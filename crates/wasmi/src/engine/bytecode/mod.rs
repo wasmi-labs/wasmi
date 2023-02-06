@@ -290,33 +290,39 @@ impl Instruction {
 
     /// Returns `true` if the [`Instruction`] loads from linear memory.
     pub fn is_load(&self) -> bool {
-        matches!(self, Instruction::I32Load(_)
-            | Instruction::I64Load(_)
-            | Instruction::F32Load(_)
-            | Instruction::F64Load(_)
-            | Instruction::I32Load8S(_)
-            | Instruction::I32Load8U(_)
-            | Instruction::I32Load16S(_)
-            | Instruction::I32Load16U(_)
-            | Instruction::I64Load8S(_)
-            | Instruction::I64Load8U(_)
-            | Instruction::I64Load16S(_)
-            | Instruction::I64Load16U(_)
-            | Instruction::I64Load32S(_)
-            | Instruction::I64Load32U(_))
+        matches!(
+            self,
+            Instruction::I32Load(_)
+                | Instruction::I64Load(_)
+                | Instruction::F32Load(_)
+                | Instruction::F64Load(_)
+                | Instruction::I32Load8S(_)
+                | Instruction::I32Load8U(_)
+                | Instruction::I32Load16S(_)
+                | Instruction::I32Load16U(_)
+                | Instruction::I64Load8S(_)
+                | Instruction::I64Load8U(_)
+                | Instruction::I64Load16S(_)
+                | Instruction::I64Load16U(_)
+                | Instruction::I64Load32S(_)
+                | Instruction::I64Load32U(_)
+        )
     }
 
     /// Returns `true` if the [`Instruction`] stores to linear memory.
     pub fn is_store(&self) -> bool {
-        matches!(self, Instruction::I32Store(_)
-            | Instruction::I64Store(_)
-            | Instruction::F32Store(_)
-            | Instruction::F64Store(_)
-            | Instruction::I32Store8(_)
-            | Instruction::I32Store16(_)
-            | Instruction::I64Store8(_)
-            | Instruction::I64Store16(_)
-            | Instruction::I64Store32(_))
+        matches!(
+            self,
+            Instruction::I32Store(_)
+                | Instruction::I64Store(_)
+                | Instruction::F32Store(_)
+                | Instruction::F64Store(_)
+                | Instruction::I32Store8(_)
+                | Instruction::I32Store16(_)
+                | Instruction::I64Store8(_)
+                | Instruction::I64Store16(_)
+                | Instruction::I64Store32(_)
+        )
     }
 
     /// Returns the amount of fuel that the `Instruction` will consume if statically known.
