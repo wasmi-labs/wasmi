@@ -177,8 +177,8 @@ impl StoreError {
 pub struct Fuel {
     /// The remaining fuel.
     remaining: u64,
-    /// The fuel consumed so far.
-    consumed: u64,
+    /// The total amount of fuel so far.
+    total: u64,
 }
 
 impl Fuel {
@@ -188,41 +188,30 @@ impl Fuel {
     ///
     /// If this overflows the [`Fuel`] counter.
     pub fn add_fuel(&mut self, delta: u64) {
-        self.remaining = self.remaining.checked_add(delta).unwrap_or_else(|| {
+        self.total = self.total.checked_add(delta).unwrap_or_else(|| {
             panic!(
-                "encountered fuel overflow: fuel = {}, delta = {delta}",
-                self.remaining
+                "encountered total fuel overflow: fuel = {}, delta = {delta}",
+                self.total
             )
         });
+        // No need to check as well since `self.total > self.remaining`.
+        self.remaining = self.remaining.wrapping_add(delta);
     }
 
     /// Returns the amount of [`Fuel`] consumed by executions of the [`Store`] so far.
     pub fn fuel_consumed(&self) -> u64 {
-        self.consumed
+        self.total.wrapping_sub(self.remaining)
     }
 
     /// Synthetically consumes an amount of [`Fuel`] for the [`Store`].
     ///
     /// Returns the remaining amount of [`Fuel`] after this operation.
     pub fn consume_fuel(&mut self, delta: u64) -> Result<u64, TrapCode> {
-        /// Raises an out-of-fuel error and indicates cold execution path.
-        #[cold]
-        fn err_out_of_fuel() -> Result<u64, TrapCode> {
-            Err(TrapCode::OutOfFuel)
-        }
-        match self.remaining.checked_sub(delta) {
-            Some(new_remaining) => {
-                self.remaining = new_remaining;
-                self.consumed = self.consumed.checked_add(delta).unwrap_or_else(|| {
-                    panic!(
-                        "encountered consumed fuel overflow: consumed = {}, delta = {delta}",
-                        self.remaining
-                    )
-                });
-                Ok(new_remaining)
-            }
-            None => err_out_of_fuel(),
-        }
+        self.remaining = self
+            .remaining
+            .checked_sub(delta)
+            .ok_or(TrapCode::OutOfFuel)?;
+        Ok(self.remaining)
     }
 }
 
