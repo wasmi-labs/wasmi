@@ -426,13 +426,13 @@ fn type_check_arguments(
 }
 
 /// Returns a [`Value`] buffer capable of holding the return values.
-fn prepare_results_buffer(func_type: &FuncType) -> Vec<Value> {
+fn prepare_results_buffer(func_type: &FuncType) -> Box<[Value]> {
     func_type
         .results()
         .iter()
         .copied()
         .map(Value::default)
-        .collect::<Vec<_>>()
+        .collect()
 }
 
 /// Prints a signalling text that Wasm execution has started.
