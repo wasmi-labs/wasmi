@@ -437,14 +437,8 @@ fn prepare_results_buffer(func_type: &FuncType) -> Vec<Value> {
 
 /// Prints a signalling text that Wasm execution has started.
 fn print_execution_start(wasm_file: &Path, func_name: &str, func_args: &[Value]) {
-    print!("executing {wasm_file:?}::{func_name}(");
-    if let Some((first_arg, rest_args)) = func_args.split_first() {
-        print!("{}", DisplayValue::from(first_arg));
-        for arg in rest_args.iter().map(DisplayValue::from) {
-            print!(", {arg}");
-        }
-    }
-    println!(") ...");
+    let display_args = DisplaySequence::new(", ", func_args.iter().map(DisplayValue::from));
+    println!("executing File({wasm_file:?})::{func_name}({display_args}) ...");
 }
 
 /// Prints the results of the Wasm computation in a human readable form.
