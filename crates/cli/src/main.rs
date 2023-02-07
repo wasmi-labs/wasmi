@@ -97,19 +97,18 @@ impl Args {
         self.dirs
             .iter()
             .map(|path| {
-                let dir = Dir::open_ambient_dir(path, ambient_authority())
-                    .with_context(|| {
-                        format!("failed to open directory '{path:?}' with ambient authority")
-                    })?;
+                let dir = Dir::open_ambient_dir(path, ambient_authority()).with_context(|| {
+                    format!("failed to open directory '{path:?}' with ambient authority")
+                })?;
                 Ok((path.as_ref(), dir))
             })
             .collect::<Result<Vec<_>>>()
     }
 
     /// Opens sockets given in `--tcplisten` and returns them for use by the [`WasiCtx`].
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// If any of the given socket addresses in `--tcplisten` cannot be listened to.
     fn preopen_sockets(&self) -> Result<Vec<TcpListener>> {
         self.tcplisten
@@ -124,10 +123,10 @@ impl Args {
     }
 
     /// Returns the arguments that the WASI invokation expects to receive.
-    /// 
+    ///
     /// The first argument is always the module file name itself followed
     /// by the arguments to the invoked function if any.
-    /// 
+    ///
     /// This is similar to how `UNIX` systems work, and is part of the `WASI` spec.
     fn argv(&self) -> Vec<String> {
         let mut args = Vec::with_capacity(self.func_args.len() + 1);
