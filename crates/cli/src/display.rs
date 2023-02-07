@@ -1,3 +1,4 @@
+use crate::context::Context;
 use std::fmt::{self, Display};
 use wasmi::{core::ValueType, FuncType, Value};
 
@@ -137,6 +138,32 @@ where
             for param in rest {
                 write!(f, "{separator}{param}")?;
             }
+        }
+        Ok(())
+    }
+}
+
+/// [`Display`]-wrapper for exported functions of a [`Context`].
+pub struct DisplayExportedFuncs<'a>(&'a Context);
+
+impl<'a> From<&'a Context> for DisplayExportedFuncs<'a> {
+    fn from(ctx: &'a Context) -> Self {
+        Self(ctx)
+    }
+}
+
+impl Display for DisplayExportedFuncs<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let exported_funcs = self.0.exported_funcs().collect::<Box<[_]>>();
+        if exported_funcs.is_empty() {
+            return write!(f, "No exported functions found for the Wasm module.");
+        }
+        write!(f, "The Wasm module exports the following functions:\n\n")?;
+        for func in exported_funcs
+            .iter()
+            .map(|(name, func_type)| DisplayFuncType::new(name, func_type))
+        {
+            writeln!(f, " - {func}")?;
         }
         Ok(())
     }
