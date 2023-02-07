@@ -77,6 +77,11 @@ impl Args {
         &self.wasm_file
     }
 
+    /// Returns the name of the invoked function if any.
+    pub fn invoked(&self) -> Option<&str> {
+        self.invoke.as_deref()
+    }
+
     /// Returns the function arguments given to the CLI app.
     pub fn func_args(&self) -> &[String] {
         &self.func_args[..]
