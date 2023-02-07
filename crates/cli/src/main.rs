@@ -320,37 +320,10 @@ fn display_exported_funcs(module: &wasmi::Module) -> String {
     let mut buffer = String::from("The Wasm module exports the following functions:\n\n");
     let f = &mut buffer;
     for func in exported_funcs
-        .into_iter()
-        .map(|(name, func_type)| display_exported_func(name, &func_type))
+        .iter()
+        .map(|(name, func_type)| DisplayFuncType::new(name, func_type))
     {
         writeln!(f, " - {func}").unwrap();
-    }
-    buffer
-}
-
-/// Returns a [`String`] displaying the named exported function.
-fn display_exported_func(name: &str, func_type: &FuncType) -> String {
-    let mut buffer = String::new();
-    let f = &mut buffer;
-    write!(f, "fn {name}(").unwrap();
-    if let Some((first, rest)) = func_type.params().split_first() {
-        write!(f, "{first}").unwrap();
-        for param in rest {
-            write!(f, ", {param}").unwrap();
-        }
-    }
-    write!(f, ")").unwrap();
-    if let Some((first, rest)) = func_type.results().split_first() {
-        write!(f, " -> ").unwrap();
-        if rest.is_empty() {
-            write!(f, "{first}").unwrap();
-        } else {
-            write!(f, "({first}").unwrap();
-            for result in rest {
-                write!(f, ", {result}").unwrap();
-            }
-            write!(f, ")").unwrap();
-        }
     }
     buffer
 }
