@@ -126,7 +126,7 @@ impl<'parser> FuncTranslator<'parser> {
     ///
     /// # Note
     ///
-    /// This is important for the [`FunctionTranslator`] to know since it
+    /// This is important for the [`FuncTranslator`] to know since it
     /// has to create [`Instruction::ConsumeFuel`] instructions on the start
     /// of basic blocks such as Wasm `block`, `if` and `loop` that account
     /// for all the instructions that are going to be executed within their
