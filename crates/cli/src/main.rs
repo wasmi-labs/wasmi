@@ -143,40 +143,48 @@ impl Args {
         args
     }
 
-    /// Adds WASI to the linker. Returns Linker and Store.
+    /// Creates the [`WasiCtx`] for this session.
+    fn create_wasi_context(&self) -> Result<WasiCtx, Error> {
+        let mut wasi_builder = WasiCtxBuilder::new();
+        wasi_builder = wasi_builder.inherit_stdio();
+        for KeyValue { key, value } in &self.envs {
+            wasi_builder = wasi_builder.env(key, value)?;
+        }
+        wasi_builder = wasi_builder.args(&self.argv())?;
+        // Add pre-opened TCP sockets.
+        //
+        // Note that `num_fd` starts at 3 because the inherited `stdin`, `stdout` and `stderr`
+        // are already mapped to `0, 1, 2` respectively.
+        for (socket, num_fd) in self.preopen_sockets()?.into_iter().zip(3..) {
+            wasi_builder = wasi_builder.preopened_socket(num_fd, socket)?;
+        }
+        // Add pre-opened directories.
+        for (dir_name, dir) in self.preopen_dirs()? {
+            wasi_builder = wasi_builder.preopened_dir(dir, dir_name)?;
+        }
+        Ok(wasi_builder.build())
+    }
+
+    /// Sets up the [`Store`] and [`Linker`] for the given [`Engine`].
+    ///
+    /// Returns the fully setup pair of [`Linker`] and [`Store`].
+    ///
+    /// # Note
+    ///
+    /// Also sets up the [`WasiCtx`] and defines WASI definitions in the created [`Linker`].
+    ///
+    /// # Errors
+    ///
+    /// If [`WasiCtx`] creation fails.
+    /// If adding WASI definition to the [`Linker`] fails.
     fn link_wasi(
         &self,
         engine: &Engine,
     ) -> Result<(wasmi::Linker<WasiCtx>, Store<WasiCtx>), anyhow::Error> {
+        let wasi_ctx = self.create_wasi_context()?;
+        let mut store = wasmi::Store::new(engine, wasi_ctx);
         let mut linker = <wasmi::Linker<WasiCtx>>::default();
-
-        // add wasi to linker
-        let mut wasi_bldr = WasiCtxBuilder::new();
-        wasi_bldr = wasi_bldr.inherit_stdio();
-        let argv = self.argv();
-        let preopened_dirs = self.preopen_dirs()?;
-        let tcpsockets = self.preopen_sockets()?;
-        for KeyValue { key, value } in self.envs.iter() {
-            wasi_bldr = wasi_bldr.env(key, value)?;
-        }
-        wasi_bldr = wasi_bldr.args(&argv)?;
-
-        // stdin, stdout, stderr: 0,1,2. we already inherited the three earlier
-        let mut num_fd = 2;
-        for socket in tcpsockets {
-            num_fd += 1;
-            wasi_bldr = wasi_bldr.preopened_socket(num_fd, socket)?;
-        }
-
-        for (dir_name, dir) in preopened_dirs {
-            wasi_bldr = wasi_bldr.preopened_dir(dir, dir_name)?;
-        }
-
-        let wasi = wasi_bldr.build();
-
-        let mut store = wasmi::Store::new(engine, wasi);
         wasmi_wasi::define_wasi(&mut linker, &mut store, |ctx| ctx)?;
-
         Ok((linker, store))
     }
 
