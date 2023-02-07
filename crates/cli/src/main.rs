@@ -89,9 +89,9 @@ struct Args {
 
 impl Args {
     /// Pre-opens all directories given in `--dir` and returns them for use by the [`WasiCtx`].
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// If any of the given directions in `--dir` cannot be opened.
     fn preopen_dirs(&self) -> Result<Vec<(&Path, Dir)>> {
         self.dirs
