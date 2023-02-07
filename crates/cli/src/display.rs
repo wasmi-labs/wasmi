@@ -1,7 +1,7 @@
 use std::fmt::{self, Display};
 use wasmi::{FuncType, Value};
 
-/// Wrapper type that implements `Display` for [`Value`].
+/// [`Display`]-wrapper type for [`Value`].
 pub struct DisplayValue<'a>(&'a Value);
 
 impl<'a> From<&'a Value> for DisplayValue<'a> {
@@ -25,23 +25,25 @@ impl<'a> fmt::Display for DisplayValue<'a> {
     }
 }
 
-/// Wrapper type around [`FuncType`] that implements `Display` for it.
-pub struct DisplayFuncType<'a>(&'a FuncType);
+/// [`Display`]-wrapper type around [`FuncType`].
+pub struct DisplayFuncType<'a> {
+    func_type: &'a FuncType,
+}
 
 impl<'a> From<&'a FuncType> for DisplayFuncType<'a> {
     fn from(func_type: &'a FuncType) -> Self {
-        Self(func_type)
+        Self { func_type }
     }
 }
 
 impl fmt::Display for DisplayFuncType<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "fn(")?;
-        let params = self.0.params();
-        let results = self.0.results();
+        let params = self.func_type.params();
+        let results = self.func_type.results();
         write!(f, "{}", DisplaySequence::new(", ", params))?;
         write!(f, ")")?;
-        if let Some((first, rest)) = results.split_first() {
+        if !results.is_empty() {
             write!(f, " -> ")?;
             if results.len() == 1 {
                 write!(f, "{}", &results[0])?;
