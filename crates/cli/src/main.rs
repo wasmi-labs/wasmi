@@ -12,10 +12,11 @@ use std::{
 use wasmi::{
     core::{ValueType, F32, F64},
     Engine,
+    Extern,
     ExternType,
     Func,
     FuncType,
-    Linker,
+    Instance,
     Module,
     Store,
     Value,
@@ -202,20 +203,21 @@ impl Args {
         let engine = wasmi::Engine::default();
         let module = load_wasm_module(&self.wasm_file, &engine)?;
         let (linker, mut store) = self.link_wasi(&engine)?;
-        let (name, func) = self.load_func(&linker, &mut store, &module)?;
+        let instance = linker
+            .instantiate(&mut store, &module)
+            .and_then(|pre| pre.start(&mut store))
+            .map_err(|error| anyhow!("failed to instantiate and start the Wasm module: {error}"))?;
+        let (name, func) = self.load_func(&instance, &mut store, &module)?;
         Ok((name, func, store))
     }
 
+    /// Returns the named function given via `--invoke` or the WASI entry point function.
     fn load_func<T>(
         &self,
-        linker: &Linker<T>,
+        instance: &Instance,
         mut store: &mut Store<T>,
         module: &Module,
     ) -> Result<(String, Func)> {
-        let instance = linker
-            .instantiate(&mut store, module)
-            .and_then(|pre| pre.start(&mut store))
-            .map_err(|error| anyhow!("failed to instantiate and start the Wasm module: {error}"))?;
         let missing_func_error = || {
             let exported_funcs = display_exported_funcs(module);
             anyhow!(
@@ -224,21 +226,25 @@ impl Args {
             )
         };
         if let Some(name) = &self.invoke {
-            // if a func name is provided
+            // Case: A function name was provided via the `--invoke` flag.
             let func = instance
                 .get_export(&store, name)
-                .and_then(|ext| ext.into_func())
+                .and_then(Extern::into_func)
                 .ok_or_else(missing_func_error)?;
             Ok((name.into(), func))
         } else {
+            // Case: No function name was provided via the `--invoke` flag.
+            //
+            // In this case we check whether the executed Wasm module contains
+            // exports for a function named `""` and `"_start"` because by convention
+            // these are the potential names of WASI's entry points.
             let (name, ext) = {
                 if let Some(ext) = instance.get_export(&mut store, "") {
-                    // try " "
                     ("", ext)
                 } else if let Some(ext) = instance.get_export(&mut store, "_start") {
                     ("_start", ext)
                 } else {
-                    // no function invoked plus no default function exported: we bail out
+                    // Case: Neither WASI default entry point functions are exported so we bail out.
                     return Err(missing_func_error());
                 }
             };
