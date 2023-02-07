@@ -103,6 +103,7 @@ impl Args {
 
     /// Computes a vector of args provided to the program
     /// First arg is always the module name. It's not expected to be provided at the command line
+    /// This is similar to how `UNIX` systems work, and is part of the `WASI` spec.
     fn argv(&self) -> Vec<String> {
         let mut args = Vec::with_capacity(self.func_args.len() + 1);
 
@@ -186,19 +187,19 @@ impl Args {
             .instantiate(&mut store, module)
             .and_then(|pre| pre.start(&mut store))
             .map_err(|error| anyhow!("failed to instantiate and start the Wasm module: {error}"))?;
-
+        let missing_func_error = || {
+            let exported_funcs = display_exported_funcs(module);
+            anyhow!(
+                "missing function name argument for {}\n\n{exported_funcs}",
+                self.wasm_file.display()
+            )
+        };
         if let Some(name) = &self.invoke {
             // if a func name is provided
             let func = instance
                 .get_export(&store, name)
                 .and_then(|ext| ext.into_func())
-                .ok_or_else(|| {
-                    let exported_funcs = display_exported_funcs(module);
-                    anyhow!(
-                        "could not find function \"{name}\" in {}\n\n{exported_funcs}",
-                        self.wasm_file.display()
-                    )
-                })?;
+                .ok_or_else(missing_func_error)?;
             Ok((name.into(), func))
         } else {
             let (name, ext) = {
@@ -209,11 +210,7 @@ impl Args {
                     ("_start", ext)
                 } else {
                     // no function invoked plus no default function exported: we bail out
-                    let exported_funcs = display_exported_funcs(module);
-                    bail!(
-                        "missing function name argument for {}\n\n{exported_funcs}",
-                        self.wasm_file.display()
-                    )
+                    return Err(missing_func_error());
                 }
             };
             let func = ext
@@ -350,7 +347,7 @@ fn display_exported_func(name: &str, func_type: &FuncType) -> String {
 fn type_check_arguments(
     func_name: &str,
     func_type: &FuncType,
-    func_args: &Vec<String>,
+    func_args: &[String],
 ) -> Result<Vec<Value>> {
     // default exports (especially) from WASI programs usually don't take arguments as function arguments.
     // In such a case we would like to defer to the more elaborate check, in which case it would not even iterate at all

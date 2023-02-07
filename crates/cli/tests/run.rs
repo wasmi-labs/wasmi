@@ -7,23 +7,20 @@ fn test_simple_print() {
     let assert = cmd.arg(get_bin_path("simple_print")).assert();
     let output = assert.get_output();
     let stdout = &output.stdout;
-    assert!(is_subslice(stdout, b"Hello World"));
-    if !(is_subslice(stdout, b"Hello World\n")) {
+    assert!(contains_slice(stdout, b"Hello World"));
+    if !(contains_slice(stdout, b"Hello World\n")) {
         eprint!("UNEQUAL: {}", std::str::from_utf8(stdout).unwrap());
     }
 }
 
-fn is_subslice(mut slice: &[u8], sub: &[u8]) -> bool {
-    if sub.is_empty() {
+fn contains_slice<T>(slice: &[T], other: &[T]) -> bool
+where
+    T: Eq,
+{
+    if other.is_empty() {
         return true;
     }
-    while !slice.is_empty() {
-        if slice.starts_with(sub) {
-            return true;
-        }
-        slice = &slice[1..];
-    }
-    false
+    slice.windows(other.len()).any(|window| window == other)
 }
 
 #[test]
