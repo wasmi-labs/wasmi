@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context, Error, Result};
+use anyhow::{Context, Error, Result};
 use clap::Parser;
 use std::{
     ffi::OsStr,
@@ -6,10 +6,7 @@ use std::{
     path::{Path, PathBuf},
     str::FromStr,
 };
-use wasmi::{Engine, Extern, Func, Instance, Module, Store};
 use wasmi_wasi::{ambient_authority, Dir, TcpListener, WasiCtx, WasiCtxBuilder};
-
-use crate::{display_exported_funcs, load_wasm_module};
 
 /// A CLI flag value key-value argument.
 #[derive(Debug, Clone)]
@@ -162,94 +159,5 @@ impl Args {
             wasi_builder = wasi_builder.preopened_dir(dir, dir_name)?;
         }
         Ok(wasi_builder.build())
-    }
-
-    /// Sets up the [`Store`] and [`Linker`] for the given [`Engine`].
-    ///
-    /// Returns the fully setup pair of [`Linker`] and [`Store`].
-    ///
-    /// # Note
-    ///
-    /// Also sets up the [`WasiCtx`] and defines WASI definitions in the created [`Linker`].
-    ///
-    /// # Errors
-    ///
-    /// If [`WasiCtx`] creation fails.
-    /// If adding WASI definition to the [`Linker`] fails.
-    fn link_wasi(
-        &self,
-        engine: &Engine,
-    ) -> Result<(wasmi::Linker<WasiCtx>, Store<WasiCtx>), anyhow::Error> {
-        let wasi_ctx = self.wasi_context()?;
-        let mut store = wasmi::Store::new(engine, wasi_ctx);
-        let mut linker = <wasmi::Linker<WasiCtx>>::default();
-        wasmi_wasi::define_wasi(&mut linker, &mut store, |ctx| ctx)?;
-        Ok((linker, store))
-    }
-
-    /// Loads the Wasm [`Func`] from the given `wasm_bytes` with `wasi` linked.
-    ///
-    /// Returns the named [`Func`] together with its [`Store`] for further processing.
-    ///
-    /// # Errors
-    ///
-    /// - If the Wasm module fails to parse or validate.
-    /// - If there are errors linking `wasi`.
-    /// - If the Wasm module fails to instantiate or start.
-    /// - If the Wasm module does not have an exported function `func_name`.
-    pub fn load_wasm_func_with_wasi(&self) -> Result<(String, Func, Store<WasiCtx>)> {
-        let engine = wasmi::Engine::default();
-        let module = load_wasm_module(&self.wasm_file, &engine)?;
-        let (linker, mut store) = self.link_wasi(&engine)?;
-        let instance = linker
-            .instantiate(&mut store, &module)
-            .and_then(|pre| pre.start(&mut store))
-            .map_err(|error| anyhow!("failed to instantiate and start the Wasm module: {error}"))?;
-        let (name, func) = self.load_func(&instance, &mut store, &module)?;
-        Ok((name, func, store))
-    }
-
-    /// Returns the named function given via `--invoke` or the WASI entry point function.
-    fn load_func(
-        &self,
-        instance: &Instance,
-        mut store: &mut Store<WasiCtx>,
-        module: &Module,
-    ) -> Result<(String, Func)> {
-        let missing_func_error = || {
-            let exported_funcs = display_exported_funcs(module);
-            anyhow!(
-                "missing function name argument for {}\n\n{exported_funcs}",
-                self.wasm_file.display()
-            )
-        };
-        if let Some(name) = &self.invoke {
-            // Case: A function name was provided via the `--invoke` flag.
-            let func = instance
-                .get_export(&store, name)
-                .and_then(Extern::into_func)
-                .ok_or_else(missing_func_error)?;
-            Ok((name.into(), func))
-        } else {
-            // Case: No function name was provided via the `--invoke` flag.
-            //
-            // In this case we check whether the executed Wasm module contains
-            // exports for a function named `""` and `"_start"` because by convention
-            // these are the potential names of WASI's entry points.
-            let (name, ext) = {
-                if let Some(ext) = instance.get_export(&mut store, "") {
-                    ("", ext)
-                } else if let Some(ext) = instance.get_export(&mut store, "_start") {
-                    ("_start", ext)
-                } else {
-                    // Case: Neither WASI default entry point functions are exported so we bail out.
-                    return Err(missing_func_error());
-                }
-            };
-            let func = ext
-                .into_func()
-                .ok_or_else(|| anyhow!("export `{name}` is not a function"))?;
-            Ok((name.into(), func))
-        }
     }
 }
