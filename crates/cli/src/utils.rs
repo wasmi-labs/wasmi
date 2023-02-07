@@ -32,7 +32,7 @@ pub fn read_wasm_or_wat(wasm_file: &Path) -> Result<Vec<u8>, Error> {
 
 /// Returns a [`Value`] buffer capable of holding the return values.
 ///
-/// The returned buffer can be used as function results for [`Func::call`][`wasmi::Func::call`].
+/// The returned buffer can be used as function results for [`Func::call`](`wasmi::Func::call`).
 pub fn prepare_func_results(ty: &FuncType) -> Box<[Value]> {
     ty.results().iter().copied().map(Value::default).collect()
 }
@@ -46,6 +46,10 @@ pub fn prepare_func_results(ty: &FuncType) -> Box<[Value]> {
 ///
 /// - If there is a type mismatch between `args` and the expected [`ValueType`] by `ty`.
 /// - If too many or too few `args` are given for [`FuncType`] `ty`.
+/// - If unsupported [`ExternRef`] or [`FuncRef`] types are encountered.
+///
+/// [`FuncRef`]: wasmi::FuncRef
+/// [`ExternRef`]: wasmi::ExternRef
 pub fn decode_func_args(ty: &FuncType, args: &[String]) -> Result<Box<[Value]>, Error> {
     ty.params()
         .iter()
