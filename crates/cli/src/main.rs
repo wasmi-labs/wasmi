@@ -146,7 +146,6 @@ impl Args {
     /// Creates the [`WasiCtx`] for this session.
     fn create_wasi_context(&self) -> Result<WasiCtx, Error> {
         let mut wasi_builder = WasiCtxBuilder::new();
-        wasi_builder = wasi_builder.inherit_stdio();
         for KeyValue { key, value } in &self.envs {
             wasi_builder = wasi_builder.env(key, value)?;
         }
@@ -155,6 +154,7 @@ impl Args {
         //
         // Note that `num_fd` starts at 3 because the inherited `stdin`, `stdout` and `stderr`
         // are already mapped to `0, 1, 2` respectively.
+        wasi_builder = wasi_builder.inherit_stdio();
         for (socket, num_fd) in self.preopen_sockets()?.into_iter().zip(3..) {
             wasi_builder = wasi_builder.preopened_socket(num_fd, socket)?;
         }
