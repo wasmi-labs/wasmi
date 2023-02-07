@@ -190,7 +190,7 @@ impl Args {
 
     /// Loads the Wasm [`Func`] from the given `wasm_bytes` with `wasi` linked.
     ///
-    /// Returns the [`Func`] together with its [`Store`] for further processing.
+    /// Returns the named [`Func`] together with its [`Store`] for further processing.
     ///
     /// # Errors
     ///
