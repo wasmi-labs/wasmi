@@ -191,8 +191,10 @@ fn prepare_results_buffer(func_type: &FuncType) -> Box<[Value]> {
 
 /// Prints a signalling text that Wasm execution has started.
 fn print_execution_start(wasm_file: &Path, func_name: &str, func_args: &[Value]) {
-    let display_args = DisplaySequence::new(", ", func_args.iter().map(DisplayValue::from));
-    println!("executing File({wasm_file:?})::{func_name}({display_args}) ...");
+    println!(
+        "executing File({wasm_file:?})::{func_name}({}) ...",
+        DisplaySequence::new(", ", func_args.iter().map(DisplayValue::from))
+    );
 }
 
 /// Prints the results of the Wasm computation in a human readable form.
