@@ -183,8 +183,8 @@ impl InitExprOperand {
             wasmparser::Operator::GlobalGet { global_index } => {
                 Self::GlobalGet(GlobalIdx::from(global_index))
             }
-            wasmparser::Operator::RefNull { ty } => Self::RefNull {
-                ty: WasmiValueType::from(ty).into_inner(),
+            wasmparser::Operator::RefNull { hty } => Self::RefNull {
+                ty: WasmiValueType::from(hty).into_inner(),
             },
             wasmparser::Operator::RefFunc { function_index } => Self::FuncRef(function_index),
             operator => {

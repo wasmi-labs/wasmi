@@ -110,11 +110,6 @@ impl From<wasmparser::ElementKind<'_>> for ElementSegmentKind {
 
 impl From<wasmparser::Element<'_>> for ElementSegment {
     fn from(element: wasmparser::Element<'_>) -> Self {
-        assert!(
-            element.ty.is_reference_type(),
-            "only reftypes are allowed as element types but found: {:?}",
-            element.ty
-        );
         let kind = ElementSegmentKind::from(element.kind);
         let ty = WasmiValueType::from(element.ty).into_inner();
         let items = ElementSegmentItems::new(&element.items);

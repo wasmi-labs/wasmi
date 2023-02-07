@@ -315,7 +315,7 @@ impl<'engine> ModuleParser<'engine> {
         self.validator.table_section(&section)?;
         let tables = section.into_iter().map(|table| {
             table
-                .map(TableType::from_wasmparser)
+                .map(TableType::from_wasmparser_table)
                 .map_err(ModuleError::from)
         });
         self.builder.push_tables(tables)?;

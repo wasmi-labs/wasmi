@@ -14,6 +14,16 @@ impl TableType {
         let maximum = table_type.maximum;
         Self::new(element, minimum, maximum)
     }
+
+    /// Creates a new [`TableType`] from the given `wasmparser` primitive.
+    ///
+    /// # Dev. Note
+    ///
+    /// We do not use the `From` trait here so that this conversion
+    /// routine does not become part of the public API of [`TableType`].
+    pub(crate) fn from_wasmparser_table(table: wasmparser::Table<'_>) -> Self {
+        Self::from_wasmparser(table.ty)
+    }
 }
 
 impl MemoryType {
@@ -107,6 +117,28 @@ impl From<ValueType> for WasmiValueType {
     }
 }
 
+impl From<wasmparser::HeapType> for WasmiValueType {
+    fn from(heap_type: wasmparser::HeapType) -> Self {
+        match heap_type {
+            wasmparser::HeapType::TypedFunc(_) => {
+                panic!("wasmi does not support the `function-references` Wasm proposal")
+            }
+            wasmparser::HeapType::Func => Self::from(ValueType::FuncRef),
+            wasmparser::HeapType::Extern => Self::from(ValueType::ExternRef),
+        }
+    }
+}
+
+impl From<wasmparser::RefType> for WasmiValueType {
+    fn from(ref_type: wasmparser::RefType) -> Self {
+        assert!(
+            ref_type.nullable,
+            "wasmi does not support the `function-references` Wasm proposal"
+        );
+        Self::from(ref_type.heap_type)
+    }
+}
+
 impl From<wasmparser::ValType> for WasmiValueType {
     fn from(value_type: wasmparser::ValType) -> Self {
         match value_type {
@@ -115,8 +147,7 @@ impl From<wasmparser::ValType> for WasmiValueType {
             wasmparser::ValType::F32 => Self::from(ValueType::F32),
             wasmparser::ValType::F64 => Self::from(ValueType::F64),
             wasmparser::ValType::V128 => panic!("wasmi does not support the `simd` Wasm proposal"),
-            wasmparser::ValType::FuncRef => Self::from(ValueType::FuncRef),
-            wasmparser::ValType::ExternRef => Self::from(ValueType::ExternRef),
+            wasmparser::ValType::Ref(ref_type) => Self::from(ref_type),
         }
     }
 }

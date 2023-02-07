@@ -178,6 +178,7 @@ impl Config {
             memory64: false,
             extended_const: false,
             memory_control: false,
+            function_references: false,
         }
     }
 }

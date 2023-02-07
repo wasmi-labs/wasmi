@@ -1018,7 +1018,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.visit_select()
     }
 
-    fn visit_ref_null(&mut self, _ty: wasmparser::ValType) -> Result<(), TranslationError> {
+    fn visit_ref_null(&mut self, _ty: wasmparser::HeapType) -> Result<(), TranslationError> {
         // Since `wasmi` bytecode is untyped we have no special `null` instructions
         // but simply reuse the `constant` instruction with an immediate value of 0.
         // Note that `FuncRef` and `ExternRef` are encoded as 64-bit values in `wasmi`.

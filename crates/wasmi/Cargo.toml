@@ -13,7 +13,8 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
-wasmparser = { version = "0.99", package = "wasmparser-nostd", default-features = false }
+wasmparser = { git = "https://github.com/effect-handlers/wasm-tools", rev = "c1b5cc3a342c8d0b1e7b527b18438358755e1310" }
+# wasmparser = { version = "0.99", package = "wasmparser-nostd", default-features = false }
 wasmi_core = { version = "0.10", path = "../core", default-features = false }
 wasmi_arena = { version = "0.4", path = "../arena", default-features = false }
 spin = { version = "0.9", default-features = false, features = [
@@ -31,7 +32,7 @@ criterion = { version = "0.4", default-features = false }
 
 [features]
 default = ["std"]
-std = ["wasmi_core/std", "wasmi_arena/std", "wasmparser/std", "spin/std"]
+std = ["wasmi_core/std", "wasmi_arena/std", "spin/std"]
 
 [[bench]]
 name = "benches"
