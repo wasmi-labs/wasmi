@@ -43,15 +43,10 @@ impl fmt::Display for DisplayFuncType<'_> {
         write!(f, ")")?;
         if let Some((first, rest)) = results.split_first() {
             write!(f, " -> ")?;
-            if !rest.is_empty() {
-                write!(f, "(")?;
-            }
-            write!(f, "{first}")?;
-            for result in rest {
-                write!(f, ", {result}")?;
-            }
-            if !rest.is_empty() {
-                write!(f, ")")?;
+            if results.len() == 1 {
+                write!(f, "{}", &results[0])?;
+            } else {
+                write!(f, "({})", DisplaySequence::new(", ", results))?;
             }
         }
         Ok(())
