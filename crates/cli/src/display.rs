@@ -103,7 +103,7 @@ impl fmt::Display for DisplayFuncType<'_> {
     }
 }
 
-/// Display-wrapper for generic sequences with separators.
+/// [`Display`]-wrapper for generic sequences with separators.
 #[derive(Debug)]
 pub struct DisplaySequence<'a, T> {
     /// The sequence to display.
