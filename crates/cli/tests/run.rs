@@ -1,7 +1,7 @@
 use assert_cmd::Command;
 use std::path::PathBuf;
-#[test]
 
+#[test]
 fn test_simple_print() {
     let mut cmd = get_cmd();
     let assert = cmd.arg(get_bin_path("simple_print")).assert();
