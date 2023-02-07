@@ -27,18 +27,36 @@ impl<'a> fmt::Display for DisplayValue<'a> {
 
 /// [`Display`]-wrapper type around [`FuncType`].
 pub struct DisplayFuncType<'a> {
+    name: Option<&'a str>,
     func_type: &'a FuncType,
+}
+
+impl<'a> DisplayFuncType<'a> {
+    /// Creates a named [`DisplayFuncType`] for the given [`FuncType`].
+    pub fn new(name: &'a str, func_type: &'a FuncType) -> Self {
+        Self {
+            name: Some(name),
+            func_type,
+        }
+    }
 }
 
 impl<'a> From<&'a FuncType> for DisplayFuncType<'a> {
     fn from(func_type: &'a FuncType) -> Self {
-        Self { func_type }
+        Self {
+            name: None,
+            func_type,
+        }
     }
 }
 
 impl fmt::Display for DisplayFuncType<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "fn(")?;
+        if let Some(name) = self.name {
+            write!(f, "fn {name}(")?;
+        } else {
+            write!(f, "fn(")?;
+        }
         let params = self.func_type.params();
         let results = self.func_type.results();
         write!(f, "{}", DisplaySequence::new(", ", params))?;
