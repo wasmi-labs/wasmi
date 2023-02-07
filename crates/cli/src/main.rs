@@ -4,7 +4,7 @@ use crate::{
 };
 use anyhow::{anyhow, bail, Result};
 use clap::Parser;
-use std::{ffi::OsStr, fmt::Write, fs, path::Path};
+use std::{fmt::Write, path::Path};
 use wasmi::{
     core::{ValueType, F32, F64},
     Engine,
@@ -14,7 +14,9 @@ use wasmi::{
 };
 
 mod args;
+mod context;
 mod display;
+mod utils;
 
 #[cfg(test)]
 mod tests;
@@ -26,7 +28,7 @@ fn main() -> Result<()> {
     let func_type = func.ty(&store);
 
     let func_args = type_check_arguments(&func_name, &func_type, args.func_args())?;
-    let mut results = prepare_results_buffer(&func_type);
+    let mut results = utils::prepare_func_results(&func_type);
 
     print_execution_start(args.wasm_file(), &func_name, &func_args);
 
@@ -38,36 +40,13 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-/// Converts the given `.wat` into `.wasm`.
-fn wat2wasm(wat: &str) -> Result<Vec<u8>, wat::Error> {
-    wat::parse_str(wat)
-}
-
-/// Returns the contents of the given `.wasm` or `.wat` file.
-///
-/// # Errors
-///
-/// If the Wasm file `wasm_file` does not exist.
-/// If the Wasm file `wasm_file` is not a valid `.wasm` or `.wat` format.
-fn read_wasm_or_wat(wasm_file: &Path) -> Result<Vec<u8>> {
-    let mut wasm_bytes =
-        fs::read(wasm_file).map_err(|_| anyhow!("failed to read Wasm file {wasm_file:?}"))?;
-    if wasm_file.extension().and_then(OsStr::to_str) == Some("wat") {
-        let wat = String::from_utf8(wasm_bytes)
-            .map_err(|error| anyhow!("failed to read UTF-8 file {wasm_file:?}: {error}"))?;
-        wasm_bytes = wat2wasm(&wat)
-            .map_err(|error| anyhow!("failed to parse .wat file {wasm_file:?}: {error}"))?;
-    }
-    Ok(wasm_bytes)
-}
-
 /// Returns the contents of the given `.wasm` or `.wat` file.
 ///
 /// # Errors
 ///
 /// If the Wasm module fails to parse or validate.
 fn load_wasm_module(wasm_file: &Path, engine: &Engine) -> Result<wasmi::Module> {
-    let wasm_bytes = read_wasm_or_wat(wasm_file)?;
+    let wasm_bytes = utils::read_wasm_or_wat(wasm_file)?;
     let module = wasmi::Module::new(engine, &mut &wasm_bytes[..]).map_err(|error| {
         anyhow!("failed to parse and validate Wasm module {wasm_file:?}: {error}")
     })?;
@@ -177,16 +156,6 @@ fn type_check_arguments(
         })
         .collect::<Result<Vec<_>, _>>()?;
     Ok(func_args)
-}
-
-/// Returns a [`Value`] buffer capable of holding the return values.
-fn prepare_results_buffer(func_type: &FuncType) -> Box<[Value]> {
-    func_type
-        .results()
-        .iter()
-        .copied()
-        .map(Value::default)
-        .collect()
 }
 
 /// Prints a signalling text that Wasm execution has started.
