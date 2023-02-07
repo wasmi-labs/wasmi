@@ -134,7 +134,7 @@ impl Args {
             .unwrap_or_else(|| "".to_owned());
 
         args.push(module_name);
-        args.extend(self.func_args.iter().map(|arg| arg.to_string()));
+        args.extend(self.func_args.iter().cloned());
 
         args
     }
