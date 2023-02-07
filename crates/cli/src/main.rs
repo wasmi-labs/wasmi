@@ -1,6 +1,6 @@
 use crate::{
     args::Args,
-    display::{DisplayFuncType, DisplaySequence, DisplayValue},
+    display::{DisplayFuncType, DisplaySequence, DisplayValue, DisplayValueType},
 };
 use anyhow::{anyhow, bail, Result};
 use clap::Parser;
@@ -128,7 +128,8 @@ fn type_check_arguments(
                     |_| {
                         anyhow!(
                             "failed to parse function argument \
-                            {arg} at index {n} as {param_type}"
+                            {arg} at index {n} as {}",
+                            DisplayValueType::from(param_type)
                         )
                     }
                 };

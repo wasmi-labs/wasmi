@@ -1,6 +1,6 @@
-use std::{ffi::OsStr, fs, path::Path};
-
+use crate::display::DisplayValueType;
 use anyhow::{anyhow, bail, Error};
+use std::{ffi::OsStr, fs, path::Path};
 use wasmi::{
     core::{ValueType, F32, F64},
     FuncType,
@@ -57,7 +57,8 @@ pub fn decode_func_args(ty: &FuncType, args: &[String]) -> Result<Box<[Value]>, 
                     |_| {
                         anyhow!(
                             "failed to parse function argument \
-                            {arg} at index {n} as {param_type}"
+                            {arg} at index {n} as {}",
+                            DisplayValueType::from(param_type)
                         )
                     }
                 };

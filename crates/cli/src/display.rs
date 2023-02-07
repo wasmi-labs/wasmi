@@ -1,5 +1,27 @@
 use std::fmt::{self, Display};
-use wasmi::{FuncType, Value};
+use wasmi::{core::ValueType, FuncType, Value};
+
+/// [`Display`]-wrapper type for [`ValueType`].
+pub struct DisplayValueType<'a>(&'a ValueType);
+
+impl<'a> From<&'a ValueType> for DisplayValueType<'a> {
+    fn from(value_type: &'a ValueType) -> Self {
+        Self(value_type)
+    }
+}
+
+impl Display for DisplayValueType<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.0 {
+            ValueType::I32 => write!(f, "i32"),
+            ValueType::I64 => write!(f, "i64"),
+            ValueType::F32 => write!(f, "f32"),
+            ValueType::F64 => write!(f, "f64"),
+            ValueType::FuncRef => write!(f, "funcref"),
+            ValueType::ExternRef => write!(f, "externref"),
+        }
+    }
+}
 
 /// [`Display`]-wrapper type for [`Value`].
 pub struct DisplayValue<'a>(&'a Value);
@@ -59,14 +81,22 @@ impl fmt::Display for DisplayFuncType<'_> {
         }
         let params = self.func_type.params();
         let results = self.func_type.results();
-        write!(f, "{}", DisplaySequence::new(", ", params))?;
+        write!(
+            f,
+            "{}",
+            DisplaySequence::new(", ", params.iter().map(DisplayValueType::from))
+        )?;
         write!(f, ")")?;
         if !results.is_empty() {
             write!(f, " -> ")?;
             if results.len() == 1 {
-                write!(f, "{}", &results[0])?;
+                write!(f, "{}", DisplayValueType::from(&results[0]))?;
             } else {
-                write!(f, "({})", DisplaySequence::new(", ", results))?;
+                write!(
+                    f,
+                    "({})",
+                    DisplaySequence::new(", ", results.iter().map(DisplayValueType::from))
+                )?;
             }
         }
         Ok(())
