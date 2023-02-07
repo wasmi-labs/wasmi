@@ -205,10 +205,10 @@ impl Args {
     }
 
     /// Returns the named function given via `--invoke` or the WASI entry point function.
-    fn load_func<T>(
+    fn load_func(
         &self,
         instance: &Instance,
-        mut store: &mut Store<T>,
+        mut store: &mut Store<WasiCtx>,
         module: &Module,
     ) -> Result<(String, Func)> {
         let missing_func_error = || {
