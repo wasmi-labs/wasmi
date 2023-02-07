@@ -68,7 +68,7 @@ struct Args {
     tcplisten: Vec<SocketAddr>,
 
     /// The environment variable pair made available for the program.
-    #[clap(long = "env", value_name = "ENV_VAR", value_parser(KeyValue::from_str), action = clap::ArgAction::Append )]
+    #[clap(long = "env", value_name = "ENV_VAR", value_parser(KeyValue::from_str), action = clap::ArgAction::Append)]
     envs: Vec<KeyValue>,
 
     /// The WebAssembly file to execute.
