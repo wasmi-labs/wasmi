@@ -3,7 +3,7 @@ use core::borrow::Borrow;
 
 fn assert_display(func_type: impl Borrow<FuncType>, expected: &str) {
     assert_eq!(
-        format!("{}", DisplayFuncType(func_type.borrow())),
+        format!("{}", DisplayFuncType::from(func_type.borrow())),
         String::from(expected),
     );
 }

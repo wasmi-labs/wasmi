@@ -1,8 +1,9 @@
+use crate::display::{DisplayFuncType, DisplaySequence, DisplayValue};
 use anyhow::{anyhow, bail, Context, Error, Result};
 use clap::Parser;
 use std::{
     ffi::OsStr,
-    fmt::{self, Write},
+    fmt::Write,
     fs,
     net::SocketAddr,
     path::{Path, PathBuf},
@@ -20,6 +21,8 @@ use wasmi::{
     Value,
 };
 use wasmi_wasi::{ambient_authority, Dir, TcpListener, WasiCtx, WasiCtxBuilder};
+
+mod display;
 
 #[cfg(test)]
 mod tests;
@@ -44,7 +47,7 @@ impl FromStr for KeyValue {
             .find('=')
             .ok_or_else(|| anyhow::anyhow!("invalid KEY=value: no `=` found in `{}`", s))?;
         let (key, eq_value) = s.split_at(eq_pos);
-        assert!(s.starts_with("="));
+        assert!(s.starts_with('='));
         let value = &eq_value[1..];
         let key = key.to_string();
         let value = value.to_string();
@@ -374,7 +377,7 @@ fn type_check_arguments(
         bail!(
             "invalid number of arguments given for {func_name} of type {}. \
             expected {} argument but got {}",
-            DisplayFuncType(func_type),
+            DisplayFuncType::from(func_type),
             func_type.params().len(),
             func_args.len()
         );
@@ -436,30 +439,12 @@ fn prepare_results_buffer(func_type: &FuncType) -> Vec<Value> {
 fn print_execution_start(wasm_file: &Path, func_name: &str, func_args: &[Value]) {
     print!("executing {wasm_file:?}::{func_name}(");
     if let Some((first_arg, rest_args)) = func_args.split_first() {
-        print!("{}", DisplayValue(first_arg));
-        for arg in rest_args.iter().map(DisplayValue) {
+        print!("{}", DisplayValue::from(first_arg));
+        for arg in rest_args.iter().map(DisplayValue::from) {
             print!(", {arg}");
         }
     }
     println!(") ...");
-}
-
-/// Wrapper type that implements `Display` for [`Value`].
-struct DisplayValue<'a>(&'a Value);
-
-impl<'a> fmt::Display for DisplayValue<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self.0 {
-            Value::I32(value) => write!(f, "{value}"),
-            Value::I64(value) => write!(f, "{value}"),
-            Value::F32(value) => write!(f, "{value}"),
-            Value::F64(value) => write!(f, "{value}"),
-            Value::FuncRef(value) => panic!("cannot display funcref values but found {value:?}"),
-            Value::ExternRef(value) => {
-                panic!("cannot display externref values but found {value:?}")
-            }
-        }
-    }
 }
 
 /// Prints the results of the Wasm computation in a human readable form.
@@ -484,45 +469,4 @@ fn print_pretty_results(results: &[Value]) {
             println!("]");
         }
     }
-}
-
-/// Wrapper type around [`FuncType`] that implements `Display` for it.
-struct DisplayFuncType<'a>(&'a FuncType);
-
-impl fmt::Display for DisplayFuncType<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "fn(")?;
-        let params = self.0.params();
-        let results = self.0.results();
-        write_slice(f, params, ",")?;
-        write!(f, ")")?;
-        if let Some((first, rest)) = results.split_first() {
-            write!(f, " -> ")?;
-            if !rest.is_empty() {
-                write!(f, "(")?;
-            }
-            write!(f, "{first}")?;
-            for result in rest {
-                write!(f, ", {result}")?;
-            }
-            if !rest.is_empty() {
-                write!(f, ")")?;
-            }
-        }
-        Ok(())
-    }
-}
-
-/// Writes the elements of a `slice` separated by the `separator`.
-fn write_slice<T>(f: &mut fmt::Formatter, slice: &[T], separator: &str) -> fmt::Result
-where
-    T: fmt::Display,
-{
-    if let Some((first, rest)) = slice.split_first() {
-        write!(f, "{first}")?;
-        for param in rest {
-            write!(f, "{separator} {param}")?;
-        }
-    }
-    Ok(())
 }
