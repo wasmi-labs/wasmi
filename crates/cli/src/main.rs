@@ -123,19 +123,16 @@ impl Args {
     /// This is similar to how `UNIX` systems work, and is part of the `WASI` spec.
     fn argv(&self) -> Vec<String> {
         let mut args = Vec::with_capacity(self.func_args.len() + 1);
-
-        // wasm filename is the first arg
-        // keep in mind that this module name still has it's `.wasm` extension
+        // The WebAssembly filename is expected to be the first argument to WASI.
+        // Note that the module name still has it's `.wasm` file extension.
         let module_name = self
             .wasm_file
             .file_name()
             .and_then(OsStr::to_str)
-            .map(str::to_string)
-            .unwrap_or_else(|| "".to_owned());
-
+            .unwrap_or("")
+            .into();
         args.push(module_name);
-        args.extend(self.func_args.iter().cloned());
-
+        args.extend_from_slice(&self.func_args);
         args
     }
 
