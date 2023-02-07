@@ -1,4 +1,4 @@
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{anyhow, bail, Context, Error, Result};
 use clap::Parser;
 use std::{
     ffi::OsStr,
@@ -6,6 +6,7 @@ use std::{
     fs,
     net::SocketAddr,
     path::{Path, PathBuf},
+    str::FromStr,
 };
 use wasmi::{
     core::{ValueType, F32, F64},
@@ -27,15 +28,25 @@ struct KeyValue {
     value: String,
 }
 
-/// Parses a CLI flag value as [`KeyValue`] type.
-fn parse_env(s: &str) -> Result<KeyValue> {
-    let pos = s
-        .find('=')
-        .ok_or_else(|| anyhow::anyhow!("invalid KEY=value: no `=` found in `{}`", s))?;
-    Ok(KeyValue {
-        key: s[..pos].to_string(),
-        value: s[pos + 1..].to_string(),
-    })
+impl FromStr for KeyValue {
+    type Err = Error;
+
+    /// Parses a CLI flag value as [`KeyValue`] type.
+    ///
+    /// # Errors
+    ///
+    /// If the string cannot be parsed into a `KEY=VALUE` style pair.
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let eq_pos = s
+            .find('=')
+            .ok_or_else(|| anyhow::anyhow!("invalid KEY=value: no `=` found in `{}`", s))?;
+        let (key, eq_value) = s.split_at(eq_pos);
+        assert!(s.starts_with("="));
+        let value = &eq_value[1..];
+        let key = key.to_string();
+        let value = value.to_string();
+        Ok(KeyValue { key, value })
+    }
 }
 
 /// Simple program to greet a person
@@ -51,7 +62,7 @@ struct Args {
     tcplisten: Vec<SocketAddr>,
 
     /// The environment variable pair made available for the program.
-    #[clap(long = "env", value_name = "ENV_VAR", value_parser(parse_env), action = clap::ArgAction::Append )]
+    #[clap(long = "env", value_name = "ENV_VAR", value_parser(KeyValue::from_str), action = clap::ArgAction::Append )]
     envs: Vec<KeyValue>,
 
     /// The WebAssembly file to execute.
