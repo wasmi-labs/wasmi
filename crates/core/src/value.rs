@@ -2,7 +2,7 @@ use crate::{
     nan_preserving_float::{F32, F64},
     TrapCode,
 };
-use core::{f32, fmt, fmt::Display, i32, i64, u32, u64};
+use core::{f32, i32, i64, u32, u64};
 
 /// Type of a value.
 ///
@@ -39,19 +39,6 @@ impl ValueType {
     /// This is `true` for [`ValueType::FuncRef`] and [`ValueType::ExternRef`].
     pub fn is_ref(&self) -> bool {
         matches!(self, Self::ExternRef | Self::FuncRef)
-    }
-}
-
-impl Display for ValueType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::I32 => write!(f, "i32"),
-            Self::I64 => write!(f, "i64"),
-            Self::F32 => write!(f, "f32"),
-            Self::F64 => write!(f, "f64"),
-            Self::FuncRef => write!(f, "funcref"),
-            Self::ExternRef => write!(f, "externref"),
-        }
     }
 }
 

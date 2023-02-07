@@ -54,7 +54,7 @@ impl Display for GlobalError {
                 write!(
                     f,
                     "type mismatch upon writing global variable. \
-                    expected {expected} but encountered {encountered}.",
+                    expected {expected:?} but encountered {encountered:?}.",
                 )
             }
             Self::UnsatisfyingGlobalType {
