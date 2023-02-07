@@ -138,7 +138,7 @@ impl Args {
     }
 
     /// Creates the [`WasiCtx`] for this session.
-    fn create_wasi_context(&self) -> Result<WasiCtx, Error> {
+    pub fn wasi_context(&self) -> Result<WasiCtx, Error> {
         let mut wasi_builder = WasiCtxBuilder::new();
         for KeyValue { key, value } in &self.envs {
             wasi_builder = wasi_builder.env(key, value)?;
@@ -175,7 +175,7 @@ impl Args {
         &self,
         engine: &Engine,
     ) -> Result<(wasmi::Linker<WasiCtx>, Store<WasiCtx>), anyhow::Error> {
-        let wasi_ctx = self.create_wasi_context()?;
+        let wasi_ctx = self.wasi_context()?;
         let mut store = wasmi::Store::new(engine, wasi_ctx);
         let mut linker = <wasmi::Linker<WasiCtx>>::default();
         wasmi_wasi::define_wasi(&mut linker, &mut store, |ctx| ctx)?;
