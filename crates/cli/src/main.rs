@@ -118,8 +118,11 @@ impl Args {
         )
     }
 
-    /// Computes a vector of args provided to the program
-    /// First arg is always the module name. It's not expected to be provided at the command line
+    /// Returns the arguments that the WASI invokation expects to receive.
+    /// 
+    /// The first argument is always the module file name itself followed
+    /// by the arguments to the invoked function if any.
+    /// 
     /// This is similar to how `UNIX` systems work, and is part of the `WASI` spec.
     fn argv(&self) -> Vec<String> {
         let mut args = Vec::with_capacity(self.func_args.len() + 1);
