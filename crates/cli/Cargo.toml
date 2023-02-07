@@ -17,6 +17,10 @@ clap = { version = "4", features = ["derive"] }
 wasmi = { path = "../wasmi", version = "0.25.0" }
 wat = "1"
 anyhow = "1"
+wasmi_wasi = { path = "../wasi" }
+
+[dev-dependencies]
+assert_cmd = "2.0.7"
 
 # We need to put this [profile.release] section due to this bug in Cargo:
 # https://github.com/rust-lang/cargo/issues/8264

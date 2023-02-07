@@ -11,6 +11,7 @@ pub use wasi_cap_std_sync::{
     sched,
     stdio,
     Dir,
+    TcpListener,
     WasiCtxBuilder,
 };
 pub use wasi_common::{Error, WasiCtx, WasiDir, WasiFile};

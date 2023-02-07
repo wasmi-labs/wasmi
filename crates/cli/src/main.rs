@@ -1,57 +1,239 @@
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use clap::Parser;
 use std::{
     ffi::OsStr,
     fmt::{self, Write},
     fs,
+    net::SocketAddr,
     path::{Path, PathBuf},
 };
 use wasmi::{
     core::{ValueType, F32, F64},
+    Engine,
     ExternType,
     Func,
     FuncType,
+    Linker,
+    Module,
     Store,
     Value,
 };
+use wasmi_wasi::{ambient_authority, Dir, TcpListener, WasiCtx, WasiCtxBuilder};
+
+/// A CLI flag value key-value argument.
+#[derive(Debug, Clone)]
+struct KeyValue {
+    key: String,
+    value: String,
+}
+
+/// Parses a CLI flag value as [`KeyValue`] type.
+fn parse_env(s: &str) -> Result<KeyValue> {
+    let pos = s
+        .find('=')
+        .ok_or_else(|| anyhow::anyhow!("invalid KEY=value: no `=` found in `{}`", s))?;
+    Ok(KeyValue {
+        key: s[..pos].to_string(),
+        value: s[pos + 1..].to_string(),
+    })
+}
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
+    /// The host directory to pre-open for the `guest` to use.
+    #[clap(long = "dir", value_name = "DIR", action = clap::ArgAction::Append, value_hint = clap::ValueHint::DirPath)]
+    dirs: Vec<PathBuf>,
+
+    /// The socket address provided to the module. Allows it to perform socket-related `WASI` ops.
+    #[clap(long = "tcplisten", value_name = "SOCKET_ADDR", action = clap::ArgAction::Append)]
+    tcplisten: Vec<SocketAddr>,
+
+    /// The environment variable pair made available for the program.
+    #[clap(long = "env", value_name = "ENV_VAR", value_parser(parse_env), action = clap::ArgAction::Append )]
+    envs: Vec<KeyValue>,
+
     /// The WebAssembly file to execute.
     #[clap(value_hint = clap::ValueHint::FilePath)]
     wasm_file: PathBuf,
 
-    /// The exported name of the Wasm function to call.
-    ///
-    /// If this argument is missing the wasmi CLI will print out all
-    /// exported functions and their parameters of the given Wasm module.
-    #[clap()]
-    func_name: Option<String>,
+    /// The function to invoke
+    /// If this argument is missing, wasmi CLI will try to run `""` or `_start`
+    /// If neither of exported  the wasmi CLI will print out all
+    /// exported functions and their parameters of the given Wasm module and return with an error.
+    #[clap(long = "invoke", value_name = "FUNCTION")]
+    invoke: Option<String>,
 
-    /// The arguments provided to the called function.
-    #[clap()]
+    /// Possibly zero list of positional arguments
+    #[clap(value_name = "ARGS")]
     func_args: Vec<String>,
+}
+
+impl Args {
+    /// Returns a list of directory names and their corresponding [`Dir`]s for use in creating a [`WasiCtx`]   
+    fn preopen_dirs(&self) -> Result<Vec<(PathBuf, Dir)>> {
+        let mut dirs = Vec::with_capacity(self.dirs.len());
+        self.dirs.iter().try_for_each(|dir| -> Result<()> {
+            dirs.push((
+                dir.clone(),
+                Dir::open_ambient_dir(dir, ambient_authority()).with_context(|| {
+                    format!("failed to open directory '{dir:?}' with ambient authority")
+                })?,
+            ));
+            Ok(())
+        })?;
+        Ok(dirs)
+    }
+
+    /// Returns list of [`TcpListener`]'s listening for connections
+    /// on the corresponding list of addresses provided.
+    fn preopen_sockets(&self) -> Result<Vec<TcpListener>> {
+        self.tcplisten.iter().try_fold(
+            Vec::with_capacity(self.tcplisten.len()),
+            |mut socks, addr| -> Result<Vec<TcpListener>> {
+                let std_tcp_listener = std::net::TcpListener::bind(addr)
+                    .with_context(|| format!("failed to bind to tcp address '{addr}'"))?;
+                std_tcp_listener.set_nonblocking(true)?;
+                socks.push(TcpListener::from_std(std_tcp_listener));
+                Ok(socks)
+            },
+        )
+    }
+
+    /// Computes a vector of args provided to the program
+    /// First arg is always the module name. It's not expected to be provided at the command line
+    /// This is similar to how `UNIX` systems work, and is part of the `WASI` spec.
+    fn argv(&self) -> Vec<String> {
+        let mut args = Vec::with_capacity(self.func_args.len() + 1);
+
+        // wasm filename is the first arg
+        // keep in mind that this module name still has it's `.wasm` extension
+        let module_name = self
+            .wasm_file
+            .file_name()
+            .and_then(OsStr::to_str)
+            .map(str::to_string)
+            .unwrap_or_else(|| "".to_owned());
+
+        args.push(module_name);
+        args.extend(self.func_args.iter().map(|arg| arg.to_string()));
+
+        args
+    }
+
+    /// Adds WASI to the linker. Returns Linker and Store.
+    fn link_wasi(
+        &self,
+        engine: &Engine,
+    ) -> Result<(wasmi::Linker<WasiCtx>, Store<WasiCtx>), anyhow::Error> {
+        let mut linker = <wasmi::Linker<WasiCtx>>::default();
+
+        // add wasi to linker
+        let mut wasi_bldr = WasiCtxBuilder::new();
+        wasi_bldr = wasi_bldr.inherit_stdio();
+        let argv = self.argv();
+        let preopened_dirs = self.preopen_dirs()?;
+        let tcpsockets = self.preopen_sockets()?;
+        for KeyValue { key, value } in self.envs.iter() {
+            wasi_bldr = wasi_bldr.env(key, value)?;
+        }
+        wasi_bldr = wasi_bldr.args(&argv)?;
+
+        // stdin, stdout, stderr: 0,1,2. we already inherited the three earlier
+        let mut num_fd = 2;
+        for socket in tcpsockets {
+            num_fd += 1;
+            wasi_bldr = wasi_bldr.preopened_socket(num_fd, socket)?;
+        }
+
+        for (dir_name, dir) in preopened_dirs {
+            wasi_bldr = wasi_bldr.preopened_dir(dir, dir_name)?;
+        }
+
+        let wasi = wasi_bldr.build();
+
+        let mut store = wasmi::Store::new(engine, wasi);
+        wasmi_wasi::define_wasi(&mut linker, &mut store, |ctx| ctx)?;
+
+        Ok((linker, store))
+    }
+
+    /// Loads the Wasm [`Func`] from the given `wasm_bytes` with `wasi` linked.
+    ///
+    /// Returns the [`Func`] together with its [`Store`] for further processing.
+    ///
+    /// # Errors
+    ///
+    /// - If the Wasm module fails to parse or validate.
+    /// - If there are errors linking `wasi`.
+    /// - If the Wasm module fails to instantiate or start.
+    /// - If the Wasm module does not have an exported function `func_name`.
+    fn load_wasm_func_with_wasi(&self) -> Result<(String, Func, Store<WasiCtx>)> {
+        let engine = wasmi::Engine::default();
+        let module = load_wasm_module(&self.wasm_file, &engine)?;
+        let (linker, mut store) = self.link_wasi(&engine)?;
+        let (name, func) = self.load_func(&linker, &mut store, &module)?;
+        Ok((name, func, store))
+    }
+
+    fn load_func<T>(
+        &self,
+        linker: &Linker<T>,
+        mut store: &mut Store<T>,
+        module: &Module,
+    ) -> Result<(String, Func)> {
+        let instance = linker
+            .instantiate(&mut store, module)
+            .and_then(|pre| pre.start(&mut store))
+            .map_err(|error| anyhow!("failed to instantiate and start the Wasm module: {error}"))?;
+        let missing_func_error = || {
+            let exported_funcs = display_exported_funcs(module);
+            anyhow!(
+                "missing function name argument for {}\n\n{exported_funcs}",
+                self.wasm_file.display()
+            )
+        };
+        if let Some(name) = &self.invoke {
+            // if a func name is provided
+            let func = instance
+                .get_export(&store, name)
+                .and_then(|ext| ext.into_func())
+                .ok_or_else(missing_func_error)?;
+            Ok((name.into(), func))
+        } else {
+            let (name, ext) = {
+                if let Some(ext) = instance.get_export(&mut store, "") {
+                    // try " "
+                    ("", ext)
+                } else if let Some(ext) = instance.get_export(&mut store, "_start") {
+                    ("_start", ext)
+                } else {
+                    // no function invoked plus no default function exported: we bail out
+                    return Err(missing_func_error());
+                }
+            };
+            let func = ext
+                .into_func()
+                .ok_or_else(|| anyhow!("export `{name}` is not a function"))?;
+            Ok((name.into(), func))
+        }
+    }
 }
 
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    let wasm_file = args.wasm_file;
-    let module = load_wasm_module(&wasm_file)?;
-    let func_name = extract_wasm_func(&wasm_file, &module, args.func_name)?;
-    let func_args = args.func_args;
-
-    let (func, func_name, mut store) = load_wasm_func(&wasm_file, &module, &func_name)?;
+    let (func_name, func, mut store) = args.load_wasm_func_with_wasi()?;
     let func_type = func.ty(&store);
-    let func_args = type_check_arguments(&func_name, &func_type, &func_args)?;
+
+    let func_args = type_check_arguments(&func_name, &func_type, &args.func_args)?;
     let mut results = prepare_results_buffer(&func_type);
 
-    print_execution_start(&wasm_file, &func_name, &func_args);
+    print_execution_start(&args.wasm_file, &func_name, &func_args);
 
     func.call(&mut store, &func_args, &mut results)
-        .map_err(|error| anyhow!("failed during exeuction of {func_name}: {error}"))?;
+        .map_err(|error| anyhow!("failed during execution of {func_name}: {error}"))?;
 
     print_pretty_results(&results);
 
@@ -86,64 +268,12 @@ fn read_wasm_or_wat(wasm_file: &Path) -> Result<Vec<u8>> {
 /// # Errors
 ///
 /// If the Wasm module fails to parse or validate.
-fn load_wasm_module(wasm_file: &Path) -> Result<wasmi::Module> {
+fn load_wasm_module(wasm_file: &Path, engine: &Engine) -> Result<wasmi::Module> {
     let wasm_bytes = read_wasm_or_wat(wasm_file)?;
-    let engine = wasmi::Engine::default();
-    let module = wasmi::Module::new(&engine, &mut &wasm_bytes[..]).map_err(|error| {
+    let module = wasmi::Module::new(engine, &mut &wasm_bytes[..]).map_err(|error| {
         anyhow!("failed to parse and validate Wasm module {wasm_file:?}: {error}")
     })?;
     Ok(module)
-}
-
-/// Returns the given `func_name` if some.
-///
-/// # Errors
-///
-/// If the given `func_name` is none and also displays the
-/// list of exported functions from the Wasm module.
-fn extract_wasm_func(
-    wasm_file: &Path,
-    module: &wasmi::Module,
-    func_name: Option<String>,
-) -> Result<String> {
-    match func_name {
-        Some(func_name) => Ok(func_name),
-        None => {
-            let exported_funcs = display_exported_funcs(module);
-            bail!("missing function name argument for {wasm_file:?}\n\n{exported_funcs}")
-        }
-    }
-}
-
-/// Loads the Wasm [`Func`] from the given `wasm_bytes`.
-///
-/// Returns the [`Func`] together with its [`Store`] for further processing.
-///
-/// # Errors
-///
-/// - If the function name argument `func_name` is missing.
-/// - If the Wasm module fails to instantiate or start.
-/// - If the Wasm module does not have an exported function `func_name`.
-fn load_wasm_func(
-    wasm_file: &Path,
-    module: &wasmi::Module,
-    func_name: &str,
-) -> Result<(Func, String, Store<()>)> {
-    let engine = module.engine();
-    let linker = <wasmi::Linker<()>>::new();
-    let mut store = wasmi::Store::new(engine, ());
-    let instance = linker
-        .instantiate(&mut store, module)
-        .and_then(|pre| pre.start(&mut store))
-        .map_err(|error| anyhow!("failed to instantiate and start the Wasm module: {error}"))?;
-    let func = instance
-        .get_export(&store, func_name)
-        .and_then(|ext| ext.into_func())
-        .ok_or_else(|| {
-            let exported_funcs = display_exported_funcs(module);
-            anyhow!("could not find function \"{func_name}\" in {wasm_file:?}\n\n{exported_funcs}")
-        })?;
-    Ok((func, func_name.into(), store))
 }
 
 /// Returns a [`Vec`] of `(&str, FuncType)` describing the exported functions of the [`Module`].
@@ -219,7 +349,14 @@ fn type_check_arguments(
     func_type: &FuncType,
     func_args: &[String],
 ) -> Result<Vec<Value>> {
-    if func_type.params().len() != func_args.len() {
+    // default exports (especially) from WASI programs usually don't take arguments as function arguments.
+    // In such a case we would like to defer to the more elaborate check, in which case it would not even iterate at all
+    // This is done this way because users might export `""` or `"_start"` functions which take arguments would still have
+    // it type-checked.
+
+    // (1) quick check
+    if func_type.params().len() != func_args.len() && !func_name.is_empty() && func_name != "_start"
+    {
         bail!(
             "invalid number of arguments given for {func_name} of type {}. \
             expected {} argument but got {}",
@@ -228,6 +365,8 @@ fn type_check_arguments(
             func_args.len()
         );
     }
+
+    // (2) comprehensive check
     let func_args = func_type
         .params()
         .iter()
