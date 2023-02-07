@@ -121,7 +121,7 @@ impl Args {
         args
     }
 
-    /// Adds `wasi` to the linker. Returns Linker and Store.
+    /// Adds WASI to the linker. Returns Linker and Store.
     fn link_wasi(
         &self,
         engine: &Engine,
