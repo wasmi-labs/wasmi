@@ -88,34 +88,39 @@ struct Args {
 }
 
 impl Args {
-    /// Returns a list of directory names and their corresponding [`Dir`]s for use in creating a [`WasiCtx`]   
-    fn preopen_dirs(&self) -> Result<Vec<(PathBuf, Dir)>> {
-        let mut dirs = Vec::with_capacity(self.dirs.len());
-        self.dirs.iter().try_for_each(|dir| -> Result<()> {
-            dirs.push((
-                dir.clone(),
-                Dir::open_ambient_dir(dir, ambient_authority()).with_context(|| {
-                    format!("failed to open directory '{dir:?}' with ambient authority")
-                })?,
-            ));
-            Ok(())
-        })?;
-        Ok(dirs)
+    /// Pre-opens all directories given in `--dir` and returns them for use by the [`WasiCtx`].
+    /// 
+    /// # Errors
+    /// 
+    /// If any of the given directions in `--dir` cannot be opened.
+    fn preopen_dirs(&self) -> Result<Vec<(&Path, Dir)>> {
+        self.dirs
+            .iter()
+            .map(|path| {
+                let dir = Dir::open_ambient_dir(path, ambient_authority())
+                    .with_context(|| {
+                        format!("failed to open directory '{path:?}' with ambient authority")
+                    })?;
+                Ok((path.as_ref(), dir))
+            })
+            .collect::<Result<Vec<_>>>()
     }
 
-    /// Returns list of [`TcpListener`]'s listening for connections
-    /// on the corresponding list of addresses provided.
+    /// Opens sockets given in `--tcplisten` and returns them for use by the [`WasiCtx`].
+    /// 
+    /// # Errors
+    /// 
+    /// If any of the given socket addresses in `--tcplisten` cannot be listened to.
     fn preopen_sockets(&self) -> Result<Vec<TcpListener>> {
-        self.tcplisten.iter().try_fold(
-            Vec::with_capacity(self.tcplisten.len()),
-            |mut socks, addr| -> Result<Vec<TcpListener>> {
+        self.tcplisten
+            .iter()
+            .map(|addr| {
                 let std_tcp_listener = std::net::TcpListener::bind(addr)
                     .with_context(|| format!("failed to bind to tcp address '{addr}'"))?;
                 std_tcp_listener.set_nonblocking(true)?;
-                socks.push(TcpListener::from_std(std_tcp_listener));
-                Ok(socks)
-            },
-        )
+                Ok(TcpListener::from_std(std_tcp_listener))
+            })
+            .collect::<Result<Vec<_>>>()
     }
 
     /// Returns the arguments that the WASI invokation expects to receive.
