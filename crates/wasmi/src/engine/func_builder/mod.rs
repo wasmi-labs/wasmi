@@ -8,9 +8,8 @@ mod translator;
 mod value_stack;
 
 use self::{
-    control_frame::{BlockControlFrame, ControlFrame},
+    control_frame::{ControlFrame},
     control_stack::ControlFlowStack,
-    locals_registry::LocalsRegistry,
     translator::FuncTranslator,
 };
 pub use self::{
@@ -19,7 +18,7 @@ pub use self::{
 };
 use super::{FuncBody, Instruction};
 use crate::{
-    module::{BlockType, FuncIdx, ModuleResources, ReusableAllocations},
+    module::{FuncIdx, ModuleResources, ReusableAllocations},
     Engine,
 };
 use alloc::vec::Vec;
@@ -80,46 +79,11 @@ impl<'parser> FuncBuilder<'parser> {
         validator: FuncValidator,
         allocations: FunctionBuilderAllocations,
     ) -> Self {
-        let mut allocations = allocations;
-        allocations.reset();
-        let mut locals = LocalsRegistry::default();
-        Self::register_func_body_block(func, res, &mut allocations);
-        Self::register_func_params(func, res, &mut locals);
         Self {
             pos: 0,
             validator,
             translator: FuncTranslator::new(engine, func, res, allocations),
         }
-    }
-
-    /// Registers the `block` control frame surrounding the entire function body.
-    fn register_func_body_block(
-        func: FuncIdx,
-        res: ModuleResources<'parser>,
-        allocations: &mut FunctionBuilderAllocations,
-    ) {
-        let func_type = res.get_type_of_func(func);
-        let block_type = BlockType::func_type(func_type);
-        let end_label = allocations.inst_builder.new_label();
-        let block_frame = BlockControlFrame::new(block_type, end_label, 0);
-        allocations.control_frames.push_frame(block_frame);
-    }
-
-    /// Registers the function parameters in the emulated value stack.
-    fn register_func_params(
-        func: FuncIdx,
-        res: ModuleResources<'parser>,
-        locals: &mut LocalsRegistry,
-    ) -> usize {
-        let dedup_func_type = res.get_type_of_func(func);
-        let func_type = res
-            .engine()
-            .resolve_func_type(dedup_func_type, Clone::clone);
-        let params = func_type.params();
-        for _param_type in params {
-            locals.register_locals(1);
-        }
-        params.len()
     }
 
     /// Translates the given local variables for the translated function.
