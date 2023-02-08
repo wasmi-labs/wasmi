@@ -381,4 +381,26 @@ impl Instruction {
             }
         }
     }
+
+    /// Increases the fuel consumption of the [`ConsumeFuel`] instruction by `delta`.
+    ///
+    /// # Panics
+    ///
+    /// - If `self` is not a [`ConsumeFuel`] instruction.
+    /// - If the new fuel consumption overflows the internal `u64` value.
+    ///
+    /// [`ConsumeFuel`]: Instruction::ConsumeFuel
+    pub fn add_fuel(&mut self, delta: u64) {
+        match self {
+            Self::ConsumeFuel { amount } => {
+                *amount = amount.checked_add(delta).unwrap_or_else(|| {
+                    panic!(
+                        "overflowed fuel consumption. current = {}, delta = {}",
+                        amount, delta
+                    )
+                })
+            }
+            instr => panic!("expected Instruction::ConsumeFuel but found: {instr:?}"),
+        }
+    }
 }
