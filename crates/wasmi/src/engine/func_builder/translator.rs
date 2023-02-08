@@ -109,7 +109,7 @@ impl<'parser> FuncTranslator<'parser> {
         let func_type = res.get_type_of_func(func);
         let block_type = BlockType::func_type(func_type);
         let end_label = allocations.inst_builder.new_label();
-        let block_frame = BlockControlFrame::new(block_type, end_label, 0);
+        let block_frame = BlockControlFrame::new(block_type, end_label, 0, None);
         allocations.control_frames.push_frame(block_frame);
     }
 
@@ -712,6 +712,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 block_type,
                 end_label,
                 stack_height,
+                None,
             ));
         } else {
             self.alloc

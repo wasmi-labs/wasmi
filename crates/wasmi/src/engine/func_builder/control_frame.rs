@@ -1,4 +1,4 @@
-use super::labels::LabelRef;
+use super::{labels::LabelRef, Instr};
 use crate::module::BlockType;
 
 /// A Wasm `block` control flow frame.
@@ -10,15 +10,18 @@ pub struct BlockControlFrame {
     stack_height: u32,
     /// Label representing the end of the [`BlockControlFrame`].
     end_label: LabelRef,
+    /// Instruction to consume fuel upon entering the basic block if fuel metering is enabled.
+    consume_fuel: Option<Instr>,
 }
 
 impl BlockControlFrame {
     /// Creates a new [`BlockControlFrame`].
-    pub fn new(block_type: BlockType, end_label: LabelRef, stack_height: u32) -> Self {
+    pub fn new(block_type: BlockType, end_label: LabelRef, stack_height: u32, consume_fuel: Option<Instr>) -> Self {
         Self {
             block_type,
             stack_height,
             end_label,
+            consume_fuel,
         }
     }
 
@@ -44,6 +47,16 @@ impl BlockControlFrame {
     /// Returns the [`BlockType`] of the [`BlockControlFrame`].
     pub fn block_type(&self) -> BlockType {
         self.block_type
+    }
+
+    /// Returns a reference to the [`Instruction::ConsumeFuel`] of the [`BlockControlFrame`] if any.
+    /// 
+    /// Returns `None` if fuel metering is disabled.
+    /// A [`BlockControlFrame`] might share its [`Instruction::ConsumeFuel`] with its child [`BlockControlFrame`].
+    /// 
+    /// [`Instruction::ConsumeFuel`]: 
+    pub fn consume_fuel_instr(&self) -> Option<Instr> {
+        self.consume_fuel
     }
 }
 
