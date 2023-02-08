@@ -9,8 +9,9 @@ use super::{
     labels::LabelRef,
     locals_registry::LocalsRegistry,
     value_stack::ValueStackHeight,
-    FunctionBuilderAllocations,
     TranslationError,
+    ControlFlowStack,
+    InstructionsBuilder,
 };
 use crate::{
     engine::{
@@ -49,6 +50,35 @@ use crate::{
 use wasmi_core::{ValueType, F32, F64};
 use wasmparser::VisitOperator;
 
+/// Reusable allocations of a [`FuncBuilder`].
+#[derive(Debug, Default)]
+pub struct FuncTranslatorAllocations {
+    /// The control flow frame stack that represents the Wasm control flow.
+    control_frames: ControlFlowStack,
+    /// The instruction builder.
+    ///
+    /// # Note
+    ///
+    /// Allows to incrementally construct the instruction of a function.
+    inst_builder: InstructionsBuilder,
+    /// Buffer for translating `br_table`.
+    br_table_branches: Vec<Instruction>,
+}
+
+impl FuncTranslatorAllocations {
+    /// Resets the data structures of the [`FuncTranslatorAllocations`].
+    ///
+    /// # Note
+    ///
+    /// This must be called before reusing this [`FuncTranslatorAllocations`]
+    /// by another [`FuncBuilder`].
+    fn reset(&mut self) {
+        self.control_frames.reset();
+        self.inst_builder.reset();
+        self.br_table_branches.clear();
+    }
+}
+
 /// Type concerned with translating from Wasm bytecode to `wasmi` bytecode.
 pub struct FuncTranslator<'parser> {
     /// The [`Engine`] for which the function is translated.
@@ -72,7 +102,7 @@ pub struct FuncTranslator<'parser> {
     /// Stores and resolves local variable types.
     locals: LocalsRegistry,
     /// The reusable data structures of the [`FuncTranslator`].
-    alloc: FunctionBuilderAllocations,
+    alloc: FuncTranslatorAllocations,
 }
 
 impl<'parser> FuncTranslator<'parser> {
@@ -81,7 +111,7 @@ impl<'parser> FuncTranslator<'parser> {
         engine: &Engine,
         func: FuncIdx,
         res: ModuleResources<'parser>,
-        allocations: FunctionBuilderAllocations,
+        allocations: FuncTranslatorAllocations,
     ) -> Self {
         let mut allocations = allocations;
         allocations.reset();
@@ -103,7 +133,7 @@ impl<'parser> FuncTranslator<'parser> {
     fn register_func_body_block(
         func: FuncIdx,
         res: ModuleResources<'parser>,
-        allocations: &mut FunctionBuilderAllocations,
+        allocations: &mut FuncTranslatorAllocations,
     ) {
         allocations.reset();
         let func_type = res.get_type_of_func(func);
@@ -149,8 +179,8 @@ impl<'parser> FuncTranslator<'parser> {
         Ok(func_body)
     }
 
-    /// Consumes `self` and returns the underlying reusable [`FunctionBuilderAllocations`].
-    pub fn into_allocations(self) -> FunctionBuilderAllocations {
+    /// Consumes `self` and returns the underlying reusable [`FuncTranslatorAllocations`].
+    pub fn into_allocations(self) -> FuncTranslatorAllocations {
         self.alloc
     }
 

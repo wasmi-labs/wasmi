@@ -10,9 +10,10 @@ mod value_stack;
 use self::{
     control_frame::{ControlFrame},
     control_stack::ControlFlowStack,
-    translator::FuncTranslator,
+    translator::{FuncTranslator},
 };
 pub use self::{
+    translator::FuncTranslatorAllocations,
     error::TranslationError,
     inst_builder::{Instr, InstructionsBuilder, RelativeDepth},
 };
@@ -41,35 +42,6 @@ pub struct FuncBuilder<'parser> {
     translator: FuncTranslator<'parser>,
 }
 
-/// Reusable allocations of a [`FuncBuilder`].
-#[derive(Debug, Default)]
-pub struct FunctionBuilderAllocations {
-    /// The control flow frame stack that represents the Wasm control flow.
-    control_frames: ControlFlowStack,
-    /// The instruction builder.
-    ///
-    /// # Note
-    ///
-    /// Allows to incrementally construct the instruction of a function.
-    inst_builder: InstructionsBuilder,
-    /// Buffer for translating `br_table`.
-    br_table_branches: Vec<Instruction>,
-}
-
-impl FunctionBuilderAllocations {
-    /// Resets the data structures of the [`FunctionBuilderAllocations`].
-    ///
-    /// # Note
-    ///
-    /// This must be called before reusing this [`FunctionBuilderAllocations`]
-    /// by another [`FuncBuilder`].
-    fn reset(&mut self) {
-        self.control_frames.reset();
-        self.inst_builder.reset();
-        self.br_table_branches.clear();
-    }
-}
-
 impl<'parser> FuncBuilder<'parser> {
     /// Creates a new [`FuncBuilder`].
     pub fn new(
@@ -77,7 +49,7 @@ impl<'parser> FuncBuilder<'parser> {
         func: FuncIdx,
         res: ModuleResources<'parser>,
         validator: FuncValidator,
-        allocations: FunctionBuilderAllocations,
+        allocations: FuncTranslatorAllocations,
     ) -> Self {
         Self {
             pos: 0,

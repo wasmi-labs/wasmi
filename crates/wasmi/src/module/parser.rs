@@ -12,7 +12,7 @@ use super::{
     ModuleResources,
     Read,
 };
-use crate::{engine::FunctionBuilderAllocations, Engine, FuncType, MemoryType, TableType};
+use crate::{engine::FuncTranslatorAllocations, Engine, FuncType, MemoryType, TableType};
 use alloc::{boxed::Box, vec::Vec};
 use core::{
     mem::{replace, take},
@@ -67,7 +67,7 @@ pub struct ModuleParser<'engine> {
 /// Reusable heap allocations for function validation and translation.
 #[derive(Default)]
 pub struct ReusableAllocations {
-    pub translation: FunctionBuilderAllocations,
+    pub translation: FuncTranslatorAllocations,
     pub validation: FuncValidatorAllocations,
 }
 

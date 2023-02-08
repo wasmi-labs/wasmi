@@ -21,7 +21,7 @@ pub use self::{
     config::Config,
     func_builder::{
         FuncBuilder,
-        FunctionBuilderAllocations,
+        FuncTranslatorAllocations,
         Instr,
         RelativeDepth,
         TranslationError,
