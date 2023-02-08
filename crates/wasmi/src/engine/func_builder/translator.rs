@@ -108,21 +108,17 @@ impl<'parser> FuncTranslator<'parser> {
     pub fn new(
         func: FuncIdx,
         res: ModuleResources<'parser>,
-        allocations: FuncTranslatorAllocations,
+        alloc: FuncTranslatorAllocations,
     ) -> Self {
-        let mut allocations = allocations;
-        allocations.reset();
-        let mut locals = LocalsRegistry::default();
-        Self::register_func_body_block(func, res, &mut allocations);
-        Self::register_func_params(func, res, &mut locals);
         Self {
             func,
             res,
             reachable: true,
             stack_height: ValueStackHeight::default(),
-            locals,
-            alloc: allocations,
+            locals: LocalsRegistry::default(),
+            alloc,
         }
+        .init()
     }
 
     /// Returns a shared reference to the underlying [`Engine`].
@@ -130,35 +126,28 @@ impl<'parser> FuncTranslator<'parser> {
         self.res.engine()
     }
 
+    /// Initializes a newly constructed [`FuncTranslator`].
+    fn init(mut self) -> Self {
+        self.alloc.reset();
+        self.register_func_body_block();
+        self.register_func_params();
+        self
+    }
+
     /// Registers the `block` control frame surrounding the entire function body.
-    fn register_func_body_block(
-        func: FuncIdx,
-        res: ModuleResources<'parser>,
-        allocations: &mut FuncTranslatorAllocations,
-    ) {
-        allocations.reset();
-        let func_type = res.get_type_of_func(func);
+    fn register_func_body_block(&mut self) {
+        let func_type = self.res.get_type_of_func(self.func);
         let block_type = BlockType::func_type(func_type);
-        let end_label = allocations.inst_builder.new_label();
+        let end_label = self.alloc.inst_builder.new_label();
         let block_frame = BlockControlFrame::new(block_type, end_label, 0, None);
-        allocations.control_frames.push_frame(block_frame);
+        self.alloc.control_frames.push_frame(block_frame);
     }
 
     /// Registers the function parameters in the emulated value stack.
-    fn register_func_params(
-        func: FuncIdx,
-        res: ModuleResources<'parser>,
-        locals: &mut LocalsRegistry,
-    ) -> usize {
-        let dedup_func_type = res.get_type_of_func(func);
-        let func_type = res
-            .engine()
-            .resolve_func_type(dedup_func_type, Clone::clone);
-        let params = func_type.params();
-        for _param_type in params {
-            locals.register_locals(1);
+    fn register_func_params(&mut self) {
+        for _param_type in self.func_type().params() {
+            self.locals.register_locals(1);
         }
-        params.len()
     }
 
     /// Registers an `amount` of local variables.
