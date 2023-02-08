@@ -17,12 +17,11 @@ pub use self::{
     error::TranslationError,
     inst_builder::{Instr, InstructionsBuilder, RelativeDepth},
 };
-use super::{FuncBody, Instruction};
+use super::{FuncBody};
 use crate::{
     module::{FuncIdx, ModuleResources, ReusableAllocations},
     Engine,
 };
-use alloc::vec::Vec;
 use wasmparser::{BinaryReaderError, VisitOperator};
 
 /// The used function validator type.
