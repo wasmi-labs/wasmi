@@ -756,6 +756,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 block_type,
                 header,
                 stack_height,
+                None,
             ));
         } else {
             self.alloc
@@ -780,6 +781,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 end_label,
                 else_label,
                 stack_height,
+                None,
             ));
             let branch_params = self.branch_params(else_label, DropKeep::none());
             self.alloc

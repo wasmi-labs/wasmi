@@ -11,9 +11,9 @@ pub struct BlockControlFrame {
     /// Label representing the end of the [`BlockControlFrame`].
     end_label: LabelRef,
     /// Instruction to consume fuel upon entering the basic block if fuel metering is enabled.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This might be a reference to the consume fuel instruction of the parent
     /// [`ControlFrame`] of the [`BlockControlFrame`].
     consume_fuel: Option<Instr>,
@@ -62,6 +62,9 @@ impl BlockControlFrame {
     /// Returns a reference to the [`Instruction::ConsumeFuel`] of the [`BlockControlFrame`] if any.
     ///
     /// Returns `None` if fuel metering is disabled.
+    ///
+    /// # Note
+    ///
     /// A [`BlockControlFrame`] might share its [`Instruction::ConsumeFuel`] with its child [`BlockControlFrame`].
     ///
     /// [`Instruction::ConsumeFuel`]:
@@ -79,15 +82,27 @@ pub struct LoopControlFrame {
     stack_height: u32,
     /// Label representing the head of the [`LoopControlFrame`].
     head_label: LabelRef,
+    /// Instruction to consume fuel upon entering the basic block if fuel metering is enabled.
+    ///
+    /// # Note
+    ///
+    /// This must be `Some` if fuel metering is enabled and `None` otherwise.
+    consume_fuel: Option<Instr>,
 }
 
 impl LoopControlFrame {
     /// Creates a new [`LoopControlFrame`].
-    pub fn new(block_type: BlockType, head_label: LabelRef, stack_height: u32) -> Self {
+    pub fn new(
+        block_type: BlockType,
+        head_label: LabelRef,
+        stack_height: u32,
+        consume_fuel: Option<Instr>,
+    ) -> Self {
         Self {
             block_type,
             stack_height,
             head_label,
+            consume_fuel,
         }
     }
 
@@ -108,6 +123,15 @@ impl LoopControlFrame {
     /// Returns the [`BlockType`] of the [`LoopControlFrame`].
     pub fn block_type(&self) -> BlockType {
         self.block_type
+    }
+
+    /// Returns a reference to the [`Instruction::ConsumeFuel`] of the [`BlockControlFrame`] if any.
+    ///
+    /// Returns `None` if fuel metering is disabled.
+    ///
+    /// [`Instruction::ConsumeFuel`]:
+    pub fn consume_fuel_instr(&self) -> Option<Instr> {
+        self.consume_fuel
     }
 }
 
@@ -134,6 +158,17 @@ pub struct IfControlFrame {
     /// - An `end_of_else_is_reachable` field is not needed since it will
     ///   be easily computed once the translation reaches the end of the `if`.
     end_of_then_is_reachable: Option<bool>,
+    /// Instruction to consume fuel upon entering the basic block if fuel metering is enabled.
+    ///
+    /// This is used for both `then` and `else` blocks. When entering the `else`
+    /// block this field is updated to represent the [`ConsumeFuel`] instruction
+    /// of the `else` block instead of the `then` block. This is possible because
+    /// only one of them is needed at the same time during translation.
+    ///
+    /// # Note
+    ///
+    /// This must be `Some` if fuel metering is enabled and `None` otherwise.
+    consume_fuel: Option<Instr>,
 }
 
 impl IfControlFrame {
@@ -143,6 +178,7 @@ impl IfControlFrame {
         end_label: LabelRef,
         else_label: LabelRef,
         stack_height: u32,
+        consume_fuel: Option<Instr>,
     ) -> Self {
         assert_ne!(
             end_label, else_label,
@@ -154,6 +190,7 @@ impl IfControlFrame {
             end_label,
             else_label,
             end_of_then_is_reachable: None,
+            consume_fuel,
         }
     }
 
@@ -194,6 +231,37 @@ impl IfControlFrame {
     pub fn update_end_of_then_reachability(&mut self, reachable: bool) {
         assert!(self.end_of_then_is_reachable.is_none());
         self.end_of_then_is_reachable = Some(reachable);
+    }
+
+    /// Returns a reference to the [`Instruction::ConsumeFuel`] of the [`BlockControlFrame`] if any.
+    ///
+    /// Returns `None` if fuel metering is disabled.
+    ///
+    /// # Note
+    ///
+    /// This returns the [`ConsumeFuel`] instruction for both `then` and `else` blocks.
+    /// When entering the `if` block it represents the [`ConsumeFuel`] instruction until
+    /// the `else` block entered. This is possible because only one of them is needed
+    /// at the same time during translation.
+    ///
+    /// [`Instruction::ConsumeFuel`]:
+    pub fn consume_fuel_instr(&self) -> Option<Instr> {
+        self.consume_fuel
+    }
+
+    /// Updates the [`ConsumeFuel`] instruction for when the `else` block is entered.
+    ///
+    /// # Note
+    ///
+    /// This is required since the `consume_fuel` field represents the [`ConsumeFuel`]
+    /// instruction for both `then` and `else` blocks. This is possible because only one
+    /// of them is needed at the same time during translation.
+    pub fn update_consume_fuel_instr(&mut self, instr: Instr) {
+        assert!(
+            self.consume_fuel.is_some(),
+            "can only update the consume fuel instruction if it existed before"
+        );
+        self.consume_fuel = Some(instr);
     }
 }
 
@@ -335,5 +403,19 @@ impl ControlFrame {
     /// Returns `true` if the control flow frame is reachable.
     pub fn is_reachable(&self) -> bool {
         !matches!(self, ControlFrame::Unreachable(_))
+    }
+
+    /// Returns a reference to the [`Instruction::ConsumeFuel`] of the [`ControlFrame`] if any.
+    ///
+    /// Returns `None` if fuel metering is disabled.
+    ///
+    /// [`Instruction::ConsumeFuel`]:
+    pub fn consume_fuel_instr(&self) -> Option<Instr> {
+        match self {
+            ControlFrame::Block(frame) => frame.consume_fuel_instr(),
+            ControlFrame::Loop(frame) => frame.consume_fuel_instr(),
+            ControlFrame::If(frame) => frame.consume_fuel_instr(),
+            ControlFrame::Unreachable(_) => None,
+        }
     }
 }
