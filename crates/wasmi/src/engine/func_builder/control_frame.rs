@@ -16,7 +16,12 @@ pub struct BlockControlFrame {
 
 impl BlockControlFrame {
     /// Creates a new [`BlockControlFrame`].
-    pub fn new(block_type: BlockType, end_label: LabelRef, stack_height: u32, consume_fuel: Option<Instr>) -> Self {
+    pub fn new(
+        block_type: BlockType,
+        end_label: LabelRef,
+        stack_height: u32,
+        consume_fuel: Option<Instr>,
+    ) -> Self {
         Self {
             block_type,
             stack_height,
@@ -50,11 +55,11 @@ impl BlockControlFrame {
     }
 
     /// Returns a reference to the [`Instruction::ConsumeFuel`] of the [`BlockControlFrame`] if any.
-    /// 
+    ///
     /// Returns `None` if fuel metering is disabled.
     /// A [`BlockControlFrame`] might share its [`Instruction::ConsumeFuel`] with its child [`BlockControlFrame`].
-    /// 
-    /// [`Instruction::ConsumeFuel`]: 
+    ///
+    /// [`Instruction::ConsumeFuel`]:
     pub fn consume_fuel_instr(&self) -> Option<Instr> {
         self.consume_fuel
     }

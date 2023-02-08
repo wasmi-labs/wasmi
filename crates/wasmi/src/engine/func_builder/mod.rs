@@ -8,19 +8,17 @@ mod translator;
 mod value_stack;
 
 use self::{
-    control_frame::{ControlFrame},
+    control_frame::ControlFrame,
     control_stack::ControlFlowStack,
-    translator::{FuncTranslator},
+    translator::FuncTranslator,
 };
 pub use self::{
-    translator::FuncTranslatorAllocations,
     error::TranslationError,
     inst_builder::{Instr, InstructionsBuilder, RelativeDepth},
+    translator::FuncTranslatorAllocations,
 };
-use super::{FuncBody};
-use crate::{
-    module::{FuncIdx, ModuleResources, ReusableAllocations},
-};
+use super::FuncBody;
+use crate::module::{FuncIdx, ModuleResources, ReusableAllocations};
 use wasmparser::{BinaryReaderError, VisitOperator};
 
 /// The used function validator type.

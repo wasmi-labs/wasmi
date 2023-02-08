@@ -9,9 +9,9 @@ use super::{
     labels::LabelRef,
     locals_registry::LocalsRegistry,
     value_stack::ValueStackHeight,
-    TranslationError,
     ControlFlowStack,
     InstructionsBuilder,
+    TranslationError,
 };
 use crate::{
     engine::{
@@ -201,7 +201,8 @@ impl<'parser> FuncTranslator<'parser> {
     /// Returns the [`FuncType`] of the function that is currently translated.
     fn func_type(&self) -> FuncType {
         let dedup_func_type = self.res.get_type_of_func(self.func);
-        self.engine().resolve_func_type(dedup_func_type, Clone::clone)
+        self.engine()
+            .resolve_func_type(dedup_func_type, Clone::clone)
     }
 
     /// Resolves the [`FuncType`] of the given [`FuncTypeIdx`].
@@ -841,9 +842,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         // when entering the `if` in the first place so that the `else`
         // block has the same parameters on top of the stack.
         self.stack_height.shrink_to(if_frame.stack_height());
-        if_frame.block_type().foreach_param(self.res.engine(), |_param| {
-            self.stack_height.push();
-        });
+        if_frame
+            .block_type()
+            .foreach_param(self.res.engine(), |_param| {
+                self.stack_height.push();
+            });
         self.alloc.control_frames.push_frame(if_frame);
         // We can reset reachability now since the parent `if` block was reachable.
         self.reachable = true;
