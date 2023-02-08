@@ -129,13 +129,13 @@ impl<'parser> FuncTranslator<'parser> {
     /// Initializes a newly constructed [`FuncTranslator`].
     fn init(mut self) -> Self {
         self.alloc.reset();
-        self.register_func_body_block();
-        self.register_func_params();
+        self.init_func_body_block();
+        self.init_func_params();
         self
     }
 
     /// Registers the `block` control frame surrounding the entire function body.
-    fn register_func_body_block(&mut self) {
+    fn init_func_body_block(&mut self) {
         let func_type = self.res.get_type_of_func(self.func);
         let block_type = BlockType::func_type(func_type);
         let end_label = self.alloc.inst_builder.new_label();
@@ -144,7 +144,7 @@ impl<'parser> FuncTranslator<'parser> {
     }
 
     /// Registers the function parameters in the emulated value stack.
-    fn register_func_params(&mut self) {
+    fn init_func_params(&mut self) {
         for _param_type in self.func_type().params() {
             self.locals.register_locals(1);
         }
