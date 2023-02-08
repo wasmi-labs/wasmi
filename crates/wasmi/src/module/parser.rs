@@ -494,12 +494,10 @@ impl<'engine> ModuleParser<'engine> {
     /// If the function body fails to validate.
     fn process_code_entry(&mut self, func_body: FunctionBody) -> Result<(), ModuleError> {
         let func = self.next_func();
-        let engine = self.builder.engine();
         let validator = self.validator.code_section_entry(&func_body)?;
         let module_resources = ModuleResources::new(&self.builder);
         let allocations = take(&mut self.allocations);
         let (func_body, allocations) = translate(
-            engine,
             func,
             func_body,
             validator.into_validator(allocations.validation),

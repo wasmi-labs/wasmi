@@ -20,7 +20,6 @@ pub use self::{
 use super::{FuncBody};
 use crate::{
     module::{FuncIdx, ModuleResources, ReusableAllocations},
-    Engine,
 };
 use wasmparser::{BinaryReaderError, VisitOperator};
 
@@ -44,7 +43,6 @@ pub struct FuncBuilder<'parser> {
 impl<'parser> FuncBuilder<'parser> {
     /// Creates a new [`FuncBuilder`].
     pub fn new(
-        engine: &Engine,
         func: FuncIdx,
         res: ModuleResources<'parser>,
         validator: FuncValidator,
@@ -53,7 +51,7 @@ impl<'parser> FuncBuilder<'parser> {
         Self {
             pos: 0,
             validator,
-            translator: FuncTranslator::new(engine, func, res, allocations),
+            translator: FuncTranslator::new(func, res, allocations),
         }
     }
 

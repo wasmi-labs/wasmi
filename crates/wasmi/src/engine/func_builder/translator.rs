@@ -106,7 +106,6 @@ pub struct FuncTranslator<'parser> {
 impl<'parser> FuncTranslator<'parser> {
     /// Creates a new [`FuncTranslator`].
     pub fn new(
-        engine: &Engine,
         func: FuncIdx,
         res: ModuleResources<'parser>,
         allocations: FuncTranslatorAllocations,
