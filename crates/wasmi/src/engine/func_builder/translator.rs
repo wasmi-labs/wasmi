@@ -81,8 +81,6 @@ impl FuncTranslatorAllocations {
 
 /// Type concerned with translating from Wasm bytecode to `wasmi` bytecode.
 pub struct FuncTranslator<'parser> {
-    /// The [`Engine`] for which the function is translated.
-    engine: Engine,
     /// The function under construction.
     func: FuncIdx,
     /// The immutable `wasmi` module resources.
@@ -119,7 +117,6 @@ impl<'parser> FuncTranslator<'parser> {
         Self::register_func_body_block(func, res, &mut allocations);
         Self::register_func_params(func, res, &mut locals);
         Self {
-            engine: engine.clone(),
             func,
             res,
             reachable: true,
@@ -127,6 +124,11 @@ impl<'parser> FuncTranslator<'parser> {
             locals,
             alloc: allocations,
         }
+    }
+
+    /// Returns a shared reference to the underlying [`Engine`].
+    fn engine(&self) -> &Engine {
+        self.res.engine()
     }
 
     /// Registers the `block` control frame surrounding the entire function body.
@@ -172,7 +174,7 @@ impl<'parser> FuncTranslator<'parser> {
     /// Finishes constructing the function and returns its [`FuncBody`].
     pub fn finish(&mut self) -> Result<FuncBody, TranslationError> {
         let func_body = self.alloc.inst_builder.finish(
-            &self.engine,
+            self.res.engine(),
             self.len_locals(),
             self.stack_height.max_stack_height() as usize,
         );
@@ -194,13 +196,13 @@ impl<'parser> FuncTranslator<'parser> {
     /// for all the instructions that are going to be executed within their
     /// respective scope.
     fn is_fuel_metering_enabled(&self) -> bool {
-        self.engine.config().get_consume_fuel()
+        self.engine().config().get_consume_fuel()
     }
 
     /// Returns the [`FuncType`] of the function that is currently translated.
     fn func_type(&self) -> FuncType {
         let dedup_func_type = self.res.get_type_of_func(self.func);
-        self.engine.resolve_func_type(dedup_func_type, Clone::clone)
+        self.engine().resolve_func_type(dedup_func_type, Clone::clone)
     }
 
     /// Resolves the [`FuncType`] of the given [`FuncTypeIdx`].
@@ -259,9 +261,9 @@ impl<'parser> FuncTranslator<'parser> {
         // Find out how many values we need to keep (copy to the new stack location after the drop).
         let keep = match frame.kind() {
             ControlFrameKind::Block | ControlFrameKind::If => {
-                frame.block_type().len_results(&self.engine)
+                frame.block_type().len_results(self.res.engine())
             }
-            ControlFrameKind::Loop => frame.block_type().len_params(&self.engine),
+            ControlFrameKind::Loop => frame.block_type().len_params(self.res.engine()),
         };
         // Find out how many values we need to drop.
         let current_height = self.stack_height.height();
@@ -339,7 +341,7 @@ impl<'parser> FuncTranslator<'parser> {
     /// When the emulated value stack underflows. This should not happen
     /// since we have already validated the input Wasm prior.
     fn frame_stack_height(&self, block_type: BlockType) -> u32 {
-        let len_params = block_type.len_params(&self.engine);
+        let len_params = block_type.len_params(self.engine());
         let stack_height = self.stack_height.height();
         stack_height.checked_sub(len_params).unwrap_or_else(|| {
             panic!(
@@ -840,7 +842,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         // when entering the `if` in the first place so that the `else`
         // block has the same parameters on top of the stack.
         self.stack_height.shrink_to(if_frame.stack_height());
-        if_frame.block_type().foreach_param(&self.engine, |_param| {
+        if_frame.block_type().foreach_param(self.res.engine(), |_param| {
             self.stack_height.push();
         });
         self.alloc.control_frames.push_frame(if_frame);
@@ -884,7 +886,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let frame = self.alloc.control_frames.pop_frame();
         frame
             .block_type()
-            .foreach_result(&self.engine, |_result| self.stack_height.push());
+            .foreach_result(self.res.engine(), |_result| self.stack_height.push());
         Ok(())
     }
 
