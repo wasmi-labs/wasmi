@@ -11,6 +11,11 @@ pub struct BlockControlFrame {
     /// Label representing the end of the [`BlockControlFrame`].
     end_label: LabelRef,
     /// Instruction to consume fuel upon entering the basic block if fuel metering is enabled.
+    /// 
+    /// # Note
+    /// 
+    /// This might be a reference to the consume fuel instruction of the parent
+    /// [`ControlFrame`] of the [`BlockControlFrame`].
     consume_fuel: Option<Instr>,
 }
 
