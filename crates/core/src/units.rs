@@ -56,6 +56,18 @@ impl Pages {
         lhs.checked_add(rhs).and_then(Self::new)
     }
 
+    /// Substracts the given amount of pages from `self`.
+    ///
+    /// Returns `None` if the subtraction underflows or the result is out of bounds.
+    pub fn checked_sub<T>(self, rhs: T) -> Option<Self>
+    where
+        T: Into<u32>,
+    {
+        let lhs: u32 = self.into();
+        let rhs: u32 = rhs.into();
+        lhs.checked_sub(rhs).and_then(Self::new)
+    }
+
     /// Returns the amount of bytes required for the amount of [`Pages`].
     ///
     /// Returns `None` if the amount of pages represented by `self` cannot
@@ -220,10 +232,31 @@ mod tests {
 
         assert_eq!(Pages::max().checked_add(0u32), Some(Pages::max()));
         assert_eq!(Pages::max().checked_add(1u32), None);
+        assert_eq!(pages(0).checked_add(u32::MAX), None);
 
         for i in 0..100 {
             for j in 0..100 {
                 assert_eq!(pages(i).checked_add(pages(j)), Some(pages(i + j)));
+            }
+        }
+    }
+
+    #[test]
+    fn pages_checked_sub() {
+        let max_pages = u32::from(Pages::max());
+
+        assert_eq!(pages(0).checked_sub(0u32), Some(pages(0)));
+        assert_eq!(pages(0).checked_sub(1u32), None);
+        assert_eq!(pages(1).checked_sub(0u32), Some(pages(1)));
+        assert_eq!(pages(1).checked_sub(1u32), Some(pages(0)));
+
+        assert_eq!(Pages::max().checked_sub(Pages::max()), Some(pages(0)));
+        assert_eq!(Pages::max().checked_sub(u32::MAX), None);
+        assert_eq!(Pages::max().checked_sub(1u32), Some(pages(max_pages - 1)));
+
+        for i in 0..100 {
+            for j in 0..100 {
+                assert_eq!(pages(i).checked_sub(pages(j)), i.checked_sub(j).map(pages));
             }
         }
     }
