@@ -18,8 +18,9 @@ pub struct FuncParams<'a> {
     len_results: usize,
 }
 
-/// Utility type to ensure at compile time that host functions always
-/// call [`FuncParams::write_results`] at the end of their execution.
+/// Utility type to ensure at compile time that host functions always call
+/// [`FuncParams::encode_results`] or [`FuncParams::encode_results_from_slice`]
+/// at the end of their execution.
 #[derive(Debug)]
 pub struct FuncResults {}
 
