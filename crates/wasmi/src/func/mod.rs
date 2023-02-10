@@ -308,6 +308,8 @@ impl Func {
     ///
     /// # Note
     ///
+    /// - The given [`FuncType`] `ty` must match the parameters and results otherwise
+    ///   the resulting host [`Func`] might trap during execution.
     /// - It is the responsibility of the caller of [`Func::new`] to guarantee that
     ///   the correct amount and types of results are written into the results buffer
     ///   from the `func` closure. If an incorrect amount of results or types of results
