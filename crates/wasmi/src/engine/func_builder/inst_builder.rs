@@ -184,6 +184,8 @@ impl InstructionsBuilder {
     ///
     /// - If `instr` does not resolve to a [`ConsumeFuel`] instruction.
     /// - If the amount of consumed fuel for `instr` overflows.
+    ///
+    /// [`ConsumeFuel`]: enum.Instruction.html#variant.ConsumeFuel
     pub fn add_fuel(&mut self, instr: Instr, delta: u64) {
         self.insts[instr.into_usize()].add_fuel(delta)
     }
