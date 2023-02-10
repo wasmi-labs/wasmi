@@ -15,7 +15,7 @@ pub use self::{
     typed_func::{TypedFunc, WasmParams, WasmResults},
 };
 use super::{
-    engine::{DedupFuncType, FuncBody, FuncParams, FuncFinished},
+    engine::{DedupFuncType, FuncBody, FuncFinished, FuncParams},
     AsContext,
     AsContextMut,
     Instance,
@@ -236,9 +236,9 @@ impl<T> HostFuncEntity<T> {
             //       comes with its own downsides.
             let mut params_results = params_results.clone();
             let (params, results) = params_results.split_at_mut(len_params);
-            args.decode_params_into_slice(params).unwrap();
+            let func_results = args.decode_params_into_slice(params).unwrap();
             func(caller, params, results)?;
-            Ok(args.encode_results_from_slice(results).unwrap())
+            Ok(func_results.encode_results_from_slice(results).unwrap())
         });
         let signature = ctx.as_context_mut().store.inner.alloc_func_type(ty.clone());
         Self {
