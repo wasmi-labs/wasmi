@@ -213,9 +213,9 @@ impl<'parser> FuncTranslator<'parser> {
     /// Does nothing if gas metering is disabled.
     ///
     /// [`ConsumeFuel`]: enum.Instruction.html#variant.ConsumeFuel
-    fn add_fuel(&mut self, delta: u64) {
+    fn bump_fuel_consumption(&mut self, delta: u64) {
         if let Some(instr) = self.consume_fuel_instr() {
-            self.alloc.inst_builder.add_fuel(instr, delta);
+            self.alloc.inst_builder.bump_fuel_consumption(instr, delta);
         }
     }
 
@@ -1303,7 +1303,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         _mem_byte: u8,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.add_fuel(builder.fuel_costs().entity);
+            builder.bump_fuel_consumption(builder.fuel_costs().entity);
             let memory_idx = MemoryIdx::from(memory_idx);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
             builder.stack_height.push();
