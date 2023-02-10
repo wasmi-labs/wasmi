@@ -39,9 +39,9 @@ pub struct FuelCosts {
     /// The base fuel costs for all instructions.
     pub base: u64,
     /// The fuel cost for instruction operating on Wasm entities.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// A Wasm entitiy is one of `func`, `global`, `memory` or `table`.
     /// Those instructions are usually a bit more costly since they need
     /// multiplie indirect accesses through the Wasm instance and store.
