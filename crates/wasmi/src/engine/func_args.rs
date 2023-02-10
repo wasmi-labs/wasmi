@@ -62,7 +62,7 @@ impl<'a> FuncResults<'a> {
 }
 
 /// Used to guarantee by the type system that this API has been used correctly.
-/// 
+///
 /// Ensures at compile time that host functions always call
 /// [`FuncParams::decode_params`] or [`FuncParams::decode_params_into_slice`]
 /// followed by
