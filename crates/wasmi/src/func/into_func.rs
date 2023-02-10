@@ -76,10 +76,10 @@ macro_rules! impl_into_func {
                 );
                 let trampoline = HostFuncTrampoline::new(
                     move |caller: Caller<T>, params_results: FuncParams| -> Result<FuncResults, Trap> {
-                        let ($($tuple,)*): Self::Params = params_results.read_params();
+                        let ($($tuple,)*): Self::Params = params_results.decode_params();
                         let results: Self::Results =
                             (self)(caller, $($tuple),*).into_fallible()?;
-                        Ok(params_results.write_results(results))
+                        Ok(params_results.encode_results(results))
                     },
                 );
                 (signature, trampoline)
