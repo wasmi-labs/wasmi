@@ -22,7 +22,7 @@ pub struct FuncParams<'a> {
 /// [`FuncParams::encode_results`] or [`FuncParams::encode_results_from_slice`]
 /// at the end of their execution.
 #[derive(Debug)]
-pub struct FuncResults {}
+pub struct FuncFinished {}
 
 impl<'a> FuncParams<'a> {
     /// Create new [`FuncParams`].
@@ -31,7 +31,7 @@ impl<'a> FuncParams<'a> {
     ///
     /// If the length of hte `params_results` slice does not match the maximum
     /// of the `len_params` and `Len_results`.
-    pub fn new(
+    pub(super) fn new(
         params_results: &'a mut [UntypedValue],
         len_params: usize,
         len_results: usize,
@@ -85,13 +85,13 @@ impl<'a> FuncParams<'a> {
     /// # Panics
     ///
     /// If the number of results dictated by `T` does not match the expected amount.
-    pub fn encode_results<T>(mut self, values: T) -> FuncResults
+    pub fn encode_results<T>(mut self, values: T) -> FuncFinished
     where
         T: EncodeUntypedSlice,
     {
         UntypedValue::encode_slice::<T>(self.results(), values)
             .unwrap_or_else(|error| panic!("encountered unexpected invalid tuple length: {error}"));
-        FuncResults {}
+        FuncFinished {}
     }
 
     /// Encodes the results of the host function invocation given the `values` slice.
@@ -102,7 +102,7 @@ impl<'a> FuncParams<'a> {
     pub fn encode_results_from_slice(
         mut self,
         values: &[Value],
-    ) -> Result<FuncResults, UntypedError> {
+    ) -> Result<FuncFinished, UntypedError> {
         assert_eq!(self.results().len(), values.len());
         self.results()
             .iter_mut()
@@ -110,6 +110,6 @@ impl<'a> FuncParams<'a> {
             .for_each(|(dst, src)| {
                 *dst = src.clone().into();
             });
-        Ok(FuncResults {})
+        Ok(FuncFinished {})
     }
 }

@@ -15,7 +15,7 @@ pub use self::{
     typed_func::{TypedFunc, WasmParams, WasmResults},
 };
 use super::{
-    engine::{DedupFuncType, FuncBody, FuncParams, FuncResults},
+    engine::{DedupFuncType, FuncBody, FuncParams, FuncFinished},
     AsContext,
     AsContextMut,
     Instance,
@@ -182,7 +182,7 @@ impl<T> Clone for HostFuncEntity<T> {
 }
 
 type HostFuncTrampolineFn<T> =
-    dyn Fn(Caller<T>, FuncParams) -> Result<FuncResults, Trap> + Send + Sync + 'static;
+    dyn Fn(Caller<T>, FuncParams) -> Result<FuncFinished, Trap> + Send + Sync + 'static;
 
 pub struct HostFuncTrampoline<T> {
     closure: Arc<HostFuncTrampolineFn<T>>,
@@ -192,7 +192,7 @@ impl<T> HostFuncTrampoline<T> {
     /// Creates a new [`HostFuncTrampoline`] from the given trampoline function.
     pub fn new<F>(trampoline: F) -> Self
     where
-        F: Fn(Caller<T>, FuncParams) -> Result<FuncResults, Trap> + Send + Sync + 'static,
+        F: Fn(Caller<T>, FuncParams) -> Result<FuncFinished, Trap> + Send + Sync + 'static,
     {
         Self {
             closure: Arc::new(trampoline),
@@ -273,7 +273,7 @@ impl<T> HostFuncEntity<T> {
         mut ctx: impl AsContextMut<UserState = T>,
         instance: Option<&Instance>,
         params: FuncParams,
-    ) -> Result<FuncResults, Trap> {
+    ) -> Result<FuncFinished, Trap> {
         let caller = <Caller<T>>::new(&mut ctx, instance);
         (self.trampoline.closure)(caller, params)
     }

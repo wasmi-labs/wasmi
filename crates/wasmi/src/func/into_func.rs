@@ -1,5 +1,5 @@
 use super::{
-    super::engine::{FuncParams, FuncResults},
+    super::engine::{FuncParams, FuncFinished},
     HostFuncTrampoline,
 };
 use crate::{
@@ -75,7 +75,7 @@ macro_rules! impl_into_func {
                     <Self::Results as WasmTypeList>::types(),
                 );
                 let trampoline = HostFuncTrampoline::new(
-                    move |caller: Caller<T>, params_results: FuncParams| -> Result<FuncResults, Trap> {
+                    move |caller: Caller<T>, params_results: FuncParams| -> Result<FuncFinished, Trap> {
                         let ($($tuple,)*): Self::Params = params_results.decode_params();
                         let results: Self::Results =
                             (self)(caller, $($tuple),*).into_fallible()?;
