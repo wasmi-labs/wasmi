@@ -142,9 +142,9 @@ impl<'parser> FuncTranslator<'parser> {
         let block_type = BlockType::func_type(func_type);
         let end_label = self.alloc.inst_builder.new_label();
         let consume_fuel = self.is_fuel_metering_enabled().then(|| {
-            self.alloc.inst_builder.push_inst(Instruction::consume_fuel(
-                self.engine().config().fuel_costs().base,
-            ))
+            self.alloc
+                .inst_builder
+                .push_inst(Instruction::consume_fuel(self.fuel_costs().base))
         });
         let block_frame = BlockControlFrame::new(block_type, end_label, 0, consume_fuel);
         self.alloc.control_frames.push_frame(block_frame);
@@ -789,9 +789,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let header = self.alloc.inst_builder.new_label();
             self.alloc.inst_builder.pin_label(header);
             let consume_fuel = self.is_fuel_metering_enabled().then(|| {
-                self.alloc.inst_builder.push_inst(Instruction::consume_fuel(
-                    self.engine().config().fuel_costs().base,
-                ))
+                self.alloc
+                    .inst_builder
+                    .push_inst(Instruction::consume_fuel(self.fuel_costs().base))
             });
             self.alloc.control_frames.push_frame(LoopControlFrame::new(
                 block_type,
@@ -818,9 +818,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let else_label = self.alloc.inst_builder.new_label();
             let end_label = self.alloc.inst_builder.new_label();
             let consume_fuel = self.is_fuel_metering_enabled().then(|| {
-                self.alloc.inst_builder.push_inst(Instruction::consume_fuel(
-                    self.engine().config().fuel_costs().base,
-                ))
+                self.alloc
+                    .inst_builder
+                    .push_inst(Instruction::consume_fuel(self.fuel_costs().base))
             });
             self.alloc.control_frames.push_frame(IfControlFrame::new(
                 block_type,
@@ -880,9 +880,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         // since the `ConsumeFuel` instruction for the `then` block is no longer
         // used from this point on.
         self.is_fuel_metering_enabled().then(|| {
-            let consume_fuel = self.alloc.inst_builder.push_inst(Instruction::consume_fuel(
-                self.engine().config().fuel_costs().base,
-            ));
+            let consume_fuel = self
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::consume_fuel(self.fuel_costs().base));
             if_frame.update_consume_fuel_instr(consume_fuel);
         });
         // We need to reset the value stack to exactly how it has been
