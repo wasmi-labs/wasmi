@@ -15,7 +15,7 @@ pub use self::{
     typed_func::{TypedFunc, WasmParams, WasmResults},
 };
 use super::{
-    engine::{DedupFuncType, FuncBody, FuncParams, FuncResults},
+    engine::{DedupFuncType, FuncBody, FuncFinished, FuncParams},
     AsContext,
     AsContextMut,
     Instance,
@@ -182,7 +182,7 @@ impl<T> Clone for HostFuncEntity<T> {
 }
 
 type HostFuncTrampolineFn<T> =
-    dyn Fn(Caller<T>, FuncParams) -> Result<FuncResults, Trap> + Send + Sync + 'static;
+    dyn Fn(Caller<T>, FuncParams) -> Result<FuncFinished, Trap> + Send + Sync + 'static;
 
 pub struct HostFuncTrampoline<T> {
     closure: Arc<HostFuncTrampolineFn<T>>,
@@ -192,7 +192,7 @@ impl<T> HostFuncTrampoline<T> {
     /// Creates a new [`HostFuncTrampoline`] from the given trampoline function.
     pub fn new<F>(trampoline: F) -> Self
     where
-        F: Fn(Caller<T>, FuncParams) -> Result<FuncResults, Trap> + Send + Sync + 'static,
+        F: Fn(Caller<T>, FuncParams) -> Result<FuncFinished, Trap> + Send + Sync + 'static,
     {
         Self {
             closure: Arc::new(trampoline),
@@ -236,9 +236,9 @@ impl<T> HostFuncEntity<T> {
             //       comes with its own downsides.
             let mut params_results = params_results.clone();
             let (params, results) = params_results.split_at_mut(len_params);
-            args.decode_params_into_slice(params).unwrap();
+            let func_results = args.decode_params_into_slice(params).unwrap();
             func(caller, params, results)?;
-            Ok(args.encode_results_from_slice(results).unwrap())
+            Ok(func_results.encode_results_from_slice(results).unwrap())
         });
         let signature = ctx.as_context_mut().store.inner.alloc_func_type(ty.clone());
         Self {
@@ -273,7 +273,7 @@ impl<T> HostFuncEntity<T> {
         mut ctx: impl AsContextMut<UserState = T>,
         instance: Option<&Instance>,
         params: FuncParams,
-    ) -> Result<FuncResults, Trap> {
+    ) -> Result<FuncFinished, Trap> {
         let caller = <Caller<T>>::new(&mut ctx, instance);
         (self.trampoline.closure)(caller, params)
     }
