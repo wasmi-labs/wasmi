@@ -38,6 +38,14 @@ pub struct Config {
 pub struct FuelCosts {
     /// The base fuel costs for all instructions.
     pub base: u64,
+    /// The fuel cost for instruction operating on Wasm entities.
+    /// 
+    /// # Note
+    /// 
+    /// A Wasm entitiy is one of `func`, `global`, `memory` or `table`.
+    /// Those instructions are usually a bit more costly since they need
+    /// multiplie indirect accesses through the Wasm instance and store.
+    pub entity: u64,
     /// The fuel cost offset for `memory.load` instructions.
     pub load: u64,
     /// The fuel cost offset for `memory.store` instructions.
@@ -45,9 +53,9 @@ pub struct FuelCosts {
     /// The fuel cost offset for `call` and `call_indirect` instructions.
     pub call: u64,
     /// The fuel cost offset per local variable for `call` and `call_indirect` instruction.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This is also applied to all function parameters since
     /// they are translated to local variable slots.
     pub call_per_local: u64,
@@ -62,14 +70,15 @@ pub struct FuelCosts {
 impl Default for FuelCosts {
     fn default() -> Self {
         Self {
-            base: 10,
-            load: 50,
-            store: 30,
-            call: 250,
+            base: 100,
+            entity: 500,
+            load: 650,
+            store: 450,
+            call: 1500,
             call_per_local: 10,
             branch_per_kept: 10,
-            memory_per_byte: 1,
-            table_per_element: 4,
+            memory_per_byte: 2,
+            table_per_element: 10,
         }
     }
 }
