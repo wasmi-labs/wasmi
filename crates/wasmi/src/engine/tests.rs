@@ -771,7 +771,7 @@ fn metered_simple_01() {
         )
     "#,
     );
-    let expected_fuel = 200;
+    let expected_fuel = 320;
     let expected = [
         Instruction::consume_fuel(expected_fuel),
         Instruction::local_get(1),
@@ -795,7 +795,7 @@ fn metered_simple_02() {
         )
     "#,
     );
-    let expected_fuel = 400;
+    let expected_fuel = 520;
     let expected = [
         Instruction::consume_fuel(expected_fuel),
         Instruction::local_get(1),
@@ -823,7 +823,7 @@ fn metered_simple_03() {
         )
     "#,
     );
-    let expected_fuel = 800;
+    let expected_fuel = 930;
     let expected = [
         Instruction::consume_fuel(expected_fuel),
         Instruction::local_get(2),
@@ -865,7 +865,7 @@ fn metered_nested_blocks() {
         )
     "#,
     );
-    let expected_fuel = 1000;
+    let expected_fuel = 1120;
     let expected = [
         Instruction::consume_fuel(expected_fuel),
         Instruction::local_get(1),

@@ -153,6 +153,7 @@ impl<'parser> FuncTranslator<'parser> {
     /// Registers the function parameters in the emulated value stack.
     fn init_func_params(&mut self) {
         for _param_type in self.func_type().params() {
+            self.bump_fuel_consumption(self.fuel_costs().call_per_local);
             self.locals.register_locals(1);
         }
     }
@@ -163,6 +164,8 @@ impl<'parser> FuncTranslator<'parser> {
     ///
     /// If too many local variables have been registered.
     pub fn register_locals(&mut self, amount: u32) {
+        let fuel_costs = u64::from(amount) * self.fuel_costs().call_per_local;
+        self.bump_fuel_consumption(fuel_costs);
         self.locals.register_locals(amount);
     }
 
@@ -951,6 +954,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_if_reachable(|builder| {
             match builder.acquire_target(relative_depth)? {
                 AcquiredTarget::Branch(end_label, drop_keep) => {
+                    builder.bump_fuel_consumption(builder.fuel_costs().base);
+                    builder.bump_fuel_consumption(drop_keep.fuel_consumption(builder.fuel_costs()));
                     let params = builder.branch_params(end_label, drop_keep);
                     builder
                         .alloc
@@ -972,6 +977,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             builder.stack_height.pop1();
             match builder.acquire_target(relative_depth)? {
                 AcquiredTarget::Branch(end_label, drop_keep) => {
+                    builder.bump_fuel_consumption(builder.fuel_costs().base);
+                    builder.bump_fuel_consumption(drop_keep.fuel_consumption(builder.fuel_costs()));
                     let params = builder.branch_params(end_label, drop_keep);
                     builder
                         .alloc
@@ -999,9 +1006,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 builder: &mut FuncTranslator,
                 n: usize,
                 depth: RelativeDepth,
+                max_drop_keep_fuel: &mut u64,
             ) -> Result<Instruction, TranslationError> {
                 match builder.acquire_target(depth.into_u32())? {
                     AcquiredTarget::Branch(label, drop_keep) => {
+                        *max_drop_keep_fuel = (*max_drop_keep_fuel)
+                            .max(drop_keep.fuel_consumption(builder.fuel_costs()));
                         let base = builder.alloc.inst_builder.current_pc();
                         let instr = offset_instr(base, n + 1);
                         let offset = builder
@@ -1009,9 +1019,14 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                             .inst_builder
                             .try_resolve_label_for(label, instr);
                         let params = BranchParams::new(offset, drop_keep);
+
                         Ok(Instruction::Br(params))
                     }
-                    AcquiredTarget::Return(drop_keep) => Ok(Instruction::Return(drop_keep)),
+                    AcquiredTarget::Return(drop_keep) => {
+                        *max_drop_keep_fuel = (*max_drop_keep_fuel)
+                            .max(drop_keep.fuel_consumption(builder.fuel_costs()));
+                        Ok(Instruction::Return(drop_keep))
+                    }
                 }
             }
 
@@ -1028,22 +1043,30 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 })
                 .map(RelativeDepth::from_u32);
 
+            builder.bump_fuel_consumption(builder.fuel_costs().base);
+            // The maximum fuel costs among all `br_table` arms.
+            // We use this to charge fuel once at the entry of a `br_table`
+            // for the most expensive arm of all of its arms.
+            let mut max_drop_keep_fuel = 0;
+
             builder.stack_height.pop1();
             builder.alloc.br_table_branches.clear();
             for (n, depth) in targets.into_iter().enumerate() {
-                let relative_depth = compute_instr(builder, n, depth)?;
+                let relative_depth = compute_instr(builder, n, depth, &mut max_drop_keep_fuel)?;
                 builder.alloc.br_table_branches.push(relative_depth);
             }
 
             // We include the default target in `len_branches`.
             let len_branches = builder.alloc.br_table_branches.len();
-            let default_branch = compute_instr(builder, len_branches, default)?;
+            let default_branch =
+                compute_instr(builder, len_branches, default, &mut max_drop_keep_fuel)?;
             builder.alloc.inst_builder.push_inst(Instruction::BrTable {
                 len_targets: len_branches + 1,
             });
             for branch in builder.alloc.br_table_branches.drain(..) {
                 builder.alloc.inst_builder.push_inst(branch);
             }
+            builder.bump_fuel_consumption(max_drop_keep_fuel);
             builder.alloc.inst_builder.push_inst(default_branch);
             builder.reachable = false;
             Ok(())
@@ -1053,6 +1076,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_return(&mut self) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let drop_keep = builder.drop_keep_return()?;
+            builder.bump_fuel_consumption(builder.fuel_costs().base);
+            builder.bump_fuel_consumption(drop_keep.fuel_consumption(builder.fuel_costs()));
             builder
                 .alloc
                 .inst_builder
