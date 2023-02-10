@@ -394,10 +394,7 @@ impl Instruction {
         match self {
             Self::ConsumeFuel { amount } => {
                 *amount = amount.checked_add(delta).unwrap_or_else(|| {
-                    panic!(
-                        "overflowed fuel consumption. current = {}, delta = {}",
-                        amount, delta
-                    )
+                    panic!("overflowed fuel consumption. current = {amount}, delta = {delta}",)
                 })
             }
             instr => panic!("expected Instruction::ConsumeFuel but found: {instr:?}"),
