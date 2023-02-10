@@ -139,7 +139,12 @@ impl<'parser> FuncTranslator<'parser> {
         let func_type = self.res.get_type_of_func(self.func);
         let block_type = BlockType::func_type(func_type);
         let end_label = self.alloc.inst_builder.new_label();
-        let block_frame = BlockControlFrame::new(block_type, end_label, 0, None);
+        let consume_fuel = self.is_fuel_metering_enabled().then(|| {
+            self.alloc.inst_builder.push_inst(Instruction::consume_fuel(
+                self.engine().config().fuel_costs().base,
+            ))
+        });
+        let block_frame = BlockControlFrame::new(block_type, end_label, 0, consume_fuel);
         self.alloc.control_frames.push_frame(block_frame);
     }
 
