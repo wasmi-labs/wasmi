@@ -751,6 +751,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_unreachable(&mut self) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
+            builder.bump_fuel_consumption(builder.fuel_costs().base);
             builder
                 .alloc
                 .inst_builder
@@ -833,6 +834,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 stack_height,
                 consume_fuel,
             ));
+            self.bump_fuel_consumption(builder.fuel_costs().base);
             let branch_params = self.branch_params(else_label, DropKeep::none());
             self.alloc
                 .inst_builder
