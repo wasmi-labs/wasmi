@@ -47,9 +47,9 @@ use crate::{
     Mutability,
     Value,
 };
+use alloc::vec::Vec;
 use wasmi_core::{ValueType, F32, F64};
 use wasmparser::VisitOperator;
-use alloc::vec::Vec;
 
 /// Reusable allocations of a [`FuncTranslator`].
 #[derive(Debug, Default)]
