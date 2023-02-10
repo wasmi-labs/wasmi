@@ -732,13 +732,17 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_block(&mut self, block_type: wasmparser::BlockType) -> Result<(), TranslationError> {
         let block_type = BlockType::new(block_type, self.res);
         if self.is_reachable() {
+            // Inherit `ConsumeFuel` instruction from parent control frame.
+            // This is an optimization to reduce the number of `ConsumeFuel` instructions
+            // and is applicable since Wasm `block` unconditionally executes all its instructions.
+            let consume_fuel = self.alloc.control_frames.last().consume_fuel_instr();
             let stack_height = self.frame_stack_height(block_type);
             let end_label = self.alloc.inst_builder.new_label();
             self.alloc.control_frames.push_frame(BlockControlFrame::new(
                 block_type,
                 end_label,
                 stack_height,
-                None,
+                consume_fuel,
             ));
         } else {
             self.alloc
@@ -757,11 +761,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let stack_height = self.frame_stack_height(block_type);
             let header = self.alloc.inst_builder.new_label();
             self.alloc.inst_builder.pin_label(header);
+            let consume_fuel = self.is_fuel_metering_enabled().then(|| {
+                self.alloc.inst_builder.push_inst(Instruction::consume_fuel(
+                    self.engine().config().fuel_costs().base,
+                ))
+            });
             self.alloc.control_frames.push_frame(LoopControlFrame::new(
                 block_type,
                 header,
                 stack_height,
-                None,
+                consume_fuel,
             ));
         } else {
             self.alloc
@@ -781,12 +790,17 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let stack_height = self.frame_stack_height(block_type);
             let else_label = self.alloc.inst_builder.new_label();
             let end_label = self.alloc.inst_builder.new_label();
+            let consume_fuel = self.is_fuel_metering_enabled().then(|| {
+                self.alloc.inst_builder.push_inst(Instruction::consume_fuel(
+                    self.engine().config().fuel_costs().base,
+                ))
+            });
             self.alloc.control_frames.push_frame(IfControlFrame::new(
                 block_type,
                 end_label,
                 else_label,
                 stack_height,
-                None,
+                consume_fuel,
             ));
             let branch_params = self.branch_params(else_label, DropKeep::none());
             self.alloc
@@ -834,6 +848,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         }
         // Now resolve labels for the instructions of the `else` block
         self.alloc.inst_builder.pin_label(if_frame.else_label());
+        // Now we can also update the `ConsumeFuel` function to use the one
+        // created for the `else` part of the `if` block. This can be done
+        // since the `ConsumeFuel` instruction for the `then` block is no longer
+        // used from this point on.
+        self.is_fuel_metering_enabled().then(|| {
+            let consume_fuel = self.alloc.inst_builder.push_inst(Instruction::consume_fuel(
+                self.engine().config().fuel_costs().base,
+            ));
+            if_frame.update_consume_fuel_instr(consume_fuel);
+        });
         // We need to reset the value stack to exactly how it has been
         // when entering the `if` in the first place so that the `else`
         // block has the same parameters on top of the stack.
