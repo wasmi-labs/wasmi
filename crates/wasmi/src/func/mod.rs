@@ -66,13 +66,24 @@ impl<T> Clone for FuncEntity<T> {
 
 impl<T> FuncEntity<T> {
     /// Creates a new Wasm function from the given raw parts.
-    pub(crate) fn new_wasm(signature: DedupFuncType, body: FuncBody, instance: Instance) -> Self {
+    pub fn new_wasm(signature: DedupFuncType, body: FuncBody, instance: Instance) -> Self {
         Self {
             internal: FuncEntityInternal::Wasm(WasmFuncEntity::new(signature, body, instance)),
         }
     }
 
-    /// Creates a new host function from the given closure.
+    /// Creates a new host function from the given dynamically typed closure.
+    pub fn new(
+        ctx: impl AsContextMut<UserState = T>,
+        ty: FuncType,
+        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Trap> + Send + Sync + 'static,
+    ) -> Self {
+        Self {
+            internal: FuncEntityInternal::Host(HostFuncEntity::new(ctx, ty, func)),
+        }
+    }
+
+    /// Creates a new host function from the given dynamically typed closure.
     pub fn wrap<Params, Results>(
         ctx: impl AsContextMut<UserState = T>,
         func: impl IntoFunc<T, Params, Results>,
@@ -204,7 +215,39 @@ impl<T> Debug for HostFuncEntity<T> {
 }
 
 impl<T> HostFuncEntity<T> {
-    /// Creates a new host function from the given closure.
+    /// Creates a new host function from the given dynamically typed closure.
+    pub fn new(
+        mut ctx: impl AsContextMut<UserState = T>,
+        ty: FuncType,
+        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Trap> + Send + Sync + 'static,
+    ) -> Self {
+        // Preprocess parameters and results buffers so that we can reuse those
+        // computations within the closure implementation. We put both parameters
+        // and results into a single buffer which we can split to minimize the
+        // amount of allocations per trampoline invokation.
+        let params_iter = ty.params().iter().copied().map(Value::default);
+        let results_iter = ty.results().iter().copied().map(Value::default);
+        let len_params = ty.params().len();
+        let params_results: Box<[Value]> = params_iter.chain(results_iter).collect();
+        let trampoline = <HostFuncTrampoline<T>>::new(move |caller, args| {
+            // We are required to clone the buffer because we are operating within a `Fn`.
+            // This way the trampoline closure only has to own a single slice buffer.
+            // Note: An alternative solution is to use interior mutability but that solution
+            //       comes with its own downsides.
+            let mut params_results = params_results.clone();
+            let (params, results) = params_results.split_at_mut(len_params);
+            args.decode_params_into_slice(params).unwrap();
+            func(caller, params, results)?;
+            Ok(args.encode_results_from_slice(results).unwrap())
+        });
+        let signature = ctx.as_context_mut().store.inner.alloc_func_type(ty.clone());
+        Self {
+            signature,
+            trampoline,
+        }
+    }
+
+    /// Creates a new host function from the given statically typed closure.
     pub fn wrap<Params, Results>(
         mut ctx: impl AsContextMut,
         func: impl IntoFunc<T, Params, Results>,
@@ -250,6 +293,36 @@ impl Func {
     /// Returns the underlying stored representation.
     pub(super) fn as_inner(&self) -> &Stored<FuncIdx> {
         &self.0
+    }
+
+    /// Creates a new [`Func`] with the given arguments.
+    ///
+    /// This is typically used to create a host-defined function to pass as an import to a Wasm module.
+    ///
+    /// - `ty`: the signature that the given closure adheres to,
+    ///         used to indicate what the inputs and outputs are.
+    /// - `func`: the native code invoked whenever this Func will be called.
+    ///           The closure is provided a [`Caller`] as its first argument
+    ///           which allows it to query information about the [`Instance`]
+    ///           that is assocaited to the call.
+    ///
+    /// # Note
+    ///
+    /// - It is the responsibility of the caller of [`Func::new`] to guarantee that
+    ///   the correct amount and types of results are written into the results buffer
+    ///   from the `func` closure. If an incorrect amount of results or types of results
+    ///   is written into the buffer then the remaining computation may fail in unexpected
+    ///   ways. This footgun can be avoided by using the typed [`Func::wrap`] method instead.
+    /// - Prefer using [`Func::wrap`] over this method if possible since [`Func`] instances
+    ///   created using this constructor have runtime overhead for every invokation that
+    ///   can be avoided by using [`Func::wrap`].
+    pub fn new<T>(
+        mut ctx: impl AsContextMut<UserState = T>,
+        ty: FuncType,
+        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Trap> + Send + Sync + 'static,
+    ) -> Self {
+        let func = FuncEntity::new(ctx.as_context_mut(), ty, func);
+        ctx.as_context_mut().store.alloc_func(func)
     }
 
     /// Creates a new host function from the given closure.
