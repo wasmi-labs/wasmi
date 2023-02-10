@@ -874,6 +874,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         // Create the jump from the end of the `then` block to the `if`
         // block's end label in case the end of `then` is reachable.
         if reachable {
+            self.bump_fuel_consumption(builder.fuel_costs().base);
             let params = self.branch_params(if_frame.end_label(), DropKeep::none());
             self.alloc.inst_builder.push_inst(Instruction::Br(params));
         }
