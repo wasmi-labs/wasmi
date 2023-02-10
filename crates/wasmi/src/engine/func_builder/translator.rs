@@ -51,7 +51,7 @@ use wasmi_core::{ValueType, F32, F64};
 use wasmparser::VisitOperator;
 use alloc::vec::Vec;
 
-/// Reusable allocations of a [`FuncBuilder`].
+/// Reusable allocations of a [`FuncTranslator`].
 #[derive(Debug, Default)]
 pub struct FuncTranslatorAllocations {
     /// The control flow frame stack that represents the Wasm control flow.
@@ -72,7 +72,7 @@ impl FuncTranslatorAllocations {
     /// # Note
     ///
     /// This must be called before reusing this [`FuncTranslatorAllocations`]
-    /// by another [`FuncBuilder`].
+    /// by another [`FuncTranslator`].
     fn reset(&mut self) {
         self.control_frames.reset();
         self.inst_builder.reset();

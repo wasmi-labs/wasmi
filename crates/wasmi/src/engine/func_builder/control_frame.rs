@@ -59,15 +59,15 @@ impl BlockControlFrame {
         self.block_type
     }
 
-    /// Returns a reference to the [`Instruction::ConsumeFuel`] of the [`BlockControlFrame`] if any.
+    /// Returns a reference to the [`ConsumeFuel`] instruction of the [`BlockControlFrame`] if any.
     ///
     /// Returns `None` if fuel metering is disabled.
     ///
     /// # Note
     ///
-    /// A [`BlockControlFrame`] might share its [`Instruction::ConsumeFuel`] with its child [`BlockControlFrame`].
+    /// A [`BlockControlFrame`] might share its [`ConsumeFuel`] instruction with its child [`BlockControlFrame`].
     ///
-    /// [`Instruction::ConsumeFuel`]:
+    /// [`ConsumeFuel`]: enum.Instruction.html#variant.ConsumeFuel
     pub fn consume_fuel_instr(&self) -> Option<Instr> {
         self.consume_fuel
     }
@@ -125,11 +125,11 @@ impl LoopControlFrame {
         self.block_type
     }
 
-    /// Returns a reference to the [`Instruction::ConsumeFuel`] of the [`BlockControlFrame`] if any.
+    /// Returns a reference to the [`ConsumeFuel`] instruction of the [`BlockControlFrame`] if any.
     ///
     /// Returns `None` if fuel metering is disabled.
     ///
-    /// [`Instruction::ConsumeFuel`]:
+    /// [`ConsumeFuel`]: enum.Instruction.html#variant.ConsumeFuel
     pub fn consume_fuel_instr(&self) -> Option<Instr> {
         self.consume_fuel
     }
@@ -168,6 +168,8 @@ pub struct IfControlFrame {
     /// # Note
     ///
     /// This must be `Some` if fuel metering is enabled and `None` otherwise.
+    ///
+    /// [`ConsumeFuel`]: enum.Instruction.html#variant.ConsumeFuel
     consume_fuel: Option<Instr>,
 }
 
@@ -233,7 +235,7 @@ impl IfControlFrame {
         self.end_of_then_is_reachable = Some(reachable);
     }
 
-    /// Returns a reference to the [`Instruction::ConsumeFuel`] of the [`BlockControlFrame`] if any.
+    /// Returns a reference to the [`ConsumeFuel`] instruction of the [`BlockControlFrame`] if any.
     ///
     /// Returns `None` if fuel metering is disabled.
     ///
@@ -244,7 +246,7 @@ impl IfControlFrame {
     /// the `else` block entered. This is possible because only one of them is needed
     /// at the same time during translation.
     ///
-    /// [`Instruction::ConsumeFuel`]:
+    /// [`ConsumeFuel`]: enum.Instruction.html#variant.ConsumeFuel
     pub fn consume_fuel_instr(&self) -> Option<Instr> {
         self.consume_fuel
     }
@@ -256,6 +258,8 @@ impl IfControlFrame {
     /// This is required since the `consume_fuel` field represents the [`ConsumeFuel`]
     /// instruction for both `then` and `else` blocks. This is possible because only one
     /// of them is needed at the same time during translation.
+    ///
+    /// [`ConsumeFuel`]: enum.Instruction.html#variant.ConsumeFuel
     pub fn update_consume_fuel_instr(&mut self, instr: Instr) {
         assert!(
             self.consume_fuel.is_some(),
@@ -405,11 +409,11 @@ impl ControlFrame {
         !matches!(self, ControlFrame::Unreachable(_))
     }
 
-    /// Returns a reference to the [`Instruction::ConsumeFuel`] of the [`ControlFrame`] if any.
+    /// Returns a reference to the [`ConsumeFuel`] instruction of the [`ControlFrame`] if any.
     ///
     /// Returns `None` if fuel metering is disabled.
     ///
-    /// [`Instruction::ConsumeFuel`]:
+    /// [`ConsumeFuel`]: enum.Instruction.html#variant.ConsumeFuel
     pub fn consume_fuel_instr(&self) -> Option<Instr> {
         match self {
             ControlFrame::Block(frame) => frame.consume_fuel_instr(),
