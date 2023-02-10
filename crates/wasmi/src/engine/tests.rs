@@ -823,7 +823,7 @@ fn metered_simple_03() {
         )
     "#,
     );
-    let expected_fuel = 100;
+    let expected_fuel = 300;
     let expected = [
         Instruction::consume_fuel(expected_fuel),
         Instruction::local_get(2),

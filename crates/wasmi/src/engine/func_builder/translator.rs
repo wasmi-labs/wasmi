@@ -439,6 +439,7 @@ impl<'parser> FuncTranslator<'parser> {
         self.translate_if_reachable(|builder| {
             let (memory_idx, offset) = Self::decompose_memarg(memarg);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
+            builder.bump_fuel_consumption(builder.fuel_costs().load);
             builder.stack_height.pop1();
             builder.stack_height.push();
             let offset = Offset::from(offset);
@@ -471,6 +472,7 @@ impl<'parser> FuncTranslator<'parser> {
         self.translate_if_reachable(|builder| {
             let (memory_idx, offset) = Self::decompose_memarg(memarg);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
+            builder.bump_fuel_consumption(builder.fuel_costs().store);
             builder.stack_height.pop2();
             let offset = Offset::from(offset);
             builder.alloc.inst_builder.push_inst(make_inst(offset));
@@ -493,6 +495,7 @@ impl<'parser> FuncTranslator<'parser> {
         T: Into<Value>,
     {
         self.translate_if_reachable(|builder| {
+            builder.bump_fuel_consumption(builder.fuel_costs().base);
             let value = value.into();
             builder.stack_height.push();
             builder
@@ -517,8 +520,7 @@ impl<'parser> FuncTranslator<'parser> {
         inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.stack_height.pop1();
-            builder.stack_height.push();
+            builder.bump_fuel_consumption(builder.fuel_costs().base);
             builder.alloc.inst_builder.push_inst(inst);
             Ok(())
         })
@@ -542,6 +544,7 @@ impl<'parser> FuncTranslator<'parser> {
         inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
+            builder.bump_fuel_consumption(builder.fuel_costs().base);
             builder.stack_height.pop2();
             builder.stack_height.push();
             builder.alloc.inst_builder.push_inst(inst);
@@ -571,6 +574,7 @@ impl<'parser> FuncTranslator<'parser> {
         inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
+            builder.bump_fuel_consumption(builder.fuel_costs().base);
             builder.alloc.inst_builder.push_inst(inst);
             Ok(())
         })
@@ -603,6 +607,7 @@ impl<'parser> FuncTranslator<'parser> {
         inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
+            builder.bump_fuel_consumption(builder.fuel_costs().base);
             builder.stack_height.pop2();
             builder.stack_height.push();
             builder.alloc.inst_builder.push_inst(inst);
@@ -633,8 +638,7 @@ impl<'parser> FuncTranslator<'parser> {
         inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.stack_height.pop1();
-            builder.stack_height.push();
+            builder.bump_fuel_consumption(builder.fuel_costs().base);
             builder.alloc.inst_builder.push_inst(inst);
             Ok(())
         })
