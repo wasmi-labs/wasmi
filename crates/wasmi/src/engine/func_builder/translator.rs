@@ -1303,6 +1303,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         _mem_byte: u8,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
+            builder.add_fuel(builder.fuel_costs().entity);
             let memory_idx = MemoryIdx::from(memory_idx);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
             builder.stack_height.push();
