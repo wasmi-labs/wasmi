@@ -193,6 +193,26 @@ impl<'parser> FuncTranslator<'parser> {
         self.engine().config().get_consume_fuel()
     }
 
+    /// Returns the most recent [`ConsumeFuel`] instruction in the translation process.
+    ///
+    /// Returns `None` if gas metering is disabled.
+    ///
+    /// [`ConsumeFuel`]: enum.Instruction.html#variant.ConsumeFuel
+    fn consume_fuel_instr(&self) -> Option<Instr> {
+        self.alloc.control_frames.last().consume_fuel_instr()
+    }
+
+    /// Adds fuel to the most recent [`ConsumeFuel`] instruction in the translation process.
+    ///
+    /// Does nothing if gas metering is disabled.
+    ///
+    /// [`ConsumeFuel`]: enum.Instruction.html#variant.ConsumeFuel
+    fn add_fuel(&mut self, delta: u64) {
+        if let Some(instr) = self.consume_fuel_instr() {
+            self.alloc.inst_builder.add_fuel(instr, delta);
+        }
+    }
+
     /// Returns the [`FuncType`] of the function that is currently translated.
     fn func_type(&self) -> FuncType {
         let dedup_func_type = self.res.get_type_of_func(self.func);
