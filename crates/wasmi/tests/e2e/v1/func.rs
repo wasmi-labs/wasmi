@@ -3,8 +3,8 @@
 use core::slice;
 
 use assert_matches::assert_matches;
-use wasmi::{errors::FuncError, Engine, Error, Func, Store, Value};
-use wasmi_core::{F32, F64};
+use wasmi::{errors::FuncError, Engine, Error, Func, FuncType, Store, Value};
+use wasmi_core::{ValueType, F32, F64};
 
 fn test_setup() -> Store<()> {
     let engine = Engine::default();
@@ -24,85 +24,178 @@ macro_rules! assert_eq_tuple {
     }
 }
 
-fn setup_add2() -> (Store<()>, Func) {
+// Returns a Wasm store and two binary addition [`Func`] instances.
+fn setup_add2() -> (Store<()>, Func, Func) {
     let mut store = test_setup();
-    // This host function represents a simple binary addition.
     let add2 = Func::wrap(&mut store, |lhs: i32, rhs: i32| lhs + rhs);
-    (store, add2)
+    let add2_dyn = Func::new(
+        &mut store,
+        FuncType::new([ValueType::I32, ValueType::I32], [ValueType::I32]),
+        |_caller, inputs: &[Value], results: &mut [Value]| {
+            assert_eq!(inputs.len(), 2);
+            assert_eq!(results.len(), 1);
+            let lhs = &inputs[0].i32().unwrap();
+            let rhs = &inputs[1].i32().unwrap();
+            results[0] = (lhs + rhs).into();
+            Ok(())
+        },
+    );
+    (store, add2, add2_dyn)
 }
 
 #[test]
 fn dynamic_add2_works() {
-    let (mut store, add2) = setup_add2();
-    let mut result = Value::I32(0);
-    add2.call(
-        &mut store,
-        &[Value::I32(1), Value::I32(2)],
-        slice::from_mut(&mut result),
-    )
-    .unwrap();
-    assert_eq!(result.i32(), Some(3));
+    let (mut store, add2, add2_dyn) = setup_add2();
+    for a in 0..10 {
+        for b in 0..10 {
+            let params = [Value::I32(a), Value::I32(b)];
+            let expected = a + b;
+            let mut result = Value::I32(0);
+            // Call to Func with statically typed closure.
+            add2.call(&mut store, &params, slice::from_mut(&mut result))
+                .unwrap();
+            // Reset result before execution.
+            result = Value::I32(0);
+            // Call to Func with dynamically typed closure.
+            add2_dyn
+                .call(&mut store, &params, slice::from_mut(&mut result))
+                .unwrap();
+            assert_eq!(result.i32(), Some(expected));
+        }
+    }
 }
 
 #[test]
 fn static_add2_works() {
-    let (mut store, add2) = setup_add2();
-    let typed_add2 = add2.typed::<(i32, i32), i32>(&mut store).unwrap();
-    let result = typed_add2.call(&mut store, (1, 2)).unwrap();
-    assert_eq!(result, 3);
+    let (mut store, add2, add2_dyn) = setup_add2();
+    let add2 = add2.typed::<(i32, i32), i32>(&mut store).unwrap();
+    let add2_dyn = add2_dyn.typed::<(i32, i32), i32>(&mut store).unwrap();
+    for a in 0..10 {
+        for b in 0..10 {
+            let expected = a + b;
+            assert_eq!(add2.call(&mut store, (a, b)).unwrap(), expected);
+            assert_eq!(add2_dyn.call(&mut store, (a, b)).unwrap(), expected);
+        }
+    }
 }
 
-fn setup_add3() -> (Store<()>, Func) {
+// Returns a Wasm store and two three-way addition [`Func`] instances.
+fn setup_add3() -> (Store<()>, Func, Func) {
     let mut store = test_setup();
-    // This host function performance a three-way addition.
     let add3 = Func::wrap(&mut store, |v0: i32, v1: i32, v2: i32| v0 + v1 + v2);
-    (store, add3)
+    let add3_dyn = Func::new(
+        &mut store,
+        FuncType::new(
+            [ValueType::I32, ValueType::I32, ValueType::I32],
+            [ValueType::I32],
+        ),
+        |_caller, inputs: &[Value], results: &mut [Value]| {
+            assert_eq!(inputs.len(), 3);
+            assert_eq!(results.len(), 1);
+            let a = &inputs[0].i32().unwrap();
+            let b = &inputs[1].i32().unwrap();
+            let c = &inputs[2].i32().unwrap();
+            results[0] = (a + b + c).into();
+            Ok(())
+        },
+    );
+    (store, add3, add3_dyn)
 }
 
 #[test]
 fn dynamic_add3_works() {
-    let (mut store, add3) = setup_add3();
-    let mut result = Value::I32(0);
-    add3.call(
-        &mut store,
-        &[Value::I32(1), Value::I32(2), Value::I32(3)],
-        slice::from_mut(&mut result),
-    )
-    .unwrap();
-    assert_eq!(result.i32(), Some(6));
+    let (mut store, add3, add3_dyn) = setup_add3();
+    for a in 0..5 {
+        for b in 0..5 {
+            for c in 0..5 {
+                let params = [Value::I32(a), Value::I32(b), Value::I32(c)];
+                let expected = a + b + c;
+                let mut result = Value::I32(0);
+                // Call to Func with statically typed closure.
+                add3.call(&mut store, &params, slice::from_mut(&mut result))
+                    .unwrap();
+                assert_eq!(result.i32(), Some(expected));
+                // Reset result before execution.
+                result = Value::I32(0);
+                // Call to Func with dynamically typed closure.
+                add3_dyn
+                    .call(&mut store, &params, slice::from_mut(&mut result))
+                    .unwrap();
+                assert_eq!(result.i32(), Some(expected));
+            }
+        }
+    }
 }
 
 #[test]
 fn static_add3_works() {
-    let (mut store, add3) = setup_add3();
-    let typed_add3 = add3.typed::<(i32, i32, i32), i32>(&mut store).unwrap();
-    let result = typed_add3.call(&mut store, (1, 2, 3)).unwrap();
-    assert_eq!(result, 6);
+    let (mut store, add3, add3_dyn) = setup_add3();
+    let add3 = add3.typed::<(i32, i32, i32), i32>(&mut store).unwrap();
+    let add3_dyn = add3_dyn.typed::<(i32, i32, i32), i32>(&mut store).unwrap();
+    for a in 0..5 {
+        for b in 0..5 {
+            for c in 0..5 {
+                let expected = a + b + c;
+                assert_eq!(add3.call(&mut store, (a, b, c)).unwrap(), expected);
+                assert_eq!(add3_dyn.call(&mut store, (a, b, c)).unwrap(), expected);
+            }
+        }
+    }
 }
 
-fn setup_duplicate() -> (Store<()>, Func) {
+// Returns a `Store` and two Wasm host functions that duplicate their inputs.
+fn setup_duplicate() -> (Store<()>, Func, Func) {
     let mut store = test_setup();
-    // This host function takes one `i32` argument and returns it twice.
     let duplicate = Func::wrap(&mut store, |value: i32| (value, value));
-    (store, duplicate)
+    let duplicate_dyn = Func::new(
+        &mut store,
+        FuncType::new([ValueType::I32], [ValueType::I32, ValueType::I32]),
+        |_caller, inputs: &[Value], results: &mut [Value]| {
+            assert_eq!(inputs.len(), 1);
+            assert_eq!(results.len(), 2);
+            let input = inputs[0].i32().unwrap();
+            results[0] = input.into();
+            results[1] = input.into();
+            Ok(())
+        },
+    );
+    (store, duplicate, duplicate_dyn)
 }
 
 #[test]
 fn dynamic_duplicate_works() {
-    let (mut store, duplicate) = setup_duplicate();
-    let mut result = [Value::I32(0), Value::I32(0)];
-    duplicate
-        .call(&mut store, &[Value::I32(10)], &mut result)
-        .unwrap();
-    assert_eq!((result[0].i32(), result[1].i32()), (Some(10), Some(10)));
+    let (mut store, duplicate, duplicate_dyn) = setup_duplicate();
+    for input in 0..10 {
+        let params = [Value::I32(input)];
+        let expected = [Value::I32(input), Value::I32(input)];
+        let mut results = [Value::I32(0), Value::I32(0)];
+        // Call to Func with statically typed closure.
+        duplicate.call(&mut store, &params, &mut results).unwrap();
+        assert_eq!(results[0].i32(), expected[0].i32());
+        assert_eq!(results[1].i32(), expected[1].i32());
+        // Reset result before execution.
+        results = [Value::I32(0), Value::I32(0)];
+        // Call to Func with dynamically typed closure.
+        duplicate_dyn
+            .call(&mut store, &params, &mut results)
+            .unwrap();
+        assert_eq!(results[0].i32(), expected[0].i32());
+        assert_eq!(results[1].i32(), expected[1].i32());
+    }
 }
 
 #[test]
 fn static_duplicate_works() {
-    let (mut store, duplicate) = setup_duplicate();
-    let typed_duplicate = duplicate.typed::<i32, (i32, i32)>(&mut store).unwrap();
-    let result = typed_duplicate.call(&mut store, 10).unwrap();
-    assert_eq!(result, (10, 10));
+    let (mut store, duplicate, duplicate_dyn) = setup_duplicate();
+    let duplicate = duplicate.typed::<i32, (i32, i32)>(&mut store).unwrap();
+    let duplicate_dyn = duplicate_dyn.typed::<i32, (i32, i32)>(&mut store).unwrap();
+    for input in 0..10 {
+        assert_eq!(duplicate.call(&mut store, input).unwrap(), (input, input));
+        assert_eq!(
+            duplicate_dyn.call(&mut store, input).unwrap(),
+            (input, input)
+        );
+    }
 }
 
 fn setup_many_params() -> (Store<()>, Func) {
