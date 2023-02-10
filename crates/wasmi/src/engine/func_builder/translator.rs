@@ -195,13 +195,8 @@ impl<'parser> FuncTranslator<'parser> {
     }
 
     /// Returns the configured [`FuelCosts`] of the [`Engine`].
-    ///
-    /// Returns `None` if gas metering is disabled.
-    fn fuel_costs(&self) -> Option<&FuelCosts> {
-        if self.is_fuel_metering_enabled() {
-            return Some(self.engine().config().fuel_costs());
-        }
-        None
+    fn fuel_costs(&self) -> &FuelCosts {
+        self.engine().config().fuel_costs()
     }
 
     /// Returns the most recent [`ConsumeFuel`] instruction in the translation process.
