@@ -449,12 +449,15 @@ impl<'a> Instruction<'a> {
                         function_index,
                         function_name,
                         op_index_in_plugin,
-                    } => Opcode::CallHost {
+                    } => Opcode::InternalHostCall {
                         plugin: *plugin,
                         function_index: *function_index,
                         function_name: function_name.clone(),
                         op_index_in_plugin: *op_index_in_plugin,
                     },
+                    specs::types::FunctionType::HostFunctionExternal { op, sig, .. } => {
+                        Opcode::ExternalHostCall { op: *op, sig: *sig }
+                    }
                 }
             }
             Instruction::CallIndirect(idx) => Opcode::CallIndirect { type_idx: idx },

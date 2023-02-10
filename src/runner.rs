@@ -32,6 +32,7 @@ use alloc::{boxed::Box, vec::Vec};
 use core::{cell::RefCell, fmt, ops, u32, usize};
 use parity_wasm::elements::Local;
 use specs::{
+    external_host_call_table::ExternalHostCallSignature,
     itable::{BinOp, BitOp, InstructionTableEntry, RelOp, ShiftOp, UnaryOp},
     jtable::JumpTableEntry,
     mtable::{MemoryReadSize, MemoryStoreSize, VarType},
@@ -416,6 +417,20 @@ impl Interpreter {
                                                 )),
                                                 signature: signature.clone(),
                                                 op_index_in_plugin: *op_index_in_plugin,
+                                            }
+                                        }
+                                        StepInfo::ExternalHostCall { op, sig, .. } => {
+                                            if let ExternalHostCallSignature::Return = sig {
+                                                entry.step_info = StepInfo::ExternalHostCall {
+                                                    op: *op,
+                                                    value: Some(
+                                                        from_value_internal_to_u64_with_typ(
+                                                            VarType::I64,
+                                                            return_val.into(),
+                                                        ),
+                                                    ),
+                                                    sig: *sig,
+                                                }
                                             }
                                         }
                                         _ => unreachable!(),
@@ -1071,6 +1086,21 @@ impl Interpreter {
                                 ret_val: None,
                                 signature,
                                 op_index_in_plugin: *op_index_in_plugin,
+                            }
+                        }
+                        specs::types::FunctionType::HostFunctionExternal { op, sig, .. } => {
+                            StepInfo::ExternalHostCall {
+                                op: *op,
+                                value: match sig {
+                                    ExternalHostCallSignature::Argument => {
+                                        Some(from_value_internal_to_u64_with_typ(
+                                            VarType::I64,
+                                            *self.value_stack.top(),
+                                        ))
+                                    }
+                                    ExternalHostCallSignature::Return => None,
+                                },
+                                sig: *sig,
                             }
                         }
                     }

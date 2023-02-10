@@ -230,11 +230,24 @@ impl Tracer {
                         } => {
                             let plugin_desc = self.lookup_host_plugin(host_func_index);
 
-                            FunctionType::HostFunction {
-                                plugin: plugin_desc.plugin,
-                                function_index: host_func_index,
-                                function_name: plugin_desc.name,
-                                op_index_in_plugin: plugin_desc.op_index_in_plugin,
+                            match plugin_desc {
+                                HostFunctionDesc::Internal {
+                                    name,
+                                    op_index_in_plugin,
+                                    plugin,
+                                } => FunctionType::HostFunction {
+                                    plugin,
+                                    function_index: host_func_index,
+                                    function_name: name,
+                                    op_index_in_plugin,
+                                },
+                                HostFunctionDesc::External { name, op, sig } => {
+                                    FunctionType::HostFunctionExternal {
+                                        function_name: name,
+                                        op,
+                                        sig,
+                                    }
+                                }
                             }
                         }
                     };
