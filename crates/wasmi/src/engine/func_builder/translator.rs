@@ -25,6 +25,7 @@ use crate::{
             SignatureIdx,
             TableIdx,
         },
+        config::FuelCosts,
         func_builder::control_frame::ControlFrameKind,
         DropKeep,
         FuncBody,
@@ -191,6 +192,16 @@ impl<'parser> FuncTranslator<'parser> {
     /// respective scope.
     fn is_fuel_metering_enabled(&self) -> bool {
         self.engine().config().get_consume_fuel()
+    }
+
+    /// Returns the configured [`FuelCosts`] of the [`Engine`].
+    ///
+    /// Returns `None` if gas metering is disabled.
+    fn fuel_costs(&self) -> Option<FuelCosts> {
+        if !self.is_fuel_metering_enabled() {
+            return None;
+        }
+        Some(*self.engine().config().fuel_costs())
     }
 
     /// Returns the most recent [`ConsumeFuel`] instruction in the translation process.
