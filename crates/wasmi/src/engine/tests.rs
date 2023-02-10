@@ -760,18 +760,6 @@ fn br_table_return() {
     assert_func_bodies(&wasm, [expected]);
 }
 
-/// Returns the total consumed fuel of all instructions in `instr`.
-///
-/// # Panics
-///
-/// If the fuel cost of any of the instructions is not known statically.
-fn fuel(instrs: impl IntoIterator<Item = Instruction>) -> u64 {
-    instrs
-        .into_iter()
-        .map(|instr| instr.consumed_fuel().unwrap())
-        .sum()
-}
-
 #[test]
 fn metered_simple_01() {
     let wasm = wat2wasm(
@@ -783,7 +771,7 @@ fn metered_simple_01() {
         )
     "#,
     );
-    let expected_fuel = fuel([Instruction::local_get(1)]);
+    let expected_fuel = 100;
     let expected = [
         Instruction::consume_fuel(expected_fuel),
         Instruction::local_get(1),
@@ -807,11 +795,7 @@ fn metered_simple_02() {
         )
     "#,
     );
-    let expected_fuel = fuel([
-        Instruction::local_get(1),
-        Instruction::local_get(2),
-        Instruction::Drop,
-    ]);
+    let expected_fuel = 100;
     let expected = [
         Instruction::consume_fuel(expected_fuel),
         Instruction::local_get(1),
@@ -839,15 +823,7 @@ fn metered_simple_03() {
         )
     "#,
     );
-    let expected_fuel = fuel([
-        Instruction::local_get(2),
-        Instruction::local_get(2),
-        Instruction::I32Add,
-        Instruction::local_set(2),
-        Instruction::local_get(2),
-        Instruction::local_get(3),
-        Instruction::I32Mul,
-    ]);
+    let expected_fuel = 100;
     let expected = [
         Instruction::consume_fuel(expected_fuel),
         Instruction::local_get(2),
@@ -889,8 +865,9 @@ fn metered_nested_blocks() {
         )
     "#,
     );
+    let expected_fuel = 100;
     let expected = [
-        Instruction::consume_fuel(9),
+        Instruction::consume_fuel(expected_fuel),
         Instruction::local_get(1),
         Instruction::local_get(2),
         Instruction::local_get(3),
