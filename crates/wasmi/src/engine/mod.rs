@@ -40,7 +40,7 @@ use self::{
     stack::{FuncFrame, Stack, ValueStack},
 };
 pub(crate) use self::{
-    func_args::{FuncParams, FuncResults},
+    func_args::{FuncFinished, FuncParams, FuncResults},
     func_types::DedupFuncType,
 };
 use super::{func::FuncEntityInternal, AsContextMut, Func};
