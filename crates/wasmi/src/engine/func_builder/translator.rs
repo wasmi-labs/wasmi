@@ -198,10 +198,10 @@ impl<'parser> FuncTranslator<'parser> {
     ///
     /// Returns `None` if gas metering is disabled.
     fn fuel_costs(&self) -> Option<&FuelCosts> {
-        if !self.is_fuel_metering_enabled() {
-            return None;
+        if self.is_fuel_metering_enabled() {
+            return Some(self.engine().config().fuel_costs());
         }
-        Some(self.engine().config().fuel_costs())
+        None
     }
 
     /// Returns the most recent [`ConsumeFuel`] instruction in the translation process.
