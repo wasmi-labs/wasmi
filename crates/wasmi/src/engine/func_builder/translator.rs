@@ -49,6 +49,7 @@ use crate::{
 };
 use wasmi_core::{ValueType, F32, F64};
 use wasmparser::VisitOperator;
+use alloc::vec::Vec;
 
 /// Reusable allocations of a [`FuncBuilder`].
 #[derive(Debug, Default)]
