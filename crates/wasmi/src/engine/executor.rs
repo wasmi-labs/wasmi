@@ -147,13 +147,13 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 Instr::I64Store16(offset) => self.visit_i64_store_16(offset)?,
                 Instr::I64Store32(offset) => self.visit_i64_store_32(offset)?,
                 Instr::MemorySize => self.visit_memory_size(),
-                Instr::MemoryGrow => self.visit_memory_grow(),
+                Instr::MemoryGrow => self.visit_memory_grow()?,
                 Instr::MemoryFill => self.visit_memory_fill()?,
                 Instr::MemoryCopy => self.visit_memory_copy()?,
                 Instr::MemoryInit(segment) => self.visit_memory_init(segment)?,
                 Instr::DataDrop(segment) => self.visit_data_drop(segment),
                 Instr::TableSize { table } => self.visit_table_size(table),
-                Instr::TableGrow { table } => self.visit_table_grow(table),
+                Instr::TableGrow { table } => self.visit_table_grow(table)?,
                 Instr::TableFill { table } => self.visit_table_fill(table)?,
                 Instr::TableGet { table } => self.visit_table_get(table)?,
                 Instr::TableSet { table } => self.visit_table_set(table)?,
@@ -467,6 +467,21 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.value_stack.drop_keep(drop_keep);
         self.sync_stack_ptr();
     }
+
+    /// Consume an amount of fuel specified by the closure.
+    ///
+    /// The closure `delta` is only evaluated if fuel metering is enabled.
+    ///
+    /// # Errors
+    ///
+    /// If the [`StoreInner`] ran out of fuel.
+    fn consume_fuel_with(&mut self, delta: impl FnOnce(&Self) -> u64) -> Result<(), TrapCode> {
+        if self.ctx.engine().config().get_consume_fuel() {
+            let delta = delta(self);
+            self.ctx.fuel_mut().consume_fuel(delta)?;
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -481,6 +496,9 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_consume_fuel(&mut self, amount: u64) -> Result<(), TrapCode> {
+        // We do not have to check if fuel metering is enabled since
+        // these `wasmi` instructions are only generated if fuel metering
+        // is enabled to begin with.
         self.ctx.fuel_mut().consume_fuel(amount)?;
         self.try_next_instr()
     }
@@ -627,15 +645,20 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.next_instr()
     }
 
-    fn visit_memory_grow(&mut self) {
+    fn visit_memory_grow(&mut self) -> Result<(), TrapCode> {
         /// The WebAssembly spec demands to return `0xFFFF_FFFF`
         /// in case of failure for the `memory.grow` instruction.
         const ERR_VALUE: u32 = u32::MAX;
         let memory = self.default_memory();
-        let result = Pages::new(self.value_stack.pop_as()).map_or(ERR_VALUE, |additional| {
+        let delta = self.value_stack.pop_as();
+        self.consume_fuel_with(|this| {
+            let delta_in_bytes = Pages::new(delta).and_then(Pages::to_bytes).unwrap_or(0) as u64;
+            delta_in_bytes * this.ctx.engine().config().fuel_costs().memory_per_byte
+        })?;
+        let result = Pages::new(delta).map_or(ERR_VALUE, |delta| {
             self.ctx
                 .resolve_memory_mut(&memory)
-                .grow(additional)
+                .grow(delta)
                 .map(u32::from)
                 .unwrap_or(ERR_VALUE)
         });
@@ -644,16 +667,19 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         // is used again.
         self.cache.reset_default_memory_bytes();
         self.value_stack.push(result);
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn visit_memory_fill(&mut self) -> Result<(), TrapCode> {
-        let bytes = self.cache.default_memory_bytes(self.ctx);
         // The `n`, `val` and `d` variable bindings are extracted from the Wasm specification.
         let (d, val, n) = self.value_stack.pop3();
         let n = i32::from(n) as usize;
         let offset = i32::from(d) as usize;
         let byte = u8::from(val);
+        self.consume_fuel_with(|this| {
+            n as u64 * this.ctx.engine().config().fuel_costs().memory_per_byte
+        })?;
+        let bytes = self.cache.default_memory_bytes(self.ctx);
         let memory = bytes
             .data_mut()
             .get_mut(offset..)
@@ -669,6 +695,9 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let n = i32::from(n) as usize;
         let src_offset = i32::from(s) as usize;
         let dst_offset = i32::from(d) as usize;
+        self.consume_fuel_with(|this| {
+            n as u64 * this.ctx.engine().config().fuel_costs().memory_per_byte
+        })?;
         let data = self.cache.default_memory_bytes(self.ctx).data_mut();
         // These accesses just perform the bounds checks required by the Wasm spec.
         data.get(src_offset..)
@@ -687,6 +716,9 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let n = i32::from(n) as usize;
         let src_offset = i32::from(s) as usize;
         let dst_offset = i32::from(d) as usize;
+        self.consume_fuel_with(|this| {
+            n as u64 * this.ctx.engine().config().fuel_costs().memory_per_byte
+        })?;
         let (memory, data) = self
             .cache
             .get_default_memory_and_data_segment(self.ctx, segment);
@@ -717,12 +749,15 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.next_instr()
     }
 
-    fn visit_table_grow(&mut self, table_index: TableIdx) {
+    fn visit_table_grow(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
         // As demanded by the Wasm specification this value is returned
         // by `table.grow` if the growth operation was unsuccessful.
         const ERROR_CODE: u32 = u32::MAX;
         let (init, delta) = self.value_stack.pop2();
         let delta: u32 = delta.into();
+        self.consume_fuel_with(|this| {
+            u64::from(delta) * this.ctx.engine().config().fuel_costs().table_per_element
+        })?;
         let table = self.cache.get_table(self.ctx, table_index);
         let result = self
             .ctx
@@ -730,7 +765,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             .grow_untyped(delta, init)
             .unwrap_or(ERROR_CODE);
         self.value_stack.push(result);
-        self.next_instr()
+        self.try_next_instr()
     }
 
     fn visit_table_fill(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
@@ -738,6 +773,9 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let (i, val, n) = self.value_stack.pop3();
         let dst: u32 = i.into();
         let len: u32 = n.into();
+        self.consume_fuel_with(|this| {
+            u64::from(len) * this.ctx.engine().config().fuel_costs().table_per_element
+        })?;
         let table = self.cache.get_table(self.ctx, table_index);
         self.ctx
             .resolve_table_mut(&table)
@@ -774,6 +812,9 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let len = u32::from(n);
         let src_index = u32::from(s);
         let dst_index = u32::from(d);
+        self.consume_fuel_with(|this| {
+            u64::from(len) * this.ctx.engine().config().fuel_costs().table_per_element
+        })?;
         // Query both tables and check if they are the same:
         let dst = self.cache.get_table(self.ctx, dst);
         let src = self.cache.get_table(self.ctx, src);
@@ -799,6 +840,9 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let len = u32::from(n);
         let src_index = u32::from(s);
         let dst_index = u32::from(d);
+        self.consume_fuel_with(|this| {
+            u64::from(len) * this.ctx.engine().config().fuel_costs().table_per_element
+        })?;
         let (instance, table, element) = self
             .cache
             .get_table_and_element_segment(self.ctx, table, elem);
