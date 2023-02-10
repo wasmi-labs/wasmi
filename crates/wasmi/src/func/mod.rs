@@ -23,7 +23,7 @@ use super::{
     Stored,
 };
 use crate::{core::Trap, engine::ResumableCall, Error, Value};
-use alloc::sync::Arc;
+use alloc::{boxed::Box, sync::Arc};
 use core::{fmt, fmt::Debug, num::NonZeroU32};
 use wasmi_arena::ArenaIndex;
 
