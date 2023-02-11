@@ -64,7 +64,11 @@ pub struct Args {
     invoke: Option<String>,
 
     /// Possibly zero list of positional arguments
-    #[clap(value_name = "ARGS", trailing_var_arg = true, allow_hyphen_values = true)]
+    #[clap(
+        value_name = "ARGS",
+        trailing_var_arg = true,
+        allow_hyphen_values = true
+    )]
     func_args: Vec<String>,
 }
 
