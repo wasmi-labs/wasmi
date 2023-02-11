@@ -650,18 +650,34 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         /// in case of failure for the `memory.grow` instruction.
         const ERR_VALUE: u32 = u32::MAX;
         let memory = self.default_memory();
-        let delta = self.value_stack.pop_as();
+        let delta: u32 = self.value_stack.pop_as();
+        let delta = match Pages::new(delta) {
+            Some(pages) => pages,
+            None => {
+                // Cannot grow memory so we push the expected error value.
+                self.value_stack.push(ERR_VALUE);
+                return self.try_next_instr();
+            }
+        };
         self.consume_fuel_with(|this| {
-            let delta_in_bytes = Pages::new(delta).and_then(Pages::to_bytes).unwrap_or(0) as u64;
-            delta_in_bytes * this.ctx.engine().config().fuel_costs().memory_per_byte
+            // Since `memory.grow` is extremely expensive in the success case
+            // in terms of fuel costs we only want to pay for them when the
+            // operation is actually going to succeed.
+            this.ctx
+                .resolve_memory(&memory)
+                .can_grow(delta)
+                .then(|| {
+                    let delta_in_bytes = delta.to_bytes().unwrap_or(0) as u64;
+                    delta_in_bytes * this.ctx.engine().config().fuel_costs().memory_per_byte
+                })
+                .unwrap_or(0)
         })?;
-        let result = Pages::new(delta).map_or(ERR_VALUE, |delta| {
-            self.ctx
-                .resolve_memory_mut(&memory)
-                .grow(delta)
-                .map(u32::from)
-                .unwrap_or(ERR_VALUE)
-        });
+        let result = self
+            .ctx
+            .resolve_memory_mut(&memory)
+            .grow(delta)
+            .map(u32::from)
+            .unwrap_or(ERR_VALUE);
         // The memory grow might have invalidated the cached linear memory
         // so we need to reset it in order for the cache to reload in case it
         // is used again.
