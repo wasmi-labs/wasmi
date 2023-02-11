@@ -43,7 +43,7 @@ macro_rules! impl_add_to_linker_for_funcs {
             fn $fname:ident ($( $arg:ident : $typ:ty ),* $(,)? ) -> $ret:tt
         );+ $(;)?
     ) => {
-        fn add_wasi_snapshot_to_wasmi_linker<'a, T, U>(
+        fn add_wasi_snapshot_to_wasmi_linker<T, U>(
             linker: &mut Linker<T>,
             mut store_ctx: impl AsContextMut<UserState = T>,
             wasi_ctx: impl Fn(&mut T) -> &mut U + Send + Sync + Copy + 'static)
