@@ -3,7 +3,6 @@ name = "wasmi_cli"
 version = "0.26.0"
 documentation = "https://docs.rs/wasmi/"
 description = "WebAssembly interpreter"
-publish = true
 authors.workspace = true
 repository.workspace = true
 edition.workspace = true
@@ -13,11 +12,11 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
-clap = { version = "4", features = ["derive"] }
-wasmi = { path = "../wasmi", version = "0.26.0" }
-wat = "1"
 anyhow = "1"
-wasmi_wasi = { path = "../wasi" }
+clap = { version = "4", features = ["derive"] }
+wasmi = { version = "0.26.0", path = "../wasmi" }
+wasmi_wasi = { version = "0.1.0", path = "../wasi" }
+wat = "1"
 
 [dev-dependencies]
 assert_cmd = "2.0.7"
