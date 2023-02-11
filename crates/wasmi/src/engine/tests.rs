@@ -1282,10 +1282,7 @@ fn metered_load_01() {
         Instruction::I32Load(Offset::from(0)),
         Instruction::Return(drop_keep(1, 1)),
     ];
-    assert_func_bodies_metered(
-        &wasm,
-        [expected],
-    );
+    assert_func_bodies_metered(&wasm, [expected]);
 }
 
 #[test]
@@ -1311,8 +1308,5 @@ fn metered_store_01() {
         Instruction::I32Store(Offset::from(0)),
         Instruction::Return(drop_keep(2, 0)),
     ];
-    assert_func_bodies_metered(
-        &wasm,
-        [expected],
-    );
+    assert_func_bodies_metered(&wasm, [expected]);
 }
