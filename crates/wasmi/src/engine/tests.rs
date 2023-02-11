@@ -1222,11 +1222,11 @@ fn metered_calls_03() {
         r#"
         (module
             (func $f0 (param $a i32) (result i32)
-                (local i32) ;; index 1
-                (local.set 1 (local.get $a))
+                (local $b i32) ;; index 1
+                (local.set $b (local.get $a))
                 (i32.add
                     (local.get $a)
-                    (local.get 1)
+                    (local.get $b)
                 )
             )
             (func $f1 (param $a i32) (result i32)
