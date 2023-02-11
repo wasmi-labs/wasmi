@@ -848,6 +848,43 @@ fn metered_simple_03() {
 }
 
 #[test]
+fn metered_if_01() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param $condition i32) (param $then i32) (param $else i32) (result i32)
+                (if (result i32) (local.get $condition)
+                    (then
+                        (return (local.get $then))
+                    )
+                    (else 
+                        (return (local.get $else))
+                    )
+                )
+            )
+        )
+    "#,
+    );
+    let costs = fuel_costs();
+    let expected_fuel_fn = 4 * costs.base + 3 * costs.call_per_local + costs.branch_per_kept;
+    let expected_fuel_then = 3 * costs.base + costs.branch_per_kept;
+    let expected_fuel_else = expected_fuel_then;
+    let expected = [
+        /* 0 */ Instruction::consume_fuel(expected_fuel_fn), // function body
+        /* 1 */ Instruction::local_get(3), // if condition
+        /* 2 */ Instruction::BrIfEqz(params!(2 => 6, drop: 0, keep: 0)),
+        /* 3 */ Instruction::consume_fuel(expected_fuel_then), // then
+        /* 4 */ Instruction::local_get(2),
+        /* 5 */ Instruction::Return(drop_keep(3, 1)),
+        /* 6 */ Instruction::consume_fuel(expected_fuel_else), // else
+        /* 7 */ Instruction::local_get(1),
+        /* 8 */ Instruction::Return(drop_keep(3, 1)), // end if
+        /* 9 */ Instruction::Return(drop_keep(3, 1)),
+    ];
+    assert_func_bodies_metered(&wasm, [expected]);
+}
+
+#[test]
 fn metered_nested_blocks() {
     let wasm = wat2wasm(
         r#"
