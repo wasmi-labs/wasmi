@@ -891,3 +891,53 @@ fn metered_nested_blocks() {
     ];
     assert_func_bodies_metered(&wasm, [expected]);
 }
+
+#[test]
+fn metered_nested_loops() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param $p0 i32) (result i32)
+                local.get $p0
+                (loop
+                    local.get $p0
+                    (loop
+                        local.get $p0
+                        (loop
+                            local.get $p0
+                            (loop
+                                local.get $p0
+                                drop
+                            )
+                            drop
+                        )
+                        drop
+                    )
+                    drop
+                )
+            )
+        )
+    "#,
+    );
+    let costs = fuel_costs();
+    let expected_fuel_outer = 3 * costs.base + costs.call_per_local + costs.branch_per_kept;
+    let expected_fuel_inner = 3 * costs.base;
+    let expected = [
+        Instruction::consume_fuel(expected_fuel_outer),
+        Instruction::local_get(1),
+        Instruction::consume_fuel(expected_fuel_inner),
+        Instruction::local_get(2),
+        Instruction::consume_fuel(expected_fuel_inner),
+        Instruction::local_get(3),
+        Instruction::consume_fuel(expected_fuel_inner),
+        Instruction::local_get(4),
+        Instruction::consume_fuel(expected_fuel_inner),
+        Instruction::local_get(5),
+        Instruction::Drop,
+        Instruction::Drop,
+        Instruction::Drop,
+        Instruction::Drop,
+        Instruction::Return(drop_keep(1, 1)),
+    ];
+    assert_func_bodies_metered(&wasm, [expected]);
+}
