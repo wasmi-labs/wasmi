@@ -825,6 +825,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let stack_height = self.frame_stack_height(block_type);
             let else_label = self.alloc.inst_builder.new_label();
             let end_label = self.alloc.inst_builder.new_label();
+            self.bump_fuel_consumption(self.fuel_costs().base);
+            let branch_params = self.branch_params(else_label, DropKeep::none());
+            self.alloc
+                .inst_builder
+                .push_inst(Instruction::BrIfEqz(branch_params));
             let consume_fuel = self.is_fuel_metering_enabled().then(|| {
                 self.alloc
                     .inst_builder
@@ -837,11 +842,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 stack_height,
                 consume_fuel,
             ));
-            self.bump_fuel_consumption(self.fuel_costs().base);
-            let branch_params = self.branch_params(else_label, DropKeep::none());
-            self.alloc
-                .inst_builder
-                .push_inst(Instruction::BrIfEqz(branch_params));
         } else {
             self.alloc
                 .control_frames
