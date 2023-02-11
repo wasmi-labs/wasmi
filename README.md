@@ -36,14 +36,13 @@ such as Wasmtime it is also a decent option for initial prototyping.
 
 The following list states some of the distinct features of `wasmi`.
 
-- Primarily concerned about
-    - correct and deterministic WebAssembly execution.
-    - WebAssembly specification compliance.
-- Can itself be compiled to and executed via WebAssembly.
+- Focus on simple, correct and deterministic WebAssembly execution.
+- Can itself run inside of WebAssembly.
 - Low-overhead and cross-platform WebAssembly runtime.
-- Loosely mirrors the [Wasmtime API](https://docs.rs/wasmtime/)
-  to act as a drop-in solution.
-- Supports resumable function calls.
+- Loosely mirrors the [Wasmtime API](https://docs.rs/wasmtime/).
+- Resumable function calls.
+- Built-in support for fuel metering.
+- 100% official WebAssembly spec testsuite compliance.
 
 ## WebAssembly Proposals
 
@@ -61,7 +60,7 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 | [`tail-calls`] | ⌛ | Support is planned. [(#363)] |
 | [`extended-const`] | ⌛ | Support is planned. [(#638)] |
 | | |
-| [WASI] | 🟡 | Experimental support via the [`wasmi_wasi` crate]. |
+| [WASI] | 🟡 | Experimental support via the [`wasmi_wasi` crate] or the `wasmi` CLI application. |
 
 [`mutable-global`]: https://github.com/WebAssembly/mutable-global
 [`saturating-float-to-int`]: https://github.com/WebAssembly/nontrapping-float-to-int-conversions
@@ -95,7 +94,6 @@ Then run arbitrary `wasm32-unknown-unknown` Wasm blobs via:
 ```console
 wasmi_cli <WASM_FILE> <FUNC_NAME> [<FUNC_ARGS>]*
 ```
-**Note:** As of version `v0.23.1` the `wasmi_cli` application does not yet support WASI out of the box.
 
 ### As Rust Library
 
