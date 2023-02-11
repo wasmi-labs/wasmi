@@ -198,7 +198,7 @@ impl MemoryEntity {
         Ok((new_pages, new_size))
     }
 
-    /// Returns `true` if [`MemoryEntity::grow`](`additional`) would succeed.
+    /// Returns `true` if [`MemoryEntity::grow`] by `additional` [`Pages`] would succeed.
     pub fn can_grow(&self, additional: Pages) -> bool {
         self.check_grow(additional).is_ok()
     }
