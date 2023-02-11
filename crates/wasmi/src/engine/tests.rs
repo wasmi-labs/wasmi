@@ -885,7 +885,7 @@ fn metered_if_01() {
 }
 
 #[test]
-fn metered_block_in_if() {
+fn metered_block_in_if_01() {
     let wasm = wat2wasm(
         r#"
         (module
@@ -910,21 +910,105 @@ fn metered_block_in_if() {
     let expected_fuel_fn = 5 * costs.base + 3 * costs.call_per_local + costs.branch_per_kept;
     let expected_fuel_then = 3 * costs.base + costs.branch_per_kept;
     let expected_fuel_else = expected_fuel_then;
+    #[rustfmt::skip]
+    let expected = [
+        /*  0 */ Instruction::consume_fuel(expected_fuel_fn), // function body
+        /*  1 */ Instruction::local_get(3), // if condition
+        /*  2 */ Instruction::BrIfEqz(params!(2 => 7, drop: 0, keep: 0)),
+        /*  3 */ Instruction::consume_fuel(expected_fuel_then), // then
+        /*  4 */ Instruction::local_get(2),
+        /*  5 */ Instruction::Return(drop_keep(3, 1)),
+        /*  6 */ Instruction::Br(params!(6 => 10, drop: 0, keep: 0)), // This deadcode Br is created because
+                                                                      // `wasmi`'s dead code analysis does not
+                                                                      // properly detect dead code in blocks
+                                                                      // (and loops) that have an unreachable end.
+        /*  7 */ Instruction::consume_fuel(expected_fuel_else), // else
+        /*  8 */ Instruction::local_get(1),
+        /*  9 */ Instruction::Return(drop_keep(3, 1)), // end if
+        /* 10 */ Instruction::Return(drop_keep(3, 1)),
+    ];
+    assert_func_bodies_metered(&wasm, [expected]);
+}
+
+#[test]
+fn metered_block_in_if_02() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param $condition i32) (param $then i32) (param $else i32) (result i32)
+                (if (result i32) (local.get $condition)
+                    (then
+                        (block (result i32)
+                            (local.get $then)
+                        )
+                    )
+                    (else
+                        (block (result i32)
+                            (local.get $else)
+                        )
+                    )
+                )
+            )
+        )
+    "#,
+    );
+    let costs = fuel_costs();
+    let expected_fuel_fn = 5 * costs.base + 3 * costs.call_per_local + costs.branch_per_kept;
+    let expected_fuel_then = 2 * costs.base;
+    let expected_fuel_else = expected_fuel_then;
+    let expected = [
+        /*  0 */ Instruction::consume_fuel(expected_fuel_fn), // function body
+        /*  1 */ Instruction::local_get(3), // if condition
+        /*  2 */ Instruction::BrIfEqz(params!(2 => 6, drop: 0, keep: 0)),
+        /*  3 */ Instruction::consume_fuel(expected_fuel_then), // then
+        /*  4 */ Instruction::local_get(2),
+        /*  5 */ Instruction::Br(params!(6 => 9, drop: 0, keep: 0)),
+        /*  6 */ Instruction::consume_fuel(expected_fuel_else), // else
+        /*  7 */ Instruction::local_get(1),
+        /*  8 */ Instruction::Return(drop_keep(3, 1)), // end if
+    ];
+    assert_func_bodies_metered(&wasm, [expected]);
+}
+
+#[test]
+fn metered_loop_in_if() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param $condition i32) (param $then i32) (param $else i32) (result i32)
+                (if (result i32) (local.get $condition)
+                    (then
+                        (loop (result i32)
+                            (local.get $then)
+                        )
+                    )
+                    (else
+                        (loop (result i32)
+                            (local.get $else)
+                        )
+                    )
+                )
+            )
+        )
+    "#,
+    );
+    let costs = fuel_costs();
+    let expected_fuel_fn = 5 * costs.base + 3 * costs.call_per_local + costs.branch_per_kept;
+    let expected_fuel_then = costs.base;
+    let expected_fuel_else = expected_fuel_then;
+    let expected_fuel_loop = 2 * costs.base;
     let expected = [
         /* 0 */ Instruction::consume_fuel(expected_fuel_fn), // function body
         /* 1 */ Instruction::local_get(3), // if condition
         /* 2 */ Instruction::BrIfEqz(params!(2 => 7, drop: 0, keep: 0)),
         /* 3 */ Instruction::consume_fuel(expected_fuel_then), // then
-        /* 4 */ Instruction::local_get(2),
-        /* 5 */ Instruction::Return(drop_keep(3, 1)),
-        /* 5 */ Instruction::Br(params!(5 => 9, drop: 0, keep: 0)), // This deadcode Br is created because
-                                                                    // `wasmi`'s dead code analysis does not
-                                                                    // properly detect dead code in blocks
-                                                                    // (and loops) that have an unreachable end.
-        /* 6 */ Instruction::consume_fuel(expected_fuel_else), // else
-        /* 7 */ Instruction::local_get(1),
-        /* 8 */ Instruction::Return(drop_keep(3, 1)), // end if
-        /* 9 */ Instruction::Return(drop_keep(3, 1)),
+        /* 4 */ Instruction::consume_fuel(expected_fuel_loop), // loop
+        /* 5 */ Instruction::local_get(2),
+        /* 6 */ Instruction::Br(params!(5 => 9, drop: 0, keep: 0)),
+        /* 7 */ Instruction::consume_fuel(expected_fuel_else), // else
+        /* 8 */ Instruction::consume_fuel(expected_fuel_loop), // loop
+        /* 9 */ Instruction::local_get(1),
+        /*10 */ Instruction::Return(drop_keep(3, 1)),
     ];
     assert_func_bodies_metered(&wasm, [expected]);
 }
