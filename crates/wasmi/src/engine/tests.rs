@@ -1,5 +1,5 @@
 use super::{
-    bytecode::{FuncIdx, GlobalIdx},
+    bytecode::{FuncIdx, GlobalIdx, Offset},
     *,
 };
 use crate::{
@@ -1259,5 +1259,60 @@ fn metered_calls_03() {
     assert_func_bodies_metered(
         &wasm,
         [expected_f0.iter().copied(), expected_f1.iter().copied()],
+    );
+}
+
+#[test]
+fn metered_load_01() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (memory 1)
+            (func (param $src i32) (result i32)
+                (i32.load (local.get $src))
+            )
+        )
+    "#,
+    );
+    let costs = fuel_costs();
+    let expected_fuel = 3 * costs.base + costs.load + costs.call_per_local + costs.branch_per_kept;
+    let expected = [
+        Instruction::consume_fuel(expected_fuel),
+        Instruction::local_get(1),
+        Instruction::I32Load(Offset::from(0)),
+        Instruction::Return(drop_keep(1, 1)),
+    ];
+    assert_func_bodies_metered(
+        &wasm,
+        [expected],
+    );
+}
+
+#[test]
+fn metered_store_01() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (memory 1)
+            (func (param $dst i32) (param $value i32)
+                (i32.store
+                    (local.get $dst) (local.get $value)
+                )
+            )
+        )
+    "#,
+    );
+    let costs = fuel_costs();
+    let expected_fuel = 4 * costs.base + costs.store + 2 * costs.call_per_local;
+    let expected = [
+        Instruction::consume_fuel(expected_fuel),
+        Instruction::local_get(2),
+        Instruction::local_get(2),
+        Instruction::I32Store(Offset::from(0)),
+        Instruction::Return(drop_keep(2, 0)),
+    ];
+    assert_func_bodies_metered(
+        &wasm,
+        [expected],
     );
 }
