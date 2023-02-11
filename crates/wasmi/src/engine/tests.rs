@@ -1,4 +1,7 @@
-use super::{bytecode::GlobalIdx, *};
+use super::{
+    bytecode::{FuncIdx, GlobalIdx},
+    *,
+};
 use crate::{
     engine::{
         bytecode::{BranchOffset, BranchParams, Instruction},
@@ -1140,4 +1143,121 @@ fn metered_global_bump() {
         Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies_metered(&wasm, [expected]);
+}
+
+#[test]
+fn metered_calls_01() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func $f0 (result i32)
+                (i32.const 0)
+            )
+            (func $f1 (result i32)
+                (call $f0)
+            )
+        )
+    "#,
+    );
+    let costs = fuel_costs();
+    let expected_fuel_f0 = 3 * costs.base;
+    let expected_f0 = [
+        Instruction::consume_fuel(expected_fuel_f0),
+        Instruction::constant(0),
+        Instruction::Return(drop_keep(0, 1)),
+    ];
+    let expected_fuel_f1 = 2 * costs.base + costs.call;
+    let expected_f1 = [
+        Instruction::consume_fuel(expected_fuel_f1),
+        Instruction::Call(FuncIdx::from(0)),
+        Instruction::Return(drop_keep(0, 1)),
+    ];
+    assert_func_bodies_metered(&wasm, [expected_f0, expected_f1]);
+}
+
+#[test]
+fn metered_calls_02() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func $f0 (param $a i32) (param $b i32) (result i32)
+                (i32.add
+                    (local.get $a)
+                    (local.get $b)
+                )
+            )
+            (func $f1 (param $a i32) (param $b i32) (result i32)
+                (call $f0
+                    (local.get $a)
+                    (local.get $b)
+                )
+            )
+        )
+    "#,
+    );
+    let costs = fuel_costs();
+    let expected_fuel_f0 = 5 * costs.base + 2 * costs.call_per_local + costs.branch_per_kept;
+    let expected_f0 = [
+        Instruction::consume_fuel(expected_fuel_f0),
+        Instruction::local_get(2),
+        Instruction::local_get(2),
+        Instruction::I32Add,
+        Instruction::Return(drop_keep(2, 1)),
+    ];
+    let expected_fuel_f1 =
+        4 * costs.base + costs.call + 2 * costs.call_per_local + costs.branch_per_kept;
+    let expected_f1 = [
+        Instruction::consume_fuel(expected_fuel_f1),
+        Instruction::local_get(2),
+        Instruction::local_get(2),
+        Instruction::Call(FuncIdx::from(0)),
+        Instruction::Return(drop_keep(2, 1)),
+    ];
+    assert_func_bodies_metered(&wasm, [expected_f0, expected_f1]);
+}
+
+#[test]
+fn metered_calls_03() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func $f0 (param $a i32) (result i32)
+                (local i32) ;; index 1
+                (local.set 1 (local.get $a))
+                (i32.add
+                    (local.get $a)
+                    (local.get 1)
+                )
+            )
+            (func $f1 (param $a i32) (result i32)
+                (call $f0
+                    (local.get $a)
+                )
+            )
+        )
+    "#,
+    );
+    let costs = fuel_costs();
+    let expected_fuel_f0 = 7 * costs.base + 2 * costs.call_per_local + costs.branch_per_kept;
+    let expected_f0 = [
+        Instruction::consume_fuel(expected_fuel_f0),
+        Instruction::local_get(2),
+        Instruction::local_set(1),
+        Instruction::local_get(2),
+        Instruction::local_get(2),
+        Instruction::I32Add,
+        Instruction::Return(drop_keep(2, 1)),
+    ];
+    let expected_fuel_f1 =
+        3 * costs.base + costs.call + costs.call_per_local + costs.branch_per_kept;
+    let expected_f1 = [
+        Instruction::consume_fuel(expected_fuel_f1),
+        Instruction::local_get(1),
+        Instruction::Call(FuncIdx::from(0)),
+        Instruction::Return(drop_keep(1, 1)),
+    ];
+    assert_func_bodies_metered(
+        &wasm,
+        [expected_f0.iter().copied(), expected_f1.iter().copied()],
+    );
 }
