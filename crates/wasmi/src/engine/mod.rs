@@ -21,7 +21,7 @@ pub use self::{
     config::Config,
     func_builder::{
         FuncBuilder,
-        FunctionBuilderAllocations,
+        FuncTranslatorAllocations,
         Instr,
         RelativeDepth,
         TranslationError,
@@ -127,7 +127,7 @@ impl Engine {
     }
 
     /// Returns a shared reference to the [`Config`] of the [`Engine`].
-    pub fn config(&self) -> Config {
+    pub fn config(&self) -> &Config {
         self.inner.config()
     }
 
@@ -294,6 +294,8 @@ impl Engine {
 /// The internal state of the `wasmi` engine.
 #[derive(Debug)]
 pub struct EngineInner {
+    /// The [`Config`] of the engine.
+    config: Config,
     /// Engine resources shared across multiple engine executors.
     res: RwLock<EngineResources>,
     /// Reusable engine stacks for Wasm execution.
@@ -347,13 +349,14 @@ impl EngineInner {
     /// Creates a new [`EngineInner`] with the given [`Config`].
     fn new(config: &Config) -> Self {
         Self {
-            res: RwLock::new(EngineResources::new(config)),
+            config: *config,
+            res: RwLock::new(EngineResources::new()),
             stacks: Mutex::new(EngineStacks::new(config)),
         }
     }
 
-    fn config(&self) -> Config {
-        self.res.read().config
+    fn config(&self) -> &Config {
+        &self.config
     }
 
     fn alloc_func_type(&self, func_type: FuncType) -> DedupFuncType {
@@ -489,8 +492,6 @@ impl EngineInner {
 /// Can be shared by multiple engine executors.
 #[derive(Debug)]
 pub struct EngineResources {
-    /// The configuration with which the [`Engine`] has been created.
-    config: Config,
     /// Stores all Wasm function bodies that the interpreter is aware of.
     code_map: CodeMap,
     /// Deduplicated function types.
@@ -503,11 +504,10 @@ pub struct EngineResources {
 }
 
 impl EngineResources {
-    /// Creates a new [`EngineResources`] with the given [`Config`].
-    fn new(config: &Config) -> Self {
+    /// Creates a new [`EngineResources`].
+    fn new() -> Self {
         let engine_idx = EngineIdx::new();
         Self {
-            config: *config,
             code_map: CodeMap::default(),
             func_types: FuncTypeRegistry::new(engine_idx),
         }

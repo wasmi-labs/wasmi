@@ -48,6 +48,9 @@ pub enum Instruction {
         len_targets: usize,
     },
     Unreachable,
+    ConsumeFuel {
+        amount: u64,
+    },
     Return(DropKeep),
     ReturnIfNez(DropKeep),
     Call(FuncIdx),
@@ -277,6 +280,30 @@ impl Instruction {
     pub fn local_tee(local_depth: usize) -> Self {
         Self::LocalTee {
             local_depth: LocalDepth::from(local_depth),
+        }
+    }
+
+    /// Convenience method to create a new `ConsumeFuel` instruction.
+    pub fn consume_fuel(amount: u64) -> Self {
+        Self::ConsumeFuel { amount }
+    }
+
+    /// Increases the fuel consumption of the [`ConsumeFuel`] instruction by `delta`.
+    ///
+    /// # Panics
+    ///
+    /// - If `self` is not a [`ConsumeFuel`] instruction.
+    /// - If the new fuel consumption overflows the internal `u64` value.
+    ///
+    /// [`ConsumeFuel`]: Instruction::ConsumeFuel
+    pub fn bump_fuel_consumption(&mut self, delta: u64) {
+        match self {
+            Self::ConsumeFuel { amount } => {
+                *amount = amount.checked_add(delta).unwrap_or_else(|| {
+                    panic!("overflowed fuel consumption. current = {amount}, delta = {delta}",)
+                })
+            }
+            instr => panic!("expected Instruction::ConsumeFuel but found: {instr:?}"),
         }
     }
 }

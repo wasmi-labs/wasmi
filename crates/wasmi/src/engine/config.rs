@@ -27,6 +27,60 @@ pub struct Config {
     reference_types: bool,
     /// Is `true` if Wasm instructions on `f32` and `f64` types are allowed.
     floats: bool,
+    /// Is `true` if `wasmi` executions shall consume fuel.
+    consume_fuel: bool,
+    /// The configured fuel costs of all `wasmi` bytecode instructions.
+    fuel_costs: FuelCosts,
+}
+
+/// Type storing all kinds of fuel costs of instructions.
+#[derive(Debug, Copy, Clone)]
+pub struct FuelCosts {
+    /// The base fuel costs for all instructions.
+    pub base: u64,
+    /// The fuel cost for instruction operating on Wasm entities.
+    ///
+    /// # Note
+    ///
+    /// A Wasm entitiy is one of `func`, `global`, `memory` or `table`.
+    /// Those instructions are usually a bit more costly since they need
+    /// multiplie indirect accesses through the Wasm instance and store.
+    pub entity: u64,
+    /// The fuel cost offset for `memory.load` instructions.
+    pub load: u64,
+    /// The fuel cost offset for `memory.store` instructions.
+    pub store: u64,
+    /// The fuel cost offset for `call` and `call_indirect` instructions.
+    pub call: u64,
+    /// The fuel cost offset per local variable for `call` and `call_indirect` instruction.
+    ///
+    /// # Note
+    ///
+    /// This is also applied to all function parameters since
+    /// they are translated to local variable slots.
+    pub call_per_local: u64,
+    /// The fuel cost offset per kept value for branches that need to copy values on the stack.
+    pub branch_per_kept: u64,
+    /// The fuel cost offset per byte for `bulk-memory` instructions.
+    pub memory_per_byte: u64,
+    /// The fuel cost offset per element for `bulk-table` instructions.
+    pub table_per_element: u64,
+}
+
+impl Default for FuelCosts {
+    fn default() -> Self {
+        Self {
+            base: 100,
+            entity: 500,
+            load: 650,
+            store: 450,
+            call: 1500,
+            call_per_local: 10,
+            branch_per_kept: 10,
+            memory_per_byte: 2,
+            table_per_element: 10,
+        }
+    }
 }
 
 impl Default for Config {
@@ -41,6 +95,8 @@ impl Default for Config {
             bulk_memory: true,
             reference_types: true,
             floats: true,
+            consume_fuel: false,
+            fuel_costs: FuelCosts::default(),
         }
     }
 }
@@ -156,6 +212,40 @@ impl Config {
     pub fn floats(&mut self, enable: bool) -> &mut Self {
         self.floats = enable;
         self
+    }
+
+    /// Configures whether `wasmi` will consume fuel during execution to either halt execution as desired.
+    ///
+    /// # Note
+    ///
+    /// This configuration can be used to make `wasmi` instrument its internal bytecode
+    /// so that it consumes fuel as it executes. Once an execution runs out of fuel
+    /// a [`TrapCode::OutOfFuel`](crate::core::TrapCode::OutOfFuel) trap is raised.
+    /// This way users can deterministically halt or yield the execution of WebAssembly code.
+    ///
+    /// - Use [`Store::add_fuel`](crate::Store::add_fuel) to pour some fuel into the [`Store`] before
+    ///   executing some code as the [`Store`] start with no fuel.
+    /// - Use [`Caller::consume_fuel`](crate::Caller::consume_fuel) to charge costs for executed host functions.
+    ///
+    /// Disabled by default.
+    ///
+    /// [`Store`]: crate::Store
+    /// [`Engine`]: crate::Engine
+    pub fn consume_fuel(&mut self, enable: bool) -> &mut Self {
+        self.consume_fuel = enable;
+        self
+    }
+
+    /// Returns `true` if the [`Config`] enables fuel consumption by the [`Engine`].
+    ///
+    /// [`Engine`]: crate::Engine
+    pub(crate) fn get_consume_fuel(&self) -> bool {
+        self.consume_fuel
+    }
+
+    /// Returns the configured [`FuelCosts`].
+    pub(crate) fn fuel_costs(&self) -> &FuelCosts {
+        &self.fuel_costs
     }
 
     /// Returns the [`WasmFeatures`] represented by the [`Config`].

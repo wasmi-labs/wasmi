@@ -1,3 +1,4 @@
+use super::bytecode::{DataSegmentIdx, ElementSegmentIdx, TableIdx};
 use crate::{
     instance::InstanceEntity,
     memory::DataSegment,
@@ -13,8 +14,6 @@ use crate::{
 };
 use core::ptr::NonNull;
 use wasmi_core::UntypedValue;
-
-use super::bytecode::{DataSegmentIdx, ElementSegmentIdx, TableIdx};
 
 /// A cache for frequently used entities of an [`Instance`].
 #[derive(Debug)]

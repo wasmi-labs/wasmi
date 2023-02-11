@@ -277,6 +277,13 @@ pub enum TrapCode {
     /// with an index that points to a function with signature different of what is
     /// expected by this indirect call, this trap is raised.
     BadSignature,
+
+    /// This trap is raised when a WebAssembly execution ran out of fuel.
+    ///
+    /// The `wasmi` execution engine can be configured to instrument its
+    /// internal bytecode so that fuel is consumed for each executed instruction.
+    /// This is useful to deterministically halt or yield a WebAssembly execution.
+    OutOfFuel,
 }
 
 impl TrapCode {
@@ -297,6 +304,7 @@ impl TrapCode {
             Self::BadConversionToInteger => "invalid conversion to integer",
             Self::StackOverflow => "call stack exhausted",
             Self::BadSignature => "indirect call type mismatch",
+            Self::OutOfFuel => "all fuel consumed by WebAssembly",
         }
     }
 }

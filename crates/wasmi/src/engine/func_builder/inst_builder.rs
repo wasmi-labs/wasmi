@@ -177,6 +177,18 @@ impl InstructionsBuilder {
             self.insts[user.into_usize()].update_branch_offset(offset);
         }
     }
+
+    /// Adds the given `delta` amount of fuel to the [`ConsumeFuel`] instruction `instr`.
+    ///
+    /// # Panics
+    ///
+    /// - If `instr` does not resolve to a [`ConsumeFuel`] instruction.
+    /// - If the amount of consumed fuel for `instr` overflows.
+    ///
+    /// [`ConsumeFuel`]: enum.Instruction.html#variant.ConsumeFuel
+    pub fn bump_fuel_consumption(&mut self, instr: Instr, delta: u64) {
+        self.insts[instr.into_usize()].bump_fuel_consumption(delta)
+    }
 }
 
 impl Instruction {
