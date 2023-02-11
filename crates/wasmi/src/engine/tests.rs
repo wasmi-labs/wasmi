@@ -2,6 +2,7 @@ use super::*;
 use crate::{
     engine::{
         bytecode::{BranchOffset, BranchParams, Instruction},
+        config::FuelCosts,
         DropKeep,
     },
     Engine,
@@ -760,6 +761,11 @@ fn br_table_return() {
     assert_func_bodies(&wasm, [expected]);
 }
 
+/// Returns the default [`FuelCosts`].
+pub fn fuel_costs() -> FuelCosts {
+    *Config::default().fuel_costs()
+}
+
 #[test]
 fn metered_simple_01() {
     let wasm = wat2wasm(
@@ -771,7 +777,8 @@ fn metered_simple_01() {
         )
     "#,
     );
-    let expected_fuel = 320;
+    let costs = fuel_costs();
+    let expected_fuel = 3 * costs.base + costs.call_per_local + costs.branch_per_kept;
     let expected = [
         Instruction::consume_fuel(expected_fuel),
         Instruction::local_get(1),
@@ -795,7 +802,8 @@ fn metered_simple_02() {
         )
     "#,
     );
-    let expected_fuel = 520;
+    let costs = fuel_costs();
+    let expected_fuel = 5 * costs.base + costs.call_per_local + costs.branch_per_kept;
     let expected = [
         Instruction::consume_fuel(expected_fuel),
         Instruction::local_get(1),
@@ -823,7 +831,8 @@ fn metered_simple_03() {
         )
     "#,
     );
-    let expected_fuel = 930;
+    let costs = fuel_costs();
+    let expected_fuel = 9 * costs.base + 2 * costs.call_per_local + costs.branch_per_kept;
     let expected = [
         Instruction::consume_fuel(expected_fuel),
         Instruction::local_get(2),
@@ -865,7 +874,8 @@ fn metered_nested_blocks() {
         )
     "#,
     );
-    let expected_fuel = 1120;
+    let costs = fuel_costs();
+    let expected_fuel = 11 * costs.base + costs.call_per_local + costs.branch_per_kept;
     let expected = [
         Instruction::consume_fuel(expected_fuel),
         Instruction::local_get(1),
