@@ -1,4 +1,4 @@
-use super::*;
+use super::{bytecode::GlobalIdx, *};
 use crate::{
     engine::{
         bytecode::{BranchOffset, BranchParams, Instruction},
@@ -1103,6 +1103,40 @@ fn metered_nested_loops() {
         Instruction::Drop,
         Instruction::Drop,
         Instruction::Drop,
+        Instruction::Return(drop_keep(1, 1)),
+    ];
+    assert_func_bodies_metered(&wasm, [expected]);
+}
+
+#[test]
+fn metered_global_bump() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (global $g (mut i32) (i32.const 0))
+            ;; Increases $g by $delta and returns the new value.
+            (func (param $delta i32) (result i32)
+                (global.set $g
+                    (i32.add
+                        (global.get $g)
+                        (local.get $delta)
+                    )
+                )
+                (global.get $g)
+            )
+        )
+    "#,
+    );
+    let costs = fuel_costs();
+    let expected_fuel =
+        3 * costs.entity + 4 * costs.base + costs.call_per_local + costs.branch_per_kept;
+    let expected = [
+        Instruction::consume_fuel(expected_fuel),
+        Instruction::GlobalGet(GlobalIdx::from(0)),
+        Instruction::local_get(2),
+        Instruction::I32Add,
+        Instruction::GlobalSet(GlobalIdx::from(0)),
+        Instruction::GlobalGet(GlobalIdx::from(0)),
         Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies_metered(&wasm, [expected]);
