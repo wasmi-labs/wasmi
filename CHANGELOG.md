@@ -8,6 +8,29 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.26.0`] - 2023-02-11
+
+### Added
+
+- `wasmi` CLI: Add WASI support. (https://github.com/paritytech/wasmi/pull/597)
+  - Big shoutout to [Onigbinde Oluwamuyiwa Elijah](https://github.com/OLUWAMUYIWA) for contributing this to `wasmi`!
+- Add built-in support for fuel metering. (https://github.com/paritytech/wasmi/pull/653)
+  - This allows to control the runtime of Wasm executions in a deterministic fasion
+    effectively avoiding the halting problem by charging for executed instructions.
+    Not using the feature will not affect the execution efficiency of `wasmi` for users.
+- Add `Pages::checked_sub` method. (https://github.com/paritytech/wasmi/pull/660)
+- Add `Func::new` constructor. (https://github.com/paritytech/wasmi/pull/662)
+  - This allows to create `Func` instances from closures without statically known types.
+
+### Changed
+
+- Update to `wasmparser-nostd` version `0.100.1`. (https://github.com/paritytech/wasmi/pull/666)
+
+### Internal
+
+- Clean up and reorganization of the `wasmi_cli` crate. (https://github.com/paritytech/wasmi/pull/655)
+- Refactoring of internal host call API. (https://github.com/paritytech/wasmi/pull/664)
+
 ## [`0.25.0`] - 2023-02-04
 
 ### Added
