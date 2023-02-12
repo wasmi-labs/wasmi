@@ -18,6 +18,18 @@ jobs:
           toolchain: stable
           target: wasm32-unknown-unknown
           override: true
+      - name: Set up Cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/            
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
       - name: Add extra targets
         # Workaround for https://github.com/actions-rs/toolchain/issues/165
         run: |
@@ -32,7 +44,7 @@ jobs:
         with:
           command: build
           args: --workspace --all-features
-      - name: Build wasmi itself as no_std
+      - name: Build (no_std)
         uses: actions-rs/cargo@v1
         with:
           command: build
@@ -41,7 +53,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --workspace --no-default-features --target wasm32-unknown-unknown --exclude wasmi_cli --exclude wasmi_wasi
+          args: --workspace --lib --no-default-features --target wasm32-unknown-unknown --exclude wasmi_cli --exclude wasmi_wasi
 
   test:
     name: Test
@@ -58,6 +70,18 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
+      - name: Set up Cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/            
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Test (default features)
@@ -102,6 +126,18 @@ jobs:
           toolchain: stable
           override: true
           components: rust-docs, rust-src
+      - name: Set up Cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/            
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
       - uses: actions-rs/cargo@v1
         env:
           RUSTDOCFLAGS: '-D warnings'
@@ -124,6 +160,40 @@ jobs:
           command: audit
           args: ''
 
+  udeps:
+    name: uDeps
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+      - name: Set up Cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-udeps-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-udeps-
+      - name: Checkout Submodules
+        run: git submodule update --init --recursive
+      - name: Install cargo-udeps
+        run: |
+          # Note: We use `|| true` because cargo install returns an error
+          #       if cargo-udeps was already installed on the CI runner.
+          cargo install --locked cargo-udeps || true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: udeps
+          args: --all-targets
+
   miri:
     name: Miri
     runs-on: ubuntu-latest
@@ -135,6 +205,18 @@ jobs:
           toolchain: nightly
           override: true
           components: miri
+      - name: Set up Cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-miri-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-miri-
       - name: Clippy (--lib)
         uses: actions-rs/cargo@v1
         with:
@@ -157,6 +239,18 @@ jobs:
           toolchain: nightly
           override: true
           components: clippy
+      - name: Set up Cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/            
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
       - name: Clippy (default features)
         uses: actions-rs/cargo@v1
         with:
@@ -191,6 +285,18 @@ jobs:
         with:
           toolchain: stable
           override: true
+      - name: Set up Cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-coverage-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-coverage-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Run cargo-tarpaulin (default features)
