@@ -194,6 +194,41 @@ jobs:
           command: udeps
           args: --all-targets
 
+  fuzz:
+    name: Fuzzing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+      - name: Set up Cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-fuzz-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-fuzz-
+      - name: Checkout Submodules
+        run: git submodule update --init --recursive
+      - name: Install cargo-fuzz
+        run: |
+          # Note: We use `|| true` because cargo install returns an error
+          #       if cargo-udeps was already installed on the CI runner.
+          cargo install --locked cargo-fuzz || true
+      - name: Fuzz Translate
+        uses: actions-rs/cargo@v1
+        with:
+          command: fuzz
+          args: --target translate -- -max_total_time=180 # 3 minutes of fuzzing
+
   miri:
     name: Miri
     runs-on: ubuntu-latest
