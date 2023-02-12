@@ -193,6 +193,18 @@ jobs:
           toolchain: nightly
           override: true
           components: miri
+      - name: Set up Cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-miri-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-miri-
       - name: Clippy (--lib)
         uses: actions-rs/cargo@v1
         with:
