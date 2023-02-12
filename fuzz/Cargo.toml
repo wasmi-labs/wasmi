@@ -24,3 +24,9 @@ name = "translate"
 path = "fuzz_targets/translate.rs"
 test = false
 doc = false
+
+[[bin]]
+name = "translate_metered"
+path = "fuzz_targets/translate_metered.rs"
+test = false
+doc = false
