@@ -7,6 +7,7 @@ use wasmi::{
     Error,
     Extern,
     Func,
+    FuncType,
     Linker,
     Module,
     ResumableCall,
@@ -21,6 +22,78 @@ use wasmi_core::{Trap, TrapCode, ValueType};
 fn test_setup() -> Store<()> {
     let engine = Engine::default();
     Store::new(&engine, ())
+}
+
+fn resumable_call_smoldot_common(wasm: &str) -> (Store<()>, TypedResumableInvocation<i32>) {
+    let mut store = test_setup();
+    let mut linker = <Linker<()>>::new();
+    // The important part about this test is that this
+    // host function has more results than parameters.
+    let host_fn = Func::new(
+        &mut store,
+        FuncType::new([], [ValueType::I32]),
+        |_caller, _inputs, _output| Err(Trap::i32_exit(100)),
+    );
+    linker.define("env", "host_fn", host_fn).unwrap();
+    // The Wasm defines a single function that calls the
+    // host function, returns 10 if the output is 0 and
+    // returns 20 otherwise.
+    let wasm = wat::parse_str(wasm).unwrap();
+    let module = Module::new(store.engine(), &mut &wasm[..]).unwrap();
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .start(&mut store)
+        .unwrap();
+    let wasm_fn = instance.get_typed_func::<(), i32>(&store, "test").unwrap();
+    let invocation = match wasm_fn.call_resumable(&mut store, ()).unwrap() {
+        TypedResumableCall::Resumable(invocation) => invocation,
+        TypedResumableCall::Finished(_) => panic!("expected TypedResumableCall::Resumable"),
+    };
+    (store, invocation)
+}
+
+#[test]
+fn resumable_call_smoldot_01() {
+    let (mut store, invocation) = resumable_call_smoldot_common(
+        r#"
+        (module
+            (import "env" "host_fn" (func $host_fn (result i32)))
+            (func (export "test") (result i32)
+                (call $host_fn)
+            )
+        )
+        "#,
+    );
+    match invocation.resume(&mut store, &[Value::I32(42)]).unwrap() {
+        TypedResumableCall::Finished(result) => assert_eq!(result, 42),
+        TypedResumableCall::Resumable(_) => panic!("expected TypeResumableCall::Finished"),
+    }
+}
+
+#[test]
+fn resumable_call_smoldot_02() {
+    let (mut store, invocation) = resumable_call_smoldot_common(
+        r#"
+        (module
+            (import "env" "host_fn" (func $host_fn (result i32)))
+            (func (export "test") (result i32)
+                (if (result i32) (i32.ne (call $host_fn) (i32.const 0))
+                    (then
+                        (i32.const 11) ;; EXPECTED
+                    )
+                    (else
+                        (i32.const 22) ;; FAILURE
+                    )
+                )
+            )
+        )
+        "#,
+    );
+    match invocation.resume(&mut store, &[Value::I32(42)]).unwrap() {
+        TypedResumableCall::Finished(result) => assert_eq!(result, 11),
+        TypedResumableCall::Resumable(_) => panic!("expected TypeResumableCall::Finished"),
+    }
 }
 
 #[test]
