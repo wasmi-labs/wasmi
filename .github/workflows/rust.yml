@@ -239,6 +239,18 @@ jobs:
           toolchain: nightly
           override: true
           components: clippy
+      - name: Set up Cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/            
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
       - name: Clippy (default features)
         uses: actions-rs/cargo@v1
         with:
