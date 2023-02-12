@@ -227,7 +227,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: fuzz
-          args: run translate -- -max_total_time=120 # 2 minutes of fuzzing
+          args: run translate -j 2 -- -max_total_time=120 # 2 minutes of fuzzing
 
   miri:
     name: Miri
