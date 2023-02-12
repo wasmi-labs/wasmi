@@ -277,10 +277,16 @@ impl Stack {
         let len_outputs = output_types.len();
         let max_inout = len_inputs.max(len_outputs);
         self.values.reserve(max_inout)?;
-        if len_outputs > len_inputs {
+        let delta = if len_outputs > len_inputs {
+            // Note: We have to save the delta of values pushed
+            //       so that we can drop them in case the host
+            //       function fails to execute properly.
             let delta = len_outputs - len_inputs;
             self.values.extend_zeros(delta)?;
-        }
+            delta
+        } else {
+            0
+        };
         let params_results = FuncParams::new(
             self.values.peek_as_slice_mut(max_inout),
             len_inputs,
@@ -289,7 +295,17 @@ impl Stack {
         // Now we are ready to perform the host function call.
         // Note: We need to clone the host function due to some borrowing issues.
         //       This should not be a big deal since host functions usually are cheap to clone.
-        host_func.call(&mut ctx, instance, params_results)?;
+        host_func
+            .call(&mut ctx, instance, params_results)
+            .map_err(|error| {
+                // Note: We drop the values that have been temporarily added to
+                //       the stack to act as parameter and result buffer for the
+                //       called host function. Since the host function failed we
+                //       need to clean up the temporary buffer values here.
+                //       This is required for resumable calls to work properly.
+                self.values.drop(delta);
+                error
+            })?;
         // If the host functions returns fewer results than it receives parameters
         // the value stack needs to be shrinked for the delta.
         if len_outputs < len_inputs {
