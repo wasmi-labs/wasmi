@@ -24,3 +24,7 @@ rand = "0.8.2"
 default = ["std"]
 # Use `no-default-features` for a `no_std` build.
 std = ["num-traits/std", "downcast-rs/std"]
+
+[package.metadata.cargo-udeps.ignore]
+# cargo-udeps cannot detect that libm is used for no_std targets only.
+normal = ["libm"]
