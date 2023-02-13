@@ -38,37 +38,52 @@ impl FromStr for KeyValue {
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
+#[clap(author, version, about, long_about = None, trailing_var_arg = true)]
 pub struct Args {
     /// The host directory to pre-open for the `guest` to use.
-    #[clap(long = "dir", value_name = "DIR", action = clap::ArgAction::Append, value_hint = clap::ValueHint::DirPath)]
+    #[clap(
+        long = "dir",
+        value_name = "DIRECTORY",
+        action = clap::ArgAction::Append,
+        value_hint = clap::ValueHint::DirPath,
+    )]
     dirs: Vec<PathBuf>,
 
     /// The socket address provided to the module. Allows it to perform socket-related `WASI` ops.
-    #[clap(long = "tcplisten", value_name = "SOCKET_ADDR", action = clap::ArgAction::Append)]
+    #[clap(
+        long = "tcplisten",
+        value_name = "SOCKET ADDRESS",
+        action = clap::ArgAction::Append,
+    )]
     tcplisten: Vec<SocketAddr>,
 
     /// The environment variable pair made available for the program.
-    #[clap(long = "env", value_name = "ENV_VAR", value_parser(KeyValue::from_str), action = clap::ArgAction::Append)]
+    #[clap(
+        long = "env",
+        value_name = "NAME=VAL",
+        value_parser(KeyValue::from_str),
+        action = clap::ArgAction::Append,
+    )]
     envs: Vec<KeyValue>,
 
-    /// The WebAssembly file to execute.
-    #[clap(value_hint = clap::ValueHint::FilePath)]
+    /// The file containing the WebAssembly module to execute.
+    #[clap(
+        value_name = "MODULE",
+        value_hint = clap::ValueHint::FilePath,
+    )]
     wasm_file: PathBuf,
 
-    /// The function to invoke
-    /// If this argument is missing, wasmi CLI will try to run `""` or `_start`
-    /// If neither of exported  the wasmi CLI will print out all
-    /// exported functions and their parameters of the given Wasm module and return with an error.
+    /// The function to invoke.
+    ///
+    /// If this argument is missing, `wasmi` CLI will try to run `""` or `_start`.
+    ///
+    /// If neither are exported the `wasmi` CLI will display out all exported
+    /// functions of the Wasm module and return with an error.
     #[clap(long = "invoke", value_name = "FUNCTION")]
     invoke: Option<String>,
 
-    /// Possibly zero list of positional arguments
-    #[clap(
-        value_name = "ARGS",
-        trailing_var_arg = true,
-        allow_hyphen_values = true
-    )]
+    /// Arguments given to the Wasm module or the invoked function.
+    #[clap(value_name = "ARGS")]
     func_args: Vec<String>,
 }
 
