@@ -112,7 +112,7 @@ pub mod errors {
         linker::LinkerError,
         memory::MemoryError,
         module::{InstantiationError, ModuleError},
-        store::StoreError,
+        store::FuelError,
         table::TableError,
     };
 }

@@ -136,14 +136,14 @@ fn test_store_is_send_sync() {
 
 /// An error that may be encountered when operating on the [`Store`].
 #[derive(Debug, Clone)]
-pub enum StoreError {
+pub enum FuelError {
     /// Raised when trying to use any of the `fuel` methods while fuel metering is disabled.
     FuelMeteringDisabled,
     /// Raised when trying to consume more fuel than is available in the [`Store`].
     OutOfFuel,
 }
 
-impl fmt::Display for StoreError {
+impl fmt::Display for FuelError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::FuelMeteringDisabled => write!(f, "fuel metering is disabled"),
@@ -152,7 +152,7 @@ impl fmt::Display for StoreError {
     }
 }
 
-impl StoreError {
+impl FuelError {
     /// Returns an error indicating that fuel metering has been disabled.
     ///
     /// # Note
@@ -205,6 +205,16 @@ impl Fuel {
         self.total.wrapping_sub(self.remaining)
     }
 
+    /// Returns `Ok` if enough fuel is remaining to satisfy `delta` fuel consumption.
+    ///
+    /// Returns a [`TrapCode::OutOfFuel`] error otherwise.
+    pub fn sufficient_fuel(&self, delta: u64) -> Result<(), TrapCode> {
+        self.remaining
+            .checked_sub(delta)
+            .map(|_| ())
+            .ok_or(TrapCode::OutOfFuel)
+    }
+
     /// Synthetically consumes an amount of [`Fuel`] for the [`Store`].
     ///
     /// Returns the remaining amount of [`Fuel`] after this operation.
@@ -238,6 +248,11 @@ impl StoreInner {
     /// Returns the [`Engine`] that this store is associated with.
     pub fn engine(&self) -> &Engine {
         &self.engine
+    }
+
+    /// Returns a shared reference to the [`Fuel`] counters.
+    pub fn fuel(&self) -> &Fuel {
+        &self.fuel
     }
 
     /// Returns an exclusive reference to the [`Fuel`] counters.
@@ -727,10 +742,10 @@ impl<T> Store<T> {
 
     /// Returns `Ok` if fuel metering has been enabled.
     ///
-    /// Otherwise returns the respective [`StoreError`].
-    fn check_fuel_metering_enabled(&self) -> Result<(), StoreError> {
+    /// Otherwise returns the respective [`FuelError`].
+    fn check_fuel_metering_enabled(&self) -> Result<(), FuelError> {
         if !self.is_fuel_metering_enabled() {
-            return Err(StoreError::fuel_metering_disabled());
+            return Err(FuelError::fuel_metering_disabled());
         }
         Ok(())
     }
@@ -744,7 +759,7 @@ impl<T> Store<T> {
     /// # Errors
     ///
     /// If fuel metering is disabled.
-    pub fn add_fuel(&mut self, delta: u64) -> Result<(), StoreError> {
+    pub fn add_fuel(&mut self, delta: u64) -> Result<(), FuelError> {
         self.check_fuel_metering_enabled()?;
         self.inner.fuel.add_fuel(delta);
         Ok(())
@@ -770,12 +785,12 @@ impl<T> Store<T> {
     ///
     /// - If fuel metering is disabled.
     /// - If more fuel is consumed than available.
-    pub fn consume_fuel(&mut self, delta: u64) -> Result<u64, StoreError> {
+    pub fn consume_fuel(&mut self, delta: u64) -> Result<u64, FuelError> {
         self.check_fuel_metering_enabled()?;
         self.inner
             .fuel
             .consume_fuel(delta)
-            .map_err(|_error| StoreError::out_of_fuel())
+            .map_err(|_error| FuelError::out_of_fuel())
     }
 
     /// Allocates a new Wasm or host [`FuncEntity`] and returns a [`Func`] reference to it.

@@ -1,11 +1,11 @@
 use super::errors::{
+    FuelError,
     FuncError,
     GlobalError,
     InstantiationError,
     LinkerError,
     MemoryError,
     ModuleError,
-    StoreError,
     TableError,
 };
 use crate::core::Trap;
@@ -28,7 +28,7 @@ pub enum Error {
     /// A module compilation, validation and translation error.
     Module(ModuleError),
     /// A store error.
-    Store(StoreError),
+    Store(FuelError),
     /// A function error.
     Func(FuncError),
     /// A trap as defined by the WebAssembly specification.
@@ -96,8 +96,8 @@ impl From<ModuleError> for Error {
     }
 }
 
-impl From<StoreError> for Error {
-    fn from(error: StoreError) -> Self {
+impl From<FuelError> for Error {
+    fn from(error: FuelError) -> Self {
         Self::Store(error)
     }
 }
