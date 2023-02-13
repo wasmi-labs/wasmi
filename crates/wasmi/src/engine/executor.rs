@@ -763,9 +763,10 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                     .and_then(|memory| memory.get_mut(..n))
                     .ok_or(TrapCode::MemoryOutOfBounds)?;
                 memory.fill(byte);
-                this.try_next_instr()
+                Ok(())
             },
-        )
+        )?;
+        self.try_next_instr()
     }
 
     fn visit_memory_copy(&mut self) -> Result<(), TrapCode> {
@@ -786,9 +787,10 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                     .and_then(|memory| memory.get(..n))
                     .ok_or(TrapCode::MemoryOutOfBounds)?;
                 data.copy_within(src_offset..src_offset.wrapping_add(n), dst_offset);
-                this.try_next_instr()
+                Ok(())
             },
-        )
+        )?;
+        self.try_next_instr()
     }
 
     fn visit_memory_init(&mut self, segment: DataSegmentIdx) -> Result<(), TrapCode> {
@@ -812,9 +814,10 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                     .and_then(|data| data.get(..n))
                     .ok_or(TrapCode::MemoryOutOfBounds)?;
                 memory.copy_from_slice(data);
-                this.try_next_instr()
+                Ok(())
             },
-        )
+        )?;
+        self.try_next_instr()
     }
 
     fn visit_data_drop(&mut self, segment_index: DataSegmentIdx) {
@@ -866,9 +869,10 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 this.ctx
                     .resolve_table_mut(&table)
                     .fill_untyped(dst, val, len)?;
-                this.try_next_instr()
+                Ok(())
             },
-        )
+        )?;
+        self.try_next_instr()
     }
 
     fn visit_table_get(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
@@ -915,9 +919,10 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                     let (dst, src) = this.ctx.resolve_table_pair_mut(&dst, &src);
                     TableEntity::copy(dst, dst_index, src, src_index, len)?;
                 }
-                this.try_next_instr()
+                Ok(())
             },
-        )
+        )?;
+        self.try_next_instr()
     }
 
     fn visit_table_init(
@@ -941,9 +946,10 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                         .get_func(func_index)
                         .unwrap_or_else(|| panic!("missing function at index {func_index}"))
                 })?;
-                this.try_next_instr()
+                Ok(())
             },
-        )
+        )?;
+        self.try_next_instr()
     }
 
     fn visit_element_drop(&mut self, segment_index: ElementSegmentIdx) {
