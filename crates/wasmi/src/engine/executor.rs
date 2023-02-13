@@ -725,7 +725,8 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 delta_in_bytes * costs.memory_per_byte
             },
             |this| {
-                let new_pages = this.ctx
+                let new_pages = this
+                    .ctx
                     .resolve_memory_mut(&memory)
                     .grow(delta)
                     .map(u32::from)
