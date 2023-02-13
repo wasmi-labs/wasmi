@@ -205,6 +205,16 @@ impl Fuel {
         self.total.wrapping_sub(self.remaining)
     }
 
+    /// Returns `Ok` if enough fuel is remaining to satisfy `delta` fuel consumption.
+    ///
+    /// Returns a [`TrapCode::OutOfFuel`] error otherwise.
+    pub fn sufficient_fuel(&self, delta: u64) -> Result<(), TrapCode> {
+        self.remaining
+            .checked_sub(delta)
+            .map(|_| ())
+            .ok_or(TrapCode::OutOfFuel)
+    }
+
     /// Synthetically consumes an amount of [`Fuel`] for the [`Store`].
     ///
     /// Returns the remaining amount of [`Fuel`] after this operation.
@@ -238,6 +248,11 @@ impl StoreInner {
     /// Returns the [`Engine`] that this store is associated with.
     pub fn engine(&self) -> &Engine {
         &self.engine
+    }
+
+    /// Returns a shared reference to the [`Fuel`] counters.
+    pub fn fuel(&self) -> &Fuel {
+        &self.fuel
     }
 
     /// Returns an exclusive reference to the [`Fuel`] counters.
