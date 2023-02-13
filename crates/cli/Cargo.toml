@@ -14,7 +14,7 @@ categories.workspace = true
 [dependencies]
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
-wasmi = { version = "0.26.0", path = "../wasmi" }
+wasmi = { version = "0.26.1", path = "../wasmi" }
 wasmi_wasi = { version = "0.1.0", path = "../wasi" }
 wat = "1"
 

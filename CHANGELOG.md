@@ -8,6 +8,14 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.26.1`] - 2023-02-13
+
+### Fixed
+
+- Fixed a bug where resuming a resumable function from a host function with more outputs than
+  inputs could lead to incorrect behavior or runtime panics. (https://github.com/paritytech/wasmi/pull/671)
+    - Thanks to [Pierre Krieger (tomaka)](https://github.com/tomaka) for reporting and crafting an initial minimal test case.
+
 ## [`0.26.0`] - 2023-02-11
 
 ### Added
