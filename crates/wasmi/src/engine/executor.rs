@@ -20,7 +20,14 @@ use super::{
     FuncFrame,
     ValueStack,
 };
-use crate::{core::TrapCode, table::TableEntity, Func, FuncRef, StoreInner};
+use crate::{
+    core::TrapCode,
+    engine::config::FuelCosts,
+    table::TableEntity,
+    Func,
+    FuncRef,
+    StoreInner,
+};
 use core::cmp::{self};
 use wasmi_core::{Pages, UntypedValue};
 
@@ -482,6 +489,11 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         }
         Ok(())
     }
+
+    /// Returns a shared reference to the [`FuelCosts`] of the [`Engine`].
+    fn fuel_costs(&self) -> &FuelCosts {
+        self.ctx.engine().config().fuel_costs()
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -668,7 +680,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 .can_grow(delta)
                 .then(|| {
                     let delta_in_bytes = delta.to_bytes().unwrap_or(0) as u64;
-                    delta_in_bytes * this.ctx.engine().config().fuel_costs().memory_per_byte
+                    delta_in_bytes * this.fuel_costs().memory_per_byte
                 })
                 .unwrap_or(0)
         })?;
@@ -692,9 +704,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let n = i32::from(n) as usize;
         let offset = i32::from(d) as usize;
         let byte = u8::from(val);
-        self.consume_fuel_with(|this| {
-            n as u64 * this.ctx.engine().config().fuel_costs().memory_per_byte
-        })?;
+        self.consume_fuel_with(|this| n as u64 * this.fuel_costs().memory_per_byte)?;
         let bytes = self.cache.default_memory_bytes(self.ctx);
         let memory = bytes
             .data_mut()
@@ -711,9 +721,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let n = i32::from(n) as usize;
         let src_offset = i32::from(s) as usize;
         let dst_offset = i32::from(d) as usize;
-        self.consume_fuel_with(|this| {
-            n as u64 * this.ctx.engine().config().fuel_costs().memory_per_byte
-        })?;
+        self.consume_fuel_with(|this| n as u64 * this.fuel_costs().memory_per_byte)?;
         let data = self.cache.default_memory_bytes(self.ctx).data_mut();
         // These accesses just perform the bounds checks required by the Wasm spec.
         data.get(src_offset..)
@@ -732,9 +740,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let n = i32::from(n) as usize;
         let src_offset = i32::from(s) as usize;
         let dst_offset = i32::from(d) as usize;
-        self.consume_fuel_with(|this| {
-            n as u64 * this.ctx.engine().config().fuel_costs().memory_per_byte
-        })?;
+        self.consume_fuel_with(|this| n as u64 * this.fuel_costs().memory_per_byte)?;
         let (memory, data) = self
             .cache
             .get_default_memory_and_data_segment(self.ctx, segment);
@@ -771,9 +777,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         const ERROR_CODE: u32 = u32::MAX;
         let (init, delta) = self.value_stack.pop2();
         let delta: u32 = delta.into();
-        self.consume_fuel_with(|this| {
-            u64::from(delta) * this.ctx.engine().config().fuel_costs().table_per_element
-        })?;
+        self.consume_fuel_with(|this| u64::from(delta) * this.fuel_costs().table_per_element)?;
         let table = self.cache.get_table(self.ctx, table_index);
         let result = self
             .ctx
@@ -789,9 +793,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let (i, val, n) = self.value_stack.pop3();
         let dst: u32 = i.into();
         let len: u32 = n.into();
-        self.consume_fuel_with(|this| {
-            u64::from(len) * this.ctx.engine().config().fuel_costs().table_per_element
-        })?;
+        self.consume_fuel_with(|this| u64::from(len) * this.fuel_costs().table_per_element)?;
         let table = self.cache.get_table(self.ctx, table_index);
         self.ctx
             .resolve_table_mut(&table)
@@ -828,9 +830,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let len = u32::from(n);
         let src_index = u32::from(s);
         let dst_index = u32::from(d);
-        self.consume_fuel_with(|this| {
-            u64::from(len) * this.ctx.engine().config().fuel_costs().table_per_element
-        })?;
+        self.consume_fuel_with(|this| u64::from(len) * this.fuel_costs().table_per_element)?;
         // Query both tables and check if they are the same:
         let dst = self.cache.get_table(self.ctx, dst);
         let src = self.cache.get_table(self.ctx, src);
@@ -856,9 +856,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let len = u32::from(n);
         let src_index = u32::from(s);
         let dst_index = u32::from(d);
-        self.consume_fuel_with(|this| {
-            u64::from(len) * this.ctx.engine().config().fuel_costs().table_per_element
-        })?;
+        self.consume_fuel_with(|this| u64::from(len) * this.fuel_costs().table_per_element)?;
         let (instance, table, element) = self
             .cache
             .get_table_and_element_segment(self.ctx, table, elem);
