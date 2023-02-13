@@ -2,7 +2,7 @@ use crate::{
     args::Args,
     display::{DisplayExportedFuncs, DisplayFuncType, DisplaySequence, DisplayValue},
 };
-use anyhow::{anyhow, bail, Error, Result};
+use anyhow::{bail, Error, Result};
 use clap::Parser;
 use context::Context;
 use std::{path::Path, process};
