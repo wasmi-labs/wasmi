@@ -540,7 +540,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     /// Returns a shared reference to the [`FuelCosts`] of the [`Engine`].
-    /// 
+    ///
     /// [`Engine`]: crate::Engine
     fn fuel_costs(&self) -> &FuelCosts {
         self.ctx.engine().config().fuel_costs()
