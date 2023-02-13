@@ -214,6 +214,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
+            fuzz/target/
           key: ${{ runner.os }}-cargo-fuzz-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-fuzz-
       - name: Checkout Submodules
