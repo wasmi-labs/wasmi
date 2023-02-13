@@ -63,6 +63,25 @@ type WasmStoreOp = fn(
     value: UntypedValue,
 ) -> Result<(), TrapCode>;
 
+/// An error that can occur upon `memory.grow` or `table.grow`.
+#[derive(Copy, Clone)]
+pub enum EntityGrowError {
+    /// Usually a [`TrapCode::OutOfFuel`] trap.
+    TrapCode(TrapCode),
+    /// Encountered when `memory.grow` or `table.grow` fails.
+    InvalidGrow,
+}
+
+impl From<TrapCode> for EntityGrowError {
+    fn from(trap_code: TrapCode) -> Self {
+        Self::TrapCode(trap_code)
+    }
+}
+
+/// The WebAssembly specification demands to return this value
+/// if the `memory.grow` or `table.grow` operations fail.
+const INVALID_GROWTH_ERRCODE: u32 = u32::MAX;
+
 /// An execution context for executing a `wasmi` function frame.
 #[derive(Debug)]
 struct Executor<'ctx, 'engine, 'func> {
@@ -475,21 +494,6 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.sync_stack_ptr();
     }
 
-    /// Consume an amount of fuel specified by the closure.
-    ///
-    /// The closure `delta` is only evaluated if fuel metering is enabled.
-    ///
-    /// # Errors
-    ///
-    /// If the [`StoreInner`] ran out of fuel.
-    fn consume_fuel_with(&mut self, delta: impl FnOnce(&Self) -> u64) -> Result<(), TrapCode> {
-        if self.is_fuel_metering_enabled() {
-            let delta = delta(self);
-            self.ctx.fuel_mut().consume_fuel(delta)?;
-        }
-        Ok(())
-    }
-
     /// Consume an amount of fuel specified by `delta` if `exec` succeeds.
     ///
     /// # Note
@@ -703,42 +707,34 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_memory_grow(&mut self) -> Result<(), TrapCode> {
-        /// The WebAssembly spec demands to return `0xFFFF_FFFF`
-        /// in case of failure for the `memory.grow` instruction.
-        const ERR_VALUE: u32 = u32::MAX;
         let memory = self.default_memory();
         let delta: u32 = self.value_stack.pop_as();
         let delta = match Pages::new(delta) {
             Some(pages) => pages,
             None => {
                 // Cannot grow memory so we push the expected error value.
-                self.value_stack.push(ERR_VALUE);
+                self.value_stack.push(INVALID_GROWTH_ERRCODE);
                 return self.try_next_instr();
             }
         };
-        self.consume_fuel_with(|this| {
-            // Since `memory.grow` is extremely expensive in the success case
-            // in terms of fuel costs we only want to pay for them when the
-            // operation is actually going to succeed.
-            this.ctx
-                .resolve_memory(&memory)
-                .can_grow(delta)
-                .then(|| {
-                    let delta_in_bytes = delta.to_bytes().unwrap_or(0) as u64;
-                    delta_in_bytes * this.fuel_costs().memory_per_byte
-                })
-                .unwrap_or(0)
-        })?;
-        let result = self
-            .ctx
-            .resolve_memory_mut(&memory)
-            .grow(delta)
-            .map(u32::from)
-            .unwrap_or(ERR_VALUE);
-        // The memory grow might have invalidated the cached linear memory
-        // so we need to reset it in order for the cache to reload in case it
-        // is used again.
-        self.cache.reset_default_memory_bytes();
+        let result = self.consume_fuel_on_success(
+            |this| {
+                let delta_in_bytes = delta.to_bytes().unwrap_or(0) as u64;
+                delta_in_bytes * this.fuel_costs().memory_per_byte
+            },
+            |this| {
+                this.ctx
+                    .resolve_memory_mut(&memory)
+                    .grow(delta)
+                    .map(u32::from)
+                    .map_err(|_| EntityGrowError::InvalidGrow)
+            },
+        );
+        let result = match result {
+            Ok(result) => result,
+            Err(EntityGrowError::InvalidGrow) => INVALID_GROWTH_ERRCODE,
+            Err(EntityGrowError::TrapCode(trap_code)) => return Err(trap_code),
+        };
         self.value_stack.push(result);
         self.try_next_instr()
     }
@@ -829,21 +825,6 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_table_grow(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
-        /// An error that can occur upon `table.grow`.
-        #[derive(Copy, Clone)]
-        pub enum TableGrowError {
-            /// Usually a [`TrapCode::OutOfFuel`] trap.
-            TrapCode(TrapCode),
-            /// Encountered when growing the `table` fails.
-            InvalidGrow,
-        }
-
-        impl From<TrapCode> for TableGrowError {
-            fn from(trap_code: TrapCode) -> Self {
-                Self::TrapCode(trap_code)
-            }
-        }
-
         let (init, delta) = self.value_stack.pop2();
         let delta: u32 = delta.into();
         let result = self.consume_fuel_on_success(
@@ -853,17 +834,13 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 this.ctx
                     .resolve_table_mut(&table)
                     .grow_untyped(delta, init)
-                    .map_err(|_| TableGrowError::InvalidGrow)
+                    .map_err(|_| EntityGrowError::InvalidGrow)
             },
         );
         let result = match result {
             Ok(result) => result,
-            Err(TableGrowError::InvalidGrow) => {
-                // The Wasm specification demands that this value is returned
-                // by `table.grow` if the growth operation was unsuccessful.
-                u32::MAX
-            }
-            Err(TableGrowError::TrapCode(trap_code)) => return Err(trap_code),
+            Err(EntityGrowError::InvalidGrow) => INVALID_GROWTH_ERRCODE,
+            Err(EntityGrowError::TrapCode(trap_code)) => return Err(trap_code),
         };
         self.value_stack.push(result);
         self.try_next_instr()

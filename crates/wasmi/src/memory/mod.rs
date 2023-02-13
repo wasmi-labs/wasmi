@@ -163,46 +163,6 @@ impl MemoryEntity {
         self.current_pages
     }
 
-    /// Checks if the [`MemoryEntity`] can be grown by the given amount of [`Pages`].
-    ///
-    /// Returns the new amount of [`Pages`] and the amount of bytes that the
-    /// [`MemoryEntity`] and its underlying byte buffer would have after an actual
-    /// `grow` operation.
-    ///
-    /// # Note
-    ///
-    /// This does _NOT_ actually grow the [`MemoryEntity`] and merely serves the
-    /// purpose of deduplicating logic from different other methods.
-    ///
-    /// # Errors
-    ///
-    /// If the linear memory would grow beyond its maximum limit after
-    /// the grow operation.
-    pub fn check_grow(&self, additional: Pages) -> Result<(Pages, usize), MemoryError> {
-        let current_pages = self.current_pages();
-        if additional == Pages::from(0) {
-            // Nothing to do in this case. Bail out early.
-            let current_size = current_pages
-                .to_bytes()
-                .expect("cannot have invalid amount of pages for bytes conversion");
-            return Ok((current_pages, current_size));
-        }
-        let maximum_pages = self.ty().maximum_pages().unwrap_or_else(Pages::max);
-        let new_pages = current_pages
-            .checked_add(additional)
-            .filter(|&new_pages| new_pages <= maximum_pages)
-            .ok_or(MemoryError::OutOfBoundsGrowth)?;
-        let new_size = new_pages
-            .to_bytes()
-            .ok_or(MemoryError::OutOfBoundsAllocation)?;
-        Ok((new_pages, new_size))
-    }
-
-    /// Returns `true` if [`MemoryEntity::grow`] by `additional` [`Pages`] would succeed.
-    pub fn can_grow(&self, additional: Pages) -> bool {
-        self.check_grow(additional).is_ok()
-    }
-
     /// Grows the linear memory by the given amount of new pages.
     ///
     /// Returns the amount of pages before the operation upon success.
@@ -213,7 +173,18 @@ impl MemoryEntity {
     /// the grow operation.
     pub fn grow(&mut self, additional: Pages) -> Result<Pages, MemoryError> {
         let current_pages = self.current_pages();
-        let (new_pages, new_size) = self.check_grow(additional)?;
+        if additional == Pages::from(0) {
+            // Nothing to do in this case. Bail out early.
+            return Ok(current_pages);
+        }
+        let maximum_pages = self.ty().maximum_pages().unwrap_or_else(Pages::max);
+        let new_pages = current_pages
+            .checked_add(additional)
+            .filter(|&new_pages| new_pages <= maximum_pages)
+            .ok_or(MemoryError::OutOfBoundsGrowth)?;
+        let new_size = new_pages
+            .to_bytes()
+            .ok_or(MemoryError::OutOfBoundsAllocation)?;
         // At this point it is okay to grow the underlying virtual memory
         // by the given amount of additional pages.
         self.bytes.grow(new_size);
