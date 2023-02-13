@@ -742,7 +742,7 @@ impl<T> Store<T> {
 
     /// Returns `Ok` if fuel metering has been enabled.
     ///
-    /// Otherwise returns the respective [`StoreError`].
+    /// Otherwise returns the respective [`FuelError`].
     fn check_fuel_metering_enabled(&self) -> Result<(), FuelError> {
         if !self.is_fuel_metering_enabled() {
             return Err(FuelError::fuel_metering_disabled());
