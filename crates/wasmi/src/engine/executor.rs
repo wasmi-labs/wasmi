@@ -725,11 +725,16 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 delta_in_bytes * costs.memory_per_byte
             },
             |this| {
-                this.ctx
+                let new_pages = this.ctx
                     .resolve_memory_mut(&memory)
                     .grow(delta)
                     .map(u32::from)
-                    .map_err(|_| EntityGrowError::InvalidGrow)
+                    .map_err(|_| EntityGrowError::InvalidGrow)?;
+                // The `memory.grow` operation might have invalidated the cached
+                // linear memory so we need to reset it in order for the cache to
+                // reload in case it is used again.
+                this.cache.reset_default_memory_bytes();
+                Ok(new_pages)
             },
         );
         let result = match result {
