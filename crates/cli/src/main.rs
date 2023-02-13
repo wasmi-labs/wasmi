@@ -5,7 +5,7 @@ use crate::{
 use anyhow::{anyhow, bail, Error, Result};
 use clap::Parser;
 use context::Context;
-use std::path::Path;
+use std::{path::Path, process};
 use wasmi::{Func, FuncType, Value};
 
 mod args;
@@ -37,12 +37,24 @@ fn main() -> Result<()> {
         )
     }
 
-    func.call(ctx.store_mut(), &func_args, &mut func_results)
-        .map_err(|error| anyhow!("failed during execution of {func_name}: {error}"))?;
-
-    print_pretty_results(&func_results);
-
-    Ok(())
+    match func.call(ctx.store_mut(), &func_args, &mut func_results) {
+        Ok(()) => {
+            print_pretty_results(&func_results);
+            Ok(())
+        },
+        Err(error) => {
+            if let wasmi::Error::Trap(trap) = &error {
+                if let Some(exit_code) = trap.i32_exit_status() {
+                    // We received an exit code from the WASI program,
+                    // therefore we exit with the same exit code after
+                    // pretty printing the results.
+                    print_pretty_results(&func_results);
+                    process::exit(exit_code)
+                }
+            }
+            bail!("failed during execution of {func_name}: {error}")
+        }
+    }
 }
 
 /// Performs minor typecheck on the function signature.
