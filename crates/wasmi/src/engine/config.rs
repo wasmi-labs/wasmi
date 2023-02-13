@@ -205,8 +205,7 @@ impl Config {
     ///
     /// # Note
     ///
-    /// This can be used to disallow floating-point operators.
-    /// Note that disabling this does not disable the `f32` and `f64` Wasm types, only the operators that work on them.
+    /// This can be used to disallow floating-point operators and types.
     ///
     /// Enabled by default.
     pub fn floats(&mut self, enable: bool) -> &mut Self {
