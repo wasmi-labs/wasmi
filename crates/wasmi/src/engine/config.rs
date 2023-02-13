@@ -183,7 +183,7 @@ impl Config {
     ///
     /// Enabled by default.
     ///
-    /// [`multi-value`]: https://github.com/WebAssembly/bulk-memory-operations
+    /// [`bulk-memory`]: https://github.com/WebAssembly/bulk-memory-operations
     pub fn wasm_bulk_memory(&mut self, enable: bool) -> &mut Self {
         self.bulk_memory = enable;
         self
@@ -195,17 +195,13 @@ impl Config {
     ///
     /// Enabled by default.
     ///
-    /// [`multi-value`]: https://github.com/WebAssembly/reference-types
+    /// [`reference-types`]: https://github.com/WebAssembly/reference-types
     pub fn wasm_reference_types(&mut self, enable: bool) -> &mut Self {
         self.reference_types = enable;
         self
     }
 
-    /// Enable or disable Wasm instructions on `f32` and `f64` types.
-    ///
-    /// # Note
-    ///
-    /// This can be used to disallow floating-point operators and types.
+    /// Enable or disable Wasm floating point (`f32` and `f64`) instructions and types.
     ///
     /// Enabled by default.
     pub fn floats(&mut self, enable: bool) -> &mut Self {
