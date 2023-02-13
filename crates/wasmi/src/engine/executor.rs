@@ -483,13 +483,18 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     ///
     /// If the [`StoreInner`] ran out of fuel.
     fn consume_fuel_with(&mut self, delta: impl FnOnce(&Self) -> u64) -> Result<(), TrapCode> {
-        if self.ctx.engine().config().get_consume_fuel() {
+        if self.is_fuel_metering_enabled() {
             let delta = delta(self);
             self.ctx.fuel_mut().consume_fuel(delta)?;
         }
         Ok(())
     }
 
+
+    /// Returns `true` if fuel metering is enabled.
+    fn is_fuel_metering_enabled(&self) -> bool {
+        self.ctx.engine().config().get_consume_fuel()
+    }
     /// Returns a shared reference to the [`FuelCosts`] of the [`Engine`].
     fn fuel_costs(&self) -> &FuelCosts {
         self.ctx.engine().config().fuel_costs()
