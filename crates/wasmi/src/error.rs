@@ -1,11 +1,11 @@
 use super::errors::{
+    FuelError,
     FuncError,
     GlobalError,
     InstantiationError,
     LinkerError,
     MemoryError,
     ModuleError,
-    FuelError,
     TableError,
 };
 use crate::core::Trap;
