@@ -12,7 +12,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Fixed
 
-- Fixed a bug where resuming a resumable function with more outputs than
+- Fixed a bug where resuming a resumable function from a host function with more outputs than
   inputs could lead to incorrect behavior or runtime panics. (https://github.com/paritytech/wasmi/pull/671)
     - Thanks to [Pierre Krieger (tomaka)](https://github.com/tomaka) for reporting and crafting an initial minimal test case.
 
