@@ -41,7 +41,7 @@ fn main() -> Result<()> {
         Ok(()) => {
             print_pretty_results(&func_results);
             Ok(())
-        },
+        }
         Err(error) => {
             if let wasmi::Error::Trap(trap) = &error {
                 if let Some(exit_code) = trap.i32_exit_status() {
