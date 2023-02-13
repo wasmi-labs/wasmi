@@ -214,6 +214,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
+            fuzz/target/
           key: ${{ runner.os }}-cargo-fuzz-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-fuzz-
       - name: Checkout Submodules
@@ -227,12 +228,12 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: fuzz
-          args: run translate -j 2 -- -max_total_time=60 # 1 minute of fuzzing
+          args: run translate -j 2 --verbose -- -max_total_time=60 # 1 minute of fuzzing
       - name: Fuzz Translate (metered)
         uses: actions-rs/cargo@v1
         with:
           command: fuzz
-          args: run translate -j 2 -- -max_total_time=60 # 1 minute of fuzzing
+          args: run translate -j 2 --verbose -- -max_total_time=60 # 1 minute of fuzzing
 
   miri:
     name: Miri
