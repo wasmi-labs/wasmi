@@ -20,7 +20,7 @@ fn main() -> Result<()> {
     let args = Args::parse();
     let wasm_file = args.wasm_file();
     let wasi_ctx = args.wasi_context()?;
-    let mut ctx = Context::new(wasm_file, wasi_ctx)?;
+    let mut ctx = Context::new(wasm_file, wasi_ctx, args.fuel())?;
     let (func_name, func) = get_invoked_func(&args, &ctx)?;
     let ty = func.ty(ctx.store());
     let func_args = utils::decode_func_args(&ty, args.func_args())?;
@@ -39,6 +39,7 @@ fn main() -> Result<()> {
 
     match func.call(ctx.store_mut(), &func_args, &mut func_results) {
         Ok(()) => {
+            print_remaining_fuel(&args, &ctx);
             print_pretty_results(&func_results);
             Ok(())
         }
@@ -48,12 +49,24 @@ fn main() -> Result<()> {
                     // We received an exit code from the WASI program,
                     // therefore we exit with the same exit code after
                     // pretty printing the results.
+                    print_remaining_fuel(&args, &ctx);
                     print_pretty_results(&func_results);
                     process::exit(exit_code)
                 }
             }
             bail!("failed during execution of {func_name}: {error}")
         }
+    }
+}
+
+/// Prints the remaining fuel so far if fuel metering was enabled.
+fn print_remaining_fuel(args: &Args, ctx: &Context) {
+    if let Some(total_fuel) = args.fuel() {
+        let consumed = ctx.store().fuel_consumed().unwrap_or_else(|| {
+            panic!("fuel metering is enabled but could not query consumed fuel")
+        });
+        let remaining = total_fuel - consumed;
+        println!("fuel consumed: {consumed}, fuel remaining: {remaining}");
     }
 }
 

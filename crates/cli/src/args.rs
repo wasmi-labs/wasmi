@@ -82,6 +82,12 @@ pub struct Args {
     #[clap(long = "invoke", value_name = "FUNCTION")]
     invoke: Option<String>,
 
+    /// Enable execution fiel metering with N units of fuel.
+    ///
+    /// The execution will trap after running out of the N units of fuel.
+    #[clap(long = "fuel", value_name = "N")]
+    fuel: Option<u64>,
+
     /// Arguments given to the Wasm module or the invoked function.
     #[clap(value_name = "ARGS")]
     func_args: Vec<String>,
@@ -101,6 +107,11 @@ impl Args {
     /// Returns the function arguments given to the CLI app.
     pub fn func_args(&self) -> &[String] {
         &self.func_args[..]
+    }
+
+    /// Returns the amount of fuel given to the CLI app if any.
+    pub fn fuel(&self) -> Option<u64> {
+        self.fuel
     }
 
     /// Pre-opens all directories given in `--dir` and returns them for use by the [`WasiCtx`].
