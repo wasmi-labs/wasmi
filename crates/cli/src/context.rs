@@ -1,7 +1,7 @@
 use crate::utils;
 use anyhow::{anyhow, Error};
 use std::path::Path;
-use wasmi::{ExternType, Func, FuncType, Instance, Module, Store};
+use wasmi::{Config, ExternType, Func, FuncType, Instance, Module, Store};
 use wasmi_wasi::WasiCtx;
 
 /// The [`Context`] for the `wasmi` CLI application.
@@ -23,13 +23,22 @@ impl Context {
     ///
     /// - If parsing, validating, compiling or instantiating the Wasm module failed.
     /// - If adding WASI defintions to the linker failed.
-    pub fn new(wasm_file: &Path, wasi_ctx: WasiCtx) -> Result<Self, Error> {
-        let engine = wasmi::Engine::default();
+    pub fn new(wasm_file: &Path, wasi_ctx: WasiCtx, fuel: Option<u64>) -> Result<Self, Error> {
+        let mut config = Config::default();
+        if fuel.is_some() {
+            config.consume_fuel(true);
+        }
+        let engine = wasmi::Engine::new(&config);
         let wasm_bytes = utils::read_wasm_or_wat(wasm_file)?;
         let module = wasmi::Module::new(&engine, &mut &wasm_bytes[..]).map_err(|error| {
             anyhow!("failed to parse and validate Wasm module {wasm_file:?}: {error}")
         })?;
         let mut store = wasmi::Store::new(&engine, wasi_ctx);
+        if let Some(fuel) = fuel {
+            store.add_fuel(fuel).unwrap_or_else(|error| {
+                panic!("error: fuel metering is enabled but encountered: {error}")
+            });
+        }
         let mut linker = <wasmi::Linker<WasiCtx>>::default();
         wasmi_wasi::define_wasi(&mut linker, &mut store, |ctx| ctx)
             .map_err(|error| anyhow!("failed to add WASI definitions to the linker: {error}"))?;
