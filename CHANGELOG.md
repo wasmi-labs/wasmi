@@ -8,6 +8,29 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.27.0`] - 2023-02-14
+
+### Added
+
+- Added support for fuel metering in the `wasmi` CLI. (https://github.com/paritytech/wasmi/pull/679)
+  - Users can now specify an amount of fuel via `--fuel N` to commit for the execution.
+    Upon success the `wasmi` CLI will display the total amount of consumed and remaining fuel.
+
+### Fixed
+
+- Fixed a bug that `wasmi` CLI did not preserve the WASI exit status. (https://github.com/paritytech/wasmi/pull/677)
+  - Thanks to [YAMAMOTO Takashi @yamt](https://github.com/yamt) for reporting the issue.
+- The `wasmi` CLI now properly displays exported functions if `--invoke x` was provided and `x` was not found. (https://github.com/paritytech/wasmi/pull/678)
+- Applied minor fixes to `Config` docs. (https://github.com/paritytech/wasmi/pull/673)
+
+### Changed
+
+- Defer charging fuel for costly bulk `memory` and bulk `table` operations. (https://github.com/paritytech/wasmi/pull/676)
+  - Note that the check to assert that enough fuel is provided for these costly
+    operation is still happening before the actual computation and only the charging
+    is deferred to after a successful run. The reason behind this is that all the affected
+    operations fail fast and therefore should not cost lots of fuel in case of failure.
+
 ## [`0.26.1`] - 2023-02-13
 
 ### Fixed
