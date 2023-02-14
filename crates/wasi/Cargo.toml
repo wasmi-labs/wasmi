@@ -1,6 +1,6 @@
 [package]
 name = "wasmi_wasi"
-version = "0.1.0"
+version = "0.2.0"
 documentation = "https://docs.rs/wasmi_wasi"
 description = "WASI library support for the wasmi interpreter"
 authors.workspace = true
@@ -15,7 +15,7 @@ categories.workspace = true
 wasi-common = "2.0"
 wasi-cap-std-sync = "2.0"
 wiggle = { version = "2.0", default-features = false, features = ["wiggle_metadata"] }
-wasmi = { version = "0.26.1", path = "../wasmi" }
+wasmi = { version = "0.27.0", path = "../wasmi" }
 
 [dev-dependencies]
 wat = "1.0.50"
