@@ -2,7 +2,7 @@ use crate::{
     args::Args,
     display::{DisplayExportedFuncs, DisplayFuncType, DisplaySequence, DisplayValue},
 };
-use anyhow::{bail, Error, Result};
+use anyhow::{anyhow, bail, Error, Result};
 use clap::Parser;
 use context::Context;
 use std::{path::Path, process};
@@ -87,7 +87,9 @@ fn typecheck_args(func_name: &str, func_ty: &FuncType, args: &[Value]) -> Result
 fn get_invoked_func(args: &Args, ctx: &Context) -> Result<(String, Func), Error> {
     match args.invoked() {
         Some(func_name) => {
-            let func = ctx.get_func(func_name)?;
+            let func = ctx
+                .get_func(func_name)
+                .map_err(|error| anyhow!("{error}\n\n{}", DisplayExportedFuncs::from(ctx)))?;
             let func_name = func_name.into();
             Ok((func_name, func))
         }
