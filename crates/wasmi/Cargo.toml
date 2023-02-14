@@ -1,6 +1,6 @@
 [package]
 name = "wasmi"
-version = "0.26.1"
+version = "0.27.0"
 documentation = "https://docs.rs/wasmi/"
 description = "WebAssembly interpreter"
 exclude = ["tests/*", "benches/*"]
