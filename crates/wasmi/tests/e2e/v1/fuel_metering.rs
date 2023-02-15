@@ -10,7 +10,7 @@ fn test_setup() -> (Store<()>, Linker<()>) {
     config.consume_fuel(true);
     let engine = Engine::new(&config);
     let store = Store::new(&engine, ());
-    let linker = Linker::new();
+    let linker = Linker::new(&engine);
     (store, linker)
 }
 

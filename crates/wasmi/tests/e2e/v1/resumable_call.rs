@@ -19,14 +19,15 @@ use wasmi::{
 };
 use wasmi_core::{Trap, TrapCode, ValueType};
 
-fn test_setup() -> Store<()> {
+fn test_setup() -> (Store<()>, Linker<()>) {
     let engine = Engine::default();
-    Store::new(&engine, ())
+    let store = Store::new(&engine, ());
+    let linker = <Linker<()>>::new(&engine);
+    (store, linker)
 }
 
 fn resumable_call_smoldot_common(wasm: &str) -> (Store<()>, TypedResumableInvocation<i32>) {
-    let mut store = test_setup();
-    let mut linker = <Linker<()>>::new();
+    let (mut store, mut linker) = test_setup();
     // The important part about this test is that this
     // host function has more results than parameters.
     let host_fn = Func::new(
@@ -98,7 +99,7 @@ fn resumable_call_smoldot_02() {
 
 #[test]
 fn resumable_call_host() {
-    let mut store = test_setup();
+    let (mut store, _linker) = test_setup();
     let host_fn = Func::wrap(&mut store, || -> Result<(), Trap> {
         Err(Trap::i32_exit(100))
     });
@@ -125,8 +126,7 @@ fn resumable_call_host() {
 
 #[test]
 fn resumable_call() {
-    let mut store = test_setup();
-    let mut linker = <Linker<()>>::new();
+    let (mut store, mut linker) = test_setup();
     let host_fn = Func::wrap(&mut store, |input: i32| -> Result<i32, Trap> {
         match input {
             1 => Err(Trap::i32_exit(10)),

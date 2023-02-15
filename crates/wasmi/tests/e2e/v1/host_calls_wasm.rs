@@ -3,15 +3,16 @@
 
 use wasmi::{Caller, Engine, Extern, Func, Linker, Module, Store};
 
-fn test_setup() -> Store<()> {
+fn test_setup() -> (Store<()>, Linker<()>) {
     let engine = Engine::default();
-    Store::new(&engine, ())
+    let store = Store::new(&engine, ());
+    let linker = <Linker<()>>::new(&engine);
+    (store, linker)
 }
 
 #[test]
 fn host_calls_wasm() {
-    let mut store = test_setup();
-    let mut linker = <Linker<()>>::new();
+    let (mut store, mut linker) = test_setup();
     let host_fn = Func::wrap(&mut store, |mut caller: Caller<()>, input: i32| -> i32 {
         let wasm_fn = caller
             .get_export("square")

@@ -5,7 +5,7 @@ use crate::{
     FuncType,
     GlobalType,
     MemoryType,
-    TableType,
+    TableType, Engine,
 };
 use alloc::{
     collections::{btree_map::Entry, BTreeMap},
@@ -293,6 +293,13 @@ struct ImportKey {
 
 /// A linker used to define module imports and instantiate module instances.
 pub struct Linker<T> {
+    /// The underlying [`Engine`] for the [`Linker`].
+    /// 
+    /// # Note
+    /// 
+    /// Primarily required to define [`Linker`] owned host functions using
+    /// [`Linker::func_wrap`] and [`Linker::func_new`].
+    engine: Engine,
     /// Allows to efficiently store strings and deduplicate them..
     strings: StringInterner,
     /// Stores the definitions given their names.
@@ -312,6 +319,7 @@ impl<T> Debug for Linker<T> {
 impl<T> Clone for Linker<T> {
     fn clone(&self) -> Linker<T> {
         Self {
+            engine: self.engine.clone(),
             strings: self.strings.clone(),
             definitions: self.definitions.clone(),
             marker: self.marker,
@@ -321,18 +329,24 @@ impl<T> Clone for Linker<T> {
 
 impl<T> Default for Linker<T> {
     fn default() -> Self {
-        Self::new()
+        Self::new(&Engine::default())
     }
 }
 
 impl<T> Linker<T> {
     /// Creates a new linker.
-    pub fn new() -> Self {
+    pub fn new(engine: &Engine) -> Self {
         Self {
+            engine: engine.clone(),
             strings: StringInterner::default(),
             definitions: BTreeMap::default(),
             marker: PhantomData,
         }
+    }
+
+    /// Returns the underlying [`Engine`] of the [`Linker`].
+    pub fn engine(&self) -> &Engine {
+        &self.engine
     }
 
     /// Define a new item in this [`Linker`].
