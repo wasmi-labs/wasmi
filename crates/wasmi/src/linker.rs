@@ -2,6 +2,7 @@ use super::{AsContextMut, Error, Extern, InstancePre, Module};
 use crate::{
     func::HostFuncEntity,
     module::{ImportName, ImportType},
+    AsContext,
     Engine,
     ExternType,
     FuncType,
@@ -303,7 +304,7 @@ enum Definition<T> {
 impl<T> Clone for Definition<T> {
     fn clone(&self) -> Self {
         match self {
-            Self::Extern(definition) => Self::Extern(definition.clone()),
+            Self::Extern(definition) => Self::Extern(*definition),
             Self::HostFunc(host_func) => Self::HostFunc(host_func.clone()),
         }
     }
@@ -362,7 +363,7 @@ impl<'a, T> DebugHostFuncEntity<'a, T> {
 impl<'a, T> Debug for DebugHostFuncEntity<'a, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.engine
-            .resolve_func_type(&self.host_func.ty_dedup(), |func_type| {
+            .resolve_func_type(self.host_func.ty_dedup(), |func_type| {
                 f.debug_struct("HostFunc").field("ty", func_type).finish()
             })
     }
@@ -478,17 +479,29 @@ impl<T> Linker<T> {
         Ok(())
     }
 
-    /// Looks up a previously defined extern value in this [`Linker`].
+    /// Looks up a defined [`Extern`] by name in this [`Linker`].
     ///
-    /// Returns `None` if this name was not previously defined in this
-    /// [`Linker`].
-    fn resolve(&self, module: &str, name: &str) -> Option<Extern> {
+    /// Returns `None` if this name was not previously defined in this [`Linker`].
+    ///
+    /// # Panics
+    ///
+    /// If the [`Engine`] of this [`Linker`] and the [`Engine`] of `context` are not the same.
+    pub fn get(
+        &self,
+        context: impl AsContext<UserState = T>,
+        module: &str,
+        name: &str,
+    ) -> Option<Extern> {
+        assert!(Engine::same(
+            context.as_context().store.engine(),
+            self.engine()
+        ));
         let key = ImportKey {
             module: self.strings.get(module)?,
             name: self.strings.get(name)?,
         };
         if let Some(Definition::Extern(item)) = self.definitions.get(&key) {
-            return Some(item.clone());
+            return Some(*item);
         }
         None
     }
@@ -505,7 +518,7 @@ impl<T> Linker<T> {
     /// - If any imported item does not satisfy its type requirements.
     pub fn instantiate(
         &self,
-        mut context: impl AsContextMut,
+        mut context: impl AsContextMut<UserState = T>,
         module: &Module,
     ) -> Result<InstancePre, Error> {
         assert!(Engine::same(self.engine(), context.as_context().engine()));
@@ -527,7 +540,7 @@ impl<T> Linker<T> {
     /// If the imported item does not satisfy constraints set by the [`Module`].
     fn process_import(
         &self,
-        context: impl AsContextMut,
+        context: impl AsContextMut<UserState = T>,
         import: ImportType,
     ) -> Result<Extern, Error> {
         assert!(Engine::same(self.engine(), context.as_context().engine()));
@@ -535,7 +548,7 @@ impl<T> Linker<T> {
         let module_name = import.module();
         let field_name = import.name();
         let resolved = self
-            .resolve(module_name, field_name)
+            .get(context.as_context(), module_name, field_name)
             .ok_or_else(|| LinkerError::missing_definition(&import))?;
         let invalid_type = || LinkerError::invalid_type_definition(&import, &resolved.ty(&context));
         match import.ty() {
