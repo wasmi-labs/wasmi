@@ -1,5 +1,6 @@
 use super::{AsContextMut, Error, Extern, InstancePre, Module};
 use crate::{
+    func::HostFuncEntity,
     module::{ImportName, ImportType},
     Engine,
     ExternType,
@@ -16,7 +17,6 @@ use alloc::{
 use core::{
     fmt,
     fmt::{Debug, Display},
-    marker::PhantomData,
     num::NonZeroUsize,
     ops::Deref,
 };
@@ -292,6 +292,82 @@ struct ImportKey {
     name: Symbol,
 }
 
+/// A [`Linker`] definition.
+enum Definition<T> {
+    /// An external item from an [`Instance`](crate::Instance).
+    Extern(Extern),
+    /// A [`Linker`] internal host function.
+    HostFunc(HostFuncEntity<T>),
+}
+
+impl<T> Clone for Definition<T> {
+    fn clone(&self) -> Self {
+        match self {
+            Self::Extern(definition) => Self::Extern(definition.clone()),
+            Self::HostFunc(host_func) => Self::HostFunc(host_func.clone()),
+        }
+    }
+}
+
+/// [`Debug`]-wrapper for the definitions of a [`Linker`].
+pub struct DebugDefinitions<'a, T> {
+    /// The [`Engine`] of the [`Linker`].
+    engine: &'a Engine,
+    /// The definitions of the [`Linker`].
+    definitions: &'a BTreeMap<ImportKey, Definition<T>>,
+}
+
+impl<'a, T> DebugDefinitions<'a, T> {
+    /// Create a new [`Debug`]-wrapper for the [`Linker`] definitions.
+    fn new(linker: &'a Linker<T>) -> Self {
+        Self {
+            engine: linker.engine(),
+            definitions: &linker.definitions,
+        }
+    }
+}
+
+impl<'a, T> Debug for DebugDefinitions<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut map = f.debug_map();
+        for (name, definition) in self.definitions {
+            match definition {
+                Definition::Extern(definition) => {
+                    map.entry(name, definition);
+                }
+                Definition::HostFunc(definition) => {
+                    map.entry(name, &DebugHostFuncEntity::new(self.engine, definition));
+                }
+            }
+        }
+        map.finish()
+    }
+}
+
+/// [`Debug`]-wrapper for [`HostFuncEntity`] in the [`Linker`].
+pub struct DebugHostFuncEntity<'a, T> {
+    /// The [`Engine`] of the [`Linker`].
+    engine: &'a Engine,
+    /// The host function to be [`Debug`] formatted.
+    host_func: &'a HostFuncEntity<T>,
+}
+
+impl<'a, T> DebugHostFuncEntity<'a, T> {
+    /// Create a new [`Debug`]-wrapper for the [`HostFuncEntity`].
+    fn new(engine: &'a Engine, host_func: &'a HostFuncEntity<T>) -> Self {
+        Self { engine, host_func }
+    }
+}
+
+impl<'a, T> Debug for DebugHostFuncEntity<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.engine
+            .resolve_func_type(&self.host_func.ty_dedup(), |func_type| {
+                f.debug_struct("HostFunc").field("ty", func_type).finish()
+            })
+    }
+}
+
 /// A linker used to define module imports and instantiate module instances.
 pub struct Linker<T> {
     /// The underlying [`Engine`] for the [`Linker`].
@@ -304,15 +380,14 @@ pub struct Linker<T> {
     /// Allows to efficiently store strings and deduplicate them..
     strings: StringInterner,
     /// Stores the definitions given their names.
-    definitions: BTreeMap<ImportKey, Extern>,
-    marker: PhantomData<fn() -> T>,
+    definitions: BTreeMap<ImportKey, Definition<T>>,
 }
 
 impl<T> Debug for Linker<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Linker")
             .field("strings", &self.strings)
-            .field("definitions", &self.definitions)
+            .field("definitions", &DebugDefinitions::new(self))
             .finish()
     }
 }
@@ -323,7 +398,6 @@ impl<T> Clone for Linker<T> {
             engine: self.engine.clone(),
             strings: self.strings.clone(),
             definitions: self.definitions.clone(),
-            marker: self.marker,
         }
     }
 }
@@ -341,7 +415,6 @@ impl<T> Linker<T> {
             engine: engine.clone(),
             strings: StringInterner::default(),
             definitions: BTreeMap::default(),
-            marker: PhantomData,
         }
     }
 
@@ -399,7 +472,7 @@ impl<T> Linker<T> {
                 });
             }
             Entry::Vacant(v) => {
-                v.insert(item);
+                v.insert(Definition::Extern(item));
             }
         }
         Ok(())
@@ -414,7 +487,10 @@ impl<T> Linker<T> {
             module: self.strings.get(module)?,
             name: self.strings.get(name)?,
         };
-        self.definitions.get(&key).copied()
+        if let Some(Definition::Extern(item)) = self.definitions.get(&key) {
+            return Some(item.clone());
+        }
+        None
     }
 
     /// Instantiates the given [`Module`] using the definitions in the [`Linker`].
