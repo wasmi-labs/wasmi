@@ -42,8 +42,6 @@ pub struct Tracer {
     pub elem_table: ElemTable,
     pub configure_table: ConfigureTable,
     type_of_func_ref: Vec<(FuncRef, u32)>,
-    // GlobalRef to global indexƒ
-    global_instance_lookup: Vec<(GlobalRef, u16)>,
     function_lookup: Vec<(FuncRef, u16)>,
     last_jump_eid: Vec<u64>,
     function_index_allocator: u32,
@@ -63,7 +61,6 @@ impl Tracer {
             elem_table: ElemTable::default(),
             configure_table: ConfigureTable::default(),
             type_of_func_ref: vec![],
-            global_instance_lookup: vec![],
             function_lookup: vec![],
             function_index_allocator: 1,
             function_index_translation: Default::default(),
@@ -116,21 +113,13 @@ impl Tracer {
     pub(crate) fn push_global(&mut self, globalidx: u32, globalref: &GlobalRef) {
         let vtype = globalref.elements_value_type().into();
 
-        if let Some(_origin_idx) = self.lookup_global_instance(globalref) {
-            // Import global does not support yet.
-            todo!()
-        } else {
-            self.global_instance_lookup
-                .push((globalref.clone(), globalidx as u16));
-
-            self.imtable.push(
-                true,
-                globalref.is_mutable(),
-                globalidx,
-                vtype,
-                from_value_internal_to_u64_with_typ(vtype, ValueInternal::from(globalref.get())),
-            )
-        }
+        self.imtable.push(
+            true,
+            globalref.is_mutable(),
+            globalidx,
+            vtype,
+            from_value_internal_to_u64_with_typ(vtype, ValueInternal::from(globalref.get())),
+        );
     }
 
     pub(crate) fn push_elem(&mut self, table_idx: u32, offset: u32, func_idx: u32, type_idx: u32) {
@@ -278,16 +267,6 @@ impl Tracer {
                 }
             }
         }
-    }
-
-    pub fn lookup_global_instance(&self, global_instance: &GlobalRef) -> Option<u16> {
-        for m in &self.global_instance_lookup {
-            if &m.0 == global_instance {
-                return Some(m.1);
-            }
-        }
-
-        None
     }
 
     pub fn lookup_function(&self, function: &FuncRef) -> u16 {
