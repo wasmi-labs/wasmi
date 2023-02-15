@@ -39,7 +39,7 @@ impl Context {
                 panic!("error: fuel metering is enabled but encountered: {error}")
             });
         }
-        let mut linker = <wasmi::Linker<WasiCtx>>::default();
+        let mut linker = <wasmi::Linker<WasiCtx>>::new(&engine);
         wasmi_wasi::define_wasi(&mut linker, &mut store, |ctx| ctx)
             .map_err(|error| anyhow!("failed to add WASI definitions to the linker: {error}"))?;
         let instance = linker

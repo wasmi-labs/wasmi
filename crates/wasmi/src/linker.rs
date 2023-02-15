@@ -419,6 +419,10 @@ impl<T> Linker<T> {
 
     /// Instantiates the given [`Module`] using the definitions in the [`Linker`].
     ///
+    /// # Panics
+    ///
+    /// If the [`Engine`] of the [`Linker`] and `context` are not the same.
+    ///
     /// # Errors
     ///
     /// - If the linker does not define imports of the instantiated [`Module`].
@@ -428,6 +432,7 @@ impl<T> Linker<T> {
         mut context: impl AsContextMut,
         module: &Module,
     ) -> Result<InstancePre, Error> {
+        assert!(Engine::same(self.engine(), context.as_context().engine()));
         let externals = module
             .imports()
             .map(|import| self.process_import(&mut context, import))
@@ -437,6 +442,10 @@ impl<T> Linker<T> {
 
     /// Processes a single [`Module`] import.
     ///
+    /// # Panics
+    ///
+    /// If the [`Engine`] of the [`Linker`] and `context` are not the same.
+    ///
     /// # Errors
     ///
     /// If the imported item does not satisfy constraints set by the [`Module`].
@@ -445,6 +454,7 @@ impl<T> Linker<T> {
         context: impl AsContextMut,
         import: ImportType,
     ) -> Result<Extern, Error> {
+        assert!(Engine::same(self.engine(), context.as_context().engine()));
         let import_name = import.import_name();
         let module_name = import.module();
         let field_name = import.name();
