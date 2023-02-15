@@ -162,8 +162,8 @@ impl WasmFuncEntity {
     }
 
     /// Returns the instance where the [`Func`] belong to.
-    pub fn instance(&self) -> Instance {
-        self.instance
+    pub fn instance(&self) -> &Instance {
+        &self.instance
     }
 
     /// Returns the Wasm function body of the [`Func`].
