@@ -22,7 +22,7 @@ use super::{
     StoreContext,
     Stored,
 };
-use crate::{core::Trap, engine::ResumableCall, Error, Value, Engine};
+use crate::{core::Trap, engine::ResumableCall, Engine, Error, Value};
 use alloc::{boxed::Box, sync::Arc};
 use core::{fmt, fmt::Debug, num::NonZeroU32};
 use wasmi_arena::ArenaIndex;
@@ -66,13 +66,17 @@ impl<T> Clone for FuncEntity<T> {
 
 impl<T> From<WasmFuncEntity> for FuncEntity<T> {
     fn from(wasm_func: WasmFuncEntity) -> Self {
-        Self { inner: FuncEntityInner::Wasm(wasm_func) }
+        Self {
+            inner: FuncEntityInner::Wasm(wasm_func),
+        }
     }
 }
 
 impl<T> From<HostFuncEntity<T>> for FuncEntity<T> {
     fn from(host_func: HostFuncEntity<T>) -> Self {
-        Self { inner: FuncEntityInner::Host(host_func) }
+        Self {
+            inner: FuncEntityInner::Host(host_func),
+        }
     }
 }
 
@@ -92,10 +96,7 @@ impl<T> FuncEntity<T> {
     }
 
     /// Creates a new host function from the given dynamically typed closure.
-    pub fn wrap<Params, Results>(
-        engine: &Engine,
-        func: impl IntoFunc<T, Params, Results>,
-    ) -> Self {
+    pub fn wrap<Params, Results>(engine: &Engine, func: impl IntoFunc<T, Params, Results>) -> Self {
         Self::from(HostFuncEntity::wrap(engine, func))
     }
 
@@ -254,10 +255,7 @@ impl<T> HostFuncEntity<T> {
     }
 
     /// Creates a new host function from the given statically typed closure.
-    pub fn wrap<Params, Results>(
-        engine: &Engine,
-        func: impl IntoFunc<T, Params, Results>,
-    ) -> Self {
+    pub fn wrap<Params, Results>(engine: &Engine, func: impl IntoFunc<T, Params, Results>) -> Self {
         let (signature, trampoline) = func.into_func();
         let signature = engine.alloc_func_type(signature);
         Self {

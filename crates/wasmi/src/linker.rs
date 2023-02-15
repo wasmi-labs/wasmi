@@ -1,11 +1,12 @@
 use super::{AsContextMut, Error, Extern, InstancePre, Module};
 use crate::{
     module::{ImportName, ImportType},
+    Engine,
     ExternType,
     FuncType,
     GlobalType,
     MemoryType,
-    TableType, Engine,
+    TableType,
 };
 use alloc::{
     collections::{btree_map::Entry, BTreeMap},
@@ -294,9 +295,9 @@ struct ImportKey {
 /// A linker used to define module imports and instantiate module instances.
 pub struct Linker<T> {
     /// The underlying [`Engine`] for the [`Linker`].
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// Primarily required to define [`Linker`] owned host functions using
     /// [`Linker::func_wrap`] and [`Linker::func_new`].
     engine: Engine,

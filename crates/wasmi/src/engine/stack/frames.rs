@@ -22,7 +22,10 @@ pub struct FuncFrame {
 impl FuncFrame {
     /// Creates a new [`FuncFrame`].
     pub fn new(ip: InstructionPtr, instance: &Instance) -> Self {
-        Self { ip, instance: *instance }
+        Self {
+            ip,
+            instance: *instance,
+        }
     }
 
     /// Returns the current instruction pointer.
