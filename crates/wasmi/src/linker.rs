@@ -375,8 +375,8 @@ pub struct Linker<T> {
     ///
     /// # Note
     ///
-    /// Primarily required to define [`Linker`] owned host functions using
-    /// [`Linker::func_wrap`] and [`Linker::func_new`].
+    /// Primarily required to define [`Linker`] owned host functions
+    //  using [`Linker::func_wrap`] and [`Linker::func_new`]. TODO: implement methods
     engine: Engine,
     /// Allows to efficiently store strings and deduplicate them..
     strings: StringInterner,
