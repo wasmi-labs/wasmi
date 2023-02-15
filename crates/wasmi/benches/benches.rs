@@ -113,7 +113,7 @@ fn bench_translate_erc1155(c: &mut Criterion) {
 fn bench_instantiate_wasm_kernel(c: &mut Criterion) {
     c.bench_function("instantiate/wasm_kernel", |b| {
         let module = load_module_from_file(WASM_KERNEL);
-        let linker = <Linker<()>>::default();
+        let linker = <Linker<()>>::new(module.engine());
         b.iter(|| {
             let mut store = Store::new(module.engine(), ());
             let _instance = linker.instantiate(&mut store, &module).unwrap();
