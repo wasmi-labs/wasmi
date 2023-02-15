@@ -43,7 +43,7 @@ pub(crate) use self::{
     func_args::{FuncFinished, FuncParams, FuncResults},
     func_types::DedupFuncType,
 };
-use super::{func::FuncEntityInternal, AsContextMut, Func};
+use super::{func::FuncEntityInner, AsContextMut, Func};
 use crate::{
     core::{Trap, TrapCode},
     FuncType,
@@ -589,12 +589,12 @@ impl<'engine> EngineExecutor<'engine> {
     {
         self.initialize_args(params);
         match func.as_internal(ctx.as_context()) {
-            FuncEntityInternal::Wasm(wasm_func) => {
+            FuncEntityInner::Wasm(wasm_func) => {
                 let mut frame = self.stack.call_wasm_root(wasm_func, &self.res.code_map)?;
                 let mut cache = InstanceCache::from(frame.instance());
                 self.execute_wasm_func(ctx.as_context_mut(), &mut frame, &mut cache)?;
             }
-            FuncEntityInternal::Host(host_func) => {
+            FuncEntityInner::Host(host_func) => {
                 let host_func = host_func.clone();
                 self.stack
                     .call_host_root(ctx.as_context_mut(), host_func, &self.res.func_types)?;
@@ -681,10 +681,10 @@ impl<'engine> EngineExecutor<'engine> {
                 },
                 CallOutcome::NestedCall(called_func) => {
                     match called_func.as_internal(ctx.as_context()) {
-                        FuncEntityInternal::Wasm(wasm_func) => {
+                        FuncEntityInner::Wasm(wasm_func) => {
                             *frame = self.stack.call_wasm(frame, wasm_func, &self.res.code_map)?;
                         }
-                        FuncEntityInternal::Host(host_func) => {
+                        FuncEntityInner::Host(host_func) => {
                             cache.reset_default_memory_bytes();
                             let host_func = host_func.clone();
                             self.stack

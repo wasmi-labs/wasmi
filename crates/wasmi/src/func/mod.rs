@@ -22,7 +22,7 @@ use super::{
     StoreContext,
     Stored,
 };
-use crate::{core::Trap, engine::ResumableCall, Error, Value};
+use crate::{core::Trap, engine::ResumableCall, Error, Value, Engine};
 use alloc::{boxed::Box, sync::Arc};
 use core::{fmt, fmt::Debug, num::NonZeroU32};
 use wasmi_arena::ArenaIndex;
@@ -53,61 +53,67 @@ pub struct FuncEntity<T> {
     /// We wrap this enum in a struct so that we can make its
     /// variants private. This is advantageous since they are
     /// implementation details and not important to the user.
-    internal: FuncEntityInternal<T>,
+    inner: FuncEntityInner<T>,
 }
 
 impl<T> Clone for FuncEntity<T> {
     fn clone(&self) -> Self {
         Self {
-            internal: self.internal.clone(),
+            inner: self.inner.clone(),
         }
+    }
+}
+
+impl<T> From<WasmFuncEntity> for FuncEntity<T> {
+    fn from(wasm_func: WasmFuncEntity) -> Self {
+        Self { inner: FuncEntityInner::Wasm(wasm_func) }
+    }
+}
+
+impl<T> From<HostFuncEntity<T>> for FuncEntity<T> {
+    fn from(host_func: HostFuncEntity<T>) -> Self {
+        Self { inner: FuncEntityInner::Host(host_func) }
     }
 }
 
 impl<T> FuncEntity<T> {
     /// Creates a new Wasm function from the given raw parts.
     pub fn new_wasm(signature: DedupFuncType, body: FuncBody, instance: Instance) -> Self {
-        Self {
-            internal: FuncEntityInternal::Wasm(WasmFuncEntity::new(signature, body, instance)),
-        }
+        Self::from(WasmFuncEntity::new(signature, body, instance))
     }
 
     /// Creates a new host function from the given dynamically typed closure.
     pub fn new(
-        ctx: impl AsContextMut<UserState = T>,
+        engine: &Engine,
         ty: FuncType,
         func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Trap> + Send + Sync + 'static,
     ) -> Self {
-        Self {
-            internal: FuncEntityInternal::Host(HostFuncEntity::new(ctx, ty, func)),
-        }
+        Self::from(HostFuncEntity::new(engine, ty, func))
     }
 
     /// Creates a new host function from the given dynamically typed closure.
     pub fn wrap<Params, Results>(
-        ctx: impl AsContextMut<UserState = T>,
+        engine: &Engine,
         func: impl IntoFunc<T, Params, Results>,
     ) -> Self {
-        Self {
-            internal: FuncEntityInternal::Host(HostFuncEntity::wrap(ctx, func)),
-        }
+        Self::from(HostFuncEntity::wrap(engine, func))
     }
 
-    /// Returns the internal function entity.
+    /// Returns a shared reference to the [`FuncEntityInner`].
     ///
     /// # Note
     ///
     /// This can be used to efficiently match against host or Wasm
     /// function entities and efficiently extract their properties.
-    pub(crate) fn as_internal(&self) -> &FuncEntityInternal<T> {
-        &self.internal
+    pub(crate) fn as_internal(&self) -> &FuncEntityInner<T> {
+        &self.inner
     }
 
     /// Returns the signature of the Wasm function.
     pub fn ty_dedup(&self) -> &DedupFuncType {
         match self.as_internal() {
-            FuncEntityInternal::Wasm(func) => func.ty_dedup(),
-            FuncEntityInternal::Host(func) => func.ty_dedup(),
+            FuncEntityInner::Wasm(func) => func.ty_dedup(),
+            FuncEntityInner::Host(func) => func.ty_dedup(),
         }
     }
 }
@@ -116,14 +122,14 @@ impl<T> FuncEntity<T> {
 ///
 /// This can either be a host function or a Wasm function.
 #[derive(Debug)]
-pub(crate) enum FuncEntityInternal<T> {
+pub(crate) enum FuncEntityInner<T> {
     /// A Wasm function instance.
     Wasm(WasmFuncEntity),
     /// A host function instance.
     Host(HostFuncEntity<T>),
 }
 
-impl<T> Clone for FuncEntityInternal<T> {
+impl<T> Clone for FuncEntityInner<T> {
     fn clone(&self) -> Self {
         match self {
             Self::Wasm(func) => Self::Wasm(func.clone()),
@@ -217,7 +223,7 @@ impl<T> Debug for HostFuncEntity<T> {
 impl<T> HostFuncEntity<T> {
     /// Creates a new host function from the given dynamically typed closure.
     pub fn new(
-        mut ctx: impl AsContextMut<UserState = T>,
+        engine: &Engine,
         ty: FuncType,
         func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Trap> + Send + Sync + 'static,
     ) -> Self {
@@ -240,7 +246,7 @@ impl<T> HostFuncEntity<T> {
             func(caller, params, results)?;
             Ok(func_results.encode_results_from_slice(results).unwrap())
         });
-        let signature = ctx.as_context_mut().store.inner.alloc_func_type(ty.clone());
+        let signature = engine.alloc_func_type(ty.clone());
         Self {
             signature,
             trampoline,
@@ -249,11 +255,11 @@ impl<T> HostFuncEntity<T> {
 
     /// Creates a new host function from the given statically typed closure.
     pub fn wrap<Params, Results>(
-        mut ctx: impl AsContextMut,
+        engine: &Engine,
         func: impl IntoFunc<T, Params, Results>,
     ) -> Self {
         let (signature, trampoline) = func.into_func();
-        let signature = ctx.as_context_mut().store.inner.alloc_func_type(signature);
+        let signature = engine.alloc_func_type(signature);
         Self {
             signature,
             trampoline,
@@ -323,7 +329,8 @@ impl Func {
         ty: FuncType,
         func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Trap> + Send + Sync + 'static,
     ) -> Self {
-        let func = FuncEntity::new(ctx.as_context_mut(), ty, func);
+        let engine = ctx.as_context().store.engine();
+        let func = FuncEntity::new(engine, ty, func);
         ctx.as_context_mut().store.alloc_func(func)
     }
 
@@ -332,7 +339,8 @@ impl Func {
         mut ctx: impl AsContextMut<UserState = T>,
         func: impl IntoFunc<T, Params, Results>,
     ) -> Self {
-        let func = FuncEntity::wrap(ctx.as_context_mut(), func);
+        let engine = ctx.as_context().store.engine();
+        let func = FuncEntity::wrap(engine, func);
         ctx.as_context_mut().store.alloc_func(func)
     }
 
@@ -485,7 +493,7 @@ impl Func {
     pub(crate) fn as_internal<'a, T: 'a>(
         &self,
         ctx: impl Into<StoreContext<'a, T>>,
-    ) -> &'a FuncEntityInternal<T> {
+    ) -> &'a FuncEntityInner<T> {
         ctx.into().store.resolve_func(self).as_internal()
     }
 }
