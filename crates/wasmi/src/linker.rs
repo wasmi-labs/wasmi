@@ -394,7 +394,7 @@ impl<T> Linker<T> {
     ///
     /// Returns `None` if this name was not previously defined in this
     /// [`Linker`].
-    pub fn resolve(&self, module: &str, name: &str) -> Option<Extern> {
+    fn resolve(&self, module: &str, name: &str) -> Option<Extern> {
         let key = ImportKey {
             module: self.strings.get(module)?,
             name: self.strings.get(name)?,
