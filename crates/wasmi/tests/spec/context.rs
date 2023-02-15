@@ -50,7 +50,7 @@ impl<'a> TestContext<'a> {
     /// Creates a new [`TestContext`] with the given [`TestDescriptor`].
     pub fn new(descriptor: &'a TestDescriptor, config: Config) -> Self {
         let engine = Engine::new(&config);
-        let mut linker = Linker::default();
+        let mut linker = Linker::new(&engine);
         let mut store = Store::new(&engine, ());
         let default_memory = Memory::new(&mut store, MemoryType::new(1, Some(2)).unwrap()).unwrap();
         let default_table = Table::new(

@@ -1,20 +1,20 @@
 use wasi_cap_std_sync::WasiCtxBuilder;
-use wasmi::{Config, Extern, Instance, Store};
+use wasmi::{Config, Engine, Extern, Instance, Linker, Module, Store};
 use wasmi_wasi::{define_wasi, WasiCtx};
 
-pub fn load_instance_from_wat(wat_bytes: &[u8]) -> (wasmi::Store<WasiCtx>, wasmi::Instance) {
+pub fn load_instance_from_wat(wat_bytes: &[u8]) -> (Store<WasiCtx>, wasmi::Instance) {
     let wasm = wat2wasm(wat_bytes);
     let config = Config::default();
-    let engine = wasmi::Engine::new(&config);
-    let module = wasmi::Module::new(&engine, &wasm[..]).unwrap();
-    let mut linker = <wasmi::Linker<WasiCtx>>::default();
+    let engine = Engine::new(&config);
+    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let mut linker = <Linker<WasiCtx>>::new(&engine);
     // add wasi to linker
     let wasi = WasiCtxBuilder::new()
         .inherit_stdio()
         .inherit_args()
         .unwrap()
         .build();
-    let mut store = wasmi::Store::new(&engine, wasi);
+    let mut store = Store::new(&engine, wasi);
 
     define_wasi(&mut linker, &mut store, |ctx| ctx).unwrap();
     let instance = linker

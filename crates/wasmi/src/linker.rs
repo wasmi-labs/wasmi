@@ -1,6 +1,9 @@
 use super::{AsContextMut, Error, Extern, InstancePre, Module};
 use crate::{
+    func::HostFuncEntity,
     module::{ImportName, ImportType},
+    AsContext,
+    Engine,
     ExternType,
     FuncType,
     GlobalType,
@@ -15,7 +18,6 @@ use alloc::{
 use core::{
     fmt,
     fmt::{Debug, Display},
-    marker::PhantomData,
     num::NonZeroUsize,
     ops::Deref,
 };
@@ -291,20 +293,102 @@ struct ImportKey {
     name: Symbol,
 }
 
+/// A [`Linker`] definition.
+enum Definition<T> {
+    /// An external item from an [`Instance`](crate::Instance).
+    Extern(Extern),
+    /// A [`Linker`] internal host function.
+    HostFunc(HostFuncEntity<T>),
+}
+
+impl<T> Clone for Definition<T> {
+    fn clone(&self) -> Self {
+        match self {
+            Self::Extern(definition) => Self::Extern(*definition),
+            Self::HostFunc(host_func) => Self::HostFunc(host_func.clone()),
+        }
+    }
+}
+
+/// [`Debug`]-wrapper for the definitions of a [`Linker`].
+pub struct DebugDefinitions<'a, T> {
+    /// The [`Engine`] of the [`Linker`].
+    engine: &'a Engine,
+    /// The definitions of the [`Linker`].
+    definitions: &'a BTreeMap<ImportKey, Definition<T>>,
+}
+
+impl<'a, T> DebugDefinitions<'a, T> {
+    /// Create a new [`Debug`]-wrapper for the [`Linker`] definitions.
+    fn new(linker: &'a Linker<T>) -> Self {
+        Self {
+            engine: linker.engine(),
+            definitions: &linker.definitions,
+        }
+    }
+}
+
+impl<'a, T> Debug for DebugDefinitions<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut map = f.debug_map();
+        for (name, definition) in self.definitions {
+            match definition {
+                Definition::Extern(definition) => {
+                    map.entry(name, definition);
+                }
+                Definition::HostFunc(definition) => {
+                    map.entry(name, &DebugHostFuncEntity::new(self.engine, definition));
+                }
+            }
+        }
+        map.finish()
+    }
+}
+
+/// [`Debug`]-wrapper for [`HostFuncEntity`] in the [`Linker`].
+pub struct DebugHostFuncEntity<'a, T> {
+    /// The [`Engine`] of the [`Linker`].
+    engine: &'a Engine,
+    /// The host function to be [`Debug`] formatted.
+    host_func: &'a HostFuncEntity<T>,
+}
+
+impl<'a, T> DebugHostFuncEntity<'a, T> {
+    /// Create a new [`Debug`]-wrapper for the [`HostFuncEntity`].
+    fn new(engine: &'a Engine, host_func: &'a HostFuncEntity<T>) -> Self {
+        Self { engine, host_func }
+    }
+}
+
+impl<'a, T> Debug for DebugHostFuncEntity<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.engine
+            .resolve_func_type(self.host_func.ty_dedup(), |func_type| {
+                f.debug_struct("HostFunc").field("ty", func_type).finish()
+            })
+    }
+}
+
 /// A linker used to define module imports and instantiate module instances.
 pub struct Linker<T> {
+    /// The underlying [`Engine`] for the [`Linker`].
+    ///
+    /// # Note
+    ///
+    /// Primarily required to define [`Linker`] owned host functions
+    //  using [`Linker::func_wrap`] and [`Linker::func_new`]. TODO: implement methods
+    engine: Engine,
     /// Allows to efficiently store strings and deduplicate them..
     strings: StringInterner,
     /// Stores the definitions given their names.
-    definitions: BTreeMap<ImportKey, Extern>,
-    marker: PhantomData<fn() -> T>,
+    definitions: BTreeMap<ImportKey, Definition<T>>,
 }
 
 impl<T> Debug for Linker<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Linker")
             .field("strings", &self.strings)
-            .field("definitions", &self.definitions)
+            .field("definitions", &DebugDefinitions::new(self))
             .finish()
     }
 }
@@ -312,27 +396,32 @@ impl<T> Debug for Linker<T> {
 impl<T> Clone for Linker<T> {
     fn clone(&self) -> Linker<T> {
         Self {
+            engine: self.engine.clone(),
             strings: self.strings.clone(),
             definitions: self.definitions.clone(),
-            marker: self.marker,
         }
     }
 }
 
 impl<T> Default for Linker<T> {
     fn default() -> Self {
-        Self::new()
+        Self::new(&Engine::default())
     }
 }
 
 impl<T> Linker<T> {
     /// Creates a new linker.
-    pub fn new() -> Self {
+    pub fn new(engine: &Engine) -> Self {
         Self {
+            engine: engine.clone(),
             strings: StringInterner::default(),
             definitions: BTreeMap::default(),
-            marker: PhantomData,
         }
+    }
+
+    /// Returns the underlying [`Engine`] of the [`Linker`].
+    pub fn engine(&self) -> &Engine {
+        &self.engine
     }
 
     /// Define a new item in this [`Linker`].
@@ -384,25 +473,44 @@ impl<T> Linker<T> {
                 });
             }
             Entry::Vacant(v) => {
-                v.insert(item);
+                v.insert(Definition::Extern(item));
             }
         }
         Ok(())
     }
 
-    /// Looks up a previously defined extern value in this [`Linker`].
+    /// Looks up a defined [`Extern`] by name in this [`Linker`].
     ///
-    /// Returns `None` if this name was not previously defined in this
-    /// [`Linker`].
-    pub fn resolve(&self, module: &str, name: &str) -> Option<Extern> {
+    /// Returns `None` if this name was not previously defined in this [`Linker`].
+    ///
+    /// # Panics
+    ///
+    /// If the [`Engine`] of this [`Linker`] and the [`Engine`] of `context` are not the same.
+    pub fn get(
+        &self,
+        context: impl AsContext<UserState = T>,
+        module: &str,
+        name: &str,
+    ) -> Option<Extern> {
+        assert!(Engine::same(
+            context.as_context().store.engine(),
+            self.engine()
+        ));
         let key = ImportKey {
             module: self.strings.get(module)?,
             name: self.strings.get(name)?,
         };
-        self.definitions.get(&key).copied()
+        if let Some(Definition::Extern(item)) = self.definitions.get(&key) {
+            return Some(*item);
+        }
+        None
     }
 
     /// Instantiates the given [`Module`] using the definitions in the [`Linker`].
+    ///
+    /// # Panics
+    ///
+    /// If the [`Engine`] of the [`Linker`] and `context` are not the same.
     ///
     /// # Errors
     ///
@@ -410,9 +518,10 @@ impl<T> Linker<T> {
     /// - If any imported item does not satisfy its type requirements.
     pub fn instantiate(
         &self,
-        mut context: impl AsContextMut,
+        mut context: impl AsContextMut<UserState = T>,
         module: &Module,
     ) -> Result<InstancePre, Error> {
+        assert!(Engine::same(self.engine(), context.as_context().engine()));
         let externals = module
             .imports()
             .map(|import| self.process_import(&mut context, import))
@@ -422,19 +531,24 @@ impl<T> Linker<T> {
 
     /// Processes a single [`Module`] import.
     ///
+    /// # Panics
+    ///
+    /// If the [`Engine`] of the [`Linker`] and `context` are not the same.
+    ///
     /// # Errors
     ///
     /// If the imported item does not satisfy constraints set by the [`Module`].
     fn process_import(
         &self,
-        context: impl AsContextMut,
+        context: impl AsContextMut<UserState = T>,
         import: ImportType,
     ) -> Result<Extern, Error> {
+        assert!(Engine::same(self.engine(), context.as_context().engine()));
         let import_name = import.import_name();
         let module_name = import.module();
         let field_name = import.name();
         let resolved = self
-            .resolve(module_name, field_name)
+            .get(context.as_context(), module_name, field_name)
             .ok_or_else(|| LinkerError::missing_definition(&import))?;
         let invalid_type = || LinkerError::invalid_type_definition(&import, &resolved.ty(&context));
         match import.ty() {

@@ -143,7 +143,7 @@ fn implicit_return_no_value() {
     "#,
     );
     let expected = [Instruction::Return(drop_keep(0, 0))];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -161,7 +161,7 @@ fn implicit_return_with_value() {
         Instruction::constant(0),
         Instruction::Return(drop_keep(0, 1)),
     ];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -175,7 +175,7 @@ fn implicit_return_param() {
     "#,
     );
     let expected = [Instruction::Return(drop_keep(1, 0))];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -193,7 +193,7 @@ fn get_local() {
         Instruction::local_get(1),
         Instruction::Return(drop_keep(1, 1)),
     ];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -215,7 +215,7 @@ fn get_local_2() {
         Instruction::Drop,
         Instruction::Return(drop_keep(2, 1)),
     ];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -239,7 +239,7 @@ fn get_local_3() {
         Instruction::Drop,
         Instruction::Return(drop_keep(2, 0)),
     ];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -258,7 +258,7 @@ fn explicit_return() {
         Instruction::local_get(1),
         Instruction::Return(drop_keep(1, 1)),
     ];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -280,7 +280,7 @@ fn simple_add() {
         Instruction::I32Add,
         Instruction::Return(drop_keep(2, 1)),
     ];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -310,7 +310,7 @@ fn simple_mul_add() {
         Instruction::I32Mul,
         Instruction::Return(drop_keep(2, 1)),
     ];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -331,7 +331,7 @@ fn drop_locals() {
         Instruction::local_set(1),
         Instruction::Return(drop_keep(2, 0)),
     ];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 macro_rules! params {
@@ -364,7 +364,7 @@ fn if_without_else() {
         /* 4 */ Instruction::constant(3),
         /* 5 */ Instruction::Return(drop_keep(1, 1)),
     ];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -396,7 +396,7 @@ fn if_else() {
         /* 6 */ Instruction::local_set(1),
         /* 7 */ Instruction::Return(drop_keep(1, 0)),
     ];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -425,7 +425,7 @@ fn if_else_returns_result() {
         /* 5 */ Instruction::Drop,
         /* 6 */ Instruction::Return(drop_keep(0, 0)),
     ];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -462,7 +462,7 @@ fn if_else_branch_from_true_branch() {
         /*  9 */ Instruction::Drop,
         /* 10 */ Instruction::Return(drop_keep(0, 0)),
     ];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -499,7 +499,7 @@ fn if_else_branch_from_false_branch() {
         /*  9 */ Instruction::Drop,
         /* 10 */ Instruction::Return(drop_keep(0, 0)),
     ];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -535,7 +535,7 @@ fn if_else_both_unreachable_before_end() {
         /* 7 */ Instruction::constant(3),
         /* 8 */ Instruction::Return(drop_keep(1, 1)),
     ];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -561,7 +561,7 @@ fn loop_() {
         /* 3 */ Instruction::Drop,
         /* 4 */ Instruction::Return(drop_keep(0, 0)),
     ];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -577,7 +577,7 @@ fn loop_empty() {
     "#,
     );
     let expected = [Instruction::Return(drop_keep(0, 0))];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -609,7 +609,7 @@ fn spec_as_br_if_value_cond() {
         /* 5 */ Instruction::Br(params!(5 => 6, drop: 1, keep: 1)),
         /* 6 */ Instruction::Return(drop_keep(0, 1)),
     ];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -635,7 +635,7 @@ fn br_table() {
         /* 3 */ Instruction::Br(params!(3 => 4, drop: 0, keep: 0)),
         /* 4 */ Instruction::Return(drop_keep(0, 0)),
     ];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -667,7 +667,7 @@ fn br_table_returns_result() {
         /* 6 */ Instruction::Drop,
         /* 7 */ Instruction::Return(drop_keep(0, 0)),
     ];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -696,7 +696,7 @@ fn wabt_example() {
         /* 4 */ Instruction::constant(2),
         /* 5 */ Instruction::Return(drop_keep(1, 1)),
     ];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -712,7 +712,7 @@ fn br_return() {
     "#,
     );
     let expected = [Instruction::Return(drop_keep(0, 0))];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -733,7 +733,7 @@ fn br_if_return() {
         Instruction::ReturnIfNez(drop_keep(1, 0)),
         Instruction::Return(drop_keep(1, 0)),
     ];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 #[test]
@@ -761,7 +761,7 @@ fn br_table_return() {
         /* 4 */ Instruction::Return(drop_keep(1, 0)),
         /* 5 */ Instruction::Return(drop_keep(1, 0)),
     ];
-    assert_func_bodies(&wasm, [expected]);
+    assert_func_bodies(wasm, [expected]);
 }
 
 /// Returns the default [`FuelCosts`].
@@ -787,7 +787,7 @@ fn metered_simple_01() {
         Instruction::local_get(1),
         Instruction::Return(drop_keep(1, 1)),
     ];
-    assert_func_bodies_metered(&wasm, [expected]);
+    assert_func_bodies_metered(wasm, [expected]);
 }
 
 #[test]
@@ -814,7 +814,7 @@ fn metered_simple_02() {
         Instruction::Drop,
         Instruction::Return(drop_keep(1, 1)),
     ];
-    assert_func_bodies_metered(&wasm, [expected]);
+    assert_func_bodies_metered(wasm, [expected]);
 }
 
 #[test]
@@ -847,7 +847,7 @@ fn metered_simple_03() {
         Instruction::I32Mul,
         Instruction::Return(drop_keep(2, 1)),
     ];
-    assert_func_bodies_metered(&wasm, [expected]);
+    assert_func_bodies_metered(wasm, [expected]);
 }
 
 #[test]
@@ -884,7 +884,7 @@ fn metered_if_01() {
         /* 8 */ Instruction::Return(drop_keep(3, 1)), // end if
         /* 9 */ Instruction::Return(drop_keep(3, 1)),
     ];
-    assert_func_bodies_metered(&wasm, [expected]);
+    assert_func_bodies_metered(wasm, [expected]);
 }
 
 #[test]
@@ -930,7 +930,7 @@ fn metered_block_in_if_01() {
         /*  9 */ Instruction::Return(drop_keep(3, 1)), // end if
         /* 10 */ Instruction::Return(drop_keep(3, 1)),
     ];
-    assert_func_bodies_metered(&wasm, [expected]);
+    assert_func_bodies_metered(wasm, [expected]);
 }
 
 #[test]
@@ -970,7 +970,7 @@ fn metered_block_in_if_02() {
         /*  7 */ Instruction::local_get(1),
         /*  8 */ Instruction::Return(drop_keep(3, 1)), // end if
     ];
-    assert_func_bodies_metered(&wasm, [expected]);
+    assert_func_bodies_metered(wasm, [expected]);
 }
 
 #[test]
@@ -1013,7 +1013,7 @@ fn metered_loop_in_if() {
         /* 9 */ Instruction::local_get(1),
         /*10 */ Instruction::Return(drop_keep(3, 1)),
     ];
-    assert_func_bodies_metered(&wasm, [expected]);
+    assert_func_bodies_metered(wasm, [expected]);
 }
 
 #[test]
@@ -1058,7 +1058,7 @@ fn metered_nested_blocks() {
         Instruction::Drop,
         Instruction::Return(drop_keep(1, 1)),
     ];
-    assert_func_bodies_metered(&wasm, [expected]);
+    assert_func_bodies_metered(wasm, [expected]);
 }
 
 #[test]
@@ -1108,7 +1108,7 @@ fn metered_nested_loops() {
         Instruction::Drop,
         Instruction::Return(drop_keep(1, 1)),
     ];
-    assert_func_bodies_metered(&wasm, [expected]);
+    assert_func_bodies_metered(wasm, [expected]);
 }
 
 #[test]
@@ -1142,7 +1142,7 @@ fn metered_global_bump() {
         Instruction::GlobalGet(GlobalIdx::from(0)),
         Instruction::Return(drop_keep(1, 1)),
     ];
-    assert_func_bodies_metered(&wasm, [expected]);
+    assert_func_bodies_metered(wasm, [expected]);
 }
 
 #[test]
@@ -1172,7 +1172,7 @@ fn metered_calls_01() {
         Instruction::Call(FuncIdx::from(0)),
         Instruction::Return(drop_keep(0, 1)),
     ];
-    assert_func_bodies_metered(&wasm, [expected_f0, expected_f1]);
+    assert_func_bodies_metered(wasm, [expected_f0, expected_f1]);
 }
 
 #[test]
@@ -1213,7 +1213,7 @@ fn metered_calls_02() {
         Instruction::Call(FuncIdx::from(0)),
         Instruction::Return(drop_keep(2, 1)),
     ];
-    assert_func_bodies_metered(&wasm, [expected_f0, expected_f1]);
+    assert_func_bodies_metered(wasm, [expected_f0, expected_f1]);
 }
 
 #[test]
@@ -1282,7 +1282,7 @@ fn metered_load_01() {
         Instruction::I32Load(Offset::from(0)),
         Instruction::Return(drop_keep(1, 1)),
     ];
-    assert_func_bodies_metered(&wasm, [expected]);
+    assert_func_bodies_metered(wasm, [expected]);
 }
 
 #[test]
@@ -1308,5 +1308,5 @@ fn metered_store_01() {
         Instruction::I32Store(Offset::from(0)),
         Instruction::Return(drop_keep(2, 0)),
     ];
-    assert_func_bodies_metered(&wasm, [expected]);
+    assert_func_bodies_metered(wasm, [expected]);
 }

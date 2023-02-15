@@ -21,8 +21,11 @@ pub struct FuncFrame {
 
 impl FuncFrame {
     /// Creates a new [`FuncFrame`].
-    pub fn new(ip: InstructionPtr, instance: Instance) -> Self {
-        Self { ip, instance }
+    pub fn new(ip: InstructionPtr, instance: &Instance) -> Self {
+        Self {
+            ip,
+            instance: *instance,
+        }
     }
 
     /// Returns the current instruction pointer.
@@ -66,7 +69,7 @@ impl CallStack {
     }
 
     /// Initializes the [`CallStack`] given the Wasm function.
-    pub(crate) fn init(&mut self, ip: InstructionPtr, instance: Instance) -> FuncFrame {
+    pub(crate) fn init(&mut self, ip: InstructionPtr, instance: &Instance) -> FuncFrame {
         self.clear();
         FuncFrame::new(ip, instance)
     }

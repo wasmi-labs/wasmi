@@ -113,7 +113,7 @@ fn bench_translate_erc1155(c: &mut Criterion) {
 fn bench_instantiate_wasm_kernel(c: &mut Criterion) {
     c.bench_function("instantiate/wasm_kernel", |b| {
         let module = load_module_from_file(WASM_KERNEL);
-        let linker = <Linker<()>>::default();
+        let linker = <Linker<()>>::new(module.engine());
         b.iter(|| {
             let mut store = Store::new(module.engine(), ());
             let _instance = linker.instantiate(&mut store, &module).unwrap();
@@ -128,7 +128,7 @@ fn bench_instantiate_contract(c: &mut Criterion, name: &str, path: &str) {
         let module = load_module_from_file(path);
         let engine = module.engine();
         let mut store = Store::new(&engine, ());
-        let mut linker = <Linker<()>>::default();
+        let mut linker = <Linker<()>>::new(&engine);
         linker
             .define(
                 "env",
@@ -857,7 +857,7 @@ fn bench_execute_host_calls(c: &mut Criterion) {
         let wasm = wat2wasm(include_bytes!("wat/host_calls.wat"));
         let engine = Engine::default();
         let module = Module::new(&engine, &wasm[..]).unwrap();
-        let mut linker = <Linker<()>>::default();
+        let mut linker = <Linker<()>>::new(&engine);
         let mut store = Store::new(&engine, ());
         let host_call = Func::wrap(&mut store, |value: i64| value.wrapping_sub(1));
         linker.define("benchmark", "host_call", host_call).unwrap();

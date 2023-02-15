@@ -260,15 +260,6 @@ impl StoreInner {
         &mut self.fuel
     }
 
-    /// Allocates a new [`FuncType`] and returns a [`DedupFuncType`] reference to it.
-    ///
-    /// # Note
-    ///
-    /// This deduplicates [`FuncType`] instances that compare as equal.
-    pub fn alloc_func_type(&mut self, func_type: FuncType) -> DedupFuncType {
-        self.engine.alloc_func_type(func_type)
-    }
-
     /// Wraps an entitiy `Idx` (index type) as a [`Stored<Idx>`] type.
     ///
     /// # Note
