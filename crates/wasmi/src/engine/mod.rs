@@ -131,6 +131,11 @@ impl Engine {
         self.inner.config()
     }
 
+    /// Returns `true` if both [`Engine`] references `a` and `b` refer to the same [`Engine`].
+    pub fn same(a: &Engine, b: &Engine) -> bool {
+        Arc::ptr_eq(&a.inner, &b.inner)
+    }
+
     /// Allocates a new function type to the engine.
     pub(super) fn alloc_func_type(&self, func_type: FuncType) -> DedupFuncType {
         self.inner.alloc_func_type(func_type)
