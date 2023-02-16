@@ -59,7 +59,40 @@ pub enum CallOutcome {
     /// The function has returned.
     Return,
     /// The function called another function.
-    NestedCall(Func),
+    Call {
+        /// The kind of the call.
+        kind: CallKind,
+        /// The called function.
+        func: Func,
+    },
+}
+
+/// The kind of a call.
+#[derive(Debug, Copy, Clone)]
+pub enum CallKind {
+    /// The call is a nested call within the caller.
+    Nested,
+    /// The call is a tail call and returns to the caller.
+    Return,
+}
+
+impl CallOutcome {
+    /// Creates a nested call [`CallOutcome`] for `func`.
+    pub fn nested_call(func: Func) -> Self {
+        Self::Call {
+            kind: CallKind::Nested,
+            func,
+        }
+    }
+
+    /// Creates a returning tail call [`CallOutcome`] for `func`.
+    #[allow(dead_code)] // TODO: remove
+    pub fn return_call(func: Func) -> Self {
+        Self::Call {
+            kind: CallKind::Return,
+            func,
+        }
+    }
 }
 
 /// A unique engine index.
@@ -684,8 +717,8 @@ impl<'engine> EngineExecutor<'engine> {
                     }
                     None => return Ok(()),
                 },
-                CallOutcome::NestedCall(called_func) => {
-                    match called_func.as_internal(ctx.as_context()) {
+                CallOutcome::Call { func, .. } => {
+                    match func.as_internal(ctx.as_context()) {
                         FuncEntityInner::Wasm(wasm_func) => {
                             *frame = self.stack.call_wasm(frame, wasm_func, &self.res.code_map)?;
                         }
@@ -702,7 +735,7 @@ impl<'engine> EngineExecutor<'engine> {
                                 .or_else(|trap| {
                                     // Push the calling function onto the Stack to make it possible to resume execution.
                                     self.stack.push_frame(*frame)?;
-                                    Err(TaggedTrap::host(called_func, trap))
+                                    Err(TaggedTrap::host(func, trap))
                                 })?;
                         }
                     }

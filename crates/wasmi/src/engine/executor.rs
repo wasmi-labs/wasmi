@@ -486,7 +486,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.next_instr();
         self.frame.update_ip(self.ip);
         self.sync_stack_ptr();
-        Ok(CallOutcome::NestedCall(*func))
+        Ok(CallOutcome::nested_call(*func))
     }
 
     /// Returns to the caller.
