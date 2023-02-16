@@ -29,7 +29,6 @@ use crate::{
 };
 use core::{
     fmt::{self, Debug},
-    num::NonZeroU32,
     sync::atomic::{AtomicU32, Ordering},
 };
 use wasmi_arena::{Arena, ArenaIndex, ComponentVec, GuardedEntity};
@@ -41,41 +40,28 @@ use wasmi_core::TrapCode;
 ///
 /// Used to protect against invalid entity indices.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct StoreIdx(NonZeroU32);
+pub struct StoreIdx(u32);
 
 impl ArenaIndex for StoreIdx {
     fn into_usize(self) -> usize {
-        self.0.get().wrapping_sub(1) as usize
+        self.0 as usize
     }
 
     fn from_usize(value: usize) -> Self {
-        u32::try_from(value)
-            .map(|value| value.wrapping_add(1))
-            .ok()
-            .and_then(NonZeroU32::new)
-            .map(Self)
-            .unwrap_or_else(|| panic!("value is out of bounds as store index: {value}"))
+        let value = value.try_into().unwrap_or_else(|error| {
+            panic!("index {value} is out of bounds as store index: {error}")
+        });
+        Self(value)
     }
 }
 
 impl StoreIdx {
-    /// Creates a new [`StoreIdx`] from the given `value`.
-    ///
-    /// # Panics
-    ///
-    /// If `value` is out of bounds.
-    fn from_u32(value: u32) -> Self {
-        NonZeroU32::new(value.wrapping_add(1))
-            .map(Self)
-            .unwrap_or_else(|| panic!("value is out of bounds as store index: {value}"))
-    }
-
     /// Returns a new unique [`StoreIdx`].
     fn new() -> Self {
         /// A static store index counter.
         static CURRENT_STORE_IDX: AtomicU32 = AtomicU32::new(0);
         let next_idx = CURRENT_STORE_IDX.fetch_add(1, Ordering::AcqRel);
-        Self::from_u32(next_idx)
+        Self(next_idx)
     }
 }
 
