@@ -30,13 +30,9 @@ fn host_compiles_wasm() {
         let engine = caller.engine();
         Module::new(engine, &mut &wasm_hostfn[..])
             .map(|module| {
-                println!("SUCCESS");
                 module.imports().len() as u64
             })
-            .unwrap_or_else(|error| {
-                println!("FAILURE: {error}");
-                0
-            })
+            .unwrap_or(0)
     });
     linker.define("env", "host_fn", host_fn).unwrap();
     let module = Module::new(store.engine(), &mut &wasm[..]).unwrap();
