@@ -728,7 +728,7 @@ impl<'parser> FuncTranslator<'parser> {
             "tried to keep {keep} values while having \
             only {height_diff} values available on the frame",
         );
-        let len_params_locals = self.locals.len_registered() as u32;
+        let len_params_locals = self.locals.len_registered();
         let drop = height_diff - keep + len_params_locals;
         DropKeep::new(drop as usize, keep as usize).map_err(Into::into)
     }
