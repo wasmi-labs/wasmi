@@ -592,8 +592,7 @@ impl<'engine> EngineExecutor<'engine> {
         self.initialize_args(params);
         match func.as_internal(ctx.as_context()) {
             FuncEntityInner::Wasm(wasm_func) => {
-                let res = self.res.read();
-                let mut frame = self.stack.call_wasm_root(wasm_func, &res.code_map)?;
+                let mut frame = self.stack.call_wasm_root(wasm_func, &self.res.read().code_map)?;
                 let mut cache = InstanceCache::from(frame.instance());
                 self.execute_wasm_func(ctx.as_context_mut(), &mut frame, &mut cache)?;
             }
