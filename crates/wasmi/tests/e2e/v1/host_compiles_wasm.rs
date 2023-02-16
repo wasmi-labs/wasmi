@@ -29,9 +29,7 @@ fn host_compiles_wasm() {
         // by compiling it. This is not efficient and done for testing purposes.
         let engine = caller.engine();
         Module::new(engine, &mut &wasm_hostfn[..])
-            .map(|module| {
-                module.imports().len() as u64
-            })
+            .map(|module| module.imports().len() as u64)
             .unwrap_or(0)
     });
     linker.define("env", "host_fn", host_fn).unwrap();
