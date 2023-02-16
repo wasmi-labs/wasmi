@@ -28,13 +28,15 @@ fn host_compiles_wasm() {
         // The host function returns the amount of imports of the Wasm module
         // by compiling it. This is not efficient and done for testing purposes.
         let engine = caller.engine();
-        Module::new(engine, &mut &wasm_hostfn[..]).map(|module| {
-            println!("SUCCESS");
-            module.imports().len() as u64
-        }).unwrap_or_else(|error| {
-            println!("FAILURE: {error}");
-            0
-        })
+        Module::new(engine, &mut &wasm_hostfn[..])
+            .map(|module| {
+                println!("SUCCESS");
+                module.imports().len() as u64
+            })
+            .unwrap_or_else(|error| {
+                println!("FAILURE: {error}");
+                0
+            })
     });
     linker.define("env", "host_fn", host_fn).unwrap();
     let module = Module::new(store.engine(), &mut &wasm[..]).unwrap();
