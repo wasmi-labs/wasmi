@@ -486,6 +486,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// This also prepares the instruction pointer and stack pointer for
     /// the function call so that the stack and execution state is synchronized
     /// with the outer structures.
+    #[inline(always)]
     fn call_func(
         &mut self,
         func: &Func,
@@ -559,6 +560,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     /// Executes a `call` or `return_call` instruction.
+    #[inline(always)]
     fn execute_call(
         &mut self,
         func_index: FuncIdx,
@@ -569,6 +571,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     /// Executes a `call_indirect` or `return_call_indirect` instruction.
+    #[inline(always)]
     fn execute_call_indirect(
         &mut self,
         table: TableIdx,
