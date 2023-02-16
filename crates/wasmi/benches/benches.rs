@@ -926,6 +926,12 @@ fn bench_execute_fibonacci(c: &mut Criterion) {
         FIBONACCI_REC_RESULT,
     );
     bench_fib(
+        "execute/fib_tail_recursive",
+        "fib_tail_recursive",
+        FIBONACCI_INC_N,
+        FIBONACCI_INC_RESULT,
+    );
+    bench_fib(
         "execute/fib_iterative",
         "fib_iterative",
         FIBONACCI_INC_N,
