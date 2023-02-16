@@ -7,7 +7,7 @@ pub use self::{
 };
 use super::{
     code_map::{CodeMap, InstructionPtr},
-    func_types::FuncTypeRegistry,
+    EngineResources,
     FuncParams,
 };
 use crate::{
@@ -21,6 +21,7 @@ use core::{
     fmt::{self, Display},
     mem::size_of,
 };
+use spin::RwLock;
 use wasmi_core::{Trap, TrapCode};
 
 /// Default value for initial value stack height in bytes.
@@ -226,12 +227,12 @@ impl Stack {
         &mut self,
         ctx: C,
         host_func: HostFuncEntity<<C as AsContext>::UserState>,
-        func_types: &FuncTypeRegistry,
+        res: &RwLock<EngineResources>,
     ) -> Result<(), Trap>
     where
         C: AsContextMut,
     {
-        self.call_host_impl(ctx, host_func, None, func_types)
+        self.call_host_impl(ctx, host_func, None, res)
     }
 
     /// Executes the given host function called by a Wasm function.
@@ -240,13 +241,13 @@ impl Stack {
         ctx: C,
         caller: &FuncFrame,
         host_func: HostFuncEntity<<C as AsContext>::UserState>,
-        func_types: &FuncTypeRegistry,
+        res: &RwLock<EngineResources>,
     ) -> Result<(), Trap>
     where
         C: AsContextMut,
     {
         let instance = caller.instance();
-        self.call_host_impl(ctx, host_func, Some(instance), func_types)
+        self.call_host_impl(ctx, host_func, Some(instance), res)
     }
 
     /// Executes the given host function.
@@ -261,16 +262,19 @@ impl Stack {
         mut ctx: C,
         host_func: HostFuncEntity<<C as AsContext>::UserState>,
         instance: Option<&Instance>,
-        func_types: &FuncTypeRegistry,
+        res: &RwLock<EngineResources>,
     ) -> Result<(), Trap>
     where
         C: AsContextMut,
     {
+        let func_type = res
+            .read()
+            .func_types
+            .resolve_func_type(host_func.ty_dedup())
+            .clone();
         // The host function signature is required for properly
         // adjusting, inspecting and manipulating the value stack.
-        let (input_types, output_types) = func_types
-            .resolve_func_type(host_func.ty_dedup())
-            .params_results();
+        let (input_types, output_types) = func_type.params_results();
         // In case the host function returns more values than it takes
         // we are required to extend the value stack.
         let len_inputs = input_types.len();

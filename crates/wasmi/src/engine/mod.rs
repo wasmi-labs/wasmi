@@ -405,9 +405,8 @@ impl EngineInner {
     where
         Results: CallResults,
     {
-        let res = self.res.read();
         let mut stack = self.stacks.lock().reuse_or_new();
-        let results = EngineExecutor::new(&res, &mut stack)
+        let results = EngineExecutor::new(&self.res, &mut stack)
             .execute_func(ctx, func, params, results)
             .map_err(TaggedTrap::into_trap);
         self.stacks.lock().recycle(stack);
@@ -424,9 +423,8 @@ impl EngineInner {
     where
         Results: CallResults,
     {
-        let res = self.res.read();
         let mut stack = self.stacks.lock().reuse_or_new();
-        let results = EngineExecutor::new(&res, &mut stack).execute_func(
+        let results = EngineExecutor::new(&self.res, &mut stack).execute_func(
             ctx.as_context_mut(),
             func,
             params,
@@ -464,9 +462,8 @@ impl EngineInner {
     where
         Results: CallResults,
     {
-        let res = self.res.read();
         let host_func = invocation.host_func();
-        let results = EngineExecutor::new(&res, &mut invocation.stack)
+        let results = EngineExecutor::new(&self.res, &mut invocation.stack)
             .resume_func(ctx, host_func, params, results);
         match results {
             Ok(results) => {
@@ -562,14 +559,14 @@ impl From<TrapCode> for TaggedTrap {
 #[derive(Debug)]
 pub struct EngineExecutor<'engine> {
     /// Shared and reusable generic engine resources.
-    res: &'engine EngineResources,
+    res: &'engine RwLock<EngineResources>,
     /// The value and call stacks.
     stack: &'engine mut Stack,
 }
 
 impl<'engine> EngineExecutor<'engine> {
     /// Creates a new [`EngineExecutor`] with the given [`StackLimits`].
-    fn new(res: &'engine EngineResources, stack: &'engine mut Stack) -> Self {
+    fn new(res: &'engine RwLock<EngineResources>, stack: &'engine mut Stack) -> Self {
         Self { res, stack }
     }
 
@@ -595,14 +592,15 @@ impl<'engine> EngineExecutor<'engine> {
         self.initialize_args(params);
         match func.as_internal(ctx.as_context()) {
             FuncEntityInner::Wasm(wasm_func) => {
-                let mut frame = self.stack.call_wasm_root(wasm_func, &self.res.code_map)?;
+                let res = self.res.read();
+                let mut frame = self.stack.call_wasm_root(wasm_func, &res.code_map)?;
                 let mut cache = InstanceCache::from(frame.instance());
                 self.execute_wasm_func(ctx.as_context_mut(), &mut frame, &mut cache)?;
             }
             FuncEntityInner::Host(host_func) => {
                 let host_func = host_func.clone();
                 self.stack
-                    .call_host_root(ctx.as_context_mut(), host_func, &self.res.func_types)?;
+                    .call_host_root(ctx.as_context_mut(), host_func, self.res)?;
             }
         };
         let results = self.write_results_back(results);
@@ -687,18 +685,14 @@ impl<'engine> EngineExecutor<'engine> {
                 CallOutcome::NestedCall(called_func) => {
                     match called_func.as_internal(ctx.as_context()) {
                         FuncEntityInner::Wasm(wasm_func) => {
-                            *frame = self.stack.call_wasm(frame, wasm_func, &self.res.code_map)?;
+                            let res = self.res.read();
+                            *frame = self.stack.call_wasm(frame, wasm_func, &res.code_map)?;
                         }
                         FuncEntityInner::Host(host_func) => {
                             cache.reset_default_memory_bytes();
                             let host_func = host_func.clone();
                             self.stack
-                                .call_host(
-                                    ctx.as_context_mut(),
-                                    frame,
-                                    host_func,
-                                    &self.res.func_types,
-                                )
+                                .call_host(ctx.as_context_mut(), frame, host_func, self.res)
                                 .or_else(|trap| {
                                     // Push the calling function onto the Stack to make it possible to resume execution.
                                     self.stack.push_frame(*frame)?;
