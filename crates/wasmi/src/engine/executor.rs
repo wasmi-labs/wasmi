@@ -141,6 +141,10 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                         return Ok(CallOutcome::Return);
                     }
                 }
+                Instr::ReturnCall(func) => return self.visit_return_call(func),
+                Instr::ReturnCallIndirect { table, func_type } => {
+                    return self.visit_return_call_indirect(table, func_type)
+                }
                 Instr::Call(func) => return self.visit_call(func),
                 Instr::CallIndirect { table, func_type } => {
                     return self.visit_call_indirect(table, func_type)
@@ -644,6 +648,18 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let new_value = self.value_stack.pop();
         *self.global(global_index) = new_value;
         self.next_instr()
+    }
+
+    fn visit_return_call(&mut self, _func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
+        todo!()
+    }
+
+    fn visit_return_call_indirect(
+        &mut self,
+        _table: TableIdx,
+        _func_type: SignatureIdx,
+    ) -> Result<CallOutcome, TrapCode> {
+        todo!()
     }
 
     fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {

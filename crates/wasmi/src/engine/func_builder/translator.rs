@@ -694,6 +694,45 @@ impl<'parser> FuncTranslator<'parser> {
     fn unsupported_operator(&self, name: &str) -> Result<(), TranslationError> {
         panic!("tried to translate an unsupported Wasm operator: {name}")
     }
+
+    /// Translates `call` and `return_call`.
+    fn translate_call(
+        &mut self,
+        func_idx: u32,
+        make_instr: fn(bytecode::FuncIdx) -> Instruction,
+    ) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            builder.bump_fuel_consumption(builder.fuel_costs().call);
+            let func_idx = FuncIdx::from(func_idx);
+            let func_type = builder.func_type_of(func_idx);
+            builder.adjust_value_stack_for_call(&func_type);
+            let func_idx = func_idx.into_u32().into();
+            builder.alloc.inst_builder.push_inst(make_instr(func_idx));
+            Ok(())
+        })
+    }
+
+    /// Translates `call_indirect` and `return_call_indirect`.
+    fn translate_call_indirect(
+        &mut self,
+        func_type_index: u32,
+        table_index: u32,
+        make_instr: fn(TableIdx, SignatureIdx) -> Instruction,
+    ) -> Result<(), TranslationError> {
+        self.translate_if_reachable(|builder| {
+            builder.bump_fuel_consumption(builder.fuel_costs().call);
+            let func_type_index = SignatureIdx::from(func_type_index);
+            let table = TableIdx::from(table_index);
+            builder.stack_height.pop1();
+            let func_type = builder.func_type_at(func_type_index);
+            builder.adjust_value_stack_for_call(&func_type);
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(make_instr(table, func_type_index));
+            Ok(())
+        })
+    }
 }
 
 /// An acquired target.
@@ -727,6 +766,9 @@ macro_rules! impl_visit_operator {
         impl_visit_operator!(@@skipped $($rest)*);
     };
     ( @reference_types $($rest:tt)* ) => {
+        impl_visit_operator!(@@skipped $($rest)*);
+    };
+    ( @tail_call $($rest:tt)* ) => {
         impl_visit_operator!(@@skipped $($rest)*);
     };
     ( @@skipped $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $($rest:tt)* ) => {
@@ -1087,19 +1129,26 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         })
     }
 
+    fn visit_return_call(&mut self, func_idx: u32) -> Result<(), TranslationError> {
+        self.translate_call(func_idx, Instruction::ReturnCall)?;
+        self.reachable = false;
+        Ok(())
+    }
+
+    fn visit_return_call_indirect(
+        &mut self,
+        func_type_index: u32,
+        table_index: u32,
+    ) -> Result<(), TranslationError> {
+        self.translate_call_indirect(func_type_index, table_index, |table, func_type| {
+            Instruction::ReturnCallIndirect { table, func_type }
+        })?;
+        self.reachable = false;
+        Ok(())
+    }
+
     fn visit_call(&mut self, func_idx: u32) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().call);
-            let func_idx = FuncIdx::from(func_idx);
-            let func_type = builder.func_type_of(func_idx);
-            builder.adjust_value_stack_for_call(&func_type);
-            let func_idx = func_idx.into_u32().into();
-            builder
-                .alloc
-                .inst_builder
-                .push_inst(Instruction::Call(func_idx));
-            Ok(())
-        })
+        self.translate_call(func_idx, Instruction::Call)
     }
 
     fn visit_call_indirect(
@@ -1108,21 +1157,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         table_index: u32,
         _table_byte: u8,
     ) -> Result<(), TranslationError> {
-        self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().call);
-            let func_type_index = SignatureIdx::from(func_type_index);
-            let table = TableIdx::from(table_index);
-            builder.stack_height.pop1();
-            let func_type = builder.func_type_at(func_type_index);
-            builder.adjust_value_stack_for_call(&func_type);
-            builder
-                .alloc
-                .inst_builder
-                .push_inst(Instruction::CallIndirect {
-                    table,
-                    func_type: func_type_index,
-                });
-            Ok(())
+        self.translate_call_indirect(func_type_index, table_index, |table, func_type| {
+            Instruction::CallIndirect { table, func_type }
         })
     }
 
