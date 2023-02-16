@@ -1150,12 +1150,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         table_index: u32,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().call);
             let signature = SignatureIdx::from(func_type_index);
             let func_type = builder.func_type_at(signature);
             let table = TableIdx::from(table_index);
             builder.stack_height.pop1();
             let drop_keep = builder.drop_keep_return_call(&func_type)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().call);
+            builder.bump_fuel_consumption(drop_keep.fuel_consumption(builder.fuel_costs()));
             builder
                 .alloc
                 .inst_builder
