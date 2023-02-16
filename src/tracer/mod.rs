@@ -6,7 +6,7 @@ use specs::{
     etable::EventTable,
     host_function::HostFunctionDesc,
     itable::{InstructionTable, InstructionTableEntry},
-    jtable::JumpTable,
+    jtable::{JumpTable, StaticFrameEntry},
     mtable::VarType,
     types::FunctionType,
 };
@@ -43,10 +43,11 @@ pub struct Tracer {
     pub configure_table: ConfigureTable,
     type_of_func_ref: Vec<(FuncRef, u32)>,
     function_lookup: Vec<(FuncRef, u16)>,
-    last_jump_eid: Vec<u64>,
+    pub(crate) last_jump_eid: Vec<u64>,
     function_index_allocator: u32,
     pub(crate) function_index_translation: HashMap<u32, FuncDesc>,
     pub host_function_index_lookup: HashMap<usize, HostFunctionDesc>,
+    pub static_jtable_entries: Vec<StaticFrameEntry>,
 }
 
 impl Tracer {
@@ -56,7 +57,7 @@ impl Tracer {
             itable: InstructionTable::default(),
             imtable: IMTable::default(),
             etable: EventTable::default(),
-            last_jump_eid: vec![0],
+            last_jump_eid: vec![],
             jtable: JumpTable::default(),
             elem_table: ElemTable::default(),
             configure_table: ConfigureTable::default(),
@@ -65,6 +66,7 @@ impl Tracer {
             function_index_allocator: 1,
             function_index_translation: Default::default(),
             host_function_index_lookup: host_plugin_lookup,
+            static_jtable_entries: vec![],
         }
     }
 

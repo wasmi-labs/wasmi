@@ -330,6 +330,10 @@ impl Interpreter {
                             let nested_context = FunctionContext::new(nested_func.clone());
 
                             if let Some(tracer) = self.tracer.clone() {
+                                let callee_fid = {
+                                    tracer.clone().borrow().lookup_function(&nested_func) as u64
+                                };
+
                                 let mut tracer = (*tracer).borrow_mut();
                                 let eid = tracer.eid();
                                 let last_jump_eid = tracer.last_jump_eid();
@@ -342,6 +346,7 @@ impl Interpreter {
                                 tracer.jtable.push(JumpTableEntry {
                                     eid,
                                     last_jump_eid,
+                                    callee_fid,
                                     inst: Box::new(inst.into()),
                                 });
 
