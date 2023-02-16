@@ -29,8 +29,8 @@ use crate::{
 };
 use core::{
     fmt::{self, Debug},
-    sync::atomic::{AtomicU32, Ordering},
     num::NonZeroU32,
+    sync::atomic::{AtomicU32, Ordering},
 };
 use wasmi_arena::{Arena, ArenaIndex, ComponentVec, GuardedEntity};
 use wasmi_core::TrapCode;
@@ -60,9 +60,9 @@ impl ArenaIndex for StoreIdx {
 
 impl StoreIdx {
     /// Creates a new [`StoreIdx`] from the given `value`.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// If `value` is out of bounds.
     fn from_u32(value: u32) -> Self {
         NonZeroU32::new(value.wrapping_add(1))
