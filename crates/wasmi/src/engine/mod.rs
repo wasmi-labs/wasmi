@@ -716,10 +716,12 @@ impl<'engine> EngineExecutor<'engine> {
                     }
                     None => return Ok(()),
                 },
-                CallOutcome::Call { func, .. } => {
+                CallOutcome::Call { func, kind } => {
                     match func.as_internal(ctx.as_context()) {
                         FuncEntityInner::Wasm(wasm_func) => {
-                            *frame = self.stack.call_wasm(frame, wasm_func, &self.res.code_map)?;
+                            *frame =
+                                self.stack
+                                    .call_wasm(frame, wasm_func, &self.res.code_map, kind)?;
                         }
                         FuncEntityInner::Host(host_func) => {
                             cache.reset_default_memory_bytes();
@@ -733,7 +735,9 @@ impl<'engine> EngineExecutor<'engine> {
                                 )
                                 .or_else(|trap| {
                                     // Push the calling function onto the Stack to make it possible to resume execution.
-                                    self.stack.push_frame(*frame)?;
+                                    if matches!(kind, CallKind::Nested) {
+                                        self.stack.push_frame(*frame)?;
+                                    }
                                     Err(TaggedTrap::host(func, trap))
                                 })?;
                         }

@@ -8,6 +8,7 @@ pub use self::{
 use super::{
     code_map::{CodeMap, InstructionPtr},
     func_types::FuncTypeRegistry,
+    CallKind,
     FuncParams,
 };
 use crate::{
@@ -188,9 +189,12 @@ impl Stack {
         caller: &FuncFrame,
         wasm_func: &WasmFuncEntity,
         code_map: &CodeMap,
+        kind: CallKind,
     ) -> Result<FuncFrame, TrapCode> {
         let ip = self.call_wasm_impl(wasm_func, code_map)?;
-        self.frames.push(*caller)?;
+        if matches!(kind, CallKind::Nested) {
+            self.frames.push(*caller)?;
+        }
         let instance = wasm_func.instance();
         let frame = FuncFrame::new(ip, instance);
         Ok(frame)

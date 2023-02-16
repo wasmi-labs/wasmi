@@ -141,10 +141,14 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                         return Ok(CallOutcome::Return);
                     }
                 }
-                Instr::ReturnCall(func) => return self.visit_return_call(func),
-                Instr::ReturnCallIndirect { table, func_type } => {
-                    return self.visit_return_call_indirect(table, func_type)
+                Instr::ReturnCall { drop_keep, func } => {
+                    return self.visit_return_call(drop_keep, func)
                 }
+                Instr::ReturnCallIndirect {
+                    drop_keep,
+                    table,
+                    func_type,
+                } => return self.visit_return_call_indirect(drop_keep, table, func_type),
                 Instr::Call(func) => return self.visit_call(func),
                 Instr::CallIndirect { table, func_type } => {
                     return self.visit_call_indirect(table, func_type)
@@ -694,15 +698,22 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.next_instr()
     }
 
-    fn visit_return_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
+    fn visit_return_call(
+        &mut self,
+        drop_keep: DropKeep,
+        func_index: FuncIdx,
+    ) -> Result<CallOutcome, TrapCode> {
+        self.value_stack.drop_keep(drop_keep);
         self.execute_call(func_index, CallOutcome::return_call)
     }
 
     fn visit_return_call_indirect(
         &mut self,
+        drop_keep: DropKeep,
         table: TableIdx,
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
+        self.value_stack.drop_keep(drop_keep);
         self.execute_call_indirect(table, func_type, CallOutcome::return_call)
     }
 

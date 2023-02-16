@@ -53,8 +53,12 @@ pub enum Instruction {
     },
     Return(DropKeep),
     ReturnIfNez(DropKeep),
-    ReturnCall(FuncIdx),
+    ReturnCall {
+        drop_keep: DropKeep,
+        func: FuncIdx,
+    },
     ReturnCallIndirect {
+        drop_keep: DropKeep,
         table: TableIdx,
         func_type: SignatureIdx,
     },
