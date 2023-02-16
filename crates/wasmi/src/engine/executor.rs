@@ -482,11 +482,15 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// This also prepares the instruction pointer and stack pointer for
     /// the function call so that the stack and execution state is synchronized
     /// with the outer structures.
-    fn call_func(&mut self, func: &Func) -> Result<CallOutcome, TrapCode> {
+    fn call_func(
+        &mut self,
+        func: &Func,
+        make_outcome: fn(Func) -> CallOutcome,
+    ) -> Result<CallOutcome, TrapCode> {
         self.next_instr();
         self.frame.update_ip(self.ip);
         self.sync_stack_ptr();
-        Ok(CallOutcome::nested_call(*func))
+        Ok(make_outcome(*func))
     }
 
     /// Returns to the caller.
@@ -548,6 +552,46 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// [`Engine`]: crate::Engine
     fn fuel_costs(&self) -> &FuelCosts {
         self.ctx.engine().config().fuel_costs()
+    }
+
+    /// Executes a `call` or `return_call` instruction.
+    fn execute_call(
+        &mut self,
+        func_index: FuncIdx,
+        make_outcome: fn(Func) -> CallOutcome,
+    ) -> Result<CallOutcome, TrapCode> {
+        let callee = self.cache.get_func(self.ctx, func_index.into_inner());
+        self.call_func(&callee, make_outcome)
+    }
+
+    /// Executes a `call_indirect` or `return_call_indirect` instruction.
+    fn execute_call_indirect(
+        &mut self,
+        table: TableIdx,
+        func_type: SignatureIdx,
+        make_outcome: fn(Func) -> CallOutcome,
+    ) -> Result<CallOutcome, TrapCode> {
+        let func_index: u32 = self.value_stack.pop_as();
+        let table = self.cache.get_table(self.ctx, table);
+        let funcref = self
+            .ctx
+            .resolve_table(&table)
+            .get_untyped(func_index)
+            .map(FuncRef::from)
+            .ok_or(TrapCode::TableOutOfBounds)?;
+        let func = funcref.func().ok_or(TrapCode::IndirectCallToNull)?;
+        let actual_signature = self.ctx.get_func_type(func);
+        let expected_signature = self
+            .ctx
+            .resolve_instance(self.frame.instance())
+            .get_signature(func_type.into_inner())
+            .unwrap_or_else(|| {
+                panic!("missing signature for call_indirect at index: {func_type:?}")
+            });
+        if actual_signature != expected_signature {
+            return Err(TrapCode::BadSignature).map_err(Into::into);
+        }
+        self.call_func(func, make_outcome)
     }
 }
 
@@ -650,21 +694,20 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.next_instr()
     }
 
-    fn visit_return_call(&mut self, _func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
-        todo!()
+    fn visit_return_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
+        self.execute_call(func_index, CallOutcome::return_call)
     }
 
     fn visit_return_call_indirect(
         &mut self,
-        _table: TableIdx,
-        _func_type: SignatureIdx,
+        table: TableIdx,
+        func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
-        todo!()
+        self.execute_call_indirect(table, func_type, CallOutcome::return_call)
     }
 
     fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
-        let callee = self.cache.get_func(self.ctx, func_index.into_inner());
-        self.call_func(&callee)
+        self.execute_call(func_index, CallOutcome::nested_call)
     }
 
     fn visit_call_indirect(
@@ -672,27 +715,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         table: TableIdx,
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
-        let func_index: u32 = self.value_stack.pop_as();
-        let table = self.cache.get_table(self.ctx, table);
-        let funcref = self
-            .ctx
-            .resolve_table(&table)
-            .get_untyped(func_index)
-            .map(FuncRef::from)
-            .ok_or(TrapCode::TableOutOfBounds)?;
-        let func = funcref.func().ok_or(TrapCode::IndirectCallToNull)?;
-        let actual_signature = self.ctx.get_func_type(func);
-        let expected_signature = self
-            .ctx
-            .resolve_instance(self.frame.instance())
-            .get_signature(func_type.into_inner())
-            .unwrap_or_else(|| {
-                panic!("missing signature for call_indirect at index: {func_type:?}")
-            });
-        if actual_signature != expected_signature {
-            return Err(TrapCode::BadSignature).map_err(Into::into);
-        }
-        self.call_func(func)
+        self.execute_call_indirect(table, func_type, CallOutcome::nested_call)
     }
 
     fn visit_const(&mut self, bytes: UntypedValue) {

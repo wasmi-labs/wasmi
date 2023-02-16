@@ -86,7 +86,6 @@ impl CallOutcome {
     }
 
     /// Creates a returning tail call [`CallOutcome`] for `func`.
-    #[allow(dead_code)] // TODO: remove
     pub fn return_call(func: Func) -> Self {
         Self::Call {
             kind: CallKind::Return,
