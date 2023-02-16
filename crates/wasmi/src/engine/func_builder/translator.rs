@@ -274,6 +274,24 @@ impl<'parser> FuncTranslator<'parser> {
         Ok(())
     }
 
+    /// Return the value stack height difference to the height at the given `depth`.
+    ///
+    /// # Panics
+    ///
+    /// - If the current code is unreachable.
+    fn height_diff(&self, depth: u32) -> u32 {
+        debug_assert!(self.is_reachable());
+        let current_height = self.stack_height.height();
+        let frame = self.alloc.control_frames.nth_back(depth);
+        let origin_height = frame.stack_height().expect("frame is reachable");
+        assert!(
+            origin_height <= current_height,
+            "encountered value stack underflow: \
+            current height {current_height}, original height {origin_height}",
+        );
+        current_height - origin_height
+    }
+
     /// Computes how many values should be dropped and kept for the specific branch.
     ///
     /// # Panics
@@ -290,14 +308,7 @@ impl<'parser> FuncTranslator<'parser> {
             ControlFrameKind::Loop => frame.block_type().len_params(self.res.engine()),
         };
         // Find out how many values we need to drop.
-        let current_height = self.stack_height.height();
-        let origin_height = frame.stack_height().expect("frame is reachable");
-        assert!(
-            origin_height <= current_height,
-            "encountered value stack underflow: \
-            current height {current_height}, original height {origin_height}",
-        );
-        let height_diff = current_height - origin_height;
+        let height_diff = self.height_diff(depth);
         assert!(
             keep <= height_diff,
             "tried to keep {keep} values while having \
@@ -305,6 +316,15 @@ impl<'parser> FuncTranslator<'parser> {
         );
         let drop = height_diff - keep;
         DropKeep::new(drop as usize, keep as usize).map_err(Into::into)
+    }
+
+    /// Returns the maximum control stack depth at the current position in the code.
+    fn max_depth(&self) -> u32 {
+        self.alloc
+            .control_frames
+            .len()
+            .checked_sub(1)
+            .expect("control flow frame stack must not be empty") as u32
     }
 
     /// Compute [`DropKeep`] for the return statement.
@@ -319,12 +339,7 @@ impl<'parser> FuncTranslator<'parser> {
             !self.alloc.control_frames.is_empty(),
             "drop_keep_return cannot be called with the frame stack empty"
         );
-        let max_depth = self
-            .alloc
-            .control_frames
-            .len()
-            .checked_sub(1)
-            .expect("control flow frame stack must not be empty") as u32;
+        let max_depth = self.max_depth();
         let drop_keep = self.compute_drop_keep(max_depth)?;
         let len_params_locals = self.locals.len_registered() as usize;
         DropKeep::new(
@@ -702,11 +717,19 @@ impl<'parser> FuncTranslator<'parser> {
     /// If underflow of the value stack is detected.
     fn drop_keep_return_call(&self, callee_type: &FuncType) -> Result<DropKeep, TranslationError> {
         debug_assert!(self.is_reachable());
-        let drop_keep = self.drop_keep_return()?;
         // For return calls we need to adjust the `keep` value to
         // be equal to the amount of parameters the callee expects.
-        let keep = callee_type.params().len();
-        DropKeep::new(drop_keep.drop(), keep).map_err(Into::into)
+        let keep = callee_type.params().len() as u32;
+        // Find out how many values we need to drop.
+        let max_depth = self.max_depth();
+        let height_diff = self.height_diff(max_depth);
+        assert!(
+            keep <= height_diff,
+            "tried to keep {keep} values while having \
+            only {height_diff} values available on the frame",
+        );
+        let drop = height_diff - keep;
+        DropKeep::new(drop as usize, keep as usize).map_err(Into::into)
     }
 }
 
@@ -1109,7 +1132,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let func = bytecode::FuncIdx::from(func_idx);
             let func_type = builder.func_type_of(func_idx.into());
             let drop_keep = builder.drop_keep_return_call(&func_type)?;
-            builder.adjust_value_stack_for_call(&func_type);
             builder.bump_fuel_consumption(builder.fuel_costs().call);
             builder.bump_fuel_consumption(drop_keep.fuel_consumption(builder.fuel_costs()));
             builder
@@ -1131,9 +1153,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let signature = SignatureIdx::from(func_type_index);
             let func_type = builder.func_type_at(signature);
             let table = TableIdx::from(table_index);
-            let drop_keep = builder.drop_keep_return_call(&func_type)?;
             builder.stack_height.pop1();
-            builder.adjust_value_stack_for_call(&func_type);
+            let drop_keep = builder.drop_keep_return_call(&func_type)?;
             builder
                 .alloc
                 .inst_builder
@@ -1142,6 +1163,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     table,
                     func_type: signature,
                 });
+            builder.reachable = false;
             Ok(())
         })
     }
