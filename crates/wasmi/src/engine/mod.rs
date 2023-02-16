@@ -736,6 +736,9 @@ impl<'engine> EngineExecutor<'engine> {
                                 .or_else(|trap| {
                                     // Push the calling function onto the Stack to make it possible to resume execution.
                                     if matches!(kind, CallKind::Nested) {
+                                        // TODO: for resumable calls we might need to remove this check again
+                                        //       and instead always push a frame before a host call since that
+                                        //       is what a call resumption expects.
                                         self.stack.push_frame(*frame)?;
                                     }
                                     Err(TaggedTrap::host(func, trap))
