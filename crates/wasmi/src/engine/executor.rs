@@ -706,6 +706,9 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         drop_keep: DropKeep,
         func_index: FuncIdx,
     ) -> Result<CallOutcome, TrapCode> {
+        // TODO: If an executor executes in a resumable way we actually need to convert all
+        //       tail calls to host functions to normal calls since the call resumption expects
+        //       the caller on the stack.
         self.value_stack.drop_keep(drop_keep);
         self.execute_call(func_index, CallOutcome::return_call)
     }
@@ -717,6 +720,9 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
         let func_index: u32 = self.value_stack.pop_as();
+        // TODO: If an executor executes in a resumable way we actually need to convert all
+        //       tail calls to host functions to normal calls since the call resumption expects
+        //       the caller on the stack.
         self.value_stack.drop_keep(drop_keep);
         self.execute_call_indirect(table, func_index, func_type, CallOutcome::return_call)
     }
