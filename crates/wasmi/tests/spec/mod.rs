@@ -96,7 +96,6 @@ define_spec_tests! {
     fn wasm_bulk("bulk");
     fn wasm_call("call");
     fn wasm_call_indirect("call_indirect");
-    #[should_panic]
     fn wasm_return_call("proposals/tail-call/return_call");
     #[should_panic]
 
