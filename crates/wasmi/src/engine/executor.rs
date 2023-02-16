@@ -572,10 +572,10 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     fn execute_call_indirect(
         &mut self,
         table: TableIdx,
+        func_index: u32,
         func_type: SignatureIdx,
         make_outcome: fn(Func) -> CallOutcome,
     ) -> Result<CallOutcome, TrapCode> {
-        let func_index: u32 = self.value_stack.pop_as();
         let table = self.cache.get_table(self.ctx, table);
         let funcref = self
             .ctx
@@ -713,8 +713,9 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         table: TableIdx,
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
+        let func_index: u32 = self.value_stack.pop_as();
         self.value_stack.drop_keep(drop_keep);
-        self.execute_call_indirect(table, func_type, CallOutcome::return_call)
+        self.execute_call_indirect(table, func_index, func_type, CallOutcome::return_call)
     }
 
     fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
@@ -726,7 +727,8 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         table: TableIdx,
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
-        self.execute_call_indirect(table, func_type, CallOutcome::nested_call)
+        let func_index: u32 = self.value_stack.pop_as();
+        self.execute_call_indirect(table, func_index, func_type, CallOutcome::nested_call)
     }
 
     fn visit_const(&mut self, bytes: UntypedValue) {
