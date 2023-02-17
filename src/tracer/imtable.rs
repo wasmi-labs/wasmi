@@ -22,7 +22,6 @@ impl Into<InitMemoryTableEntry> for IMEntry {
             } else {
                 LocationType::Heap
             },
-            mmid: self.module_instance_index as u64,
             offset: self.offset as u64,
             vtype: self.vtype,
             value: self.value,
@@ -38,7 +37,6 @@ impl IMTable {
         &mut self,
         is_global: bool,
         is_mutable: bool,
-        module_instance_index: u16,
         offset: u32,
         vtype: VarType,
         value: u64,
@@ -50,7 +48,6 @@ impl IMTable {
             } else {
                 LocationType::Heap
             },
-            mmid: module_instance_index as u64,
             offset: offset as u64,
             vtype,
             value,
