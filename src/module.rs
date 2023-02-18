@@ -514,18 +514,14 @@ impl ModuleInstance {
         }
 
         if let Some(tracer) = tracer {
-            let current_module_id = { tracer.borrow().lookup_module_instance(&module_ref) };
+            let mut tracer = tracer.borrow_mut();
 
-            {
-                let mut tracer = tracer.borrow_mut();
+            for (globalidx, globalref) in module_ref.globals().iter().enumerate() {
+                tracer.push_global(globalidx as u32, globalref);
+            }
 
-                for (globalidx, globalref) in module_ref.globals().iter().enumerate() {
-                    tracer.push_global(current_module_id, globalidx as u32, globalref);
-                }
-
-                if let Some(memory_ref) = module_ref.memory_by_index(DEFAULT_MEMORY_INDEX) {
-                    tracer.push_init_memory(memory_ref)
-                }
+            if let Some(memory_ref) = module_ref.memory_by_index(DEFAULT_MEMORY_INDEX) {
+                tracer.push_init_memory(memory_ref)
             }
         }
 
@@ -710,6 +706,12 @@ impl ModuleInstance {
     ) -> Result<Option<RuntimeValue>, Error> {
         let func_instance = self.func_by_name(func_name)?;
 
+        {
+            let mut tracer = tracer.borrow_mut();
+
+            tracer.last_jump_eid.push(0);
+        }
+
         FuncInstance::invoke_trace(&func_instance, args, externals, tracer).map_err(Error::Trap)
     }
 
@@ -818,6 +820,11 @@ impl<'a> NotStartedModuleRef<'a> {
         state: &mut E,
         tracer: Rc<RefCell<Tracer>>,
     ) -> Result<ModuleRef, Trap> {
+        {
+            let mut tracer = tracer.borrow_mut();
+            tracer.last_jump_eid.push(0);
+        }
+
         if let Some(start_fn_idx) = self.loaded_module.module().start_section() {
             let start_func = self
                 .instance
@@ -866,6 +873,12 @@ impl<'a> NotStartedModuleRef<'a> {
     /// Returns `true` if it has a `start` function.
     pub fn has_start(&self) -> bool {
         self.loaded_module.module().start_section().is_some()
+    }
+
+    pub fn lookup_function_by_name(&self, tracer: Rc<RefCell<Tracer>>, func_name: &str) -> u16 {
+        let func_ref = self.instance.func_by_name(func_name).unwrap();
+
+        tracer.borrow().lookup_function(&func_ref)
     }
 }
 

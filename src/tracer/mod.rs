@@ -6,7 +6,7 @@ use specs::{
     etable::EventTable,
     host_function::HostFunctionDesc,
     itable::{InstructionTable, InstructionTableEntry},
-    jtable::JumpTable,
+    jtable::{JumpTable, StaticFrameEntry},
     mtable::VarType,
     types::FunctionType,
 };
@@ -42,14 +42,12 @@ pub struct Tracer {
     pub elem_table: ElemTable,
     pub configure_table: ConfigureTable,
     type_of_func_ref: Vec<(FuncRef, u32)>,
-    module_instance_lookup: Vec<(ModuleRef, u16)>,
-    memory_instance_lookup: Vec<(MemoryRef, u16)>,
-    global_instance_lookup: Vec<(GlobalRef, (u16, u16))>,
     function_lookup: Vec<(FuncRef, u16)>,
-    last_jump_eid: Vec<u64>,
+    pub(crate) last_jump_eid: Vec<u64>,
     function_index_allocator: u32,
     pub(crate) function_index_translation: HashMap<u32, FuncDesc>,
     pub host_function_index_lookup: HashMap<usize, HostFunctionDesc>,
+    pub static_jtable_entries: Vec<StaticFrameEntry>,
 }
 
 impl Tracer {
@@ -59,18 +57,16 @@ impl Tracer {
             itable: InstructionTable::default(),
             imtable: IMTable::default(),
             etable: EventTable::default(),
-            last_jump_eid: vec![0],
+            last_jump_eid: vec![],
             jtable: JumpTable::default(),
             elem_table: ElemTable::default(),
             configure_table: ConfigureTable::default(),
             type_of_func_ref: vec![],
-            module_instance_lookup: vec![],
-            memory_instance_lookup: vec![],
-            global_instance_lookup: vec![],
             function_lookup: vec![],
             function_index_allocator: 1,
             function_index_translation: Default::default(),
             host_function_index_lookup: host_plugin_lookup,
+            static_jtable_entries: vec![],
         }
     }
 
@@ -80,14 +76,6 @@ impl Tracer {
 
     pub fn pop_frame(&mut self) {
         self.last_jump_eid.pop().unwrap();
-    }
-
-    pub fn next_module_id(&self) -> u16 {
-        (self.module_instance_lookup.len() as u16) + 1
-    }
-
-    pub fn next_memory_id(&self) -> u16 {
-        (self.memory_instance_lookup.len() as u16) + 1
     }
 
     pub fn last_jump_eid(&self) -> u64 {
@@ -119,39 +107,21 @@ impl Tracer {
         for i in 0..(pages * 8192) {
             let mut buf = [0u8; 8];
             (*memref).get_into(i * 8, &mut buf).unwrap();
-            self.imtable.push(
-                false,
-                true,
-                self.next_memory_id(),
-                i,
-                VarType::I64,
-                u64::from_le_bytes(buf),
-            );
+            self.imtable
+                .push(false, true, i, VarType::I64, u64::from_le_bytes(buf));
         }
-
-        self.memory_instance_lookup
-            .push((memref, self.next_memory_id()));
     }
 
-    pub(crate) fn push_global(&mut self, moid: u16, globalidx: u32, globalref: &GlobalRef) {
+    pub(crate) fn push_global(&mut self, globalidx: u32, globalref: &GlobalRef) {
         let vtype = globalref.elements_value_type().into();
 
-        if let Some((_origin_moid, _origin_idx)) = self.lookup_global_instance(globalref) {
-            // Import global does not support yet.
-            todo!()
-        } else {
-            self.global_instance_lookup
-                .push((globalref.clone(), (moid, globalidx as u16)));
-
-            self.imtable.push(
-                true,
-                globalref.is_mutable(),
-                moid,
-                globalidx,
-                vtype,
-                from_value_internal_to_u64_with_typ(vtype, ValueInternal::from(globalref.get())),
-            )
-        }
+        self.imtable.push(
+            true,
+            globalref.is_mutable(),
+            globalidx,
+            vtype,
+            from_value_internal_to_u64_with_typ(vtype, ValueInternal::from(globalref.get())),
+        );
     }
 
     pub(crate) fn push_elem(&mut self, table_idx: u32, offset: u32, func_idx: u32, type_idx: u32) {
@@ -283,7 +253,6 @@ impl Tracer {
                             let pc = iter.position();
                             if let Some(instruction) = iter.next() {
                                 let _ = self.itable.push(
-                                    self.next_module_id(),
                                     funcdesc.index_within_jtable,
                                     pc as u16,
                                     instruction.into(&self.function_index_translation),
@@ -300,39 +269,6 @@ impl Tracer {
                 }
             }
         }
-
-        self.module_instance_lookup
-            .push((module_instance.clone(), self.next_module_id()));
-    }
-
-    pub fn lookup_module_instance(&self, module_instance: &ModuleRef) -> u16 {
-        for m in &self.module_instance_lookup {
-            if &m.0 == module_instance {
-                return m.1;
-            }
-        }
-
-        unreachable!()
-    }
-
-    pub fn lookup_memory_instance(&self, module_instance: &MemoryRef) -> u16 {
-        for m in &self.memory_instance_lookup {
-            if &m.0 == module_instance {
-                return m.1;
-            }
-        }
-
-        unreachable!()
-    }
-
-    pub fn lookup_global_instance(&self, global_instance: &GlobalRef) -> Option<(u16, u16)> {
-        for m in &self.global_instance_lookup {
-            if &m.0 == global_instance {
-                return Some(m.1);
-            }
-        }
-
-        None
     }
 
     pub fn lookup_function(&self, function: &FuncRef) -> u16 {

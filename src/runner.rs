@@ -330,6 +330,10 @@ impl Interpreter {
                             let nested_context = FunctionContext::new(nested_func.clone());
 
                             if let Some(tracer) = self.tracer.clone() {
+                                let callee_fid = {
+                                    tracer.clone().borrow().lookup_function(&nested_func) as u64
+                                };
+
                                 let mut tracer = (*tracer).borrow_mut();
                                 let eid = tracer.eid();
                                 let last_jump_eid = tracer.last_jump_eid();
@@ -342,6 +346,7 @@ impl Interpreter {
                                 tracer.jtable.push(JumpTableEntry {
                                     eid,
                                     last_jump_eid,
+                                    callee_fid,
                                     inst: Box::new(inst.into()),
                                 });
 
@@ -446,12 +451,9 @@ impl Interpreter {
 
     fn run_instruction_pre(
         &mut self,
-        tracer: Rc<RefCell<Tracer>>,
         function_context: &FunctionContext,
         instructions: &isa::Instruction,
     ) -> Option<RunInstructionTracePre> {
-        let tracer = tracer.borrow();
-
         match *instructions {
             isa::Instruction::GetLocal(..) => None,
             isa::Instruction::SetLocal(depth, vtype) => {
@@ -536,12 +538,6 @@ impl Interpreter {
                 let raw_address = <_>::from_value_internal(*self.value_stack.top());
                 let address =
                     effective_address(offset, raw_address).map_or(None, |addr| Some(addr));
-                let mmid = tracer.lookup_memory_instance(
-                    &function_context
-                        .memory
-                        .clone()
-                        .expect("Due to validation memory should exists"),
-                );
 
                 Some(RunInstructionTracePre::Load {
                     offset,
@@ -549,7 +545,6 @@ impl Interpreter {
                     effective_address: address,
                     vtype: parity_wasm::elements::ValueType::I32,
                     load_size,
-                    mmid: mmid as u64,
                 })
             }
             isa::Instruction::I64Load(offset)
@@ -572,12 +567,6 @@ impl Interpreter {
                 let raw_address = <_>::from_value_internal(*self.value_stack.top());
                 let address =
                     effective_address(offset, raw_address).map_or(None, |addr| Some(addr));
-                let mmid = tracer.lookup_memory_instance(
-                    &function_context
-                        .memory
-                        .clone()
-                        .expect("Due to validation memory should exists"),
-                );
 
                 Some(RunInstructionTracePre::Load {
                     offset,
@@ -585,7 +574,6 @@ impl Interpreter {
                     effective_address: address,
                     vtype: parity_wasm::elements::ValueType::I64,
                     load_size,
-                    mmid: mmid as u64,
                 })
             }
             isa::Instruction::I32Store(offset)
@@ -602,7 +590,6 @@ impl Interpreter {
                 let raw_address = <_>::from_value_internal(*self.value_stack.pick(2));
                 let address =
                     effective_address(offset, raw_address).map_or(None, |addr| Some(addr));
-                let mmid = tracer.lookup_memory_instance(&function_context.memory.clone().unwrap());
 
                 let pre_block_value1 = address.map(|address| {
                     let mut buf = [0u8; 8];
@@ -639,7 +626,6 @@ impl Interpreter {
                     value: value as u64,
                     vtype: parity_wasm::elements::ValueType::I32,
                     store_size,
-                    mmid: mmid as u64,
                     pre_block_value1,
                     pre_block_value2,
                 })
@@ -660,7 +646,6 @@ impl Interpreter {
                 let raw_address = <_>::from_value_internal(*self.value_stack.pick(2));
                 let address =
                     effective_address(offset, raw_address).map_or(None, |addr| Some(addr));
-                let mmid = tracer.lookup_memory_instance(&function_context.memory.clone().unwrap());
 
                 let pre_block_value1 = address.map(|address| {
                     let mut buf = [0u8; 8];
@@ -697,7 +682,6 @@ impl Interpreter {
                     value,
                     vtype: parity_wasm::elements::ValueType::I64,
                     store_size,
-                    mmid: mmid as u64,
                     pre_block_value1,
                     pre_block_value2,
                 })
@@ -856,8 +840,6 @@ impl Interpreter {
                 vtype: vtype.into(),
             },
             isa::Instruction::GetGlobal(idx) => {
-                let tracer = self.tracer.as_ref().unwrap().borrow();
-
                 let global_ref = context.module().global_by_index(idx).unwrap();
                 let is_mutable = global_ref.is_mutable();
                 let vtype: VarType = global_ref.value_type().into_elements().into();
@@ -866,27 +848,14 @@ impl Interpreter {
                     ValueInternal::from(global_ref.get()),
                 );
 
-                let (origin_module, origin_idx) =
-                    tracer.lookup_global_instance(&global_ref).unwrap();
-                let moid = tracer.lookup_module_instance(&context.module);
-                /*
-                 * TODO: imported global is not support yet.
-                 */
-                assert_eq!(origin_module, moid);
-                assert_eq!(origin_idx, idx as u16);
-
                 StepInfo::GetGlobal {
                     idx,
-                    origin_module: moid,
-                    origin_idx: idx as u16,
                     vtype,
                     is_mutable,
                     value,
                 }
             }
             isa::Instruction::SetGlobal(idx) => {
-                let tracer = self.tracer.as_ref().unwrap().borrow();
-
                 let global_ref = context.module().global_by_index(idx).unwrap();
                 let is_mutable = global_ref.is_mutable();
                 let vtype: VarType = global_ref.value_type().into_elements().into();
@@ -895,19 +864,8 @@ impl Interpreter {
                     ValueInternal::from(global_ref.get()),
                 );
 
-                let (origin_module, origin_idx) =
-                    tracer.lookup_global_instance(&global_ref).unwrap();
-                let moid = tracer.lookup_module_instance(&context.module);
-                /*
-                 * TODO: imported global is not support yet.
-                 */
-                assert_eq!(origin_module, moid);
-                assert_eq!(origin_idx, idx as u16);
-
                 StepInfo::SetGlobal {
                     idx,
-                    origin_module: moid,
-                    origin_idx: idx as u16,
                     vtype,
                     is_mutable,
                     value,
@@ -1154,7 +1112,6 @@ impl Interpreter {
                     effective_address,
                     vtype,
                     load_size,
-                    mmid,
                 } = pre_status.unwrap()
                 {
                     let block_value1 = {
@@ -1194,7 +1151,6 @@ impl Interpreter {
                         ),
                         block_value1,
                         block_value2,
-                        mmid,
                     }
                 } else {
                     unreachable!()
@@ -1214,7 +1170,6 @@ impl Interpreter {
                     value,
                     vtype,
                     store_size,
-                    mmid,
                     pre_block_value1,
                     pre_block_value2,
                 } = pre_status.unwrap()
@@ -1251,7 +1206,6 @@ impl Interpreter {
                         raw_address,
                         effective_address: effective_address.unwrap(),
                         value: value as u64,
-                        mmid,
                         pre_block_value1: pre_block_value1.unwrap(),
                         pre_block_value2: pre_block_value2.unwrap_or(0u64),
                         updated_block_value1,
@@ -1967,11 +1921,7 @@ impl Interpreter {
             );
 
             let pre_status = if self.tracer.is_some() {
-                self.run_instruction_pre(
-                    self.tracer.clone().unwrap(),
-                    function_context,
-                    &instruction,
-                )
+                self.run_instruction_pre(function_context, &instruction)
             } else {
                 None
             };
@@ -1992,16 +1942,11 @@ impl Interpreter {
 
                         let instruction = { instruction.into(&tracer.function_index_translation) };
 
-                        let module_instance =
-                            tracer.lookup_module_instance(&function_context.module);
-
                         let function = tracer.lookup_function(&function_context.function);
 
                         let last_jump_eid = tracer.last_jump_eid();
 
                         let inst_entry = InstructionTableEntry {
-                            moid: module_instance,
-                            mmid: module_instance,
                             fid: function,
                             iid: pc as u16,
                             opcode: instruction,
