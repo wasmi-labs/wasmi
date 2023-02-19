@@ -7,6 +7,7 @@ mod config;
 pub mod executor;
 mod func_args;
 mod func_builder;
+mod func_registry;
 mod func_types;
 mod resumable;
 pub mod stack;
@@ -35,6 +36,7 @@ use self::{
     cache::InstanceCache,
     code_map::CodeMap,
     executor::execute_frame,
+    func_registry::{FuncRegistry, Func as EngineFunc},
     func_types::FuncTypeRegistry,
     resumable::ResumableCallBase,
     stack::{FuncFrame, Stack, ValueStack},
@@ -46,6 +48,7 @@ pub(crate) use self::{
 use super::{func::FuncEntityInner, AsContextMut, Func};
 use crate::{
     core::{Trap, TrapCode},
+    func::HostFunc,
     FuncType,
 };
 use alloc::{sync::Arc, vec::Vec};
@@ -136,9 +139,29 @@ impl Engine {
         Arc::ptr_eq(&a.inner, &b.inner)
     }
 
-    /// Allocates a new function type to the engine.
+    /// Allocates a new function type to the [`Engine`].
     pub(super) fn alloc_func_type(&self, func_type: FuncType) -> DedupFuncType {
         self.inner.alloc_func_type(func_type)
+    }
+
+    /// Allocates a new Wasm function to the [`Engine`].
+    pub(super) fn alloc_wasm_func<I>(
+        &self,
+        ty: DedupFuncType,
+        len_locals: usize,
+        stack_usage: usize,
+        instrs: I,
+    ) -> EngineFunc
+    where
+        I: IntoIterator<Item = Instruction>,
+    {
+        self.inner
+            .alloc_wasm_func(ty, len_locals, stack_usage, instrs)
+    }
+
+    /// Allocates a new host function to the [`Engine`].
+    pub(crate) fn alloc_host_func(&self, ty: DedupFuncType, func: HostFunc) -> EngineFunc {
+        self.inner.alloc_host_func(ty, func)
     }
 
     /// Resolves a deduplicated function type into a [`FuncType`] entity.
@@ -368,6 +391,26 @@ impl EngineInner {
         self.res.write().func_types.alloc_func_type(func_type)
     }
 
+    fn alloc_wasm_func<I>(
+        &self,
+        ty: DedupFuncType,
+        len_locals: usize,
+        stack_usage: usize,
+        instrs: I,
+    ) -> EngineFunc
+    where
+        I: IntoIterator<Item = Instruction>,
+    {
+        self.res
+            .write()
+            .funcs
+            .alloc_wasm(ty, len_locals, stack_usage, instrs)
+    }
+
+    fn alloc_host_func(&self, ty: DedupFuncType, func: HostFunc) -> EngineFunc {
+        self.res.write().funcs.alloc_host(ty, func)
+    }
+
     fn alloc_func_body<I>(&self, len_locals: usize, max_stack_height: usize, insts: I) -> FuncBody
     where
         I: IntoIterator<Item = Instruction>,
@@ -497,6 +540,8 @@ impl EngineInner {
 /// Can be shared by multiple engine executors.
 #[derive(Debug)]
 pub struct EngineResources {
+    /// Stores all Wasm and host functions registered by the [`Engine`].
+    funcs: FuncRegistry,
     /// Stores all Wasm function bodies that the interpreter is aware of.
     code_map: CodeMap,
     /// Deduplicated function types.
@@ -513,6 +558,7 @@ impl EngineResources {
     fn new() -> Self {
         let engine_idx = EngineIdx::new();
         Self {
+            funcs: FuncRegistry::new(engine_idx),
             code_map: CodeMap::default(),
             func_types: FuncTypeRegistry::new(engine_idx),
         }
