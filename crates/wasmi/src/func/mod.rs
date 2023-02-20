@@ -47,28 +47,24 @@ impl ArenaIndex for FuncIdx {
     }
 }
 
-/// A function instance.
+/// A Wasm or host function instance.
 #[derive(Debug)]
-pub struct FuncEntity<T> {
-    /// We wrap this enum in a struct so that we can make its
-    /// variants private. This is advantageous since they are
-    /// implementation details and not important to the user.
-    inner: FuncEntityInner<T>,
+pub enum FuncEntity<T> {
+    /// A Wasm function.
+    Wasm(WasmFuncEntity),
+    /// A host function.
+    Host(HostFuncEntity<T>),
 }
 
 impl<T> From<WasmFuncEntity> for FuncEntity<T> {
-    fn from(wasm_func: WasmFuncEntity) -> Self {
-        Self {
-            inner: FuncEntityInner::Wasm(wasm_func),
-        }
+    fn from(func: WasmFuncEntity) -> Self {
+        Self::Wasm(func)
     }
 }
 
 impl<T> From<HostFuncEntity<T>> for FuncEntity<T> {
-    fn from(host_func: HostFuncEntity<T>) -> Self {
-        Self {
-            inner: FuncEntityInner::Host(host_func),
-        }
+    fn from(func: HostFuncEntity<T>) -> Self {
+        Self::Host(func)
     }
 }
 
@@ -92,39 +88,18 @@ impl<T> FuncEntity<T> {
         Self::from(HostFuncEntity::wrap(engine, func))
     }
 
-    /// Returns a shared reference to the [`FuncEntityInner`].
-    ///
-    /// # Note
-    ///
-    /// This can be used to efficiently match against host or Wasm
-    /// function entities and efficiently extract their properties.
-    pub(crate) fn as_internal(&self) -> &FuncEntityInner<T> {
-        &self.inner
-    }
-
     /// Returns the signature of the Wasm function.
     pub fn ty_dedup(&self) -> &DedupFuncType {
-        match self.as_internal() {
-            FuncEntityInner::Wasm(func) => func.ty_dedup(),
-            FuncEntityInner::Host(func) => func.ty_dedup(),
+        match self {
+            Self::Wasm(func) => func.ty_dedup(),
+            Self::Host(func) => func.ty_dedup(),
         }
     }
 }
 
-/// The internal representation of a function instance.
-///
-/// This can either be a host function or a Wasm function.
-#[derive(Debug)]
-pub(crate) enum FuncEntityInner<T> {
-    /// A Wasm function instance.
-    Wasm(WasmFuncEntity),
-    /// A host function instance.
-    Host(HostFuncEntity<T>),
-}
-
 /// A Wasm function instance.
 #[derive(Debug, Clone)]
-pub(crate) struct WasmFuncEntity {
+pub struct WasmFuncEntity {
     ty: DedupFuncType,
     body: FuncBody,
     instance: Instance,
@@ -157,7 +132,7 @@ impl WasmFuncEntity {
 }
 
 /// A host function instance.
-pub(crate) struct HostFuncEntity<T> {
+pub struct HostFuncEntity<T> {
     ty: DedupFuncType,
     trampoline: HostFuncTrampoline<T>,
 }
@@ -474,7 +449,7 @@ impl Func {
     pub(crate) fn as_internal<'a, T: 'a>(
         &self,
         ctx: impl Into<StoreContext<'a, T>>,
-    ) -> &'a FuncEntityInner<T> {
-        ctx.into().store.resolve_func(self).as_internal()
+    ) -> &'a FuncEntity<T> {
+        ctx.into().store.resolve_func(self)
     }
 }
