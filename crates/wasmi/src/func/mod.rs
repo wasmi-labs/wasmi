@@ -142,7 +142,7 @@ impl<T> Clone for FuncEntityInner<T> {
 /// A Wasm function instance.
 #[derive(Debug, Clone)]
 pub(crate) struct WasmFuncEntity {
-    signature: DedupFuncType,
+    ty: DedupFuncType,
     body: FuncBody,
     instance: Instance,
 }
@@ -151,7 +151,7 @@ impl WasmFuncEntity {
     /// Creates a new Wasm function from the given raw parts.
     pub fn new(signature: DedupFuncType, body: FuncBody, instance: Instance) -> Self {
         Self {
-            signature,
+            ty: signature,
             body,
             instance,
         }
@@ -159,7 +159,7 @@ impl WasmFuncEntity {
 
     /// Returns the signature of the Wasm function.
     pub fn ty_dedup(&self) -> &DedupFuncType {
-        &self.signature
+        &self.ty
     }
 
     /// Returns the instance where the [`Func`] belong to.
@@ -175,14 +175,14 @@ impl WasmFuncEntity {
 
 /// A host function instance.
 pub(crate) struct HostFuncEntity<T> {
-    signature: DedupFuncType,
+    ty: DedupFuncType,
     trampoline: HostFuncTrampoline<T>,
 }
 
 impl<T> Clone for HostFuncEntity<T> {
     fn clone(&self) -> Self {
         Self {
-            signature: self.signature,
+            ty: self.ty,
             trampoline: self.trampoline.clone(),
         }
     }
@@ -217,7 +217,7 @@ impl<T> Clone for HostFuncTrampoline<T> {
 
 impl<T> Debug for HostFuncEntity<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Debug::fmt(&self.signature, f)
+        Debug::fmt(&self.ty, f)
     }
 }
 
@@ -249,7 +249,7 @@ impl<T> HostFuncEntity<T> {
         });
         let signature = engine.alloc_func_type(ty.clone());
         Self {
-            signature,
+            ty: signature,
             trampoline,
         }
     }
@@ -259,14 +259,14 @@ impl<T> HostFuncEntity<T> {
         let (signature, trampoline) = func.into_func();
         let signature = engine.alloc_func_type(signature);
         Self {
-            signature,
+            ty: signature,
             trampoline,
         }
     }
 
     /// Returns the signature of the host function.
     pub fn ty_dedup(&self) -> &DedupFuncType {
-        &self.signature
+        &self.ty
     }
 
     /// Calls the host function with the given inputs.
