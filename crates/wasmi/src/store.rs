@@ -1,6 +1,7 @@
 use crate::{
     engine::DedupFuncType,
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
+    func::{HostFunc, HostFuncEntity, HostFuncIdx},
     memory::DataSegment,
     DataSegmentEntity,
     DataSegmentIdx,
@@ -76,8 +77,8 @@ pub struct Store<T> {
     /// This is re-exported to the rest of the crate since
     /// it is used directly by the engine's executor.
     pub(crate) inner: StoreInner,
-    /// Stored Wasm or host functions.
-    funcs: Arena<FuncIdx, FuncEntity<T>>,
+    /// Stored host functions.
+    host_funcs: Arena<HostFuncIdx, HostFuncEntity<T>>,
     /// User provided host data owned by the [`Store`].
     data: T,
 }
@@ -96,6 +97,8 @@ pub struct StoreInner {
     /// This is required so that the [`Engine`] can work entirely
     /// with a `&mut StoreInner` reference.
     func_types: ComponentVec<FuncIdx, DedupFuncType>,
+    /// Stored Wasm or host functions.
+    funcs: Arena<FuncIdx, FuncEntity>,
     /// Stored linear memories.
     memories: Arena<MemoryIdx, MemoryEntity>,
     /// Stored tables.
@@ -232,6 +235,7 @@ impl StoreInner {
             engine: engine.clone(),
             store_idx: StoreIdx::new(),
             func_types: ComponentVec::new(),
+            funcs: Arena::new(),
             memories: Arena::new(),
             tables: Arena::new(),
             globals: Arena::new(),
@@ -692,6 +696,28 @@ impl StoreInner {
     pub fn resolve_external_object(&self, object: &ExternObject) -> &ExternObjectEntity {
         self.resolve(object.as_inner(), &self.extern_objects)
     }
+
+    /// Allocates a new Wasm or host [`FuncEntity`] and returns a [`Func`] reference to it.
+    pub fn alloc_func(&mut self, func: FuncEntity) -> Func {
+        let func_type = *func.ty_dedup();
+        let idx = self.funcs.alloc(func);
+        let func = Func::from_inner(self.wrap_stored(idx));
+        self.register_func_type(func, &func_type);
+        func
+    }
+
+    /// Returns a shared reference to the associated entity of the Wasm or host function.
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Func`] does not originate from this [`Store`].
+    /// - If the [`Func`] cannot be resolved to its entity.
+    pub fn resolve_func(&self, func: &Func) -> &FuncEntity {
+        let entity_index = self.unwrap_stored(func.as_inner());
+        self.funcs.get(entity_index).unwrap_or_else(|| {
+            panic!("failed to resolve stored Wasm or host function: {entity_index:?}")
+        })
+    }
 }
 
 impl<T> Store<T> {
@@ -699,7 +725,7 @@ impl<T> Store<T> {
     pub fn new(engine: &Engine, data: T) -> Self {
         Self {
             inner: StoreInner::new(engine),
-            funcs: Arena::new(),
+            host_funcs: Arena::new(),
             data,
         }
     }
@@ -782,13 +808,10 @@ impl<T> Store<T> {
             .map_err(|_error| FuelError::out_of_fuel())
     }
 
-    /// Allocates a new Wasm or host [`FuncEntity`] and returns a [`Func`] reference to it.
-    pub(super) fn alloc_func(&mut self, func: FuncEntity<T>) -> Func {
-        let func_type = *func.ty_dedup();
-        let idx = self.funcs.alloc(func);
-        let func = Func::from_inner(self.inner.wrap_stored(idx));
-        self.inner.register_func_type(func, &func_type);
-        func
+    /// Allocates a new [`HostFuncEntity`] and returns a [`Func`] reference to it.
+    pub(super) fn alloc_host_func(&mut self, func: HostFuncEntity<T>) -> HostFunc {
+        let idx = self.host_funcs.alloc(func);
+        HostFunc::from_inner(self.inner.wrap_stored(idx))
     }
 
     /// Returns an exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`]
@@ -810,17 +833,17 @@ impl<T> Store<T> {
         (self.inner.resolve_memory_mut(memory), &mut self.data)
     }
 
-    /// Returns a shared reference to the associated entity of the Wasm or host function.
+    /// Returns a shared reference to the associated entity of the host function.
     ///
     /// # Panics
     ///
-    /// - If the [`Func`] does not originate from this [`Store`].
-    /// - If the [`Func`] cannot be resolved to its entity.
-    pub(super) fn resolve_func(&self, func: &Func) -> &FuncEntity<T> {
+    /// - If the [`HostFunc`] does not originate from this [`Store`].
+    /// - If the [`HostFunc`] cannot be resolved to its entity.
+    pub(super) fn resolve_host_func(&self, func: &HostFunc) -> &HostFuncEntity<T> {
         let entity_index = self.inner.unwrap_stored(func.as_inner());
-        self.funcs.get(entity_index).unwrap_or_else(|| {
-            panic!("failed to resolve stored Wasm or host function: {entity_index:?}")
-        })
+        self.host_funcs
+            .get(entity_index)
+            .unwrap_or_else(|| panic!("failed to resolve stored host function: {entity_index:?}"))
     }
 }
 

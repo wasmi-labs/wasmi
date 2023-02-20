@@ -7,6 +7,7 @@ mod tests;
 pub use self::{error::InstantiationError, pre::InstancePre};
 use super::{element::ElementSegmentKind, export, DataSegmentKind, InitExpr, Module};
 use crate::{
+    func::WasmFuncEntity,
     memory::DataSegment,
     AsContext,
     AsContextMut,
@@ -14,7 +15,6 @@ use crate::{
     Error,
     Extern,
     ExternType,
-    FuncEntity,
     FuncRef,
     FuncType,
     Global,
@@ -166,10 +166,12 @@ impl Module {
         handle: Instance,
     ) {
         for (func_type, func_body) in self.internal_funcs() {
+            let wasm_func = WasmFuncEntity::new(func_type, func_body, handle);
             let func = context
                 .as_context_mut()
                 .store
-                .alloc_func(FuncEntity::new_wasm(func_type, func_body, handle));
+                .inner
+                .alloc_func(wasm_func.into());
             builder.push_func(func);
         }
     }

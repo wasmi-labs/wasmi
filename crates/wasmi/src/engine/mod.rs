@@ -597,13 +597,17 @@ impl<'engine> EngineExecutor<'engine> {
         Results: CallResults,
     {
         self.initialize_args(params);
-        match ctx.as_context().store.resolve_func(func) {
+        match ctx.as_context().store.inner.resolve_func(func) {
             FuncEntity::Wasm(wasm_func) => {
                 let mut frame = self.stack.call_wasm_root(wasm_func, &self.res.code_map)?;
                 let mut cache = InstanceCache::from(frame.instance());
                 self.execute_wasm_func(ctx.as_context_mut(), &mut frame, &mut cache)?;
             }
             FuncEntity::Host(host_func) => {
+                let host_func = ctx
+                    .as_context()
+                    .store
+                    .resolve_host_func(host_func.host_func());
                 let host_func = host_func.clone();
                 self.stack
                     .call_host_root(ctx.as_context_mut(), host_func, &self.res.func_types)?;
@@ -689,11 +693,15 @@ impl<'engine> EngineExecutor<'engine> {
                     None => return Ok(()),
                 },
                 CallOutcome::NestedCall(called_func) => {
-                    match ctx.as_context().store.resolve_func(&called_func) {
+                    match ctx.as_context().store.inner.resolve_func(&called_func) {
                         FuncEntity::Wasm(wasm_func) => {
                             *frame = self.stack.call_wasm(frame, wasm_func, &self.res.code_map)?;
                         }
                         FuncEntity::Host(host_func) => {
+                            let host_func = ctx
+                                .as_context()
+                                .store
+                                .resolve_host_func(host_func.host_func());
                             cache.reset_default_memory_bytes();
                             let host_func = host_func.clone();
                             self.stack

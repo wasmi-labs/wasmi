@@ -47,47 +47,85 @@ impl ArenaIndex for FuncIdx {
     }
 }
 
+/// A raw index to a host function entity.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct HostFuncIdx(usize);
+
+impl ArenaIndex for HostFuncIdx {
+    fn into_usize(self) -> usize {
+        self.0
+    }
+
+    fn from_usize(index: usize) -> Self {
+        Self(index)
+    }
+}
+
+/// A host function reference.
+#[derive(Debug, Copy, Clone)]
+#[repr(transparent)]
+pub struct HostFunc(Stored<HostFuncIdx>);
+
+impl HostFunc {
+    /// Creates a new host function reference.
+    pub(super) fn from_inner(stored: Stored<HostFuncIdx>) -> Self {
+        Self(stored)
+    }
+
+    /// Returns the underlying stored representation.
+    pub(super) fn as_inner(&self) -> &Stored<HostFuncIdx> {
+        &self.0
+    }
+}
+
 /// A Wasm or host function instance.
 #[derive(Debug)]
-pub enum FuncEntity<T> {
+pub enum FuncEntity {
     /// A Wasm function.
     Wasm(WasmFuncEntity),
     /// A host function.
-    Host(HostFuncEntity<T>),
+    Host(TypedHostFunc),
 }
 
-impl<T> From<WasmFuncEntity> for FuncEntity<T> {
+impl From<WasmFuncEntity> for FuncEntity {
     fn from(func: WasmFuncEntity) -> Self {
         Self::Wasm(func)
     }
 }
 
-impl<T> From<HostFuncEntity<T>> for FuncEntity<T> {
-    fn from(func: HostFuncEntity<T>) -> Self {
+impl From<TypedHostFunc> for FuncEntity {
+    fn from(func: TypedHostFunc) -> Self {
         Self::Host(func)
     }
 }
 
-impl<T> FuncEntity<T> {
-    /// Creates a new Wasm function from the given raw parts.
-    pub fn new_wasm(signature: DedupFuncType, body: FuncBody, instance: Instance) -> Self {
-        Self::from(WasmFuncEntity::new(signature, body, instance))
+/// A host function reference and its function type.
+#[derive(Debug, Copy, Clone)]
+pub struct TypedHostFunc {
+    /// The function type of the host function.
+    ty: DedupFuncType,
+    /// The host function reference.
+    func: HostFunc,
+}
+
+impl TypedHostFunc {
+    /// Creates a new [`TypedHostFunc`].
+    pub fn new(ty: DedupFuncType, func: HostFunc) -> Self {
+        Self { ty, func }
     }
 
-    /// Creates a new host function from the given dynamically typed closure.
-    pub fn new(
-        engine: &Engine,
-        ty: FuncType,
-        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Trap> + Send + Sync + 'static,
-    ) -> Self {
-        Self::from(HostFuncEntity::new(engine, ty, func))
+    /// Returns the signature of the host function.
+    pub fn ty_dedup(&self) -> &DedupFuncType {
+        &self.ty
     }
 
-    /// Creates a new host function from the given dynamically typed closure.
-    pub fn wrap<Params, Results>(engine: &Engine, func: impl IntoFunc<T, Params, Results>) -> Self {
-        Self::from(HostFuncEntity::wrap(engine, func))
+    /// Returns the underlying [`HostFunc`].
+    pub fn host_func(&self) -> &HostFunc {
+        &self.func
     }
+}
 
+impl FuncEntity {
     /// Returns the signature of the Wasm function.
     pub fn ty_dedup(&self) -> &DedupFuncType {
         match self {
@@ -100,8 +138,11 @@ impl<T> FuncEntity<T> {
 /// A Wasm function instance.
 #[derive(Debug, Clone)]
 pub struct WasmFuncEntity {
+    /// The function type of the Wasm function.
     ty: DedupFuncType,
+    /// The compiled function body of the Wasm function.
     body: FuncBody,
+    /// The instance associated to the Wasm function.
     instance: Instance,
 }
 
@@ -286,8 +327,13 @@ impl Func {
         func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Trap> + Send + Sync + 'static,
     ) -> Self {
         let engine = ctx.as_context().store.engine();
-        let func = FuncEntity::new(engine, ty, func);
-        ctx.as_context_mut().store.alloc_func(func)
+        let host_func = HostFuncEntity::new(engine, ty, func);
+        let ty_dedup = *host_func.ty_dedup();
+        let func = ctx.as_context_mut().store.alloc_host_func(host_func);
+        ctx.as_context_mut()
+            .store
+            .inner
+            .alloc_func(TypedHostFunc::new(ty_dedup, func).into())
     }
 
     /// Creates a new host function from the given closure.
@@ -296,8 +342,13 @@ impl Func {
         func: impl IntoFunc<T, Params, Results>,
     ) -> Self {
         let engine = ctx.as_context().store.engine();
-        let func = FuncEntity::wrap(engine, func);
-        ctx.as_context_mut().store.alloc_func(func)
+        let host_func = HostFuncEntity::wrap(engine, func);
+        let ty_dedup = *host_func.ty_dedup();
+        let func = ctx.as_context_mut().store.alloc_host_func(host_func);
+        ctx.as_context_mut()
+            .store
+            .inner
+            .alloc_func(TypedHostFunc::new(ty_dedup, func).into())
     }
 
     /// Returns the signature of the function.
@@ -305,7 +356,7 @@ impl Func {
         &self,
         ctx: impl Into<StoreContext<'a, T>>,
     ) -> &'a DedupFuncType {
-        ctx.into().store.resolve_func(self).ty_dedup()
+        ctx.into().store.inner.resolve_func(self).ty_dedup()
     }
 
     /// Returns the function type of the [`Func`].
