@@ -43,10 +43,11 @@ pub(crate) use self::{
     func_args::{FuncFinished, FuncParams, FuncResults},
     func_types::DedupFuncType,
 };
-use super::{func::FuncEntityInner, AsContextMut, Func};
+use super::{func::FuncEntityInner, AsContext, AsContextMut, Func};
 use crate::{
     core::{Trap, TrapCode},
     FuncType,
+    StoreContextMut,
 };
 use alloc::{sync::Arc, vec::Vec};
 use core::sync::atomic::{AtomicU32, Ordering};
@@ -206,9 +207,9 @@ impl Engine {
     /// - When encountering a Wasm or host trap during the execution of `func`.
     ///
     /// [`TypedFunc`]: [`crate::TypedFunc`]
-    pub(crate) fn execute_func<Results>(
+    pub(crate) fn execute_func<T, Results>(
         &self,
-        ctx: impl AsContextMut,
+        ctx: StoreContextMut<T>,
         func: Func,
         params: impl CallParams,
         results: Results,
@@ -241,9 +242,9 @@ impl Engine {
     /// - When `func` is a host function that traps.
     ///
     /// [`TypedFunc`]: [`crate::TypedFunc`]
-    pub(crate) fn execute_func_resumable<Results>(
+    pub(crate) fn execute_func_resumable<T, Results>(
         &self,
-        ctx: impl AsContextMut,
+        ctx: StoreContextMut<T>,
         func: Func,
         params: impl CallParams,
         results: Results,
@@ -277,9 +278,9 @@ impl Engine {
     /// - When `func` is a host function that traps.
     ///
     /// [`TypedFunc`]: [`crate::TypedFunc`]
-    pub(crate) fn resume_func<Results>(
+    pub(crate) fn resume_func<T, Results>(
         &self,
-        ctx: impl AsContextMut,
+        ctx: StoreContextMut<T>,
         invocation: ResumableInvocation,
         params: impl CallParams,
         results: Results,
@@ -395,9 +396,9 @@ impl EngineInner {
             .copied()
     }
 
-    fn execute_func<Results>(
+    fn execute_func<T, Results>(
         &self,
-        ctx: impl AsContextMut,
+        ctx: StoreContextMut<T>,
         func: Func,
         params: impl CallParams,
         results: Results,
@@ -414,9 +415,9 @@ impl EngineInner {
         results
     }
 
-    fn execute_func_resumable<Results>(
+    fn execute_func_resumable<T, Results>(
         &self,
-        mut ctx: impl AsContextMut,
+        mut ctx: StoreContextMut<T>,
         func: Func,
         params: impl CallParams,
         results: Results,
@@ -454,9 +455,9 @@ impl EngineInner {
         }
     }
 
-    pub(crate) fn resume_func<Results>(
+    pub(crate) fn resume_func<T, Results>(
         &self,
-        ctx: impl AsContextMut,
+        ctx: StoreContextMut<T>,
         mut invocation: ResumableInvocation,
         params: impl CallParams,
         results: Results,
@@ -582,9 +583,9 @@ impl<'engine> EngineExecutor<'engine> {
     /// - If the given `params` do not match the expected parameters of `func`.
     /// - If the given `results` do not match the the length of the expected results of `func`.
     /// - When encountering a Wasm or host trap during the execution of `func`.
-    fn execute_func<Results>(
+    fn execute_func<T, Results>(
         &mut self,
-        mut ctx: impl AsContextMut,
+        mut ctx: StoreContextMut<T>,
         func: Func,
         params: impl CallParams,
         results: Results,
@@ -618,9 +619,9 @@ impl<'engine> EngineExecutor<'engine> {
     /// - If the given `params` do not match the expected parameters of `func`.
     /// - If the given `results` do not match the the length of the expected results of `func`.
     /// - When encountering a Wasm or host trap during the execution of `func`.
-    fn resume_func<Results>(
+    fn resume_func<T, Results>(
         &mut self,
-        mut ctx: impl AsContextMut,
+        mut ctx: StoreContextMut<T>,
         host_func: Func,
         params: impl CallParams,
         results: Results,
@@ -669,9 +670,9 @@ impl<'engine> EngineExecutor<'engine> {
     /// # Errors
     ///
     /// When encountering a Wasm or host trap during the execution of `func`.
-    fn execute_wasm_func(
+    fn execute_wasm_func<T>(
         &mut self,
-        mut ctx: impl AsContextMut,
+        mut ctx: StoreContextMut<T>,
         frame: &mut FuncFrame,
         cache: &mut InstanceCache,
     ) -> Result<(), TaggedTrap> {
@@ -717,9 +718,9 @@ impl<'engine> EngineExecutor<'engine> {
     ///
     /// - If the execution of the function `frame` trapped.
     #[inline(always)]
-    fn execute_frame(
+    fn execute_frame<T>(
         &mut self,
-        mut ctx: impl AsContextMut,
+        ctx: StoreContextMut<T>,
         frame: &mut FuncFrame,
         cache: &mut InstanceCache,
     ) -> Result<CallOutcome, Trap> {
@@ -734,12 +735,6 @@ impl<'engine> EngineExecutor<'engine> {
         }
 
         let value_stack = &mut self.stack.values;
-        execute_frame(
-            &mut ctx.as_context_mut().store.inner,
-            value_stack,
-            cache,
-            frame,
-        )
-        .map_err(make_trap)
+        execute_frame(&mut ctx.store.inner, value_stack, cache, frame).map_err(make_trap)
     }
 }

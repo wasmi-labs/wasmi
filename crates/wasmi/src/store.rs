@@ -848,7 +848,7 @@ pub trait AsContextMut: AsContext {
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct StoreContext<'a, T> {
-    pub(super) store: &'a Store<T>,
+    pub(crate) store: &'a Store<T>,
 }
 
 impl<'a, T> StoreContext<'a, T> {
@@ -893,7 +893,7 @@ impl<'a, T: AsContextMut> From<&'a mut T> for StoreContextMut<'a, T::UserState> 
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct StoreContextMut<'a, T> {
-    pub(super) store: &'a mut Store<T>,
+    pub(crate) store: &'a mut Store<T>,
 }
 
 impl<'a, T> StoreContextMut<'a, T> {
