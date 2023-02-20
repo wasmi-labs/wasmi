@@ -439,17 +439,4 @@ impl Func {
     {
         TypedFunc::new(ctx, *self)
     }
-
-    /// Returns the internal representation of the [`Func`] instance.
-    ///
-    /// # Note
-    ///
-    /// This is intentionally a private API and mainly provided for efficient
-    /// execution of the `wasmi` interpreter upon function dispatch.
-    pub(crate) fn as_internal<'a, T: 'a>(
-        &self,
-        ctx: impl Into<StoreContext<'a, T>>,
-    ) -> &'a FuncEntity<T> {
-        ctx.into().store.resolve_func(self)
-    }
 }

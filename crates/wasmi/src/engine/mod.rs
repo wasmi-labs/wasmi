@@ -597,7 +597,7 @@ impl<'engine> EngineExecutor<'engine> {
         Results: CallResults,
     {
         self.initialize_args(params);
-        match func.as_internal(ctx.as_context()) {
+        match ctx.as_context().store.resolve_func(func) {
             FuncEntity::Wasm(wasm_func) => {
                 let mut frame = self.stack.call_wasm_root(wasm_func, &self.res.code_map)?;
                 let mut cache = InstanceCache::from(frame.instance());
@@ -689,7 +689,7 @@ impl<'engine> EngineExecutor<'engine> {
                     None => return Ok(()),
                 },
                 CallOutcome::NestedCall(called_func) => {
-                    match called_func.as_internal(ctx.as_context()) {
+                    match ctx.as_context().store.resolve_func(&called_func) {
                         FuncEntity::Wasm(wasm_func) => {
                             *frame = self.stack.call_wasm(frame, wasm_func, &self.res.code_map)?;
                         }
