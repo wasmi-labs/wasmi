@@ -1,5 +1,7 @@
-use super::{
+use crate::{
     engine::DedupFuncType,
+    externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
+    memory::DataSegment,
     DataSegmentEntity,
     DataSegmentIdx,
     ElementSegment,
@@ -22,10 +24,6 @@ use super::{
     Table,
     TableEntity,
     TableIdx,
-};
-use crate::{
-    externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
-    memory::DataSegment,
 };
 use core::{
     fmt::{self, Debug},
