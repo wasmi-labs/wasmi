@@ -56,14 +56,6 @@ pub struct FuncEntity<T> {
     inner: FuncEntityInner<T>,
 }
 
-impl<T> Clone for FuncEntity<T> {
-    fn clone(&self) -> Self {
-        Self {
-            inner: self.inner.clone(),
-        }
-    }
-}
-
 impl<T> From<WasmFuncEntity> for FuncEntity<T> {
     fn from(wasm_func: WasmFuncEntity) -> Self {
         Self {
@@ -128,15 +120,6 @@ pub(crate) enum FuncEntityInner<T> {
     Wasm(WasmFuncEntity),
     /// A host function instance.
     Host(HostFuncEntity<T>),
-}
-
-impl<T> Clone for FuncEntityInner<T> {
-    fn clone(&self) -> Self {
-        match self {
-            Self::Wasm(func) => Self::Wasm(func.clone()),
-            Self::Host(func) => Self::Host(func.clone()),
-        }
-    }
 }
 
 /// A Wasm function instance.
