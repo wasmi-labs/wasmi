@@ -213,7 +213,7 @@ impl Engine {
     pub(crate) fn execute_func<T, Results>(
         &self,
         ctx: StoreContextMut<T>,
-        func: Func,
+        func: &Func,
         params: impl CallParams,
         results: Results,
     ) -> Result<<Results as CallResults>::Results, Trap>
@@ -248,7 +248,7 @@ impl Engine {
     pub(crate) fn execute_func_resumable<T, Results>(
         &self,
         ctx: StoreContextMut<T>,
-        func: Func,
+        func: &Func,
         params: impl CallParams,
         results: Results,
     ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
@@ -402,7 +402,7 @@ impl EngineInner {
     fn execute_func<T, Results>(
         &self,
         ctx: StoreContextMut<T>,
-        func: Func,
+        func: &Func,
         params: impl CallParams,
         results: Results,
     ) -> Result<<Results as CallResults>::Results, Trap>
@@ -421,7 +421,7 @@ impl EngineInner {
     fn execute_func_resumable<T, Results>(
         &self,
         mut ctx: StoreContextMut<T>,
-        func: Func,
+        func: &Func,
         params: impl CallParams,
         results: Results,
     ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
@@ -450,7 +450,7 @@ impl EngineInner {
                 host_trap,
             }) => Ok(ResumableCallBase::Resumable(ResumableInvocation::new(
                 ctx.as_context().store.engine().clone(),
-                func,
+                *func,
                 host_func,
                 host_trap,
                 stack,
@@ -589,7 +589,7 @@ impl<'engine> EngineExecutor<'engine> {
     fn execute_func<T, Results>(
         &mut self,
         mut ctx: StoreContextMut<T>,
-        func: Func,
+        func: &Func,
         params: impl CallParams,
         results: Results,
     ) -> Result<<Results as CallResults>::Results, TaggedTrap>

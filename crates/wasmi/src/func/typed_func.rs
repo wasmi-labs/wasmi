@@ -97,7 +97,7 @@ where
         // Note: Cloning an [`Engine`] is intentionally a cheap operation.
         ctx.as_context().store.engine().clone().execute_func(
             ctx.as_context_mut(),
-            self.func,
+            &self.func,
             params,
             <CallResultsTuple<Results>>::default(),
         )
@@ -130,7 +130,7 @@ where
             .clone()
             .execute_func_resumable(
                 ctx.as_context_mut(),
-                self.func,
+                &self.func,
                 params,
                 <CallResultsTuple<Results>>::default(),
             )
