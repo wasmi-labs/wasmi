@@ -64,9 +64,9 @@ impl ArenaIndex for TrampolineIdx {
 /// A host function reference.
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
-pub struct HostFuncTrampoline(Stored<TrampolineIdx>);
+pub struct Trampoline(Stored<TrampolineIdx>);
 
-impl HostFuncTrampoline {
+impl Trampoline {
     /// Creates a new host function reference.
     pub(super) fn from_inner(stored: Stored<TrampolineIdx>) -> Self {
         Self(stored)
@@ -105,12 +105,12 @@ pub struct HostFuncEntity {
     /// The function type of the host function.
     ty: DedupFuncType,
     /// A reference to the trampoline of the host function.
-    func: HostFuncTrampoline,
+    func: Trampoline,
 }
 
 impl HostFuncEntity {
     /// Creates a new [`HostFuncEntity`].
-    pub fn new(ty: DedupFuncType, func: HostFuncTrampoline) -> Self {
+    pub fn new(ty: DedupFuncType, func: Trampoline) -> Self {
         Self { ty, func }
     }
 
@@ -120,7 +120,7 @@ impl HostFuncEntity {
     }
 
     /// Returns the [`HostFuncTrampoline`] of the host function.
-    pub fn trampoline(&self) -> &HostFuncTrampoline {
+    pub fn trampoline(&self) -> &Trampoline {
         &self.func
     }
 }
@@ -189,33 +189,6 @@ impl<T> Clone for HostFuncTrampolineEntity<T> {
     }
 }
 
-type TrampolineFn<T> =
-    dyn Fn(Caller<T>, FuncParams) -> Result<FuncFinished, Trap> + Send + Sync + 'static;
-
-pub struct TrampolineEntity<T> {
-    closure: Arc<TrampolineFn<T>>,
-}
-
-impl<T> TrampolineEntity<T> {
-    /// Creates a new [`HostFuncTrampoline`] from the given trampoline function.
-    pub fn new<F>(trampoline: F) -> Self
-    where
-        F: Fn(Caller<T>, FuncParams) -> Result<FuncFinished, Trap> + Send + Sync + 'static,
-    {
-        Self {
-            closure: Arc::new(trampoline),
-        }
-    }
-}
-
-impl<T> Clone for TrampolineEntity<T> {
-    fn clone(&self) -> Self {
-        Self {
-            closure: self.closure.clone(),
-        }
-    }
-}
-
 impl<T> Debug for HostFuncTrampolineEntity<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         Debug::fmt(&self.ty, f)
@@ -264,6 +237,36 @@ impl<T> HostFuncTrampolineEntity<T> {
         &self.ty
     }
 
+    /// Returns the trampoline of the host function.
+    pub fn trampoline(&self) -> &TrampolineEntity<T> {
+        &self.trampoline
+    }
+}
+
+type TrampolineFn<T> =
+    dyn Fn(Caller<T>, FuncParams) -> Result<FuncFinished, Trap> + Send + Sync + 'static;
+
+pub struct TrampolineEntity<T> {
+    closure: Arc<TrampolineFn<T>>,
+}
+
+impl<T> Debug for TrampolineEntity<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TrampolineEntity").finish()
+    }
+}
+
+impl<T> TrampolineEntity<T> {
+    /// Creates a new [`HostFuncTrampoline`] from the given trampoline function.
+    pub fn new<F>(trampoline: F) -> Self
+    where
+        F: Fn(Caller<T>, FuncParams) -> Result<FuncFinished, Trap> + Send + Sync + 'static,
+    {
+        Self {
+            closure: Arc::new(trampoline),
+        }
+    }
+
     /// Calls the host function with the given inputs.
     ///
     /// The result is written back into the `outputs` buffer.
@@ -274,7 +277,15 @@ impl<T> HostFuncTrampolineEntity<T> {
         params: FuncParams,
     ) -> Result<FuncFinished, Trap> {
         let caller = <Caller<T>>::new(&mut ctx, instance);
-        (self.trampoline.closure)(caller, params)
+        (self.closure)(caller, params)
+    }
+}
+
+impl<T> Clone for TrampolineEntity<T> {
+    fn clone(&self) -> Self {
+        Self {
+            closure: self.closure.clone(),
+        }
     }
 }
 
@@ -325,7 +336,8 @@ impl Func {
         let engine = ctx.as_context().store.engine();
         let host_func = HostFuncTrampolineEntity::new(engine, ty, func);
         let ty_dedup = *host_func.ty_dedup();
-        let func = ctx.as_context_mut().store.alloc_trampoline(host_func);
+        let trampoline = host_func.trampoline().clone();
+        let func = ctx.as_context_mut().store.alloc_trampoline(trampoline);
         ctx.as_context_mut()
             .store
             .inner
@@ -340,7 +352,8 @@ impl Func {
         let engine = ctx.as_context().store.engine();
         let host_func = HostFuncTrampolineEntity::wrap(engine, func);
         let ty_dedup = *host_func.ty_dedup();
-        let func = ctx.as_context_mut().store.alloc_trampoline(host_func);
+        let trampoline = host_func.trampoline().clone();
+        let func = ctx.as_context_mut().store.alloc_trampoline(trampoline);
         ctx.as_context_mut()
             .store
             .inner

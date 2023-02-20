@@ -604,11 +604,7 @@ impl<'engine> EngineExecutor<'engine> {
                 self.execute_wasm_func(ctx.as_context_mut(), &mut frame, &mut cache)?;
             }
             FuncEntity::Host(host_func) => {
-                let host_func = ctx
-                    .as_context()
-                    .store
-                    .resolve_trampoline(host_func.trampoline());
-                let host_func = host_func.clone();
+                let host_func = *host_func;
                 self.stack
                     .call_host_root(ctx.as_context_mut(), host_func, &self.res.func_types)?;
             }
@@ -698,12 +694,8 @@ impl<'engine> EngineExecutor<'engine> {
                             *frame = self.stack.call_wasm(frame, wasm_func, &self.res.code_map)?;
                         }
                         FuncEntity::Host(host_func) => {
-                            let host_func = ctx
-                                .as_context()
-                                .store
-                                .resolve_trampoline(host_func.trampoline());
                             cache.reset_default_memory_bytes();
-                            let host_func = host_func.clone();
+                            let host_func = *host_func;
                             self.stack
                                 .call_host(
                                     ctx.as_context_mut(),

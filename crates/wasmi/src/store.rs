@@ -1,7 +1,7 @@
 use crate::{
     engine::DedupFuncType,
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
-    func::{HostFuncTrampoline, HostFuncTrampolineEntity, TrampolineIdx},
+    func::{Trampoline, TrampolineEntity, TrampolineIdx},
     memory::DataSegment,
     DataSegmentEntity,
     DataSegmentIdx,
@@ -78,7 +78,7 @@ pub struct Store<T> {
     /// it is used directly by the engine's executor.
     pub(crate) inner: StoreInner,
     /// Stored host function trampolines.
-    trampolines: Arena<TrampolineIdx, HostFuncTrampolineEntity<T>>,
+    trampolines: Arena<TrampolineIdx, TrampolineEntity<T>>,
     /// User provided host data owned by the [`Store`].
     data: T,
 }
@@ -809,12 +809,9 @@ impl<T> Store<T> {
     }
 
     /// Allocates a new [`HostFuncTrampolineEntity`] and returns a [`HostFuncTrampoline`] reference to it.
-    pub(super) fn alloc_trampoline(
-        &mut self,
-        func: HostFuncTrampolineEntity<T>,
-    ) -> HostFuncTrampoline {
+    pub(super) fn alloc_trampoline(&mut self, func: TrampolineEntity<T>) -> Trampoline {
         let idx = self.trampolines.alloc(func);
-        HostFuncTrampoline::from_inner(self.inner.wrap_stored(idx))
+        Trampoline::from_inner(self.inner.wrap_stored(idx))
     }
 
     /// Returns an exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`]
@@ -840,12 +837,9 @@ impl<T> Store<T> {
     ///
     /// # Panics
     ///
-    /// - If the [`HostFuncTrampoline`] does not originate from this [`Store`].
-    /// - If the [`HostFuncTrampoline`] cannot be resolved to its entity.
-    pub(super) fn resolve_trampoline(
-        &self,
-        func: &HostFuncTrampoline,
-    ) -> &HostFuncTrampolineEntity<T> {
+    /// - If the [`Trampoline`] does not originate from this [`Store`].
+    /// - If the [`Trampoline`] cannot be resolved to its entity.
+    pub(super) fn resolve_trampoline(&self, func: &Trampoline) -> &TrampolineEntity<T> {
         let entity_index = self.inner.unwrap_stored(func.as_inner());
         self.trampolines
             .get(entity_index)
