@@ -772,7 +772,7 @@ impl<T> Store<T> {
             .map_err(|_error| FuelError::out_of_fuel())
     }
 
-    /// Allocates a new [`HostFuncTrampolineEntity`] and returns a [`HostFuncTrampoline`] reference to it.
+    /// Allocates a new [`TrampolineEntity`] and returns a [`Trampoline`] reference to it.
     pub(super) fn alloc_trampoline(&mut self, func: TrampolineEntity<T>) -> Trampoline {
         let idx = self.trampolines.alloc(func);
         Trampoline::from_inner(self.inner.wrap_stored(idx))

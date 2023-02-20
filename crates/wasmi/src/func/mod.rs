@@ -119,7 +119,7 @@ impl HostFuncEntity {
         &self.ty
     }
 
-    /// Returns the [`HostFuncTrampoline`] of the host function.
+    /// Returns the [`Trampoline`] of the host function.
     pub fn trampoline(&self) -> &Trampoline {
         &self.func
     }
@@ -257,7 +257,7 @@ impl<T> Debug for TrampolineEntity<T> {
 }
 
 impl<T> TrampolineEntity<T> {
-    /// Creates a new [`HostFuncTrampoline`] from the given trampoline function.
+    /// Creates a new [`TrampolineEntity`] from the given host function.
     pub fn new<F>(trampoline: F) -> Self
     where
         F: Fn(Caller<T>, FuncParams) -> Result<FuncFinished, Trap> + Send + Sync + 'static,
@@ -267,7 +267,7 @@ impl<T> TrampolineEntity<T> {
         }
     }
 
-    /// Calls the host function with the given inputs.
+    /// Calls the host function trampoline with the given inputs.
     ///
     /// The result is written back into the `outputs` buffer.
     pub fn call(
