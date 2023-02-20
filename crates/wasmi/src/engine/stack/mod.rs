@@ -14,8 +14,8 @@ use crate::{
     core::UntypedValue,
     func::{HostFuncEntity, WasmFuncEntity},
     AsContext,
-    AsContextMut,
     Instance,
+    StoreContextMut,
 };
 use core::{
     fmt::{self, Display},
@@ -222,29 +222,23 @@ impl Stack {
     }
 
     /// Executes the given host function as root.
-    pub(crate) fn call_host_root<C>(
+    pub(crate) fn call_host_root<T>(
         &mut self,
-        ctx: C,
-        host_func: HostFuncEntity<<C as AsContext>::UserState>,
+        ctx: StoreContextMut<T>,
+        host_func: HostFuncEntity,
         func_types: &FuncTypeRegistry,
-    ) -> Result<(), Trap>
-    where
-        C: AsContextMut,
-    {
+    ) -> Result<(), Trap> {
         self.call_host_impl(ctx, host_func, None, func_types)
     }
 
     /// Executes the given host function called by a Wasm function.
-    pub(crate) fn call_host<C>(
+    pub(crate) fn call_host<T>(
         &mut self,
-        ctx: C,
+        ctx: StoreContextMut<T>,
         caller: &FuncFrame,
-        host_func: HostFuncEntity<<C as AsContext>::UserState>,
+        host_func: HostFuncEntity,
         func_types: &FuncTypeRegistry,
-    ) -> Result<(), Trap>
-    where
-        C: AsContextMut,
-    {
+    ) -> Result<(), Trap> {
         let instance = caller.instance();
         self.call_host_impl(ctx, host_func, Some(instance), func_types)
     }
@@ -256,16 +250,13 @@ impl Stack {
     /// - If the host function returns a host side error or trap.
     /// - If the value stack overflowed upon pushing parameters or results.
     #[inline(never)]
-    fn call_host_impl<C>(
+    fn call_host_impl<T>(
         &mut self,
-        mut ctx: C,
-        host_func: HostFuncEntity<<C as AsContext>::UserState>,
+        ctx: StoreContextMut<T>,
+        host_func: HostFuncEntity,
         instance: Option<&Instance>,
         func_types: &FuncTypeRegistry,
-    ) -> Result<(), Trap>
-    where
-        C: AsContextMut,
-    {
+    ) -> Result<(), Trap> {
         // The host function signature is required for properly
         // adjusting, inspecting and manipulating the value stack.
         let (input_types, output_types) = func_types
@@ -295,8 +286,13 @@ impl Stack {
         // Now we are ready to perform the host function call.
         // Note: We need to clone the host function due to some borrowing issues.
         //       This should not be a big deal since host functions usually are cheap to clone.
-        host_func
-            .call(&mut ctx, instance, params_results)
+        let trampoline = ctx
+            .as_context()
+            .store
+            .resolve_trampoline(host_func.trampoline())
+            .clone();
+        trampoline
+            .call(ctx, instance, params_results)
             .map_err(|error| {
                 // Note: We drop the values that have been temporarily added to
                 //       the stack to act as parameter and result buffer for the

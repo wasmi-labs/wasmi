@@ -47,103 +47,102 @@ impl ArenaIndex for FuncIdx {
     }
 }
 
-/// A function instance.
+/// A raw index to a host function trampoline entity.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct TrampolineIdx(usize);
+
+impl ArenaIndex for TrampolineIdx {
+    fn into_usize(self) -> usize {
+        self.0
+    }
+
+    fn from_usize(index: usize) -> Self {
+        Self(index)
+    }
+}
+
+/// A host function reference.
+#[derive(Debug, Copy, Clone)]
+#[repr(transparent)]
+pub struct Trampoline(Stored<TrampolineIdx>);
+
+impl Trampoline {
+    /// Creates a new host function reference.
+    pub(super) fn from_inner(stored: Stored<TrampolineIdx>) -> Self {
+        Self(stored)
+    }
+
+    /// Returns the underlying stored representation.
+    pub(super) fn as_inner(&self) -> &Stored<TrampolineIdx> {
+        &self.0
+    }
+}
+
+/// A Wasm or host function instance.
 #[derive(Debug)]
-pub struct FuncEntity<T> {
-    /// We wrap this enum in a struct so that we can make its
-    /// variants private. This is advantageous since they are
-    /// implementation details and not important to the user.
-    inner: FuncEntityInner<T>,
+pub enum FuncEntity {
+    /// A Wasm function.
+    Wasm(WasmFuncEntity),
+    /// A host function.
+    Host(HostFuncEntity),
 }
 
-impl<T> Clone for FuncEntity<T> {
-    fn clone(&self) -> Self {
-        Self {
-            inner: self.inner.clone(),
-        }
-    }
-}
-
-impl<T> From<WasmFuncEntity> for FuncEntity<T> {
-    fn from(wasm_func: WasmFuncEntity) -> Self {
-        Self {
-            inner: FuncEntityInner::Wasm(wasm_func),
-        }
+impl From<WasmFuncEntity> for FuncEntity {
+    fn from(func: WasmFuncEntity) -> Self {
+        Self::Wasm(func)
     }
 }
 
-impl<T> From<HostFuncEntity<T>> for FuncEntity<T> {
-    fn from(host_func: HostFuncEntity<T>) -> Self {
-        Self {
-            inner: FuncEntityInner::Host(host_func),
-        }
+impl From<HostFuncEntity> for FuncEntity {
+    fn from(func: HostFuncEntity) -> Self {
+        Self::Host(func)
     }
 }
 
-impl<T> FuncEntity<T> {
-    /// Creates a new Wasm function from the given raw parts.
-    pub fn new_wasm(signature: DedupFuncType, body: FuncBody, instance: Instance) -> Self {
-        Self::from(WasmFuncEntity::new(signature, body, instance))
+/// A host function reference and its function type.
+#[derive(Debug, Copy, Clone)]
+pub struct HostFuncEntity {
+    /// The function type of the host function.
+    ty: DedupFuncType,
+    /// A reference to the trampoline of the host function.
+    func: Trampoline,
+}
+
+impl HostFuncEntity {
+    /// Creates a new [`HostFuncEntity`].
+    pub fn new(ty: DedupFuncType, func: Trampoline) -> Self {
+        Self { ty, func }
     }
 
-    /// Creates a new host function from the given dynamically typed closure.
-    pub fn new(
-        engine: &Engine,
-        ty: FuncType,
-        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Trap> + Send + Sync + 'static,
-    ) -> Self {
-        Self::from(HostFuncEntity::new(engine, ty, func))
+    /// Returns the signature of the host function.
+    pub fn ty_dedup(&self) -> &DedupFuncType {
+        &self.ty
     }
 
-    /// Creates a new host function from the given dynamically typed closure.
-    pub fn wrap<Params, Results>(engine: &Engine, func: impl IntoFunc<T, Params, Results>) -> Self {
-        Self::from(HostFuncEntity::wrap(engine, func))
+    /// Returns the [`Trampoline`] of the host function.
+    pub fn trampoline(&self) -> &Trampoline {
+        &self.func
     }
+}
 
-    /// Returns a shared reference to the [`FuncEntityInner`].
-    ///
-    /// # Note
-    ///
-    /// This can be used to efficiently match against host or Wasm
-    /// function entities and efficiently extract their properties.
-    pub(crate) fn as_internal(&self) -> &FuncEntityInner<T> {
-        &self.inner
-    }
-
+impl FuncEntity {
     /// Returns the signature of the Wasm function.
     pub fn ty_dedup(&self) -> &DedupFuncType {
-        match self.as_internal() {
-            FuncEntityInner::Wasm(func) => func.ty_dedup(),
-            FuncEntityInner::Host(func) => func.ty_dedup(),
-        }
-    }
-}
-
-/// The internal representation of a function instance.
-///
-/// This can either be a host function or a Wasm function.
-#[derive(Debug)]
-pub(crate) enum FuncEntityInner<T> {
-    /// A Wasm function instance.
-    Wasm(WasmFuncEntity),
-    /// A host function instance.
-    Host(HostFuncEntity<T>),
-}
-
-impl<T> Clone for FuncEntityInner<T> {
-    fn clone(&self) -> Self {
         match self {
-            Self::Wasm(func) => Self::Wasm(func.clone()),
-            Self::Host(func) => Self::Host(func.clone()),
+            Self::Wasm(func) => func.ty_dedup(),
+            Self::Host(func) => func.ty_dedup(),
         }
     }
 }
 
 /// A Wasm function instance.
 #[derive(Debug, Clone)]
-pub(crate) struct WasmFuncEntity {
-    signature: DedupFuncType,
+pub struct WasmFuncEntity {
+    /// The function type of the Wasm function.
+    ty: DedupFuncType,
+    /// The compiled function body of the Wasm function.
     body: FuncBody,
+    /// The instance associated to the Wasm function.
     instance: Instance,
 }
 
@@ -151,7 +150,7 @@ impl WasmFuncEntity {
     /// Creates a new Wasm function from the given raw parts.
     pub fn new(signature: DedupFuncType, body: FuncBody, instance: Instance) -> Self {
         Self {
-            signature,
+            ty: signature,
             body,
             instance,
         }
@@ -159,7 +158,7 @@ impl WasmFuncEntity {
 
     /// Returns the signature of the Wasm function.
     pub fn ty_dedup(&self) -> &DedupFuncType {
-        &self.signature
+        &self.ty
     }
 
     /// Returns the instance where the [`Func`] belong to.
@@ -174,55 +173,30 @@ impl WasmFuncEntity {
 }
 
 /// A host function instance.
-pub(crate) struct HostFuncEntity<T> {
-    signature: DedupFuncType,
-    trampoline: HostFuncTrampoline<T>,
+pub struct HostFuncTrampolineEntity<T> {
+    /// The type of the associated host function.
+    ty: DedupFuncType,
+    /// The trampoline of the associated host function.
+    trampoline: TrampolineEntity<T>,
 }
 
-impl<T> Clone for HostFuncEntity<T> {
+impl<T> Clone for HostFuncTrampolineEntity<T> {
     fn clone(&self) -> Self {
         Self {
-            signature: self.signature,
+            ty: self.ty,
             trampoline: self.trampoline.clone(),
         }
     }
 }
 
-type HostFuncTrampolineFn<T> =
-    dyn Fn(Caller<T>, FuncParams) -> Result<FuncFinished, Trap> + Send + Sync + 'static;
-
-pub struct HostFuncTrampoline<T> {
-    closure: Arc<HostFuncTrampolineFn<T>>,
-}
-
-impl<T> HostFuncTrampoline<T> {
-    /// Creates a new [`HostFuncTrampoline`] from the given trampoline function.
-    pub fn new<F>(trampoline: F) -> Self
-    where
-        F: Fn(Caller<T>, FuncParams) -> Result<FuncFinished, Trap> + Send + Sync + 'static,
-    {
-        Self {
-            closure: Arc::new(trampoline),
-        }
-    }
-}
-
-impl<T> Clone for HostFuncTrampoline<T> {
-    fn clone(&self) -> Self {
-        Self {
-            closure: self.closure.clone(),
-        }
-    }
-}
-
-impl<T> Debug for HostFuncEntity<T> {
+impl<T> Debug for HostFuncTrampolineEntity<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Debug::fmt(&self.signature, f)
+        Debug::fmt(&self.ty, f)
     }
 }
 
-impl<T> HostFuncEntity<T> {
-    /// Creates a new host function from the given dynamically typed closure.
+impl<T> HostFuncTrampolineEntity<T> {
+    /// Creates a new host function trampoline from the given dynamically typed closure.
     pub fn new(
         engine: &Engine,
         ty: FuncType,
@@ -236,7 +210,7 @@ impl<T> HostFuncEntity<T> {
         let results_iter = ty.results().iter().copied().map(Value::default);
         let len_params = ty.params().len();
         let params_results: Box<[Value]> = params_iter.chain(results_iter).collect();
-        let trampoline = <HostFuncTrampoline<T>>::new(move |caller, args| {
+        let trampoline = <TrampolineEntity<T>>::new(move |caller, args| {
             // We are required to clone the buffer because we are operating within a `Fn`.
             // This way the trampoline closure only has to own a single slice buffer.
             // Note: An alternative solution is to use interior mutability but that solution
@@ -247,29 +221,53 @@ impl<T> HostFuncEntity<T> {
             func(caller, params, results)?;
             Ok(func_results.encode_results_from_slice(results).unwrap())
         });
-        let signature = engine.alloc_func_type(ty.clone());
-        Self {
-            signature,
-            trampoline,
-        }
+        let ty = engine.alloc_func_type(ty.clone());
+        Self { ty, trampoline }
     }
 
-    /// Creates a new host function from the given statically typed closure.
+    /// Creates a new host function trampoline from the given statically typed closure.
     pub fn wrap<Params, Results>(engine: &Engine, func: impl IntoFunc<T, Params, Results>) -> Self {
         let (signature, trampoline) = func.into_func();
-        let signature = engine.alloc_func_type(signature);
-        Self {
-            signature,
-            trampoline,
-        }
+        let ty = engine.alloc_func_type(signature);
+        Self { ty, trampoline }
     }
 
     /// Returns the signature of the host function.
     pub fn ty_dedup(&self) -> &DedupFuncType {
-        &self.signature
+        &self.ty
     }
 
-    /// Calls the host function with the given inputs.
+    /// Returns the trampoline of the host function.
+    pub fn trampoline(&self) -> &TrampolineEntity<T> {
+        &self.trampoline
+    }
+}
+
+type TrampolineFn<T> =
+    dyn Fn(Caller<T>, FuncParams) -> Result<FuncFinished, Trap> + Send + Sync + 'static;
+
+pub struct TrampolineEntity<T> {
+    closure: Arc<TrampolineFn<T>>,
+}
+
+impl<T> Debug for TrampolineEntity<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TrampolineEntity").finish()
+    }
+}
+
+impl<T> TrampolineEntity<T> {
+    /// Creates a new [`TrampolineEntity`] from the given host function.
+    pub fn new<F>(trampoline: F) -> Self
+    where
+        F: Fn(Caller<T>, FuncParams) -> Result<FuncFinished, Trap> + Send + Sync + 'static,
+    {
+        Self {
+            closure: Arc::new(trampoline),
+        }
+    }
+
+    /// Calls the host function trampoline with the given inputs.
     ///
     /// The result is written back into the `outputs` buffer.
     pub fn call(
@@ -279,7 +277,15 @@ impl<T> HostFuncEntity<T> {
         params: FuncParams,
     ) -> Result<FuncFinished, Trap> {
         let caller = <Caller<T>>::new(&mut ctx, instance);
-        (self.trampoline.closure)(caller, params)
+        (self.closure)(caller, params)
+    }
+}
+
+impl<T> Clone for TrampolineEntity<T> {
+    fn clone(&self) -> Self {
+        Self {
+            closure: self.closure.clone(),
+        }
     }
 }
 
@@ -328,8 +334,14 @@ impl Func {
         func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Trap> + Send + Sync + 'static,
     ) -> Self {
         let engine = ctx.as_context().store.engine();
-        let func = FuncEntity::new(engine, ty, func);
-        ctx.as_context_mut().store.alloc_func(func)
+        let host_func = HostFuncTrampolineEntity::new(engine, ty, func);
+        let ty_dedup = *host_func.ty_dedup();
+        let trampoline = host_func.trampoline().clone();
+        let func = ctx.as_context_mut().store.alloc_trampoline(trampoline);
+        ctx.as_context_mut()
+            .store
+            .inner
+            .alloc_func(HostFuncEntity::new(ty_dedup, func).into())
     }
 
     /// Creates a new host function from the given closure.
@@ -338,8 +350,14 @@ impl Func {
         func: impl IntoFunc<T, Params, Results>,
     ) -> Self {
         let engine = ctx.as_context().store.engine();
-        let func = FuncEntity::wrap(engine, func);
-        ctx.as_context_mut().store.alloc_func(func)
+        let host_func = HostFuncTrampolineEntity::wrap(engine, func);
+        let ty_dedup = *host_func.ty_dedup();
+        let trampoline = host_func.trampoline().clone();
+        let func = ctx.as_context_mut().store.alloc_trampoline(trampoline);
+        ctx.as_context_mut()
+            .store
+            .inner
+            .alloc_func(HostFuncEntity::new(ty_dedup, func).into())
     }
 
     /// Returns the signature of the function.
@@ -347,7 +365,7 @@ impl Func {
         &self,
         ctx: impl Into<StoreContext<'a, T>>,
     ) -> &'a DedupFuncType {
-        ctx.into().store.resolve_func(self).ty_dedup()
+        ctx.into().store.inner.resolve_func(self).ty_dedup()
     }
 
     /// Returns the function type of the [`Func`].
@@ -381,7 +399,7 @@ impl Func {
         // Note: Cloning an [`Engine`] is intentionally a cheap operation.
         ctx.as_context().store.engine().clone().execute_func(
             ctx.as_context_mut(),
-            *self,
+            self,
             inputs,
             outputs,
         )?;
@@ -423,7 +441,7 @@ impl Func {
             .store
             .engine()
             .clone()
-            .execute_func_resumable(ctx.as_context_mut(), *self, inputs, outputs)
+            .execute_func_resumable(ctx.as_context_mut(), self, inputs, outputs)
             .map_err(Into::into)
             .map(ResumableCall::new)
     }
@@ -480,18 +498,5 @@ impl Func {
         Results: WasmResults,
     {
         TypedFunc::new(ctx, *self)
-    }
-
-    /// Returns the internal representation of the [`Func`] instance.
-    ///
-    /// # Note
-    ///
-    /// This is intentionally a private API and mainly provided for efficient
-    /// execution of the `wasmi` interpreter upon function dispatch.
-    pub(crate) fn as_internal<'a, T: 'a>(
-        &self,
-        ctx: impl Into<StoreContext<'a, T>>,
-    ) -> &'a FuncEntityInner<T> {
-        ctx.into().store.resolve_func(self).as_internal()
     }
 }

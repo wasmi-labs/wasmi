@@ -43,9 +43,12 @@ pub(crate) use self::{
     func_args::{FuncFinished, FuncParams, FuncResults},
     func_types::DedupFuncType,
 };
-use super::{func::FuncEntityInner, AsContext, AsContextMut, Func};
 use crate::{
     core::{Trap, TrapCode},
+    func::FuncEntity,
+    AsContext,
+    AsContextMut,
+    Func,
     FuncType,
     StoreContextMut,
 };
@@ -210,7 +213,7 @@ impl Engine {
     pub(crate) fn execute_func<T, Results>(
         &self,
         ctx: StoreContextMut<T>,
-        func: Func,
+        func: &Func,
         params: impl CallParams,
         results: Results,
     ) -> Result<<Results as CallResults>::Results, Trap>
@@ -245,7 +248,7 @@ impl Engine {
     pub(crate) fn execute_func_resumable<T, Results>(
         &self,
         ctx: StoreContextMut<T>,
-        func: Func,
+        func: &Func,
         params: impl CallParams,
         results: Results,
     ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
@@ -399,7 +402,7 @@ impl EngineInner {
     fn execute_func<T, Results>(
         &self,
         ctx: StoreContextMut<T>,
-        func: Func,
+        func: &Func,
         params: impl CallParams,
         results: Results,
     ) -> Result<<Results as CallResults>::Results, Trap>
@@ -418,7 +421,7 @@ impl EngineInner {
     fn execute_func_resumable<T, Results>(
         &self,
         mut ctx: StoreContextMut<T>,
-        func: Func,
+        func: &Func,
         params: impl CallParams,
         results: Results,
     ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
@@ -447,7 +450,7 @@ impl EngineInner {
                 host_trap,
             }) => Ok(ResumableCallBase::Resumable(ResumableInvocation::new(
                 ctx.as_context().store.engine().clone(),
-                func,
+                *func,
                 host_func,
                 host_trap,
                 stack,
@@ -586,7 +589,7 @@ impl<'engine> EngineExecutor<'engine> {
     fn execute_func<T, Results>(
         &mut self,
         mut ctx: StoreContextMut<T>,
-        func: Func,
+        func: &Func,
         params: impl CallParams,
         results: Results,
     ) -> Result<<Results as CallResults>::Results, TaggedTrap>
@@ -594,14 +597,14 @@ impl<'engine> EngineExecutor<'engine> {
         Results: CallResults,
     {
         self.initialize_args(params);
-        match func.as_internal(ctx.as_context()) {
-            FuncEntityInner::Wasm(wasm_func) => {
+        match ctx.as_context().store.inner.resolve_func(func) {
+            FuncEntity::Wasm(wasm_func) => {
                 let mut frame = self.stack.call_wasm_root(wasm_func, &self.res.code_map)?;
                 let mut cache = InstanceCache::from(frame.instance());
                 self.execute_wasm_func(ctx.as_context_mut(), &mut frame, &mut cache)?;
             }
-            FuncEntityInner::Host(host_func) => {
-                let host_func = host_func.clone();
+            FuncEntity::Host(host_func) => {
+                let host_func = *host_func;
                 self.stack
                     .call_host_root(ctx.as_context_mut(), host_func, &self.res.func_types)?;
             }
@@ -686,13 +689,13 @@ impl<'engine> EngineExecutor<'engine> {
                     None => return Ok(()),
                 },
                 CallOutcome::NestedCall(called_func) => {
-                    match called_func.as_internal(ctx.as_context()) {
-                        FuncEntityInner::Wasm(wasm_func) => {
+                    match ctx.as_context().store.inner.resolve_func(&called_func) {
+                        FuncEntity::Wasm(wasm_func) => {
                             *frame = self.stack.call_wasm(frame, wasm_func, &self.res.code_map)?;
                         }
-                        FuncEntityInner::Host(host_func) => {
+                        FuncEntity::Host(host_func) => {
                             cache.reset_default_memory_bytes();
-                            let host_func = host_func.clone();
+                            let host_func = *host_func;
                             self.stack
                                 .call_host(
                                     ctx.as_context_mut(),

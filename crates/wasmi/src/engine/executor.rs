@@ -665,7 +665,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             .map(FuncRef::from)
             .ok_or(TrapCode::TableOutOfBounds)?;
         let func = funcref.func().ok_or(TrapCode::IndirectCallToNull)?;
-        let actual_signature = self.ctx.get_func_type(func);
+        let actual_signature = self.ctx.resolve_func(func).ty_dedup();
         let expected_signature = self
             .ctx
             .resolve_instance(self.frame.instance())
