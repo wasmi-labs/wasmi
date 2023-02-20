@@ -1,7 +1,7 @@
 use crate::{
     engine::DedupFuncType,
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
-    func::{HostFunc, HostFuncEntity, HostFuncIdx},
+    func::{HostFuncTrampoline, HostFuncTrampolineEntity, TrampolineIdx},
     memory::DataSegment,
     DataSegmentEntity,
     DataSegmentIdx,
@@ -77,8 +77,8 @@ pub struct Store<T> {
     /// This is re-exported to the rest of the crate since
     /// it is used directly by the engine's executor.
     pub(crate) inner: StoreInner,
-    /// Stored host functions.
-    host_funcs: Arena<HostFuncIdx, HostFuncEntity<T>>,
+    /// Stored host function trampolines.
+    trampolines: Arena<TrampolineIdx, HostFuncTrampolineEntity<T>>,
     /// User provided host data owned by the [`Store`].
     data: T,
 }
@@ -725,7 +725,7 @@ impl<T> Store<T> {
     pub fn new(engine: &Engine, data: T) -> Self {
         Self {
             inner: StoreInner::new(engine),
-            host_funcs: Arena::new(),
+            trampolines: Arena::new(),
             data,
         }
     }
@@ -808,10 +808,13 @@ impl<T> Store<T> {
             .map_err(|_error| FuelError::out_of_fuel())
     }
 
-    /// Allocates a new [`HostFuncEntity`] and returns a [`Func`] reference to it.
-    pub(super) fn alloc_host_func(&mut self, func: HostFuncEntity<T>) -> HostFunc {
-        let idx = self.host_funcs.alloc(func);
-        HostFunc::from_inner(self.inner.wrap_stored(idx))
+    /// Allocates a new [`HostFuncTrampolineEntity`] and returns a [`HostFuncTrampoline`] reference to it.
+    pub(super) fn alloc_trampoline(
+        &mut self,
+        func: HostFuncTrampolineEntity<T>,
+    ) -> HostFuncTrampoline {
+        let idx = self.trampolines.alloc(func);
+        HostFuncTrampoline::from_inner(self.inner.wrap_stored(idx))
     }
 
     /// Returns an exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`]
@@ -833,15 +836,18 @@ impl<T> Store<T> {
         (self.inner.resolve_memory_mut(memory), &mut self.data)
     }
 
-    /// Returns a shared reference to the associated entity of the host function.
+    /// Returns a shared reference to the associated entity of the host function trampoline.
     ///
     /// # Panics
     ///
-    /// - If the [`HostFunc`] does not originate from this [`Store`].
-    /// - If the [`HostFunc`] cannot be resolved to its entity.
-    pub(super) fn resolve_host_func(&self, func: &HostFunc) -> &HostFuncEntity<T> {
+    /// - If the [`HostFuncTrampoline`] does not originate from this [`Store`].
+    /// - If the [`HostFuncTrampoline`] cannot be resolved to its entity.
+    pub(super) fn resolve_trampoline(
+        &self,
+        func: &HostFuncTrampoline,
+    ) -> &HostFuncTrampolineEntity<T> {
         let entity_index = self.inner.unwrap_stored(func.as_inner());
-        self.host_funcs
+        self.trampolines
             .get(entity_index)
             .unwrap_or_else(|| panic!("failed to resolve stored host function: {entity_index:?}"))
     }

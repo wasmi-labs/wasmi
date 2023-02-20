@@ -12,7 +12,7 @@ use super::{
 };
 use crate::{
     core::UntypedValue,
-    func::{HostFuncEntity, WasmFuncEntity},
+    func::{HostFuncTrampolineEntity, WasmFuncEntity},
     AsContext,
     AsContextMut,
     Instance,
@@ -225,7 +225,7 @@ impl Stack {
     pub(crate) fn call_host_root<C>(
         &mut self,
         ctx: C,
-        host_func: HostFuncEntity<<C as AsContext>::UserState>,
+        host_func: HostFuncTrampolineEntity<<C as AsContext>::UserState>,
         func_types: &FuncTypeRegistry,
     ) -> Result<(), Trap>
     where
@@ -239,7 +239,7 @@ impl Stack {
         &mut self,
         ctx: C,
         caller: &FuncFrame,
-        host_func: HostFuncEntity<<C as AsContext>::UserState>,
+        host_func: HostFuncTrampolineEntity<<C as AsContext>::UserState>,
         func_types: &FuncTypeRegistry,
     ) -> Result<(), Trap>
     where
@@ -259,7 +259,7 @@ impl Stack {
     fn call_host_impl<C>(
         &mut self,
         mut ctx: C,
-        host_func: HostFuncEntity<<C as AsContext>::UserState>,
+        host_func: HostFuncTrampolineEntity<<C as AsContext>::UserState>,
         instance: Option<&Instance>,
         func_types: &FuncTypeRegistry,
     ) -> Result<(), Trap>

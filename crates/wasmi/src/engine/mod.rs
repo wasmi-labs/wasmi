@@ -607,7 +607,7 @@ impl<'engine> EngineExecutor<'engine> {
                 let host_func = ctx
                     .as_context()
                     .store
-                    .resolve_host_func(host_func.host_func());
+                    .resolve_trampoline(host_func.trampoline());
                 let host_func = host_func.clone();
                 self.stack
                     .call_host_root(ctx.as_context_mut(), host_func, &self.res.func_types)?;
@@ -701,7 +701,7 @@ impl<'engine> EngineExecutor<'engine> {
                             let host_func = ctx
                                 .as_context()
                                 .store
-                                .resolve_host_func(host_func.host_func());
+                                .resolve_trampoline(host_func.trampoline());
                             cache.reset_default_memory_bytes();
                             let host_func = host_func.clone();
                             self.stack

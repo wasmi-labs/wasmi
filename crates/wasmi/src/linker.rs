@@ -1,6 +1,6 @@
 use super::{AsContextMut, Error, Extern, InstancePre, Module};
 use crate::{
-    func::HostFuncEntity,
+    func::HostFuncTrampolineEntity,
     module::{ImportName, ImportType},
     AsContext,
     Engine,
@@ -298,7 +298,7 @@ enum Definition<T> {
     /// An external item from an [`Instance`](crate::Instance).
     Extern(Extern),
     /// A [`Linker`] internal host function.
-    HostFunc(HostFuncEntity<T>),
+    HostFunc(HostFuncTrampolineEntity<T>),
 }
 
 impl<T> Clone for Definition<T> {
@@ -350,12 +350,12 @@ pub struct DebugHostFuncEntity<'a, T> {
     /// The [`Engine`] of the [`Linker`].
     engine: &'a Engine,
     /// The host function to be [`Debug`] formatted.
-    host_func: &'a HostFuncEntity<T>,
+    host_func: &'a HostFuncTrampolineEntity<T>,
 }
 
 impl<'a, T> DebugHostFuncEntity<'a, T> {
     /// Create a new [`Debug`]-wrapper for the [`HostFuncEntity`].
-    fn new(engine: &'a Engine, host_func: &'a HostFuncEntity<T>) -> Self {
+    fn new(engine: &'a Engine, host_func: &'a HostFuncTrampolineEntity<T>) -> Self {
         Self { engine, host_func }
     }
 }
