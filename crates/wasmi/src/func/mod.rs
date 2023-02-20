@@ -246,21 +246,15 @@ impl<T> HostFuncEntity<T> {
             func(caller, params, results)?;
             Ok(func_results.encode_results_from_slice(results).unwrap())
         });
-        let signature = engine.alloc_func_type(ty.clone());
-        Self {
-            ty: signature,
-            trampoline,
-        }
+        let ty = engine.alloc_func_type(ty.clone());
+        Self { ty, trampoline }
     }
 
     /// Creates a new host function from the given statically typed closure.
     pub fn wrap<Params, Results>(engine: &Engine, func: impl IntoFunc<T, Params, Results>) -> Self {
         let (signature, trampoline) = func.into_func();
-        let signature = engine.alloc_func_type(signature);
-        Self {
-            ty: signature,
-            trampoline,
-        }
+        let ty = engine.alloc_func_type(signature);
+        Self { ty, trampoline }
     }
 
     /// Returns the signature of the host function.
