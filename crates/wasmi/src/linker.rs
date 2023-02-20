@@ -345,7 +345,7 @@ impl<'a, T> Debug for DebugDefinitions<'a, T> {
     }
 }
 
-/// [`Debug`]-wrapper for [`HostFuncEntity`] in the [`Linker`].
+/// [`Debug`]-wrapper for [`HostFuncTrampolineEntity`] in the [`Linker`].
 pub struct DebugHostFuncEntity<'a, T> {
     /// The [`Engine`] of the [`Linker`].
     engine: &'a Engine,
@@ -354,7 +354,7 @@ pub struct DebugHostFuncEntity<'a, T> {
 }
 
 impl<'a, T> DebugHostFuncEntity<'a, T> {
-    /// Create a new [`Debug`]-wrapper for the [`HostFuncEntity`].
+    /// Create a new [`Debug`]-wrapper for the [`HostFuncTrampolineEntity`].
     fn new(engine: &'a Engine, host_func: &'a HostFuncTrampolineEntity<T>) -> Self {
         Self { engine, host_func }
     }

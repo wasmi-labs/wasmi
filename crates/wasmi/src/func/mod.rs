@@ -109,7 +109,7 @@ pub struct HostFuncEntity {
 }
 
 impl HostFuncEntity {
-    /// Creates a new [`TypedHostFunc`].
+    /// Creates a new [`HostFuncEntity`].
     pub fn new(ty: DedupFuncType, func: HostFuncTrampoline) -> Self {
         Self { ty, func }
     }
