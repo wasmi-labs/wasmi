@@ -110,7 +110,7 @@ impl ValueStack {
     }
 
     #[cfg(test)]
-    pub fn iter<'a>(&'a self) -> core::slice::Iter<'a, UntypedValue> {
+    pub fn iter(&self) -> core::slice::Iter<UntypedValue> {
         self.into_iter()
     }
 
