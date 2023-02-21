@@ -286,12 +286,14 @@ impl<'a> ValueStackRef<'a> {
     /// the underlying [`ValueStack`]. This is important in order to synchronize
     /// the [`ValueStack`] with the changes done to the [`ValueStackRef`]
     /// when necessary.
+    #[inline]
     pub fn new(stack: &'a mut ValueStack) -> Self {
         let sp = stack.stack_ptr();
         Self { sp, stack }
     }
 
     /// Synchronizes the original value stack pointer.
+    #[inline]
     pub fn sync(&mut self) {
         self.stack.sync_stack_ptr(self.sp);
     }
@@ -310,6 +312,7 @@ impl<'a> ValueStackRef<'a> {
     /// top `k` entries are the top `k` entries before this operation.
     ///
     /// Note that `k + d` cannot be greater than the stack length.
+    #[inline]
     pub fn drop_keep(&mut self, drop_keep: DropKeep) {
         self.sp.drop_keep(drop_keep)
     }
