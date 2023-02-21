@@ -23,6 +23,7 @@ impl From<*mut UntypedValue> for ValueStackPtr {
 
 impl ValueStackPtr {
     /// Calculates the distance between two [`ValueStackPtr] in units of [`UntypedValue`].
+    #[inline]
     pub fn offset_from(self, other: Self) -> isize {
         unsafe { self.ptr.offset_from(other.ptr) }
     }
