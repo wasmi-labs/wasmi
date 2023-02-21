@@ -339,8 +339,6 @@ impl<'a> ValueStackRef<'a> {
     ///
     /// # Note
     ///
-    /// Given a `depth` of 1 has the same effect as [`ValueStackRef::last_mut`].
-    ///
     /// A `depth` of 0 is invalid and undefined.
     #[inline]
     pub fn set_nth_back(&mut self, depth: usize, value: UntypedValue) {
