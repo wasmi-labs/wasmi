@@ -462,17 +462,6 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         }
     }
 
-    /// Synchronizes the current stack pointer with the [`ValueStack`].
-    ///
-    /// # Note
-    ///
-    /// For performance reasons we detach the stack pointer form the [`ValueStack`].
-    /// Therefore it is necessary to synchronize the [`ValueStack`] upon finishing
-    /// execution of a sequence of non control flow instructions.
-    fn sync_stack_ptr(&mut self) {
-        self.value_stack.sync();
-    }
-
     /// Calls the given [`Func`].
     ///
     /// This also prepares the instruction pointer and stack pointer for
@@ -481,7 +470,6 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     fn call_func(&mut self, func: &Func) -> Result<CallOutcome, TrapCode> {
         self.next_instr();
         self.frame.update_ip(self.ip);
-        self.sync_stack_ptr();
         Ok(CallOutcome::NestedCall(*func))
     }
 
@@ -491,7 +479,6 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// and synchronizes the execution state with the outer structures.
     fn ret(&mut self, drop_keep: DropKeep) {
         self.value_stack.drop_keep(drop_keep);
-        self.sync_stack_ptr();
     }
 
     /// Consume an amount of fuel specified by `delta` if `exec` succeeds.

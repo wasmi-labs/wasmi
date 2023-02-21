@@ -15,6 +15,12 @@ pub struct ValueStackRef<'a> {
     orig_sp: &'a mut usize,
 }
 
+impl<'a> Drop for ValueStackRef<'a> {
+    fn drop(&mut self) {
+        self.sync()
+    }
+}
+
 impl<'a> fmt::Debug for ValueStackRef<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", &self.values[0..self.stack_ptr])
@@ -39,7 +45,7 @@ impl<'a> ValueStackRef<'a> {
     }
 
     /// Synchronizes the original value stack pointer.
-    pub fn sync(&mut self) {
+    fn sync(&mut self) {
         *self.orig_sp = self.stack_ptr;
     }
 
