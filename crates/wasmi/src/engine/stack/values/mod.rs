@@ -116,7 +116,7 @@ impl ValueStack {
 
     /// Returns the current [`ValueStackPtr`] of `self`.
     pub fn stack_ptr(&mut self) -> ValueStackPtr {
-        ValueStackPtr::from(self.entries[self.stack_ptr..].as_mut_ptr())
+        ValueStackPtr::from(unsafe { self.entries[..].as_mut_ptr().add(self.stack_ptr) })
     }
 
     /// Synchronizes [`ValueStack`] with the new [`ValueStackPtr`].
