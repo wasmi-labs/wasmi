@@ -1,14 +1,12 @@
-use super::ValueStack;
 use crate::{
     core::{TrapCode, UntypedValue},
     engine::DropKeep,
 };
-use core::fmt;
 
 /// A pointer on the [`ValueStack`].
 ///
 /// Allows for efficient mutable access to the values of the [`ValueStack`].
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct ValueStackPtr {
     ptr: *mut UntypedValue,
@@ -122,6 +120,15 @@ impl ValueStackPtr {
         self.inc();
     }
 
+    /// Pops the last [`UntypedValue`] from the [`ValueStack`] as `T`.
+    #[inline]
+    pub fn pop_as<T>(&mut self) -> T
+    where
+        T: From<UntypedValue>,
+    {
+        T::from(self.pop())
+    }
+
     /// Pops the last [`UntypedValue`] from the [`ValueStack`].
     ///
     /// # Note
@@ -129,7 +136,7 @@ impl ValueStackPtr {
     /// This operation heavily relies on the prior validation of
     /// the executed WebAssembly bytecode for correctness.
     #[inline]
-    fn pop(&mut self) -> UntypedValue {
+    pub fn pop(&mut self) -> UntypedValue {
         self.dec();
         self.get()
     }
@@ -141,7 +148,7 @@ impl ValueStackPtr {
     /// This operation heavily relies on the prior validation of
     /// the executed WebAssembly bytecode for correctness.
     #[inline]
-    fn pop2(&mut self) -> (UntypedValue, UntypedValue) {
+    pub fn pop2(&mut self) -> (UntypedValue, UntypedValue) {
         let rhs = self.pop();
         let lhs = self.pop();
         (lhs, rhs)
@@ -262,207 +269,5 @@ impl ValueStackPtr {
             }
         }
         *self = self.into_nth_back(drop);
-    }
-}
-
-/// A mutable view over the [`ValueStack`].
-///
-/// This allows for a more efficient access to the [`ValueStack`] during execution.
-pub struct ValueStackRef<'a> {
-    pub(super) sp: ValueStackPtr,
-    pub(super) stack: &'a mut ValueStack,
-}
-
-impl<'a> fmt::Debug for ValueStackRef<'a> {
-    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // write!(f, "{:?}", &self.values[0..self.stack_ptr])
-        todo!()
-    }
-}
-
-impl<'a> ValueStackRef<'a> {
-    /// Creates a new [`ValueStackRef`] from the given [`ValueStack`].
-    ///
-    /// This also returns an exclusive reference to the stack pointer of
-    /// the underlying [`ValueStack`]. This is important in order to synchronize
-    /// the [`ValueStack`] with the changes done to the [`ValueStackRef`]
-    /// when necessary.
-    #[inline]
-    pub fn new(stack: &'a mut ValueStack) -> Self {
-        let sp = stack.stack_ptr();
-        Self { sp, stack }
-    }
-
-    /// Synchronizes the original value stack pointer.
-    #[inline]
-    pub fn sync(&mut self) {
-        self.stack.sync_stack_ptr(self.sp);
-    }
-
-    /// Drops some amount of entries and keeps some amount of them at the new top.
-    ///
-    /// # Note
-    ///
-    /// For an amount of entries to keep `k` and an amount of entries to drop `d`
-    /// this has the following effect on stack `s` and stack pointer `sp`.
-    ///
-    /// 1) Copy `k` elements from indices starting at `sp - k` to `sp - k - d`.
-    /// 2) Adjust stack pointer: `sp -= d`
-    ///
-    /// After this operation the value stack will have `d` fewer entries and the
-    /// top `k` entries are the top `k` entries before this operation.
-    ///
-    /// Note that `k + d` cannot be greater than the stack length.
-    #[inline]
-    pub fn drop_keep(&mut self, drop_keep: DropKeep) {
-        self.sp.drop_keep(drop_keep)
-    }
-
-    /// Returns the last stack entry of the [`ValueStackRef`].
-    ///
-    /// # Note
-    ///
-    /// This has the same effect as [`ValueStackRef::nth_back`]`(1)`.
-    #[inline]
-    pub fn last(&self) -> UntypedValue {
-        self.sp.last()
-    }
-
-    /// Peeks the entry at the given depth from the last entry.
-    ///
-    /// # Note
-    ///
-    /// Given a `depth` of 1 has the same effect as [`ValueStackRef::last`].
-    ///
-    /// A `depth` of 0 is invalid and undefined.
-    #[inline]
-    pub fn nth_back(&self, depth: usize) -> UntypedValue {
-        self.sp.nth_back(depth)
-    }
-
-    /// Peeks the `&mut` entry at the given depth from the last entry.
-    ///
-    /// # Note
-    ///
-    /// A `depth` of 0 is invalid and undefined.
-    #[inline]
-    pub fn set_nth_back(&mut self, depth: usize, value: UntypedValue) {
-        self.sp.set_nth_back(depth, value)
-    }
-
-    /// Pops the last [`UntypedValue`] from the [`ValueStack`].
-    ///
-    /// # Note
-    ///
-    /// This operation heavily relies on the prior validation of
-    /// the executed WebAssembly bytecode for correctness.
-    #[inline]
-    pub fn pop(&mut self) -> UntypedValue {
-        self.sp.pop()
-    }
-
-    /// Pops the last [`UntypedValue`] from the [`ValueStack`] as `T`.
-    #[inline]
-    pub fn pop_as<T>(&mut self) -> T
-    where
-        T: From<UntypedValue>,
-    {
-        T::from(self.pop())
-    }
-
-    /// Pops the last pair of [`UntypedValue`] from the [`ValueStack`].
-    ///
-    /// # Note
-    ///
-    /// - This operation is slightly more efficient than using
-    ///   [`ValueStackRef::pop`] twice.
-    /// - This operation heavily relies on the prior validation of
-    ///   the executed WebAssembly bytecode for correctness.
-    #[inline]
-    pub fn pop2(&mut self) -> (UntypedValue, UntypedValue) {
-        self.sp.pop2()
-    }
-
-    /// Pops the last triple of [`UntypedValue`] from the [`ValueStack`].
-    ///
-    /// # Note
-    ///
-    /// - This operation is slightly more efficient than using
-    ///   [`ValueStackRef::pop`] trice.
-    /// - This operation heavily relies on the prior validation of
-    ///   the executed WebAssembly bytecode for correctness.
-    #[inline]
-    pub fn pop3(&mut self) -> (UntypedValue, UntypedValue, UntypedValue) {
-        self.sp.pop3()
-    }
-
-    /// Evaluates the given closure `f` for the 3 top most stack values.
-    #[inline]
-    pub fn eval_top3<F>(&mut self, f: F)
-    where
-        F: FnOnce(UntypedValue, UntypedValue, UntypedValue) -> UntypedValue,
-    {
-        self.sp.eval_top3(f)
-    }
-
-    /// Evaluates the given closure `f` for the top most stack value.
-    #[inline]
-    pub fn eval_top<F>(&mut self, f: F)
-    where
-        F: FnOnce(UntypedValue) -> UntypedValue,
-    {
-        self.sp.eval_top(f)
-    }
-
-    /// Evaluates the given fallible closure `f` for the top most stack value.
-    ///
-    /// # Errors
-    ///
-    /// If the closure execution fails.
-    #[inline]
-    pub fn try_eval_top<F>(&mut self, f: F) -> Result<(), TrapCode>
-    where
-        F: FnOnce(UntypedValue) -> Result<UntypedValue, TrapCode>,
-    {
-        self.sp.try_eval_top(f)
-    }
-
-    /// Evaluates the given closure `f` for the 2 top most stack values.
-    #[inline]
-    pub fn eval_top2<F>(&mut self, f: F)
-    where
-        F: FnOnce(UntypedValue, UntypedValue) -> UntypedValue,
-    {
-        self.sp.eval_top2(f)
-    }
-
-    /// Evaluates the given fallible closure `f` for the 2 top most stack values.
-    ///
-    /// # Errors
-    ///
-    /// If the closure execution fails.
-    #[inline]
-    pub fn try_eval_top2<F>(&mut self, f: F) -> Result<(), TrapCode>
-    where
-        F: FnOnce(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
-    {
-        self.sp.try_eval_top2(f)
-    }
-
-    /// Pushes the [`UntypedValue`] to the end of the [`ValueStack`].
-    ///
-    /// # Note
-    ///
-    /// - This operation heavily relies on the prior validation of
-    ///   the executed WebAssembly bytecode for correctness.
-    /// - Especially the stack-depth analysis during compilation with
-    ///   a manual stack extension before function call prevents this
-    ///   procedure from panicking.
-    #[inline]
-    pub fn push<T>(&mut self, entry: T)
-    where
-        T: Into<UntypedValue>,
-    {
-        self.sp.push(entry.into())
     }
 }

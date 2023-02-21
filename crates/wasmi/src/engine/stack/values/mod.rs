@@ -5,8 +5,7 @@ mod vref;
 #[cfg(test)]
 mod tests;
 
-use self::vref::ValueStackPtr;
-pub use self::vref::ValueStackRef;
+pub use self::vref::ValueStackPtr;
 use super::{err_stack_overflow, DEFAULT_MAX_VALUE_STACK_HEIGHT, DEFAULT_MIN_VALUE_STACK_HEIGHT};
 use crate::core::TrapCode;
 use alloc::vec::Vec;

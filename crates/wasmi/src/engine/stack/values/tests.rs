@@ -13,9 +13,9 @@ fn drop_keep_works() {
         E::Item: Into<UntypedValue>,
     {
         let mut s = stack.clone();
-        let mut sref = ValueStackRef::new(&mut s);
-        sref.drop_keep(drop_keep);
-        sref.sync();
+        let mut sp = s.stack_ptr();
+        sp.drop_keep(drop_keep);
+        s.sync_stack_ptr(sp);
         let expected: Vec<_> = expected.into_iter().map(Into::into).collect();
         let actual: Vec<_> = s.iter().copied().collect();
         assert_eq!(actual, expected, "test failed for {drop_keep:?}");
