@@ -5,21 +5,6 @@ fn drop_keep(drop: usize, keep: usize) -> DropKeep {
     DropKeep::new(drop, keep).unwrap()
 }
 
-impl<'a> IntoIterator for &'a ValueStackRef<'a> {
-    type Item = &'a UntypedValue;
-    type IntoIter = core::slice::Iter<'a, UntypedValue>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.values[0..self.stack_ptr].iter()
-    }
-}
-
-impl<'a> ValueStackRef<'a> {
-    pub fn iter(&'a self) -> core::slice::Iter<'a, UntypedValue> {
-        self.into_iter()
-    }
-}
-
 #[test]
 fn drop_keep_works() {
     fn assert_drop_keep<E>(stack: &ValueStack, drop_keep: DropKeep, expected: E)
@@ -28,10 +13,12 @@ fn drop_keep_works() {
         E::Item: Into<UntypedValue>,
     {
         let mut s = stack.clone();
-        let mut s = ValueStackRef::new(&mut s);
-        s.drop_keep(drop_keep);
-        let expected = expected.into_iter().map(Into::into);
-        assert!(s.iter().copied().eq(expected));
+        let mut sref = ValueStackRef::new(&mut s);
+        sref.drop_keep(drop_keep);
+        sref.sync();
+        let expected: Vec<_> = expected.into_iter().map(Into::into).collect();
+        let actual: Vec<_> = s.iter().copied().collect();
+        assert_eq!(actual, expected, "test failed for {drop_keep:?}");
     }
 
     let test_inputs = [1, 2, 3, 4, 5, 6];

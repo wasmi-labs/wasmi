@@ -5,6 +5,7 @@ mod vref;
 #[cfg(test)]
 mod tests;
 
+use self::vref::ValueStackPtr;
 pub use self::vref::ValueStackRef;
 use super::{err_stack_overflow, DEFAULT_MAX_VALUE_STACK_HEIGHT, DEFAULT_MIN_VALUE_STACK_HEIGHT};
 use crate::core::TrapCode;
@@ -83,6 +84,16 @@ impl FromIterator<UntypedValue> for ValueStack {
     }
 }
 
+#[cfg(test)]
+impl<'a> IntoIterator for &'a ValueStack {
+    type Item = &'a UntypedValue;
+    type IntoIter = core::slice::Iter<'a, UntypedValue>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.entries[0..self.stack_ptr].iter()
+    }
+}
+
 impl ValueStack {
     /// Creates an empty [`ValueStack`] that does not allocate heap memor.
     ///
@@ -96,6 +107,23 @@ impl ValueStack {
             stack_ptr: 0,
             maximum_len: 0,
         }
+    }
+
+    #[cfg(test)]
+    pub fn iter<'a>(&'a self) -> core::slice::Iter<'a, UntypedValue> {
+        self.into_iter()
+    }
+
+    /// Returns the current [`ValueStackPtr`] of `self`.
+    pub fn stack_ptr(&mut self) -> ValueStackPtr {
+        ValueStackPtr::from(self.entries[self.stack_ptr..].as_mut_ptr())
+    }
+
+    /// Synchronizes [`ValueStack`] with the new [`ValueStackPtr`].
+    pub fn sync_stack_ptr<'a>(&'a mut self, new_sp: ValueStackPtr<'a>) {
+        let old_sp = self.stack_ptr();
+        let offset = new_sp.offset_from(old_sp);
+        self.stack_ptr = self.stack_ptr.wrapping_add_signed(offset);
     }
 
     /// Returns `true` if the [`ValueStack`] is empty.
