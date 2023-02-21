@@ -9,6 +9,7 @@ use core::fmt;
 ///
 /// Allows for efficient mutable access to the values of the [`ValueStack`].
 #[derive(Copy, Clone)]
+#[repr(transparent)]
 pub struct ValueStackPtr {
     ptr: *mut UntypedValue,
 }
