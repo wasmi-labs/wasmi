@@ -618,7 +618,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_local_get(&mut self, local_depth: LocalDepth) {
-        let value = self.value_stack.peek(local_depth.into_inner());
+        let value = self.value_stack.nth_back(local_depth.into_inner());
         self.value_stack.push(value);
         self.next_instr()
     }

@@ -39,13 +39,13 @@ impl ValueStackPtr {
 
     /// Returns a [`ValueStackPtr`] offset by `delta` from `self`.
     #[must_use]
-    fn offset(self, delta: isize) -> Self {
+    fn into_offset(self, delta: isize) -> Self {
         Self::from(unsafe { self.ptr.offset(delta) })
     }
 
     /// Returns a [`ValueStackPtr`] pointing to the n-th [`UntypedValue`] from the back.
     #[must_use]
-    fn nth_back(self, delta: usize) -> Self {
+    fn into_nth_back(self, delta: usize) -> Self {
         Self::from(unsafe { self.ptr.sub(delta) })
     }
 
@@ -57,7 +57,7 @@ impl ValueStackPtr {
     #[inline]
     #[must_use]
     pub fn last(self) -> UntypedValue {
-        self.peek(1)
+        self.nth_back(1)
     }
 
     /// Returns an exclusive reference to the last [`UntypedValue`] on the [`ValueStack`].
@@ -79,8 +79,8 @@ impl ValueStackPtr {
     /// A `depth` of 0 is invalid and undefined.
     #[inline]
     #[must_use]
-    pub fn peek(self, depth: usize) -> UntypedValue {
-        self.nth_back(depth).get()
+    pub fn nth_back(self, depth: usize) -> UntypedValue {
+        self.into_nth_back(depth).get()
     }
 
     /// Writes `value` to the n-th [`UntypedValue`] from the back.
@@ -92,17 +92,17 @@ impl ValueStackPtr {
     /// A `depth` of 0 is invalid and undefined.
     #[inline]
     pub fn set_nth_back(self, depth: usize, value: UntypedValue) {
-        self.nth_back(depth).set(value)
+        self.into_nth_back(depth).set(value)
     }
 
     /// Bumps the [`ValueStackPtr`] of `self` by one.
     fn inc(&mut self) {
-        *self = self.offset(1);
+        *self = self.into_offset(1);
     }
 
     /// Decreases the [`ValueStackPtr`] of `self` by one.
     fn dec(&mut self) {
-        *self = self.offset(-1);
+        *self = self.into_offset(-1);
     }
 
     /// Pushes the [`UntypedValue`] to the end of the [`ValueStack`].
@@ -247,19 +247,19 @@ impl ValueStackPtr {
             // Bail out early when there are no values to keep.
         } else if keep == 1 {
             // Bail out early when there is only one value to copy.
-            self.nth_back(drop + 1).set(self.last());
+            self.into_nth_back(drop + 1).set(self.last());
         } else {
             // Copy kept values over to their new place on the stack.
             // Note: We cannot use `memcpy` since the slices may overlap.
-            let mut src = self.nth_back(keep);
-            let mut dst = self.nth_back(keep + drop);
+            let mut src = self.into_nth_back(keep);
+            let mut dst = self.into_nth_back(keep + drop);
             for _ in 0..keep {
                 dst.set(src.get());
                 dst.inc();
                 src.inc();
             }
         }
-        *self = self.nth_back(drop);
+        *self = self.into_nth_back(drop);
     }
 }
 
@@ -331,8 +331,8 @@ impl<'a> ValueStackRef<'a> {
     ///
     /// A `depth` of 0 is invalid and undefined.
     #[inline]
-    pub fn peek(&self, depth: usize) -> UntypedValue {
-        self.sp.peek(depth)
+    pub fn nth_back(&self, depth: usize) -> UntypedValue {
+        self.sp.nth_back(depth)
     }
 
     /// Peeks the `&mut` entry at the given depth from the last entry.
