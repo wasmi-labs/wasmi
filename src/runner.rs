@@ -330,9 +330,8 @@ impl Interpreter {
                             let nested_context = FunctionContext::new(nested_func.clone());
 
                             if let Some(tracer) = self.tracer.clone() {
-                                let callee_fid = {
-                                    tracer.clone().borrow().lookup_function(&nested_func) as u64
-                                };
+                                let callee_fid =
+                                    tracer.clone().borrow().lookup_function(&nested_func);
 
                                 let mut tracer = (*tracer).borrow_mut();
                                 let eid = tracer.eid();
@@ -1948,14 +1947,14 @@ impl Interpreter {
 
                         let inst_entry = InstructionTableEntry {
                             fid: function,
-                            iid: pc as u16,
+                            iid: pc,
                             opcode: instruction,
                         };
 
                         tracer.etable.push(
                             inst_entry,
-                            sp as u64,
-                            current_memory,
+                            sp.try_into().unwrap(),
+                            current_memory.try_into().unwrap(),
                             last_jump_eid,
                             post_status,
                         );

@@ -373,8 +373,8 @@ impl ModuleInstance {
                 let mut tracer = tracer.borrow_mut();
 
                 tracer.configure_table = ConfigureTable {
-                    init_memory_pages: memory_type.limits().initial() as usize,
-                    maximal_memory_pages: memory_type.limits().maximum().unwrap_or(65536) as usize,
+                    init_memory_pages: memory_type.limits().initial(),
+                    maximal_memory_pages: memory_type.limits().maximum().unwrap_or(65536),
                 };
             }
         }
@@ -875,7 +875,7 @@ impl<'a> NotStartedModuleRef<'a> {
         self.loaded_module.module().start_section().is_some()
     }
 
-    pub fn lookup_function_by_name(&self, tracer: Rc<RefCell<Tracer>>, func_name: &str) -> u16 {
+    pub fn lookup_function_by_name(&self, tracer: Rc<RefCell<Tracer>>, func_name: &str) -> u32 {
         let func_ref = self.instance.func_by_name(func_name).unwrap();
 
         tracer.borrow().lookup_function(&func_ref)

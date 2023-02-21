@@ -22,7 +22,7 @@ impl Into<InitMemoryTableEntry> for IMEntry {
             } else {
                 LocationType::Heap
             },
-            offset: self.offset as u64,
+            offset: self.offset,
             vtype: self.vtype,
             value: self.value,
         }
@@ -48,7 +48,7 @@ impl IMTable {
             } else {
                 LocationType::Heap
             },
-            offset: offset as u64,
+            offset,
             vtype,
             value,
         })
