@@ -625,13 +625,15 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
 
     fn visit_local_set(&mut self, local_depth: LocalDepth) {
         let new_value = self.value_stack.pop();
-        *self.value_stack.peek_mut(local_depth.into_inner()) = new_value;
+        self.value_stack
+            .set_nth_back(local_depth.into_inner(), new_value);
         self.next_instr()
     }
 
     fn visit_local_tee(&mut self, local_depth: LocalDepth) {
         let new_value = self.value_stack.last();
-        *self.value_stack.peek_mut(local_depth.into_inner()) = new_value;
+        self.value_stack
+            .set_nth_back(local_depth.into_inner(), new_value);
         self.next_instr()
     }
 

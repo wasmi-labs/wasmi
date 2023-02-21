@@ -3,28 +3,24 @@ use crate::{
     core::{TrapCode, UntypedValue},
     engine::DropKeep,
 };
-use core::{fmt, marker::PhantomData};
+use core::fmt;
 
 /// A pointer on the [`ValueStack`].
 ///
 /// Allows for efficient mutable access to the values of the [`ValueStack`].
 #[derive(Copy, Clone)]
-pub struct ValueStackPtr<'a> {
+pub struct ValueStackPtr {
     ptr: *mut UntypedValue,
-    marker: PhantomData<fn() -> &'a ()>,
 }
 
-impl<'a> From<*mut UntypedValue> for ValueStackPtr<'a> {
+impl From<*mut UntypedValue> for ValueStackPtr {
     #[inline]
     fn from(ptr: *mut UntypedValue) -> Self {
-        Self {
-            ptr,
-            marker: PhantomData,
-        }
+        Self { ptr }
     }
 }
 
-impl<'a> ValueStackPtr<'a> {
+impl ValueStackPtr {
     /// Calculates the distance between two [`ValueStackPtr] in units of [`UntypedValue`].
     pub fn offset_from(self, other: Self) -> isize {
         unsafe { self.ptr.offset_from(other.ptr) }
@@ -36,10 +32,9 @@ impl<'a> ValueStackPtr<'a> {
         unsafe { *self.ptr }
     }
 
-    /// Returns an exclusive reference to the [`UntypedValue`] at the current stack pointer.
-    #[must_use]
-    fn get_mut(self) -> &'a mut UntypedValue {
-        unsafe { &mut *self.ptr }
+    /// Writes `value` to the cell pointed at by [`ValueStackPtr`].
+    fn set(self, value: UntypedValue) {
+        unsafe { self.ptr.write(value) }
     }
 
     /// Returns a [`ValueStackPtr`] offset by `delta` from `self`.
@@ -71,9 +66,8 @@ impl<'a> ValueStackPtr<'a> {
     ///
     /// This has the same effect as [`ValueStackPtr::peek`]`(1)`.
     #[inline]
-    #[must_use]
-    pub fn last_mut(self) -> &'a mut UntypedValue {
-        self.peek_mut(1)
+    pub fn set_last(self, value: UntypedValue) {
+        self.set_nth_back(1, value)
     }
 
     /// Peeks the entry at the given depth from the last entry.
@@ -89,17 +83,16 @@ impl<'a> ValueStackPtr<'a> {
         self.nth_back(depth).get()
     }
 
-    /// Peeks the `&mut` entry at the given depth from the last entry.
+    /// Writes `value` to the n-th [`UntypedValue`] from the back.
     ///
     /// # Note
     ///
-    /// Given a `depth` of 1 has the same effect as [`ValueStackRef::last_mut`].
+    /// Given a `depth` of 1 has the same effect as [`ValueStackPtr::set_last`].
     ///
     /// A `depth` of 0 is invalid and undefined.
     #[inline]
-    #[must_use]
-    pub fn peek_mut(self, depth: usize) -> &'a mut UntypedValue {
-        self.nth_back(depth).get_mut()
+    pub fn set_nth_back(self, depth: usize, value: UntypedValue) {
+        self.nth_back(depth).set(value)
     }
 
     /// Bumps the [`ValueStackPtr`] of `self` by one.
@@ -123,7 +116,7 @@ impl<'a> ValueStackPtr<'a> {
     ///   procedure from panicking.
     #[inline]
     pub fn push(&mut self, value: UntypedValue) {
-        *self.get_mut() = value;
+        self.set(value);
         self.inc();
     }
 
@@ -173,8 +166,8 @@ impl<'a> ValueStackPtr<'a> {
         F: FnOnce(UntypedValue, UntypedValue, UntypedValue) -> UntypedValue,
     {
         let (e2, e3) = self.pop2();
-        let e1 = self.last_mut();
-        *e1 = f(*e1, e2, e3)
+        let e1 = self.last();
+        self.set_last(f(e1, e2, e3));
     }
 
     /// Evaluates the given closure `f` for the top most stack value.
@@ -183,8 +176,8 @@ impl<'a> ValueStackPtr<'a> {
     where
         F: FnOnce(UntypedValue) -> UntypedValue,
     {
-        let top = self.last_mut();
-        *top = f(*top);
+        let top = self.last();
+        self.set_last(f(top));
     }
 
     /// Evaluates the given fallible closure `f` for the top most stack value.
@@ -197,8 +190,8 @@ impl<'a> ValueStackPtr<'a> {
     where
         F: FnOnce(UntypedValue) -> Result<UntypedValue, TrapCode>,
     {
-        let top = self.last_mut();
-        *top = f(*top)?;
+        let top = self.last();
+        self.set_last(f(top)?);
         Ok(())
     }
 
@@ -209,8 +202,8 @@ impl<'a> ValueStackPtr<'a> {
         F: FnOnce(UntypedValue, UntypedValue) -> UntypedValue,
     {
         let rhs = self.pop();
-        let lhs = self.last_mut();
-        *lhs = f(*lhs, rhs);
+        let lhs = self.last();
+        self.set_last(f(lhs, rhs));
     }
 
     /// Evaluates the given fallible closure `f` for the 2 top most stack values.
@@ -224,8 +217,8 @@ impl<'a> ValueStackPtr<'a> {
         F: FnOnce(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
     {
         let rhs = self.pop();
-        let lhs = self.last_mut();
-        *lhs = f(*lhs, rhs)?;
+        let lhs = self.last();
+        self.set_last(f(lhs, rhs)?);
         Ok(())
     }
 
@@ -254,14 +247,14 @@ impl<'a> ValueStackPtr<'a> {
             // Bail out early when there are no values to keep.
         } else if keep == 1 {
             // Bail out early when there is only one value to copy.
-            *self.nth_back(drop + 1).get_mut() = self.last();
+            self.nth_back(drop + 1).set(self.last());
         } else {
             // Copy kept values over to their new place on the stack.
             // Note: We cannot use `memcpy` since the slices may overlap.
             let mut src = self.nth_back(keep);
             let mut dst = self.nth_back(keep + drop);
             for _ in 0..keep {
-                *dst.get_mut() = src.get();
+                dst.set(src.get());
                 dst.inc();
                 src.inc();
             }
@@ -274,7 +267,7 @@ impl<'a> ValueStackPtr<'a> {
 ///
 /// This allows for a more efficient access to the [`ValueStack`] during execution.
 pub struct ValueStackRef<'a> {
-    pub(super) sp: ValueStackPtr<'a>,
+    pub(super) sp: ValueStackPtr,
     pub(super) stack: &'a mut ValueStack,
 }
 
@@ -292,9 +285,8 @@ impl<'a> ValueStackRef<'a> {
     /// the underlying [`ValueStack`]. This is important in order to synchronize
     /// the [`ValueStack`] with the changes done to the [`ValueStackRef`]
     /// when necessary.
-    pub fn new(value_stack: &'a mut ValueStack) -> Self {
-        let stack = unsafe { &mut *(value_stack as *mut ValueStack) };
-        let sp = value_stack.stack_ptr();
+    pub fn new(stack: &'a mut ValueStack) -> Self {
+        let sp = stack.stack_ptr();
         Self { sp, stack }
     }
 
@@ -351,8 +343,8 @@ impl<'a> ValueStackRef<'a> {
     ///
     /// A `depth` of 0 is invalid and undefined.
     #[inline]
-    pub fn peek_mut(&mut self, depth: usize) -> &mut UntypedValue {
-        self.sp.peek_mut(depth)
+    pub fn set_nth_back(&mut self, depth: usize, value: UntypedValue) {
+        self.sp.set_nth_back(depth, value)
     }
 
     /// Pops the last [`UntypedValue`] from the [`ValueStack`].

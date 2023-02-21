@@ -120,7 +120,7 @@ impl ValueStack {
     }
 
     /// Synchronizes [`ValueStack`] with the new [`ValueStackPtr`].
-    pub fn sync_stack_ptr<'a>(&'a mut self, new_sp: ValueStackPtr<'a>) {
+    pub fn sync_stack_ptr(&mut self, new_sp: ValueStackPtr) {
         let old_sp = self.stack_ptr();
         let offset = new_sp.offset_from(old_sp);
         self.stack_ptr = self.stack_ptr.wrapping_add_signed(offset);
