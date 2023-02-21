@@ -54,7 +54,7 @@ impl ValueStackPtr {
     ///
     /// # Note
     ///
-    /// This has the same effect as [`ValueStackPtr::peek`]`(1)`.
+    /// This has the same effect as [`ValueStackPtr::nth_back`]`(1)`.
     #[inline]
     #[must_use]
     pub fn last(self) -> UntypedValue {
@@ -65,7 +65,7 @@ impl ValueStackPtr {
     ///
     /// # Note
     ///
-    /// This has the same effect as [`ValueStackPtr::peek`]`(1)`.
+    /// This has the same effect as [`ValueStackPtr::nth_back`]`(1)`.
     #[inline]
     pub fn set_last(self, value: UntypedValue) {
         self.set_nth_back(1, value)
@@ -318,7 +318,7 @@ impl<'a> ValueStackRef<'a> {
     ///
     /// # Note
     ///
-    /// This has the same effect as [`ValueStackRef::peek`]`(1)`.
+    /// This has the same effect as [`ValueStackRef::nth_back`]`(1)`.
     #[inline]
     pub fn last(&self) -> UntypedValue {
         self.sp.last()
