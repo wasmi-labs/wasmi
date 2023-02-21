@@ -49,11 +49,7 @@ pub fn execute_frame<'engine>(
     cache: &'engine mut InstanceCache,
     frame: &mut FuncFrame,
 ) -> Result<CallOutcome, TrapCode> {
-    let sp = value_stack.stack_ptr();
-    let mut executor = Executor::new(sp, ctx, cache, frame);
-    let outcome = executor.execute();
-    value_stack.sync_stack_ptr(executor.sp);
-    outcome
+    Executor::new(value_stack, ctx, cache, frame).execute()
 }
 
 /// The function signature of Wasm load operations.
@@ -102,31 +98,35 @@ struct Executor<'ctx, 'engine, 'func> {
     cache: &'engine mut InstanceCache,
     /// The function frame that is being executed.
     frame: &'func mut FuncFrame,
+    /// The value stack.
+    value_stack: &'engine mut ValueStack,
 }
 
 impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// Creates a new [`Executor`] for executing a `wasmi` function frame.
     #[inline(always)]
     pub fn new(
-        value_stack: ValueStackPtr,
+        value_stack: &'engine mut ValueStack,
         ctx: &'ctx mut StoreInner,
         cache: &'engine mut InstanceCache,
         frame: &'func mut FuncFrame,
     ) -> Self {
         cache.update_instance(frame.instance());
         let ip = frame.ip();
+        let sp = value_stack.stack_ptr();
         Self {
             ip,
-            sp: value_stack,
+            sp,
             ctx,
             cache,
             frame,
+            value_stack,
         }
     }
 
     /// Executes the function frame until it returns or traps.
     #[inline(always)]
-    fn execute(&mut self) -> Result<CallOutcome, TrapCode> {
+    fn execute(mut self) -> Result<CallOutcome, TrapCode> {
         use Instruction as Instr;
         loop {
             match *self.instr() {
@@ -466,6 +466,17 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         }
     }
 
+    /// Synchronizes the current stack pointer with the [`ValueStack`].
+    ///
+    /// # Note
+    ///
+    /// For performance reasons we detach the stack pointer form the [`ValueStack`].
+    /// Therefore it is necessary to synchronize the [`ValueStack`] upon finishing
+    /// execution of a sequence of non control flow instructions.
+    fn sync_stack_ptr(&mut self) {
+        self.value_stack.sync_stack_ptr(self.sp);
+    }
+
     /// Calls the given [`Func`].
     ///
     /// This also prepares the instruction pointer and stack pointer for
@@ -474,6 +485,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     fn call_func(&mut self, func: &Func) -> Result<CallOutcome, TrapCode> {
         self.next_instr();
         self.frame.update_ip(self.ip);
+        self.sync_stack_ptr();
         Ok(CallOutcome::NestedCall(*func))
     }
 
@@ -483,6 +495,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// and synchronizes the execution state with the outer structures.
     fn ret(&mut self, drop_keep: DropKeep) {
         self.sp.drop_keep(drop_keep);
+        self.sync_stack_ptr();
     }
 
     /// Consume an amount of fuel specified by `delta` if `exec` succeeds.
