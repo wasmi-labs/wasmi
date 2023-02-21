@@ -28,7 +28,7 @@ pub mod imtable;
 
 #[derive(Debug)]
 pub struct FuncDesc {
-    pub index_within_jtable: u16,
+    pub index_within_jtable: u32,
     pub ftype: FunctionType,
     pub signature: Signature,
 }
@@ -42,8 +42,8 @@ pub struct Tracer {
     pub elem_table: ElemTable,
     pub configure_table: ConfigureTable,
     type_of_func_ref: Vec<(FuncRef, u32)>,
-    function_lookup: Vec<(FuncRef, u16)>,
-    pub(crate) last_jump_eid: Vec<u64>,
+    function_lookup: Vec<(FuncRef, u32)>,
+    pub(crate) last_jump_eid: Vec<u32>,
     function_index_allocator: u32,
     pub(crate) function_index_translation: HashMap<u32, FuncDesc>,
     pub host_function_index_lookup: HashMap<usize, HostFunctionDesc>,
@@ -78,11 +78,11 @@ impl Tracer {
         self.last_jump_eid.pop().unwrap();
     }
 
-    pub fn last_jump_eid(&self) -> u64 {
+    pub fn last_jump_eid(&self) -> u32 {
         *self.last_jump_eid.last().unwrap()
     }
 
-    pub fn eid(&self) -> u64 {
+    pub fn eid(&self) -> u32 {
         self.etable.get_latest_eid()
     }
 
@@ -223,11 +223,11 @@ impl Tracer {
                     };
 
                     self.function_lookup
-                        .push((func.clone(), func_index_in_itable as u16));
+                        .push((func.clone(), func_index_in_itable));
                     self.function_index_translation.insert(
                         func_index,
                         FuncDesc {
-                            index_within_jtable: func_index_in_itable as u16,
+                            index_within_jtable: func_index_in_itable,
                             ftype,
                             signature: func.signature().clone(),
                         },
@@ -254,7 +254,7 @@ impl Tracer {
                             if let Some(instruction) = iter.next() {
                                 let _ = self.itable.push(
                                     funcdesc.index_within_jtable,
-                                    pc as u16,
+                                    pc,
                                     instruction.into(&self.function_index_translation),
                                 );
                             } else {
@@ -271,7 +271,7 @@ impl Tracer {
         }
     }
 
-    pub fn lookup_function(&self, function: &FuncRef) -> u16 {
+    pub fn lookup_function(&self, function: &FuncRef) -> u32 {
         let pos = self
             .function_lookup
             .iter()
@@ -284,7 +284,7 @@ impl Tracer {
         let function_idx = self.lookup_function(function);
 
         for ientry in self.itable.entries() {
-            if ientry.fid as u16 == function_idx && ientry.iid as u32 == pos {
+            if ientry.fid == function_idx && ientry.iid as u32 == pos {
                 return ientry.clone();
             }
         }
@@ -296,7 +296,7 @@ impl Tracer {
         let function_idx = self.lookup_function(function);
 
         for ientry in self.itable.entries() {
-            if ientry.fid as u16 == function_idx {
+            if ientry.fid == function_idx {
                 return ientry.clone();
             }
         }

@@ -105,22 +105,22 @@ pub enum RunInstructionTracePre {
 }
 
 pub(crate) trait ETable {
-    fn get_latest_eid(&self) -> u64;
+    fn get_latest_eid(&self) -> u32;
 
     fn get_last_entry_mut(&mut self) -> Option<&mut EventTableEntry>;
 
     fn push(
         &mut self,
         inst: InstructionTableEntry,
-        sp: u64,
-        allocated_memory_pages: usize,
-        last_jump_eid: u64,
+        sp: u32,
+        allocated_memory_pages: u32,
+        last_jump_eid: u32,
         step_info: StepInfo,
     ) -> EventTableEntry;
 }
 
 impl ETable for EventTable {
-    fn get_latest_eid(&self) -> u64 {
+    fn get_latest_eid(&self) -> u32 {
         self.entries().last().unwrap().eid
     }
 
@@ -131,19 +131,19 @@ impl ETable for EventTable {
     fn push(
         &mut self,
         inst: InstructionTableEntry,
-        sp: u64,
-        allocated_memory_pages: usize,
-        last_jump_eid: u64,
+        sp: u32,
+        allocated_memory_pages: u32,
+        last_jump_eid: u32,
         step_info: StepInfo,
     ) -> EventTableEntry {
-        let sp = (DEFAULT_VALUE_STACK_LIMIT as u64)
+        let sp = (DEFAULT_VALUE_STACK_LIMIT as u32)
             .checked_sub(sp)
             .unwrap()
             .checked_sub(1)
             .unwrap();
 
         let eentry = EventTableEntry {
-            eid: self.entries().len() as u64 + 1,
+            eid: (self.entries().len() + 1).try_into().unwrap(),
             sp,
             allocated_memory_pages,
             last_jump_eid,
