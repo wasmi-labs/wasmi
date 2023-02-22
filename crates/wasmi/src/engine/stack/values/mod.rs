@@ -114,17 +114,26 @@ impl ValueStack {
     }
 
     /// Returns the current [`ValueStackPtr`] of `self`.
+    ///
+    /// The returned [`ValueStackPtr`] points to the top most value on the [`ValueStack`].
     #[inline]
     pub fn stack_ptr(&mut self) -> ValueStackPtr {
         ValueStackPtr::from(unsafe { self.entries.as_mut_ptr().add(self.stack_ptr) })
     }
 
+    /// Returns the base [`ValueStackPtr`] of `self`.
+    ///
+    /// The returned [`ValueStackPtr`] points to the first value on the [`ValueStack`].
+    #[inline]
+    pub fn base_ptr(&mut self) -> ValueStackPtr {
+        ValueStackPtr::from(self.entries.as_mut_ptr())
+    }
+
     /// Synchronizes [`ValueStack`] with the new [`ValueStackPtr`].
     #[inline]
     pub fn sync_stack_ptr(&mut self, new_sp: ValueStackPtr) {
-        let old_sp = self.stack_ptr();
-        let offset = new_sp.offset_from(old_sp);
-        self.stack_ptr = self.stack_ptr.wrapping_add_signed(offset);
+        let offset = new_sp.offset_from(self.base_ptr());
+        self.stack_ptr = offset as usize;
     }
 
     /// Returns `true` if the [`ValueStack`] is empty.
