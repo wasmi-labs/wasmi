@@ -90,6 +90,13 @@ struct Executor<'ctx, 'engine, 'func> {
     ip: InstructionPtr,
     /// Stores the value stack of live values on the Wasm stack.
     sp: ValueStackPtr,
+    /// The value stack.
+    /// 
+    /// # Note
+    /// 
+    /// This reference is mainly used to synchronize back state
+    /// after manipulations to the value stack via `sp`.
+    value_stack: &'engine mut ValueStack,
     /// A mutable [`StoreInner`] context.
     ///
     /// [`StoreInner`]: [`crate::StoreInner`]
@@ -98,8 +105,6 @@ struct Executor<'ctx, 'engine, 'func> {
     cache: &'engine mut InstanceCache,
     /// The function frame that is being executed.
     frame: &'func mut FuncFrame,
-    /// The value stack.
-    value_stack: &'engine mut ValueStack,
 }
 
 impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
