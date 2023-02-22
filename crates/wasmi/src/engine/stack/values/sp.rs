@@ -37,7 +37,7 @@ impl ValueStackPtr {
 
     /// Writes `value` to the cell pointed at by [`ValueStackPtr`].
     fn set(self, value: UntypedValue) {
-        unsafe { self.ptr.write(value) }
+        *unsafe { &mut *self.ptr } = value;
     }
 
     /// Returns a [`ValueStackPtr`] with a pointer value increased by `delta`.
