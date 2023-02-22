@@ -113,11 +113,13 @@ impl ValueStackPtr {
     }
 
     /// Bumps the [`ValueStackPtr`] of `self` by one.
+    #[inline]
     fn inc_by(&mut self, delta: usize) {
         self.ptr = unsafe { self.ptr.add(delta) };
     }
 
     /// Decreases the [`ValueStackPtr`] of `self` by one.
+    #[inline]
     fn dec_by(&mut self, delta: usize) {
         self.ptr = unsafe { self.ptr.sub(delta) };
     }
@@ -278,6 +280,7 @@ impl ValueStackPtr {
     }
 
     /// Returns `true` if `self` and `other` point to the same [`UntypedValue`] cell.
+    #[inline]
     fn ptr_eq(self, other: Self) -> bool {
         ptr::eq(self.ptr, other.ptr)
     }
