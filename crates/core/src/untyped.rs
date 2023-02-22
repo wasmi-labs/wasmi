@@ -151,10 +151,8 @@ impl UntypedValue {
     ) -> Result<(), TrapCode> {
         let raw_address = u32::from(address);
         let address = effective_address(raw_address, offset)?;
-        let len_buffer = buffer.len();
         let slice = memory
-            .get(address..)
-            .and_then(|slice| slice.get(..len_buffer))
+            .get(address..address + buffer.len())
             .ok_or(TrapCode::MemoryOutOfBounds)?;
         buffer.copy_from_slice(slice);
         Ok(())
@@ -346,10 +344,8 @@ impl UntypedValue {
     ) -> Result<(), TrapCode> {
         let raw_address = u32::from(address);
         let address = effective_address(raw_address, offset)?;
-        let len_buffer = buffer.len();
         let slice = memory
-            .get_mut(address..)
-            .and_then(|slice| slice.get_mut(..len_buffer))
+            .get_mut(address..address + buffer.len())
             .ok_or(TrapCode::MemoryOutOfBounds)?;
         slice.copy_from_slice(buffer);
         Ok(())
