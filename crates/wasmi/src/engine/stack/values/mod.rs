@@ -114,11 +114,13 @@ impl ValueStack {
     }
 
     /// Returns the current [`ValueStackPtr`] of `self`.
+    #[inline]
     pub fn stack_ptr(&mut self) -> ValueStackPtr {
         ValueStackPtr::from(unsafe { self.entries[..].as_mut_ptr().add(self.stack_ptr) })
     }
 
     /// Synchronizes [`ValueStack`] with the new [`ValueStackPtr`].
+    #[inline]
     pub fn sync_stack_ptr(&mut self, new_sp: ValueStackPtr) {
         let old_sp = self.stack_ptr();
         let offset = new_sp.offset_from(old_sp);
