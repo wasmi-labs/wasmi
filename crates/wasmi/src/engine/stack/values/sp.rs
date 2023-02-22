@@ -276,6 +276,11 @@ impl ValueStackPtr {
         Ok(())
     }
 
+    /// Returns `true` if `self` and `other` point to the same [`UntypedValue`] cell.
+    fn ptr_eq(&self, other: &Self) -> bool {
+        self.ptr.eq(&other.ptr)
+    }
+
     /// Drops some amount of entries and keeps some amount of them at the new top.
     ///
     /// # Note
@@ -305,7 +310,7 @@ impl ValueStackPtr {
             }
             // Copy kept values over to their new place on the stack.
             // Note: We cannot use `memcpy` since the slices may overlap.
-            for _ in 0..keep {
+            while !this.ptr_eq(&src) {
                 dst.set(src.get());
                 dst.inc_by(1);
                 src.inc_by(1);
