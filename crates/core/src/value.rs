@@ -119,7 +119,7 @@ impl LoadInto for [u8; 2] {
     fn load_into(&mut self, memory: &[u8], address: usize) -> Result<(), TrapCode> {
         let start = address;
         let end = address + self.len();
-        if end >= memory.len() {
+        if end > memory.len() {
             return Err(TrapCode::MemoryOutOfBounds);
         }
         let slice = &memory[start..end];
@@ -134,7 +134,7 @@ impl LoadInto for [u8; 4] {
     fn load_into(&mut self, memory: &[u8], address: usize) -> Result<(), TrapCode> {
         let start = address;
         let end = address + self.len();
-        if end >= memory.len() {
+        if end > memory.len() {
             return Err(TrapCode::MemoryOutOfBounds);
         }
         let slice = &memory[start..end];
@@ -149,7 +149,7 @@ impl LoadInto for [u8; 8] {
     fn load_into(&mut self, memory: &[u8], address: usize) -> Result<(), TrapCode> {
         let start = address;
         let end = address + self.len();
-        if end >= memory.len() {
+        if end > memory.len() {
             return Err(TrapCode::MemoryOutOfBounds);
         }
         let slice = &memory[start..end];
@@ -177,7 +177,7 @@ impl StoreFrom for [u8; 2] {
     fn store_from(&self, memory: &mut [u8], address: usize) -> Result<(), TrapCode> {
         let start = address;
         let end = address + self.len();
-        if end >= memory.len() {
+        if end > memory.len() {
             return Err(TrapCode::MemoryOutOfBounds);
         }
         let slice = &mut memory[start..end];
@@ -192,7 +192,7 @@ impl StoreFrom for [u8; 4] {
     fn store_from(&self, memory: &mut [u8], address: usize) -> Result<(), TrapCode> {
         let start = address;
         let end = address + self.len();
-        if end >= memory.len() {
+        if end > memory.len() {
             return Err(TrapCode::MemoryOutOfBounds);
         }
         let slice = &mut memory[start..end];
@@ -207,7 +207,7 @@ impl StoreFrom for [u8; 8] {
     fn store_from(&self, memory: &mut [u8], address: usize) -> Result<(), TrapCode> {
         let start = address;
         let end = address + self.len();
-        if end >= memory.len() {
+        if end > memory.len() {
             return Err(TrapCode::MemoryOutOfBounds);
         }
         let slice = &mut memory[start..end];
