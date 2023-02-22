@@ -91,9 +91,9 @@ struct Executor<'ctx, 'engine, 'func> {
     /// Stores the value stack of live values on the Wasm stack.
     sp: ValueStackPtr,
     /// The value stack.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This reference is mainly used to synchronize back state
     /// after manipulations to the value stack via `sp`.
     value_stack: &'engine mut ValueStack,
@@ -122,10 +122,10 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         Self {
             ip,
             sp,
+            value_stack,
             ctx,
             cache,
             frame,
-            value_stack,
         }
     }
 
