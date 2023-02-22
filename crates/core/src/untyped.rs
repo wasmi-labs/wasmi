@@ -1,4 +1,5 @@
 use crate::{
+    value::{LoadInto, StoreFrom},
     ArithmeticOps,
     ExtendInto,
     Float,
@@ -137,29 +138,6 @@ fn effective_address(address: u32, offset: u32) -> Result<usize, TrapCode> {
 }
 
 impl UntypedValue {
-    /// Loads the memory at `memory[address+offset..]` into `buffer`.
-    ///
-    /// # Errors
-    ///
-    /// - If `address + offset` overflows.
-    /// - If `address + offset` loads out of bounds from `memory`.
-    fn load_into(
-        memory: &[u8],
-        buffer: &mut [u8],
-        address: Self,
-        offset: u32,
-    ) -> Result<(), TrapCode> {
-        let raw_address = u32::from(address);
-        let address = effective_address(raw_address, offset)?;
-        let len_buffer = buffer.len();
-        let slice = memory
-            .get(address..)
-            .and_then(|slice| slice.get(..len_buffer))
-            .ok_or(TrapCode::MemoryOutOfBounds)?;
-        buffer.copy_from_slice(slice);
-        Ok(())
-    }
-
     /// Executes a generic `T.loadN_[s|u]` Wasm operation.
     ///
     /// # Errors
@@ -171,8 +149,10 @@ impl UntypedValue {
         T: Into<Self>,
         U: LittleEndianConvert + ExtendInto<T>,
     {
+        let raw_address = u32::from(address);
+        let address = effective_address(raw_address, offset)?;
         let mut buffer = <<U as LittleEndianConvert>::Bytes as Default>::default();
-        Self::load_into(memory, buffer.as_mut(), address, offset)?;
+        buffer.load_into(memory, address)?;
         let value: Self = <U as LittleEndianConvert>::from_le_bytes(buffer)
             .extend_into()
             .into();
@@ -332,29 +312,6 @@ impl UntypedValue {
         Self::load_extend::<i64, u32>(memory, address, offset)
     }
 
-    /// Stores the `buffer` contents at `memory[address+offset..]`.
-    ///
-    /// # Errors
-    ///
-    /// - If `address + offset` overflows.
-    /// - If `address + offset` stores out of bounds from `memory`.
-    fn store_from(
-        memory: &mut [u8],
-        address: Self,
-        offset: u32,
-        buffer: &[u8],
-    ) -> Result<(), TrapCode> {
-        let raw_address = u32::from(address);
-        let address = effective_address(raw_address, offset)?;
-        let len_buffer = buffer.len();
-        let slice = memory
-            .get_mut(address..)
-            .and_then(|slice| slice.get_mut(..len_buffer))
-            .ok_or(TrapCode::MemoryOutOfBounds)?;
-        slice.copy_from_slice(buffer);
-        Ok(())
-    }
-
     /// Executes a generic `T.store[N]` Wasm operation.
     ///
     /// # Errors
@@ -371,9 +328,12 @@ impl UntypedValue {
         T: From<Self> + WrapInto<U>,
         U: LittleEndianConvert,
     {
+        let raw_address = u32::from(address);
+        let address = effective_address(raw_address, offset)?;
         let wrapped = T::from(value).wrap_into();
         let buffer = <U as LittleEndianConvert>::into_le_bytes(wrapped);
-        Self::store_from(memory, address, offset, buffer.as_ref())
+        buffer.store_from(memory, address)?;
+        Ok(())
     }
 
     /// Executes a generic `T.store` Wasm operation.

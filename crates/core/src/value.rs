@@ -99,10 +99,132 @@ pub trait TransmuteInto<T> {
     fn transmute_into(self) -> T;
 }
 
+pub trait LoadInto {
+    fn load_into(&mut self, memory: &[u8], effective_address: usize) -> Result<(), TrapCode>;
+}
+
+pub trait StoreFrom {
+    fn store_from(&self, memory: &mut [u8], effective_address: usize) -> Result<(), TrapCode>;
+}
+
+impl LoadInto for [u8; 1] {
+    fn load_into(&mut self, memory: &[u8], address: usize) -> Result<(), TrapCode> {
+        self[0] = memory
+            .get(address)
+            .copied()
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        Ok(())
+    }
+}
+
+impl StoreFrom for [u8; 1] {
+    fn store_from(&self, memory: &mut [u8], effective_address: usize) -> Result<(), TrapCode> {
+        let cell = memory
+            .get_mut(effective_address)
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        *cell = self[0];
+        Ok(())
+    }
+}
+
+impl LoadInto for [u8; 2] {
+    fn load_into(&mut self, memory: &[u8], address: usize) -> Result<(), TrapCode> {
+        let len_buffer = self.len();
+        let slice = memory
+            .get(address..)
+            .and_then(|slice| slice.get(..len_buffer))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        self[0] = slice[0];
+        self[1] = slice[1];
+        Ok(())
+    }
+}
+
+impl StoreFrom for [u8; 2] {
+    fn store_from(&self, memory: &mut [u8], effective_address: usize) -> Result<(), TrapCode> {
+        let len_buffer = self.len();
+        let slice = memory
+            .get_mut(effective_address..)
+            .and_then(|slice| slice.get_mut(..len_buffer))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        slice[0] = self[0];
+        slice[1] = self[1];
+        Ok(())
+    }
+}
+
+impl LoadInto for [u8; 4] {
+    fn load_into(&mut self, memory: &[u8], address: usize) -> Result<(), TrapCode> {
+        let len_buffer = self.len();
+        let slice = memory
+            .get(address..)
+            .and_then(|slice| slice.get(..len_buffer))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        self[0] = slice[0];
+        self[1] = slice[1];
+        self[2] = slice[2];
+        self[3] = slice[3];
+        Ok(())
+    }
+}
+
+impl StoreFrom for [u8; 4] {
+    fn store_from(&self, memory: &mut [u8], effective_address: usize) -> Result<(), TrapCode> {
+        let len_buffer = self.len();
+        let slice = memory
+            .get_mut(effective_address..)
+            .and_then(|slice| slice.get_mut(..len_buffer))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        slice[0] = self[0];
+        slice[1] = self[1];
+        slice[2] = self[2];
+        slice[3] = self[3];
+        Ok(())
+    }
+}
+
+impl LoadInto for [u8; 8] {
+    fn load_into(&mut self, memory: &[u8], address: usize) -> Result<(), TrapCode> {
+        let len_buffer = self.len();
+        let slice = memory
+            .get(address..)
+            .and_then(|slice| slice.get(..len_buffer))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        self[0] = slice[0];
+        self[1] = slice[1];
+        self[2] = slice[2];
+        self[3] = slice[3];
+        self[4] = slice[4];
+        self[5] = slice[5];
+        self[6] = slice[6];
+        self[7] = slice[7];
+        Ok(())
+    }
+}
+
+impl StoreFrom for [u8; 8] {
+    fn store_from(&self, memory: &mut [u8], effective_address: usize) -> Result<(), TrapCode> {
+        let len_buffer = self.len();
+        let slice = memory
+            .get_mut(effective_address..)
+            .and_then(|slice| slice.get_mut(..len_buffer))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        slice[0] = self[0];
+        slice[1] = self[1];
+        slice[2] = self[2];
+        slice[3] = self[3];
+        slice[4] = self[4];
+        slice[5] = self[5];
+        slice[6] = self[6];
+        slice[7] = self[7];
+        Ok(())
+    }
+}
+
 /// Types that can be converted from and to little endian bytes.
 pub trait LittleEndianConvert {
     /// The little endian bytes representation.
-    type Bytes: Default + AsRef<[u8]> + AsMut<[u8]>;
+    type Bytes: Default + LoadInto + StoreFrom;
 
     /// Converts `self` into little endian bytes.
     fn into_le_bytes(self) -> Self::Bytes;
