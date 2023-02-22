@@ -185,10 +185,8 @@ impl ValueStackPtr {
     /// [`ValueStack`]: super::ValueStack
     #[inline]
     pub fn pop(&mut self) -> UntypedValue {
-        let ptr = self.into_sub(1);
-        let popped = ptr.get();
-        *self = ptr;
-        popped
+        self.dec_by(1);
+        self.get()
     }
 
     /// Pops the last pair of [`UntypedValue`] from the [`ValueStack`].
@@ -306,7 +304,6 @@ impl ValueStackPtr {
     ///
     /// Note that `k + d` cannot be greater than the stack length.
     pub fn drop_keep(&mut self, drop_keep: DropKeep) {
-        #[inline]
         fn drop_keep_impl(this: ValueStackPtr, drop: usize, keep: usize) {
             if keep == 0 {
                 // Case: no values need to be kept.
