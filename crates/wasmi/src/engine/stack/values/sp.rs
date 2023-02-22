@@ -291,28 +291,34 @@ impl ValueStackPtr {
     ///
     /// Note that `k + d` cannot be greater than the stack length.
     pub fn drop_keep(&mut self, drop_keep: DropKeep) {
-        let drop = drop_keep.drop();
-        if drop == 0 {
-            // Nothing to do in this case.
-            return;
-        }
-        let keep = drop_keep.keep();
-        if keep == 0 {
-            // Bail out early when there are no values to keep.
-        } else if keep == 1 {
-            // Bail out early when there is only one value to copy.
-            self.into_sub(drop + 1).set(self.last());
-        } else {
+        fn drop_keep_impl(this: ValueStackPtr, drop: usize, keep: usize) {
+            if keep == 0 {
+                // Bail out early when there are no values to keep.
+                return;
+            }
+            let mut src = this.into_sub(keep);
+            let mut dst = this.into_sub(keep + drop);
+            if keep == 1 {
+                // Bail out early when there are no values to keep.
+                dst.set(src.get());
+                return;
+            }
             // Copy kept values over to their new place on the stack.
             // Note: We cannot use `memcpy` since the slices may overlap.
-            let mut src = self.into_sub(keep);
-            let mut dst = self.into_sub(keep + drop);
             for _ in 0..keep {
                 dst.set(src.get());
                 dst.inc_by(1);
                 src.inc_by(1);
             }
         }
+
+        let drop = drop_keep.drop();
+        if drop == 0 {
+            // Nothing to do in this case.
+            return;
+        }
+        let keep = drop_keep.keep();
+        drop_keep_impl(*self, drop, keep);
         self.dec_by(drop);
     }
 }
