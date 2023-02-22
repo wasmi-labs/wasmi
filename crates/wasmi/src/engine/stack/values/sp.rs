@@ -31,11 +31,13 @@ impl ValueStackPtr {
 
     /// Returns the [`UntypedValue`] at the current stack pointer.
     #[must_use]
+    #[inline]
     fn get(self) -> UntypedValue {
         unsafe { *self.ptr }
     }
 
     /// Writes `value` to the cell pointed at by [`ValueStackPtr`].
+    #[inline]
     fn set(self, value: UntypedValue) {
         *unsafe { &mut *self.ptr } = value;
     }
@@ -46,6 +48,7 @@ impl ValueStackPtr {
     ///
     /// The amount of `delta` is in number of bytes per [`UntypedValue`].
     #[must_use]
+    #[inline]
     pub fn into_add(mut self, delta: usize) -> Self {
         self.inc_by(delta);
         self
@@ -57,6 +60,7 @@ impl ValueStackPtr {
     ///
     /// The amount of `delta` is in number of bytes per [`UntypedValue`].
     #[must_use]
+    #[inline]
     pub fn into_sub(mut self, delta: usize) -> Self {
         self.dec_by(delta);
         self
