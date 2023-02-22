@@ -2,7 +2,7 @@ use crate::{
     nan_preserving_float::{F32, F64},
     TrapCode,
 };
-use core::{f32, i32, i64, u32, u64};
+use core::{f32, i32, i64, ptr, u32, u64};
 
 /// Type of a value.
 ///
@@ -103,10 +103,6 @@ pub trait LoadInto {
     fn load_into(&mut self, memory: &[u8], address: usize) -> Result<(), TrapCode>;
 }
 
-pub trait StoreFrom {
-    fn store_from(&self, memory: &mut [u8], address: usize) -> Result<(), TrapCode>;
-}
-
 impl LoadInto for [u8; 1] {
     #[inline]
     fn load_into(&mut self, memory: &[u8], address: usize) -> Result<(), TrapCode> {
@@ -118,33 +114,14 @@ impl LoadInto for [u8; 1] {
     }
 }
 
-impl StoreFrom for [u8; 1] {
-    #[inline]
-    fn store_from(&self, memory: &mut [u8], address: usize) -> Result<(), TrapCode> {
-        let cell = memory.get_mut(address).ok_or(TrapCode::MemoryOutOfBounds)?;
-        *cell = self[0];
-        Ok(())
-    }
-}
-
 impl LoadInto for [u8; 2] {
     #[inline]
     fn load_into(&mut self, memory: &[u8], address: usize) -> Result<(), TrapCode> {
         let slice = memory
             .get(address..address + self.len())
             .ok_or(TrapCode::MemoryOutOfBounds)?;
-        self.copy_from_slice(slice);
-        Ok(())
-    }
-}
-
-impl StoreFrom for [u8; 2] {
-    #[inline]
-    fn store_from(&self, memory: &mut [u8], address: usize) -> Result<(), TrapCode> {
-        let slice = memory
-            .get_mut(address..address + self.len())
-            .ok_or(TrapCode::MemoryOutOfBounds)?;
-        slice.copy_from_slice(self);
+        // SAFETY: Already performed bounds check.
+        *self = unsafe { ptr::read_unaligned(slice.as_ptr() as _) };
         Ok(())
     }
 }
@@ -155,18 +132,8 @@ impl LoadInto for [u8; 4] {
         let slice = memory
             .get(address..address + self.len())
             .ok_or(TrapCode::MemoryOutOfBounds)?;
-        self.copy_from_slice(slice);
-        Ok(())
-    }
-}
-
-impl StoreFrom for [u8; 4] {
-    #[inline]
-    fn store_from(&self, memory: &mut [u8], address: usize) -> Result<(), TrapCode> {
-        let slice = memory
-            .get_mut(address..address + self.len())
-            .ok_or(TrapCode::MemoryOutOfBounds)?;
-        slice.copy_from_slice(self);
+        // SAFETY: Already performed bounds check.
+        *self = unsafe { ptr::read_unaligned(slice.as_ptr() as _) };
         Ok(())
     }
 }
@@ -177,7 +144,45 @@ impl LoadInto for [u8; 8] {
         let slice = memory
             .get(address..address + self.len())
             .ok_or(TrapCode::MemoryOutOfBounds)?;
-        self.copy_from_slice(slice);
+        // SAFETY: Already performed bounds check.
+        *self = unsafe { ptr::read_unaligned(slice.as_ptr() as _) };
+        Ok(())
+    }
+}
+
+pub trait StoreFrom {
+    fn store_from(&self, memory: &mut [u8], address: usize) -> Result<(), TrapCode>;
+}
+
+impl StoreFrom for [u8; 1] {
+    #[inline]
+    fn store_from(&self, memory: &mut [u8], address: usize) -> Result<(), TrapCode> {
+        let cell = memory.get_mut(address).ok_or(TrapCode::MemoryOutOfBounds)?;
+        *cell = self[0];
+        Ok(())
+    }
+}
+
+impl StoreFrom for [u8; 2] {
+    #[inline]
+    fn store_from(&self, memory: &mut [u8], address: usize) -> Result<(), TrapCode> {
+        let slice = memory
+            .get_mut(address..address + self.len())
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        // SAFETY: Already performed bounds check.
+        unsafe { ptr::write_unaligned(slice.as_mut_ptr() as _, *self) };
+        Ok(())
+    }
+}
+
+impl StoreFrom for [u8; 4] {
+    #[inline]
+    fn store_from(&self, memory: &mut [u8], address: usize) -> Result<(), TrapCode> {
+        let slice = memory
+            .get_mut(address..address + self.len())
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        // SAFETY: Already performed bounds check.
+        unsafe { ptr::write_unaligned(slice.as_mut_ptr() as _, *self) };
         Ok(())
     }
 }
@@ -188,7 +193,8 @@ impl StoreFrom for [u8; 8] {
         let slice = memory
             .get_mut(address..address + self.len())
             .ok_or(TrapCode::MemoryOutOfBounds)?;
-        slice.copy_from_slice(self);
+        // SAFETY: Already performed bounds check.
+        unsafe { ptr::write_unaligned(slice.as_mut_ptr() as _, *self) };
         Ok(())
     }
 }
