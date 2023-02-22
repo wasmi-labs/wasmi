@@ -117,10 +117,12 @@ impl LoadInto for [u8; 1] {
 impl LoadInto for [u8; 2] {
     #[inline]
     fn load_into(&mut self, memory: &[u8], address: usize) -> Result<(), TrapCode> {
-        let slice = memory
-            .get(address..)
-            .and_then(|slice| slice.get(..self.len()))
-            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        let start = address;
+        let end = address + self.len();
+        if end >= memory.len() {
+            return Err(TrapCode::MemoryOutOfBounds);
+        }
+        let slice = &memory[start..end];
         // SAFETY: Already performed bounds check.
         *self = unsafe { ptr::read_unaligned(slice.as_ptr() as _) };
         Ok(())
@@ -130,10 +132,12 @@ impl LoadInto for [u8; 2] {
 impl LoadInto for [u8; 4] {
     #[inline]
     fn load_into(&mut self, memory: &[u8], address: usize) -> Result<(), TrapCode> {
-        let slice = memory
-            .get(address..)
-            .and_then(|slice| slice.get(..self.len()))
-            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        let start = address;
+        let end = address + self.len();
+        if end >= memory.len() {
+            return Err(TrapCode::MemoryOutOfBounds);
+        }
+        let slice = &memory[start..end];
         // SAFETY: Already performed bounds check.
         *self = unsafe { ptr::read_unaligned(slice.as_ptr() as _) };
         Ok(())
@@ -143,10 +147,12 @@ impl LoadInto for [u8; 4] {
 impl LoadInto for [u8; 8] {
     #[inline]
     fn load_into(&mut self, memory: &[u8], address: usize) -> Result<(), TrapCode> {
-        let slice = memory
-            .get(address..)
-            .and_then(|slice| slice.get(..self.len()))
-            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        let start = address;
+        let end = address + self.len();
+        if end >= memory.len() {
+            return Err(TrapCode::MemoryOutOfBounds);
+        }
+        let slice = &memory[start..end];
         // SAFETY: Already performed bounds check.
         *self = unsafe { ptr::read_unaligned(slice.as_ptr() as _) };
         Ok(())
@@ -169,10 +175,12 @@ impl StoreFrom for [u8; 1] {
 impl StoreFrom for [u8; 2] {
     #[inline]
     fn store_from(&self, memory: &mut [u8], address: usize) -> Result<(), TrapCode> {
-        let slice = memory
-            .get_mut(address..)
-            .and_then(|slice| slice.get_mut(..self.len()))
-            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        let start = address;
+        let end = address + self.len();
+        if end >= memory.len() {
+            return Err(TrapCode::MemoryOutOfBounds);
+        }
+        let slice = &mut memory[start..end];
         // SAFETY: Already performed bounds check.
         unsafe { ptr::write_unaligned(slice.as_mut_ptr() as _, *self) };
         Ok(())
@@ -182,10 +190,12 @@ impl StoreFrom for [u8; 2] {
 impl StoreFrom for [u8; 4] {
     #[inline]
     fn store_from(&self, memory: &mut [u8], address: usize) -> Result<(), TrapCode> {
-        let slice = memory
-            .get_mut(address..)
-            .and_then(|slice| slice.get_mut(..self.len()))
-            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        let start = address;
+        let end = address + self.len();
+        if end >= memory.len() {
+            return Err(TrapCode::MemoryOutOfBounds);
+        }
+        let slice = &mut memory[start..end];
         // SAFETY: Already performed bounds check.
         unsafe { ptr::write_unaligned(slice.as_mut_ptr() as _, *self) };
         Ok(())
@@ -195,10 +205,12 @@ impl StoreFrom for [u8; 4] {
 impl StoreFrom for [u8; 8] {
     #[inline]
     fn store_from(&self, memory: &mut [u8], address: usize) -> Result<(), TrapCode> {
-        let slice = memory
-            .get_mut(address..)
-            .and_then(|slice| slice.get_mut(..self.len()))
-            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        let start = address;
+        let end = address + self.len();
+        if end >= memory.len() {
+            return Err(TrapCode::MemoryOutOfBounds);
+        }
+        let slice = &mut memory[start..end];
         // SAFETY: Already performed bounds check.
         unsafe { ptr::write_unaligned(slice.as_mut_ptr() as _, *self) };
         Ok(())
