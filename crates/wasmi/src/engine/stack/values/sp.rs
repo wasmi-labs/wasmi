@@ -32,13 +32,13 @@ impl ValueStackPtr {
     /// Returns the [`UntypedValue`] at the current stack pointer.
     #[must_use]
     #[inline]
-    fn get(self) -> UntypedValue {
+    fn get(&self) -> UntypedValue {
         unsafe { *self.ptr }
     }
 
     /// Writes `value` to the cell pointed at by [`ValueStackPtr`].
     #[inline]
-    fn set(self, value: UntypedValue) {
+    fn set(&mut self, value: UntypedValue) {
         *unsafe { &mut *self.ptr } = value;
     }
 
@@ -75,7 +75,7 @@ impl ValueStackPtr {
     /// [`ValueStack`]: super::ValueStack
     #[inline]
     #[must_use]
-    pub fn last(self) -> UntypedValue {
+    pub fn last(&self) -> UntypedValue {
         self.nth_back(1)
     }
 
@@ -87,7 +87,7 @@ impl ValueStackPtr {
     ///
     /// [`ValueStack`]: super::ValueStack
     #[inline]
-    pub fn set_last(self, value: UntypedValue) {
+    pub fn set_last(&mut self, value: UntypedValue) {
         self.set_nth_back(1, value)
     }
 
@@ -100,7 +100,7 @@ impl ValueStackPtr {
     /// A `depth` of 0 is invalid and undefined.
     #[inline]
     #[must_use]
-    pub fn nth_back(self, depth: usize) -> UntypedValue {
+    pub fn nth_back(&self, depth: usize) -> UntypedValue {
         self.into_sub(depth).get()
     }
 
@@ -112,7 +112,7 @@ impl ValueStackPtr {
     ///
     /// A `depth` of 0 is invalid and undefined.
     #[inline]
-    pub fn set_nth_back(self, depth: usize, value: UntypedValue) {
+    pub fn set_nth_back(&mut self, depth: usize, value: UntypedValue) {
         self.into_sub(depth).set(value)
     }
 
