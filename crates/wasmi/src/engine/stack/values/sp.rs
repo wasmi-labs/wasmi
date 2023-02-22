@@ -195,9 +195,8 @@ impl ValueStackPtr {
     /// [`ValueStack`]: super::ValueStack
     #[inline]
     pub fn pop2(&mut self) -> (UntypedValue, UntypedValue) {
-        let rhs = self.into_sub(1).get();
-        let lhs = self.into_sub(2).get();
-        self.dec_by(2);
+        let rhs = self.pop();
+        let lhs = self.pop();
         (lhs, rhs)
     }
 
@@ -211,10 +210,9 @@ impl ValueStackPtr {
     /// [`ValueStack`]: super::ValueStack
     #[inline]
     pub fn pop3(&mut self) -> (UntypedValue, UntypedValue, UntypedValue) {
-        let trd = self.into_sub(1).get();
-        let snd = self.into_sub(2).get();
-        let fst = self.into_sub(3).get();
-        self.dec_by(3);
+        let trd = self.pop();
+        let snd = self.pop();
+        let fst = self.pop();
         (fst, snd, trd)
     }
 
