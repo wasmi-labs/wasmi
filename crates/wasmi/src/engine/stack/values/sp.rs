@@ -313,6 +313,6 @@ impl ValueStackPtr {
                 src.inc_by(1);
             }
         }
-        *self = self.into_sub(drop);
+        self.dec_by(drop);
     }
 }
