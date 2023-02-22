@@ -39,20 +39,15 @@ impl ValueStackPtr {
         unsafe { self.ptr.write(value) }
     }
 
-    /// Returns a [`ValueStackPtr`] offset by `delta` from `self`.
-    #[must_use]
-    fn into_offset(self, delta: isize) -> Self {
-        Self::from(unsafe { self.ptr.offset(delta) })
-    }
-
     /// Returns a [`ValueStackPtr`] with a pointer value increased by `delta`.
     ///
     /// # Note
     ///
     /// The amount of `delta` is in number of bytes per [`UntypedValue`].
     #[must_use]
-    pub fn into_add(self, delta: usize) -> Self {
-        Self::from(unsafe { self.ptr.add(delta) })
+    pub fn into_add(mut self, delta: usize) -> Self {
+        self.inc_by(delta);
+        self
     }
 
     /// Returns a [`ValueStackPtr`] with a pointer value decreased by `delta`.
@@ -61,8 +56,9 @@ impl ValueStackPtr {
     ///
     /// The amount of `delta` is in number of bytes per [`UntypedValue`].
     #[must_use]
-    pub fn into_sub(self, delta: usize) -> Self {
-        Self::from(unsafe { self.ptr.sub(delta) })
+    pub fn into_sub(mut self, delta: usize) -> Self {
+        self.dec_by(delta);
+        self
     }
 
     /// Returns the last [`UntypedValue`] on the [`ValueStack`].
@@ -116,13 +112,13 @@ impl ValueStackPtr {
     }
 
     /// Bumps the [`ValueStackPtr`] of `self` by one.
-    fn inc(&mut self) {
-        *self = self.into_offset(1);
+    fn inc_by(&mut self, delta: usize) {
+        self.ptr = unsafe { self.ptr.add(delta) };
     }
 
     /// Decreases the [`ValueStackPtr`] of `self` by one.
-    fn dec(&mut self) {
-        *self = self.into_offset(-1);
+    fn dec_by(&mut self, delta: usize) {
+        self.ptr = unsafe { self.ptr.sub(delta) };
     }
 
     /// Pushes the [`UntypedValue`] to the end of the [`ValueStack`].
@@ -139,7 +135,7 @@ impl ValueStackPtr {
     #[inline]
     pub fn push(&mut self, value: UntypedValue) {
         self.set(value);
-        self.inc();
+        self.inc_by(1);
     }
 
     /// Pops the last [`UntypedValue`] from the [`ValueStack`] as `T`.
@@ -163,7 +159,7 @@ impl ValueStackPtr {
     /// [`ValueStack`]: super::ValueStack
     #[inline]
     pub fn pop(&mut self) -> UntypedValue {
-        self.dec();
+        self.dec_by(1);
         self.get()
     }
 
@@ -294,8 +290,8 @@ impl ValueStackPtr {
             let mut dst = self.into_sub(keep + drop);
             for _ in 0..keep {
                 dst.set(src.get());
-                dst.inc();
-                src.inc();
+                dst.inc_by(1);
+                src.inc_by(1);
             }
         }
         *self = self.into_sub(drop);
