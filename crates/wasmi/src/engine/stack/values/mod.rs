@@ -118,14 +118,14 @@ impl ValueStack {
     /// The returned [`ValueStackPtr`] points to the top most value on the [`ValueStack`].
     #[inline]
     pub fn stack_ptr(&mut self) -> ValueStackPtr {
-        ValueStackPtr::from(unsafe { self.entries.as_mut_ptr().add(self.stack_ptr) })
+        self.base_ptr().into_add(self.stack_ptr)
     }
 
     /// Returns the base [`ValueStackPtr`] of `self`.
     ///
     /// The returned [`ValueStackPtr`] points to the first value on the [`ValueStack`].
     #[inline]
-    pub fn base_ptr(&mut self) -> ValueStackPtr {
+    fn base_ptr(&mut self) -> ValueStackPtr {
         ValueStackPtr::from(self.entries.as_mut_ptr())
     }
 

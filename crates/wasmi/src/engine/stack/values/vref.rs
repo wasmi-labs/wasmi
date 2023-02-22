@@ -43,9 +43,23 @@ impl ValueStackPtr {
         Self::from(unsafe { self.ptr.offset(delta) })
     }
 
-    /// Returns a [`ValueStackPtr`] pointing to the n-th [`UntypedValue`] from the back.
+    /// Returns a [`ValueStackPtr`] with a pointer value increased by `delta`.
+    ///
+    /// # Note
+    ///
+    /// The amount of `delta` is in number of bytes per [`UntypedValue`].
     #[must_use]
-    fn into_nth_back(self, delta: usize) -> Self {
+    pub fn into_add(self, delta: usize) -> Self {
+        Self::from(unsafe { self.ptr.add(delta) })
+    }
+
+    /// Returns a [`ValueStackPtr`] with a pointer value decreased by `delta`.
+    ///
+    /// # Note
+    ///
+    /// The amount of `delta` is in number of bytes per [`UntypedValue`].
+    #[must_use]
+    pub fn into_sub(self, delta: usize) -> Self {
         Self::from(unsafe { self.ptr.sub(delta) })
     }
 
@@ -80,7 +94,7 @@ impl ValueStackPtr {
     #[inline]
     #[must_use]
     pub fn nth_back(self, depth: usize) -> UntypedValue {
-        self.into_nth_back(depth).get()
+        self.into_sub(depth).get()
     }
 
     /// Writes `value` to the n-th [`UntypedValue`] from the back.
@@ -92,7 +106,7 @@ impl ValueStackPtr {
     /// A `depth` of 0 is invalid and undefined.
     #[inline]
     pub fn set_nth_back(self, depth: usize, value: UntypedValue) {
-        self.into_nth_back(depth).set(value)
+        self.into_sub(depth).set(value)
     }
 
     /// Bumps the [`ValueStackPtr`] of `self` by one.
@@ -256,18 +270,18 @@ impl ValueStackPtr {
             // Bail out early when there are no values to keep.
         } else if keep == 1 {
             // Bail out early when there is only one value to copy.
-            self.into_nth_back(drop + 1).set(self.last());
+            self.into_sub(drop + 1).set(self.last());
         } else {
             // Copy kept values over to their new place on the stack.
             // Note: We cannot use `memcpy` since the slices may overlap.
-            let mut src = self.into_nth_back(keep);
-            let mut dst = self.into_nth_back(keep + drop);
+            let mut src = self.into_sub(keep);
+            let mut dst = self.into_sub(keep + drop);
             for _ in 0..keep {
                 dst.set(src.get());
                 dst.inc();
                 src.inc();
             }
         }
-        *self = self.into_nth_back(drop);
+        *self = self.into_sub(drop);
     }
 }
