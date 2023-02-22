@@ -713,7 +713,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     fn visit_memory_size(&mut self) {
         let memory = self.default_memory();
         let result: u32 = self.ctx.resolve_memory(&memory).current_pages().into();
-        self.sp.push(result.into());
+        self.sp.push_as(result);
         self.next_instr()
     }
 
@@ -724,7 +724,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             Some(pages) => pages,
             None => {
                 // Cannot grow memory so we push the expected error value.
-                self.sp.push(INVALID_GROWTH_ERRCODE.into());
+                self.sp.push_as(INVALID_GROWTH_ERRCODE);
                 return self.try_next_instr();
             }
         };
@@ -752,7 +752,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             Err(EntityGrowError::InvalidGrow) => INVALID_GROWTH_ERRCODE,
             Err(EntityGrowError::TrapCode(trap_code)) => return Err(trap_code),
         };
-        self.sp.push(result.into());
+        self.sp.push_as(result);
         self.try_next_instr()
     }
 
@@ -840,7 +840,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     fn visit_table_size(&mut self, table_index: TableIdx) {
         let table = self.cache.get_table(self.ctx, table_index);
         let size = self.ctx.resolve_table(&table).size();
-        self.sp.push(size.into());
+        self.sp.push_as(size);
         self.next_instr()
     }
 
@@ -862,7 +862,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             Err(EntityGrowError::InvalidGrow) => INVALID_GROWTH_ERRCODE,
             Err(EntityGrowError::TrapCode(trap_code)) => return Err(trap_code),
         };
-        self.sp.push(result.into());
+        self.sp.push_as(result);
         self.try_next_instr()
     }
 
@@ -970,7 +970,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     fn visit_ref_func(&mut self, func_index: FuncIdx) {
         let func = self.cache.get_func(self.ctx, func_index.into_inner());
         let funcref = FuncRef::new(func);
-        self.sp.push(funcref.into());
+        self.sp.push_as(funcref);
         self.next_instr();
     }
 

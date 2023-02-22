@@ -121,6 +121,25 @@ impl ValueStackPtr {
         self.ptr = unsafe { self.ptr.sub(delta) };
     }
 
+    /// Pushes the `T` to the end of the [`ValueStack`].
+    ///
+    /// # Note
+    ///
+    /// - This operation heavily relies on the prior validation of
+    ///   the executed WebAssembly bytecode for correctness.
+    /// - Especially the stack-depth analysis during compilation with
+    ///   a manual stack extension before function call prevents this
+    ///   procedure from panicking.
+    ///
+    /// [`ValueStack`]: super::ValueStack
+    #[inline]
+    pub fn push_as<T>(&mut self, value: T)
+    where
+        T: Into<UntypedValue>,
+    {
+        self.push(value.into())
+    }
+
     /// Pushes the [`UntypedValue`] to the end of the [`ValueStack`].
     ///
     /// # Note
