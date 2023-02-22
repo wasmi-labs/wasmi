@@ -239,8 +239,8 @@ impl ValueStack {
     ///
     /// # Note
     ///
-    /// This allows efficient implementation of [`ValueStack::push`] and
-    /// [`ValueStackRef::pop`] operations.
+    /// This allows to efficiently operate on the [`ValueStack`] through
+    /// [`ValueStackPtr`] which requires external resource management.
     ///
     /// Before executing a function the interpreter calls this function
     /// to guarantee that enough space on the [`ValueStack`] exists for

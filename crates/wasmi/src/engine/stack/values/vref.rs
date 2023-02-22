@@ -6,6 +6,8 @@ use crate::{
 /// A pointer on the [`ValueStack`].
 ///
 /// Allows for efficient mutable access to the values of the [`ValueStack`].
+///
+/// [`ValueStack`]: super::ValueStack
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct ValueStackPtr {
@@ -68,6 +70,8 @@ impl ValueStackPtr {
     /// # Note
     ///
     /// This has the same effect as [`ValueStackPtr::nth_back`]`(1)`.
+    ///
+    /// [`ValueStack`]: super::ValueStack
     #[inline]
     #[must_use]
     pub fn last(self) -> UntypedValue {
@@ -79,6 +83,8 @@ impl ValueStackPtr {
     /// # Note
     ///
     /// This has the same effect as [`ValueStackPtr::nth_back`]`(1)`.
+    ///
+    /// [`ValueStack`]: super::ValueStack
     #[inline]
     pub fn set_last(self, value: UntypedValue) {
         self.set_nth_back(1, value)
@@ -88,7 +94,7 @@ impl ValueStackPtr {
     ///
     /// # Note
     ///
-    /// Given a `depth` of 1 has the same effect as [`ValueStackRef::last`].
+    /// Given a `depth` of 1 has the same effect as [`ValueStackPtr::last`].
     ///
     /// A `depth` of 0 is invalid and undefined.
     #[inline]
@@ -128,6 +134,8 @@ impl ValueStackPtr {
     /// - Especially the stack-depth analysis during compilation with
     ///   a manual stack extension before function call prevents this
     ///   procedure from panicking.
+    ///
+    /// [`ValueStack`]: super::ValueStack
     #[inline]
     pub fn push(&mut self, value: UntypedValue) {
         self.set(value);
@@ -135,6 +143,8 @@ impl ValueStackPtr {
     }
 
     /// Pops the last [`UntypedValue`] from the [`ValueStack`] as `T`.
+    ///
+    /// [`ValueStack`]: super::ValueStack
     #[inline]
     pub fn pop_as<T>(&mut self) -> T
     where
@@ -149,6 +159,8 @@ impl ValueStackPtr {
     ///
     /// This operation heavily relies on the prior validation of
     /// the executed WebAssembly bytecode for correctness.
+    ///
+    /// [`ValueStack`]: super::ValueStack
     #[inline]
     pub fn pop(&mut self) -> UntypedValue {
         self.dec();
@@ -161,6 +173,8 @@ impl ValueStackPtr {
     ///
     /// This operation heavily relies on the prior validation of
     /// the executed WebAssembly bytecode for correctness.
+    ///
+    /// [`ValueStack`]: super::ValueStack
     #[inline]
     pub fn pop2(&mut self) -> (UntypedValue, UntypedValue) {
         let rhs = self.pop();
@@ -174,6 +188,8 @@ impl ValueStackPtr {
     ///
     /// This operation heavily relies on the prior validation of
     /// the executed WebAssembly bytecode for correctness.
+    ///
+    /// [`ValueStack`]: super::ValueStack
     #[inline]
     pub fn pop3(&mut self) -> (UntypedValue, UntypedValue, UntypedValue) {
         let trd = self.pop();
