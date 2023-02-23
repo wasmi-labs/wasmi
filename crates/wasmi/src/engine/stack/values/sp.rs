@@ -219,6 +219,27 @@ impl ValueStackPtr {
         (fst, snd, trd)
     }
 
+    /// Evaluates the given closure `f` for the top most stack value.
+    #[inline]
+    pub fn eval_top<F>(&mut self, f: F)
+    where
+        F: FnOnce(UntypedValue) -> UntypedValue,
+    {
+        let top = self.last();
+        self.set_last(f(top));
+    }
+
+    /// Evaluates the given closure `f` for the 2 top most stack values.
+    #[inline]
+    pub fn eval_top2<F>(&mut self, f: F)
+    where
+        F: FnOnce(UntypedValue, UntypedValue) -> UntypedValue,
+    {
+        let rhs = self.pop();
+        let lhs = self.last();
+        self.set_last(f(lhs, rhs));
+    }
+
     /// Evaluates the given closure `f` for the 3 top most stack values.
     #[inline]
     pub fn eval_top3<F>(&mut self, f: F)
@@ -228,16 +249,6 @@ impl ValueStackPtr {
         let (e2, e3) = self.pop2();
         let e1 = self.last();
         self.set_last(f(e1, e2, e3));
-    }
-
-    /// Evaluates the given closure `f` for the top most stack value.
-    #[inline]
-    pub fn eval_top<F>(&mut self, f: F)
-    where
-        F: FnOnce(UntypedValue) -> UntypedValue,
-    {
-        let top = self.last();
-        self.set_last(f(top));
     }
 
     /// Evaluates the given fallible closure `f` for the top most stack value.
@@ -253,17 +264,6 @@ impl ValueStackPtr {
         let top = self.last();
         self.set_last(f(top)?);
         Ok(())
-    }
-
-    /// Evaluates the given closure `f` for the 2 top most stack values.
-    #[inline]
-    pub fn eval_top2<F>(&mut self, f: F)
-    where
-        F: FnOnce(UntypedValue, UntypedValue) -> UntypedValue,
-    {
-        let rhs = self.pop();
-        let lhs = self.last();
-        self.set_last(f(lhs, rhs));
     }
 
     /// Evaluates the given fallible closure `f` for the 2 top most stack values.
