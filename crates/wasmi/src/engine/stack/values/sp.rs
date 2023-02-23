@@ -306,7 +306,9 @@ impl ValueStackPtr {
     /// top `k` entries are the top `k` entries before this operation.
     ///
     /// Note that `k + d` cannot be greater than the stack length.
+    #[inline]
     pub fn drop_keep(&mut self, drop_keep: DropKeep) {
+        #[inline(always)]
         fn drop_keep_impl(this: ValueStackPtr, drop: usize, keep: usize) {
             if keep == 0 {
                 // Case: no values need to be kept.
