@@ -316,7 +316,7 @@ impl ValueStackPtr {
                 return;
             }
             let mut src = this.into_sub(keep);
-            let mut dst = this.into_sub(keep + drop_keep.drop());
+            let mut dst = src.into_sub(drop_keep.drop());
             if keep == 1 {
                 // Case: only one value needs to be kept.
                 dst.set(src.get());
