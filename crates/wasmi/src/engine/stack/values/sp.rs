@@ -185,8 +185,9 @@ impl ValueStackPtr {
     /// [`ValueStack`]: super::ValueStack
     #[inline]
     pub fn pop(&mut self) -> UntypedValue {
+        let popped = self.into_sub(1).get();
         self.dec_by(1);
-        self.get()
+        popped
     }
 
     /// Pops the last pair of [`UntypedValue`] from the [`ValueStack`].
@@ -199,8 +200,9 @@ impl ValueStackPtr {
     /// [`ValueStack`]: super::ValueStack
     #[inline]
     pub fn pop2(&mut self) -> (UntypedValue, UntypedValue) {
-        let rhs = self.pop();
-        let lhs = self.pop();
+        let rhs = self.into_sub(1).get();
+        let lhs = self.into_sub(2).get();
+        self.dec_by(2);
         (lhs, rhs)
     }
 
