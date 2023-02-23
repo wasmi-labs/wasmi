@@ -309,14 +309,13 @@ impl ValueStackPtr {
     #[inline]
     pub fn drop_keep(&mut self, drop_keep: DropKeep) {
         #[inline(always)]
-        fn drop_keep_impl(this: ValueStackPtr, drop_keep: DropKeep) {
-            let keep = drop_keep.keep();
+        fn drop_keep_impl(this: ValueStackPtr, drop: usize, keep: usize) {
             if keep == 0 {
                 // Case: no values need to be kept.
                 return;
             }
             let mut src = this.into_sub(keep);
-            let mut dst = src.into_sub(drop_keep.drop());
+            let mut dst = src.into_sub(drop);
             if keep == 1 {
                 // Case: only one value needs to be kept.
                 dst.set(src.get());
@@ -335,7 +334,8 @@ impl ValueStackPtr {
             // Nothing to do in this case.
             return;
         }
-        drop_keep_impl(*self, drop_keep);
+        let keep = drop_keep.keep();
+        drop_keep_impl(*self, drop, keep);
         self.dec_by(drop);
     }
 }
