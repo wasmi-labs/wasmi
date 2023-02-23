@@ -96,7 +96,7 @@ impl ValueStackPtr {
     ///
     /// # Note
     ///
-    /// Given a `depth` of 1 has the same effect as [`ValueStackPtr::set_last`].
+    /// Given a `depth` of 1 has the same effect as mutating [`ValueStackPtr::last`].
     ///
     /// A `depth` of 0 is invalid and undefined.
     #[inline]
