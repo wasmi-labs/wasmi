@@ -409,12 +409,14 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     /// Executes an infallible unary `wasmi` instruction.
+    #[inline]
     fn execute_unary(&mut self, f: fn(UntypedValue) -> UntypedValue) {
         self.sp.eval_top(f);
         self.next_instr()
     }
 
     /// Executes a fallible unary `wasmi` instruction.
+    #[inline]
     fn try_execute_unary(
         &mut self,
         f: fn(UntypedValue) -> Result<UntypedValue, TrapCode>,
@@ -424,12 +426,14 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     /// Executes an infallible binary `wasmi` instruction.
+    #[inline]
     fn execute_binary(&mut self, f: fn(UntypedValue, UntypedValue) -> UntypedValue) {
         self.sp.eval_top2(f);
         self.next_instr()
     }
 
     /// Executes a fallible binary `wasmi` instruction.
+    #[inline]
     fn try_execute_binary(
         &mut self,
         f: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
@@ -439,6 +443,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     /// Shifts the instruction pointer to the next instruction.
+    #[inline]
     fn next_instr(&mut self) {
         self.ip_add(1)
     }
@@ -448,18 +453,21 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// # Note
     ///
     /// This is a convenience function for fallible instructions.
+    #[inline]
     fn try_next_instr(&mut self) -> Result<(), TrapCode> {
         self.next_instr();
         Ok(())
     }
 
     /// Offsets the instruction pointer using the given [`BranchParams`].
+    #[inline]
     fn branch_to(&mut self, params: BranchParams) {
         self.sp.drop_keep(params.drop_keep());
         self.ip_add(params.offset().into_i32() as isize)
     }
 
     /// Adjusts the [`InstructionPtr`] by `delta` in terms of [`Instruction`].
+    #[inline]
     fn ip_add(&mut self, delta: isize) {
         // Safety: This is safe since we carefully constructed the `wasmi`
         //         bytecode in conjunction with Wasm validation so that the
@@ -479,6 +487,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// For performance reasons we detach the stack pointer form the [`ValueStack`].
     /// Therefore it is necessary to synchronize the [`ValueStack`] upon finishing
     /// execution of a sequence of non control flow instructions.
+    #[inline]
     fn sync_stack_ptr(&mut self) {
         self.value_stack.sync_stack_ptr(self.sp);
     }
