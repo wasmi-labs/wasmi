@@ -79,18 +79,6 @@ impl ValueStackPtr {
         self.nth_back(1)
     }
 
-    /// Returns an exclusive reference to the last [`UntypedValue`] on the [`ValueStack`].
-    ///
-    /// # Note
-    ///
-    /// This has the same effect as [`ValueStackPtr::nth_back`]`(1)`.
-    ///
-    /// [`ValueStack`]: super::ValueStack
-    #[inline]
-    pub fn set_last(self, value: UntypedValue) {
-        self.set_nth_back(1, value)
-    }
-
     /// Peeks the entry at the given depth from the last entry.
     ///
     /// # Note
@@ -225,8 +213,8 @@ impl ValueStackPtr {
     where
         F: FnOnce(UntypedValue) -> UntypedValue,
     {
-        let top = self.last();
-        self.set_last(f(top));
+        let last = self.into_sub(1);
+        last.set(f(last.get()))
     }
 
     /// Evaluates the given closure `f` for the 2 top most stack values.
@@ -236,8 +224,9 @@ impl ValueStackPtr {
         F: FnOnce(UntypedValue, UntypedValue) -> UntypedValue,
     {
         let rhs = self.pop();
-        let lhs = self.last();
-        self.set_last(f(lhs, rhs));
+        let last = self.into_sub(1);
+        let lhs = last.get();
+        last.set(f(lhs, rhs));
     }
 
     /// Evaluates the given closure `f` for the 3 top most stack values.
@@ -247,8 +236,9 @@ impl ValueStackPtr {
         F: FnOnce(UntypedValue, UntypedValue, UntypedValue) -> UntypedValue,
     {
         let (e2, e3) = self.pop2();
-        let e1 = self.last();
-        self.set_last(f(e1, e2, e3));
+        let last = self.into_sub(1);
+        let e1 = last.get();
+        last.set(f(e1, e2, e3));
     }
 
     /// Evaluates the given fallible closure `f` for the top most stack value.
@@ -261,8 +251,8 @@ impl ValueStackPtr {
     where
         F: FnOnce(UntypedValue) -> Result<UntypedValue, TrapCode>,
     {
-        let top = self.last();
-        self.set_last(f(top)?);
+        let last = self.into_sub(1);
+        last.set(f(last.get())?);
         Ok(())
     }
 
@@ -277,8 +267,9 @@ impl ValueStackPtr {
         F: FnOnce(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
     {
         let rhs = self.pop();
-        let lhs = self.last();
-        self.set_last(f(lhs, rhs)?);
+        let last = self.into_sub(1);
+        let lhs = last.get();
+        last.set(f(lhs, rhs)?);
         Ok(())
     }
 
