@@ -1,11 +1,11 @@
 //! Data structures to represent the Wasm value stack during execution.
 
-mod vref;
+mod sp;
 
 #[cfg(test)]
 mod tests;
 
-pub use self::vref::ValueStackRef;
+pub use self::sp::ValueStackPtr;
 use super::{err_stack_overflow, DEFAULT_MAX_VALUE_STACK_HEIGHT, DEFAULT_MIN_VALUE_STACK_HEIGHT};
 use crate::core::TrapCode;
 use alloc::vec::Vec;
@@ -83,6 +83,16 @@ impl FromIterator<UntypedValue> for ValueStack {
     }
 }
 
+#[cfg(test)]
+impl<'a> IntoIterator for &'a ValueStack {
+    type Item = &'a UntypedValue;
+    type IntoIter = core::slice::Iter<'a, UntypedValue>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.entries[0..self.stack_ptr].iter()
+    }
+}
+
 impl ValueStack {
     /// Creates an empty [`ValueStack`] that does not allocate heap memor.
     ///
@@ -96,6 +106,34 @@ impl ValueStack {
             stack_ptr: 0,
             maximum_len: 0,
         }
+    }
+
+    #[cfg(test)]
+    pub fn iter(&self) -> core::slice::Iter<UntypedValue> {
+        self.into_iter()
+    }
+
+    /// Returns the current [`ValueStackPtr`] of `self`.
+    ///
+    /// The returned [`ValueStackPtr`] points to the top most value on the [`ValueStack`].
+    #[inline]
+    pub fn stack_ptr(&mut self) -> ValueStackPtr {
+        self.base_ptr().into_add(self.stack_ptr)
+    }
+
+    /// Returns the base [`ValueStackPtr`] of `self`.
+    ///
+    /// The returned [`ValueStackPtr`] points to the first value on the [`ValueStack`].
+    #[inline]
+    fn base_ptr(&mut self) -> ValueStackPtr {
+        ValueStackPtr::from(self.entries.as_mut_ptr())
+    }
+
+    /// Synchronizes [`ValueStack`] with the new [`ValueStackPtr`].
+    #[inline]
+    pub fn sync_stack_ptr(&mut self, new_sp: ValueStackPtr) {
+        let offset = new_sp.offset_from(self.base_ptr());
+        self.stack_ptr = offset as usize;
     }
 
     /// Returns `true` if the [`ValueStack`] is empty.
@@ -201,8 +239,8 @@ impl ValueStack {
     ///
     /// # Note
     ///
-    /// This allows efficient implementation of [`ValueStack::push`] and
-    /// [`ValueStackRef::pop`] operations.
+    /// This allows to efficiently operate on the [`ValueStack`] through
+    /// [`ValueStackPtr`] which requires external resource management.
     ///
     /// Before executing a function the interpreter calls this function
     /// to guarantee that enough space on the [`ValueStack`] exists for

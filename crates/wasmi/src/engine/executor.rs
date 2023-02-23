@@ -1,32 +1,33 @@
-use super::{
-    super::{Memory, Table},
-    bytecode::{
-        BranchParams,
-        DataSegmentIdx,
-        ElementSegmentIdx,
-        FuncIdx,
-        GlobalIdx,
-        Instruction,
-        LocalDepth,
-        Offset,
-        SignatureIdx,
-        TableIdx,
-    },
-    cache::InstanceCache,
-    code_map::InstructionPtr,
-    stack::ValueStackRef,
-    CallOutcome,
-    DropKeep,
-    FuncFrame,
-    ValueStack,
-};
 use crate::{
     core::TrapCode,
-    engine::config::FuelCosts,
+    engine::{
+        bytecode::{
+            BranchParams,
+            DataSegmentIdx,
+            ElementSegmentIdx,
+            FuncIdx,
+            GlobalIdx,
+            Instruction,
+            LocalDepth,
+            Offset,
+            SignatureIdx,
+            TableIdx,
+        },
+        cache::InstanceCache,
+        code_map::InstructionPtr,
+        config::FuelCosts,
+        stack::ValueStackPtr,
+        CallOutcome,
+        DropKeep,
+        FuncFrame,
+        ValueStack,
+    },
     table::TableEntity,
     Func,
     FuncRef,
+    Memory,
     StoreInner,
+    Table,
 };
 use core::cmp::{self};
 use wasmi_core::{Pages, UntypedValue};
@@ -88,7 +89,14 @@ struct Executor<'ctx, 'engine, 'func> {
     /// The pointer to the currently executed instruction.
     ip: InstructionPtr,
     /// Stores the value stack of live values on the Wasm stack.
-    value_stack: ValueStackRef<'engine>,
+    sp: ValueStackPtr,
+    /// The value stack.
+    ///
+    /// # Note
+    ///
+    /// This reference is mainly used to synchronize back state
+    /// after manipulations to the value stack via `sp`.
+    value_stack: &'engine mut ValueStack,
     /// A mutable [`StoreInner`] context.
     ///
     /// [`StoreInner`]: [`crate::StoreInner`]
@@ -110,9 +118,10 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     ) -> Self {
         cache.update_instance(frame.instance());
         let ip = frame.ip();
-        let value_stack = ValueStackRef::new(value_stack);
+        let sp = value_stack.stack_ptr();
         Self {
             ip,
+            sp,
             value_stack,
             ctx,
             cache,
@@ -370,7 +379,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         offset: Offset,
         load_extend: WasmLoadOp,
     ) -> Result<(), TrapCode> {
-        self.value_stack.try_eval_top(|address| {
+        self.sp.try_eval_top(|address| {
             let memory = self.cache.default_memory_bytes(self.ctx).data();
             let value = load_extend(memory, address, offset.into_inner())?;
             Ok(value)
@@ -393,43 +402,48 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         offset: Offset,
         store_wrap: WasmStoreOp,
     ) -> Result<(), TrapCode> {
-        let (address, value) = self.value_stack.pop2();
+        let (address, value) = self.sp.pop2();
         let memory = self.cache.default_memory_bytes(self.ctx).data_mut();
         store_wrap(memory, address, offset.into_inner(), value)?;
         self.try_next_instr()
     }
 
     /// Executes an infallible unary `wasmi` instruction.
+    #[inline]
     fn execute_unary(&mut self, f: fn(UntypedValue) -> UntypedValue) {
-        self.value_stack.eval_top(f);
+        self.sp.eval_top(f);
         self.next_instr()
     }
 
     /// Executes a fallible unary `wasmi` instruction.
+    #[inline]
     fn try_execute_unary(
         &mut self,
         f: fn(UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), TrapCode> {
-        self.value_stack.try_eval_top(f)?;
+        self.sp.try_eval_top(f)?;
         self.try_next_instr()
     }
 
     /// Executes an infallible binary `wasmi` instruction.
+    #[inline]
     fn execute_binary(&mut self, f: fn(UntypedValue, UntypedValue) -> UntypedValue) {
-        self.value_stack.eval_top2(f);
+        self.sp.eval_top2(f);
         self.next_instr()
     }
 
     /// Executes a fallible binary `wasmi` instruction.
+    #[inline]
     fn try_execute_binary(
         &mut self,
         f: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), TrapCode> {
-        self.value_stack.try_eval_top2(f)?;
+        self.sp.try_eval_top2(f)?;
         self.try_next_instr()
     }
 
     /// Shifts the instruction pointer to the next instruction.
+    #[inline]
     fn next_instr(&mut self) {
         self.ip_add(1)
     }
@@ -439,17 +453,21 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// # Note
     ///
     /// This is a convenience function for fallible instructions.
+    #[inline]
     fn try_next_instr(&mut self) -> Result<(), TrapCode> {
         self.next_instr();
         Ok(())
     }
 
     /// Offsets the instruction pointer using the given [`BranchParams`].
+    #[inline]
     fn branch_to(&mut self, params: BranchParams) {
-        self.value_stack.drop_keep(params.drop_keep());
+        self.sp.drop_keep(params.drop_keep());
         self.ip_add(params.offset().into_i32() as isize)
     }
 
+    /// Adjusts the [`InstructionPtr`] by `delta` in terms of [`Instruction`].
+    #[inline]
     fn ip_add(&mut self, delta: isize) {
         // Safety: This is safe since we carefully constructed the `wasmi`
         //         bytecode in conjunction with Wasm validation so that the
@@ -469,8 +487,9 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// For performance reasons we detach the stack pointer form the [`ValueStack`].
     /// Therefore it is necessary to synchronize the [`ValueStack`] upon finishing
     /// execution of a sequence of non control flow instructions.
+    #[inline]
     fn sync_stack_ptr(&mut self) {
-        self.value_stack.sync();
+        self.value_stack.sync_stack_ptr(self.sp);
     }
 
     /// Calls the given [`Func`].
@@ -490,7 +509,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// This also modifies the stack as the caller would expect it
     /// and synchronizes the execution state with the outer structures.
     fn ret(&mut self, drop_keep: DropKeep) {
-        self.value_stack.drop_keep(drop_keep);
+        self.sp.drop_keep(drop_keep);
         self.sync_stack_ptr();
     }
 
@@ -571,7 +590,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_br_if_eqz(&mut self, params: BranchParams) {
-        let condition = self.value_stack.pop_as();
+        let condition = self.sp.pop_as();
         if condition {
             self.next_instr()
         } else {
@@ -580,7 +599,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_br_if_nez(&mut self, params: BranchParams) {
-        let condition = self.value_stack.pop_as();
+        let condition = self.sp.pop_as();
         if condition {
             self.branch_to(params)
         } else {
@@ -589,7 +608,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_return_if_nez(&mut self, drop_keep: DropKeep) -> MaybeReturn {
-        let condition = self.value_stack.pop_as();
+        let condition = self.sp.pop_as();
         if condition {
             self.ret(drop_keep);
             MaybeReturn::Return
@@ -600,7 +619,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_br_table(&mut self, len_targets: usize) {
-        let index: u32 = self.value_stack.pop_as();
+        let index: u32 = self.sp.pop_as();
         // The index of the default target which is the last target of the slice.
         let max_index = len_targets - 1;
         // A normalized index will always yield a target without panicking.
@@ -617,31 +636,31 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_local_get(&mut self, local_depth: LocalDepth) {
-        let value = self.value_stack.peek(local_depth.into_inner());
-        self.value_stack.push(value);
+        let value = self.sp.nth_back(local_depth.into_inner());
+        self.sp.push(value);
         self.next_instr()
     }
 
     fn visit_local_set(&mut self, local_depth: LocalDepth) {
-        let new_value = self.value_stack.pop();
-        *self.value_stack.peek_mut(local_depth.into_inner()) = new_value;
+        let new_value = self.sp.pop();
+        self.sp.set_nth_back(local_depth.into_inner(), new_value);
         self.next_instr()
     }
 
     fn visit_local_tee(&mut self, local_depth: LocalDepth) {
-        let new_value = self.value_stack.last();
-        *self.value_stack.peek_mut(local_depth.into_inner()) = new_value;
+        let new_value = self.sp.last();
+        self.sp.set_nth_back(local_depth.into_inner(), new_value);
         self.next_instr()
     }
 
     fn visit_global_get(&mut self, global_index: GlobalIdx) {
         let global_value = *self.global(global_index);
-        self.value_stack.push(global_value);
+        self.sp.push(global_value);
         self.next_instr()
     }
 
     fn visit_global_set(&mut self, global_index: GlobalIdx) {
-        let new_value = self.value_stack.pop();
+        let new_value = self.sp.pop();
         *self.global(global_index) = new_value;
         self.next_instr()
     }
@@ -656,7 +675,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         table: TableIdx,
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
-        let func_index: u32 = self.value_stack.pop_as();
+        let func_index: u32 = self.sp.pop_as();
         let table = self.cache.get_table(self.ctx, table);
         let funcref = self
             .ctx
@@ -680,17 +699,17 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_const(&mut self, bytes: UntypedValue) {
-        self.value_stack.push(bytes);
+        self.sp.push(bytes);
         self.next_instr()
     }
 
     fn visit_drop(&mut self) {
-        let _ = self.value_stack.pop();
+        self.sp.drop();
         self.next_instr()
     }
 
     fn visit_select(&mut self) {
-        self.value_stack.eval_top3(|e1, e2, e3| {
+        self.sp.eval_top3(|e1, e2, e3| {
             let condition = <bool as From<UntypedValue>>::from(e3);
             if condition {
                 e1
@@ -704,18 +723,18 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     fn visit_memory_size(&mut self) {
         let memory = self.default_memory();
         let result: u32 = self.ctx.resolve_memory(&memory).current_pages().into();
-        self.value_stack.push(result);
+        self.sp.push_as(result);
         self.next_instr()
     }
 
     fn visit_memory_grow(&mut self) -> Result<(), TrapCode> {
         let memory = self.default_memory();
-        let delta: u32 = self.value_stack.pop_as();
+        let delta: u32 = self.sp.pop_as();
         let delta = match Pages::new(delta) {
             Some(pages) => pages,
             None => {
                 // Cannot grow memory so we push the expected error value.
-                self.value_stack.push(INVALID_GROWTH_ERRCODE);
+                self.sp.push_as(INVALID_GROWTH_ERRCODE);
                 return self.try_next_instr();
             }
         };
@@ -743,13 +762,13 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             Err(EntityGrowError::InvalidGrow) => INVALID_GROWTH_ERRCODE,
             Err(EntityGrowError::TrapCode(trap_code)) => return Err(trap_code),
         };
-        self.value_stack.push(result);
+        self.sp.push_as(result);
         self.try_next_instr()
     }
 
     fn visit_memory_fill(&mut self) -> Result<(), TrapCode> {
         // The `n`, `val` and `d` variable bindings are extracted from the Wasm specification.
-        let (d, val, n) = self.value_stack.pop3();
+        let (d, val, n) = self.sp.pop3();
         let n = i32::from(n) as usize;
         let offset = i32::from(d) as usize;
         let byte = u8::from(val);
@@ -771,7 +790,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
 
     fn visit_memory_copy(&mut self) -> Result<(), TrapCode> {
         // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
-        let (d, s, n) = self.value_stack.pop3();
+        let (d, s, n) = self.sp.pop3();
         let n = i32::from(n) as usize;
         let src_offset = i32::from(s) as usize;
         let dst_offset = i32::from(d) as usize;
@@ -795,7 +814,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
 
     fn visit_memory_init(&mut self, segment: DataSegmentIdx) -> Result<(), TrapCode> {
         // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
-        let (d, s, n) = self.value_stack.pop3();
+        let (d, s, n) = self.sp.pop3();
         let n = i32::from(n) as usize;
         let src_offset = i32::from(s) as usize;
         let dst_offset = i32::from(d) as usize;
@@ -831,12 +850,12 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     fn visit_table_size(&mut self, table_index: TableIdx) {
         let table = self.cache.get_table(self.ctx, table_index);
         let size = self.ctx.resolve_table(&table).size();
-        self.value_stack.push(size);
+        self.sp.push_as(size);
         self.next_instr()
     }
 
     fn visit_table_grow(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
-        let (init, delta) = self.value_stack.pop2();
+        let (init, delta) = self.sp.pop2();
         let delta: u32 = delta.into();
         let result = self.consume_fuel_on_success(
             |costs| u64::from(delta) * costs.table_per_element,
@@ -853,13 +872,13 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             Err(EntityGrowError::InvalidGrow) => INVALID_GROWTH_ERRCODE,
             Err(EntityGrowError::TrapCode(trap_code)) => return Err(trap_code),
         };
-        self.value_stack.push(result);
+        self.sp.push_as(result);
         self.try_next_instr()
     }
 
     fn visit_table_fill(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
         // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
-        let (i, val, n) = self.value_stack.pop3();
+        let (i, val, n) = self.sp.pop3();
         let dst: u32 = i.into();
         let len: u32 = n.into();
         self.consume_fuel_on_success(
@@ -876,7 +895,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_table_get(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
-        self.value_stack.try_eval_top(|index| {
+        self.sp.try_eval_top(|index| {
             let index: u32 = index.into();
             let table = self.cache.get_table(self.ctx, table_index);
             self.ctx
@@ -888,7 +907,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_table_set(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
-        let (index, value) = self.value_stack.pop2();
+        let (index, value) = self.sp.pop2();
         let index: u32 = index.into();
         let table = self.cache.get_table(self.ctx, table_index);
         self.ctx
@@ -900,7 +919,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
 
     fn visit_table_copy(&mut self, dst: TableIdx, src: TableIdx) -> Result<(), TrapCode> {
         // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
-        let (d, s, n) = self.value_stack.pop3();
+        let (d, s, n) = self.sp.pop3();
         let len = u32::from(n);
         let src_index = u32::from(s);
         let dst_index = u32::from(d);
@@ -931,7 +950,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         elem: ElementSegmentIdx,
     ) -> Result<(), TrapCode> {
         // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
-        let (d, s, n) = self.value_stack.pop3();
+        let (d, s, n) = self.sp.pop3();
         let len = u32::from(n);
         let src_index = u32::from(s);
         let dst_index = u32::from(d);
@@ -961,7 +980,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     fn visit_ref_func(&mut self, func_index: FuncIdx) {
         let func = self.cache.get_func(self.ctx, func_index.into_inner());
         let funcref = FuncRef::new(func);
-        self.value_stack.push(funcref);
+        self.sp.push_as(funcref);
         self.next_instr();
     }
 

@@ -3,7 +3,7 @@ mod values;
 
 pub use self::{
     frames::{CallStack, FuncFrame},
-    values::{ValueStack, ValueStackRef},
+    values::{ValueStack, ValueStackPtr},
 };
 use super::{
     code_map::{CodeMap, InstructionPtr},
