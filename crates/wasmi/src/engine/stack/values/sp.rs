@@ -2,7 +2,6 @@ use crate::{
     core::{TrapCode, UntypedValue},
     engine::DropKeep,
 };
-use core::ptr;
 
 /// A pointer on the [`ValueStack`].
 ///
@@ -286,12 +285,6 @@ impl ValueStackPtr {
         Ok(())
     }
 
-    /// Returns `true` if `self` and `other` point to the same [`UntypedValue`] cell.
-    #[inline]
-    fn ptr_eq(self, other: Self) -> bool {
-        ptr::eq(self.ptr, other.ptr)
-    }
-
     /// Drops some amount of entries and keeps some amount of them at the new top.
     ///
     /// # Note
@@ -313,18 +306,16 @@ impl ValueStackPtr {
                 // Case: no values need to be kept.
                 return;
             }
-            let mut src = this.into_sub(keep);
-            let mut dst = this.into_sub(keep + drop_keep.drop());
+            let src = this.into_sub(keep);
+            let dst = this.into_sub(keep + drop_keep.drop());
             if keep == 1 {
                 // Case: only one value needs to be kept.
                 dst.set(src.get());
                 return;
             }
             // Case: many values need to be kept and moved on the stack.
-            while !this.ptr_eq(src) {
-                dst.set(src.get());
-                dst.inc_by(1);
-                src.inc_by(1);
+            for i in 0..keep {
+                dst.into_add(i).set(src.into_add(i).get());
             }
         }
 
