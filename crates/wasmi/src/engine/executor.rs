@@ -459,6 +459,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.ip_add(params.offset().into_i32() as isize)
     }
 
+    /// Adjusts the [`InstructionPtr`] by `delta` in terms of [`Instruction`].
     fn ip_add(&mut self, delta: isize) {
         // Safety: This is safe since we carefully constructed the `wasmi`
         //         bytecode in conjunction with Wasm validation so that the
