@@ -694,7 +694,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_drop(&mut self) {
-        let _ = self.sp.pop();
+        self.sp.drop();
         self.next_instr()
     }
 

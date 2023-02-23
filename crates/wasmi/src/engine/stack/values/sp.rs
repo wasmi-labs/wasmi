@@ -177,6 +177,19 @@ impl ValueStackPtr {
         self.get()
     }
 
+    /// Drops the last [`UntypedValue`] from the [`ValueStack`].
+    ///
+    /// # Note
+    ///
+    /// This operation heavily relies on the prior validation of
+    /// the executed WebAssembly bytecode for correctness.
+    ///
+    /// [`ValueStack`]: super::ValueStack
+    #[inline]
+    pub fn drop(&mut self) {
+        self.dec_by(1);
+    }
+
     /// Pops the last pair of [`UntypedValue`] from the [`ValueStack`].
     ///
     /// # Note
