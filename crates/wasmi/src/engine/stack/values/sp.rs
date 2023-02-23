@@ -214,8 +214,7 @@ impl ValueStackPtr {
     /// [`ValueStack`]: super::ValueStack
     #[inline]
     pub fn pop3(&mut self) -> (UntypedValue, UntypedValue, UntypedValue) {
-        let trd = self.pop();
-        let snd = self.pop();
+        let (snd, trd) = self.pop2();
         let fst = self.pop();
         (fst, snd, trd)
     }
