@@ -827,9 +827,11 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.consume_fuel_on_success(
             |costs| n as u64 * costs.memory_per_byte,
             |this| {
-                let (memory, data) = this
-                    .cache
-                    .get_default_memory_and_data_segment(this.ctx, segment);
+                let memory = this.cache.default_memory();
+                let data = this.cache.get_data_segment(segment);
+                let (memory, data) = this.ctx.resolve_memory_mut_and_data_segment(&memory, &data);
+                let memory = memory.data_mut();
+                let data = data.bytes();
                 let memory = memory
                     .get_mut(dst_offset..)
                     .and_then(|memory| memory.get_mut(..n))

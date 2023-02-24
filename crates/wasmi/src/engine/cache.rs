@@ -98,23 +98,6 @@ impl InstanceCache {
             })
     }
 
-    /// Loads the [`DataSegment`] at `index` of the currently used [`Instance`].
-    ///
-    /// # Panics
-    ///
-    /// If there is no [`DataSegment`] for the [`Instance`] at the `index`.
-    #[inline]
-    pub fn get_default_memory_and_data_segment<'a>(
-        &mut self,
-        ctx: &'a mut StoreInner,
-        segment: DataSegmentIdx,
-    ) -> (&'a mut [u8], &'a [u8]) {
-        let mem = self.default_memory();
-        let seg = self.get_data_segment(segment);
-        let (memory, segment) = ctx.resolve_memory_mut_and_data_segment(&mem, &seg);
-        (memory.data_mut(), segment.bytes())
-    }
-
     /// Loads the default [`Memory`] of the currently used [`Instance`].
     ///
     /// # Panics
