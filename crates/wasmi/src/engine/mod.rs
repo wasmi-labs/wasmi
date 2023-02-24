@@ -707,7 +707,6 @@ impl<'engine> EngineExecutor<'engine> {
         }
     }
 
-    #[inline(never)]
     fn execute_host_func<T>(
         &mut self,
         ctx: StoreContextMut<T>,
