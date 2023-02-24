@@ -6,6 +6,7 @@ pub use self::{
     values::{ValueStack, ValueStackPtr},
 };
 use super::{
+    cache::InstanceCache,
     code_map::{CodeMap, InstructionPtr},
     func_types::FuncTypeRegistry,
     FuncParams,
@@ -13,6 +14,7 @@ use super::{
 use crate::{
     core::UntypedValue,
     func::{HostFuncEntity, WasmFuncEntity},
+    store::StoreInner,
     AsContext,
     Instance,
     StoreContextMut,
@@ -187,13 +189,18 @@ impl Stack {
     /// Updates the `caller` [`FuncFrame`] to the called Wasm function.
     pub(crate) fn call_wasm(
         &mut self,
+        ctx: &StoreInner,
         caller: &mut FuncFrame,
         called: &WasmFuncEntity,
         code_map: &CodeMap,
+        cache: &mut InstanceCache,
     ) -> Result<(), TrapCode> {
         let ip = self.call_wasm_impl(called, code_map)?;
         self.frames.push(*caller)?;
         let instance = called.instance();
+        if caller.instance() != instance {
+            cache.update_instance(ctx, instance);
+        }
         *caller = FuncFrame::new(ip, instance);
         Ok(())
     }

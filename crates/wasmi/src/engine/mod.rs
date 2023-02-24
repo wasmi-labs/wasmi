@@ -681,6 +681,10 @@ impl<'engine> EngineExecutor<'engine> {
             match self.execute_frame(ctx.as_context_mut(), frame, &mut cache)? {
                 CallOutcome::Return => match self.stack.return_wasm() {
                     Some(caller) => {
+                        let instance = caller.instance();
+                        if frame.instance() != instance {
+                            cache.update_instance(&ctx.as_context().store.inner, instance)
+                        }
                         *frame = caller;
                         continue 'outer;
                     }
@@ -689,7 +693,13 @@ impl<'engine> EngineExecutor<'engine> {
                 CallOutcome::NestedCall(ref called_func) => {
                     match ctx.as_context().store.inner.resolve_func(called_func) {
                         FuncEntity::Wasm(wasm_func) => {
-                            self.stack.call_wasm(frame, wasm_func, &self.res.code_map)?;
+                            self.stack.call_wasm(
+                                &ctx.as_context().store.inner,
+                                frame,
+                                wasm_func,
+                                &self.res.code_map,
+                                &mut cache,
+                            )?;
                         }
                         FuncEntity::Host(host_func) => {
                             let host_func = *host_func;

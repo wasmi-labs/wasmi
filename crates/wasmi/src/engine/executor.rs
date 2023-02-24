@@ -115,7 +115,6 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         cache: &'engine mut InstanceCache,
         frame: &'func mut FuncFrame,
     ) -> Self {
-        cache.update_instance(ctx, frame.instance());
         let ip = frame.ip();
         let sp = value_stack.stack_ptr();
         Self {

@@ -57,12 +57,6 @@ impl InstanceCache {
     /// Updates the currently used instance resetting all cached entities.
     pub fn update_instance(&mut self, store: &StoreInner, instance: &Instance) {
         let new_instance = NonNull::from(store.resolve_instance(instance));
-        if self.instance_entity == new_instance {
-            // A pointer comparison properly identifies
-            // a different instance as well as a different store.
-            return;
-        }
-        // Now reset all instance related cached data.
         self.instance_entity = new_instance;
         self.default_memory = None;
         self.last_table = None;
