@@ -21,9 +21,9 @@ pub struct InstanceCache {
     /// The current instance in use.
     instance: Instance,
     /// A pointer to the current instance entity.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// We use `NonNull` to defeat lifetime issues naturally
     /// arising in caching code in Rust.
     instance_entity: NonNull<InstanceEntity>,
@@ -105,10 +105,7 @@ impl InstanceCache {
     ///
     /// If there is no [`ElementSegment`] for the [`Instance`] at the `index`.
     #[inline]
-    pub fn get_element_segment(
-        &mut self,
-        index: ElementSegmentIdx,
-    ) -> ElementSegment {
+    pub fn get_element_segment(&mut self, index: ElementSegmentIdx) -> ElementSegment {
         self.instance_entity()
             .get_element_segment(index.into_inner())
             .unwrap_or_else(|| {

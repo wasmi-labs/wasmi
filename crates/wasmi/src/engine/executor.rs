@@ -840,9 +840,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_data_drop(&mut self, segment_index: DataSegmentIdx) {
-        let segment = self
-            .cache
-            .get_data_segment(segment_index.into_inner());
+        let segment = self.cache.get_data_segment(segment_index.into_inner());
         self.ctx.resolve_data_segment_mut(&segment).drop_bytes();
         self.next_instr();
     }
