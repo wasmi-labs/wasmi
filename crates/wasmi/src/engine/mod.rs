@@ -739,6 +739,9 @@ impl<'engine> EngineExecutor<'engine> {
 
         let store_inner = &mut ctx.store.inner;
         let value_stack = &mut self.stack.values;
-        execute_frame(store_inner, cache, frame, value_stack).map_err(make_trap)
+        let call_stack = &mut self.stack.frames;
+        let code_map = &self.res.code_map;
+        execute_frame(store_inner, cache, frame, value_stack, call_stack, code_map)
+            .map_err(make_trap)
     }
 }

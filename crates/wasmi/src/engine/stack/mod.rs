@@ -105,9 +105,9 @@ impl Default for StackLimits {
 #[derive(Debug, Default)]
 pub struct Stack {
     /// The value stack.
-    pub(crate) values: ValueStack,
+    pub values: ValueStack,
     /// The frame stack.
-    frames: CallStack,
+    pub frames: CallStack,
 }
 
 impl Stack {

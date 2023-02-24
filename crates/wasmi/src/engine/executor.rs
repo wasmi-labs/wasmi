@@ -1,6 +1,8 @@
 use crate::{
     core::TrapCode,
     engine::{
+        code_map::CodeMap,
+        stack::CallStack,
         bytecode::{
             BranchParams,
             DataSegmentIdx,
@@ -27,10 +29,38 @@ use crate::{
     FuncRef,
     Memory,
     StoreInner,
-    Table,
+    Table, func::HostFuncEntity,
 };
 use core::cmp::{self};
 use wasmi_core::{Pages, UntypedValue};
+
+/// The outcome of a Wasm execution.
+/// 
+/// # Note
+/// 
+/// A Wasm execution includes everything but host calls.
+/// In other words: Everything in between host calls is a Wasm execution.
+#[derive(Debug, Copy, Clone)]
+pub enum ExecutionOutcome {
+    /// The execution has ended.
+    End,
+    /// The function called a host function.
+    HostCall(HostFuncEntity),
+}
+
+/// The outcome of a Wasm execution.
+/// 
+/// # Note
+/// 
+/// A Wasm execution includes everything but host calls.
+/// In other words: Everything in between host calls is a Wasm execution.
+#[derive(Debug, Copy, Clone)]
+pub enum NestedCallOutcome {
+    /// The Wasm execution continues in Wasm.
+    Continue,
+    /// The Wasm execution calls a host function.
+    HostCall(HostFuncEntity),
+}
 
 /// Executes the given function `frame`.
 ///
@@ -48,8 +78,10 @@ pub fn execute_frame<'engine>(
     cache: &'engine mut InstanceCache,
     frame: &mut FuncFrame,
     value_stack: &'engine mut ValueStack,
+    call_stack: &'engine mut CallStack,
+    code_map: &'engine CodeMap,
 ) -> Result<CallOutcome, TrapCode> {
-    Executor::new(ctx, cache, frame, value_stack).execute()
+    Executor::new(ctx, cache, frame, value_stack, call_stack, code_map).execute()
 }
 
 /// The function signature of Wasm load operations.
@@ -105,6 +137,8 @@ struct Executor<'ctx, 'engine, 'func> {
     /// This reference is mainly used to synchronize back state
     /// after manipulations to the value stack via `sp`.
     value_stack: &'engine mut ValueStack,
+    call_stack: &'engine mut CallStack,
+    code_map: &'engine CodeMap,
 }
 
 impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
@@ -115,6 +149,8 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         cache: &'engine mut InstanceCache,
         frame: &'func mut FuncFrame,
         value_stack: &'engine mut ValueStack,
+        call_stack: &'engine mut CallStack,
+        code_map: &'engine CodeMap,
     ) -> Self {
         cache.update_instance(frame.instance());
         let ip = frame.ip();
@@ -126,6 +162,8 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             cache,
             frame,
             value_stack,
+            call_stack,
+            code_map,
         }
     }
 
