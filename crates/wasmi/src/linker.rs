@@ -816,7 +816,7 @@ mod tests {
                     )
                 )
             "#;
-        let wasm = wat::parse_str(&wat).unwrap();
+        let wasm = wat::parse_str(wat).unwrap();
         let module = Module::new(&engine, &mut &wasm[..]).unwrap();
         let instance = linker
             .instantiate(&mut store, &module)
