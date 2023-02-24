@@ -204,6 +204,7 @@ impl ValueStack {
     }
 
     /// Prepares the [`ValueStack`] for execution of the given Wasm function.
+    #[inline(always)]
     pub fn prepare_wasm_call(&mut self, header: &FuncHeader) -> Result<(), TrapCode> {
         let max_stack_height = header.max_stack_height();
         self.reserve(max_stack_height)?;
@@ -257,6 +258,7 @@ impl ValueStack {
     /// For this to be working we need a stack-depth analysis during Wasm
     /// compilation so that we are aware of all stack-depths for every
     /// functions.
+    #[inline]
     pub fn reserve(&mut self, additional: usize) -> Result<(), TrapCode> {
         let new_len = self
             .len()
