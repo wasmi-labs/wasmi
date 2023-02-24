@@ -187,6 +187,7 @@ impl Stack {
     /// Prepares the [`Stack`] for the given Wasm function call.
     ///
     /// Updates the `caller` [`FuncFrame`] to the called Wasm function.
+    #[inline(never)]
     pub(crate) fn call_wasm(
         &mut self,
         ctx: &StoreInner,
@@ -206,6 +207,7 @@ impl Stack {
     }
 
     /// Prepares the [`Stack`] for execution of the given Wasm [`FuncFrame`].
+    #[inline(always)]
     pub(crate) fn call_wasm_impl(
         &mut self,
         wasm_func: &WasmFuncEntity,
@@ -226,6 +228,7 @@ impl Stack {
     /// Signals the [`Stack`] to return the last Wasm function call.
     ///
     /// Returns the next function on the call stack if any.
+    #[inline(never)]
     pub fn return_wasm(
         &mut self,
         ctx: &StoreInner,

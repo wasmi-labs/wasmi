@@ -41,7 +41,7 @@ use wasmi_core::{Pages, UntypedValue};
 /// # Errors
 ///
 /// - If the execution of the function `frame` trapped.
-#[inline(always)]
+#[inline(never)]
 pub fn execute_frame<'engine>(
     ctx: &mut StoreInner,
     value_stack: &'engine mut ValueStack,

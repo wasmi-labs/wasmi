@@ -55,6 +55,7 @@ impl InstanceCache {
     }
 
     /// Updates the currently used instance resetting all cached entities.
+    #[inline(always)]
     pub fn update_instance(&mut self, store: &StoreInner, instance: &Instance) {
         let new_instance = NonNull::from(store.resolve_instance(instance));
         self.instance_entity = new_instance;

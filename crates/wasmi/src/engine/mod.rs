@@ -715,6 +715,7 @@ impl<'engine> EngineExecutor<'engine> {
         }
     }
 
+    #[inline(always)]
     fn execute_host_func<T>(
         &mut self,
         ctx: StoreContextMut<T>,
@@ -754,7 +755,6 @@ impl<'engine> EngineExecutor<'engine> {
             code.into()
         }
 
-        let value_stack = &mut self.stack.values;
-        execute_frame(&mut ctx.store.inner, value_stack, cache, frame).map_err(make_trap)
+        execute_frame(&mut ctx.store.inner, &mut self.stack.values, cache, frame).map_err(make_trap)
     }
 }

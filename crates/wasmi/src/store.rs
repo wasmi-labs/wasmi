@@ -676,6 +676,7 @@ impl StoreInner {
     ///
     /// - If the [`Func`] does not originate from this [`Store`].
     /// - If the [`Func`] cannot be resolved to its entity.
+    #[inline]
     pub fn resolve_func(&self, func: &Func) -> &FuncEntity {
         let entity_index = self.unwrap_stored(func.as_inner());
         self.funcs.get(entity_index).unwrap_or_else(|| {
