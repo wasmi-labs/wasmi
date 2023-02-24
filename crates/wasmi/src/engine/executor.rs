@@ -45,11 +45,11 @@ use wasmi_core::{Pages, UntypedValue};
 #[inline(always)]
 pub fn execute_frame<'engine>(
     ctx: &mut StoreInner,
-    value_stack: &'engine mut ValueStack,
     cache: &'engine mut InstanceCache,
     frame: &mut FuncFrame,
+    value_stack: &'engine mut ValueStack,
 ) -> Result<CallOutcome, TrapCode> {
-    Executor::new(value_stack, ctx, cache, frame).execute()
+    Executor::new(ctx, cache, frame, value_stack).execute()
 }
 
 /// The function signature of Wasm load operations.
@@ -111,10 +111,10 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// Creates a new [`Executor`] for executing a `wasmi` function frame.
     #[inline(always)]
     pub fn new(
-        value_stack: &'engine mut ValueStack,
         ctx: &'ctx mut StoreInner,
         cache: &'engine mut InstanceCache,
         frame: &'func mut FuncFrame,
+        value_stack: &'engine mut ValueStack,
     ) -> Self {
         cache.update_instance(frame.instance());
         let ip = frame.ip();
