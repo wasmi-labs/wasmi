@@ -25,6 +25,7 @@ use crate::{
     table::TableEntity,
     Func,
     FuncRef,
+    Instance,
     Memory,
     StoreInner,
     Table,
@@ -340,6 +341,11 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         //
         // Properly constructed `wasmi` bytecode can never produce invalid `pc`.
         unsafe { self.ip.get() }
+    }
+
+    /// Returns the [`Instance`] of the current frame.
+    fn instance(&self) -> &Instance {
+        self.frame.instance()
     }
 
     /// Returns the default linear memory.
@@ -955,9 +961,12 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.consume_fuel_on_success(
             |costs| u64::from(len) * costs.table_per_element,
             |this| {
+                let instance = *this.instance();
+                let table = this.cache.get_table(table);
+                let elem = this.cache.get_element_segment(elem);
                 let (instance, table, element) = this
-                    .cache
-                    .get_table_and_element_segment(this.ctx, table, elem);
+                    .ctx
+                    .resolve_instance_table_element(&instance, &table, &elem);
                 table.init(dst_index, element, src_index, len, |func_index| {
                     instance
                         .get_func(func_index)

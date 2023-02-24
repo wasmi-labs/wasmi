@@ -3,9 +3,7 @@ use crate::{
     instance::InstanceEntity,
     memory::DataSegment,
     module::DEFAULT_MEMORY_INDEX,
-    table::TableEntity,
     ElementSegment,
-    ElementSegmentEntity,
     Func,
     Instance,
     Memory,
@@ -51,11 +49,6 @@ impl InstanceCache {
             last_global: None,
             default_memory_bytes: None,
         }
-    }
-
-    /// Resolves the instances.
-    fn instance(&self) -> &Instance {
-        &self.instance
     }
 
     /// Resolves the instances.
@@ -128,28 +121,6 @@ impl InstanceCache {
         let seg = self.get_data_segment(segment);
         let (memory, segment) = ctx.resolve_memory_mut_and_data_segment(&mem, &seg);
         (memory.data_mut(), segment.bytes())
-    }
-
-    /// Loads the [`ElementSegment`] at `index` of the currently used [`Instance`].
-    ///
-    /// # Panics
-    ///
-    /// If there is no [`ElementSegment`] for the [`Instance`] at the `index`.
-    #[inline]
-    pub fn get_table_and_element_segment<'a>(
-        &mut self,
-        ctx: &'a mut StoreInner,
-        table: TableIdx,
-        segment: ElementSegmentIdx,
-    ) -> (
-        &'a InstanceEntity,
-        &'a mut TableEntity,
-        &'a ElementSegmentEntity,
-    ) {
-        let tab = self.get_table(table);
-        let seg = self.get_element_segment(segment);
-        let inst = self.instance();
-        ctx.resolve_instance_table_element(inst, &tab, &seg)
     }
 
     /// Loads the default [`Memory`] of the currently used [`Instance`].
