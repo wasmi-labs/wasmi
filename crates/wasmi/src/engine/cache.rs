@@ -193,7 +193,7 @@ impl InstanceCache {
         let index = index.into_inner();
         match self.last_table {
             Some((table_index, table)) if index == table_index => table,
-            _ => self.load_table_at(index),
+            _ => *self.load_table_at(index),
         }
     }
 
@@ -202,12 +202,12 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have the table.
-    fn load_table_at(&mut self, index: u32) -> Table {
+    fn load_table_at(&mut self, index: u32) -> &Table {
         let table = self
             .instance()
             .get_table(index)
             .unwrap_or_else(|| panic!("missing table at index {index} for cached instance"));
-        self.last_table = Some((index, table));
+        let (_index, table) = self.last_table.insert((index, table));
         table
     }
 
