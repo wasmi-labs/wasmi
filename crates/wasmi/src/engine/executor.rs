@@ -21,7 +21,7 @@ use crate::{
         FuncFrame,
         ValueStack,
     },
-    func::{FuncEntity, HostFuncEntity},
+    func::{FuncEntity},
     table::TableEntity,
     Func,
     FuncRef,
@@ -43,7 +43,7 @@ pub enum WasmOutcome {
     /// The Wasm execution has ended and returns to the host side.
     Return,
     /// The Wasm execution calls a host function.
-    Call(Func, HostFuncEntity),
+    Call(Func),
 }
 
 /// The outcome of a Wasm execution.
@@ -57,7 +57,7 @@ pub enum CallOutcome {
     /// The Wasm execution continues in Wasm.
     Continue,
     /// The Wasm execution calls a host function.
-    Call(Func, HostFuncEntity),
+    Call(Func),
 }
 
 /// The outcome of a Wasm return statement.
@@ -200,15 +200,15 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                     }
                 }
                 Instr::Call(func) => {
-                    if let CallOutcome::Call(func, host_func) = self.visit_call(func)? {
-                        return Ok(WasmOutcome::Call(func, host_func));
+                    if let CallOutcome::Call(host_func) = self.visit_call(func)? {
+                        return Ok(WasmOutcome::Call(host_func));
                     }
                 }
                 Instr::CallIndirect { table, func_type } => {
-                    if let CallOutcome::Call(func, host_func) =
+                    if let CallOutcome::Call(host_func) =
                         self.visit_call_indirect(table, func_type)?
                     {
-                        return Ok(WasmOutcome::Call(func, host_func));
+                        return Ok(WasmOutcome::Call(host_func));
                     }
                 }
                 Instr::Drop => self.visit_drop(),
@@ -560,7 +560,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.sync_stack_ptr();
         let wasm_func = match self.ctx.resolve_func(func) {
             FuncEntity::Wasm(wasm_func) => wasm_func,
-            FuncEntity::Host(host_func) => return Ok(CallOutcome::Call(*func, *host_func)),
+            FuncEntity::Host(_host_func) => return Ok(CallOutcome::Call(*func)),
         };
         let header = self.code_map.header(wasm_func.func_body());
         self.value_stack.prepare_wasm_call(header)?;

@@ -673,7 +673,11 @@ impl<'engine> EngineExecutor<'engine> {
         loop {
             match self.execute_frame(ctx.as_context_mut(), frame, cache)? {
                 WasmOutcome::Return => return Ok(()),
-                WasmOutcome::Call(func, host_func) => {
+                WasmOutcome::Call(func) => {
+                    let host_func = match ctx.as_context().store.inner.resolve_func(&func) {
+                        FuncEntity::Wasm(_) => unreachable!("`func` must be a host function"),
+                        FuncEntity::Host(host_func) => *host_func,
+                    };
                     cache.reset_default_memory_bytes();
                     self.stack
                         .call_host(ctx.as_context_mut(), frame, host_func, &self.res.func_types)
