@@ -183,17 +183,19 @@ impl Stack {
     }
 
     /// Prepares the [`Stack`] for the given Wasm function call.
+    ///
+    /// Updates the `caller` [`FuncFrame`] to the called Wasm function.
     pub(crate) fn call_wasm(
         &mut self,
-        caller: &FuncFrame,
-        wasm_func: &WasmFuncEntity,
+        caller: &mut FuncFrame,
+        called: &WasmFuncEntity,
         code_map: &CodeMap,
-    ) -> Result<FuncFrame, TrapCode> {
-        let ip = self.call_wasm_impl(wasm_func, code_map)?;
+    ) -> Result<(), TrapCode> {
+        let ip = self.call_wasm_impl(called, code_map)?;
         self.frames.push(*caller)?;
-        let instance = wasm_func.instance();
-        let frame = FuncFrame::new(ip, instance);
-        Ok(frame)
+        let instance = called.instance();
+        *caller = FuncFrame::new(ip, instance);
+        Ok(())
     }
 
     /// Prepares the [`Stack`] for execution of the given Wasm [`FuncFrame`].

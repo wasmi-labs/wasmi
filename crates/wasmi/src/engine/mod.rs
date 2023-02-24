@@ -689,7 +689,7 @@ impl<'engine> EngineExecutor<'engine> {
                 CallOutcome::NestedCall(ref called_func) => {
                     match ctx.as_context().store.inner.resolve_func(called_func) {
                         FuncEntity::Wasm(wasm_func) => {
-                            *frame = self.stack.call_wasm(frame, wasm_func, &self.res.code_map)?;
+                            self.stack.call_wasm(frame, wasm_func, &self.res.code_map)?;
                         }
                         FuncEntity::Host(host_func) => {
                             let host_func = *host_func;
