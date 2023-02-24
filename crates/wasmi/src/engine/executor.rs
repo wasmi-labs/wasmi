@@ -735,7 +735,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 let memory = this.cache.default_memory();
                 let new_pages = this
                     .ctx
-                    .resolve_memory_mut(&memory)
+                    .resolve_memory_mut(memory)
                     .grow(delta)
                     .map(u32::from)
                     .map_err(|_| EntityGrowError::InvalidGrow)?;
@@ -812,7 +812,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             |this| {
                 let data = this.cache.get_data_segment(segment);
                 let memory = this.cache.default_memory();
-                let (memory, data) = this.ctx.resolve_memory_mut_and_data_segment(&memory, &data);
+                let (memory, data) = this.ctx.resolve_memory_mut_and_data_segment(memory, &data);
                 let memory = memory.data_mut();
                 let data = data.bytes();
                 let memory = memory
