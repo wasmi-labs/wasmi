@@ -20,6 +20,13 @@ use wasmi_core::UntypedValue;
 pub struct InstanceCache {
     /// The current instance in use.
     instance: Instance,
+    /// A pointer to the current instance entity.
+    /// 
+    /// # Note
+    /// 
+    /// We use `NonNull` to defeat lifetime issues naturally
+    /// arising in caching code in Rust.
+    instance_entity: NonNull<InstanceEntity>,
     /// The default linear memory of the currently used [`Instance`].
     default_memory: Option<Memory>,
     /// The last accessed table of the currently used [`Instance`].
@@ -32,10 +39,12 @@ pub struct InstanceCache {
     default_memory_bytes: Option<CachedMemoryBytes>,
 }
 
-impl From<&'_ Instance> for InstanceCache {
-    fn from(instance: &Instance) -> Self {
+impl InstanceCache {
+    /// Creates a new [`InstanceCache`].
+    pub fn new(store: &StoreInner, instance: &Instance) -> Self {
         Self {
             instance: *instance,
+            instance_entity: NonNull::from(store.resolve_instance(instance)),
             default_memory: None,
             last_table: None,
             last_func: None,
@@ -43,12 +52,15 @@ impl From<&'_ Instance> for InstanceCache {
             default_memory_bytes: None,
         }
     }
-}
 
-impl InstanceCache {
     /// Resolves the instances.
     fn instance(&self) -> &Instance {
         &self.instance
+    }
+
+    /// Resolves the instances.
+    fn instance_entity(&self) -> &InstanceEntity {
+        unsafe { self.instance_entity.as_ref() }
     }
 
     /// Updates the cached [`Instance`].
@@ -62,10 +74,14 @@ impl InstanceCache {
     }
 
     /// Updates the currently used instance resetting all cached entities.
-    pub fn update_instance(&mut self, instance: &Instance) {
-        if instance == self.instance() {
+    pub fn update_instance(&mut self, store: &StoreInner, instance: &Instance) {
+        let new_instance = NonNull::from(store.resolve_instance(instance));
+        if self.instance_entity == new_instance {
+            // A pointer comparison properly identifies
+            // a different instance as well as a different store.
             return;
         }
+        self.instance_entity = new_instance;
         self.set_instance(instance);
     }
 
@@ -75,12 +91,11 @@ impl InstanceCache {
     ///
     /// If there is no [`DataSegment`] for the [`Instance`] at the `index`.
     #[inline]
-    pub fn get_data_segment(&mut self, ctx: &mut StoreInner, index: u32) -> DataSegment {
-        let instance = self.instance();
-        ctx.resolve_instance(self.instance())
+    pub fn get_data_segment(&mut self, index: u32) -> DataSegment {
+        self.instance_entity()
             .get_data_segment(index)
             .unwrap_or_else(|| {
-                panic!("missing data segment ({index:?}) for instance: {instance:?}",)
+                panic!("missing data segment (at index {index:?}) in cached instance")
             })
     }
 
@@ -92,14 +107,12 @@ impl InstanceCache {
     #[inline]
     pub fn get_element_segment(
         &mut self,
-        ctx: &mut StoreInner,
         index: ElementSegmentIdx,
     ) -> ElementSegment {
-        let instance = self.instance();
-        ctx.resolve_instance(self.instance())
+        self.instance_entity()
             .get_element_segment(index.into_inner())
             .unwrap_or_else(|| {
-                panic!("missing element segment ({index:?}) for instance: {instance:?}",)
+                panic!("missing element segment (at index {index:?}) for cached instance")
             })
     }
 
@@ -115,7 +128,7 @@ impl InstanceCache {
         segment: DataSegmentIdx,
     ) -> (&'a mut [u8], &'a [u8]) {
         let mem = self.default_memory(ctx);
-        let seg = self.get_data_segment(ctx, segment.into_inner());
+        let seg = self.get_data_segment(segment.into_inner());
         let (memory, segment) = ctx.resolve_memory_mut_and_data_segment(&mem, &seg);
         (memory.data_mut(), segment.bytes())
     }
@@ -137,7 +150,7 @@ impl InstanceCache {
         &'a ElementSegmentEntity,
     ) {
         let tab = self.get_table(ctx, table);
-        let seg = self.get_element_segment(ctx, segment);
+        let seg = self.get_element_segment(segment);
         let inst = self.instance();
         ctx.resolve_instance_table_element(inst, &tab, &seg)
     }

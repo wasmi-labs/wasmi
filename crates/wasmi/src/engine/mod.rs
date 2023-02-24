@@ -600,7 +600,7 @@ impl<'engine> EngineExecutor<'engine> {
         match ctx.as_context().store.inner.resolve_func(func) {
             FuncEntity::Wasm(wasm_func) => {
                 let mut frame = self.stack.call_wasm_root(wasm_func, &self.res.code_map)?;
-                let mut cache = InstanceCache::from(frame.instance());
+                let mut cache = InstanceCache::new(&ctx.as_context().store.inner, frame.instance());
                 self.execute_wasm_func(ctx.as_context_mut(), &mut frame, &mut cache)?;
             }
             FuncEntity::Host(host_func) => {
@@ -640,7 +640,7 @@ impl<'engine> EngineExecutor<'engine> {
             .stack
             .pop_frame()
             .expect("a frame must be on the call stack upon resumption");
-        let mut cache = InstanceCache::from(frame.instance());
+        let mut cache = InstanceCache::new(&ctx.as_context().store.inner, frame.instance());
         self.execute_wasm_func(ctx.as_context_mut(), &mut frame, &mut cache)?;
         let results = self.write_results_back(results);
         Ok(results)

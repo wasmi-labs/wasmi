@@ -116,7 +116,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         cache: &'engine mut InstanceCache,
         frame: &'func mut FuncFrame,
     ) -> Self {
-        cache.update_instance(frame.instance());
+        cache.update_instance(ctx, frame.instance());
         let ip = frame.ip();
         let sp = value_stack.stack_ptr();
         Self {
@@ -842,7 +842,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     fn visit_data_drop(&mut self, segment_index: DataSegmentIdx) {
         let segment = self
             .cache
-            .get_data_segment(self.ctx, segment_index.into_inner());
+            .get_data_segment(segment_index.into_inner());
         self.ctx.resolve_data_segment_mut(&segment).drop_bytes();
         self.next_instr();
     }
@@ -972,7 +972,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_element_drop(&mut self, segment_index: ElementSegmentIdx) {
-        let segment = self.cache.get_element_segment(self.ctx, segment_index);
+        let segment = self.cache.get_element_segment(segment_index);
         self.ctx.resolve_element_segment_mut(&segment).drop_items();
         self.next_instr();
     }
