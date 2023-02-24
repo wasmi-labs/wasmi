@@ -37,7 +37,7 @@ use self::{
     executor::execute_frame,
     func_types::FuncTypeRegistry,
     resumable::ResumableCallBase,
-    stack::{FuncFrame, Stack, ValueStack},
+    stack::{FuncFrame, ReturnOutcome, Stack, ValueStack},
 };
 pub(crate) use self::{
     func_args::{FuncFinished, FuncParams, FuncResults},
@@ -677,19 +677,17 @@ impl<'engine> EngineExecutor<'engine> {
         frame: &mut FuncFrame,
     ) -> Result<(), TaggedTrap> {
         let mut cache = InstanceCache::new(&ctx.as_context().store.inner, frame.instance());
-        'outer: loop {
+        loop {
             match self.execute_frame(ctx.as_context_mut(), frame, &mut cache)? {
-                CallOutcome::Return => match self.stack.return_wasm() {
-                    Some(caller) => {
-                        let instance = caller.instance();
-                        if frame.instance() != instance {
-                            cache.update_instance(&ctx.as_context().store.inner, instance)
-                        }
-                        *frame = caller;
-                        continue 'outer;
+                CallOutcome::Return => {
+                    let outcome =
+                        self.stack
+                            .return_wasm(&ctx.as_context().store.inner, frame, &mut cache);
+                    match outcome {
+                        ReturnOutcome::EndExecution => return Ok(()),
+                        ReturnOutcome::EndCall => (),
                     }
-                    None => return Ok(()),
-                },
+                }
                 CallOutcome::NestedCall(ref called_func) => {
                     match ctx.as_context().store.inner.resolve_func(called_func) {
                         FuncEntity::Wasm(wasm_func) => {

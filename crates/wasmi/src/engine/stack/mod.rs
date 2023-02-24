@@ -226,8 +226,23 @@ impl Stack {
     /// Signals the [`Stack`] to return the last Wasm function call.
     ///
     /// Returns the next function on the call stack if any.
-    pub fn return_wasm(&mut self) -> Option<FuncFrame> {
-        self.frames.pop()
+    pub fn return_wasm(
+        &mut self,
+        ctx: &StoreInner,
+        callee: &mut FuncFrame,
+        cache: &mut InstanceCache,
+    ) -> ReturnOutcome {
+        match self.frames.pop() {
+            Some(caller) => {
+                let instance = caller.instance();
+                if callee.instance() != instance {
+                    cache.update_instance(ctx, instance)
+                }
+                *callee = caller;
+                ReturnOutcome::EndCall
+            }
+            None => ReturnOutcome::EndExecution,
+        }
     }
 
     /// Executes the given host function as root.
@@ -329,4 +344,12 @@ impl Stack {
         self.values.clear();
         self.frames.clear();
     }
+}
+
+#[derive(Copy, Clone)]
+pub enum ReturnOutcome {
+    /// Ends the execution.
+    EndExecution,
+    /// Ends the function call.
+    EndCall,
 }
