@@ -49,7 +49,7 @@ impl InstanceCache {
     }
 
     /// Resolves the instances.
-    fn instance_entity(&self) -> &InstanceEntity {
+    fn instance(&self) -> &InstanceEntity {
         unsafe { self.instance_entity.as_ref() }
     }
 
@@ -77,7 +77,7 @@ impl InstanceCache {
     /// If there is no [`DataSegment`] for the [`Instance`] at the `index`.
     #[inline]
     pub fn get_data_segment(&mut self, index: DataSegmentIdx) -> DataSegment {
-        self.instance_entity()
+        self.instance()
             .get_data_segment(index.into_inner())
             .unwrap_or_else(|| {
                 panic!("missing data segment (at index {index:?}) in cached instance")
@@ -91,7 +91,7 @@ impl InstanceCache {
     /// If there is no [`ElementSegment`] for the [`Instance`] at the `index`.
     #[inline]
     pub fn get_element_segment(&mut self, index: ElementSegmentIdx) -> ElementSegment {
-        self.instance_entity()
+        self.instance()
             .get_element_segment(index.into_inner())
             .unwrap_or_else(|| {
                 panic!("missing element segment (at index {index:?}) for cached instance")
@@ -105,7 +105,7 @@ impl InstanceCache {
     /// If the currently used [`Instance`] does not have a default linear memory.
     fn load_default_memory(&mut self) -> Memory {
         let default_memory = self
-            .instance_entity()
+            .instance()
             .get_memory(DEFAULT_MEMORY_INDEX)
             .unwrap_or_else(|| panic!("missing default linear memory for cached instance"));
         self.default_memory = Some(default_memory);
@@ -184,7 +184,7 @@ impl InstanceCache {
     /// If the currently used [`Instance`] does not have the table.
     fn load_table_at(&mut self, index: u32) -> Table {
         let table = self
-            .instance_entity()
+            .instance()
             .get_table(index)
             .unwrap_or_else(|| panic!("missing table at index {index} for cached instance"));
         self.last_table = Some((index, table));
@@ -198,7 +198,7 @@ impl InstanceCache {
     /// If the currently used [`Instance`] does not have the function.
     fn load_func_at(&mut self, index: u32) -> Func {
         let func = self
-            .instance_entity()
+            .instance()
             .get_func(index)
             .unwrap_or_else(|| panic!("missing func at index {index} for cached instance"));
         self.last_func = Some((index, func));
@@ -226,7 +226,7 @@ impl InstanceCache {
     /// If the currently used [`Instance`] does not have a default table.
     fn load_global_at(&mut self, ctx: &mut StoreInner, index: u32) -> NonNull<UntypedValue> {
         let global = self
-            .instance_entity()
+            .instance()
             .get_global(index)
             .as_ref()
             .map(|global| ctx.resolve_global_mut(global).get_untyped_ptr())
