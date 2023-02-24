@@ -738,3 +738,119 @@ impl<T> Linker<T> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use wasmi_core::ValueType;
+
+    use super::*;
+    use crate::Store;
+
+    struct HostState {
+        a: i32,
+        b: i64,
+    }
+
+    #[test]
+    fn linker_funcs_work() {
+        let engine = Engine::default();
+        let mut linker = <Linker<HostState>>::new(&engine);
+        linker
+            .func_new(
+                "host",
+                "get_a",
+                FuncType::new([], [ValueType::I32]),
+                |ctx: Caller<HostState>, _params: &[Value], results: &mut [Value]| {
+                    results[0] = Value::from(ctx.data().a);
+                    Ok(())
+                },
+            )
+            .unwrap();
+        linker
+            .func_new(
+                "host",
+                "set_a",
+                FuncType::new([ValueType::I32], []),
+                |mut ctx: Caller<HostState>, params: &[Value], _results: &mut [Value]| {
+                    ctx.data_mut().a = params[0].i32().unwrap();
+                    Ok(())
+                },
+            )
+            .unwrap();
+        linker
+            .func_wrap("host", "get_b", |ctx: Caller<HostState>| ctx.data().b)
+            .unwrap();
+        linker
+            .func_wrap("host", "set_b", |mut ctx: Caller<HostState>, value: i64| {
+                ctx.data_mut().b = value
+            })
+            .unwrap();
+        let a_init = 42;
+        let b_init = 77;
+        let mut store = <Store<HostState>>::new(
+            &engine,
+            HostState {
+                a: a_init,
+                b: b_init,
+            },
+        );
+        let wat = r#"
+                (module
+                    (import "host" "get_a" (func $host_get_a (result i32)))
+                    (import "host" "set_a" (func $host_set_a (param i32)))
+                    (import "host" "get_b" (func $host_get_b (result i64)))
+                    (import "host" "set_b" (func $host_set_b (param i64)))
+
+                    (func (export "wasm_get_a") (result i32)
+                        (call $host_get_a)
+                    )
+                    (func (export "wasm_set_a") (param $param i32)
+                        (call $host_set_a (local.get $param))
+                    )
+
+                    (func (export "wasm_get_b") (result i64)
+                        (call $host_get_b)
+                    )
+                    (func (export "wasm_set_b") (param $param i64)
+                        (call $host_set_b (local.get $param))
+                    )
+                )
+            "#;
+        let wasm = wat::parse_str(&wat).unwrap();
+        let module = Module::new(&engine, &mut &wasm[..]).unwrap();
+        let instance = linker
+            .instantiate(&mut store, &module)
+            .unwrap()
+            .start(&mut store)
+            .unwrap();
+
+        let wasm_get_a = instance
+            .get_func(&store, "wasm_get_a")
+            .unwrap()
+            .typed::<(), i32>(&store)
+            .unwrap();
+        let wasm_set_a = instance
+            .get_func(&store, "wasm_set_a")
+            .unwrap()
+            .typed::<i32, ()>(&store)
+            .unwrap();
+        let wasm_get_b = instance
+            .get_func(&store, "wasm_get_b")
+            .unwrap()
+            .typed::<(), i64>(&store)
+            .unwrap();
+        let wasm_set_b = instance
+            .get_func(&store, "wasm_set_b")
+            .unwrap()
+            .typed::<i64, ()>(&store)
+            .unwrap();
+
+        assert_eq!(wasm_get_a.call(&mut store, ()).unwrap(), a_init);
+        wasm_set_a.call(&mut store, 100).unwrap();
+        assert_eq!(wasm_get_a.call(&mut store, ()).unwrap(), 100);
+
+        assert_eq!(wasm_get_b.call(&mut store, ()).unwrap(), b_init);
+        wasm_set_b.call(&mut store, 200).unwrap();
+        assert_eq!(wasm_get_b.call(&mut store, ()).unwrap(), 200);
+    }
+}
