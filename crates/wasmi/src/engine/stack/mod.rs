@@ -268,7 +268,7 @@ impl Stack {
             //       so that we can drop them in case the host
             //       function fails to execute properly.
             let delta = len_outputs - len_inputs;
-            self.values.extend_zeros(delta)?;
+            self.values.extend_zeros(delta);
             delta
         } else {
             0

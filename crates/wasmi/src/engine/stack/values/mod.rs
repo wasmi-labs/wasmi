@@ -193,15 +193,14 @@ impl ValueStack {
     /// # Errors
     ///
     /// If the value stack cannot fit `additional` stack values.
-    pub fn extend_zeros(&mut self, additional: usize) -> Result<(), TrapCode> {
+    pub fn extend_zeros(&mut self, additional: usize) {
         let cells = self
             .entries
             .get_mut(self.stack_ptr..)
             .and_then(|slice| slice.get_mut(..additional))
-            .ok_or(TrapCode::StackOverflow)?;
+            .unwrap_or_else(|| panic!("did not reserve enough value stack space"));
         cells.fill(UntypedValue::default());
         self.stack_ptr += additional;
-        Ok(())
     }
 
     /// Prepares the [`ValueStack`] for execution of the given Wasm function.
@@ -213,8 +212,7 @@ impl ValueStack {
         self.reserve(max_stack_height)?;
         let len_locals = header.len_locals();
         self
-            .extend_zeros(len_locals)
-            .expect("stack overflow is unexpected due to previous stack reserve");
+            .extend_zeros(len_locals);
         Ok(())
     }
 
