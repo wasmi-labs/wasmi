@@ -386,7 +386,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         load_extend: WasmLoadOp,
     ) -> Result<(), TrapCode> {
         self.sp.try_eval_top(|address| {
-            let memory = self.cache.default_memory_bytes(self.ctx).data();
+            let memory = self.cache.default_memory_bytes(self.ctx);
             let value = load_extend(memory, address, offset.into_inner())?;
             Ok(value)
         })?;
@@ -409,7 +409,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         store_wrap: WasmStoreOp,
     ) -> Result<(), TrapCode> {
         let (address, value) = self.sp.pop2();
-        let memory = self.cache.default_memory_bytes(self.ctx).data_mut();
+        let memory = self.cache.default_memory_bytes_mut(self.ctx);
         store_wrap(memory, address, offset.into_inner(), value)?;
         self.try_next_instr()
     }
@@ -781,9 +781,9 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.consume_fuel_on_success(
             |costs| n as u64 * costs.memory_per_byte,
             |this| {
-                let bytes = this.cache.default_memory_bytes(this.ctx);
-                let memory = bytes
-                    .data_mut()
+                let memory = this
+                    .cache
+                    .default_memory_bytes_mut(this.ctx)
                     .get_mut(offset..)
                     .and_then(|memory| memory.get_mut(..n))
                     .ok_or(TrapCode::MemoryOutOfBounds)?;
@@ -803,7 +803,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.consume_fuel_on_success(
             |costs| n as u64 * costs.memory_per_byte,
             |this| {
-                let data = this.cache.default_memory_bytes(this.ctx).data_mut();
+                let data = this.cache.default_memory_bytes_mut(this.ctx);
                 // These accesses just perform the bounds checks required by the Wasm spec.
                 data.get(src_offset..)
                     .and_then(|memory| memory.get(..n))
