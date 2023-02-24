@@ -1,8 +1,6 @@
 use crate::{
     core::TrapCode,
     engine::{
-        code_map::CodeMap,
-        stack::CallStack,
         bytecode::{
             BranchParams,
             DataSegmentIdx,
@@ -16,50 +14,59 @@ use crate::{
             TableIdx,
         },
         cache::InstanceCache,
-        code_map::InstructionPtr,
+        code_map::{CodeMap, InstructionPtr},
         config::FuelCosts,
-        stack::ValueStackPtr,
-        CallOutcome,
+        stack::{CallStack, ValueStackPtr},
         DropKeep,
         FuncFrame,
         ValueStack,
     },
+    func::{FuncEntity, HostFuncEntity},
     table::TableEntity,
     Func,
     FuncRef,
     Memory,
     StoreInner,
-    Table, func::HostFuncEntity,
+    Table,
 };
 use core::cmp::{self};
 use wasmi_core::{Pages, UntypedValue};
 
 /// The outcome of a Wasm execution.
-/// 
+///
 /// # Note
-/// 
+///
 /// A Wasm execution includes everything but host calls.
 /// In other words: Everything in between host calls is a Wasm execution.
 #[derive(Debug, Copy, Clone)]
-pub enum ExecutionOutcome {
-    /// The execution has ended.
-    End,
-    /// The function called a host function.
-    HostCall(HostFuncEntity),
+pub enum WasmOutcome {
+    /// The Wasm execution has ended and returns to the host side.
+    Return,
+    /// The Wasm execution calls a host function.
+    Call(Func, HostFuncEntity),
 }
 
 /// The outcome of a Wasm execution.
-/// 
+///
 /// # Note
-/// 
+///
 /// A Wasm execution includes everything but host calls.
 /// In other words: Everything in between host calls is a Wasm execution.
 #[derive(Debug, Copy, Clone)]
-pub enum NestedCallOutcome {
+pub enum CallOutcome {
     /// The Wasm execution continues in Wasm.
     Continue,
     /// The Wasm execution calls a host function.
-    HostCall(HostFuncEntity),
+    Call(Func, HostFuncEntity),
+}
+
+/// The outcome of a Wasm return statement.
+#[derive(Debug, Copy, Clone)]
+pub enum ReturnOutcome {
+    /// The call returns to a nested Wasm caller.
+    Wasm,
+    /// The call returns back to the host.
+    Host,
 }
 
 /// Executes the given function `frame`.
@@ -72,7 +79,7 @@ pub enum NestedCallOutcome {
 /// # Errors
 ///
 /// - If the execution of the function `frame` trapped.
-#[inline(always)]
+#[inline(never)]
 pub fn execute_frame<'engine>(
     ctx: &mut StoreInner,
     cache: &'engine mut InstanceCache,
@@ -80,7 +87,7 @@ pub fn execute_frame<'engine>(
     value_stack: &'engine mut ValueStack,
     call_stack: &'engine mut CallStack,
     code_map: &'engine CodeMap,
-) -> Result<CallOutcome, TrapCode> {
+) -> Result<WasmOutcome, TrapCode> {
     Executor::new(ctx, cache, frame, value_stack, call_stack, code_map).execute()
 }
 
@@ -169,7 +176,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
 
     /// Executes the function frame until it returns or traps.
     #[inline(always)]
-    fn execute(mut self) -> Result<CallOutcome, TrapCode> {
+    fn execute(mut self) -> Result<WasmOutcome, TrapCode> {
         use Instruction as Instr;
         loop {
             match *self.instr() {
@@ -182,15 +189,27 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 Instr::BrTable { len_targets } => self.visit_br_table(len_targets),
                 Instr::Unreachable => self.visit_unreachable()?,
                 Instr::ConsumeFuel { amount } => self.visit_consume_fuel(amount)?,
-                Instr::Return(drop_keep) => return self.visit_ret(drop_keep),
-                Instr::ReturnIfNez(drop_keep) => {
-                    if let MaybeReturn::Return = self.visit_return_if_nez(drop_keep) {
-                        return Ok(CallOutcome::Return);
+                Instr::Return(drop_keep) => {
+                    if let ReturnOutcome::Host = self.visit_ret(drop_keep) {
+                        return Ok(WasmOutcome::Return);
                     }
                 }
-                Instr::Call(func) => return self.visit_call(func),
+                Instr::ReturnIfNez(drop_keep) => {
+                    if let ReturnOutcome::Host = self.visit_return_if_nez(drop_keep) {
+                        return Ok(WasmOutcome::Return);
+                    }
+                }
+                Instr::Call(func) => {
+                    if let CallOutcome::Call(func, host_func) = self.visit_call(func)? {
+                        return Ok(WasmOutcome::Call(func, host_func));
+                    }
+                }
                 Instr::CallIndirect { table, func_type } => {
-                    return self.visit_call_indirect(table, func_type)
+                    if let CallOutcome::Call(func, host_func) =
+                        self.visit_call_indirect(table, func_type)?
+                    {
+                        return Ok(WasmOutcome::Call(func, host_func));
+                    }
                 }
                 Instr::Drop => self.visit_drop(),
                 Instr::Select => self.visit_select(),
@@ -539,16 +558,38 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.next_instr();
         self.frame.update_ip(self.ip);
         self.sync_stack_ptr();
-        Ok(CallOutcome::NestedCall(*func))
+        let wasm_func = match self.ctx.resolve_func(func) {
+            FuncEntity::Wasm(wasm_func) => wasm_func,
+            FuncEntity::Host(host_func) => return Ok(CallOutcome::Call(*func, *host_func)),
+        };
+        let header = self.code_map.header(wasm_func.func_body());
+        self.value_stack.prepare_wasm_call(header)?;
+        self.sp = self.value_stack.stack_ptr();
+        let iref = header.iref();
+        self.ip = self.code_map.instr_ptr(iref);
+        self.call_stack.push(*self.frame)?;
+        let instance = wasm_func.instance();
+        self.cache.update_instance(instance);
+        *self.frame = FuncFrame::new(self.ip, instance);
+        Ok(CallOutcome::Continue)
     }
 
     /// Returns to the caller.
     ///
     /// This also modifies the stack as the caller would expect it
     /// and synchronizes the execution state with the outer structures.
-    fn ret(&mut self, drop_keep: DropKeep) {
+    fn ret(&mut self, drop_keep: DropKeep) -> ReturnOutcome {
         self.sp.drop_keep(drop_keep);
         self.sync_stack_ptr();
+        match self.call_stack.pop() {
+            Some(caller) => {
+                self.ip = caller.ip();
+                self.cache.update_instance(caller.instance());
+                *self.frame = caller;
+                ReturnOutcome::Wasm
+            }
+            None => ReturnOutcome::Host,
+        }
     }
 
     /// Consume an amount of fuel specified by `delta` if `exec` succeeds.
@@ -604,12 +645,6 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
-pub enum MaybeReturn {
-    Return,
-    Continue,
-}
-
 impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     fn visit_unreachable(&mut self) -> Result<(), TrapCode> {
         Err(TrapCode::UnreachableCodeReached).map_err(Into::into)
@@ -645,14 +680,13 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         }
     }
 
-    fn visit_return_if_nez(&mut self, drop_keep: DropKeep) -> MaybeReturn {
+    fn visit_return_if_nez(&mut self, drop_keep: DropKeep) -> ReturnOutcome {
         let condition = self.sp.pop_as();
         if condition {
-            self.ret(drop_keep);
-            MaybeReturn::Return
+            self.ret(drop_keep)
         } else {
             self.next_instr();
-            MaybeReturn::Continue
+            ReturnOutcome::Wasm
         }
     }
 
@@ -668,9 +702,8 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         }
     }
 
-    fn visit_ret(&mut self, drop_keep: DropKeep) -> Result<CallOutcome, TrapCode> {
-        self.ret(drop_keep);
-        Ok(CallOutcome::Return)
+    fn visit_ret(&mut self, drop_keep: DropKeep) -> ReturnOutcome {
+        self.ret(drop_keep)
     }
 
     fn visit_local_get(&mut self, local_depth: LocalDepth) {

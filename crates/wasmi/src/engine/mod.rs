@@ -34,7 +34,7 @@ use self::{
     bytecode::Instruction,
     cache::InstanceCache,
     code_map::CodeMap,
-    executor::execute_frame,
+    executor::{execute_frame, WasmOutcome},
     func_types::FuncTypeRegistry,
     resumable::ResumableCallBase,
     stack::{FuncFrame, Stack, ValueStack},
@@ -56,15 +56,6 @@ use alloc::{sync::Arc, vec::Vec};
 use core::sync::atomic::{AtomicU32, Ordering};
 use spin::{Mutex, RwLock};
 use wasmi_arena::{ArenaIndex, GuardedEntity};
-
-/// The outcome of a `wasmi` function execution.
-#[derive(Debug, Copy, Clone)]
-pub enum CallOutcome {
-    /// The function has returned.
-    Return,
-    /// The function called another function.
-    NestedCall(Func),
-}
 
 /// A unique engine index.
 ///
@@ -679,37 +670,18 @@ impl<'engine> EngineExecutor<'engine> {
         frame: &mut FuncFrame,
         cache: &mut InstanceCache,
     ) -> Result<(), TaggedTrap> {
-        'outer: loop {
+        loop {
             match self.execute_frame(ctx.as_context_mut(), frame, cache)? {
-                CallOutcome::Return => match self.stack.return_wasm() {
-                    Some(caller) => {
-                        *frame = caller;
-                        continue 'outer;
-                    }
-                    None => return Ok(()),
-                },
-                CallOutcome::NestedCall(called_func) => {
-                    match ctx.as_context().store.inner.resolve_func(&called_func) {
-                        FuncEntity::Wasm(wasm_func) => {
-                            *frame = self.stack.call_wasm(frame, wasm_func, &self.res.code_map)?;
-                        }
-                        FuncEntity::Host(host_func) => {
-                            cache.reset_default_memory_bytes();
-                            let host_func = *host_func;
-                            self.stack
-                                .call_host(
-                                    ctx.as_context_mut(),
-                                    frame,
-                                    host_func,
-                                    &self.res.func_types,
-                                )
-                                .or_else(|trap| {
-                                    // Push the calling function onto the Stack to make it possible to resume execution.
-                                    self.stack.push_frame(*frame)?;
-                                    Err(TaggedTrap::host(called_func, trap))
-                                })?;
-                        }
-                    }
+                WasmOutcome::Return => return Ok(()),
+                WasmOutcome::Call(func, host_func) => {
+                    cache.reset_default_memory_bytes();
+                    self.stack
+                        .call_host(ctx.as_context_mut(), frame, host_func, &self.res.func_types)
+                        .or_else(|trap| {
+                            // Push the calling function onto the Stack to make it possible to resume execution.
+                            self.stack.push_frame(*frame)?;
+                            Err(TaggedTrap::host(func, trap))
+                        })?;
                 }
             }
         }
@@ -726,7 +698,7 @@ impl<'engine> EngineExecutor<'engine> {
         ctx: StoreContextMut<T>,
         frame: &mut FuncFrame,
         cache: &mut InstanceCache,
-    ) -> Result<CallOutcome, Trap> {
+    ) -> Result<WasmOutcome, Trap> {
         /// Converts a [`TrapCode`] into a [`Trap`].
         ///
         /// This function exists for performance reasons since its `#[cold]`
