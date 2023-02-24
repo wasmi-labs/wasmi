@@ -193,6 +193,7 @@ impl ValueStack {
     /// # Errors
     ///
     /// If the value stack cannot fit `additional` stack values.
+    #[inline]
     pub fn extend_zeros(&mut self, additional: usize) {
         let cells = self
             .entries

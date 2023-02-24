@@ -62,6 +62,7 @@ impl InstanceCache {
     }
 
     /// Updates the currently used instance resetting all cached entities.
+    #[inline]
     pub fn update_instance(&mut self, instance: &Instance) {
         if instance == self.instance() {
             return;

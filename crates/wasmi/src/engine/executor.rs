@@ -554,6 +554,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// This also prepares the instruction pointer and stack pointer for
     /// the function call so that the stack and execution state is synchronized
     /// with the outer structures.
+    #[inline(always)]
     fn call_func(&mut self, func: &Func) -> Result<CallOutcome, TrapCode> {
         self.next_instr();
         self.frame.update_ip(self.ip);
@@ -578,6 +579,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     ///
     /// This also modifies the stack as the caller would expect it
     /// and synchronizes the execution state with the outer structures.
+    #[inline(always)]
     fn ret(&mut self, drop_keep: DropKeep) -> ReturnOutcome {
         self.sp.drop_keep(drop_keep);
         self.sync_stack_ptr();
