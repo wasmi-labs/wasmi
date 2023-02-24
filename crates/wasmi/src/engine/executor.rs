@@ -666,7 +666,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
-        let callee = self.cache.get_func(self.ctx, func_index.into_inner());
+        let callee = self.cache.get_func(func_index.into_inner());
         self.call_func(&callee)
     }
 
@@ -976,7 +976,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_ref_func(&mut self, func_index: FuncIdx) {
-        let func = self.cache.get_func(self.ctx, func_index.into_inner());
+        let func = self.cache.get_func(func_index.into_inner());
         let funcref = FuncRef::new(func);
         self.sp.push_as(funcref);
         self.next_instr();

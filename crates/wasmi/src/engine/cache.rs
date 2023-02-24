@@ -252,16 +252,13 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have the function.
-    fn load_func_at(&mut self, ctx: &StoreInner, index: u32) -> Func {
-        let func = ctx
-            .resolve_instance(self.instance())
-            .get_func(index)
-            .unwrap_or_else(|| {
-                panic!(
-                    "missing func at index {index} for instance: {:?}",
-                    self.instance
-                )
-            });
+    fn load_func_at(&mut self, index: u32) -> Func {
+        let func = self.instance_entity().get_func(index).unwrap_or_else(|| {
+            panic!(
+                "missing func at index {index} for instance: {:?}",
+                self.instance
+            )
+        });
         self.last_func = Some((index, func));
         func
     }
@@ -272,10 +269,10 @@ impl InstanceCache {
     ///
     /// If the currently used [`Instance`] does not have a [`Func`] at the index.
     #[inline]
-    pub fn get_func(&mut self, ctx: &StoreInner, func_idx: u32) -> Func {
+    pub fn get_func(&mut self, func_idx: u32) -> Func {
         match self.last_func {
             Some((index, func)) if index == func_idx => func,
-            _ => self.load_func_at(ctx, func_idx),
+            _ => self.load_func_at(func_idx),
         }
     }
 
