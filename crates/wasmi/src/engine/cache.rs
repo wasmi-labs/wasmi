@@ -104,13 +104,12 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a default linear memory.
-    fn load_default_memory(&mut self) -> Memory {
+    fn load_default_memory(&mut self) -> &Memory {
         let default_memory = self
             .instance()
             .get_memory(DEFAULT_MEMORY_INDEX)
             .unwrap_or_else(|| panic!("missing default linear memory for cached instance"));
-        self.default_memory = Some(default_memory);
-        default_memory
+        self.default_memory.insert(default_memory)
     }
 
     /// Returns the default [`Memory`] of the currently used [`Instance`].
@@ -119,9 +118,9 @@ impl InstanceCache {
     ///
     /// If the currently used [`Instance`] does not have a default linear memory.
     #[inline]
-    pub fn default_memory(&mut self) -> Memory {
+    pub fn default_memory(&mut self) -> &Memory {
         match self.default_memory {
-            Some(default_memory) => default_memory,
+            Some(ref default_memory) => default_memory,
             None => self.load_default_memory(),
         }
     }

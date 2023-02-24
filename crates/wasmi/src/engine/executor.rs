@@ -26,7 +26,6 @@ use crate::{
     Func,
     FuncRef,
     Instance,
-    Memory,
     StoreInner,
     Table,
 };
@@ -346,16 +345,6 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// Returns the [`Instance`] of the current frame.
     fn instance(&self) -> &Instance {
         self.frame.instance()
-    }
-
-    /// Returns the default linear memory.
-    ///
-    /// # Panics
-    ///
-    /// If there exists is no linear memory for the instance.
-    #[inline]
-    fn default_memory(&mut self) -> Memory {
-        self.cache.default_memory()
     }
 
     /// Returns the global variable at the given index.
@@ -727,14 +716,13 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_memory_size(&mut self) {
-        let memory = self.default_memory();
-        let result: u32 = self.ctx.resolve_memory(&memory).current_pages().into();
+        let memory = self.cache.default_memory();
+        let result: u32 = self.ctx.resolve_memory(memory).current_pages().into();
         self.sp.push_as(result);
         self.next_instr()
     }
 
     fn visit_memory_grow(&mut self) -> Result<(), TrapCode> {
-        let memory = self.default_memory();
         let delta: u32 = self.sp.pop_as();
         let delta = match Pages::new(delta) {
             Some(pages) => pages,
@@ -750,6 +738,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 delta_in_bytes * costs.memory_per_byte
             },
             |this| {
+                let memory = this.cache.default_memory();
                 let new_pages = this
                     .ctx
                     .resolve_memory_mut(&memory)
@@ -827,8 +816,8 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.consume_fuel_on_success(
             |costs| n as u64 * costs.memory_per_byte,
             |this| {
-                let memory = this.cache.default_memory();
                 let data = this.cache.get_data_segment(segment);
+                let memory = this.cache.default_memory();
                 let (memory, data) = this.ctx.resolve_memory_mut_and_data_segment(&memory, &data);
                 let memory = memory.data_mut();
                 let data = data.bytes();
