@@ -208,12 +208,10 @@ impl InstanceCache {
     ///
     /// If the currently used [`Instance`] does not have the table.
     fn load_table_at(&mut self, index: u32) -> Table {
-        let table = self.instance_entity().get_table(index).unwrap_or_else(|| {
-            panic!(
-                "missing table at index {index} for instance: {:?}",
-                self.instance
-            )
-        });
+        let table = self
+            .instance_entity()
+            .get_table(index)
+            .unwrap_or_else(|| panic!("missing table at index {index} for cached instance"));
         self.last_table = Some((index, table));
         table
     }
@@ -224,12 +222,10 @@ impl InstanceCache {
     ///
     /// If the currently used [`Instance`] does not have the function.
     fn load_func_at(&mut self, index: u32) -> Func {
-        let func = self.instance_entity().get_func(index).unwrap_or_else(|| {
-            panic!(
-                "missing func at index {index} for instance: {:?}",
-                self.instance
-            )
-        });
+        let func = self
+            .instance_entity()
+            .get_func(index)
+            .unwrap_or_else(|| panic!("missing func at index {index} for cached instance"));
         self.last_func = Some((index, func));
         func
     }
@@ -260,10 +256,7 @@ impl InstanceCache {
             .as_ref()
             .map(|global| ctx.resolve_global_mut(global).get_untyped_ptr())
             .unwrap_or_else(|| {
-                panic!(
-                    "missing global variable at index {index} for instance: {:?}",
-                    self.instance
-                )
+                panic!("missing global variable at index {index} for cached instance")
             });
         self.last_global = Some((index, global));
         global
