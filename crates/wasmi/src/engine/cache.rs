@@ -143,10 +143,8 @@ impl InstanceCache {
     /// Returns an exclusive reference to the cached default memory.
     fn load_default_memory_bytes(&mut self, ctx: &mut StoreInner) -> &mut CachedMemoryBytes {
         let memory = self.default_memory();
-        self.default_memory_bytes = Some(CachedMemoryBytes::new(ctx, &memory));
         self.default_memory_bytes
-            .as_mut()
-            .expect("cached_memory was just set to Some")
+            .insert(CachedMemoryBytes::new(ctx, &memory))
     }
 
     /// Clears the cached default memory instance.
