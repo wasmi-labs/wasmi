@@ -1,16 +1,21 @@
-use super::{AsContextMut, Error, Extern, InstancePre, Module};
 use crate::{
+    core::Trap,
     func::{FuncEntity, HostFuncEntity, HostFuncTrampolineEntity},
     module::{ImportName, ImportType},
     AsContext,
+    AsContextMut,
     Caller,
     Engine,
+    Error,
+    Extern,
     ExternType,
     Func,
     FuncType,
     GlobalType,
+    InstancePre,
     IntoFunc,
     MemoryType,
+    Module,
     TableType,
     Value,
 };
@@ -25,7 +30,6 @@ use core::{
     num::NonZeroUsize,
     ops::Deref,
 };
-use wasmi_core::Trap;
 
 /// An error that may occur upon operating with [`Linker`] instances.
 #[derive(Debug)]
