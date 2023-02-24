@@ -46,7 +46,6 @@ impl ArenaIndex for InstanceIdx {
 /// A module instance entity.
 #[derive(Debug)]
 pub struct InstanceEntity {
-    initialized: bool,
     func_types: Arc<[DedupFuncType]>,
     tables: Box<[Table]>,
     funcs: Box<[Func]>,
@@ -55,6 +54,7 @@ pub struct InstanceEntity {
     exports: BTreeMap<Box<str>, Extern>,
     data_segments: Box<[DataSegment]>,
     elem_segments: Box<[ElementSegment]>,
+    initialized: bool,
 }
 
 impl InstanceEntity {
