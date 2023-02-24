@@ -196,7 +196,8 @@ impl ValueStack {
     pub fn extend_zeros(&mut self, additional: usize) -> Result<(), TrapCode> {
         let cells = self
             .entries
-            .get_mut(self.stack_ptr..self.stack_ptr + additional)
+            .get_mut(self.stack_ptr..)
+            .and_then(|slice| slice.get_mut(..additional))
             .ok_or(TrapCode::StackOverflow)?;
         cells.fill(UntypedValue::default());
         self.stack_ptr += additional;
