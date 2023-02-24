@@ -283,8 +283,8 @@ impl InstanceCache {
     ///
     /// If the currently used [`Instance`] does not have a default table.
     fn load_global_at(&mut self, ctx: &mut StoreInner, index: u32) -> NonNull<UntypedValue> {
-        let global = ctx
-            .resolve_instance(self.instance())
+        let global = self
+            .instance_entity()
             .get_global(index)
             .as_ref()
             .map(|global| ctx.resolve_global_mut(global).get_untyped_ptr())
