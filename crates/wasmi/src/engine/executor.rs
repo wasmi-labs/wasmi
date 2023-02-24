@@ -349,7 +349,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// If there exists is no linear memory for the instance.
     #[inline]
     fn default_memory(&mut self) -> Memory {
-        self.cache.default_memory(self.ctx)
+        self.cache.default_memory()
     }
 
     /// Returns the global variable at the given index.

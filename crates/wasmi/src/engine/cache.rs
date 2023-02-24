@@ -124,7 +124,7 @@ impl InstanceCache {
         ctx: &'a mut StoreInner,
         segment: DataSegmentIdx,
     ) -> (&'a mut [u8], &'a [u8]) {
-        let mem = self.default_memory(ctx);
+        let mem = self.default_memory();
         let seg = self.get_data_segment(segment);
         let (memory, segment) = ctx.resolve_memory_mut_and_data_segment(&mem, &seg);
         (memory.data_mut(), segment.bytes())
@@ -157,12 +157,11 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a default linear memory.
-    fn load_default_memory(&mut self, ctx: &StoreInner) -> Memory {
-        let instance = self.instance();
-        let default_memory = ctx
-            .resolve_instance(instance)
+    fn load_default_memory(&mut self) -> Memory {
+        let default_memory = self
+            .instance_entity()
             .get_memory(DEFAULT_MEMORY_INDEX)
-            .unwrap_or_else(|| panic!("missing default linear memory for instance: {instance:?}",));
+            .unwrap_or_else(|| panic!("missing default linear memory for cached instance"));
         self.default_memory = Some(default_memory);
         default_memory
     }
@@ -173,10 +172,10 @@ impl InstanceCache {
     ///
     /// If the currently used [`Instance`] does not have a default linear memory.
     #[inline]
-    pub fn default_memory(&mut self, ctx: &StoreInner) -> Memory {
+    pub fn default_memory(&mut self) -> Memory {
         match self.default_memory {
             Some(default_memory) => default_memory,
-            None => self.load_default_memory(ctx),
+            None => self.load_default_memory(),
         }
     }
 
@@ -197,7 +196,7 @@ impl InstanceCache {
     ///
     /// Returns an exclusive reference to the cached default memory.
     fn load_default_memory_bytes(&mut self, ctx: &mut StoreInner) -> &mut CachedMemoryBytes {
-        let memory = self.default_memory(ctx);
+        let memory = self.default_memory();
         self.default_memory_bytes = Some(CachedMemoryBytes::new(ctx, &memory));
         self.default_memory_bytes
             .as_mut()
