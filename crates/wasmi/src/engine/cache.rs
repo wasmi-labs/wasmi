@@ -16,8 +16,6 @@ use wasmi_core::UntypedValue;
 /// A cache for frequently used entities of an [`Instance`].
 #[derive(Debug)]
 pub struct InstanceCache {
-    /// The current instance in use.
-    instance: Instance,
     /// A pointer to the current instance entity.
     ///
     /// # Note
@@ -41,7 +39,6 @@ impl InstanceCache {
     /// Creates a new [`InstanceCache`].
     pub fn new(store: &StoreInner, instance: &Instance) -> Self {
         Self {
-            instance: *instance,
             instance_entity: NonNull::from(store.resolve_instance(instance)),
             default_memory: None,
             last_table: None,
@@ -56,16 +53,6 @@ impl InstanceCache {
         unsafe { self.instance_entity.as_ref() }
     }
 
-    /// Updates the cached [`Instance`].
-    fn set_instance(&mut self, instance: &Instance) {
-        self.instance = *instance;
-        self.default_memory = None;
-        self.last_table = None;
-        self.last_func = None;
-        self.last_global = None;
-        self.default_memory_bytes = None;
-    }
-
     /// Updates the currently used instance resetting all cached entities.
     pub fn update_instance(&mut self, store: &StoreInner, instance: &Instance) {
         let new_instance = NonNull::from(store.resolve_instance(instance));
@@ -74,8 +61,13 @@ impl InstanceCache {
             // a different instance as well as a different store.
             return;
         }
+        // Now reset all instance related cached data.
         self.instance_entity = new_instance;
-        self.set_instance(instance);
+        self.default_memory = None;
+        self.last_table = None;
+        self.last_func = None;
+        self.last_global = None;
+        self.default_memory_bytes = None;
     }
 
     /// Loads the [`DataSegment`] at `index` of the currently used [`Instance`].
