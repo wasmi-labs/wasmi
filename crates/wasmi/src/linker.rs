@@ -825,24 +825,16 @@ mod tests {
             .unwrap();
 
         let wasm_get_a = instance
-            .get_func(&store, "wasm_get_a")
-            .unwrap()
-            .typed::<(), i32>(&store)
+            .get_typed_func::<(), i32>(&store, "wasm_get_a")
             .unwrap();
         let wasm_set_a = instance
-            .get_func(&store, "wasm_set_a")
-            .unwrap()
-            .typed::<i32, ()>(&store)
+            .get_typed_func::<i32, ()>(&store, "wasm_set_a")
             .unwrap();
         let wasm_get_b = instance
-            .get_func(&store, "wasm_get_b")
-            .unwrap()
-            .typed::<(), i64>(&store)
+            .get_typed_func::<(), i64>(&store, "wasm_get_b")
             .unwrap();
         let wasm_set_b = instance
-            .get_func(&store, "wasm_set_b")
-            .unwrap()
-            .typed::<i64, ()>(&store)
+            .get_typed_func::<i64, ()>(&store, "wasm_set_b")
             .unwrap();
 
         assert_eq!(wasm_get_a.call(&mut store, ()).unwrap(), a_init);
