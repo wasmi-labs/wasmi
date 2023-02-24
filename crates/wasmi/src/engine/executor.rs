@@ -25,7 +25,6 @@ use crate::{
     table::TableEntity,
     Func,
     FuncRef,
-    Instance,
     StoreInner,
     Table,
 };
@@ -340,11 +339,6 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         //
         // Properly constructed `wasmi` bytecode can never produce invalid `pc`.
         unsafe { self.ip.get() }
-    }
-
-    /// Returns the [`Instance`] of the current frame.
-    fn instance(&self) -> &Instance {
-        self.frame.instance()
     }
 
     /// Returns the global variable at the given index.
@@ -952,12 +946,12 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.consume_fuel_on_success(
             |costs| u64::from(len) * costs.table_per_element,
             |this| {
-                let instance = *this.instance();
+                let instance = this.frame.instance();
                 let table = this.cache.get_table(table);
                 let elem = this.cache.get_element_segment(elem);
                 let (instance, table, element) = this
                     .ctx
-                    .resolve_instance_table_element(&instance, &table, &elem);
+                    .resolve_instance_table_element(instance, &table, &elem);
                 table.init(dst_index, element, src_index, len, |func_index| {
                     instance
                         .get_func(func_index)
