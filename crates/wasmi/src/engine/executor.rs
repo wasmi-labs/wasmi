@@ -21,7 +21,7 @@ use crate::{
         FuncFrame,
         ValueStack,
     },
-    func::{FuncEntity},
+    func::FuncEntity,
     table::TableEntity,
     Func,
     FuncRef,
