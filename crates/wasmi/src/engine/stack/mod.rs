@@ -232,6 +232,7 @@ impl Stack {
     }
 
     /// Executes the given host function called by a Wasm function.
+    #[inline(always)]
     pub(crate) fn call_host<T>(
         &mut self,
         ctx: StoreContextMut<T>,
@@ -249,7 +250,7 @@ impl Stack {
     ///
     /// - If the host function returns a host side error or trap.
     /// - If the value stack overflowed upon pushing parameters or results.
-    #[inline(never)]
+    #[inline(always)]
     fn call_host_impl<T>(
         &mut self,
         ctx: StoreContextMut<T>,

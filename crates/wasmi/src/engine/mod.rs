@@ -45,7 +45,7 @@ pub(crate) use self::{
 };
 use crate::{
     core::{Trap, TrapCode},
-    func::FuncEntity,
+    func::{FuncEntity, HostFuncEntity},
     AsContext,
     AsContextMut,
     Func,
@@ -686,31 +686,43 @@ impl<'engine> EngineExecutor<'engine> {
                     }
                     None => return Ok(()),
                 },
-                CallOutcome::NestedCall(called_func) => {
-                    match ctx.as_context().store.inner.resolve_func(&called_func) {
+                CallOutcome::NestedCall(ref called_func) => {
+                    match ctx.as_context().store.inner.resolve_func(called_func) {
                         FuncEntity::Wasm(wasm_func) => {
                             *frame = self.stack.call_wasm(frame, wasm_func, &self.res.code_map)?;
                         }
                         FuncEntity::Host(host_func) => {
-                            cache.reset_default_memory_bytes();
                             let host_func = *host_func;
-                            self.stack
-                                .call_host(
-                                    ctx.as_context_mut(),
-                                    frame,
-                                    host_func,
-                                    &self.res.func_types,
-                                )
-                                .or_else(|trap| {
-                                    // Push the calling function onto the Stack to make it possible to resume execution.
-                                    self.stack.push_frame(*frame)?;
-                                    Err(TaggedTrap::host(called_func, trap))
-                                })?;
+                            cache.reset_default_memory_bytes();
+                            self.execute_host_func(
+                                ctx.as_context_mut(),
+                                host_func,
+                                frame,
+                                called_func,
+                            )?;
                         }
                     }
                 }
             }
         }
+    }
+
+    #[inline(never)]
+    fn execute_host_func<T>(
+        &mut self,
+        ctx: StoreContextMut<T>,
+        host_func: HostFuncEntity,
+        frame: &mut FuncFrame,
+        called_func: &Func,
+    ) -> Result<(), TaggedTrap> {
+        self.stack
+            .call_host(ctx, frame, host_func, &self.res.func_types)
+            .or_else(|trap| {
+                // Push the calling function onto the Stack to make it possible to resume execution.
+                self.stack.push_frame(*frame)?;
+                Err(TaggedTrap::host(*called_func, trap))
+            })?;
+        Ok(())
     }
 
     /// Executes the given function `frame` and returns the result.
