@@ -204,15 +204,11 @@ impl ValueStack {
     }
 
     /// Prepares the [`ValueStack`] for execution of the given Wasm function.
-    pub fn prepare_wasm_call(
-        &mut self,
-        header: &FuncHeader,
-    ) -> Result<(), TrapCode> {
+    pub fn prepare_wasm_call(&mut self, header: &FuncHeader) -> Result<(), TrapCode> {
         let max_stack_height = header.max_stack_height();
         self.reserve(max_stack_height)?;
         let len_locals = header.len_locals();
-        self
-            .extend_zeros(len_locals);
+        self.extend_zeros(len_locals);
         Ok(())
     }
 
