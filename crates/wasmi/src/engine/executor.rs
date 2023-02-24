@@ -122,10 +122,10 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         Self {
             ip,
             sp,
-            value_stack,
             ctx,
             cache,
             frame,
+            value_stack,
         }
     }
 
