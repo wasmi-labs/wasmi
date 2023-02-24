@@ -676,7 +676,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
         let func_index: u32 = self.sp.pop_as();
-        let table = self.cache.get_table(self.ctx, table);
+        let table = self.cache.get_table(table);
         let funcref = self
             .ctx
             .resolve_table(&table)
@@ -846,7 +846,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_table_size(&mut self, table_index: TableIdx) {
-        let table = self.cache.get_table(self.ctx, table_index);
+        let table = self.cache.get_table(table_index);
         let size = self.ctx.resolve_table(&table).size();
         self.sp.push_as(size);
         self.next_instr()
@@ -858,7 +858,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let result = self.consume_fuel_on_success(
             |costs| u64::from(delta) * costs.table_per_element,
             |this| {
-                let table = this.cache.get_table(this.ctx, table_index);
+                let table = this.cache.get_table(table_index);
                 this.ctx
                     .resolve_table_mut(&table)
                     .grow_untyped(delta, init)
@@ -882,7 +882,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.consume_fuel_on_success(
             |costs| u64::from(len) * costs.table_per_element,
             |this| {
-                let table = this.cache.get_table(this.ctx, table_index);
+                let table = this.cache.get_table(table_index);
                 this.ctx
                     .resolve_table_mut(&table)
                     .fill_untyped(dst, val, len)?;
@@ -895,7 +895,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     fn visit_table_get(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
         self.sp.try_eval_top(|index| {
             let index: u32 = index.into();
-            let table = self.cache.get_table(self.ctx, table_index);
+            let table = self.cache.get_table(table_index);
             self.ctx
                 .resolve_table(&table)
                 .get_untyped(index)
@@ -907,7 +907,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     fn visit_table_set(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
         let (index, value) = self.sp.pop2();
         let index: u32 = index.into();
-        let table = self.cache.get_table(self.ctx, table_index);
+        let table = self.cache.get_table(table_index);
         self.ctx
             .resolve_table_mut(&table)
             .set_untyped(index, value)
@@ -925,8 +925,8 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             |costs| u64::from(len) * costs.table_per_element,
             |this| {
                 // Query both tables and check if they are the same:
-                let dst = this.cache.get_table(this.ctx, dst);
-                let src = this.cache.get_table(this.ctx, src);
+                let dst = this.cache.get_table(dst);
+                let src = this.cache.get_table(src);
                 if Table::eq(&dst, &src) {
                     // Copy within the same table:
                     let table = this.ctx.resolve_table_mut(&dst);

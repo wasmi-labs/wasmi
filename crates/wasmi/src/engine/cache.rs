@@ -146,7 +146,7 @@ impl InstanceCache {
         &'a mut TableEntity,
         &'a ElementSegmentEntity,
     ) {
-        let tab = self.get_table(ctx, table);
+        let tab = self.get_table(table);
         let seg = self.get_element_segment(segment);
         let inst = self.instance();
         ctx.resolve_instance_table_element(inst, &tab, &seg)
@@ -223,11 +223,11 @@ impl InstanceCache {
     ///
     /// If the currently used [`Instance`] does not have a default table.
     #[inline]
-    pub fn get_table(&mut self, ctx: &StoreInner, index: TableIdx) -> Table {
+    pub fn get_table(&mut self, index: TableIdx) -> Table {
         let index = index.into_inner();
         match self.last_table {
             Some((table_index, table)) if index == table_index => table,
-            _ => self.load_table_at(ctx, index),
+            _ => self.load_table_at(index),
         }
     }
 
@@ -236,16 +236,13 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have the table.
-    fn load_table_at(&mut self, ctx: &StoreInner, index: u32) -> Table {
-        let table = ctx
-            .resolve_instance(self.instance())
-            .get_table(index)
-            .unwrap_or_else(|| {
-                panic!(
-                    "missing table at index {index} for instance: {:?}",
-                    self.instance
-                )
-            });
+    fn load_table_at(&mut self, index: u32) -> Table {
+        let table = self.instance_entity().get_table(index).unwrap_or_else(|| {
+            panic!(
+                "missing table at index {index} for instance: {:?}",
+                self.instance
+            )
+        });
         self.last_table = Some((index, table));
         table
     }
