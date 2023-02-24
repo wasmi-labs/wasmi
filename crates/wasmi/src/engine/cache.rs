@@ -91,9 +91,9 @@ impl InstanceCache {
     ///
     /// If there is no [`DataSegment`] for the [`Instance`] at the `index`.
     #[inline]
-    pub fn get_data_segment(&mut self, index: u32) -> DataSegment {
+    pub fn get_data_segment(&mut self, index: DataSegmentIdx) -> DataSegment {
         self.instance_entity()
-            .get_data_segment(index)
+            .get_data_segment(index.into_inner())
             .unwrap_or_else(|| {
                 panic!("missing data segment (at index {index:?}) in cached instance")
             })
@@ -125,7 +125,7 @@ impl InstanceCache {
         segment: DataSegmentIdx,
     ) -> (&'a mut [u8], &'a [u8]) {
         let mem = self.default_memory(ctx);
-        let seg = self.get_data_segment(segment.into_inner());
+        let seg = self.get_data_segment(segment);
         let (memory, segment) = ctx.resolve_memory_mut_and_data_segment(&mem, &seg);
         (memory.data_mut(), segment.bytes())
     }
