@@ -203,12 +203,7 @@ impl Stack {
         code_map: &CodeMap,
     ) -> Result<InstructionPtr, TrapCode> {
         let header = code_map.header(wasm_func.func_body());
-        let max_stack_height = header.max_stack_height();
-        self.values.reserve(max_stack_height)?;
-        let len_locals = header.len_locals();
-        self.values
-            .extend_zeros(len_locals)
-            .expect("stack overflow is unexpected due to previous stack reserve");
+        self.values.prepare_wasm_call(header)?;
         let iref = header.iref();
         let ip = code_map.instr_ptr(iref);
         Ok(ip)

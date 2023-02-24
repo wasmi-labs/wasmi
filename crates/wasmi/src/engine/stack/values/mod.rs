@@ -7,7 +7,7 @@ mod tests;
 
 pub use self::sp::ValueStackPtr;
 use super::{err_stack_overflow, DEFAULT_MAX_VALUE_STACK_HEIGHT, DEFAULT_MIN_VALUE_STACK_HEIGHT};
-use crate::core::TrapCode;
+use crate::{core::TrapCode, engine::code_map::FuncHeader};
 use alloc::vec::Vec;
 use core::{fmt, fmt::Debug, iter, mem::size_of};
 use wasmi_core::UntypedValue;
@@ -200,6 +200,20 @@ impl ValueStack {
             .ok_or(TrapCode::StackOverflow)?;
         cells.fill(UntypedValue::default());
         self.stack_ptr += additional;
+        Ok(())
+    }
+
+    /// Prepares the [`ValueStack`] for execution of the given Wasm function.
+    pub fn prepare_wasm_call(
+        &mut self,
+        header: &FuncHeader,
+    ) -> Result<(), TrapCode> {
+        let max_stack_height = header.max_stack_height();
+        self.reserve(max_stack_height)?;
+        let len_locals = header.len_locals();
+        self
+            .extend_zeros(len_locals)
+            .expect("stack overflow is unexpected due to previous stack reserve");
         Ok(())
     }
 
