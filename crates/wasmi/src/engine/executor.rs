@@ -165,7 +165,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         code_map: &'engine CodeMap,
     ) -> Self {
         let frame = call_stack.pop().expect("must have frame on the call stack");
-        cache.update_instance(frame.instance());
         let ip = frame.ip();
         let sp = value_stack.stack_ptr();
         Self {
