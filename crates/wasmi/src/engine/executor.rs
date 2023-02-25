@@ -775,7 +775,9 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.consume_fuel_on_success(
             |costs| n as u64 * costs.memory_per_byte,
             |this| {
-                let memory = this.cache.default_memory_bytes_mut(this.ctx)
+                let memory = this
+                    .cache
+                    .default_memory_bytes_mut(this.ctx)
                     .get_mut(offset..)
                     .and_then(|memory| memory.get_mut(..n))
                     .ok_or(TrapCode::MemoryOutOfBounds)?;
