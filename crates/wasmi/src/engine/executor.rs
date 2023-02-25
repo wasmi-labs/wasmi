@@ -25,7 +25,6 @@ use crate::{
     table::TableEntity,
     Func,
     FuncRef,
-    Memory,
     StoreInner,
     Table,
 };
@@ -403,16 +402,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         //
         // Properly constructed `wasmi` bytecode can never produce invalid `pc`.
         unsafe { self.ip.get() }
-    }
-
-    /// Returns the default linear memory.
-    ///
-    /// # Panics
-    ///
-    /// If there exists is no linear memory for the instance.
-    #[inline]
-    fn default_memory(&mut self) -> Memory {
-        self.cache.default_memory(self.ctx)
     }
 
     /// Returns the global variable at the given index.
@@ -799,14 +788,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     fn visit_memory_size(&mut self) {
-        let memory = self.default_memory();
+        let memory = self.cache.default_memory(self.ctx);
         let result: u32 = self.ctx.resolve_memory(&memory).current_pages().into();
         self.sp.push_as(result);
         self.next_instr()
     }
 
     fn visit_memory_grow(&mut self) -> Result<(), TrapCode> {
-        let memory = self.default_memory();
+        let memory = self.cache.default_memory(self.ctx);
         let delta: u32 = self.sp.pop_as();
         let delta = match Pages::new(delta) {
             Some(pages) => pages,
