@@ -29,7 +29,7 @@ pub struct InstanceCache {
     /// The last accessed global variable value of the currently used [`Instance`].
     last_global: Option<(u32, NonNull<UntypedValue>)>,
     /// The bytes of a default linear memory of the currently used [`Instance`].
-    default_memory_bytes: Option<CachedMemoryBytes>,
+    default_memory_bytes: Option<NonNull<[u8]>>,
 }
 
 impl From<&'_ Instance> for InstanceCache {
@@ -47,7 +47,8 @@ impl From<&'_ Instance> for InstanceCache {
 
 impl InstanceCache {
     /// Resolves the instances.
-    fn instance(&self) -> &Instance {
+    #[inline]
+    pub fn instance(&self) -> &Instance {
         &self.instance
     }
 
@@ -170,28 +171,39 @@ impl InstanceCache {
         }
     }
 
-    /// Returns a cached default linear memory.
+    /// Returns the bytes of the default linear memory.
     ///
     /// # Note
     ///
     /// This avoids one indirection compared to using the `default_memory`.
     #[inline]
-    pub fn default_memory_bytes(&mut self, ctx: &mut StoreInner) -> &mut CachedMemoryBytes {
-        match self.default_memory_bytes {
+    pub fn default_memory_bytes(&mut self, ctx: &mut StoreInner) -> &[u8] {
+        self.default_memory_bytes_mut(ctx)
+    }
+
+    /// Returns the mutable bytes of the default linear memory.
+    ///
+    /// # Note
+    ///
+    /// This avoids one indirection compared to using the `default_memory`.
+    #[inline]
+    pub fn default_memory_bytes_mut(&mut self, ctx: &mut StoreInner) -> &mut [u8] {
+        let cached = match self.default_memory_bytes {
             Some(ref mut cached) => cached,
             None => self.load_default_memory_bytes(ctx),
-        }
+        };
+        // SAFETY: This deref is safe since we only hold this pointer
+        //         as long as we are sure that nothing else can manipulate
+        //         the linear memory in a way that would invalidate the pointer.
+        unsafe { cached.as_mut() }
     }
 
     /// Loads and populates the cached default memory instance.
     ///
     /// Returns an exclusive reference to the cached default memory.
-    fn load_default_memory_bytes(&mut self, ctx: &mut StoreInner) -> &mut CachedMemoryBytes {
+    fn load_default_memory_bytes(&mut self, ctx: &mut StoreInner) -> &mut NonNull<[u8]> {
         let memory = self.default_memory(ctx);
-        self.default_memory_bytes = Some(CachedMemoryBytes::new(ctx, &memory));
-        self.default_memory_bytes
-            .as_mut()
-            .expect("cached_memory was just set to Some")
+        self.default_memory_bytes.insert(ctx.resolve_memory_mut(&memory).data().into())
     }
 
     /// Clears the cached default memory instance.
@@ -311,34 +323,5 @@ impl InstanceCache {
         //         as long as we are sure that nothing else can manipulate
         //         the global in a way that would invalidate the pointer.
         unsafe { ptr.as_mut() }
-    }
-}
-
-/// The cached bytes of a linear memory entity.
-#[derive(Debug)]
-pub struct CachedMemoryBytes {
-    /// The pointer to the linear memory slice of bytes.
-    data: NonNull<[u8]>,
-}
-
-impl CachedMemoryBytes {
-    /// Creates a new [`CachedMemoryBytes`] from the given [`Memory`].
-    #[inline]
-    pub fn new(ctx: &mut StoreInner, memory: &Memory) -> Self {
-        Self {
-            data: ctx.resolve_memory_mut(memory).data().into(),
-        }
-    }
-
-    /// Returns an exclusive reference to the underlying byte slices.
-    #[inline]
-    pub fn data(&self) -> &[u8] {
-        unsafe { self.data.as_ref() }
-    }
-
-    /// Returns an exclusive reference to the underlying byte slices.
-    #[inline]
-    pub fn data_mut(&mut self) -> &mut [u8] {
-        unsafe { self.data.as_mut() }
     }
 }
