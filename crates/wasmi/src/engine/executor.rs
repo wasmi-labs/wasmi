@@ -144,7 +144,17 @@ struct Executor<'ctx, 'engine, 'func> {
     /// This reference is mainly used to synchronize back state
     /// after manipulations to the value stack via `sp`.
     value_stack: &'engine mut ValueStack,
+    /// The call stack.
+    /// 
+    /// # Note
+    /// 
+    /// This is used to store the stack of nested function calls.
     call_stack: &'engine mut CallStack,
+    /// The Wasm function code map.
+    /// 
+    /// # Note
+    /// 
+    /// This is used to lookup Wasm function information.
     code_map: &'engine CodeMap,
 }
 
