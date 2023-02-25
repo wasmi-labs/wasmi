@@ -395,7 +395,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Returns the [`Instruction`] at the current program counter.
-    #[inline(always)]
+    #[inline]
     fn instr(&self) -> &Instruction {
         // # Safety
         //
@@ -573,7 +573,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// This also modifies the stack as the caller would expect it
     /// and synchronizes the execution state with the outer structures.
-    #[inline(always)]
+    #[inline]
     fn ret(&mut self, drop_keep: DropKeep) -> ReturnOutcome {
         self.sp.drop_keep(drop_keep);
         self.sync_stack_ptr();
