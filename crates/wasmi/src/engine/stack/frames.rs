@@ -33,11 +33,6 @@ impl FuncFrame {
         self.ip
     }
 
-    /// Updates the instruction pointer.
-    pub fn update_ip(&mut self, new_ip: InstructionPtr) {
-        self.ip = new_ip;
-    }
-
     /// Returns the instance of the [`FuncFrame`].
     pub fn instance(&self) -> &Instance {
         &self.instance
@@ -69,9 +64,9 @@ impl CallStack {
     }
 
     /// Initializes the [`CallStack`] given the Wasm function.
-    pub(crate) fn init(&mut self, ip: InstructionPtr, instance: &Instance) -> FuncFrame {
+    pub(crate) fn init(&mut self, ip: InstructionPtr, instance: &Instance) {
         self.clear();
-        FuncFrame::new(ip, instance)
+        self.frames.push(FuncFrame::new(ip, instance));
     }
 
     /// Pushes a Wasm caller function onto the [`CallStack`].
@@ -86,6 +81,11 @@ impl CallStack {
     /// Pops the last [`FuncFrame`] from the [`CallStack`] if any.
     pub fn pop(&mut self) -> Option<FuncFrame> {
         self.frames.pop()
+    }
+
+    /// Peeks the last [`FuncFrame`] from the [`CallStack`] if any.
+    pub fn peek(&self) -> Option<&FuncFrame> {
+        self.frames.last()
     }
 
     /// Returns the amount of function frames on the [`CallStack`].

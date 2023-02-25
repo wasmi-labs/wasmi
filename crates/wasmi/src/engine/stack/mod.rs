@@ -144,42 +144,16 @@ impl Stack {
         self.values.is_empty()
     }
 
-    /// Push the given `frame` onto the call stack.
-    ///
-    /// # Note
-    ///
-    /// This API is required for resumable function calls so that the currently
-    /// active function frame can be pushed back onto the stack before returning
-    /// in a resumable state. Upon resumption the function frame can be popped
-    /// from the stack again.
-    pub(super) fn push_frame(&mut self, frame: FuncFrame) -> Result<(), TrapCode> {
-        self.frames.push(frame)
-    }
-
-    /// Pops the top most [`FuncFrame`] if any.
-    ///
-    /// # Note
-    ///
-    /// This is the counterpart method oo [`push_frame`] and also
-    /// required when resuming a resumable function execution to
-    /// pop of the Wasm function that was called just before the
-    /// errorneous host function invocation that caused the resumable
-    /// function invocation to pause.
-    ///
-    /// [`push_frame`]: [`Stack::push_frame`]
-    pub(super) fn pop_frame(&mut self) -> Option<FuncFrame> {
-        self.frames.pop()
-    }
-
     /// Initializes the [`Stack`] for the given Wasm root function call.
     pub(crate) fn call_wasm_root(
         &mut self,
         wasm_func: &WasmFuncEntity,
         code_map: &CodeMap,
-    ) -> Result<FuncFrame, TrapCode> {
+    ) -> Result<(), TrapCode> {
         let iref = self.call_wasm_impl(wasm_func, code_map)?;
         let instance = wasm_func.instance();
-        Ok(self.frames.init(iref, instance))
+        self.frames.init(iref, instance);
+        Ok(())
     }
 
     /// Prepares the [`Stack`] for execution of the given Wasm [`FuncFrame`].
@@ -209,10 +183,14 @@ impl Stack {
     pub(crate) fn call_host<T>(
         &mut self,
         ctx: StoreContextMut<T>,
-        caller: &FuncFrame,
         host_func: HostFuncEntity,
         func_types: &FuncTypeRegistry,
     ) -> Result<(), Trap> {
+        let caller = self
+            .frames
+            .peek()
+            .copied()
+            .expect("must have a frame on the call stack");
         let instance = caller.instance();
         self.call_host_impl(ctx, host_func, Some(instance), func_types)
     }

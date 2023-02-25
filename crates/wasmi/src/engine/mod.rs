@@ -590,9 +590,8 @@ impl<'engine> EngineExecutor<'engine> {
         self.initialize_args(params);
         match ctx.as_context().store.inner.resolve_func(func) {
             FuncEntity::Wasm(wasm_func) => {
-                let mut frame = self.stack.call_wasm_root(wasm_func, &self.res.code_map)?;
-                let mut cache = InstanceCache::from(frame.instance());
-                self.execute_wasm_func(ctx.as_context_mut(), &mut frame, &mut cache)?;
+                self.stack.call_wasm_root(wasm_func, &self.res.code_map)?;
+                self.execute_wasm_func(ctx.as_context_mut())?;
             }
             FuncEntity::Host(host_func) => {
                 let host_func = *host_func;
@@ -627,12 +626,11 @@ impl<'engine> EngineExecutor<'engine> {
             .values
             .drop(host_func.ty(ctx.as_context()).params().len());
         self.stack.values.extend(params.call_params());
-        let mut frame = self
-            .stack
-            .pop_frame()
-            .expect("a frame must be on the call stack upon resumption");
-        let mut cache = InstanceCache::from(frame.instance());
-        self.execute_wasm_func(ctx.as_context_mut(), &mut frame, &mut cache)?;
+        assert!(
+            self.stack.frames.peek().is_some(),
+            "a frame must be on the call stack upon resumption"
+        );
+        self.execute_wasm_func(ctx.as_context_mut())?;
         let results = self.write_results_back(results);
         Ok(results)
     }
@@ -664,14 +662,16 @@ impl<'engine> EngineExecutor<'engine> {
     /// # Errors
     ///
     /// When encountering a Wasm or host trap during the execution of `func`.
-    fn execute_wasm_func<T>(
-        &mut self,
-        mut ctx: StoreContextMut<T>,
-        frame: &mut FuncFrame,
-        cache: &mut InstanceCache,
-    ) -> Result<(), TaggedTrap> {
+    fn execute_wasm_func<T>(&mut self, mut ctx: StoreContextMut<T>) -> Result<(), TaggedTrap> {
+        let mut cache = self
+            .stack
+            .frames
+            .peek()
+            .map(FuncFrame::instance)
+            .map(InstanceCache::from)
+            .expect("must have frame on the call stack");
         loop {
-            match self.execute_frame(ctx.as_context_mut(), frame, cache)? {
+            match self.execute_frame(ctx.as_context_mut(), &mut cache)? {
                 WasmOutcome::Return => return Ok(()),
                 WasmOutcome::Call(func) => {
                     let host_func = match ctx.as_context().store.inner.resolve_func(&func) {
@@ -680,12 +680,8 @@ impl<'engine> EngineExecutor<'engine> {
                     };
                     cache.reset_default_memory_bytes();
                     self.stack
-                        .call_host(ctx.as_context_mut(), frame, host_func, &self.res.func_types)
-                        .or_else(|trap| {
-                            // Push the calling function onto the Stack to make it possible to resume execution.
-                            self.stack.push_frame(*frame)?;
-                            Err(TaggedTrap::host(func, trap))
-                        })?;
+                        .call_host(ctx.as_context_mut(), host_func, &self.res.func_types)
+                        .map_err(|trap| TaggedTrap::host(func, trap))?;
                 }
             }
         }
@@ -700,7 +696,6 @@ impl<'engine> EngineExecutor<'engine> {
     fn execute_frame<T>(
         &mut self,
         ctx: StoreContextMut<T>,
-        frame: &mut FuncFrame,
         cache: &mut InstanceCache,
     ) -> Result<WasmOutcome, Trap> {
         /// Converts a [`TrapCode`] into a [`Trap`].
@@ -717,7 +712,6 @@ impl<'engine> EngineExecutor<'engine> {
         let value_stack = &mut self.stack.values;
         let call_stack = &mut self.stack.frames;
         let code_map = &self.res.code_map;
-        execute_frame(store_inner, cache, frame, value_stack, call_stack, code_map)
-            .map_err(make_trap)
+        execute_frame(store_inner, cache, value_stack, call_stack, code_map).map_err(make_trap)
     }
 }

@@ -83,12 +83,11 @@ pub enum ReturnOutcome {
 pub fn execute_frame<'engine>(
     ctx: &mut StoreInner,
     cache: &'engine mut InstanceCache,
-    frame: &mut FuncFrame,
     value_stack: &'engine mut ValueStack,
     call_stack: &'engine mut CallStack,
     code_map: &'engine CodeMap,
 ) -> Result<WasmOutcome, TrapCode> {
-    Executor::new(ctx, cache, frame, value_stack, call_stack, code_map).execute()
+    Executor::new(ctx, cache, value_stack, call_stack, code_map).execute()
 }
 
 /// The function signature of Wasm load operations.
@@ -124,7 +123,7 @@ const INVALID_GROWTH_ERRCODE: u32 = u32::MAX;
 
 /// An execution context for executing a `wasmi` function frame.
 #[derive(Debug)]
-struct Executor<'ctx, 'engine, 'func> {
+struct Executor<'ctx, 'engine> {
     /// The pointer to the currently executed instruction.
     ip: InstructionPtr,
     /// Stores the value stack of live values on the Wasm stack.
@@ -135,8 +134,6 @@ struct Executor<'ctx, 'engine, 'func> {
     ctx: &'ctx mut StoreInner,
     /// Stores frequently used instance related data.
     cache: &'engine mut InstanceCache,
-    /// The function frame that is being executed.
-    frame: &'func mut FuncFrame,
     /// The value stack.
     ///
     /// # Note
@@ -145,30 +142,30 @@ struct Executor<'ctx, 'engine, 'func> {
     /// after manipulations to the value stack via `sp`.
     value_stack: &'engine mut ValueStack,
     /// The call stack.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This is used to store the stack of nested function calls.
     call_stack: &'engine mut CallStack,
     /// The Wasm function code map.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This is used to lookup Wasm function information.
     code_map: &'engine CodeMap,
 }
 
-impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
+impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Creates a new [`Executor`] for executing a `wasmi` function frame.
     #[inline(always)]
     pub fn new(
         ctx: &'ctx mut StoreInner,
         cache: &'engine mut InstanceCache,
-        frame: &'func mut FuncFrame,
         value_stack: &'engine mut ValueStack,
         call_stack: &'engine mut CallStack,
         code_map: &'engine CodeMap,
     ) -> Self {
+        let frame = call_stack.pop().expect("must have frame on the call stack");
         cache.update_instance(frame.instance());
         let ip = frame.ip();
         let sp = value_stack.stack_ptr();
@@ -177,7 +174,6 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             sp,
             ctx,
             cache,
-            frame,
             value_stack,
             call_stack,
             code_map,
@@ -570,8 +566,9 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     #[inline(always)]
     fn call_func(&mut self, func: &Func) -> Result<CallOutcome, TrapCode> {
         self.next_instr();
-        self.frame.update_ip(self.ip);
         self.sync_stack_ptr();
+        self.call_stack
+            .push(FuncFrame::new(self.ip, self.cache.instance()))?;
         let wasm_func = match self.ctx.resolve_func(func) {
             FuncEntity::Wasm(wasm_func) => wasm_func,
             FuncEntity::Host(_host_func) => return Ok(CallOutcome::Call(*func)),
@@ -579,12 +576,8 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let header = self.code_map.header(wasm_func.func_body());
         self.value_stack.prepare_wasm_call(header)?;
         self.sp = self.value_stack.stack_ptr();
-        let iref = header.iref();
-        self.ip = self.code_map.instr_ptr(iref);
-        self.call_stack.push(*self.frame)?;
-        let instance = wasm_func.instance();
-        self.cache.update_instance(instance);
-        *self.frame = FuncFrame::new(self.ip, instance);
+        self.cache.update_instance(wasm_func.instance());
+        self.ip = self.code_map.instr_ptr(header.iref());
         Ok(CallOutcome::Continue)
     }
 
@@ -600,7 +593,6 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             Some(caller) => {
                 self.ip = caller.ip();
                 self.cache.update_instance(caller.instance());
-                *self.frame = caller;
                 ReturnOutcome::Wasm
             }
             None => ReturnOutcome::Host,
@@ -660,7 +652,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 }
 
-impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
+impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn visit_unreachable(&mut self) -> Result<(), TrapCode> {
         Err(TrapCode::UnreachableCodeReached).map_err(Into::into)
     }
@@ -773,7 +765,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let actual_signature = self.ctx.resolve_func(func).ty_dedup();
         let expected_signature = self
             .ctx
-            .resolve_instance(self.frame.instance())
+            .resolve_instance(self.cache.instance())
             .get_signature(func_type.into_inner())
             .unwrap_or_else(|| {
                 panic!("missing signature for call_indirect at index: {func_type:?}")
