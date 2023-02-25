@@ -414,6 +414,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// # Panics
     ///
     /// If there is no global variable at the given index.
+    #[inline]
     fn global(&mut self, global_index: GlobalIdx) -> &mut UntypedValue {
         self.cache.get_global(self.ctx, global_index.into_inner())
     }
@@ -431,6 +432,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// - `{i32, i64}.load16_u`
     /// - `i64.load32_s`
     /// - `i64.load32_u`
+    #[inline]
     fn execute_load_extend(
         &mut self,
         offset: Offset,
@@ -454,6 +456,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// - `{i32, i64}.store8`
     /// - `{i32, i64}.store16`
     /// - `i64.store32`
+    #[inline]
     fn execute_store_wrap(
         &mut self,
         offset: Offset,
