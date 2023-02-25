@@ -70,6 +70,7 @@ impl CallStack {
     }
 
     /// Pushes a Wasm caller function onto the [`CallStack`].
+    #[inline]
     pub(crate) fn push(&mut self, caller: FuncFrame) -> Result<(), TrapCode> {
         if self.len() == self.recursion_limit {
             return Err(err_stack_overflow());
@@ -79,16 +80,19 @@ impl CallStack {
     }
 
     /// Pops the last [`FuncFrame`] from the [`CallStack`] if any.
+    #[inline]
     pub fn pop(&mut self) -> Option<FuncFrame> {
         self.frames.pop()
     }
 
     /// Peeks the last [`FuncFrame`] from the [`CallStack`] if any.
+    #[inline]
     pub fn peek(&self) -> Option<&FuncFrame> {
         self.frames.last()
     }
 
     /// Returns the amount of function frames on the [`CallStack`].
+    #[inline]
     fn len(&self) -> usize {
         self.frames.len()
     }
