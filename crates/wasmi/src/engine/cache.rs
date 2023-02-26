@@ -222,7 +222,7 @@ impl InstanceCache {
     /// [`Store`]: crate::Store
     #[inline]
     pub fn reset(&mut self) {
-        self.default_memory_bytes = None;
+        self.reset_default_memory_bytes();
         self.last_global = None;
     }
 
