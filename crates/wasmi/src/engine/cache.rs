@@ -218,7 +218,7 @@ impl InstanceCache {
     /// - Furthermore a called host function could introduce new global
     ///   variables to the [`Store`] and thus might invalidate cached
     ///   global variables. So we need to reset them as well.
-    /// 
+    ///
     /// [`Store`]: crate::Store
     #[inline]
     pub fn reset(&mut self) {
