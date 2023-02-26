@@ -352,15 +352,6 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.cache.default_memory(self.ctx)
     }
 
-    /// Returns the global variable at the given index.
-    ///
-    /// # Panics
-    ///
-    /// If there is no global variable at the given index.
-    fn global(&mut self, global_index: GlobalIdx) -> &mut UntypedValue {
-        self.cache.get_global(self.ctx, global_index.into_inner())
-    }
-
     /// Executes a generic Wasm `store[N_{s|u}]` operation.
     ///
     /// # Note
@@ -654,19 +645,19 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_global_get(&mut self, global_index: GlobalIdx) {
-        let global_value = *self.global(global_index);
+        let global_value = self.cache.get_global(self.ctx, global_index);
         self.sp.push(global_value);
         self.next_instr()
     }
 
     fn visit_global_set(&mut self, global_index: GlobalIdx) {
         let new_value = self.sp.pop();
-        *self.global(global_index) = new_value;
+        self.cache.set_global(self.ctx, global_index, new_value);
         self.next_instr()
     }
 
     fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
-        let callee = self.cache.get_func(self.ctx, func_index.into_inner());
+        let callee = self.cache.get_func(self.ctx, func_index);
         self.call_func(&callee)
     }
 
@@ -978,7 +969,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     }
 
     fn visit_ref_func(&mut self, func_index: FuncIdx) {
-        let func = self.cache.get_func(self.ctx, func_index.into_inner());
+        let func = self.cache.get_func(self.ctx, func_index);
         let funcref = FuncRef::new(func);
         self.sp.push_as(funcref);
         self.next_instr();

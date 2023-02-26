@@ -1,4 +1,4 @@
-use super::bytecode::{DataSegmentIdx, ElementSegmentIdx, TableIdx};
+use super::bytecode::{DataSegmentIdx, ElementSegmentIdx, GlobalIdx, TableIdx, FuncIdx};
 use crate::{
     instance::InstanceEntity,
     memory::DataSegment,
@@ -282,7 +282,8 @@ impl InstanceCache {
     ///
     /// If the currently used [`Instance`] does not have a [`Func`] at the index.
     #[inline]
-    pub fn get_func(&mut self, ctx: &StoreInner, func_idx: u32) -> Func {
+    pub fn get_func(&mut self, ctx: &StoreInner, func_idx: FuncIdx) -> Func {
+        let func_idx = func_idx.into_inner();
         match self.last_func {
             Some((index, func)) if index == func_idx => func,
             _ => self.load_func_at(ctx, func_idx),
@@ -296,7 +297,7 @@ impl InstanceCache {
     ///
     /// If the currently used [`Instance`] does not have a default table.
     #[cold]
-    fn load_global_at(&mut self, ctx: &mut StoreInner, index: u32) -> NonNull<UntypedValue> {
+    fn load_global_ref_at(&mut self, ctx: &mut StoreInner, index: u32) -> NonNull<UntypedValue> {
         let global = ctx
             .resolve_instance(self.instance())
             .get_global(index)
@@ -319,14 +320,42 @@ impl InstanceCache {
     ///
     /// If the currently used [`Instance`] does not have a [`Func`] at the index.
     #[inline]
-    pub fn get_global(&mut self, ctx: &mut StoreInner, global_idx: u32) -> &mut UntypedValue {
+    fn get_global_ref(&mut self, ctx: &mut StoreInner, global_idx: GlobalIdx) -> &mut UntypedValue {
+        let global_idx = global_idx.into_inner();
         let mut ptr = match self.last_global {
             Some((index, global)) if index == global_idx => global,
-            _ => self.load_global_at(ctx, global_idx),
+            _ => self.load_global_ref_at(ctx, global_idx),
         };
         // SAFETY: This deref is safe since we only hold this pointer
         //         as long as we are sure that nothing else can manipulate
         //         the global in a way that would invalidate the pointer.
         unsafe { ptr.as_mut() }
+    }
+
+    /// Returns a pointer to the value of the global variable at `index`
+    /// of the currently used [`Instance`].
+    ///
+    /// # Panics
+    ///
+    /// If the currently used [`Instance`] does not have a [`Func`] at the index.
+    #[inline]
+    pub fn get_global(&mut self, ctx: &mut StoreInner, global_idx: GlobalIdx) -> UntypedValue {
+        *self.get_global_ref(ctx, global_idx)
+    }
+
+    /// Returns a pointer to the value of the global variable at `index`
+    /// of the currently used [`Instance`].
+    ///
+    /// # Panics
+    ///
+    /// If the currently used [`Instance`] does not have a [`Func`] at the index.
+    #[inline]
+    pub fn set_global(
+        &mut self,
+        ctx: &mut StoreInner,
+        global_idx: GlobalIdx,
+        new_value: UntypedValue,
+    ) {
+        *self.get_global_ref(ctx, global_idx) = new_value;
     }
 }
