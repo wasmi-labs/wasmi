@@ -122,17 +122,18 @@ const INVALID_GROWTH_ERRCODE: u32 = u32::MAX;
 
 /// An execution context for executing a `wasmi` function frame.
 #[derive(Debug)]
+#[repr(C)]
 struct Executor<'ctx, 'engine> {
-    /// The pointer to the currently executed instruction.
-    ip: InstructionPtr,
     /// Stores the value stack of live values on the Wasm stack.
     sp: ValueStackPtr,
+    /// The pointer to the currently executed instruction.
+    ip: InstructionPtr,
+    /// Stores frequently used instance related data.
+    cache: &'engine mut InstanceCache,
     /// A mutable [`StoreInner`] context.
     ///
     /// [`StoreInner`]: [`crate::StoreInner`]
     ctx: &'ctx mut StoreInner,
-    /// Stores frequently used instance related data.
-    cache: &'engine mut InstanceCache,
     /// The value stack.
     ///
     /// # Note
@@ -168,10 +169,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let ip = frame.ip();
         let sp = value_stack.stack_ptr();
         Self {
-            ip,
             sp,
-            ctx,
+            ip,
             cache,
+            ctx,
             value_stack,
             call_stack,
             code_map,
@@ -489,7 +490,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Shifts the instruction pointer to the next instruction.
     #[inline]
     fn next_instr(&mut self) {
-        self.ip_add(1)
+        self.ip.add(1)
     }
 
     /// Shifts the instruction pointer to the next instruction and returns `Ok(())`.
@@ -507,21 +508,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline]
     fn branch_to(&mut self, params: BranchParams) {
         self.sp.drop_keep(params.drop_keep());
-        self.ip_add(params.offset().into_i32() as isize)
-    }
-
-    /// Adjusts the [`InstructionPtr`] by `delta` in terms of [`Instruction`].
-    #[inline]
-    fn ip_add(&mut self, delta: isize) {
-        // Safety: This is safe since we carefully constructed the `wasmi`
-        //         bytecode in conjunction with Wasm validation so that the
-        //         offsets of the instruction pointer within the sequence of
-        //         instructions never make the instruction pointer point out
-        //         of bounds of the instructions that belong to the function
-        //         that is currently executed.
-        unsafe {
-            self.ip.offset(delta);
-        }
+        self.ip.offset(params.offset().into_i32() as isize)
     }
 
     /// Synchronizes the current stack pointer with the [`ValueStack`].
@@ -692,9 +679,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         // A normalized index will always yield a target without panicking.
         let normalized_index = cmp::min(index as usize, max_index);
         // Update `pc`:
-        unsafe {
-            self.ip.offset((normalized_index + 1) as isize);
-        }
+        self.ip.add(normalized_index + 1);
     }
 
     #[inline(always)]

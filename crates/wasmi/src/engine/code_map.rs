@@ -164,8 +164,13 @@ impl InstructionPtr {
     /// offset values so that the [`InstructionPtr`] never points out of valid
     /// bounds of the instructions of the same compiled Wasm function.
     #[inline(always)]
-    pub unsafe fn offset(&mut self, by: isize) {
-        self.ptr = self.ptr.offset(by);
+    pub fn offset(&mut self, by: isize) {
+        self.ptr = unsafe { self.ptr.offset(by) };
+    }
+
+    #[inline(always)]
+    pub fn add(&mut self, delta: usize) {
+        self.ptr = unsafe { self.ptr.add(delta) };
     }
 
     /// Returns a shared reference to the currently pointed at [`Instruction`].
