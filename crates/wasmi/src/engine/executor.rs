@@ -559,7 +559,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             .push(FuncFrame::new(self.ip, self.cache.instance()))?;
         let wasm_func = match self.ctx.resolve_func(func) {
             FuncEntity::Wasm(wasm_func) => wasm_func,
-            FuncEntity::Host(_host_func) => return Ok(CallOutcome::Call(*func)),
+            FuncEntity::Host(_host_func) => {
+                self.cache.reset();
+                return Ok(CallOutcome::Call(*func))
+            }
         };
         let header = self.code_map.header(wasm_func.func_body());
         self.value_stack.prepare_wasm_call(header)?;

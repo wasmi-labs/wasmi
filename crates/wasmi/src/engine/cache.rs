@@ -201,12 +201,27 @@ impl InstanceCache {
     ///
     /// - This is important when operations such as `memory.grow` have
     ///   occured that might have invalidated the cached memory.
-    /// - Conservatively it is also recommended to reset default memory bytes
-    ///   when calling a host function since that might invalidate linear memory
-    ///   without the Wasm engine knowing.
+    /// - It is equally important to reset cached default memory bytes
+    ///   when calling a host function since it might call `memory.grow`.
     #[inline]
     pub fn reset_default_memory_bytes(&mut self) {
         self.default_memory_bytes = None;
+        self.last_global = None;
+    }
+
+    /// Clears the cached default memory instance and global variable.
+    ///
+    /// # Note
+    ///
+    /// - This is required for host function calls for reasons explained
+    ///   in [`InstanceCache::reset_default_memory_bytes`].
+    /// - Furthermore a called host function could introduce new global
+    ///   variables to the [`Store`] and thus might invalidate cached
+    ///   global variables. So we need to reset them as well.
+    #[inline]
+    pub fn reset(&mut self) {
+        self.default_memory_bytes = None;
+        self.last_global = None;
     }
 
     /// Returns the [`Table`] at the `index` of the currently used [`Instance`].
