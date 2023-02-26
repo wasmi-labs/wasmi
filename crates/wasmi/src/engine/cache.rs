@@ -1,4 +1,4 @@
-use super::bytecode::{DataSegmentIdx, ElementSegmentIdx, TableIdx};
+use super::bytecode::{DataSegmentIdx, ElementSegmentIdx, GlobalIdx, TableIdx};
 use crate::{
     instance::InstanceEntity,
     memory::DataSegment,
@@ -17,7 +17,10 @@ use wasmi_core::UntypedValue;
 
 /// A cache for frequently used entities of an [`Instance`].
 #[derive(Debug)]
+#[repr(C)]
 pub struct InstanceCache {
+    /// The bytes of a default linear memory of the currently used [`Instance`].
+    default_memory_bytes: Option<NonNull<[u8]>>,
     /// The current instance in use.
     instance: Instance,
     /// The default linear memory of the currently used [`Instance`].
@@ -28,8 +31,6 @@ pub struct InstanceCache {
     last_func: Option<(u32, Func)>,
     /// The last accessed global variable value of the currently used [`Instance`].
     last_global: Option<(u32, NonNull<UntypedValue>)>,
-    /// The bytes of a default linear memory of the currently used [`Instance`].
-    default_memory_bytes: Option<CachedMemoryBytes>,
 }
 
 impl From<&'_ Instance> for InstanceCache {
@@ -47,12 +48,14 @@ impl From<&'_ Instance> for InstanceCache {
 
 impl InstanceCache {
     /// Resolves the instances.
+    #[inline]
     pub fn instance(&self) -> &Instance {
         &self.instance
     }
 
     /// Updates the cached [`Instance`].
     #[cold]
+    #[inline]
     fn set_instance(&mut self, instance: &Instance) {
         self.instance = *instance;
         self.default_memory = None;
@@ -77,12 +80,12 @@ impl InstanceCache {
     ///
     /// If there is no [`DataSegment`] for the [`Instance`] at the `index`.
     #[inline]
-    pub fn get_data_segment(&mut self, ctx: &mut StoreInner, index: u32) -> DataSegment {
+    pub fn get_data_segment(&mut self, ctx: &StoreInner, index: u32) -> DataSegment {
         let instance = self.instance();
         ctx.resolve_instance(self.instance())
             .get_data_segment(index)
             .unwrap_or_else(|| {
-                panic!("missing data segment ({index:?}) for instance: {instance:?}",)
+                unreachable!("missing data segment ({index:?}) for instance: {instance:?}",)
             })
     }
 
@@ -94,14 +97,14 @@ impl InstanceCache {
     #[inline]
     pub fn get_element_segment(
         &mut self,
-        ctx: &mut StoreInner,
+        ctx: &StoreInner,
         index: ElementSegmentIdx,
     ) -> ElementSegment {
         let instance = self.instance();
         ctx.resolve_instance(self.instance())
             .get_element_segment(index.into_inner())
             .unwrap_or_else(|| {
-                panic!("missing element segment ({index:?}) for instance: {instance:?}",)
+                unreachable!("missing element segment ({index:?}) for instance: {instance:?}",)
             })
     }
 
@@ -116,9 +119,9 @@ impl InstanceCache {
         ctx: &'a mut StoreInner,
         segment: DataSegmentIdx,
     ) -> (&'a mut [u8], &'a [u8]) {
-        let mem = self.default_memory(ctx);
         let seg = self.get_data_segment(ctx, segment.into_inner());
-        let (memory, segment) = ctx.resolve_memory_mut_and_data_segment(&mem, &seg);
+        let mem = self.default_memory(ctx);
+        let (memory, segment) = ctx.resolve_memory_mut_and_data_segment(mem, &seg);
         (memory.data_mut(), segment.bytes())
     }
 
@@ -149,14 +152,17 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a default linear memory.
-    fn load_default_memory(&mut self, ctx: &StoreInner) -> Memory {
+    #[cold]
+    #[inline]
+    fn load_default_memory(&mut self, ctx: &StoreInner) -> &Memory {
         let instance = self.instance();
         let default_memory = ctx
             .resolve_instance(instance)
             .get_memory(DEFAULT_MEMORY_INDEX)
-            .unwrap_or_else(|| panic!("missing default linear memory for instance: {instance:?}",));
-        self.default_memory = Some(default_memory);
-        default_memory
+            .unwrap_or_else(|| {
+                unreachable!("missing default linear memory for instance: {instance:?}")
+            });
+        self.default_memory.insert(default_memory)
     }
 
     /// Returns the default [`Memory`] of the currently used [`Instance`].
@@ -165,9 +171,9 @@ impl InstanceCache {
     ///
     /// If the currently used [`Instance`] does not have a default linear memory.
     #[inline]
-    pub fn default_memory(&mut self, ctx: &StoreInner) -> Memory {
+    pub fn default_memory(&mut self, ctx: &StoreInner) -> &Memory {
         match self.default_memory {
-            Some(default_memory) => default_memory,
+            Some(ref default_memory) => default_memory,
             None => self.load_default_memory(ctx),
         }
     }
@@ -178,22 +184,23 @@ impl InstanceCache {
     ///
     /// This avoids one indirection compared to using the `default_memory`.
     #[inline]
-    pub fn default_memory_bytes(&mut self, ctx: &mut StoreInner) -> &mut CachedMemoryBytes {
-        match self.default_memory_bytes {
+    pub fn default_memory_bytes<'ctx>(&mut self, ctx: &'ctx mut StoreInner) -> &'ctx mut [u8] {
+        let bytes = match self.default_memory_bytes {
             Some(ref mut cached) => cached,
             None => self.load_default_memory_bytes(ctx),
-        }
+        };
+        unsafe { bytes.as_mut() }
     }
 
     /// Loads and populates the cached default memory instance.
     ///
     /// Returns an exclusive reference to the cached default memory.
-    fn load_default_memory_bytes(&mut self, ctx: &mut StoreInner) -> &mut CachedMemoryBytes {
-        let memory = self.default_memory(ctx);
-        self.default_memory_bytes = Some(CachedMemoryBytes::new(ctx, &memory));
+    #[cold]
+    #[inline]
+    fn load_default_memory_bytes(&mut self, ctx: &mut StoreInner) -> &mut NonNull<[u8]> {
+        let memory = *self.default_memory(ctx);
         self.default_memory_bytes
-            .as_mut()
-            .expect("cached_memory was just set to Some")
+            .insert(ctx.resolve_memory_mut(&memory).data().into())
     }
 
     /// Clears the cached default memory instance.
@@ -246,12 +253,14 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have the table.
+    #[cold]
+    #[inline]
     fn load_table_at(&mut self, ctx: &StoreInner, index: u32) -> Table {
         let table = ctx
             .resolve_instance(self.instance())
             .get_table(index)
             .unwrap_or_else(|| {
-                panic!(
+                unreachable!(
                     "missing table at index {index} for instance: {:?}",
                     self.instance
                 )
@@ -265,12 +274,14 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have the function.
+    #[cold]
+    #[inline]
     fn load_func_at(&mut self, ctx: &StoreInner, index: u32) -> Func {
         let func = ctx
             .resolve_instance(self.instance())
             .get_func(index)
             .unwrap_or_else(|| {
-                panic!(
+                unreachable!(
                     "missing func at index {index} for instance: {:?}",
                     self.instance
                 )
@@ -298,6 +309,8 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a default table.
+    #[cold]
+    #[inline]
     fn load_global_at(&mut self, ctx: &mut StoreInner, index: u32) -> NonNull<UntypedValue> {
         let global = ctx
             .resolve_instance(self.instance())
@@ -305,7 +318,7 @@ impl InstanceCache {
             .as_ref()
             .map(|global| ctx.resolve_global_mut(global).get_untyped_ptr())
             .unwrap_or_else(|| {
-                panic!(
+                unreachable!(
                     "missing global variable at index {index} for instance: {:?}",
                     self.instance
                 )
@@ -320,44 +333,47 @@ impl InstanceCache {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a [`Func`] at the index.
-    #[inline]
-    pub fn get_global(&mut self, ctx: &mut StoreInner, global_idx: u32) -> &mut UntypedValue {
+    #[inline(always)]
+    fn get_global_mut<'ctx>(
+        &mut self,
+        ctx: &'ctx mut StoreInner,
+        global_index: GlobalIdx,
+    ) -> &'ctx mut UntypedValue {
+        let global_index = global_index.into_inner();
         let mut ptr = match self.last_global {
-            Some((index, global)) if index == global_idx => global,
-            _ => self.load_global_at(ctx, global_idx),
+            Some((index, global)) if index == global_index => global,
+            _ => self.load_global_at(ctx, global_index),
         };
         // SAFETY: This deref is safe since we only hold this pointer
         //         as long as we are sure that nothing else can manipulate
         //         the global in a way that would invalidate the pointer.
         unsafe { ptr.as_mut() }
     }
-}
 
-/// The cached bytes of a linear memory entity.
-#[derive(Debug)]
-pub struct CachedMemoryBytes {
-    /// The pointer to the linear memory slice of bytes.
-    data: NonNull<[u8]>,
-}
-
-impl CachedMemoryBytes {
-    /// Creates a new [`CachedMemoryBytes`] from the given [`Memory`].
-    #[inline]
-    pub fn new(ctx: &mut StoreInner, memory: &Memory) -> Self {
-        Self {
-            data: ctx.resolve_memory_mut(memory).data().into(),
-        }
+    /// Returns a pointer to the value of the global variable at `index`
+    /// of the currently used [`Instance`].
+    ///
+    /// # Panics
+    ///
+    /// If the currently used [`Instance`] does not have a [`Func`] at the index.
+    #[inline(always)]
+    pub fn get_global(&mut self, ctx: &mut StoreInner, global_index: GlobalIdx) -> UntypedValue {
+        *self.get_global_mut(ctx, global_index)
     }
 
-    /// Returns an exclusive reference to the underlying byte slices.
-    #[inline]
-    pub fn data(&self) -> &[u8] {
-        unsafe { self.data.as_ref() }
-    }
-
-    /// Returns an exclusive reference to the underlying byte slices.
-    #[inline]
-    pub fn data_mut(&mut self) -> &mut [u8] {
-        unsafe { self.data.as_mut() }
+    /// Returns a pointer to the value of the global variable at `index`
+    /// of the currently used [`Instance`].
+    ///
+    /// # Panics
+    ///
+    /// If the currently used [`Instance`] does not have a [`Func`] at the index.
+    #[inline(always)]
+    pub fn set_global(
+        &mut self,
+        ctx: &mut StoreInner,
+        global_index: GlobalIdx,
+        new_value: UntypedValue,
+    ) {
+        *self.get_global_mut(ctx, global_index) = new_value;
     }
 }

@@ -403,16 +403,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         unsafe { self.ip.get() }
     }
 
-    /// Returns the global variable at the given index.
-    ///
-    /// # Panics
-    ///
-    /// If there is no global variable at the given index.
-    #[inline]
-    fn global(&mut self, global_index: GlobalIdx) -> &mut UntypedValue {
-        self.cache.get_global(self.ctx, global_index.into_inner())
-    }
-
     /// Executes a generic Wasm `store[N_{s|u}]` operation.
     ///
     /// # Note
@@ -433,7 +423,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         load_extend: WasmLoadOp,
     ) -> Result<(), TrapCode> {
         self.sp.try_eval_top(|address| {
-            let memory = self.cache.default_memory_bytes(self.ctx).data();
+            let memory = self.cache.default_memory_bytes(self.ctx);
             let value = load_extend(memory, address, offset.into_inner())?;
             Ok(value)
         })?;
@@ -457,7 +447,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         store_wrap: WasmStoreOp,
     ) -> Result<(), TrapCode> {
         let (address, value) = self.sp.pop2();
-        let memory = self.cache.default_memory_bytes(self.ctx).data_mut();
+        let memory = self.cache.default_memory_bytes(self.ctx);
         store_wrap(memory, address, offset.into_inner(), value)?;
         self.try_next_instr()
     }
@@ -735,7 +725,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     #[inline(always)]
     fn visit_global_get(&mut self, global_index: GlobalIdx) {
-        let global_value = *self.global(global_index);
+        let global_value = self.cache.get_global(self.ctx, global_index);
         self.sp.push(global_value);
         self.next_instr()
     }
@@ -743,7 +733,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     fn visit_global_set(&mut self, global_index: GlobalIdx) {
         let new_value = self.sp.pop();
-        *self.global(global_index) = new_value;
+        self.cache.set_global(self.ctx, global_index, new_value);
         self.next_instr()
     }
 
@@ -810,14 +800,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     fn visit_memory_size(&mut self) {
         let memory = self.cache.default_memory(self.ctx);
-        let result: u32 = self.ctx.resolve_memory(&memory).current_pages().into();
+        let result: u32 = self.ctx.resolve_memory(memory).current_pages().into();
         self.sp.push_as(result);
         self.next_instr()
     }
 
     #[inline(always)]
     fn visit_memory_grow(&mut self) -> Result<(), TrapCode> {
-        let memory = self.cache.default_memory(self.ctx);
         let delta: u32 = self.sp.pop_as();
         let delta = match Pages::new(delta) {
             Some(pages) => pages,
@@ -833,9 +822,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 delta_in_bytes * costs.memory_per_byte
             },
             |this| {
+                let memory = this.cache.default_memory(this.ctx);
                 let new_pages = this
                     .ctx
-                    .resolve_memory_mut(&memory)
+                    .resolve_memory_mut(memory)
                     .grow(delta)
                     .map(u32::from)
                     .map_err(|_| EntityGrowError::InvalidGrow)?;
@@ -865,9 +855,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.consume_fuel_on_success(
             |costs| n as u64 * costs.memory_per_byte,
             |this| {
-                let bytes = this.cache.default_memory_bytes(this.ctx);
-                let memory = bytes
-                    .data_mut()
+                let memory = this
+                    .cache
+                    .default_memory_bytes(this.ctx)
                     .get_mut(offset..)
                     .and_then(|memory| memory.get_mut(..n))
                     .ok_or(TrapCode::MemoryOutOfBounds)?;
@@ -888,7 +878,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.consume_fuel_on_success(
             |costs| n as u64 * costs.memory_per_byte,
             |this| {
-                let data = this.cache.default_memory_bytes(this.ctx).data_mut();
+                let data = this.cache.default_memory_bytes(this.ctx);
                 // These accesses just perform the bounds checks required by the Wasm spec.
                 data.get(src_offset..)
                     .and_then(|memory| memory.get(..n))
