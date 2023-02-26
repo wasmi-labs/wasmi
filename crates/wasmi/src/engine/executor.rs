@@ -561,7 +561,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             FuncEntity::Wasm(wasm_func) => wasm_func,
             FuncEntity::Host(_host_func) => {
                 self.cache.reset();
-                return Ok(CallOutcome::Call(*func))
+                return Ok(CallOutcome::Call(*func));
             }
         };
         let header = self.code_map.header(wasm_func.func_body());
