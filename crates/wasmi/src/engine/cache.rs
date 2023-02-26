@@ -201,6 +201,8 @@ impl InstanceCache {
     /// Loads and populates the cached default memory instance.
     ///
     /// Returns an exclusive reference to the cached default memory.
+    #[inline]
+    #[cold]
     fn load_default_memory_bytes(&mut self, ctx: &mut StoreInner) -> &mut NonNull<[u8]> {
         let memory = self.default_memory(ctx);
         self.default_memory_bytes
