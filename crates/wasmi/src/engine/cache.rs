@@ -21,6 +21,8 @@ use wasmi_core::UntypedValue;
 pub struct InstanceCache {
     /// The bytes of a default linear memory of the currently used [`Instance`].
     default_memory_bytes: Option<NonNull<[u8]>>,
+    /// The last accessed global variable value of the currently used [`Instance`].
+    last_global: Option<(GlobalIdx, NonNull<UntypedValue>)>,
     /// The current instance in use.
     instance: Instance,
     /// The default linear memory of the currently used [`Instance`].
@@ -29,8 +31,6 @@ pub struct InstanceCache {
     last_table: Option<(TableIdx, Table)>,
     /// The last accessed function of the currently used [`Instance`].
     last_func: Option<(FuncIdx, Func)>,
-    /// The last accessed global variable value of the currently used [`Instance`].
-    last_global: Option<(GlobalIdx, NonNull<UntypedValue>)>,
 }
 
 impl From<&'_ Instance> for InstanceCache {
