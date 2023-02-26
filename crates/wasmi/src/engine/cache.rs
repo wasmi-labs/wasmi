@@ -205,7 +205,8 @@ impl InstanceCache {
     #[cold]
     fn load_default_memory_bytes(&mut self, ctx: &mut StoreInner) -> NonNull<[u8]> {
         let memory = self.default_memory(ctx);
-        *self.default_memory_bytes
+        *self
+            .default_memory_bytes
             .insert(ctx.resolve_memory_mut(&memory).data().into())
     }
 
