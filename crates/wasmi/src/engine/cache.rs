@@ -188,8 +188,8 @@ impl InstanceCache {
     /// This avoids one indirection compared to using the `default_memory`.
     #[inline]
     pub fn default_memory_bytes_mut(&mut self, ctx: &mut StoreInner) -> &mut [u8] {
-        let cached = match self.default_memory_bytes {
-            Some(ref mut cached) => cached,
+        let mut cached = match self.default_memory_bytes {
+            Some(cached) => cached,
             None => self.load_default_memory_bytes(ctx),
         };
         // SAFETY: This deref is safe since we only hold this pointer
@@ -203,9 +203,9 @@ impl InstanceCache {
     /// Returns an exclusive reference to the cached default memory.
     #[inline]
     #[cold]
-    fn load_default_memory_bytes(&mut self, ctx: &mut StoreInner) -> &mut NonNull<[u8]> {
+    fn load_default_memory_bytes(&mut self, ctx: &mut StoreInner) -> NonNull<[u8]> {
         let memory = self.default_memory(ctx);
-        self.default_memory_bytes
+        *self.default_memory_bytes
             .insert(ctx.resolve_memory_mut(&memory).data().into())
     }
 
