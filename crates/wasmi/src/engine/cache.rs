@@ -1,4 +1,4 @@
-use super::bytecode::{DataSegmentIdx, ElementSegmentIdx, GlobalIdx, TableIdx};
+use super::bytecode::{DataSegmentIdx, ElementSegmentIdx, FuncIdx, GlobalIdx, TableIdx};
 use crate::{
     instance::InstanceEntity,
     memory::DataSegment,
@@ -26,11 +26,11 @@ pub struct InstanceCache {
     /// The default linear memory of the currently used [`Instance`].
     default_memory: Option<Memory>,
     /// The last accessed table of the currently used [`Instance`].
-    last_table: Option<(u32, Table)>,
+    last_table: Option<(TableIdx, Table)>,
     /// The last accessed function of the currently used [`Instance`].
-    last_func: Option<(u32, Func)>,
+    last_func: Option<(FuncIdx, Func)>,
     /// The last accessed global variable value of the currently used [`Instance`].
-    last_global: Option<(u32, NonNull<UntypedValue>)>,
+    last_global: Option<(GlobalIdx, NonNull<UntypedValue>)>,
 }
 
 impl From<&'_ Instance> for InstanceCache {
@@ -241,7 +241,6 @@ impl InstanceCache {
     /// If the currently used [`Instance`] does not have a default table.
     #[inline]
     pub fn get_table(&mut self, ctx: &StoreInner, index: TableIdx) -> Table {
-        let index = index.into_inner();
         match self.last_table {
             Some((table_index, table)) if index == table_index => table,
             _ => self.load_table_at(ctx, index),
@@ -255,13 +254,13 @@ impl InstanceCache {
     /// If the currently used [`Instance`] does not have the table.
     #[cold]
     #[inline]
-    fn load_table_at(&mut self, ctx: &StoreInner, index: u32) -> Table {
+    fn load_table_at(&mut self, ctx: &StoreInner, index: TableIdx) -> Table {
         let table = ctx
             .resolve_instance(self.instance())
-            .get_table(index)
+            .get_table(index.into_inner())
             .unwrap_or_else(|| {
                 unreachable!(
-                    "missing table at index {index} for instance: {:?}",
+                    "missing table at index {index:?} for instance: {:?}",
                     self.instance
                 )
             });
@@ -276,13 +275,13 @@ impl InstanceCache {
     /// If the currently used [`Instance`] does not have the function.
     #[cold]
     #[inline]
-    fn load_func_at(&mut self, ctx: &StoreInner, index: u32) -> Func {
+    fn load_func_at(&mut self, ctx: &StoreInner, index: FuncIdx) -> Func {
         let func = ctx
             .resolve_instance(self.instance())
-            .get_func(index)
+            .get_func(index.into_inner())
             .unwrap_or_else(|| {
                 unreachable!(
-                    "missing func at index {index} for instance: {:?}",
+                    "missing func at index {index:?} for instance: {:?}",
                     self.instance
                 )
             });
@@ -296,7 +295,7 @@ impl InstanceCache {
     ///
     /// If the currently used [`Instance`] does not have a [`Func`] at the index.
     #[inline]
-    pub fn get_func(&mut self, ctx: &StoreInner, func_idx: u32) -> Func {
+    pub fn get_func(&mut self, ctx: &StoreInner, func_idx: FuncIdx) -> Func {
         match self.last_func {
             Some((index, func)) if index == func_idx => func,
             _ => self.load_func_at(ctx, func_idx),
@@ -311,15 +310,15 @@ impl InstanceCache {
     /// If the currently used [`Instance`] does not have a default table.
     #[cold]
     #[inline]
-    fn load_global_at(&mut self, ctx: &mut StoreInner, index: u32) -> NonNull<UntypedValue> {
+    fn load_global_at(&mut self, ctx: &mut StoreInner, index: GlobalIdx) -> NonNull<UntypedValue> {
         let global = ctx
             .resolve_instance(self.instance())
-            .get_global(index)
+            .get_global(index.into_inner())
             .as_ref()
             .map(|global| ctx.resolve_global_mut(global).get_untyped_ptr())
             .unwrap_or_else(|| {
                 unreachable!(
-                    "missing global variable at index {index} for instance: {:?}",
+                    "missing global variable at index {index:?} for instance: {:?}",
                     self.instance
                 )
             });
@@ -339,7 +338,6 @@ impl InstanceCache {
         ctx: &'ctx mut StoreInner,
         global_index: GlobalIdx,
     ) -> &'ctx mut UntypedValue {
-        let global_index = global_index.into_inner();
         let mut ptr = match self.last_global {
             Some((index, global)) if index == global_index => global,
             _ => self.load_global_at(ctx, global_index),
