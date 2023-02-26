@@ -52,6 +52,7 @@ impl InstanceCache {
     }
 
     /// Updates the cached [`Instance`].
+    #[cold]
     fn set_instance(&mut self, instance: &Instance) {
         self.instance = *instance;
         self.default_memory = None;
