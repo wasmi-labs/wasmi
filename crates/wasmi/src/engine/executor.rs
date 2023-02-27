@@ -224,16 +224,16 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::I64Load(offset) => self.visit_i64_load(offset)?,
                 Instr::F32Load(offset) => self.visit_f32_load(offset)?,
                 Instr::F64Load(offset) => self.visit_f64_load(offset)?,
-                Instr::I32Load8S(offset) => self.visit_i32_load_i8(offset)?,
-                Instr::I32Load8U(offset) => self.visit_i32_load_u8(offset)?,
-                Instr::I32Load16S(offset) => self.visit_i32_load_i16(offset)?,
-                Instr::I32Load16U(offset) => self.visit_i32_load_u16(offset)?,
-                Instr::I64Load8S(offset) => self.visit_i64_load_i8(offset)?,
-                Instr::I64Load8U(offset) => self.visit_i64_load_u8(offset)?,
-                Instr::I64Load16S(offset) => self.visit_i64_load_i16(offset)?,
-                Instr::I64Load16U(offset) => self.visit_i64_load_u16(offset)?,
-                Instr::I64Load32S(offset) => self.visit_i64_load_i32(offset)?,
-                Instr::I64Load32U(offset) => self.visit_i64_load_u32(offset)?,
+                Instr::I32Load8S(offset) => self.visit_i32_load_i8_s(offset)?,
+                Instr::I32Load8U(offset) => self.visit_i32_load_i8_u(offset)?,
+                Instr::I32Load16S(offset) => self.visit_i32_load_i16_s(offset)?,
+                Instr::I32Load16U(offset) => self.visit_i32_load_i16_u(offset)?,
+                Instr::I64Load8S(offset) => self.visit_i64_load_i8_s(offset)?,
+                Instr::I64Load8U(offset) => self.visit_i64_load_i8_u(offset)?,
+                Instr::I64Load16S(offset) => self.visit_i64_load_i16_s(offset)?,
+                Instr::I64Load16U(offset) => self.visit_i64_load_i16_u(offset)?,
+                Instr::I64Load32S(offset) => self.visit_i64_load_i32_s(offset)?,
+                Instr::I64Load32U(offset) => self.visit_i64_load_i32_u(offset)?,
                 Instr::I32Store(offset) => self.visit_i32_store(offset)?,
                 Instr::I64Store(offset) => self.visit_i64_store(offset)?,
                 Instr::F32Store(offset) => self.visit_f32_store(offset)?,
@@ -358,39 +358,39 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::F64Max => self.visit_f64_max(),
                 Instr::F64Copysign => self.visit_f64_copysign(),
                 Instr::I32WrapI64 => self.visit_i32_wrap_i64(),
-                Instr::I32TruncF32S => self.visit_i32_trunc_f32()?,
-                Instr::I32TruncF32U => self.visit_u32_trunc_f32()?,
-                Instr::I32TruncF64S => self.visit_i32_trunc_f64()?,
-                Instr::I32TruncF64U => self.visit_u32_trunc_f64()?,
-                Instr::I64ExtendI32S => self.visit_i64_extend_i32(),
-                Instr::I64ExtendI32U => self.visit_i64_extend_u32(),
-                Instr::I64TruncF32S => self.visit_i64_trunc_f32()?,
-                Instr::I64TruncF32U => self.visit_u64_trunc_f32()?,
-                Instr::I64TruncF64S => self.visit_i64_trunc_f64()?,
-                Instr::I64TruncF64U => self.visit_u64_trunc_f64()?,
-                Instr::F32ConvertI32S => self.visit_f32_convert_i32(),
-                Instr::F32ConvertI32U => self.visit_f32_convert_u32(),
-                Instr::F32ConvertI64S => self.visit_f32_convert_i64(),
-                Instr::F32ConvertI64U => self.visit_f32_convert_u64(),
+                Instr::I32TruncF32S => self.visit_i32_trunc_f32_s()?,
+                Instr::I32TruncF32U => self.visit_i32_trunc_f32_u()?,
+                Instr::I32TruncF64S => self.visit_i32_trunc_f64_s()?,
+                Instr::I32TruncF64U => self.visit_i32_trunc_f64_u()?,
+                Instr::I64ExtendI32S => self.visit_i64_extend_i32_s(),
+                Instr::I64ExtendI32U => self.visit_i64_extend_i32_u(),
+                Instr::I64TruncF32S => self.visit_i64_trunc_f32_s()?,
+                Instr::I64TruncF32U => self.visit_i64_trunc_f32_u()?,
+                Instr::I64TruncF64S => self.visit_i64_trunc_f64_s()?,
+                Instr::I64TruncF64U => self.visit_i64_trunc_f64_u()?,
+                Instr::F32ConvertI32S => self.visit_f32_convert_i32_s(),
+                Instr::F32ConvertI32U => self.visit_f32_convert_i32_u(),
+                Instr::F32ConvertI64S => self.visit_f32_convert_i64_s(),
+                Instr::F32ConvertI64U => self.visit_f32_convert_i64_u(),
                 Instr::F32DemoteF64 => self.visit_f32_demote_f64(),
-                Instr::F64ConvertI32S => self.visit_f64_convert_i32(),
-                Instr::F64ConvertI32U => self.visit_f64_convert_u32(),
-                Instr::F64ConvertI64S => self.visit_f64_convert_i64(),
-                Instr::F64ConvertI64U => self.visit_f64_convert_u64(),
+                Instr::F64ConvertI32S => self.visit_f64_convert_i32_s(),
+                Instr::F64ConvertI32U => self.visit_f64_convert_i32_u(),
+                Instr::F64ConvertI64S => self.visit_f64_convert_i64_s(),
+                Instr::F64ConvertI64U => self.visit_f64_convert_i64_u(),
                 Instr::F64PromoteF32 => self.visit_f64_promote_f32(),
-                Instr::I32TruncSatF32S => self.visit_i32_trunc_sat_f32(),
-                Instr::I32TruncSatF32U => self.visit_u32_trunc_sat_f32(),
-                Instr::I32TruncSatF64S => self.visit_i32_trunc_sat_f64(),
-                Instr::I32TruncSatF64U => self.visit_u32_trunc_sat_f64(),
-                Instr::I64TruncSatF32S => self.visit_i64_trunc_sat_f32(),
-                Instr::I64TruncSatF32U => self.visit_u64_trunc_sat_f32(),
-                Instr::I64TruncSatF64S => self.visit_i64_trunc_sat_f64(),
-                Instr::I64TruncSatF64U => self.visit_u64_trunc_sat_f64(),
-                Instr::I32Extend8S => self.visit_i32_sign_extend8(),
-                Instr::I32Extend16S => self.visit_i32_sign_extend16(),
-                Instr::I64Extend8S => self.visit_i64_sign_extend8(),
-                Instr::I64Extend16S => self.visit_i64_sign_extend16(),
-                Instr::I64Extend32S => self.visit_i64_sign_extend32(),
+                Instr::I32TruncSatF32S => self.visit_i32_trunc_sat_f32_s(),
+                Instr::I32TruncSatF32U => self.visit_i32_trunc_sat_f32_u(),
+                Instr::I32TruncSatF64S => self.visit_i32_trunc_sat_f64_s(),
+                Instr::I32TruncSatF64U => self.visit_i32_trunc_sat_f64_u(),
+                Instr::I64TruncSatF32S => self.visit_i64_trunc_sat_f32_s(),
+                Instr::I64TruncSatF32U => self.visit_i64_trunc_sat_f32_u(),
+                Instr::I64TruncSatF64S => self.visit_i64_trunc_sat_f64_s(),
+                Instr::I64TruncSatF64U => self.visit_i64_trunc_sat_f64_u(),
+                Instr::I32Extend8S => self.visit_i32_extend8_s(),
+                Instr::I32Extend16S => self.visit_i32_extend16_s(),
+                Instr::I64Extend8S => self.visit_i64_extend8_s(),
+                Instr::I64Extend16S => self.visit_i64_extend16_s(),
+                Instr::I64Extend32S => self.visit_i64_extend32_s(),
             }
         }
     }
@@ -1051,779 +1051,276 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.sp.push_as(funcref);
         self.next_instr();
     }
-
-    #[inline(always)]
-    fn visit_i32_load(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i32_load)
-    }
-
-    #[inline(always)]
-    fn visit_i64_load(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i64_load)
-    }
-
-    #[inline(always)]
-    fn visit_f32_load(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::f32_load)
-    }
-
-    #[inline(always)]
-    fn visit_f64_load(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::f64_load)
-    }
-
-    #[inline(always)]
-    fn visit_i32_load_i8(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i32_load8_s)
-    }
-
-    #[inline(always)]
-    fn visit_i32_load_u8(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i32_load8_u)
-    }
-
-    #[inline(always)]
-    fn visit_i32_load_i16(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i32_load16_s)
-    }
-
-    #[inline(always)]
-    fn visit_i32_load_u16(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i32_load16_u)
-    }
-
-    #[inline(always)]
-    fn visit_i64_load_i8(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i64_load8_s)
-    }
-
-    #[inline(always)]
-    fn visit_i64_load_u8(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i64_load8_u)
-    }
-
-    #[inline(always)]
-    fn visit_i64_load_i16(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i64_load16_s)
-    }
-
-    #[inline(always)]
-    fn visit_i64_load_u16(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i64_load16_u)
-    }
-
-    #[inline(always)]
-    fn visit_i64_load_i32(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i64_load32_s)
-    }
-
-    #[inline(always)]
-    fn visit_i64_load_u32(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i64_load32_u)
-    }
-
-    #[inline(always)]
-    fn visit_i32_store(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap(offset, UntypedValue::i32_store)
-    }
-
-    #[inline(always)]
-    fn visit_i64_store(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap(offset, UntypedValue::i64_store)
-    }
-
-    #[inline(always)]
-    fn visit_f32_store(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap(offset, UntypedValue::f32_store)
-    }
-
-    #[inline(always)]
-    fn visit_f64_store(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap(offset, UntypedValue::f64_store)
-    }
-
-    #[inline(always)]
-    fn visit_i32_store_8(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap(offset, UntypedValue::i32_store8)
-    }
-
-    #[inline(always)]
-    fn visit_i32_store_16(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap(offset, UntypedValue::i32_store16)
-    }
-
-    #[inline(always)]
-    fn visit_i64_store_8(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap(offset, UntypedValue::i64_store8)
-    }
-
-    #[inline(always)]
-    fn visit_i64_store_16(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap(offset, UntypedValue::i64_store16)
-    }
-
-    #[inline(always)]
-    fn visit_i64_store_32(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap(offset, UntypedValue::i64_store32)
-    }
-
-    #[inline(always)]
-    fn visit_i32_eqz(&mut self) {
-        self.execute_unary(UntypedValue::i32_eqz)
-    }
-
-    #[inline(always)]
-    fn visit_i32_eq(&mut self) {
-        self.execute_binary(UntypedValue::i32_eq)
-    }
-
-    #[inline(always)]
-    fn visit_i32_ne(&mut self) {
-        self.execute_binary(UntypedValue::i32_ne)
-    }
-
-    #[inline(always)]
-    fn visit_i32_lt_s(&mut self) {
-        self.execute_binary(UntypedValue::i32_lt_s)
-    }
-
-    #[inline(always)]
-    fn visit_i32_lt_u(&mut self) {
-        self.execute_binary(UntypedValue::i32_lt_u)
-    }
-
-    #[inline(always)]
-    fn visit_i32_gt_s(&mut self) {
-        self.execute_binary(UntypedValue::i32_gt_s)
-    }
-
-    #[inline(always)]
-    fn visit_i32_gt_u(&mut self) {
-        self.execute_binary(UntypedValue::i32_gt_u)
-    }
-
-    #[inline(always)]
-    fn visit_i32_le_s(&mut self) {
-        self.execute_binary(UntypedValue::i32_le_s)
-    }
-
-    #[inline(always)]
-    fn visit_i32_le_u(&mut self) {
-        self.execute_binary(UntypedValue::i32_le_u)
-    }
-
-    #[inline(always)]
-    fn visit_i32_ge_s(&mut self) {
-        self.execute_binary(UntypedValue::i32_ge_s)
-    }
-
-    #[inline(always)]
-    fn visit_i32_ge_u(&mut self) {
-        self.execute_binary(UntypedValue::i32_ge_u)
-    }
-
-    #[inline(always)]
-    fn visit_i64_eqz(&mut self) {
-        self.execute_unary(UntypedValue::i64_eqz)
-    }
-
-    #[inline(always)]
-    fn visit_i64_eq(&mut self) {
-        self.execute_binary(UntypedValue::i64_eq)
-    }
-
-    #[inline(always)]
-    fn visit_i64_ne(&mut self) {
-        self.execute_binary(UntypedValue::i64_ne)
-    }
-
-    #[inline(always)]
-    fn visit_i64_lt_s(&mut self) {
-        self.execute_binary(UntypedValue::i64_lt_s)
-    }
-
-    #[inline(always)]
-    fn visit_i64_lt_u(&mut self) {
-        self.execute_binary(UntypedValue::i64_lt_u)
-    }
-
-    #[inline(always)]
-    fn visit_i64_gt_s(&mut self) {
-        self.execute_binary(UntypedValue::i64_gt_s)
-    }
-
-    #[inline(always)]
-    fn visit_i64_gt_u(&mut self) {
-        self.execute_binary(UntypedValue::i64_gt_u)
-    }
-
-    #[inline(always)]
-    fn visit_i64_le_s(&mut self) {
-        self.execute_binary(UntypedValue::i64_le_s)
-    }
-
-    #[inline(always)]
-    fn visit_i64_le_u(&mut self) {
-        self.execute_binary(UntypedValue::i64_le_u)
-    }
-
-    #[inline(always)]
-    fn visit_i64_ge_s(&mut self) {
-        self.execute_binary(UntypedValue::i64_ge_s)
-    }
-
-    #[inline(always)]
-    fn visit_i64_ge_u(&mut self) {
-        self.execute_binary(UntypedValue::i64_ge_u)
-    }
-
-    #[inline(always)]
-    fn visit_f32_eq(&mut self) {
-        self.execute_binary(UntypedValue::f32_eq)
-    }
-
-    #[inline(always)]
-    fn visit_f32_ne(&mut self) {
-        self.execute_binary(UntypedValue::f32_ne)
-    }
-
-    #[inline(always)]
-    fn visit_f32_lt(&mut self) {
-        self.execute_binary(UntypedValue::f32_lt)
-    }
-
-    #[inline(always)]
-    fn visit_f32_gt(&mut self) {
-        self.execute_binary(UntypedValue::f32_gt)
-    }
-
-    #[inline(always)]
-    fn visit_f32_le(&mut self) {
-        self.execute_binary(UntypedValue::f32_le)
-    }
-
-    #[inline(always)]
-    fn visit_f32_ge(&mut self) {
-        self.execute_binary(UntypedValue::f32_ge)
-    }
-
-    #[inline(always)]
-    fn visit_f64_eq(&mut self) {
-        self.execute_binary(UntypedValue::f64_eq)
-    }
-
-    #[inline(always)]
-    fn visit_f64_ne(&mut self) {
-        self.execute_binary(UntypedValue::f64_ne)
-    }
-
-    #[inline(always)]
-    fn visit_f64_lt(&mut self) {
-        self.execute_binary(UntypedValue::f64_lt)
-    }
-
-    #[inline(always)]
-    fn visit_f64_gt(&mut self) {
-        self.execute_binary(UntypedValue::f64_gt)
-    }
-
-    #[inline(always)]
-    fn visit_f64_le(&mut self) {
-        self.execute_binary(UntypedValue::f64_le)
-    }
-
-    #[inline(always)]
-    fn visit_f64_ge(&mut self) {
-        self.execute_binary(UntypedValue::f64_ge)
-    }
-
-    #[inline(always)]
-    fn visit_i32_clz(&mut self) {
-        self.execute_unary(UntypedValue::i32_clz)
-    }
-
-    #[inline(always)]
-    fn visit_i32_ctz(&mut self) {
-        self.execute_unary(UntypedValue::i32_ctz)
-    }
-
-    #[inline(always)]
-    fn visit_i32_popcnt(&mut self) {
-        self.execute_unary(UntypedValue::i32_popcnt)
-    }
-
-    #[inline(always)]
-    fn visit_i32_add(&mut self) {
-        self.execute_binary(UntypedValue::i32_add)
-    }
-
-    #[inline(always)]
-    fn visit_i32_sub(&mut self) {
-        self.execute_binary(UntypedValue::i32_sub)
-    }
-
-    #[inline(always)]
-    fn visit_i32_mul(&mut self) {
-        self.execute_binary(UntypedValue::i32_mul)
-    }
-
-    #[inline(always)]
-    fn visit_i32_div_s(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_binary(UntypedValue::i32_div_s)
-    }
-
-    #[inline(always)]
-    fn visit_i32_div_u(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_binary(UntypedValue::i32_div_u)
-    }
-
-    #[inline(always)]
-    fn visit_i32_rem_s(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_binary(UntypedValue::i32_rem_s)
-    }
-
-    #[inline(always)]
-    fn visit_i32_rem_u(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_binary(UntypedValue::i32_rem_u)
-    }
-
-    #[inline(always)]
-    fn visit_i32_and(&mut self) {
-        self.execute_binary(UntypedValue::i32_and)
-    }
-
-    #[inline(always)]
-    fn visit_i32_or(&mut self) {
-        self.execute_binary(UntypedValue::i32_or)
-    }
-
-    #[inline(always)]
-    fn visit_i32_xor(&mut self) {
-        self.execute_binary(UntypedValue::i32_xor)
-    }
-
-    #[inline(always)]
-    fn visit_i32_shl(&mut self) {
-        self.execute_binary(UntypedValue::i32_shl)
-    }
-
-    #[inline(always)]
-    fn visit_i32_shr_s(&mut self) {
-        self.execute_binary(UntypedValue::i32_shr_s)
-    }
-
-    #[inline(always)]
-    fn visit_i32_shr_u(&mut self) {
-        self.execute_binary(UntypedValue::i32_shr_u)
-    }
-
-    #[inline(always)]
-    fn visit_i32_rotl(&mut self) {
-        self.execute_binary(UntypedValue::i32_rotl)
-    }
-
-    #[inline(always)]
-    fn visit_i32_rotr(&mut self) {
-        self.execute_binary(UntypedValue::i32_rotr)
-    }
-
-    #[inline(always)]
-    fn visit_i64_clz(&mut self) {
-        self.execute_unary(UntypedValue::i64_clz)
-    }
-
-    #[inline(always)]
-    fn visit_i64_ctz(&mut self) {
-        self.execute_unary(UntypedValue::i64_ctz)
-    }
-
-    #[inline(always)]
-    fn visit_i64_popcnt(&mut self) {
-        self.execute_unary(UntypedValue::i64_popcnt)
-    }
-
-    #[inline(always)]
-    fn visit_i64_add(&mut self) {
-        self.execute_binary(UntypedValue::i64_add)
-    }
-
-    #[inline(always)]
-    fn visit_i64_sub(&mut self) {
-        self.execute_binary(UntypedValue::i64_sub)
-    }
-
-    #[inline(always)]
-    fn visit_i64_mul(&mut self) {
-        self.execute_binary(UntypedValue::i64_mul)
-    }
-
-    #[inline(always)]
-    fn visit_i64_div_s(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_binary(UntypedValue::i64_div_s)
-    }
-
-    #[inline(always)]
-    fn visit_i64_div_u(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_binary(UntypedValue::i64_div_u)
-    }
-
-    #[inline(always)]
-    fn visit_i64_rem_s(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_binary(UntypedValue::i64_rem_s)
-    }
-
-    #[inline(always)]
-    fn visit_i64_rem_u(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_binary(UntypedValue::i64_rem_u)
-    }
-
-    #[inline(always)]
-    fn visit_i64_and(&mut self) {
-        self.execute_binary(UntypedValue::i64_and)
-    }
-
-    #[inline(always)]
-    fn visit_i64_or(&mut self) {
-        self.execute_binary(UntypedValue::i64_or)
-    }
-
-    #[inline(always)]
-    fn visit_i64_xor(&mut self) {
-        self.execute_binary(UntypedValue::i64_xor)
-    }
-
-    #[inline(always)]
-    fn visit_i64_shl(&mut self) {
-        self.execute_binary(UntypedValue::i64_shl)
-    }
-
-    #[inline(always)]
-    fn visit_i64_shr_s(&mut self) {
-        self.execute_binary(UntypedValue::i64_shr_s)
-    }
-
-    #[inline(always)]
-    fn visit_i64_shr_u(&mut self) {
-        self.execute_binary(UntypedValue::i64_shr_u)
-    }
-
-    #[inline(always)]
-    fn visit_i64_rotl(&mut self) {
-        self.execute_binary(UntypedValue::i64_rotl)
-    }
-
-    #[inline(always)]
-    fn visit_i64_rotr(&mut self) {
-        self.execute_binary(UntypedValue::i64_rotr)
-    }
-
-    #[inline(always)]
-    fn visit_f32_abs(&mut self) {
-        self.execute_unary(UntypedValue::f32_abs)
-    }
-
-    #[inline(always)]
-    fn visit_f32_neg(&mut self) {
-        self.execute_unary(UntypedValue::f32_neg)
-    }
-
-    #[inline(always)]
-    fn visit_f32_ceil(&mut self) {
-        self.execute_unary(UntypedValue::f32_ceil)
-    }
-
-    #[inline(always)]
-    fn visit_f32_floor(&mut self) {
-        self.execute_unary(UntypedValue::f32_floor)
-    }
-
-    #[inline(always)]
-    fn visit_f32_trunc(&mut self) {
-        self.execute_unary(UntypedValue::f32_trunc)
-    }
-
-    #[inline(always)]
-    fn visit_f32_nearest(&mut self) {
-        self.execute_unary(UntypedValue::f32_nearest)
-    }
-
-    #[inline(always)]
-    fn visit_f32_sqrt(&mut self) {
-        self.execute_unary(UntypedValue::f32_sqrt)
-    }
-
-    #[inline(always)]
-    fn visit_f32_add(&mut self) {
-        self.execute_binary(UntypedValue::f32_add)
-    }
-
-    #[inline(always)]
-    fn visit_f32_sub(&mut self) {
-        self.execute_binary(UntypedValue::f32_sub)
-    }
-
-    #[inline(always)]
-    fn visit_f32_mul(&mut self) {
-        self.execute_binary(UntypedValue::f32_mul)
-    }
-
-    #[inline(always)]
-    fn visit_f32_div(&mut self) {
-        self.execute_binary(UntypedValue::f32_div)
-    }
-
-    #[inline(always)]
-    fn visit_f32_min(&mut self) {
-        self.execute_binary(UntypedValue::f32_min)
-    }
-
-    #[inline(always)]
-    fn visit_f32_max(&mut self) {
-        self.execute_binary(UntypedValue::f32_max)
-    }
-
-    #[inline(always)]
-    fn visit_f32_copysign(&mut self) {
-        self.execute_binary(UntypedValue::f32_copysign)
-    }
-
-    #[inline(always)]
-    fn visit_f64_abs(&mut self) {
-        self.execute_unary(UntypedValue::f64_abs)
-    }
-
-    #[inline(always)]
-    fn visit_f64_neg(&mut self) {
-        self.execute_unary(UntypedValue::f64_neg)
-    }
-
-    #[inline(always)]
-    fn visit_f64_ceil(&mut self) {
-        self.execute_unary(UntypedValue::f64_ceil)
-    }
-
-    #[inline(always)]
-    fn visit_f64_floor(&mut self) {
-        self.execute_unary(UntypedValue::f64_floor)
-    }
-
-    #[inline(always)]
-    fn visit_f64_trunc(&mut self) {
-        self.execute_unary(UntypedValue::f64_trunc)
-    }
-
-    #[inline(always)]
-    fn visit_f64_nearest(&mut self) {
-        self.execute_unary(UntypedValue::f64_nearest)
-    }
-
-    #[inline(always)]
-    fn visit_f64_sqrt(&mut self) {
-        self.execute_unary(UntypedValue::f64_sqrt)
-    }
-
-    #[inline(always)]
-    fn visit_f64_add(&mut self) {
-        self.execute_binary(UntypedValue::f64_add)
-    }
-
-    #[inline(always)]
-    fn visit_f64_sub(&mut self) {
-        self.execute_binary(UntypedValue::f64_sub)
-    }
-
-    #[inline(always)]
-    fn visit_f64_mul(&mut self) {
-        self.execute_binary(UntypedValue::f64_mul)
-    }
-
-    #[inline(always)]
-    fn visit_f64_div(&mut self) {
-        self.execute_binary(UntypedValue::f64_div)
-    }
-
-    #[inline(always)]
-    fn visit_f64_min(&mut self) {
-        self.execute_binary(UntypedValue::f64_min)
-    }
-
-    #[inline(always)]
-    fn visit_f64_max(&mut self) {
-        self.execute_binary(UntypedValue::f64_max)
-    }
-
-    #[inline(always)]
-    fn visit_f64_copysign(&mut self) {
-        self.execute_binary(UntypedValue::f64_copysign)
-    }
-
-    #[inline(always)]
-    fn visit_i32_wrap_i64(&mut self) {
-        self.execute_unary(UntypedValue::i32_wrap_i64)
-    }
-
-    #[inline(always)]
-    fn visit_i32_trunc_f32(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_unary(UntypedValue::i32_trunc_f32_s)
-    }
-
-    #[inline(always)]
-    fn visit_u32_trunc_f32(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_unary(UntypedValue::i32_trunc_f32_u)
-    }
-
-    #[inline(always)]
-    fn visit_i32_trunc_f64(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_unary(UntypedValue::i32_trunc_f64_s)
-    }
-
-    #[inline(always)]
-    fn visit_u32_trunc_f64(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_unary(UntypedValue::i32_trunc_f64_u)
-    }
-
-    #[inline(always)]
-    fn visit_i64_extend_i32(&mut self) {
-        self.execute_unary(UntypedValue::i64_extend_i32_s)
-    }
-
-    #[inline(always)]
-    fn visit_i64_extend_u32(&mut self) {
-        self.execute_unary(UntypedValue::i64_extend_i32_u)
-    }
-
-    #[inline(always)]
-    fn visit_i64_trunc_f32(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_unary(UntypedValue::i64_trunc_f32_s)
-    }
-
-    #[inline(always)]
-    fn visit_u64_trunc_f32(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_unary(UntypedValue::i64_trunc_f32_u)
-    }
-
-    #[inline(always)]
-    fn visit_i64_trunc_f64(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_unary(UntypedValue::i64_trunc_f64_s)
-    }
-
-    #[inline(always)]
-    fn visit_u64_trunc_f64(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_unary(UntypedValue::i64_trunc_f64_u)
-    }
-
-    #[inline(always)]
-    fn visit_f32_convert_i32(&mut self) {
-        self.execute_unary(UntypedValue::f32_convert_i32_s)
-    }
-
-    #[inline(always)]
-    fn visit_f32_convert_u32(&mut self) {
-        self.execute_unary(UntypedValue::f32_convert_i32_u)
-    }
-
-    #[inline(always)]
-    fn visit_f32_convert_i64(&mut self) {
-        self.execute_unary(UntypedValue::f32_convert_i64_s)
-    }
-
-    #[inline(always)]
-    fn visit_f32_convert_u64(&mut self) {
-        self.execute_unary(UntypedValue::f32_convert_i64_u)
-    }
-
-    #[inline(always)]
-    fn visit_f32_demote_f64(&mut self) {
-        self.execute_unary(UntypedValue::f32_demote_f64)
-    }
-
-    #[inline(always)]
-    fn visit_f64_convert_i32(&mut self) {
-        self.execute_unary(UntypedValue::f64_convert_i32_s)
-    }
-
-    #[inline(always)]
-    fn visit_f64_convert_u32(&mut self) {
-        self.execute_unary(UntypedValue::f64_convert_i32_u)
-    }
-
-    #[inline(always)]
-    fn visit_f64_convert_i64(&mut self) {
-        self.execute_unary(UntypedValue::f64_convert_i64_s)
-    }
-
-    #[inline(always)]
-    fn visit_f64_convert_u64(&mut self) {
-        self.execute_unary(UntypedValue::f64_convert_i64_u)
-    }
-
-    #[inline(always)]
-    fn visit_f64_promote_f32(&mut self) {
-        self.execute_unary(UntypedValue::f64_promote_f32)
-    }
-
-    #[inline(always)]
-    fn visit_i32_sign_extend8(&mut self) {
-        self.execute_unary(UntypedValue::i32_extend8_s)
-    }
-
-    #[inline(always)]
-    fn visit_i32_sign_extend16(&mut self) {
-        self.execute_unary(UntypedValue::i32_extend16_s)
-    }
-
-    #[inline(always)]
-    fn visit_i64_sign_extend8(&mut self) {
-        self.execute_unary(UntypedValue::i64_extend8_s)
-    }
-
-    #[inline(always)]
-    fn visit_i64_sign_extend16(&mut self) {
-        self.execute_unary(UntypedValue::i64_extend16_s)
-    }
-
-    #[inline(always)]
-    fn visit_i64_sign_extend32(&mut self) {
-        self.execute_unary(UntypedValue::i64_extend32_s)
-    }
-
-    #[inline(always)]
-    fn visit_i32_trunc_sat_f32(&mut self) {
-        self.execute_unary(UntypedValue::i32_trunc_sat_f32_s)
-    }
-
-    #[inline(always)]
-    fn visit_u32_trunc_sat_f32(&mut self) {
-        self.execute_unary(UntypedValue::i32_trunc_sat_f32_u)
-    }
-
-    #[inline(always)]
-    fn visit_i32_trunc_sat_f64(&mut self) {
-        self.execute_unary(UntypedValue::i32_trunc_sat_f64_s)
-    }
-
-    #[inline(always)]
-    fn visit_u32_trunc_sat_f64(&mut self) {
-        self.execute_unary(UntypedValue::i32_trunc_sat_f64_u)
-    }
-
-    #[inline(always)]
-    fn visit_i64_trunc_sat_f32(&mut self) {
-        self.execute_unary(UntypedValue::i64_trunc_sat_f32_s)
-    }
-
-    #[inline(always)]
-    fn visit_u64_trunc_sat_f32(&mut self) {
-        self.execute_unary(UntypedValue::i64_trunc_sat_f32_u)
-    }
-
-    #[inline(always)]
-    fn visit_i64_trunc_sat_f64(&mut self) {
-        self.execute_unary(UntypedValue::i64_trunc_sat_f64_s)
-    }
-
-    #[inline(always)]
-    fn visit_u64_trunc_sat_f64(&mut self) {
-        self.execute_unary(UntypedValue::i64_trunc_sat_f64_u)
+}
+
+macro_rules! impl_visit_load {
+    ( $( fn $visit_ident:ident($untyped_ident:ident); )* ) => {
+        $(
+            #[inline(always)]
+            fn $visit_ident(
+                &mut self,
+                offset: Offset,
+            ) -> Result<(), TrapCode> {
+                self.execute_load_extend(offset, UntypedValue::$untyped_ident)
+            }
+        )*
+    }
+}
+impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+    impl_visit_load! {
+        fn visit_i32_load(i32_load);
+        fn visit_i64_load(i64_load);
+        fn visit_f32_load(f32_load);
+        fn visit_f64_load(f64_load);
+
+        fn visit_i32_load_i8_s(i32_load8_s);
+        fn visit_i32_load_i8_u(i32_load8_u);
+        fn visit_i32_load_i16_s(i32_load16_s);
+        fn visit_i32_load_i16_u(i32_load16_u);
+
+        fn visit_i64_load_i8_s(i64_load8_s);
+        fn visit_i64_load_i8_u(i64_load8_u);
+        fn visit_i64_load_i16_s(i64_load16_s);
+        fn visit_i64_load_i16_u(i64_load16_u);
+        fn visit_i64_load_i32_s(i64_load32_s);
+        fn visit_i64_load_i32_u(i64_load32_u);
+    }
+}
+
+macro_rules! impl_visit_store {
+    ( $( fn $visit_ident:ident($untyped_ident:ident); )* ) => {
+        $(
+            #[inline(always)]
+            fn $visit_ident(
+                &mut self,
+                offset: Offset,
+            ) -> Result<(), TrapCode> {
+                self.execute_store_wrap(offset, UntypedValue::$untyped_ident)
+            }
+        )*
+    }
+}
+impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+    impl_visit_store! {
+        fn visit_i32_store(i32_store);
+        fn visit_i64_store(i64_store);
+        fn visit_f32_store(f32_store);
+        fn visit_f64_store(f64_store);
+
+        fn visit_i32_store_8(i32_store8);
+        fn visit_i32_store_16(i32_store16);
+
+        fn visit_i64_store_8(i64_store8);
+        fn visit_i64_store_16(i64_store16);
+        fn visit_i64_store_32(i64_store32);
+    }
+}
+
+macro_rules! impl_visit_unary {
+    ( $( fn $visit_ident:ident($untyped_ident:ident); )* ) => {
+        $(
+            #[inline(always)]
+            fn $visit_ident(&mut self) {
+                self.execute_unary(UntypedValue::$untyped_ident)
+            }
+        )*
+    }
+}
+impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+    impl_visit_unary! {
+        fn visit_i32_eqz(i32_eqz);
+        fn visit_i64_eqz(i64_eqz);
+
+        fn visit_i32_clz(i32_clz);
+        fn visit_i32_ctz(i32_ctz);
+        fn visit_i32_popcnt(i32_popcnt);
+
+        fn visit_i64_clz(i64_clz);
+        fn visit_i64_ctz(i64_ctz);
+        fn visit_i64_popcnt(i64_popcnt);
+
+        fn visit_f32_abs(f32_abs);
+        fn visit_f32_neg(f32_neg);
+        fn visit_f32_ceil(f32_ceil);
+        fn visit_f32_floor(f32_floor);
+        fn visit_f32_trunc(f32_trunc);
+        fn visit_f32_nearest(f32_nearest);
+        fn visit_f32_sqrt(f32_sqrt);
+
+        fn visit_f64_abs(f64_abs);
+        fn visit_f64_neg(f64_neg);
+        fn visit_f64_ceil(f64_ceil);
+        fn visit_f64_floor(f64_floor);
+        fn visit_f64_trunc(f64_trunc);
+        fn visit_f64_nearest(f64_nearest);
+        fn visit_f64_sqrt(f64_sqrt);
+
+        fn visit_i32_wrap_i64(i32_wrap_i64);
+        fn visit_i64_extend_i32_s(i64_extend_i32_s);
+        fn visit_i64_extend_i32_u(i64_extend_i32_u);
+
+        fn visit_f32_convert_i32_s(f32_convert_i32_s);
+        fn visit_f32_convert_i32_u(f32_convert_i32_u);
+        fn visit_f32_convert_i64_s(f32_convert_i64_s);
+        fn visit_f32_convert_i64_u(f32_convert_i64_u);
+        fn visit_f32_demote_f64(f32_demote_f64);
+        fn visit_f64_convert_i32_s(f64_convert_i32_s);
+        fn visit_f64_convert_i32_u(f64_convert_i32_u);
+        fn visit_f64_convert_i64_s(f64_convert_i64_s);
+        fn visit_f64_convert_i64_u(f64_convert_i64_u);
+        fn visit_f64_promote_f32(f64_promote_f32);
+
+        fn visit_i32_extend8_s(i32_extend8_s);
+        fn visit_i32_extend16_s(i32_extend16_s);
+        fn visit_i64_extend8_s(i64_extend8_s);
+        fn visit_i64_extend16_s(i64_extend16_s);
+        fn visit_i64_extend32_s(i64_extend32_s);
+
+        fn visit_i32_trunc_sat_f32_s(i32_trunc_sat_f32_s);
+        fn visit_i32_trunc_sat_f32_u(i32_trunc_sat_f32_u);
+        fn visit_i32_trunc_sat_f64_s(i32_trunc_sat_f64_s);
+        fn visit_i32_trunc_sat_f64_u(i32_trunc_sat_f64_u);
+        fn visit_i64_trunc_sat_f32_s(i64_trunc_sat_f32_s);
+        fn visit_i64_trunc_sat_f32_u(i64_trunc_sat_f32_u);
+        fn visit_i64_trunc_sat_f64_s(i64_trunc_sat_f64_s);
+        fn visit_i64_trunc_sat_f64_u(i64_trunc_sat_f64_u);
+    }
+}
+
+macro_rules! impl_visit_fallible_unary {
+    ( $( fn $visit_ident:ident($untyped_ident:ident); )* ) => {
+        $(
+            #[inline(always)]
+            fn $visit_ident(&mut self) -> Result<(), TrapCode> {
+                self.try_execute_unary(UntypedValue::$untyped_ident)
+            }
+        )*
+    }
+}
+impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+    impl_visit_fallible_unary! {
+        fn visit_i32_trunc_f32_s(i32_trunc_f32_s);
+        fn visit_i32_trunc_f32_u(i32_trunc_f32_u);
+        fn visit_i32_trunc_f64_s(i32_trunc_f64_s);
+        fn visit_i32_trunc_f64_u(i32_trunc_f64_u);
+
+        fn visit_i64_trunc_f32_s(i64_trunc_f32_s);
+        fn visit_i64_trunc_f32_u(i64_trunc_f32_u);
+        fn visit_i64_trunc_f64_s(i64_trunc_f64_s);
+        fn visit_i64_trunc_f64_u(i64_trunc_f64_u);
+    }
+}
+
+macro_rules! impl_visit_binary {
+    ( $( fn $visit_ident:ident($untyped_ident:ident); )* ) => {
+        $(
+            #[inline(always)]
+            fn $visit_ident(&mut self) {
+                self.execute_binary(UntypedValue::$untyped_ident)
+            }
+        )*
+    }
+}
+impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+    impl_visit_binary! {
+        fn visit_i32_eq(i32_eq);
+        fn visit_i32_ne(i32_ne);
+        fn visit_i32_lt_s(i32_lt_s);
+        fn visit_i32_lt_u(i32_lt_u);
+        fn visit_i32_gt_s(i32_gt_s);
+        fn visit_i32_gt_u(i32_gt_u);
+        fn visit_i32_le_s(i32_le_s);
+        fn visit_i32_le_u(i32_le_u);
+        fn visit_i32_ge_s(i32_ge_s);
+        fn visit_i32_ge_u(i32_ge_u);
+
+        fn visit_i64_eq(i64_eq);
+        fn visit_i64_ne(i64_ne);
+        fn visit_i64_lt_s(i64_lt_s);
+        fn visit_i64_lt_u(i64_lt_u);
+        fn visit_i64_gt_s(i64_gt_s);
+        fn visit_i64_gt_u(i64_gt_u);
+        fn visit_i64_le_s(i64_le_s);
+        fn visit_i64_le_u(i64_le_u);
+        fn visit_i64_ge_s(i64_ge_s);
+        fn visit_i64_ge_u(i64_ge_u);
+
+        fn visit_f32_eq(f32_eq);
+        fn visit_f32_ne(f32_ne);
+        fn visit_f32_lt(f32_lt);
+        fn visit_f32_gt(f32_gt);
+        fn visit_f32_le(f32_le);
+        fn visit_f32_ge(f32_ge);
+
+        fn visit_f64_eq(f64_eq);
+        fn visit_f64_ne(f64_ne);
+        fn visit_f64_lt(f64_lt);
+        fn visit_f64_gt(f64_gt);
+        fn visit_f64_le(f64_le);
+        fn visit_f64_ge(f64_ge);
+
+        fn visit_i32_add(i32_add);
+        fn visit_i32_sub(i32_sub);
+        fn visit_i32_mul(i32_mul);
+        fn visit_i32_and(i32_and);
+        fn visit_i32_or(i32_or);
+        fn visit_i32_xor(i32_xor);
+        fn visit_i32_shl(i32_shl);
+        fn visit_i32_shr_s(i32_shr_s);
+        fn visit_i32_shr_u(i32_shr_u);
+        fn visit_i32_rotl(i32_rotl);
+        fn visit_i32_rotr(i32_rotr);
+
+        fn visit_i64_add(i64_add);
+        fn visit_i64_sub(i64_sub);
+        fn visit_i64_mul(i64_mul);
+        fn visit_i64_and(i64_and);
+        fn visit_i64_or(i64_or);
+        fn visit_i64_xor(i64_xor);
+        fn visit_i64_shl(i64_shl);
+        fn visit_i64_shr_s(i64_shr_s);
+        fn visit_i64_shr_u(i64_shr_u);
+        fn visit_i64_rotl(i64_rotl);
+        fn visit_i64_rotr(i64_rotr);
+
+        fn visit_f32_add(f32_add);
+        fn visit_f32_sub(f32_sub);
+        fn visit_f32_mul(f32_mul);
+        fn visit_f32_div(f32_div);
+        fn visit_f32_min(f32_min);
+        fn visit_f32_max(f32_max);
+        fn visit_f32_copysign(f32_copysign);
+
+        fn visit_f64_add(f64_add);
+        fn visit_f64_sub(f64_sub);
+        fn visit_f64_mul(f64_mul);
+        fn visit_f64_div(f64_div);
+        fn visit_f64_min(f64_min);
+        fn visit_f64_max(f64_max);
+        fn visit_f64_copysign(f64_copysign);
+    }
+}
+
+macro_rules! impl_visit_fallible_binary {
+    ( $( fn $visit_ident:ident($untyped_ident:ident); )* ) => {
+        $(
+            #[inline(always)]
+            fn $visit_ident(&mut self) -> Result<(), TrapCode> {
+                self.try_execute_binary(UntypedValue::$untyped_ident)
+            }
+        )*
+    }
+}
+impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+    impl_visit_fallible_binary! {
+        fn visit_i32_div_s(i32_div_s);
+        fn visit_i32_div_u(i32_div_u);
+        fn visit_i32_rem_s(i32_rem_s);
+        fn visit_i32_rem_u(i32_rem_u);
+
+        fn visit_i64_div_s(i64_div_s);
+        fn visit_i64_div_u(i64_div_u);
+        fn visit_i64_rem_s(i64_rem_s);
+        fn visit_i64_rem_u(i64_rem_u);
     }
 }
