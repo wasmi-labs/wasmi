@@ -170,7 +170,7 @@ impl Stack {
     }
 
     /// Executes the given host function as root.
-    pub(crate) fn call_host_root<T>(
+    pub(crate) fn call_host_as_root<T>(
         &mut self,
         ctx: StoreContextMut<T>,
         host_func: HostFuncEntity,
@@ -181,7 +181,7 @@ impl Stack {
 
     /// Executes the given host function called by a Wasm function.
     #[inline(always)]
-    pub(crate) fn call_host<T>(
+    pub(crate) fn call_host_from_wasm<T>(
         &mut self,
         ctx: StoreContextMut<T>,
         host_func: HostFuncEntity,

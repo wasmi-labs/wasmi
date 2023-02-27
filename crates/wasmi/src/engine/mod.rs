@@ -596,7 +596,7 @@ impl<'engine> EngineExecutor<'engine> {
             FuncEntity::Host(host_func) => {
                 let host_func = *host_func;
                 self.stack
-                    .call_host_root(ctx.as_context_mut(), host_func, &self.res.func_types)?;
+                    .call_host_as_root(ctx.as_context_mut(), host_func, &self.res.func_types)?;
             }
         };
         let results = self.write_results_back(results);
@@ -679,7 +679,7 @@ impl<'engine> EngineExecutor<'engine> {
                         FuncEntity::Host(host_func) => *host_func,
                     };
                     self.stack
-                        .call_host(ctx.as_context_mut(), host_func, &self.res.func_types)
+                        .call_host_from_wasm(ctx.as_context_mut(), host_func, &self.res.func_types)
                         .map_err(|trap| TaggedTrap::host(func, trap))?;
                 }
             }
