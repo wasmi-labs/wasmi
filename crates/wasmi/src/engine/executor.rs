@@ -120,251 +120,6 @@ impl From<TrapCode> for EntityGrowError {
 /// if the `memory.grow` or `table.grow` operations fail.
 const INVALID_GROWTH_ERRCODE: u32 = u32::MAX;
 
-/// Shifts the instruction pointer to the next instruction.
-#[inline]
-fn next_instr(ip: &mut InstructionPtr) {
-    ip.add(1)
-}
-
-/// Shifts the instruction pointer to the next instruction and returns `Ok(())`.
-///
-/// # Note
-///
-/// This is a convenience function for fallible instructions.
-#[inline]
-fn try_next_instr(ip: &mut InstructionPtr) -> Result<(), TrapCode> {
-    next_instr(ip);
-    Ok(())
-}
-
-/// Offsets the instruction pointer using the given [`BranchParams`].
-#[inline]
-fn branch_to(ip: &mut InstructionPtr, sp: &mut ValueStackPtr, params: BranchParams) {
-    sp.drop_keep(params.drop_keep());
-    ip.offset(params.offset().into_i32() as isize)
-}
-
-/// Synchronizes the current stack pointer with the [`ValueStack`].
-///
-/// # Note
-///
-/// For performance reasons we detach the stack pointer form the [`ValueStack`].
-/// Therefore it is necessary to synchronize the [`ValueStack`] upon finishing
-/// execution of a sequence of non control flow instructions.
-#[inline]
-fn sync_stack_ptr(sp: &mut ValueStackPtr, value_stack: &mut ValueStack) {
-    value_stack.sync_stack_ptr(*sp);
-}
-
-/// Returns to the caller.
-///
-/// This also modifies the stack as the caller would expect it
-/// and synchronizes the execution state with the outer structures.
-#[inline]
-fn ret(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    cache: &mut InstanceCache,
-    value_stack: &mut ValueStack,
-    call_stack: &mut CallStack,
-    drop_keep: DropKeep,
-) -> ReturnOutcome {
-    sp.drop_keep(drop_keep);
-    sync_stack_ptr(sp, value_stack);
-    match call_stack.pop() {
-        Some(caller) => {
-            *ip = caller.ip();
-            cache.update_instance(caller.instance());
-            ReturnOutcome::Wasm
-        }
-        None => ReturnOutcome::Host,
-    }
-}
-
-/// Executes a generic Wasm `store[N_{s|u}]` operation.
-///
-/// # Note
-///
-/// This can be used to emulate the following Wasm operands:
-///
-/// - `{i32, i64, f32, f64}.load`
-/// - `{i32, i64}.load8_s`
-/// - `{i32, i64}.load8_u`
-/// - `{i32, i64}.load16_s`
-/// - `{i32, i64}.load16_u`
-/// - `i64.load32_s`
-/// - `i64.load32_u`
-#[inline]
-fn execute_load_extend(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    ctx: &mut StoreInner,
-    cache: &mut InstanceCache,
-    offset: Offset,
-    load_extend: WasmLoadOp,
-) -> Result<(), TrapCode> {
-    sp.try_eval_top(|address| {
-        let memory = cache.default_memory_bytes(ctx);
-        let value = load_extend(memory, address, offset.into_inner())?;
-        Ok(value)
-    })?;
-    try_next_instr(ip)
-}
-
-/// Executes a generic Wasm `store[N]` operation.
-///
-/// # Note
-///
-/// This can be used to emulate the following Wasm operands:
-///
-/// - `{i32, i64, f32, f64}.store`
-/// - `{i32, i64}.store8`
-/// - `{i32, i64}.store16`
-/// - `i64.store32`
-#[inline]
-fn execute_store_wrap(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    ctx: &mut StoreInner,
-    cache: &mut InstanceCache,
-    offset: Offset,
-    store_wrap: WasmStoreOp,
-) -> Result<(), TrapCode> {
-    let (address, value) = sp.pop2();
-    let memory = cache.default_memory_bytes(ctx);
-    store_wrap(memory, address, offset.into_inner(), value)?;
-    try_next_instr(ip)
-}
-
-/// Executes an infallible unary `wasmi` instruction.
-#[inline]
-fn execute_unary(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    f: fn(UntypedValue) -> UntypedValue,
-) {
-    sp.eval_top(f);
-    next_instr(ip)
-}
-
-/// Executes a fallible unary `wasmi` instruction.
-#[inline]
-fn try_execute_unary(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    f: fn(UntypedValue) -> Result<UntypedValue, TrapCode>,
-) -> Result<(), TrapCode> {
-    sp.try_eval_top(f)?;
-    try_next_instr(ip)
-}
-
-/// Executes an infallible binary `wasmi` instruction.
-#[inline]
-fn execute_binary(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    f: fn(UntypedValue, UntypedValue) -> UntypedValue,
-) {
-    sp.eval_top2(f);
-    next_instr(ip)
-}
-
-/// Executes a fallible binary `wasmi` instruction.
-#[inline]
-fn try_execute_binary(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    f: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
-) -> Result<(), TrapCode> {
-    sp.try_eval_top2(f)?;
-    try_next_instr(ip)
-}
-
-/// Calls the given [`Func`].
-///
-/// This also prepares the instruction pointer and stack pointer for
-/// the function call so that the stack and execution state is synchronized
-/// with the outer structures.
-#[inline(always)]
-fn call_func(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    cache: &mut InstanceCache,
-    ctx: &mut StoreInner,
-    value_stack: &mut ValueStack,
-    call_stack: &mut CallStack,
-    code_map: &CodeMap,
-    func: &Func,
-) -> Result<CallOutcome, TrapCode> {
-    next_instr(ip);
-    sync_stack_ptr(sp, value_stack);
-    call_stack.push(FuncFrame::new(*ip, cache.instance()))?;
-    let wasm_func = match ctx.resolve_func(func) {
-        FuncEntity::Wasm(wasm_func) => wasm_func,
-        FuncEntity::Host(_host_func) => {
-            cache.reset();
-            return Ok(CallOutcome::Call(*func));
-        }
-    };
-    let header = code_map.header(wasm_func.func_body());
-    value_stack.prepare_wasm_call(header)?;
-    *sp = value_stack.stack_ptr();
-    cache.update_instance(wasm_func.instance());
-    *ip = code_map.instr_ptr(header.iref());
-    Ok(CallOutcome::Continue)
-}
-
-/// Consume an amount of fuel specified by `delta` if `exec` succeeds.
-///
-/// # Note
-///
-/// - `delta` is only evaluated if fuel metering is enabled.
-/// - `exec` is only evaluated if the remaining fuel is sufficient
-///    for amount of required fuel determined by `delta` or if
-///    fuel metering is disabled.
-///
-/// Only if `exec` runs successfully and fuel metering
-/// is enabled the fuel determined by `delta` is charged.
-///
-/// # Errors
-///
-/// - If the [`StoreInner`] ran out of fuel.
-/// - If the `exec` closure traps.
-fn consume_fuel_on_success<T, E>(
-    ctx: &mut StoreInner,
-    delta: impl FnOnce(&FuelCosts) -> u64,
-    exec: impl FnOnce(&mut StoreInner) -> Result<T, E>,
-) -> Result<T, E>
-where
-    E: From<TrapCode>,
-{
-    if !is_fuel_metering_enabled(ctx) {
-        return exec(ctx);
-    }
-    // At this point we know that fuel metering is enabled.
-    let delta = delta(fuel_costs(ctx));
-    ctx.fuel().sufficient_fuel(delta)?;
-    let result = exec(ctx)?;
-    ctx.fuel_mut().consume_fuel(delta).unwrap_or_else(|error| {
-        panic!("remaining fuel has already been approved prior but encountered: {error}")
-    });
-    Ok(result)
-}
-
-/// Returns `true` if fuel metering is enabled.
-#[inline]
-fn is_fuel_metering_enabled(ctx: &StoreInner) -> bool {
-    ctx.engine().config().get_consume_fuel()
-}
-
-/// Returns a shared reference to the [`FuelCosts`] of the [`Engine`].
-///
-/// [`Engine`]: crate::Engine
-#[inline]
-fn fuel_costs(ctx: &StoreInner) -> &FuelCosts {
-    ctx.engine().config().fuel_costs()
-}
-
 /// An execution context for executing a `wasmi` function frame.
 #[derive(Debug)]
 #[repr(C)]
@@ -427,1074 +182,1648 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes the function frame until it returns or traps.
     #[inline(always)]
     fn execute(mut self) -> Result<WasmOutcome, TrapCode> {
-        let Self {
-            sp,
-            ip,
-            cache,
-            ctx,
-            value_stack,
-            call_stack,
-            code_map,
-        } = &mut self;
         use Instruction as Instr;
         loop {
-            match *ip.get() {
-                Instr::LocalGet { local_depth } => visit_local_get(ip, sp, local_depth),
-                Instr::LocalSet { local_depth } => visit_local_set(ip, sp, local_depth),
-                Instr::LocalTee { local_depth } => visit_local_tee(ip, sp, local_depth),
-                Instr::Br(params) => visit_br(ip, sp, params),
-                Instr::BrIfEqz(params) => visit_br_if_eqz(ip, sp, params),
-                Instr::BrIfNez(params) => visit_br_if_nez(ip, sp, params),
-                Instr::BrTable { len_targets } => visit_br_table(ip, sp, len_targets),
-                Instr::Unreachable => visit_unreachable()?,
-                Instr::ConsumeFuel { amount } => visit_consume_fuel(ip, ctx, amount)?,
+            match *self.ip.get() {
+                Instr::LocalGet { local_depth } => self.visit_local_get(local_depth),
+                Instr::LocalSet { local_depth } => self.visit_local_set(local_depth),
+                Instr::LocalTee { local_depth } => self.visit_local_tee(local_depth),
+                Instr::Br(params) => self.visit_br(params),
+                Instr::BrIfEqz(params) => self.visit_br_if_eqz(params),
+                Instr::BrIfNez(params) => self.visit_br_if_nez(params),
+                Instr::BrTable { len_targets } => self.visit_br_table(len_targets),
+                Instr::Unreachable => self.visit_unreachable()?,
+                Instr::ConsumeFuel { amount } => self.visit_consume_fuel(amount)?,
                 Instr::Return(drop_keep) => {
-                    if let ReturnOutcome::Host =
-                        visit_ret(ip, sp, cache, value_stack, call_stack, drop_keep)
-                    {
+                    if let ReturnOutcome::Host = self.visit_ret(drop_keep) {
                         return Ok(WasmOutcome::Return);
                     }
                 }
                 Instr::ReturnIfNez(drop_keep) => {
-                    if let ReturnOutcome::Host =
-                        visit_return_if_nez(ip, sp, cache, value_stack, call_stack, drop_keep)
-                    {
+                    if let ReturnOutcome::Host = self.visit_return_if_nez(drop_keep) {
                         return Ok(WasmOutcome::Return);
                     }
                 }
                 Instr::Call(func) => {
-                    if let CallOutcome::Call(host_func) =
-                        visit_call(ip, sp, cache, ctx, value_stack, call_stack, code_map, func)?
-                    {
+                    if let CallOutcome::Call(host_func) = self.visit_call(func)? {
                         return Ok(WasmOutcome::Call(host_func));
                     }
                 }
                 Instr::CallIndirect { table, func_type } => {
-                    if let CallOutcome::Call(host_func) = visit_call_indirect(
-                        ip,
-                        sp,
-                        cache,
-                        ctx,
-                        value_stack,
-                        call_stack,
-                        code_map,
-                        table,
-                        func_type,
-                    )? {
+                    if let CallOutcome::Call(host_func) =
+                        self.visit_call_indirect(table, func_type)?
+                    {
                         return Ok(WasmOutcome::Call(host_func));
                     }
                 }
-                Instr::Drop => visit_drop(ip, sp),
-                Instr::Select => visit_select(ip, sp),
-                Instr::GlobalGet(global_idx) => visit_global_get(ip, sp, ctx, cache, global_idx),
-                Instr::GlobalSet(global_idx) => visit_global_set(ip, sp, ctx, cache, global_idx),
-                Instr::I32Load(offset) => visit_i32_load(ip, sp, ctx, cache, offset)?,
-                Instr::I64Load(offset) => visit_i64_load(ip, sp, ctx, cache, offset)?,
-                Instr::F32Load(offset) => visit_f32_load(ip, sp, ctx, cache, offset)?,
-                Instr::F64Load(offset) => visit_f64_load(ip, sp, ctx, cache, offset)?,
-                Instr::I32Load8S(offset) => visit_i32_load_i8_s(ip, sp, ctx, cache, offset)?,
-                Instr::I32Load8U(offset) => visit_i32_load_i8_u(ip, sp, ctx, cache, offset)?,
-                Instr::I32Load16S(offset) => visit_i32_load_i16_s(ip, sp, ctx, cache, offset)?,
-                Instr::I32Load16U(offset) => visit_i32_load_i16_u(ip, sp, ctx, cache, offset)?,
-                Instr::I64Load8S(offset) => visit_i64_load_i8_s(ip, sp, ctx, cache, offset)?,
-                Instr::I64Load8U(offset) => visit_i64_load_i8_u(ip, sp, ctx, cache, offset)?,
-                Instr::I64Load16S(offset) => visit_i64_load_i16_s(ip, sp, ctx, cache, offset)?,
-                Instr::I64Load16U(offset) => visit_i64_load_i16_u(ip, sp, ctx, cache, offset)?,
-                Instr::I64Load32S(offset) => visit_i64_load_i32_s(ip, sp, ctx, cache, offset)?,
-                Instr::I64Load32U(offset) => visit_i64_load_i32_u(ip, sp, ctx, cache, offset)?,
-                Instr::I32Store(offset) => visit_i32_store(ip, sp, ctx, cache, offset)?,
-                Instr::I64Store(offset) => visit_i64_store(ip, sp, ctx, cache, offset)?,
-                Instr::F32Store(offset) => visit_f32_store(ip, sp, ctx, cache, offset)?,
-                Instr::F64Store(offset) => visit_f64_store(ip, sp, ctx, cache, offset)?,
-                Instr::I32Store8(offset) => visit_i32_store_8(ip, sp, ctx, cache, offset)?,
-                Instr::I32Store16(offset) => visit_i32_store_16(ip, sp, ctx, cache, offset)?,
-                Instr::I64Store8(offset) => visit_i64_store_8(ip, sp, ctx, cache, offset)?,
-                Instr::I64Store16(offset) => visit_i64_store_16(ip, sp, ctx, cache, offset)?,
-                Instr::I64Store32(offset) => visit_i64_store_32(ip, sp, ctx, cache, offset)?,
-                Instr::MemorySize => visit_memory_size(ip, sp, ctx, cache),
-                Instr::MemoryGrow => visit_memory_grow(ip, sp, ctx, cache)?,
-                Instr::MemoryFill => visit_memory_fill(ip, sp, ctx, cache)?,
-                Instr::MemoryCopy => visit_memory_copy(ip, sp, ctx, cache)?,
-                Instr::MemoryInit(segment) => visit_memory_init(ip, sp, ctx, cache, segment)?,
-                Instr::DataDrop(segment) => visit_data_drop(ip, ctx, cache, segment),
-                Instr::TableSize { table } => visit_table_size(ip, sp, ctx, cache, table),
-                Instr::TableGrow { table } => visit_table_grow(ip, sp, ctx, cache, table)?,
-                Instr::TableFill { table } => visit_table_fill(ip, sp, ctx, cache, table)?,
-                Instr::TableGet { table } => visit_table_get(ip, sp, ctx, cache, table)?,
-                Instr::TableSet { table } => visit_table_set(ip, sp, ctx, cache, table)?,
-                Instr::TableCopy { dst, src } => visit_table_copy(ip, sp, ctx, cache, dst, src)?,
-                Instr::TableInit { table, elem } => {
-                    visit_table_init(ip, sp, ctx, cache, table, elem)?
-                }
-                Instr::ElemDrop(segment) => visit_element_drop(ip, ctx, cache, segment),
-                Instr::RefFunc { func_index } => visit_ref_func(ip, sp, ctx, cache, func_index),
-                Instr::Const(bytes) => visit_const(ip, sp, bytes),
-                Instr::I32Eqz => visit_i32_eqz(ip, sp),
-                Instr::I32Eq => visit_i32_eq(ip, sp),
-                Instr::I32Ne => visit_i32_ne(ip, sp),
-                Instr::I32LtS => visit_i32_lt_s(ip, sp),
-                Instr::I32LtU => visit_i32_lt_u(ip, sp),
-                Instr::I32GtS => visit_i32_gt_s(ip, sp),
-                Instr::I32GtU => visit_i32_gt_u(ip, sp),
-                Instr::I32LeS => visit_i32_le_s(ip, sp),
-                Instr::I32LeU => visit_i32_le_u(ip, sp),
-                Instr::I32GeS => visit_i32_ge_s(ip, sp),
-                Instr::I32GeU => visit_i32_ge_u(ip, sp),
-                Instr::I64Eqz => visit_i64_eqz(ip, sp),
-                Instr::I64Eq => visit_i64_eq(ip, sp),
-                Instr::I64Ne => visit_i64_ne(ip, sp),
-                Instr::I64LtS => visit_i64_lt_s(ip, sp),
-                Instr::I64LtU => visit_i64_lt_u(ip, sp),
-                Instr::I64GtS => visit_i64_gt_s(ip, sp),
-                Instr::I64GtU => visit_i64_gt_u(ip, sp),
-                Instr::I64LeS => visit_i64_le_s(ip, sp),
-                Instr::I64LeU => visit_i64_le_u(ip, sp),
-                Instr::I64GeS => visit_i64_ge_s(ip, sp),
-                Instr::I64GeU => visit_i64_ge_u(ip, sp),
-                Instr::F32Eq => visit_f32_eq(ip, sp),
-                Instr::F32Ne => visit_f32_ne(ip, sp),
-                Instr::F32Lt => visit_f32_lt(ip, sp),
-                Instr::F32Gt => visit_f32_gt(ip, sp),
-                Instr::F32Le => visit_f32_le(ip, sp),
-                Instr::F32Ge => visit_f32_ge(ip, sp),
-                Instr::F64Eq => visit_f64_eq(ip, sp),
-                Instr::F64Ne => visit_f64_ne(ip, sp),
-                Instr::F64Lt => visit_f64_lt(ip, sp),
-                Instr::F64Gt => visit_f64_gt(ip, sp),
-                Instr::F64Le => visit_f64_le(ip, sp),
-                Instr::F64Ge => visit_f64_ge(ip, sp),
-                Instr::I32Clz => visit_i32_clz(ip, sp),
-                Instr::I32Ctz => visit_i32_ctz(ip, sp),
-                Instr::I32Popcnt => visit_i32_popcnt(ip, sp),
-                Instr::I32Add => visit_i32_add(ip, sp),
-                Instr::I32Sub => visit_i32_sub(ip, sp),
-                Instr::I32Mul => visit_i32_mul(ip, sp),
-                Instr::I32DivS => visit_i32_div_s(ip, sp)?,
-                Instr::I32DivU => visit_i32_div_u(ip, sp)?,
-                Instr::I32RemS => visit_i32_rem_s(ip, sp)?,
-                Instr::I32RemU => visit_i32_rem_u(ip, sp)?,
-                Instr::I32And => visit_i32_and(ip, sp),
-                Instr::I32Or => visit_i32_or(ip, sp),
-                Instr::I32Xor => visit_i32_xor(ip, sp),
-                Instr::I32Shl => visit_i32_shl(ip, sp),
-                Instr::I32ShrS => visit_i32_shr_s(ip, sp),
-                Instr::I32ShrU => visit_i32_shr_u(ip, sp),
-                Instr::I32Rotl => visit_i32_rotl(ip, sp),
-                Instr::I32Rotr => visit_i32_rotr(ip, sp),
-                Instr::I64Clz => visit_i64_clz(ip, sp),
-                Instr::I64Ctz => visit_i64_ctz(ip, sp),
-                Instr::I64Popcnt => visit_i64_popcnt(ip, sp),
-                Instr::I64Add => visit_i64_add(ip, sp),
-                Instr::I64Sub => visit_i64_sub(ip, sp),
-                Instr::I64Mul => visit_i64_mul(ip, sp),
-                Instr::I64DivS => visit_i64_div_s(ip, sp)?,
-                Instr::I64DivU => visit_i64_div_u(ip, sp)?,
-                Instr::I64RemS => visit_i64_rem_s(ip, sp)?,
-                Instr::I64RemU => visit_i64_rem_u(ip, sp)?,
-                Instr::I64And => visit_i64_and(ip, sp),
-                Instr::I64Or => visit_i64_or(ip, sp),
-                Instr::I64Xor => visit_i64_xor(ip, sp),
-                Instr::I64Shl => visit_i64_shl(ip, sp),
-                Instr::I64ShrS => visit_i64_shr_s(ip, sp),
-                Instr::I64ShrU => visit_i64_shr_u(ip, sp),
-                Instr::I64Rotl => visit_i64_rotl(ip, sp),
-                Instr::I64Rotr => visit_i64_rotr(ip, sp),
-                Instr::F32Abs => visit_f32_abs(ip, sp),
-                Instr::F32Neg => visit_f32_neg(ip, sp),
-                Instr::F32Ceil => visit_f32_ceil(ip, sp),
-                Instr::F32Floor => visit_f32_floor(ip, sp),
-                Instr::F32Trunc => visit_f32_trunc(ip, sp),
-                Instr::F32Nearest => visit_f32_nearest(ip, sp),
-                Instr::F32Sqrt => visit_f32_sqrt(ip, sp),
-                Instr::F32Add => visit_f32_add(ip, sp),
-                Instr::F32Sub => visit_f32_sub(ip, sp),
-                Instr::F32Mul => visit_f32_mul(ip, sp),
-                Instr::F32Div => visit_f32_div(ip, sp),
-                Instr::F32Min => visit_f32_min(ip, sp),
-                Instr::F32Max => visit_f32_max(ip, sp),
-                Instr::F32Copysign => visit_f32_copysign(ip, sp),
-                Instr::F64Abs => visit_f64_abs(ip, sp),
-                Instr::F64Neg => visit_f64_neg(ip, sp),
-                Instr::F64Ceil => visit_f64_ceil(ip, sp),
-                Instr::F64Floor => visit_f64_floor(ip, sp),
-                Instr::F64Trunc => visit_f64_trunc(ip, sp),
-                Instr::F64Nearest => visit_f64_nearest(ip, sp),
-                Instr::F64Sqrt => visit_f64_sqrt(ip, sp),
-                Instr::F64Add => visit_f64_add(ip, sp),
-                Instr::F64Sub => visit_f64_sub(ip, sp),
-                Instr::F64Mul => visit_f64_mul(ip, sp),
-                Instr::F64Div => visit_f64_div(ip, sp),
-                Instr::F64Min => visit_f64_min(ip, sp),
-                Instr::F64Max => visit_f64_max(ip, sp),
-                Instr::F64Copysign => visit_f64_copysign(ip, sp),
-                Instr::I32WrapI64 => visit_i32_wrap_i64(ip, sp),
-                Instr::I32TruncF32S => visit_i32_trunc_f32_s(ip, sp)?,
-                Instr::I32TruncF32U => visit_i32_trunc_f32_u(ip, sp)?,
-                Instr::I32TruncF64S => visit_i32_trunc_f64_s(ip, sp)?,
-                Instr::I32TruncF64U => visit_i32_trunc_f64_u(ip, sp)?,
-                Instr::I64ExtendI32S => visit_i64_extend_i32_s(ip, sp),
-                Instr::I64ExtendI32U => visit_i64_extend_i32_u(ip, sp),
-                Instr::I64TruncF32S => visit_i64_trunc_f32_s(ip, sp)?,
-                Instr::I64TruncF32U => visit_i64_trunc_f32_u(ip, sp)?,
-                Instr::I64TruncF64S => visit_i64_trunc_f64_s(ip, sp)?,
-                Instr::I64TruncF64U => visit_i64_trunc_f64_u(ip, sp)?,
-                Instr::F32ConvertI32S => visit_f32_convert_i32_s(ip, sp),
-                Instr::F32ConvertI32U => visit_f32_convert_i32_u(ip, sp),
-                Instr::F32ConvertI64S => visit_f32_convert_i64_s(ip, sp),
-                Instr::F32ConvertI64U => visit_f32_convert_i64_u(ip, sp),
-                Instr::F32DemoteF64 => visit_f32_demote_f64(ip, sp),
-                Instr::F64ConvertI32S => visit_f64_convert_i32_s(ip, sp),
-                Instr::F64ConvertI32U => visit_f64_convert_i32_u(ip, sp),
-                Instr::F64ConvertI64S => visit_f64_convert_i64_s(ip, sp),
-                Instr::F64ConvertI64U => visit_f64_convert_i64_u(ip, sp),
-                Instr::F64PromoteF32 => visit_f64_promote_f32(ip, sp),
-                Instr::I32TruncSatF32S => visit_i32_trunc_sat_f32_s(ip, sp),
-                Instr::I32TruncSatF32U => visit_i32_trunc_sat_f32_u(ip, sp),
-                Instr::I32TruncSatF64S => visit_i32_trunc_sat_f64_s(ip, sp),
-                Instr::I32TruncSatF64U => visit_i32_trunc_sat_f64_u(ip, sp),
-                Instr::I64TruncSatF32S => visit_i64_trunc_sat_f32_s(ip, sp),
-                Instr::I64TruncSatF32U => visit_i64_trunc_sat_f32_u(ip, sp),
-                Instr::I64TruncSatF64S => visit_i64_trunc_sat_f64_s(ip, sp),
-                Instr::I64TruncSatF64U => visit_i64_trunc_sat_f64_u(ip, sp),
-                Instr::I32Extend8S => visit_i32_extend8_s(ip, sp),
-                Instr::I32Extend16S => visit_i32_extend16_s(ip, sp),
-                Instr::I64Extend8S => visit_i64_extend8_s(ip, sp),
-                Instr::I64Extend16S => visit_i64_extend16_s(ip, sp),
-                Instr::I64Extend32S => visit_i64_extend32_s(ip, sp),
+                Instr::Drop => self.visit_drop(),
+                Instr::Select => self.visit_select(),
+                Instr::GlobalGet(global_idx) => self.visit_global_get(global_idx),
+                Instr::GlobalSet(global_idx) => self.visit_global_set(global_idx),
+                Instr::I32Load(offset) => self.visit_i32_load(offset)?,
+                Instr::I64Load(offset) => self.visit_i64_load(offset)?,
+                Instr::F32Load(offset) => self.visit_f32_load(offset)?,
+                Instr::F64Load(offset) => self.visit_f64_load(offset)?,
+                Instr::I32Load8S(offset) => self.visit_i32_load_i8(offset)?,
+                Instr::I32Load8U(offset) => self.visit_i32_load_u8(offset)?,
+                Instr::I32Load16S(offset) => self.visit_i32_load_i16(offset)?,
+                Instr::I32Load16U(offset) => self.visit_i32_load_u16(offset)?,
+                Instr::I64Load8S(offset) => self.visit_i64_load_i8(offset)?,
+                Instr::I64Load8U(offset) => self.visit_i64_load_u8(offset)?,
+                Instr::I64Load16S(offset) => self.visit_i64_load_i16(offset)?,
+                Instr::I64Load16U(offset) => self.visit_i64_load_u16(offset)?,
+                Instr::I64Load32S(offset) => self.visit_i64_load_i32(offset)?,
+                Instr::I64Load32U(offset) => self.visit_i64_load_u32(offset)?,
+                Instr::I32Store(offset) => self.visit_i32_store(offset)?,
+                Instr::I64Store(offset) => self.visit_i64_store(offset)?,
+                Instr::F32Store(offset) => self.visit_f32_store(offset)?,
+                Instr::F64Store(offset) => self.visit_f64_store(offset)?,
+                Instr::I32Store8(offset) => self.visit_i32_store_8(offset)?,
+                Instr::I32Store16(offset) => self.visit_i32_store_16(offset)?,
+                Instr::I64Store8(offset) => self.visit_i64_store_8(offset)?,
+                Instr::I64Store16(offset) => self.visit_i64_store_16(offset)?,
+                Instr::I64Store32(offset) => self.visit_i64_store_32(offset)?,
+                Instr::MemorySize => self.visit_memory_size(),
+                Instr::MemoryGrow => self.visit_memory_grow()?,
+                Instr::MemoryFill => self.visit_memory_fill()?,
+                Instr::MemoryCopy => self.visit_memory_copy()?,
+                Instr::MemoryInit(segment) => self.visit_memory_init(segment)?,
+                Instr::DataDrop(segment) => self.visit_data_drop(segment),
+                Instr::TableSize { table } => self.visit_table_size(table),
+                Instr::TableGrow { table } => self.visit_table_grow(table)?,
+                Instr::TableFill { table } => self.visit_table_fill(table)?,
+                Instr::TableGet { table } => self.visit_table_get(table)?,
+                Instr::TableSet { table } => self.visit_table_set(table)?,
+                Instr::TableCopy { dst, src } => self.visit_table_copy(dst, src)?,
+                Instr::TableInit { table, elem } => self.visit_table_init(table, elem)?,
+                Instr::ElemDrop(segment) => self.visit_element_drop(segment),
+                Instr::RefFunc { func_index } => self.visit_ref_func(func_index),
+                Instr::Const(bytes) => self.visit_const(bytes),
+                Instr::I32Eqz => self.visit_i32_eqz(),
+                Instr::I32Eq => self.visit_i32_eq(),
+                Instr::I32Ne => self.visit_i32_ne(),
+                Instr::I32LtS => self.visit_i32_lt_s(),
+                Instr::I32LtU => self.visit_i32_lt_u(),
+                Instr::I32GtS => self.visit_i32_gt_s(),
+                Instr::I32GtU => self.visit_i32_gt_u(),
+                Instr::I32LeS => self.visit_i32_le_s(),
+                Instr::I32LeU => self.visit_i32_le_u(),
+                Instr::I32GeS => self.visit_i32_ge_s(),
+                Instr::I32GeU => self.visit_i32_ge_u(),
+                Instr::I64Eqz => self.visit_i64_eqz(),
+                Instr::I64Eq => self.visit_i64_eq(),
+                Instr::I64Ne => self.visit_i64_ne(),
+                Instr::I64LtS => self.visit_i64_lt_s(),
+                Instr::I64LtU => self.visit_i64_lt_u(),
+                Instr::I64GtS => self.visit_i64_gt_s(),
+                Instr::I64GtU => self.visit_i64_gt_u(),
+                Instr::I64LeS => self.visit_i64_le_s(),
+                Instr::I64LeU => self.visit_i64_le_u(),
+                Instr::I64GeS => self.visit_i64_ge_s(),
+                Instr::I64GeU => self.visit_i64_ge_u(),
+                Instr::F32Eq => self.visit_f32_eq(),
+                Instr::F32Ne => self.visit_f32_ne(),
+                Instr::F32Lt => self.visit_f32_lt(),
+                Instr::F32Gt => self.visit_f32_gt(),
+                Instr::F32Le => self.visit_f32_le(),
+                Instr::F32Ge => self.visit_f32_ge(),
+                Instr::F64Eq => self.visit_f64_eq(),
+                Instr::F64Ne => self.visit_f64_ne(),
+                Instr::F64Lt => self.visit_f64_lt(),
+                Instr::F64Gt => self.visit_f64_gt(),
+                Instr::F64Le => self.visit_f64_le(),
+                Instr::F64Ge => self.visit_f64_ge(),
+                Instr::I32Clz => self.visit_i32_clz(),
+                Instr::I32Ctz => self.visit_i32_ctz(),
+                Instr::I32Popcnt => self.visit_i32_popcnt(),
+                Instr::I32Add => self.visit_i32_add(),
+                Instr::I32Sub => self.visit_i32_sub(),
+                Instr::I32Mul => self.visit_i32_mul(),
+                Instr::I32DivS => self.visit_i32_div_s()?,
+                Instr::I32DivU => self.visit_i32_div_u()?,
+                Instr::I32RemS => self.visit_i32_rem_s()?,
+                Instr::I32RemU => self.visit_i32_rem_u()?,
+                Instr::I32And => self.visit_i32_and(),
+                Instr::I32Or => self.visit_i32_or(),
+                Instr::I32Xor => self.visit_i32_xor(),
+                Instr::I32Shl => self.visit_i32_shl(),
+                Instr::I32ShrS => self.visit_i32_shr_s(),
+                Instr::I32ShrU => self.visit_i32_shr_u(),
+                Instr::I32Rotl => self.visit_i32_rotl(),
+                Instr::I32Rotr => self.visit_i32_rotr(),
+                Instr::I64Clz => self.visit_i64_clz(),
+                Instr::I64Ctz => self.visit_i64_ctz(),
+                Instr::I64Popcnt => self.visit_i64_popcnt(),
+                Instr::I64Add => self.visit_i64_add(),
+                Instr::I64Sub => self.visit_i64_sub(),
+                Instr::I64Mul => self.visit_i64_mul(),
+                Instr::I64DivS => self.visit_i64_div_s()?,
+                Instr::I64DivU => self.visit_i64_div_u()?,
+                Instr::I64RemS => self.visit_i64_rem_s()?,
+                Instr::I64RemU => self.visit_i64_rem_u()?,
+                Instr::I64And => self.visit_i64_and(),
+                Instr::I64Or => self.visit_i64_or(),
+                Instr::I64Xor => self.visit_i64_xor(),
+                Instr::I64Shl => self.visit_i64_shl(),
+                Instr::I64ShrS => self.visit_i64_shr_s(),
+                Instr::I64ShrU => self.visit_i64_shr_u(),
+                Instr::I64Rotl => self.visit_i64_rotl(),
+                Instr::I64Rotr => self.visit_i64_rotr(),
+                Instr::F32Abs => self.visit_f32_abs(),
+                Instr::F32Neg => self.visit_f32_neg(),
+                Instr::F32Ceil => self.visit_f32_ceil(),
+                Instr::F32Floor => self.visit_f32_floor(),
+                Instr::F32Trunc => self.visit_f32_trunc(),
+                Instr::F32Nearest => self.visit_f32_nearest(),
+                Instr::F32Sqrt => self.visit_f32_sqrt(),
+                Instr::F32Add => self.visit_f32_add(),
+                Instr::F32Sub => self.visit_f32_sub(),
+                Instr::F32Mul => self.visit_f32_mul(),
+                Instr::F32Div => self.visit_f32_div(),
+                Instr::F32Min => self.visit_f32_min(),
+                Instr::F32Max => self.visit_f32_max(),
+                Instr::F32Copysign => self.visit_f32_copysign(),
+                Instr::F64Abs => self.visit_f64_abs(),
+                Instr::F64Neg => self.visit_f64_neg(),
+                Instr::F64Ceil => self.visit_f64_ceil(),
+                Instr::F64Floor => self.visit_f64_floor(),
+                Instr::F64Trunc => self.visit_f64_trunc(),
+                Instr::F64Nearest => self.visit_f64_nearest(),
+                Instr::F64Sqrt => self.visit_f64_sqrt(),
+                Instr::F64Add => self.visit_f64_add(),
+                Instr::F64Sub => self.visit_f64_sub(),
+                Instr::F64Mul => self.visit_f64_mul(),
+                Instr::F64Div => self.visit_f64_div(),
+                Instr::F64Min => self.visit_f64_min(),
+                Instr::F64Max => self.visit_f64_max(),
+                Instr::F64Copysign => self.visit_f64_copysign(),
+                Instr::I32WrapI64 => self.visit_i32_wrap_i64(),
+                Instr::I32TruncF32S => self.visit_i32_trunc_f32()?,
+                Instr::I32TruncF32U => self.visit_u32_trunc_f32()?,
+                Instr::I32TruncF64S => self.visit_i32_trunc_f64()?,
+                Instr::I32TruncF64U => self.visit_u32_trunc_f64()?,
+                Instr::I64ExtendI32S => self.visit_i64_extend_i32(),
+                Instr::I64ExtendI32U => self.visit_i64_extend_u32(),
+                Instr::I64TruncF32S => self.visit_i64_trunc_f32()?,
+                Instr::I64TruncF32U => self.visit_u64_trunc_f32()?,
+                Instr::I64TruncF64S => self.visit_i64_trunc_f64()?,
+                Instr::I64TruncF64U => self.visit_u64_trunc_f64()?,
+                Instr::F32ConvertI32S => self.visit_f32_convert_i32(),
+                Instr::F32ConvertI32U => self.visit_f32_convert_u32(),
+                Instr::F32ConvertI64S => self.visit_f32_convert_i64(),
+                Instr::F32ConvertI64U => self.visit_f32_convert_u64(),
+                Instr::F32DemoteF64 => self.visit_f32_demote_f64(),
+                Instr::F64ConvertI32S => self.visit_f64_convert_i32(),
+                Instr::F64ConvertI32U => self.visit_f64_convert_u32(),
+                Instr::F64ConvertI64S => self.visit_f64_convert_i64(),
+                Instr::F64ConvertI64U => self.visit_f64_convert_u64(),
+                Instr::F64PromoteF32 => self.visit_f64_promote_f32(),
+                Instr::I32TruncSatF32S => self.visit_i32_trunc_sat_f32(),
+                Instr::I32TruncSatF32U => self.visit_u32_trunc_sat_f32(),
+                Instr::I32TruncSatF64S => self.visit_i32_trunc_sat_f64(),
+                Instr::I32TruncSatF64U => self.visit_u32_trunc_sat_f64(),
+                Instr::I64TruncSatF32S => self.visit_i64_trunc_sat_f32(),
+                Instr::I64TruncSatF32U => self.visit_u64_trunc_sat_f32(),
+                Instr::I64TruncSatF64S => self.visit_i64_trunc_sat_f64(),
+                Instr::I64TruncSatF64U => self.visit_u64_trunc_sat_f64(),
+                Instr::I32Extend8S => self.visit_i32_sign_extend8(),
+                Instr::I32Extend16S => self.visit_i32_sign_extend16(),
+                Instr::I64Extend8S => self.visit_i64_sign_extend8(),
+                Instr::I64Extend16S => self.visit_i64_sign_extend16(),
+                Instr::I64Extend32S => self.visit_i64_sign_extend32(),
             }
         }
     }
-}
 
-#[inline(always)]
-fn visit_unreachable() -> Result<(), TrapCode> {
-    Err(TrapCode::UnreachableCodeReached).map_err(Into::into)
-}
+    /// Executes a generic Wasm `store[N_{s|u}]` operation.
+    ///
+    /// # Note
+    ///
+    /// This can be used to emulate the following Wasm operands:
+    ///
+    /// - `{i32, i64, f32, f64}.load`
+    /// - `{i32, i64}.load8_s`
+    /// - `{i32, i64}.load8_u`
+    /// - `{i32, i64}.load16_s`
+    /// - `{i32, i64}.load16_u`
+    /// - `i64.load32_s`
+    /// - `i64.load32_u`
+    #[inline]
+    fn execute_load_extend(
+        &mut self,
+        offset: Offset,
+        load_extend: WasmLoadOp,
+    ) -> Result<(), TrapCode> {
+        self.sp.try_eval_top(|address| {
+            let memory = self.cache.default_memory_bytes(self.ctx);
+            let value = load_extend(memory, address, offset.into_inner())?;
+            Ok(value)
+        })?;
+        self.try_next_instr()
+    }
 
-#[inline(always)]
-fn visit_consume_fuel(
-    ip: &mut InstructionPtr,
-    ctx: &mut StoreInner,
-    amount: u64,
-) -> Result<(), TrapCode> {
-    // We do not have to check if fuel metering is enabled since
-    // these `wasmi` instructions are only generated if fuel metering
-    // is enabled to begin with.
-    ctx.fuel_mut().consume_fuel(amount)?;
-    try_next_instr(ip)
-}
+    /// Executes a generic Wasm `store[N]` operation.
+    ///
+    /// # Note
+    ///
+    /// This can be used to emulate the following Wasm operands:
+    ///
+    /// - `{i32, i64, f32, f64}.store`
+    /// - `{i32, i64}.store8`
+    /// - `{i32, i64}.store16`
+    /// - `i64.store32`
+    #[inline]
+    fn execute_store_wrap(
+        &mut self,
+        offset: Offset,
+        store_wrap: WasmStoreOp,
+    ) -> Result<(), TrapCode> {
+        let (address, value) = self.sp.pop2();
+        let memory = self.cache.default_memory_bytes(self.ctx);
+        store_wrap(memory, address, offset.into_inner(), value)?;
+        self.try_next_instr()
+    }
 
-#[inline(always)]
-fn visit_br(ip: &mut InstructionPtr, sp: &mut ValueStackPtr, params: BranchParams) {
-    branch_to(ip, sp, params)
-}
+    /// Executes an infallible unary `wasmi` instruction.
+    #[inline]
+    fn execute_unary(&mut self, f: fn(UntypedValue) -> UntypedValue) {
+        self.sp.eval_top(f);
+        self.next_instr()
+    }
 
-#[inline(always)]
-fn visit_br_if_eqz(ip: &mut InstructionPtr, sp: &mut ValueStackPtr, params: BranchParams) {
-    let condition = sp.pop_as();
-    if condition {
-        next_instr(ip)
-    } else {
-        branch_to(ip, sp, params)
+    /// Executes a fallible unary `wasmi` instruction.
+    #[inline]
+    fn try_execute_unary(
+        &mut self,
+        f: fn(UntypedValue) -> Result<UntypedValue, TrapCode>,
+    ) -> Result<(), TrapCode> {
+        self.sp.try_eval_top(f)?;
+        self.try_next_instr()
+    }
+
+    /// Executes an infallible binary `wasmi` instruction.
+    #[inline]
+    fn execute_binary(&mut self, f: fn(UntypedValue, UntypedValue) -> UntypedValue) {
+        self.sp.eval_top2(f);
+        self.next_instr()
+    }
+
+    /// Executes a fallible binary `wasmi` instruction.
+    #[inline]
+    fn try_execute_binary(
+        &mut self,
+        f: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
+    ) -> Result<(), TrapCode> {
+        self.sp.try_eval_top2(f)?;
+        self.try_next_instr()
+    }
+
+    /// Shifts the instruction pointer to the next instruction.
+    #[inline]
+    fn next_instr(&mut self) {
+        self.ip.add(1)
+    }
+
+    /// Shifts the instruction pointer to the next instruction and returns `Ok(())`.
+    ///
+    /// # Note
+    ///
+    /// This is a convenience function for fallible instructions.
+    #[inline]
+    fn try_next_instr(&mut self) -> Result<(), TrapCode> {
+        self.next_instr();
+        Ok(())
+    }
+
+    /// Offsets the instruction pointer using the given [`BranchParams`].
+    #[inline]
+    fn branch_to(&mut self, params: BranchParams) {
+        self.sp.drop_keep(params.drop_keep());
+        self.ip.offset(params.offset().into_i32() as isize)
+    }
+
+    /// Synchronizes the current stack pointer with the [`ValueStack`].
+    ///
+    /// # Note
+    ///
+    /// For performance reasons we detach the stack pointer form the [`ValueStack`].
+    /// Therefore it is necessary to synchronize the [`ValueStack`] upon finishing
+    /// execution of a sequence of non control flow instructions.
+    #[inline]
+    fn sync_stack_ptr(&mut self) {
+        self.value_stack.sync_stack_ptr(self.sp);
+    }
+
+    /// Calls the given [`Func`].
+    ///
+    /// This also prepares the instruction pointer and stack pointer for
+    /// the function call so that the stack and execution state is synchronized
+    /// with the outer structures.
+    #[inline(always)]
+    fn call_func(&mut self, func: &Func) -> Result<CallOutcome, TrapCode> {
+        self.next_instr();
+        self.sync_stack_ptr();
+        self.call_stack
+            .push(FuncFrame::new(self.ip, self.cache.instance()))?;
+        let wasm_func = match self.ctx.resolve_func(func) {
+            FuncEntity::Wasm(wasm_func) => wasm_func,
+            FuncEntity::Host(_host_func) => {
+                self.cache.reset();
+                return Ok(CallOutcome::Call(*func));
+            }
+        };
+        let header = self.code_map.header(wasm_func.func_body());
+        self.value_stack.prepare_wasm_call(header)?;
+        self.sp = self.value_stack.stack_ptr();
+        self.cache.update_instance(wasm_func.instance());
+        self.ip = self.code_map.instr_ptr(header.iref());
+        Ok(CallOutcome::Continue)
+    }
+
+    /// Returns to the caller.
+    ///
+    /// This also modifies the stack as the caller would expect it
+    /// and synchronizes the execution state with the outer structures.
+    #[inline]
+    fn ret(&mut self, drop_keep: DropKeep) -> ReturnOutcome {
+        self.sp.drop_keep(drop_keep);
+        self.sync_stack_ptr();
+        match self.call_stack.pop() {
+            Some(caller) => {
+                self.ip = caller.ip();
+                self.cache.update_instance(caller.instance());
+                ReturnOutcome::Wasm
+            }
+            None => ReturnOutcome::Host,
+        }
+    }
+
+    /// Consume an amount of fuel specified by `delta` if `exec` succeeds.
+    ///
+    /// # Note
+    ///
+    /// - `delta` is only evaluated if fuel metering is enabled.
+    /// - `exec` is only evaluated if the remaining fuel is sufficient
+    ///    for amount of required fuel determined by `delta` or if
+    ///    fuel metering is disabled.
+    ///
+    /// Only if `exec` runs successfully and fuel metering
+    /// is enabled the fuel determined by `delta` is charged.
+    ///
+    /// # Errors
+    ///
+    /// - If the [`StoreInner`] ran out of fuel.
+    /// - If the `exec` closure traps.
+    fn consume_fuel_on_success<T, E>(
+        &mut self,
+        delta: impl FnOnce(&FuelCosts) -> u64,
+        exec: impl FnOnce(&mut Self) -> Result<T, E>,
+    ) -> Result<T, E>
+    where
+        E: From<TrapCode>,
+    {
+        if !self.is_fuel_metering_enabled() {
+            return exec(self);
+        }
+        // At this point we know that fuel metering is enabled.
+        let delta = delta(self.fuel_costs());
+        self.ctx.fuel().sufficient_fuel(delta)?;
+        let result = exec(self)?;
+        self.ctx
+            .fuel_mut()
+            .consume_fuel(delta)
+            .unwrap_or_else(|error| {
+                panic!("remaining fuel has already been approved prior but encountered: {error}")
+            });
+        Ok(result)
+    }
+
+    /// Returns `true` if fuel metering is enabled.
+    fn is_fuel_metering_enabled(&self) -> bool {
+        self.ctx.engine().config().get_consume_fuel()
+    }
+
+    /// Returns a shared reference to the [`FuelCosts`] of the [`Engine`].
+    ///
+    /// [`Engine`]: crate::Engine
+    fn fuel_costs(&self) -> &FuelCosts {
+        self.ctx.engine().config().fuel_costs()
     }
 }
 
-#[inline(always)]
-fn visit_br_if_nez(ip: &mut InstructionPtr, sp: &mut ValueStackPtr, params: BranchParams) {
-    let condition = sp.pop_as();
-    if condition {
-        branch_to(ip, sp, params)
-    } else {
-        next_instr(ip)
+impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+    #[inline(always)]
+    fn visit_unreachable(&mut self) -> Result<(), TrapCode> {
+        Err(TrapCode::UnreachableCodeReached).map_err(Into::into)
     }
-}
 
-#[inline(always)]
-fn visit_return_if_nez(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    cache: &mut InstanceCache,
-    value_stack: &mut ValueStack,
-    call_stack: &mut CallStack,
-    drop_keep: DropKeep,
-) -> ReturnOutcome {
-    let condition = sp.pop_as();
-    if condition {
-        ret(ip, sp, cache, value_stack, call_stack, drop_keep)
-    } else {
-        next_instr(ip);
-        ReturnOutcome::Wasm
+    #[inline(always)]
+    fn visit_consume_fuel(&mut self, amount: u64) -> Result<(), TrapCode> {
+        // We do not have to check if fuel metering is enabled since
+        // these `wasmi` instructions are only generated if fuel metering
+        // is enabled to begin with.
+        self.ctx.fuel_mut().consume_fuel(amount)?;
+        self.try_next_instr()
     }
-}
 
-#[inline(always)]
-fn visit_br_table(ip: &mut InstructionPtr, sp: &mut ValueStackPtr, len_targets: usize) {
-    let index: u32 = sp.pop_as();
-    // The index of the default target which is the last target of the slice.
-    let max_index = len_targets - 1;
-    // A normalized index will always yield a target without panicking.
-    let normalized_index = cmp::min(index as usize, max_index);
-    // Update `pc`:
-    ip.add(normalized_index + 1);
-}
-
-#[inline(always)]
-fn visit_ret(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    cache: &mut InstanceCache,
-    value_stack: &mut ValueStack,
-    call_stack: &mut CallStack,
-    drop_keep: DropKeep,
-) -> ReturnOutcome {
-    ret(ip, sp, cache, value_stack, call_stack, drop_keep)
-}
-
-#[inline(always)]
-fn visit_local_get(ip: &mut InstructionPtr, sp: &mut ValueStackPtr, local_depth: LocalDepth) {
-    let value = sp.nth_back(local_depth.into_inner());
-    sp.push(value);
-    next_instr(ip)
-}
-
-#[inline(always)]
-fn visit_local_set(ip: &mut InstructionPtr, sp: &mut ValueStackPtr, local_depth: LocalDepth) {
-    let new_value = sp.pop();
-    sp.set_nth_back(local_depth.into_inner(), new_value);
-    next_instr(ip)
-}
-
-#[inline(always)]
-fn visit_local_tee(ip: &mut InstructionPtr, sp: &mut ValueStackPtr, local_depth: LocalDepth) {
-    let new_value = sp.last();
-    sp.set_nth_back(local_depth.into_inner(), new_value);
-    next_instr(ip)
-}
-
-#[inline(always)]
-fn visit_global_get(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    ctx: &mut StoreInner,
-    cache: &mut InstanceCache,
-    global_index: GlobalIdx,
-) {
-    let global_value = cache.get_global(ctx, global_index);
-    sp.push(global_value);
-    next_instr(ip)
-}
-
-#[inline(always)]
-fn visit_global_set(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    ctx: &mut StoreInner,
-    cache: &mut InstanceCache,
-    global_index: GlobalIdx,
-) {
-    let new_value = sp.pop();
-    cache.set_global(ctx, global_index, new_value);
-    next_instr(ip)
-}
-
-#[inline(always)]
-fn visit_call(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    cache: &mut InstanceCache,
-    ctx: &mut StoreInner,
-    value_stack: &mut ValueStack,
-    call_stack: &mut CallStack,
-    code_map: &CodeMap,
-    func_index: FuncIdx,
-) -> Result<CallOutcome, TrapCode> {
-    let callee = cache.get_func(ctx, func_index);
-    call_func(
-        ip,
-        sp,
-        cache,
-        ctx,
-        value_stack,
-        call_stack,
-        code_map,
-        &callee,
-    )
-}
-
-#[inline(always)]
-fn visit_call_indirect(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    cache: &mut InstanceCache,
-    ctx: &mut StoreInner,
-    value_stack: &mut ValueStack,
-    call_stack: &mut CallStack,
-    code_map: &CodeMap,
-    table: TableIdx,
-    func_type: SignatureIdx,
-) -> Result<CallOutcome, TrapCode> {
-    let func_index: u32 = sp.pop_as();
-    let table = cache.get_table(ctx, table);
-    let funcref = ctx
-        .resolve_table(&table)
-        .get_untyped(func_index)
-        .map(FuncRef::from)
-        .ok_or(TrapCode::TableOutOfBounds)?;
-    let func = funcref.func().ok_or(TrapCode::IndirectCallToNull)?;
-    let actual_signature = ctx.resolve_func(func).ty_dedup();
-    let expected_signature = ctx
-        .resolve_instance(cache.instance())
-        .get_signature(func_type.into_inner())
-        .unwrap_or_else(|| panic!("missing signature for call_indirect at index: {func_type:?}"));
-    if actual_signature != expected_signature {
-        return Err(TrapCode::BadSignature).map_err(Into::into);
+    #[inline(always)]
+    fn visit_br(&mut self, params: BranchParams) {
+        self.branch_to(params)
     }
-    call_func(ip, sp, cache, ctx, value_stack, call_stack, code_map, func)
-}
 
-#[inline(always)]
-fn visit_const(ip: &mut InstructionPtr, sp: &mut ValueStackPtr, bytes: UntypedValue) {
-    sp.push(bytes);
-    next_instr(ip)
-}
-
-#[inline(always)]
-fn visit_drop(ip: &mut InstructionPtr, sp: &mut ValueStackPtr) {
-    sp.drop();
-    next_instr(ip)
-}
-
-#[inline(always)]
-fn visit_select(ip: &mut InstructionPtr, sp: &mut ValueStackPtr) {
-    sp.eval_top3(|e1, e2, e3| {
-        let condition = <bool as From<UntypedValue>>::from(e3);
+    #[inline(always)]
+    fn visit_br_if_eqz(&mut self, params: BranchParams) {
+        let condition = self.sp.pop_as();
         if condition {
-            e1
+            self.next_instr()
         } else {
-            e2
+            self.branch_to(params)
         }
-    });
-    next_instr(ip)
-}
+    }
 
-#[inline(always)]
-fn visit_memory_size(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    ctx: &mut StoreInner,
-    cache: &mut InstanceCache,
-) {
-    let memory = cache.default_memory(ctx);
-    let result: u32 = ctx.resolve_memory(memory).current_pages().into();
-    sp.push_as(result);
-    next_instr(ip)
-}
-
-#[inline(always)]
-fn visit_memory_grow(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    ctx: &mut StoreInner,
-    cache: &mut InstanceCache,
-) -> Result<(), TrapCode> {
-    let delta: u32 = sp.pop_as();
-    let delta = match Pages::new(delta) {
-        Some(pages) => pages,
-        None => {
-            // Cannot grow memory so we push the expected error value.
-            sp.push_as(INVALID_GROWTH_ERRCODE);
-            return try_next_instr(ip);
+    #[inline(always)]
+    fn visit_br_if_nez(&mut self, params: BranchParams) {
+        let condition = self.sp.pop_as();
+        if condition {
+            self.branch_to(params)
+        } else {
+            self.next_instr()
         }
-    };
-    let result = consume_fuel_on_success(
-        ctx,
-        |costs| {
-            let delta_in_bytes = delta.to_bytes().unwrap_or(0) as u64;
-            delta_in_bytes * costs.memory_per_byte
-        },
-        |ctx| {
-            let memory = cache.default_memory(ctx);
-            let new_pages = ctx
-                .resolve_memory_mut(memory)
-                .grow(delta)
-                .map(u32::from)
-                .map_err(|_| EntityGrowError::InvalidGrow)?;
-            // The `memory.grow` operation might have invalidated the cached
-            // linear memory so we need to reset it in order for the cache to
-            // reload in case it is used again.
-            cache.reset_default_memory_bytes();
-            Ok(new_pages)
-        },
-    );
-    let result = match result {
-        Ok(result) => result,
-        Err(EntityGrowError::InvalidGrow) => INVALID_GROWTH_ERRCODE,
-        Err(EntityGrowError::TrapCode(trap_code)) => return Err(trap_code),
-    };
-    sp.push_as(result);
-    try_next_instr(ip)
-}
+    }
 
-#[inline(always)]
-fn visit_memory_fill(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    ctx: &mut StoreInner,
-    cache: &mut InstanceCache,
-) -> Result<(), TrapCode> {
-    // The `n`, `val` and `d` variable bindings are extracted from the Wasm specification.
-    let (d, val, n) = sp.pop3();
-    let n = i32::from(n) as usize;
-    let offset = i32::from(d) as usize;
-    let byte = u8::from(val);
-    consume_fuel_on_success(
-        ctx,
-        |costs| n as u64 * costs.memory_per_byte,
-        |ctx| {
-            let memory = cache
-                .default_memory_bytes(ctx)
-                .get_mut(offset..)
-                .and_then(|memory| memory.get_mut(..n))
-                .ok_or(TrapCode::MemoryOutOfBounds)?;
-            memory.fill(byte);
-            Ok(())
-        },
-    )?;
-    try_next_instr(ip)
-}
+    #[inline(always)]
+    fn visit_return_if_nez(&mut self, drop_keep: DropKeep) -> ReturnOutcome {
+        let condition = self.sp.pop_as();
+        if condition {
+            self.ret(drop_keep)
+        } else {
+            self.next_instr();
+            ReturnOutcome::Wasm
+        }
+    }
 
-#[inline(always)]
-fn visit_memory_copy(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    ctx: &mut StoreInner,
-    cache: &mut InstanceCache,
-) -> Result<(), TrapCode> {
-    // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
-    let (d, s, n) = sp.pop3();
-    let n = i32::from(n) as usize;
-    let src_offset = i32::from(s) as usize;
-    let dst_offset = i32::from(d) as usize;
-    consume_fuel_on_success(
-        ctx,
-        |costs| n as u64 * costs.memory_per_byte,
-        |ctx| {
-            let data = cache.default_memory_bytes(ctx);
-            // These accesses just perform the bounds checks required by the Wasm spec.
-            data.get(src_offset..)
-                .and_then(|memory| memory.get(..n))
-                .ok_or(TrapCode::MemoryOutOfBounds)?;
-            data.get(dst_offset..)
-                .and_then(|memory| memory.get(..n))
-                .ok_or(TrapCode::MemoryOutOfBounds)?;
-            data.copy_within(src_offset..src_offset.wrapping_add(n), dst_offset);
-            Ok(())
-        },
-    )?;
-    try_next_instr(ip)
-}
+    #[inline(always)]
+    fn visit_br_table(&mut self, len_targets: usize) {
+        let index: u32 = self.sp.pop_as();
+        // The index of the default target which is the last target of the slice.
+        let max_index = len_targets - 1;
+        // A normalized index will always yield a target without panicking.
+        let normalized_index = cmp::min(index as usize, max_index);
+        // Update `pc`:
+        self.ip.add(normalized_index + 1);
+    }
 
-#[inline(always)]
-fn visit_memory_init(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    ctx: &mut StoreInner,
-    cache: &mut InstanceCache,
-    segment: DataSegmentIdx,
-) -> Result<(), TrapCode> {
-    // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
-    let (d, s, n) = sp.pop3();
-    let n = i32::from(n) as usize;
-    let src_offset = i32::from(s) as usize;
-    let dst_offset = i32::from(d) as usize;
-    consume_fuel_on_success(
-        ctx,
-        |costs| n as u64 * costs.memory_per_byte,
-        |ctx| {
-            let (memory, data) = cache.get_default_memory_and_data_segment(ctx, segment);
-            let memory = memory
-                .get_mut(dst_offset..)
-                .and_then(|memory| memory.get_mut(..n))
-                .ok_or(TrapCode::MemoryOutOfBounds)?;
-            let data = data
-                .get(src_offset..)
-                .and_then(|data| data.get(..n))
-                .ok_or(TrapCode::MemoryOutOfBounds)?;
-            memory.copy_from_slice(data);
-            Ok(())
-        },
-    )?;
-    try_next_instr(ip)
-}
+    #[inline(always)]
+    fn visit_ret(&mut self, drop_keep: DropKeep) -> ReturnOutcome {
+        self.ret(drop_keep)
+    }
 
-#[inline(always)]
-fn visit_data_drop(
-    ip: &mut InstructionPtr,
-    ctx: &mut StoreInner,
-    cache: &mut InstanceCache,
-    segment_index: DataSegmentIdx,
-) {
-    let segment = cache.get_data_segment(ctx, segment_index.into_inner());
-    ctx.resolve_data_segment_mut(&segment).drop_bytes();
-    next_instr(ip);
-}
+    #[inline(always)]
+    fn visit_local_get(&mut self, local_depth: LocalDepth) {
+        let value = self.sp.nth_back(local_depth.into_inner());
+        self.sp.push(value);
+        self.next_instr()
+    }
 
-#[inline(always)]
-fn visit_table_size(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    ctx: &mut StoreInner,
-    cache: &mut InstanceCache,
-    table_index: TableIdx,
-) {
-    let table = cache.get_table(ctx, table_index);
-    let size = ctx.resolve_table(&table).size();
-    sp.push_as(size);
-    next_instr(ip)
-}
+    #[inline(always)]
+    fn visit_local_set(&mut self, local_depth: LocalDepth) {
+        let new_value = self.sp.pop();
+        self.sp.set_nth_back(local_depth.into_inner(), new_value);
+        self.next_instr()
+    }
 
-#[inline(always)]
-fn visit_table_grow(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    ctx: &mut StoreInner,
-    cache: &mut InstanceCache,
-    table_index: TableIdx,
-) -> Result<(), TrapCode> {
-    let (init, delta) = sp.pop2();
-    let delta: u32 = delta.into();
-    let result = consume_fuel_on_success(
-        ctx,
-        |costs| u64::from(delta) * costs.table_per_element,
-        |ctx| {
-            let table = cache.get_table(ctx, table_index);
-            ctx.resolve_table_mut(&table)
-                .grow_untyped(delta, init)
-                .map_err(|_| EntityGrowError::InvalidGrow)
-        },
-    );
-    let result = match result {
-        Ok(result) => result,
-        Err(EntityGrowError::InvalidGrow) => INVALID_GROWTH_ERRCODE,
-        Err(EntityGrowError::TrapCode(trap_code)) => return Err(trap_code),
-    };
-    sp.push_as(result);
-    try_next_instr(ip)
-}
+    #[inline(always)]
+    fn visit_local_tee(&mut self, local_depth: LocalDepth) {
+        let new_value = self.sp.last();
+        self.sp.set_nth_back(local_depth.into_inner(), new_value);
+        self.next_instr()
+    }
 
-#[inline(always)]
-fn visit_table_fill(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    ctx: &mut StoreInner,
-    cache: &mut InstanceCache,
-    table_index: TableIdx,
-) -> Result<(), TrapCode> {
-    // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
-    let (i, val, n) = sp.pop3();
-    let dst: u32 = i.into();
-    let len: u32 = n.into();
-    consume_fuel_on_success(
-        ctx,
-        |costs| u64::from(len) * costs.table_per_element,
-        |ctx| {
-            let table = cache.get_table(ctx, table_index);
-            ctx.resolve_table_mut(&table).fill_untyped(dst, val, len)?;
-            Ok(())
-        },
-    )?;
-    try_next_instr(ip)
-}
+    #[inline(always)]
+    fn visit_global_get(&mut self, global_index: GlobalIdx) {
+        let global_value = self.cache.get_global(self.ctx, global_index);
+        self.sp.push(global_value);
+        self.next_instr()
+    }
 
-#[inline(always)]
-fn visit_table_get(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    ctx: &mut StoreInner,
-    cache: &mut InstanceCache,
-    table_index: TableIdx,
-) -> Result<(), TrapCode> {
-    sp.try_eval_top(|index| {
-        let index: u32 = index.into();
-        let table = cache.get_table(ctx, table_index);
-        ctx.resolve_table(&table)
-            .get_untyped(index)
-            .ok_or(TrapCode::TableOutOfBounds)
-    })?;
-    try_next_instr(ip)
-}
+    #[inline(always)]
+    fn visit_global_set(&mut self, global_index: GlobalIdx) {
+        let new_value = self.sp.pop();
+        self.cache.set_global(self.ctx, global_index, new_value);
+        self.next_instr()
+    }
 
-#[inline(always)]
-fn visit_table_set(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    ctx: &mut StoreInner,
-    cache: &mut InstanceCache,
-    table_index: TableIdx,
-) -> Result<(), TrapCode> {
-    let (index, value) = sp.pop2();
-    let index: u32 = index.into();
-    let table = cache.get_table(ctx, table_index);
-    ctx.resolve_table_mut(&table)
-        .set_untyped(index, value)
-        .map_err(|_| TrapCode::TableOutOfBounds)?;
-    try_next_instr(ip)
-}
+    #[inline(always)]
+    fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
+        let callee = self.cache.get_func(self.ctx, func_index);
+        self.call_func(&callee)
+    }
 
-#[inline(always)]
-fn visit_table_copy(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    ctx: &mut StoreInner,
-    cache: &mut InstanceCache,
-    dst: TableIdx,
-    src: TableIdx,
-) -> Result<(), TrapCode> {
-    // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
-    let (d, s, n) = sp.pop3();
-    let len = u32::from(n);
-    let src_index = u32::from(s);
-    let dst_index = u32::from(d);
-    consume_fuel_on_success(
-        ctx,
-        |costs| u64::from(len) * costs.table_per_element,
-        |ctx| {
-            // Query both tables and check if they are the same:
-            let dst = cache.get_table(ctx, dst);
-            let src = cache.get_table(ctx, src);
-            if Table::eq(&dst, &src) {
-                // Copy within the same table:
-                let table = ctx.resolve_table_mut(&dst);
-                table.copy_within(dst_index, src_index, len)?;
+    #[inline(always)]
+    fn visit_call_indirect(
+        &mut self,
+        table: TableIdx,
+        func_type: SignatureIdx,
+    ) -> Result<CallOutcome, TrapCode> {
+        let func_index: u32 = self.sp.pop_as();
+        let table = self.cache.get_table(self.ctx, table);
+        let funcref = self
+            .ctx
+            .resolve_table(&table)
+            .get_untyped(func_index)
+            .map(FuncRef::from)
+            .ok_or(TrapCode::TableOutOfBounds)?;
+        let func = funcref.func().ok_or(TrapCode::IndirectCallToNull)?;
+        let actual_signature = self.ctx.resolve_func(func).ty_dedup();
+        let expected_signature = self
+            .ctx
+            .resolve_instance(self.cache.instance())
+            .get_signature(func_type.into_inner())
+            .unwrap_or_else(|| {
+                panic!("missing signature for call_indirect at index: {func_type:?}")
+            });
+        if actual_signature != expected_signature {
+            return Err(TrapCode::BadSignature).map_err(Into::into);
+        }
+        self.call_func(func)
+    }
+
+    #[inline(always)]
+    fn visit_const(&mut self, bytes: UntypedValue) {
+        self.sp.push(bytes);
+        self.next_instr()
+    }
+
+    #[inline(always)]
+    fn visit_drop(&mut self) {
+        self.sp.drop();
+        self.next_instr()
+    }
+
+    #[inline(always)]
+    fn visit_select(&mut self) {
+        self.sp.eval_top3(|e1, e2, e3| {
+            let condition = <bool as From<UntypedValue>>::from(e3);
+            if condition {
+                e1
             } else {
-                // Copy from one table to another table:
-                let (dst, src) = ctx.resolve_table_pair_mut(&dst, &src);
-                TableEntity::copy(dst, dst_index, src, src_index, len)?;
+                e2
             }
-            Ok(())
-        },
-    )?;
-    try_next_instr(ip)
-}
-
-#[inline(always)]
-fn visit_table_init(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    ctx: &mut StoreInner,
-    cache: &mut InstanceCache,
-    table: TableIdx,
-    elem: ElementSegmentIdx,
-) -> Result<(), TrapCode> {
-    // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
-    let (d, s, n) = sp.pop3();
-    let len = u32::from(n);
-    let src_index = u32::from(s);
-    let dst_index = u32::from(d);
-    consume_fuel_on_success(
-        ctx,
-        |costs| u64::from(len) * costs.table_per_element,
-        |ctx| {
-            let (instance, table, element) = cache.get_table_and_element_segment(ctx, table, elem);
-            table.init(dst_index, element, src_index, len, |func_index| {
-                instance
-                    .get_func(func_index)
-                    .unwrap_or_else(|| panic!("missing function at index {func_index}"))
-            })?;
-            Ok(())
-        },
-    )?;
-    try_next_instr(ip)
-}
-
-#[inline(always)]
-fn visit_element_drop(
-    ip: &mut InstructionPtr,
-    ctx: &mut StoreInner,
-    cache: &mut InstanceCache,
-    segment_index: ElementSegmentIdx,
-) {
-    let segment = cache.get_element_segment(ctx, segment_index);
-    ctx.resolve_element_segment_mut(&segment).drop_items();
-    next_instr(ip);
-}
-
-#[inline(always)]
-fn visit_ref_func(
-    ip: &mut InstructionPtr,
-    sp: &mut ValueStackPtr,
-    ctx: &mut StoreInner,
-    cache: &mut InstanceCache,
-    func_index: FuncIdx,
-) {
-    let func = cache.get_func(ctx, func_index);
-    let funcref = FuncRef::new(func);
-    sp.push_as(funcref);
-    next_instr(ip);
-}
-
-macro_rules! impl_visit_load {
-    ( $( fn $visit_ident:ident($untyped_ident:ident); )* ) => {
-        $(
-            #[inline(always)]
-            fn $visit_ident(
-                ip: &mut InstructionPtr,
-                sp: &mut ValueStackPtr,
-                ctx: &mut StoreInner,
-                cache: &mut InstanceCache,
-                offset: Offset,
-            ) -> Result<(), TrapCode> {
-                execute_load_extend(ip, sp, ctx, cache, offset, UntypedValue::$untyped_ident)
-            }
-        )*
+        });
+        self.next_instr()
     }
-}
-impl_visit_load! {
-    fn visit_i32_load(i32_load);
-    fn visit_i64_load(i64_load);
-    fn visit_f32_load(f32_load);
-    fn visit_f64_load(f64_load);
 
-    fn visit_i32_load_i8_s(i32_load8_s);
-    fn visit_i32_load_i8_u(i32_load8_u);
-    fn visit_i32_load_i16_s(i32_load16_s);
-    fn visit_i32_load_i16_u(i32_load16_u);
-
-    fn visit_i64_load_i8_s(i64_load8_s);
-    fn visit_i64_load_i8_u(i64_load8_u);
-    fn visit_i64_load_i16_s(i64_load16_s);
-    fn visit_i64_load_i16_u(i64_load16_u);
-    fn visit_i64_load_i32_s(i64_load32_s);
-    fn visit_i64_load_i32_u(i64_load32_u);
-}
-
-macro_rules! impl_visit_store {
-    ( $( fn $visit_ident:ident($untyped_ident:ident); )* ) => {
-        $(
-            #[inline(always)]
-            fn $visit_ident(
-                ip: &mut InstructionPtr,
-                sp: &mut ValueStackPtr,
-                ctx: &mut StoreInner,
-                cache: &mut InstanceCache,
-                offset: Offset,
-            ) -> Result<(), TrapCode> {
-                execute_store_wrap(ip, sp, ctx, cache, offset, UntypedValue::$untyped_ident)
-            }
-        )*
+    #[inline(always)]
+    fn visit_memory_size(&mut self) {
+        let memory = self.cache.default_memory(self.ctx);
+        let result: u32 = self.ctx.resolve_memory(memory).current_pages().into();
+        self.sp.push_as(result);
+        self.next_instr()
     }
-}
-impl_visit_store! {
-    fn visit_i32_store(i32_store);
-    fn visit_i64_store(i64_store);
-    fn visit_f32_store(f32_store);
-    fn visit_f64_store(f64_store);
 
-    fn visit_i32_store_8(i32_store8);
-    fn visit_i32_store_16(i32_store16);
-
-    fn visit_i64_store_8(i64_store8);
-    fn visit_i64_store_16(i64_store16);
-    fn visit_i64_store_32(i64_store32);
-}
-
-macro_rules! impl_visit_unary {
-    ( $( fn $visit_ident:ident($untyped_ident:ident); )* ) => {
-        $(
-            #[inline(always)]
-            fn $visit_ident(ip: &mut InstructionPtr, sp: &mut ValueStackPtr) {
-                execute_unary(ip, sp, UntypedValue::$untyped_ident)
+    #[inline(always)]
+    fn visit_memory_grow(&mut self) -> Result<(), TrapCode> {
+        let delta: u32 = self.sp.pop_as();
+        let delta = match Pages::new(delta) {
+            Some(pages) => pages,
+            None => {
+                // Cannot grow memory so we push the expected error value.
+                self.sp.push_as(INVALID_GROWTH_ERRCODE);
+                return self.try_next_instr();
             }
-        )*
+        };
+        let result = self.consume_fuel_on_success(
+            |costs| {
+                let delta_in_bytes = delta.to_bytes().unwrap_or(0) as u64;
+                delta_in_bytes * costs.memory_per_byte
+            },
+            |this| {
+                let memory = this.cache.default_memory(this.ctx);
+                let new_pages = this
+                    .ctx
+                    .resolve_memory_mut(memory)
+                    .grow(delta)
+                    .map(u32::from)
+                    .map_err(|_| EntityGrowError::InvalidGrow)?;
+                // The `memory.grow` operation might have invalidated the cached
+                // linear memory so we need to reset it in order for the cache to
+                // reload in case it is used again.
+                this.cache.reset_default_memory_bytes();
+                Ok(new_pages)
+            },
+        );
+        let result = match result {
+            Ok(result) => result,
+            Err(EntityGrowError::InvalidGrow) => INVALID_GROWTH_ERRCODE,
+            Err(EntityGrowError::TrapCode(trap_code)) => return Err(trap_code),
+        };
+        self.sp.push_as(result);
+        self.try_next_instr()
     }
-}
-impl_visit_unary! {
-    fn visit_i32_eqz(i32_eqz);
-    fn visit_i64_eqz(i64_eqz);
 
-    fn visit_i32_clz(i32_clz);
-    fn visit_i32_ctz(i32_ctz);
-    fn visit_i32_popcnt(i32_popcnt);
-
-    fn visit_i64_clz(i64_clz);
-    fn visit_i64_ctz(i64_ctz);
-    fn visit_i64_popcnt(i64_popcnt);
-
-    fn visit_f32_abs(f32_abs);
-    fn visit_f32_neg(f32_neg);
-    fn visit_f32_ceil(f32_ceil);
-    fn visit_f32_floor(f32_floor);
-    fn visit_f32_trunc(f32_trunc);
-    fn visit_f32_nearest(f32_nearest);
-    fn visit_f32_sqrt(f32_sqrt);
-
-    fn visit_f64_abs(f64_abs);
-    fn visit_f64_neg(f64_neg);
-    fn visit_f64_ceil(f64_ceil);
-    fn visit_f64_floor(f64_floor);
-    fn visit_f64_trunc(f64_trunc);
-    fn visit_f64_nearest(f64_nearest);
-    fn visit_f64_sqrt(f64_sqrt);
-
-    fn visit_i32_wrap_i64(i32_wrap_i64);
-    fn visit_i64_extend_i32_s(i64_extend_i32_s);
-    fn visit_i64_extend_i32_u(i64_extend_i32_u);
-
-    fn visit_f32_convert_i32_s(f32_convert_i32_s);
-    fn visit_f32_convert_i32_u(f32_convert_i32_u);
-    fn visit_f32_convert_i64_s(f32_convert_i64_s);
-    fn visit_f32_convert_i64_u(f32_convert_i64_u);
-    fn visit_f32_demote_f64(f32_demote_f64);
-    fn visit_f64_convert_i32_s(f64_convert_i32_s);
-    fn visit_f64_convert_i32_u(f64_convert_i32_u);
-    fn visit_f64_convert_i64_s(f64_convert_i64_s);
-    fn visit_f64_convert_i64_u(f64_convert_i64_u);
-    fn visit_f64_promote_f32(f64_promote_f32);
-
-    fn visit_i32_extend8_s(i32_extend8_s);
-    fn visit_i32_extend16_s(i32_extend16_s);
-    fn visit_i64_extend8_s(i64_extend8_s);
-    fn visit_i64_extend16_s(i64_extend16_s);
-    fn visit_i64_extend32_s(i64_extend32_s);
-
-    fn visit_i32_trunc_sat_f32_s(i32_trunc_sat_f32_s);
-    fn visit_i32_trunc_sat_f32_u(i32_trunc_sat_f32_u);
-    fn visit_i32_trunc_sat_f64_s(i32_trunc_sat_f64_s);
-    fn visit_i32_trunc_sat_f64_u(i32_trunc_sat_f64_u);
-    fn visit_i64_trunc_sat_f32_s(i64_trunc_sat_f32_s);
-    fn visit_i64_trunc_sat_f32_u(i64_trunc_sat_f32_u);
-    fn visit_i64_trunc_sat_f64_s(i64_trunc_sat_f64_s);
-    fn visit_i64_trunc_sat_f64_u(i64_trunc_sat_f64_u);
-}
-
-macro_rules! impl_visit_fallible_unary {
-    ( $( fn $visit_ident:ident($untyped_ident:ident); )* ) => {
-        $(
-            #[inline(always)]
-            fn $visit_ident(ip: &mut InstructionPtr, sp: &mut ValueStackPtr) -> Result<(), TrapCode> {
-                try_execute_unary(ip, sp, UntypedValue::$untyped_ident)
-            }
-        )*
+    #[inline(always)]
+    fn visit_memory_fill(&mut self) -> Result<(), TrapCode> {
+        // The `n`, `val` and `d` variable bindings are extracted from the Wasm specification.
+        let (d, val, n) = self.sp.pop3();
+        let n = i32::from(n) as usize;
+        let offset = i32::from(d) as usize;
+        let byte = u8::from(val);
+        self.consume_fuel_on_success(
+            |costs| n as u64 * costs.memory_per_byte,
+            |this| {
+                let memory = this
+                    .cache
+                    .default_memory_bytes(this.ctx)
+                    .get_mut(offset..)
+                    .and_then(|memory| memory.get_mut(..n))
+                    .ok_or(TrapCode::MemoryOutOfBounds)?;
+                memory.fill(byte);
+                Ok(())
+            },
+        )?;
+        self.try_next_instr()
     }
-}
-impl_visit_fallible_unary! {
-    fn visit_i32_trunc_f32_s(i32_trunc_f32_s);
-    fn visit_i32_trunc_f32_u(i32_trunc_f32_u);
-    fn visit_i32_trunc_f64_s(i32_trunc_f64_s);
-    fn visit_i32_trunc_f64_u(i32_trunc_f64_u);
 
-    fn visit_i64_trunc_f32_s(i64_trunc_f32_s);
-    fn visit_i64_trunc_f32_u(i64_trunc_f32_u);
-    fn visit_i64_trunc_f64_s(i64_trunc_f64_s);
-    fn visit_i64_trunc_f64_u(i64_trunc_f64_u);
-}
-
-macro_rules! impl_visit_binary {
-    ( $( fn $visit_ident:ident($untyped_ident:ident); )* ) => {
-        $(
-            #[inline(always)]
-            fn $visit_ident(ip: &mut InstructionPtr, sp: &mut ValueStackPtr) {
-                execute_binary(ip, sp, UntypedValue::$untyped_ident)
-            }
-        )*
+    #[inline(always)]
+    fn visit_memory_copy(&mut self) -> Result<(), TrapCode> {
+        // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
+        let (d, s, n) = self.sp.pop3();
+        let n = i32::from(n) as usize;
+        let src_offset = i32::from(s) as usize;
+        let dst_offset = i32::from(d) as usize;
+        self.consume_fuel_on_success(
+            |costs| n as u64 * costs.memory_per_byte,
+            |this| {
+                let data = this.cache.default_memory_bytes(this.ctx);
+                // These accesses just perform the bounds checks required by the Wasm spec.
+                data.get(src_offset..)
+                    .and_then(|memory| memory.get(..n))
+                    .ok_or(TrapCode::MemoryOutOfBounds)?;
+                data.get(dst_offset..)
+                    .and_then(|memory| memory.get(..n))
+                    .ok_or(TrapCode::MemoryOutOfBounds)?;
+                data.copy_within(src_offset..src_offset.wrapping_add(n), dst_offset);
+                Ok(())
+            },
+        )?;
+        self.try_next_instr()
     }
-}
-impl_visit_binary! {
-    fn visit_i32_eq(i32_eq);
-    fn visit_i32_ne(i32_ne);
-    fn visit_i32_lt_s(i32_lt_s);
-    fn visit_i32_lt_u(i32_lt_u);
-    fn visit_i32_gt_s(i32_gt_s);
-    fn visit_i32_gt_u(i32_gt_u);
-    fn visit_i32_le_s(i32_le_s);
-    fn visit_i32_le_u(i32_le_u);
-    fn visit_i32_ge_s(i32_ge_s);
-    fn visit_i32_ge_u(i32_ge_u);
 
-    fn visit_i64_eq(i64_eq);
-    fn visit_i64_ne(i64_ne);
-    fn visit_i64_lt_s(i64_lt_s);
-    fn visit_i64_lt_u(i64_lt_u);
-    fn visit_i64_gt_s(i64_gt_s);
-    fn visit_i64_gt_u(i64_gt_u);
-    fn visit_i64_le_s(i64_le_s);
-    fn visit_i64_le_u(i64_le_u);
-    fn visit_i64_ge_s(i64_ge_s);
-    fn visit_i64_ge_u(i64_ge_u);
-
-    fn visit_f32_eq(f32_eq);
-    fn visit_f32_ne(f32_ne);
-    fn visit_f32_lt(f32_lt);
-    fn visit_f32_gt(f32_gt);
-    fn visit_f32_le(f32_le);
-    fn visit_f32_ge(f32_ge);
-
-    fn visit_f64_eq(f64_eq);
-    fn visit_f64_ne(f64_ne);
-    fn visit_f64_lt(f64_lt);
-    fn visit_f64_gt(f64_gt);
-    fn visit_f64_le(f64_le);
-    fn visit_f64_ge(f64_ge);
-
-    fn visit_i32_add(i32_add);
-    fn visit_i32_sub(i32_sub);
-    fn visit_i32_mul(i32_mul);
-    fn visit_i32_and(i32_and);
-    fn visit_i32_or(i32_or);
-    fn visit_i32_xor(i32_xor);
-    fn visit_i32_shl(i32_shl);
-    fn visit_i32_shr_s(i32_shr_s);
-    fn visit_i32_shr_u(i32_shr_u);
-    fn visit_i32_rotl(i32_rotl);
-    fn visit_i32_rotr(i32_rotr);
-
-    fn visit_i64_add(i64_add);
-    fn visit_i64_sub(i64_sub);
-    fn visit_i64_mul(i64_mul);
-    fn visit_i64_and(i64_and);
-    fn visit_i64_or(i64_or);
-    fn visit_i64_xor(i64_xor);
-    fn visit_i64_shl(i64_shl);
-    fn visit_i64_shr_s(i64_shr_s);
-    fn visit_i64_shr_u(i64_shr_u);
-    fn visit_i64_rotl(i64_rotl);
-    fn visit_i64_rotr(i64_rotr);
-
-    fn visit_f32_add(f32_add);
-    fn visit_f32_sub(f32_sub);
-    fn visit_f32_mul(f32_mul);
-    fn visit_f32_div(f32_div);
-    fn visit_f32_min(f32_min);
-    fn visit_f32_max(f32_max);
-    fn visit_f32_copysign(f32_copysign);
-
-    fn visit_f64_add(f64_add);
-    fn visit_f64_sub(f64_sub);
-    fn visit_f64_mul(f64_mul);
-    fn visit_f64_div(f64_div);
-    fn visit_f64_min(f64_min);
-    fn visit_f64_max(f64_max);
-    fn visit_f64_copysign(f64_copysign);
-}
-
-macro_rules! impl_visit_fallible_binary {
-    ( $( fn $visit_ident:ident($untyped_ident:ident); )* ) => {
-        $(
-            #[inline(always)]
-            fn $visit_ident(ip: &mut InstructionPtr, sp: &mut ValueStackPtr) -> Result<(), TrapCode> {
-                try_execute_binary(ip, sp, UntypedValue::$untyped_ident)
-            }
-        )*
+    #[inline(always)]
+    fn visit_memory_init(&mut self, segment: DataSegmentIdx) -> Result<(), TrapCode> {
+        // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
+        let (d, s, n) = self.sp.pop3();
+        let n = i32::from(n) as usize;
+        let src_offset = i32::from(s) as usize;
+        let dst_offset = i32::from(d) as usize;
+        self.consume_fuel_on_success(
+            |costs| n as u64 * costs.memory_per_byte,
+            |this| {
+                let (memory, data) = this
+                    .cache
+                    .get_default_memory_and_data_segment(this.ctx, segment);
+                let memory = memory
+                    .get_mut(dst_offset..)
+                    .and_then(|memory| memory.get_mut(..n))
+                    .ok_or(TrapCode::MemoryOutOfBounds)?;
+                let data = data
+                    .get(src_offset..)
+                    .and_then(|data| data.get(..n))
+                    .ok_or(TrapCode::MemoryOutOfBounds)?;
+                memory.copy_from_slice(data);
+                Ok(())
+            },
+        )?;
+        self.try_next_instr()
     }
-}
-impl_visit_fallible_binary! {
-    fn visit_i32_div_s(i32_div_s);
-    fn visit_i32_div_u(i32_div_u);
-    fn visit_i32_rem_s(i32_rem_s);
-    fn visit_i32_rem_u(i32_rem_u);
 
-    fn visit_i64_div_s(i64_div_s);
-    fn visit_i64_div_u(i64_div_u);
-    fn visit_i64_rem_s(i64_rem_s);
-    fn visit_i64_rem_u(i64_rem_u);
+    #[inline(always)]
+    fn visit_data_drop(&mut self, segment_index: DataSegmentIdx) {
+        let segment = self
+            .cache
+            .get_data_segment(self.ctx, segment_index.into_inner());
+        self.ctx.resolve_data_segment_mut(&segment).drop_bytes();
+        self.next_instr();
+    }
+
+    #[inline(always)]
+    fn visit_table_size(&mut self, table_index: TableIdx) {
+        let table = self.cache.get_table(self.ctx, table_index);
+        let size = self.ctx.resolve_table(&table).size();
+        self.sp.push_as(size);
+        self.next_instr()
+    }
+
+    #[inline(always)]
+    fn visit_table_grow(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
+        let (init, delta) = self.sp.pop2();
+        let delta: u32 = delta.into();
+        let result = self.consume_fuel_on_success(
+            |costs| u64::from(delta) * costs.table_per_element,
+            |this| {
+                let table = this.cache.get_table(this.ctx, table_index);
+                this.ctx
+                    .resolve_table_mut(&table)
+                    .grow_untyped(delta, init)
+                    .map_err(|_| EntityGrowError::InvalidGrow)
+            },
+        );
+        let result = match result {
+            Ok(result) => result,
+            Err(EntityGrowError::InvalidGrow) => INVALID_GROWTH_ERRCODE,
+            Err(EntityGrowError::TrapCode(trap_code)) => return Err(trap_code),
+        };
+        self.sp.push_as(result);
+        self.try_next_instr()
+    }
+
+    #[inline(always)]
+    fn visit_table_fill(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
+        // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
+        let (i, val, n) = self.sp.pop3();
+        let dst: u32 = i.into();
+        let len: u32 = n.into();
+        self.consume_fuel_on_success(
+            |costs| u64::from(len) * costs.table_per_element,
+            |this| {
+                let table = this.cache.get_table(this.ctx, table_index);
+                this.ctx
+                    .resolve_table_mut(&table)
+                    .fill_untyped(dst, val, len)?;
+                Ok(())
+            },
+        )?;
+        self.try_next_instr()
+    }
+
+    #[inline(always)]
+    fn visit_table_get(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
+        self.sp.try_eval_top(|index| {
+            let index: u32 = index.into();
+            let table = self.cache.get_table(self.ctx, table_index);
+            self.ctx
+                .resolve_table(&table)
+                .get_untyped(index)
+                .ok_or(TrapCode::TableOutOfBounds)
+        })?;
+        self.try_next_instr()
+    }
+
+    #[inline(always)]
+    fn visit_table_set(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
+        let (index, value) = self.sp.pop2();
+        let index: u32 = index.into();
+        let table = self.cache.get_table(self.ctx, table_index);
+        self.ctx
+            .resolve_table_mut(&table)
+            .set_untyped(index, value)
+            .map_err(|_| TrapCode::TableOutOfBounds)?;
+        self.try_next_instr()
+    }
+
+    #[inline(always)]
+    fn visit_table_copy(&mut self, dst: TableIdx, src: TableIdx) -> Result<(), TrapCode> {
+        // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
+        let (d, s, n) = self.sp.pop3();
+        let len = u32::from(n);
+        let src_index = u32::from(s);
+        let dst_index = u32::from(d);
+        self.consume_fuel_on_success(
+            |costs| u64::from(len) * costs.table_per_element,
+            |this| {
+                // Query both tables and check if they are the same:
+                let dst = this.cache.get_table(this.ctx, dst);
+                let src = this.cache.get_table(this.ctx, src);
+                if Table::eq(&dst, &src) {
+                    // Copy within the same table:
+                    let table = this.ctx.resolve_table_mut(&dst);
+                    table.copy_within(dst_index, src_index, len)?;
+                } else {
+                    // Copy from one table to another table:
+                    let (dst, src) = this.ctx.resolve_table_pair_mut(&dst, &src);
+                    TableEntity::copy(dst, dst_index, src, src_index, len)?;
+                }
+                Ok(())
+            },
+        )?;
+        self.try_next_instr()
+    }
+
+    #[inline(always)]
+    fn visit_table_init(
+        &mut self,
+        table: TableIdx,
+        elem: ElementSegmentIdx,
+    ) -> Result<(), TrapCode> {
+        // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
+        let (d, s, n) = self.sp.pop3();
+        let len = u32::from(n);
+        let src_index = u32::from(s);
+        let dst_index = u32::from(d);
+        self.consume_fuel_on_success(
+            |costs| u64::from(len) * costs.table_per_element,
+            |this| {
+                let (instance, table, element) = this
+                    .cache
+                    .get_table_and_element_segment(this.ctx, table, elem);
+                table.init(dst_index, element, src_index, len, |func_index| {
+                    instance
+                        .get_func(func_index)
+                        .unwrap_or_else(|| panic!("missing function at index {func_index}"))
+                })?;
+                Ok(())
+            },
+        )?;
+        self.try_next_instr()
+    }
+
+    #[inline(always)]
+    fn visit_element_drop(&mut self, segment_index: ElementSegmentIdx) {
+        let segment = self.cache.get_element_segment(self.ctx, segment_index);
+        self.ctx.resolve_element_segment_mut(&segment).drop_items();
+        self.next_instr();
+    }
+
+    #[inline(always)]
+    fn visit_ref_func(&mut self, func_index: FuncIdx) {
+        let func = self.cache.get_func(self.ctx, func_index);
+        let funcref = FuncRef::new(func);
+        self.sp.push_as(funcref);
+        self.next_instr();
+    }
+
+    #[inline(always)]
+    fn visit_i32_load(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_load_extend(offset, UntypedValue::i32_load)
+    }
+
+    #[inline(always)]
+    fn visit_i64_load(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_load_extend(offset, UntypedValue::i64_load)
+    }
+
+    #[inline(always)]
+    fn visit_f32_load(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_load_extend(offset, UntypedValue::f32_load)
+    }
+
+    #[inline(always)]
+    fn visit_f64_load(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_load_extend(offset, UntypedValue::f64_load)
+    }
+
+    #[inline(always)]
+    fn visit_i32_load_i8(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_load_extend(offset, UntypedValue::i32_load8_s)
+    }
+
+    #[inline(always)]
+    fn visit_i32_load_u8(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_load_extend(offset, UntypedValue::i32_load8_u)
+    }
+
+    #[inline(always)]
+    fn visit_i32_load_i16(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_load_extend(offset, UntypedValue::i32_load16_s)
+    }
+
+    #[inline(always)]
+    fn visit_i32_load_u16(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_load_extend(offset, UntypedValue::i32_load16_u)
+    }
+
+    #[inline(always)]
+    fn visit_i64_load_i8(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_load_extend(offset, UntypedValue::i64_load8_s)
+    }
+
+    #[inline(always)]
+    fn visit_i64_load_u8(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_load_extend(offset, UntypedValue::i64_load8_u)
+    }
+
+    #[inline(always)]
+    fn visit_i64_load_i16(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_load_extend(offset, UntypedValue::i64_load16_s)
+    }
+
+    #[inline(always)]
+    fn visit_i64_load_u16(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_load_extend(offset, UntypedValue::i64_load16_u)
+    }
+
+    #[inline(always)]
+    fn visit_i64_load_i32(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_load_extend(offset, UntypedValue::i64_load32_s)
+    }
+
+    #[inline(always)]
+    fn visit_i64_load_u32(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_load_extend(offset, UntypedValue::i64_load32_u)
+    }
+
+    #[inline(always)]
+    fn visit_i32_store(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_store_wrap(offset, UntypedValue::i32_store)
+    }
+
+    #[inline(always)]
+    fn visit_i64_store(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_store_wrap(offset, UntypedValue::i64_store)
+    }
+
+    #[inline(always)]
+    fn visit_f32_store(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_store_wrap(offset, UntypedValue::f32_store)
+    }
+
+    #[inline(always)]
+    fn visit_f64_store(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_store_wrap(offset, UntypedValue::f64_store)
+    }
+
+    #[inline(always)]
+    fn visit_i32_store_8(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_store_wrap(offset, UntypedValue::i32_store8)
+    }
+
+    #[inline(always)]
+    fn visit_i32_store_16(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_store_wrap(offset, UntypedValue::i32_store16)
+    }
+
+    #[inline(always)]
+    fn visit_i64_store_8(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_store_wrap(offset, UntypedValue::i64_store8)
+    }
+
+    #[inline(always)]
+    fn visit_i64_store_16(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_store_wrap(offset, UntypedValue::i64_store16)
+    }
+
+    #[inline(always)]
+    fn visit_i64_store_32(&mut self, offset: Offset) -> Result<(), TrapCode> {
+        self.execute_store_wrap(offset, UntypedValue::i64_store32)
+    }
+
+    #[inline(always)]
+    fn visit_i32_eqz(&mut self) {
+        self.execute_unary(UntypedValue::i32_eqz)
+    }
+
+    #[inline(always)]
+    fn visit_i32_eq(&mut self) {
+        self.execute_binary(UntypedValue::i32_eq)
+    }
+
+    #[inline(always)]
+    fn visit_i32_ne(&mut self) {
+        self.execute_binary(UntypedValue::i32_ne)
+    }
+
+    #[inline(always)]
+    fn visit_i32_lt_s(&mut self) {
+        self.execute_binary(UntypedValue::i32_lt_s)
+    }
+
+    #[inline(always)]
+    fn visit_i32_lt_u(&mut self) {
+        self.execute_binary(UntypedValue::i32_lt_u)
+    }
+
+    #[inline(always)]
+    fn visit_i32_gt_s(&mut self) {
+        self.execute_binary(UntypedValue::i32_gt_s)
+    }
+
+    #[inline(always)]
+    fn visit_i32_gt_u(&mut self) {
+        self.execute_binary(UntypedValue::i32_gt_u)
+    }
+
+    #[inline(always)]
+    fn visit_i32_le_s(&mut self) {
+        self.execute_binary(UntypedValue::i32_le_s)
+    }
+
+    #[inline(always)]
+    fn visit_i32_le_u(&mut self) {
+        self.execute_binary(UntypedValue::i32_le_u)
+    }
+
+    #[inline(always)]
+    fn visit_i32_ge_s(&mut self) {
+        self.execute_binary(UntypedValue::i32_ge_s)
+    }
+
+    #[inline(always)]
+    fn visit_i32_ge_u(&mut self) {
+        self.execute_binary(UntypedValue::i32_ge_u)
+    }
+
+    #[inline(always)]
+    fn visit_i64_eqz(&mut self) {
+        self.execute_unary(UntypedValue::i64_eqz)
+    }
+
+    #[inline(always)]
+    fn visit_i64_eq(&mut self) {
+        self.execute_binary(UntypedValue::i64_eq)
+    }
+
+    #[inline(always)]
+    fn visit_i64_ne(&mut self) {
+        self.execute_binary(UntypedValue::i64_ne)
+    }
+
+    #[inline(always)]
+    fn visit_i64_lt_s(&mut self) {
+        self.execute_binary(UntypedValue::i64_lt_s)
+    }
+
+    #[inline(always)]
+    fn visit_i64_lt_u(&mut self) {
+        self.execute_binary(UntypedValue::i64_lt_u)
+    }
+
+    #[inline(always)]
+    fn visit_i64_gt_s(&mut self) {
+        self.execute_binary(UntypedValue::i64_gt_s)
+    }
+
+    #[inline(always)]
+    fn visit_i64_gt_u(&mut self) {
+        self.execute_binary(UntypedValue::i64_gt_u)
+    }
+
+    #[inline(always)]
+    fn visit_i64_le_s(&mut self) {
+        self.execute_binary(UntypedValue::i64_le_s)
+    }
+
+    #[inline(always)]
+    fn visit_i64_le_u(&mut self) {
+        self.execute_binary(UntypedValue::i64_le_u)
+    }
+
+    #[inline(always)]
+    fn visit_i64_ge_s(&mut self) {
+        self.execute_binary(UntypedValue::i64_ge_s)
+    }
+
+    #[inline(always)]
+    fn visit_i64_ge_u(&mut self) {
+        self.execute_binary(UntypedValue::i64_ge_u)
+    }
+
+    #[inline(always)]
+    fn visit_f32_eq(&mut self) {
+        self.execute_binary(UntypedValue::f32_eq)
+    }
+
+    #[inline(always)]
+    fn visit_f32_ne(&mut self) {
+        self.execute_binary(UntypedValue::f32_ne)
+    }
+
+    #[inline(always)]
+    fn visit_f32_lt(&mut self) {
+        self.execute_binary(UntypedValue::f32_lt)
+    }
+
+    #[inline(always)]
+    fn visit_f32_gt(&mut self) {
+        self.execute_binary(UntypedValue::f32_gt)
+    }
+
+    #[inline(always)]
+    fn visit_f32_le(&mut self) {
+        self.execute_binary(UntypedValue::f32_le)
+    }
+
+    #[inline(always)]
+    fn visit_f32_ge(&mut self) {
+        self.execute_binary(UntypedValue::f32_ge)
+    }
+
+    #[inline(always)]
+    fn visit_f64_eq(&mut self) {
+        self.execute_binary(UntypedValue::f64_eq)
+    }
+
+    #[inline(always)]
+    fn visit_f64_ne(&mut self) {
+        self.execute_binary(UntypedValue::f64_ne)
+    }
+
+    #[inline(always)]
+    fn visit_f64_lt(&mut self) {
+        self.execute_binary(UntypedValue::f64_lt)
+    }
+
+    #[inline(always)]
+    fn visit_f64_gt(&mut self) {
+        self.execute_binary(UntypedValue::f64_gt)
+    }
+
+    #[inline(always)]
+    fn visit_f64_le(&mut self) {
+        self.execute_binary(UntypedValue::f64_le)
+    }
+
+    #[inline(always)]
+    fn visit_f64_ge(&mut self) {
+        self.execute_binary(UntypedValue::f64_ge)
+    }
+
+    #[inline(always)]
+    fn visit_i32_clz(&mut self) {
+        self.execute_unary(UntypedValue::i32_clz)
+    }
+
+    #[inline(always)]
+    fn visit_i32_ctz(&mut self) {
+        self.execute_unary(UntypedValue::i32_ctz)
+    }
+
+    #[inline(always)]
+    fn visit_i32_popcnt(&mut self) {
+        self.execute_unary(UntypedValue::i32_popcnt)
+    }
+
+    #[inline(always)]
+    fn visit_i32_add(&mut self) {
+        self.execute_binary(UntypedValue::i32_add)
+    }
+
+    #[inline(always)]
+    fn visit_i32_sub(&mut self) {
+        self.execute_binary(UntypedValue::i32_sub)
+    }
+
+    #[inline(always)]
+    fn visit_i32_mul(&mut self) {
+        self.execute_binary(UntypedValue::i32_mul)
+    }
+
+    #[inline(always)]
+    fn visit_i32_div_s(&mut self) -> Result<(), TrapCode> {
+        self.try_execute_binary(UntypedValue::i32_div_s)
+    }
+
+    #[inline(always)]
+    fn visit_i32_div_u(&mut self) -> Result<(), TrapCode> {
+        self.try_execute_binary(UntypedValue::i32_div_u)
+    }
+
+    #[inline(always)]
+    fn visit_i32_rem_s(&mut self) -> Result<(), TrapCode> {
+        self.try_execute_binary(UntypedValue::i32_rem_s)
+    }
+
+    #[inline(always)]
+    fn visit_i32_rem_u(&mut self) -> Result<(), TrapCode> {
+        self.try_execute_binary(UntypedValue::i32_rem_u)
+    }
+
+    #[inline(always)]
+    fn visit_i32_and(&mut self) {
+        self.execute_binary(UntypedValue::i32_and)
+    }
+
+    #[inline(always)]
+    fn visit_i32_or(&mut self) {
+        self.execute_binary(UntypedValue::i32_or)
+    }
+
+    #[inline(always)]
+    fn visit_i32_xor(&mut self) {
+        self.execute_binary(UntypedValue::i32_xor)
+    }
+
+    #[inline(always)]
+    fn visit_i32_shl(&mut self) {
+        self.execute_binary(UntypedValue::i32_shl)
+    }
+
+    #[inline(always)]
+    fn visit_i32_shr_s(&mut self) {
+        self.execute_binary(UntypedValue::i32_shr_s)
+    }
+
+    #[inline(always)]
+    fn visit_i32_shr_u(&mut self) {
+        self.execute_binary(UntypedValue::i32_shr_u)
+    }
+
+    #[inline(always)]
+    fn visit_i32_rotl(&mut self) {
+        self.execute_binary(UntypedValue::i32_rotl)
+    }
+
+    #[inline(always)]
+    fn visit_i32_rotr(&mut self) {
+        self.execute_binary(UntypedValue::i32_rotr)
+    }
+
+    #[inline(always)]
+    fn visit_i64_clz(&mut self) {
+        self.execute_unary(UntypedValue::i64_clz)
+    }
+
+    #[inline(always)]
+    fn visit_i64_ctz(&mut self) {
+        self.execute_unary(UntypedValue::i64_ctz)
+    }
+
+    #[inline(always)]
+    fn visit_i64_popcnt(&mut self) {
+        self.execute_unary(UntypedValue::i64_popcnt)
+    }
+
+    #[inline(always)]
+    fn visit_i64_add(&mut self) {
+        self.execute_binary(UntypedValue::i64_add)
+    }
+
+    #[inline(always)]
+    fn visit_i64_sub(&mut self) {
+        self.execute_binary(UntypedValue::i64_sub)
+    }
+
+    #[inline(always)]
+    fn visit_i64_mul(&mut self) {
+        self.execute_binary(UntypedValue::i64_mul)
+    }
+
+    #[inline(always)]
+    fn visit_i64_div_s(&mut self) -> Result<(), TrapCode> {
+        self.try_execute_binary(UntypedValue::i64_div_s)
+    }
+
+    #[inline(always)]
+    fn visit_i64_div_u(&mut self) -> Result<(), TrapCode> {
+        self.try_execute_binary(UntypedValue::i64_div_u)
+    }
+
+    #[inline(always)]
+    fn visit_i64_rem_s(&mut self) -> Result<(), TrapCode> {
+        self.try_execute_binary(UntypedValue::i64_rem_s)
+    }
+
+    #[inline(always)]
+    fn visit_i64_rem_u(&mut self) -> Result<(), TrapCode> {
+        self.try_execute_binary(UntypedValue::i64_rem_u)
+    }
+
+    #[inline(always)]
+    fn visit_i64_and(&mut self) {
+        self.execute_binary(UntypedValue::i64_and)
+    }
+
+    #[inline(always)]
+    fn visit_i64_or(&mut self) {
+        self.execute_binary(UntypedValue::i64_or)
+    }
+
+    #[inline(always)]
+    fn visit_i64_xor(&mut self) {
+        self.execute_binary(UntypedValue::i64_xor)
+    }
+
+    #[inline(always)]
+    fn visit_i64_shl(&mut self) {
+        self.execute_binary(UntypedValue::i64_shl)
+    }
+
+    #[inline(always)]
+    fn visit_i64_shr_s(&mut self) {
+        self.execute_binary(UntypedValue::i64_shr_s)
+    }
+
+    #[inline(always)]
+    fn visit_i64_shr_u(&mut self) {
+        self.execute_binary(UntypedValue::i64_shr_u)
+    }
+
+    #[inline(always)]
+    fn visit_i64_rotl(&mut self) {
+        self.execute_binary(UntypedValue::i64_rotl)
+    }
+
+    #[inline(always)]
+    fn visit_i64_rotr(&mut self) {
+        self.execute_binary(UntypedValue::i64_rotr)
+    }
+
+    #[inline(always)]
+    fn visit_f32_abs(&mut self) {
+        self.execute_unary(UntypedValue::f32_abs)
+    }
+
+    #[inline(always)]
+    fn visit_f32_neg(&mut self) {
+        self.execute_unary(UntypedValue::f32_neg)
+    }
+
+    #[inline(always)]
+    fn visit_f32_ceil(&mut self) {
+        self.execute_unary(UntypedValue::f32_ceil)
+    }
+
+    #[inline(always)]
+    fn visit_f32_floor(&mut self) {
+        self.execute_unary(UntypedValue::f32_floor)
+    }
+
+    #[inline(always)]
+    fn visit_f32_trunc(&mut self) {
+        self.execute_unary(UntypedValue::f32_trunc)
+    }
+
+    #[inline(always)]
+    fn visit_f32_nearest(&mut self) {
+        self.execute_unary(UntypedValue::f32_nearest)
+    }
+
+    #[inline(always)]
+    fn visit_f32_sqrt(&mut self) {
+        self.execute_unary(UntypedValue::f32_sqrt)
+    }
+
+    #[inline(always)]
+    fn visit_f32_add(&mut self) {
+        self.execute_binary(UntypedValue::f32_add)
+    }
+
+    #[inline(always)]
+    fn visit_f32_sub(&mut self) {
+        self.execute_binary(UntypedValue::f32_sub)
+    }
+
+    #[inline(always)]
+    fn visit_f32_mul(&mut self) {
+        self.execute_binary(UntypedValue::f32_mul)
+    }
+
+    #[inline(always)]
+    fn visit_f32_div(&mut self) {
+        self.execute_binary(UntypedValue::f32_div)
+    }
+
+    #[inline(always)]
+    fn visit_f32_min(&mut self) {
+        self.execute_binary(UntypedValue::f32_min)
+    }
+
+    #[inline(always)]
+    fn visit_f32_max(&mut self) {
+        self.execute_binary(UntypedValue::f32_max)
+    }
+
+    #[inline(always)]
+    fn visit_f32_copysign(&mut self) {
+        self.execute_binary(UntypedValue::f32_copysign)
+    }
+
+    #[inline(always)]
+    fn visit_f64_abs(&mut self) {
+        self.execute_unary(UntypedValue::f64_abs)
+    }
+
+    #[inline(always)]
+    fn visit_f64_neg(&mut self) {
+        self.execute_unary(UntypedValue::f64_neg)
+    }
+
+    #[inline(always)]
+    fn visit_f64_ceil(&mut self) {
+        self.execute_unary(UntypedValue::f64_ceil)
+    }
+
+    #[inline(always)]
+    fn visit_f64_floor(&mut self) {
+        self.execute_unary(UntypedValue::f64_floor)
+    }
+
+    #[inline(always)]
+    fn visit_f64_trunc(&mut self) {
+        self.execute_unary(UntypedValue::f64_trunc)
+    }
+
+    #[inline(always)]
+    fn visit_f64_nearest(&mut self) {
+        self.execute_unary(UntypedValue::f64_nearest)
+    }
+
+    #[inline(always)]
+    fn visit_f64_sqrt(&mut self) {
+        self.execute_unary(UntypedValue::f64_sqrt)
+    }
+
+    #[inline(always)]
+    fn visit_f64_add(&mut self) {
+        self.execute_binary(UntypedValue::f64_add)
+    }
+
+    #[inline(always)]
+    fn visit_f64_sub(&mut self) {
+        self.execute_binary(UntypedValue::f64_sub)
+    }
+
+    #[inline(always)]
+    fn visit_f64_mul(&mut self) {
+        self.execute_binary(UntypedValue::f64_mul)
+    }
+
+    #[inline(always)]
+    fn visit_f64_div(&mut self) {
+        self.execute_binary(UntypedValue::f64_div)
+    }
+
+    #[inline(always)]
+    fn visit_f64_min(&mut self) {
+        self.execute_binary(UntypedValue::f64_min)
+    }
+
+    #[inline(always)]
+    fn visit_f64_max(&mut self) {
+        self.execute_binary(UntypedValue::f64_max)
+    }
+
+    #[inline(always)]
+    fn visit_f64_copysign(&mut self) {
+        self.execute_binary(UntypedValue::f64_copysign)
+    }
+
+    #[inline(always)]
+    fn visit_i32_wrap_i64(&mut self) {
+        self.execute_unary(UntypedValue::i32_wrap_i64)
+    }
+
+    #[inline(always)]
+    fn visit_i32_trunc_f32(&mut self) -> Result<(), TrapCode> {
+        self.try_execute_unary(UntypedValue::i32_trunc_f32_s)
+    }
+
+    #[inline(always)]
+    fn visit_u32_trunc_f32(&mut self) -> Result<(), TrapCode> {
+        self.try_execute_unary(UntypedValue::i32_trunc_f32_u)
+    }
+
+    #[inline(always)]
+    fn visit_i32_trunc_f64(&mut self) -> Result<(), TrapCode> {
+        self.try_execute_unary(UntypedValue::i32_trunc_f64_s)
+    }
+
+    #[inline(always)]
+    fn visit_u32_trunc_f64(&mut self) -> Result<(), TrapCode> {
+        self.try_execute_unary(UntypedValue::i32_trunc_f64_u)
+    }
+
+    #[inline(always)]
+    fn visit_i64_extend_i32(&mut self) {
+        self.execute_unary(UntypedValue::i64_extend_i32_s)
+    }
+
+    #[inline(always)]
+    fn visit_i64_extend_u32(&mut self) {
+        self.execute_unary(UntypedValue::i64_extend_i32_u)
+    }
+
+    #[inline(always)]
+    fn visit_i64_trunc_f32(&mut self) -> Result<(), TrapCode> {
+        self.try_execute_unary(UntypedValue::i64_trunc_f32_s)
+    }
+
+    #[inline(always)]
+    fn visit_u64_trunc_f32(&mut self) -> Result<(), TrapCode> {
+        self.try_execute_unary(UntypedValue::i64_trunc_f32_u)
+    }
+
+    #[inline(always)]
+    fn visit_i64_trunc_f64(&mut self) -> Result<(), TrapCode> {
+        self.try_execute_unary(UntypedValue::i64_trunc_f64_s)
+    }
+
+    #[inline(always)]
+    fn visit_u64_trunc_f64(&mut self) -> Result<(), TrapCode> {
+        self.try_execute_unary(UntypedValue::i64_trunc_f64_u)
+    }
+
+    #[inline(always)]
+    fn visit_f32_convert_i32(&mut self) {
+        self.execute_unary(UntypedValue::f32_convert_i32_s)
+    }
+
+    #[inline(always)]
+    fn visit_f32_convert_u32(&mut self) {
+        self.execute_unary(UntypedValue::f32_convert_i32_u)
+    }
+
+    #[inline(always)]
+    fn visit_f32_convert_i64(&mut self) {
+        self.execute_unary(UntypedValue::f32_convert_i64_s)
+    }
+
+    #[inline(always)]
+    fn visit_f32_convert_u64(&mut self) {
+        self.execute_unary(UntypedValue::f32_convert_i64_u)
+    }
+
+    #[inline(always)]
+    fn visit_f32_demote_f64(&mut self) {
+        self.execute_unary(UntypedValue::f32_demote_f64)
+    }
+
+    #[inline(always)]
+    fn visit_f64_convert_i32(&mut self) {
+        self.execute_unary(UntypedValue::f64_convert_i32_s)
+    }
+
+    #[inline(always)]
+    fn visit_f64_convert_u32(&mut self) {
+        self.execute_unary(UntypedValue::f64_convert_i32_u)
+    }
+
+    #[inline(always)]
+    fn visit_f64_convert_i64(&mut self) {
+        self.execute_unary(UntypedValue::f64_convert_i64_s)
+    }
+
+    #[inline(always)]
+    fn visit_f64_convert_u64(&mut self) {
+        self.execute_unary(UntypedValue::f64_convert_i64_u)
+    }
+
+    #[inline(always)]
+    fn visit_f64_promote_f32(&mut self) {
+        self.execute_unary(UntypedValue::f64_promote_f32)
+    }
+
+    #[inline(always)]
+    fn visit_i32_sign_extend8(&mut self) {
+        self.execute_unary(UntypedValue::i32_extend8_s)
+    }
+
+    #[inline(always)]
+    fn visit_i32_sign_extend16(&mut self) {
+        self.execute_unary(UntypedValue::i32_extend16_s)
+    }
+
+    #[inline(always)]
+    fn visit_i64_sign_extend8(&mut self) {
+        self.execute_unary(UntypedValue::i64_extend8_s)
+    }
+
+    #[inline(always)]
+    fn visit_i64_sign_extend16(&mut self) {
+        self.execute_unary(UntypedValue::i64_extend16_s)
+    }
+
+    #[inline(always)]
+    fn visit_i64_sign_extend32(&mut self) {
+        self.execute_unary(UntypedValue::i64_extend32_s)
+    }
+
+    #[inline(always)]
+    fn visit_i32_trunc_sat_f32(&mut self) {
+        self.execute_unary(UntypedValue::i32_trunc_sat_f32_s)
+    }
+
+    #[inline(always)]
+    fn visit_u32_trunc_sat_f32(&mut self) {
+        self.execute_unary(UntypedValue::i32_trunc_sat_f32_u)
+    }
+
+    #[inline(always)]
+    fn visit_i32_trunc_sat_f64(&mut self) {
+        self.execute_unary(UntypedValue::i32_trunc_sat_f64_s)
+    }
+
+    #[inline(always)]
+    fn visit_u32_trunc_sat_f64(&mut self) {
+        self.execute_unary(UntypedValue::i32_trunc_sat_f64_u)
+    }
+
+    #[inline(always)]
+    fn visit_i64_trunc_sat_f32(&mut self) {
+        self.execute_unary(UntypedValue::i64_trunc_sat_f32_s)
+    }
+
+    #[inline(always)]
+    fn visit_u64_trunc_sat_f32(&mut self) {
+        self.execute_unary(UntypedValue::i64_trunc_sat_f32_u)
+    }
+
+    #[inline(always)]
+    fn visit_i64_trunc_sat_f64(&mut self) {
+        self.execute_unary(UntypedValue::i64_trunc_sat_f64_s)
+    }
+
+    #[inline(always)]
+    fn visit_u64_trunc_sat_f64(&mut self) {
+        self.execute_unary(UntypedValue::i64_trunc_sat_f64_u)
+    }
 }
