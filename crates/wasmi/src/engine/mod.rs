@@ -665,6 +665,7 @@ impl<'engine> EngineExecutor<'engine> {
     /// # Errors
     ///
     /// When encountering a Wasm or host trap during the execution of `func`.
+    #[inline(never)]
     fn execute_wasm_func<T>(&mut self, mut ctx: StoreContextMut<T>) -> Result<(), TaggedTrap> {
         let mut cache = self
             .stack
