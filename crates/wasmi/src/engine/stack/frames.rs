@@ -64,14 +64,14 @@ impl CallStack {
     }
 
     /// Initializes the [`CallStack`] given the Wasm function.
-    pub(crate) fn init(&mut self, ip: InstructionPtr, instance: &Instance) {
-        self.clear();
+    pub fn init(&mut self, ip: InstructionPtr, instance: &Instance) {
+        self.reset();
         self.frames.push(FuncFrame::new(ip, instance));
     }
 
     /// Pushes a Wasm caller function onto the [`CallStack`].
     #[inline]
-    pub(crate) fn push(&mut self, caller: FuncFrame) -> Result<(), TrapCode> {
+    pub fn push(&mut self, caller: FuncFrame) -> Result<(), TrapCode> {
         if self.len() == self.recursion_limit {
             return Err(err_stack_overflow());
         }
@@ -105,7 +105,7 @@ impl CallStack {
     /// function execution which leaves the [`CallStack`] in an unspecified
     /// state. Therefore the [`CallStack`] is required to be reset before
     /// function execution happens.
-    pub fn clear(&mut self) {
+    pub fn reset(&mut self) {
         self.frames.clear();
     }
 }

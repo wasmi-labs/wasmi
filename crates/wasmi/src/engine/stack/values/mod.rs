@@ -303,7 +303,7 @@ impl ValueStack {
     /// function execution which leaves the [`ValueStack`] in an unspecified
     /// state. Therefore the [`ValueStack`] is required to be reset before
     /// function execution happens.
-    pub fn clear(&mut self) {
+    pub fn reset(&mut self) {
         self.stack_ptr = 0;
     }
 }

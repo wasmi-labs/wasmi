@@ -587,10 +587,12 @@ impl<'engine> EngineExecutor<'engine> {
     where
         Results: CallResults,
     {
-        self.initialize_args(params);
+        self.stack.reset();
+        self.stack.values.extend(params.call_params());
         match ctx.as_context().store.inner.resolve_func(func) {
             FuncEntity::Wasm(wasm_func) => {
-                self.stack.call_wasm_root(wasm_func, &self.res.code_map)?;
+                self.stack
+                    .prepare_wasm_call(wasm_func, &self.res.code_map)?;
                 self.execute_wasm_func(ctx.as_context_mut())?;
             }
             FuncEntity::Host(host_func) => {
@@ -636,12 +638,6 @@ impl<'engine> EngineExecutor<'engine> {
         self.execute_wasm_func(ctx.as_context_mut())?;
         let results = self.write_results_back(results);
         Ok(results)
-    }
-
-    /// Initializes the value stack with the given arguments `params`.
-    fn initialize_args(&mut self, params: impl CallParams) {
-        self.stack.clear();
-        self.stack.values.extend(params.call_params());
     }
 
     /// Writes the results of the function execution back into the `results` buffer.

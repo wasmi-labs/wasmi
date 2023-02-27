@@ -5,11 +5,7 @@ pub use self::{
     frames::{CallStack, FuncFrame},
     values::{ValueStack, ValueStackPtr},
 };
-use super::{
-    code_map::{CodeMap, InstructionPtr},
-    func_types::FuncTypeRegistry,
-    FuncParams,
-};
+use super::{code_map::CodeMap, func_types::FuncTypeRegistry, FuncParams};
 use crate::{
     core::UntypedValue,
     func::{HostFuncEntity, WasmFuncEntity},
@@ -60,7 +56,7 @@ impl Display for LimitsError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             LimitsError::InitialValueStackExceedsMaximum => {
-                write!(f, "initial value stack heihgt exceeds maximum stack height")
+                write!(f, "initial value stack height exceeds maximum stack height")
             }
         }
     }
@@ -128,7 +124,7 @@ impl Stack {
     /// # Note
     ///
     /// Empty stacks require no heap allocations and are cheap to construct.
-    pub(crate) fn empty() -> Self {
+    pub fn empty() -> Self {
         Self {
             values: ValueStack::empty(),
             frames: CallStack::default(),
@@ -140,37 +136,26 @@ impl Stack {
     /// # Note
     ///
     /// Empty [`Stack`] instances are usually non-usable dummy instances.
-    pub(crate) fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.values.is_empty()
     }
 
-    /// Initializes the [`Stack`] for the given Wasm root function call.
-    pub(crate) fn call_wasm_root(
+    /// Prepares the [`Stack`] for a call to the Wasm function.
+    pub fn prepare_wasm_call(
         &mut self,
         wasm_func: &WasmFuncEntity,
         code_map: &CodeMap,
     ) -> Result<(), TrapCode> {
-        let iref = self.call_wasm_impl(wasm_func, code_map)?;
+        let header = code_map.header(wasm_func.func_body());
+        self.values.prepare_wasm_call(header)?;
+        let ip = code_map.instr_ptr(header.iref());
         let instance = wasm_func.instance();
-        self.frames.init(iref, instance);
+        self.frames.init(ip, instance);
         Ok(())
     }
 
-    /// Prepares the [`Stack`] for execution of the given Wasm [`FuncFrame`].
-    pub(crate) fn call_wasm_impl(
-        &mut self,
-        wasm_func: &WasmFuncEntity,
-        code_map: &CodeMap,
-    ) -> Result<InstructionPtr, TrapCode> {
-        let header = code_map.header(wasm_func.func_body());
-        self.values.prepare_wasm_call(header)?;
-        let iref = header.iref();
-        let ip = code_map.instr_ptr(iref);
-        Ok(ip)
-    }
-
     /// Executes the given host function as root.
-    pub(crate) fn call_host_as_root<T>(
+    pub fn call_host_as_root<T>(
         &mut self,
         ctx: StoreContextMut<T>,
         host_func: HostFuncEntity,
@@ -181,7 +166,7 @@ impl Stack {
 
     /// Executes the given host function called by a Wasm function.
     #[inline(always)]
-    pub(crate) fn call_host_from_wasm<T>(
+    pub fn call_host_from_wasm<T>(
         &mut self,
         ctx: StoreContextMut<T>,
         host_func: HostFuncEntity,
@@ -268,8 +253,8 @@ impl Stack {
     }
 
     /// Clears both value and call stacks.
-    pub fn clear(&mut self) {
-        self.values.clear();
-        self.frames.clear();
+    pub fn reset(&mut self) {
+        self.values.reset();
+        self.frames.reset();
     }
 }
