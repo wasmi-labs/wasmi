@@ -165,11 +165,17 @@ impl InstructionPtr {
     /// bounds of the instructions of the same compiled Wasm function.
     #[inline(always)]
     pub fn offset(&mut self, by: isize) {
+        // SAFETY: Within Wasm bytecode execution we are guaranteed by
+        //         Wasm validation and `wasmi` codegen to never run out
+        //         of valid bounds using this method.
         self.ptr = unsafe { self.ptr.offset(by) };
     }
 
     #[inline(always)]
     pub fn add(&mut self, delta: usize) {
+        // SAFETY: Within Wasm bytecode execution we are guaranteed by
+        //         Wasm validation and `wasmi` codegen to never run out
+        //         of valid bounds using this method.
         self.ptr = unsafe { self.ptr.add(delta) };
     }
 
@@ -182,6 +188,9 @@ impl InstructionPtr {
     /// the boundaries of its associated compiled Wasm function.
     #[inline(always)]
     pub fn get(&self) -> &Instruction {
+        // SAFETY: Within Wasm bytecode execution we are guaranteed by
+        //         Wasm validation and `wasmi` codegen to never run out
+        //         of valid bounds using this method.
         unsafe { &*self.ptr }
     }
 }
