@@ -34,7 +34,7 @@ use self::{
     bytecode::Instruction,
     cache::InstanceCache,
     code_map::CodeMap,
-    executor::{execute_frame, WasmOutcome},
+    executor::{execute_wasm, WasmOutcome},
     func_types::FuncTypeRegistry,
     resumable::ResumableCallBase,
     stack::{FuncFrame, Stack, ValueStack},
@@ -595,8 +595,11 @@ impl<'engine> EngineExecutor<'engine> {
             }
             FuncEntity::Host(host_func) => {
                 let host_func = *host_func;
-                self.stack
-                    .call_host_as_root(ctx.as_context_mut(), host_func, &self.res.func_types)?;
+                self.stack.call_host_as_root(
+                    ctx.as_context_mut(),
+                    host_func,
+                    &self.res.func_types,
+                )?;
             }
         };
         let results = self.write_results_back(results);
@@ -671,28 +674,33 @@ impl<'engine> EngineExecutor<'engine> {
             .map(InstanceCache::from)
             .expect("must have frame on the call stack");
         loop {
-            match self.execute_frame(ctx.as_context_mut(), &mut cache)? {
+            match self.execute_wasm(ctx.as_context_mut(), &mut cache)? {
                 WasmOutcome::Return => return Ok(()),
-                WasmOutcome::Call(func) => {
-                    let host_func = match ctx.as_context().store.inner.resolve_func(&func) {
+                WasmOutcome::Call(ref func) => {
+                    let host_func = match ctx.as_context().store.inner.resolve_func(func) {
                         FuncEntity::Wasm(_) => unreachable!("`func` must be a host function"),
                         FuncEntity::Host(host_func) => *host_func,
                     };
                     self.stack
                         .call_host_from_wasm(ctx.as_context_mut(), host_func, &self.res.func_types)
-                        .map_err(|trap| TaggedTrap::host(func, trap))?;
+                        .map_err(|trap| TaggedTrap::host(*func, trap))?;
                 }
             }
         }
     }
 
-    /// Executes the given function `frame` and returns the result.
+    /// Executes the given function `frame`.
+    ///
+    /// # Note
+    ///
+    /// This executes Wasm instructions until either the execution calls
+    /// into a host function or the Wasm execution has come to an end.
     ///
     /// # Errors
     ///
-    /// - If the execution of the function `frame` trapped.
+    /// If the Wasm execution traps.
     #[inline(always)]
-    fn execute_frame<T>(
+    fn execute_wasm<T>(
         &mut self,
         ctx: StoreContextMut<T>,
         cache: &mut InstanceCache,
@@ -711,6 +719,6 @@ impl<'engine> EngineExecutor<'engine> {
         let value_stack = &mut self.stack.values;
         let call_stack = &mut self.stack.frames;
         let code_map = &self.res.code_map;
-        execute_frame(store_inner, cache, value_stack, call_stack, code_map).map_err(make_trap)
+        execute_wasm(store_inner, cache, value_stack, call_stack, code_map).map_err(make_trap)
     }
 }

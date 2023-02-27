@@ -72,14 +72,14 @@ pub enum ReturnOutcome {
 ///
 /// # Note
 ///
-/// This executes instructions sequentially until either the function
-/// calls into another function or the function returns to its caller.
+/// This executes Wasm instructions until either the execution calls
+/// into a host function or the Wasm execution has come to an end.
 ///
 /// # Errors
 ///
-/// - If the execution of the function `frame` trapped.
+/// If the Wasm execution traps.
 #[inline(never)]
-pub fn execute_frame<'engine>(
+pub fn execute_wasm<'engine>(
     ctx: &mut StoreInner,
     cache: &'engine mut InstanceCache,
     value_stack: &'engine mut ValueStack,
