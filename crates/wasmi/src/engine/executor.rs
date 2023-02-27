@@ -286,6 +286,7 @@ fn try_execute_binary(
 /// the function call so that the stack and execution state is synchronized
 /// with the outer structures.
 #[inline(always)]
+#[allow(clippy::too_many_arguments)]
 fn call_func(
     ip: &mut InstructionPtr,
     sp: &mut ValueStackPtr,
@@ -427,6 +428,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes the function frame until it returns or traps.
     #[inline(always)]
     fn execute(mut self) -> Result<WasmOutcome, TrapCode> {
+        use Instruction as Instr;
         let Self {
             sp,
             ip,
@@ -436,7 +438,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             call_stack,
             code_map,
         } = &mut self;
-        use Instruction as Instr;
         loop {
             match *ip.get() {
                 Instr::LocalGet { local_depth } => visit_local_get(ip, sp, local_depth),
@@ -798,6 +799,7 @@ fn visit_global_set(
 }
 
 #[inline(always)]
+#[allow(clippy::too_many_arguments)]
 fn visit_call(
     ip: &mut InstructionPtr,
     sp: &mut ValueStackPtr,
@@ -822,6 +824,7 @@ fn visit_call(
 }
 
 #[inline(always)]
+#[allow(clippy::too_many_arguments)]
 fn visit_call_indirect(
     ip: &mut InstructionPtr,
     sp: &mut ValueStackPtr,
