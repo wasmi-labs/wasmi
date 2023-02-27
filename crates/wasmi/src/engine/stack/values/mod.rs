@@ -72,27 +72,6 @@ impl Extend<UntypedValue> for ValueStack {
     }
 }
 
-impl FromIterator<UntypedValue> for ValueStack {
-    fn from_iter<I>(iter: I) -> Self
-    where
-        I: IntoIterator<Item = UntypedValue>,
-    {
-        let mut stack = ValueStack::default();
-        stack.extend(iter);
-        stack
-    }
-}
-
-#[cfg(test)]
-impl<'a> IntoIterator for &'a ValueStack {
-    type Item = &'a UntypedValue;
-    type IntoIter = core::slice::Iter<'a, UntypedValue>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.entries[0..self.stack_ptr].iter()
-    }
-}
-
 impl ValueStack {
     /// Creates an empty [`ValueStack`] that does not allocate heap memor.
     ///
@@ -106,11 +85,6 @@ impl ValueStack {
             stack_ptr: 0,
             maximum_len: 0,
         }
-    }
-
-    #[cfg(test)]
-    pub fn iter(&self) -> core::slice::Iter<UntypedValue> {
-        self.into_iter()
     }
 
     /// Returns the current [`ValueStackPtr`] of `self`.
@@ -180,6 +154,7 @@ impl ValueStack {
     /// # Panics (Debug)
     ///
     /// If the `index` is out of bounds.
+    #[inline]
     fn get_release_unchecked_mut(&mut self, index: usize) -> &mut UntypedValue {
         debug_assert!(index < self.capacity());
         // Safety: This is safe since all wasmi bytecode has been validated
@@ -193,7 +168,6 @@ impl ValueStack {
     /// # Errors
     ///
     /// If the value stack cannot fit `additional` stack values.
-    #[inline]
     pub fn extend_zeros(&mut self, additional: usize) {
         let cells = self
             .entries
@@ -205,7 +179,6 @@ impl ValueStack {
     }
 
     /// Prepares the [`ValueStack`] for execution of the given Wasm function.
-    #[inline(always)]
     pub fn prepare_wasm_call(&mut self, header: &FuncHeader) -> Result<(), TrapCode> {
         let max_stack_height = header.max_stack_height();
         self.reserve(max_stack_height)?;
@@ -215,6 +188,7 @@ impl ValueStack {
     }
 
     /// Drops the last value on the [`ValueStack`].
+    #[inline]
     pub fn drop(&mut self, depth: usize) {
         self.stack_ptr -= depth;
     }
@@ -228,11 +202,9 @@ impl ValueStack {
     /// - Especially the stack-depth analysis during compilation with
     ///   a manual stack extension before function call prevents this
     ///   procedure from panicking.
-    pub fn push<T>(&mut self, entry: T)
-    where
-        T: Into<UntypedValue>,
-    {
-        *self.get_release_unchecked_mut(self.stack_ptr) = entry.into();
+    #[inline]
+    pub fn push(&mut self, entry: UntypedValue) {
+        *self.get_release_unchecked_mut(self.stack_ptr) = entry;
         self.stack_ptr += 1;
     }
 
@@ -242,7 +214,7 @@ impl ValueStack {
     }
 
     /// Returns the current length of the [`ValueStack`].
-    pub fn len(&self) -> usize {
+    fn len(&self) -> usize {
         self.stack_ptr
     }
 
@@ -259,7 +231,6 @@ impl ValueStack {
     /// For this to be working we need a stack-depth analysis during Wasm
     /// compilation so that we are aware of all stack-depths for every
     /// functions.
-    #[inline]
     pub fn reserve(&mut self, additional: usize) -> Result<(), TrapCode> {
         let new_len = self
             .len()
@@ -282,6 +253,7 @@ impl ValueStack {
     ///
     /// This API is mostly used when writing results back to the
     /// caller after function execution has finished.
+    #[inline]
     pub fn drain(&mut self) -> &[UntypedValue] {
         let len = self.stack_ptr;
         self.stack_ptr = 0;
@@ -289,6 +261,7 @@ impl ValueStack {
     }
 
     /// Returns an exclusive slice to the last `depth` entries in the value stack.
+    #[inline]
     pub fn peek_as_slice_mut(&mut self, depth: usize) -> &mut [UntypedValue] {
         let start = self.stack_ptr - depth;
         let end = self.stack_ptr;
