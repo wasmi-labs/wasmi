@@ -122,7 +122,6 @@ const INVALID_GROWTH_ERRCODE: u32 = u32::MAX;
 
 /// An execution context for executing a `wasmi` function frame.
 #[derive(Debug)]
-#[repr(C)]
 struct Executor<'ctx, 'engine> {
     /// Stores the value stack of live values on the Wasm stack.
     sp: ValueStackPtr,
@@ -166,8 +165,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         code_map: &'engine CodeMap,
     ) -> Self {
         let frame = call_stack.pop().expect("must have frame on the call stack");
-        let ip = frame.ip();
         let sp = value_stack.stack_ptr();
+        let ip = frame.ip();
         Self {
             sp,
             ip,
