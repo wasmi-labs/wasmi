@@ -184,7 +184,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn execute(mut self) -> Result<WasmOutcome, TrapCode> {
         use Instruction as Instr;
         loop {
-            match *self.instr() {
+            match *self.ip.get() {
                 Instr::LocalGet { local_depth } => self.visit_local_get(local_depth),
                 Instr::LocalSet { local_depth } => self.visit_local_set(local_depth),
                 Instr::LocalTee { local_depth } => self.visit_local_tee(local_depth),
@@ -393,15 +393,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::I64Extend32S => self.visit_i64_sign_extend32(),
             }
         }
-    }
-
-    /// Returns the [`Instruction`] at the current program counter.
-    #[inline]
-    fn instr(&self) -> &Instruction {
-        // # Safety
-        //
-        // Properly constructed `wasmi` bytecode can never produce invalid `pc`.
-        unsafe { self.ip.get() }
     }
 
     /// Executes a generic Wasm `store[N_{s|u}]` operation.

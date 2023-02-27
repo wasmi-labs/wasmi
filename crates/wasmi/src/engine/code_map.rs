@@ -181,7 +181,7 @@ impl InstructionPtr {
     /// guaranteed that the [`InstructionPtr`] is validly pointing inside
     /// the boundaries of its associated compiled Wasm function.
     #[inline(always)]
-    pub unsafe fn get(&self) -> &Instruction {
-        &*self.ptr
+    pub fn get(&self) -> &Instruction {
+        unsafe { &*self.ptr }
     }
 }
