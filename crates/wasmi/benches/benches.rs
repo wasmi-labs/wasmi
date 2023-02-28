@@ -902,12 +902,12 @@ fn bench_execute_fibonacci(c: &mut Criterion) {
     }
 
     const FIBONACCI_REC_N: i64 = 25;
-    const FIBONACCI_REC_RESULT: i64 = fib(FIBONACCI_REC_N);
+    const FIBONACCI_TAIL_N: i64 = 50_000;
     const FIBONACCI_INC_N: i64 = 100_000;
-    const FIBONACCI_INC_RESULT: i64 = fib(FIBONACCI_INC_N);
     let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/fibonacci.wat"));
-    let mut bench_fib = |bench_id: &str, func_name: &str, input: i64, expected: i64| {
+    let mut bench_fib = |bench_id: &str, func_name: &str, input: i64| {
         c.bench_function(bench_id, |b| {
+            let expected = fib(input);
             let fib = instance
                 .get_export(&store, func_name)
                 .and_then(Extern::into_func)
@@ -919,24 +919,9 @@ fn bench_execute_fibonacci(c: &mut Criterion) {
             });
         });
     };
-    bench_fib(
-        "execute/fib_recursive",
-        "fib_recursive",
-        FIBONACCI_REC_N,
-        FIBONACCI_REC_RESULT,
-    );
-    // bench_fib(
-    //     "execute/fib_tail_recursive",
-    //     "fib_tail_recursive",
-    //     FIBONACCI_INC_N,
-    //     FIBONACCI_INC_RESULT,
-    // );
-    bench_fib(
-        "execute/fib_iterative",
-        "fib_iterative",
-        FIBONACCI_INC_N,
-        FIBONACCI_INC_RESULT,
-    );
+    bench_fib("execute/fibonacci_rec", "fibonacci_rec", FIBONACCI_REC_N);
+    bench_fib("execute/fibonacci_tail", "fibonacci_tail", FIBONACCI_TAIL_N);
+    bench_fib("execute/fibonacci_iter", "fibonacci_iter", FIBONACCI_INC_N);
 }
 
 fn bench_execute_memory_sum(c: &mut Criterion) {

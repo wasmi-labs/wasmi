@@ -1,6 +1,6 @@
 use super::{
     super::engine::{FuncFinished, FuncParams, FuncResults},
-    HostFuncTrampoline,
+    TrampolineEntity,
 };
 use crate::{
     core::{Trap, ValueType, F32, F64},
@@ -24,7 +24,7 @@ pub trait IntoFunc<T, Params, Results>: Send + Sync + 'static {
 
     /// Converts the function into its `wasmi` signature and its trampoline.
     #[doc(hidden)]
-    fn into_func(self) -> (FuncType, HostFuncTrampoline<T>);
+    fn into_func(self) -> (FuncType, TrampolineEntity<T>);
 }
 
 macro_rules! impl_into_func {
@@ -42,7 +42,7 @@ macro_rules! impl_into_func {
             type Results = <R as WasmRet>::Ok;
 
             #[allow(non_snake_case)]
-            fn into_func(self) -> (FuncType, HostFuncTrampoline<T>) {
+            fn into_func(self) -> (FuncType, TrampolineEntity<T>) {
                 IntoFunc::into_func(
                     move |
                         _: Caller<'_, T>,
@@ -69,12 +69,12 @@ macro_rules! impl_into_func {
             type Results = <R as WasmRet>::Ok;
 
             #[allow(non_snake_case)]
-            fn into_func(self) -> (FuncType, HostFuncTrampoline<T>) {
+            fn into_func(self) -> (FuncType, TrampolineEntity<T>) {
                 let signature = FuncType::new(
                     <Self::Params as WasmTypeList>::types(),
                     <Self::Results as WasmTypeList>::types(),
                 );
-                let trampoline = HostFuncTrampoline::new(
+                let trampoline = TrampolineEntity::new(
                     move |caller: Caller<T>, params_results: FuncParams| -> Result<FuncFinished, Trap> {
                         let (($($tuple,)*), func_results): (Self::Params, FuncResults) = params_results.decode_params();
                         let results: Self::Results =

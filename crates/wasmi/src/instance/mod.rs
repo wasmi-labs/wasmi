@@ -104,8 +104,8 @@ impl InstanceEntity {
     }
 
     /// Returns the signature at the `index` if any.
-    pub fn get_signature(&self, index: u32) -> Option<DedupFuncType> {
-        self.func_types.get(index as usize).copied()
+    pub fn get_signature(&self, index: u32) -> Option<&DedupFuncType> {
+        self.func_types.get(index as usize)
     }
 
     /// Returns the [`DataSegment`] at the `index` if any.

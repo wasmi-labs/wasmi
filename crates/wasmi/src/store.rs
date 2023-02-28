@@ -1,5 +1,8 @@
-use super::{
+use crate::{
     engine::DedupFuncType,
+    externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
+    func::{Trampoline, TrampolineEntity, TrampolineIdx},
+    memory::DataSegment,
     DataSegmentEntity,
     DataSegmentIdx,
     ElementSegment,
@@ -23,15 +26,11 @@ use super::{
     TableEntity,
     TableIdx,
 };
-use crate::{
-    externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
-    memory::DataSegment,
-};
 use core::{
     fmt::{self, Debug},
     sync::atomic::{AtomicU32, Ordering},
 };
-use wasmi_arena::{Arena, ArenaIndex, ComponentVec, GuardedEntity};
+use wasmi_arena::{Arena, ArenaIndex, GuardedEntity};
 use wasmi_core::TrapCode;
 
 /// A unique store index.
@@ -78,8 +77,8 @@ pub struct Store<T> {
     /// This is re-exported to the rest of the crate since
     /// it is used directly by the engine's executor.
     pub(crate) inner: StoreInner,
-    /// Stored Wasm or host functions.
-    funcs: Arena<FuncIdx, FuncEntity<T>>,
+    /// Stored host function trampolines.
+    trampolines: Arena<TrampolineIdx, TrampolineEntity<T>>,
     /// User provided host data owned by the [`Store`].
     data: T,
 }
@@ -91,13 +90,8 @@ pub struct StoreInner {
     ///
     /// Used to protect against invalid entity indices.
     store_idx: StoreIdx,
-    /// Stores the function type for each function.
-    ///
-    /// # Note
-    ///
-    /// This is required so that the [`Engine`] can work entirely
-    /// with a `&mut StoreInner` reference.
-    func_types: ComponentVec<FuncIdx, DedupFuncType>,
+    /// Stored Wasm or host functions.
+    funcs: Arena<FuncIdx, FuncEntity>,
     /// Stored linear memories.
     memories: Arena<MemoryIdx, MemoryEntity>,
     /// Stored tables.
@@ -233,7 +227,7 @@ impl StoreInner {
         StoreInner {
             engine: engine.clone(),
             store_idx: StoreIdx::new(),
-            func_types: ComponentVec::new(),
+            funcs: Arena::new(),
             memories: Arena::new(),
             tables: Arena::new(),
             globals: Arena::new(),
@@ -285,31 +279,6 @@ impl StoreInner {
                 stored, self.store_idx,
             )
         })
-    }
-
-    /// Registers the `func_type` for the given `func`.
-    ///
-    /// # Note
-    ///
-    /// This is required so that the [`Engine`] can work entirely
-    /// with a `&mut StoreInner` reference.
-    pub fn register_func_type(&mut self, func: Func, func_type: &DedupFuncType) {
-        let idx = self.unwrap_stored(func.as_inner());
-        let previous = self.func_types.set(idx, *func_type);
-        debug_assert!(previous.is_none());
-    }
-
-    /// Returns the [`DedupFuncType`] for the given [`Func`].
-    ///
-    /// # Note
-    ///
-    /// Panics if no [`DedupFuncType`] for the given [`Func`] was registered.
-    pub fn get_func_type(&self, func: &Func) -> DedupFuncType {
-        let idx = self.unwrap_stored(func.as_inner());
-        self.func_types
-            .get(idx)
-            .copied()
-            .unwrap_or_else(|| panic!("missing function type for func: {func:?}"))
     }
 
     /// Allocates a new [`GlobalEntity`] and returns a [`Global`] reference to it.
@@ -694,6 +663,25 @@ impl StoreInner {
     pub fn resolve_external_object(&self, object: &ExternObject) -> &ExternObjectEntity {
         self.resolve(object.as_inner(), &self.extern_objects)
     }
+
+    /// Allocates a new Wasm or host [`FuncEntity`] and returns a [`Func`] reference to it.
+    pub fn alloc_func(&mut self, func: FuncEntity) -> Func {
+        let idx = self.funcs.alloc(func);
+        Func::from_inner(self.wrap_stored(idx))
+    }
+
+    /// Returns a shared reference to the associated entity of the Wasm or host function.
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Func`] does not originate from this [`Store`].
+    /// - If the [`Func`] cannot be resolved to its entity.
+    pub fn resolve_func(&self, func: &Func) -> &FuncEntity {
+        let entity_index = self.unwrap_stored(func.as_inner());
+        self.funcs.get(entity_index).unwrap_or_else(|| {
+            panic!("failed to resolve stored Wasm or host function: {entity_index:?}")
+        })
+    }
 }
 
 impl<T> Store<T> {
@@ -701,7 +689,7 @@ impl<T> Store<T> {
     pub fn new(engine: &Engine, data: T) -> Self {
         Self {
             inner: StoreInner::new(engine),
-            funcs: Arena::new(),
+            trampolines: Arena::new(),
             data,
         }
     }
@@ -784,13 +772,10 @@ impl<T> Store<T> {
             .map_err(|_error| FuelError::out_of_fuel())
     }
 
-    /// Allocates a new Wasm or host [`FuncEntity`] and returns a [`Func`] reference to it.
-    pub(super) fn alloc_func(&mut self, func: FuncEntity<T>) -> Func {
-        let func_type = *func.ty_dedup();
-        let idx = self.funcs.alloc(func);
-        let func = Func::from_inner(self.inner.wrap_stored(idx));
-        self.inner.register_func_type(func, &func_type);
-        func
+    /// Allocates a new [`TrampolineEntity`] and returns a [`Trampoline`] reference to it.
+    pub(super) fn alloc_trampoline(&mut self, func: TrampolineEntity<T>) -> Trampoline {
+        let idx = self.trampolines.alloc(func);
+        Trampoline::from_inner(self.inner.wrap_stored(idx))
     }
 
     /// Returns an exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`]
@@ -812,17 +797,17 @@ impl<T> Store<T> {
         (self.inner.resolve_memory_mut(memory), &mut self.data)
     }
 
-    /// Returns a shared reference to the associated entity of the Wasm or host function.
+    /// Returns a shared reference to the associated entity of the host function trampoline.
     ///
     /// # Panics
     ///
-    /// - If the [`Func`] does not originate from this [`Store`].
-    /// - If the [`Func`] cannot be resolved to its entity.
-    pub(super) fn resolve_func(&self, func: &Func) -> &FuncEntity<T> {
+    /// - If the [`Trampoline`] does not originate from this [`Store`].
+    /// - If the [`Trampoline`] cannot be resolved to its entity.
+    pub(super) fn resolve_trampoline(&self, func: &Trampoline) -> &TrampolineEntity<T> {
         let entity_index = self.inner.unwrap_stored(func.as_inner());
-        self.funcs.get(entity_index).unwrap_or_else(|| {
-            panic!("failed to resolve stored Wasm or host function: {entity_index:?}")
-        })
+        self.trampolines
+            .get(entity_index)
+            .unwrap_or_else(|| panic!("failed to resolve stored host function: {entity_index:?}"))
     }
 }
 
@@ -848,7 +833,7 @@ pub trait AsContextMut: AsContext {
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct StoreContext<'a, T> {
-    pub(super) store: &'a Store<T>,
+    pub(crate) store: &'a Store<T>,
 }
 
 impl<'a, T> StoreContext<'a, T> {
@@ -893,7 +878,7 @@ impl<'a, T: AsContextMut> From<&'a mut T> for StoreContextMut<'a, T::UserState> 
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct StoreContextMut<'a, T> {
-    pub(super) store: &'a mut Store<T>,
+    pub(crate) store: &'a mut Store<T>,
 }
 
 impl<'a, T> StoreContextMut<'a, T> {

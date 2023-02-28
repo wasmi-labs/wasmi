@@ -3,20 +3,15 @@ mod values;
 
 pub use self::{
     frames::{CallStack, FuncFrame},
-    values::{ValueStack, ValueStackRef},
-};
-use super::{
-    code_map::{CodeMap, InstructionPtr},
-    func_types::FuncTypeRegistry,
-    CallKind,
-    FuncParams,
+    values::{ValueStack, ValueStackPtr},
 };
 use crate::{
     core::UntypedValue,
+    engine::{code_map::CodeMap, func_types::FuncTypeRegistry, FuncParams},
     func::{HostFuncEntity, WasmFuncEntity},
     AsContext,
-    AsContextMut,
     Instance,
+    StoreContextMut,
 };
 use core::{
     fmt::{self, Display},
@@ -61,7 +56,7 @@ impl Display for LimitsError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             LimitsError::InitialValueStackExceedsMaximum => {
-                write!(f, "initial value stack heihgt exceeds maximum stack height")
+                write!(f, "initial value stack height exceeds maximum stack height")
             }
         }
     }
@@ -106,9 +101,9 @@ impl Default for StackLimits {
 #[derive(Debug, Default)]
 pub struct Stack {
     /// The value stack.
-    pub(crate) values: ValueStack,
+    pub values: ValueStack,
     /// The frame stack.
-    frames: CallStack,
+    pub frames: CallStack,
 }
 
 impl Stack {
@@ -129,7 +124,7 @@ impl Stack {
     /// # Note
     ///
     /// Empty stacks require no heap allocations and are cheap to construct.
-    pub(crate) fn empty() -> Self {
+    pub fn empty() -> Self {
         Self {
             values: ValueStack::empty(),
             frames: CallStack::default(),
@@ -141,114 +136,47 @@ impl Stack {
     /// # Note
     ///
     /// Empty [`Stack`] instances are usually non-usable dummy instances.
-    pub(crate) fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.values.is_empty()
     }
 
-    /// Push the given `frame` onto the call stack.
-    ///
-    /// # Note
-    ///
-    /// This API is required for resumable function calls so that the currently
-    /// active function frame can be pushed back onto the stack before returning
-    /// in a resumable state. Upon resumption the function frame can be popped
-    /// from the stack again.
-    pub(super) fn push_frame(&mut self, frame: FuncFrame) -> Result<(), TrapCode> {
-        self.frames.push(frame)
-    }
-
-    /// Pops the top most [`FuncFrame`] if any.
-    ///
-    /// # Note
-    ///
-    /// This is the counterpart method oo [`push_frame`] and also
-    /// required when resuming a resumable function execution to
-    /// pop of the Wasm function that was called just before the
-    /// errorneous host function invocation that caused the resumable
-    /// function invocation to pause.
-    ///
-    /// [`push_frame`]: [`Stack::push_frame`]
-    pub(super) fn pop_frame(&mut self) -> Option<FuncFrame> {
-        self.frames.pop()
-    }
-
-    /// Initializes the [`Stack`] for the given Wasm root function call.
-    pub(crate) fn call_wasm_root(
+    /// Prepares the [`Stack`] for a call to the Wasm function.
+    pub fn prepare_wasm_call(
         &mut self,
         wasm_func: &WasmFuncEntity,
         code_map: &CodeMap,
-    ) -> Result<FuncFrame, TrapCode> {
-        let iref = self.call_wasm_impl(wasm_func, code_map)?;
-        let instance = wasm_func.instance();
-        Ok(self.frames.init(iref, instance))
-    }
-
-    /// Prepares the [`Stack`] for the given Wasm function call.
-    pub(crate) fn call_wasm(
-        &mut self,
-        caller: &FuncFrame,
-        wasm_func: &WasmFuncEntity,
-        code_map: &CodeMap,
-        kind: CallKind,
-    ) -> Result<FuncFrame, TrapCode> {
-        let ip = self.call_wasm_impl(wasm_func, code_map)?;
-        if matches!(kind, CallKind::Nested) {
-            self.frames.push(*caller)?;
-        }
-        let instance = wasm_func.instance();
-        let frame = FuncFrame::new(ip, instance);
-        Ok(frame)
-    }
-
-    /// Prepares the [`Stack`] for execution of the given Wasm [`FuncFrame`].
-    pub(crate) fn call_wasm_impl(
-        &mut self,
-        wasm_func: &WasmFuncEntity,
-        code_map: &CodeMap,
-    ) -> Result<InstructionPtr, TrapCode> {
+    ) -> Result<(), TrapCode> {
         let header = code_map.header(wasm_func.func_body());
-        let max_stack_height = header.max_stack_height();
-        self.values.reserve(max_stack_height)?;
-        let len_locals = header.len_locals();
-        self.values
-            .extend_zeros(len_locals)
-            .expect("stack overflow is unexpected due to previous stack reserve");
-        let iref = header.iref();
-        let ip = code_map.instr_ptr(iref);
-        Ok(ip)
-    }
-
-    /// Signals the [`Stack`] to return the last Wasm function call.
-    ///
-    /// Returns the next function on the call stack if any.
-    pub fn return_wasm(&mut self) -> Option<FuncFrame> {
-        self.frames.pop()
+        self.values.prepare_wasm_call(header)?;
+        let ip = code_map.instr_ptr(header.iref());
+        let instance = wasm_func.instance();
+        self.frames.init(ip, instance);
+        Ok(())
     }
 
     /// Executes the given host function as root.
-    pub(crate) fn call_host_root<C>(
+    pub fn call_host_as_root<T>(
         &mut self,
-        ctx: C,
-        host_func: HostFuncEntity<<C as AsContext>::UserState>,
+        ctx: StoreContextMut<T>,
+        host_func: HostFuncEntity,
         func_types: &FuncTypeRegistry,
-    ) -> Result<(), Trap>
-    where
-        C: AsContextMut,
-    {
+    ) -> Result<(), Trap> {
         self.call_host_impl(ctx, host_func, None, func_types)
     }
 
     /// Executes the given host function called by a Wasm function.
-    pub(crate) fn call_host<C>(
+    #[inline(always)]
+    pub fn call_host_from_wasm<T>(
         &mut self,
-        ctx: C,
-        caller: &FuncFrame,
-        host_func: HostFuncEntity<<C as AsContext>::UserState>,
+        ctx: StoreContextMut<T>,
+        host_func: HostFuncEntity,
         func_types: &FuncTypeRegistry,
-    ) -> Result<(), Trap>
-    where
-        C: AsContextMut,
-    {
+    ) -> Result<(), Trap> {
+        let caller = self
+            .frames
+            .peek()
+            .copied()
+            .expect("must have a frame on the call stack");
         let instance = caller.instance();
         self.call_host_impl(ctx, host_func, Some(instance), func_types)
     }
@@ -259,17 +187,14 @@ impl Stack {
     ///
     /// - If the host function returns a host side error or trap.
     /// - If the value stack overflowed upon pushing parameters or results.
-    #[inline(never)]
-    fn call_host_impl<C>(
+    #[inline(always)]
+    fn call_host_impl<T>(
         &mut self,
-        mut ctx: C,
-        host_func: HostFuncEntity<<C as AsContext>::UserState>,
+        ctx: StoreContextMut<T>,
+        host_func: HostFuncEntity,
         instance: Option<&Instance>,
         func_types: &FuncTypeRegistry,
-    ) -> Result<(), Trap>
-    where
-        C: AsContextMut,
-    {
+    ) -> Result<(), Trap> {
         // The host function signature is required for properly
         // adjusting, inspecting and manipulating the value stack.
         let (input_types, output_types) = func_types
@@ -286,7 +211,7 @@ impl Stack {
             //       so that we can drop them in case the host
             //       function fails to execute properly.
             let delta = len_outputs - len_inputs;
-            self.values.extend_zeros(delta)?;
+            self.values.extend_zeros(delta);
             delta
         } else {
             0
@@ -299,8 +224,13 @@ impl Stack {
         // Now we are ready to perform the host function call.
         // Note: We need to clone the host function due to some borrowing issues.
         //       This should not be a big deal since host functions usually are cheap to clone.
-        host_func
-            .call(&mut ctx, instance, params_results)
+        let trampoline = ctx
+            .as_context()
+            .store
+            .resolve_trampoline(host_func.trampoline())
+            .clone();
+        trampoline
+            .call(ctx, instance, params_results)
             .map_err(|error| {
                 // Note: We drop the values that have been temporarily added to
                 //       the stack to act as parameter and result buffer for the
@@ -323,8 +253,8 @@ impl Stack {
     }
 
     /// Clears both value and call stacks.
-    pub fn clear(&mut self) {
-        self.values.clear();
-        self.frames.clear();
+    pub fn reset(&mut self) {
+        self.values.reset();
+        self.frames.reset();
     }
 }
