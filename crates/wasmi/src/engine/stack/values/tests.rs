@@ -5,6 +5,32 @@ fn drop_keep(drop: usize, keep: usize) -> DropKeep {
     DropKeep::new(drop, keep).unwrap()
 }
 
+impl FromIterator<UntypedValue> for ValueStack {
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = UntypedValue>,
+    {
+        let mut stack = ValueStack::default();
+        stack.extend(iter);
+        stack
+    }
+}
+
+impl<'a> IntoIterator for &'a ValueStack {
+    type Item = &'a UntypedValue;
+    type IntoIter = core::slice::Iter<'a, UntypedValue>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.entries[0..self.stack_ptr].iter()
+    }
+}
+
+impl ValueStack {
+    pub fn iter(&self) -> core::slice::Iter<UntypedValue> {
+        self.into_iter()
+    }
+}
+
 #[test]
 fn drop_keep_works() {
     fn assert_drop_keep<E>(stack: &ValueStack, drop_keep: DropKeep, expected: E)

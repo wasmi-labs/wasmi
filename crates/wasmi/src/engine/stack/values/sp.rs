@@ -25,6 +25,9 @@ impl ValueStackPtr {
     /// Calculates the distance between two [`ValueStackPtr] in units of [`UntypedValue`].
     #[inline]
     pub fn offset_from(self, other: Self) -> isize {
+        // SAFETY: Within Wasm bytecode execution we are guaranteed by
+        //         Wasm validation and `wasmi` codegen to never run out
+        //         of valid bounds using this method.
         unsafe { self.ptr.offset_from(other.ptr) }
     }
 
@@ -32,12 +35,18 @@ impl ValueStackPtr {
     #[must_use]
     #[inline]
     fn get(self) -> UntypedValue {
+        // SAFETY: Within Wasm bytecode execution we are guaranteed by
+        //         Wasm validation and `wasmi` codegen to never run out
+        //         of valid bounds using this method.
         unsafe { *self.ptr }
     }
 
     /// Writes `value` to the cell pointed at by [`ValueStackPtr`].
     #[inline]
     fn set(self, value: UntypedValue) {
+        // SAFETY: Within Wasm bytecode execution we are guaranteed by
+        //         Wasm validation and `wasmi` codegen to never run out
+        //         of valid bounds using this method.
         *unsafe { &mut *self.ptr } = value;
     }
 
@@ -106,12 +115,18 @@ impl ValueStackPtr {
     /// Bumps the [`ValueStackPtr`] of `self` by one.
     #[inline]
     fn inc_by(&mut self, delta: usize) {
+        // SAFETY: Within Wasm bytecode execution we are guaranteed by
+        //         Wasm validation and `wasmi` codegen to never run out
+        //         of valid bounds using this method.
         self.ptr = unsafe { self.ptr.add(delta) };
     }
 
     /// Decreases the [`ValueStackPtr`] of `self` by one.
     #[inline]
     fn dec_by(&mut self, delta: usize) {
+        // SAFETY: Within Wasm bytecode execution we are guaranteed by
+        //         Wasm validation and `wasmi` codegen to never run out
+        //         of valid bounds using this method.
         self.ptr = unsafe { self.ptr.sub(delta) };
     }
 
