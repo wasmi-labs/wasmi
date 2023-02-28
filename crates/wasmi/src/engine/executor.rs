@@ -14,7 +14,7 @@ use crate::{
             TableIdx,
         },
         cache::InstanceCache,
-        code_map::{CodeMap, FuncBody, InstructionPtr},
+        code_map::{CodeMap, InstructionPtr},
         config::FuelCosts,
         stack::{CallStack, ValueStackPtr},
         DropKeep,
@@ -25,7 +25,6 @@ use crate::{
     table::TableEntity,
     Func,
     FuncRef,
-    Instance,
     StoreInner,
     Table,
 };
@@ -550,40 +549,24 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.sync_stack_ptr();
         match self.ctx.resolve_func(func) {
             FuncEntity::Wasm(wasm_func) => {
-                self.call_wasm_func(wasm_func.func_body(), *wasm_func.instance(), kind)
+                if matches!(kind, CallKind::Nested) {
+                    self.call_stack
+                        .push(FuncFrame::new(self.ip, self.cache.instance()))?;
+                }
+                let header = self.code_map.header(wasm_func.func_body());
+                self.value_stack.prepare_wasm_call(header)?;
+                self.sp = self.value_stack.stack_ptr();
+                self.cache.update_instance(wasm_func.instance());
+                self.ip = self.code_map.instr_ptr(header.iref());
+                Ok(CallOutcome::Continue)
             }
-            FuncEntity::Host(_host_func) => self.call_host_func(func),
+            FuncEntity::Host(_host_func) => {
+                self.call_stack
+                    .push(FuncFrame::new(self.ip, self.cache.instance()))?;
+                self.cache.reset();
+                Ok(CallOutcome::Call(*func))
+            }
         }
-    }
-
-    /// Calls the host function.
-    #[inline(always)]
-    #[cold]
-    fn call_host_func(&mut self, func: &Func) -> Result<CallOutcome, TrapCode> {
-        self.call_stack
-            .push(FuncFrame::new(self.ip, self.cache.instance()))?;
-        self.cache.reset();
-        Ok(CallOutcome::Call(*func))
-    }
-
-    /// Calls the Wasm function.
-    #[inline(always)]
-    fn call_wasm_func(
-        &mut self,
-        func_body: FuncBody,
-        instance: Instance,
-        kind: CallKind,
-    ) -> Result<CallOutcome, TrapCode> {
-        if matches!(kind, CallKind::Nested) {
-            self.call_stack
-                .push(FuncFrame::new(self.ip, self.cache.instance()))?;
-        }
-        let header = self.code_map.header(func_body);
-        self.value_stack.prepare_wasm_call(header)?;
-        self.sp = self.value_stack.stack_ptr();
-        self.cache.update_instance(&instance);
-        self.ip = self.code_map.instr_ptr(header.iref());
-        Ok(CallOutcome::Continue)
     }
 
     /// Returns to the caller.
