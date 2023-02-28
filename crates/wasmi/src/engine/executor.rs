@@ -556,6 +556,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         }
     }
 
+    /// Calls the host function.
     #[inline(always)]
     #[cold]
     fn call_host_func(&mut self, func: &Func) -> Result<CallOutcome, TrapCode> {
@@ -565,6 +566,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         Ok(CallOutcome::Call(*func))
     }
 
+    /// Calls the Wasm function.
     #[inline(always)]
     fn call_wasm_func(
         &mut self,
