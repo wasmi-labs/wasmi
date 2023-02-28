@@ -52,7 +52,7 @@
         (local.set $n2 (i64.const 1))
         (local.set $i (i64.const 2))
         ;;since we normally return n2, handle n=1 case specially
-        (loop $again
+        (loop $continue
             (if
                 (i64.lt_s (local.get $i) (local.get $N))
                 (then
@@ -60,7 +60,7 @@
                     (local.set $n1 (local.get $n2))
                     (local.set $n2 (local.get $tmp))
                     (local.set $i (i64.add (local.get $i) (i64.const 1)))
-                    (br $again)
+                    (br $continue)
                 )
             )
         )
