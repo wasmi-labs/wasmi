@@ -920,11 +920,7 @@ fn bench_execute_fibonacci(c: &mut Criterion) {
         });
     };
     bench_fib("execute/fibonacci_rec", "fibonacci_rec", FIBONACCI_REC_N);
-    bench_fib(
-        "execute/fibonacci_tail",
-        "fibonacci_tail",
-        FIBONACCI_TAIL_N,
-    );
+    bench_fib("execute/fibonacci_tail", "fibonacci_tail", FIBONACCI_TAIL_N);
     bench_fib("execute/fibonacci_iter", "fibonacci_iter", FIBONACCI_INC_N);
 }
 
