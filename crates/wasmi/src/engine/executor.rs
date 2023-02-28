@@ -14,7 +14,7 @@ use crate::{
             TableIdx,
         },
         cache::InstanceCache,
-        code_map::{CodeMap, InstructionPtr, FuncBody},
+        code_map::{CodeMap, FuncBody, InstructionPtr},
         config::FuelCosts,
         stack::{CallStack, ValueStackPtr},
         DropKeep,
