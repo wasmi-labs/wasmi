@@ -449,7 +449,7 @@ impl EngineInner {
         }
     }
 
-    pub(crate) fn resume_func<T, Results>(
+    fn resume_func<T, Results>(
         &self,
         ctx: StoreContextMut<T>,
         mut invocation: ResumableInvocation,
