@@ -201,6 +201,7 @@ impl Engine {
     /// - When encountering a Wasm or host trap during the execution of `func`.
     ///
     /// [`TypedFunc`]: [`crate::TypedFunc`]
+    #[inline]
     pub(crate) fn execute_func<T, Results>(
         &self,
         ctx: StoreContextMut<T>,
@@ -236,6 +237,7 @@ impl Engine {
     /// - When `func` is a host function that traps.
     ///
     /// [`TypedFunc`]: [`crate::TypedFunc`]
+    #[inline]
     pub(crate) fn execute_func_resumable<T, Results>(
         &self,
         ctx: StoreContextMut<T>,
@@ -272,6 +274,7 @@ impl Engine {
     /// - When `func` is a host function that traps.
     ///
     /// [`TypedFunc`]: [`crate::TypedFunc`]
+    #[inline]
     pub(crate) fn resume_func<T, Results>(
         &self,
         ctx: StoreContextMut<T>,
@@ -649,6 +652,7 @@ impl<'engine> EngineExecutor<'engine> {
     /// # Panics
     ///
     /// - If the `results` buffer length does not match the remaining amount of stack values.
+    #[inline]
     fn write_results_back<Results>(&mut self, results: Results) -> <Results as CallResults>::Results
     where
         Results: CallResults,
