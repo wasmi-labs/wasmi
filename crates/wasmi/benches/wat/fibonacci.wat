@@ -27,7 +27,7 @@
                 (return (local.get $b))
             )
         )
-        (call $fib_tail_recursive
+        (return_call $fib_tail_recursive
             (i64.sub (local.get $N) (i64.const 1))
             (local.get $b)
             (i64.add (local.get $a) (local.get $b))
@@ -35,7 +35,7 @@
     )
 
     (func (export "fibonacci_tail") (param $N i64) (result i64)
-        (call $fib_tail_recursive (local.get $N) (i64.const 0) (i64.const 1))
+        (return_call $fib_tail_recursive (local.get $N) (i64.const 0) (i64.const 1))
     )
 
     (func $fib_iterative (export "fibonacci_iter") (param $N i64) (result i64)

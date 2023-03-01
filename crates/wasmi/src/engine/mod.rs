@@ -677,14 +677,35 @@ impl<'engine> EngineExecutor<'engine> {
         loop {
             match self.execute_wasm(ctx.as_context_mut(), &mut cache)? {
                 WasmOutcome::Return => return Ok(()),
-                WasmOutcome::Call(ref func) => {
+                WasmOutcome::Call {
+                    ref host_func,
+                    instance,
+                } => {
+                    let func = host_func;
                     let host_func = match ctx.as_context().store.inner.resolve_func(func) {
                         FuncEntity::Wasm(_) => unreachable!("`func` must be a host function"),
                         FuncEntity::Host(host_func) => *host_func,
                     };
-                    self.stack
-                        .call_host_from_wasm(ctx.as_context_mut(), host_func, &self.res.func_types)
-                        .map_err(|trap| TaggedTrap::host(*func, trap))?;
+                    let result = self.stack.call_host_impl(
+                        ctx.as_context_mut(),
+                        host_func,
+                        Some(&instance),
+                        &self.res.func_types,
+                    );
+                    if self.stack.frames.peek().is_some() {
+                        // Case: There is a frame on the call stack.
+                        //
+                        // This is the default case and we can easily make host function
+                        // errors return a resumable call handle.
+                        result.map_err(|trap| TaggedTrap::host(*func, trap))?;
+                    } else {
+                        // Case: No frame is on the call stack. (edge case)
+                        //
+                        // This can happen if the host function was called by a tail call.
+                        // In this case we treat host function errors the same as if we called
+                        // the host function as root and do not allow to resume the call.
+                        result.map_err(TaggedTrap::Wasm)?;
+                    }
                 }
             }
         }

@@ -25,6 +25,7 @@ use crate::{
     table::TableEntity,
     Func,
     FuncRef,
+    Instance,
     StoreInner,
     Table,
 };
@@ -42,7 +43,7 @@ pub enum WasmOutcome {
     /// The Wasm execution has ended and returns to the host side.
     Return,
     /// The Wasm execution calls a host function.
-    Call(Func),
+    Call { host_func: Func, instance: Instance },
 }
 
 /// The outcome of a Wasm execution.
@@ -56,7 +57,16 @@ pub enum CallOutcome {
     /// The Wasm execution continues in Wasm.
     Continue,
     /// The Wasm execution calls a host function.
-    Call(Func),
+    Call { host_func: Func, instance: Instance },
+}
+
+/// The kind of a function call.
+#[derive(Debug, Copy, Clone)]
+pub enum CallKind {
+    /// A nested function call.
+    Nested,
+    /// A tailing function call.
+    Tail,
 }
 
 /// The outcome of a Wasm return statement.
@@ -203,16 +213,56 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                         return Ok(WasmOutcome::Return);
                     }
                 }
+                Instr::ReturnCall { drop_keep, func } => {
+                    if let CallOutcome::Call {
+                        host_func,
+                        instance,
+                    } = self.visit_return_call(drop_keep, func)?
+                    {
+                        return Ok(WasmOutcome::Call {
+                            host_func,
+                            instance,
+                        });
+                    }
+                }
+                Instr::ReturnCallIndirect {
+                    drop_keep,
+                    table,
+                    func_type,
+                } => {
+                    if let CallOutcome::Call {
+                        host_func,
+                        instance,
+                    } = self.visit_return_call_indirect(drop_keep, table, func_type)?
+                    {
+                        return Ok(WasmOutcome::Call {
+                            host_func,
+                            instance,
+                        });
+                    }
+                }
                 Instr::Call(func) => {
-                    if let CallOutcome::Call(host_func) = self.visit_call(func)? {
-                        return Ok(WasmOutcome::Call(host_func));
+                    if let CallOutcome::Call {
+                        host_func,
+                        instance,
+                    } = self.visit_call(func)?
+                    {
+                        return Ok(WasmOutcome::Call {
+                            host_func,
+                            instance,
+                        });
                     }
                 }
                 Instr::CallIndirect { table, func_type } => {
-                    if let CallOutcome::Call(host_func) =
-                        self.visit_call_indirect(table, func_type)?
+                    if let CallOutcome::Call {
+                        host_func,
+                        instance,
+                    } = self.visit_call_indirect(table, func_type)?
                     {
-                        return Ok(WasmOutcome::Call(host_func));
+                        return Ok(WasmOutcome::Call {
+                            host_func,
+                            instance,
+                        });
                     }
                 }
                 Instr::Drop => self.visit_drop(),
@@ -519,24 +569,30 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// the function call so that the stack and execution state is synchronized
     /// with the outer structures.
     #[inline(always)]
-    fn call_func(&mut self, func: &Func) -> Result<CallOutcome, TrapCode> {
+    fn call_func(&mut self, func: &Func, kind: CallKind) -> Result<CallOutcome, TrapCode> {
         self.next_instr();
         self.sync_stack_ptr();
-        self.call_stack
-            .push(FuncFrame::new(self.ip, self.cache.instance()))?;
-        let wasm_func = match self.ctx.resolve_func(func) {
-            FuncEntity::Wasm(wasm_func) => wasm_func,
+        if matches!(kind, CallKind::Nested) {
+            self.call_stack
+                .push(FuncFrame::new(self.ip, self.cache.instance()))?;
+        }
+        match self.ctx.resolve_func(func) {
+            FuncEntity::Wasm(wasm_func) => {
+                let header = self.code_map.header(wasm_func.func_body());
+                self.value_stack.prepare_wasm_call(header)?;
+                self.sp = self.value_stack.stack_ptr();
+                self.cache.update_instance(wasm_func.instance());
+                self.ip = self.code_map.instr_ptr(header.iref());
+                Ok(CallOutcome::Continue)
+            }
             FuncEntity::Host(_host_func) => {
                 self.cache.reset();
-                return Ok(CallOutcome::Call(*func));
+                Ok(CallOutcome::Call {
+                    host_func: *func,
+                    instance: *self.cache.instance(),
+                })
             }
-        };
-        let header = self.code_map.header(wasm_func.func_body());
-        self.value_stack.prepare_wasm_call(header)?;
-        self.sp = self.value_stack.stack_ptr();
-        self.cache.update_instance(wasm_func.instance());
-        self.ip = self.code_map.instr_ptr(header.iref());
-        Ok(CallOutcome::Continue)
+        }
     }
 
     /// Returns to the caller.
@@ -607,6 +663,48 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// [`Engine`]: crate::Engine
     fn fuel_costs(&self) -> &FuelCosts {
         self.ctx.engine().config().fuel_costs()
+    }
+
+    /// Executes a `call` or `return_call` instruction.
+    #[inline(always)]
+    fn execute_call(
+        &mut self,
+        func_index: FuncIdx,
+        kind: CallKind,
+    ) -> Result<CallOutcome, TrapCode> {
+        let callee = self.cache.get_func(self.ctx, func_index);
+        self.call_func(&callee, kind)
+    }
+
+    /// Executes a `call_indirect` or `return_call_indirect` instruction.
+    #[inline(always)]
+    fn execute_call_indirect(
+        &mut self,
+        table: TableIdx,
+        func_index: u32,
+        func_type: SignatureIdx,
+        kind: CallKind,
+    ) -> Result<CallOutcome, TrapCode> {
+        let table = self.cache.get_table(self.ctx, table);
+        let funcref = self
+            .ctx
+            .resolve_table(&table)
+            .get_untyped(func_index)
+            .map(FuncRef::from)
+            .ok_or(TrapCode::TableOutOfBounds)?;
+        let func = funcref.func().ok_or(TrapCode::IndirectCallToNull)?;
+        let actual_signature = self.ctx.resolve_func(func).ty_dedup();
+        let expected_signature = self
+            .ctx
+            .resolve_instance(self.cache.instance())
+            .get_signature(func_type.into_inner())
+            .unwrap_or_else(|| {
+                panic!("missing signature for call_indirect at index: {func_type:?}")
+            });
+        if actual_signature != expected_signature {
+            return Err(TrapCode::BadSignature).map_err(Into::into);
+        }
+        self.call_func(func, kind)
     }
 }
 
@@ -713,9 +811,31 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     #[inline(always)]
+    fn visit_return_call(
+        &mut self,
+        drop_keep: DropKeep,
+        func_index: FuncIdx,
+    ) -> Result<CallOutcome, TrapCode> {
+        self.sp.drop_keep(drop_keep);
+        self.execute_call(func_index, CallKind::Tail)
+    }
+
+    #[inline(always)]
+    fn visit_return_call_indirect(
+        &mut self,
+        drop_keep: DropKeep,
+        table: TableIdx,
+        func_type: SignatureIdx,
+    ) -> Result<CallOutcome, TrapCode> {
+        let func_index: u32 = self.sp.pop_as();
+        self.sp.drop_keep(drop_keep);
+        self.execute_call_indirect(table, func_index, func_type, CallKind::Tail)
+    }
+
+    #[inline(always)]
     fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
         let callee = self.cache.get_func(self.ctx, func_index);
-        self.call_func(&callee)
+        self.call_func(&callee, CallKind::Nested)
     }
 
     #[inline(always)]
@@ -725,26 +845,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
         let func_index: u32 = self.sp.pop_as();
-        let table = self.cache.get_table(self.ctx, table);
-        let funcref = self
-            .ctx
-            .resolve_table(&table)
-            .get_untyped(func_index)
-            .map(FuncRef::from)
-            .ok_or(TrapCode::TableOutOfBounds)?;
-        let func = funcref.func().ok_or(TrapCode::IndirectCallToNull)?;
-        let actual_signature = self.ctx.resolve_func(func).ty_dedup();
-        let expected_signature = self
-            .ctx
-            .resolve_instance(self.cache.instance())
-            .get_signature(func_type.into_inner())
-            .unwrap_or_else(|| {
-                panic!("missing signature for call_indirect at index: {func_type:?}")
-            });
-        if actual_signature != expected_signature {
-            return Err(TrapCode::BadSignature).map_err(Into::into);
-        }
-        self.call_func(func)
+        self.execute_call_indirect(table, func_index, func_type, CallKind::Nested)
     }
 
     #[inline(always)]

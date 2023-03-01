@@ -135,6 +135,9 @@ macro_rules! impl_visit_operator {
     ( @reference_types $($rest:tt)* ) => {
         impl_visit_operator!(@@supported $($rest)*);
     };
+    ( @tail_call $($rest:tt)* ) => {
+        impl_visit_operator!(@@supported $($rest)*);
+    };
     ( @@supported $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $($rest:tt)* ) => {
         fn $visit(&mut self $($(,$arg: $argty)*)?) -> Self::Output {
             let offset = self.current_pos();
