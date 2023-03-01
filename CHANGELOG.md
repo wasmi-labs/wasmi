@@ -8,6 +8,40 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.28.0`] - 2023-03-01
+
+### Added
+
+- Added support for the `tail-call` Wasm proposal. (https://github.com/paritytech/wasmi/pull/683)
+- Added support for `Linker` defined host functions. (https://github.com/paritytech/wasmi/pull/692)
+  - Apparently this PR introduced some performance wins for the Wasm target according to our tests.
+    This information shall be taken with a grain of salt since we are not sure why those performance
+    improvement occured since the PR's functionality is orthogonal to Wasm engine performance.
+  - Required precursor refactoring PR: https://github.com/paritytech/wasmi/pull/681
+
+[`tail-call`]: https://github.com/WebAssembly/tail-call
+
+### Internal
+
+- Refactor the `wasmi` Wasm engine to handle Wasm calls and returns in its core. [(#694)]
+  - This improved performance of Wasm function calls significantly at the cost of host function call performance.
+  - Also this seemed to have impacts Wasm target performance quite positively, too.
+- The `Store` now handles Wasm functions and host functions separately. (https://github.com/paritytech/wasmi/pull/686)
+  - This allows to store Wasm functions into the `StoreInner` type which was an important
+    step towards the major refactoring in [(#694)]
+  - It was expected that host function call performance would degrade by this PR but our tests
+    actually showed that the opposite was true and Wasm target performance was improved overall.
+- Introduce `ValueStackPtr` abstraction for the `wasmi` engine core. (https://github.com/paritytech/wasmi/pull/688)
+  - This change significantly improved performance especially on the Wasm target according to our tests.
+- Optimize `memory.{load,store}` when reading or writing single bytes. (https://github.com/paritytech/wasmi/pull/689)
+  - The performance wins were more modest than we hoped but still measurable.
+- Use `StoreContextMut<T>` instead of `impl AsContextMut` in the `wasmi` engine core. (https://github.com/paritytech/wasmi/pull/685)
+  - This is a simple refactoring with the goal to make the Rust compiler have a simpler job at
+    optimizing certain functions in the engine's inner workings since `StoreContextMut` provides
+    more information to the compiler.
+
+[(#694)]: https://github.com/paritytech/wasmi/pull/694
+
 ## [`0.27.0`] - 2023-02-14
 
 ### Added

@@ -15,7 +15,7 @@ categories.workspace = true
 wasi-common = "2.0"
 wasi-cap-std-sync = "2.0"
 wiggle = { version = "2.0", default-features = false, features = ["wiggle_metadata"] }
-wasmi = { version = "0.27.0", path = "../wasmi" }
+wasmi = { version = "0.28.0", path = "../wasmi" }
 
 [dev-dependencies]
 wat = "1.0.50"
