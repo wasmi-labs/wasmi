@@ -2,7 +2,7 @@ use crate::{
     nan_preserving_float::{F32, F64},
     TrapCode,
 };
-use core::{f32, i32, i64, ptr, u32, u64};
+use core::{f32, i32, i64, u32, u64};
 
 /// Type of a value.
 ///
@@ -99,120 +99,48 @@ pub trait TransmuteInto<T> {
     fn transmute_into(self) -> T;
 }
 
+/// Allows to efficiently load bytes from `memory` into a buffer.
 pub trait LoadInto {
+    /// Loads bytes from `memory` into `self`.
+    ///
+    /// # Errors
+    ///
+    /// Traps if the `memory` access is out of bounds.
     fn load_into(&mut self, memory: &[u8], address: usize) -> Result<(), TrapCode>;
 }
 
-impl LoadInto for [u8; 1] {
+impl<const N: usize> LoadInto for [u8; N] {
     #[inline]
     fn load_into(&mut self, memory: &[u8], address: usize) -> Result<(), TrapCode> {
-        self[0] = memory
-            .get(address)
-            .copied()
+        let slice: &Self = memory
+            .get(address..)
+            .and_then(|slice| slice.get(..N))
+            .and_then(|slice| slice.try_into().ok())
             .ok_or(TrapCode::MemoryOutOfBounds)?;
+        *self = *slice;
         Ok(())
     }
 }
 
-impl LoadInto for [u8; 2] {
-    #[inline]
-    fn load_into(&mut self, memory: &[u8], address: usize) -> Result<(), TrapCode> {
-        let start = address;
-        let end = address + self.len();
-        if end > memory.len() {
-            return Err(TrapCode::MemoryOutOfBounds);
-        }
-        let slice = &memory[start..end];
-        // SAFETY: Already performed bounds check.
-        *self = unsafe { ptr::read_unaligned(slice.as_ptr() as _) };
-        Ok(())
-    }
-}
-
-impl LoadInto for [u8; 4] {
-    #[inline]
-    fn load_into(&mut self, memory: &[u8], address: usize) -> Result<(), TrapCode> {
-        let start = address;
-        let end = address + self.len();
-        if end > memory.len() {
-            return Err(TrapCode::MemoryOutOfBounds);
-        }
-        let slice = &memory[start..end];
-        // SAFETY: Already performed bounds check.
-        *self = unsafe { ptr::read_unaligned(slice.as_ptr() as _) };
-        Ok(())
-    }
-}
-
-impl LoadInto for [u8; 8] {
-    #[inline]
-    fn load_into(&mut self, memory: &[u8], address: usize) -> Result<(), TrapCode> {
-        let start = address;
-        let end = address + self.len();
-        if end > memory.len() {
-            return Err(TrapCode::MemoryOutOfBounds);
-        }
-        let slice = &memory[start..end];
-        // SAFETY: Already performed bounds check.
-        *self = unsafe { ptr::read_unaligned(slice.as_ptr() as _) };
-        Ok(())
-    }
-}
-
+/// Allows to efficiently write bytes from a buffer into `memory`.
 pub trait StoreFrom {
+    /// Writes bytes from `self` to `memory`.
+    ///
+    /// # Errors
+    ///
+    /// Traps if the `memory` access is out of bounds.
     fn store_from(&self, memory: &mut [u8], address: usize) -> Result<(), TrapCode>;
 }
 
-impl StoreFrom for [u8; 1] {
+impl<const N: usize> StoreFrom for [u8; N] {
     #[inline]
     fn store_from(&self, memory: &mut [u8], address: usize) -> Result<(), TrapCode> {
-        let cell = memory.get_mut(address).ok_or(TrapCode::MemoryOutOfBounds)?;
-        *cell = self[0];
-        Ok(())
-    }
-}
-
-impl StoreFrom for [u8; 2] {
-    #[inline]
-    fn store_from(&self, memory: &mut [u8], address: usize) -> Result<(), TrapCode> {
-        let start = address;
-        let end = address + self.len();
-        if end > memory.len() {
-            return Err(TrapCode::MemoryOutOfBounds);
-        }
-        let slice = &mut memory[start..end];
-        // SAFETY: Already performed bounds check.
-        unsafe { ptr::write_unaligned(slice.as_mut_ptr() as _, *self) };
-        Ok(())
-    }
-}
-
-impl StoreFrom for [u8; 4] {
-    #[inline]
-    fn store_from(&self, memory: &mut [u8], address: usize) -> Result<(), TrapCode> {
-        let start = address;
-        let end = address + self.len();
-        if end > memory.len() {
-            return Err(TrapCode::MemoryOutOfBounds);
-        }
-        let slice = &mut memory[start..end];
-        // SAFETY: Already performed bounds check.
-        unsafe { ptr::write_unaligned(slice.as_mut_ptr() as _, *self) };
-        Ok(())
-    }
-}
-
-impl StoreFrom for [u8; 8] {
-    #[inline]
-    fn store_from(&self, memory: &mut [u8], address: usize) -> Result<(), TrapCode> {
-        let start = address;
-        let end = address + self.len();
-        if end > memory.len() {
-            return Err(TrapCode::MemoryOutOfBounds);
-        }
-        let slice = &mut memory[start..end];
-        // SAFETY: Already performed bounds check.
-        unsafe { ptr::write_unaligned(slice.as_mut_ptr() as _, *self) };
+        let slice: &mut Self = memory
+            .get_mut(address..)
+            .and_then(|slice| slice.get_mut(..N))
+            .and_then(|slice| slice.try_into().ok())
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        *slice = *self;
         Ok(())
     }
 }
