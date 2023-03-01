@@ -457,7 +457,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// - `{i32, i64}.load16_u`
     /// - `i64.load32_s`
     /// - `i64.load32_u`
-    #[inline]
+    #[inline(always)]
     fn execute_load_extend(
         &mut self,
         offset: Offset,
@@ -481,7 +481,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// - `{i32, i64}.store8`
     /// - `{i32, i64}.store16`
     /// - `i64.store32`
-    #[inline]
+    #[inline(always)]
     fn execute_store_wrap(
         &mut self,
         offset: Offset,
@@ -494,14 +494,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an infallible unary `wasmi` instruction.
-    #[inline]
+    #[inline(always)]
     fn execute_unary(&mut self, f: fn(UntypedValue) -> UntypedValue) {
         self.sp.eval_top(f);
         self.next_instr()
     }
 
     /// Executes a fallible unary `wasmi` instruction.
-    #[inline]
+    #[inline(always)]
     fn try_execute_unary(
         &mut self,
         f: fn(UntypedValue) -> Result<UntypedValue, TrapCode>,
@@ -511,14 +511,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an infallible binary `wasmi` instruction.
-    #[inline]
+    #[inline(always)]
     fn execute_binary(&mut self, f: fn(UntypedValue, UntypedValue) -> UntypedValue) {
         self.sp.eval_top2(f);
         self.next_instr()
     }
 
     /// Executes a fallible binary `wasmi` instruction.
-    #[inline]
+    #[inline(always)]
     fn try_execute_binary(
         &mut self,
         f: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
@@ -528,7 +528,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Shifts the instruction pointer to the next instruction.
-    #[inline]
+    #[inline(always)]
     fn next_instr(&mut self) {
         self.ip.add(1)
     }
@@ -538,14 +538,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// # Note
     ///
     /// This is a convenience function for fallible instructions.
-    #[inline]
+    #[inline(always)]
     fn try_next_instr(&mut self) -> Result<(), TrapCode> {
         self.next_instr();
         Ok(())
     }
 
     /// Offsets the instruction pointer using the given [`BranchParams`].
-    #[inline]
+    #[inline(always)]
     fn branch_to(&mut self, params: BranchParams) {
         self.sp.drop_keep(params.drop_keep());
         self.ip.offset(params.offset().into_i32() as isize)
@@ -558,7 +558,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// For performance reasons we detach the stack pointer form the [`ValueStack`].
     /// Therefore it is necessary to synchronize the [`ValueStack`] upon finishing
     /// execution of a sequence of non control flow instructions.
-    #[inline]
+    #[inline(always)]
     fn sync_stack_ptr(&mut self) {
         self.value_stack.sync_stack_ptr(self.sp);
     }
