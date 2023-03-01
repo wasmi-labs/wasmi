@@ -164,8 +164,19 @@ impl InstructionPtr {
     /// offset values so that the [`InstructionPtr`] never points out of valid
     /// bounds of the instructions of the same compiled Wasm function.
     #[inline(always)]
-    pub unsafe fn offset(&mut self, by: isize) {
-        self.ptr = self.ptr.offset(by);
+    pub fn offset(&mut self, by: isize) {
+        // SAFETY: Within Wasm bytecode execution we are guaranteed by
+        //         Wasm validation and `wasmi` codegen to never run out
+        //         of valid bounds using this method.
+        self.ptr = unsafe { self.ptr.offset(by) };
+    }
+
+    #[inline(always)]
+    pub fn add(&mut self, delta: usize) {
+        // SAFETY: Within Wasm bytecode execution we are guaranteed by
+        //         Wasm validation and `wasmi` codegen to never run out
+        //         of valid bounds using this method.
+        self.ptr = unsafe { self.ptr.add(delta) };
     }
 
     /// Returns a shared reference to the currently pointed at [`Instruction`].
@@ -176,7 +187,10 @@ impl InstructionPtr {
     /// guaranteed that the [`InstructionPtr`] is validly pointing inside
     /// the boundaries of its associated compiled Wasm function.
     #[inline(always)]
-    pub unsafe fn get(&self) -> &Instruction {
-        &*self.ptr
+    pub fn get(&self) -> &Instruction {
+        // SAFETY: Within Wasm bytecode execution we are guaranteed by
+        //         Wasm validation and `wasmi` codegen to never run out
+        //         of valid bounds using this method.
+        unsafe { &*self.ptr }
     }
 }

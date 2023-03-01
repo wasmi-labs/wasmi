@@ -33,11 +33,6 @@ impl FuncFrame {
         self.ip
     }
 
-    /// Updates the instruction pointer.
-    pub fn update_ip(&mut self, new_ip: InstructionPtr) {
-        self.ip = new_ip;
-    }
-
     /// Returns the instance of the [`FuncFrame`].
     pub fn instance(&self) -> &Instance {
         &self.instance
@@ -69,13 +64,14 @@ impl CallStack {
     }
 
     /// Initializes the [`CallStack`] given the Wasm function.
-    pub(crate) fn init(&mut self, ip: InstructionPtr, instance: &Instance) -> FuncFrame {
-        self.clear();
-        FuncFrame::new(ip, instance)
+    pub fn init(&mut self, ip: InstructionPtr, instance: &Instance) {
+        self.reset();
+        self.frames.push(FuncFrame::new(ip, instance));
     }
 
     /// Pushes a Wasm caller function onto the [`CallStack`].
-    pub(crate) fn push(&mut self, caller: FuncFrame) -> Result<(), TrapCode> {
+    #[inline]
+    pub fn push(&mut self, caller: FuncFrame) -> Result<(), TrapCode> {
         if self.len() == self.recursion_limit {
             return Err(err_stack_overflow());
         }
@@ -84,11 +80,19 @@ impl CallStack {
     }
 
     /// Pops the last [`FuncFrame`] from the [`CallStack`] if any.
+    #[inline]
     pub fn pop(&mut self) -> Option<FuncFrame> {
         self.frames.pop()
     }
 
+    /// Peeks the last [`FuncFrame`] from the [`CallStack`] if any.
+    #[inline]
+    pub fn peek(&self) -> Option<&FuncFrame> {
+        self.frames.last()
+    }
+
     /// Returns the amount of function frames on the [`CallStack`].
+    #[inline]
     fn len(&self) -> usize {
         self.frames.len()
     }
@@ -101,7 +105,7 @@ impl CallStack {
     /// function execution which leaves the [`CallStack`] in an unspecified
     /// state. Therefore the [`CallStack`] is required to be reset before
     /// function execution happens.
-    pub fn clear(&mut self) {
+    pub fn reset(&mut self) {
         self.frames.clear();
     }
 }

@@ -1,14 +1,23 @@
-use super::{AsContextMut, Error, Extern, InstancePre, Module};
 use crate::{
-    func::HostFuncTrampolineEntity,
+    core::Trap,
+    func::{FuncEntity, HostFuncEntity, HostFuncTrampolineEntity},
     module::{ImportName, ImportType},
     AsContext,
+    AsContextMut,
+    Caller,
     Engine,
+    Error,
+    Extern,
     ExternType,
+    Func,
     FuncType,
     GlobalType,
+    InstancePre,
+    IntoFunc,
     MemoryType,
+    Module,
     TableType,
+    Value,
 };
 use alloc::{
     collections::{btree_map::Entry, BTreeMap},
@@ -29,10 +38,6 @@ pub enum LinkerError {
     DuplicateDefinition {
         /// The duplicate import name of the definition.
         import_name: ImportName,
-        /// The duplicated imported item.
-        ///
-        /// This refers to the second inserted item.
-        duplicate: Extern,
     },
     /// Encountered when no definition for an import is found.
     MissingDefinition {
@@ -149,13 +154,10 @@ impl std::error::Error for LinkerError {}
 impl Display for LinkerError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::DuplicateDefinition {
-                import_name,
-                duplicate,
-            } => {
+            Self::DuplicateDefinition { import_name } => {
                 write!(
                     f,
-                    "encountered duplicate definition `{import_name}` of {duplicate:?}",
+                    "encountered duplicate definition with name `{import_name}`",
                 )
             }
             Self::MissingDefinition { name, ty } => {
@@ -310,6 +312,64 @@ impl<T> Clone for Definition<T> {
     }
 }
 
+impl<T> Definition<T> {
+    /// Returns the [`Extern`] item if this [`Definition`] is [`Definition::Extern`].
+    ///
+    /// Otherwise returns `None`.
+    fn as_extern(&self) -> Option<&Extern> {
+        match self {
+            Definition::Extern(item) => Some(item),
+            Definition::HostFunc(_) => None,
+        }
+    }
+
+    /// Returns the [`ExternType`] of the [`Definition`].
+    pub fn ty(&self, ctx: impl AsContext) -> ExternType {
+        match self {
+            Definition::Extern(item) => item.ty(ctx),
+            Definition::HostFunc(host_func) => {
+                let func_type = ctx
+                    .as_context()
+                    .store
+                    .engine()
+                    .resolve_func_type(host_func.ty_dedup(), FuncType::clone);
+                ExternType::Func(func_type)
+            }
+        }
+    }
+
+    /// Returns the [`Func`] of the [`Definition`] if it is a function.
+    ///
+    /// Returns `None` otherwise.
+    ///
+    /// # Note
+    ///
+    /// - This allocates a new [`Func`] on the `ctx` if it is a [`Linker`]
+    ///   defined host function.
+    /// - This unifies handling of [`Definition::Extern(Extern::Func)`] and
+    ///   [`Definition::HostFunc`].
+    pub fn as_func(&self, mut ctx: impl AsContextMut<UserState = T>) -> Option<Func> {
+        match self {
+            Definition::Extern(Extern::Func(func)) => Some(*func),
+            Definition::HostFunc(host_func) => {
+                let trampoline = ctx
+                    .as_context_mut()
+                    .store
+                    .alloc_trampoline(host_func.trampoline().clone());
+                let ty_dedup = host_func.ty_dedup();
+                let entity = HostFuncEntity::new(*ty_dedup, trampoline);
+                let func = ctx
+                    .as_context_mut()
+                    .store
+                    .inner
+                    .alloc_func(FuncEntity::Host(entity));
+                Some(func)
+            }
+            _ => None,
+        }
+    }
+}
+
 /// [`Debug`]-wrapper for the definitions of a [`Linker`].
 pub struct DebugDefinitions<'a, T> {
     /// The [`Engine`] of the [`Linker`].
@@ -436,7 +496,60 @@ impl<T> Linker<T> {
         item: impl Into<Extern>,
     ) -> Result<&mut Self, LinkerError> {
         let key = self.import_key(module, name);
-        self.insert(key, item.into())?;
+        self.insert(key, Definition::Extern(item.into()))?;
+        Ok(self)
+    }
+
+    /// Creates a new named [`Func::new`]-style host [`Func`] for this [`Linker`].
+    ///
+    /// For more information see [`Linker::func_wrap`].
+    ///
+    /// # Errors
+    ///
+    /// If there already is a definition under the same name for this [`Linker`].
+    pub fn func_new(
+        &mut self,
+        module: &str,
+        name: &str,
+        ty: FuncType,
+        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Trap> + Send + Sync + 'static,
+    ) -> Result<&mut Self, LinkerError> {
+        let func = HostFuncTrampolineEntity::new(&self.engine, ty, func);
+        let key = self.import_key(module, name);
+        self.insert(key, Definition::HostFunc(func))?;
+        Ok(self)
+    }
+
+    /// Creates a new named [`Func::new`]-style host [`Func`] for this [`Linker`].
+    ///
+    /// For information how to use this API see [`Func::wrap`].
+    ///
+    /// This method creates a host function for this [`Linker`] under the given name.
+    /// It is distint in its ability to create a [`Store`] independent
+    /// host function. Host functions defined this way can be used to instantiate
+    /// instances in multiple different [`Store`] entities.
+    ///
+    /// The same applies to other [`Linker`] methods to define new [`Func`] instances
+    /// such as [`Linker::func_new`].
+    ///
+    /// In a concurrently running program, this means that these host functions
+    /// could be called concurrently if different [`Store`] entities are executing on
+    /// different threads.
+    ///
+    /// # Errors
+    ///
+    /// If there already is a definition under the same name for this [`Linker`].
+    ///
+    /// [`Store`]: crate::Store
+    pub fn func_wrap<Params, Args>(
+        &mut self,
+        module: &str,
+        name: &str,
+        func: impl IntoFunc<T, Params, Args>,
+    ) -> Result<&mut Self, LinkerError> {
+        let func = HostFuncTrampolineEntity::wrap(&self.engine, func);
+        let key = self.import_key(module, name);
+        self.insert(key, Definition::HostFunc(func))?;
         Ok(self)
     }
 
@@ -460,20 +573,17 @@ impl<T> Linker<T> {
     /// # Errors
     ///
     /// If there already is a definition for the import key for this [`Linker`].
-    fn insert(&mut self, key: ImportKey, item: Extern) -> Result<(), LinkerError> {
+    fn insert(&mut self, key: ImportKey, item: Definition<T>) -> Result<(), LinkerError> {
         match self.definitions.entry(key) {
             Entry::Occupied(_) => {
                 let (module_name, field_name) = self
                     .resolve_import_key(key)
                     .unwrap_or_else(|| panic!("encountered missing import names for key {key:?}"));
                 let import_name = ImportName::new(module_name, field_name);
-                return Err(LinkerError::DuplicateDefinition {
-                    import_name,
-                    duplicate: item,
-                });
+                return Err(LinkerError::DuplicateDefinition { import_name });
             }
             Entry::Vacant(v) => {
-                v.insert(Definition::Extern(item));
+                v.insert(item);
             }
         }
         Ok(())
@@ -481,7 +591,8 @@ impl<T> Linker<T> {
 
     /// Looks up a defined [`Extern`] by name in this [`Linker`].
     ///
-    /// Returns `None` if this name was not previously defined in this [`Linker`].
+    /// - Returns `None` if this name was not previously defined in this [`Linker`].
+    /// - Returns `None` if the definition is a [`Linker`] defined host function.
     ///
     /// # Panics
     ///
@@ -492,6 +603,25 @@ impl<T> Linker<T> {
         module: &str,
         name: &str,
     ) -> Option<Extern> {
+        match self.get_definition(context, module, name) {
+            Some(Definition::Extern(item)) => Some(*item),
+            _ => None,
+        }
+    }
+
+    /// Looks up a [`Definition`] by name in this [`Linker`].
+    ///
+    /// Returns `None` if this name was not previously defined in this [`Linker`].
+    ///
+    /// # Panics
+    ///
+    /// If the [`Engine`] of this [`Linker`] and the [`Engine`] of `context` are not the same.
+    fn get_definition(
+        &self,
+        context: impl AsContext<UserState = T>,
+        module: &str,
+        name: &str,
+    ) -> Option<&Definition<T>> {
         assert!(Engine::same(
             context.as_context().store.engine(),
             self.engine()
@@ -500,10 +630,7 @@ impl<T> Linker<T> {
             module: self.strings.get(module)?,
             name: self.strings.get(name)?,
         };
-        if let Some(Definition::Extern(item)) = self.definitions.get(&key) {
-            return Some(*item);
-        }
-        None
+        self.definitions.get(&key)
     }
 
     /// Instantiates the given [`Module`] using the definitions in the [`Linker`].
@@ -540,7 +667,7 @@ impl<T> Linker<T> {
     /// If the imported item does not satisfy constraints set by the [`Module`].
     fn process_import(
         &self,
-        context: impl AsContextMut<UserState = T>,
+        mut context: impl AsContextMut<UserState = T>,
         import: ImportType,
     ) -> Result<Extern, Error> {
         assert!(Engine::same(self.engine(), context.as_context().engine()));
@@ -548,13 +675,16 @@ impl<T> Linker<T> {
         let module_name = import.module();
         let field_name = import.name();
         let resolved = self
-            .get(context.as_context(), module_name, field_name)
+            .get_definition(context.as_context(), module_name, field_name)
             .ok_or_else(|| LinkerError::missing_definition(&import))?;
         let invalid_type = || LinkerError::invalid_type_definition(&import, &resolved.ty(&context));
         match import.ty() {
             ExternType::Func(expected_type) => {
-                let func = resolved.into_func().ok_or_else(invalid_type)?;
-                let found_type = func.ty(&context);
+                let found_type = resolved
+                    .ty(&context)
+                    .func()
+                    .cloned()
+                    .ok_or_else(invalid_type)?;
                 if &found_type != expected_type {
                     return Err(LinkerError::func_type_mismatch(
                         import_name,
@@ -563,10 +693,17 @@ impl<T> Linker<T> {
                     ))
                     .map_err(Into::into);
                 }
+                let func = resolved
+                    .as_func(&mut context)
+                    .expect("already asserted that `resolved` is a function");
                 Ok(Extern::Func(func))
             }
             ExternType::Table(expected_type) => {
-                let table = resolved.into_table().ok_or_else(invalid_type)?;
+                let table = resolved
+                    .as_extern()
+                    .copied()
+                    .and_then(Extern::into_table)
+                    .ok_or_else(invalid_type)?;
                 let found_type = table.dynamic_ty(context);
                 found_type.is_subtype_or_err(expected_type).map_err(|_| {
                     LinkerError::table_type_mismatch(import_name, expected_type, &found_type)
@@ -574,7 +711,11 @@ impl<T> Linker<T> {
                 Ok(Extern::Table(table))
             }
             ExternType::Memory(expected_type) => {
-                let memory = resolved.into_memory().ok_or_else(invalid_type)?;
+                let memory = resolved
+                    .as_extern()
+                    .copied()
+                    .and_then(Extern::into_memory)
+                    .ok_or_else(invalid_type)?;
                 let found_type = memory.dynamic_ty(context);
                 found_type.is_subtype_or_err(expected_type).map_err(|_| {
                     LinkerError::invalid_memory_subtype(import_name, expected_type, &found_type)
@@ -582,7 +723,11 @@ impl<T> Linker<T> {
                 Ok(Extern::Memory(memory))
             }
             ExternType::Global(expected_type) => {
-                let global = resolved.into_global().ok_or_else(invalid_type)?;
+                let global = resolved
+                    .as_extern()
+                    .copied()
+                    .and_then(Extern::into_global)
+                    .ok_or_else(invalid_type)?;
                 let found_type = global.ty(context);
                 if &found_type != expected_type {
                     return Err(LinkerError::global_type_mismatch(
@@ -595,5 +740,113 @@ impl<T> Linker<T> {
                 Ok(Extern::Global(global))
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use wasmi_core::ValueType;
+
+    use super::*;
+    use crate::Store;
+
+    struct HostState {
+        a: i32,
+        b: i64,
+    }
+
+    #[test]
+    fn linker_funcs_work() {
+        let engine = Engine::default();
+        let mut linker = <Linker<HostState>>::new(&engine);
+        linker
+            .func_new(
+                "host",
+                "get_a",
+                FuncType::new([], [ValueType::I32]),
+                |ctx: Caller<HostState>, _params: &[Value], results: &mut [Value]| {
+                    results[0] = Value::from(ctx.data().a);
+                    Ok(())
+                },
+            )
+            .unwrap();
+        linker
+            .func_new(
+                "host",
+                "set_a",
+                FuncType::new([ValueType::I32], []),
+                |mut ctx: Caller<HostState>, params: &[Value], _results: &mut [Value]| {
+                    ctx.data_mut().a = params[0].i32().unwrap();
+                    Ok(())
+                },
+            )
+            .unwrap();
+        linker
+            .func_wrap("host", "get_b", |ctx: Caller<HostState>| ctx.data().b)
+            .unwrap();
+        linker
+            .func_wrap("host", "set_b", |mut ctx: Caller<HostState>, value: i64| {
+                ctx.data_mut().b = value
+            })
+            .unwrap();
+        let a_init = 42;
+        let b_init = 77;
+        let mut store = <Store<HostState>>::new(
+            &engine,
+            HostState {
+                a: a_init,
+                b: b_init,
+            },
+        );
+        let wat = r#"
+                (module
+                    (import "host" "get_a" (func $host_get_a (result i32)))
+                    (import "host" "set_a" (func $host_set_a (param i32)))
+                    (import "host" "get_b" (func $host_get_b (result i64)))
+                    (import "host" "set_b" (func $host_set_b (param i64)))
+
+                    (func (export "wasm_get_a") (result i32)
+                        (call $host_get_a)
+                    )
+                    (func (export "wasm_set_a") (param $param i32)
+                        (call $host_set_a (local.get $param))
+                    )
+
+                    (func (export "wasm_get_b") (result i64)
+                        (call $host_get_b)
+                    )
+                    (func (export "wasm_set_b") (param $param i64)
+                        (call $host_set_b (local.get $param))
+                    )
+                )
+            "#;
+        let wasm = wat::parse_str(wat).unwrap();
+        let module = Module::new(&engine, &mut &wasm[..]).unwrap();
+        let instance = linker
+            .instantiate(&mut store, &module)
+            .unwrap()
+            .start(&mut store)
+            .unwrap();
+
+        let wasm_get_a = instance
+            .get_typed_func::<(), i32>(&store, "wasm_get_a")
+            .unwrap();
+        let wasm_set_a = instance
+            .get_typed_func::<i32, ()>(&store, "wasm_set_a")
+            .unwrap();
+        let wasm_get_b = instance
+            .get_typed_func::<(), i64>(&store, "wasm_get_b")
+            .unwrap();
+        let wasm_set_b = instance
+            .get_typed_func::<i64, ()>(&store, "wasm_set_b")
+            .unwrap();
+
+        assert_eq!(wasm_get_a.call(&mut store, ()).unwrap(), a_init);
+        wasm_set_a.call(&mut store, 100).unwrap();
+        assert_eq!(wasm_get_a.call(&mut store, ()).unwrap(), 100);
+
+        assert_eq!(wasm_get_b.call(&mut store, ()).unwrap(), b_init);
+        wasm_set_b.call(&mut store, 200).unwrap();
+        assert_eq!(wasm_get_b.call(&mut store, ()).unwrap(), 200);
     }
 }

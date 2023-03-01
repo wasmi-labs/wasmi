@@ -1,54 +1,102 @@
-use super::{
-    super::{Memory, Table},
-    bytecode::{
-        BranchParams,
-        DataSegmentIdx,
-        ElementSegmentIdx,
-        FuncIdx,
-        GlobalIdx,
-        Instruction,
-        LocalDepth,
-        Offset,
-        SignatureIdx,
-        TableIdx,
-    },
-    cache::InstanceCache,
-    code_map::InstructionPtr,
-    stack::ValueStackRef,
-    CallOutcome,
-    DropKeep,
-    FuncFrame,
-    ValueStack,
-};
 use crate::{
     core::TrapCode,
-    engine::config::FuelCosts,
+    engine::{
+        bytecode::{
+            BranchParams,
+            DataSegmentIdx,
+            ElementSegmentIdx,
+            FuncIdx,
+            GlobalIdx,
+            Instruction,
+            LocalDepth,
+            Offset,
+            SignatureIdx,
+            TableIdx,
+        },
+        cache::InstanceCache,
+        code_map::{CodeMap, InstructionPtr},
+        config::FuelCosts,
+        stack::{CallStack, ValueStackPtr},
+        DropKeep,
+        FuncFrame,
+        ValueStack,
+    },
+    func::FuncEntity,
     table::TableEntity,
     Func,
     FuncRef,
+    Instance,
     StoreInner,
+    Table,
 };
 use core::cmp::{self};
 use wasmi_core::{Pages, UntypedValue};
+
+/// The outcome of a Wasm execution.
+///
+/// # Note
+///
+/// A Wasm execution includes everything but host calls.
+/// In other words: Everything in between host calls is a Wasm execution.
+#[derive(Debug, Copy, Clone)]
+pub enum WasmOutcome {
+    /// The Wasm execution has ended and returns to the host side.
+    Return,
+    /// The Wasm execution calls a host function.
+    Call { host_func: Func, instance: Instance },
+}
+
+/// The outcome of a Wasm execution.
+///
+/// # Note
+///
+/// A Wasm execution includes everything but host calls.
+/// In other words: Everything in between host calls is a Wasm execution.
+#[derive(Debug, Copy, Clone)]
+pub enum CallOutcome {
+    /// The Wasm execution continues in Wasm.
+    Continue,
+    /// The Wasm execution calls a host function.
+    Call { host_func: Func, instance: Instance },
+}
+
+/// The kind of a function call.
+#[derive(Debug, Copy, Clone)]
+pub enum CallKind {
+    /// A nested function call.
+    Nested,
+    /// A tailing function call.
+    Tail,
+}
+
+/// The outcome of a Wasm return statement.
+#[derive(Debug, Copy, Clone)]
+pub enum ReturnOutcome {
+    /// The call returns to a nested Wasm caller.
+    Wasm,
+    /// The call returns back to the host.
+    Host,
+}
 
 /// Executes the given function `frame`.
 ///
 /// # Note
 ///
-/// This executes instructions sequentially until either the function
-/// calls into another function or the function returns to its caller.
+/// This executes Wasm instructions until either the execution calls
+/// into a host function or the Wasm execution has come to an end.
 ///
 /// # Errors
 ///
-/// - If the execution of the function `frame` trapped.
-#[inline(always)]
-pub fn execute_frame<'engine>(
+/// If the Wasm execution traps.
+#[inline(never)]
+pub fn execute_wasm<'engine>(
     ctx: &mut StoreInner,
-    value_stack: &'engine mut ValueStack,
     cache: &'engine mut InstanceCache,
-    frame: &mut FuncFrame,
-) -> Result<CallOutcome, TrapCode> {
-    Executor::new(value_stack, ctx, cache, frame).execute()
+    value_stack: &'engine mut ValueStack,
+    call_stack: &'engine mut CallStack,
+    code_map: &'engine CodeMap,
+) -> Result<WasmOutcome, TrapCode> {
+    Executor::new(ctx, cache, value_stack, call_stack, code_map).execute()
 }
 
 /// The function signature of Wasm load operations.
@@ -84,48 +132,68 @@ const INVALID_GROWTH_ERRCODE: u32 = u32::MAX;
 
 /// An execution context for executing a `wasmi` function frame.
 #[derive(Debug)]
-struct Executor<'ctx, 'engine, 'func> {
+struct Executor<'ctx, 'engine> {
+    /// Stores the value stack of live values on the Wasm stack.
+    sp: ValueStackPtr,
     /// The pointer to the currently executed instruction.
     ip: InstructionPtr,
-    /// Stores the value stack of live values on the Wasm stack.
-    value_stack: ValueStackRef<'engine>,
+    /// Stores frequently used instance related data.
+    cache: &'engine mut InstanceCache,
     /// A mutable [`StoreInner`] context.
     ///
     /// [`StoreInner`]: [`crate::StoreInner`]
     ctx: &'ctx mut StoreInner,
-    /// Stores frequently used instance related data.
-    cache: &'engine mut InstanceCache,
-    /// The function frame that is being executed.
-    frame: &'func mut FuncFrame,
+    /// The value stack.
+    ///
+    /// # Note
+    ///
+    /// This reference is mainly used to synchronize back state
+    /// after manipulations to the value stack via `sp`.
+    value_stack: &'engine mut ValueStack,
+    /// The call stack.
+    ///
+    /// # Note
+    ///
+    /// This is used to store the stack of nested function calls.
+    call_stack: &'engine mut CallStack,
+    /// The Wasm function code map.
+    ///
+    /// # Note
+    ///
+    /// This is used to lookup Wasm function information.
+    code_map: &'engine CodeMap,
 }
 
-impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
+impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Creates a new [`Executor`] for executing a `wasmi` function frame.
     #[inline(always)]
     pub fn new(
-        value_stack: &'engine mut ValueStack,
         ctx: &'ctx mut StoreInner,
         cache: &'engine mut InstanceCache,
-        frame: &'func mut FuncFrame,
+        value_stack: &'engine mut ValueStack,
+        call_stack: &'engine mut CallStack,
+        code_map: &'engine CodeMap,
     ) -> Self {
-        cache.update_instance(frame.instance());
+        let frame = call_stack.pop().expect("must have frame on the call stack");
+        let sp = value_stack.stack_ptr();
         let ip = frame.ip();
-        let value_stack = ValueStackRef::new(value_stack);
         Self {
+            sp,
             ip,
-            value_stack,
-            ctx,
             cache,
-            frame,
+            ctx,
+            value_stack,
+            call_stack,
+            code_map,
         }
     }
 
     /// Executes the function frame until it returns or traps.
     #[inline(always)]
-    fn execute(mut self) -> Result<CallOutcome, TrapCode> {
+    fn execute(mut self) -> Result<WasmOutcome, TrapCode> {
         use Instruction as Instr;
         loop {
-            match *self.instr() {
+            match *self.ip.get() {
                 Instr::LocalGet { local_depth } => self.visit_local_get(local_depth),
                 Instr::LocalSet { local_depth } => self.visit_local_set(local_depth),
                 Instr::LocalTee { local_depth } => self.visit_local_tee(local_depth),
@@ -135,15 +203,67 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 Instr::BrTable { len_targets } => self.visit_br_table(len_targets),
                 Instr::Unreachable => self.visit_unreachable()?,
                 Instr::ConsumeFuel { amount } => self.visit_consume_fuel(amount)?,
-                Instr::Return(drop_keep) => return self.visit_ret(drop_keep),
-                Instr::ReturnIfNez(drop_keep) => {
-                    if let MaybeReturn::Return = self.visit_return_if_nez(drop_keep) {
-                        return Ok(CallOutcome::Return);
+                Instr::Return(drop_keep) => {
+                    if let ReturnOutcome::Host = self.visit_ret(drop_keep) {
+                        return Ok(WasmOutcome::Return);
                     }
                 }
-                Instr::Call(func) => return self.visit_call(func),
+                Instr::ReturnIfNez(drop_keep) => {
+                    if let ReturnOutcome::Host = self.visit_return_if_nez(drop_keep) {
+                        return Ok(WasmOutcome::Return);
+                    }
+                }
+                Instr::ReturnCall { drop_keep, func } => {
+                    if let CallOutcome::Call {
+                        host_func,
+                        instance,
+                    } = self.visit_return_call(drop_keep, func)?
+                    {
+                        return Ok(WasmOutcome::Call {
+                            host_func,
+                            instance,
+                        });
+                    }
+                }
+                Instr::ReturnCallIndirect {
+                    drop_keep,
+                    table,
+                    func_type,
+                } => {
+                    if let CallOutcome::Call {
+                        host_func,
+                        instance,
+                    } = self.visit_return_call_indirect(drop_keep, table, func_type)?
+                    {
+                        return Ok(WasmOutcome::Call {
+                            host_func,
+                            instance,
+                        });
+                    }
+                }
+                Instr::Call(func) => {
+                    if let CallOutcome::Call {
+                        host_func,
+                        instance,
+                    } = self.visit_call(func)?
+                    {
+                        return Ok(WasmOutcome::Call {
+                            host_func,
+                            instance,
+                        });
+                    }
+                }
                 Instr::CallIndirect { table, func_type } => {
-                    return self.visit_call_indirect(table, func_type)
+                    if let CallOutcome::Call {
+                        host_func,
+                        instance,
+                    } = self.visit_call_indirect(table, func_type)?
+                    {
+                        return Ok(WasmOutcome::Call {
+                            host_func,
+                            instance,
+                        });
+                    }
                 }
                 Instr::Drop => self.visit_drop(),
                 Instr::Select => self.visit_select(),
@@ -153,16 +273,16 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 Instr::I64Load(offset) => self.visit_i64_load(offset)?,
                 Instr::F32Load(offset) => self.visit_f32_load(offset)?,
                 Instr::F64Load(offset) => self.visit_f64_load(offset)?,
-                Instr::I32Load8S(offset) => self.visit_i32_load_i8(offset)?,
-                Instr::I32Load8U(offset) => self.visit_i32_load_u8(offset)?,
-                Instr::I32Load16S(offset) => self.visit_i32_load_i16(offset)?,
-                Instr::I32Load16U(offset) => self.visit_i32_load_u16(offset)?,
-                Instr::I64Load8S(offset) => self.visit_i64_load_i8(offset)?,
-                Instr::I64Load8U(offset) => self.visit_i64_load_u8(offset)?,
-                Instr::I64Load16S(offset) => self.visit_i64_load_i16(offset)?,
-                Instr::I64Load16U(offset) => self.visit_i64_load_u16(offset)?,
-                Instr::I64Load32S(offset) => self.visit_i64_load_i32(offset)?,
-                Instr::I64Load32U(offset) => self.visit_i64_load_u32(offset)?,
+                Instr::I32Load8S(offset) => self.visit_i32_load_i8_s(offset)?,
+                Instr::I32Load8U(offset) => self.visit_i32_load_i8_u(offset)?,
+                Instr::I32Load16S(offset) => self.visit_i32_load_i16_s(offset)?,
+                Instr::I32Load16U(offset) => self.visit_i32_load_i16_u(offset)?,
+                Instr::I64Load8S(offset) => self.visit_i64_load_i8_s(offset)?,
+                Instr::I64Load8U(offset) => self.visit_i64_load_i8_u(offset)?,
+                Instr::I64Load16S(offset) => self.visit_i64_load_i16_s(offset)?,
+                Instr::I64Load16U(offset) => self.visit_i64_load_i16_u(offset)?,
+                Instr::I64Load32S(offset) => self.visit_i64_load_i32_s(offset)?,
+                Instr::I64Load32U(offset) => self.visit_i64_load_i32_u(offset)?,
                 Instr::I32Store(offset) => self.visit_i32_store(offset)?,
                 Instr::I64Store(offset) => self.visit_i64_store(offset)?,
                 Instr::F32Store(offset) => self.visit_f32_store(offset)?,
@@ -287,69 +407,41 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 Instr::F64Max => self.visit_f64_max(),
                 Instr::F64Copysign => self.visit_f64_copysign(),
                 Instr::I32WrapI64 => self.visit_i32_wrap_i64(),
-                Instr::I32TruncF32S => self.visit_i32_trunc_f32()?,
-                Instr::I32TruncF32U => self.visit_u32_trunc_f32()?,
-                Instr::I32TruncF64S => self.visit_i32_trunc_f64()?,
-                Instr::I32TruncF64U => self.visit_u32_trunc_f64()?,
-                Instr::I64ExtendI32S => self.visit_i64_extend_i32(),
-                Instr::I64ExtendI32U => self.visit_i64_extend_u32(),
-                Instr::I64TruncF32S => self.visit_i64_trunc_f32()?,
-                Instr::I64TruncF32U => self.visit_u64_trunc_f32()?,
-                Instr::I64TruncF64S => self.visit_i64_trunc_f64()?,
-                Instr::I64TruncF64U => self.visit_u64_trunc_f64()?,
-                Instr::F32ConvertI32S => self.visit_f32_convert_i32(),
-                Instr::F32ConvertI32U => self.visit_f32_convert_u32(),
-                Instr::F32ConvertI64S => self.visit_f32_convert_i64(),
-                Instr::F32ConvertI64U => self.visit_f32_convert_u64(),
+                Instr::I32TruncF32S => self.visit_i32_trunc_f32_s()?,
+                Instr::I32TruncF32U => self.visit_i32_trunc_f32_u()?,
+                Instr::I32TruncF64S => self.visit_i32_trunc_f64_s()?,
+                Instr::I32TruncF64U => self.visit_i32_trunc_f64_u()?,
+                Instr::I64ExtendI32S => self.visit_i64_extend_i32_s(),
+                Instr::I64ExtendI32U => self.visit_i64_extend_i32_u(),
+                Instr::I64TruncF32S => self.visit_i64_trunc_f32_s()?,
+                Instr::I64TruncF32U => self.visit_i64_trunc_f32_u()?,
+                Instr::I64TruncF64S => self.visit_i64_trunc_f64_s()?,
+                Instr::I64TruncF64U => self.visit_i64_trunc_f64_u()?,
+                Instr::F32ConvertI32S => self.visit_f32_convert_i32_s(),
+                Instr::F32ConvertI32U => self.visit_f32_convert_i32_u(),
+                Instr::F32ConvertI64S => self.visit_f32_convert_i64_s(),
+                Instr::F32ConvertI64U => self.visit_f32_convert_i64_u(),
                 Instr::F32DemoteF64 => self.visit_f32_demote_f64(),
-                Instr::F64ConvertI32S => self.visit_f64_convert_i32(),
-                Instr::F64ConvertI32U => self.visit_f64_convert_u32(),
-                Instr::F64ConvertI64S => self.visit_f64_convert_i64(),
-                Instr::F64ConvertI64U => self.visit_f64_convert_u64(),
+                Instr::F64ConvertI32S => self.visit_f64_convert_i32_s(),
+                Instr::F64ConvertI32U => self.visit_f64_convert_i32_u(),
+                Instr::F64ConvertI64S => self.visit_f64_convert_i64_s(),
+                Instr::F64ConvertI64U => self.visit_f64_convert_i64_u(),
                 Instr::F64PromoteF32 => self.visit_f64_promote_f32(),
-                Instr::I32TruncSatF32S => self.visit_i32_trunc_sat_f32(),
-                Instr::I32TruncSatF32U => self.visit_u32_trunc_sat_f32(),
-                Instr::I32TruncSatF64S => self.visit_i32_trunc_sat_f64(),
-                Instr::I32TruncSatF64U => self.visit_u32_trunc_sat_f64(),
-                Instr::I64TruncSatF32S => self.visit_i64_trunc_sat_f32(),
-                Instr::I64TruncSatF32U => self.visit_u64_trunc_sat_f32(),
-                Instr::I64TruncSatF64S => self.visit_i64_trunc_sat_f64(),
-                Instr::I64TruncSatF64U => self.visit_u64_trunc_sat_f64(),
-                Instr::I32Extend8S => self.visit_i32_sign_extend8(),
-                Instr::I32Extend16S => self.visit_i32_sign_extend16(),
-                Instr::I64Extend8S => self.visit_i64_sign_extend8(),
-                Instr::I64Extend16S => self.visit_i64_sign_extend16(),
-                Instr::I64Extend32S => self.visit_i64_sign_extend32(),
+                Instr::I32TruncSatF32S => self.visit_i32_trunc_sat_f32_s(),
+                Instr::I32TruncSatF32U => self.visit_i32_trunc_sat_f32_u(),
+                Instr::I32TruncSatF64S => self.visit_i32_trunc_sat_f64_s(),
+                Instr::I32TruncSatF64U => self.visit_i32_trunc_sat_f64_u(),
+                Instr::I64TruncSatF32S => self.visit_i64_trunc_sat_f32_s(),
+                Instr::I64TruncSatF32U => self.visit_i64_trunc_sat_f32_u(),
+                Instr::I64TruncSatF64S => self.visit_i64_trunc_sat_f64_s(),
+                Instr::I64TruncSatF64U => self.visit_i64_trunc_sat_f64_u(),
+                Instr::I32Extend8S => self.visit_i32_extend8_s(),
+                Instr::I32Extend16S => self.visit_i32_extend16_s(),
+                Instr::I64Extend8S => self.visit_i64_extend8_s(),
+                Instr::I64Extend16S => self.visit_i64_extend16_s(),
+                Instr::I64Extend32S => self.visit_i64_extend32_s(),
             }
         }
-    }
-
-    /// Returns the [`Instruction`] at the current program counter.
-    #[inline(always)]
-    fn instr(&self) -> &Instruction {
-        // # Safety
-        //
-        // Properly constructed `wasmi` bytecode can never produce invalid `pc`.
-        unsafe { self.ip.get() }
-    }
-
-    /// Returns the default linear memory.
-    ///
-    /// # Panics
-    ///
-    /// If there exists is no linear memory for the instance.
-    #[inline]
-    fn default_memory(&mut self) -> Memory {
-        self.cache.default_memory(self.ctx)
-    }
-
-    /// Returns the global variable at the given index.
-    ///
-    /// # Panics
-    ///
-    /// If there is no global variable at the given index.
-    fn global(&mut self, global_index: GlobalIdx) -> &mut UntypedValue {
-        self.cache.get_global(self.ctx, global_index.into_inner())
     }
 
     /// Executes a generic Wasm `store[N_{s|u}]` operation.
@@ -365,13 +457,14 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// - `{i32, i64}.load16_u`
     /// - `i64.load32_s`
     /// - `i64.load32_u`
+    #[inline]
     fn execute_load_extend(
         &mut self,
         offset: Offset,
         load_extend: WasmLoadOp,
     ) -> Result<(), TrapCode> {
-        self.value_stack.try_eval_top(|address| {
-            let memory = self.cache.default_memory_bytes(self.ctx).data();
+        self.sp.try_eval_top(|address| {
+            let memory = self.cache.default_memory_bytes(self.ctx);
             let value = load_extend(memory, address, offset.into_inner())?;
             Ok(value)
         })?;
@@ -388,50 +481,56 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// - `{i32, i64}.store8`
     /// - `{i32, i64}.store16`
     /// - `i64.store32`
+    #[inline]
     fn execute_store_wrap(
         &mut self,
         offset: Offset,
         store_wrap: WasmStoreOp,
     ) -> Result<(), TrapCode> {
-        let (address, value) = self.value_stack.pop2();
-        let memory = self.cache.default_memory_bytes(self.ctx).data_mut();
+        let (address, value) = self.sp.pop2();
+        let memory = self.cache.default_memory_bytes(self.ctx);
         store_wrap(memory, address, offset.into_inner(), value)?;
         self.try_next_instr()
     }
 
     /// Executes an infallible unary `wasmi` instruction.
+    #[inline]
     fn execute_unary(&mut self, f: fn(UntypedValue) -> UntypedValue) {
-        self.value_stack.eval_top(f);
+        self.sp.eval_top(f);
         self.next_instr()
     }
 
     /// Executes a fallible unary `wasmi` instruction.
+    #[inline]
     fn try_execute_unary(
         &mut self,
         f: fn(UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), TrapCode> {
-        self.value_stack.try_eval_top(f)?;
+        self.sp.try_eval_top(f)?;
         self.try_next_instr()
     }
 
     /// Executes an infallible binary `wasmi` instruction.
+    #[inline]
     fn execute_binary(&mut self, f: fn(UntypedValue, UntypedValue) -> UntypedValue) {
-        self.value_stack.eval_top2(f);
+        self.sp.eval_top2(f);
         self.next_instr()
     }
 
     /// Executes a fallible binary `wasmi` instruction.
+    #[inline]
     fn try_execute_binary(
         &mut self,
         f: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), TrapCode> {
-        self.value_stack.try_eval_top2(f)?;
+        self.sp.try_eval_top2(f)?;
         self.try_next_instr()
     }
 
     /// Shifts the instruction pointer to the next instruction.
+    #[inline]
     fn next_instr(&mut self) {
-        self.ip_add(1)
+        self.ip.add(1)
     }
 
     /// Shifts the instruction pointer to the next instruction and returns `Ok(())`.
@@ -439,27 +538,17 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// # Note
     ///
     /// This is a convenience function for fallible instructions.
+    #[inline]
     fn try_next_instr(&mut self) -> Result<(), TrapCode> {
         self.next_instr();
         Ok(())
     }
 
     /// Offsets the instruction pointer using the given [`BranchParams`].
+    #[inline]
     fn branch_to(&mut self, params: BranchParams) {
-        self.value_stack.drop_keep(params.drop_keep());
-        self.ip_add(params.offset().into_i32() as isize)
-    }
-
-    fn ip_add(&mut self, delta: isize) {
-        // Safety: This is safe since we carefully constructed the `wasmi`
-        //         bytecode in conjunction with Wasm validation so that the
-        //         offsets of the instruction pointer within the sequence of
-        //         instructions never make the instruction pointer point out
-        //         of bounds of the instructions that belong to the function
-        //         that is currently executed.
-        unsafe {
-            self.ip.offset(delta);
-        }
+        self.sp.drop_keep(params.drop_keep());
+        self.ip.offset(params.offset().into_i32() as isize)
     }
 
     /// Synchronizes the current stack pointer with the [`ValueStack`].
@@ -469,8 +558,9 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// For performance reasons we detach the stack pointer form the [`ValueStack`].
     /// Therefore it is necessary to synchronize the [`ValueStack`] upon finishing
     /// execution of a sequence of non control flow instructions.
+    #[inline]
     fn sync_stack_ptr(&mut self) {
-        self.value_stack.sync();
+        self.value_stack.sync_stack_ptr(self.sp);
     }
 
     /// Calls the given [`Func`].
@@ -478,20 +568,49 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     /// This also prepares the instruction pointer and stack pointer for
     /// the function call so that the stack and execution state is synchronized
     /// with the outer structures.
-    fn call_func(&mut self, func: &Func) -> Result<CallOutcome, TrapCode> {
+    #[inline(always)]
+    fn call_func(&mut self, func: &Func, kind: CallKind) -> Result<CallOutcome, TrapCode> {
         self.next_instr();
-        self.frame.update_ip(self.ip);
         self.sync_stack_ptr();
-        Ok(CallOutcome::NestedCall(*func))
+        if matches!(kind, CallKind::Nested) {
+            self.call_stack
+                .push(FuncFrame::new(self.ip, self.cache.instance()))?;
+        }
+        match self.ctx.resolve_func(func) {
+            FuncEntity::Wasm(wasm_func) => {
+                let header = self.code_map.header(wasm_func.func_body());
+                self.value_stack.prepare_wasm_call(header)?;
+                self.sp = self.value_stack.stack_ptr();
+                self.cache.update_instance(wasm_func.instance());
+                self.ip = self.code_map.instr_ptr(header.iref());
+                Ok(CallOutcome::Continue)
+            }
+            FuncEntity::Host(_host_func) => {
+                self.cache.reset();
+                Ok(CallOutcome::Call {
+                    host_func: *func,
+                    instance: *self.cache.instance(),
+                })
+            }
+        }
     }
 
     /// Returns to the caller.
     ///
     /// This also modifies the stack as the caller would expect it
     /// and synchronizes the execution state with the outer structures.
-    fn ret(&mut self, drop_keep: DropKeep) {
-        self.value_stack.drop_keep(drop_keep);
+    #[inline]
+    fn ret(&mut self, drop_keep: DropKeep) -> ReturnOutcome {
+        self.sp.drop_keep(drop_keep);
         self.sync_stack_ptr();
+        match self.call_stack.pop() {
+            Some(caller) => {
+                self.ip = caller.ip();
+                self.cache.update_instance(caller.instance());
+                ReturnOutcome::Wasm
+            }
+            None => ReturnOutcome::Host,
+        }
     }
 
     /// Consume an amount of fuel specified by `delta` if `exec` succeeds.
@@ -545,118 +664,27 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
     fn fuel_costs(&self) -> &FuelCosts {
         self.ctx.engine().config().fuel_costs()
     }
-}
 
-#[derive(Debug, Copy, Clone)]
-pub enum MaybeReturn {
-    Return,
-    Continue,
-}
-
-impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
-    fn visit_unreachable(&mut self) -> Result<(), TrapCode> {
-        Err(TrapCode::UnreachableCodeReached).map_err(Into::into)
+    /// Executes a `call` or `return_call` instruction.
+    #[inline(always)]
+    fn execute_call(
+        &mut self,
+        func_index: FuncIdx,
+        kind: CallKind,
+    ) -> Result<CallOutcome, TrapCode> {
+        let callee = self.cache.get_func(self.ctx, func_index);
+        self.call_func(&callee, kind)
     }
 
-    fn visit_consume_fuel(&mut self, amount: u64) -> Result<(), TrapCode> {
-        // We do not have to check if fuel metering is enabled since
-        // these `wasmi` instructions are only generated if fuel metering
-        // is enabled to begin with.
-        self.ctx.fuel_mut().consume_fuel(amount)?;
-        self.try_next_instr()
-    }
-
-    fn visit_br(&mut self, params: BranchParams) {
-        self.branch_to(params)
-    }
-
-    fn visit_br_if_eqz(&mut self, params: BranchParams) {
-        let condition = self.value_stack.pop_as();
-        if condition {
-            self.next_instr()
-        } else {
-            self.branch_to(params)
-        }
-    }
-
-    fn visit_br_if_nez(&mut self, params: BranchParams) {
-        let condition = self.value_stack.pop_as();
-        if condition {
-            self.branch_to(params)
-        } else {
-            self.next_instr()
-        }
-    }
-
-    fn visit_return_if_nez(&mut self, drop_keep: DropKeep) -> MaybeReturn {
-        let condition = self.value_stack.pop_as();
-        if condition {
-            self.ret(drop_keep);
-            MaybeReturn::Return
-        } else {
-            self.next_instr();
-            MaybeReturn::Continue
-        }
-    }
-
-    fn visit_br_table(&mut self, len_targets: usize) {
-        let index: u32 = self.value_stack.pop_as();
-        // The index of the default target which is the last target of the slice.
-        let max_index = len_targets - 1;
-        // A normalized index will always yield a target without panicking.
-        let normalized_index = cmp::min(index as usize, max_index);
-        // Update `pc`:
-        unsafe {
-            self.ip.offset((normalized_index + 1) as isize);
-        }
-    }
-
-    fn visit_ret(&mut self, drop_keep: DropKeep) -> Result<CallOutcome, TrapCode> {
-        self.ret(drop_keep);
-        Ok(CallOutcome::Return)
-    }
-
-    fn visit_local_get(&mut self, local_depth: LocalDepth) {
-        let value = self.value_stack.peek(local_depth.into_inner());
-        self.value_stack.push(value);
-        self.next_instr()
-    }
-
-    fn visit_local_set(&mut self, local_depth: LocalDepth) {
-        let new_value = self.value_stack.pop();
-        *self.value_stack.peek_mut(local_depth.into_inner()) = new_value;
-        self.next_instr()
-    }
-
-    fn visit_local_tee(&mut self, local_depth: LocalDepth) {
-        let new_value = self.value_stack.last();
-        *self.value_stack.peek_mut(local_depth.into_inner()) = new_value;
-        self.next_instr()
-    }
-
-    fn visit_global_get(&mut self, global_index: GlobalIdx) {
-        let global_value = *self.global(global_index);
-        self.value_stack.push(global_value);
-        self.next_instr()
-    }
-
-    fn visit_global_set(&mut self, global_index: GlobalIdx) {
-        let new_value = self.value_stack.pop();
-        *self.global(global_index) = new_value;
-        self.next_instr()
-    }
-
-    fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
-        let callee = self.cache.get_func(self.ctx, func_index.into_inner());
-        self.call_func(&callee)
-    }
-
-    fn visit_call_indirect(
+    /// Executes a `call_indirect` or `return_call_indirect` instruction.
+    #[inline(always)]
+    fn execute_call_indirect(
         &mut self,
         table: TableIdx,
+        func_index: u32,
         func_type: SignatureIdx,
+        kind: CallKind,
     ) -> Result<CallOutcome, TrapCode> {
-        let func_index: u32 = self.value_stack.pop_as();
         let table = self.cache.get_table(self.ctx, table);
         let funcref = self
             .ctx
@@ -668,7 +696,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         let actual_signature = self.ctx.resolve_func(func).ty_dedup();
         let expected_signature = self
             .ctx
-            .resolve_instance(self.frame.instance())
+            .resolve_instance(self.cache.instance())
             .get_signature(func_type.into_inner())
             .unwrap_or_else(|| {
                 panic!("missing signature for call_indirect at index: {func_type:?}")
@@ -676,21 +704,165 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         if actual_signature != expected_signature {
             return Err(TrapCode::BadSignature).map_err(Into::into);
         }
-        self.call_func(func)
+        self.call_func(func, kind)
+    }
+}
+
+impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+    #[inline(always)]
+    fn visit_unreachable(&mut self) -> Result<(), TrapCode> {
+        Err(TrapCode::UnreachableCodeReached).map_err(Into::into)
     }
 
+    #[inline(always)]
+    fn visit_consume_fuel(&mut self, amount: u64) -> Result<(), TrapCode> {
+        // We do not have to check if fuel metering is enabled since
+        // these `wasmi` instructions are only generated if fuel metering
+        // is enabled to begin with.
+        self.ctx.fuel_mut().consume_fuel(amount)?;
+        self.try_next_instr()
+    }
+
+    #[inline(always)]
+    fn visit_br(&mut self, params: BranchParams) {
+        self.branch_to(params)
+    }
+
+    #[inline(always)]
+    fn visit_br_if_eqz(&mut self, params: BranchParams) {
+        let condition = self.sp.pop_as();
+        if condition {
+            self.next_instr()
+        } else {
+            self.branch_to(params)
+        }
+    }
+
+    #[inline(always)]
+    fn visit_br_if_nez(&mut self, params: BranchParams) {
+        let condition = self.sp.pop_as();
+        if condition {
+            self.branch_to(params)
+        } else {
+            self.next_instr()
+        }
+    }
+
+    #[inline(always)]
+    fn visit_return_if_nez(&mut self, drop_keep: DropKeep) -> ReturnOutcome {
+        let condition = self.sp.pop_as();
+        if condition {
+            self.ret(drop_keep)
+        } else {
+            self.next_instr();
+            ReturnOutcome::Wasm
+        }
+    }
+
+    #[inline(always)]
+    fn visit_br_table(&mut self, len_targets: usize) {
+        let index: u32 = self.sp.pop_as();
+        // The index of the default target which is the last target of the slice.
+        let max_index = len_targets - 1;
+        // A normalized index will always yield a target without panicking.
+        let normalized_index = cmp::min(index as usize, max_index);
+        // Update `pc`:
+        self.ip.add(normalized_index + 1);
+    }
+
+    #[inline(always)]
+    fn visit_ret(&mut self, drop_keep: DropKeep) -> ReturnOutcome {
+        self.ret(drop_keep)
+    }
+
+    #[inline(always)]
+    fn visit_local_get(&mut self, local_depth: LocalDepth) {
+        let value = self.sp.nth_back(local_depth.into_inner());
+        self.sp.push(value);
+        self.next_instr()
+    }
+
+    #[inline(always)]
+    fn visit_local_set(&mut self, local_depth: LocalDepth) {
+        let new_value = self.sp.pop();
+        self.sp.set_nth_back(local_depth.into_inner(), new_value);
+        self.next_instr()
+    }
+
+    #[inline(always)]
+    fn visit_local_tee(&mut self, local_depth: LocalDepth) {
+        let new_value = self.sp.last();
+        self.sp.set_nth_back(local_depth.into_inner(), new_value);
+        self.next_instr()
+    }
+
+    #[inline(always)]
+    fn visit_global_get(&mut self, global_index: GlobalIdx) {
+        let global_value = self.cache.get_global(self.ctx, global_index);
+        self.sp.push(global_value);
+        self.next_instr()
+    }
+
+    #[inline(always)]
+    fn visit_global_set(&mut self, global_index: GlobalIdx) {
+        let new_value = self.sp.pop();
+        self.cache.set_global(self.ctx, global_index, new_value);
+        self.next_instr()
+    }
+
+    #[inline(always)]
+    fn visit_return_call(
+        &mut self,
+        drop_keep: DropKeep,
+        func_index: FuncIdx,
+    ) -> Result<CallOutcome, TrapCode> {
+        self.sp.drop_keep(drop_keep);
+        self.execute_call(func_index, CallKind::Tail)
+    }
+
+    #[inline(always)]
+    fn visit_return_call_indirect(
+        &mut self,
+        drop_keep: DropKeep,
+        table: TableIdx,
+        func_type: SignatureIdx,
+    ) -> Result<CallOutcome, TrapCode> {
+        let func_index: u32 = self.sp.pop_as();
+        self.sp.drop_keep(drop_keep);
+        self.execute_call_indirect(table, func_index, func_type, CallKind::Tail)
+    }
+
+    #[inline(always)]
+    fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
+        let callee = self.cache.get_func(self.ctx, func_index);
+        self.call_func(&callee, CallKind::Nested)
+    }
+
+    #[inline(always)]
+    fn visit_call_indirect(
+        &mut self,
+        table: TableIdx,
+        func_type: SignatureIdx,
+    ) -> Result<CallOutcome, TrapCode> {
+        let func_index: u32 = self.sp.pop_as();
+        self.execute_call_indirect(table, func_index, func_type, CallKind::Nested)
+    }
+
+    #[inline(always)]
     fn visit_const(&mut self, bytes: UntypedValue) {
-        self.value_stack.push(bytes);
+        self.sp.push(bytes);
         self.next_instr()
     }
 
+    #[inline(always)]
     fn visit_drop(&mut self) {
-        let _ = self.value_stack.pop();
+        self.sp.drop();
         self.next_instr()
     }
 
+    #[inline(always)]
     fn visit_select(&mut self) {
-        self.value_stack.eval_top3(|e1, e2, e3| {
+        self.sp.eval_top3(|e1, e2, e3| {
             let condition = <bool as From<UntypedValue>>::from(e3);
             if condition {
                 e1
@@ -701,21 +873,22 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.next_instr()
     }
 
+    #[inline(always)]
     fn visit_memory_size(&mut self) {
-        let memory = self.default_memory();
-        let result: u32 = self.ctx.resolve_memory(&memory).current_pages().into();
-        self.value_stack.push(result);
+        let memory = self.cache.default_memory(self.ctx);
+        let result: u32 = self.ctx.resolve_memory(memory).current_pages().into();
+        self.sp.push_as(result);
         self.next_instr()
     }
 
+    #[inline(always)]
     fn visit_memory_grow(&mut self) -> Result<(), TrapCode> {
-        let memory = self.default_memory();
-        let delta: u32 = self.value_stack.pop_as();
+        let delta: u32 = self.sp.pop_as();
         let delta = match Pages::new(delta) {
             Some(pages) => pages,
             None => {
                 // Cannot grow memory so we push the expected error value.
-                self.value_stack.push(INVALID_GROWTH_ERRCODE);
+                self.sp.push_as(INVALID_GROWTH_ERRCODE);
                 return self.try_next_instr();
             }
         };
@@ -725,9 +898,10 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
                 delta_in_bytes * costs.memory_per_byte
             },
             |this| {
+                let memory = this.cache.default_memory(this.ctx);
                 let new_pages = this
                     .ctx
-                    .resolve_memory_mut(&memory)
+                    .resolve_memory_mut(memory)
                     .grow(delta)
                     .map(u32::from)
                     .map_err(|_| EntityGrowError::InvalidGrow)?;
@@ -743,22 +917,23 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             Err(EntityGrowError::InvalidGrow) => INVALID_GROWTH_ERRCODE,
             Err(EntityGrowError::TrapCode(trap_code)) => return Err(trap_code),
         };
-        self.value_stack.push(result);
+        self.sp.push_as(result);
         self.try_next_instr()
     }
 
+    #[inline(always)]
     fn visit_memory_fill(&mut self) -> Result<(), TrapCode> {
         // The `n`, `val` and `d` variable bindings are extracted from the Wasm specification.
-        let (d, val, n) = self.value_stack.pop3();
+        let (d, val, n) = self.sp.pop3();
         let n = i32::from(n) as usize;
         let offset = i32::from(d) as usize;
         let byte = u8::from(val);
         self.consume_fuel_on_success(
             |costs| n as u64 * costs.memory_per_byte,
             |this| {
-                let bytes = this.cache.default_memory_bytes(this.ctx);
-                let memory = bytes
-                    .data_mut()
+                let memory = this
+                    .cache
+                    .default_memory_bytes(this.ctx)
                     .get_mut(offset..)
                     .and_then(|memory| memory.get_mut(..n))
                     .ok_or(TrapCode::MemoryOutOfBounds)?;
@@ -769,16 +944,17 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.try_next_instr()
     }
 
+    #[inline(always)]
     fn visit_memory_copy(&mut self) -> Result<(), TrapCode> {
         // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
-        let (d, s, n) = self.value_stack.pop3();
+        let (d, s, n) = self.sp.pop3();
         let n = i32::from(n) as usize;
         let src_offset = i32::from(s) as usize;
         let dst_offset = i32::from(d) as usize;
         self.consume_fuel_on_success(
             |costs| n as u64 * costs.memory_per_byte,
             |this| {
-                let data = this.cache.default_memory_bytes(this.ctx).data_mut();
+                let data = this.cache.default_memory_bytes(this.ctx);
                 // These accesses just perform the bounds checks required by the Wasm spec.
                 data.get(src_offset..)
                     .and_then(|memory| memory.get(..n))
@@ -793,9 +969,10 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.try_next_instr()
     }
 
+    #[inline(always)]
     fn visit_memory_init(&mut self, segment: DataSegmentIdx) -> Result<(), TrapCode> {
         // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
-        let (d, s, n) = self.value_stack.pop3();
+        let (d, s, n) = self.sp.pop3();
         let n = i32::from(n) as usize;
         let src_offset = i32::from(s) as usize;
         let dst_offset = i32::from(d) as usize;
@@ -820,6 +997,7 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.try_next_instr()
     }
 
+    #[inline(always)]
     fn visit_data_drop(&mut self, segment_index: DataSegmentIdx) {
         let segment = self
             .cache
@@ -828,15 +1006,17 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.next_instr();
     }
 
+    #[inline(always)]
     fn visit_table_size(&mut self, table_index: TableIdx) {
         let table = self.cache.get_table(self.ctx, table_index);
         let size = self.ctx.resolve_table(&table).size();
-        self.value_stack.push(size);
+        self.sp.push_as(size);
         self.next_instr()
     }
 
+    #[inline(always)]
     fn visit_table_grow(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
-        let (init, delta) = self.value_stack.pop2();
+        let (init, delta) = self.sp.pop2();
         let delta: u32 = delta.into();
         let result = self.consume_fuel_on_success(
             |costs| u64::from(delta) * costs.table_per_element,
@@ -853,13 +1033,14 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
             Err(EntityGrowError::InvalidGrow) => INVALID_GROWTH_ERRCODE,
             Err(EntityGrowError::TrapCode(trap_code)) => return Err(trap_code),
         };
-        self.value_stack.push(result);
+        self.sp.push_as(result);
         self.try_next_instr()
     }
 
+    #[inline(always)]
     fn visit_table_fill(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
         // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
-        let (i, val, n) = self.value_stack.pop3();
+        let (i, val, n) = self.sp.pop3();
         let dst: u32 = i.into();
         let len: u32 = n.into();
         self.consume_fuel_on_success(
@@ -875,8 +1056,9 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.try_next_instr()
     }
 
+    #[inline(always)]
     fn visit_table_get(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
-        self.value_stack.try_eval_top(|index| {
+        self.sp.try_eval_top(|index| {
             let index: u32 = index.into();
             let table = self.cache.get_table(self.ctx, table_index);
             self.ctx
@@ -887,8 +1069,9 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.try_next_instr()
     }
 
+    #[inline(always)]
     fn visit_table_set(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
-        let (index, value) = self.value_stack.pop2();
+        let (index, value) = self.sp.pop2();
         let index: u32 = index.into();
         let table = self.cache.get_table(self.ctx, table_index);
         self.ctx
@@ -898,9 +1081,10 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.try_next_instr()
     }
 
+    #[inline(always)]
     fn visit_table_copy(&mut self, dst: TableIdx, src: TableIdx) -> Result<(), TrapCode> {
         // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
-        let (d, s, n) = self.value_stack.pop3();
+        let (d, s, n) = self.sp.pop3();
         let len = u32::from(n);
         let src_index = u32::from(s);
         let dst_index = u32::from(d);
@@ -925,13 +1109,14 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.try_next_instr()
     }
 
+    #[inline(always)]
     fn visit_table_init(
         &mut self,
         table: TableIdx,
         elem: ElementSegmentIdx,
     ) -> Result<(), TrapCode> {
         // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
-        let (d, s, n) = self.value_stack.pop3();
+        let (d, s, n) = self.sp.pop3();
         let len = u32::from(n);
         let src_index = u32::from(s);
         let dst_index = u32::from(d);
@@ -952,636 +1137,290 @@ impl<'ctx, 'engine, 'func> Executor<'ctx, 'engine, 'func> {
         self.try_next_instr()
     }
 
+    #[inline(always)]
     fn visit_element_drop(&mut self, segment_index: ElementSegmentIdx) {
         let segment = self.cache.get_element_segment(self.ctx, segment_index);
         self.ctx.resolve_element_segment_mut(&segment).drop_items();
         self.next_instr();
     }
 
+    #[inline(always)]
     fn visit_ref_func(&mut self, func_index: FuncIdx) {
-        let func = self.cache.get_func(self.ctx, func_index.into_inner());
+        let func = self.cache.get_func(self.ctx, func_index);
         let funcref = FuncRef::new(func);
-        self.value_stack.push(funcref);
+        self.sp.push_as(funcref);
         self.next_instr();
     }
-
-    fn visit_i32_load(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i32_load)
-    }
-
-    fn visit_i64_load(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i64_load)
-    }
-
-    fn visit_f32_load(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::f32_load)
-    }
-
-    fn visit_f64_load(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::f64_load)
-    }
-
-    fn visit_i32_load_i8(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i32_load8_s)
-    }
-
-    fn visit_i32_load_u8(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i32_load8_u)
-    }
-
-    fn visit_i32_load_i16(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i32_load16_s)
-    }
-
-    fn visit_i32_load_u16(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i32_load16_u)
-    }
-
-    fn visit_i64_load_i8(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i64_load8_s)
-    }
-
-    fn visit_i64_load_u8(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i64_load8_u)
-    }
-
-    fn visit_i64_load_i16(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i64_load16_s)
-    }
-
-    fn visit_i64_load_u16(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i64_load16_u)
-    }
-
-    fn visit_i64_load_i32(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i64_load32_s)
-    }
-
-    fn visit_i64_load_u32(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_load_extend(offset, UntypedValue::i64_load32_u)
-    }
-
-    fn visit_i32_store(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap(offset, UntypedValue::i32_store)
-    }
-
-    fn visit_i64_store(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap(offset, UntypedValue::i64_store)
-    }
-
-    fn visit_f32_store(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap(offset, UntypedValue::f32_store)
-    }
-
-    fn visit_f64_store(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap(offset, UntypedValue::f64_store)
-    }
-
-    fn visit_i32_store_8(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap(offset, UntypedValue::i32_store8)
-    }
-
-    fn visit_i32_store_16(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap(offset, UntypedValue::i32_store16)
-    }
-
-    fn visit_i64_store_8(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap(offset, UntypedValue::i64_store8)
-    }
-
-    fn visit_i64_store_16(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap(offset, UntypedValue::i64_store16)
-    }
-
-    fn visit_i64_store_32(&mut self, offset: Offset) -> Result<(), TrapCode> {
-        self.execute_store_wrap(offset, UntypedValue::i64_store32)
-    }
-
-    fn visit_i32_eqz(&mut self) {
-        self.execute_unary(UntypedValue::i32_eqz)
-    }
-
-    fn visit_i32_eq(&mut self) {
-        self.execute_binary(UntypedValue::i32_eq)
-    }
-
-    fn visit_i32_ne(&mut self) {
-        self.execute_binary(UntypedValue::i32_ne)
-    }
-
-    fn visit_i32_lt_s(&mut self) {
-        self.execute_binary(UntypedValue::i32_lt_s)
-    }
-
-    fn visit_i32_lt_u(&mut self) {
-        self.execute_binary(UntypedValue::i32_lt_u)
-    }
-
-    fn visit_i32_gt_s(&mut self) {
-        self.execute_binary(UntypedValue::i32_gt_s)
-    }
-
-    fn visit_i32_gt_u(&mut self) {
-        self.execute_binary(UntypedValue::i32_gt_u)
-    }
-
-    fn visit_i32_le_s(&mut self) {
-        self.execute_binary(UntypedValue::i32_le_s)
-    }
-
-    fn visit_i32_le_u(&mut self) {
-        self.execute_binary(UntypedValue::i32_le_u)
-    }
-
-    fn visit_i32_ge_s(&mut self) {
-        self.execute_binary(UntypedValue::i32_ge_s)
-    }
-
-    fn visit_i32_ge_u(&mut self) {
-        self.execute_binary(UntypedValue::i32_ge_u)
-    }
-
-    fn visit_i64_eqz(&mut self) {
-        self.execute_unary(UntypedValue::i64_eqz)
-    }
-
-    fn visit_i64_eq(&mut self) {
-        self.execute_binary(UntypedValue::i64_eq)
-    }
-
-    fn visit_i64_ne(&mut self) {
-        self.execute_binary(UntypedValue::i64_ne)
-    }
-
-    fn visit_i64_lt_s(&mut self) {
-        self.execute_binary(UntypedValue::i64_lt_s)
-    }
-
-    fn visit_i64_lt_u(&mut self) {
-        self.execute_binary(UntypedValue::i64_lt_u)
-    }
-
-    fn visit_i64_gt_s(&mut self) {
-        self.execute_binary(UntypedValue::i64_gt_s)
-    }
-
-    fn visit_i64_gt_u(&mut self) {
-        self.execute_binary(UntypedValue::i64_gt_u)
-    }
-
-    fn visit_i64_le_s(&mut self) {
-        self.execute_binary(UntypedValue::i64_le_s)
-    }
-
-    fn visit_i64_le_u(&mut self) {
-        self.execute_binary(UntypedValue::i64_le_u)
-    }
-
-    fn visit_i64_ge_s(&mut self) {
-        self.execute_binary(UntypedValue::i64_ge_s)
-    }
-
-    fn visit_i64_ge_u(&mut self) {
-        self.execute_binary(UntypedValue::i64_ge_u)
-    }
-
-    fn visit_f32_eq(&mut self) {
-        self.execute_binary(UntypedValue::f32_eq)
-    }
-
-    fn visit_f32_ne(&mut self) {
-        self.execute_binary(UntypedValue::f32_ne)
-    }
-
-    fn visit_f32_lt(&mut self) {
-        self.execute_binary(UntypedValue::f32_lt)
-    }
-
-    fn visit_f32_gt(&mut self) {
-        self.execute_binary(UntypedValue::f32_gt)
-    }
-
-    fn visit_f32_le(&mut self) {
-        self.execute_binary(UntypedValue::f32_le)
-    }
-
-    fn visit_f32_ge(&mut self) {
-        self.execute_binary(UntypedValue::f32_ge)
-    }
-
-    fn visit_f64_eq(&mut self) {
-        self.execute_binary(UntypedValue::f64_eq)
-    }
-
-    fn visit_f64_ne(&mut self) {
-        self.execute_binary(UntypedValue::f64_ne)
-    }
-
-    fn visit_f64_lt(&mut self) {
-        self.execute_binary(UntypedValue::f64_lt)
-    }
-
-    fn visit_f64_gt(&mut self) {
-        self.execute_binary(UntypedValue::f64_gt)
-    }
-
-    fn visit_f64_le(&mut self) {
-        self.execute_binary(UntypedValue::f64_le)
-    }
-
-    fn visit_f64_ge(&mut self) {
-        self.execute_binary(UntypedValue::f64_ge)
-    }
-
-    fn visit_i32_clz(&mut self) {
-        self.execute_unary(UntypedValue::i32_clz)
-    }
-
-    fn visit_i32_ctz(&mut self) {
-        self.execute_unary(UntypedValue::i32_ctz)
-    }
-
-    fn visit_i32_popcnt(&mut self) {
-        self.execute_unary(UntypedValue::i32_popcnt)
-    }
-
-    fn visit_i32_add(&mut self) {
-        self.execute_binary(UntypedValue::i32_add)
-    }
-
-    fn visit_i32_sub(&mut self) {
-        self.execute_binary(UntypedValue::i32_sub)
-    }
-
-    fn visit_i32_mul(&mut self) {
-        self.execute_binary(UntypedValue::i32_mul)
-    }
-
-    fn visit_i32_div_s(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_binary(UntypedValue::i32_div_s)
-    }
-
-    fn visit_i32_div_u(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_binary(UntypedValue::i32_div_u)
-    }
-
-    fn visit_i32_rem_s(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_binary(UntypedValue::i32_rem_s)
-    }
-
-    fn visit_i32_rem_u(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_binary(UntypedValue::i32_rem_u)
-    }
-
-    fn visit_i32_and(&mut self) {
-        self.execute_binary(UntypedValue::i32_and)
-    }
-
-    fn visit_i32_or(&mut self) {
-        self.execute_binary(UntypedValue::i32_or)
-    }
-
-    fn visit_i32_xor(&mut self) {
-        self.execute_binary(UntypedValue::i32_xor)
-    }
-
-    fn visit_i32_shl(&mut self) {
-        self.execute_binary(UntypedValue::i32_shl)
-    }
-
-    fn visit_i32_shr_s(&mut self) {
-        self.execute_binary(UntypedValue::i32_shr_s)
-    }
-
-    fn visit_i32_shr_u(&mut self) {
-        self.execute_binary(UntypedValue::i32_shr_u)
-    }
-
-    fn visit_i32_rotl(&mut self) {
-        self.execute_binary(UntypedValue::i32_rotl)
-    }
-
-    fn visit_i32_rotr(&mut self) {
-        self.execute_binary(UntypedValue::i32_rotr)
-    }
-
-    fn visit_i64_clz(&mut self) {
-        self.execute_unary(UntypedValue::i64_clz)
-    }
-
-    fn visit_i64_ctz(&mut self) {
-        self.execute_unary(UntypedValue::i64_ctz)
-    }
-
-    fn visit_i64_popcnt(&mut self) {
-        self.execute_unary(UntypedValue::i64_popcnt)
-    }
-
-    fn visit_i64_add(&mut self) {
-        self.execute_binary(UntypedValue::i64_add)
-    }
-
-    fn visit_i64_sub(&mut self) {
-        self.execute_binary(UntypedValue::i64_sub)
-    }
-
-    fn visit_i64_mul(&mut self) {
-        self.execute_binary(UntypedValue::i64_mul)
-    }
-
-    fn visit_i64_div_s(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_binary(UntypedValue::i64_div_s)
-    }
-
-    fn visit_i64_div_u(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_binary(UntypedValue::i64_div_u)
-    }
-
-    fn visit_i64_rem_s(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_binary(UntypedValue::i64_rem_s)
-    }
-
-    fn visit_i64_rem_u(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_binary(UntypedValue::i64_rem_u)
-    }
-
-    fn visit_i64_and(&mut self) {
-        self.execute_binary(UntypedValue::i64_and)
-    }
-
-    fn visit_i64_or(&mut self) {
-        self.execute_binary(UntypedValue::i64_or)
-    }
-
-    fn visit_i64_xor(&mut self) {
-        self.execute_binary(UntypedValue::i64_xor)
-    }
-
-    fn visit_i64_shl(&mut self) {
-        self.execute_binary(UntypedValue::i64_shl)
-    }
-
-    fn visit_i64_shr_s(&mut self) {
-        self.execute_binary(UntypedValue::i64_shr_s)
-    }
-
-    fn visit_i64_shr_u(&mut self) {
-        self.execute_binary(UntypedValue::i64_shr_u)
-    }
-
-    fn visit_i64_rotl(&mut self) {
-        self.execute_binary(UntypedValue::i64_rotl)
-    }
-
-    fn visit_i64_rotr(&mut self) {
-        self.execute_binary(UntypedValue::i64_rotr)
-    }
-
-    fn visit_f32_abs(&mut self) {
-        self.execute_unary(UntypedValue::f32_abs)
-    }
-
-    fn visit_f32_neg(&mut self) {
-        self.execute_unary(UntypedValue::f32_neg)
-    }
-
-    fn visit_f32_ceil(&mut self) {
-        self.execute_unary(UntypedValue::f32_ceil)
-    }
-
-    fn visit_f32_floor(&mut self) {
-        self.execute_unary(UntypedValue::f32_floor)
-    }
-
-    fn visit_f32_trunc(&mut self) {
-        self.execute_unary(UntypedValue::f32_trunc)
-    }
-
-    fn visit_f32_nearest(&mut self) {
-        self.execute_unary(UntypedValue::f32_nearest)
-    }
-
-    fn visit_f32_sqrt(&mut self) {
-        self.execute_unary(UntypedValue::f32_sqrt)
-    }
-
-    fn visit_f32_add(&mut self) {
-        self.execute_binary(UntypedValue::f32_add)
-    }
-
-    fn visit_f32_sub(&mut self) {
-        self.execute_binary(UntypedValue::f32_sub)
-    }
-
-    fn visit_f32_mul(&mut self) {
-        self.execute_binary(UntypedValue::f32_mul)
-    }
-
-    fn visit_f32_div(&mut self) {
-        self.execute_binary(UntypedValue::f32_div)
-    }
-
-    fn visit_f32_min(&mut self) {
-        self.execute_binary(UntypedValue::f32_min)
-    }
-
-    fn visit_f32_max(&mut self) {
-        self.execute_binary(UntypedValue::f32_max)
-    }
-
-    fn visit_f32_copysign(&mut self) {
-        self.execute_binary(UntypedValue::f32_copysign)
-    }
-
-    fn visit_f64_abs(&mut self) {
-        self.execute_unary(UntypedValue::f64_abs)
-    }
-
-    fn visit_f64_neg(&mut self) {
-        self.execute_unary(UntypedValue::f64_neg)
-    }
-
-    fn visit_f64_ceil(&mut self) {
-        self.execute_unary(UntypedValue::f64_ceil)
-    }
-
-    fn visit_f64_floor(&mut self) {
-        self.execute_unary(UntypedValue::f64_floor)
-    }
-
-    fn visit_f64_trunc(&mut self) {
-        self.execute_unary(UntypedValue::f64_trunc)
-    }
-
-    fn visit_f64_nearest(&mut self) {
-        self.execute_unary(UntypedValue::f64_nearest)
-    }
-
-    fn visit_f64_sqrt(&mut self) {
-        self.execute_unary(UntypedValue::f64_sqrt)
-    }
-
-    fn visit_f64_add(&mut self) {
-        self.execute_binary(UntypedValue::f64_add)
-    }
-
-    fn visit_f64_sub(&mut self) {
-        self.execute_binary(UntypedValue::f64_sub)
-    }
-
-    fn visit_f64_mul(&mut self) {
-        self.execute_binary(UntypedValue::f64_mul)
-    }
-
-    fn visit_f64_div(&mut self) {
-        self.execute_binary(UntypedValue::f64_div)
-    }
-
-    fn visit_f64_min(&mut self) {
-        self.execute_binary(UntypedValue::f64_min)
-    }
-
-    fn visit_f64_max(&mut self) {
-        self.execute_binary(UntypedValue::f64_max)
-    }
-
-    fn visit_f64_copysign(&mut self) {
-        self.execute_binary(UntypedValue::f64_copysign)
-    }
-
-    fn visit_i32_wrap_i64(&mut self) {
-        self.execute_unary(UntypedValue::i32_wrap_i64)
-    }
-
-    fn visit_i32_trunc_f32(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_unary(UntypedValue::i32_trunc_f32_s)
-    }
-
-    fn visit_u32_trunc_f32(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_unary(UntypedValue::i32_trunc_f32_u)
-    }
-
-    fn visit_i32_trunc_f64(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_unary(UntypedValue::i32_trunc_f64_s)
-    }
-
-    fn visit_u32_trunc_f64(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_unary(UntypedValue::i32_trunc_f64_u)
-    }
-
-    fn visit_i64_extend_i32(&mut self) {
-        self.execute_unary(UntypedValue::i64_extend_i32_s)
-    }
-
-    fn visit_i64_extend_u32(&mut self) {
-        self.execute_unary(UntypedValue::i64_extend_i32_u)
-    }
-
-    fn visit_i64_trunc_f32(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_unary(UntypedValue::i64_trunc_f32_s)
-    }
-
-    fn visit_u64_trunc_f32(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_unary(UntypedValue::i64_trunc_f32_u)
-    }
-
-    fn visit_i64_trunc_f64(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_unary(UntypedValue::i64_trunc_f64_s)
-    }
-
-    fn visit_u64_trunc_f64(&mut self) -> Result<(), TrapCode> {
-        self.try_execute_unary(UntypedValue::i64_trunc_f64_u)
-    }
-
-    fn visit_f32_convert_i32(&mut self) {
-        self.execute_unary(UntypedValue::f32_convert_i32_s)
-    }
-
-    fn visit_f32_convert_u32(&mut self) {
-        self.execute_unary(UntypedValue::f32_convert_i32_u)
-    }
-
-    fn visit_f32_convert_i64(&mut self) {
-        self.execute_unary(UntypedValue::f32_convert_i64_s)
-    }
-
-    fn visit_f32_convert_u64(&mut self) {
-        self.execute_unary(UntypedValue::f32_convert_i64_u)
-    }
-
-    fn visit_f32_demote_f64(&mut self) {
-        self.execute_unary(UntypedValue::f32_demote_f64)
-    }
-
-    fn visit_f64_convert_i32(&mut self) {
-        self.execute_unary(UntypedValue::f64_convert_i32_s)
-    }
-
-    fn visit_f64_convert_u32(&mut self) {
-        self.execute_unary(UntypedValue::f64_convert_i32_u)
-    }
-
-    fn visit_f64_convert_i64(&mut self) {
-        self.execute_unary(UntypedValue::f64_convert_i64_s)
-    }
-
-    fn visit_f64_convert_u64(&mut self) {
-        self.execute_unary(UntypedValue::f64_convert_i64_u)
-    }
-
-    fn visit_f64_promote_f32(&mut self) {
-        self.execute_unary(UntypedValue::f64_promote_f32)
-    }
-
-    fn visit_i32_sign_extend8(&mut self) {
-        self.execute_unary(UntypedValue::i32_extend8_s)
-    }
-
-    fn visit_i32_sign_extend16(&mut self) {
-        self.execute_unary(UntypedValue::i32_extend16_s)
-    }
-
-    fn visit_i64_sign_extend8(&mut self) {
-        self.execute_unary(UntypedValue::i64_extend8_s)
-    }
-
-    fn visit_i64_sign_extend16(&mut self) {
-        self.execute_unary(UntypedValue::i64_extend16_s)
-    }
-
-    fn visit_i64_sign_extend32(&mut self) {
-        self.execute_unary(UntypedValue::i64_extend32_s)
-    }
-
-    fn visit_i32_trunc_sat_f32(&mut self) {
-        self.execute_unary(UntypedValue::i32_trunc_sat_f32_s)
-    }
-
-    fn visit_u32_trunc_sat_f32(&mut self) {
-        self.execute_unary(UntypedValue::i32_trunc_sat_f32_u)
-    }
-
-    fn visit_i32_trunc_sat_f64(&mut self) {
-        self.execute_unary(UntypedValue::i32_trunc_sat_f64_s)
-    }
-
-    fn visit_u32_trunc_sat_f64(&mut self) {
-        self.execute_unary(UntypedValue::i32_trunc_sat_f64_u)
-    }
-
-    fn visit_i64_trunc_sat_f32(&mut self) {
-        self.execute_unary(UntypedValue::i64_trunc_sat_f32_s)
-    }
-
-    fn visit_u64_trunc_sat_f32(&mut self) {
-        self.execute_unary(UntypedValue::i64_trunc_sat_f32_u)
-    }
-
-    fn visit_i64_trunc_sat_f64(&mut self) {
-        self.execute_unary(UntypedValue::i64_trunc_sat_f64_s)
-    }
-
-    fn visit_u64_trunc_sat_f64(&mut self) {
-        self.execute_unary(UntypedValue::i64_trunc_sat_f64_u)
+}
+
+macro_rules! impl_visit_load {
+    ( $( fn $visit_ident:ident($untyped_ident:ident); )* ) => {
+        $(
+            #[inline(always)]
+            fn $visit_ident(
+                &mut self,
+                offset: Offset,
+            ) -> Result<(), TrapCode> {
+                self.execute_load_extend(offset, UntypedValue::$untyped_ident)
+            }
+        )*
+    }
+}
+impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+    impl_visit_load! {
+        fn visit_i32_load(i32_load);
+        fn visit_i64_load(i64_load);
+        fn visit_f32_load(f32_load);
+        fn visit_f64_load(f64_load);
+
+        fn visit_i32_load_i8_s(i32_load8_s);
+        fn visit_i32_load_i8_u(i32_load8_u);
+        fn visit_i32_load_i16_s(i32_load16_s);
+        fn visit_i32_load_i16_u(i32_load16_u);
+
+        fn visit_i64_load_i8_s(i64_load8_s);
+        fn visit_i64_load_i8_u(i64_load8_u);
+        fn visit_i64_load_i16_s(i64_load16_s);
+        fn visit_i64_load_i16_u(i64_load16_u);
+        fn visit_i64_load_i32_s(i64_load32_s);
+        fn visit_i64_load_i32_u(i64_load32_u);
+    }
+}
+
+macro_rules! impl_visit_store {
+    ( $( fn $visit_ident:ident($untyped_ident:ident); )* ) => {
+        $(
+            #[inline(always)]
+            fn $visit_ident(
+                &mut self,
+                offset: Offset,
+            ) -> Result<(), TrapCode> {
+                self.execute_store_wrap(offset, UntypedValue::$untyped_ident)
+            }
+        )*
+    }
+}
+impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+    impl_visit_store! {
+        fn visit_i32_store(i32_store);
+        fn visit_i64_store(i64_store);
+        fn visit_f32_store(f32_store);
+        fn visit_f64_store(f64_store);
+
+        fn visit_i32_store_8(i32_store8);
+        fn visit_i32_store_16(i32_store16);
+
+        fn visit_i64_store_8(i64_store8);
+        fn visit_i64_store_16(i64_store16);
+        fn visit_i64_store_32(i64_store32);
+    }
+}
+
+macro_rules! impl_visit_unary {
+    ( $( fn $visit_ident:ident($untyped_ident:ident); )* ) => {
+        $(
+            #[inline(always)]
+            fn $visit_ident(&mut self) {
+                self.execute_unary(UntypedValue::$untyped_ident)
+            }
+        )*
+    }
+}
+impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+    impl_visit_unary! {
+        fn visit_i32_eqz(i32_eqz);
+        fn visit_i64_eqz(i64_eqz);
+
+        fn visit_i32_clz(i32_clz);
+        fn visit_i32_ctz(i32_ctz);
+        fn visit_i32_popcnt(i32_popcnt);
+
+        fn visit_i64_clz(i64_clz);
+        fn visit_i64_ctz(i64_ctz);
+        fn visit_i64_popcnt(i64_popcnt);
+
+        fn visit_f32_abs(f32_abs);
+        fn visit_f32_neg(f32_neg);
+        fn visit_f32_ceil(f32_ceil);
+        fn visit_f32_floor(f32_floor);
+        fn visit_f32_trunc(f32_trunc);
+        fn visit_f32_nearest(f32_nearest);
+        fn visit_f32_sqrt(f32_sqrt);
+
+        fn visit_f64_abs(f64_abs);
+        fn visit_f64_neg(f64_neg);
+        fn visit_f64_ceil(f64_ceil);
+        fn visit_f64_floor(f64_floor);
+        fn visit_f64_trunc(f64_trunc);
+        fn visit_f64_nearest(f64_nearest);
+        fn visit_f64_sqrt(f64_sqrt);
+
+        fn visit_i32_wrap_i64(i32_wrap_i64);
+        fn visit_i64_extend_i32_s(i64_extend_i32_s);
+        fn visit_i64_extend_i32_u(i64_extend_i32_u);
+
+        fn visit_f32_convert_i32_s(f32_convert_i32_s);
+        fn visit_f32_convert_i32_u(f32_convert_i32_u);
+        fn visit_f32_convert_i64_s(f32_convert_i64_s);
+        fn visit_f32_convert_i64_u(f32_convert_i64_u);
+        fn visit_f32_demote_f64(f32_demote_f64);
+        fn visit_f64_convert_i32_s(f64_convert_i32_s);
+        fn visit_f64_convert_i32_u(f64_convert_i32_u);
+        fn visit_f64_convert_i64_s(f64_convert_i64_s);
+        fn visit_f64_convert_i64_u(f64_convert_i64_u);
+        fn visit_f64_promote_f32(f64_promote_f32);
+
+        fn visit_i32_extend8_s(i32_extend8_s);
+        fn visit_i32_extend16_s(i32_extend16_s);
+        fn visit_i64_extend8_s(i64_extend8_s);
+        fn visit_i64_extend16_s(i64_extend16_s);
+        fn visit_i64_extend32_s(i64_extend32_s);
+
+        fn visit_i32_trunc_sat_f32_s(i32_trunc_sat_f32_s);
+        fn visit_i32_trunc_sat_f32_u(i32_trunc_sat_f32_u);
+        fn visit_i32_trunc_sat_f64_s(i32_trunc_sat_f64_s);
+        fn visit_i32_trunc_sat_f64_u(i32_trunc_sat_f64_u);
+        fn visit_i64_trunc_sat_f32_s(i64_trunc_sat_f32_s);
+        fn visit_i64_trunc_sat_f32_u(i64_trunc_sat_f32_u);
+        fn visit_i64_trunc_sat_f64_s(i64_trunc_sat_f64_s);
+        fn visit_i64_trunc_sat_f64_u(i64_trunc_sat_f64_u);
+    }
+}
+
+macro_rules! impl_visit_fallible_unary {
+    ( $( fn $visit_ident:ident($untyped_ident:ident); )* ) => {
+        $(
+            #[inline(always)]
+            fn $visit_ident(&mut self) -> Result<(), TrapCode> {
+                self.try_execute_unary(UntypedValue::$untyped_ident)
+            }
+        )*
+    }
+}
+impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+    impl_visit_fallible_unary! {
+        fn visit_i32_trunc_f32_s(i32_trunc_f32_s);
+        fn visit_i32_trunc_f32_u(i32_trunc_f32_u);
+        fn visit_i32_trunc_f64_s(i32_trunc_f64_s);
+        fn visit_i32_trunc_f64_u(i32_trunc_f64_u);
+
+        fn visit_i64_trunc_f32_s(i64_trunc_f32_s);
+        fn visit_i64_trunc_f32_u(i64_trunc_f32_u);
+        fn visit_i64_trunc_f64_s(i64_trunc_f64_s);
+        fn visit_i64_trunc_f64_u(i64_trunc_f64_u);
+    }
+}
+
+macro_rules! impl_visit_binary {
+    ( $( fn $visit_ident:ident($untyped_ident:ident); )* ) => {
+        $(
+            #[inline(always)]
+            fn $visit_ident(&mut self) {
+                self.execute_binary(UntypedValue::$untyped_ident)
+            }
+        )*
+    }
+}
+impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+    impl_visit_binary! {
+        fn visit_i32_eq(i32_eq);
+        fn visit_i32_ne(i32_ne);
+        fn visit_i32_lt_s(i32_lt_s);
+        fn visit_i32_lt_u(i32_lt_u);
+        fn visit_i32_gt_s(i32_gt_s);
+        fn visit_i32_gt_u(i32_gt_u);
+        fn visit_i32_le_s(i32_le_s);
+        fn visit_i32_le_u(i32_le_u);
+        fn visit_i32_ge_s(i32_ge_s);
+        fn visit_i32_ge_u(i32_ge_u);
+
+        fn visit_i64_eq(i64_eq);
+        fn visit_i64_ne(i64_ne);
+        fn visit_i64_lt_s(i64_lt_s);
+        fn visit_i64_lt_u(i64_lt_u);
+        fn visit_i64_gt_s(i64_gt_s);
+        fn visit_i64_gt_u(i64_gt_u);
+        fn visit_i64_le_s(i64_le_s);
+        fn visit_i64_le_u(i64_le_u);
+        fn visit_i64_ge_s(i64_ge_s);
+        fn visit_i64_ge_u(i64_ge_u);
+
+        fn visit_f32_eq(f32_eq);
+        fn visit_f32_ne(f32_ne);
+        fn visit_f32_lt(f32_lt);
+        fn visit_f32_gt(f32_gt);
+        fn visit_f32_le(f32_le);
+        fn visit_f32_ge(f32_ge);
+
+        fn visit_f64_eq(f64_eq);
+        fn visit_f64_ne(f64_ne);
+        fn visit_f64_lt(f64_lt);
+        fn visit_f64_gt(f64_gt);
+        fn visit_f64_le(f64_le);
+        fn visit_f64_ge(f64_ge);
+
+        fn visit_i32_add(i32_add);
+        fn visit_i32_sub(i32_sub);
+        fn visit_i32_mul(i32_mul);
+        fn visit_i32_and(i32_and);
+        fn visit_i32_or(i32_or);
+        fn visit_i32_xor(i32_xor);
+        fn visit_i32_shl(i32_shl);
+        fn visit_i32_shr_s(i32_shr_s);
+        fn visit_i32_shr_u(i32_shr_u);
+        fn visit_i32_rotl(i32_rotl);
+        fn visit_i32_rotr(i32_rotr);
+
+        fn visit_i64_add(i64_add);
+        fn visit_i64_sub(i64_sub);
+        fn visit_i64_mul(i64_mul);
+        fn visit_i64_and(i64_and);
+        fn visit_i64_or(i64_or);
+        fn visit_i64_xor(i64_xor);
+        fn visit_i64_shl(i64_shl);
+        fn visit_i64_shr_s(i64_shr_s);
+        fn visit_i64_shr_u(i64_shr_u);
+        fn visit_i64_rotl(i64_rotl);
+        fn visit_i64_rotr(i64_rotr);
+
+        fn visit_f32_add(f32_add);
+        fn visit_f32_sub(f32_sub);
+        fn visit_f32_mul(f32_mul);
+        fn visit_f32_div(f32_div);
+        fn visit_f32_min(f32_min);
+        fn visit_f32_max(f32_max);
+        fn visit_f32_copysign(f32_copysign);
+
+        fn visit_f64_add(f64_add);
+        fn visit_f64_sub(f64_sub);
+        fn visit_f64_mul(f64_mul);
+        fn visit_f64_div(f64_div);
+        fn visit_f64_min(f64_min);
+        fn visit_f64_max(f64_max);
+        fn visit_f64_copysign(f64_copysign);
+    }
+}
+
+macro_rules! impl_visit_fallible_binary {
+    ( $( fn $visit_ident:ident($untyped_ident:ident); )* ) => {
+        $(
+            #[inline(always)]
+            fn $visit_ident(&mut self) -> Result<(), TrapCode> {
+                self.try_execute_binary(UntypedValue::$untyped_ident)
+            }
+        )*
+    }
+}
+impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+    impl_visit_fallible_binary! {
+        fn visit_i32_div_s(i32_div_s);
+        fn visit_i32_div_u(i32_div_u);
+        fn visit_i32_rem_s(i32_rem_s);
+        fn visit_i32_rem_u(i32_rem_u);
+
+        fn visit_i64_div_s(i64_div_s);
+        fn visit_i64_div_u(i64_div_u);
+        fn visit_i64_rem_s(i64_rem_s);
+        fn visit_i64_rem_u(i64_rem_u);
     }
 }
