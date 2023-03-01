@@ -99,10 +99,56 @@ pub trait TransmuteInto<T> {
     fn transmute_into(self) -> T;
 }
 
+/// Allows to efficiently load bytes from `memory` into a buffer.
+pub trait LoadInto {
+    /// Loads bytes from `memory` into `self`.
+    ///
+    /// # Errors
+    ///
+    /// Traps if the `memory` access is out of bounds.
+    fn load_into(&mut self, memory: &[u8], address: usize) -> Result<(), TrapCode>;
+}
+
+impl<const N: usize> LoadInto for [u8; N] {
+    #[inline]
+    fn load_into(&mut self, memory: &[u8], address: usize) -> Result<(), TrapCode> {
+        let slice: &Self = memory
+            .get(address..)
+            .and_then(|slice| slice.get(..N))
+            .and_then(|slice| slice.try_into().ok())
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        *self = *slice;
+        Ok(())
+    }
+}
+
+/// Allows to efficiently write bytes from a buffer into `memory`.
+pub trait StoreFrom {
+    /// Writes bytes from `self` to `memory`.
+    ///
+    /// # Errors
+    ///
+    /// Traps if the `memory` access is out of bounds.
+    fn store_from(&self, memory: &mut [u8], address: usize) -> Result<(), TrapCode>;
+}
+
+impl<const N: usize> StoreFrom for [u8; N] {
+    #[inline]
+    fn store_from(&self, memory: &mut [u8], address: usize) -> Result<(), TrapCode> {
+        let slice: &mut Self = memory
+            .get_mut(address..)
+            .and_then(|slice| slice.get_mut(..N))
+            .and_then(|slice| slice.try_into().ok())
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        *slice = *self;
+        Ok(())
+    }
+}
+
 /// Types that can be converted from and to little endian bytes.
 pub trait LittleEndianConvert {
     /// The little endian bytes representation.
-    type Bytes: Default + AsRef<[u8]> + AsMut<[u8]>;
+    type Bytes: Default + LoadInto + StoreFrom;
 
     /// Converts `self` into little endian bytes.
     fn into_le_bytes(self) -> Self::Bytes;
