@@ -25,6 +25,7 @@ use crate::{
     table::TableEntity,
     Func,
     FuncRef,
+    Instance,
     StoreInner,
     Table,
 };
@@ -42,7 +43,7 @@ pub enum WasmOutcome {
     /// The Wasm execution has ended and returns to the host side.
     Return,
     /// The Wasm execution calls a host function.
-    Call(Func),
+    Call { host_func: Func, instance: Instance },
 }
 
 /// The outcome of a Wasm execution.
@@ -56,7 +57,7 @@ pub enum CallOutcome {
     /// The Wasm execution continues in Wasm.
     Continue,
     /// The Wasm execution calls a host function.
-    Call(Func),
+    Call { host_func: Func, instance: Instance },
 }
 
 /// The kind of a function call.
@@ -213,8 +214,15 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     }
                 }
                 Instr::ReturnCall { drop_keep, func } => {
-                    if let CallOutcome::Call(host_func) = self.visit_return_call(drop_keep, func)? {
-                        return Ok(WasmOutcome::Call(host_func));
+                    if let CallOutcome::Call {
+                        host_func,
+                        instance,
+                    } = self.visit_return_call(drop_keep, func)?
+                    {
+                        return Ok(WasmOutcome::Call {
+                            host_func,
+                            instance,
+                        });
                     }
                 }
                 Instr::ReturnCallIndirect {
@@ -222,22 +230,39 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     table,
                     func_type,
                 } => {
-                    if let CallOutcome::Call(host_func) =
-                        self.visit_return_call_indirect(drop_keep, table, func_type)?
+                    if let CallOutcome::Call {
+                        host_func,
+                        instance,
+                    } = self.visit_return_call_indirect(drop_keep, table, func_type)?
                     {
-                        return Ok(WasmOutcome::Call(host_func));
+                        return Ok(WasmOutcome::Call {
+                            host_func,
+                            instance,
+                        });
                     }
                 }
                 Instr::Call(func) => {
-                    if let CallOutcome::Call(host_func) = self.visit_call(func)? {
-                        return Ok(WasmOutcome::Call(host_func));
+                    if let CallOutcome::Call {
+                        host_func,
+                        instance,
+                    } = self.visit_call(func)?
+                    {
+                        return Ok(WasmOutcome::Call {
+                            host_func,
+                            instance,
+                        });
                     }
                 }
                 Instr::CallIndirect { table, func_type } => {
-                    if let CallOutcome::Call(host_func) =
-                        self.visit_call_indirect(table, func_type)?
+                    if let CallOutcome::Call {
+                        host_func,
+                        instance,
+                    } = self.visit_call_indirect(table, func_type)?
                     {
-                        return Ok(WasmOutcome::Call(host_func));
+                        return Ok(WasmOutcome::Call {
+                            host_func,
+                            instance,
+                        });
                     }
                 }
                 Instr::Drop => self.visit_drop(),
@@ -547,12 +572,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn call_func(&mut self, func: &Func, kind: CallKind) -> Result<CallOutcome, TrapCode> {
         self.next_instr();
         self.sync_stack_ptr();
+        if matches!(kind, CallKind::Nested) {
+            self.call_stack
+                .push(FuncFrame::new(self.ip, self.cache.instance()))?;
+        }
         match self.ctx.resolve_func(func) {
             FuncEntity::Wasm(wasm_func) => {
-                if matches!(kind, CallKind::Nested) {
-                    self.call_stack
-                        .push(FuncFrame::new(self.ip, self.cache.instance()))?;
-                }
                 let header = self.code_map.header(wasm_func.func_body());
                 self.value_stack.prepare_wasm_call(header)?;
                 self.sp = self.value_stack.stack_ptr();
@@ -561,10 +586,11 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Ok(CallOutcome::Continue)
             }
             FuncEntity::Host(_host_func) => {
-                self.call_stack
-                    .push(FuncFrame::new(self.ip, self.cache.instance()))?;
                 self.cache.reset();
-                Ok(CallOutcome::Call(*func))
+                Ok(CallOutcome::Call {
+                    host_func: *func,
+                    instance: *self.cache.instance(),
+                })
             }
         }
     }

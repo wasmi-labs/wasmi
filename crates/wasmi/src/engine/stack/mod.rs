@@ -164,23 +164,6 @@ impl Stack {
         self.call_host_impl(ctx, host_func, None, func_types)
     }
 
-    /// Executes the given host function called by a Wasm function.
-    #[inline(always)]
-    pub fn call_host_from_wasm<T>(
-        &mut self,
-        ctx: StoreContextMut<T>,
-        host_func: HostFuncEntity,
-        func_types: &FuncTypeRegistry,
-    ) -> Result<(), Trap> {
-        let caller = self
-            .frames
-            .peek()
-            .copied()
-            .expect("must have a frame on the call stack");
-        let instance = caller.instance();
-        self.call_host_impl(ctx, host_func, Some(instance), func_types)
-    }
-
     /// Executes the given host function.
     ///
     /// # Errors
@@ -188,7 +171,7 @@ impl Stack {
     /// - If the host function returns a host side error or trap.
     /// - If the value stack overflowed upon pushing parameters or results.
     #[inline(always)]
-    fn call_host_impl<T>(
+    pub fn call_host_impl<T>(
         &mut self,
         ctx: StoreContextMut<T>,
         host_func: HostFuncEntity,
