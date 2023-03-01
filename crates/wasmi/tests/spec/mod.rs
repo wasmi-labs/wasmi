@@ -77,6 +77,7 @@ fn make_config() -> Config {
     config.wasm_multi_value(true);
     config.wasm_bulk_memory(true);
     config.wasm_reference_types(true);
+    config.wasm_tail_call(true);
     config
 }
 
@@ -95,6 +96,9 @@ define_spec_tests! {
     fn wasm_bulk("bulk");
     fn wasm_call("call");
     fn wasm_call_indirect("call_indirect");
+    fn wasm_return_call("proposals/tail-call/return_call");
+
+    fn wasm_return_call_indirect("proposals/tail-call/return_call_indirect");
     fn wasm_comments("comments");
     fn wasm_const("const");
     fn wasm_conversions("conversions");

@@ -25,6 +25,8 @@ pub struct Config {
     bulk_memory: bool,
     /// Is `true` if the [`reference-types`] Wasm proposal is enabled.
     reference_types: bool,
+    /// Is `true` if the [`tail-call`] Wasm proposal is enabled.
+    tail_call: bool,
     /// Is `true` if Wasm instructions on `f32` and `f64` types are allowed.
     floats: bool,
     /// Is `true` if `wasmi` executions shall consume fuel.
@@ -94,6 +96,7 @@ impl Default for Config {
             multi_value: true,
             bulk_memory: true,
             reference_types: true,
+            tail_call: false,
             floats: true,
             consume_fuel: false,
             fuel_costs: FuelCosts::default(),
@@ -201,6 +204,18 @@ impl Config {
         self
     }
 
+    /// Enable or disable the [`tail-call`] Wasm proposal for the [`Config`].
+    ///
+    /// # Note
+    ///
+    /// Disabled by default.
+    ///
+    /// [`tail-call`]: https://github.com/WebAssembly/tail-calls
+    pub fn wasm_tail_call(&mut self, enable: bool) -> &mut Self {
+        self.tail_call = enable;
+        self
+    }
+
     /// Enable or disable Wasm floating point (`f32` and `f64`) instructions and types.
     ///
     /// Enabled by default.
@@ -252,12 +267,12 @@ impl Config {
             sign_extension: self.sign_extension,
             bulk_memory: self.bulk_memory,
             reference_types: self.reference_types,
+            tail_call: self.tail_call,
             floats: self.floats,
             component_model: false,
             simd: false,
             relaxed_simd: false,
             threads: false,
-            tail_call: false,
             multi_memory: false,
             exceptions: false,
             memory64: false,
