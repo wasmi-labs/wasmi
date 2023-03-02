@@ -40,7 +40,7 @@ impl Context {
             });
         }
         let mut linker = <wasmi::Linker<WasiCtx>>::new(&engine);
-        wasmi_wasi::define_wasi(&mut linker, &mut store, |ctx| ctx)
+        wasmi_wasi::add_to_linker(&mut linker, |ctx| ctx)
             .map_err(|error| anyhow!("failed to add WASI definitions to the linker: {error}"))?;
         let instance = linker
             .instantiate(&mut store, &module)

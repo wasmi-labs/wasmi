@@ -1,18 +1,15 @@
+//! This crate provides support for WASI `preview1` for the `wasmi` interpreter.
+//!
+//! Use [`add_to_linker`] to add all supported WASI definitions to the `wasmi` linker.
+
 mod guest_memory;
-pub mod snapshots;
+
+#[cfg(feature = "sync")]
+pub mod sync;
 
 pub use self::guest_memory::WasmiGuestMemory;
-pub use snapshots::preview_1::define_wasi;
-pub use wasi_cap_std_sync::{
-    ambient_authority,
-    clocks,
-    file::{filetype_from, get_fd_flags, File},
-    net,
-    sched,
-    stdio,
-    Dir,
-    TcpListener,
-    WasiCtxBuilder,
-};
 pub use wasi_common::{Error, WasiCtx, WasiDir, WasiFile};
-pub use wasmi::Linker;
+
+/// Sync mode is the "default" of this crate, so we also export it at the top level.
+#[cfg(feature = "sync")]
+pub use sync::*;

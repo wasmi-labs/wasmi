@@ -19,3 +19,7 @@ wasmi = { version = "0.28.0", path = "../wasmi" }
 
 [dev-dependencies]
 wat = "1.0.50"
+
+[features]
+default = ["sync"]
+sync = []
