@@ -21,6 +21,10 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 [`tail-call`]: https://github.com/WebAssembly/tail-call
 
+### Changed
+
+- The `wasmi_wasi` crate now more closely mirrors the `wasmtime_wasi` crate API. (https://github.com/paritytech/wasmi/pull/700)
+
 ### Internal
 
 - Refactor the `wasmi` Wasm engine to handle Wasm calls and returns in its core. [(#694)]
