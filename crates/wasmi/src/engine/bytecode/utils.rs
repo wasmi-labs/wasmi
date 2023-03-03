@@ -1,4 +1,4 @@
-use crate::engine::{config::FuelCosts, Instr};
+use crate::engine::Instr;
 use core::fmt::Display;
 
 /// Defines how many stack values are going to be dropped and kept after branching.
@@ -61,15 +61,6 @@ impl DropKeep {
     /// Returns the amount of stack values to keep.
     pub fn keep(self) -> usize {
         self.keep as usize
-    }
-
-    /// Returns the fuel consumption required for this [`DropKeep`].
-    pub fn fuel_consumption(self, costs: &FuelCosts) -> u64 {
-        if self.drop == 0 {
-            // If nothing is dropped no copy is required.
-            return 0;
-        }
-        u64::from(self.keep) * costs.branch_per_kept
     }
 }
 

@@ -781,7 +781,8 @@ fn metered_simple_01() {
     "#,
     );
     let costs = fuel_costs();
-    let expected_fuel = 3 * costs.base + costs.call_per_local + costs.branch_per_kept;
+    let expected_fuel =
+        3 * costs.base + costs.fuel_for_locals(1) + costs.fuel_for_drop_keep(drop_keep(1, 1));
     let expected = [
         Instruction::consume_fuel(expected_fuel),
         Instruction::local_get(1),
@@ -806,7 +807,8 @@ fn metered_simple_02() {
     "#,
     );
     let costs = fuel_costs();
-    let expected_fuel = 5 * costs.base + costs.call_per_local + costs.branch_per_kept;
+    let expected_fuel =
+        5 * costs.base + costs.fuel_for_locals(1) + costs.fuel_for_drop_keep(drop_keep(1, 1));
     let expected = [
         Instruction::consume_fuel(expected_fuel),
         Instruction::local_get(1),
@@ -835,7 +837,8 @@ fn metered_simple_03() {
     "#,
     );
     let costs = fuel_costs();
-    let expected_fuel = 9 * costs.base + 2 * costs.call_per_local + costs.branch_per_kept;
+    let expected_fuel =
+        9 * costs.base + costs.fuel_for_locals(2) + costs.fuel_for_drop_keep(drop_keep(2, 1));
     let expected = [
         Instruction::consume_fuel(expected_fuel),
         Instruction::local_get(2),
@@ -869,8 +872,9 @@ fn metered_if_01() {
     "#,
     );
     let costs = fuel_costs();
-    let expected_fuel_fn = 4 * costs.base + 3 * costs.call_per_local + costs.branch_per_kept;
-    let expected_fuel_then = 3 * costs.base + costs.branch_per_kept;
+    let expected_fuel_fn =
+        4 * costs.base + costs.fuel_for_locals(3) + costs.fuel_for_drop_keep(drop_keep(3, 1));
+    let expected_fuel_then = 3 * costs.base + costs.fuel_for_drop_keep(drop_keep(3, 1));
     let expected_fuel_else = expected_fuel_then;
     let expected = [
         /* 0 */ Instruction::consume_fuel(expected_fuel_fn), // function body
@@ -910,8 +914,9 @@ fn metered_block_in_if_01() {
     "#,
     );
     let costs = fuel_costs();
-    let expected_fuel_fn = 5 * costs.base + 3 * costs.call_per_local + costs.branch_per_kept;
-    let expected_fuel_then = 3 * costs.base + costs.branch_per_kept;
+    let expected_fuel_fn =
+        5 * costs.base + costs.fuel_for_locals(3) + costs.fuel_for_drop_keep(drop_keep(3, 1));
+    let expected_fuel_then = 3 * costs.base + costs.fuel_for_drop_keep(drop_keep(3, 1));
     let expected_fuel_else = expected_fuel_then;
     #[rustfmt::skip]
     let expected = [
@@ -956,7 +961,8 @@ fn metered_block_in_if_02() {
     "#,
     );
     let costs = fuel_costs();
-    let expected_fuel_fn = 5 * costs.base + 3 * costs.call_per_local + costs.branch_per_kept;
+    let expected_fuel_fn =
+        5 * costs.base + costs.fuel_for_locals(3) + costs.fuel_for_drop_keep(drop_keep(3, 1));
     let expected_fuel_then = 2 * costs.base;
     let expected_fuel_else = expected_fuel_then;
     let expected = [
@@ -996,7 +1002,8 @@ fn metered_loop_in_if() {
     "#,
     );
     let costs = fuel_costs();
-    let expected_fuel_fn = 5 * costs.base + 3 * costs.call_per_local + costs.branch_per_kept;
+    let expected_fuel_fn =
+        5 * costs.base + costs.fuel_for_locals(3) + costs.fuel_for_drop_keep(drop_keep(3, 1));
     let expected_fuel_then = costs.base;
     let expected_fuel_else = expected_fuel_then;
     let expected_fuel_loop = 2 * costs.base;
@@ -1044,7 +1051,8 @@ fn metered_nested_blocks() {
     "#,
     );
     let costs = fuel_costs();
-    let expected_fuel = 11 * costs.base + costs.call_per_local + costs.branch_per_kept;
+    let expected_fuel =
+        11 * costs.base + costs.fuel_for_locals(1) + costs.fuel_for_drop_keep(drop_keep(1, 1));
     let expected = [
         Instruction::consume_fuel(expected_fuel),
         Instruction::local_get(1),
@@ -1089,7 +1097,8 @@ fn metered_nested_loops() {
     "#,
     );
     let costs = fuel_costs();
-    let expected_fuel_outer = 3 * costs.base + costs.call_per_local + costs.branch_per_kept;
+    let expected_fuel_outer =
+        3 * costs.base + costs.fuel_for_locals(1) + costs.fuel_for_drop_keep(drop_keep(1, 1));
     let expected_fuel_inner = 3 * costs.base;
     let expected = [
         Instruction::consume_fuel(expected_fuel_outer),
@@ -1131,8 +1140,10 @@ fn metered_global_bump() {
     "#,
     );
     let costs = fuel_costs();
-    let expected_fuel =
-        3 * costs.entity + 4 * costs.base + costs.call_per_local + costs.branch_per_kept;
+    let expected_fuel = 3 * costs.entity
+        + 4 * costs.base
+        + costs.fuel_for_locals(1)
+        + costs.fuel_for_drop_keep(drop_keep(1, 1));
     let expected = [
         Instruction::consume_fuel(expected_fuel),
         Instruction::GlobalGet(GlobalIdx::from(0)),
@@ -1196,7 +1207,8 @@ fn metered_calls_02() {
     "#,
     );
     let costs = fuel_costs();
-    let expected_fuel_f0 = 5 * costs.base + 2 * costs.call_per_local + costs.branch_per_kept;
+    let expected_fuel_f0 =
+        5 * costs.base + costs.fuel_for_locals(2) + costs.fuel_for_drop_keep(drop_keep(2, 1));
     let expected_f0 = [
         Instruction::consume_fuel(expected_fuel_f0),
         Instruction::local_get(2),
@@ -1204,8 +1216,10 @@ fn metered_calls_02() {
         Instruction::I32Add,
         Instruction::Return(drop_keep(2, 1)),
     ];
-    let expected_fuel_f1 =
-        4 * costs.base + costs.call + 2 * costs.call_per_local + costs.branch_per_kept;
+    let expected_fuel_f1 = 4 * costs.base
+        + costs.call
+        + costs.fuel_for_locals(2)
+        + costs.fuel_for_drop_keep(drop_keep(2, 1));
     let expected_f1 = [
         Instruction::consume_fuel(expected_fuel_f1),
         Instruction::local_get(2),
@@ -1238,7 +1252,8 @@ fn metered_calls_03() {
     "#,
     );
     let costs = fuel_costs();
-    let expected_fuel_f0 = 7 * costs.base + 2 * costs.call_per_local + costs.branch_per_kept;
+    let expected_fuel_f0 =
+        7 * costs.base + costs.fuel_for_locals(2) + costs.fuel_for_drop_keep(drop_keep(2, 1));
     let expected_f0 = [
         Instruction::consume_fuel(expected_fuel_f0),
         Instruction::local_get(2),
@@ -1248,8 +1263,10 @@ fn metered_calls_03() {
         Instruction::I32Add,
         Instruction::Return(drop_keep(2, 1)),
     ];
-    let expected_fuel_f1 =
-        3 * costs.base + costs.call + costs.call_per_local + costs.branch_per_kept;
+    let expected_fuel_f1 = 3 * costs.base
+        + costs.call
+        + costs.fuel_for_locals(1)
+        + costs.fuel_for_drop_keep(drop_keep(1, 1));
     let expected_f1 = [
         Instruction::consume_fuel(expected_fuel_f1),
         Instruction::local_get(1),
@@ -1275,7 +1292,10 @@ fn metered_load_01() {
     "#,
     );
     let costs = fuel_costs();
-    let expected_fuel = 3 * costs.base + costs.load + costs.call_per_local + costs.branch_per_kept;
+    let expected_fuel = 3 * costs.base
+        + costs.load
+        + costs.fuel_for_locals(1)
+        + costs.fuel_for_drop_keep(drop_keep(1, 1));
     let expected = [
         Instruction::consume_fuel(expected_fuel),
         Instruction::local_get(1),
@@ -1300,7 +1320,7 @@ fn metered_store_01() {
     "#,
     );
     let costs = fuel_costs();
-    let expected_fuel = 4 * costs.base + costs.store + 2 * costs.call_per_local;
+    let expected_fuel = 4 * costs.base + costs.store + costs.fuel_for_locals(2);
     let expected = [
         Instruction::consume_fuel(expected_fuel),
         Instruction::local_get(2),

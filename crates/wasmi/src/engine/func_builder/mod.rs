@@ -65,6 +65,17 @@ impl<'parser> FuncBuilder<'parser> {
         Ok(())
     }
 
+    /// This informs the [`FuncBuilder`] that the function header translation is finished.
+    ///
+    /// # Note
+    ///
+    /// This was introduced to properly calculate the fuel costs for all local variables
+    /// and function parameters. After this function call no more locals and parameters may
+    /// be added to this function translation.
+    pub fn finish_translate_locals(&mut self) {
+        self.translator.finish_translate_locals()
+    }
+
     /// Updates the current position within the Wasm binary while parsing operators.
     pub fn update_pos(&mut self, pos: usize) {
         self.pos = pos;
