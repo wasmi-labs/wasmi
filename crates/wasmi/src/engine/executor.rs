@@ -646,20 +646,23 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         match self.get_fuel_consumption_mode() {
             FuelConsumptionMode::Eager => {
                 self.ctx.fuel_mut().consume_fuel(delta)?;
-                exec(self)
             }
             FuelConsumptionMode::Lazy => {
                 self.ctx.fuel().sufficient_fuel(delta)?;
-                let result = exec(self)?;
-                self.ctx
-                    .fuel_mut()
-                    .consume_fuel(delta)
-                    .unwrap_or_else(|error| {
-                        panic!("remaining fuel has already been approved prior but encountered: {error}")
-                    });
-                Ok(result)
             }
         }
+        let result = exec(self)?;
+        if matches!(self.get_fuel_consumption_mode(), FuelConsumptionMode::Lazy) {
+            self.ctx
+                .fuel_mut()
+                .consume_fuel(delta)
+                .unwrap_or_else(|error| {
+                    panic!(
+                        "remaining fuel has already been approved prior but encountered: {error}"
+                    )
+                });
+        }
+        Ok(result)
     }
 
     /// Returns `true` if fuel metering is enabled.
