@@ -80,12 +80,10 @@ pub enum FuelConsumptionMode {
     /// # Note
     ///
     /// A use case for when a user might prefer eager fuel consumption
-    /// over lazy is when fuel costs are to be estimated in a dry-run
-    /// before actually performing a run. This is often done via third
-    /// party tools interfacing with blockchain smart contracts for example.
-    /// In these cases it is important that the estimated amount of fuel
-    /// via the dry-run is always at least as much as the real run later on
-    /// will actually consume.
+    /// is when the fuel **required** to perform an execution should be identical
+    /// to the actual fuel **consumed** by an execution. Otherwise it can be confusing
+    /// that the execution consumed `x` gas while it needs `x + gas_for_bulk_op` to
+    /// not run out of fuel.
     Eager,
 }
 
