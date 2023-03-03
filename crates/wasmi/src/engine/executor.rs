@@ -23,6 +23,7 @@ use crate::{
     },
     func::FuncEntity,
     table::TableEntity,
+    FuelConsumptionMode,
     Func,
     FuncRef,
     Instance,
@@ -642,15 +643,23 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         }
         // At this point we know that fuel metering is enabled.
         let delta = delta(self.fuel_costs());
-        self.ctx.fuel().sufficient_fuel(delta)?;
-        let result = exec(self)?;
-        self.ctx
-            .fuel_mut()
-            .consume_fuel(delta)
-            .unwrap_or_else(|error| {
-                panic!("remaining fuel has already been approved prior but encountered: {error}")
-            });
-        Ok(result)
+        match self.get_fuel_consumption_mode() {
+            FuelConsumptionMode::Eager => {
+                self.ctx.fuel_mut().consume_fuel(delta)?;
+                exec(self)
+            }
+            FuelConsumptionMode::Lazy => {
+                self.ctx.fuel().sufficient_fuel(delta)?;
+                let result = exec(self)?;
+                self.ctx
+                    .fuel_mut()
+                    .consume_fuel(delta)
+                    .unwrap_or_else(|error| {
+                        panic!("remaining fuel has already been approved prior but encountered: {error}")
+                    });
+                Ok(result)
+            }
+        }
     }
 
     /// Returns `true` if fuel metering is enabled.
@@ -663,6 +672,11 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// [`Engine`]: crate::Engine
     fn fuel_costs(&self) -> &FuelCosts {
         self.ctx.engine().config().fuel_costs()
+    }
+
+    /// Returns the [`FuelConsumptionMode`] of the [`Engine`].
+    fn get_fuel_consumption_mode(&self) -> FuelConsumptionMode {
+        self.ctx.engine().config().get_fuel_consumption_mode()
     }
 
     /// Executes a `call` or `return_call` instruction.
