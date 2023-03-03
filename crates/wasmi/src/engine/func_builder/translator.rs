@@ -153,7 +153,6 @@ impl<'parser> FuncTranslator<'parser> {
     /// Registers the function parameters in the emulated value stack.
     fn init_func_params(&mut self) {
         for _param_type in self.func_type().params() {
-            self.bump_fuel_consumption(self.fuel_costs().call_per_local);
             self.locals.register_locals(1);
         }
     }
@@ -164,9 +163,21 @@ impl<'parser> FuncTranslator<'parser> {
     ///
     /// If too many local variables have been registered.
     pub fn register_locals(&mut self, amount: u32) {
-        let fuel_costs = u64::from(amount) * self.fuel_costs().call_per_local;
-        self.bump_fuel_consumption(fuel_costs);
         self.locals.register_locals(amount);
+    }
+
+    /// This informs the [`FuncTranslator`] that the function header translation is finished.
+    ///
+    /// # Note
+    ///
+    /// This was introduced to properly calculate the fuel costs for all local variables
+    /// and function parameters. After this function call no more locals and parameters may
+    /// be added to this function translation.
+    pub fn finish_translate_locals(&mut self) {
+        self.bump_fuel_consumption(
+            self.fuel_costs()
+                .fuel_for_locals(u64::from(self.locals.len_registered())),
+        )
     }
 
     /// Finishes constructing the function and returns its [`FuncBody`].
@@ -996,7 +1007,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             match builder.acquire_target(relative_depth)? {
                 AcquiredTarget::Branch(end_label, drop_keep) => {
                     builder.bump_fuel_consumption(builder.fuel_costs().base);
-                    builder.bump_fuel_consumption(drop_keep.fuel_consumption(builder.fuel_costs()));
+                    builder
+                        .bump_fuel_consumption(builder.fuel_costs().fuel_for_drop_keep(drop_keep));
                     let params = builder.branch_params(end_label, drop_keep);
                     builder
                         .alloc
@@ -1019,7 +1031,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             match builder.acquire_target(relative_depth)? {
                 AcquiredTarget::Branch(end_label, drop_keep) => {
                     builder.bump_fuel_consumption(builder.fuel_costs().base);
-                    builder.bump_fuel_consumption(drop_keep.fuel_consumption(builder.fuel_costs()));
+                    builder
+                        .bump_fuel_consumption(builder.fuel_costs().fuel_for_drop_keep(drop_keep));
                     let params = builder.branch_params(end_label, drop_keep);
                     builder
                         .alloc
@@ -1052,7 +1065,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 match builder.acquire_target(depth.into_u32())? {
                     AcquiredTarget::Branch(label, drop_keep) => {
                         *max_drop_keep_fuel = (*max_drop_keep_fuel)
-                            .max(drop_keep.fuel_consumption(builder.fuel_costs()));
+                            .max(builder.fuel_costs().fuel_for_drop_keep(drop_keep));
                         let base = builder.alloc.inst_builder.current_pc();
                         let instr = offset_instr(base, n + 1);
                         let offset = builder
@@ -1065,7 +1078,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     }
                     AcquiredTarget::Return(drop_keep) => {
                         *max_drop_keep_fuel = (*max_drop_keep_fuel)
-                            .max(drop_keep.fuel_consumption(builder.fuel_costs()));
+                            .max(builder.fuel_costs().fuel_for_drop_keep(drop_keep));
                         Ok(Instruction::Return(drop_keep))
                     }
                 }
@@ -1118,7 +1131,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_if_reachable(|builder| {
             let drop_keep = builder.drop_keep_return()?;
             builder.bump_fuel_consumption(builder.fuel_costs().base);
-            builder.bump_fuel_consumption(drop_keep.fuel_consumption(builder.fuel_costs()));
+            builder.bump_fuel_consumption(builder.fuel_costs().fuel_for_drop_keep(drop_keep));
             builder
                 .alloc
                 .inst_builder
@@ -1134,7 +1147,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let func_type = builder.func_type_of(func_idx.into());
             let drop_keep = builder.drop_keep_return_call(&func_type)?;
             builder.bump_fuel_consumption(builder.fuel_costs().call);
-            builder.bump_fuel_consumption(drop_keep.fuel_consumption(builder.fuel_costs()));
+            builder.bump_fuel_consumption(builder.fuel_costs().fuel_for_drop_keep(drop_keep));
             builder
                 .alloc
                 .inst_builder
@@ -1156,7 +1169,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             builder.stack_height.pop1();
             let drop_keep = builder.drop_keep_return_call(&func_type)?;
             builder.bump_fuel_consumption(builder.fuel_costs().call);
-            builder.bump_fuel_consumption(drop_keep.fuel_consumption(builder.fuel_costs()));
+            builder.bump_fuel_consumption(builder.fuel_costs().fuel_for_drop_keep(drop_keep));
             builder
                 .alloc
                 .inst_builder

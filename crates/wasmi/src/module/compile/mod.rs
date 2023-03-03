@@ -78,6 +78,7 @@ impl<'parser> FunctionTranslator<'parser> {
             self.func_builder
                 .translate_locals(offset, amount, value_type)?;
         }
+        self.func_builder.finish_translate_locals();
         Ok(())
     }
 
