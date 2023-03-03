@@ -675,6 +675,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Returns the [`FuelConsumptionMode`] of the [`Engine`].
+    ///
+    /// [`Engine`]: crate::Engine
     fn get_fuel_consumption_mode(&self) -> FuelConsumptionMode {
         self.ctx.engine().config().get_fuel_consumption_mode()
     }
