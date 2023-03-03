@@ -374,7 +374,7 @@ impl Config {
     }
 
     /// Returns the [`WasmFeatures`] represented by the [`Config`].
-    pub fn wasm_features(&self) -> WasmFeatures {
+    pub(crate) fn wasm_features(&self) -> WasmFeatures {
         WasmFeatures {
             multi_value: self.multi_value,
             mutable_global: self.mutable_global,
