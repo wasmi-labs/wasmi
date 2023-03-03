@@ -644,8 +644,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         }
         // At this point we know that fuel metering is enabled.
         let delta = delta(self.fuel_costs());
-        let mode = self.get_fuel_consumption_mode();
-        match mode {
+        match self.get_fuel_consumption_mode() {
             FuelConsumptionMode::Eager => {
                 self.ctx.fuel_mut().consume_fuel(delta)?;
             }
@@ -654,7 +653,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             }
         }
         let result = exec(self)?;
-        if matches!(mode, FuelConsumptionMode::Lazy) {
+        if matches!(self.get_fuel_consumption_mode(), FuelConsumptionMode::Lazy) {
             self.ctx
                 .fuel_mut()
                 .consume_fuel(delta)
