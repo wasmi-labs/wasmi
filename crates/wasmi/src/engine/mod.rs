@@ -18,7 +18,7 @@ mod tests;
 pub use self::{
     bytecode::DropKeep,
     code_map::FuncBody,
-    config::Config,
+    config::{Config, FuelConsumptionMode},
     func_builder::{
         FuncBuilder,
         FuncTranslatorAllocations,

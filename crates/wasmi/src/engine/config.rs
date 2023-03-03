@@ -35,6 +35,58 @@ pub struct Config {
     consume_fuel: bool,
     /// The configured fuel costs of all `wasmi` bytecode instructions.
     fuel_costs: FuelCosts,
+    /// The fuel consumption mode of the `wasmi` [`Engine`](crate::Engine).
+    fuel_consumption_mode: FuelConsumptionMode,
+}
+
+/// The fuel consumption mode of the `wasmi` [`Engine`].
+///
+/// This mode affects when fuel is charged for Wasm bulk-operations.
+/// Affected Wasm instructions are:
+///
+/// - `memory.{grow, copy, fill}`
+/// - `data.init`
+/// - `table.{grow, copy, fill}`
+/// - `element.init`
+///
+/// The default fuel consumption mode is [`FuelConsumptionMode::Lazy`].
+///
+/// [`Engine`]: crate::Engine
+#[derive(Debug, Default, Copy, Clone)]
+pub enum FuelConsumptionMode {
+    /// Fuel consumption for bulk-operations is lazy.
+    ///
+    /// Lazy fuel consumption means that fuel for bulk-operations
+    /// is checked before executing the instruction but only consumed
+    /// if the executed instruction suceeded. The reason for this is
+    /// that bulk-operations fail fast and therefore do not cost
+    /// a lot of compute power in case of failure.
+    ///
+    /// # Note
+    ///
+    /// Lazy fuel consumption makes sense as default mode since the
+    /// affected bulk-operations usually are very costly if they are
+    /// successful. Therefore users generally want to avoid having to
+    /// using more fuel than what was actually used, especially if there
+    /// is an underlying cost model associated to the used fuel.
+    #[default]
+    Lazy,
+    /// Fuel consumption for bulk-operations is eager.
+    ///
+    /// Eager fuel consumption means that fuel for bulk-operations
+    /// is always consumed before executing the instruction independent
+    /// of it suceeding or failing.
+    ///
+    /// # Note
+    ///
+    /// A use case for when a user might prefer eager fuel consumption
+    /// over lazy is when fuel costs are to be estimated in a dry-run
+    /// before actually performing a run. This is often done via third
+    /// party tools interfacing with blockchain smart contracts for example.
+    /// In these cases it is important that the estimated amount of fuel
+    /// via the dry-run is always at least as much as the real run later on
+    /// will actually consume.
+    Eager,
 }
 
 /// Type storing all kinds of fuel costs of instructions.
@@ -154,6 +206,7 @@ impl Default for Config {
             floats: true,
             consume_fuel: false,
             fuel_costs: FuelCosts::default(),
+            fuel_consumption_mode: FuelConsumptionMode::Lazy,
         }
     }
 }
@@ -310,6 +363,14 @@ impl Config {
     /// Returns the configured [`FuelCosts`].
     pub(crate) fn fuel_costs(&self) -> &FuelCosts {
         &self.fuel_costs
+    }
+
+    /// Configures the [`FuelConsumptionMode`] for the [`Engine`].
+    ///
+    /// [`Engine`]: crate::Engine
+    pub fn fuel_consumption_mode(&mut self, mode: FuelConsumptionMode) -> &mut Self {
+        self.fuel_consumption_mode = mode;
+        self
     }
 
     /// Returns the [`WasmFeatures`] represented by the [`Config`].
