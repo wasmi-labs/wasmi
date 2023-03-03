@@ -366,6 +366,10 @@ impl Config {
     }
 
     /// Configures the [`FuelConsumptionMode`] for the [`Engine`].
+    /// 
+    /// # Note
+    /// 
+    /// This has no effect if fuel metering is disabled for the [`Engine`].
     ///
     /// [`Engine`]: crate::Engine
     pub fn fuel_consumption_mode(&mut self, mode: FuelConsumptionMode) -> &mut Self {
