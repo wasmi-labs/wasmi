@@ -377,9 +377,14 @@ impl Config {
 
     /// Returns the [`FuelConsumptionMode`] for the [`Engine`].
     ///
+    /// Returns `None` if fuel metering is disabled for the [`Engine`].
+    ///
     /// [`Engine`]: crate::Engine
-    pub(crate) fn get_fuel_consumption_mode(&self) -> FuelConsumptionMode {
-        self.fuel_consumption_mode
+    pub(crate) fn get_fuel_consumption_mode(&self) -> Option<FuelConsumptionMode> {
+        if !self.get_consume_fuel() {
+            return None;
+        }
+        Some(self.fuel_consumption_mode)
     }
 
     /// Returns the [`WasmFeatures`] represented by the [`Config`].

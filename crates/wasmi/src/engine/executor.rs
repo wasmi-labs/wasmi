@@ -630,7 +630,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// - If the [`StoreInner`] ran out of fuel.
     /// - If the `exec` closure traps.
-    #[inline(always)]
+    #[inline]
     fn consume_fuel_on_success<T, E>(
         &mut self,
         delta: impl FnOnce(&FuelCosts) -> u64,
@@ -639,37 +639,28 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     where
         E: From<TrapCode>,
     {
-        if !self.is_fuel_metering_enabled() {
-            return exec(self);
-        }
-        // At this point we know that fuel metering is enabled.
-        let delta = delta(self.fuel_costs());
         match self.get_fuel_consumption_mode() {
-            FuelConsumptionMode::Eager => {
-                self.ctx.fuel_mut().consume_fuel(delta)?;
-            }
-            FuelConsumptionMode::Lazy => {
+            None => exec(self),
+            Some(FuelConsumptionMode::Lazy) => {
+                let delta = delta(self.fuel_costs());
                 self.ctx.fuel().sufficient_fuel(delta)?;
+                let result = exec(self)?;
+                self.ctx
+                    .fuel_mut()
+                    .consume_fuel(delta)
+                    .unwrap_or_else(|error| {
+                        panic!(
+                            "remaining fuel has already been approved prior but encountered: {error}"
+                        )
+                    });
+                Ok(result)
+            }
+            Some(FuelConsumptionMode::Eager) => {
+                let delta = delta(self.fuel_costs());
+                self.ctx.fuel_mut().consume_fuel(delta)?;
+                exec(self)
             }
         }
-        let result = exec(self)?;
-        if matches!(self.get_fuel_consumption_mode(), FuelConsumptionMode::Lazy) {
-            self.ctx
-                .fuel_mut()
-                .consume_fuel(delta)
-                .unwrap_or_else(|error| {
-                    panic!(
-                        "remaining fuel has already been approved prior but encountered: {error}"
-                    )
-                });
-        }
-        Ok(result)
-    }
-
-    /// Returns `true` if fuel metering is enabled.
-    #[inline(always)]
-    fn is_fuel_metering_enabled(&self) -> bool {
-        self.ctx.engine().config().get_consume_fuel()
     }
 
     /// Returns a shared reference to the [`FuelCosts`] of the [`Engine`].
@@ -684,7 +675,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// [`Engine`]: crate::Engine
     #[inline(always)]
-    fn get_fuel_consumption_mode(&self) -> FuelConsumptionMode {
+    fn get_fuel_consumption_mode(&self) -> Option<FuelConsumptionMode> {
         self.ctx.engine().config().get_fuel_consumption_mode()
     }
 
