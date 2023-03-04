@@ -630,6 +630,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// - If the [`StoreInner`] ran out of fuel.
     /// - If the `exec` closure traps.
+    #[inline]
     fn consume_fuel_on_success<T, E>(
         &mut self,
         delta: impl FnOnce(&FuelCosts) -> u64,
@@ -647,11 +648,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 self.ctx
                     .fuel_mut()
                     .consume_fuel(delta)
-                    .unwrap_or_else(|error| {
-                        panic!(
-                            "remaining fuel has already been approved prior but encountered: {error}"
-                        )
-                    });
+                    .expect("remaining fuel has already been approved prior");
                 Ok(result)
             }
             Some(FuelConsumptionMode::Eager) => {
