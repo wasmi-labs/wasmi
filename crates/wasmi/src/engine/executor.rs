@@ -651,6 +651,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// - If the [`StoreInner`] ran out of fuel.
     /// - If the `exec` closure traps.
     #[inline]
+    #[cold]
     fn consume_fuel_with_mode<T, E>(
         &mut self,
         mode: FuelConsumptionMode,
