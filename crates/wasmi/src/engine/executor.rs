@@ -458,7 +458,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// - `{i32, i64}.load16_u`
     /// - `i64.load32_s`
     /// - `i64.load32_u`
-    #[inline]
+    #[inline(always)]
     fn execute_load_extend(
         &mut self,
         offset: Offset,
@@ -482,7 +482,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// - `{i32, i64}.store8`
     /// - `{i32, i64}.store16`
     /// - `i64.store32`
-    #[inline]
+    #[inline(always)]
     fn execute_store_wrap(
         &mut self,
         offset: Offset,
@@ -495,14 +495,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an infallible unary `wasmi` instruction.
-    #[inline]
+    #[inline(always)]
     fn execute_unary(&mut self, f: fn(UntypedValue) -> UntypedValue) {
         self.sp.eval_top(f);
         self.next_instr()
     }
 
     /// Executes a fallible unary `wasmi` instruction.
-    #[inline]
+    #[inline(always)]
     fn try_execute_unary(
         &mut self,
         f: fn(UntypedValue) -> Result<UntypedValue, TrapCode>,
@@ -512,14 +512,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an infallible binary `wasmi` instruction.
-    #[inline]
+    #[inline(always)]
     fn execute_binary(&mut self, f: fn(UntypedValue, UntypedValue) -> UntypedValue) {
         self.sp.eval_top2(f);
         self.next_instr()
     }
 
     /// Executes a fallible binary `wasmi` instruction.
-    #[inline]
+    #[inline(always)]
     fn try_execute_binary(
         &mut self,
         f: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
