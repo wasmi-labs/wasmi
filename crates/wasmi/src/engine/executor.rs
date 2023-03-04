@@ -194,23 +194,24 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn execute(mut self) -> Result<WasmOutcome, TrapCode> {
         use Instruction as Instr;
         loop {
-            match *self.ip.get() {
-                Instr::LocalGet { local_depth } => self.visit_local_get(local_depth),
-                Instr::LocalSet { local_depth } => self.visit_local_set(local_depth),
-                Instr::LocalTee { local_depth } => self.visit_local_tee(local_depth),
-                Instr::Br(params) => self.visit_br(params),
-                Instr::BrIfEqz(params) => self.visit_br_if_eqz(params),
-                Instr::BrIfNez(params) => self.visit_br_if_nez(params),
-                Instr::BrTable { len_targets } => self.visit_br_table(len_targets),
+            let ip = self.ip;
+            match ip.get() {
+                Instr::LocalGet { local_depth } => self.visit_local_get(*local_depth),
+                Instr::LocalSet { local_depth } => self.visit_local_set(*local_depth),
+                Instr::LocalTee { local_depth } => self.visit_local_tee(*local_depth),
+                Instr::Br(params) => self.visit_br(*params),
+                Instr::BrIfEqz(params) => self.visit_br_if_eqz(*params),
+                Instr::BrIfNez(params) => self.visit_br_if_nez(*params),
+                Instr::BrTable { len_targets } => self.visit_br_table(*len_targets),
                 Instr::Unreachable => self.visit_unreachable()?,
-                Instr::ConsumeFuel { amount } => self.visit_consume_fuel(amount)?,
+                Instr::ConsumeFuel { amount } => self.visit_consume_fuel(*amount)?,
                 Instr::Return(drop_keep) => {
-                    if let ReturnOutcome::Host = self.visit_ret(drop_keep) {
+                    if let ReturnOutcome::Host = self.visit_ret(*drop_keep) {
                         return Ok(WasmOutcome::Return);
                     }
                 }
                 Instr::ReturnIfNez(drop_keep) => {
-                    if let ReturnOutcome::Host = self.visit_return_if_nez(drop_keep) {
+                    if let ReturnOutcome::Host = self.visit_return_if_nez(*drop_keep) {
                         return Ok(WasmOutcome::Return);
                     }
                 }
@@ -218,7 +219,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     if let CallOutcome::Call {
                         host_func,
                         instance,
-                    } = self.visit_return_call(drop_keep, func)?
+                    } = self.visit_return_call(*drop_keep, *func)?
                     {
                         return Ok(WasmOutcome::Call {
                             host_func,
@@ -234,7 +235,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     if let CallOutcome::Call {
                         host_func,
                         instance,
-                    } = self.visit_return_call_indirect(drop_keep, table, func_type)?
+                    } = self.visit_return_call_indirect(*drop_keep, *table, *func_type)?
                     {
                         return Ok(WasmOutcome::Call {
                             host_func,
@@ -246,7 +247,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     if let CallOutcome::Call {
                         host_func,
                         instance,
-                    } = self.visit_call(func)?
+                    } = self.visit_call(*func)?
                     {
                         return Ok(WasmOutcome::Call {
                             host_func,
@@ -258,7 +259,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     if let CallOutcome::Call {
                         host_func,
                         instance,
-                    } = self.visit_call_indirect(table, func_type)?
+                    } = self.visit_call_indirect(*table, *func_type)?
                     {
                         return Ok(WasmOutcome::Call {
                             host_func,
@@ -268,47 +269,47 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 }
                 Instr::Drop => self.visit_drop(),
                 Instr::Select => self.visit_select(),
-                Instr::GlobalGet(global_idx) => self.visit_global_get(global_idx),
-                Instr::GlobalSet(global_idx) => self.visit_global_set(global_idx),
-                Instr::I32Load(offset) => self.visit_i32_load(offset)?,
-                Instr::I64Load(offset) => self.visit_i64_load(offset)?,
-                Instr::F32Load(offset) => self.visit_f32_load(offset)?,
-                Instr::F64Load(offset) => self.visit_f64_load(offset)?,
-                Instr::I32Load8S(offset) => self.visit_i32_load_i8_s(offset)?,
-                Instr::I32Load8U(offset) => self.visit_i32_load_i8_u(offset)?,
-                Instr::I32Load16S(offset) => self.visit_i32_load_i16_s(offset)?,
-                Instr::I32Load16U(offset) => self.visit_i32_load_i16_u(offset)?,
-                Instr::I64Load8S(offset) => self.visit_i64_load_i8_s(offset)?,
-                Instr::I64Load8U(offset) => self.visit_i64_load_i8_u(offset)?,
-                Instr::I64Load16S(offset) => self.visit_i64_load_i16_s(offset)?,
-                Instr::I64Load16U(offset) => self.visit_i64_load_i16_u(offset)?,
-                Instr::I64Load32S(offset) => self.visit_i64_load_i32_s(offset)?,
-                Instr::I64Load32U(offset) => self.visit_i64_load_i32_u(offset)?,
-                Instr::I32Store(offset) => self.visit_i32_store(offset)?,
-                Instr::I64Store(offset) => self.visit_i64_store(offset)?,
-                Instr::F32Store(offset) => self.visit_f32_store(offset)?,
-                Instr::F64Store(offset) => self.visit_f64_store(offset)?,
-                Instr::I32Store8(offset) => self.visit_i32_store_8(offset)?,
-                Instr::I32Store16(offset) => self.visit_i32_store_16(offset)?,
-                Instr::I64Store8(offset) => self.visit_i64_store_8(offset)?,
-                Instr::I64Store16(offset) => self.visit_i64_store_16(offset)?,
-                Instr::I64Store32(offset) => self.visit_i64_store_32(offset)?,
+                Instr::GlobalGet(global_idx) => self.visit_global_get(*global_idx),
+                Instr::GlobalSet(global_idx) => self.visit_global_set(*global_idx),
+                Instr::I32Load(offset) => self.visit_i32_load(*offset)?,
+                Instr::I64Load(offset) => self.visit_i64_load(*offset)?,
+                Instr::F32Load(offset) => self.visit_f32_load(*offset)?,
+                Instr::F64Load(offset) => self.visit_f64_load(*offset)?,
+                Instr::I32Load8S(offset) => self.visit_i32_load_i8_s(*offset)?,
+                Instr::I32Load8U(offset) => self.visit_i32_load_i8_u(*offset)?,
+                Instr::I32Load16S(offset) => self.visit_i32_load_i16_s(*offset)?,
+                Instr::I32Load16U(offset) => self.visit_i32_load_i16_u(*offset)?,
+                Instr::I64Load8S(offset) => self.visit_i64_load_i8_s(*offset)?,
+                Instr::I64Load8U(offset) => self.visit_i64_load_i8_u(*offset)?,
+                Instr::I64Load16S(offset) => self.visit_i64_load_i16_s(*offset)?,
+                Instr::I64Load16U(offset) => self.visit_i64_load_i16_u(*offset)?,
+                Instr::I64Load32S(offset) => self.visit_i64_load_i32_s(*offset)?,
+                Instr::I64Load32U(offset) => self.visit_i64_load_i32_u(*offset)?,
+                Instr::I32Store(offset) => self.visit_i32_store(*offset)?,
+                Instr::I64Store(offset) => self.visit_i64_store(*offset)?,
+                Instr::F32Store(offset) => self.visit_f32_store(*offset)?,
+                Instr::F64Store(offset) => self.visit_f64_store(*offset)?,
+                Instr::I32Store8(offset) => self.visit_i32_store_8(*offset)?,
+                Instr::I32Store16(offset) => self.visit_i32_store_16(*offset)?,
+                Instr::I64Store8(offset) => self.visit_i64_store_8(*offset)?,
+                Instr::I64Store16(offset) => self.visit_i64_store_16(*offset)?,
+                Instr::I64Store32(offset) => self.visit_i64_store_32(*offset)?,
                 Instr::MemorySize => self.visit_memory_size(),
                 Instr::MemoryGrow => self.visit_memory_grow()?,
                 Instr::MemoryFill => self.visit_memory_fill()?,
                 Instr::MemoryCopy => self.visit_memory_copy()?,
-                Instr::MemoryInit(segment) => self.visit_memory_init(segment)?,
-                Instr::DataDrop(segment) => self.visit_data_drop(segment),
-                Instr::TableSize { table } => self.visit_table_size(table),
-                Instr::TableGrow { table } => self.visit_table_grow(table)?,
-                Instr::TableFill { table } => self.visit_table_fill(table)?,
-                Instr::TableGet { table } => self.visit_table_get(table)?,
-                Instr::TableSet { table } => self.visit_table_set(table)?,
-                Instr::TableCopy { dst, src } => self.visit_table_copy(dst, src)?,
-                Instr::TableInit { table, elem } => self.visit_table_init(table, elem)?,
-                Instr::ElemDrop(segment) => self.visit_element_drop(segment),
-                Instr::RefFunc { func_index } => self.visit_ref_func(func_index),
-                Instr::Const(bytes) => self.visit_const(bytes),
+                Instr::MemoryInit(segment) => self.visit_memory_init(*segment)?,
+                Instr::DataDrop(segment) => self.visit_data_drop(*segment),
+                Instr::TableSize { table } => self.visit_table_size(*table),
+                Instr::TableGrow { table } => self.visit_table_grow(*table)?,
+                Instr::TableFill { table } => self.visit_table_fill(*table)?,
+                Instr::TableGet { table } => self.visit_table_get(*table)?,
+                Instr::TableSet { table } => self.visit_table_set(*table)?,
+                Instr::TableCopy { dst, src } => self.visit_table_copy(*dst, *src)?,
+                Instr::TableInit { table, elem } => self.visit_table_init(*table, *elem)?,
+                Instr::ElemDrop(segment) => self.visit_element_drop(*segment),
+                Instr::RefFunc { func_index } => self.visit_ref_func(*func_index),
+                Instr::Const(bytes) => self.visit_const(*bytes),
                 Instr::I32Eqz => self.visit_i32_eqz(),
                 Instr::I32Eq => self.visit_i32_eq(),
                 Instr::I32Ne => self.visit_i32_ne(),
