@@ -204,7 +204,7 @@ impl Default for Config {
             floats: true,
             consume_fuel: false,
             fuel_costs: FuelCosts::default(),
-            fuel_consumption_mode: FuelConsumptionMode::Lazy,
+            fuel_consumption_mode: FuelConsumptionMode::default(),
         }
     }
 }
