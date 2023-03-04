@@ -630,7 +630,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// - If the [`StoreInner`] ran out of fuel.
     /// - If the `exec` closure traps.
-    #[inline]
     fn consume_fuel_on_success<T, E>(
         &mut self,
         delta: impl FnOnce(&FuelCosts) -> u64,
@@ -666,7 +665,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Returns a shared reference to the [`FuelCosts`] of the [`Engine`].
     ///
     /// [`Engine`]: crate::Engine
-    #[inline(always)]
+    #[inline]
     fn fuel_costs(&self) -> &FuelCosts {
         self.ctx.engine().config().fuel_costs()
     }
@@ -674,7 +673,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Returns the [`FuelConsumptionMode`] of the [`Engine`].
     ///
     /// [`Engine`]: crate::Engine
-    #[inline(always)]
+    #[inline]
     fn get_fuel_consumption_mode(&self) -> Option<FuelConsumptionMode> {
         self.ctx.engine().config().get_fuel_consumption_mode()
     }
