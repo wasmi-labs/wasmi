@@ -167,7 +167,11 @@ struct Executor<'ctx, 'engine> {
 
 macro_rules! forward_call {
     ($expr:expr) => {{
-        if let CallOutcome::Call { host_func, instance } = $expr? {
+        if let CallOutcome::Call {
+            host_func,
+            instance,
+        } = $expr?
+        {
             return Ok(WasmOutcome::Call {
                 host_func,
                 instance,
