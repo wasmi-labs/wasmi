@@ -33,10 +33,10 @@ pub struct Config {
     floats: bool,
     /// Is `true` if `wasmi` executions shall consume fuel.
     consume_fuel: bool,
-    /// The configured fuel costs of all `wasmi` bytecode instructions.
-    fuel_costs: FuelCosts,
     /// The fuel consumption mode of the `wasmi` [`Engine`](crate::Engine).
     fuel_consumption_mode: FuelConsumptionMode,
+    /// The configured fuel costs of all `wasmi` bytecode instructions.
+    fuel_costs: FuelCosts,
 }
 
 /// The fuel consumption mode of the `wasmi` [`Engine`].
@@ -381,10 +381,7 @@ impl Config {
     ///
     /// [`Engine`]: crate::Engine
     pub(crate) fn get_fuel_consumption_mode(&self) -> Option<FuelConsumptionMode> {
-        if !self.get_consume_fuel() {
-            return None;
-        }
-        Some(self.fuel_consumption_mode)
+        self.get_consume_fuel().then_some(self.fuel_consumption_mode)
     }
 
     /// Returns the [`WasmFeatures`] represented by the [`Config`].
