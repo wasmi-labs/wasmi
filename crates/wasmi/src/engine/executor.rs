@@ -165,6 +165,17 @@ struct Executor<'ctx, 'engine> {
     code_map: &'engine CodeMap,
 }
 
+macro_rules! forward_call {
+    ($expr:expr) => {{
+        if let CallOutcome::Call { host_func, instance } = $expr? {
+            return Ok(WasmOutcome::Call {
+                host_func,
+                instance,
+            });
+        }
+    }};
+}
+
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Creates a new [`Executor`] for executing a `wasmi` function frame.
     #[inline(always)]
@@ -215,56 +226,18 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     }
                 }
                 Instr::ReturnCall { drop_keep, func } => {
-                    if let CallOutcome::Call {
-                        host_func,
-                        instance,
-                    } = self.visit_return_call(drop_keep, func)?
-                    {
-                        return Ok(WasmOutcome::Call {
-                            host_func,
-                            instance,
-                        });
-                    }
+                    forward_call!(self.visit_return_call(drop_keep, func))
                 }
                 Instr::ReturnCallIndirect {
                     drop_keep,
                     table,
                     func_type,
                 } => {
-                    if let CallOutcome::Call {
-                        host_func,
-                        instance,
-                    } = self.visit_return_call_indirect(drop_keep, table, func_type)?
-                    {
-                        return Ok(WasmOutcome::Call {
-                            host_func,
-                            instance,
-                        });
-                    }
+                    forward_call!(self.visit_return_call_indirect(drop_keep, table, func_type))
                 }
-                Instr::Call(func) => {
-                    if let CallOutcome::Call {
-                        host_func,
-                        instance,
-                    } = self.visit_call(func)?
-                    {
-                        return Ok(WasmOutcome::Call {
-                            host_func,
-                            instance,
-                        });
-                    }
-                }
+                Instr::Call(func) => forward_call!(self.visit_call(func)),
                 Instr::CallIndirect { table, func_type } => {
-                    if let CallOutcome::Call {
-                        host_func,
-                        instance,
-                    } = self.visit_call_indirect(table, func_type)?
-                    {
-                        return Ok(WasmOutcome::Call {
-                            host_func,
-                            instance,
-                        });
-                    }
+                    forward_call!(self.visit_call_indirect(table, func_type))
                 }
                 Instr::Drop => self.visit_drop(),
                 Instr::Select => self.visit_select(),
