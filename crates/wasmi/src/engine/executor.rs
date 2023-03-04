@@ -650,6 +650,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// - If the [`StoreInner`] ran out of fuel.
     /// - If the `exec` closure traps.
+    #[inline(always)]
+    #[cold]
     fn consume_fuel_with_mode<T, E>(
         &mut self,
         mode: FuelConsumptionMode,
@@ -676,7 +678,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// - If the [`StoreInner`] ran out of fuel.
     /// - If the `exec` closure traps.
-    #[inline]
+    #[inline(always)]
     fn consume_fuel_with_lazy<T, E>(
         &mut self,
         delta: u64,
@@ -700,7 +702,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// - If the [`StoreInner`] ran out of fuel.
     /// - If the `exec` closure traps.
-    #[inline]
+    #[inline(always)]
     fn consume_fuel_with_eager<T, E>(
         &mut self,
         delta: u64,
