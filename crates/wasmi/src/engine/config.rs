@@ -381,7 +381,8 @@ impl Config {
     ///
     /// [`Engine`]: crate::Engine
     pub(crate) fn get_fuel_consumption_mode(&self) -> Option<FuelConsumptionMode> {
-        self.get_consume_fuel().then_some(self.fuel_consumption_mode)
+        self.get_consume_fuel()
+            .then_some(self.fuel_consumption_mode)
     }
 
     /// Returns the [`WasmFeatures`] represented by the [`Config`].
