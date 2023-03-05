@@ -604,7 +604,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// - If the [`StoreInner`] ran out of fuel.
     /// - If the `exec` closure traps.
-    #[inline]
+    #[inline(always)]
     fn consume_fuel_with<T, E>(
         &mut self,
         delta: impl FnOnce(&FuelCosts) -> u64,
