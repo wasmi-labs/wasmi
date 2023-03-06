@@ -23,6 +23,7 @@ use crate::{
     },
     func::FuncEntity,
     table::TableEntity,
+    FuelConsumptionMode,
     Func,
     FuncRef,
     Instance,
@@ -164,6 +165,21 @@ struct Executor<'ctx, 'engine> {
     code_map: &'engine CodeMap,
 }
 
+macro_rules! forward_call {
+    ($expr:expr) => {{
+        if let CallOutcome::Call {
+            host_func,
+            instance,
+        } = $expr?
+        {
+            return Ok(WasmOutcome::Call {
+                host_func,
+                instance,
+            });
+        }
+    }};
+}
+
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Creates a new [`Executor`] for executing a `wasmi` function frame.
     #[inline(always)]
@@ -214,56 +230,18 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     }
                 }
                 Instr::ReturnCall { drop_keep, func } => {
-                    if let CallOutcome::Call {
-                        host_func,
-                        instance,
-                    } = self.visit_return_call(drop_keep, func)?
-                    {
-                        return Ok(WasmOutcome::Call {
-                            host_func,
-                            instance,
-                        });
-                    }
+                    forward_call!(self.visit_return_call(drop_keep, func))
                 }
                 Instr::ReturnCallIndirect {
                     drop_keep,
                     table,
                     func_type,
                 } => {
-                    if let CallOutcome::Call {
-                        host_func,
-                        instance,
-                    } = self.visit_return_call_indirect(drop_keep, table, func_type)?
-                    {
-                        return Ok(WasmOutcome::Call {
-                            host_func,
-                            instance,
-                        });
-                    }
+                    forward_call!(self.visit_return_call_indirect(drop_keep, table, func_type))
                 }
-                Instr::Call(func) => {
-                    if let CallOutcome::Call {
-                        host_func,
-                        instance,
-                    } = self.visit_call(func)?
-                    {
-                        return Ok(WasmOutcome::Call {
-                            host_func,
-                            instance,
-                        });
-                    }
-                }
+                Instr::Call(func) => forward_call!(self.visit_call(func)),
                 Instr::CallIndirect { table, func_type } => {
-                    if let CallOutcome::Call {
-                        host_func,
-                        instance,
-                    } = self.visit_call_indirect(table, func_type)?
-                    {
-                        return Ok(WasmOutcome::Call {
-                            host_func,
-                            instance,
-                        });
-                    }
+                    forward_call!(self.visit_call_indirect(table, func_type))
                 }
                 Instr::Drop => self.visit_drop(),
                 Instr::Select => self.visit_select(),
@@ -599,7 +577,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// This also modifies the stack as the caller would expect it
     /// and synchronizes the execution state with the outer structures.
-    #[inline]
+    #[inline(always)]
     fn ret(&mut self, drop_keep: DropKeep) -> ReturnOutcome {
         self.sp.drop_keep(drop_keep);
         self.sync_stack_ptr();
@@ -622,14 +600,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///    for amount of required fuel determined by `delta` or if
     ///    fuel metering is disabled.
     ///
-    /// Only if `exec` runs successfully and fuel metering
-    /// is enabled the fuel determined by `delta` is charged.
-    ///
     /// # Errors
     ///
     /// - If the [`StoreInner`] ran out of fuel.
     /// - If the `exec` closure traps.
-    fn consume_fuel_on_success<T, E>(
+    #[inline(always)]
+    fn consume_fuel_with<T, E>(
         &mut self,
         delta: impl FnOnce(&FuelCosts) -> u64,
         exec: impl FnOnce(&mut Self) -> Result<T, E>,
@@ -637,32 +613,98 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     where
         E: From<TrapCode>,
     {
-        if !self.is_fuel_metering_enabled() {
-            return exec(self);
+        match self.get_fuel_consumption_mode() {
+            None => exec(self),
+            Some(mode) => self.consume_fuel_with_mode(mode, delta, exec),
         }
-        // At this point we know that fuel metering is enabled.
+    }
+
+    /// Consume an amount of fuel specified by `delta` and executes `exec`.
+    ///
+    /// The `mode` determines when and if the fuel determined by `delta` is charged.
+    ///
+    /// # Errors
+    ///
+    /// - If the [`StoreInner`] ran out of fuel.
+    /// - If the `exec` closure traps.
+    #[inline(always)]
+    fn consume_fuel_with_mode<T, E>(
+        &mut self,
+        mode: FuelConsumptionMode,
+        delta: impl FnOnce(&FuelCosts) -> u64,
+        exec: impl FnOnce(&mut Self) -> Result<T, E>,
+    ) -> Result<T, E>
+    where
+        E: From<TrapCode>,
+    {
         let delta = delta(self.fuel_costs());
+        match mode {
+            FuelConsumptionMode::Lazy => self.consume_fuel_with_lazy(delta, exec),
+            FuelConsumptionMode::Eager => self.consume_fuel_with_eager(delta, exec),
+        }
+    }
+
+    /// Consume an amount of fuel specified by `delta` if `exec` succeeds.
+    ///
+    /// Prior to executing `exec` it is checked if enough fuel is remaining
+    /// determined by `delta`. The fuel is charged only after `exec` has been
+    /// finished successfully.
+    ///
+    /// # Errors
+    ///
+    /// - If the [`StoreInner`] ran out of fuel.
+    /// - If the `exec` closure traps.
+    #[inline(always)]
+    fn consume_fuel_with_lazy<T, E>(
+        &mut self,
+        delta: u64,
+        exec: impl FnOnce(&mut Self) -> Result<T, E>,
+    ) -> Result<T, E>
+    where
+        E: From<TrapCode>,
+    {
         self.ctx.fuel().sufficient_fuel(delta)?;
         let result = exec(self)?;
         self.ctx
             .fuel_mut()
             .consume_fuel(delta)
-            .unwrap_or_else(|error| {
-                panic!("remaining fuel has already been approved prior but encountered: {error}")
-            });
+            .expect("remaining fuel has already been approved prior");
         Ok(result)
     }
 
-    /// Returns `true` if fuel metering is enabled.
-    fn is_fuel_metering_enabled(&self) -> bool {
-        self.ctx.engine().config().get_consume_fuel()
+    /// Consume an amount of fuel specified by `delta` and executes `exec`.
+    ///
+    /// # Errors
+    ///
+    /// - If the [`StoreInner`] ran out of fuel.
+    /// - If the `exec` closure traps.
+    #[inline(always)]
+    fn consume_fuel_with_eager<T, E>(
+        &mut self,
+        delta: u64,
+        exec: impl FnOnce(&mut Self) -> Result<T, E>,
+    ) -> Result<T, E>
+    where
+        E: From<TrapCode>,
+    {
+        self.ctx.fuel_mut().consume_fuel(delta)?;
+        exec(self)
     }
 
     /// Returns a shared reference to the [`FuelCosts`] of the [`Engine`].
     ///
     /// [`Engine`]: crate::Engine
+    #[inline]
     fn fuel_costs(&self) -> &FuelCosts {
         self.ctx.engine().config().fuel_costs()
+    }
+
+    /// Returns the [`FuelConsumptionMode`] of the [`Engine`].
+    ///
+    /// [`Engine`]: crate::Engine
+    #[inline]
+    fn get_fuel_consumption_mode(&self) -> Option<FuelConsumptionMode> {
+        self.ctx.engine().config().get_fuel_consumption_mode()
     }
 
     /// Executes a `call` or `return_call` instruction.
@@ -892,7 +934,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 return self.try_next_instr();
             }
         };
-        let result = self.consume_fuel_on_success(
+        let result = self.consume_fuel_with(
             |costs| {
                 let delta_in_bytes = delta.to_bytes().unwrap_or(0) as u64;
                 costs.fuel_for_bytes(delta_in_bytes)
@@ -928,7 +970,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let n = i32::from(n) as usize;
         let offset = i32::from(d) as usize;
         let byte = u8::from(val);
-        self.consume_fuel_on_success(
+        self.consume_fuel_with(
             |costs| costs.fuel_for_bytes(n as u64),
             |this| {
                 let memory = this
@@ -951,7 +993,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let n = i32::from(n) as usize;
         let src_offset = i32::from(s) as usize;
         let dst_offset = i32::from(d) as usize;
-        self.consume_fuel_on_success(
+        self.consume_fuel_with(
             |costs| costs.fuel_for_bytes(n as u64),
             |this| {
                 let data = this.cache.default_memory_bytes(this.ctx);
@@ -976,7 +1018,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let n = i32::from(n) as usize;
         let src_offset = i32::from(s) as usize;
         let dst_offset = i32::from(d) as usize;
-        self.consume_fuel_on_success(
+        self.consume_fuel_with(
             |costs| costs.fuel_for_bytes(n as u64),
             |this| {
                 let (memory, data) = this
@@ -1018,7 +1060,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn visit_table_grow(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
         let (init, delta) = self.sp.pop2();
         let delta: u32 = delta.into();
-        let result = self.consume_fuel_on_success(
+        let result = self.consume_fuel_with(
             |costs| costs.fuel_for_elements(u64::from(delta)),
             |this| {
                 let table = this.cache.get_table(this.ctx, table_index);
@@ -1043,7 +1085,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let (i, val, n) = self.sp.pop3();
         let dst: u32 = i.into();
         let len: u32 = n.into();
-        self.consume_fuel_on_success(
+        self.consume_fuel_with(
             |costs| costs.fuel_for_elements(u64::from(len)),
             |this| {
                 let table = this.cache.get_table(this.ctx, table_index);
@@ -1088,7 +1130,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let len = u32::from(n);
         let src_index = u32::from(s);
         let dst_index = u32::from(d);
-        self.consume_fuel_on_success(
+        self.consume_fuel_with(
             |costs| costs.fuel_for_elements(u64::from(len)),
             |this| {
                 // Query both tables and check if they are the same:
@@ -1120,7 +1162,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let len = u32::from(n);
         let src_index = u32::from(s);
         let dst_index = u32::from(d);
-        self.consume_fuel_on_success(
+        self.consume_fuel_with(
             |costs| costs.fuel_for_elements(u64::from(len)),
             |this| {
                 let (instance, table, element) = this
