@@ -29,6 +29,8 @@ pub struct Config {
     reference_types: bool,
     /// Is `true` if the [`tail-call`] Wasm proposal is enabled.
     tail_call: bool,
+    /// Is `true` if the [`extended-const`] Wasm proposal is enabled.
+    extended_const: bool,
     /// Is `true` if Wasm instructions on `f32` and `f64` types are allowed.
     floats: bool,
     /// Is `true` if `wasmi` executions shall consume fuel.
@@ -201,6 +203,7 @@ impl Default for Config {
             bulk_memory: true,
             reference_types: true,
             tail_call: false,
+            extended_const: false,
             floats: true,
             consume_fuel: false,
             fuel_costs: FuelCosts::default(),
@@ -321,6 +324,18 @@ impl Config {
         self
     }
 
+    /// Enable or disable the [`extended-const`] Wasm proposal for the [`Config`].
+    ///
+    /// # Note
+    ///
+    /// Disabled by default.
+    ///
+    /// [`tail-call`]: https://github.com/WebAssembly/extended-const
+    pub fn wasm_extended_const(&mut self, enable: bool) -> &mut Self {
+        self.extended_const = enable;
+        self
+    }
+
     /// Enable or disable Wasm floating point (`f32` and `f64`) instructions and types.
     ///
     /// Enabled by default.
@@ -395,6 +410,7 @@ impl Config {
             bulk_memory: self.bulk_memory,
             reference_types: self.reference_types,
             tail_call: self.tail_call,
+            extended_const: self.extended_const,
             floats: self.floats,
             component_model: false,
             simd: false,
@@ -403,7 +419,6 @@ impl Config {
             multi_memory: false,
             exceptions: false,
             memory64: false,
-            extended_const: false,
             memory_control: false,
         }
     }
