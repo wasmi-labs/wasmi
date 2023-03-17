@@ -141,7 +141,7 @@ impl Op {
     }
 
     /// Creates a new global operator with the given index.
-    pub fn func_ref(function_index: u32) -> Self {
+    pub fn funcref(function_index: u32) -> Self {
         Self::FuncRef(FuncRefOp { function_index })
     }
 
@@ -269,7 +269,7 @@ impl ConstExpr {
                     stack.push(Op::constant(value));
                 }
                 wasmparser::Operator::RefFunc { function_index } => {
-                    stack.push(Op::func_ref(function_index));
+                    stack.push(Op::funcref(function_index));
                 }
                 wasmparser::Operator::I32Add => expr_op(&mut stack, UntypedValue::i32_add),
                 wasmparser::Operator::I32Sub => expr_op(&mut stack, UntypedValue::i32_sub),
@@ -305,7 +305,7 @@ impl ConstExpr {
         }
     }
 
-    /// Returns `Some(index)` if the [`ConstExpr`] is a `func_ref(index)`.
+    /// Returns `Some(index)` if the [`ConstExpr`] is a `funcref(index)`.
     ///
     /// Otherwise returns `None`.
     pub fn funcref(&self) -> Option<FuncIdx> {
