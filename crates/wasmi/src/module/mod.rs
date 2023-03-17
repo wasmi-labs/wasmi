@@ -34,7 +34,7 @@ pub use self::{
 pub(crate) use self::{
     data::{DataSegment, DataSegmentKind},
     element::{ElementSegment, ElementSegmentItems, ElementSegmentKind},
-    init_expr::InitExpr,
+    init_expr::ConstExpr,
 };
 use crate::{
     engine::{DedupFuncType, FuncBody},
@@ -59,7 +59,7 @@ pub struct Module {
     tables: Box<[TableType]>,
     memories: Box<[MemoryType]>,
     globals: Box<[GlobalType]>,
-    globals_init: Box<[InitExpr]>,
+    globals_init: Box<[ConstExpr]>,
     exports: BTreeMap<Box<str>, ExternIdx>,
     start: Option<FuncIdx>,
     func_bodies: Box<[FuncBody]>,
@@ -440,11 +440,11 @@ impl<'a> ExactSizeIterator for InternalFuncsIter<'a> {
 /// An iterator over the internally defined functions of a [`Module`].
 #[derive(Debug)]
 pub struct InternalGlobalsIter<'a> {
-    iter: iter::Zip<SliceIter<'a, GlobalType>, SliceIter<'a, InitExpr>>,
+    iter: iter::Zip<SliceIter<'a, GlobalType>, SliceIter<'a, ConstExpr>>,
 }
 
 impl<'a> Iterator for InternalGlobalsIter<'a> {
-    type Item = (&'a GlobalType, &'a InitExpr);
+    type Item = (&'a GlobalType, &'a ConstExpr);
 
     fn next(&mut self) -> Option<Self::Item> {
         self.iter.next()

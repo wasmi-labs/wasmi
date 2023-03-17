@@ -1,6 +1,7 @@
 use super::{
     export::ExternIdx,
     import::FuncTypeIdx,
+    ConstExpr,
     DataSegment,
     ElementSegment,
     ExternTypeIdx,
@@ -9,7 +10,6 @@ use super::{
     GlobalIdx,
     Import,
     ImportName,
-    InitExpr,
     Module,
 };
 use crate::{
@@ -33,7 +33,7 @@ pub struct ModuleBuilder<'engine> {
     pub tables: Vec<TableType>,
     pub memories: Vec<MemoryType>,
     pub globals: Vec<GlobalType>,
-    pub globals_init: Vec<InitExpr>,
+    pub globals_init: Vec<ConstExpr>,
     pub exports: BTreeMap<Box<str>, ExternIdx>,
     pub start: Option<FuncIdx>,
     pub func_bodies: Vec<FuncBody>,
@@ -90,7 +90,7 @@ impl<'a> ModuleResources<'a> {
     }
 
     /// Returns the global variable type and optional initial value.
-    pub fn get_global(&self, global_idx: GlobalIdx) -> (GlobalType, Option<&InitExpr>) {
+    pub fn get_global(&self, global_idx: GlobalIdx) -> (GlobalType, Option<&ConstExpr>) {
         let index = global_idx.into_u32() as usize;
         let len_imports = self.res.imports.len_globals();
         let global_type = self.get_type_of_global(global_idx);

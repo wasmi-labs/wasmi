@@ -5,10 +5,11 @@ mod pre;
 mod tests;
 
 pub use self::{error::InstantiationError, pre::InstancePre};
-use super::{element::ElementSegmentKind, export, DataSegmentKind, InitExpr, Module};
+use super::{element::ElementSegmentKind, export, ConstExpr, DataSegmentKind, Module};
 use crate::{
     func::WasmFuncEntity,
     memory::DataSegment,
+    value::WithType,
     AsContext,
     AsContextMut,
     ElementSegment,
@@ -25,7 +26,7 @@ use crate::{
     Table,
     Value,
 };
-use wasmi_core::Trap;
+use wasmi_core::{Trap, UntypedValue};
 
 impl Module {
     /// Instantiates a new [`Instance`] from the given compiled [`Module`].
@@ -227,9 +228,14 @@ impl Module {
         builder: &mut InstanceEntityBuilder,
     ) {
         for (global_type, global_init) in self.internal_globals() {
+            let value_type = global_type.content();
             let init_value = Self::eval_init_expr(context.as_context_mut(), builder, global_init);
             let mutability = global_type.mutability();
-            let global = Global::new(context.as_context_mut(), init_value, mutability);
+            let global = Global::new(
+                context.as_context_mut(),
+                init_value.with_type(value_type),
+                mutability,
+            );
             builder.push_global(global);
         }
     }
@@ -238,12 +244,14 @@ impl Module {
     fn eval_init_expr(
         context: impl AsContext,
         builder: &InstanceEntityBuilder,
-        init_expr: &InitExpr,
-    ) -> Value {
-        init_expr.to_const_with_context(
-            |global_index| builder.get_global(global_index).get(&context),
-            |func_index| Value::from(FuncRef::new(builder.get_func(func_index))),
-        )
+        init_expr: &ConstExpr,
+    ) -> UntypedValue {
+        init_expr
+            .eval_with_context(
+                |global_index| builder.get_global(global_index).get(&context),
+                |func_index| FuncRef::new(builder.get_func(func_index)),
+            )
+            .expect("must evaluate to proper value")
     }
 
     /// Extracts the Wasm exports from the module and registers them into the [`Instance`].
@@ -291,15 +299,11 @@ impl Module {
         for segment in &self.element_segments[..] {
             let element = ElementSegment::new(context.as_context_mut(), segment);
             if let ElementSegmentKind::Active(active) = segment.kind() {
-                let dst_index = Self::eval_init_expr(&mut *context, builder, active.offset())
-                    .i32()
-                    .unwrap_or_else(|| {
-                        panic!(
-                            "expected offset value of type `i32` due to \
-                                 Wasm validation but found: {:?}",
-                            active.offset(),
-                        )
-                    }) as u32;
+                let dst_index = u32::from(Self::eval_init_expr(
+                    &mut *context,
+                    builder,
+                    active.offset(),
+                ));
                 let table = builder.get_table(active.table_index().into_u32());
                 // Note: This checks not only that the elements in the element segments properly
                 //       fit into the table at the given offset but also that the element segment
@@ -345,14 +349,8 @@ impl Module {
             let bytes = segment.bytes();
             if let DataSegmentKind::Active(segment) = segment.kind() {
                 let offset_expr = segment.offset();
-                let offset = Self::eval_init_expr(&mut *context, builder, offset_expr)
-                    .i32()
-                    .unwrap_or_else(|| {
-                        panic!(
-                            "expected offset value of type `i32` due to \
-                                Wasm validation but found: {offset_expr:?}",
-                        )
-                    }) as u32 as usize;
+                let offset =
+                    u32::from(Self::eval_init_expr(&mut *context, builder, offset_expr)) as usize;
                 let memory = builder.get_memory(segment.memory_index().into_u32());
                 memory.write(&mut *context, offset, bytes)?;
             }
