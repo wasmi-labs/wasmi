@@ -1,4 +1,4 @@
-use super::InitExpr;
+use super::ConstExpr;
 use crate::GlobalType;
 
 /// The index of a global variable within a [`Module`].
@@ -33,13 +33,13 @@ pub struct Global {
     ///
     /// This is represented by a so called initializer expression
     /// that is run at module instantiation time.
-    init_expr: InitExpr,
+    init_expr: ConstExpr,
 }
 
 impl From<wasmparser::Global<'_>> for Global {
     fn from(global: wasmparser::Global<'_>) -> Self {
         let global_type = GlobalType::from_wasmparser(global.ty);
-        let init_expr = InitExpr::new(global.init_expr);
+        let init_expr = ConstExpr::new(global.init_expr);
         Self {
             global_type,
             init_expr,
@@ -49,7 +49,7 @@ impl From<wasmparser::Global<'_>> for Global {
 
 impl Global {
     /// Splits the [`Global`] into its global type and its global initializer.
-    pub fn into_type_and_init(self) -> (GlobalType, InitExpr) {
+    pub fn into_type_and_init(self) -> (GlobalType, ConstExpr) {
         (self.global_type, self.init_expr)
     }
 }

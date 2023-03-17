@@ -1,4 +1,4 @@
-use super::{InitExpr, MemoryIdx};
+use super::{ConstExpr, MemoryIdx};
 use alloc::sync::Arc;
 
 /// A Wasm [`Module`] data segment.
@@ -27,7 +27,7 @@ pub struct ActiveDataSegment {
     /// The linear memory that is to be initialized with this active segment.
     memory_index: MemoryIdx,
     /// The offset at which the data segment is initialized.
-    offset: InitExpr,
+    offset: ConstExpr,
 }
 
 impl ActiveDataSegment {
@@ -37,7 +37,7 @@ impl ActiveDataSegment {
     }
 
     /// Returns the offset expression of the [`ActiveDataSegment`].
-    pub fn offset(&self) -> &InitExpr {
+    pub fn offset(&self) -> &ConstExpr {
         &self.offset
     }
 }
@@ -50,7 +50,7 @@ impl From<wasmparser::DataKind<'_>> for DataSegmentKind {
                 offset_expr,
             } => {
                 let memory_index = MemoryIdx::from(memory_index);
-                let offset = InitExpr::new(offset_expr);
+                let offset = ConstExpr::new(offset_expr);
                 Self::Active(ActiveDataSegment {
                     memory_index,
                     offset,

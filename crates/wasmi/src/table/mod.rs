@@ -327,14 +327,14 @@ impl TableEntity {
             ValueType::FuncRef => {
                 // Initialize element interpreted as Wasm `funrefs`.
                 dst_items.iter_mut().zip(src_items).for_each(|(dst, src)| {
-                    let func_or_null = src.as_funcref().map(FuncIdx::into_u32).map(&get_func);
+                    let func_or_null = src.funcref().map(FuncIdx::into_u32).map(&get_func);
                     *dst = FuncRef::new(func_or_null).into();
                 });
             }
             ValueType::ExternRef => {
                 // Initialize element interpreted as Wasm `externrefs`.
                 dst_items.iter_mut().zip(src_items).for_each(|(dst, src)| {
-                    *dst = UntypedValue::from(src.as_externref());
+                    *dst = src.eval_const().expect("must evaluate to some value");
                 });
             }
             _ => panic!("table.init currently only works on reftypes"),

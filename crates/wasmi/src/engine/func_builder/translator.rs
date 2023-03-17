@@ -34,10 +34,10 @@ use crate::{
     },
     module::{
         BlockType,
+        ConstExpr,
         FuncIdx,
         FuncTypeIdx,
         GlobalIdx,
-        InitExpr,
         MemoryIdx,
         ModuleResources,
         DEFAULT_MEMORY_INDEX,
@@ -416,14 +416,14 @@ impl<'parser> FuncTranslator<'parser> {
     /// have a chance to be optimized to more efficient instructions.
     fn optimize_global_get(
         global_type: &GlobalType,
-        init_value: Option<&InitExpr>,
+        init_value: Option<&ConstExpr>,
     ) -> Option<Instruction> {
         if let (Mutability::Const, Some(init_expr)) = (global_type.mutability(), init_value) {
-            if let Some(value) = init_expr.to_const() {
+            if let Some(value) = init_expr.eval_const() {
                 // We can optimize `global.get` to the constant value.
                 return Some(Instruction::constant(value));
             }
-            if let Some(func_index) = init_expr.func_ref() {
+            if let Some(func_index) = init_expr.funcref() {
                 // We can optimize `global.get` to the equivalent `ref.func x` instruction.
                 let func_index = bytecode::FuncIdx::from(func_index.into_u32());
                 return Some(Instruction::RefFunc { func_index });

@@ -1,6 +1,6 @@
 use crate::{
     module,
-    module::{ElementSegmentItems, InitExpr},
+    module::{ConstExpr, ElementSegmentItems},
     store::Stored,
     AsContext,
     AsContextMut,
@@ -124,7 +124,7 @@ impl ElementSegmentEntity {
     }
 
     /// Returns the items of the [`ElementSegmentEntity`].
-    pub fn items(&self) -> &[InitExpr] {
+    pub fn items(&self) -> &[ConstExpr] {
         self.items
             .as_ref()
             .map(ElementSegmentItems::items)

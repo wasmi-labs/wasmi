@@ -1,4 +1,4 @@
-use super::{InitExpr, TableIdx};
+use super::{ConstExpr, TableIdx};
 use crate::module::utils::WasmiValueType;
 use alloc::sync::Arc;
 use wasmi_core::ValueType;
@@ -19,7 +19,7 @@ pub struct ElementSegment {
 /// The items of an [`ElementSegment`].
 #[derive(Debug, Clone)]
 pub struct ElementSegmentItems {
-    exprs: Arc<[InitExpr]>,
+    exprs: Arc<[ConstExpr]>,
 }
 
 impl ElementSegmentItems {
@@ -36,7 +36,7 @@ impl ElementSegmentItems {
                 .map(|item| {
                     item.unwrap_or_else(|error| panic!("failed to parse element item: {error}"))
                 })
-                .map(InitExpr::new_funcref)
+                .map(ConstExpr::new_funcref)
                 .collect::<Arc<[_]>>(),
             wasmparser::ElementItems::Expressions(items) => items
                 .clone()
@@ -44,14 +44,14 @@ impl ElementSegmentItems {
                 .map(|item| {
                     item.unwrap_or_else(|error| panic!("failed to parse element item: {error}"))
                 })
-                .map(InitExpr::new)
+                .map(ConstExpr::new)
                 .collect::<Arc<[_]>>(),
         };
         Self { exprs }
     }
 
     /// Returns a shared reference to the items of the [`ElementSegmentItems`].
-    pub fn items(&self) -> &[InitExpr] {
+    pub fn items(&self) -> &[ConstExpr] {
         &self.exprs
     }
 }
@@ -73,7 +73,7 @@ pub struct ActiveElementSegment {
     /// The index of the Wasm table that is to be initialized.
     table_index: TableIdx,
     /// The offset where the Wasm table is to be initialized.
-    offset: InitExpr,
+    offset: ConstExpr,
 }
 
 impl ActiveElementSegment {
@@ -83,7 +83,7 @@ impl ActiveElementSegment {
     }
 
     /// Returns the offset expression of the [`ActiveElementSegment`].
-    pub fn offset(&self) -> &InitExpr {
+    pub fn offset(&self) -> &ConstExpr {
         &self.offset
     }
 }
@@ -96,7 +96,7 @@ impl From<wasmparser::ElementKind<'_>> for ElementSegmentKind {
                 offset_expr,
             } => {
                 let table_index = TableIdx::from(table_index);
-                let offset = InitExpr::new(offset_expr);
+                let offset = ConstExpr::new(offset_expr);
                 Self::Active(ActiveElementSegment {
                     table_index,
                     offset,
