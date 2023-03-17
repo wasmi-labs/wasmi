@@ -1,3 +1,11 @@
+//! Data structures to represents Wasm constant expressions.
+//!
+//! This has built-in support for the `extended-const` Wasm proposal.
+//! The design of the execution mechanic was inspired by the [`s1vm`]
+//! virtual machine architecture.
+//!
+//! [`s1vm`]: https://github.com/Neopallium/s1vm
+
 use super::FuncIdx;
 use crate::{ExternRef, FuncRef, Value};
 use alloc::boxed::Box;
