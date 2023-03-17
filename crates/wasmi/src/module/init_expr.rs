@@ -1,5 +1,6 @@
 use super::FuncIdx;
 use crate::{ExternRef, FuncRef, Value};
+use alloc::boxed::Box;
 use core::fmt;
 use smallvec::SmallVec;
 use wasmi_core::{UntypedValue, F32, F64};
