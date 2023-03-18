@@ -108,8 +108,21 @@ impl Tracer {
             let mut buf = [0u8; 8];
             (*memref).get_into(i * 8, &mut buf).unwrap();
             self.imtable
-                .push(false, true, i, VarType::I64, u64::from_le_bytes(buf));
+                .push(false, true, i, i, VarType::I64, u64::from_le_bytes(buf));
         }
+
+        self.imtable.push(
+            false,
+            true,
+            pages * 8192,
+            memref
+                .limits()
+                .maximum()
+                .map(|limit| limit * 8192 - 1)
+                .unwrap_or(u32::MAX),
+            VarType::I64,
+            0,
+        );
     }
 
     pub(crate) fn push_global(&mut self, globalidx: u32, globalref: &GlobalRef) {
@@ -118,6 +131,7 @@ impl Tracer {
         self.imtable.push(
             true,
             globalref.is_mutable(),
+            globalidx,
             globalidx,
             vtype,
             from_value_internal_to_u64_with_typ(vtype, ValueInternal::from(globalref.get())),
