@@ -8,6 +8,26 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.29.0`] - 2023-03-20
+
+### Added
+
+- Added support for `extended-const` Wasm proposal. (https://github.com/paritytech/wasmi/pull/707)
+- Added fuel consumption modes. (https://github.com/paritytech/wasmi/pull/706)
+  - This allows eager and lazy fuel consumption modes to be used which
+    mainly affects bulk operations such as `table.copy` and `memory.grow`.
+    Eager fuel consumption always consumes fuel before a bulk operation for the
+    total amount independent of success or failure of the operation whereras
+    lazy fuel consumption only consumes fuel for successful executions.
+
+### Changed
+
+- Normalize fuel costs of all instructions. (https://github.com/paritytech/wasmi/pull/705)
+  - With this change most instructions cost roughly 1 fuel upon execution.
+    This is more similar to how Wasmtime deals with fuel metered instruction costs.
+    Before this change `wasmi` tried to have fuel costs that more closely mirror
+    the computation intensity of the respective instruction according to benchmarks.
+
 ## [`0.28.0`] - 2023-03-01
 
 ### Added
