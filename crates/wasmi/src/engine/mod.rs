@@ -32,6 +32,7 @@ pub use self::{
 };
 use self::{
     bytecode::Instruction,
+    bytecode::OpCode,
     cache::InstanceCache,
     code_map::CodeMap,
     executor::{execute_wasm, WasmOutcome},

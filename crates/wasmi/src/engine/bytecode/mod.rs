@@ -21,6 +21,10 @@ pub use self::utils::{
 };
 use core::fmt::Debug;
 use wasmi_core::UntypedValue;
+use enum_tag::EnumTag;
+
+/// The `opcode` of an [`Instruction`].
+pub type OpCode = <Instruction as EnumTag>::Tag;
 
 /// The internal `wasmi` bytecode that is stored for Wasm functions.
 ///
@@ -30,7 +34,7 @@ use wasmi_core::UntypedValue;
 ///
 /// For example the `BrTable` instruction is unrolled into separate instructions
 /// each representing either the `BrTable` head or one of its branching targets.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, EnumTag)]
 pub enum Instruction {
     LocalGet {
         local_depth: LocalDepth,

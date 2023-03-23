@@ -5,6 +5,7 @@ use super::{
     labels::{LabelRef, LabelRegistry},
     Instr,
     RelativeDepth,
+    super::OpCode,
 };
 use crate::engine::{
     bytecode::{BranchOffset, Instruction},
@@ -57,6 +58,16 @@ impl EncodedInstrs {
         //         The values overwritten by this `write_unaligned`
         //         are simple bytes and thus no `drop` needs to happen.
         unsafe { ptr::write_unaligned(dst, value) };
+    }
+
+    /// Encodes a `wasmi` [`OpCode`].
+    /// 
+    /// # Note
+    /// 
+    /// This is much more efficient than using [`InstructionEncoder::push_encoded`]
+    /// and a quite common case for most of the `wasmi` instructions.
+    fn push_opcode(&mut self, opcode: OpCode) {
+        self.encoded.push(opcode as u8);
     }
 }
 
