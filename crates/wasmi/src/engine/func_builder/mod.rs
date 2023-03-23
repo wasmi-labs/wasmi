@@ -2,6 +2,7 @@ mod control_frame;
 mod control_stack;
 mod error;
 mod inst_builder;
+mod inst_encoder;
 mod labels;
 mod locals_registry;
 mod translator;
