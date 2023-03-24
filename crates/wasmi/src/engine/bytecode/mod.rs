@@ -20,8 +20,8 @@ pub use self::utils::{
     TableIdx,
 };
 use core::fmt::Debug;
-use wasmi_core::UntypedValue;
 use enum_tag::EnumTag;
+use wasmi_core::UntypedValue;
 
 /// The `opcode` of an [`Instruction`].
 pub type OpCode = <Instruction as EnumTag>::Tag;

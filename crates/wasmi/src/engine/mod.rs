@@ -31,8 +31,7 @@ pub use self::{
     traits::{CallParams, CallResults},
 };
 use self::{
-    bytecode::Instruction,
-    bytecode::OpCode,
+    bytecode::{Instruction, OpCode},
     cache::InstanceCache,
     code_map::CodeMap,
     executor::{execute_wasm, WasmOutcome},

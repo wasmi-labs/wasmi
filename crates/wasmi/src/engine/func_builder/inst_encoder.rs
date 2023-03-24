@@ -1,16 +1,14 @@
 //! Abstractions to build up instructions forming Wasm function bodies.
 
-use core::{mem, ptr};
 use super::{
+    super::OpCode,
     labels::{LabelRef, LabelRegistry},
     Instr,
     RelativeDepth,
-    super::OpCode,
 };
-use crate::engine::{
-    bytecode::{BranchOffset, Instruction},
-};
+use crate::engine::bytecode::{BranchOffset, Instruction};
 use alloc::vec::Vec;
+use core::{mem, ptr};
 
 /// The buffer that stores all the encoded instructions.
 #[derive(Debug, Default)]
@@ -37,9 +35,9 @@ impl EncodedInstrs {
     }
 
     /// Encodes `value` and pushes it onto the buffer of encoded instructions.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This method may be called multiple times upon encoding a single instruction.
     /// For example one time for the discriminant, and another time for a parameter
     /// of the encoded instruction.
@@ -61,9 +59,9 @@ impl EncodedInstrs {
     }
 
     /// Encodes a `wasmi` [`OpCode`].
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This is much more efficient than using [`InstructionEncoder::push_encoded`]
     /// and a quite common case for most of the `wasmi` instructions.
     fn push_opcode(&mut self, opcode: OpCode) {
