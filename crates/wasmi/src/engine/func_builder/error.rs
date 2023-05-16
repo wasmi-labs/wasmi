@@ -10,6 +10,15 @@ pub struct TranslationError {
 }
 
 impl TranslationError {
+    /// Create a new [`TranslationError`] from the inner variant.
+    #[cold]
+    #[inline]
+    pub fn new(inner: TranslationErrorInner) -> Self {
+        Self {
+            inner: Box::new(inner)
+        }
+    }
+
     /// Creates a new error indicating an unsupported Wasm block type.
     pub fn unsupported_block_type(block_type: wasmparser::BlockType) -> Self {
         Self {
@@ -52,13 +61,40 @@ impl Display for TranslationError {
                 write!(f, "encountered unsupported Wasm value type: {error:?}")
             }
             TranslationErrorInner::DropKeep(error) => error.fmt(f),
+            TranslationErrorInner::FunctionIndexOutOfBounds => {
+                write!(f, "function index is out of bounds for wasmi bytecode")
+            }
+            TranslationErrorInner::TableIndexOutOfBounds => {
+                write!(f, "table index is out of bounds for wasmi bytecode")
+            }
+            TranslationErrorInner::GlobalIndexOutOfBounds => {
+                write!(f, "global variable index is out of bounds for wasmi bytecode")
+            }
+            TranslationErrorInner::TypeIndexOutOfBounds => {
+                write!(f, "type index is out of bounds for wasmi bytecode")
+            }
+            TranslationErrorInner::LocalIndexOutOfBounds => {
+                write!(f, "local variable index is out of bounds for wasmi bytecode")
+            }
+            TranslationErrorInner::DataSegmentIndexOutOfBounds => {
+                write!(f, "data segment index is out of bounds for wasmi bytecode")
+            }
+            TranslationErrorInner::ElementSegmentIndexOutOfBounds => {
+                write!(f, "element segment index is out of bounds for wasmi bytecode")
+            }
+            TranslationErrorInner::BranchOffsetOutOfBounds => {
+                write!(f, "branching offset is out of bounds for wasmi bytecode")
+            }
+            TranslationErrorInner::DropKeepOutOfBounds => {
+                write!(f, "drop keep properties is out of bounds for wasmi bytecode")
+            }
         }
     }
 }
 
 /// The inner error type encapsulating internal [`TranslationError`] state.
 #[derive(Debug)]
-enum TranslationErrorInner {
+pub enum TranslationErrorInner {
     /// There was either a problem parsing a Wasm input OR validating a Wasm input.
     Validate(wasmparser::BinaryReaderError),
     /// Encountered an unsupported Wasm block type.
@@ -67,4 +103,22 @@ enum TranslationErrorInner {
     UnsupportedValueType(wasmparser::ValType),
     /// An error with limitations of `DropKeep`.
     DropKeep(DropKeepError),
+    /// Function index out of bounds.
+    FunctionIndexOutOfBounds,
+    /// Table index out of bounds.
+    TableIndexOutOfBounds,
+    /// Global variable index out of bounds.
+    GlobalIndexOutOfBounds,
+    /// Type index out of bounds.
+    TypeIndexOutOfBounds,
+    /// Local variable index out of bounds.
+    LocalIndexOutOfBounds,
+    /// Data segment index out of bounds.
+    DataSegmentIndexOutOfBounds,
+    /// Element segment index out of bounds.
+    ElementSegmentIndexOutOfBounds,
+    /// Branching offset out of bounds.
+    BranchOffsetOutOfBounds,
+    /// Drop & Keep properties are out of bounds.
+    DropKeepOutOfBounds,
 }
