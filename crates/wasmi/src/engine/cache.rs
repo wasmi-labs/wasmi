@@ -278,7 +278,7 @@ impl InstanceCache {
     fn load_func_at(&mut self, ctx: &StoreInner, index: FuncIdx) -> Func {
         let func = ctx
             .resolve_instance(self.instance())
-            .get_func(index.into_inner())
+            .get_func(index.to_u32())
             .unwrap_or_else(|| {
                 unreachable!(
                     "missing func at index {index:?} for instance: {:?}",
