@@ -13,7 +13,7 @@ use self::{
     translator::FuncTranslator,
 };
 pub use self::{
-    error::TranslationError,
+    error::{TranslationError, TranslationErrorInner},
     inst_builder::{Instr, InstructionsBuilder, RelativeDepth},
     translator::FuncTranslatorAllocations,
 };
