@@ -1156,6 +1156,15 @@ fn metered_global_bump() {
     assert_func_bodies_metered(wasm, [expected]);
 }
 
+/// Creates a [`FuncIdx`] from the given `u32` index value.
+/// 
+/// # Panics
+/// 
+/// If the `u32` index value is out of bounds for the [`FuncIdx`].
+fn func_idx(index: u32) -> FuncIdx {
+    FuncIdx::try_from(index).unwrap()
+}
+
 #[test]
 fn metered_calls_01() {
     let wasm = wat2wasm(
@@ -1180,7 +1189,7 @@ fn metered_calls_01() {
     let expected_fuel_f1 = 2 * costs.base + costs.call;
     let expected_f1 = [
         Instruction::consume_fuel(expected_fuel_f1),
-        Instruction::Call(FuncIdx::from(0)),
+        Instruction::Call(func_idx(0)),
         Instruction::Return(drop_keep(0, 1)),
     ];
     assert_func_bodies_metered(wasm, [expected_f0, expected_f1]);
@@ -1224,7 +1233,7 @@ fn metered_calls_02() {
         Instruction::consume_fuel(expected_fuel_f1),
         Instruction::local_get(2),
         Instruction::local_get(2),
-        Instruction::Call(FuncIdx::from(0)),
+        Instruction::Call(func_idx(0)),
         Instruction::Return(drop_keep(2, 1)),
     ];
     assert_func_bodies_metered(wasm, [expected_f0, expected_f1]);
@@ -1270,7 +1279,7 @@ fn metered_calls_03() {
     let expected_f1 = [
         Instruction::consume_fuel(expected_fuel_f1),
         Instruction::local_get(1),
-        Instruction::Call(FuncIdx::from(0)),
+        Instruction::Call(func_idx(0)),
         Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies_metered(
