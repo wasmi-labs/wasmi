@@ -1,5 +1,6 @@
-use crate::engine::Instr;
+use crate::engine::{Instr, TranslationError, func_builder::TranslationErrorInner};
 use core::fmt::Display;
+use intx::U24;
 
 /// Defines how many stack values are going to be dropped and kept after branching.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -67,18 +68,23 @@ impl DropKeep {
 /// A function index.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct FuncIdx(u32);
+pub struct FuncIdx(U24);
 
-impl From<u32> for FuncIdx {
-    fn from(index: u32) -> Self {
-        Self(index)
+impl TryFrom<u32> for FuncIdx {
+    type Error = TranslationError;
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        match U24::try_from(value) {
+            Ok(value) => Ok(Self(value)),
+            Err(_) => Err(TranslationError::new(TranslationErrorInner::FunctionIndexOutOfBounds))
+        }
     }
 }
 
 impl FuncIdx {
     /// Returns the inner `u32` index.
     pub fn into_inner(self) -> u32 {
-        self.0
+        u32::from(self.0)
     }
 }
 

@@ -417,19 +417,19 @@ impl<'parser> FuncTranslator<'parser> {
     fn optimize_global_get(
         global_type: &GlobalType,
         init_value: Option<&ConstExpr>,
-    ) -> Option<Instruction> {
+    ) -> Result<Option<Instruction>, TranslationError> {
         if let (Mutability::Const, Some(init_expr)) = (global_type.mutability(), init_value) {
             if let Some(value) = init_expr.eval_const() {
                 // We can optimize `global.get` to the constant value.
-                return Some(Instruction::constant(value));
+                return Ok(Some(Instruction::constant(value)));
             }
             if let Some(func_index) = init_expr.funcref() {
                 // We can optimize `global.get` to the equivalent `ref.func x` instruction.
-                let func_index = bytecode::FuncIdx::from(func_index.into_u32());
-                return Some(Instruction::RefFunc { func_index });
+                let func_index = bytecode::FuncIdx::try_from(func_index.into_u32())?;
+                return Ok(Some(Instruction::RefFunc { func_index }));
             }
         }
-        None
+        Ok(None)
     }
 
     /// Decompose a [`wasmparser::MemArg`] into its raw parts.
@@ -1143,7 +1143,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_return_call(&mut self, func_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let func = bytecode::FuncIdx::from(func_idx);
+            let func = bytecode::FuncIdx::try_from(func_idx)?;
             let func_type = builder.func_type_of(func_idx.into());
             let drop_keep = builder.drop_keep_return_call(&func_type)?;
             builder.bump_fuel_consumption(builder.fuel_costs().call);
@@ -1189,7 +1189,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let func_idx = FuncIdx::from(func_idx);
             let func_type = builder.func_type_of(func_idx);
             builder.adjust_value_stack_for_call(&func_type);
-            let func_idx = func_idx.into_u32().into();
+            let func_idx = bytecode::FuncIdx::try_from(func_idx.into_u32())?;
             builder
                 .alloc
                 .inst_builder
@@ -1260,7 +1260,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_ref_func(&mut self, func_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             builder.bump_fuel_consumption(builder.fuel_costs().base);
-            let func_index = bytecode::FuncIdx::from(func_index);
+            let func_index = bytecode::FuncIdx::try_from(func_index)?;
             builder
                 .alloc
                 .inst_builder
@@ -1314,7 +1314,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let global_idx = GlobalIdx::from(global_idx);
             builder.stack_height.push();
             let (global_type, init_value) = builder.res.get_global(global_idx);
-            let instr = Self::optimize_global_get(&global_type, init_value).unwrap_or_else(|| {
+            let instr = Self::optimize_global_get(&global_type, init_value)?.unwrap_or_else(|| {
                 // No optimization took place in this case.
                 Instruction::GlobalGet(global_idx.into_u32().into())
             });
