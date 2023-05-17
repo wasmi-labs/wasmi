@@ -19,6 +19,7 @@ pub use self::utils::{
     SignatureIdx,
     TableIdx,
 };
+use super::TranslationError;
 use core::fmt::Debug;
 use wasmi_core::UntypedValue;
 
@@ -272,24 +273,36 @@ impl Instruction {
     }
 
     /// Creates a new `local.get` instruction from the given local depth.
-    pub fn local_get(local_depth: usize) -> Self {
-        Self::LocalGet {
-            local_depth: LocalDepth::from(local_depth),
-        }
+    ///
+    /// # Errors
+    ///
+    /// If the `local_depth` is out of bounds as local depth index.
+    pub fn local_get(local_depth: u32) -> Result<Self, TranslationError> {
+        Ok(Self::LocalGet {
+            local_depth: LocalDepth::try_from(local_depth)?,
+        })
     }
 
     /// Creates a new `local.set` instruction from the given local depth.
-    pub fn local_set(local_depth: usize) -> Self {
-        Self::LocalSet {
-            local_depth: LocalDepth::from(local_depth),
-        }
+    ///
+    /// # Errors
+    ///
+    /// If the `local_depth` is out of bounds as local depth index.
+    pub fn local_set(local_depth: u32) -> Result<Self, TranslationError> {
+        Ok(Self::LocalSet {
+            local_depth: LocalDepth::try_from(local_depth)?,
+        })
     }
 
     /// Creates a new `local.tee` instruction from the given local depth.
-    pub fn local_tee(local_depth: usize) -> Self {
-        Self::LocalTee {
-            local_depth: LocalDepth::from(local_depth),
-        }
+    ///
+    /// # Errors
+    ///
+    /// If the `local_depth` is out of bounds as local depth index.
+    pub fn local_tee(local_depth: u32) -> Result<Self, TranslationError> {
+        Ok(Self::LocalTee {
+            local_depth: LocalDepth::try_from(local_depth)?,
+        })
     }
 
     /// Convenience method to create a new `ConsumeFuel` instruction.
