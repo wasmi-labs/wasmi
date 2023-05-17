@@ -272,7 +272,7 @@ impl BranchParams {
     }
 }
 
-/// The branching offset.
+/// A signed offset for branch instructions.
 ///
 /// This defines how much the instruction pointer is offset
 /// upon taking the respective branch.
