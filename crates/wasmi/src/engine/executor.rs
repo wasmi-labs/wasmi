@@ -739,7 +739,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let expected_signature = self
             .ctx
             .resolve_instance(self.cache.instance())
-            .get_signature(func_type.into_inner())
+            .get_signature(func_type.to_u32())
             .unwrap_or_else(|| {
                 panic!("missing signature for call_indirect at index: {func_type:?}")
             });

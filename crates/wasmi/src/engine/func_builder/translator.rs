@@ -242,7 +242,7 @@ impl<'parser> FuncTranslator<'parser> {
 
     /// Resolves the [`FuncType`] of the given [`FuncTypeIdx`].
     fn func_type_at(&self, func_type_index: SignatureIdx) -> FuncType {
-        let func_type_index = FuncTypeIdx::from(func_type_index.into_inner()); // TODO: use the same type
+        let func_type_index = FuncTypeIdx::from(func_type_index.to_u32()); // TODO: use the same type
         let dedup_func_type = self.res.get_func_type(func_type_index);
         self.res
             .engine()
@@ -1163,7 +1163,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         table_index: u32,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let signature = SignatureIdx::from(func_type_index);
+            let signature = SignatureIdx::try_from(func_type_index)?;
             let func_type = builder.func_type_at(signature);
             let table = TableIdx::try_from(table_index)?;
             builder.stack_height.pop1();
@@ -1206,7 +1206,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             builder.bump_fuel_consumption(builder.fuel_costs().call);
-            let func_type = SignatureIdx::from(func_type_index);
+            let func_type = SignatureIdx::try_from(func_type_index)?;
             let table = TableIdx::try_from(table_index)?;
             builder.stack_height.pop1();
             builder.adjust_value_stack_for_call(&builder.func_type_at(func_type));
