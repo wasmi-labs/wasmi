@@ -1314,9 +1314,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let global_idx = GlobalIdx::from(global_idx);
             builder.stack_height.push();
             let (global_type, init_value) = builder.res.get_global(global_idx);
+            let global_idx = bytecode::GlobalIdx::try_from(global_idx.into_u32())?;
             let instr = Self::optimize_global_get(&global_type, init_value)?.unwrap_or_else(|| {
                 // No optimization took place in this case.
-                Instruction::GlobalGet(global_idx.into_u32().into())
+                Instruction::GlobalGet(global_idx)
             });
             builder.alloc.inst_builder.push_inst(instr);
             Ok(())
@@ -1330,7 +1331,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let global_type = builder.res.get_type_of_global(global_idx);
             debug_assert_eq!(global_type.mutability(), Mutability::Var);
             builder.stack_height.pop1();
-            let global_idx = global_idx.into_u32().into();
+            let global_idx = bytecode::GlobalIdx::try_from(global_idx.into_u32())?;
             builder
                 .alloc
                 .inst_builder

@@ -180,18 +180,25 @@ impl LocalDepth {
 /// [`Store`]: [`crate::Store`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct GlobalIdx(u32);
+pub struct GlobalIdx(U24);
 
-impl From<u32> for GlobalIdx {
-    fn from(index: u32) -> Self {
-        Self(index)
+impl TryFrom<u32> for GlobalIdx {
+    type Error = TranslationError;
+
+    fn try_from(index: u32) -> Result<Self, Self::Error> {
+        match U24::try_from(index) {
+            Ok(index) => Ok(Self(index)),
+            Err(_) => Err(TranslationError::new(
+                TranslationErrorInner::GlobalIndexOutOfBounds,
+            )),
+        }
     }
 }
 
 impl GlobalIdx {
-    /// Returns the inner `u32` index.
+    /// Returns the index value as `u32`.
     pub fn into_inner(self) -> u32 {
-        self.0
+        u32::from(self.0)
     }
 }
 

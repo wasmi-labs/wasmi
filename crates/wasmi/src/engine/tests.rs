@@ -50,6 +50,24 @@ mod instr {
     }
 }
 
+/// Creates a [`FuncIdx`] from the given `u32` index value.
+///
+/// # Panics
+///
+/// If the `u32` index value is out of bounds for the [`FuncIdx`].
+fn func_idx(index: u32) -> FuncIdx {
+    FuncIdx::try_from(index).unwrap()
+}
+
+/// Creates a [`GlobalIdx`] from the given `u32` index value.
+///
+/// # Panics
+///
+/// If the `u32` index value is out of bounds for the [`GlobalIdx`].
+fn global_idx(index: u32) -> GlobalIdx {
+    GlobalIdx::try_from(index).unwrap()
+}
+
 /// Asserts that the given `func_body` consists of the expected instructions.
 ///
 /// # Panics
@@ -1163,23 +1181,14 @@ fn metered_global_bump() {
         + costs.fuel_for_drop_keep(drop_keep(1, 1));
     let expected = [
         Instruction::consume_fuel(expected_fuel),
-        Instruction::GlobalGet(GlobalIdx::from(0)),
+        Instruction::GlobalGet(global_idx(0)),
         instr::local_get(2),
         Instruction::I32Add,
-        Instruction::GlobalSet(GlobalIdx::from(0)),
-        Instruction::GlobalGet(GlobalIdx::from(0)),
+        Instruction::GlobalSet(global_idx(0)),
+        Instruction::GlobalGet(global_idx(0)),
         Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies_metered(wasm, [expected]);
-}
-
-/// Creates a [`FuncIdx`] from the given `u32` index value.
-///
-/// # Panics
-///
-/// If the `u32` index value is out of bounds for the [`FuncIdx`].
-fn func_idx(index: u32) -> FuncIdx {
-    FuncIdx::try_from(index).unwrap()
 }
 
 #[test]
