@@ -819,7 +819,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     #[inline(always)]
     fn visit_local_get(&mut self, local_depth: LocalDepth) {
-        let value = self.sp.nth_back(local_depth.into_inner());
+        let value = self.sp.nth_back(local_depth.to_usize());
         self.sp.push(value);
         self.next_instr()
     }
@@ -827,14 +827,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     fn visit_local_set(&mut self, local_depth: LocalDepth) {
         let new_value = self.sp.pop();
-        self.sp.set_nth_back(local_depth.into_inner(), new_value);
+        self.sp.set_nth_back(local_depth.to_usize(), new_value);
         self.next_instr()
     }
 
     #[inline(always)]
     fn visit_local_tee(&mut self, local_depth: LocalDepth) {
         let new_value = self.sp.last();
-        self.sp.set_nth_back(local_depth.into_inner(), new_value);
+        self.sp.set_nth_back(local_depth.to_usize(), new_value);
         self.next_instr()
     }
 

@@ -149,18 +149,25 @@ impl SignatureIdx {
 /// of the value stack at the time of access.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct LocalDepth(usize);
+pub struct LocalDepth(U24);
 
-impl From<usize> for LocalDepth {
-    fn from(index: usize) -> Self {
-        Self(index)
+impl TryFrom<u32> for LocalDepth {
+    type Error = TranslationError;
+
+    fn try_from(index: u32) -> Result<Self, Self::Error> {
+        match U24::try_from(index) {
+            Ok(index) => Ok(Self(index)),
+            Err(_) => Err(TranslationError::new(
+                TranslationErrorInner::LocalIndexOutOfBounds,
+            )),
+        }
     }
 }
 
 impl LocalDepth {
     /// Returns the depth as `usize` index.
-    pub fn into_inner(self) -> usize {
-        self.0
+    pub fn to_usize(self) -> usize {
+        u32::from(self.0) as usize
     }
 }
 

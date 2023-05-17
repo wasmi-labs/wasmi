@@ -362,13 +362,13 @@ impl<'parser> FuncTranslator<'parser> {
     }
 
     /// Returns the relative depth on the stack of the local variable.
-    fn relative_local_depth(&self, local_idx: u32) -> usize {
+    fn relative_local_depth(&self, local_idx: u32) -> u32 {
         debug_assert!(self.is_reachable());
-        let stack_height = self.stack_height.height() as usize;
-        let len_params_locals = self.locals.len_registered() as usize;
+        let stack_height = self.stack_height.height();
+        let len_params_locals = self.locals.len_registered();
         stack_height
             .checked_add(len_params_locals)
-            .and_then(|x| x.checked_sub(local_idx as usize))
+            .and_then(|x| x.checked_sub(local_idx))
             .unwrap_or_else(|| panic!("cannot convert local index into local depth: {local_idx}"))
     }
 
@@ -1277,7 +1277,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             builder
                 .alloc
                 .inst_builder
-                .push_inst(Instruction::local_get(local_depth));
+                .push_inst(Instruction::local_get(local_depth)?);
             builder.stack_height.push();
             Ok(())
         })
@@ -1291,7 +1291,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             builder
                 .alloc
                 .inst_builder
-                .push_inst(Instruction::local_set(local_depth));
+                .push_inst(Instruction::local_set(local_depth)?);
             Ok(())
         })
     }
@@ -1303,7 +1303,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             builder
                 .alloc
                 .inst_builder
-                .push_inst(Instruction::local_tee(local_depth));
+                .push_inst(Instruction::local_tee(local_depth)?);
             Ok(())
         })
     }
