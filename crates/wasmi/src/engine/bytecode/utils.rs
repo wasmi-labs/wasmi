@@ -2,69 +2,6 @@ use crate::engine::{func_builder::TranslationErrorInner, Instr, TranslationError
 use core::fmt::Display;
 use intx::U24;
 
-/// Defines how many stack values are going to be dropped and kept after branching.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct DropKeep {
-    /// The amount of stack values dropped.
-    drop: u16,
-    /// The amount of stack values kept.
-    keep: u16,
-}
-
-/// An error that may occur upon operating on [`DropKeep`].
-#[derive(Debug, Copy, Clone)]
-pub enum DropKeepError {
-    /// The amount of kept elements exceeds the engine's limits.
-    OutOfBoundsKeep,
-    /// The amount of dropped elements exceeds the engine's limits.
-    OutOfBoundsDrop,
-}
-
-impl Display for DropKeepError {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        match self {
-            DropKeepError::OutOfBoundsKeep => {
-                write!(f, "amount of kept elements exceeds engine's limits")
-            }
-            DropKeepError::OutOfBoundsDrop => {
-                write!(f, "amount of dropped elements exceeds engine's limits")
-            }
-        }
-    }
-}
-
-impl DropKeep {
-    /// Creates a new [`DropKeep`] that drops or keeps nothing.
-    pub fn none() -> Self {
-        Self { drop: 0, keep: 0 }
-    }
-
-    /// Creates a new [`DropKeep`] with the given amounts to drop and keep.
-    ///
-    /// # Panics
-    ///
-    /// - If `drop` or `keep` values do not respect their limitations.
-    pub fn new(drop: usize, keep: usize) -> Result<Self, DropKeepError> {
-        let drop = drop
-            .try_into()
-            .map_err(|_| DropKeepError::OutOfBoundsDrop)?;
-        let keep = keep
-            .try_into()
-            .map_err(|_| DropKeepError::OutOfBoundsKeep)?;
-        Ok(Self { drop, keep })
-    }
-
-    /// Returns the amount of stack values to drop.
-    pub fn drop(self) -> usize {
-        self.drop as usize
-    }
-
-    /// Returns the amount of stack values to keep.
-    pub fn keep(self) -> usize {
-        self.keep as usize
-    }
-}
-
 /// A function index.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
@@ -369,5 +306,68 @@ impl BranchOffset {
     /// Returns the `i32` representation of the [`BranchOffset`].
     pub fn into_i32(self) -> i32 {
         self.0
+    }
+}
+
+/// Defines how many stack values are going to be dropped and kept after branching.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct DropKeep {
+    /// The amount of stack values dropped.
+    drop: u16,
+    /// The amount of stack values kept.
+    keep: u16,
+}
+
+/// An error that may occur upon operating on [`DropKeep`].
+#[derive(Debug, Copy, Clone)]
+pub enum DropKeepError {
+    /// The amount of kept elements exceeds the engine's limits.
+    OutOfBoundsKeep,
+    /// The amount of dropped elements exceeds the engine's limits.
+    OutOfBoundsDrop,
+}
+
+impl Display for DropKeepError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            DropKeepError::OutOfBoundsKeep => {
+                write!(f, "amount of kept elements exceeds engine's limits")
+            }
+            DropKeepError::OutOfBoundsDrop => {
+                write!(f, "amount of dropped elements exceeds engine's limits")
+            }
+        }
+    }
+}
+
+impl DropKeep {
+    /// Creates a new [`DropKeep`] that drops or keeps nothing.
+    pub fn none() -> Self {
+        Self { drop: 0, keep: 0 }
+    }
+
+    /// Creates a new [`DropKeep`] with the given amounts to drop and keep.
+    ///
+    /// # Panics
+    ///
+    /// - If `drop` or `keep` values do not respect their limitations.
+    pub fn new(drop: usize, keep: usize) -> Result<Self, DropKeepError> {
+        let drop = drop
+            .try_into()
+            .map_err(|_| DropKeepError::OutOfBoundsDrop)?;
+        let keep = keep
+            .try_into()
+            .map_err(|_| DropKeepError::OutOfBoundsKeep)?;
+        Ok(Self { drop, keep })
+    }
+
+    /// Returns the amount of stack values to drop.
+    pub fn drop(self) -> usize {
+        self.drop as usize
+    }
+
+    /// Returns the amount of stack values to keep.
+    pub fn keep(self) -> usize {
+        self.keep as usize
     }
 }
