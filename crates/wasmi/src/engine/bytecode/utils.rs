@@ -102,7 +102,7 @@ impl TryFrom<u32> for TableIdx {
         match U24::try_from(index) {
             Ok(index) => Ok(Self(index)),
             Err(_) => Err(TranslationError::new(
-                TranslationErrorInner::FunctionIndexOutOfBounds,
+                TranslationErrorInner::TableIndexOutOfBounds,
             )),
         }
     }
