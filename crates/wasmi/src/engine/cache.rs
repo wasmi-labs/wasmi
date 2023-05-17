@@ -102,7 +102,7 @@ impl InstanceCache {
     ) -> ElementSegment {
         let instance = self.instance();
         ctx.resolve_instance(self.instance())
-            .get_element_segment(index.into_inner())
+            .get_element_segment(index.to_u32())
             .unwrap_or_else(|| {
                 unreachable!("missing element segment ({index:?}) for instance: {instance:?}",)
             })
@@ -119,7 +119,7 @@ impl InstanceCache {
         ctx: &'a mut StoreInner,
         segment: DataSegmentIdx,
     ) -> (&'a mut [u8], &'a [u8]) {
-        let seg = self.get_data_segment(ctx, segment.into_inner());
+        let seg = self.get_data_segment(ctx, segment.to_u32());
         let mem = self.default_memory(ctx);
         let (memory, segment) = ctx.resolve_memory_mut_and_data_segment(mem, &seg);
         (memory.data_mut(), segment.bytes())

@@ -1478,7 +1478,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             builder
                 .alloc
                 .inst_builder
-                .push_inst(Instruction::MemoryInit(DataSegmentIdx::from(segment_index)));
+                .push_inst(Instruction::MemoryInit(DataSegmentIdx::try_from(
+                    segment_index,
+                )?));
             Ok(())
         })
     }
@@ -1513,7 +1515,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_data_drop(&mut self, segment_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             builder.bump_fuel_consumption(builder.fuel_costs().entity);
-            let segment_index = DataSegmentIdx::from(segment_index);
+            let segment_index = DataSegmentIdx::try_from(segment_index)?;
             builder
                 .alloc
                 .inst_builder
@@ -1609,7 +1611,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             builder.bump_fuel_consumption(builder.fuel_costs().entity);
             builder.stack_height.pop3();
             let table = TableIdx::try_from(table_index)?;
-            let elem = ElementSegmentIdx::from(segment_index);
+            let elem = ElementSegmentIdx::try_from(segment_index)?;
             builder
                 .alloc
                 .inst_builder
@@ -1621,12 +1623,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_elem_drop(&mut self, segment_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             builder.bump_fuel_consumption(builder.fuel_costs().entity);
-            builder
-                .alloc
-                .inst_builder
-                .push_inst(Instruction::ElemDrop(ElementSegmentIdx::from(
-                    segment_index,
-                )));
+            builder.alloc.inst_builder.push_inst(Instruction::ElemDrop(
+                ElementSegmentIdx::try_from(segment_index)?,
+            ));
             Ok(())
         })
     }

@@ -1043,7 +1043,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn visit_data_drop(&mut self, segment_index: DataSegmentIdx) {
         let segment = self
             .cache
-            .get_data_segment(self.ctx, segment_index.into_inner());
+            .get_data_segment(self.ctx, segment_index.to_u32());
         self.ctx.resolve_data_segment_mut(&segment).drop_bytes();
         self.next_instr();
     }

@@ -211,18 +211,25 @@ impl GlobalIdx {
 /// [`Store`]: [`crate::Store`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct DataSegmentIdx(u32);
+pub struct DataSegmentIdx(U24);
 
-impl From<u32> for DataSegmentIdx {
-    fn from(index: u32) -> Self {
-        Self(index)
+impl TryFrom<u32> for DataSegmentIdx {
+    type Error = TranslationError;
+
+    fn try_from(index: u32) -> Result<Self, Self::Error> {
+        match U24::try_from(index) {
+            Ok(index) => Ok(Self(index)),
+            Err(_) => Err(TranslationError::new(
+                TranslationErrorInner::DataSegmentIndexOutOfBounds,
+            )),
+        }
     }
 }
 
 impl DataSegmentIdx {
-    /// Returns the inner `u32` index.
-    pub fn into_inner(self) -> u32 {
-        self.0
+    /// Returns the index value as `u32`.
+    pub fn to_u32(self) -> u32 {
+        u32::from(self.0)
     }
 }
 
@@ -235,18 +242,25 @@ impl DataSegmentIdx {
 /// [`Store`]: [`crate::Store`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct ElementSegmentIdx(u32);
+pub struct ElementSegmentIdx(U24);
 
-impl From<u32> for ElementSegmentIdx {
-    fn from(index: u32) -> Self {
-        Self(index)
+impl TryFrom<u32> for ElementSegmentIdx {
+    type Error = TranslationError;
+
+    fn try_from(index: u32) -> Result<Self, Self::Error> {
+        match U24::try_from(index) {
+            Ok(index) => Ok(Self(index)),
+            Err(_) => Err(TranslationError::new(
+                TranslationErrorInner::ElementSegmentIndexOutOfBounds,
+            )),
+        }
     }
 }
 
 impl ElementSegmentIdx {
-    /// Returns the inner `u32` index.
-    pub fn into_inner(self) -> u32 {
-        self.0
+    /// Returns the index value as `u32`.
+    pub fn to_u32(self) -> u32 {
+        u32::from(self.0)
     }
 }
 
