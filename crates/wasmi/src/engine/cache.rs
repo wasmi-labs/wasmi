@@ -257,7 +257,7 @@ impl InstanceCache {
     fn load_table_at(&mut self, ctx: &StoreInner, index: TableIdx) -> Table {
         let table = ctx
             .resolve_instance(self.instance())
-            .get_table(index.into_inner())
+            .get_table(index.to_u32())
             .unwrap_or_else(|| {
                 unreachable!(
                     "missing table at index {index:?} for instance: {:?}",

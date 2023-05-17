@@ -15,7 +15,7 @@ impl TranslationError {
     #[inline]
     pub fn new(inner: TranslationErrorInner) -> Self {
         Self {
-            inner: Box::new(inner)
+            inner: Box::new(inner),
         }
     }
 
@@ -68,25 +68,37 @@ impl Display for TranslationError {
                 write!(f, "table index is out of bounds for wasmi bytecode")
             }
             TranslationErrorInner::GlobalIndexOutOfBounds => {
-                write!(f, "global variable index is out of bounds for wasmi bytecode")
+                write!(
+                    f,
+                    "global variable index is out of bounds for wasmi bytecode"
+                )
             }
             TranslationErrorInner::TypeIndexOutOfBounds => {
                 write!(f, "type index is out of bounds for wasmi bytecode")
             }
             TranslationErrorInner::LocalIndexOutOfBounds => {
-                write!(f, "local variable index is out of bounds for wasmi bytecode")
+                write!(
+                    f,
+                    "local variable index is out of bounds for wasmi bytecode"
+                )
             }
             TranslationErrorInner::DataSegmentIndexOutOfBounds => {
                 write!(f, "data segment index is out of bounds for wasmi bytecode")
             }
             TranslationErrorInner::ElementSegmentIndexOutOfBounds => {
-                write!(f, "element segment index is out of bounds for wasmi bytecode")
+                write!(
+                    f,
+                    "element segment index is out of bounds for wasmi bytecode"
+                )
             }
             TranslationErrorInner::BranchOffsetOutOfBounds => {
                 write!(f, "branching offset is out of bounds for wasmi bytecode")
             }
             TranslationErrorInner::DropKeepOutOfBounds => {
-                write!(f, "drop keep properties is out of bounds for wasmi bytecode")
+                write!(
+                    f,
+                    "drop keep properties is out of bounds for wasmi bytecode"
+                )
             }
         }
     }

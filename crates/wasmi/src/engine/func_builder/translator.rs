@@ -1165,7 +1165,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_if_reachable(|builder| {
             let signature = SignatureIdx::from(func_type_index);
             let func_type = builder.func_type_at(signature);
-            let table = TableIdx::from(table_index);
+            let table = TableIdx::try_from(table_index)?;
             builder.stack_height.pop1();
             let drop_keep = builder.drop_keep_return_call(&func_type)?;
             builder.bump_fuel_consumption(builder.fuel_costs().call);
@@ -1207,7 +1207,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_if_reachable(|builder| {
             builder.bump_fuel_consumption(builder.fuel_costs().call);
             let func_type = SignatureIdx::from(func_type_index);
-            let table = TableIdx::from(table_index);
+            let table = TableIdx::try_from(table_index)?;
             builder.stack_height.pop1();
             builder.adjust_value_stack_for_call(&builder.func_type_at(func_type));
             builder
@@ -1524,7 +1524,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_table_size(&mut self, table_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             builder.bump_fuel_consumption(builder.fuel_costs().entity);
-            let table = TableIdx::from(table_index);
+            let table = TableIdx::try_from(table_index)?;
             builder.stack_height.push();
             builder
                 .alloc
@@ -1537,7 +1537,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_table_grow(&mut self, table_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             builder.bump_fuel_consumption(builder.fuel_costs().entity);
-            let table = TableIdx::from(table_index);
+            let table = TableIdx::try_from(table_index)?;
             builder.stack_height.pop1();
             builder
                 .alloc
@@ -1550,8 +1550,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_table_copy(&mut self, dst_table: u32, src_table: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             builder.bump_fuel_consumption(builder.fuel_costs().entity);
-            let dst = TableIdx::from(dst_table);
-            let src = TableIdx::from(src_table);
+            let dst = TableIdx::try_from(dst_table)?;
+            let src = TableIdx::try_from(src_table)?;
             builder.stack_height.pop3();
             builder
                 .alloc
@@ -1564,7 +1564,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_table_fill(&mut self, table_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             builder.bump_fuel_consumption(builder.fuel_costs().entity);
-            let table = TableIdx::from(table_index);
+            let table = TableIdx::try_from(table_index)?;
             builder.stack_height.pop3();
             builder
                 .alloc
@@ -1577,7 +1577,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_table_get(&mut self, table_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             builder.bump_fuel_consumption(builder.fuel_costs().entity);
-            let table = TableIdx::from(table_index);
+            let table = TableIdx::try_from(table_index)?;
             builder
                 .alloc
                 .inst_builder
@@ -1589,7 +1589,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_table_set(&mut self, table_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             builder.bump_fuel_consumption(builder.fuel_costs().entity);
-            let table = TableIdx::from(table_index);
+            let table = TableIdx::try_from(table_index)?;
             builder.stack_height.pop2();
             builder
                 .alloc
@@ -1607,7 +1607,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_if_reachable(|builder| {
             builder.bump_fuel_consumption(builder.fuel_costs().entity);
             builder.stack_height.pop3();
-            let table = TableIdx::from(table_index);
+            let table = TableIdx::try_from(table_index)?;
             let elem = ElementSegmentIdx::from(segment_index);
             builder
                 .alloc

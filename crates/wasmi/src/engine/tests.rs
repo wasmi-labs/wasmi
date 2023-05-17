@@ -1157,9 +1157,9 @@ fn metered_global_bump() {
 }
 
 /// Creates a [`FuncIdx`] from the given `u32` index value.
-/// 
+///
 /// # Panics
-/// 
+///
 /// If the `u32` index value is out of bounds for the [`FuncIdx`].
 fn func_idx(index: u32) -> FuncIdx {
     FuncIdx::try_from(index).unwrap()

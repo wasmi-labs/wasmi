@@ -1,4 +1,4 @@
-use crate::engine::{Instr, TranslationError, func_builder::TranslationErrorInner};
+use crate::engine::{func_builder::TranslationErrorInner, Instr, TranslationError};
 use core::fmt::Display;
 use intx::U24;
 
@@ -73,10 +73,12 @@ pub struct FuncIdx(U24);
 impl TryFrom<u32> for FuncIdx {
     type Error = TranslationError;
 
-    fn try_from(value: u32) -> Result<Self, Self::Error> {
-        match U24::try_from(value) {
-            Ok(value) => Ok(Self(value)),
-            Err(_) => Err(TranslationError::new(TranslationErrorInner::FunctionIndexOutOfBounds))
+    fn try_from(index: u32) -> Result<Self, Self::Error> {
+        match U24::try_from(index) {
+            Ok(index) => Ok(Self(index)),
+            Err(_) => Err(TranslationError::new(
+                TranslationErrorInner::FunctionIndexOutOfBounds,
+            )),
         }
     }
 }
@@ -91,18 +93,25 @@ impl FuncIdx {
 /// A table index.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct TableIdx(u32);
+pub struct TableIdx(U24);
 
-impl From<u32> for TableIdx {
-    fn from(index: u32) -> Self {
-        Self(index)
+impl TryFrom<u32> for TableIdx {
+    type Error = TranslationError;
+
+    fn try_from(index: u32) -> Result<Self, Self::Error> {
+        match U24::try_from(index) {
+            Ok(index) => Ok(Self(index)),
+            Err(_) => Err(TranslationError::new(
+                TranslationErrorInner::FunctionIndexOutOfBounds,
+            )),
+        }
     }
 }
 
 impl TableIdx {
-    /// Returns the inner `u32` index.
-    pub fn into_inner(self) -> u32 {
-        self.0
+    /// Returns the index value as `u32`.
+    pub fn to_u32(self) -> u32 {
+        u32::from(self.0)
     }
 }
 
