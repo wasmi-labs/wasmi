@@ -313,7 +313,7 @@ impl InstanceCache {
     fn load_global_at(&mut self, ctx: &mut StoreInner, index: GlobalIdx) -> NonNull<UntypedValue> {
         let global = ctx
             .resolve_instance(self.instance())
-            .get_global(index.into_inner())
+            .get_global(index.to_u32())
             .as_ref()
             .map(|global| ctx.resolve_global_mut(global).get_untyped_ptr())
             .unwrap_or_else(|| {

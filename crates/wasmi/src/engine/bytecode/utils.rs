@@ -197,7 +197,7 @@ impl TryFrom<u32> for GlobalIdx {
 
 impl GlobalIdx {
     /// Returns the index value as `u32`.
-    pub fn into_inner(self) -> u32 {
+    pub fn to_u32(self) -> u32 {
         u32::from(self.0)
     }
 }
