@@ -371,7 +371,10 @@ fn drop_locals() {
 
 macro_rules! params {
     ( $src:expr => $dst:expr, drop: $drop:expr, keep: $keep:expr ) => {
-        BranchParams::new(BranchOffset::from_i32($dst - $src), drop_keep($drop, $keep))
+        BranchParams::new(
+            BranchOffset::try_from($dst - $src).unwrap(),
+            drop_keep($drop, $keep),
+        )
     };
 }
 

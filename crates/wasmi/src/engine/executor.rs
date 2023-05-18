@@ -526,7 +526,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     fn branch_to(&mut self, params: BranchParams) {
         self.sp.drop_keep(params.drop_keep());
-        self.ip.offset(params.offset().into_i32() as isize)
+        self.ip.offset(params.offset().to_i32() as isize)
     }
 
     /// Synchronizes the current stack pointer with the [`ValueStack`].

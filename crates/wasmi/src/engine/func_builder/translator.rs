@@ -182,12 +182,11 @@ impl<'parser> FuncTranslator<'parser> {
 
     /// Finishes constructing the function and returns its [`FuncBody`].
     pub fn finish(&mut self) -> Result<FuncBody, TranslationError> {
-        let func_body = self.alloc.inst_builder.finish(
+        self.alloc.inst_builder.finish(
             self.res.engine(),
             self.len_locals(),
             self.stack_height.max_stack_height() as usize,
-        );
-        Ok(func_body)
+        )
     }
 
     /// Consumes `self` and returns the underlying reusable [`FuncTranslatorAllocations`].
@@ -373,8 +372,13 @@ impl<'parser> FuncTranslator<'parser> {
     }
 
     /// Creates [`BranchParams`] to `target` using `drop_keep` for the current instruction.
-    fn branch_params(&mut self, target: LabelRef, drop_keep: DropKeep) -> BranchParams {
-        BranchParams::new(self.alloc.inst_builder.try_resolve_label(target), drop_keep)
+    fn branch_params(
+        &mut self,
+        target: LabelRef,
+        drop_keep: DropKeep,
+    ) -> Result<BranchParams, TranslationError> {
+        let branch_offset = self.alloc.inst_builder.try_resolve_label(target)?;
+        Ok(BranchParams::new(branch_offset, drop_keep))
     }
 
     /// Calculates the stack height upon entering a control flow frame.
@@ -878,7 +882,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let else_label = self.alloc.inst_builder.new_label();
             let end_label = self.alloc.inst_builder.new_label();
             self.bump_fuel_consumption(self.fuel_costs().base);
-            let branch_params = self.branch_params(else_label, DropKeep::none());
+            let branch_params = self.branch_params(else_label, DropKeep::none())?;
             self.alloc
                 .inst_builder
                 .push_inst(Instruction::BrIfEqz(branch_params));
@@ -932,7 +936,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         // block's end label in case the end of `then` is reachable.
         if reachable {
             self.bump_fuel_consumption(self.fuel_costs().base);
-            let params = self.branch_params(if_frame.end_label(), DropKeep::none());
+            let params = self.branch_params(if_frame.end_label(), DropKeep::none())?;
             self.alloc.inst_builder.push_inst(Instruction::Br(params));
         }
         // Now resolve labels for the instructions of the `else` block
@@ -1009,7 +1013,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     builder.bump_fuel_consumption(builder.fuel_costs().base);
                     builder
                         .bump_fuel_consumption(builder.fuel_costs().fuel_for_drop_keep(drop_keep));
-                    let params = builder.branch_params(end_label, drop_keep);
+                    let params = builder.branch_params(end_label, drop_keep)?;
                     builder
                         .alloc
                         .inst_builder
@@ -1033,7 +1037,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     builder.bump_fuel_consumption(builder.fuel_costs().base);
                     builder
                         .bump_fuel_consumption(builder.fuel_costs().fuel_for_drop_keep(drop_keep));
-                    let params = builder.branch_params(end_label, drop_keep);
+                    let params = builder.branch_params(end_label, drop_keep)?;
                     builder
                         .alloc
                         .inst_builder
@@ -1071,7 +1075,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                         let offset = builder
                             .alloc
                             .inst_builder
-                            .try_resolve_label_for(label, instr);
+                            .try_resolve_label_for(label, instr)?;
                         let params = BranchParams::new(offset, drop_keep);
 
                         Ok(Instruction::Br(params))

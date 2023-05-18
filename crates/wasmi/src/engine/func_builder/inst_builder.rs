@@ -1,6 +1,9 @@
 //! Abstractions to build up instructions forming Wasm function bodies.
 
-use super::labels::{LabelRef, LabelRegistry};
+use super::{
+    labels::{LabelRef, LabelRegistry},
+    TranslationError,
+};
 use crate::engine::{
     bytecode::{BranchOffset, Instruction},
     Engine,
@@ -135,7 +138,7 @@ impl InstructionsBuilder {
     ///
     /// Returns an uninitialized [`BranchOffset`] if the `label` cannot yet
     /// be resolved and defers resolution to later.
-    pub fn try_resolve_label(&mut self, label: LabelRef) -> BranchOffset {
+    pub fn try_resolve_label(&mut self, label: LabelRef) -> Result<BranchOffset, TranslationError> {
         let user = self.current_pc();
         self.try_resolve_label_for(label, user)
     }
@@ -144,7 +147,11 @@ impl InstructionsBuilder {
     ///
     /// Returns an uninitialized [`BranchOffset`] if the `label` cannot yet
     /// be resolved and defers resolution to later.
-    pub fn try_resolve_label_for(&mut self, label: LabelRef, instr: Instr) -> BranchOffset {
+    pub fn try_resolve_label_for(
+        &mut self,
+        label: LabelRef,
+        instr: Instr,
+    ) -> Result<BranchOffset, TranslationError> {
         self.labels.try_resolve_label(label, instr)
     }
 
@@ -162,9 +169,10 @@ impl InstructionsBuilder {
         engine: &Engine,
         len_locals: usize,
         max_stack_height: usize,
-    ) -> FuncBody {
-        self.update_branch_offsets();
-        engine.alloc_func_body(len_locals, max_stack_height, self.insts.drain(..))
+    ) -> Result<FuncBody, TranslationError> {
+        self.update_branch_offsets()?;
+        let func_body = engine.alloc_func_body(len_locals, max_stack_height, self.insts.drain(..));
+        Ok(func_body)
     }
 
     /// Updates the branch offsets of all branch instructions inplace.
@@ -172,10 +180,11 @@ impl InstructionsBuilder {
     /// # Panics
     ///
     /// If this is used before all branching labels have been pinned.
-    fn update_branch_offsets(&mut self) {
+    fn update_branch_offsets(&mut self) -> Result<(), TranslationError> {
         for (user, offset) in self.labels.resolved_users() {
-            self.insts[user.into_usize()].update_branch_offset(offset);
+            self.insts[user.into_usize()].update_branch_offset(offset?);
         }
+        Ok(())
     }
 
     /// Adds the given `delta` amount of fuel to the [`ConsumeFuel`] instruction `instr`.

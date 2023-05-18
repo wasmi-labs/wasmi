@@ -1,6 +1,6 @@
 use crate::engine::{func_builder::TranslationErrorInner, Instr, TranslationError};
 use core::fmt::Display;
-use intx::U24;
+use intx::{I24, U24};
 
 /// A function index.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -277,35 +277,61 @@ impl BranchParams {
 /// This defines how much the instruction pointer is offset
 /// upon taking the respective branch.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct BranchOffset(i32);
+pub struct BranchOffset(I24);
+
+#[cfg(test)]
+impl TryFrom<i32> for BranchOffset {
+    type Error = TranslationError;
+
+    /// Creates a [`BranchOffset`] from the given raw `i32` value.
+    ///
+    /// # Note
+    ///
+    /// Only required for testing purposes.
+    fn try_from(offset: i32) -> Result<Self, Self::Error> {
+        match I24::try_from(offset) {
+            Ok(offset) => Ok(Self(offset)),
+            Err(_) => Err(TranslationError::new(
+                TranslationErrorInner::BranchOffsetOutOfBounds,
+            )),
+        }
+    }
+}
 
 impl BranchOffset {
-    /// Creates a [`BranchOffset`] from the given raw `i32` value.
-    #[cfg(test)]
-    pub fn from_i32(value: i32) -> Self {
-        Self(value)
-    }
-
     /// Creates an uninitalized [`BranchOffset`].
     pub fn uninit() -> Self {
-        Self(0)
+        Self(I24::default())
     }
 
     /// Creates an initialized [`BranchOffset`] from `src` to `dst`.
-    pub fn init(src: Instr, dst: Instr) -> Self {
+    ///
+    /// # Errors
+    ///
+    /// If the resulting [`BranchOffset`] is out of bounds.
+    ///
+    /// # Panics
+    ///
+    /// If the resulting [`BranchOffset`] is uninitialized, aka equal to 0.
+    pub fn init(src: Instr, dst: Instr) -> Result<Self, TranslationError> {
+        fn make_err() -> TranslationError {
+            TranslationError::new(TranslationErrorInner::BranchOffsetOutOfBounds)
+        }
         let src = src.into_u32() as i32;
         let dst = dst.into_u32() as i32;
-        Self(dst - src)
+        let offset = dst.checked_sub(src).ok_or_else(make_err)?;
+        let offset = I24::try_from(offset).map_err(|_| make_err())?;
+        Ok(Self(offset))
     }
 
     /// Returns `true` if the [`BranchOffset`] has been initialized.
     pub fn is_init(self) -> bool {
-        self.0 != 0
+        self.to_i32() != 0
     }
 
     /// Returns the `i32` representation of the [`BranchOffset`].
-    pub fn into_i32(self) -> i32 {
-        self.0
+    pub fn to_i32(self) -> i32 {
+        i32::from(self.0)
     }
 }
 
