@@ -1319,7 +1319,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             builder.stack_height.push();
             let (global_type, init_value) = builder.res.get_global(global_idx);
             let global_idx = bytecode::GlobalIdx::try_from(global_idx.into_u32())?;
-            let instr = Self::optimize_global_get(&global_type, init_value)?.unwrap_or_else(|| {
+            let instr = Self::optimize_global_get(&global_type, init_value)?.unwrap_or({
                 // No optimization took place in this case.
                 Instruction::GlobalGet(global_idx)
             });

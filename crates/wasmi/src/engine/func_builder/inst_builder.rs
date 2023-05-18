@@ -163,7 +163,6 @@ impl InstructionsBuilder {
     /// into the [`Engine`] so that the [`Engine`] is
     /// aware of the Wasm function existence. Returns a `FuncBody`
     /// reference that allows to retrieve the instructions.
-    #[must_use]
     pub fn finish(
         &mut self,
         engine: &Engine,
