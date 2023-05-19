@@ -1,5 +1,5 @@
 use crate::engine::{func_builder::TranslationErrorInner, Instr, TranslationError};
-use core::fmt::Display;
+use core::fmt::{self, Display};
 use intx::{I24, U24};
 
 /// A function index.
@@ -336,64 +336,84 @@ impl BranchOffset {
 }
 
 /// Defines how many stack values are going to be dropped and kept after branching.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub struct DropKeep {
-    /// The amount of stack values dropped.
-    drop: u16,
-    /// The amount of stack values kept.
-    keep: u16,
+    drop_keep: [u8; 3],
+}
+
+impl fmt::Debug for DropKeep {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("DropKeep")
+            .field("drop", &self.drop())
+            .field("keep", &self.keep())
+            .finish()
+    }
 }
 
 /// An error that may occur upon operating on [`DropKeep`].
 #[derive(Debug, Copy, Clone)]
 pub enum DropKeepError {
     /// The amount of kept elements exceeds the engine's limits.
-    OutOfBoundsKeep,
+    KeepOutOfBounds,
     /// The amount of dropped elements exceeds the engine's limits.
-    OutOfBoundsDrop,
+    DropOutOfBounds,
 }
 
 impl Display for DropKeepError {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DropKeepError::OutOfBoundsKeep => {
-                write!(f, "amount of kept elements exceeds engine's limits")
+            DropKeepError::KeepOutOfBounds => {
+                write!(f, "amount of kept elements exceeds engine limits")
             }
-            DropKeepError::OutOfBoundsDrop => {
-                write!(f, "amount of dropped elements exceeds engine's limits")
+            DropKeepError::DropOutOfBounds => {
+                write!(f, "amount of dropped elements exceeds engine limits")
             }
         }
     }
 }
 
 impl DropKeep {
+    /// Returns the amount of stack values to keep.
+    pub fn keep(self) -> u16 {
+        u16::from_ne_bytes([self.drop_keep[0], self.drop_keep[1] >> 4])
+    }
+
+    /// Returns the amount of stack values to drop.
+    pub fn drop(self) -> u16 {
+        u16::from_ne_bytes([self.drop_keep[2], self.drop_keep[1] & 0x0F])
+    }
+
     /// Creates a new [`DropKeep`] that drops or keeps nothing.
     pub fn none() -> Self {
-        Self { drop: 0, keep: 0 }
+        Self {
+            drop_keep: [0x00; 3],
+        }
     }
 
     /// Creates a new [`DropKeep`] with the given amounts to drop and keep.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// - If `drop` or `keep` values do not respect their limitations.
+    /// - If `keep` is larger than `drop`.
+    /// - If `keep` is out of bounds. (max 4095)
+    /// - If `drop` is out of bounds. (delta to keep max 4095)
     pub fn new(drop: usize, keep: usize) -> Result<Self, DropKeepError> {
-        let drop = drop
-            .try_into()
-            .map_err(|_| DropKeepError::OutOfBoundsDrop)?;
-        let keep = keep
-            .try_into()
-            .map_err(|_| DropKeepError::OutOfBoundsKeep)?;
-        Ok(Self { drop, keep })
-    }
-
-    /// Returns the amount of stack values to drop.
-    pub fn drop(self) -> usize {
-        self.drop as usize
-    }
-
-    /// Returns the amount of stack values to keep.
-    pub fn keep(self) -> usize {
-        self.keep as usize
+        println!("DropKeep(drop = {drop}, keep = {keep})");
+        if keep >= 4096 {
+            return Err(DropKeepError::KeepOutOfBounds);
+        }
+        // Now we can cast `drop` and `keep` to `u16` values safely.
+        let keep = keep as u16;
+        let drop = drop as u16;
+        if drop >= 4096 {
+            return Err(DropKeepError::DropOutOfBounds);
+        }
+        let [k0, k1] = keep.to_ne_bytes();
+        let [d0, d1] = drop.to_ne_bytes();
+        debug_assert!(k1 <= 0x0F);
+        debug_assert!(d1 <= 0x0F);
+        Ok(Self {
+            drop_keep: [k0, k1 << 4 | d1, d0],
+        })
     }
 }

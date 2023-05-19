@@ -354,8 +354,8 @@ impl<'parser> FuncTranslator<'parser> {
         let len_params_locals = self.locals.len_registered() as usize;
         DropKeep::new(
             // Drop all local variables and parameters upon exit.
-            drop_keep.drop() + len_params_locals,
-            drop_keep.keep(),
+            drop_keep.drop() as usize + len_params_locals,
+            drop_keep.keep() as usize,
         )
         .map_err(Into::into)
     }

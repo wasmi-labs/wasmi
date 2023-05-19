@@ -149,7 +149,7 @@ impl FuelCosts {
         if drop_keep.drop() == 0 {
             return 0;
         }
-        Self::costs_per(drop_keep.keep() as u64, self.branch_kept_per_fuel)
+        Self::costs_per(u64::from(drop_keep.keep()), self.branch_kept_per_fuel)
     }
 
     /// Returns the fuel consumption for calling a function with the amount of local variables.
