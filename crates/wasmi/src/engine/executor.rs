@@ -3,6 +3,7 @@ use crate::{
     engine::{
         bytecode::{
             BranchParams,
+            BranchTableTargets,
             DataSegmentIdx,
             ElementSegmentIdx,
             FuncIdx,
@@ -216,7 +217,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::Br(params) => self.visit_br(params),
                 Instr::BrIfEqz(params) => self.visit_br_if_eqz(params),
                 Instr::BrIfNez(params) => self.visit_br_if_nez(params),
-                Instr::BrTable { len_targets } => self.visit_br_table(len_targets),
+                Instr::BrTable(targets) => self.visit_br_table(targets),
                 Instr::Unreachable => self.visit_unreachable()?,
                 Instr::ConsumeFuel { amount } => self.visit_consume_fuel(amount)?,
                 Instr::Return(drop_keep) => {
@@ -802,10 +803,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     #[inline(always)]
-    fn visit_br_table(&mut self, len_targets: usize) {
+    fn visit_br_table(&mut self, targets: BranchTableTargets) {
         let index: u32 = self.sp.pop_as();
         // The index of the default target which is the last target of the slice.
-        let max_index = len_targets - 1;
+        let max_index = targets.to_usize() - 1;
         // A normalized index will always yield a target without panicking.
         let normalized_index = cmp::min(index as usize, max_index);
         // Update `pc`:

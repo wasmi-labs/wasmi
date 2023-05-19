@@ -8,6 +8,7 @@ mod tests;
 pub use self::utils::{
     BranchOffset,
     BranchParams,
+    BranchTableTargets,
     DataSegmentIdx,
     DropKeep,
     DropKeepError,
@@ -45,9 +46,7 @@ pub enum Instruction {
     Br(BranchParams),
     BrIfEqz(BranchParams),
     BrIfNez(BranchParams),
-    BrTable {
-        len_targets: usize,
-    },
+    BrTable(BranchTableTargets),
     Unreachable,
     ConsumeFuel {
         amount: u64,

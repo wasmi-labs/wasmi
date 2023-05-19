@@ -18,6 +18,7 @@ use crate::{
         bytecode::{
             self,
             BranchParams,
+            BranchTableTargets,
             DataSegmentIdx,
             ElementSegmentIdx,
             Instruction,
@@ -1118,9 +1119,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let len_branches = builder.alloc.br_table_branches.len();
             let default_branch =
                 compute_instr(builder, len_branches, default, &mut max_drop_keep_fuel)?;
-            builder.alloc.inst_builder.push_inst(Instruction::BrTable {
-                len_targets: len_branches + 1,
-            });
+            let len_targets = BranchTableTargets::try_from(len_branches as u64 + 1)?;
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::BrTable(len_targets));
             for branch in builder.alloc.br_table_branches.drain(..) {
                 builder.alloc.inst_builder.push_inst(branch);
             }

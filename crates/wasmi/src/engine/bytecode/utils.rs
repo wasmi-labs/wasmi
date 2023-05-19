@@ -201,6 +201,31 @@ impl ElementSegmentIdx {
     }
 }
 
+/// The number of branches of a [`BranchTable`] instruction.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct BranchTableTargets(U24);
+
+impl TryFrom<u64> for BranchTableTargets {
+    type Error = TranslationError;
+
+    fn try_from(index: u64) -> Result<Self, Self::Error> {
+        match U24::try_from(index) {
+            Ok(index) => Ok(Self(index)),
+            Err(_) => Err(TranslationError::new(
+                TranslationErrorInner::BranchTableTargetsOutOfBounds,
+            )),
+        }
+    }
+}
+
+impl BranchTableTargets {
+    /// Returns the index value as `usize`.
+    pub fn to_usize(self) -> usize {
+        u32::from(self.0) as usize
+    }
+}
+
 /// A linear memory access offset.
 ///
 /// # Note

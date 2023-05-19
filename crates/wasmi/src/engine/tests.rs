@@ -1,5 +1,5 @@
 use super::{
-    bytecode::{FuncIdx, GlobalIdx, Offset},
+    bytecode::{BranchTableTargets, FuncIdx, GlobalIdx, Offset},
     *,
 };
 use crate::{
@@ -66,6 +66,15 @@ fn func_idx(index: u32) -> FuncIdx {
 /// If the `u32` index value is out of bounds for the [`GlobalIdx`].
 fn global_idx(index: u32) -> GlobalIdx {
     GlobalIdx::try_from(index).unwrap()
+}
+
+/// Returns the [`BranchTableTargets`] for the given amount.
+///
+/// # Panics
+///
+/// If `len_targets` is out of bounds as [`BranchTableTargets`].
+fn br_targets(len_targets: usize) -> BranchTableTargets {
+    BranchTableTargets::try_from(len_targets as u64).unwrap()
 }
 
 /// Asserts that the given `func_body` consists of the expected instructions.
@@ -642,7 +651,7 @@ fn spec_as_br_if_value_cond() {
         /* 0 */ Instruction::constant(6),
         /* 1 */ Instruction::constant(9),
         /* 2 */ Instruction::constant(0),
-        /* 3 */ Instruction::BrTable { len_targets: 2 },
+        /* 3 */ Instruction::BrTable(br_targets(2)),
         /* 4 */ Instruction::Br(params!(4 => 6, drop: 1, keep: 1)),
         /* 5 */ Instruction::Br(params!(5 => 6, drop: 1, keep: 1)),
         /* 6 */ Instruction::Return(drop_keep(0, 1)),
@@ -668,7 +677,7 @@ fn br_table() {
     );
     let expected = [
         /* 0 */ Instruction::constant(0),
-        /* 1 */ Instruction::BrTable { len_targets: 2 },
+        /* 1 */ Instruction::BrTable(br_targets(2)),
         /* 2 */ Instruction::Br(params!(2 => 0, drop: 0, keep: 0)),
         /* 3 */ Instruction::Br(params!(3 => 4, drop: 0, keep: 0)),
         /* 4 */ Instruction::Return(drop_keep(0, 0)),
@@ -698,7 +707,7 @@ fn br_table_returns_result() {
     let expected = [
         /* 0 */ Instruction::constant(0),
         /* 1 */ Instruction::constant(1),
-        /* 2 */ Instruction::BrTable { len_targets: 2 },
+        /* 2 */ Instruction::BrTable(br_targets(2)),
         /* 3 */ Instruction::Br(params!(3 => 5, drop: 0, keep: 1)),
         /* 4 */ Instruction::Br(params!(4 => 6, drop: 0, keep: 1)),
         /* 5 */ Instruction::Unreachable,
@@ -793,7 +802,7 @@ fn br_table_return() {
     );
     let expected = [
         /* 0 */ instr::local_get(1),
-        /* 1 */ Instruction::BrTable { len_targets: 3 },
+        /* 1 */ Instruction::BrTable(br_targets(3)),
         /* 2 */ Instruction::Br(params!(2 => 5, drop: 0, keep: 0)),
         /* 3 */ Instruction::Br(params!(3 => 5, drop: 0, keep: 0)),
         /* 4 */ Instruction::Return(drop_keep(1, 0)),

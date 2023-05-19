@@ -61,6 +61,12 @@ impl Display for TranslationError {
                 write!(f, "encountered unsupported Wasm value type: {error:?}")
             }
             TranslationErrorInner::DropKeep(error) => error.fmt(f),
+            TranslationErrorInner::BranchTableTargetsOutOfBounds => {
+                write!(
+                    f,
+                    "branch table targets are out of bounds for wasmi bytecode"
+                )
+            }
             TranslationErrorInner::FunctionIndexOutOfBounds => {
                 write!(f, "function index is out of bounds for wasmi bytecode")
             }
@@ -115,6 +121,8 @@ pub enum TranslationErrorInner {
     UnsupportedValueType(wasmparser::ValType),
     /// An error with limitations of `DropKeep`.
     DropKeep(DropKeepError),
+    /// When using too many branch table targets.
+    BranchTableTargetsOutOfBounds,
     /// Function index out of bounds.
     FunctionIndexOutOfBounds,
     /// Table index out of bounds.
