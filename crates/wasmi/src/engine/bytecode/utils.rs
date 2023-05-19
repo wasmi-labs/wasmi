@@ -423,7 +423,6 @@ impl DropKeep {
     /// - If `keep` is out of bounds. (max 4095)
     /// - If `drop` is out of bounds. (delta to keep max 4095)
     pub fn new(drop: usize, keep: usize) -> Result<Self, DropKeepError> {
-        println!("DropKeep(drop = {drop}, keep = {keep})");
         if keep >= 4096 {
             return Err(DropKeepError::KeepOutOfBounds);
         }
