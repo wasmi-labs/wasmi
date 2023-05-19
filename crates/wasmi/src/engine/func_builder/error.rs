@@ -100,12 +100,6 @@ impl Display for TranslationError {
             TranslationErrorInner::BranchOffsetOutOfBounds => {
                 write!(f, "branching offset is out of bounds for wasmi bytecode")
             }
-            TranslationErrorInner::DropKeepOutOfBounds => {
-                write!(
-                    f,
-                    "drop keep properties is out of bounds for wasmi bytecode"
-                )
-            }
             TranslationErrorInner::BlockFuelOutOfBounds => {
                 write!(
                     f,
@@ -145,8 +139,6 @@ pub enum TranslationErrorInner {
     ElementSegmentIndexOutOfBounds,
     /// Branching offset out of bounds.
     BranchOffsetOutOfBounds,
-    /// Drop & Keep properties are out of bounds.
-    DropKeepOutOfBounds,
     /// Fuel required for a block is out of bounds.
     BlockFuelOutOfBounds,
 }
