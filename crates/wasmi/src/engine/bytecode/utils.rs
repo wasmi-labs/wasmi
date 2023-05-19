@@ -201,7 +201,9 @@ impl ElementSegmentIdx {
     }
 }
 
-/// The number of branches of a [`BranchTable`] instruction.
+/// The number of branches of an [`Instruction::BrTable`].
+/// 
+/// [`Instruction::BrTable`]: [`super::Instruction::BrTable`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct BranchTableTargets(U24);
