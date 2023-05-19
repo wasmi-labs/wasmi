@@ -34,15 +34,9 @@ use wasmi_core::UntypedValue;
 /// each representing either the `BrTable` head or one of its branching targets.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Instruction {
-    LocalGet {
-        local_depth: LocalDepth,
-    },
-    LocalSet {
-        local_depth: LocalDepth,
-    },
-    LocalTee {
-        local_depth: LocalDepth,
-    },
+    LocalGet(LocalDepth),
+    LocalSet(LocalDepth),
+    LocalTee(LocalDepth),
     Br(BranchParams),
     BrIfEqz(BranchParams),
     BrIfNez(BranchParams),
@@ -277,9 +271,7 @@ impl Instruction {
     ///
     /// If the `local_depth` is out of bounds as local depth index.
     pub fn local_get(local_depth: u32) -> Result<Self, TranslationError> {
-        Ok(Self::LocalGet {
-            local_depth: LocalDepth::try_from(local_depth)?,
-        })
+        Ok(Self::LocalGet(LocalDepth::try_from(local_depth)?))
     }
 
     /// Creates a new `local.set` instruction from the given local depth.
@@ -288,9 +280,7 @@ impl Instruction {
     ///
     /// If the `local_depth` is out of bounds as local depth index.
     pub fn local_set(local_depth: u32) -> Result<Self, TranslationError> {
-        Ok(Self::LocalSet {
-            local_depth: LocalDepth::try_from(local_depth)?,
-        })
+        Ok(Self::LocalSet(LocalDepth::try_from(local_depth)?))
     }
 
     /// Creates a new `local.tee` instruction from the given local depth.
@@ -299,9 +289,7 @@ impl Instruction {
     ///
     /// If the `local_depth` is out of bounds as local depth index.
     pub fn local_tee(local_depth: u32) -> Result<Self, TranslationError> {
-        Ok(Self::LocalTee {
-            local_depth: LocalDepth::try_from(local_depth)?,
-        })
+        Ok(Self::LocalTee(LocalDepth::try_from(local_depth)?))
     }
 
     /// Convenience method to create a new `ConsumeFuel` instruction.

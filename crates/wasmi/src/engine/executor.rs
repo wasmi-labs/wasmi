@@ -211,9 +211,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         use Instruction as Instr;
         loop {
             match *self.ip.get() {
-                Instr::LocalGet { local_depth } => self.visit_local_get(local_depth),
-                Instr::LocalSet { local_depth } => self.visit_local_set(local_depth),
-                Instr::LocalTee { local_depth } => self.visit_local_tee(local_depth),
+                Instr::LocalGet(local_depth) => self.visit_local_get(local_depth),
+                Instr::LocalSet(local_depth) => self.visit_local_set(local_depth),
+                Instr::LocalTee(local_depth) => self.visit_local_tee(local_depth),
                 Instr::Br(params) => self.visit_br(params),
                 Instr::BrIfEqz(params) => self.visit_br_if_eqz(params),
                 Instr::BrIfNez(params) => self.visit_br_if_nez(params),
