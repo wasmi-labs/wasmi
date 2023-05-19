@@ -426,12 +426,12 @@ impl DropKeep {
         if keep >= 4096 {
             return Err(DropKeepError::KeepOutOfBounds);
         }
-        // Now we can cast `drop` and `keep` to `u16` values safely.
-        let keep = keep as u16;
-        let drop = drop as u16;
         if drop >= 4096 {
             return Err(DropKeepError::DropOutOfBounds);
         }
+        // Now we can cast `drop` and `keep` to `u16` values safely.
+        let keep = keep as u16;
+        let drop = drop as u16;
         let [k0, k1] = keep.to_ne_bytes();
         let [d0, d1] = drop.to_ne_bytes();
         debug_assert!(k1 <= 0x0F);
