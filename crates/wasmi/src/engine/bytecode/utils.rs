@@ -400,12 +400,12 @@ impl Display for DropKeepError {
 impl DropKeep {
     /// Returns the amount of stack values to keep.
     pub fn keep(self) -> u16 {
-        u16::from_ne_bytes([self.drop_keep[0], self.drop_keep[1] >> 4])
+        u16::from_le_bytes([self.drop_keep[0], self.drop_keep[1] >> 4])
     }
 
     /// Returns the amount of stack values to drop.
     pub fn drop(self) -> u16 {
-        u16::from_ne_bytes([self.drop_keep[2], self.drop_keep[1] & 0x0F])
+        u16::from_le_bytes([self.drop_keep[2], self.drop_keep[1] & 0x0F])
     }
 
     /// Creates a new [`DropKeep`] that drops or keeps nothing.
@@ -432,8 +432,8 @@ impl DropKeep {
         // Now we can cast `drop` and `keep` to `u16` values safely.
         let keep = keep as u16;
         let drop = drop as u16;
-        let [k0, k1] = keep.to_ne_bytes();
-        let [d0, d1] = drop.to_ne_bytes();
+        let [k0, k1] = keep.to_le_bytes();
+        let [d0, d1] = drop.to_le_bytes();
         debug_assert!(k1 <= 0x0F);
         debug_assert!(d1 <= 0x0F);
         Ok(Self {
