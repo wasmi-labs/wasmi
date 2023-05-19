@@ -29,6 +29,8 @@ fn create_module(config: &Config, bytes: &[u8]) -> Module {
 
 /// Contains some utility methods to construct instructions simpler.
 mod instr {
+    use crate::engine::bytecode::BlockFuel;
+
     use super::Instruction;
 
     /// Creates a new [`Instruction::LocalGet`] with the `local_depth`.
@@ -47,6 +49,15 @@ mod instr {
     /// If the `local_depth` is out of bounds.
     pub fn local_set(local_depth: u32) -> Instruction {
         Instruction::local_set(local_depth).unwrap()
+    }
+
+    /// Creates a new [`Instruction::ConsumeFuel`] with the `block_fuel`.
+    ///
+    /// # Panics
+    ///
+    /// If the `block_fuel` is out of bounds.
+    pub fn consume_fuel(block_fuel: u64) -> Instruction {
+        Instruction::ConsumeFuel(BlockFuel::try_from(block_fuel).unwrap())
     }
 }
 
@@ -831,7 +842,7 @@ fn metered_simple_01() {
     let expected_fuel =
         3 * costs.base + costs.fuel_for_locals(1) + costs.fuel_for_drop_keep(drop_keep(1, 1));
     let expected = [
-        Instruction::consume_fuel(expected_fuel),
+        instr::consume_fuel(expected_fuel),
         instr::local_get(1),
         Instruction::Return(drop_keep(1, 1)),
     ];
@@ -857,7 +868,7 @@ fn metered_simple_02() {
     let expected_fuel =
         5 * costs.base + costs.fuel_for_locals(1) + costs.fuel_for_drop_keep(drop_keep(1, 1));
     let expected = [
-        Instruction::consume_fuel(expected_fuel),
+        instr::consume_fuel(expected_fuel),
         instr::local_get(1),
         instr::local_get(2),
         Instruction::Drop,
@@ -887,7 +898,7 @@ fn metered_simple_03() {
     let expected_fuel =
         9 * costs.base + costs.fuel_for_locals(2) + costs.fuel_for_drop_keep(drop_keep(2, 1));
     let expected = [
-        Instruction::consume_fuel(expected_fuel),
+        instr::consume_fuel(expected_fuel),
         instr::local_get(2),
         instr::local_get(2),
         Instruction::I32Add,
@@ -924,13 +935,13 @@ fn metered_if_01() {
     let expected_fuel_then = 3 * costs.base + costs.fuel_for_drop_keep(drop_keep(3, 1));
     let expected_fuel_else = expected_fuel_then;
     let expected = [
-        /* 0 */ Instruction::consume_fuel(expected_fuel_fn), // function body
+        /* 0 */ instr::consume_fuel(expected_fuel_fn), // function body
         /* 1 */ instr::local_get(3), // if condition
         /* 2 */ Instruction::BrIfEqz(params!(2 => 6, drop: 0, keep: 0)),
-        /* 3 */ Instruction::consume_fuel(expected_fuel_then), // then
+        /* 3 */ instr::consume_fuel(expected_fuel_then), // then
         /* 4 */ instr::local_get(2),
         /* 5 */ Instruction::Return(drop_keep(3, 1)),
-        /* 6 */ Instruction::consume_fuel(expected_fuel_else), // else
+        /* 6 */ instr::consume_fuel(expected_fuel_else), // else
         /* 7 */ instr::local_get(1),
         /* 8 */ Instruction::Return(drop_keep(3, 1)), // end if
         /* 9 */ Instruction::Return(drop_keep(3, 1)),
@@ -967,17 +978,17 @@ fn metered_block_in_if_01() {
     let expected_fuel_else = expected_fuel_then;
     #[rustfmt::skip]
     let expected = [
-        /*  0 */ Instruction::consume_fuel(expected_fuel_fn), // function body
+        /*  0 */ instr::consume_fuel(expected_fuel_fn), // function body
         /*  1 */ instr::local_get(3), // if condition
         /*  2 */ Instruction::BrIfEqz(params!(2 => 7, drop: 0, keep: 0)),
-        /*  3 */ Instruction::consume_fuel(expected_fuel_then), // then
+        /*  3 */ instr::consume_fuel(expected_fuel_then), // then
         /*  4 */ instr::local_get(2),
         /*  5 */ Instruction::Return(drop_keep(3, 1)),
         /*  6 */ Instruction::Br(params!(6 => 10, drop: 0, keep: 0)), // This deadcode Br is created because
                                                                       // `wasmi`'s dead code analysis does not
                                                                       // properly detect dead code in blocks
                                                                       // (and loops) that have an unreachable end.
-        /*  7 */ Instruction::consume_fuel(expected_fuel_else), // else
+        /*  7 */ instr::consume_fuel(expected_fuel_else), // else
         /*  8 */ instr::local_get(1),
         /*  9 */ Instruction::Return(drop_keep(3, 1)), // end if
         /* 10 */ Instruction::Return(drop_keep(3, 1)),
@@ -1013,13 +1024,13 @@ fn metered_block_in_if_02() {
     let expected_fuel_then = 2 * costs.base;
     let expected_fuel_else = expected_fuel_then;
     let expected = [
-        /*  0 */ Instruction::consume_fuel(expected_fuel_fn), // function body
+        /*  0 */ instr::consume_fuel(expected_fuel_fn), // function body
         /*  1 */ instr::local_get(3), // if condition
         /*  2 */ Instruction::BrIfEqz(params!(2 => 6, drop: 0, keep: 0)),
-        /*  3 */ Instruction::consume_fuel(expected_fuel_then), // then
+        /*  3 */ instr::consume_fuel(expected_fuel_then), // then
         /*  4 */ instr::local_get(2),
         /*  5 */ Instruction::Br(params!(6 => 9, drop: 0, keep: 0)),
-        /*  6 */ Instruction::consume_fuel(expected_fuel_else), // else
+        /*  6 */ instr::consume_fuel(expected_fuel_else), // else
         /*  7 */ instr::local_get(1),
         /*  8 */ Instruction::Return(drop_keep(3, 1)), // end if
     ];
@@ -1055,15 +1066,15 @@ fn metered_loop_in_if() {
     let expected_fuel_else = expected_fuel_then;
     let expected_fuel_loop = 2 * costs.base;
     let expected = [
-        /* 0 */ Instruction::consume_fuel(expected_fuel_fn), // function body
+        /* 0 */ instr::consume_fuel(expected_fuel_fn), // function body
         /* 1 */ instr::local_get(3), // if condition
         /* 2 */ Instruction::BrIfEqz(params!(2 => 7, drop: 0, keep: 0)),
-        /* 3 */ Instruction::consume_fuel(expected_fuel_then), // then
-        /* 4 */ Instruction::consume_fuel(expected_fuel_loop), // loop
+        /* 3 */ instr::consume_fuel(expected_fuel_then), // then
+        /* 4 */ instr::consume_fuel(expected_fuel_loop), // loop
         /* 5 */ instr::local_get(2),
         /* 6 */ Instruction::Br(params!(5 => 9, drop: 0, keep: 0)),
-        /* 7 */ Instruction::consume_fuel(expected_fuel_else), // else
-        /* 8 */ Instruction::consume_fuel(expected_fuel_loop), // loop
+        /* 7 */ instr::consume_fuel(expected_fuel_else), // else
+        /* 8 */ instr::consume_fuel(expected_fuel_loop), // loop
         /* 9 */ instr::local_get(1),
         /*10 */ Instruction::Return(drop_keep(3, 1)),
     ];
@@ -1101,7 +1112,7 @@ fn metered_nested_blocks() {
     let expected_fuel =
         11 * costs.base + costs.fuel_for_locals(1) + costs.fuel_for_drop_keep(drop_keep(1, 1));
     let expected = [
-        Instruction::consume_fuel(expected_fuel),
+        instr::consume_fuel(expected_fuel),
         instr::local_get(1),
         instr::local_get(2),
         instr::local_get(3),
@@ -1148,15 +1159,15 @@ fn metered_nested_loops() {
         3 * costs.base + costs.fuel_for_locals(1) + costs.fuel_for_drop_keep(drop_keep(1, 1));
     let expected_fuel_inner = 3 * costs.base;
     let expected = [
-        Instruction::consume_fuel(expected_fuel_outer),
+        instr::consume_fuel(expected_fuel_outer),
         instr::local_get(1),
-        Instruction::consume_fuel(expected_fuel_inner),
+        instr::consume_fuel(expected_fuel_inner),
         instr::local_get(2),
-        Instruction::consume_fuel(expected_fuel_inner),
+        instr::consume_fuel(expected_fuel_inner),
         instr::local_get(3),
-        Instruction::consume_fuel(expected_fuel_inner),
+        instr::consume_fuel(expected_fuel_inner),
         instr::local_get(4),
-        Instruction::consume_fuel(expected_fuel_inner),
+        instr::consume_fuel(expected_fuel_inner),
         instr::local_get(5),
         Instruction::Drop,
         Instruction::Drop,
@@ -1192,7 +1203,7 @@ fn metered_global_bump() {
         + costs.fuel_for_locals(1)
         + costs.fuel_for_drop_keep(drop_keep(1, 1));
     let expected = [
-        Instruction::consume_fuel(expected_fuel),
+        instr::consume_fuel(expected_fuel),
         Instruction::GlobalGet(global_idx(0)),
         instr::local_get(2),
         Instruction::I32Add,
@@ -1220,13 +1231,13 @@ fn metered_calls_01() {
     let costs = fuel_costs();
     let expected_fuel_f0 = 3 * costs.base;
     let expected_f0 = [
-        Instruction::consume_fuel(expected_fuel_f0),
+        instr::consume_fuel(expected_fuel_f0),
         Instruction::constant(0),
         Instruction::Return(drop_keep(0, 1)),
     ];
     let expected_fuel_f1 = 2 * costs.base + costs.call;
     let expected_f1 = [
-        Instruction::consume_fuel(expected_fuel_f1),
+        instr::consume_fuel(expected_fuel_f1),
         Instruction::Call(func_idx(0)),
         Instruction::Return(drop_keep(0, 1)),
     ];
@@ -1257,7 +1268,7 @@ fn metered_calls_02() {
     let expected_fuel_f0 =
         5 * costs.base + costs.fuel_for_locals(2) + costs.fuel_for_drop_keep(drop_keep(2, 1));
     let expected_f0 = [
-        Instruction::consume_fuel(expected_fuel_f0),
+        instr::consume_fuel(expected_fuel_f0),
         instr::local_get(2),
         instr::local_get(2),
         Instruction::I32Add,
@@ -1268,7 +1279,7 @@ fn metered_calls_02() {
         + costs.fuel_for_locals(2)
         + costs.fuel_for_drop_keep(drop_keep(2, 1));
     let expected_f1 = [
-        Instruction::consume_fuel(expected_fuel_f1),
+        instr::consume_fuel(expected_fuel_f1),
         instr::local_get(2),
         instr::local_get(2),
         Instruction::Call(func_idx(0)),
@@ -1302,7 +1313,7 @@ fn metered_calls_03() {
     let expected_fuel_f0 =
         7 * costs.base + costs.fuel_for_locals(2) + costs.fuel_for_drop_keep(drop_keep(2, 1));
     let expected_f0 = [
-        Instruction::consume_fuel(expected_fuel_f0),
+        instr::consume_fuel(expected_fuel_f0),
         instr::local_get(2),
         instr::local_set(1),
         instr::local_get(2),
@@ -1315,7 +1326,7 @@ fn metered_calls_03() {
         + costs.fuel_for_locals(1)
         + costs.fuel_for_drop_keep(drop_keep(1, 1));
     let expected_f1 = [
-        Instruction::consume_fuel(expected_fuel_f1),
+        instr::consume_fuel(expected_fuel_f1),
         instr::local_get(1),
         Instruction::Call(func_idx(0)),
         Instruction::Return(drop_keep(1, 1)),
@@ -1344,7 +1355,7 @@ fn metered_load_01() {
         + costs.fuel_for_locals(1)
         + costs.fuel_for_drop_keep(drop_keep(1, 1));
     let expected = [
-        Instruction::consume_fuel(expected_fuel),
+        instr::consume_fuel(expected_fuel),
         instr::local_get(1),
         Instruction::I32Load(Offset::from(0)),
         Instruction::Return(drop_keep(1, 1)),
@@ -1369,7 +1380,7 @@ fn metered_store_01() {
     let costs = fuel_costs();
     let expected_fuel = 4 * costs.base + costs.store + costs.fuel_for_locals(2);
     let expected = [
-        Instruction::consume_fuel(expected_fuel),
+        instr::consume_fuel(expected_fuel),
         instr::local_get(2),
         instr::local_get(2),
         Instruction::I32Store(Offset::from(0)),

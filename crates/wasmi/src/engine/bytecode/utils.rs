@@ -202,7 +202,7 @@ impl ElementSegmentIdx {
 }
 
 /// The number of branches of an [`Instruction::BrTable`].
-/// 
+///
 /// [`Instruction::BrTable`]: [`super::Instruction::BrTable`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
@@ -225,6 +225,50 @@ impl BranchTableTargets {
     /// Returns the index value as `usize`.
     pub fn to_usize(self) -> usize {
         u32::from(self.0) as usize
+    }
+}
+
+/// The accumulated fuel to execute a block via [`Instruction::ConsumeFuel`].
+///
+/// [`Instruction::ConsumeFuel`]: [`super::Instruction::ConsumeFuel`]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct BlockFuel(U24);
+
+impl TryFrom<u64> for BlockFuel {
+    type Error = TranslationError;
+
+    fn try_from(index: u64) -> Result<Self, Self::Error> {
+        match U24::try_from(index) {
+            Ok(index) => Ok(Self(index)),
+            Err(_) => Err(TranslationError::new(
+                TranslationErrorInner::BlockFuelOutOfBounds,
+            )),
+        }
+    }
+}
+
+impl BlockFuel {
+    /// Bump the fuel by `amount` if possible.
+    ///
+    /// # Errors
+    ///
+    /// If the new fuel amount after this operation is out of bounds.
+    pub fn bump_by(&mut self, amount: u64) -> Result<(), TranslationError> {
+        let new_amount = self
+            .to_u64()
+            .checked_add(amount)
+            .ok_or(TranslationErrorInner::BlockFuelOutOfBounds)
+            .map_err(TranslationError::new)?;
+        self.0 = U24::try_from(new_amount)
+            .map_err(|_| TranslationErrorInner::BlockFuelOutOfBounds)
+            .map_err(TranslationError::new)?;
+        Ok(())
+    }
+
+    /// Returns the index value as `u64`.
+    pub fn to_u64(self) -> u64 {
+        u64::from(self.0)
     }
 }
 

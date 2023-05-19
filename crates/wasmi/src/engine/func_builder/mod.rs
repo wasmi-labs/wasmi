@@ -72,7 +72,7 @@ impl<'parser> FuncBuilder<'parser> {
     /// This was introduced to properly calculate the fuel costs for all local variables
     /// and function parameters. After this function call no more locals and parameters may
     /// be added to this function translation.
-    pub fn finish_translate_locals(&mut self) {
+    pub fn finish_translate_locals(&mut self) -> Result<(), TranslationError> {
         self.translator.finish_translate_locals()
     }
 

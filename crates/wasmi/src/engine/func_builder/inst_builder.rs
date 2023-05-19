@@ -194,7 +194,11 @@ impl InstructionsBuilder {
     /// - If the amount of consumed fuel for `instr` overflows.
     ///
     /// [`ConsumeFuel`]: enum.Instruction.html#variant.ConsumeFuel
-    pub fn bump_fuel_consumption(&mut self, instr: Instr, delta: u64) {
+    pub fn bump_fuel_consumption(
+        &mut self,
+        instr: Instr,
+        delta: u64,
+    ) -> Result<(), TranslationError> {
         self.insts[instr.into_usize()].bump_fuel_consumption(delta)
     }
 }

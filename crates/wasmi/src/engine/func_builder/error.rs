@@ -106,6 +106,12 @@ impl Display for TranslationError {
                     "drop keep properties is out of bounds for wasmi bytecode"
                 )
             }
+            TranslationErrorInner::BlockFuelOutOfBounds => {
+                write!(
+                    f,
+                    "fuel required to execute a block is out of bounds for wasmi bytecode"
+                )
+            }
         }
     }
 }
@@ -141,4 +147,6 @@ pub enum TranslationErrorInner {
     BranchOffsetOutOfBounds,
     /// Drop & Keep properties are out of bounds.
     DropKeepOutOfBounds,
+    /// Fuel required for a block is out of bounds.
+    BlockFuelOutOfBounds,
 }

@@ -2,6 +2,7 @@ use crate::{
     core::TrapCode,
     engine::{
         bytecode::{
+            BlockFuel,
             BranchParams,
             BranchTableTargets,
             DataSegmentIdx,
@@ -219,7 +220,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::BrIfNez(params) => self.visit_br_if_nez(params),
                 Instr::BrTable(targets) => self.visit_br_table(targets),
                 Instr::Unreachable => self.visit_unreachable()?,
-                Instr::ConsumeFuel { amount } => self.visit_consume_fuel(amount)?,
+                Instr::ConsumeFuel(block_fuel) => self.visit_consume_fuel(block_fuel)?,
                 Instr::Return(drop_keep) => {
                     if let ReturnOutcome::Host = self.visit_ret(drop_keep) {
                         return Ok(WasmOutcome::Return);
@@ -758,11 +759,11 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     #[inline(always)]
-    fn visit_consume_fuel(&mut self, amount: u64) -> Result<(), TrapCode> {
+    fn visit_consume_fuel(&mut self, block_fuel: BlockFuel) -> Result<(), TrapCode> {
         // We do not have to check if fuel metering is enabled since
         // these `wasmi` instructions are only generated if fuel metering
         // is enabled to begin with.
-        self.ctx.fuel_mut().consume_fuel(amount)?;
+        self.ctx.fuel_mut().consume_fuel(block_fuel.to_u64())?;
         self.try_next_instr()
     }
 

@@ -6,6 +6,7 @@ mod utils;
 mod tests;
 
 pub use self::utils::{
+    BlockFuel,
     BranchOffset,
     BranchParams,
     BranchTableTargets,
@@ -42,9 +43,7 @@ pub enum Instruction {
     BrIfNez(BranchParams),
     BrTable(BranchTableTargets),
     Unreachable,
-    ConsumeFuel {
-        amount: u64,
-    },
+    ConsumeFuel(BlockFuel),
     Return(DropKeep),
     ReturnIfNez(DropKeep),
     ReturnCall {
@@ -293,8 +292,9 @@ impl Instruction {
     }
 
     /// Convenience method to create a new `ConsumeFuel` instruction.
-    pub fn consume_fuel(amount: u64) -> Self {
-        Self::ConsumeFuel { amount }
+    pub fn consume_fuel(amount: u64) -> Result<Self, TranslationError> {
+        let block_fuel = BlockFuel::try_from(amount)?;
+        Ok(Self::ConsumeFuel(block_fuel))
     }
 
     /// Increases the fuel consumption of the [`ConsumeFuel`] instruction by `delta`.
@@ -305,13 +305,9 @@ impl Instruction {
     /// - If the new fuel consumption overflows the internal `u64` value.
     ///
     /// [`ConsumeFuel`]: Instruction::ConsumeFuel
-    pub fn bump_fuel_consumption(&mut self, delta: u64) {
+    pub fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), TranslationError> {
         match self {
-            Self::ConsumeFuel { amount } => {
-                *amount = amount.checked_add(delta).unwrap_or_else(|| {
-                    panic!("overflowed fuel consumption. current = {amount}, delta = {delta}",)
-                })
-            }
+            Self::ConsumeFuel(block_fuel) => block_fuel.bump_by(delta),
             instr => panic!("expected Instruction::ConsumeFuel but found: {instr:?}"),
         }
     }
