@@ -93,21 +93,11 @@ pub enum Instruction {
     MemoryCopy,
     MemoryInit(DataSegmentIdx),
     DataDrop(DataSegmentIdx),
-    TableSize {
-        table: TableIdx,
-    },
-    TableGrow {
-        table: TableIdx,
-    },
-    TableFill {
-        table: TableIdx,
-    },
-    TableGet {
-        table: TableIdx,
-    },
-    TableSet {
-        table: TableIdx,
-    },
+    TableSize(TableIdx),
+    TableGrow(TableIdx),
+    TableFill(TableIdx),
+    TableGet(TableIdx),
+    TableSet(TableIdx),
     TableCopy {
         dst: TableIdx,
         src: TableIdx,
@@ -117,9 +107,7 @@ pub enum Instruction {
         elem: ElementSegmentIdx,
     },
     ElemDrop(ElementSegmentIdx),
-    RefFunc {
-        func_index: FuncIdx,
-    },
+    RefFunc(FuncIdx),
     Const(UntypedValue),
     I32Eqz,
     I32Eq,

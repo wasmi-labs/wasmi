@@ -440,7 +440,7 @@ impl<'parser> FuncTranslator<'parser> {
             if let Some(func_index) = init_expr.funcref() {
                 // We can optimize `global.get` to the equivalent `ref.func x` instruction.
                 let func_index = bytecode::FuncIdx::try_from(func_index.into_u32())?;
-                return Ok(Some(Instruction::RefFunc { func_index }));
+                return Ok(Some(Instruction::RefFunc(func_index)));
             }
         }
         Ok(None)
@@ -1282,7 +1282,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             builder
                 .alloc
                 .inst_builder
-                .push_inst(Instruction::RefFunc { func_index });
+                .push_inst(Instruction::RefFunc(func_index));
             builder.stack_height.push();
             Ok(())
         })
@@ -1550,7 +1550,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             builder
                 .alloc
                 .inst_builder
-                .push_inst(Instruction::TableSize { table });
+                .push_inst(Instruction::TableSize(table));
             Ok(())
         })
     }
@@ -1563,7 +1563,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             builder
                 .alloc
                 .inst_builder
-                .push_inst(Instruction::TableGrow { table });
+                .push_inst(Instruction::TableGrow(table));
             Ok(())
         })
     }
@@ -1590,7 +1590,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             builder
                 .alloc
                 .inst_builder
-                .push_inst(Instruction::TableFill { table });
+                .push_inst(Instruction::TableFill(table));
             Ok(())
         })
     }
@@ -1602,7 +1602,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             builder
                 .alloc
                 .inst_builder
-                .push_inst(Instruction::TableGet { table });
+                .push_inst(Instruction::TableGet(table));
             Ok(())
         })
     }
@@ -1615,7 +1615,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             builder
                 .alloc
                 .inst_builder
-                .push_inst(Instruction::TableSet { table });
+                .push_inst(Instruction::TableSet(table));
             Ok(())
         })
     }
