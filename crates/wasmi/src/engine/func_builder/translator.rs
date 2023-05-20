@@ -17,7 +17,7 @@ use crate::{
     engine::{
         bytecode::{
             self,
-            BranchParams,
+            BranchOffset,
             BranchTableTargets,
             DataSegmentIdx,
             ElementSegmentIdx,
@@ -381,14 +381,9 @@ impl<'parser> FuncTranslator<'parser> {
             .unwrap_or_else(|| panic!("cannot convert local index into local depth: {local_idx}"))
     }
 
-    /// Creates [`BranchParams`] to `target` using `drop_keep` for the current instruction.
-    fn branch_params(
-        &mut self,
-        target: LabelRef,
-        drop_keep: DropKeep,
-    ) -> Result<BranchParams, TranslationError> {
-        let branch_offset = self.alloc.inst_builder.try_resolve_label(target)?;
-        Ok(BranchParams::new(branch_offset, drop_keep))
+    /// Creates the [`BranchOffset`] to the `target` instruction for the current instruction.
+    fn branch_offset(&mut self, target: LabelRef) -> Result<BranchOffset, TranslationError> {
+        self.alloc.inst_builder.try_resolve_label(target)
     }
 
     /// Calculates the stack height upon entering a control flow frame.
@@ -892,10 +887,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let else_label = self.alloc.inst_builder.new_label();
             let end_label = self.alloc.inst_builder.new_label();
             self.bump_fuel_consumption(self.fuel_costs().base)?;
-            let branch_params = self.branch_params(else_label, DropKeep::none())?;
+            let branch_offset = self.branch_offset(else_label)?;
             self.alloc
                 .inst_builder
-                .push_inst(Instruction::BrIfEqz(branch_params));
+                .push_br_eqz_instr(branch_offset, DropKeep::none());
             let consume_fuel = self.is_fuel_metering_enabled().then(|| {
                 self.alloc
                     .inst_builder
@@ -946,8 +941,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         // block's end label in case the end of `then` is reachable.
         if reachable {
             self.bump_fuel_consumption(self.fuel_costs().base)?;
-            let params = self.branch_params(if_frame.end_label(), DropKeep::none())?;
-            self.alloc.inst_builder.push_inst(Instruction::Br(params));
+            let offset = self.branch_offset(if_frame.end_label())?;
+            self.alloc
+                .inst_builder
+                .push_br_instr(offset, DropKeep::none());
         }
         // Now resolve labels for the instructions of the `else` block
         self.alloc.inst_builder.pin_label(if_frame.else_label());
@@ -1024,11 +1021,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     builder.bump_fuel_consumption(
                         builder.fuel_costs().fuel_for_drop_keep(drop_keep),
                     )?;
-                    let params = builder.branch_params(end_label, drop_keep)?;
-                    builder
-                        .alloc
-                        .inst_builder
-                        .push_inst(Instruction::Br(params));
+                    let offset = builder.branch_offset(end_label)?;
+                    builder.alloc.inst_builder.push_br_instr(offset, drop_keep);
                 }
                 AcquiredTarget::Return(_) => {
                     // In this case the `br` can be directly translated as `return`.
@@ -1049,11 +1043,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     builder.bump_fuel_consumption(
                         builder.fuel_costs().fuel_for_drop_keep(drop_keep),
                     )?;
-                    let params = builder.branch_params(end_label, drop_keep)?;
+                    let offset = builder.branch_offset(end_label)?;
                     builder
                         .alloc
                         .inst_builder
-                        .push_inst(Instruction::BrIfNez(params));
+                        .push_br_nez_instr(offset, drop_keep);
                 }
                 AcquiredTarget::Return(drop_keep) => {
                     builder
@@ -1067,6 +1061,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_br_table(&mut self, table: wasmparser::BrTable<'a>) -> Result<(), TranslationError> {
+        #[derive(Debug, Copy, Clone)]
+        enum BrTableTarget {
+            Br(BranchOffset, DropKeep),
+            Return(DropKeep),
+        }
+
         self.translate_if_reachable(|builder| {
             fn offset_instr(base: Instr, offset: usize) -> Instr {
                 Instr::from_u32(base.into_u32() + offset as u32)
@@ -1077,25 +1077,40 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 n: usize,
                 depth: RelativeDepth,
                 max_drop_keep_fuel: &mut u64,
-            ) -> Result<Instruction, TranslationError> {
+            ) -> Result<BrTableTarget, TranslationError> {
                 match builder.acquire_target(depth.into_u32())? {
                     AcquiredTarget::Branch(label, drop_keep) => {
                         *max_drop_keep_fuel = (*max_drop_keep_fuel)
                             .max(builder.fuel_costs().fuel_for_drop_keep(drop_keep));
                         let base = builder.alloc.inst_builder.current_pc();
-                        let instr = offset_instr(base, n + 1);
+                        let instr = offset_instr(base, 2 * n + 1);
                         let offset = builder
                             .alloc
                             .inst_builder
                             .try_resolve_label_for(label, instr)?;
-                        let params = BranchParams::new(offset, drop_keep);
-
-                        Ok(Instruction::Br(params))
+                        Ok(BrTableTarget::Br(offset, drop_keep))
                     }
                     AcquiredTarget::Return(drop_keep) => {
                         *max_drop_keep_fuel = (*max_drop_keep_fuel)
                             .max(builder.fuel_costs().fuel_for_drop_keep(drop_keep));
-                        Ok(Instruction::Return(drop_keep))
+                        Ok(BrTableTarget::Return(drop_keep))
+                    }
+                }
+            }
+
+            /// Encodes the [`BrTableTarget`] into the given [`Instruction`] stream.
+            fn encode_br_table_target(stream: &mut Vec<Instruction>, target: BrTableTarget) {
+                match target {
+                    BrTableTarget::Br(offset, drop_keep) => {
+                        // Case: We push a `Br` followed by a `Return` as usual.
+                        stream.push(Instruction::Br(offset));
+                        stream.push(Instruction::Return(drop_keep));
+                    }
+                    BrTableTarget::Return(drop_keep) => {
+                        // Case: We push `Return` two times to make all branch targets use 2 instruction words.
+                        //       This is important to make `br_table` dispatch efficient.
+                        stream.push(Instruction::Return(drop_keep));
+                        stream.push(Instruction::Return(drop_keep));
                     }
                 }
             }
@@ -1122,12 +1137,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             builder.stack_height.pop1();
             builder.alloc.br_table_branches.clear();
             for (n, depth) in targets.into_iter().enumerate() {
-                let relative_depth = compute_instr(builder, n, depth, &mut max_drop_keep_fuel)?;
-                builder.alloc.br_table_branches.push(relative_depth);
+                let target = compute_instr(builder, n, depth, &mut max_drop_keep_fuel)?;
+                encode_br_table_target(&mut builder.alloc.br_table_branches, target)
             }
 
-            // We include the default target in `len_branches`.
-            let len_branches = builder.alloc.br_table_branches.len();
+            // We include the default target in `len_branches`. Each branch takes up 2 instruction words.
+            let len_branches = builder.alloc.br_table_branches.len() / 2;
             let default_branch =
                 compute_instr(builder, len_branches, default, &mut max_drop_keep_fuel)?;
             let len_targets = BranchTableTargets::try_from(len_branches as u64 + 1)?;
@@ -1135,11 +1150,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 .alloc
                 .inst_builder
                 .push_inst(Instruction::BrTable(len_targets));
+            encode_br_table_target(&mut builder.alloc.br_table_branches, default_branch);
             for branch in builder.alloc.br_table_branches.drain(..) {
                 builder.alloc.inst_builder.push_inst(branch);
             }
             builder.bump_fuel_consumption(max_drop_keep_fuel)?;
-            builder.alloc.inst_builder.push_inst(default_branch);
             builder.reachable = false;
             Ok(())
         })

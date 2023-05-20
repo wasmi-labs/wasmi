@@ -145,7 +145,7 @@ impl LabelRegistry {
         user: Instr,
     ) -> Result<BranchOffset, TranslationError> {
         let offset = match *self.get_label(label) {
-            Label::Pinned(target) => BranchOffset::init(user, target)?,
+            Label::Pinned(target) => BranchOffset::from_src_to_dst(user, target)?,
             Label::Unpinned => {
                 self.users.push(LabelUser::new(label, user));
                 BranchOffset::uninit()
@@ -202,7 +202,7 @@ impl<'a> Iterator for ResolvedUserIter<'a> {
             .registry
             .resolve_label(next.label)
             .unwrap_or_else(|err| panic!("failed to resolve user: {err}"));
-        let offset = BranchOffset::init(src, dst);
+        let offset = BranchOffset::from_src_to_dst(src, dst);
         Some((src, offset))
     }
 }

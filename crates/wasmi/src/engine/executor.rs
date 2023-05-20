@@ -3,7 +3,6 @@ use crate::{
     engine::{
         bytecode::{
             BlockFuel,
-            BranchParams,
             BranchTableTargets,
             DataSegmentIdx,
             ElementSegmentIdx,
@@ -34,6 +33,8 @@ use crate::{
 };
 use core::cmp::{self};
 use wasmi_core::{Pages, UntypedValue};
+
+use super::bytecode::BranchOffset;
 
 /// The outcome of a Wasm execution.
 ///
@@ -215,9 +216,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::LocalGet(local_depth) => self.visit_local_get(local_depth),
                 Instr::LocalSet(local_depth) => self.visit_local_set(local_depth),
                 Instr::LocalTee(local_depth) => self.visit_local_tee(local_depth),
-                Instr::Br(params) => self.visit_br(params),
-                Instr::BrIfEqz(params) => self.visit_br_if_eqz(params),
-                Instr::BrIfNez(params) => self.visit_br_if_nez(params),
+                Instr::Br(offset) => self.visit_br(offset),
+                Instr::BrIfEqz(offset) => self.visit_br_if_eqz(offset),
+                Instr::BrIfNez(offset) => self.visit_br_if_nez(offset),
                 Instr::BrTable(targets) => self.visit_br_table(targets),
                 Instr::Unreachable => self.visit_unreachable()?,
                 Instr::ConsumeFuel(block_fuel) => self.visit_consume_fuel(block_fuel)?,
@@ -513,6 +514,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.ip.add(1)
     }
 
+    /// Shifts the instruction pointer to the next instruction.
+    #[inline(always)]
+    fn next_instr2(&mut self) {
+        self.ip.add(2)
+    }
+
     /// Shifts the instruction pointer to the next instruction and returns `Ok(())`.
     ///
     /// # Note
@@ -526,9 +533,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Offsets the instruction pointer using the given [`BranchParams`].
     #[inline(always)]
-    fn branch_to(&mut self, params: BranchParams) {
-        self.sp.drop_keep(params.drop_keep());
-        self.ip.offset(params.offset().to_i32() as isize)
+    fn branch_to(&mut self, offset: BranchOffset, drop_keep: DropKeep) {
+        self.sp.drop_keep(drop_keep);
+        self.ip.offset(offset.to_i32() as isize)
     }
 
     /// Synchronizes the current stack pointer with the [`ValueStack`].
@@ -767,28 +774,47 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.try_next_instr()
     }
 
-    #[inline(always)]
-    fn visit_br(&mut self, params: BranchParams) {
-        self.branch_to(params)
-    }
-
-    #[inline(always)]
-    fn visit_br_if_eqz(&mut self, params: BranchParams) {
-        let condition = self.sp.pop_as();
-        if condition {
-            self.next_instr()
-        } else {
-            self.branch_to(params)
+    /// Fetches the [`DropKeep`] parameter for an instruction.
+    ///
+    /// # Note
+    ///
+    /// This is required for some instructions that do not fit into
+    /// a single instruction word and store a [`DropKeep`] value in
+    /// another instruction word.
+    fn fetch_drop_keep(&self) -> DropKeep {
+        let mut addr = self.ip;
+        addr.add(1);
+        match addr.get() {
+            Instruction::Return(drop_keep) => *drop_keep,
+            _ => unreachable!("expected Return instruction word at this point"),
         }
     }
 
     #[inline(always)]
-    fn visit_br_if_nez(&mut self, params: BranchParams) {
+    fn visit_br(&mut self, offset: BranchOffset) {
+        let drop_keep = self.fetch_drop_keep();
+        self.branch_to(offset, drop_keep)
+    }
+
+    #[inline(always)]
+    fn visit_br_if_eqz(&mut self, offset: BranchOffset) {
         let condition = self.sp.pop_as();
         if condition {
-            self.branch_to(params)
+            self.next_instr2()
         } else {
-            self.next_instr()
+            let drop_keep = self.fetch_drop_keep();
+            self.branch_to(offset, drop_keep)
+        }
+    }
+
+    #[inline(always)]
+    fn visit_br_if_nez(&mut self, offset: BranchOffset) {
+        let condition = self.sp.pop_as();
+        if condition {
+            let drop_keep = self.fetch_drop_keep();
+            self.branch_to(offset, drop_keep)
+        } else {
+            self.next_instr2()
         }
     }
 
@@ -811,7 +837,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         // A normalized index will always yield a target without panicking.
         let normalized_index = cmp::min(index as usize, max_index);
         // Update `pc`:
-        self.ip.add(normalized_index + 1);
+        self.ip.add(2 * normalized_index + 1);
     }
 
     #[inline(always)]

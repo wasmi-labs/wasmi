@@ -294,55 +294,6 @@ impl Offset {
     }
 }
 
-/// A branching target.
-///
-/// This also specifies how many values on the stack
-/// need to be dropped and kept in order to maintain
-/// value stack integrity.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct BranchParams {
-    /// The branching offset.
-    ///
-    /// How much instruction pointer is offset upon taking the branch.
-    offset: BranchOffset,
-    /// How many values on the stack need to be dropped and kept.
-    drop_keep: DropKeep,
-}
-
-impl BranchParams {
-    /// Creates new [`BranchParams`].
-    pub fn new(offset: BranchOffset, drop_keep: DropKeep) -> Self {
-        Self { offset, drop_keep }
-    }
-
-    /// Returns `true` if the [`BranchParams`] have been initialized already.
-    fn is_init(&self) -> bool {
-        self.offset.is_init()
-    }
-
-    /// Initializes the [`BranchParams`] with a proper [`BranchOffset`].
-    ///
-    /// # Panics
-    ///
-    /// - If the [`BranchParams`] have already been initialized.
-    /// - If the given [`BranchOffset`] is not properly initialized.
-    pub fn init(&mut self, offset: BranchOffset) {
-        assert!(offset.is_init());
-        assert!(!self.is_init());
-        self.offset = offset;
-    }
-
-    /// Returns the branching offset.
-    pub fn offset(self) -> BranchOffset {
-        self.offset
-    }
-
-    /// Returns the amount of stack values to drop and keep upon taking the branch.
-    pub fn drop_keep(self) -> DropKeep {
-        self.drop_keep
-    }
-}
-
 /// A signed offset for branch instructions.
 ///
 /// This defines how much the instruction pointer is offset
@@ -384,7 +335,7 @@ impl BranchOffset {
     /// # Panics
     ///
     /// If the resulting [`BranchOffset`] is uninitialized, aka equal to 0.
-    pub fn init(src: Instr, dst: Instr) -> Result<Self, TranslationError> {
+    pub fn from_src_to_dst(src: Instr, dst: Instr) -> Result<Self, TranslationError> {
         fn make_err() -> TranslationError {
             TranslationError::new(TranslationErrorInner::BranchOffsetOutOfBounds)
         }
@@ -398,6 +349,18 @@ impl BranchOffset {
     /// Returns `true` if the [`BranchOffset`] has been initialized.
     pub fn is_init(self) -> bool {
         self.to_i32() != 0
+    }
+
+    /// Initializes the [`BranchOffset`] with a proper value.
+    ///
+    /// # Panics
+    ///
+    /// - If the [`BranchOffset`] have already been initialized.
+    /// - If the given [`BranchOffset`] is not properly initialized.
+    pub fn init(&mut self, valid_offset: BranchOffset) {
+        assert!(valid_offset.is_init());
+        assert!(!self.is_init());
+        *self = valid_offset;
     }
 
     /// Returns the `i32` representation of the [`BranchOffset`].

@@ -6,6 +6,7 @@ use super::{
 };
 use crate::engine::{
     bytecode::{BranchOffset, Instruction},
+    DropKeep,
     Engine,
     FuncBody,
 };
@@ -134,6 +135,33 @@ impl InstructionsBuilder {
         idx
     }
 
+    /// Pushes an [`Instruction::Br`] to the [`InstructionsBuilder`].
+    ///
+    /// Returns an [`Instr`] to refer to the pushed instruction.
+    pub fn push_br_instr(&mut self, branch_offset: BranchOffset, drop_keep: DropKeep) -> Instr {
+        let idx = self.push_inst(Instruction::Br(branch_offset));
+        self.push_inst(Instruction::Return(drop_keep));
+        idx
+    }
+
+    /// Pushes an [`Instruction::BrIfEqz`] to the [`InstructionsBuilder`].
+    ///
+    /// Returns an [`Instr`] to refer to the pushed instruction.
+    pub fn push_br_eqz_instr(&mut self, branch_offset: BranchOffset, drop_keep: DropKeep) -> Instr {
+        let idx = self.push_inst(Instruction::BrIfEqz(branch_offset));
+        self.push_inst(Instruction::Return(drop_keep));
+        idx
+    }
+
+    /// Pushes an [`Instruction::BrIfNez`] to the [`InstructionsBuilder`].
+    ///
+    /// Returns an [`Instr`] to refer to the pushed instruction.
+    pub fn push_br_nez_instr(&mut self, branch_offset: BranchOffset, drop_keep: DropKeep) -> Instr {
+        let idx = self.push_inst(Instruction::BrIfNez(branch_offset));
+        self.push_inst(Instruction::Return(drop_keep));
+        idx
+    }
+
     /// Try resolving the `label` for the currently constructed instruction.
     ///
     /// Returns an uninitialized [`BranchOffset`] if the `label` cannot yet
@@ -209,11 +237,11 @@ impl Instruction {
     /// # Panics
     ///
     /// If `self` is not a branch [`Instruction`].
-    pub fn update_branch_offset(&mut self, offset: BranchOffset) {
+    pub fn update_branch_offset(&mut self, new_offset: BranchOffset) {
         match self {
-            Instruction::Br(params)
-            | Instruction::BrIfEqz(params)
-            | Instruction::BrIfNez(params) => params.init(offset),
+            Instruction::Br(offset)
+            | Instruction::BrIfEqz(offset)
+            | Instruction::BrIfNez(offset) => offset.init(new_offset),
             _ => panic!("tried to update branch offset of a non-branch instruction: {self:?}"),
         }
     }

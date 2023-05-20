@@ -8,7 +8,6 @@ mod tests;
 pub use self::utils::{
     BlockFuel,
     BranchOffset,
-    BranchParams,
     BranchTableTargets,
     DataSegmentIdx,
     DropKeep,
@@ -38,9 +37,46 @@ pub enum Instruction {
     LocalGet(LocalDepth),
     LocalSet(LocalDepth),
     LocalTee(LocalDepth),
-    Br(BranchParams),
-    BrIfEqz(BranchParams),
-    BrIfNez(BranchParams),
+    /// An unconditional branch.
+    ///
+    /// This operation also adjust the underlying value stack if necessary.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by a [`Instruction::Return`]
+    /// which stores information about the [`DropKeep`] behavior of the
+    /// [`Instruction::Br`]. The [`Instruction::Return`] will never be executed
+    /// and only acts as parameter storage for this instruction.
+    Br(BranchOffset),
+    /// Branches if the top-most stack value is equal to zero.
+    ///
+    /// This operation also adjust the underlying value stack if necessary.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by a [`Instruction::Return`]
+    /// which stores information about the [`DropKeep`] behavior of the
+    /// [`Instruction::BrIfEqz`]. The [`Instruction::Return`] will never be executed
+    /// and only acts as parameter storage for this instruction.
+    BrIfEqz(BranchOffset),
+    /// Branches if the top-most stack value is _not_ equal to zero.
+    ///
+    /// This operation also adjust the underlying value stack if necessary.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by a [`Instruction::Return`]
+    /// which stores information about the [`DropKeep`] behavior of the
+    /// [`Instruction::BrIfNez`]. The [`Instruction::Return`] will never be executed
+    /// and only acts as parameter storage for this instruction.
+    BrIfNez(BranchOffset),
+    /// Branch table with a set number of branching targets.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by exactly as many unconditional
+    /// branch instructions as determined by [`BranchTableTargets`]. Branch
+    /// instructions that may follow are [`Instruction::Br] and [`Instruction::Return`].
     BrTable(BranchTableTargets),
     Unreachable,
     ConsumeFuel(BlockFuel),
