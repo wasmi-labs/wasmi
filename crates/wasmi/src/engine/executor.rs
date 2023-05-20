@@ -515,6 +515,11 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Shifts the instruction pointer to the next instruction.
+    ///
+    /// # Note
+    ///
+    /// This is used by `wasmi` instructions that have a fixed
+    /// encoding size of two instruction words such as [`Instruction::Br`].
     #[inline(always)]
     fn next_instr2(&mut self) {
         self.ip.add(2)
@@ -531,7 +536,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         Ok(())
     }
 
-    /// Offsets the instruction pointer using the given [`BranchParams`].
+    /// Offsets the instruction pointer using the given [`BranchOffset`] and [`DropKeep`].
     #[inline(always)]
     fn branch_to(&mut self, offset: BranchOffset, drop_keep: DropKeep) {
         self.sp.drop_keep(drop_keep);
