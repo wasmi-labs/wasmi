@@ -33,6 +33,7 @@ use crate::{
     Table,
 };
 use core::cmp::{self};
+use intx::I24;
 use wasmi_core::{Pages, UntypedValue};
 
 /// The outcome of a Wasm execution.
@@ -288,6 +289,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::TableInit(elem) => self.visit_table_init(elem)?,
                 Instr::ElemDrop(segment) => self.visit_element_drop(segment),
                 Instr::RefFunc(func_index) => self.visit_ref_func(func_index),
+                Instr::I32Const24(value) => self.visit_i32_const_24(value),
+                Instr::I64Const24(value) => self.visit_i64_const_24(value),
                 Instr::Const(bytes) => self.visit_const(bytes),
                 Instr::I32Eqz => self.visit_i32_eqz(),
                 Instr::I32Eq => self.visit_i32_eq(),
@@ -961,6 +964,20 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let table = self.fetch_table_idx(1);
         let func_index: u32 = self.sp.pop_as();
         self.execute_call_indirect(2, table, func_index, func_type, CallKind::Nested)
+    }
+
+    #[inline(always)]
+    fn visit_i32_const_24(&mut self, value: I24) {
+        let sign_extended = i32::from(value);
+        self.sp.push(UntypedValue::from(sign_extended));
+        self.next_instr()
+    }
+
+    #[inline(always)]
+    fn visit_i64_const_24(&mut self, value: I24) {
+        let sign_extended = i64::from(value);
+        self.sp.push(UntypedValue::from(sign_extended));
+        self.next_instr()
     }
 
     #[inline(always)]

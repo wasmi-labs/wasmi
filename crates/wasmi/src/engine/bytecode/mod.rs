@@ -22,6 +22,7 @@ pub use self::utils::{
 };
 use super::TranslationError;
 use core::fmt::Debug;
+use intx::I24;
 use wasmi_core::UntypedValue;
 
 /// The internal `wasmi` bytecode that is stored for Wasm functions.
@@ -173,6 +174,24 @@ pub enum Instruction {
     TableInit(ElementSegmentIdx),
     ElemDrop(ElementSegmentIdx),
     RefFunc(FuncIdx),
+    /// A 32-bit integer value losslessly encoded as 24-bit integer.
+    ///
+    /// Upon execution the 24-bit integer is sign-extended to the 32-bit integer.
+    ///
+    /// # Note
+    ///
+    /// This is a space-optimized variant of [`Instruction::ConstRef`] but can
+    /// only used for small integer values that fit into a 24-bit integer value.
+    I32Const24(I24),
+    /// A 64-bit integer value losslessly encoded as 24-bit integer.
+    ///
+    /// Upon execution the 24-bit integer is sign-extended to the 64-bit integer.
+    ///
+    /// # Note
+    ///
+    /// This is a space-optimized variant of [`Instruction::ConstRef`] but can
+    /// only used for small integer values that fit into a 24-bit integer value.
+    I64Const24(I24),
     Const(UntypedValue),
     I32Eqz,
     I32Eq,

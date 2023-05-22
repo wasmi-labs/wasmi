@@ -50,6 +50,7 @@ use crate::{
     Value,
 };
 use alloc::vec::Vec;
+use intx::I24;
 use wasmi_core::{ValueType, F32, F64};
 use wasmparser::VisitOperator;
 
@@ -1684,11 +1685,39 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_const(&mut self, value: i32) -> Result<(), TranslationError> {
-        self.translate_const(value)
+        match I24::try_from(value) {
+            Ok(value) => self.translate_if_reachable(|builder| {
+                // Case: The constant value is small enough that we can apply
+                //       a small value optimization and use a more efficient
+                //       instruction to encode the constant value instruction.
+                builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+                builder.stack_height.push();
+                builder
+                    .alloc
+                    .inst_builder
+                    .push_inst(Instruction::I32Const24(value));
+                Ok(())
+            }),
+            Err(_) => self.translate_const(value),
+        }
     }
 
     fn visit_i64_const(&mut self, value: i64) -> Result<(), TranslationError> {
-        self.translate_const(value)
+        match I24::try_from(value) {
+            Ok(value) => self.translate_if_reachable(|builder| {
+                // Case: The constant value is small enough that we can apply
+                //       a small value optimization and use a more efficient
+                //       instruction to encode the constant value instruction.
+                builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+                builder.stack_height.push();
+                builder
+                    .alloc
+                    .inst_builder
+                    .push_inst(Instruction::I64Const24(value));
+                Ok(())
+            }),
+            Err(_) => self.translate_const(value),
+        }
     }
 
     fn visit_f32_const(&mut self, value: wasmparser::Ieee32) -> Result<(), TranslationError> {
