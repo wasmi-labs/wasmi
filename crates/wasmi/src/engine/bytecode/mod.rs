@@ -111,10 +111,7 @@ pub enum Instruction {
     /// that encodes the [`TableIdx`] parameter. Note that the [`Instruction::TableGet`]
     /// only acts as a storage for the parameter of the [`Instruction::CallIndirect`]
     /// and will never be executed by itself.
-    CallIndirect {
-        func_type: SignatureIdx,
-        table: TableIdx,
-    },
+    CallIndirect(SignatureIdx),
     Drop,
     Select,
     GlobalGet(GlobalIdx),

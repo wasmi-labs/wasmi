@@ -239,8 +239,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     forward_call!(self.visit_return_call_indirect(func_type))
                 }
                 Instr::Call(func) => forward_call!(self.visit_call(func)),
-                Instr::CallIndirect { table, func_type } => {
-                    forward_call!(self.visit_call_indirect(table, func_type))
+                Instr::CallIndirect(func_type) => {
+                    forward_call!(self.visit_call_indirect(func_type))
                 }
                 Instr::Drop => self.visit_drop(),
                 Instr::Select => self.visit_select(),
@@ -939,13 +939,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     #[inline(always)]
-    fn visit_call_indirect(
-        &mut self,
-        table: TableIdx,
-        func_type: SignatureIdx,
-    ) -> Result<CallOutcome, TrapCode> {
+    fn visit_call_indirect(&mut self, func_type: SignatureIdx) -> Result<CallOutcome, TrapCode> {
+        let table = self.fetch_table_idx(1);
         let func_index: u32 = self.sp.pop_as();
-        self.execute_call_indirect(1, table, func_index, func_type, CallKind::Nested)
+        self.execute_call_indirect(2, table, func_index, func_type, CallKind::Nested)
     }
 
     #[inline(always)]
