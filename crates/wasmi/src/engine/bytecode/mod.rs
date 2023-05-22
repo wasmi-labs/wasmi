@@ -163,7 +163,7 @@ pub enum Instruction {
     /// must be followed by an [`Instruction::TableGet`] which stores a
     /// [`TableIdx`] that refers to the `src` (source) table.
     TableCopy(TableIdx),
-    /// Initializes a [`Table`] given an [`ElementSegmentIdx`].
+    /// Initializes a table given an [`ElementSegmentIdx`].
     ///
     /// # Encoding
     ///
