@@ -280,7 +280,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::TableFill(table) => self.visit_table_fill(table)?,
                 Instr::TableGet(table) => self.visit_table_get(table)?,
                 Instr::TableSet(table) => self.visit_table_set(table)?,
-                Instr::TableCopy { dst, src } => self.visit_table_copy(dst, src)?,
+                Instr::TableCopy(dst) => self.visit_table_copy(dst)?,
                 Instr::TableInit { table, elem } => self.visit_table_init(table, elem)?,
                 Instr::ElemDrop(segment) => self.visit_element_drop(segment),
                 Instr::RefFunc(func_index) => self.visit_ref_func(func_index),
@@ -532,6 +532,20 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     fn try_next_instr(&mut self) -> Result<(), TrapCode> {
         self.next_instr();
+        Ok(())
+    }
+
+    /// Shifts the instruction pointer to the next instruction and returns `Ok(())`.
+    ///
+    /// Has a parameter `skip` to denote how many instruction words
+    /// to skip to reach the next actual instruction.
+    ///
+    /// # Note
+    ///
+    /// This is a convenience function for fallible instructions.
+    #[inline(always)]
+    fn try_next_instr_at(&mut self, skip: usize) -> Result<(), TrapCode> {
+        self.next_instr_at(skip);
         Ok(())
     }
 
@@ -1179,7 +1193,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     #[inline(always)]
-    fn visit_table_copy(&mut self, dst: TableIdx, src: TableIdx) -> Result<(), TrapCode> {
+    fn visit_table_copy(&mut self, dst: TableIdx) -> Result<(), TrapCode> {
+        let src = self.fetch_table_idx(1);
         // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
         let (d, s, n) = self.sp.pop3();
         let len = u32::from(n);
@@ -1203,7 +1218,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Ok(())
             },
         )?;
-        self.try_next_instr()
+        self.try_next_instr_at(2)
     }
 
     #[inline(always)]

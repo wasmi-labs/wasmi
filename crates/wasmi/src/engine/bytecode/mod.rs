@@ -150,10 +150,19 @@ pub enum Instruction {
     TableFill(TableIdx),
     TableGet(TableIdx),
     TableSet(TableIdx),
-    TableCopy {
-        dst: TableIdx,
-        src: TableIdx,
-    },
+    /// Copies elements from one table to another.
+    ///
+    /// # Note
+    ///
+    /// It is also possible to copy elements within the same table.
+    ///
+    /// # Encoding
+    ///
+    /// The [`TableIdx`] referred to by the [`Instruction::TableCopy`]
+    /// represents the `dst` (destination) table. The [`Instruction::TableCopy`]
+    /// must be followed by an [`Instruction::TableGet`] which stores a
+    /// [`TableIdx`] that refers to the `src` (source) table.
+    TableCopy(TableIdx),
     TableInit {
         table: TableIdx,
         elem: ElementSegmentIdx,
