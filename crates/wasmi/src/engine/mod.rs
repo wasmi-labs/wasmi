@@ -4,6 +4,7 @@ pub mod bytecode;
 mod cache;
 pub mod code_map;
 mod config;
+mod const_pool;
 pub mod executor;
 mod func_args;
 mod func_builder;
@@ -34,6 +35,7 @@ use self::{
     bytecode::Instruction,
     cache::InstanceCache,
     code_map::CodeMap,
+    const_pool::{ConstPool, ConstPoolView},
     executor::{execute_wasm, WasmOutcome},
     func_types::FuncTypeRegistry,
     resumable::ResumableCallBase,
@@ -497,6 +499,8 @@ impl EngineInner {
 pub struct EngineResources {
     /// Stores all Wasm function bodies that the interpreter is aware of.
     code_map: CodeMap,
+    /// A pool of reusable, deduplicated constant values.
+    const_pool: ConstPool,
     /// Deduplicated function types.
     ///
     /// # Note
@@ -512,6 +516,7 @@ impl EngineResources {
         let engine_idx = EngineIdx::new();
         Self {
             code_map: CodeMap::default(),
+            const_pool: ConstPool::default(),
             func_types: FuncTypeRegistry::new(engine_idx),
         }
     }
@@ -741,6 +746,15 @@ impl<'engine> EngineExecutor<'engine> {
         let value_stack = &mut self.stack.values;
         let call_stack = &mut self.stack.frames;
         let code_map = &self.res.code_map;
-        execute_wasm(store_inner, cache, value_stack, call_stack, code_map).map_err(make_trap)
+        let const_pool = self.res.const_pool.view();
+        execute_wasm(
+            store_inner,
+            cache,
+            value_stack,
+            call_stack,
+            code_map,
+            const_pool,
+        )
+        .map_err(make_trap)
     }
 }

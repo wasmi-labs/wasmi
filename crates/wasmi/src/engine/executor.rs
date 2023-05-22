@@ -1,3 +1,4 @@
+use super::{bytecode::BranchOffset, ConstPoolView};
 use crate::{
     core::TrapCode,
     engine::{
@@ -33,8 +34,6 @@ use crate::{
 };
 use core::cmp::{self};
 use wasmi_core::{Pages, UntypedValue};
-
-use super::bytecode::BranchOffset;
 
 /// The outcome of a Wasm execution.
 ///
@@ -99,8 +98,9 @@ pub fn execute_wasm<'engine>(
     value_stack: &'engine mut ValueStack,
     call_stack: &'engine mut CallStack,
     code_map: &'engine CodeMap,
+    const_pool: ConstPoolView<'engine>,
 ) -> Result<WasmOutcome, TrapCode> {
-    Executor::new(ctx, cache, value_stack, call_stack, code_map).execute()
+    Executor::new(ctx, cache, value_stack, call_stack, code_map, const_pool).execute()
 }
 
 /// The function signature of Wasm load operations.
@@ -166,6 +166,8 @@ struct Executor<'ctx, 'engine> {
     ///
     /// This is used to lookup Wasm function information.
     code_map: &'engine CodeMap,
+    /// A read-only view to a pool of constant values.
+    const_pool: ConstPoolView<'engine>,
 }
 
 macro_rules! forward_call {
@@ -192,6 +194,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         value_stack: &'engine mut ValueStack,
         call_stack: &'engine mut CallStack,
         code_map: &'engine CodeMap,
+        const_pool: ConstPoolView<'engine>,
     ) -> Self {
         let frame = call_stack.pop().expect("must have frame on the call stack");
         let sp = value_stack.stack_ptr();
@@ -204,6 +207,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             value_stack,
             call_stack,
             code_map,
+            const_pool,
         }
     }
 
