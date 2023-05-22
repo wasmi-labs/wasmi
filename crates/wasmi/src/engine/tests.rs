@@ -70,15 +70,6 @@ mod instr {
     pub fn i32_const24(value: i32) -> Instruction {
         Instruction::I32Const24(I24::try_from(value).unwrap())
     }
-
-    /// Creates a new [`Instruction::I64Const24`] instruction for the `value`.
-    ///
-    /// # Panics
-    ///
-    /// If the `value` cannot be encoded into a 24-bit value.
-    pub fn i64_const24(value: i64) -> Instruction {
-        Instruction::I32Const24(I24::try_from(value).unwrap())
-    }
 }
 
 /// Creates a [`FuncIdx`] from the given `u32` index value.

@@ -47,11 +47,10 @@ use crate::{
     FuncType,
     GlobalType,
     Mutability,
-    Value,
 };
 use alloc::vec::Vec;
 use intx::I24;
-use wasmi_core::{ValueType, F32, F64};
+use wasmi_core::{UntypedValue, ValueType, F32, F64};
 use wasmparser::VisitOperator;
 
 /// Reusable allocations of a [`FuncTranslator`].
@@ -427,11 +426,23 @@ impl<'parser> FuncTranslator<'parser> {
     fn optimize_global_get(
         global_type: &GlobalType,
         init_value: Option<&ConstExpr>,
+        engine: &Engine,
     ) -> Result<Option<Instruction>, TranslationError> {
         if let (Mutability::Const, Some(init_expr)) = (global_type.mutability(), init_value) {
             if let Some(value) = init_expr.eval_const() {
+                if global_type.content() == ValueType::I32 {
+                    if let Ok(value) = I24::try_from(i32::from(value)) {
+                        return Ok(Some(Instruction::I32Const24(value)));
+                    }
+                }
+                if global_type.content() == ValueType::I64 {
+                    if let Ok(value) = I24::try_from(i64::from(value)) {
+                        return Ok(Some(Instruction::I64Const24(value)));
+                    }
+                }
                 // We can optimize `global.get` to the constant value.
-                return Ok(Some(Instruction::constant(value)));
+                let cref = engine.alloc_const(value)?;
+                return Ok(Some(Instruction::ConstRef(cref)));
             }
             if let Some(func_index) = init_expr.funcref() {
                 // We can optimize `global.get` to the equivalent `ref.func x` instruction.
@@ -531,16 +542,17 @@ impl<'parser> FuncTranslator<'parser> {
     /// - `f64.const`
     fn translate_const<T>(&mut self, value: T) -> Result<(), TranslationError>
     where
-        T: Into<Value>,
+        T: Into<UntypedValue>,
     {
         self.translate_if_reachable(|builder| {
             builder.bump_fuel_consumption(builder.fuel_costs().base)?;
             let value = value.into();
             builder.stack_height.push();
+            let cref = builder.engine().alloc_const(value)?;
             builder
                 .alloc
                 .inst_builder
-                .push_inst(Instruction::constant(value));
+                .push_inst(Instruction::ConstRef(cref));
             Ok(())
         })
     }
@@ -1361,7 +1373,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             builder.stack_height.push();
             let (global_type, init_value) = builder.res.get_global(global_idx);
             let global_idx = bytecode::GlobalIdx::try_from(global_idx.into_u32())?;
-            let instr = Self::optimize_global_get(&global_type, init_value)?.unwrap_or({
+            let engine = builder.engine();
+            let instr = Self::optimize_global_get(&global_type, init_value, engine)?.unwrap_or({
                 // No optimization took place in this case.
                 Instruction::GlobalGet(global_idx)
             });

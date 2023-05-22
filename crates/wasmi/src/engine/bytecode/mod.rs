@@ -20,10 +20,9 @@ pub use self::utils::{
     SignatureIdx,
     TableIdx,
 };
-use super::TranslationError;
+use super::{const_pool::ConstRef, TranslationError};
 use core::fmt::Debug;
 use intx::I24;
-use wasmi_core::UntypedValue;
 
 /// The internal `wasmi` bytecode that is stored for Wasm functions.
 ///
@@ -192,7 +191,10 @@ pub enum Instruction {
     /// This is a space-optimized variant of [`Instruction::ConstRef`] but can
     /// only used for small integer values that fit into a 24-bit integer value.
     I64Const24(I24),
-    Const(UntypedValue),
+    /// Pushes a constant value onto the stack.
+    ///
+    /// The constant value is referred to indirectly by the [`ConstRef`].
+    ConstRef(ConstRef),
     I32Eqz,
     I32Eq,
     I32Ne,
@@ -328,14 +330,6 @@ pub enum Instruction {
 }
 
 impl Instruction {
-    /// Creates a new `Const` instruction from the given value.
-    pub fn constant<C>(value: C) -> Self
-    where
-        C: Into<UntypedValue>,
-    {
-        Self::Const(value.into())
-    }
-
     /// Creates a new `local.get` instruction from the given local depth.
     ///
     /// # Errors

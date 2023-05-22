@@ -74,6 +74,11 @@ impl ConstPool {
     /// Returns the [`UntypedValue`] for the given [`ConstRef`] if existing.
     ///
     /// Returns `None` is the [`ConstPool`] does not store a value for the [`ConstRef`].
+    ///
+    /// # Note
+    ///
+    /// This API is mainly used and useful in testing code.
+    #[allow(dead_code)]
     pub fn get(&self, cref: ConstRef) -> Option<UntypedValue> {
         self.idx2const.get(cref.to_usize()).copied()
     }

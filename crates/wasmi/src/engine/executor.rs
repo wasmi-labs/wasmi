@@ -1,4 +1,4 @@
-use super::{bytecode::BranchOffset, ConstPoolView};
+use super::{bytecode::BranchOffset, const_pool::ConstRef, ConstPoolView};
 use crate::{
     core::TrapCode,
     engine::{
@@ -291,7 +291,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::RefFunc(func_index) => self.visit_ref_func(func_index),
                 Instr::I32Const24(value) => self.visit_i32_const_24(value),
                 Instr::I64Const24(value) => self.visit_i64_const_24(value),
-                Instr::Const(bytes) => self.visit_const(bytes),
+                Instr::ConstRef(cref) => self.visit_const(cref),
                 Instr::I32Eqz => self.visit_i32_eqz(),
                 Instr::I32Eq => self.visit_i32_eq(),
                 Instr::I32Ne => self.visit_i32_ne(),
@@ -981,8 +981,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     #[inline(always)]
-    fn visit_const(&mut self, bytes: UntypedValue) {
-        self.sp.push(bytes);
+    fn visit_const(&mut self, cref: ConstRef) {
+        let value = self
+            .const_pool
+            .get(cref)
+            .unwrap_or_else(|| unreachable!("missing constant value for const reference"));
+        self.sp.push(value);
         self.next_instr()
     }
 

@@ -35,7 +35,7 @@ use self::{
     bytecode::Instruction,
     cache::InstanceCache,
     code_map::CodeMap,
-    const_pool::{ConstPool, ConstPoolView},
+    const_pool::{ConstPool, ConstPoolView, ConstRef},
     executor::{execute_wasm, WasmOutcome},
     func_types::FuncTypeRegistry,
     resumable::ResumableCallBase,
@@ -58,6 +58,7 @@ use alloc::{sync::Arc, vec::Vec};
 use core::sync::atomic::{AtomicU32, Ordering};
 use spin::{Mutex, RwLock};
 use wasmi_arena::{ArenaIndex, GuardedEntity};
+use wasmi_core::UntypedValue;
 
 /// A unique engine index.
 ///
@@ -136,6 +137,15 @@ impl Engine {
     /// Allocates a new function type to the engine.
     pub(super) fn alloc_func_type(&self, func_type: FuncType) -> DedupFuncType {
         self.inner.alloc_func_type(func_type)
+    }
+
+    /// Allocates a new constant value to the engine.
+    ///
+    /// # Errors
+    ///
+    /// If too many constant values have been allocated for the [`Engine`] this way.
+    pub(super) fn alloc_const(&self, value: UntypedValue) -> Result<ConstRef, TranslationError> {
+        self.inner.alloc_const(value)
     }
 
     /// Resolves a deduplicated function type into a [`FuncType`] entity.
@@ -366,6 +376,10 @@ impl EngineInner {
 
     fn alloc_func_type(&self, func_type: FuncType) -> DedupFuncType {
         self.res.write().func_types.alloc_func_type(func_type)
+    }
+
+    fn alloc_const(&self, value: UntypedValue) -> Result<ConstRef, TranslationError> {
+        self.res.write().const_pool.alloc(value)
     }
 
     fn alloc_func_body<I>(&self, len_locals: usize, max_stack_height: usize, insts: I) -> FuncBody
