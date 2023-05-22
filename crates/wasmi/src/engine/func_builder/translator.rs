@@ -1210,11 +1210,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             builder
                 .alloc
                 .inst_builder
-                .push_inst(Instruction::ReturnCallIndirect {
-                    drop_keep,
-                    table,
-                    func_type: signature,
-                });
+                .push_inst(Instruction::ReturnCallIndirect(signature));
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::Return(drop_keep));
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::TableGet(table));
             builder.reachable = false;
             Ok(())
         })

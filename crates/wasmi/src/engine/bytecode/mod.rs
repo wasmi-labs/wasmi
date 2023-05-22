@@ -100,11 +100,7 @@ pub enum Instruction {
     /// that encodes the [`TableIdx`] parameter. Note that both, [`Instruction::Return`]
     /// and [`Instruction::TableGet`] only act as a storage for parameters to the
     /// [`Instruction::ReturnCallIndirect`] and will never be executed by themselves.
-    ReturnCallIndirect {
-        func_type: SignatureIdx,
-        drop_keep: DropKeep,
-        table: TableIdx,
-    },
+    ReturnCallIndirect(SignatureIdx),
     /// Calls the function.
     Call(FuncIdx),
     /// Calling a function indirectly.

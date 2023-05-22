@@ -235,12 +235,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::ReturnCall(func) => {
                     forward_call!(self.visit_return_call(func))
                 }
-                Instr::ReturnCallIndirect {
-                    drop_keep,
-                    table,
-                    func_type,
-                } => {
-                    forward_call!(self.visit_return_call_indirect(drop_keep, table, func_type))
+                Instr::ReturnCallIndirect(func_type) => {
+                    forward_call!(self.visit_return_call_indirect(func_type))
                 }
                 Instr::Call(func) => forward_call!(self.visit_call(func)),
                 Instr::CallIndirect { table, func_type } => {
@@ -745,6 +741,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     fn execute_call_indirect(
         &mut self,
+        skip: usize,
         table: TableIdx,
         func_index: u32,
         func_type: SignatureIdx,
@@ -769,7 +766,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         if actual_signature != expected_signature {
             return Err(TrapCode::BadSignature).map_err(Into::into);
         }
-        self.call_func(1, func, kind)
+        self.call_func(skip, func, kind)
     }
 }
 
@@ -792,21 +789,43 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// # Note
     ///
-    /// This is required for some instructions that do not fit into
-    /// a single instruction word and store a [`DropKeep`] value in
-    /// another instruction word.
-    fn fetch_drop_keep(&self) -> DropKeep {
-        let mut addr = self.ip;
-        addr.add(1);
+    /// - This is done by encoding an [`Instruction::Return`] instruction
+    ///   word following the actual instruction where the [`DropKeep`]
+    ///   paremeter belongs to.
+    /// - This is required for some instructions that do not fit into
+    ///   a single instruction word and store a [`DropKeep`] value in
+    ///   another instruction word.
+    fn fetch_drop_keep(&self, offset: usize) -> DropKeep {
+        let mut addr: InstructionPtr = self.ip;
+        addr.add(offset);
         match addr.get() {
             Instruction::Return(drop_keep) => *drop_keep,
             _ => unreachable!("expected Return instruction word at this point"),
         }
     }
 
+    /// Fetches the [`TableIdx`] parameter for an instruction.
+    ///
+    /// # Note
+    ///
+    /// - This is done by encoding an [`Instruction::TableGet`] instruction
+    ///   word following the actual instruction where the [`TableIdx`]
+    ///   paremeter belongs to.
+    /// - This is required for some instructions that do not fit into
+    ///   a single instruction word and store a [`TableIdx`] value in
+    ///   another instruction word.
+    fn fetch_table_idx(&self, offset: usize) -> TableIdx {
+        let mut addr: InstructionPtr = self.ip;
+        addr.add(offset);
+        match addr.get() {
+            Instruction::TableGet(table_idx) => *table_idx,
+            _ => unreachable!("expected TableGet instruction word at this point"),
+        }
+    }
+
     #[inline(always)]
     fn visit_br(&mut self, offset: BranchOffset) {
-        let drop_keep = self.fetch_drop_keep();
+        let drop_keep = self.fetch_drop_keep(1);
         self.branch_to(offset, drop_keep)
     }
 
@@ -816,7 +835,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         if condition {
             self.next_instr_at(2)
         } else {
-            let drop_keep = self.fetch_drop_keep();
+            let drop_keep = self.fetch_drop_keep(1);
             self.branch_to(offset, drop_keep)
         }
     }
@@ -825,7 +844,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn visit_br_if_nez(&mut self, offset: BranchOffset) {
         let condition = self.sp.pop_as();
         if condition {
-            let drop_keep = self.fetch_drop_keep();
+            let drop_keep = self.fetch_drop_keep(1);
             self.branch_to(offset, drop_keep)
         } else {
             self.next_instr_at(2)
@@ -896,7 +915,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     #[inline(always)]
     fn visit_return_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
-        let drop_keep = self.fetch_drop_keep();
+        let drop_keep = self.fetch_drop_keep(1);
         self.sp.drop_keep(drop_keep);
         self.execute_call(2, func_index, CallKind::Tail)
     }
@@ -904,13 +923,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     fn visit_return_call_indirect(
         &mut self,
-        drop_keep: DropKeep,
-        table: TableIdx,
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
+        let drop_keep = self.fetch_drop_keep(1);
+        let table = self.fetch_table_idx(2);
         let func_index: u32 = self.sp.pop_as();
         self.sp.drop_keep(drop_keep);
-        self.execute_call_indirect(table, func_index, func_type, CallKind::Tail)
+        self.execute_call_indirect(3, table, func_index, func_type, CallKind::Tail)
     }
 
     #[inline(always)]
@@ -926,7 +945,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
         let func_index: u32 = self.sp.pop_as();
-        self.execute_call_indirect(table, func_index, func_type, CallKind::Nested)
+        self.execute_call_indirect(1, table, func_index, func_type, CallKind::Nested)
     }
 
     #[inline(always)]
