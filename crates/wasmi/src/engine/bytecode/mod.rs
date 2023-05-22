@@ -82,19 +82,42 @@ pub enum Instruction {
     ConsumeFuel(BlockFuel),
     Return(DropKeep),
     ReturnIfNez(DropKeep),
-    ReturnCall {
-        drop_keep: DropKeep,
-        func: FuncIdx,
-    },
+    /// Tail calling `func`.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Return`] that
+    /// encodes the [`DropKeep`] parameter. Note that the [`Instruction::Return`]
+    /// only acts as a storage for the parameter of the [`Instruction::ReturnCall`]
+    /// and will never be executed by itself.
+    ReturnCall(FuncIdx),
+    /// Tail calling a function indirectly.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Return`] that
+    /// encodes the [`DropKeep`] parameter as well as an [`Instruction::TableGet`]
+    /// that encodes the [`TableIdx`] parameter. Note that both, [`Instruction::Return`]
+    /// and [`Instruction::TableGet`] only act as a storage for parameters to the
+    /// [`Instruction::ReturnCallIndirect`] and will never be executed by themselves.
     ReturnCallIndirect {
+        func_type: SignatureIdx,
         drop_keep: DropKeep,
         table: TableIdx,
-        func_type: SignatureIdx,
     },
+    /// Calls the function.
     Call(FuncIdx),
+    /// Calling a function indirectly.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::TableGet`]
+    /// that encodes the [`TableIdx`] parameter. Note that the [`Instruction::TableGet`]
+    /// only acts as a storage for the parameter of the [`Instruction::CallIndirect`]
+    /// and will never be executed by itself.
     CallIndirect {
-        table: TableIdx,
         func_type: SignatureIdx,
+        table: TableIdx,
     },
     Drop,
     Select,

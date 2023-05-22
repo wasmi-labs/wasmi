@@ -232,8 +232,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                         return Ok(WasmOutcome::Return);
                     }
                 }
-                Instr::ReturnCall { drop_keep, func } => {
-                    forward_call!(self.visit_return_call(drop_keep, func))
+                Instr::ReturnCall(func) => {
+                    forward_call!(self.visit_return_call(func))
                 }
                 Instr::ReturnCallIndirect {
                     drop_keep,
@@ -516,13 +516,16 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Shifts the instruction pointer to the next instruction.
     ///
+    /// Has a parameter `skip` to denote how many instruction words
+    /// to skip to reach the next actual instruction.
+    ///
     /// # Note
     ///
     /// This is used by `wasmi` instructions that have a fixed
     /// encoding size of two instruction words such as [`Instruction::Br`].
     #[inline(always)]
-    fn next_instr2(&mut self) {
-        self.ip.add(2)
+    fn next_instr_at(&mut self, skip: usize) {
+        self.ip.add(skip)
     }
 
     /// Shifts the instruction pointer to the next instruction and returns `Ok(())`.
@@ -561,8 +564,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// the function call so that the stack and execution state is synchronized
     /// with the outer structures.
     #[inline(always)]
-    fn call_func(&mut self, func: &Func, kind: CallKind) -> Result<CallOutcome, TrapCode> {
-        self.next_instr();
+    fn call_func(
+        &mut self,
+        skip: usize,
+        func: &Func,
+        kind: CallKind,
+    ) -> Result<CallOutcome, TrapCode> {
+        self.next_instr_at(skip);
         self.sync_stack_ptr();
         if matches!(kind, CallKind::Nested) {
             self.call_stack
@@ -725,11 +733,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     fn execute_call(
         &mut self,
+        skip: usize,
         func_index: FuncIdx,
         kind: CallKind,
     ) -> Result<CallOutcome, TrapCode> {
         let callee = self.cache.get_func(self.ctx, func_index);
-        self.call_func(&callee, kind)
+        self.call_func(skip, &callee, kind)
     }
 
     /// Executes a `call_indirect` or `return_call_indirect` instruction.
@@ -760,7 +769,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         if actual_signature != expected_signature {
             return Err(TrapCode::BadSignature).map_err(Into::into);
         }
-        self.call_func(func, kind)
+        self.call_func(1, func, kind)
     }
 }
 
@@ -805,7 +814,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn visit_br_if_eqz(&mut self, offset: BranchOffset) {
         let condition = self.sp.pop_as();
         if condition {
-            self.next_instr2()
+            self.next_instr_at(2)
         } else {
             let drop_keep = self.fetch_drop_keep();
             self.branch_to(offset, drop_keep)
@@ -819,7 +828,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             let drop_keep = self.fetch_drop_keep();
             self.branch_to(offset, drop_keep)
         } else {
-            self.next_instr2()
+            self.next_instr_at(2)
         }
     }
 
@@ -886,13 +895,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     #[inline(always)]
-    fn visit_return_call(
-        &mut self,
-        drop_keep: DropKeep,
-        func_index: FuncIdx,
-    ) -> Result<CallOutcome, TrapCode> {
+    fn visit_return_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
+        let drop_keep = self.fetch_drop_keep();
         self.sp.drop_keep(drop_keep);
-        self.execute_call(func_index, CallKind::Tail)
+        self.execute_call(2, func_index, CallKind::Tail)
     }
 
     #[inline(always)]
@@ -910,7 +916,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
         let callee = self.cache.get_func(self.ctx, func_index);
-        self.call_func(&callee, CallKind::Nested)
+        self.call_func(1, &callee, CallKind::Nested)
     }
 
     #[inline(always)]

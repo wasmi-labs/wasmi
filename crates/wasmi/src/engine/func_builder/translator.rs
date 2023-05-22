@@ -1184,7 +1184,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             builder
                 .alloc
                 .inst_builder
-                .push_inst(Instruction::ReturnCall { drop_keep, func });
+                .push_inst(Instruction::ReturnCall(func));
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::Return(drop_keep));
             builder.reachable = false;
             Ok(())
         })
