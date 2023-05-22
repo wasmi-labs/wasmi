@@ -281,7 +281,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::TableGet(table) => self.visit_table_get(table)?,
                 Instr::TableSet(table) => self.visit_table_set(table)?,
                 Instr::TableCopy(dst) => self.visit_table_copy(dst)?,
-                Instr::TableInit { table, elem } => self.visit_table_init(table, elem)?,
+                Instr::TableInit(elem) => self.visit_table_init(elem)?,
                 Instr::ElemDrop(segment) => self.visit_element_drop(segment),
                 Instr::RefFunc(func_index) => self.visit_ref_func(func_index),
                 Instr::Const(bytes) => self.visit_const(bytes),
@@ -1222,11 +1222,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     #[inline(always)]
-    fn visit_table_init(
-        &mut self,
-        table: TableIdx,
-        elem: ElementSegmentIdx,
-    ) -> Result<(), TrapCode> {
+    fn visit_table_init(&mut self, elem: ElementSegmentIdx) -> Result<(), TrapCode> {
+        let table = self.fetch_table_idx(1);
         // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
         let (d, s, n) = self.sp.pop3();
         let len = u32::from(n);
@@ -1246,7 +1243,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Ok(())
             },
         )?;
-        self.try_next_instr()
+        self.try_next_instr_at(2)
     }
 
     #[inline(always)]

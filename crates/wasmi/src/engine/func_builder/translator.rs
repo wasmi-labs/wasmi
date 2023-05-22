@@ -1664,7 +1664,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             builder
                 .alloc
                 .inst_builder
-                .push_inst(Instruction::TableInit { table, elem });
+                .push_inst(Instruction::TableInit(elem));
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::TableGet(table));
             Ok(())
         })
     }
