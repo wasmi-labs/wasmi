@@ -899,7 +899,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let branch_offset = self.branch_offset(else_label)?;
             self.alloc
                 .inst_builder
-                .push_br_eqz_instr(branch_offset, DropKeep::none());
+                .push_inst(Instruction::BrIfEqz(branch_offset));
             let consume_fuel = self.is_fuel_metering_enabled().then(|| {
                 self.alloc
                     .inst_builder
@@ -951,9 +951,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         if reachable {
             self.bump_fuel_consumption(self.fuel_costs().base)?;
             let offset = self.branch_offset(if_frame.end_label())?;
-            self.alloc
-                .inst_builder
-                .push_br_instr(offset, DropKeep::none());
+            self.alloc.inst_builder.push_inst(Instruction::Br(offset));
         }
         // Now resolve labels for the instructions of the `else` block
         self.alloc.inst_builder.pin_label(if_frame.else_label());
@@ -1027,11 +1025,21 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             match builder.acquire_target(relative_depth)? {
                 AcquiredTarget::Branch(end_label, drop_keep) => {
                     builder.bump_fuel_consumption(builder.fuel_costs().base)?;
-                    builder.bump_fuel_consumption(
-                        builder.fuel_costs().fuel_for_drop_keep(drop_keep),
-                    )?;
                     let offset = builder.branch_offset(end_label)?;
-                    builder.alloc.inst_builder.push_br_instr(offset, drop_keep);
+                    if drop_keep.is_noop() {
+                        builder
+                            .alloc
+                            .inst_builder
+                            .push_inst(Instruction::Br(offset));
+                    } else {
+                        builder.bump_fuel_consumption(
+                            builder.fuel_costs().fuel_for_drop_keep(drop_keep),
+                        )?;
+                        builder
+                            .alloc
+                            .inst_builder
+                            .push_br_adjust_instr(offset, drop_keep);
+                    }
                 }
                 AcquiredTarget::Return(_) => {
                     // In this case the `br` can be directly translated as `return`.
@@ -1049,14 +1057,21 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             match builder.acquire_target(relative_depth)? {
                 AcquiredTarget::Branch(end_label, drop_keep) => {
                     builder.bump_fuel_consumption(builder.fuel_costs().base)?;
-                    builder.bump_fuel_consumption(
-                        builder.fuel_costs().fuel_for_drop_keep(drop_keep),
-                    )?;
                     let offset = builder.branch_offset(end_label)?;
-                    builder
-                        .alloc
-                        .inst_builder
-                        .push_br_nez_instr(offset, drop_keep);
+                    if drop_keep.is_noop() {
+                        builder
+                            .alloc
+                            .inst_builder
+                            .push_inst(Instruction::BrIfNez(offset));
+                    } else {
+                        builder.bump_fuel_consumption(
+                            builder.fuel_costs().fuel_for_drop_keep(drop_keep),
+                        )?;
+                        builder
+                            .alloc
+                            .inst_builder
+                            .push_br_adjust_nez_instr(offset, drop_keep);
+                    }
                 }
                 AcquiredTarget::Return(drop_keep) => {
                     builder
@@ -1112,7 +1127,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 match target {
                     BrTableTarget::Br(offset, drop_keep) => {
                         // Case: We push a `Br` followed by a `Return` as usual.
-                        stream.push(Instruction::Br(offset));
+                        stream.push(Instruction::BrAdjust(offset));
                         stream.push(Instruction::Return(drop_keep));
                     }
                     BrTableTarget::Return(drop_keep) => {

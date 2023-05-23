@@ -223,6 +223,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::Br(offset) => self.visit_br(offset),
                 Instr::BrIfEqz(offset) => self.visit_br_if_eqz(offset),
                 Instr::BrIfNez(offset) => self.visit_br_if_nez(offset),
+                Instr::BrAdjust(offset) => self.visit_br_adjust(offset),
+                Instr::BrAdjustIfNez(offset) => self.visit_br_adjust_if_nez(offset),
                 Instr::BrTable(targets) => self.visit_br_table(targets),
                 Instr::Unreachable => self.visit_unreachable()?,
                 Instr::ConsumeFuel(block_fuel) => self.visit_consume_fuel(block_fuel)?,
@@ -555,11 +557,27 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         Ok(())
     }
 
-    /// Offsets the instruction pointer using the given [`BranchOffset`] and [`DropKeep`].
+    /// Branches and adjusts the value stack.
+    ///
+    /// # Note
+    ///
+    /// Offsets the instruction pointer using the given [`BranchOffset`] and
+    /// adjusts the value stack using the [`DropKeep`].
     #[inline(always)]
-    fn branch_to(&mut self, offset: BranchOffset, drop_keep: DropKeep) {
-        self.sp.drop_keep(drop_keep);
+    fn branch_to(&mut self, offset: BranchOffset) {
         self.ip.offset(offset.to_i32() as isize)
+    }
+
+    /// Branches and adjusts the value stack.
+    ///
+    /// # Note
+    ///
+    /// Offsets the instruction pointer using the given [`BranchOffset`] and
+    /// adjusts the value stack using the [`DropKeep`].
+    #[inline(always)]
+    fn branch_to_and_adjust(&mut self, offset: BranchOffset, drop_keep: DropKeep) {
+        self.sp.drop_keep(drop_keep);
+        self.branch_to(offset)
     }
 
     /// Synchronizes the current stack pointer with the [`ValueStack`].
@@ -845,18 +863,16 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     #[inline(always)]
     fn visit_br(&mut self, offset: BranchOffset) {
-        let drop_keep = self.fetch_drop_keep(1);
-        self.branch_to(offset, drop_keep)
+        self.branch_to(offset)
     }
 
     #[inline(always)]
     fn visit_br_if_eqz(&mut self, offset: BranchOffset) {
         let condition = self.sp.pop_as();
         if condition {
-            self.next_instr_at(2)
+            self.next_instr()
         } else {
-            let drop_keep = self.fetch_drop_keep(1);
-            self.branch_to(offset, drop_keep)
+            self.branch_to(offset)
         }
     }
 
@@ -864,8 +880,24 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn visit_br_if_nez(&mut self, offset: BranchOffset) {
         let condition = self.sp.pop_as();
         if condition {
+            self.branch_to(offset)
+        } else {
+            self.next_instr()
+        }
+    }
+
+    #[inline(always)]
+    fn visit_br_adjust(&mut self, offset: BranchOffset) {
+        let drop_keep = self.fetch_drop_keep(1);
+        self.branch_to_and_adjust(offset, drop_keep)
+    }
+
+    #[inline(always)]
+    fn visit_br_adjust_if_nez(&mut self, offset: BranchOffset) {
+        let condition = self.sp.pop_as();
+        if condition {
             let drop_keep = self.fetch_drop_keep(1);
-            self.branch_to(offset, drop_keep)
+            self.branch_to_and_adjust(offset, drop_keep)
         } else {
             self.next_instr_at(2)
         }

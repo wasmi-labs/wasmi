@@ -38,6 +38,12 @@ pub enum Instruction {
     LocalSet(LocalDepth),
     LocalTee(LocalDepth),
     /// An unconditional branch.
+    Br(BranchOffset),
+    /// Branches if the top-most stack value is equal to zero.
+    BrIfEqz(BranchOffset),
+    /// Branches if the top-most stack value is _not_ equal to zero.
+    BrIfNez(BranchOffset),
+    /// An unconditional branch.
     ///
     /// This operation also adjust the underlying value stack if necessary.
     ///
@@ -47,18 +53,7 @@ pub enum Instruction {
     /// which stores information about the [`DropKeep`] behavior of the
     /// [`Instruction::Br`]. The [`Instruction::Return`] will never be executed
     /// and only acts as parameter storage for this instruction.
-    Br(BranchOffset),
-    /// Branches if the top-most stack value is equal to zero.
-    ///
-    /// This operation also adjust the underlying value stack if necessary.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by a [`Instruction::Return`]
-    /// which stores information about the [`DropKeep`] behavior of the
-    /// [`Instruction::BrIfEqz`]. The [`Instruction::Return`] will never be executed
-    /// and only acts as parameter storage for this instruction.
-    BrIfEqz(BranchOffset),
+    BrAdjust(BranchOffset),
     /// Branches if the top-most stack value is _not_ equal to zero.
     ///
     /// This operation also adjust the underlying value stack if necessary.
@@ -69,7 +64,7 @@ pub enum Instruction {
     /// which stores information about the [`DropKeep`] behavior of the
     /// [`Instruction::BrIfNez`]. The [`Instruction::Return`] will never be executed
     /// and only acts as parameter storage for this instruction.
-    BrIfNez(BranchOffset),
+    BrAdjustIfNez(BranchOffset),
     /// Branch table with a set number of branching targets.
     ///
     /// # Encoding

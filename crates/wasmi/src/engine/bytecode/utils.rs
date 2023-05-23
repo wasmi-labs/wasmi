@@ -356,9 +356,9 @@ impl DropKeep {
         self.drop
     }
 
-    /// Creates a new [`DropKeep`] that drops or keeps nothing.
-    pub fn none() -> Self {
-        Self { drop: 0, keep: 0 }
+    /// Returns `true` if the [`DropKeep`] does nothing.
+    pub fn is_noop(self) -> bool {
+        self.drop == 0
     }
 
     /// Creates a new [`DropKeep`] with the given amounts to drop and keep.
