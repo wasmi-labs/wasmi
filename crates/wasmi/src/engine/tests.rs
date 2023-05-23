@@ -93,7 +93,7 @@ fn global_idx(index: u32) -> GlobalIdx {
 ///
 /// If `len_targets` is out of bounds as [`BranchTableTargets`].
 fn br_targets(len_targets: usize) -> BranchTableTargets {
-    BranchTableTargets::try_from(len_targets as u64).unwrap()
+    BranchTableTargets::try_from(len_targets).unwrap()
 }
 
 /// Asserts that the given `func_body` consists of the expected instructions.

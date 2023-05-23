@@ -157,13 +157,13 @@ impl ElementSegmentIdx {
 /// [`Instruction::BrTable`]: [`super::Instruction::BrTable`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct BranchTableTargets(U24);
+pub struct BranchTableTargets(u32);
 
-impl TryFrom<u64> for BranchTableTargets {
+impl TryFrom<usize> for BranchTableTargets {
     type Error = TranslationError;
 
-    fn try_from(index: u64) -> Result<Self, Self::Error> {
-        match U24::try_from(index) {
+    fn try_from(index: usize) -> Result<Self, Self::Error> {
+        match u32::try_from(index) {
             Ok(index) => Ok(Self(index)),
             Err(_) => Err(TranslationError::new(
                 TranslationErrorInner::BranchTableTargetsOutOfBounds,
@@ -175,7 +175,7 @@ impl TryFrom<u64> for BranchTableTargets {
 impl BranchTableTargets {
     /// Returns the index value as `usize`.
     pub fn to_usize(self) -> usize {
-        u32::from(self.0) as usize
+        self.0 as usize
     }
 }
 

@@ -1154,7 +1154,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let len_branches = builder.alloc.br_table_branches.len() / 2;
             let default_branch =
                 compute_instr(builder, len_branches, default, &mut max_drop_keep_fuel)?;
-            let len_targets = BranchTableTargets::try_from(len_branches as u64 + 1)?;
+            let len_targets = BranchTableTargets::try_from(len_branches + 1)?;
             builder
                 .alloc
                 .inst_builder
