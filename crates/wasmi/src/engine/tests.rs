@@ -29,11 +29,8 @@ fn create_module(config: &Config, bytes: &[u8]) -> Module {
 
 /// Contains some utility methods to construct instructions simpler.
 mod instr {
-    use intx::I24;
-
-    use crate::engine::bytecode::BlockFuel;
-
     use super::Instruction;
+    use crate::engine::bytecode::BlockFuel;
 
     /// Creates a new [`Instruction::LocalGet`] with the `local_depth`.
     ///
@@ -62,13 +59,13 @@ mod instr {
         Instruction::ConsumeFuel(BlockFuel::try_from(block_fuel).unwrap())
     }
 
-    /// Creates a new [`Instruction::I32Const24`] instruction for the `value`.
+    /// Creates a new [`Instruction::Const32`] instruction for the `value`.
     ///
     /// # Panics
     ///
     /// If the `value` cannot be encoded into a 24-bit value.
-    pub fn i32_const24(value: i32) -> Instruction {
-        Instruction::I32Const24(I24::try_from(value).unwrap())
+    pub fn i32_const(value: i32) -> Instruction {
+        Instruction::Const32(value.to_ne_bytes())
     }
 }
 
@@ -229,7 +226,7 @@ fn implicit_return_with_value() {
         )
     "#,
     );
-    let expected = [instr::i32_const24(0), Instruction::Return(drop_keep(0, 1))];
+    let expected = [instr::i32_const(0), Instruction::Return(drop_keep(0, 1))];
     assert_func_bodies(wasm, [expected]);
 }
 
@@ -420,12 +417,12 @@ fn if_without_else() {
     "#,
     );
     let expected = [
-        /* 0 */ instr::i32_const24(1),
+        /* 0 */ instr::i32_const(1),
         /* 1 */ Instruction::BrIfEqz(offset!(1 => 5)),
         /* 2 */ Instruction::Return(drop_keep(0, 0)),
-        /* 3 */ instr::i32_const24(2),
+        /* 3 */ instr::i32_const(2),
         /* 4 */ Instruction::Return(drop_keep(1, 1)),
-        /* 5 */ instr::i32_const24(3),
+        /* 5 */ instr::i32_const(3),
         /* 6 */ Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies(wasm, [expected]);
@@ -451,14 +448,14 @@ fn if_else() {
     "#,
     );
     let expected = [
-        /* 0 */ instr::i32_const24(1),
+        /* 0 */ instr::i32_const(1),
         /* 1 */ Instruction::BrIfEqz(offset!(1 => 7)),
         /* 2 */ Instruction::Return(drop_keep(0, 0)),
-        /* 3 */ instr::i32_const24(2),
+        /* 3 */ instr::i32_const(2),
         /* 4 */ instr::local_set(1),
         /* 5 */ Instruction::Br(offset!(5 => 9)),
         /* 6 */ Instruction::Return(drop_keep(0, 0)),
-        /* 7 */ instr::i32_const24(3),
+        /* 7 */ instr::i32_const(3),
         /* 8 */ instr::local_set(1),
         /* 9 */ Instruction::Return(drop_keep(1, 0)),
     ];
@@ -483,13 +480,13 @@ fn if_else_returns_result() {
     "#,
     );
     let expected = [
-        /* 0 */ instr::i32_const24(1),
+        /* 0 */ instr::i32_const(1),
         /* 1 */ Instruction::BrIfEqz(offset!(1 => 6)),
         /* 2 */ Instruction::Return(drop_keep(0, 0)),
-        /* 3 */ instr::i32_const24(2),
+        /* 3 */ instr::i32_const(2),
         /* 4 */ Instruction::Br(offset!(4 => 7)),
         /* 5 */ Instruction::Return(drop_keep(0, 0)),
-        /* 6 */ instr::i32_const24(3),
+        /* 6 */ instr::i32_const(3),
         /* 7 */ Instruction::Drop,
         /* 8 */ Instruction::Return(drop_keep(0, 0)),
     ];
@@ -518,18 +515,18 @@ fn if_else_branch_from_true_branch() {
     "#,
     );
     let expected = [
-        /*  0 */ instr::i32_const24(1),
+        /*  0 */ instr::i32_const(1),
         /*  1 */ Instruction::BrIfEqz(offset!(1 => 11)),
         /*  2 */ Instruction::Return(drop_keep(0, 0)),
-        /*  3 */ instr::i32_const24(1),
-        /*  4 */ instr::i32_const24(1),
+        /*  3 */ instr::i32_const(1),
+        /*  4 */ instr::i32_const(1),
         /*  5 */ Instruction::BrIfNez(offset!(5 => 12)),
         /*  6 */ Instruction::Return(drop_keep(0, 1)),
         /*  7 */ Instruction::Drop,
-        /*  8 */ instr::i32_const24(2),
+        /*  8 */ instr::i32_const(2),
         /*  9 */ Instruction::Br(offset!(9 => 12)),
         /* 10 */ Instruction::Return(drop_keep(0, 0)),
-        /* 11 */ instr::i32_const24(3),
+        /* 11 */ instr::i32_const(3),
         /* 12 */ Instruction::Drop,
         /* 13 */ Instruction::Return(drop_keep(0, 0)),
     ];
@@ -558,18 +555,18 @@ fn if_else_branch_from_false_branch() {
     "#,
     );
     let expected = [
-        /*  0 */ instr::i32_const24(1),
+        /*  0 */ instr::i32_const(1),
         /*  1 */ Instruction::BrIfEqz(offset!(1 => 6)),
         /*  2 */ Instruction::Return(drop_keep(0, 0)),
-        /*  3 */ instr::i32_const24(1),
+        /*  3 */ instr::i32_const(1),
         /*  4 */ Instruction::Br(offset!(4 => 12)),
         /*  5 */ Instruction::Return(drop_keep(0, 0)),
-        /*  6 */ instr::i32_const24(2),
-        /*  7 */ instr::i32_const24(1),
+        /*  6 */ instr::i32_const(2),
+        /*  7 */ instr::i32_const(1),
         /*  8 */ Instruction::BrIfNez(offset!(8 => 12)),
         /*  9 */ Instruction::Return(drop_keep(0, 1)),
         /* 10 */ Instruction::Drop,
-        /* 11 */ instr::i32_const24(3),
+        /* 11 */ instr::i32_const(3),
         /* 12 */ Instruction::Drop,
         /* 13 */ Instruction::Return(drop_keep(0, 0)),
     ];
@@ -602,12 +599,12 @@ fn if_else_both_unreachable_before_end() {
         /* 0 */ instr::local_get(1),
         /* 1 */ Instruction::BrIfEqz(offset!(1 => 5)),
         /* 2 */ Instruction::Return(drop_keep(0, 0)),
-        /* 3 */ instr::i32_const24(1),
+        /* 3 */ instr::i32_const(1),
         /* 4 */ Instruction::Return(drop_keep(1, 1)),
-        /* 5 */ instr::i32_const24(2),
+        /* 5 */ instr::i32_const(2),
         /* 6 */ Instruction::Return(drop_keep(1, 1)),
         /* 7 */ Instruction::Drop,
-        /* 8 */ instr::i32_const24(3),
+        /* 8 */ instr::i32_const(3),
         /* 9 */ Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies(wasm, [expected]);
@@ -630,10 +627,10 @@ fn loop_() {
     "#,
     );
     let expected = [
-        /* 0 */ instr::i32_const24(1),
+        /* 0 */ instr::i32_const(1),
         /* 1 */ Instruction::BrIfNez(offset!(1 => 0)),
         /* 2 */ Instruction::Return(drop_keep(0, 0)),
-        /* 3 */ instr::i32_const24(2),
+        /* 3 */ instr::i32_const(2),
         /* 4 */ Instruction::Drop,
         /* 5 */ Instruction::Return(drop_keep(0, 0)),
     ];
@@ -677,9 +674,9 @@ fn spec_as_br_if_value_cond() {
     "#,
     );
     let expected = [
-        /* 0 */ instr::i32_const24(6),
-        /* 1 */ instr::i32_const24(9),
-        /* 2 */ instr::i32_const24(0),
+        /* 0 */ instr::i32_const(6),
+        /* 1 */ instr::i32_const(9),
+        /* 2 */ instr::i32_const(0),
         /* 3 */ Instruction::BrTable(br_targets(2)),
         /* 4 */ Instruction::Br(offset!(4 => 8)),
         /* 5 */ Instruction::Return(drop_keep(1, 1)),
@@ -707,7 +704,7 @@ fn br_table() {
     "#,
     );
     let expected = [
-        /* 0 */ instr::i32_const24(0),
+        /* 0 */ instr::i32_const(0),
         /* 1 */ Instruction::BrTable(br_targets(2)),
         /* 2 */ Instruction::Br(offset!(2 => 0)),
         /* 3 */ Instruction::Return(drop_keep(0, 0)),
@@ -738,8 +735,8 @@ fn br_table_returns_result() {
     "#,
     );
     let expected = [
-        /* 0 */ instr::i32_const24(0),
-        /* 1 */ instr::i32_const24(1),
+        /* 0 */ instr::i32_const(0),
+        /* 1 */ instr::i32_const(1),
         /* 2 */ Instruction::BrTable(br_targets(2)),
         /* 3 */ Instruction::Br(offset!(3 => 7)),
         /* 4 */ Instruction::Return(drop_keep(0, 1)),
@@ -774,9 +771,9 @@ fn wabt_example() {
         /* 0 */ instr::local_get(1),
         /* 1 */ Instruction::BrIfNez(offset!(1 => 5)),
         /* 2 */ Instruction::Return(drop_keep(0, 0)),
-        /* 3 */ instr::i32_const24(1),
+        /* 3 */ instr::i32_const(1),
         /* 4 */ Instruction::Return(drop_keep(1, 1)),
-        /* 5 */ instr::i32_const24(2),
+        /* 5 */ instr::i32_const(2),
         /* 6 */ Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies(wasm, [expected]);
@@ -1267,7 +1264,7 @@ fn metered_calls_01() {
     let expected_fuel_f0 = 3 * costs.base;
     let expected_f0 = [
         instr::consume_fuel(expected_fuel_f0),
-        instr::i32_const24(0),
+        instr::i32_const(0),
         Instruction::Return(drop_keep(0, 1)),
     ];
     let expected_fuel_f1 = 2 * costs.base + costs.call;

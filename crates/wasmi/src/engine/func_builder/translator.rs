@@ -431,9 +431,7 @@ impl<'parser> FuncTranslator<'parser> {
         if let (Mutability::Const, Some(init_expr)) = (global_type.mutability(), init_value) {
             if let Some(value) = init_expr.eval_const() {
                 if global_type.content() == ValueType::I32 {
-                    if let Ok(value) = I24::try_from(i32::from(value)) {
-                        return Ok(Some(Instruction::I32Const24(value)));
-                    }
+                    return Ok(Some(Instruction::i32_const(i32::from(value))));
                 }
                 if global_type.content() == ValueType::I64 {
                     if let Ok(value) = I24::try_from(i64::from(value)) {
@@ -530,17 +528,16 @@ impl<'parser> FuncTranslator<'parser> {
         })
     }
 
-    /// Translate a Wasm `<ty>.const` instruction.
+    /// Translate a generic Wasm `<ty>.const` instruction.
     ///
     /// # Note
     ///
-    /// This is used as the translation backend of the following Wasm instructions:
+    /// This is used as the translation backend of the following Wasm instructions
+    /// with constant values not representable by 32-bit values:
     ///
-    /// - `i32.const`
     /// - `i64.const`
-    /// - `f32.const`
     /// - `f64.const`
-    fn translate_const<T>(&mut self, value: T) -> Result<(), TranslationError>
+    fn translate_const_ref<T>(&mut self, value: T) -> Result<(), TranslationError>
     where
         T: Into<UntypedValue>,
     {
@@ -1305,7 +1302,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         // Since `wasmi` bytecode is untyped we have no special `null` instructions
         // but simply reuse the `constant` instruction with an immediate value of 0.
         // Note that `FuncRef` and `ExternRef` are encoded as 64-bit values in `wasmi`.
-        self.translate_const(0i64)
+        self.visit_i32_const(0i32)
     }
 
     fn visit_ref_is_null(&mut self) -> Result<(), TranslationError> {
@@ -1698,21 +1695,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_const(&mut self, value: i32) -> Result<(), TranslationError> {
-        match I24::try_from(value) {
-            Ok(value) => self.translate_if_reachable(|builder| {
-                // Case: The constant value is small enough that we can apply
-                //       a small value optimization and use a more efficient
-                //       instruction to encode the constant value instruction.
-                builder.bump_fuel_consumption(builder.fuel_costs().base)?;
-                builder.stack_height.push();
-                builder
-                    .alloc
-                    .inst_builder
-                    .push_inst(Instruction::I32Const24(value));
-                Ok(())
-            }),
-            Err(_) => self.translate_const(value),
-        }
+        self.translate_if_reachable(|builder| {
+            builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+            builder.stack_height.push();
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::i32_const(value));
+            Ok(())
+        })
     }
 
     fn visit_i64_const(&mut self, value: i64) -> Result<(), TranslationError> {
@@ -1729,16 +1720,24 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     .push_inst(Instruction::I64Const24(value));
                 Ok(())
             }),
-            Err(_) => self.translate_const(value),
+            Err(_) => self.translate_const_ref(value),
         }
     }
 
     fn visit_f32_const(&mut self, value: wasmparser::Ieee32) -> Result<(), TranslationError> {
-        self.translate_const(F32::from_bits(value.bits()))
+        self.translate_if_reachable(|builder| {
+            builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+            builder.stack_height.push();
+            builder
+                .alloc
+                .inst_builder
+                .push_inst(Instruction::f32_const(F32::from(value.bits())));
+            Ok(())
+        })
     }
 
     fn visit_f64_const(&mut self, value: wasmparser::Ieee64) -> Result<(), TranslationError> {
-        self.translate_const(F64::from_bits(value.bits()))
+        self.translate_const_ref(F64::from_bits(value.bits()))
     }
 
     fn visit_i32_eqz(&mut self) -> Result<(), TranslationError> {

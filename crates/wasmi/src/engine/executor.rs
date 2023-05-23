@@ -289,7 +289,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::TableInit(elem) => self.visit_table_init(elem)?,
                 Instr::ElemDrop(segment) => self.visit_element_drop(segment),
                 Instr::RefFunc(func_index) => self.visit_ref_func(func_index),
-                Instr::I32Const24(value) => self.visit_i32_const_24(value),
+                Instr::Const32(bytes) => self.visit_const_32(bytes),
                 Instr::I64Const24(value) => self.visit_i64_const_24(value),
                 Instr::ConstRef(cref) => self.visit_const(cref),
                 Instr::I32Eqz => self.visit_i32_eqz(),
@@ -967,9 +967,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     #[inline(always)]
-    fn visit_i32_const_24(&mut self, value: I24) {
-        let sign_extended = i32::from(value);
-        self.sp.push(UntypedValue::from(sign_extended));
+    fn visit_const_32(&mut self, bytes: [u8; 4]) {
+        let bytes = u32::from_ne_bytes(bytes);
+        self.sp.push(UntypedValue::from(bytes));
         self.next_instr()
     }
 
