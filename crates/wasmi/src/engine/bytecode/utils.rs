@@ -5,75 +5,54 @@ use intx::{I24, U24};
 /// A function index.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct FuncIdx(U24);
+pub struct FuncIdx(u32);
 
-impl TryFrom<u32> for FuncIdx {
-    type Error = TranslationError;
-
-    fn try_from(index: u32) -> Result<Self, Self::Error> {
-        match U24::try_from(index) {
-            Ok(index) => Ok(Self(index)),
-            Err(_) => Err(TranslationError::new(
-                TranslationErrorInner::FunctionIndexOutOfBounds,
-            )),
-        }
+impl From<u32> for FuncIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
     }
 }
 
 impl FuncIdx {
     /// Returns the index value as `u32`.
     pub fn to_u32(self) -> u32 {
-        u32::from(self.0)
+        self.0
     }
 }
 
 /// A table index.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct TableIdx(U24);
+pub struct TableIdx(u32);
 
-impl TryFrom<u32> for TableIdx {
-    type Error = TranslationError;
-
-    fn try_from(index: u32) -> Result<Self, Self::Error> {
-        match U24::try_from(index) {
-            Ok(index) => Ok(Self(index)),
-            Err(_) => Err(TranslationError::new(
-                TranslationErrorInner::TableIndexOutOfBounds,
-            )),
-        }
+impl From<u32> for TableIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
     }
 }
 
 impl TableIdx {
     /// Returns the index value as `u32`.
     pub fn to_u32(self) -> u32 {
-        u32::from(self.0)
+        self.0
     }
 }
 
 /// An index of a unique function signature.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct SignatureIdx(U24);
+pub struct SignatureIdx(u32);
 
-impl TryFrom<u32> for SignatureIdx {
-    type Error = TranslationError;
-
-    fn try_from(index: u32) -> Result<Self, Self::Error> {
-        match U24::try_from(index) {
-            Ok(index) => Ok(Self(index)),
-            Err(_) => Err(TranslationError::new(
-                TranslationErrorInner::TypeIndexOutOfBounds,
-            )),
-        }
+impl From<u32> for SignatureIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
     }
 }
 
 impl SignatureIdx {
     /// Returns the index value as `u32`.
     pub fn to_u32(self) -> u32 {
-        u32::from(self.0)
+        self.0
     }
 }
 
@@ -86,25 +65,18 @@ impl SignatureIdx {
 /// of the value stack at the time of access.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct LocalDepth(U24);
+pub struct LocalDepth(u32);
 
-impl TryFrom<u32> for LocalDepth {
-    type Error = TranslationError;
-
-    fn try_from(index: u32) -> Result<Self, Self::Error> {
-        match U24::try_from(index) {
-            Ok(index) => Ok(Self(index)),
-            Err(_) => Err(TranslationError::new(
-                TranslationErrorInner::LocalIndexOutOfBounds,
-            )),
-        }
+impl From<u32> for LocalDepth {
+    fn from(index: u32) -> Self {
+        Self(index)
     }
 }
 
 impl LocalDepth {
     /// Returns the depth as `usize` index.
     pub fn to_usize(self) -> usize {
-        u32::from(self.0) as usize
+        self.0 as usize
     }
 }
 
@@ -117,25 +89,18 @@ impl LocalDepth {
 /// [`Store`]: [`crate::Store`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct GlobalIdx(U24);
+pub struct GlobalIdx(u32);
 
-impl TryFrom<u32> for GlobalIdx {
-    type Error = TranslationError;
-
-    fn try_from(index: u32) -> Result<Self, Self::Error> {
-        match U24::try_from(index) {
-            Ok(index) => Ok(Self(index)),
-            Err(_) => Err(TranslationError::new(
-                TranslationErrorInner::GlobalIndexOutOfBounds,
-            )),
-        }
+impl From<u32> for GlobalIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
     }
 }
 
 impl GlobalIdx {
     /// Returns the index value as `u32`.
     pub fn to_u32(self) -> u32 {
-        u32::from(self.0)
+        self.0
     }
 }
 
@@ -148,25 +113,18 @@ impl GlobalIdx {
 /// [`Store`]: [`crate::Store`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct DataSegmentIdx(U24);
+pub struct DataSegmentIdx(u32);
 
-impl TryFrom<u32> for DataSegmentIdx {
-    type Error = TranslationError;
-
-    fn try_from(index: u32) -> Result<Self, Self::Error> {
-        match U24::try_from(index) {
-            Ok(index) => Ok(Self(index)),
-            Err(_) => Err(TranslationError::new(
-                TranslationErrorInner::DataSegmentIndexOutOfBounds,
-            )),
-        }
+impl From<u32> for DataSegmentIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
     }
 }
 
 impl DataSegmentIdx {
     /// Returns the index value as `u32`.
     pub fn to_u32(self) -> u32 {
-        u32::from(self.0)
+        self.0
     }
 }
 
@@ -179,25 +137,18 @@ impl DataSegmentIdx {
 /// [`Store`]: [`crate::Store`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct ElementSegmentIdx(U24);
+pub struct ElementSegmentIdx(u32);
 
-impl TryFrom<u32> for ElementSegmentIdx {
-    type Error = TranslationError;
-
-    fn try_from(index: u32) -> Result<Self, Self::Error> {
-        match U24::try_from(index) {
-            Ok(index) => Ok(Self(index)),
-            Err(_) => Err(TranslationError::new(
-                TranslationErrorInner::ElementSegmentIndexOutOfBounds,
-            )),
-        }
+impl From<u32> for ElementSegmentIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
     }
 }
 
 impl ElementSegmentIdx {
     /// Returns the index value as `u32`.
     pub fn to_u32(self) -> u32 {
-        u32::from(self.0)
+        self.0
     }
 }
 

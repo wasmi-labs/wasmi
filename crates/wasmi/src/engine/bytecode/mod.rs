@@ -339,7 +339,7 @@ impl Instruction {
     ///
     /// If the `local_depth` is out of bounds as local depth index.
     pub fn local_get(local_depth: u32) -> Result<Self, TranslationError> {
-        Ok(Self::LocalGet(LocalDepth::try_from(local_depth)?))
+        Ok(Self::LocalGet(LocalDepth::from(local_depth)))
     }
 
     /// Creates a new `local.set` instruction from the given local depth.
@@ -348,7 +348,7 @@ impl Instruction {
     ///
     /// If the `local_depth` is out of bounds as local depth index.
     pub fn local_set(local_depth: u32) -> Result<Self, TranslationError> {
-        Ok(Self::LocalSet(LocalDepth::try_from(local_depth)?))
+        Ok(Self::LocalSet(LocalDepth::from(local_depth)))
     }
 
     /// Creates a new `local.tee` instruction from the given local depth.
@@ -357,7 +357,7 @@ impl Instruction {
     ///
     /// If the `local_depth` is out of bounds as local depth index.
     pub fn local_tee(local_depth: u32) -> Result<Self, TranslationError> {
-        Ok(Self::LocalTee(LocalDepth::try_from(local_depth)?))
+        Ok(Self::LocalTee(LocalDepth::from(local_depth)))
     }
 
     /// Convenience method to create a new `ConsumeFuel` instruction.
