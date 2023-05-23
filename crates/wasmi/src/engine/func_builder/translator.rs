@@ -49,7 +49,6 @@ use crate::{
     Mutability,
 };
 use alloc::vec::Vec;
-use intx::I24;
 use wasmi_core::{UntypedValue, ValueType, F32, F64};
 use wasmparser::VisitOperator;
 
@@ -434,8 +433,8 @@ impl<'parser> FuncTranslator<'parser> {
                     return Ok(Some(Instruction::i32_const(i32::from(value))));
                 }
                 if global_type.content() == ValueType::I64 {
-                    if let Ok(value) = I24::try_from(i64::from(value)) {
-                        return Ok(Some(Instruction::I64Const24(value)));
+                    if let Ok(value) = i32::try_from(i64::from(value)) {
+                        return Ok(Some(Instruction::I64Const32(value)));
                     }
                 }
                 // We can optimize `global.get` to the constant value.
@@ -1707,7 +1706,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_const(&mut self, value: i64) -> Result<(), TranslationError> {
-        match I24::try_from(value) {
+        match i32::try_from(value) {
             Ok(value) => self.translate_if_reachable(|builder| {
                 // Case: The constant value is small enough that we can apply
                 //       a small value optimization and use a more efficient
@@ -1717,7 +1716,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 builder
                     .alloc
                     .inst_builder
-                    .push_inst(Instruction::I64Const24(value));
+                    .push_inst(Instruction::I64Const32(value));
                 Ok(())
             }),
             Err(_) => self.translate_const_ref(value),

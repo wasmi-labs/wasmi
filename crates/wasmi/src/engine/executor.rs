@@ -33,7 +33,6 @@ use crate::{
     Table,
 };
 use core::cmp::{self};
-use intx::I24;
 use wasmi_core::{Pages, UntypedValue};
 
 /// The outcome of a Wasm execution.
@@ -290,7 +289,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::ElemDrop(segment) => self.visit_element_drop(segment),
                 Instr::RefFunc(func_index) => self.visit_ref_func(func_index),
                 Instr::Const32(bytes) => self.visit_const_32(bytes),
-                Instr::I64Const24(value) => self.visit_i64_const_24(value),
+                Instr::I64Const32(value) => self.visit_i64_const_32(value),
                 Instr::ConstRef(cref) => self.visit_const(cref),
                 Instr::I32Eqz => self.visit_i32_eqz(),
                 Instr::I32Eq => self.visit_i32_eq(),
@@ -974,7 +973,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     #[inline(always)]
-    fn visit_i64_const_24(&mut self, value: I24) {
+    fn visit_i64_const_32(&mut self, value: i32) {
         let sign_extended = i64::from(value);
         self.sp.push(UntypedValue::from(sign_extended));
         self.next_instr()

@@ -22,7 +22,6 @@ pub use self::utils::{
 };
 use super::{const_pool::ConstRef, TranslationError};
 use core::fmt::Debug;
-use intx::I24;
 use wasmi_core::F32;
 
 /// The internal `wasmi` bytecode that is stored for Wasm functions.
@@ -176,15 +175,15 @@ pub enum Instruction {
     RefFunc(FuncIdx),
     /// A 32-bit constant value.
     Const32([u8; 4]),
-    /// A 64-bit integer value losslessly encoded as 24-bit integer.
+    /// A 64-bit integer value losslessly encoded as 32-bit integer.
     ///
-    /// Upon execution the 24-bit integer is sign-extended to the 64-bit integer.
+    /// Upon execution the 32-bit integer is sign-extended to the 64-bit integer.
     ///
     /// # Note
     ///
     /// This is a space-optimized variant of [`Instruction::ConstRef`] but can
     /// only used for small integer values that fit into a 24-bit integer value.
-    I64Const24(I24),
+    I64Const32(i32),
     /// Pushes a constant value onto the stack.
     ///
     /// The constant value is referred to indirectly by the [`ConstRef`].
