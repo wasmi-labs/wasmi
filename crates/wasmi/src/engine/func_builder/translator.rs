@@ -432,6 +432,9 @@ impl<'parser> FuncTranslator<'parser> {
                 if global_type.content() == ValueType::I32 {
                     return Ok(Some(Instruction::i32_const(i32::from(value))));
                 }
+                if global_type.content() == ValueType::F32 {
+                    return Ok(Some(Instruction::f32_const(F32::from(value))));
+                }
                 if global_type.content() == ValueType::I64 {
                     if let Ok(value) = i32::try_from(i64::from(value)) {
                         return Ok(Some(Instruction::I64Const32(value)));
