@@ -230,15 +230,15 @@ impl BlockFuel {
 /// Used to calculate the effective address of a linear memory access.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct Offset(u32);
+pub struct AddressOffset(u32);
 
-impl From<u32> for Offset {
+impl From<u32> for AddressOffset {
     fn from(index: u32) -> Self {
         Self(index)
     }
 }
 
-impl Offset {
+impl AddressOffset {
     /// Returns the inner `u32` index.
     pub fn into_inner(self) -> u32 {
         self.0

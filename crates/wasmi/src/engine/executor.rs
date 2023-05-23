@@ -11,7 +11,7 @@ use crate::{
             GlobalIdx,
             Instruction,
             LocalDepth,
-            Offset,
+            AddressOffset,
             SignatureIdx,
             TableIdx,
         },
@@ -443,7 +443,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     fn execute_load_extend(
         &mut self,
-        offset: Offset,
+        offset: AddressOffset,
         load_extend: WasmLoadOp,
     ) -> Result<(), TrapCode> {
         self.sp.try_eval_top(|address| {
@@ -467,7 +467,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     fn execute_store_wrap(
         &mut self,
-        offset: Offset,
+        offset: AddressOffset,
         store_wrap: WasmStoreOp,
     ) -> Result<(), TrapCode> {
         let (address, value) = self.sp.pop2();
@@ -1292,7 +1292,7 @@ macro_rules! impl_visit_load {
             #[inline(always)]
             fn $visit_ident(
                 &mut self,
-                offset: Offset,
+                offset: AddressOffset,
             ) -> Result<(), TrapCode> {
                 self.execute_load_extend(offset, UntypedValue::$untyped_ident)
             }
@@ -1326,7 +1326,7 @@ macro_rules! impl_visit_store {
             #[inline(always)]
             fn $visit_ident(
                 &mut self,
-                offset: Offset,
+                offset: AddressOffset,
             ) -> Result<(), TrapCode> {
                 self.execute_store_wrap(offset, UntypedValue::$untyped_ident)
             }

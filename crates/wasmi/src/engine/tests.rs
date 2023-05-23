@@ -1,5 +1,5 @@
 use super::{
-    bytecode::{BranchTableTargets, FuncIdx, GlobalIdx, Offset},
+    bytecode::{BranchTableTargets, FuncIdx, GlobalIdx, AddressOffset},
     *,
 };
 use crate::{
@@ -1389,7 +1389,7 @@ fn metered_load_01() {
     let expected = [
         instr::consume_fuel(expected_fuel),
         instr::local_get(1),
-        Instruction::I32Load(Offset::from(0)),
+        Instruction::I32Load(AddressOffset::from(0)),
         Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies_metered(wasm, [expected]);
@@ -1415,7 +1415,7 @@ fn metered_store_01() {
         instr::consume_fuel(expected_fuel),
         instr::local_get(2),
         instr::local_get(2),
-        Instruction::I32Store(Offset::from(0)),
+        Instruction::I32Store(AddressOffset::from(0)),
         Instruction::Return(drop_keep(2, 0)),
     ];
     assert_func_bodies_metered(wasm, [expected]);

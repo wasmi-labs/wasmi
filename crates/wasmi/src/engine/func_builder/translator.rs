@@ -22,7 +22,7 @@ use crate::{
             DataSegmentIdx,
             ElementSegmentIdx,
             Instruction,
-            Offset,
+            AddressOffset,
             SignatureIdx,
             TableIdx,
         },
@@ -481,7 +481,7 @@ impl<'parser> FuncTranslator<'parser> {
         &mut self,
         memarg: wasmparser::MemArg,
         _loaded_type: ValueType,
-        make_inst: fn(Offset) -> Instruction,
+        make_inst: fn(AddressOffset) -> Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let (memory_idx, offset) = Self::decompose_memarg(memarg);
@@ -489,7 +489,7 @@ impl<'parser> FuncTranslator<'parser> {
             builder.bump_fuel_consumption(builder.fuel_costs().load)?;
             builder.stack_height.pop1();
             builder.stack_height.push();
-            let offset = Offset::from(offset);
+            let offset = AddressOffset::from(offset);
             builder.alloc.inst_builder.push_inst(make_inst(offset));
             Ok(())
         })
@@ -514,14 +514,14 @@ impl<'parser> FuncTranslator<'parser> {
         &mut self,
         memarg: wasmparser::MemArg,
         _stored_value: ValueType,
-        make_inst: fn(Offset) -> Instruction,
+        make_inst: fn(AddressOffset) -> Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let (memory_idx, offset) = Self::decompose_memarg(memarg);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
             builder.bump_fuel_consumption(builder.fuel_costs().store)?;
             builder.stack_height.pop2();
-            let offset = Offset::from(offset);
+            let offset = AddressOffset::from(offset);
             builder.alloc.inst_builder.push_inst(make_inst(offset));
             Ok(())
         })
