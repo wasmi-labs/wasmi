@@ -28,6 +28,7 @@ use crate::{
             TableIdx,
         },
         config::FuelCosts,
+        const_pool::ConstRef,
         func_builder::control_frame::ControlFrameKind,
         DropKeep,
         FuncBody,
@@ -485,7 +486,7 @@ impl<'parser> FuncTranslator<'parser> {
         &mut self,
         memarg: wasmparser::MemArg,
         _loaded_type: ValueType,
-        make_inst: fn(Offset) -> Instruction,
+        make_inst: fn(ConstRef) -> Instruction,
         make_inst_opt: fn(AddressOffset) -> Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
@@ -497,8 +498,8 @@ impl<'parser> FuncTranslator<'parser> {
             if let Ok(offset) = AddressOffset::try_from(offset) {
                 builder.alloc.inst_builder.push_inst(make_inst_opt(offset));
             } else {
-                let offset = Offset::from(offset);
-                builder.alloc.inst_builder.push_inst(make_inst(offset));
+                let cref = builder.engine().alloc_const(UntypedValue::from(offset))?;
+                builder.alloc.inst_builder.push_inst(make_inst(cref));
             }
             Ok(())
         })

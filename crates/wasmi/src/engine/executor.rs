@@ -1308,9 +1308,13 @@ macro_rules! impl_visit_load {
             #[inline(always)]
             fn $visit_ident(
                 &mut self,
-                offset: Offset,
+                cref: ConstRef,
             ) -> Result<(), TrapCode> {
-                self.execute_load_extend(offset.into_inner(), UntypedValue::$untyped_ident)
+                let offset = self
+                    .const_pool
+                    .get(cref)
+                    .unwrap_or_else(|| unreachable!("missing constant value for const reference"));
+                self.execute_load_extend(u32::from(offset), UntypedValue::$untyped_ident)
             }
         )*
     }
