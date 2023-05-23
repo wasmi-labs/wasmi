@@ -1,6 +1,5 @@
 use crate::engine::{func_builder::TranslationErrorInner, Instr, TranslationError};
 use core::fmt::{self, Display};
-use intx::U24;
 
 /// A function index.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -184,13 +183,13 @@ impl BranchTableTargets {
 /// [`Instruction::ConsumeFuel`]: [`super::Instruction::ConsumeFuel`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct BlockFuel(U24);
+pub struct BlockFuel(u32);
 
 impl TryFrom<u64> for BlockFuel {
     type Error = TranslationError;
 
     fn try_from(index: u64) -> Result<Self, Self::Error> {
-        match U24::try_from(index) {
+        match u32::try_from(index) {
             Ok(index) => Ok(Self(index)),
             Err(_) => Err(TranslationError::new(
                 TranslationErrorInner::BlockFuelOutOfBounds,
@@ -211,7 +210,7 @@ impl BlockFuel {
             .checked_add(amount)
             .ok_or(TranslationErrorInner::BlockFuelOutOfBounds)
             .map_err(TranslationError::new)?;
-        self.0 = U24::try_from(new_amount)
+        self.0 = u32::try_from(new_amount)
             .map_err(|_| TranslationErrorInner::BlockFuelOutOfBounds)
             .map_err(TranslationError::new)?;
         Ok(())
