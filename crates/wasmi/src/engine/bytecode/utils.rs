@@ -277,8 +277,8 @@ impl BranchOffset {
         fn make_err() -> TranslationError {
             TranslationError::new(TranslationErrorInner::BranchOffsetOutOfBounds)
         }
-        let src = src.into_u32() as i64;
-        let dst = dst.into_u32() as i64;
+        let src = i64::from(src.into_u32());
+        let dst = i64::from(dst.into_u32());
         let offset = dst.checked_sub(src).ok_or_else(make_err)?;
         let offset = i32::try_from(offset).map_err(|_| make_err())?;
         Ok(Self(offset))
