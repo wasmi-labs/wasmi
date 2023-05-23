@@ -102,7 +102,7 @@ impl InstanceCache {
     ) -> ElementSegment {
         let instance = self.instance();
         ctx.resolve_instance(self.instance())
-            .get_element_segment(index.into_inner())
+            .get_element_segment(index.to_u32())
             .unwrap_or_else(|| {
                 unreachable!("missing element segment ({index:?}) for instance: {instance:?}",)
             })
@@ -119,7 +119,7 @@ impl InstanceCache {
         ctx: &'a mut StoreInner,
         segment: DataSegmentIdx,
     ) -> (&'a mut [u8], &'a [u8]) {
-        let seg = self.get_data_segment(ctx, segment.into_inner());
+        let seg = self.get_data_segment(ctx, segment.to_u32());
         let mem = self.default_memory(ctx);
         let (memory, segment) = ctx.resolve_memory_mut_and_data_segment(mem, &seg);
         (memory.data_mut(), segment.bytes())
@@ -257,7 +257,7 @@ impl InstanceCache {
     fn load_table_at(&mut self, ctx: &StoreInner, index: TableIdx) -> Table {
         let table = ctx
             .resolve_instance(self.instance())
-            .get_table(index.into_inner())
+            .get_table(index.to_u32())
             .unwrap_or_else(|| {
                 unreachable!(
                     "missing table at index {index:?} for instance: {:?}",
@@ -278,7 +278,7 @@ impl InstanceCache {
     fn load_func_at(&mut self, ctx: &StoreInner, index: FuncIdx) -> Func {
         let func = ctx
             .resolve_instance(self.instance())
-            .get_func(index.into_inner())
+            .get_func(index.to_u32())
             .unwrap_or_else(|| {
                 unreachable!(
                     "missing func at index {index:?} for instance: {:?}",
@@ -313,7 +313,7 @@ impl InstanceCache {
     fn load_global_at(&mut self, ctx: &mut StoreInner, index: GlobalIdx) -> NonNull<UntypedValue> {
         let global = ctx
             .resolve_instance(self.instance())
-            .get_global(index.into_inner())
+            .get_global(index.to_u32())
             .as_ref()
             .map(|global| ctx.resolve_global_mut(global).get_untyped_ptr())
             .unwrap_or_else(|| {

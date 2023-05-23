@@ -6,8 +6,10 @@ mod utils;
 mod tests;
 
 pub use self::utils::{
+    AddressOffset,
+    BlockFuel,
     BranchOffset,
-    BranchParams,
+    BranchTableTargets,
     DataSegmentIdx,
     DropKeep,
     DropKeepError,
@@ -15,12 +17,12 @@ pub use self::utils::{
     FuncIdx,
     GlobalIdx,
     LocalDepth,
-    Offset,
     SignatureIdx,
     TableIdx,
 };
+use super::{const_pool::ConstRef, TranslationError};
 use core::fmt::Debug;
-use wasmi_core::UntypedValue;
+use wasmi_core::F32;
 
 /// The internal `wasmi` bytecode that is stored for Wasm functions.
 ///
@@ -32,102 +34,155 @@ use wasmi_core::UntypedValue;
 /// each representing either the `BrTable` head or one of its branching targets.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Instruction {
-    LocalGet {
-        local_depth: LocalDepth,
-    },
-    LocalSet {
-        local_depth: LocalDepth,
-    },
-    LocalTee {
-        local_depth: LocalDepth,
-    },
-    Br(BranchParams),
-    BrIfEqz(BranchParams),
-    BrIfNez(BranchParams),
-    BrTable {
-        len_targets: usize,
-    },
+    LocalGet(LocalDepth),
+    LocalSet(LocalDepth),
+    LocalTee(LocalDepth),
+    /// An unconditional branch.
+    Br(BranchOffset),
+    /// Branches if the top-most stack value is equal to zero.
+    BrIfEqz(BranchOffset),
+    /// Branches if the top-most stack value is _not_ equal to zero.
+    BrIfNez(BranchOffset),
+    /// An unconditional branch.
+    ///
+    /// This operation also adjust the underlying value stack if necessary.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by a [`Instruction::Return`]
+    /// which stores information about the [`DropKeep`] behavior of the
+    /// [`Instruction::Br`]. The [`Instruction::Return`] will never be executed
+    /// and only acts as parameter storage for this instruction.
+    BrAdjust(BranchOffset),
+    /// Branches if the top-most stack value is _not_ equal to zero.
+    ///
+    /// This operation also adjust the underlying value stack if necessary.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by a [`Instruction::Return`]
+    /// which stores information about the [`DropKeep`] behavior of the
+    /// [`Instruction::BrIfNez`]. The [`Instruction::Return`] will never be executed
+    /// and only acts as parameter storage for this instruction.
+    BrAdjustIfNez(BranchOffset),
+    /// Branch table with a set number of branching targets.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by exactly as many unconditional
+    /// branch instructions as determined by [`BranchTableTargets`]. Branch
+    /// instructions that may follow are [`Instruction::Br] and [`Instruction::Return`].
+    BrTable(BranchTableTargets),
     Unreachable,
-    ConsumeFuel {
-        amount: u64,
-    },
+    ConsumeFuel(BlockFuel),
     Return(DropKeep),
     ReturnIfNez(DropKeep),
-    ReturnCall {
-        drop_keep: DropKeep,
-        func: FuncIdx,
-    },
-    ReturnCallIndirect {
-        drop_keep: DropKeep,
-        table: TableIdx,
-        func_type: SignatureIdx,
-    },
+    /// Tail calling `func`.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Return`] that
+    /// encodes the [`DropKeep`] parameter. Note that the [`Instruction::Return`]
+    /// only acts as a storage for the parameter of the [`Instruction::ReturnCall`]
+    /// and will never be executed by itself.
+    ReturnCall(FuncIdx),
+    /// Tail calling a function indirectly.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Return`] that
+    /// encodes the [`DropKeep`] parameter as well as an [`Instruction::TableGet`]
+    /// that encodes the [`TableIdx`] parameter. Note that both, [`Instruction::Return`]
+    /// and [`Instruction::TableGet`] only act as a storage for parameters to the
+    /// [`Instruction::ReturnCallIndirect`] and will never be executed by themselves.
+    ReturnCallIndirect(SignatureIdx),
+    /// Calls the function.
     Call(FuncIdx),
-    CallIndirect {
-        table: TableIdx,
-        func_type: SignatureIdx,
-    },
+    /// Calling a function indirectly.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::TableGet`]
+    /// that encodes the [`TableIdx`] parameter. Note that the [`Instruction::TableGet`]
+    /// only acts as a storage for the parameter of the [`Instruction::CallIndirect`]
+    /// and will never be executed by itself.
+    CallIndirect(SignatureIdx),
     Drop,
     Select,
     GlobalGet(GlobalIdx),
     GlobalSet(GlobalIdx),
-    I32Load(Offset),
-    I64Load(Offset),
-    F32Load(Offset),
-    F64Load(Offset),
-    I32Load8S(Offset),
-    I32Load8U(Offset),
-    I32Load16S(Offset),
-    I32Load16U(Offset),
-    I64Load8S(Offset),
-    I64Load8U(Offset),
-    I64Load16S(Offset),
-    I64Load16U(Offset),
-    I64Load32S(Offset),
-    I64Load32U(Offset),
-    I32Store(Offset),
-    I64Store(Offset),
-    F32Store(Offset),
-    F64Store(Offset),
-    I32Store8(Offset),
-    I32Store16(Offset),
-    I64Store8(Offset),
-    I64Store16(Offset),
-    I64Store32(Offset),
+    I32Load(AddressOffset),
+    I64Load(AddressOffset),
+    F32Load(AddressOffset),
+    F64Load(AddressOffset),
+    I32Load8S(AddressOffset),
+    I32Load8U(AddressOffset),
+    I32Load16S(AddressOffset),
+    I32Load16U(AddressOffset),
+    I64Load8S(AddressOffset),
+    I64Load8U(AddressOffset),
+    I64Load16S(AddressOffset),
+    I64Load16U(AddressOffset),
+    I64Load32S(AddressOffset),
+    I64Load32U(AddressOffset),
+    I32Store(AddressOffset),
+    I64Store(AddressOffset),
+    F32Store(AddressOffset),
+    F64Store(AddressOffset),
+    I32Store8(AddressOffset),
+    I32Store16(AddressOffset),
+    I64Store8(AddressOffset),
+    I64Store16(AddressOffset),
+    I64Store32(AddressOffset),
     MemorySize,
     MemoryGrow,
     MemoryFill,
     MemoryCopy,
     MemoryInit(DataSegmentIdx),
     DataDrop(DataSegmentIdx),
-    TableSize {
-        table: TableIdx,
-    },
-    TableGrow {
-        table: TableIdx,
-    },
-    TableFill {
-        table: TableIdx,
-    },
-    TableGet {
-        table: TableIdx,
-    },
-    TableSet {
-        table: TableIdx,
-    },
-    TableCopy {
-        dst: TableIdx,
-        src: TableIdx,
-    },
-    TableInit {
-        table: TableIdx,
-        elem: ElementSegmentIdx,
-    },
+    TableSize(TableIdx),
+    TableGrow(TableIdx),
+    TableFill(TableIdx),
+    TableGet(TableIdx),
+    TableSet(TableIdx),
+    /// Copies elements from one table to another.
+    ///
+    /// # Note
+    ///
+    /// It is also possible to copy elements within the same table.
+    ///
+    /// # Encoding
+    ///
+    /// The [`TableIdx`] referred to by the [`Instruction::TableCopy`]
+    /// represents the `dst` (destination) table. The [`Instruction::TableCopy`]
+    /// must be followed by an [`Instruction::TableGet`] which stores a
+    /// [`TableIdx`] that refers to the `src` (source) table.
+    TableCopy(TableIdx),
+    /// Initializes a table given an [`ElementSegmentIdx`].
+    ///
+    /// # Encoding
+    ///
+    /// The [`Instruction::TableInit`] must be followed by an
+    /// [`Instruction::TableGet`] which stores a [`TableIdx`]
+    /// that refers to the table to be initialized.
+    TableInit(ElementSegmentIdx),
     ElemDrop(ElementSegmentIdx),
-    RefFunc {
-        func_index: FuncIdx,
-    },
-    Const(UntypedValue),
+    RefFunc(FuncIdx),
+    /// A 32-bit constant value.
+    Const32([u8; 4]),
+    /// A 64-bit integer value losslessly encoded as 32-bit integer.
+    ///
+    /// Upon execution the 32-bit integer is sign-extended to the 64-bit integer.
+    ///
+    /// # Note
+    ///
+    /// This is a space-optimized variant of [`Instruction::ConstRef`] but can
+    /// only used for small integer values that fit into a 24-bit integer value.
+    I64Const32(i32),
+    /// Pushes a constant value onto the stack.
+    ///
+    /// The constant value is referred to indirectly by the [`ConstRef`].
+    ConstRef(ConstRef),
     I32Eqz,
     I32Eq,
     I32Ne,
@@ -263,38 +318,47 @@ pub enum Instruction {
 }
 
 impl Instruction {
-    /// Creates a new `Const` instruction from the given value.
-    pub fn constant<C>(value: C) -> Self
-    where
-        C: Into<UntypedValue>,
-    {
-        Self::Const(value.into())
+    /// Creates an [`Instruction::Const32`] from the given `i32` constant value.
+    pub fn i32_const(value: i32) -> Self {
+        Self::Const32(value.to_ne_bytes())
+    }
+
+    /// Creates an [`Instruction::Const32`] from the given `f32` constant value.
+    pub fn f32_const(value: F32) -> Self {
+        Self::Const32(value.to_bits().to_ne_bytes())
     }
 
     /// Creates a new `local.get` instruction from the given local depth.
-    pub fn local_get(local_depth: usize) -> Self {
-        Self::LocalGet {
-            local_depth: LocalDepth::from(local_depth),
-        }
+    ///
+    /// # Errors
+    ///
+    /// If the `local_depth` is out of bounds as local depth index.
+    pub fn local_get(local_depth: u32) -> Result<Self, TranslationError> {
+        Ok(Self::LocalGet(LocalDepth::from(local_depth)))
     }
 
     /// Creates a new `local.set` instruction from the given local depth.
-    pub fn local_set(local_depth: usize) -> Self {
-        Self::LocalSet {
-            local_depth: LocalDepth::from(local_depth),
-        }
+    ///
+    /// # Errors
+    ///
+    /// If the `local_depth` is out of bounds as local depth index.
+    pub fn local_set(local_depth: u32) -> Result<Self, TranslationError> {
+        Ok(Self::LocalSet(LocalDepth::from(local_depth)))
     }
 
     /// Creates a new `local.tee` instruction from the given local depth.
-    pub fn local_tee(local_depth: usize) -> Self {
-        Self::LocalTee {
-            local_depth: LocalDepth::from(local_depth),
-        }
+    ///
+    /// # Errors
+    ///
+    /// If the `local_depth` is out of bounds as local depth index.
+    pub fn local_tee(local_depth: u32) -> Result<Self, TranslationError> {
+        Ok(Self::LocalTee(LocalDepth::from(local_depth)))
     }
 
     /// Convenience method to create a new `ConsumeFuel` instruction.
-    pub fn consume_fuel(amount: u64) -> Self {
-        Self::ConsumeFuel { amount }
+    pub fn consume_fuel(amount: u64) -> Result<Self, TranslationError> {
+        let block_fuel = BlockFuel::try_from(amount)?;
+        Ok(Self::ConsumeFuel(block_fuel))
     }
 
     /// Increases the fuel consumption of the [`ConsumeFuel`] instruction by `delta`.
@@ -305,13 +369,9 @@ impl Instruction {
     /// - If the new fuel consumption overflows the internal `u64` value.
     ///
     /// [`ConsumeFuel`]: Instruction::ConsumeFuel
-    pub fn bump_fuel_consumption(&mut self, delta: u64) {
+    pub fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), TranslationError> {
         match self {
-            Self::ConsumeFuel { amount } => {
-                *amount = amount.checked_add(delta).unwrap_or_else(|| {
-                    panic!("overflowed fuel consumption. current = {amount}, delta = {delta}",)
-                })
-            }
+            Self::ConsumeFuel(block_fuel) => block_fuel.bump_by(delta),
             instr => panic!("expected Instruction::ConsumeFuel but found: {instr:?}"),
         }
     }

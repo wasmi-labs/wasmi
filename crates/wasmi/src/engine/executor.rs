@@ -1,15 +1,17 @@
+use super::{bytecode::BranchOffset, const_pool::ConstRef, ConstPoolView};
 use crate::{
     core::TrapCode,
     engine::{
         bytecode::{
-            BranchParams,
+            AddressOffset,
+            BlockFuel,
+            BranchTableTargets,
             DataSegmentIdx,
             ElementSegmentIdx,
             FuncIdx,
             GlobalIdx,
             Instruction,
             LocalDepth,
-            Offset,
             SignatureIdx,
             TableIdx,
         },
@@ -96,8 +98,9 @@ pub fn execute_wasm<'engine>(
     value_stack: &'engine mut ValueStack,
     call_stack: &'engine mut CallStack,
     code_map: &'engine CodeMap,
+    const_pool: ConstPoolView<'engine>,
 ) -> Result<WasmOutcome, TrapCode> {
-    Executor::new(ctx, cache, value_stack, call_stack, code_map).execute()
+    Executor::new(ctx, cache, value_stack, call_stack, code_map, const_pool).execute()
 }
 
 /// The function signature of Wasm load operations.
@@ -163,6 +166,8 @@ struct Executor<'ctx, 'engine> {
     ///
     /// This is used to lookup Wasm function information.
     code_map: &'engine CodeMap,
+    /// A read-only view to a pool of constant values.
+    const_pool: ConstPoolView<'engine>,
 }
 
 macro_rules! forward_call {
@@ -189,6 +194,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         value_stack: &'engine mut ValueStack,
         call_stack: &'engine mut CallStack,
         code_map: &'engine CodeMap,
+        const_pool: ConstPoolView<'engine>,
     ) -> Self {
         let frame = call_stack.pop().expect("must have frame on the call stack");
         let sp = value_stack.stack_ptr();
@@ -201,6 +207,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             value_stack,
             call_stack,
             code_map,
+            const_pool,
         }
     }
 
@@ -210,15 +217,17 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         use Instruction as Instr;
         loop {
             match *self.ip.get() {
-                Instr::LocalGet { local_depth } => self.visit_local_get(local_depth),
-                Instr::LocalSet { local_depth } => self.visit_local_set(local_depth),
-                Instr::LocalTee { local_depth } => self.visit_local_tee(local_depth),
-                Instr::Br(params) => self.visit_br(params),
-                Instr::BrIfEqz(params) => self.visit_br_if_eqz(params),
-                Instr::BrIfNez(params) => self.visit_br_if_nez(params),
-                Instr::BrTable { len_targets } => self.visit_br_table(len_targets),
+                Instr::LocalGet(local_depth) => self.visit_local_get(local_depth),
+                Instr::LocalSet(local_depth) => self.visit_local_set(local_depth),
+                Instr::LocalTee(local_depth) => self.visit_local_tee(local_depth),
+                Instr::Br(offset) => self.visit_br(offset),
+                Instr::BrIfEqz(offset) => self.visit_br_if_eqz(offset),
+                Instr::BrIfNez(offset) => self.visit_br_if_nez(offset),
+                Instr::BrAdjust(offset) => self.visit_br_adjust(offset),
+                Instr::BrAdjustIfNez(offset) => self.visit_br_adjust_if_nez(offset),
+                Instr::BrTable(targets) => self.visit_br_table(targets),
                 Instr::Unreachable => self.visit_unreachable()?,
-                Instr::ConsumeFuel { amount } => self.visit_consume_fuel(amount)?,
+                Instr::ConsumeFuel(block_fuel) => self.visit_consume_fuel(block_fuel)?,
                 Instr::Return(drop_keep) => {
                     if let ReturnOutcome::Host = self.visit_ret(drop_keep) {
                         return Ok(WasmOutcome::Return);
@@ -229,19 +238,15 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                         return Ok(WasmOutcome::Return);
                     }
                 }
-                Instr::ReturnCall { drop_keep, func } => {
-                    forward_call!(self.visit_return_call(drop_keep, func))
+                Instr::ReturnCall(func) => {
+                    forward_call!(self.visit_return_call(func))
                 }
-                Instr::ReturnCallIndirect {
-                    drop_keep,
-                    table,
-                    func_type,
-                } => {
-                    forward_call!(self.visit_return_call_indirect(drop_keep, table, func_type))
+                Instr::ReturnCallIndirect(func_type) => {
+                    forward_call!(self.visit_return_call_indirect(func_type))
                 }
                 Instr::Call(func) => forward_call!(self.visit_call(func)),
-                Instr::CallIndirect { table, func_type } => {
-                    forward_call!(self.visit_call_indirect(table, func_type))
+                Instr::CallIndirect(func_type) => {
+                    forward_call!(self.visit_call_indirect(func_type))
                 }
                 Instr::Drop => self.visit_drop(),
                 Instr::Select => self.visit_select(),
@@ -276,16 +281,18 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::MemoryCopy => self.visit_memory_copy()?,
                 Instr::MemoryInit(segment) => self.visit_memory_init(segment)?,
                 Instr::DataDrop(segment) => self.visit_data_drop(segment),
-                Instr::TableSize { table } => self.visit_table_size(table),
-                Instr::TableGrow { table } => self.visit_table_grow(table)?,
-                Instr::TableFill { table } => self.visit_table_fill(table)?,
-                Instr::TableGet { table } => self.visit_table_get(table)?,
-                Instr::TableSet { table } => self.visit_table_set(table)?,
-                Instr::TableCopy { dst, src } => self.visit_table_copy(dst, src)?,
-                Instr::TableInit { table, elem } => self.visit_table_init(table, elem)?,
+                Instr::TableSize(table) => self.visit_table_size(table),
+                Instr::TableGrow(table) => self.visit_table_grow(table)?,
+                Instr::TableFill(table) => self.visit_table_fill(table)?,
+                Instr::TableGet(table) => self.visit_table_get(table)?,
+                Instr::TableSet(table) => self.visit_table_set(table)?,
+                Instr::TableCopy(dst) => self.visit_table_copy(dst)?,
+                Instr::TableInit(elem) => self.visit_table_init(elem)?,
                 Instr::ElemDrop(segment) => self.visit_element_drop(segment),
-                Instr::RefFunc { func_index } => self.visit_ref_func(func_index),
-                Instr::Const(bytes) => self.visit_const(bytes),
+                Instr::RefFunc(func_index) => self.visit_ref_func(func_index),
+                Instr::Const32(bytes) => self.visit_const_32(bytes),
+                Instr::I64Const32(value) => self.visit_i64_const_32(value),
+                Instr::ConstRef(cref) => self.visit_const(cref),
                 Instr::I32Eqz => self.visit_i32_eqz(),
                 Instr::I32Eq => self.visit_i32_eq(),
                 Instr::I32Ne => self.visit_i32_ne(),
@@ -438,7 +445,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     fn execute_load_extend(
         &mut self,
-        offset: Offset,
+        offset: AddressOffset,
         load_extend: WasmLoadOp,
     ) -> Result<(), TrapCode> {
         self.sp.try_eval_top(|address| {
@@ -462,7 +469,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     fn execute_store_wrap(
         &mut self,
-        offset: Offset,
+        offset: AddressOffset,
         store_wrap: WasmStoreOp,
     ) -> Result<(), TrapCode> {
         let (address, value) = self.sp.pop2();
@@ -511,6 +518,20 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.ip.add(1)
     }
 
+    /// Shifts the instruction pointer to the next instruction.
+    ///
+    /// Has a parameter `skip` to denote how many instruction words
+    /// to skip to reach the next actual instruction.
+    ///
+    /// # Note
+    ///
+    /// This is used by `wasmi` instructions that have a fixed
+    /// encoding size of two instruction words such as [`Instruction::Br`].
+    #[inline(always)]
+    fn next_instr_at(&mut self, skip: usize) {
+        self.ip.add(skip)
+    }
+
     /// Shifts the instruction pointer to the next instruction and returns `Ok(())`.
     ///
     /// # Note
@@ -522,11 +543,41 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         Ok(())
     }
 
-    /// Offsets the instruction pointer using the given [`BranchParams`].
+    /// Shifts the instruction pointer to the next instruction and returns `Ok(())`.
+    ///
+    /// Has a parameter `skip` to denote how many instruction words
+    /// to skip to reach the next actual instruction.
+    ///
+    /// # Note
+    ///
+    /// This is a convenience function for fallible instructions.
     #[inline(always)]
-    fn branch_to(&mut self, params: BranchParams) {
-        self.sp.drop_keep(params.drop_keep());
-        self.ip.offset(params.offset().into_i32() as isize)
+    fn try_next_instr_at(&mut self, skip: usize) -> Result<(), TrapCode> {
+        self.next_instr_at(skip);
+        Ok(())
+    }
+
+    /// Branches and adjusts the value stack.
+    ///
+    /// # Note
+    ///
+    /// Offsets the instruction pointer using the given [`BranchOffset`] and
+    /// adjusts the value stack using the [`DropKeep`].
+    #[inline(always)]
+    fn branch_to(&mut self, offset: BranchOffset) {
+        self.ip.offset(offset.to_i32() as isize)
+    }
+
+    /// Branches and adjusts the value stack.
+    ///
+    /// # Note
+    ///
+    /// Offsets the instruction pointer using the given [`BranchOffset`] and
+    /// adjusts the value stack using the [`DropKeep`].
+    #[inline(always)]
+    fn branch_to_and_adjust(&mut self, offset: BranchOffset, drop_keep: DropKeep) {
+        self.sp.drop_keep(drop_keep);
+        self.branch_to(offset)
     }
 
     /// Synchronizes the current stack pointer with the [`ValueStack`].
@@ -547,8 +598,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// the function call so that the stack and execution state is synchronized
     /// with the outer structures.
     #[inline(always)]
-    fn call_func(&mut self, func: &Func, kind: CallKind) -> Result<CallOutcome, TrapCode> {
-        self.next_instr();
+    fn call_func(
+        &mut self,
+        skip: usize,
+        func: &Func,
+        kind: CallKind,
+    ) -> Result<CallOutcome, TrapCode> {
+        self.next_instr_at(skip);
         self.sync_stack_ptr();
         if matches!(kind, CallKind::Nested) {
             self.call_stack
@@ -711,17 +767,19 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     fn execute_call(
         &mut self,
+        skip: usize,
         func_index: FuncIdx,
         kind: CallKind,
     ) -> Result<CallOutcome, TrapCode> {
         let callee = self.cache.get_func(self.ctx, func_index);
-        self.call_func(&callee, kind)
+        self.call_func(skip, &callee, kind)
     }
 
     /// Executes a `call_indirect` or `return_call_indirect` instruction.
     #[inline(always)]
     fn execute_call_indirect(
         &mut self,
+        skip: usize,
         table: TableIdx,
         func_index: u32,
         func_type: SignatureIdx,
@@ -739,14 +797,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let expected_signature = self
             .ctx
             .resolve_instance(self.cache.instance())
-            .get_signature(func_type.into_inner())
+            .get_signature(func_type.to_u32())
             .unwrap_or_else(|| {
                 panic!("missing signature for call_indirect at index: {func_type:?}")
             });
         if actual_signature != expected_signature {
             return Err(TrapCode::BadSignature).map_err(Into::into);
         }
-        self.call_func(func, kind)
+        self.call_func(skip, func, kind)
     }
 }
 
@@ -757,36 +815,91 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     #[inline(always)]
-    fn visit_consume_fuel(&mut self, amount: u64) -> Result<(), TrapCode> {
+    fn visit_consume_fuel(&mut self, block_fuel: BlockFuel) -> Result<(), TrapCode> {
         // We do not have to check if fuel metering is enabled since
         // these `wasmi` instructions are only generated if fuel metering
         // is enabled to begin with.
-        self.ctx.fuel_mut().consume_fuel(amount)?;
+        self.ctx.fuel_mut().consume_fuel(block_fuel.to_u64())?;
         self.try_next_instr()
     }
 
-    #[inline(always)]
-    fn visit_br(&mut self, params: BranchParams) {
-        self.branch_to(params)
+    /// Fetches the [`DropKeep`] parameter for an instruction.
+    ///
+    /// # Note
+    ///
+    /// - This is done by encoding an [`Instruction::Return`] instruction
+    ///   word following the actual instruction where the [`DropKeep`]
+    ///   paremeter belongs to.
+    /// - This is required for some instructions that do not fit into
+    ///   a single instruction word and store a [`DropKeep`] value in
+    ///   another instruction word.
+    fn fetch_drop_keep(&self, offset: usize) -> DropKeep {
+        let mut addr: InstructionPtr = self.ip;
+        addr.add(offset);
+        match addr.get() {
+            Instruction::Return(drop_keep) => *drop_keep,
+            _ => unreachable!("expected Return instruction word at this point"),
+        }
     }
 
-    #[inline(always)]
-    fn visit_br_if_eqz(&mut self, params: BranchParams) {
-        let condition = self.sp.pop_as();
-        if condition {
-            self.next_instr()
-        } else {
-            self.branch_to(params)
+    /// Fetches the [`TableIdx`] parameter for an instruction.
+    ///
+    /// # Note
+    ///
+    /// - This is done by encoding an [`Instruction::TableGet`] instruction
+    ///   word following the actual instruction where the [`TableIdx`]
+    ///   paremeter belongs to.
+    /// - This is required for some instructions that do not fit into
+    ///   a single instruction word and store a [`TableIdx`] value in
+    ///   another instruction word.
+    fn fetch_table_idx(&self, offset: usize) -> TableIdx {
+        let mut addr: InstructionPtr = self.ip;
+        addr.add(offset);
+        match addr.get() {
+            Instruction::TableGet(table_idx) => *table_idx,
+            _ => unreachable!("expected TableGet instruction word at this point"),
         }
     }
 
     #[inline(always)]
-    fn visit_br_if_nez(&mut self, params: BranchParams) {
+    fn visit_br(&mut self, offset: BranchOffset) {
+        self.branch_to(offset)
+    }
+
+    #[inline(always)]
+    fn visit_br_if_eqz(&mut self, offset: BranchOffset) {
         let condition = self.sp.pop_as();
         if condition {
-            self.branch_to(params)
+            self.next_instr()
+        } else {
+            self.branch_to(offset)
+        }
+    }
+
+    #[inline(always)]
+    fn visit_br_if_nez(&mut self, offset: BranchOffset) {
+        let condition = self.sp.pop_as();
+        if condition {
+            self.branch_to(offset)
         } else {
             self.next_instr()
+        }
+    }
+
+    #[inline(always)]
+    fn visit_br_adjust(&mut self, offset: BranchOffset) {
+        let drop_keep = self.fetch_drop_keep(1);
+        self.branch_to_and_adjust(offset, drop_keep)
+    }
+
+    #[inline(always)]
+    fn visit_br_adjust_if_nez(&mut self, offset: BranchOffset) {
+        let condition = self.sp.pop_as();
+        if condition {
+            let drop_keep = self.fetch_drop_keep(1);
+            self.branch_to_and_adjust(offset, drop_keep)
+        } else {
+            self.next_instr_at(2)
         }
     }
 
@@ -802,14 +915,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     #[inline(always)]
-    fn visit_br_table(&mut self, len_targets: usize) {
+    fn visit_br_table(&mut self, targets: BranchTableTargets) {
         let index: u32 = self.sp.pop_as();
         // The index of the default target which is the last target of the slice.
-        let max_index = len_targets - 1;
+        let max_index = targets.to_usize() - 1;
         // A normalized index will always yield a target without panicking.
         let normalized_index = cmp::min(index as usize, max_index);
         // Update `pc`:
-        self.ip.add(normalized_index + 1);
+        self.ip.add(2 * normalized_index + 1);
     }
 
     #[inline(always)]
@@ -819,7 +932,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     #[inline(always)]
     fn visit_local_get(&mut self, local_depth: LocalDepth) {
-        let value = self.sp.nth_back(local_depth.into_inner());
+        let value = self.sp.nth_back(local_depth.to_usize());
         self.sp.push(value);
         self.next_instr()
     }
@@ -827,14 +940,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     fn visit_local_set(&mut self, local_depth: LocalDepth) {
         let new_value = self.sp.pop();
-        self.sp.set_nth_back(local_depth.into_inner(), new_value);
+        self.sp.set_nth_back(local_depth.to_usize(), new_value);
         self.next_instr()
     }
 
     #[inline(always)]
     fn visit_local_tee(&mut self, local_depth: LocalDepth) {
         let new_value = self.sp.last();
-        self.sp.set_nth_back(local_depth.into_inner(), new_value);
+        self.sp.set_nth_back(local_depth.to_usize(), new_value);
         self.next_instr()
     }
 
@@ -853,46 +966,58 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     #[inline(always)]
-    fn visit_return_call(
-        &mut self,
-        drop_keep: DropKeep,
-        func_index: FuncIdx,
-    ) -> Result<CallOutcome, TrapCode> {
+    fn visit_return_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
+        let drop_keep = self.fetch_drop_keep(1);
         self.sp.drop_keep(drop_keep);
-        self.execute_call(func_index, CallKind::Tail)
+        self.execute_call(2, func_index, CallKind::Tail)
     }
 
     #[inline(always)]
     fn visit_return_call_indirect(
         &mut self,
-        drop_keep: DropKeep,
-        table: TableIdx,
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
+        let drop_keep = self.fetch_drop_keep(1);
+        let table = self.fetch_table_idx(2);
         let func_index: u32 = self.sp.pop_as();
         self.sp.drop_keep(drop_keep);
-        self.execute_call_indirect(table, func_index, func_type, CallKind::Tail)
+        self.execute_call_indirect(3, table, func_index, func_type, CallKind::Tail)
     }
 
     #[inline(always)]
     fn visit_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
         let callee = self.cache.get_func(self.ctx, func_index);
-        self.call_func(&callee, CallKind::Nested)
+        self.call_func(1, &callee, CallKind::Nested)
     }
 
     #[inline(always)]
-    fn visit_call_indirect(
-        &mut self,
-        table: TableIdx,
-        func_type: SignatureIdx,
-    ) -> Result<CallOutcome, TrapCode> {
+    fn visit_call_indirect(&mut self, func_type: SignatureIdx) -> Result<CallOutcome, TrapCode> {
+        let table = self.fetch_table_idx(1);
         let func_index: u32 = self.sp.pop_as();
-        self.execute_call_indirect(table, func_index, func_type, CallKind::Nested)
+        self.execute_call_indirect(2, table, func_index, func_type, CallKind::Nested)
     }
 
     #[inline(always)]
-    fn visit_const(&mut self, bytes: UntypedValue) {
-        self.sp.push(bytes);
+    fn visit_const_32(&mut self, bytes: [u8; 4]) {
+        let bytes = u32::from_ne_bytes(bytes);
+        self.sp.push(UntypedValue::from(bytes));
+        self.next_instr()
+    }
+
+    #[inline(always)]
+    fn visit_i64_const_32(&mut self, value: i32) {
+        let sign_extended = i64::from(value);
+        self.sp.push(UntypedValue::from(sign_extended));
+        self.next_instr()
+    }
+
+    #[inline(always)]
+    fn visit_const(&mut self, cref: ConstRef) {
+        let value = self
+            .const_pool
+            .get(cref)
+            .unwrap_or_else(|| unreachable!("missing constant value for const reference"));
+        self.sp.push(value);
         self.next_instr()
     }
 
@@ -1043,7 +1168,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn visit_data_drop(&mut self, segment_index: DataSegmentIdx) {
         let segment = self
             .cache
-            .get_data_segment(self.ctx, segment_index.into_inner());
+            .get_data_segment(self.ctx, segment_index.to_u32());
         self.ctx.resolve_data_segment_mut(&segment).drop_bytes();
         self.next_instr();
     }
@@ -1124,7 +1249,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     #[inline(always)]
-    fn visit_table_copy(&mut self, dst: TableIdx, src: TableIdx) -> Result<(), TrapCode> {
+    fn visit_table_copy(&mut self, dst: TableIdx) -> Result<(), TrapCode> {
+        let src = self.fetch_table_idx(1);
         // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
         let (d, s, n) = self.sp.pop3();
         let len = u32::from(n);
@@ -1148,15 +1274,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Ok(())
             },
         )?;
-        self.try_next_instr()
+        self.try_next_instr_at(2)
     }
 
     #[inline(always)]
-    fn visit_table_init(
-        &mut self,
-        table: TableIdx,
-        elem: ElementSegmentIdx,
-    ) -> Result<(), TrapCode> {
+    fn visit_table_init(&mut self, elem: ElementSegmentIdx) -> Result<(), TrapCode> {
+        let table = self.fetch_table_idx(1);
         // The `n`, `s` and `d` variable bindings are extracted from the Wasm specification.
         let (d, s, n) = self.sp.pop3();
         let len = u32::from(n);
@@ -1176,7 +1299,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Ok(())
             },
         )?;
-        self.try_next_instr()
+        self.try_next_instr_at(2)
     }
 
     #[inline(always)]
@@ -1201,7 +1324,7 @@ macro_rules! impl_visit_load {
             #[inline(always)]
             fn $visit_ident(
                 &mut self,
-                offset: Offset,
+                offset: AddressOffset,
             ) -> Result<(), TrapCode> {
                 self.execute_load_extend(offset, UntypedValue::$untyped_ident)
             }
@@ -1235,7 +1358,7 @@ macro_rules! impl_visit_store {
             #[inline(always)]
             fn $visit_ident(
                 &mut self,
-                offset: Offset,
+                offset: AddressOffset,
             ) -> Result<(), TrapCode> {
                 self.execute_store_wrap(offset, UntypedValue::$untyped_ident)
             }

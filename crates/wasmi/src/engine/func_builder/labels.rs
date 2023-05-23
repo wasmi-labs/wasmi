@@ -1,4 +1,4 @@
-use super::Instr;
+use super::{Instr, TranslationError};
 use crate::engine::bytecode::BranchOffset;
 use alloc::vec::Vec;
 use core::{
@@ -139,14 +139,19 @@ impl LabelRegistry {
     ///
     /// In case the `label` has not yet been pinned the `user` is registered
     /// for deferred label resolution.
-    pub fn try_resolve_label(&mut self, label: LabelRef, user: Instr) -> BranchOffset {
-        match *self.get_label(label) {
-            Label::Pinned(target) => BranchOffset::init(user, target),
+    pub fn try_resolve_label(
+        &mut self,
+        label: LabelRef,
+        user: Instr,
+    ) -> Result<BranchOffset, TranslationError> {
+        let offset = match *self.get_label(label) {
+            Label::Pinned(target) => BranchOffset::from_src_to_dst(user, target)?,
             Label::Unpinned => {
                 self.users.push(LabelUser::new(label, user));
                 BranchOffset::uninit()
             }
-        }
+        };
+        Ok(offset)
     }
 
     /// Resolves a `label` to its pinned [`Instr`].
@@ -188,7 +193,7 @@ pub struct ResolvedUserIter<'a> {
 }
 
 impl<'a> Iterator for ResolvedUserIter<'a> {
-    type Item = (Instr, BranchOffset);
+    type Item = (Instr, Result<BranchOffset, TranslationError>);
 
     fn next(&mut self) -> Option<Self::Item> {
         let next = self.users.next()?;
@@ -197,7 +202,7 @@ impl<'a> Iterator for ResolvedUserIter<'a> {
             .registry
             .resolve_label(next.label)
             .unwrap_or_else(|err| panic!("failed to resolve user: {err}"));
-        let offset = BranchOffset::init(src, dst);
+        let offset = BranchOffset::from_src_to_dst(src, dst);
         Some((src, offset))
     }
 }

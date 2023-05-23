@@ -1,10 +1,10 @@
 use super::{
-    bytecode::{FuncIdx, GlobalIdx, Offset},
+    bytecode::{AddressOffset, BranchTableTargets, FuncIdx, GlobalIdx},
     *,
 };
 use crate::{
     engine::{
-        bytecode::{BranchOffset, BranchParams, Instruction},
+        bytecode::{BranchOffset, Instruction},
         config::FuelCosts,
         DropKeep,
     },
@@ -25,6 +25,75 @@ fn wat2wasm(wat: &str) -> Vec<u8> {
 fn create_module(config: &Config, bytes: &[u8]) -> Module {
     let engine = Engine::new(config);
     Module::new(&engine, bytes).unwrap()
+}
+
+/// Contains some utility methods to construct instructions simpler.
+mod instr {
+    use super::Instruction;
+    use crate::engine::bytecode::BlockFuel;
+
+    /// Creates a new [`Instruction::LocalGet`] with the `local_depth`.
+    ///
+    /// # Panics
+    ///
+    /// If the `local_depth` is out of bounds.
+    pub fn local_get(local_depth: u32) -> Instruction {
+        Instruction::local_get(local_depth).unwrap()
+    }
+
+    /// Creates a new [`Instruction::LocalSet`] with the `local_depth`.
+    ///
+    /// # Panics
+    ///
+    /// If the `local_depth` is out of bounds.
+    pub fn local_set(local_depth: u32) -> Instruction {
+        Instruction::local_set(local_depth).unwrap()
+    }
+
+    /// Creates a new [`Instruction::ConsumeFuel`] with the `block_fuel`.
+    ///
+    /// # Panics
+    ///
+    /// If the `block_fuel` is out of bounds.
+    pub fn consume_fuel(block_fuel: u64) -> Instruction {
+        Instruction::ConsumeFuel(BlockFuel::try_from(block_fuel).unwrap())
+    }
+
+    /// Creates a new [`Instruction::Const32`] instruction for the `value`.
+    ///
+    /// # Panics
+    ///
+    /// If the `value` cannot be encoded into a 24-bit value.
+    pub fn i32_const(value: i32) -> Instruction {
+        Instruction::Const32(value.to_ne_bytes())
+    }
+}
+
+/// Creates a [`FuncIdx`] from the given `u32` index value.
+///
+/// # Panics
+///
+/// If the `u32` index value is out of bounds for the [`FuncIdx`].
+fn func_idx(index: u32) -> FuncIdx {
+    FuncIdx::try_from(index).unwrap()
+}
+
+/// Creates a [`GlobalIdx`] from the given `u32` index value.
+///
+/// # Panics
+///
+/// If the `u32` index value is out of bounds for the [`GlobalIdx`].
+fn global_idx(index: u32) -> GlobalIdx {
+    GlobalIdx::try_from(index).unwrap()
+}
+
+/// Returns the [`BranchTableTargets`] for the given amount.
+///
+/// # Panics
+///
+/// If `len_targets` is out of bounds as [`BranchTableTargets`].
+fn br_targets(len_targets: usize) -> BranchTableTargets {
+    BranchTableTargets::try_from(len_targets).unwrap()
 }
 
 /// Asserts that the given `func_body` consists of the expected instructions.
@@ -157,10 +226,7 @@ fn implicit_return_with_value() {
         )
     "#,
     );
-    let expected = [
-        Instruction::constant(0),
-        Instruction::Return(drop_keep(0, 1)),
-    ];
+    let expected = [instr::i32_const(0), Instruction::Return(drop_keep(0, 1))];
     assert_func_bodies(wasm, [expected]);
 }
 
@@ -189,10 +255,7 @@ fn get_local() {
         )
     "#,
     );
-    let expected = [
-        Instruction::local_get(1),
-        Instruction::Return(drop_keep(1, 1)),
-    ];
+    let expected = [instr::local_get(1), Instruction::Return(drop_keep(1, 1))];
     assert_func_bodies(wasm, [expected]);
 }
 
@@ -210,8 +273,8 @@ fn get_local_2() {
     "#,
     );
     let expected = [
-        Instruction::local_get(2),
-        Instruction::local_get(2),
+        instr::local_get(2),
+        instr::local_get(2),
         Instruction::Drop,
         Instruction::Return(drop_keep(2, 1)),
     ];
@@ -233,8 +296,8 @@ fn get_local_3() {
     "#,
     );
     let expected = [
-        Instruction::local_get(2),
-        Instruction::local_get(2),
+        instr::local_get(2),
+        instr::local_get(2),
         Instruction::Drop,
         Instruction::Drop,
         Instruction::Return(drop_keep(2, 0)),
@@ -254,10 +317,7 @@ fn explicit_return() {
         )
     "#,
     );
-    let expected = [
-        Instruction::local_get(1),
-        Instruction::Return(drop_keep(1, 1)),
-    ];
+    let expected = [instr::local_get(1), Instruction::Return(drop_keep(1, 1))];
     assert_func_bodies(wasm, [expected]);
 }
 
@@ -275,8 +335,8 @@ fn simple_add() {
     "#,
     );
     let expected = [
-        Instruction::local_get(2),
-        Instruction::local_get(2),
+        instr::local_get(2),
+        instr::local_get(2),
         Instruction::I32Add,
         Instruction::Return(drop_keep(2, 1)),
     ];
@@ -301,10 +361,10 @@ fn simple_mul_add() {
     "#,
     );
     let expected = [
-        Instruction::local_get(2),
-        Instruction::local_get(2),
-        Instruction::local_get(4),
-        Instruction::local_get(4),
+        instr::local_get(2),
+        instr::local_get(2),
+        instr::local_get(4),
+        instr::local_get(4),
         Instruction::I32Add,
         Instruction::I32Add,
         Instruction::I32Mul,
@@ -327,16 +387,16 @@ fn drop_locals() {
     "#,
     );
     let expected = [
-        Instruction::local_get(2),
-        Instruction::local_set(1),
+        instr::local_get(2),
+        instr::local_set(1),
         Instruction::Return(drop_keep(2, 0)),
     ];
     assert_func_bodies(wasm, [expected]);
 }
 
-macro_rules! params {
-    ( $src:expr => $dst:expr, drop: $drop:expr, keep: $keep:expr ) => {
-        BranchParams::new(BranchOffset::from_i32($dst - $src), drop_keep($drop, $keep))
+macro_rules! offset {
+    ( $src:expr => $dst:expr ) => {
+        BranchOffset::try_from($dst - $src).unwrap()
     };
 }
 
@@ -357,11 +417,11 @@ fn if_without_else() {
     "#,
     );
     let expected = [
-        /* 0 */ Instruction::constant(1),
-        /* 1 */ Instruction::BrIfEqz(params!(1 => 4, drop: 0, keep: 0)),
-        /* 2 */ Instruction::constant(2),
+        /* 0 */ instr::i32_const(1),
+        /* 1 */ Instruction::BrIfEqz(offset!(1 => 4)),
+        /* 2 */ instr::i32_const(2),
         /* 3 */ Instruction::Return(drop_keep(1, 1)),
-        /* 4 */ Instruction::constant(3),
+        /* 4 */ instr::i32_const(3),
         /* 5 */ Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies(wasm, [expected]);
@@ -387,13 +447,13 @@ fn if_else() {
     "#,
     );
     let expected = [
-        /* 0 */ Instruction::constant(1),
-        /* 1 */ Instruction::BrIfEqz(params!(1 => 5, drop: 0, keep: 0)),
-        /* 2 */ Instruction::constant(2),
-        /* 3 */ Instruction::local_set(1),
-        /* 4 */ Instruction::Br(params!(4 => 7, drop: 0, keep: 0)),
-        /* 5 */ Instruction::constant(3),
-        /* 6 */ Instruction::local_set(1),
+        /* 0 */ instr::i32_const(1),
+        /* 1 */ Instruction::BrIfEqz(offset!(1 => 5)),
+        /* 2 */ instr::i32_const(2),
+        /* 3 */ instr::local_set(1),
+        /* 4 */ Instruction::Br(offset!(5 => 8)),
+        /* 5 */ instr::i32_const(3),
+        /* 6 */ instr::local_set(1),
         /* 7 */ Instruction::Return(drop_keep(1, 0)),
     ];
     assert_func_bodies(wasm, [expected]);
@@ -417,11 +477,11 @@ fn if_else_returns_result() {
     "#,
     );
     let expected = [
-        /* 0 */ Instruction::constant(1),
-        /* 1 */ Instruction::BrIfEqz(params!(1 => 4, drop: 0, keep: 0)),
-        /* 2 */ Instruction::constant(2),
-        /* 3 */ Instruction::Br(params!(3 => 5, drop: 0, keep: 0)),
-        /* 4 */ Instruction::constant(3),
+        /* 0 */ instr::i32_const(1),
+        /* 1 */ Instruction::BrIfEqz(offset!(1 => 4)),
+        /* 2 */ instr::i32_const(2),
+        /* 3 */ Instruction::Br(offset!(4 => 6)),
+        /* 4 */ instr::i32_const(3),
         /* 5 */ Instruction::Drop,
         /* 6 */ Instruction::Return(drop_keep(0, 0)),
     ];
@@ -450,15 +510,15 @@ fn if_else_branch_from_true_branch() {
     "#,
     );
     let expected = [
-        /*  0 */ Instruction::constant(1),
-        /*  1 */ Instruction::BrIfEqz(params!(1 => 8, drop: 0, keep: 0)),
-        /*  2 */ Instruction::constant(1),
-        /*  3 */ Instruction::constant(1),
-        /*  4 */ Instruction::BrIfNez(params!(4 => 9, drop: 0, keep: 1)),
+        /*  0 */ instr::i32_const(1),
+        /*  1 */ Instruction::BrIfEqz(offset!(1 => 8)),
+        /*  2 */ instr::i32_const(1),
+        /*  3 */ instr::i32_const(1),
+        /*  4 */ Instruction::BrIfNez(offset!(4 => 9)),
         /*  5 */ Instruction::Drop,
-        /*  6 */ Instruction::constant(2),
-        /*  7 */ Instruction::Br(params!(7 => 9, drop: 0, keep: 0)),
-        /*  8 */ Instruction::constant(3),
+        /*  6 */ instr::i32_const(2),
+        /*  7 */ Instruction::Br(offset!(7 => 9)),
+        /*  8 */ instr::i32_const(3),
         /*  9 */ Instruction::Drop,
         /* 10 */ Instruction::Return(drop_keep(0, 0)),
     ];
@@ -487,15 +547,15 @@ fn if_else_branch_from_false_branch() {
     "#,
     );
     let expected = [
-        /*  0 */ Instruction::constant(1),
-        /*  1 */ Instruction::BrIfEqz(params!(1 => 4, drop: 0, keep: 0)),
-        /*  2 */ Instruction::constant(1),
-        /*  3 */ Instruction::Br(params!(3 => 9, drop: 0, keep: 0)),
-        /*  4 */ Instruction::constant(2),
-        /*  5 */ Instruction::constant(1),
-        /*  6 */ Instruction::BrIfNez(params!(6 => 9, drop: 0, keep: 1)),
+        /*  0 */ instr::i32_const(1),
+        /*  1 */ Instruction::BrIfEqz(offset!(1 => 4)),
+        /*  2 */ instr::i32_const(1),
+        /*  3 */ Instruction::Br(offset!(3 => 9)),
+        /*  4 */ instr::i32_const(2),
+        /*  5 */ instr::i32_const(1),
+        /*  6 */ Instruction::BrIfNez(offset!(6 => 9)),
         /*  7 */ Instruction::Drop,
-        /*  8 */ Instruction::constant(3),
+        /*  8 */ instr::i32_const(3),
         /*  9 */ Instruction::Drop,
         /* 10 */ Instruction::Return(drop_keep(0, 0)),
     ];
@@ -525,14 +585,14 @@ fn if_else_both_unreachable_before_end() {
     "#,
     );
     let expected = [
-        /* 0 */ Instruction::local_get(1),
-        /* 1 */ Instruction::BrIfEqz(params!(1 => 4, drop: 0, keep: 0)),
-        /* 2 */ Instruction::constant(1),
+        /* 0 */ instr::local_get(1),
+        /* 1 */ Instruction::BrIfEqz(offset!(1 => 4)),
+        /* 2 */ instr::i32_const(1),
         /* 3 */ Instruction::Return(drop_keep(1, 1)),
-        /* 4 */ Instruction::constant(2),
+        /* 4 */ instr::i32_const(2),
         /* 5 */ Instruction::Return(drop_keep(1, 1)),
         /* 6 */ Instruction::Drop,
-        /* 7 */ Instruction::constant(3),
+        /* 7 */ instr::i32_const(3),
         /* 8 */ Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies(wasm, [expected]);
@@ -555,11 +615,11 @@ fn loop_() {
     "#,
     );
     let expected = [
-        /* 0 */ Instruction::constant(1),
-        /* 1 */ Instruction::BrIfNez(params!(1 => 0, drop: 0, keep: 0)),
-        /* 2 */ Instruction::constant(2),
-        /* 3 */ Instruction::Drop,
-        /* 4 */ Instruction::Return(drop_keep(0, 0)),
+        /* 0 */ instr::i32_const(1),
+        /* 1 */ Instruction::BrIfNez(offset!(1 => 0)),
+        /* 3 */ instr::i32_const(2),
+        /* 4 */ Instruction::Drop,
+        /* 5 */ Instruction::Return(drop_keep(0, 0)),
     ];
     assert_func_bodies(wasm, [expected]);
 }
@@ -601,13 +661,15 @@ fn spec_as_br_if_value_cond() {
     "#,
     );
     let expected = [
-        /* 0 */ Instruction::constant(6),
-        /* 1 */ Instruction::constant(9),
-        /* 2 */ Instruction::constant(0),
-        /* 3 */ Instruction::BrTable { len_targets: 2 },
-        /* 4 */ Instruction::Br(params!(4 => 6, drop: 1, keep: 1)),
-        /* 5 */ Instruction::Br(params!(5 => 6, drop: 1, keep: 1)),
-        /* 6 */ Instruction::Return(drop_keep(0, 1)),
+        /* 0 */ instr::i32_const(6),
+        /* 1 */ instr::i32_const(9),
+        /* 2 */ instr::i32_const(0),
+        /* 3 */ Instruction::BrTable(br_targets(2)),
+        /* 4 */ Instruction::BrAdjust(offset!(4 => 8)),
+        /* 5 */ Instruction::Return(drop_keep(1, 1)),
+        /* 6 */ Instruction::BrAdjust(offset!(6 => 8)),
+        /* 7 */ Instruction::Return(drop_keep(1, 1)),
+        /* 8 */ Instruction::Return(drop_keep(0, 1)),
     ];
     assert_func_bodies(wasm, [expected]);
 }
@@ -629,11 +691,13 @@ fn br_table() {
     "#,
     );
     let expected = [
-        /* 0 */ Instruction::constant(0),
-        /* 1 */ Instruction::BrTable { len_targets: 2 },
-        /* 2 */ Instruction::Br(params!(2 => 0, drop: 0, keep: 0)),
-        /* 3 */ Instruction::Br(params!(3 => 4, drop: 0, keep: 0)),
-        /* 4 */ Instruction::Return(drop_keep(0, 0)),
+        /* 0 */ instr::i32_const(0),
+        /* 1 */ Instruction::BrTable(br_targets(2)),
+        /* 2 */ Instruction::BrAdjust(offset!(2 => 0)),
+        /* 3 */ Instruction::Return(drop_keep(0, 0)),
+        /* 4 */ Instruction::BrAdjust(offset!(4 => 6)),
+        /* 5 */ Instruction::Return(drop_keep(0, 0)),
+        /* 6 */ Instruction::Return(drop_keep(0, 0)),
     ];
     assert_func_bodies(wasm, [expected]);
 }
@@ -658,14 +722,16 @@ fn br_table_returns_result() {
     "#,
     );
     let expected = [
-        /* 0 */ Instruction::constant(0),
-        /* 1 */ Instruction::constant(1),
-        /* 2 */ Instruction::BrTable { len_targets: 2 },
-        /* 3 */ Instruction::Br(params!(3 => 5, drop: 0, keep: 1)),
-        /* 4 */ Instruction::Br(params!(4 => 6, drop: 0, keep: 1)),
-        /* 5 */ Instruction::Unreachable,
-        /* 6 */ Instruction::Drop,
-        /* 7 */ Instruction::Return(drop_keep(0, 0)),
+        /* 0 */ instr::i32_const(0),
+        /* 1 */ instr::i32_const(1),
+        /* 2 */ Instruction::BrTable(br_targets(2)),
+        /* 3 */ Instruction::BrAdjust(offset!(3 => 7)),
+        /* 4 */ Instruction::Return(drop_keep(0, 1)),
+        /* 5 */ Instruction::BrAdjust(offset!(5 => 8)),
+        /* 6 */ Instruction::Return(drop_keep(0, 1)),
+        /* 7 */ Instruction::Unreachable,
+        /* 8 */ Instruction::Drop,
+        /* 9 */ Instruction::Return(drop_keep(0, 0)),
     ];
     assert_func_bodies(wasm, [expected]);
 }
@@ -689,11 +755,11 @@ fn wabt_example() {
     "#,
     );
     let expected = [
-        /* 0 */ Instruction::local_get(1),
-        /* 1 */ Instruction::BrIfNez(params!(1 => 4, drop: 0, keep: 0)),
-        /* 2 */ Instruction::constant(1),
+        /* 0 */ instr::local_get(1),
+        /* 1 */ Instruction::BrIfNez(offset!(1 => 4)),
+        /* 2 */ instr::i32_const(1),
         /* 3 */ Instruction::Return(drop_keep(1, 1)),
-        /* 4 */ Instruction::constant(2),
+        /* 4 */ instr::i32_const(2),
         /* 5 */ Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies(wasm, [expected]);
@@ -729,7 +795,7 @@ fn br_if_return() {
     "#,
     );
     let expected = [
-        Instruction::local_get(1),
+        instr::local_get(1),
         Instruction::ReturnIfNez(drop_keep(1, 0)),
         Instruction::Return(drop_keep(1, 0)),
     ];
@@ -754,12 +820,15 @@ fn br_table_return() {
     "#,
     );
     let expected = [
-        /* 0 */ Instruction::local_get(1),
-        /* 1 */ Instruction::BrTable { len_targets: 3 },
-        /* 2 */ Instruction::Br(params!(2 => 5, drop: 0, keep: 0)),
-        /* 3 */ Instruction::Br(params!(3 => 5, drop: 0, keep: 0)),
-        /* 4 */ Instruction::Return(drop_keep(1, 0)),
-        /* 5 */ Instruction::Return(drop_keep(1, 0)),
+        /* 0 */ instr::local_get(1),
+        /* 1 */ Instruction::BrTable(br_targets(3)),
+        /* 2 */ Instruction::BrAdjust(offset!(2 => 8)),
+        /* 3 */ Instruction::Return(drop_keep(0, 0)),
+        /* 4 */ Instruction::BrAdjust(offset!(4 => 8)),
+        /* 5 */ Instruction::Return(drop_keep(0, 0)),
+        /* 6 */ Instruction::Return(drop_keep(1, 0)),
+        /* 7 */ Instruction::Return(drop_keep(1, 0)),
+        /* 8 */ Instruction::Return(drop_keep(1, 0)),
     ];
     assert_func_bodies(wasm, [expected]);
 }
@@ -784,8 +853,8 @@ fn metered_simple_01() {
     let expected_fuel =
         3 * costs.base + costs.fuel_for_locals(1) + costs.fuel_for_drop_keep(drop_keep(1, 1));
     let expected = [
-        Instruction::consume_fuel(expected_fuel),
-        Instruction::local_get(1),
+        instr::consume_fuel(expected_fuel),
+        instr::local_get(1),
         Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies_metered(wasm, [expected]);
@@ -810,9 +879,9 @@ fn metered_simple_02() {
     let expected_fuel =
         5 * costs.base + costs.fuel_for_locals(1) + costs.fuel_for_drop_keep(drop_keep(1, 1));
     let expected = [
-        Instruction::consume_fuel(expected_fuel),
-        Instruction::local_get(1),
-        Instruction::local_get(2),
+        instr::consume_fuel(expected_fuel),
+        instr::local_get(1),
+        instr::local_get(2),
         Instruction::Drop,
         Instruction::Return(drop_keep(1, 1)),
     ];
@@ -840,13 +909,13 @@ fn metered_simple_03() {
     let expected_fuel =
         9 * costs.base + costs.fuel_for_locals(2) + costs.fuel_for_drop_keep(drop_keep(2, 1));
     let expected = [
-        Instruction::consume_fuel(expected_fuel),
-        Instruction::local_get(2),
-        Instruction::local_get(2),
+        instr::consume_fuel(expected_fuel),
+        instr::local_get(2),
+        instr::local_get(2),
         Instruction::I32Add,
-        Instruction::local_set(2),
-        Instruction::local_get(2),
-        Instruction::local_get(3),
+        instr::local_set(2),
+        instr::local_get(2),
+        instr::local_get(3),
         Instruction::I32Mul,
         Instruction::Return(drop_keep(2, 1)),
     ];
@@ -877,16 +946,16 @@ fn metered_if_01() {
     let expected_fuel_then = 3 * costs.base + costs.fuel_for_drop_keep(drop_keep(3, 1));
     let expected_fuel_else = expected_fuel_then;
     let expected = [
-        /* 0 */ Instruction::consume_fuel(expected_fuel_fn), // function body
-        /* 1 */ Instruction::local_get(3), // if condition
-        /* 2 */ Instruction::BrIfEqz(params!(2 => 6, drop: 0, keep: 0)),
-        /* 3 */ Instruction::consume_fuel(expected_fuel_then), // then
-        /* 4 */ Instruction::local_get(2),
-        /* 5 */ Instruction::Return(drop_keep(3, 1)),
-        /* 6 */ Instruction::consume_fuel(expected_fuel_else), // else
-        /* 7 */ Instruction::local_get(1),
-        /* 8 */ Instruction::Return(drop_keep(3, 1)), // end if
-        /* 9 */ Instruction::Return(drop_keep(3, 1)),
+        /*  0 */ instr::consume_fuel(expected_fuel_fn), // function body
+        /*  1 */ instr::local_get(3), // if condition
+        /*  2 */ Instruction::BrIfEqz(offset!(2 => 6)),
+        /*  3 */ instr::consume_fuel(expected_fuel_then), // then
+        /*  4 */ instr::local_get(2),
+        /*  5 */ Instruction::Return(drop_keep(3, 1)),
+        /*  6 */ instr::consume_fuel(expected_fuel_else), // else
+        /*  7 */ instr::local_get(1),
+        /*  8 */ Instruction::Return(drop_keep(3, 1)), // end if
+        /*  9 */ Instruction::Return(drop_keep(3, 1)),
     ];
     assert_func_bodies_metered(wasm, [expected]);
 }
@@ -920,18 +989,18 @@ fn metered_block_in_if_01() {
     let expected_fuel_else = expected_fuel_then;
     #[rustfmt::skip]
     let expected = [
-        /*  0 */ Instruction::consume_fuel(expected_fuel_fn), // function body
-        /*  1 */ Instruction::local_get(3), // if condition
-        /*  2 */ Instruction::BrIfEqz(params!(2 => 7, drop: 0, keep: 0)),
-        /*  3 */ Instruction::consume_fuel(expected_fuel_then), // then
-        /*  4 */ Instruction::local_get(2),
+        /*  0 */ instr::consume_fuel(expected_fuel_fn), // function body
+        /*  1 */ instr::local_get(3), // if condition
+        /*  2 */ Instruction::BrIfEqz(offset!(2 => 7)),
+        /*  3 */ instr::consume_fuel(expected_fuel_then), // then
+        /*  4 */ instr::local_get(2),
         /*  5 */ Instruction::Return(drop_keep(3, 1)),
-        /*  6 */ Instruction::Br(params!(6 => 10, drop: 0, keep: 0)), // This deadcode Br is created because
-                                                                      // `wasmi`'s dead code analysis does not
-                                                                      // properly detect dead code in blocks
-                                                                      // (and loops) that have an unreachable end.
-        /*  7 */ Instruction::consume_fuel(expected_fuel_else), // else
-        /*  8 */ Instruction::local_get(1),
+        /*  6 */ Instruction::Br(offset!(6 => 10)), // This deadcode Br is created because
+                                                    // `wasmi`'s dead code analysis does not
+                                                    // properly detect dead code in blocks
+                                                    // (and loops) that have an unreachable end.
+        /*  7 */ instr::consume_fuel(expected_fuel_else), // else
+        /*  8 */ instr::local_get(1),
         /*  9 */ Instruction::Return(drop_keep(3, 1)), // end if
         /* 10 */ Instruction::Return(drop_keep(3, 1)),
     ];
@@ -966,14 +1035,14 @@ fn metered_block_in_if_02() {
     let expected_fuel_then = 2 * costs.base;
     let expected_fuel_else = expected_fuel_then;
     let expected = [
-        /*  0 */ Instruction::consume_fuel(expected_fuel_fn), // function body
-        /*  1 */ Instruction::local_get(3), // if condition
-        /*  2 */ Instruction::BrIfEqz(params!(2 => 6, drop: 0, keep: 0)),
-        /*  3 */ Instruction::consume_fuel(expected_fuel_then), // then
-        /*  4 */ Instruction::local_get(2),
-        /*  5 */ Instruction::Br(params!(6 => 9, drop: 0, keep: 0)),
-        /*  6 */ Instruction::consume_fuel(expected_fuel_else), // else
-        /*  7 */ Instruction::local_get(1),
+        /*  0 */ instr::consume_fuel(expected_fuel_fn), // function body
+        /*  1 */ instr::local_get(3), // if condition
+        /*  2 */ Instruction::BrIfEqz(offset!(2 => 6)),
+        /*  3 */ instr::consume_fuel(expected_fuel_then), // then
+        /*  4 */ instr::local_get(2),
+        /*  5 */ Instruction::Br(offset!(5 => 8)),
+        /*  6 */ instr::consume_fuel(expected_fuel_else), // else
+        /*  7 */ instr::local_get(1),
         /*  8 */ Instruction::Return(drop_keep(3, 1)), // end if
     ];
     assert_func_bodies_metered(wasm, [expected]);
@@ -1008,17 +1077,17 @@ fn metered_loop_in_if() {
     let expected_fuel_else = expected_fuel_then;
     let expected_fuel_loop = 2 * costs.base;
     let expected = [
-        /* 0 */ Instruction::consume_fuel(expected_fuel_fn), // function body
-        /* 1 */ Instruction::local_get(3), // if condition
-        /* 2 */ Instruction::BrIfEqz(params!(2 => 7, drop: 0, keep: 0)),
-        /* 3 */ Instruction::consume_fuel(expected_fuel_then), // then
-        /* 4 */ Instruction::consume_fuel(expected_fuel_loop), // loop
-        /* 5 */ Instruction::local_get(2),
-        /* 6 */ Instruction::Br(params!(5 => 9, drop: 0, keep: 0)),
-        /* 7 */ Instruction::consume_fuel(expected_fuel_else), // else
-        /* 8 */ Instruction::consume_fuel(expected_fuel_loop), // loop
-        /* 9 */ Instruction::local_get(1),
-        /*10 */ Instruction::Return(drop_keep(3, 1)),
+        /*  0 */ instr::consume_fuel(expected_fuel_fn), // function body
+        /*  1 */ instr::local_get(3), // if condition
+        /*  2 */ Instruction::BrIfEqz(offset!(2 => 7)),
+        /*  3 */ instr::consume_fuel(expected_fuel_then), // then
+        /*  4 */ instr::consume_fuel(expected_fuel_loop), // loop
+        /*  5 */ instr::local_get(2),
+        /*  6 */ Instruction::Br(offset!(6 => 10)),
+        /*  7 */ instr::consume_fuel(expected_fuel_else), // else
+        /*  8 */ instr::consume_fuel(expected_fuel_loop), // loop
+        /*  9 */ instr::local_get(1),
+        /* 10 */ Instruction::Return(drop_keep(3, 1)),
     ];
     assert_func_bodies_metered(wasm, [expected]);
 }
@@ -1054,12 +1123,12 @@ fn metered_nested_blocks() {
     let expected_fuel =
         11 * costs.base + costs.fuel_for_locals(1) + costs.fuel_for_drop_keep(drop_keep(1, 1));
     let expected = [
-        Instruction::consume_fuel(expected_fuel),
-        Instruction::local_get(1),
-        Instruction::local_get(2),
-        Instruction::local_get(3),
-        Instruction::local_get(4),
-        Instruction::local_get(5),
+        instr::consume_fuel(expected_fuel),
+        instr::local_get(1),
+        instr::local_get(2),
+        instr::local_get(3),
+        instr::local_get(4),
+        instr::local_get(5),
         Instruction::Drop,
         Instruction::Drop,
         Instruction::Drop,
@@ -1101,16 +1170,16 @@ fn metered_nested_loops() {
         3 * costs.base + costs.fuel_for_locals(1) + costs.fuel_for_drop_keep(drop_keep(1, 1));
     let expected_fuel_inner = 3 * costs.base;
     let expected = [
-        Instruction::consume_fuel(expected_fuel_outer),
-        Instruction::local_get(1),
-        Instruction::consume_fuel(expected_fuel_inner),
-        Instruction::local_get(2),
-        Instruction::consume_fuel(expected_fuel_inner),
-        Instruction::local_get(3),
-        Instruction::consume_fuel(expected_fuel_inner),
-        Instruction::local_get(4),
-        Instruction::consume_fuel(expected_fuel_inner),
-        Instruction::local_get(5),
+        instr::consume_fuel(expected_fuel_outer),
+        instr::local_get(1),
+        instr::consume_fuel(expected_fuel_inner),
+        instr::local_get(2),
+        instr::consume_fuel(expected_fuel_inner),
+        instr::local_get(3),
+        instr::consume_fuel(expected_fuel_inner),
+        instr::local_get(4),
+        instr::consume_fuel(expected_fuel_inner),
+        instr::local_get(5),
         Instruction::Drop,
         Instruction::Drop,
         Instruction::Drop,
@@ -1145,12 +1214,12 @@ fn metered_global_bump() {
         + costs.fuel_for_locals(1)
         + costs.fuel_for_drop_keep(drop_keep(1, 1));
     let expected = [
-        Instruction::consume_fuel(expected_fuel),
-        Instruction::GlobalGet(GlobalIdx::from(0)),
-        Instruction::local_get(2),
+        instr::consume_fuel(expected_fuel),
+        Instruction::GlobalGet(global_idx(0)),
+        instr::local_get(2),
         Instruction::I32Add,
-        Instruction::GlobalSet(GlobalIdx::from(0)),
-        Instruction::GlobalGet(GlobalIdx::from(0)),
+        Instruction::GlobalSet(global_idx(0)),
+        Instruction::GlobalGet(global_idx(0)),
         Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies_metered(wasm, [expected]);
@@ -1173,14 +1242,14 @@ fn metered_calls_01() {
     let costs = fuel_costs();
     let expected_fuel_f0 = 3 * costs.base;
     let expected_f0 = [
-        Instruction::consume_fuel(expected_fuel_f0),
-        Instruction::constant(0),
+        instr::consume_fuel(expected_fuel_f0),
+        instr::i32_const(0),
         Instruction::Return(drop_keep(0, 1)),
     ];
     let expected_fuel_f1 = 2 * costs.base + costs.call;
     let expected_f1 = [
-        Instruction::consume_fuel(expected_fuel_f1),
-        Instruction::Call(FuncIdx::from(0)),
+        instr::consume_fuel(expected_fuel_f1),
+        Instruction::Call(func_idx(0)),
         Instruction::Return(drop_keep(0, 1)),
     ];
     assert_func_bodies_metered(wasm, [expected_f0, expected_f1]);
@@ -1210,9 +1279,9 @@ fn metered_calls_02() {
     let expected_fuel_f0 =
         5 * costs.base + costs.fuel_for_locals(2) + costs.fuel_for_drop_keep(drop_keep(2, 1));
     let expected_f0 = [
-        Instruction::consume_fuel(expected_fuel_f0),
-        Instruction::local_get(2),
-        Instruction::local_get(2),
+        instr::consume_fuel(expected_fuel_f0),
+        instr::local_get(2),
+        instr::local_get(2),
         Instruction::I32Add,
         Instruction::Return(drop_keep(2, 1)),
     ];
@@ -1221,10 +1290,10 @@ fn metered_calls_02() {
         + costs.fuel_for_locals(2)
         + costs.fuel_for_drop_keep(drop_keep(2, 1));
     let expected_f1 = [
-        Instruction::consume_fuel(expected_fuel_f1),
-        Instruction::local_get(2),
-        Instruction::local_get(2),
-        Instruction::Call(FuncIdx::from(0)),
+        instr::consume_fuel(expected_fuel_f1),
+        instr::local_get(2),
+        instr::local_get(2),
+        Instruction::Call(func_idx(0)),
         Instruction::Return(drop_keep(2, 1)),
     ];
     assert_func_bodies_metered(wasm, [expected_f0, expected_f1]);
@@ -1255,11 +1324,11 @@ fn metered_calls_03() {
     let expected_fuel_f0 =
         7 * costs.base + costs.fuel_for_locals(2) + costs.fuel_for_drop_keep(drop_keep(2, 1));
     let expected_f0 = [
-        Instruction::consume_fuel(expected_fuel_f0),
-        Instruction::local_get(2),
-        Instruction::local_set(1),
-        Instruction::local_get(2),
-        Instruction::local_get(2),
+        instr::consume_fuel(expected_fuel_f0),
+        instr::local_get(2),
+        instr::local_set(1),
+        instr::local_get(2),
+        instr::local_get(2),
         Instruction::I32Add,
         Instruction::Return(drop_keep(2, 1)),
     ];
@@ -1268,9 +1337,9 @@ fn metered_calls_03() {
         + costs.fuel_for_locals(1)
         + costs.fuel_for_drop_keep(drop_keep(1, 1));
     let expected_f1 = [
-        Instruction::consume_fuel(expected_fuel_f1),
-        Instruction::local_get(1),
-        Instruction::Call(FuncIdx::from(0)),
+        instr::consume_fuel(expected_fuel_f1),
+        instr::local_get(1),
+        Instruction::Call(func_idx(0)),
         Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies_metered(
@@ -1297,9 +1366,9 @@ fn metered_load_01() {
         + costs.fuel_for_locals(1)
         + costs.fuel_for_drop_keep(drop_keep(1, 1));
     let expected = [
-        Instruction::consume_fuel(expected_fuel),
-        Instruction::local_get(1),
-        Instruction::I32Load(Offset::from(0)),
+        instr::consume_fuel(expected_fuel),
+        instr::local_get(1),
+        Instruction::I32Load(AddressOffset::from(0)),
         Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies_metered(wasm, [expected]);
@@ -1322,10 +1391,10 @@ fn metered_store_01() {
     let costs = fuel_costs();
     let expected_fuel = 4 * costs.base + costs.store + costs.fuel_for_locals(2);
     let expected = [
-        Instruction::consume_fuel(expected_fuel),
-        Instruction::local_get(2),
-        Instruction::local_get(2),
-        Instruction::I32Store(Offset::from(0)),
+        instr::consume_fuel(expected_fuel),
+        instr::local_get(2),
+        instr::local_get(2),
+        Instruction::I32Store(AddressOffset::from(0)),
         Instruction::Return(drop_keep(2, 0)),
     ];
     assert_func_bodies_metered(wasm, [expected]);

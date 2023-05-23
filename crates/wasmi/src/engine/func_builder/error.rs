@@ -10,6 +10,15 @@ pub struct TranslationError {
 }
 
 impl TranslationError {
+    /// Create a new [`TranslationError`] from the inner variant.
+    #[cold]
+    #[inline]
+    pub fn new(inner: TranslationErrorInner) -> Self {
+        Self {
+            inner: Box::new(inner),
+        }
+    }
+
     /// Creates a new error indicating an unsupported Wasm block type.
     pub fn unsupported_block_type(block_type: wasmparser::BlockType) -> Self {
         Self {
@@ -52,13 +61,34 @@ impl Display for TranslationError {
                 write!(f, "encountered unsupported Wasm value type: {error:?}")
             }
             TranslationErrorInner::DropKeep(error) => error.fmt(f),
+            TranslationErrorInner::BranchTableTargetsOutOfBounds => {
+                write!(
+                    f,
+                    "branch table targets are out of bounds for wasmi bytecode"
+                )
+            }
+            TranslationErrorInner::ConstRefOutOfBounds => {
+                write!(
+                    f,
+                    "constant reference index is out of bounds for wasmi bytecode"
+                )
+            }
+            TranslationErrorInner::BranchOffsetOutOfBounds => {
+                write!(f, "branching offset is out of bounds for wasmi bytecode")
+            }
+            TranslationErrorInner::BlockFuelOutOfBounds => {
+                write!(
+                    f,
+                    "fuel required to execute a block is out of bounds for wasmi bytecode"
+                )
+            }
         }
     }
 }
 
 /// The inner error type encapsulating internal [`TranslationError`] state.
 #[derive(Debug)]
-enum TranslationErrorInner {
+pub enum TranslationErrorInner {
     /// There was either a problem parsing a Wasm input OR validating a Wasm input.
     Validate(wasmparser::BinaryReaderError),
     /// Encountered an unsupported Wasm block type.
@@ -67,4 +97,12 @@ enum TranslationErrorInner {
     UnsupportedValueType(wasmparser::ValType),
     /// An error with limitations of `DropKeep`.
     DropKeep(DropKeepError),
+    /// When using too many branch table targets.
+    BranchTableTargetsOutOfBounds,
+    /// Branching offset out of bounds.
+    BranchOffsetOutOfBounds,
+    /// Fuel required for a block is out of bounds.
+    BlockFuelOutOfBounds,
+    /// The constant reference index is out of bounds.
+    ConstRefOutOfBounds,
 }

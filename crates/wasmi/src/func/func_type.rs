@@ -1,12 +1,13 @@
 use crate::{core::ValueType, func::FuncError, Value};
 use alloc::{sync::Arc, vec::Vec};
+use core::fmt;
 
 /// A function type representing a function's parameter and result types.
 ///
 /// # Note
 ///
 /// Can be cloned cheaply.
-#[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
+#[derive(Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub struct FuncType {
     /// The number of function parameters.
     len_params: usize,
@@ -20,6 +21,15 @@ pub struct FuncType {
     /// The `len_params` field denotes how many parameters there are in
     /// the head of the vector before the results.
     params_results: Arc<[ValueType]>,
+}
+
+impl fmt::Debug for FuncType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("FuncType")
+            .field("params", &self.params())
+            .field("results", &self.results())
+            .finish()
+    }
 }
 
 impl FuncType {

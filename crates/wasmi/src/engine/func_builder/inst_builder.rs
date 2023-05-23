@@ -1,8 +1,12 @@
 //! Abstractions to build up instructions forming Wasm function bodies.
 
-use super::labels::{LabelRef, LabelRegistry};
+use super::{
+    labels::{LabelRef, LabelRegistry},
+    TranslationError,
+};
 use crate::engine::{
     bytecode::{BranchOffset, Instruction},
+    DropKeep,
     Engine,
     FuncBody,
 };
@@ -131,11 +135,37 @@ impl InstructionsBuilder {
         idx
     }
 
+    /// Pushes an [`Instruction::BrAdjust`] to the [`InstructionsBuilder`].
+    ///
+    /// Returns an [`Instr`] to refer to the pushed instruction.
+    pub fn push_br_adjust_instr(
+        &mut self,
+        branch_offset: BranchOffset,
+        drop_keep: DropKeep,
+    ) -> Instr {
+        let idx = self.push_inst(Instruction::BrAdjust(branch_offset));
+        self.push_inst(Instruction::Return(drop_keep));
+        idx
+    }
+
+    /// Pushes an [`Instruction::BrAdjustIfNez`] to the [`InstructionsBuilder`].
+    ///
+    /// Returns an [`Instr`] to refer to the pushed instruction.
+    pub fn push_br_adjust_nez_instr(
+        &mut self,
+        branch_offset: BranchOffset,
+        drop_keep: DropKeep,
+    ) -> Instr {
+        let idx = self.push_inst(Instruction::BrAdjustIfNez(branch_offset));
+        self.push_inst(Instruction::Return(drop_keep));
+        idx
+    }
+
     /// Try resolving the `label` for the currently constructed instruction.
     ///
     /// Returns an uninitialized [`BranchOffset`] if the `label` cannot yet
     /// be resolved and defers resolution to later.
-    pub fn try_resolve_label(&mut self, label: LabelRef) -> BranchOffset {
+    pub fn try_resolve_label(&mut self, label: LabelRef) -> Result<BranchOffset, TranslationError> {
         let user = self.current_pc();
         self.try_resolve_label_for(label, user)
     }
@@ -144,7 +174,11 @@ impl InstructionsBuilder {
     ///
     /// Returns an uninitialized [`BranchOffset`] if the `label` cannot yet
     /// be resolved and defers resolution to later.
-    pub fn try_resolve_label_for(&mut self, label: LabelRef, instr: Instr) -> BranchOffset {
+    pub fn try_resolve_label_for(
+        &mut self,
+        label: LabelRef,
+        instr: Instr,
+    ) -> Result<BranchOffset, TranslationError> {
         self.labels.try_resolve_label(label, instr)
     }
 
@@ -156,15 +190,15 @@ impl InstructionsBuilder {
     /// into the [`Engine`] so that the [`Engine`] is
     /// aware of the Wasm function existence. Returns a `FuncBody`
     /// reference that allows to retrieve the instructions.
-    #[must_use]
     pub fn finish(
         &mut self,
         engine: &Engine,
         len_locals: usize,
         max_stack_height: usize,
-    ) -> FuncBody {
-        self.update_branch_offsets();
-        engine.alloc_func_body(len_locals, max_stack_height, self.insts.drain(..))
+    ) -> Result<FuncBody, TranslationError> {
+        self.update_branch_offsets()?;
+        let func_body = engine.alloc_func_body(len_locals, max_stack_height, self.insts.drain(..));
+        Ok(func_body)
     }
 
     /// Updates the branch offsets of all branch instructions inplace.
@@ -172,10 +206,11 @@ impl InstructionsBuilder {
     /// # Panics
     ///
     /// If this is used before all branching labels have been pinned.
-    fn update_branch_offsets(&mut self) {
+    fn update_branch_offsets(&mut self) -> Result<(), TranslationError> {
         for (user, offset) in self.labels.resolved_users() {
-            self.insts[user.into_usize()].update_branch_offset(offset);
+            self.insts[user.into_usize()].update_branch_offset(offset?);
         }
+        Ok(())
     }
 
     /// Adds the given `delta` amount of fuel to the [`ConsumeFuel`] instruction `instr`.
@@ -186,7 +221,11 @@ impl InstructionsBuilder {
     /// - If the amount of consumed fuel for `instr` overflows.
     ///
     /// [`ConsumeFuel`]: enum.Instruction.html#variant.ConsumeFuel
-    pub fn bump_fuel_consumption(&mut self, instr: Instr, delta: u64) {
+    pub fn bump_fuel_consumption(
+        &mut self,
+        instr: Instr,
+        delta: u64,
+    ) -> Result<(), TranslationError> {
         self.insts[instr.into_usize()].bump_fuel_consumption(delta)
     }
 }
@@ -197,11 +236,13 @@ impl Instruction {
     /// # Panics
     ///
     /// If `self` is not a branch [`Instruction`].
-    pub fn update_branch_offset(&mut self, offset: BranchOffset) {
+    pub fn update_branch_offset(&mut self, new_offset: BranchOffset) {
         match self {
-            Instruction::Br(params)
-            | Instruction::BrIfEqz(params)
-            | Instruction::BrIfNez(params) => params.init(offset),
+            Instruction::Br(offset)
+            | Instruction::BrIfEqz(offset)
+            | Instruction::BrIfNez(offset)
+            | Instruction::BrAdjust(offset)
+            | Instruction::BrAdjustIfNez(offset) => offset.init(new_offset),
             _ => panic!("tried to update branch offset of a non-branch instruction: {self:?}"),
         }
     }

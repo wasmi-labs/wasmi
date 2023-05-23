@@ -4,6 +4,7 @@ pub mod bytecode;
 mod cache;
 pub mod code_map;
 mod config;
+mod const_pool;
 pub mod executor;
 mod func_args;
 mod func_builder;
@@ -34,6 +35,7 @@ use self::{
     bytecode::Instruction,
     cache::InstanceCache,
     code_map::CodeMap,
+    const_pool::{ConstPool, ConstPoolView, ConstRef},
     executor::{execute_wasm, WasmOutcome},
     func_types::FuncTypeRegistry,
     resumable::ResumableCallBase,
@@ -56,6 +58,7 @@ use alloc::{sync::Arc, vec::Vec};
 use core::sync::atomic::{AtomicU32, Ordering};
 use spin::{Mutex, RwLock};
 use wasmi_arena::{ArenaIndex, GuardedEntity};
+use wasmi_core::UntypedValue;
 
 /// A unique engine index.
 ///
@@ -134,6 +137,15 @@ impl Engine {
     /// Allocates a new function type to the engine.
     pub(super) fn alloc_func_type(&self, func_type: FuncType) -> DedupFuncType {
         self.inner.alloc_func_type(func_type)
+    }
+
+    /// Allocates a new constant value to the engine.
+    ///
+    /// # Errors
+    ///
+    /// If too many constant values have been allocated for the [`Engine`] this way.
+    pub(super) fn alloc_const(&self, value: UntypedValue) -> Result<ConstRef, TranslationError> {
+        self.inner.alloc_const(value)
     }
 
     /// Resolves a deduplicated function type into a [`FuncType`] entity.
@@ -366,6 +378,10 @@ impl EngineInner {
         self.res.write().func_types.alloc_func_type(func_type)
     }
 
+    fn alloc_const(&self, value: UntypedValue) -> Result<ConstRef, TranslationError> {
+        self.res.write().const_pool.alloc(value)
+    }
+
     fn alloc_func_body<I>(&self, len_locals: usize, max_stack_height: usize, insts: I) -> FuncBody
     where
         I: IntoIterator<Item = Instruction>,
@@ -497,6 +513,8 @@ impl EngineInner {
 pub struct EngineResources {
     /// Stores all Wasm function bodies that the interpreter is aware of.
     code_map: CodeMap,
+    /// A pool of reusable, deduplicated constant values.
+    const_pool: ConstPool,
     /// Deduplicated function types.
     ///
     /// # Note
@@ -512,6 +530,7 @@ impl EngineResources {
         let engine_idx = EngineIdx::new();
         Self {
             code_map: CodeMap::default(),
+            const_pool: ConstPool::default(),
             func_types: FuncTypeRegistry::new(engine_idx),
         }
     }
@@ -741,6 +760,15 @@ impl<'engine> EngineExecutor<'engine> {
         let value_stack = &mut self.stack.values;
         let call_stack = &mut self.stack.frames;
         let code_map = &self.res.code_map;
-        execute_wasm(store_inner, cache, value_stack, call_stack, code_map).map_err(make_trap)
+        let const_pool = self.res.const_pool.view();
+        execute_wasm(
+            store_inner,
+            cache,
+            value_stack,
+            call_stack,
+            code_map,
+            const_pool,
+        )
+        .map_err(make_trap)
     }
 }

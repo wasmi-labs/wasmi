@@ -321,8 +321,9 @@ impl ValueStackPtr {
                 // Case: no values need to be kept.
                 return;
             }
+            let keep = keep as usize;
             let src = this.into_sub(keep);
-            let dst = this.into_sub(keep + drop_keep.drop());
+            let dst = this.into_sub(keep + drop_keep.drop() as usize);
             if keep == 1 {
                 // Case: only one value needs to be kept.
                 dst.set(src.get());
@@ -340,6 +341,6 @@ impl ValueStackPtr {
             return;
         }
         drop_keep_impl(*self, drop_keep);
-        self.dec_by(drop);
+        self.dec_by(drop as usize);
     }
 }
