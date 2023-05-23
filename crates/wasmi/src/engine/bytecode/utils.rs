@@ -1,6 +1,6 @@
 use crate::engine::{func_builder::TranslationErrorInner, Instr, TranslationError};
 use core::fmt::{self, Display};
-use intx::{I24, U24};
+use intx::U24;
 
 /// A function index.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -250,31 +250,19 @@ impl AddressOffset {
 /// This defines how much the instruction pointer is offset
 /// upon taking the respective branch.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct BranchOffset(I24);
+pub struct BranchOffset(i32);
 
 #[cfg(test)]
-impl TryFrom<i32> for BranchOffset {
-    type Error = TranslationError;
-
-    /// Creates a [`BranchOffset`] from the given raw `i32` value.
-    ///
-    /// # Note
-    ///
-    /// Only required for testing purposes.
-    fn try_from(offset: i32) -> Result<Self, Self::Error> {
-        match I24::try_from(offset) {
-            Ok(offset) => Ok(Self(offset)),
-            Err(_) => Err(TranslationError::new(
-                TranslationErrorInner::BranchOffsetOutOfBounds,
-            )),
-        }
+impl From<i32> for BranchOffset {
+    fn from(index: i32) -> Self {
+        Self(index)
     }
 }
 
 impl BranchOffset {
     /// Creates an uninitalized [`BranchOffset`].
     pub fn uninit() -> Self {
-        Self(I24::default())
+        Self(0)
     }
 
     /// Creates an initialized [`BranchOffset`] from `src` to `dst`.
@@ -290,10 +278,10 @@ impl BranchOffset {
         fn make_err() -> TranslationError {
             TranslationError::new(TranslationErrorInner::BranchOffsetOutOfBounds)
         }
-        let src = src.into_u32() as i32;
-        let dst = dst.into_u32() as i32;
+        let src = src.into_u32() as i64;
+        let dst = dst.into_u32() as i64;
         let offset = dst.checked_sub(src).ok_or_else(make_err)?;
-        let offset = I24::try_from(offset).map_err(|_| make_err())?;
+        let offset = i32::try_from(offset).map_err(|_| make_err())?;
         Ok(Self(offset))
     }
 
@@ -316,7 +304,7 @@ impl BranchOffset {
 
     /// Returns the `i32` representation of the [`BranchOffset`].
     pub fn to_i32(self) -> i32 {
-        i32::from(self.0)
+        self.0
     }
 }
 

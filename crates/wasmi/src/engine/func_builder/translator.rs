@@ -17,12 +17,12 @@ use crate::{
     engine::{
         bytecode::{
             self,
+            AddressOffset,
             BranchOffset,
             BranchTableTargets,
             DataSegmentIdx,
             ElementSegmentIdx,
             Instruction,
-            AddressOffset,
             SignatureIdx,
             TableIdx,
         },

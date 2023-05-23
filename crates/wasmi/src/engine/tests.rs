@@ -1,5 +1,5 @@
 use super::{
-    bytecode::{BranchTableTargets, FuncIdx, GlobalIdx, AddressOffset},
+    bytecode::{AddressOffset, BranchTableTargets, FuncIdx, GlobalIdx},
     *,
 };
 use crate::{

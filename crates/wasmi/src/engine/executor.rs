@@ -3,6 +3,7 @@ use crate::{
     core::TrapCode,
     engine::{
         bytecode::{
+            AddressOffset,
             BlockFuel,
             BranchTableTargets,
             DataSegmentIdx,
@@ -11,7 +12,6 @@ use crate::{
             GlobalIdx,
             Instruction,
             LocalDepth,
-            AddressOffset,
             SignatureIdx,
             TableIdx,
         },

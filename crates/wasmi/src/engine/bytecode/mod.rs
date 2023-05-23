@@ -6,6 +6,7 @@ mod utils;
 mod tests;
 
 pub use self::utils::{
+    AddressOffset,
     BlockFuel,
     BranchOffset,
     BranchTableTargets,
@@ -16,7 +17,6 @@ pub use self::utils::{
     FuncIdx,
     GlobalIdx,
     LocalDepth,
-    AddressOffset,
     SignatureIdx,
     TableIdx,
 };
