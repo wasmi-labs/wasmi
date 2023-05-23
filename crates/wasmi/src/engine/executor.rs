@@ -280,14 +280,23 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::I64Load32U(offset) => self.visit_i64_load_i32_u(offset)?,
                 Instr::I64Load32UOpt(offset) => self.visit_i64_load_i32_u_opt(offset)?,
                 Instr::I32Store(offset) => self.visit_i32_store(offset)?,
+                Instr::I32StoreOpt(offset) => self.visit_i32_store_opt(offset)?,
                 Instr::I64Store(offset) => self.visit_i64_store(offset)?,
+                Instr::I64StoreOpt(offset) => self.visit_i64_store_opt(offset)?,
                 Instr::F32Store(offset) => self.visit_f32_store(offset)?,
+                Instr::F32StoreOpt(offset) => self.visit_f32_store_opt(offset)?,
                 Instr::F64Store(offset) => self.visit_f64_store(offset)?,
+                Instr::F64StoreOpt(offset) => self.visit_f64_store_opt(offset)?,
                 Instr::I32Store8(offset) => self.visit_i32_store_8(offset)?,
+                Instr::I32Store8Opt(offset) => self.visit_i32_store_8_opt(offset)?,
                 Instr::I32Store16(offset) => self.visit_i32_store_16(offset)?,
+                Instr::I32Store16Opt(offset) => self.visit_i32_store_16_opt(offset)?,
                 Instr::I64Store8(offset) => self.visit_i64_store_8(offset)?,
+                Instr::I64Store8Opt(offset) => self.visit_i64_store_8_opt(offset)?,
                 Instr::I64Store16(offset) => self.visit_i64_store_16(offset)?,
+                Instr::I64Store16Opt(offset) => self.visit_i64_store_16_opt(offset)?,
                 Instr::I64Store32(offset) => self.visit_i64_store_32(offset)?,
+                Instr::I64Store32Opt(offset) => self.visit_i64_store_32_opt(offset)?,
                 Instr::MemorySize => self.visit_memory_size(),
                 Instr::MemoryGrow => self.visit_memory_grow()?,
                 Instr::MemoryFill => self.visit_memory_fill()?,
@@ -1383,6 +1392,19 @@ macro_rules! impl_visit_store {
         )*
     }
 }
+macro_rules! impl_visit_store_opt {
+    ( $( fn $visit_ident:ident($untyped_ident:ident); )* ) => {
+        $(
+            #[inline(always)]
+            fn $visit_ident(
+                &mut self,
+                offset: AddressOffset,
+            ) -> Result<(), TrapCode> {
+                self.execute_store_wrap(offset.to_u32(), UntypedValue::$untyped_ident)
+            }
+        )*
+    }
+}
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     impl_visit_store! {
         fn visit_i32_store(i32_store);
@@ -1396,6 +1418,19 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         fn visit_i64_store_8(i64_store8);
         fn visit_i64_store_16(i64_store16);
         fn visit_i64_store_32(i64_store32);
+    }
+    impl_visit_store_opt! {
+        fn visit_i32_store_opt(i32_store);
+        fn visit_i64_store_opt(i64_store);
+        fn visit_f32_store_opt(f32_store);
+        fn visit_f64_store_opt(f64_store);
+
+        fn visit_i32_store_8_opt(i32_store8);
+        fn visit_i32_store_16_opt(i32_store16);
+
+        fn visit_i64_store_8_opt(i64_store8);
+        fn visit_i64_store_16_opt(i64_store16);
+        fn visit_i64_store_32_opt(i64_store32);
     }
 }
 

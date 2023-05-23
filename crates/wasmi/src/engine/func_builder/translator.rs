@@ -524,14 +524,19 @@ impl<'parser> FuncTranslator<'parser> {
         memarg: wasmparser::MemArg,
         _stored_value: ValueType,
         make_inst: fn(ConstRef) -> Instruction,
+        make_inst_opt: fn(AddressOffset) -> Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let (memory_idx, offset) = Self::decompose_memarg(memarg);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
             builder.bump_fuel_consumption(builder.fuel_costs().store)?;
             builder.stack_height.pop2();
-            let cref = builder.engine().alloc_const(UntypedValue::from(offset))?;
-            builder.alloc.inst_builder.push_inst(make_inst(cref));
+            if let Ok(offset) = AddressOffset::try_from(offset) {
+                builder.alloc.inst_builder.push_inst(make_inst_opt(offset));
+            } else {
+                let cref = builder.engine().alloc_const(UntypedValue::from(offset))?;
+                builder.alloc.inst_builder.push_inst(make_inst(cref));
+            }
             Ok(())
         })
     }
@@ -1532,39 +1537,84 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_store(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_store(memarg, ValueType::I32, Instruction::I32Store)
+        self.translate_store(
+            memarg,
+            ValueType::I32,
+            Instruction::I32Store,
+            Instruction::I32StoreOpt,
+        )
     }
 
     fn visit_i64_store(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_store(memarg, ValueType::I64, Instruction::I64Store)
+        self.translate_store(
+            memarg,
+            ValueType::I64,
+            Instruction::I64Store,
+            Instruction::I64StoreOpt,
+        )
     }
 
     fn visit_f32_store(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_store(memarg, ValueType::F32, Instruction::F32Store)
+        self.translate_store(
+            memarg,
+            ValueType::F32,
+            Instruction::F32Store,
+            Instruction::F32StoreOpt,
+        )
     }
 
     fn visit_f64_store(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_store(memarg, ValueType::F64, Instruction::F64Store)
+        self.translate_store(
+            memarg,
+            ValueType::F64,
+            Instruction::F64Store,
+            Instruction::F64StoreOpt,
+        )
     }
 
     fn visit_i32_store8(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_store(memarg, ValueType::I32, Instruction::I32Store8)
+        self.translate_store(
+            memarg,
+            ValueType::I32,
+            Instruction::I32Store8,
+            Instruction::I32Store8Opt,
+        )
     }
 
     fn visit_i32_store16(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_store(memarg, ValueType::I32, Instruction::I32Store16)
+        self.translate_store(
+            memarg,
+            ValueType::I32,
+            Instruction::I32Store16,
+            Instruction::I32Store16Opt,
+        )
     }
 
     fn visit_i64_store8(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_store(memarg, ValueType::I64, Instruction::I64Store8)
+        self.translate_store(
+            memarg,
+            ValueType::I64,
+            Instruction::I64Store8,
+            Instruction::I64Store8Opt,
+        )
     }
 
     fn visit_i64_store16(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_store(memarg, ValueType::I64, Instruction::I64Store16)
+        self.translate_store(
+            memarg,
+            ValueType::I64,
+            Instruction::I64Store16,
+            Instruction::I64Store16Opt,
+        )
     }
 
     fn visit_i64_store32(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_store(memarg, ValueType::I64, Instruction::I64Store32)
+        self.translate_store(
+            memarg,
+            ValueType::I64,
+            Instruction::I64Store32,
+            Instruction::I64Store32Opt,
+        )
     }
 
     fn visit_memory_size(
