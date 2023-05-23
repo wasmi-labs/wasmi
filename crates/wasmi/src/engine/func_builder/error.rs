@@ -106,6 +106,9 @@ impl Display for TranslationError {
                     "fuel required to execute a block is out of bounds for wasmi bytecode"
                 )
             }
+            TranslationErrorInner::AddressOffsetOutOfBounds => {
+                write!(f, "address offset is out of bounds for wasmi bytecode")
+            }
         }
     }
 }
@@ -141,4 +144,6 @@ pub enum TranslationErrorInner {
     BranchOffsetOutOfBounds,
     /// Fuel required for a block is out of bounds.
     BlockFuelOutOfBounds,
+    /// Address offset is out of bounds.
+    AddressOffsetOutOfBounds,
 }

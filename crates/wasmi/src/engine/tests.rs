@@ -1,5 +1,5 @@
 use super::{
-    bytecode::{BranchTableTargets, FuncIdx, GlobalIdx, Offset},
+    bytecode::{AddressOffset, BranchTableTargets, FuncIdx, GlobalIdx, Offset},
     *,
 };
 use crate::{
@@ -88,6 +88,15 @@ fn func_idx(index: u32) -> FuncIdx {
 /// If the `u32` index value is out of bounds for the [`GlobalIdx`].
 fn global_idx(index: u32) -> GlobalIdx {
     GlobalIdx::try_from(index).unwrap()
+}
+
+/// Creates a [`AddressOffset`] from the given `u32` index value.
+///
+/// # Panics
+///
+/// If the `u32` index value is out of bounds for the [`AddressOffset`].
+fn address_offset(index: u32) -> AddressOffset {
+    AddressOffset::try_from(index).unwrap()
 }
 
 /// Returns the [`BranchTableTargets`] for the given amount.
@@ -1392,7 +1401,7 @@ fn metered_load_01() {
     let expected = [
         instr::consume_fuel(expected_fuel),
         instr::local_get(1),
-        Instruction::I32Load(Offset::from(0)),
+        Instruction::I32LoadOpt(address_offset(0)),
         Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies_metered(wasm, [expected]);

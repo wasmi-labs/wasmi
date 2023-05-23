@@ -201,6 +201,31 @@ impl ElementSegmentIdx {
     }
 }
 
+/// An address offset for load and store operations.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct AddressOffset(U24);
+
+impl TryFrom<u32> for AddressOffset {
+    type Error = TranslationError;
+
+    fn try_from(index: u32) -> Result<Self, Self::Error> {
+        match U24::try_from(index) {
+            Ok(index) => Ok(Self(index)),
+            Err(_) => Err(TranslationError::new(
+                TranslationErrorInner::AddressOffsetOutOfBounds,
+            )),
+        }
+    }
+}
+
+impl AddressOffset {
+    /// Returns the index value as `u32`.
+    pub fn to_u32(self) -> u32 {
+        u32::from(self.0)
+    }
+}
+
 /// The number of branches of an [`Instruction::BrTable`].
 ///
 /// [`Instruction::BrTable`]: [`super::Instruction::BrTable`]

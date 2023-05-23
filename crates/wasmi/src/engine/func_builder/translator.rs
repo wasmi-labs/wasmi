@@ -17,6 +17,7 @@ use crate::{
     engine::{
         bytecode::{
             self,
+            AddressOffset,
             BranchOffset,
             BranchTableTargets,
             DataSegmentIdx,
@@ -485,6 +486,7 @@ impl<'parser> FuncTranslator<'parser> {
         memarg: wasmparser::MemArg,
         _loaded_type: ValueType,
         make_inst: fn(Offset) -> Instruction,
+        make_inst_opt: fn(AddressOffset) -> Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let (memory_idx, offset) = Self::decompose_memarg(memarg);
@@ -492,8 +494,12 @@ impl<'parser> FuncTranslator<'parser> {
             builder.bump_fuel_consumption(builder.fuel_costs().load)?;
             builder.stack_height.pop1();
             builder.stack_height.push();
-            let offset = Offset::from(offset);
-            builder.alloc.inst_builder.push_inst(make_inst(offset));
+            if let Ok(offset) = AddressOffset::try_from(offset) {
+                builder.alloc.inst_builder.push_inst(make_inst_opt(offset));
+            } else {
+                let offset = Offset::from(offset);
+                builder.alloc.inst_builder.push_inst(make_inst(offset));
+            }
             Ok(())
         })
     }
@@ -1400,59 +1406,129 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_load(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_load(memarg, ValueType::I32, Instruction::I32Load)
+        self.translate_load(
+            memarg,
+            ValueType::I32,
+            Instruction::I32Load,
+            Instruction::I32LoadOpt,
+        )
     }
 
     fn visit_i64_load(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_load(memarg, ValueType::I64, Instruction::I64Load)
+        self.translate_load(
+            memarg,
+            ValueType::I64,
+            Instruction::I64Load,
+            Instruction::I64LoadOpt,
+        )
     }
 
     fn visit_f32_load(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_load(memarg, ValueType::F32, Instruction::F32Load)
+        self.translate_load(
+            memarg,
+            ValueType::F32,
+            Instruction::F32Load,
+            Instruction::F32LoadOpt,
+        )
     }
 
     fn visit_f64_load(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_load(memarg, ValueType::F64, Instruction::F64Load)
+        self.translate_load(
+            memarg,
+            ValueType::F64,
+            Instruction::F64Load,
+            Instruction::F64LoadOpt,
+        )
     }
 
     fn visit_i32_load8_s(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_load(memarg, ValueType::I32, Instruction::I32Load8S)
+        self.translate_load(
+            memarg,
+            ValueType::I32,
+            Instruction::I32Load8S,
+            Instruction::I32Load8SOpt,
+        )
     }
 
     fn visit_i32_load8_u(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_load(memarg, ValueType::I32, Instruction::I32Load8U)
+        self.translate_load(
+            memarg,
+            ValueType::I32,
+            Instruction::I32Load8U,
+            Instruction::I32Load8UOpt,
+        )
     }
 
     fn visit_i32_load16_s(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_load(memarg, ValueType::I32, Instruction::I32Load16S)
+        self.translate_load(
+            memarg,
+            ValueType::I32,
+            Instruction::I32Load16S,
+            Instruction::I32Load16SOpt,
+        )
     }
 
     fn visit_i32_load16_u(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_load(memarg, ValueType::I32, Instruction::I32Load16U)
+        self.translate_load(
+            memarg,
+            ValueType::I32,
+            Instruction::I32Load16U,
+            Instruction::I32Load16UOpt,
+        )
     }
 
     fn visit_i64_load8_s(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_load(memarg, ValueType::I64, Instruction::I64Load8S)
+        self.translate_load(
+            memarg,
+            ValueType::I64,
+            Instruction::I64Load8S,
+            Instruction::I64Load8SOpt,
+        )
     }
 
     fn visit_i64_load8_u(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_load(memarg, ValueType::I64, Instruction::I64Load8U)
+        self.translate_load(
+            memarg,
+            ValueType::I64,
+            Instruction::I64Load8U,
+            Instruction::I64Load8UOpt,
+        )
     }
 
     fn visit_i64_load16_s(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_load(memarg, ValueType::I64, Instruction::I64Load16S)
+        self.translate_load(
+            memarg,
+            ValueType::I64,
+            Instruction::I64Load16S,
+            Instruction::I64Load16SOpt,
+        )
     }
 
     fn visit_i64_load16_u(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_load(memarg, ValueType::I64, Instruction::I64Load16U)
+        self.translate_load(
+            memarg,
+            ValueType::I64,
+            Instruction::I64Load16U,
+            Instruction::I64Load16UOpt,
+        )
     }
 
     fn visit_i64_load32_s(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_load(memarg, ValueType::I64, Instruction::I64Load32S)
+        self.translate_load(
+            memarg,
+            ValueType::I64,
+            Instruction::I64Load32S,
+            Instruction::I64Load32SOpt,
+        )
     }
 
     fn visit_i64_load32_u(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {
-        self.translate_load(memarg, ValueType::I64, Instruction::I64Load32U)
+        self.translate_load(
+            memarg,
+            ValueType::I64,
+            Instruction::I64Load32U,
+            Instruction::I64Load32UOpt,
+        )
     }
 
     fn visit_i32_store(&mut self, memarg: wasmparser::MemArg) -> Result<(), TranslationError> {

@@ -3,6 +3,7 @@ use crate::{
     core::TrapCode,
     engine::{
         bytecode::{
+            AddressOffset,
             BlockFuel,
             BranchTableTargets,
             DataSegmentIdx,
@@ -252,19 +253,33 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::GlobalGet(global_idx) => self.visit_global_get(global_idx),
                 Instr::GlobalSet(global_idx) => self.visit_global_set(global_idx),
                 Instr::I32Load(offset) => self.visit_i32_load(offset)?,
+                Instr::I32LoadOpt(offset) => self.visit_i32_load_opt(offset)?,
                 Instr::I64Load(offset) => self.visit_i64_load(offset)?,
+                Instr::I64LoadOpt(offset) => self.visit_i64_load_opt(offset)?,
                 Instr::F32Load(offset) => self.visit_f32_load(offset)?,
+                Instr::F32LoadOpt(offset) => self.visit_f32_load_opt(offset)?,
                 Instr::F64Load(offset) => self.visit_f64_load(offset)?,
+                Instr::F64LoadOpt(offset) => self.visit_f64_load_opt(offset)?,
                 Instr::I32Load8S(offset) => self.visit_i32_load_i8_s(offset)?,
+                Instr::I32Load8SOpt(offset) => self.visit_i32_load_i8_s_opt(offset)?,
                 Instr::I32Load8U(offset) => self.visit_i32_load_i8_u(offset)?,
+                Instr::I32Load8UOpt(offset) => self.visit_i32_load_i8_u_opt(offset)?,
                 Instr::I32Load16S(offset) => self.visit_i32_load_i16_s(offset)?,
+                Instr::I32Load16SOpt(offset) => self.visit_i32_load_i16_s_opt(offset)?,
                 Instr::I32Load16U(offset) => self.visit_i32_load_i16_u(offset)?,
+                Instr::I32Load16UOpt(offset) => self.visit_i32_load_i16_u_opt(offset)?,
                 Instr::I64Load8S(offset) => self.visit_i64_load_i8_s(offset)?,
+                Instr::I64Load8SOpt(offset) => self.visit_i64_load_i8_s_opt(offset)?,
                 Instr::I64Load8U(offset) => self.visit_i64_load_i8_u(offset)?,
+                Instr::I64Load8UOpt(offset) => self.visit_i64_load_i8_u_opt(offset)?,
                 Instr::I64Load16S(offset) => self.visit_i64_load_i16_s(offset)?,
+                Instr::I64Load16SOpt(offset) => self.visit_i64_load_i16_s_opt(offset)?,
                 Instr::I64Load16U(offset) => self.visit_i64_load_i16_u(offset)?,
+                Instr::I64Load16UOpt(offset) => self.visit_i64_load_i16_u_opt(offset)?,
                 Instr::I64Load32S(offset) => self.visit_i64_load_i32_s(offset)?,
+                Instr::I64Load32SOpt(offset) => self.visit_i64_load_i32_s_opt(offset)?,
                 Instr::I64Load32U(offset) => self.visit_i64_load_i32_u(offset)?,
+                Instr::I64Load32UOpt(offset) => self.visit_i64_load_i32_u_opt(offset)?,
                 Instr::I32Store(offset) => self.visit_i32_store(offset)?,
                 Instr::I64Store(offset) => self.visit_i64_store(offset)?,
                 Instr::F32Store(offset) => self.visit_f32_store(offset)?,
@@ -444,12 +459,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     fn execute_load_extend(
         &mut self,
-        offset: Offset,
+        offset: u32,
         load_extend: WasmLoadOp,
     ) -> Result<(), TrapCode> {
         self.sp.try_eval_top(|address| {
             let memory = self.cache.default_memory_bytes(self.ctx);
-            let value = load_extend(memory, address, offset.into_inner())?;
+            let value = load_extend(memory, address, offset)?;
             Ok(value)
         })?;
         self.try_next_instr()
@@ -1295,7 +1310,20 @@ macro_rules! impl_visit_load {
                 &mut self,
                 offset: Offset,
             ) -> Result<(), TrapCode> {
-                self.execute_load_extend(offset, UntypedValue::$untyped_ident)
+                self.execute_load_extend(offset.into_inner(), UntypedValue::$untyped_ident)
+            }
+        )*
+    }
+}
+macro_rules! impl_visit_load_opt {
+    ( $( fn $visit_ident:ident($untyped_ident:ident); )* ) => {
+        $(
+            #[inline(always)]
+            fn $visit_ident(
+                &mut self,
+                offset: AddressOffset,
+            ) -> Result<(), TrapCode> {
+                self.execute_load_extend(offset.to_u32(), UntypedValue::$untyped_ident)
             }
         )*
     }
@@ -1318,6 +1346,24 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         fn visit_i64_load_i16_u(i64_load16_u);
         fn visit_i64_load_i32_s(i64_load32_s);
         fn visit_i64_load_i32_u(i64_load32_u);
+    }
+    impl_visit_load_opt! {
+        fn visit_i32_load_opt(i32_load);
+        fn visit_i64_load_opt(i64_load);
+        fn visit_f32_load_opt(f32_load);
+        fn visit_f64_load_opt(f64_load);
+
+        fn visit_i32_load_i8_s_opt(i32_load8_s);
+        fn visit_i32_load_i8_u_opt(i32_load8_u);
+        fn visit_i32_load_i16_s_opt(i32_load16_s);
+        fn visit_i32_load_i16_u_opt(i32_load16_u);
+
+        fn visit_i64_load_i8_s_opt(i64_load8_s);
+        fn visit_i64_load_i8_u_opt(i64_load8_u);
+        fn visit_i64_load_i16_s_opt(i64_load16_s);
+        fn visit_i64_load_i16_u_opt(i64_load16_u);
+        fn visit_i64_load_i32_s_opt(i64_load32_s);
+        fn visit_i64_load_i32_u_opt(i64_load32_u);
     }
 }
 
