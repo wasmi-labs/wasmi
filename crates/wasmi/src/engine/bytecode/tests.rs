@@ -4,7 +4,7 @@ use core::mem::size_of;
 #[test]
 fn size_of_instruction() {
     assert_eq!(size_of::<Instruction>(), 8);
-    assert_eq!(size_of::<DropKeep>(), 3);
+    assert_eq!(size_of::<DropKeep>(), 4);
     assert_eq!(size_of::<BranchOffset>(), 4);
     assert_eq!(size_of::<BlockFuel>(), 4);
     assert_eq!(size_of::<BranchTableTargets>(), 4);

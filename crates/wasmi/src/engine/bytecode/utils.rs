@@ -310,7 +310,8 @@ impl BranchOffset {
 /// Defines how many stack values are going to be dropped and kept after branching.
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub struct DropKeep {
-    drop_keep: [u8; 3],
+    drop: u16,
+    keep: u16,
 }
 
 impl fmt::Debug for DropKeep {
@@ -347,19 +348,17 @@ impl Display for DropKeepError {
 impl DropKeep {
     /// Returns the amount of stack values to keep.
     pub fn keep(self) -> u16 {
-        u16::from_le_bytes([self.drop_keep[0], self.drop_keep[1] >> 4])
+        self.keep
     }
 
     /// Returns the amount of stack values to drop.
     pub fn drop(self) -> u16 {
-        u16::from_le_bytes([self.drop_keep[2], self.drop_keep[1] & 0x0F])
+        self.drop
     }
 
     /// Creates a new [`DropKeep`] that drops or keeps nothing.
     pub fn none() -> Self {
-        Self {
-            drop_keep: [0x00; 3],
-        }
+        Self { drop: 0, keep: 0 }
     }
 
     /// Creates a new [`DropKeep`] with the given amounts to drop and keep.
@@ -370,21 +369,9 @@ impl DropKeep {
     /// - If `keep` is out of bounds. (max 4095)
     /// - If `drop` is out of bounds. (delta to keep max 4095)
     pub fn new(drop: usize, keep: usize) -> Result<Self, DropKeepError> {
-        if keep >= 4096 {
-            return Err(DropKeepError::KeepOutOfBounds);
-        }
-        if drop >= 4096 {
-            return Err(DropKeepError::DropOutOfBounds);
-        }
+        let keep = u16::try_from(keep).map_err(|_| DropKeepError::KeepOutOfBounds)?;
+        let drop = u16::try_from(drop).map_err(|_| DropKeepError::KeepOutOfBounds)?;
         // Now we can cast `drop` and `keep` to `u16` values safely.
-        let keep = keep as u16;
-        let drop = drop as u16;
-        let [k0, k1] = keep.to_le_bytes();
-        let [d0, d1] = drop.to_le_bytes();
-        debug_assert!(k1 <= 0x0F);
-        debug_assert!(d1 <= 0x0F);
-        Ok(Self {
-            drop_keep: [k0, k1 << 4 | d1, d0],
-        })
+        Ok(Self { drop, keep })
     }
 }
