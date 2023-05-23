@@ -67,34 +67,10 @@ impl Display for TranslationError {
                     "branch table targets are out of bounds for wasmi bytecode"
                 )
             }
-            TranslationErrorInner::FunctionIndexOutOfBounds => {
-                write!(f, "function index is out of bounds for wasmi bytecode")
-            }
-            TranslationErrorInner::TableIndexOutOfBounds => {
-                write!(f, "table index is out of bounds for wasmi bytecode")
-            }
-            TranslationErrorInner::GlobalIndexOutOfBounds => {
+            TranslationErrorInner::ConstRefOutOfBounds => {
                 write!(
                     f,
-                    "global variable index is out of bounds for wasmi bytecode"
-                )
-            }
-            TranslationErrorInner::TypeIndexOutOfBounds => {
-                write!(f, "type index is out of bounds for wasmi bytecode")
-            }
-            TranslationErrorInner::LocalIndexOutOfBounds => {
-                write!(
-                    f,
-                    "local variable index is out of bounds for wasmi bytecode"
-                )
-            }
-            TranslationErrorInner::DataSegmentIndexOutOfBounds => {
-                write!(f, "data segment index is out of bounds for wasmi bytecode")
-            }
-            TranslationErrorInner::ElementSegmentIndexOutOfBounds => {
-                write!(
-                    f,
-                    "element segment index is out of bounds for wasmi bytecode"
+                    "constant reference index is out of bounds for wasmi bytecode"
                 )
             }
             TranslationErrorInner::BranchOffsetOutOfBounds => {
@@ -123,22 +99,10 @@ pub enum TranslationErrorInner {
     DropKeep(DropKeepError),
     /// When using too many branch table targets.
     BranchTableTargetsOutOfBounds,
-    /// Function index out of bounds.
-    FunctionIndexOutOfBounds,
-    /// Table index out of bounds.
-    TableIndexOutOfBounds,
-    /// Global variable index out of bounds.
-    GlobalIndexOutOfBounds,
-    /// Type index out of bounds.
-    TypeIndexOutOfBounds,
-    /// Local variable index out of bounds.
-    LocalIndexOutOfBounds,
-    /// Data segment index out of bounds.
-    DataSegmentIndexOutOfBounds,
-    /// Element segment index out of bounds.
-    ElementSegmentIndexOutOfBounds,
     /// Branching offset out of bounds.
     BranchOffsetOutOfBounds,
     /// Fuel required for a block is out of bounds.
     BlockFuelOutOfBounds,
+    /// The constant reference index is out of bounds.
+    ConstRefOutOfBounds,
 }

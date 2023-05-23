@@ -16,7 +16,7 @@ impl TryFrom<usize> for ConstRef {
         match U24::try_from(index as u64) {
             Ok(index) => Ok(Self(index)),
             Err(_) => Err(TranslationError::new(
-                TranslationErrorInner::LocalIndexOutOfBounds,
+                TranslationErrorInner::ConstRefOutOfBounds,
             )),
         }
     }
