@@ -12,7 +12,6 @@ use crate::{
             GlobalIdx,
             Instruction,
             LocalDepth,
-            Offset,
             SignatureIdx,
             TableIdx,
         },
@@ -481,14 +480,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// - `{i32, i64}.store16`
     /// - `i64.store32`
     #[inline(always)]
-    fn execute_store_wrap(
-        &mut self,
-        offset: Offset,
-        store_wrap: WasmStoreOp,
-    ) -> Result<(), TrapCode> {
+    fn execute_store_wrap(&mut self, offset: u32, store_wrap: WasmStoreOp) -> Result<(), TrapCode> {
         let (address, value) = self.sp.pop2();
         let memory = self.cache.default_memory_bytes(self.ctx);
-        store_wrap(memory, address, offset.into_inner(), value)?;
+        store_wrap(memory, address, offset, value)?;
         self.try_next_instr()
     }
 
@@ -1377,9 +1372,13 @@ macro_rules! impl_visit_store {
             #[inline(always)]
             fn $visit_ident(
                 &mut self,
-                offset: Offset,
+                cref: ConstRef,
             ) -> Result<(), TrapCode> {
-                self.execute_store_wrap(offset, UntypedValue::$untyped_ident)
+                let offset = self
+                    .const_pool
+                    .get(cref)
+                    .unwrap_or_else(|| unreachable!("missing constant value for const reference"));
+                self.execute_store_wrap(u32::from(offset), UntypedValue::$untyped_ident)
             }
         )*
     }

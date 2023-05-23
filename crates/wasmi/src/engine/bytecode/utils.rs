@@ -312,13 +312,6 @@ impl From<u32> for Offset {
     }
 }
 
-impl Offset {
-    /// Returns the inner `u32` index.
-    pub fn into_inner(self) -> u32 {
-        self.0
-    }
-}
-
 /// A signed offset for branch instructions.
 ///
 /// This defines how much the instruction pointer is offset

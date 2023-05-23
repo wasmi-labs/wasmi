@@ -23,7 +23,6 @@ use crate::{
             DataSegmentIdx,
             ElementSegmentIdx,
             Instruction,
-            Offset,
             SignatureIdx,
             TableIdx,
         },
@@ -524,15 +523,15 @@ impl<'parser> FuncTranslator<'parser> {
         &mut self,
         memarg: wasmparser::MemArg,
         _stored_value: ValueType,
-        make_inst: fn(Offset) -> Instruction,
+        make_inst: fn(ConstRef) -> Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let (memory_idx, offset) = Self::decompose_memarg(memarg);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
             builder.bump_fuel_consumption(builder.fuel_costs().store)?;
             builder.stack_height.pop2();
-            let offset = Offset::from(offset);
-            builder.alloc.inst_builder.push_inst(make_inst(offset));
+            let cref = builder.engine().alloc_const(UntypedValue::from(offset))?;
+            builder.alloc.inst_builder.push_inst(make_inst(cref));
             Ok(())
         })
     }
