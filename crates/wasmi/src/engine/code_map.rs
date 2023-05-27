@@ -74,7 +74,7 @@ pub struct CodeMap {
     ///
     /// Also this improves efficiency of deallocating the [`CodeMap`]
     /// and generally improves data locality.
-    insts: Vec<Instruction>,
+    instrs: Vec<Instruction>,
 }
 
 impl Default for CodeMap {
@@ -85,7 +85,7 @@ impl Default for CodeMap {
             // so that we safely can use `InstructionsRef(0)` as an uninitialized
             // index value for compiled functions that have yet to be
             // initialized with their actual function bodies.
-            insts: vec![Instruction::Unreachable],
+            instrs: vec![Instruction::Unreachable],
         }
     }
 }
@@ -100,8 +100,8 @@ impl CodeMap {
     where
         I: IntoIterator<Item = Instruction>,
     {
-        let start = self.insts.len();
-        self.insts.extend(insts);
+        let start = self.instrs.len();
+        self.instrs.extend(insts);
         let iref = InstructionsRef { start };
         let header = FuncHeader {
             iref,
@@ -116,7 +116,7 @@ impl CodeMap {
     /// Returns an [`InstructionPtr`] to the instruction at [`InstructionsRef`].
     #[inline]
     pub fn instr_ptr(&self, iref: InstructionsRef) -> InstructionPtr {
-        InstructionPtr::new(self.insts[iref.start..].as_ptr())
+        InstructionPtr::new(self.instrs[iref.start..].as_ptr())
     }
 
     /// Returns the [`FuncHeader`] of the [`FuncBody`].
@@ -130,7 +130,7 @@ impl CodeMap {
         let header = self.header(func_body);
         let start = header.iref.start;
         let end = self.instr_end(func_body);
-        let instrs = &self.insts[start..end];
+        let instrs = &self.instrs[start..end];
         instrs.get(index)
     }
 
@@ -143,7 +143,7 @@ impl CodeMap {
         self.headers
             .get(func_body.into_usize() + 1)
             .map(|header| header.iref.start)
-            .unwrap_or(self.insts.len())
+            .unwrap_or(self.instrs.len())
     }
 }
 
