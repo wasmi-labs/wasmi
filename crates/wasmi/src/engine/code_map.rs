@@ -24,7 +24,29 @@ impl ArenaIndex for CompiledFunc {
 #[derive(Debug, Copy, Clone)]
 pub struct InstructionsRef {
     /// The start index in the instructions array.
-    start: usize,
+    index: usize,
+}
+
+impl InstructionsRef {
+    /// Creates a new valid [`InstructionsRef`] for the given `index`.
+    ///
+    /// # Note
+    ///
+    /// The `index` denotes the index of the first instruction in the sequence
+    /// of instructions denoted by [`InstructionsRef`].
+    ///
+    /// # Panics
+    ///
+    /// If `index` is 0 since the zero index is reserved for uninitialized [`InstructionsRef`].
+    fn new(index: usize) -> Self {
+        assert_ne!(index, 0, "must initialize with a proper non-zero index");
+        Self { index }
+    }
+
+    /// Returns the `usize` value of the underlying index.
+    fn to_usize(self) -> usize {
+        self.index
+    }
 }
 
 /// Meta information about a compiled function.
@@ -102,7 +124,7 @@ impl CodeMap {
     {
         let start = self.instrs.len();
         self.instrs.extend(insts);
-        let iref = InstructionsRef { start };
+        let iref = InstructionsRef::new(start);
         let header = FuncHeader {
             iref,
             len_locals,
@@ -116,7 +138,7 @@ impl CodeMap {
     /// Returns an [`InstructionPtr`] to the instruction at [`InstructionsRef`].
     #[inline]
     pub fn instr_ptr(&self, iref: InstructionsRef) -> InstructionPtr {
-        InstructionPtr::new(self.instrs[iref.start..].as_ptr())
+        InstructionPtr::new(self.instrs[iref.to_usize()..].as_ptr())
     }
 
     /// Returns the [`FuncHeader`] of the [`FuncBody`].
@@ -128,7 +150,7 @@ impl CodeMap {
     #[cfg(test)]
     pub fn get_instr(&self, func_body: CompiledFunc, index: usize) -> Option<&Instruction> {
         let header = self.header(func_body);
-        let start = header.iref.start;
+        let start = header.iref.to_usize();
         let end = self.instr_end(func_body);
         let instrs = &self.instrs[start..end];
         instrs.get(index)
@@ -142,7 +164,7 @@ impl CodeMap {
     pub fn instr_end(&self, func_body: CompiledFunc) -> usize {
         self.headers
             .get(func_body.into_usize() + 1)
-            .map(|header| header.iref.start)
+            .map(|header| header.iref.to_usize())
             .unwrap_or(self.instrs.len())
     }
 }
