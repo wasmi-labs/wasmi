@@ -17,7 +17,7 @@ pub use self::{
     inst_builder::{Instr, InstructionsBuilder, RelativeDepth},
     translator::FuncTranslatorAllocations,
 };
-use super::FuncBody;
+use super::CompiledFunc;
 use crate::module::{FuncIdx, ModuleResources, ReusableAllocations};
 use wasmparser::{BinaryReaderError, VisitOperator};
 
@@ -90,7 +90,7 @@ impl<'parser> FuncBuilder<'parser> {
     pub fn finish(
         mut self,
         offset: usize,
-    ) -> Result<(FuncBody, ReusableAllocations), TranslationError> {
+    ) -> Result<(CompiledFunc, ReusableAllocations), TranslationError> {
         self.validator.finish(offset)?;
         let func_body = self.translator.finish()?;
         let allocations = ReusableAllocations {

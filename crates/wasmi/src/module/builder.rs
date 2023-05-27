@@ -13,7 +13,7 @@ use super::{
     Module,
 };
 use crate::{
-    engine::{DedupFuncType, FuncBody},
+    engine::{CompiledFunc, DedupFuncType},
     errors::ModuleError,
     Engine,
     FuncType,
@@ -36,7 +36,7 @@ pub struct ModuleBuilder<'engine> {
     pub globals_init: Vec<ConstExpr>,
     pub exports: BTreeMap<Box<str>, ExternIdx>,
     pub start: Option<FuncIdx>,
-    pub func_bodies: Vec<FuncBody>,
+    pub func_bodies: Vec<CompiledFunc>,
     pub element_segments: Vec<ElementSegment>,
     pub data_segments: Vec<DataSegment>,
 }

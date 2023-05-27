@@ -37,7 +37,7 @@ pub(crate) use self::{
     init_expr::ConstExpr,
 };
 use crate::{
-    engine::{DedupFuncType, FuncBody},
+    engine::{CompiledFunc, DedupFuncType},
     Engine,
     Error,
     ExternType,
@@ -62,7 +62,7 @@ pub struct Module {
     globals_init: Box<[ConstExpr]>,
     exports: BTreeMap<Box<str>, ExternIdx>,
     start: Option<FuncIdx>,
-    func_bodies: Box<[FuncBody]>,
+    func_bodies: Box<[CompiledFunc]>,
     element_segments: Box<[ElementSegment]>,
     data_segments: Box<[DataSegment]>,
 }
@@ -414,11 +414,11 @@ impl<'module> ImportType<'module> {
 /// An iterator over the internally defined functions of a [`Module`].
 #[derive(Debug)]
 pub struct InternalFuncsIter<'a> {
-    iter: iter::Zip<SliceIter<'a, DedupFuncType>, SliceIter<'a, FuncBody>>,
+    iter: iter::Zip<SliceIter<'a, DedupFuncType>, SliceIter<'a, CompiledFunc>>,
 }
 
 impl<'a> Iterator for InternalFuncsIter<'a> {
-    type Item = (DedupFuncType, FuncBody);
+    type Item = (DedupFuncType, CompiledFunc);
 
     fn next(&mut self) -> Option<Self::Item> {
         self.iter

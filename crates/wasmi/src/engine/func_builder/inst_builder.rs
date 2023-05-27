@@ -6,9 +6,9 @@ use super::{
 };
 use crate::engine::{
     bytecode::{BranchOffset, Instruction},
+    CompiledFunc,
     DropKeep,
     Engine,
-    FuncBody,
 };
 use alloc::vec::Vec;
 
@@ -195,7 +195,7 @@ impl InstructionsBuilder {
         engine: &Engine,
         len_locals: usize,
         max_stack_height: usize,
-    ) -> Result<FuncBody, TranslationError> {
+    ) -> Result<CompiledFunc, TranslationError> {
         self.update_branch_offsets()?;
         let func_body = engine.alloc_func_body(len_locals, max_stack_height, self.insts.drain(..));
         Ok(func_body)

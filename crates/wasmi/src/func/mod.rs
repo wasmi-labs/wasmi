@@ -15,7 +15,7 @@ pub use self::{
     typed_func::{TypedFunc, WasmParams, WasmResults},
 };
 use super::{
-    engine::{DedupFuncType, FuncBody, FuncFinished, FuncParams},
+    engine::{CompiledFunc, DedupFuncType, FuncFinished, FuncParams},
     AsContext,
     AsContextMut,
     Instance,
@@ -141,14 +141,14 @@ pub struct WasmFuncEntity {
     /// The function type of the Wasm function.
     ty: DedupFuncType,
     /// The compiled function body of the Wasm function.
-    body: FuncBody,
+    body: CompiledFunc,
     /// The instance associated to the Wasm function.
     instance: Instance,
 }
 
 impl WasmFuncEntity {
     /// Creates a new Wasm function from the given raw parts.
-    pub fn new(signature: DedupFuncType, body: FuncBody, instance: Instance) -> Self {
+    pub fn new(signature: DedupFuncType, body: CompiledFunc, instance: Instance) -> Self {
         Self {
             ty: signature,
             body,
@@ -167,7 +167,7 @@ impl WasmFuncEntity {
     }
 
     /// Returns the Wasm function body of the [`Func`].
-    pub fn func_body(&self) -> FuncBody {
+    pub fn func_body(&self) -> CompiledFunc {
         self.body
     }
 }

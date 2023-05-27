@@ -28,8 +28,8 @@ use crate::{
         },
         config::FuelCosts,
         func_builder::control_frame::ControlFrameKind,
+        CompiledFunc,
         DropKeep,
-        FuncBody,
         Instr,
         RelativeDepth,
     },
@@ -182,7 +182,7 @@ impl<'parser> FuncTranslator<'parser> {
     }
 
     /// Finishes constructing the function and returns its [`FuncBody`].
-    pub fn finish(&mut self) -> Result<FuncBody, TranslationError> {
+    pub fn finish(&mut self) -> Result<CompiledFunc, TranslationError> {
         self.alloc.inst_builder.finish(
             self.res.engine(),
             self.len_locals(),

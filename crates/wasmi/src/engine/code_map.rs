@@ -4,17 +4,17 @@ use super::Instruction;
 use alloc::vec::Vec;
 use wasmi_arena::ArenaIndex;
 
-/// A reference to a Wasm function body stored in the [`CodeMap`].
+/// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`].
 #[derive(Debug, Copy, Clone)]
-pub struct FuncBody(usize);
+pub struct CompiledFunc(usize);
 
-impl ArenaIndex for FuncBody {
+impl ArenaIndex for CompiledFunc {
     fn into_usize(self) -> usize {
         self.0
     }
 
-    fn from_usize(value: usize) -> Self {
-        FuncBody(value)
+    fn from_usize(index: usize) -> Self {
+        CompiledFunc(index)
     }
 }
 
@@ -81,7 +81,7 @@ impl CodeMap {
     /// Returns a reference to the allocated function body that can
     /// be used with [`CodeMap::header`] in order to resolve its
     /// instructions.
-    pub fn alloc<I>(&mut self, len_locals: usize, max_stack_height: usize, insts: I) -> FuncBody
+    pub fn alloc<I>(&mut self, len_locals: usize, max_stack_height: usize, insts: I) -> CompiledFunc
     where
         I: IntoIterator<Item = Instruction>,
     {
@@ -95,7 +95,7 @@ impl CodeMap {
         };
         let header_index = self.headers.len();
         self.headers.push(header);
-        FuncBody(header_index)
+        CompiledFunc::from_usize(header_index)
     }
 
     /// Returns an [`InstructionPtr`] to the instruction at [`InstructionsRef`].
@@ -105,13 +105,13 @@ impl CodeMap {
     }
 
     /// Returns the [`FuncHeader`] of the [`FuncBody`].
-    pub fn header(&self, func_body: FuncBody) -> &FuncHeader {
-        &self.headers[func_body.0]
+    pub fn header(&self, func_body: CompiledFunc) -> &FuncHeader {
+        &self.headers[func_body.into_usize()]
     }
 
     /// Resolves the instruction at `index` of the compiled [`FuncBody`].
     #[cfg(test)]
-    pub fn get_instr(&self, func_body: FuncBody, index: usize) -> Option<&Instruction> {
+    pub fn get_instr(&self, func_body: CompiledFunc, index: usize) -> Option<&Instruction> {
         let header = self.header(func_body);
         let start = header.iref.start;
         let end = self.instr_end(func_body);
@@ -124,9 +124,9 @@ impl CodeMap {
     /// This is important to synthesize how many instructions there are in
     /// the function referred to by [`FuncBody`].
     #[cfg(test)]
-    pub fn instr_end(&self, func_body: FuncBody) -> usize {
+    pub fn instr_end(&self, func_body: CompiledFunc) -> usize {
         self.headers
-            .get(func_body.0 + 1)
+            .get(func_body.into_usize() + 1)
             .map(|header| header.iref.start)
             .unwrap_or(self.insts.len())
     }

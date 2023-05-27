@@ -105,7 +105,7 @@ fn br_targets(len_targets: usize) -> BranchTableTargets {
 fn assert_func_body<E>(
     engine: &Engine,
     func_type: DedupFuncType,
-    func_body: FuncBody,
+    func_body: CompiledFunc,
     expected_instructions: E,
 ) where
     E: IntoIterator<Item = Instruction>,

@@ -18,7 +18,7 @@ mod tests;
 
 pub use self::{
     bytecode::DropKeep,
-    code_map::FuncBody,
+    code_map::CompiledFunc,
     config::{Config, FuelConsumptionMode},
     func_builder::{
         FuncBuilder,
@@ -169,7 +169,7 @@ impl Engine {
         len_locals: usize,
         max_stack_height: usize,
         insts: I,
-    ) -> FuncBody
+    ) -> CompiledFunc
     where
         I: IntoIterator<Item = Instruction>,
         I::IntoIter: ExactSizeIterator,
@@ -190,7 +190,11 @@ impl Engine {
     ///
     /// If the [`FuncBody`] is invalid for the [`Engine`].
     #[cfg(test)]
-    pub(crate) fn resolve_inst(&self, func_body: FuncBody, index: usize) -> Option<Instruction> {
+    pub(crate) fn resolve_inst(
+        &self,
+        func_body: CompiledFunc,
+        index: usize,
+    ) -> Option<Instruction> {
         self.inner.resolve_inst(func_body, index)
     }
 
@@ -382,7 +386,12 @@ impl EngineInner {
         self.res.write().const_pool.alloc(value)
     }
 
-    fn alloc_func_body<I>(&self, len_locals: usize, max_stack_height: usize, insts: I) -> FuncBody
+    fn alloc_func_body<I>(
+        &self,
+        len_locals: usize,
+        max_stack_height: usize,
+        insts: I,
+    ) -> CompiledFunc
     where
         I: IntoIterator<Item = Instruction>,
         I::IntoIter: ExactSizeIterator,
@@ -401,7 +410,7 @@ impl EngineInner {
     }
 
     #[cfg(test)]
-    fn resolve_inst(&self, func_body: FuncBody, index: usize) -> Option<Instruction> {
+    fn resolve_inst(&self, func_body: CompiledFunc, index: usize) -> Option<Instruction> {
         self.res
             .read()
             .code_map
