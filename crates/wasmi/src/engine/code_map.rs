@@ -61,7 +61,7 @@ impl FuncHeader {
 }
 
 /// Datastructure to efficiently store Wasm function bodies.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct CodeMap {
     /// The headers of all compiled functions.
     headers: Vec<FuncHeader>,
@@ -75,6 +75,19 @@ pub struct CodeMap {
     /// Also this improves efficiency of deallocating the [`CodeMap`]
     /// and generally improves data locality.
     insts: Vec<Instruction>,
+}
+
+impl Default for CodeMap {
+    fn default() -> Self {
+        Self {
+            headers: Vec::new(),
+            // The first instruction always is a simple trapping instruction
+            // so that we safely can use `InstructionsRef(0)` as an uninitialized
+            // index value for compiled functions that have yet to be
+            // initialized with their actual function bodies.
+            insts: vec![Instruction::Unreachable],
+        }
+    }
 }
 
 impl CodeMap {
