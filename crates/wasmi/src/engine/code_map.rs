@@ -6,14 +6,16 @@ use wasmi_arena::ArenaIndex;
 
 /// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`].
 #[derive(Debug, Copy, Clone)]
-pub struct CompiledFunc(usize);
+pub struct CompiledFunc(u32);
 
 impl ArenaIndex for CompiledFunc {
     fn into_usize(self) -> usize {
-        self.0
+        self.0 as usize
     }
 
     fn from_usize(index: usize) -> Self {
+        let index = u32::try_from(index)
+            .unwrap_or_else(|_| panic!("out of bounds compiled func index: {index}"));
         CompiledFunc(index)
     }
 }
