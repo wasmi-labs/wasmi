@@ -190,12 +190,12 @@ impl Engine {
     ///
     /// If the [`CompiledFunc`] is invalid for the [`Engine`].
     #[cfg(test)]
-    pub(crate) fn resolve_inst(
+    pub(crate) fn resolve_instr(
         &self,
         func_body: CompiledFunc,
         index: usize,
     ) -> Option<Instruction> {
-        self.inner.resolve_inst(func_body, index)
+        self.inner.resolve_instr(func_body, index)
     }
 
     /// Executes the given [`Func`] with parameters `params`.
@@ -415,7 +415,7 @@ impl EngineInner {
     }
 
     #[cfg(test)]
-    fn resolve_inst(&self, func_body: CompiledFunc, index: usize) -> Option<Instruction> {
+    fn resolve_instr(&self, func_body: CompiledFunc, index: usize) -> Option<Instruction> {
         self.res
             .read()
             .code_map

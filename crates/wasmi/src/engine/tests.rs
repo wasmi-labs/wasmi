@@ -120,7 +120,7 @@ fn assert_func_body<E>(
             .map(|(index, expected)| {
                 (
                     index,
-                    engine.resolve_inst(func_body, index).unwrap_or_else(|| {
+                    engine.resolve_instr(func_body, index).unwrap_or_else(|| {
                         panic!("encountered missing instruction at position {index}")
                     }),
                     expected,
@@ -134,7 +134,7 @@ fn assert_func_body<E>(
             engine.resolve_func_type(&func_type, Clone::clone),
         );
     }
-    if let Some(unexpected) = engine.resolve_inst(func_body, len_expected) {
+    if let Some(unexpected) = engine.resolve_instr(func_body, len_expected) {
         panic!("encountered unexpected instruction at position {len_expected}: {unexpected:?}",);
     }
 }
