@@ -1210,15 +1210,29 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_return_call(&mut self, func_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let func = bytecode::FuncIdx::from(func_idx);
             let func_type = builder.func_type_of(func_idx.into());
             let drop_keep = builder.drop_keep_return_call(&func_type)?;
             builder.bump_fuel_consumption(builder.fuel_costs().call)?;
             builder.bump_fuel_consumption(builder.fuel_costs().fuel_for_drop_keep(drop_keep))?;
-            builder
-                .alloc
-                .inst_builder
-                .push_inst(Instruction::ReturnCall(func));
+            match builder.res.get_compiled_func(func_idx.into()) {
+                Some(compiled_func) => {
+                    // Case: We are calling an internal function and can optimize
+                    //       this case by using the special instruction for it.
+                    builder
+                        .alloc
+                        .inst_builder
+                        .push_inst(Instruction::ReturnCallInternal(compiled_func));
+                }
+                None => {
+                    // Case: We are calling an imported function and must use the
+                    //       general calling operator for it.
+                    let func = bytecode::FuncIdx::from(func_idx);
+                    builder
+                        .alloc
+                        .inst_builder
+                        .push_inst(Instruction::ReturnCall(func));
+                }
+            }
             builder
                 .alloc
                 .inst_builder

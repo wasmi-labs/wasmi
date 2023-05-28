@@ -238,6 +238,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                         return Ok(WasmOutcome::Return);
                     }
                 }
+                Instr::ReturnCallInternal(compiled_func) => {
+                    self.visit_return_call_internal(compiled_func)?
+                }
                 Instr::ReturnCall(func) => {
                     forward_call!(self.visit_return_call(func))
                 }
@@ -630,6 +633,29 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         }
     }
 
+    /// Calls the given internal [`CompiledFunc`].
+    ///
+    /// This also prepares the instruction pointer and stack pointer for
+    /// the function call so that the stack and execution state is synchronized
+    /// with the outer structures.
+    #[inline(always)]
+    fn call_func_internal(&mut self, func: CompiledFunc, kind: CallKind) -> Result<(), TrapCode> {
+        self.next_instr_at(match kind {
+            CallKind::Nested => 1,
+            CallKind::Tail => 2,
+        });
+        self.sync_stack_ptr();
+        if matches!(kind, CallKind::Nested) {
+            self.call_stack
+                .push(FuncFrame::new(self.ip, self.cache.instance()))?;
+        }
+        let header = self.code_map.header(func);
+        self.value_stack.prepare_wasm_call(header)?;
+        self.sp = self.value_stack.stack_ptr();
+        self.ip = self.code_map.instr_ptr(header.iref());
+        Ok(())
+    }
+
     /// Returns to the caller.
     ///
     /// This also modifies the stack as the caller would expect it
@@ -967,6 +993,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     #[inline(always)]
+    fn visit_return_call_internal(&mut self, compiled_func: CompiledFunc) -> Result<(), TrapCode> {
+        let drop_keep = self.fetch_drop_keep(1);
+        self.sp.drop_keep(drop_keep);
+        self.call_func_internal(compiled_func, CallKind::Tail)
+    }
+
+    #[inline(always)]
     fn visit_return_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
         let drop_keep = self.fetch_drop_keep(1);
         self.sp.drop_keep(drop_keep);
@@ -987,15 +1020,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     #[inline(always)]
     fn visit_call_internal(&mut self, compiled_func: CompiledFunc) -> Result<(), TrapCode> {
-        self.next_instr();
-        self.sync_stack_ptr();
-        self.call_stack
-            .push(FuncFrame::new(self.ip, self.cache.instance()))?;
-        let header = self.code_map.header(compiled_func);
-        self.value_stack.prepare_wasm_call(header)?;
-        self.sp = self.value_stack.stack_ptr();
-        self.ip = self.code_map.instr_ptr(header.iref());
-        Ok(())
+        self.call_func_internal(compiled_func, CallKind::Nested)
     }
 
     #[inline(always)]
