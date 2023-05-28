@@ -104,6 +104,13 @@ pub enum Instruction {
     /// (or compiled) and acts as an optimization for those common cases.
     CallInternal(CompiledFunc),
     /// Calls the function.
+    /// 
+    /// # Note
+    /// 
+    /// Since [`Instruction::CallInternal`] should be used for all functions internal
+    /// (or compiled) to the engine this instruction should mainly be used for calling
+    /// imported functions. However, it is a general form that can technically be used
+    /// for both.
     Call(FuncIdx),
     /// Calling a function indirectly.
     ///
