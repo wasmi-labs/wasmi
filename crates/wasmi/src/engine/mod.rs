@@ -374,10 +374,12 @@ impl EngineInner {
         }
     }
 
+    /// Returns a shared reference to the [`Config`] of the [`EngineInner`].
     fn config(&self) -> &Config {
         &self.config
     }
 
+    /// Allocates a new function type to the [`EngineInner`].
     fn alloc_func_type(&self, func_type: FuncType) -> DedupFuncType {
         self.res.write().func_types.alloc_func_type(func_type)
     }
@@ -386,7 +388,7 @@ impl EngineInner {
     ///
     /// # Errors
     ///
-    /// If too many constant values have been allocated for the [`Engine`] this way.
+    /// If too many constant values have been allocated for the [`EngineInner`] this way.
     fn alloc_const(&self, value: UntypedValue) -> Result<ConstRef, TranslationError> {
         self.res.write().const_pool.alloc(value)
     }
