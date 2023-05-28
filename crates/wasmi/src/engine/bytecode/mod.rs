@@ -20,7 +20,7 @@ pub use self::utils::{
     SignatureIdx,
     TableIdx,
 };
-use super::{const_pool::ConstRef, TranslationError};
+use super::{const_pool::ConstRef, CompiledFunc, TranslationError};
 use core::fmt::Debug;
 use wasmi_core::F32;
 
@@ -96,6 +96,13 @@ pub enum Instruction {
     /// and [`Instruction::TableGet`] only act as a storage for parameters to the
     /// [`Instruction::ReturnCallIndirect`] and will never be executed by themselves.
     ReturnCallIndirect(SignatureIdx),
+    /// Calls an internal (compiled) function.
+    ///
+    /// # Note
+    ///
+    /// This instruction can be used for calls to functions that are engine internal
+    /// (or compiled) and acts as an optimization for those common cases.
+    CallInternal(CompiledFunc),
     /// Calls the function.
     Call(FuncIdx),
     /// Calling a function indirectly.

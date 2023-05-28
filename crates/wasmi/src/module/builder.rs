@@ -55,6 +55,11 @@ impl ModuleImports {
     pub fn len_globals(&self) -> usize {
         self.globals.len()
     }
+
+    /// Returns the number of imported functions.
+    pub fn len_funcs(&self) -> usize {
+        self.funcs.len()
+    }
 }
 
 /// The resources of a [`Module`] required for translating function bodies.
@@ -87,6 +92,18 @@ impl<'a> ModuleResources<'a> {
     /// Returns the [`GlobalType`] the the indexed global variable.
     pub fn get_type_of_global(&self, global_idx: GlobalIdx) -> GlobalType {
         self.res.globals[global_idx.into_u32() as usize]
+    }
+
+    /// Returns the [`CompiledFunc`] for the given [`FuncIdx`].
+    ///
+    /// Returns `None` if [`FuncIdx`] refers to an imported function.
+    pub fn get_compiled_func(&self, func_idx: FuncIdx) -> Option<CompiledFunc> {
+        let index = func_idx.into_u32() as usize;
+        let len_imported = self.res.imports.len_funcs();
+        let index = index.checked_sub(len_imported)?;
+        // Note: It is a bug if this index access is out of bounds
+        //       therefore we panic here instead of using `get`.
+        Some(self.res.compiled_funcs[index])
     }
 
     /// Returns the global variable type and optional initial value.

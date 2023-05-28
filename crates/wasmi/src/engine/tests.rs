@@ -69,13 +69,13 @@ mod instr {
     }
 }
 
-/// Creates a [`FuncIdx`] from the given `u32` index value.
+/// Creates a [`CompiledFunc`] from the given `u32` index value.
 ///
 /// # Panics
 ///
-/// If the `u32` index value is out of bounds for the [`FuncIdx`].
-fn func_idx(index: u32) -> FuncIdx {
-    FuncIdx::try_from(index).unwrap()
+/// If the `u32` index value is out of bounds for the [`CompiledFunc`].
+fn compiled_func(index: u32) -> CompiledFunc {
+    CompiledFunc::from_usize(index as usize)
 }
 
 /// Creates a [`GlobalIdx`] from the given `u32` index value.
@@ -1249,7 +1249,7 @@ fn metered_calls_01() {
     let expected_fuel_f1 = 2 * costs.base + costs.call;
     let expected_f1 = [
         instr::consume_fuel(expected_fuel_f1),
-        Instruction::Call(func_idx(0)),
+        Instruction::CallInternal(compiled_func(0)),
         Instruction::Return(drop_keep(0, 1)),
     ];
     assert_func_bodies_metered(wasm, [expected_f0, expected_f1]);
@@ -1293,7 +1293,7 @@ fn metered_calls_02() {
         instr::consume_fuel(expected_fuel_f1),
         instr::local_get(2),
         instr::local_get(2),
-        Instruction::Call(func_idx(0)),
+        Instruction::CallInternal(compiled_func(0)),
         Instruction::Return(drop_keep(2, 1)),
     ];
     assert_func_bodies_metered(wasm, [expected_f0, expected_f1]);
@@ -1339,7 +1339,7 @@ fn metered_calls_03() {
     let expected_f1 = [
         instr::consume_fuel(expected_fuel_f1),
         instr::local_get(1),
-        Instruction::Call(func_idx(0)),
+        Instruction::CallInternal(compiled_func(0)),
         Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies_metered(

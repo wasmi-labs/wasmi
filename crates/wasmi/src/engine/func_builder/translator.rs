@@ -1264,11 +1264,25 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let func_idx = FuncIdx::from(func_idx);
             let func_type = builder.func_type_of(func_idx);
             builder.adjust_value_stack_for_call(&func_type);
-            let func_idx = bytecode::FuncIdx::from(func_idx.into_u32());
-            builder
-                .alloc
-                .inst_builder
-                .push_inst(Instruction::Call(func_idx));
+            match builder.res.get_compiled_func(func_idx) {
+                Some(compiled_func) => {
+                    // Case: We are calling an internal function and can optimize
+                    //       this case by using the special instruction for it.
+                    builder
+                        .alloc
+                        .inst_builder
+                        .push_inst(Instruction::CallInternal(compiled_func));
+                }
+                None => {
+                    // Case: We are calling an imported function and must use the
+                    //       general calling operator for it.
+                    let func_idx = bytecode::FuncIdx::from(func_idx.into_u32());
+                    builder
+                        .alloc
+                        .inst_builder
+                        .push_inst(Instruction::Call(func_idx));
+                }
+            }
             Ok(())
         })
     }

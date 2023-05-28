@@ -1,4 +1,4 @@
-use super::{bytecode::BranchOffset, const_pool::ConstRef, ConstPoolView};
+use super::{bytecode::BranchOffset, const_pool::ConstRef, CompiledFunc, ConstPoolView};
 use crate::{
     core::TrapCode,
     engine::{
@@ -244,6 +244,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::ReturnCallIndirect(func_type) => {
                     forward_call!(self.visit_return_call_indirect(func_type))
                 }
+                Instr::CallInternal(compiled_func) => self.visit_call_internal(compiled_func)?,
                 Instr::Call(func) => forward_call!(self.visit_call(func)),
                 Instr::CallIndirect(func_type) => {
                     forward_call!(self.visit_call_indirect(func_type))
@@ -982,6 +983,19 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let func_index: u32 = self.sp.pop_as();
         self.sp.drop_keep(drop_keep);
         self.execute_call_indirect(3, table, func_index, func_type, CallKind::Tail)
+    }
+
+    #[inline(always)]
+    fn visit_call_internal(&mut self, compiled_func: CompiledFunc) -> Result<(), TrapCode> {
+        self.next_instr();
+        self.sync_stack_ptr();
+        self.call_stack
+            .push(FuncFrame::new(self.ip, self.cache.instance()))?;
+        let header = self.code_map.header(compiled_func);
+        self.value_stack.prepare_wasm_call(header)?;
+        self.sp = self.value_stack.stack_ptr();
+        self.ip = self.code_map.instr_ptr(header.iref());
+        Ok(())
     }
 
     #[inline(always)]

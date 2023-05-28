@@ -5,7 +5,7 @@ use alloc::vec::Vec;
 use wasmi_arena::ArenaIndex;
 
 /// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`].
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct CompiledFunc(u32);
 
 impl ArenaIndex for CompiledFunc {
