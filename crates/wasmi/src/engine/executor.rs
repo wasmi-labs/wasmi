@@ -848,7 +848,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// - This is required for some instructions that do not fit into
     ///   a single instruction word and store a [`DropKeep`] value in
     ///   another instruction word.
-    #[inline(always)]
+    #[inline]
     fn fetch_drop_keep(&self, offset: usize) -> DropKeep {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
@@ -868,7 +868,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// - This is required for some instructions that do not fit into
     ///   a single instruction word and store a [`TableIdx`] value in
     ///   another instruction word.
-    #[inline(always)]
+    #[inline]
     fn fetch_table_idx(&self, offset: usize) -> TableIdx {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
