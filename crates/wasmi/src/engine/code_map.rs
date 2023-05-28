@@ -4,7 +4,7 @@ use super::Instruction;
 use alloc::vec::Vec;
 use wasmi_arena::ArenaIndex;
 
-/// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`].
+/// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`](crate::Engine).
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct CompiledFunc(u32);
 

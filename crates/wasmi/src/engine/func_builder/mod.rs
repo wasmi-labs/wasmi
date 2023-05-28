@@ -87,7 +87,7 @@ impl<'parser> FuncBuilder<'parser> {
         self.pos
     }
 
-    /// Finishes constructing the function and returns its [`FuncBody`].
+    /// Finishes constructing the function by initializing its [`CompiledFunc`].
     pub fn finish(mut self, offset: usize) -> Result<ReusableAllocations, TranslationError> {
         self.validator.finish(offset)?;
         self.translator.finish()?;
