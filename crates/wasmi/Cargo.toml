@@ -22,7 +22,6 @@ spin = { version = "0.9", default-features = false, features = [
     "rwlock",
 ] }
 smallvec = { version = "1.10.0", features = ["union"] }
-intx = "0.1.0"
 
 [dev-dependencies]
 wat = "1"
