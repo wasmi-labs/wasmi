@@ -8,6 +8,25 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.30.0`] - 2023-05-28
+
+### Changed
+
+- Optimized `wasmi` bytecode memory consumption. (https://github.com/paritytech/wasmi/pull/718)
+  - This reduced the memory consumption of `wasmi` bytecode by organizing the instructions
+    into so-called instruction words, effectively reducing the amount of bytes required per
+    `wasmi` instruction 16 bytes to 8 bytes.
+    There was an experiment with 4 bytes but experiments confirmed that 8 bytes per instruction
+    word was the sweetspot for `wasmi` execution and translation performance.
+  - This did not affect execution performance too much but we saw performance improvements
+    for translation from Wasm to `wasmi` bytecode by roughly 15-20%.
+- Optimized `call` and `return_call` for Wasm module internal calls. (https://github.com/paritytech/wasmi/pull/724)
+  - `wasmi` bytecode now differentiates between calls to Wasm module internal functions
+    and imported functions which allows the `wasmi` bytecode executor to perform the common
+    internal calls more efficiently.
+  - This led to an execution performance improvement across the board but especially for
+    call intense workloads of up to 30% in some test cases.
+
 ## [`0.29.0`] - 2023-03-20
 
 ### Added
