@@ -310,7 +310,7 @@ impl Engine {
     }
 }
 
-/// The internal state of the `wasmi` engine.
+/// The internal state of the `wasmi` [`Engine`].
 #[derive(Debug)]
 pub struct EngineInner {
     /// The [`Config`] of the engine.
