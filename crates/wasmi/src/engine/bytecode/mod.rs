@@ -20,7 +20,7 @@ pub use self::utils::{
     SignatureIdx,
     TableIdx,
 };
-use super::{const_pool::ConstRef, TranslationError};
+use super::{const_pool::ConstRef, CompiledFunc, TranslationError};
 use core::fmt::Debug;
 use wasmi_core::F32;
 
@@ -77,7 +77,28 @@ pub enum Instruction {
     ConsumeFuel(BlockFuel),
     Return(DropKeep),
     ReturnIfNez(DropKeep),
+    /// Tail calls an internal (compiled) function.
+    ///
+    /// # Note
+    ///
+    /// This instruction can be used for calls to functions that are engine internal
+    /// (or compiled) and acts as an optimization for those common cases.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Return`] that
+    /// encodes the [`DropKeep`] parameter. Note that the [`Instruction::Return`]
+    /// only acts as a storage for the parameter of the [`Instruction::ReturnCall`]
+    /// and will never be executed by itself.
+    ReturnCallInternal(CompiledFunc),
     /// Tail calling `func`.
+    ///
+    /// # Note
+    ///
+    /// Since [`Instruction::ReturnCallInternal`] should be used for all functions internal
+    /// (or compiled) to the engine this instruction should mainly be used for tail calling
+    /// imported functions. However, it is a general form that can technically be used
+    /// for both.
     ///
     /// # Encoding
     ///
@@ -96,7 +117,21 @@ pub enum Instruction {
     /// and [`Instruction::TableGet`] only act as a storage for parameters to the
     /// [`Instruction::ReturnCallIndirect`] and will never be executed by themselves.
     ReturnCallIndirect(SignatureIdx),
+    /// Calls an internal (compiled) function.
+    ///
+    /// # Note
+    ///
+    /// This instruction can be used for calls to functions that are engine internal
+    /// (or compiled) and acts as an optimization for those common cases.
+    CallInternal(CompiledFunc),
     /// Calls the function.
+    ///
+    /// # Note
+    ///
+    /// Since [`Instruction::CallInternal`] should be used for all functions internal
+    /// (or compiled) to the engine this instruction should mainly be used for calling
+    /// imported functions. However, it is a general form that can technically be used
+    /// for both.
     Call(FuncIdx),
     /// Calling a function indirectly.
     ///

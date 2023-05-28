@@ -37,7 +37,7 @@ pub(crate) use self::{
     init_expr::ConstExpr,
 };
 use crate::{
-    engine::{DedupFuncType, FuncBody},
+    engine::{CompiledFunc, DedupFuncType},
     Engine,
     Error,
     ExternType,
@@ -62,7 +62,7 @@ pub struct Module {
     globals_init: Box<[ConstExpr]>,
     exports: BTreeMap<Box<str>, ExternIdx>,
     start: Option<FuncIdx>,
-    func_bodies: Box<[FuncBody]>,
+    compiled_funcs: Box<[CompiledFunc]>,
     element_segments: Box<[ElementSegment]>,
     data_segments: Box<[DataSegment]>,
 }
@@ -165,7 +165,7 @@ impl Module {
             globals_init: builder.globals_init.into(),
             exports: builder.exports,
             start: builder.start,
-            func_bodies: builder.func_bodies.into(),
+            compiled_funcs: builder.compiled_funcs.into(),
             element_segments: builder.element_segments.into(),
             data_segments: builder.data_segments.into(),
         }
@@ -220,10 +220,10 @@ impl Module {
         // since they refer to imported and not internally defined
         // functions.
         let funcs = &self.funcs[len_imported..];
-        let func_bodies = &self.func_bodies[..];
-        assert_eq!(funcs.len(), func_bodies.len());
+        let compiled_funcs = &self.compiled_funcs[..];
+        assert_eq!(funcs.len(), compiled_funcs.len());
         InternalFuncsIter {
-            iter: funcs.iter().zip(func_bodies),
+            iter: funcs.iter().zip(compiled_funcs),
         }
     }
 
@@ -414,11 +414,11 @@ impl<'module> ImportType<'module> {
 /// An iterator over the internally defined functions of a [`Module`].
 #[derive(Debug)]
 pub struct InternalFuncsIter<'a> {
-    iter: iter::Zip<SliceIter<'a, DedupFuncType>, SliceIter<'a, FuncBody>>,
+    iter: iter::Zip<SliceIter<'a, DedupFuncType>, SliceIter<'a, CompiledFunc>>,
 }
 
 impl<'a> Iterator for InternalFuncsIter<'a> {
-    type Item = (DedupFuncType, FuncBody);
+    type Item = (DedupFuncType, CompiledFunc);
 
     fn next(&mut self) -> Option<Self::Item> {
         self.iter

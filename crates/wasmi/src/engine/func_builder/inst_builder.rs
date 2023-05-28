@@ -6,9 +6,9 @@ use super::{
 };
 use crate::engine::{
     bytecode::{BranchOffset, Instruction},
+    CompiledFunc,
     DropKeep,
     Engine,
-    FuncBody,
 };
 use alloc::vec::Vec;
 
@@ -188,17 +188,18 @@ impl InstructionsBuilder {
     ///
     /// This feeds the built-up instructions of the function body
     /// into the [`Engine`] so that the [`Engine`] is
-    /// aware of the Wasm function existence. Returns a `FuncBody`
+    /// aware of the Wasm function existence. Returns a [`CompiledFunc`]
     /// reference that allows to retrieve the instructions.
     pub fn finish(
         &mut self,
         engine: &Engine,
+        func: CompiledFunc,
         len_locals: usize,
-        max_stack_height: usize,
-    ) -> Result<FuncBody, TranslationError> {
+        local_stack_height: usize,
+    ) -> Result<(), TranslationError> {
         self.update_branch_offsets()?;
-        let func_body = engine.alloc_func_body(len_locals, max_stack_height, self.insts.drain(..));
-        Ok(func_body)
+        engine.init_func(func, len_locals, local_stack_height, self.insts.drain(..));
+        Ok(())
     }
 
     /// Updates the branch offsets of all branch instructions inplace.

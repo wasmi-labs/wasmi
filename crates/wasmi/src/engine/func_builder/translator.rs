@@ -28,8 +28,8 @@ use crate::{
         },
         config::FuelCosts,
         func_builder::control_frame::ControlFrameKind,
+        CompiledFunc,
         DropKeep,
-        FuncBody,
         Instr,
         RelativeDepth,
     },
@@ -83,8 +83,10 @@ impl FuncTranslatorAllocations {
 
 /// Type concerned with translating from Wasm bytecode to `wasmi` bytecode.
 pub struct FuncTranslator<'parser> {
-    /// The function under construction.
+    /// The reference to the Wasm module function under construction.
     func: FuncIdx,
+    /// The reference to the compiled func allocated to the [`Engine`].
+    compiled_func: CompiledFunc,
     /// The immutable `wasmi` module resources.
     res: ModuleResources<'parser>,
     /// This represents the reachability of the currently translated code.
@@ -109,11 +111,13 @@ impl<'parser> FuncTranslator<'parser> {
     /// Creates a new [`FuncTranslator`].
     pub fn new(
         func: FuncIdx,
+        compiled_func: CompiledFunc,
         res: ModuleResources<'parser>,
         alloc: FuncTranslatorAllocations,
     ) -> Self {
         Self {
             func,
+            compiled_func,
             res,
             reachable: true,
             stack_height: ValueStackHeight::default(),
@@ -181,10 +185,11 @@ impl<'parser> FuncTranslator<'parser> {
         Ok(())
     }
 
-    /// Finishes constructing the function and returns its [`FuncBody`].
-    pub fn finish(&mut self) -> Result<FuncBody, TranslationError> {
+    /// Finishes constructing the function and returns its [`CompiledFunc`].
+    pub fn finish(&mut self) -> Result<(), TranslationError> {
         self.alloc.inst_builder.finish(
             self.res.engine(),
+            self.compiled_func,
             self.len_locals(),
             self.stack_height.max_stack_height() as usize,
         )
@@ -1205,15 +1210,29 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_return_call(&mut self, func_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            let func = bytecode::FuncIdx::from(func_idx);
             let func_type = builder.func_type_of(func_idx.into());
             let drop_keep = builder.drop_keep_return_call(&func_type)?;
             builder.bump_fuel_consumption(builder.fuel_costs().call)?;
             builder.bump_fuel_consumption(builder.fuel_costs().fuel_for_drop_keep(drop_keep))?;
-            builder
-                .alloc
-                .inst_builder
-                .push_inst(Instruction::ReturnCall(func));
+            match builder.res.get_compiled_func(func_idx.into()) {
+                Some(compiled_func) => {
+                    // Case: We are calling an internal function and can optimize
+                    //       this case by using the special instruction for it.
+                    builder
+                        .alloc
+                        .inst_builder
+                        .push_inst(Instruction::ReturnCallInternal(compiled_func));
+                }
+                None => {
+                    // Case: We are calling an imported function and must use the
+                    //       general calling operator for it.
+                    let func = bytecode::FuncIdx::from(func_idx);
+                    builder
+                        .alloc
+                        .inst_builder
+                        .push_inst(Instruction::ReturnCall(func));
+                }
+            }
             builder
                 .alloc
                 .inst_builder
@@ -1259,11 +1278,25 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let func_idx = FuncIdx::from(func_idx);
             let func_type = builder.func_type_of(func_idx);
             builder.adjust_value_stack_for_call(&func_type);
-            let func_idx = bytecode::FuncIdx::from(func_idx.into_u32());
-            builder
-                .alloc
-                .inst_builder
-                .push_inst(Instruction::Call(func_idx));
+            match builder.res.get_compiled_func(func_idx) {
+                Some(compiled_func) => {
+                    // Case: We are calling an internal function and can optimize
+                    //       this case by using the special instruction for it.
+                    builder
+                        .alloc
+                        .inst_builder
+                        .push_inst(Instruction::CallInternal(compiled_func));
+                }
+                None => {
+                    // Case: We are calling an imported function and must use the
+                    //       general calling operator for it.
+                    let func_idx = bytecode::FuncIdx::from(func_idx.into_u32());
+                    builder
+                        .alloc
+                        .inst_builder
+                        .push_inst(Instruction::Call(func_idx));
+                }
+            }
             Ok(())
         })
     }

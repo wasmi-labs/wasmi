@@ -1,5 +1,5 @@
 use super::{
-    bytecode::{AddressOffset, BranchTableTargets, FuncIdx, GlobalIdx},
+    bytecode::{AddressOffset, BranchTableTargets, GlobalIdx},
     *,
 };
 use crate::{
@@ -69,13 +69,13 @@ mod instr {
     }
 }
 
-/// Creates a [`FuncIdx`] from the given `u32` index value.
+/// Creates a [`CompiledFunc`] from the given `u32` index value.
 ///
 /// # Panics
 ///
-/// If the `u32` index value is out of bounds for the [`FuncIdx`].
-fn func_idx(index: u32) -> FuncIdx {
-    FuncIdx::try_from(index).unwrap()
+/// If the `u32` index value is out of bounds for the [`CompiledFunc`].
+fn compiled_func(index: u32) -> CompiledFunc {
+    CompiledFunc::from_usize(index as usize)
 }
 
 /// Creates a [`GlobalIdx`] from the given `u32` index value.
@@ -105,7 +105,7 @@ fn br_targets(len_targets: usize) -> BranchTableTargets {
 fn assert_func_body<E>(
     engine: &Engine,
     func_type: DedupFuncType,
-    func_body: FuncBody,
+    func_body: CompiledFunc,
     expected_instructions: E,
 ) where
     E: IntoIterator<Item = Instruction>,
@@ -120,7 +120,7 @@ fn assert_func_body<E>(
             .map(|(index, expected)| {
                 (
                     index,
-                    engine.resolve_inst(func_body, index).unwrap_or_else(|| {
+                    engine.resolve_instr(func_body, index).unwrap_or_else(|| {
                         panic!("encountered missing instruction at position {index}")
                     }),
                     expected,
@@ -134,7 +134,7 @@ fn assert_func_body<E>(
             engine.resolve_func_type(&func_type, Clone::clone),
         );
     }
-    if let Some(unexpected) = engine.resolve_inst(func_body, len_expected) {
+    if let Some(unexpected) = engine.resolve_instr(func_body, len_expected) {
         panic!("encountered unexpected instruction at position {len_expected}: {unexpected:?}",);
     }
 }
@@ -1249,7 +1249,7 @@ fn metered_calls_01() {
     let expected_fuel_f1 = 2 * costs.base + costs.call;
     let expected_f1 = [
         instr::consume_fuel(expected_fuel_f1),
-        Instruction::Call(func_idx(0)),
+        Instruction::CallInternal(compiled_func(0)),
         Instruction::Return(drop_keep(0, 1)),
     ];
     assert_func_bodies_metered(wasm, [expected_f0, expected_f1]);
@@ -1293,7 +1293,7 @@ fn metered_calls_02() {
         instr::consume_fuel(expected_fuel_f1),
         instr::local_get(2),
         instr::local_get(2),
-        Instruction::Call(func_idx(0)),
+        Instruction::CallInternal(compiled_func(0)),
         Instruction::Return(drop_keep(2, 1)),
     ];
     assert_func_bodies_metered(wasm, [expected_f0, expected_f1]);
@@ -1339,7 +1339,7 @@ fn metered_calls_03() {
     let expected_f1 = [
         instr::consume_fuel(expected_fuel_f1),
         instr::local_get(1),
-        Instruction::Call(func_idx(0)),
+        Instruction::CallInternal(compiled_func(0)),
         Instruction::Return(drop_keep(1, 1)),
     ];
     assert_func_bodies_metered(

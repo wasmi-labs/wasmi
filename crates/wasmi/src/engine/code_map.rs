@@ -4,17 +4,19 @@ use super::Instruction;
 use alloc::vec::Vec;
 use wasmi_arena::ArenaIndex;
 
-/// A reference to a Wasm function body stored in the [`CodeMap`].
-#[derive(Debug, Copy, Clone)]
-pub struct FuncBody(usize);
+/// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`](crate::Engine).
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct CompiledFunc(u32);
 
-impl ArenaIndex for FuncBody {
+impl ArenaIndex for CompiledFunc {
     fn into_usize(self) -> usize {
-        self.0
+        self.0 as usize
     }
 
-    fn from_usize(value: usize) -> Self {
-        FuncBody(value)
+    fn from_usize(index: usize) -> Self {
+        let index = u32::try_from(index)
+            .unwrap_or_else(|_| panic!("out of bounds compiled func index: {index}"));
+        CompiledFunc(index)
     }
 }
 
@@ -22,7 +24,39 @@ impl ArenaIndex for FuncBody {
 #[derive(Debug, Copy, Clone)]
 pub struct InstructionsRef {
     /// The start index in the instructions array.
-    start: usize,
+    index: usize,
+}
+
+impl InstructionsRef {
+    /// Creates a new valid [`InstructionsRef`] for the given `index`.
+    ///
+    /// # Note
+    ///
+    /// The `index` denotes the index of the first instruction in the sequence
+    /// of instructions denoted by [`InstructionsRef`].
+    ///
+    /// # Panics
+    ///
+    /// If `index` is 0 since the zero index is reserved for uninitialized [`InstructionsRef`].
+    fn new(index: usize) -> Self {
+        assert_ne!(index, 0, "must initialize with a proper non-zero index");
+        Self { index }
+    }
+
+    /// Creates a new uninitialized [`InstructionsRef`].
+    fn uninit() -> Self {
+        Self { index: 0 }
+    }
+
+    /// Returns `true` if the [`InstructionsRef`] refers to an uninitialized sequence of instructions.
+    fn is_uninit(self) -> bool {
+        self.index == 0
+    }
+
+    /// Returns the `usize` value of the underlying index.
+    fn to_usize(self) -> usize {
+        self.index
+    }
 }
 
 /// Meta information about a compiled function.
@@ -37,6 +71,32 @@ pub struct FuncHeader {
 }
 
 impl FuncHeader {
+    /// Create a new initialized [`FuncHeader`].
+    pub fn new(iref: InstructionsRef, len_locals: usize, local_stack_height: usize) -> Self {
+        let max_stack_height = local_stack_height
+            .checked_add(len_locals)
+            .unwrap_or_else(|| panic!("invalid maximum stack height for function"));
+        Self {
+            iref,
+            len_locals,
+            max_stack_height,
+        }
+    }
+
+    /// Create a new uninitialized [`FuncHeader`].
+    pub fn uninit() -> Self {
+        Self {
+            iref: InstructionsRef::uninit(),
+            len_locals: 0,
+            max_stack_height: 0,
+        }
+    }
+
+    /// Returns `true` if the [`FuncHeader`] is uninitialized.
+    pub fn is_uninit(&self) -> bool {
+        self.iref.is_uninit()
+    }
+
     /// Returns a reference to the instructions of the function.
     pub fn iref(&self) -> InstructionsRef {
         self.iref
@@ -59,7 +119,7 @@ impl FuncHeader {
 }
 
 /// Datastructure to efficiently store Wasm function bodies.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct CodeMap {
     /// The headers of all compiled functions.
     headers: Vec<FuncHeader>,
@@ -72,63 +132,91 @@ pub struct CodeMap {
     ///
     /// Also this improves efficiency of deallocating the [`CodeMap`]
     /// and generally improves data locality.
-    insts: Vec<Instruction>,
+    instrs: Vec<Instruction>,
+}
+
+impl Default for CodeMap {
+    fn default() -> Self {
+        Self {
+            headers: Vec::new(),
+            // The first instruction always is a simple trapping instruction
+            // so that we safely can use `InstructionsRef(0)` as an uninitialized
+            // index value for compiled functions that have yet to be
+            // initialized with their actual function bodies.
+            instrs: vec![Instruction::Unreachable],
+        }
+    }
 }
 
 impl CodeMap {
-    /// Allocates a new function body to the [`CodeMap`].
+    /// Allocates a new uninitialized [`CompiledFunc`] to the [`CodeMap`].
     ///
-    /// Returns a reference to the allocated function body that can
-    /// be used with [`CodeMap::header`] in order to resolve its
-    /// instructions.
-    pub fn alloc<I>(&mut self, len_locals: usize, max_stack_height: usize, insts: I) -> FuncBody
-    where
+    /// # Note
+    ///
+    /// The uninitialized [`CompiledFunc`] must be initialized using
+    /// [`CodeMap::init_func`] before it is executed.
+    pub fn alloc_func(&mut self) -> CompiledFunc {
+        let header_index = self.headers.len();
+        self.headers.push(FuncHeader::uninit());
+        CompiledFunc::from_usize(header_index)
+    }
+
+    /// Initializes the [`CompiledFunc`].
+    ///
+    /// # Panics
+    ///
+    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
+    /// - If `func` refers to an already initialized [`CompiledFunc`].
+    pub fn init_func<I>(
+        &mut self,
+        func: CompiledFunc,
+        len_locals: usize,
+        local_stack_height: usize,
+        instrs: I,
+    ) where
         I: IntoIterator<Item = Instruction>,
     {
-        let start = self.insts.len();
-        self.insts.extend(insts);
-        let iref = InstructionsRef { start };
-        let header = FuncHeader {
-            iref,
-            len_locals,
-            max_stack_height: len_locals + max_stack_height,
-        };
-        let header_index = self.headers.len();
-        self.headers.push(header);
-        FuncBody(header_index)
+        assert!(
+            self.header(func).is_uninit(),
+            "func {func:?} is already initialized"
+        );
+        let start = self.instrs.len();
+        self.instrs.extend(instrs);
+        let iref = InstructionsRef::new(start);
+        self.headers[func.into_usize()] = FuncHeader::new(iref, len_locals, local_stack_height);
     }
 
     /// Returns an [`InstructionPtr`] to the instruction at [`InstructionsRef`].
     #[inline]
     pub fn instr_ptr(&self, iref: InstructionsRef) -> InstructionPtr {
-        InstructionPtr::new(self.insts[iref.start..].as_ptr())
+        InstructionPtr::new(self.instrs[iref.to_usize()..].as_ptr())
     }
 
-    /// Returns the [`FuncHeader`] of the [`FuncBody`].
-    pub fn header(&self, func_body: FuncBody) -> &FuncHeader {
-        &self.headers[func_body.0]
+    /// Returns the [`FuncHeader`] of the [`CompiledFunc`].
+    pub fn header(&self, func_body: CompiledFunc) -> &FuncHeader {
+        &self.headers[func_body.into_usize()]
     }
 
-    /// Resolves the instruction at `index` of the compiled [`FuncBody`].
+    /// Resolves the instruction at `index` of the compiled [`CompiledFunc`].
     #[cfg(test)]
-    pub fn get_instr(&self, func_body: FuncBody, index: usize) -> Option<&Instruction> {
+    pub fn get_instr(&self, func_body: CompiledFunc, index: usize) -> Option<&Instruction> {
         let header = self.header(func_body);
-        let start = header.iref.start;
+        let start = header.iref.to_usize();
         let end = self.instr_end(func_body);
-        let instrs = &self.insts[start..end];
+        let instrs = &self.instrs[start..end];
         instrs.get(index)
     }
 
-    /// Returns the `end` index of the instructions of [`FuncBody`].
+    /// Returns the `end` index of the instructions of [`CompiledFunc`].
     ///
     /// This is important to synthesize how many instructions there are in
-    /// the function referred to by [`FuncBody`].
+    /// the function referred to by [`CompiledFunc`].
     #[cfg(test)]
-    pub fn instr_end(&self, func_body: FuncBody) -> usize {
+    pub fn instr_end(&self, func_body: CompiledFunc) -> usize {
         self.headers
-            .get(func_body.0 + 1)
-            .map(|header| header.iref.start)
-            .unwrap_or(self.insts.len())
+            .get(func_body.into_usize() + 1)
+            .map(|header| header.iref.to_usize())
+            .unwrap_or(self.instrs.len())
     }
 }
 

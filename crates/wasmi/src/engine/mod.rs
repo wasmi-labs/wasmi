@@ -18,7 +18,7 @@ mod tests;
 
 pub use self::{
     bytecode::DropKeep,
-    code_map::FuncBody,
+    code_map::CompiledFunc,
     config::{Config, FuelConsumptionMode},
     func_builder::{
         FuncBuilder,
@@ -134,12 +134,12 @@ impl Engine {
         Arc::ptr_eq(&a.inner, &b.inner)
     }
 
-    /// Allocates a new function type to the engine.
+    /// Allocates a new function type to the [`Engine`].
     pub(super) fn alloc_func_type(&self, func_type: FuncType) -> DedupFuncType {
         self.inner.alloc_func_type(func_type)
     }
 
-    /// Allocates a new constant value to the engine.
+    /// Allocates a new constant value to the [`Engine`].
     ///
     /// # Errors
     ///
@@ -161,24 +161,33 @@ impl Engine {
         self.inner.resolve_func_type(func_type, f)
     }
 
-    /// Allocates the instructions of a Wasm function body to the [`Engine`].
+    /// Allocates a new uninitialized [`CompiledFunc`] to the [`Engine`].
     ///
-    /// Returns a [`FuncBody`] reference to the allocated function body.
-    pub(super) fn alloc_func_body<I>(
-        &self,
-        len_locals: usize,
-        max_stack_height: usize,
-        insts: I,
-    ) -> FuncBody
-    where
-        I: IntoIterator<Item = Instruction>,
-        I::IntoIter: ExactSizeIterator,
-    {
-        self.inner
-            .alloc_func_body(len_locals, max_stack_height, insts)
+    /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
+    pub(super) fn alloc_func(&self) -> CompiledFunc {
+        self.inner.alloc_func()
     }
 
-    /// Resolves the [`FuncBody`] to the underlying `wasmi` bytecode instructions.
+    /// Initializes the uninitialized [`CompiledFunc`] for the [`Engine`].
+    ///
+    /// # Panics
+    ///
+    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
+    /// - If `func` refers to an already initialized [`CompiledFunc`].
+    pub(super) fn init_func<I>(
+        &self,
+        func: CompiledFunc,
+        len_locals: usize,
+        local_stack_height: usize,
+        instrs: I,
+    ) where
+        I: IntoIterator<Item = Instruction>,
+    {
+        self.inner
+            .init_func(func, len_locals, local_stack_height, instrs)
+    }
+
+    /// Resolves the [`CompiledFunc`] to the underlying `wasmi` bytecode instructions.
     ///
     /// # Note
     ///
@@ -188,10 +197,14 @@ impl Engine {
     ///
     /// # Panics
     ///
-    /// If the [`FuncBody`] is invalid for the [`Engine`].
+    /// If the [`CompiledFunc`] is invalid for the [`Engine`].
     #[cfg(test)]
-    pub(crate) fn resolve_inst(&self, func_body: FuncBody, index: usize) -> Option<Instruction> {
-        self.inner.resolve_inst(func_body, index)
+    pub(crate) fn resolve_instr(
+        &self,
+        func_body: CompiledFunc,
+        index: usize,
+    ) -> Option<Instruction> {
+        self.inner.resolve_instr(func_body, index)
     }
 
     /// Executes the given [`Func`] with parameters `params`.
@@ -306,7 +319,7 @@ impl Engine {
     }
 }
 
-/// The internal state of the `wasmi` engine.
+/// The internal state of the `wasmi` [`Engine`].
 #[derive(Debug)]
 pub struct EngineInner {
     /// The [`Config`] of the engine.
@@ -370,27 +383,51 @@ impl EngineInner {
         }
     }
 
+    /// Returns a shared reference to the [`Config`] of the [`EngineInner`].
     fn config(&self) -> &Config {
         &self.config
     }
 
+    /// Allocates a new function type to the [`EngineInner`].
     fn alloc_func_type(&self, func_type: FuncType) -> DedupFuncType {
         self.res.write().func_types.alloc_func_type(func_type)
     }
 
+    /// Allocates a new constant value to the [`EngineInner`].
+    ///
+    /// # Errors
+    ///
+    /// If too many constant values have been allocated for the [`EngineInner`] this way.
     fn alloc_const(&self, value: UntypedValue) -> Result<ConstRef, TranslationError> {
         self.res.write().const_pool.alloc(value)
     }
 
-    fn alloc_func_body<I>(&self, len_locals: usize, max_stack_height: usize, insts: I) -> FuncBody
-    where
+    /// Allocates a new uninitialized [`CompiledFunc`] to the [`EngineInner`].
+    ///
+    /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
+    fn alloc_func(&self) -> CompiledFunc {
+        self.res.write().code_map.alloc_func()
+    }
+
+    /// Initializes the uninitialized [`CompiledFunc`] for the [`EngineInner`].
+    ///
+    /// # Panics
+    ///
+    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
+    /// - If `func` refers to an already initialized [`CompiledFunc`].
+    fn init_func<I>(
+        &self,
+        func: CompiledFunc,
+        len_locals: usize,
+        local_stack_height: usize,
+        instrs: I,
+    ) where
         I: IntoIterator<Item = Instruction>,
-        I::IntoIter: ExactSizeIterator,
     {
         self.res
             .write()
             .code_map
-            .alloc(len_locals, max_stack_height, insts)
+            .init_func(func, len_locals, local_stack_height, instrs)
     }
 
     fn resolve_func_type<F, R>(&self, func_type: &DedupFuncType, f: F) -> R
@@ -401,7 +438,7 @@ impl EngineInner {
     }
 
     #[cfg(test)]
-    fn resolve_inst(&self, func_body: FuncBody, index: usize) -> Option<Instruction> {
+    fn resolve_instr(&self, func_body: CompiledFunc, index: usize) -> Option<Instruction> {
         self.res
             .read()
             .code_map

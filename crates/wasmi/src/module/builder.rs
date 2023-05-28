@@ -13,7 +13,7 @@ use super::{
     Module,
 };
 use crate::{
-    engine::{DedupFuncType, FuncBody},
+    engine::{CompiledFunc, DedupFuncType},
     errors::ModuleError,
     Engine,
     FuncType,
@@ -36,7 +36,7 @@ pub struct ModuleBuilder<'engine> {
     pub globals_init: Vec<ConstExpr>,
     pub exports: BTreeMap<Box<str>, ExternIdx>,
     pub start: Option<FuncIdx>,
-    pub func_bodies: Vec<FuncBody>,
+    pub compiled_funcs: Vec<CompiledFunc>,
     pub element_segments: Vec<ElementSegment>,
     pub data_segments: Vec<DataSegment>,
 }
@@ -54,6 +54,11 @@ impl ModuleImports {
     /// Returns the number of imported global variables.
     pub fn len_globals(&self) -> usize {
         self.globals.len()
+    }
+
+    /// Returns the number of imported functions.
+    pub fn len_funcs(&self) -> usize {
+        self.funcs.len()
     }
 }
 
@@ -89,6 +94,18 @@ impl<'a> ModuleResources<'a> {
         self.res.globals[global_idx.into_u32() as usize]
     }
 
+    /// Returns the [`CompiledFunc`] for the given [`FuncIdx`].
+    ///
+    /// Returns `None` if [`FuncIdx`] refers to an imported function.
+    pub fn get_compiled_func(&self, func_idx: FuncIdx) -> Option<CompiledFunc> {
+        let index = func_idx.into_u32() as usize;
+        let len_imported = self.res.imports.len_funcs();
+        let index = index.checked_sub(len_imported)?;
+        // Note: It is a bug if this index access is out of bounds
+        //       therefore we panic here instead of using `get`.
+        Some(self.res.compiled_funcs[index])
+    }
+
     /// Returns the global variable type and optional initial value.
     pub fn get_global(&self, global_idx: GlobalIdx) -> (GlobalType, Option<&ConstExpr>) {
         let index = global_idx.into_u32() as usize;
@@ -119,7 +136,7 @@ impl<'engine> ModuleBuilder<'engine> {
             globals_init: Vec::new(),
             exports: BTreeMap::new(),
             start: None,
-            func_bodies: Vec::new(),
+            compiled_funcs: Vec::new(),
             element_segments: Vec::new(),
             data_segments: Vec::new(),
         }
@@ -216,6 +233,7 @@ impl<'engine> ModuleBuilder<'engine> {
             let func_type_idx = func?;
             let func_type = self.func_types[func_type_idx.into_u32() as usize];
             self.funcs.push(func_type);
+            self.compiled_funcs.push(self.engine.alloc_func());
         }
         Ok(())
     }
