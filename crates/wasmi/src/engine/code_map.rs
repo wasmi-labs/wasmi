@@ -66,7 +66,7 @@ impl FuncHeader {
         let max_stack_height = max_stack_height
             .checked_add(len_locals)
             .unwrap_or_else(|| panic!("invalid maximum stack height for function"));
-        FuncHeader {
+        Self {
             iref,
             len_locals,
             max_stack_height,
