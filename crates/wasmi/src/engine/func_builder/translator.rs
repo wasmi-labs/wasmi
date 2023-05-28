@@ -83,8 +83,10 @@ impl FuncTranslatorAllocations {
 
 /// Type concerned with translating from Wasm bytecode to `wasmi` bytecode.
 pub struct FuncTranslator<'parser> {
-    /// The function under construction.
+    /// The reference to the Wasm module function under construction.
     func: FuncIdx,
+    /// The reference to the compiled func allocated to the [`Engine`].
+    compiled_func: CompiledFunc,
     /// The immutable `wasmi` module resources.
     res: ModuleResources<'parser>,
     /// This represents the reachability of the currently translated code.
@@ -109,11 +111,13 @@ impl<'parser> FuncTranslator<'parser> {
     /// Creates a new [`FuncTranslator`].
     pub fn new(
         func: FuncIdx,
+        compiled_func: CompiledFunc,
         res: ModuleResources<'parser>,
         alloc: FuncTranslatorAllocations,
     ) -> Self {
         Self {
             func,
+            compiled_func,
             res,
             reachable: true,
             stack_height: ValueStackHeight::default(),
@@ -182,9 +186,10 @@ impl<'parser> FuncTranslator<'parser> {
     }
 
     /// Finishes constructing the function and returns its [`CompiledFunc`].
-    pub fn finish(&mut self) -> Result<CompiledFunc, TranslationError> {
+    pub fn finish(&mut self) -> Result<(), TranslationError> {
         self.alloc.inst_builder.finish(
             self.res.engine(),
+            self.compiled_func,
             self.len_locals(),
             self.stack_height.max_stack_height() as usize,
         )

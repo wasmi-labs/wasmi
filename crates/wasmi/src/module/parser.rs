@@ -12,7 +12,13 @@ use super::{
     ModuleResources,
     Read,
 };
-use crate::{engine::FuncTranslatorAllocations, Engine, FuncType, MemoryType, TableType};
+use crate::{
+    engine::{CompiledFunc, FuncTranslatorAllocations},
+    Engine,
+    FuncType,
+    MemoryType,
+    TableType,
+};
 use alloc::{boxed::Box, vec::Vec};
 use core::{
     mem::{replace, take},
@@ -58,8 +64,8 @@ pub struct ModuleParser<'engine> {
     validator: Validator,
     /// The underlying Wasm parser.
     parser: WasmParser,
-    /// Currently processed function.
-    func: FuncIdx,
+    /// The number of compiled or processed functions.
+    compiled_funcs: u32,
     /// Reusable allocations for validating and translation functions.
     allocations: ReusableAllocations,
 }
@@ -81,7 +87,7 @@ impl<'engine> ModuleParser<'engine> {
             builder,
             validator,
             parser,
-            func: FuncIdx::from(0),
+            compiled_funcs: 0,
             allocations: ReusableAllocations::default(),
         }
     }
@@ -467,18 +473,20 @@ impl<'engine> ModuleParser<'engine> {
     /// If the code start section fails to validate.
     fn process_code_start(&mut self, count: u32, range: Range<usize>) -> Result<(), ModuleError> {
         self.validator.code_section_start(count, &range)?;
-        // We have to adjust the initial func reference to the first
-        // internal function before we process any of the internal functions.
-        let len_func_imports = self.builder.imports.funcs.len() as u32;
-        self.func = FuncIdx::from(len_func_imports);
         Ok(())
     }
 
     /// Returns the next `FuncIdx` for processing of its function body.
-    fn next_func(&mut self) -> FuncIdx {
-        let old = self.func;
-        self.func = FuncIdx::from(self.func.into_u32() + 1);
-        old
+    fn next_func(&mut self) -> (FuncIdx, CompiledFunc) {
+        let index = self.compiled_funcs;
+        let compiled_func = self.builder.compiled_funcs[index as usize];
+        self.compiled_funcs += 1;
+        // We have to adjust the initial func reference to the first
+        // internal function before we process any of the internal functions.
+        let len_func_imports = u32::try_from(self.builder.imports.funcs.len())
+            .unwrap_or_else(|_| panic!("too many imported functions"));
+        let func_idx = FuncIdx::from(index + len_func_imports);
+        (func_idx, compiled_func)
     }
 
     /// Process a single module code section entry.
@@ -493,18 +501,18 @@ impl<'engine> ModuleParser<'engine> {
     ///
     /// If the function body fails to validate.
     fn process_code_entry(&mut self, func_body: FunctionBody) -> Result<(), ModuleError> {
-        let func = self.next_func();
+        let (func, compiled_func) = self.next_func();
         let validator = self.validator.code_section_entry(&func_body)?;
         let module_resources = ModuleResources::new(&self.builder);
         let allocations = take(&mut self.allocations);
-        let (func_body, allocations) = translate(
+        let allocations = translate(
             func,
+            compiled_func,
             func_body,
             validator.into_validator(allocations.validation),
             module_resources,
             allocations.translation,
         )?;
-        self.builder.func_bodies.push(func_body);
         let _ = replace(&mut self.allocations, allocations);
         Ok(())
     }

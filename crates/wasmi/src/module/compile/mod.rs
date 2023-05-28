@@ -23,12 +23,13 @@ mod block_type;
 /// If the function body fails to validate.
 pub fn translate<'parser>(
     func: FuncIdx,
+    compiled_func: CompiledFunc,
     func_body: FunctionBody<'parser>,
     validator: FuncValidator<ValidatorResources>,
     res: ModuleResources<'parser>,
     allocations: FuncTranslatorAllocations,
-) -> Result<(CompiledFunc, ReusableAllocations), ModuleError> {
-    FunctionTranslator::new(func, func_body, validator, res, allocations).translate()
+) -> Result<ReusableAllocations, ModuleError> {
+    FunctionTranslator::new(func, compiled_func, func_body, validator, res, allocations).translate()
 }
 
 /// Translates Wasm bytecode into `wasmi` bytecode for a single Wasm function.
@@ -43,12 +44,13 @@ impl<'parser> FunctionTranslator<'parser> {
     /// Creates a new Wasm to `wasmi` bytecode function translator.
     fn new(
         func: FuncIdx,
+        compiled_func: CompiledFunc,
         func_body: FunctionBody<'parser>,
         validator: FuncValidator<ValidatorResources>,
         res: ModuleResources<'parser>,
         allocations: FuncTranslatorAllocations,
     ) -> Self {
-        let func_builder = FuncBuilder::new(func, res, validator, allocations);
+        let func_builder = FuncBuilder::new(func, compiled_func, res, validator, allocations);
         Self {
             func_body,
             func_builder,
@@ -56,15 +58,15 @@ impl<'parser> FunctionTranslator<'parser> {
     }
 
     /// Starts translation of the Wasm stream into `wasmi` bytecode.
-    fn translate(mut self) -> Result<(CompiledFunc, ReusableAllocations), ModuleError> {
+    fn translate(mut self) -> Result<ReusableAllocations, ModuleError> {
         self.translate_locals()?;
         let offset = self.translate_operators()?;
-        let (func_body, allocations) = self.finish(offset)?;
-        Ok((func_body, allocations))
+        let allocations = self.finish(offset)?;
+        Ok(allocations)
     }
 
     /// Finishes construction of the function and returns its [`CompiledFunc`].
-    fn finish(self, offset: usize) -> Result<(CompiledFunc, ReusableAllocations), ModuleError> {
+    fn finish(self, offset: usize) -> Result<ReusableAllocations, ModuleError> {
         self.func_builder.finish(offset).map_err(Into::into)
     }
 

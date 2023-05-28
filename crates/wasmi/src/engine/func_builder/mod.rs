@@ -42,6 +42,7 @@ impl<'parser> FuncBuilder<'parser> {
     /// Creates a new [`FuncBuilder`].
     pub fn new(
         func: FuncIdx,
+        compiled_func: CompiledFunc,
         res: ModuleResources<'parser>,
         validator: FuncValidator,
         allocations: FuncTranslatorAllocations,
@@ -49,7 +50,7 @@ impl<'parser> FuncBuilder<'parser> {
         Self {
             pos: 0,
             validator,
-            translator: FuncTranslator::new(func, res, allocations),
+            translator: FuncTranslator::new(func, compiled_func, res, allocations),
         }
     }
 
@@ -87,17 +88,14 @@ impl<'parser> FuncBuilder<'parser> {
     }
 
     /// Finishes constructing the function and returns its [`FuncBody`].
-    pub fn finish(
-        mut self,
-        offset: usize,
-    ) -> Result<(CompiledFunc, ReusableAllocations), TranslationError> {
+    pub fn finish(mut self, offset: usize) -> Result<ReusableAllocations, TranslationError> {
         self.validator.finish(offset)?;
-        let func_body = self.translator.finish()?;
+        self.translator.finish()?;
         let allocations = ReusableAllocations {
             translation: self.translator.into_allocations(),
             validation: self.validator.into_allocations(),
         };
-        Ok((func_body, allocations))
+        Ok(allocations)
     }
 
     /// Translates into `wasmi` bytecode if the current code path is reachable.

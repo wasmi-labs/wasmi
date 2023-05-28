@@ -62,7 +62,7 @@ pub struct Module {
     globals_init: Box<[ConstExpr]>,
     exports: BTreeMap<Box<str>, ExternIdx>,
     start: Option<FuncIdx>,
-    func_bodies: Box<[CompiledFunc]>,
+    compiled_funcs: Box<[CompiledFunc]>,
     element_segments: Box<[ElementSegment]>,
     data_segments: Box<[DataSegment]>,
 }
@@ -165,7 +165,7 @@ impl Module {
             globals_init: builder.globals_init.into(),
             exports: builder.exports,
             start: builder.start,
-            func_bodies: builder.func_bodies.into(),
+            compiled_funcs: builder.compiled_funcs.into(),
             element_segments: builder.element_segments.into(),
             data_segments: builder.data_segments.into(),
         }
@@ -220,10 +220,10 @@ impl Module {
         // since they refer to imported and not internally defined
         // functions.
         let funcs = &self.funcs[len_imported..];
-        let func_bodies = &self.func_bodies[..];
-        assert_eq!(funcs.len(), func_bodies.len());
+        let compiled_funcs = &self.compiled_funcs[..];
+        assert_eq!(funcs.len(), compiled_funcs.len());
         InternalFuncsIter {
-            iter: funcs.iter().zip(func_bodies),
+            iter: funcs.iter().zip(compiled_funcs),
         }
     }
 

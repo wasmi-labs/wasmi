@@ -161,21 +161,30 @@ impl Engine {
         self.inner.resolve_func_type(func_type, f)
     }
 
-    /// Allocates the instructions of a Wasm function body to the [`Engine`].
+    /// Allocates a new uninitialized [`CompiledFunc`] to the [`Engine`].
     ///
-    /// Returns a [`CompiledFunc`] reference to the allocated function body.
-    pub(super) fn alloc_func_body<I>(
+    /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
+    pub(super) fn alloc_func(&self) -> CompiledFunc {
+        self.inner.alloc_func()
+    }
+
+    /// Initializes the uninitialized [`CompiledFunc`] for the [`Engine`].
+    ///
+    /// # Panics
+    ///
+    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
+    /// - If `func` refers to an already initialized [`CompiledFunc`].
+    pub(super) fn init_func<I>(
         &self,
+        func: CompiledFunc,
         len_locals: usize,
-        max_stack_height: usize,
-        insts: I,
-    ) -> CompiledFunc
-    where
+        local_stack_height: usize,
+        instrs: I,
+    ) where
         I: IntoIterator<Item = Instruction>,
-        I::IntoIter: ExactSizeIterator,
     {
         self.inner
-            .alloc_func_body(len_locals, max_stack_height, insts)
+            .init_func(func, len_locals, local_stack_height, instrs)
     }
 
     /// Resolves the [`CompiledFunc`] to the underlying `wasmi` bytecode instructions.
@@ -393,20 +402,32 @@ impl EngineInner {
         self.res.write().const_pool.alloc(value)
     }
 
-    fn alloc_func_body<I>(
+    /// Allocates a new uninitialized [`CompiledFunc`] to the [`EngineInner`].
+    ///
+    /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
+    fn alloc_func(&self) -> CompiledFunc {
+        self.res.write().code_map.alloc_func()
+    }
+
+    /// Initializes the uninitialized [`CompiledFunc`] for the [`EngineInner`].
+    ///
+    /// # Panics
+    ///
+    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
+    /// - If `func` refers to an already initialized [`CompiledFunc`].
+    fn init_func<I>(
         &self,
+        func: CompiledFunc,
         len_locals: usize,
-        max_stack_height: usize,
-        insts: I,
-    ) -> CompiledFunc
-    where
+        local_stack_height: usize,
+        instrs: I,
+    ) where
         I: IntoIterator<Item = Instruction>,
-        I::IntoIter: ExactSizeIterator,
     {
         self.res
             .write()
             .code_map
-            .alloc(len_locals, max_stack_height, insts)
+            .init_func(func, len_locals, local_stack_height, instrs)
     }
 
     fn resolve_func_type<F, R>(&self, func_type: &DedupFuncType, f: F) -> R

@@ -43,6 +43,16 @@ impl InstructionsRef {
         Self { index }
     }
 
+    /// Creates a new uninitialized [`InstructionsRef`].
+    fn uninit() -> Self {
+        Self { index: 0 }
+    }
+
+    /// Returns `true` if the [`InstructionsRef`] refers to an uninitialized sequence of instructions.
+    fn is_uninit(self) -> bool {
+        self.index == 0
+    }
+
     /// Returns the `usize` value of the underlying index.
     fn to_usize(self) -> usize {
         self.index
@@ -71,6 +81,20 @@ impl FuncHeader {
             len_locals,
             max_stack_height,
         }
+    }
+
+    /// Create a new uninitialized [`FuncHeader`].
+    pub fn uninit() -> Self {
+        Self {
+            iref: InstructionsRef::uninit(),
+            len_locals: 0,
+            max_stack_height: 0,
+        }
+    }
+
+    /// Returns `true` if the [`FuncHeader`] is uninitialized.
+    pub fn is_uninit(&self) -> bool {
+        self.iref.is_uninit()
     }
 
     /// Returns a reference to the instructions of the function.
@@ -125,22 +149,41 @@ impl Default for CodeMap {
 }
 
 impl CodeMap {
-    /// Allocates a new function body to the [`CodeMap`].
+    /// Allocates a new uninitialized [`CompiledFunc`] to the [`CodeMap`].
     ///
-    /// Returns a reference to the allocated function body that can
-    /// be used with [`CodeMap::header`] in order to resolve its
-    /// instructions.
-    pub fn alloc<I>(&mut self, len_locals: usize, max_stack_height: usize, insts: I) -> CompiledFunc
-    where
+    /// # Note
+    ///
+    /// The uninitialized [`CompiledFunc`] must be initialized using
+    /// [`CodeMap::init_func`] before it is executed.
+    pub fn alloc_func(&mut self) -> CompiledFunc {
+        let header_index = self.headers.len();
+        self.headers.push(FuncHeader::uninit());
+        CompiledFunc::from_usize(header_index)
+    }
+
+    /// Initializes the [`CompiledFunc`].
+    ///
+    /// # Panics
+    ///
+    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
+    /// - If `func` refers to an already initialized [`CompiledFunc`].
+    pub fn init_func<I>(
+        &mut self,
+        func: CompiledFunc,
+        len_locals: usize,
+        local_stack_height: usize,
+        instrs: I,
+    ) where
         I: IntoIterator<Item = Instruction>,
     {
+        assert!(
+            self.header(func).is_uninit(),
+            "func {func:?} is already initialized"
+        );
         let start = self.instrs.len();
-        self.instrs.extend(insts);
+        self.instrs.extend(instrs);
         let iref = InstructionsRef::new(start);
-        let header_index = self.headers.len();
-        self.headers
-            .push(FuncHeader::new(iref, len_locals, max_stack_height));
-        CompiledFunc::from_usize(header_index)
+        self.headers[func.into_usize()] = FuncHeader::new(iref, len_locals, local_stack_height);
     }
 
     /// Returns an [`InstructionPtr`] to the instruction at [`InstructionsRef`].
