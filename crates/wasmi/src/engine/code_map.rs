@@ -149,12 +149,12 @@ impl CodeMap {
         InstructionPtr::new(self.instrs[iref.to_usize()..].as_ptr())
     }
 
-    /// Returns the [`FuncHeader`] of the [`FuncBody`].
+    /// Returns the [`FuncHeader`] of the [`CompiledFunc`].
     pub fn header(&self, func_body: CompiledFunc) -> &FuncHeader {
         &self.headers[func_body.into_usize()]
     }
 
-    /// Resolves the instruction at `index` of the compiled [`FuncBody`].
+    /// Resolves the instruction at `index` of the compiled [`CompiledFunc`].
     #[cfg(test)]
     pub fn get_instr(&self, func_body: CompiledFunc, index: usize) -> Option<&Instruction> {
         let header = self.header(func_body);
@@ -164,10 +164,10 @@ impl CodeMap {
         instrs.get(index)
     }
 
-    /// Returns the `end` index of the instructions of [`FuncBody`].
+    /// Returns the `end` index of the instructions of [`CompiledFunc`].
     ///
     /// This is important to synthesize how many instructions there are in
-    /// the function referred to by [`FuncBody`].
+    /// the function referred to by [`CompiledFunc`].
     #[cfg(test)]
     pub fn instr_end(&self, func_body: CompiledFunc) -> usize {
         self.headers

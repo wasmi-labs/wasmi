@@ -63,7 +63,7 @@ impl<'parser> FunctionTranslator<'parser> {
         Ok((func_body, allocations))
     }
 
-    /// Finishes construction of the function and returns its [`FuncBody`].
+    /// Finishes construction of the function and returns its [`CompiledFunc`].
     fn finish(self, offset: usize) -> Result<(CompiledFunc, ReusableAllocations), ModuleError> {
         self.func_builder.finish(offset).map_err(Into::into)
     }

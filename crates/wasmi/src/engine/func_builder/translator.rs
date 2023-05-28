@@ -181,7 +181,7 @@ impl<'parser> FuncTranslator<'parser> {
         Ok(())
     }
 
-    /// Finishes constructing the function and returns its [`FuncBody`].
+    /// Finishes constructing the function and returns its [`CompiledFunc`].
     pub fn finish(&mut self) -> Result<CompiledFunc, TranslationError> {
         self.alloc.inst_builder.finish(
             self.res.engine(),

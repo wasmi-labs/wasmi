@@ -163,7 +163,7 @@ impl Engine {
 
     /// Allocates the instructions of a Wasm function body to the [`Engine`].
     ///
-    /// Returns a [`FuncBody`] reference to the allocated function body.
+    /// Returns a [`CompiledFunc`] reference to the allocated function body.
     pub(super) fn alloc_func_body<I>(
         &self,
         len_locals: usize,
@@ -178,7 +178,7 @@ impl Engine {
             .alloc_func_body(len_locals, max_stack_height, insts)
     }
 
-    /// Resolves the [`FuncBody`] to the underlying `wasmi` bytecode instructions.
+    /// Resolves the [`CompiledFunc`] to the underlying `wasmi` bytecode instructions.
     ///
     /// # Note
     ///
@@ -188,7 +188,7 @@ impl Engine {
     ///
     /// # Panics
     ///
-    /// If the [`FuncBody`] is invalid for the [`Engine`].
+    /// If the [`CompiledFunc`] is invalid for the [`Engine`].
     #[cfg(test)]
     pub(crate) fn resolve_inst(
         &self,
