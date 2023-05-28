@@ -790,18 +790,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.ctx.engine().config().get_fuel_consumption_mode()
     }
 
-    /// Executes a `call` or `return_call` instruction.
-    #[inline(always)]
-    fn execute_call(
-        &mut self,
-        skip: usize,
-        func_index: FuncIdx,
-        kind: CallKind,
-    ) -> Result<CallOutcome, TrapCode> {
-        let callee = self.cache.get_func(self.ctx, func_index);
-        self.call_func(skip, &callee, kind)
-    }
-
     /// Executes a `call_indirect` or `return_call_indirect` instruction.
     #[inline(always)]
     fn execute_call_indirect(
@@ -1003,7 +991,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn visit_return_call(&mut self, func_index: FuncIdx) -> Result<CallOutcome, TrapCode> {
         let drop_keep = self.fetch_drop_keep(1);
         self.sp.drop_keep(drop_keep);
-        self.execute_call(2, func_index, CallKind::Tail)
+        let callee = self.cache.get_func(self.ctx, func_index);
+        self.call_func(2, &callee, CallKind::Tail)
     }
 
     #[inline(always)]
