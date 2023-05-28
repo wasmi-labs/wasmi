@@ -134,12 +134,12 @@ impl Engine {
         Arc::ptr_eq(&a.inner, &b.inner)
     }
 
-    /// Allocates a new function type to the engine.
+    /// Allocates a new function type to the [`Engine`].
     pub(super) fn alloc_func_type(&self, func_type: FuncType) -> DedupFuncType {
         self.inner.alloc_func_type(func_type)
     }
 
-    /// Allocates a new constant value to the engine.
+    /// Allocates a new constant value to the [`Engine`].
     ///
     /// # Errors
     ///
@@ -382,6 +382,11 @@ impl EngineInner {
         self.res.write().func_types.alloc_func_type(func_type)
     }
 
+    /// Allocates a new constant value to the [`EngineInner`].
+    ///
+    /// # Errors
+    ///
+    /// If too many constant values have been allocated for the [`Engine`] this way.
     fn alloc_const(&self, value: UntypedValue) -> Result<ConstRef, TranslationError> {
         self.res.write().const_pool.alloc(value)
     }
