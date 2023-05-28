@@ -61,6 +61,18 @@ pub struct FuncHeader {
 }
 
 impl FuncHeader {
+    /// Create a new initialized [`FuncHeader`].
+    pub fn new(iref: InstructionsRef, len_locals: usize, max_stack_height: usize) -> Self {
+        let max_stack_height = max_stack_height
+            .checked_add(len_locals)
+            .unwrap_or_else(|| panic!("invalid maximum stack height for function"));
+        FuncHeader {
+            iref,
+            len_locals,
+            max_stack_height,
+        }
+    }
+
     /// Returns a reference to the instructions of the function.
     pub fn iref(&self) -> InstructionsRef {
         self.iref
@@ -125,11 +137,7 @@ impl CodeMap {
         let start = self.instrs.len();
         self.instrs.extend(insts);
         let iref = InstructionsRef::new(start);
-        let header = FuncHeader {
-            iref,
-            len_locals,
-            max_stack_height: len_locals + max_stack_height,
-        };
+        let header = FuncHeader::new(iref, len_locals, max_stack_height);
         let header_index = self.headers.len();
         self.headers.push(header);
         CompiledFunc::from_usize(header_index)
