@@ -6,7 +6,6 @@ use alloc::{
 use wasmi_core::UntypedValue;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-#[repr(transparent)]
 pub struct ConstRef(u32);
 
 impl TryFrom<usize> for ConstRef {
