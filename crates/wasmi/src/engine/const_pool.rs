@@ -23,7 +23,6 @@ impl TryFrom<usize> for ConstRef {
 
 impl ConstRef {
     /// Returns the index of the [`ConstRef`] as `usize` value.
-    #[inline]
     pub fn to_usize(self) -> usize {
         self.0 as usize
     }
