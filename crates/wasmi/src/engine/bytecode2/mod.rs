@@ -432,4 +432,62 @@ pub enum Instruction {
     /// - This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
     /// - Required instruction since `i32` arithmetic shift-right is not commutative.
     I32ShrSImmRev(UnaryInstr),
+
+    /// `i32` rotate-left instruction: `r0 = rotate_left(r1, r2)`
+    I32Rotl(BinInstr),
+    /// `i32` rotate-left immediate instruction: `r0 = rotate_left(r1, c0)`
+    ///
+    /// # Note
+    ///
+    /// Optimized for small constant values that fit into 16-bit.
+    I32RotlImm16(BinInstrImm16),
+    /// `i32` rotate-left immediate instruction: `r0 = rotate_left(c0, r1)`
+    ///
+    /// # Note
+    ///
+    /// - Optimized for small constant values that fit into 16-bit.
+    /// - Required instruction since `i32` rotate-left is not commutative.
+    I32RotlImm16Rev(BinInstrImm16Rev),
+    /// `i32` rotate-left immediate instruction: `r0 = rotate_left(r1, c0)`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    I32RotlImm(UnaryInstr),
+    /// `i32` rotate-left immediate instruction: `r0 = rotate_left(r1, c0)`
+    ///
+    /// # Encoding
+    ///
+    /// - This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// - Required instruction since `i32` rotate-left is not commutative.
+    I32RotlImmRev(UnaryInstr),
+
+    /// `i32` rotate-right instruction: `r0 = rotate_right(r1, r2)`
+    I32Rotr(BinInstr),
+    /// `i32` rotate-right immediate instruction: `r0 = rotate_right(r1, c0)`
+    ///
+    /// # Note
+    ///
+    /// Optimized for small constant values that fit into 16-bit.
+    I32RotrImm16(BinInstrImm16),
+    /// `i32` rotate-right immediate instruction: `r0 = rotate_right(c0, r1)`
+    ///
+    /// # Note
+    ///
+    /// - Optimized for small constant values that fit into 16-bit.
+    /// - Required instruction since `i32` rotate-right is not commutative.
+    I32RotrImm16Rev(BinInstrImm16Rev),
+    /// `i32` rotate-right immediate instruction: `r0 = rotate_right(r1, c0)`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    I32RotrImm(UnaryInstr),
+    /// `i32` rotate-right immediate instruction: `r0 = rotate_right(r1, c0)`
+    ///
+    /// # Encoding
+    ///
+    /// - This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// - Required instruction since `i32` rotate-right is not commutative.
+    I32RotrImmRev(UnaryInstr),
 }
