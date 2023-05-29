@@ -12,10 +12,12 @@ impl TryFrom<usize> for ConstRef {
     type Error = TranslationError;
 
     fn try_from(index: usize) -> Result<Self, Self::Error> {
-        u32::try_from(index)
-            .map_err(|_| TranslationErrorInner::ConstRefOutOfBounds)
-            .map_err(TranslationError::new)
-            .map(Self)
+        match u32::try_from(index) {
+            Ok(index) => Ok(Self(index)),
+            Err(_) => Err(TranslationError::new(
+                TranslationErrorInner::ConstRefOutOfBounds,
+            )),
+        }
     }
 }
 
