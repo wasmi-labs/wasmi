@@ -293,4 +293,49 @@ pub enum Instruction {
     /// - This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
     /// - Required instruction since `i32` unsigned-remainder is not commutative.
     I32RemUImmRev(UnaryInstr),
+
+    /// `i32` bitwise-and instruction: `r0 = r1 & r2`
+    I32And(BinInstr),
+    /// `i32` bitwise-and (small) immediate instruction: `r0 = r1 & c0`
+    ///
+    /// # Note
+    ///
+    /// Optimized for small constant values that fit into 16-bit.
+    I32AndImm16(BinInstrImm16),
+    /// `i32` bitwise-and immediate instruction: `r0 = r1 & c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    I32AndImm(UnaryInstr),
+
+    /// `i32` bitwise-or instruction: `r0 = r1 & r2`
+    I32Or(BinInstr),
+    /// `i32` bitwise-or (small) immediate instruction: `r0 = r1 & c0`
+    ///
+    /// # Note
+    ///
+    /// Optimized for small constant values that fit into 16-bit.
+    I32OrImm16(BinInstrImm16),
+    /// `i32` bitwise-or immediate instruction: `r0 = r1 & c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    I32OrImm(UnaryInstr),
+
+    /// `i32` bitwise-or instruction: `r0 = r1 & r2`
+    I32Xor(BinInstr),
+    /// `i32` bitwise-or (small) immediate instruction: `r0 = r1 & c0`
+    ///
+    /// # Note
+    ///
+    /// Optimized for small constant values that fit into 16-bit.
+    I32XorImm16(BinInstrImm16),
+    /// `i32` bitwise-or immediate instruction: `r0 = r1 & c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    I32XorImm(UnaryInstr),
 }
