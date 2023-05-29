@@ -21,6 +21,7 @@ impl TryFrom<usize> for ConstRef {
 
 impl ConstRef {
     /// Returns the index of the [`ConstRef`] as `usize` value.
+    #[inline]
     pub fn to_usize(self) -> usize {
         self.0 as usize
     }
@@ -81,6 +82,7 @@ impl ConstPool {
     }
 
     /// Returns the read-only [`ConstPoolView`] of this [`ConstPool`].
+    #[inline]
     pub fn view(&self) -> ConstPoolView {
         ConstPoolView {
             idx2const: &self.idx2const,
@@ -102,6 +104,7 @@ impl ConstPoolView<'_> {
     /// Returns the [`UntypedValue`] for the given [`ConstRef`] if existing.
     ///
     /// Returns `None` is the [`ConstPool`] does not store a value for the [`ConstRef`].
+    #[inline]
     pub fn get(&self, cref: ConstRef) -> Option<UntypedValue> {
         self.idx2const.get(cref.to_usize()).copied()
     }
