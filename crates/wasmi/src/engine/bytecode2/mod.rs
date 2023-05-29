@@ -331,18 +331,105 @@ pub enum Instruction {
     /// This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
     I32OrImm(UnaryInstr),
 
-    /// `i32` bitwise-or instruction: `r0 = r1 & r2`
+    /// `i32` bitwise-or instruction: `r0 = r1 ^ r2`
     I32Xor(BinInstr),
-    /// `i32` bitwise-or (small) immediate instruction: `r0 = r1 & c0`
+    /// `i32` bitwise-or (small) immediate instruction: `r0 = r1 ^ c0`
     ///
     /// # Note
     ///
     /// Optimized for small constant values that fit into 16-bit.
     I32XorImm16(BinInstrImm16),
-    /// `i32` bitwise-or immediate instruction: `r0 = r1 & c0`
+    /// `i32` bitwise-or immediate instruction: `r0 = r1 ^ c0`
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
     I32XorImm(UnaryInstr),
+
+    /// `i32` logical shift-left instruction: `r0 = r1 << r2`
+    I32Shl(BinInstr),
+    /// `i32` logical shift-left immediate instruction: `r0 = r1 << c0`
+    ///
+    /// # Note
+    ///
+    /// Optimized for small constant values that fit into 16-bit.
+    I32ShlImm16(BinInstrImm16),
+    /// `i32` logical shift-left immediate instruction: `r0 = c0 << r1`
+    ///
+    /// # Note
+    ///
+    /// - Optimized for small constant values that fit into 16-bit.
+    /// - Required instruction since `i32` logical shift-left is not commutative.
+    I32ShlImm16Rev(BinInstrImm16Rev),
+    /// `i32` logical shift-left immediate instruction: `r0 = r1 << c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    I32ShlImm(UnaryInstr),
+    /// `i32` logical shift-left immediate instruction: `r0 = r1 << c0`
+    ///
+    /// # Encoding
+    ///
+    /// - This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// - Required instruction since `i32` logical shift-left is not commutative.
+    I32ShlImmRev(UnaryInstr),
+
+    /// `i32` logical shift-right instruction: `r0 = r1 >> r2`
+    I32ShrU(BinInstr),
+    /// `i32` logical shift-right immediate instruction: `r0 = r1 >> c0`
+    ///
+    /// # Note
+    ///
+    /// Optimized for small constant values that fit into 16-bit.
+    I32ShrUImm16(BinInstrImm16),
+    /// `i32` logical shift-right immediate instruction: `r0 = c0 >> r1`
+    ///
+    /// # Note
+    ///
+    /// - Optimized for small constant values that fit into 16-bit.
+    /// - Required instruction since `i32` logical shift-right is not commutative.
+    I32ShrUImm16Rev(BinInstrImm16Rev),
+    /// `i32` logical shift-right immediate instruction: `r0 = r1 >> c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    I32ShrUImm(UnaryInstr),
+    /// `i32` logical shift-right immediate instruction: `r0 = r1 >> c0`
+    ///
+    /// # Encoding
+    ///
+    /// - This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// - Required instruction since `i32` logical shift-right is not commutative.
+    I32ShrUImmRev(UnaryInstr),
+
+    /// `i32` arithmetic shift-right instruction: `r0 = r1 >> r2`
+    I32ShrS(BinInstr),
+    /// `i32` logical shift-right immediate instruction: `r0 = r1 >> c0`
+    ///
+    /// # Note
+    ///
+    /// Optimized for small constant values that fit into 16-bit.
+    I32ShrSImm16(BinInstrImm16),
+    /// `i32` arithmetic shift-right immediate instruction: `r0 = c0 >> r1`
+    ///
+    /// # Note
+    ///
+    /// - Optimized for small constant values that fit into 16-bit.
+    /// - Required instruction since `i32` arithmetic shift-right is not commutative.
+    I32ShrSImm16Rev(BinInstrImm16Rev),
+    /// `i32` arithmetic shift-right immediate instruction: `r0 = r1 >> c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    I32ShrSImm(UnaryInstr),
+    /// `i32` arithmetic shift-right immediate instruction: `r0 = r1 >> c0`
+    ///
+    /// # Encoding
+    ///
+    /// - This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// - Required instruction since `i32` arithmetic shift-right is not commutative.
+    I32ShrSImmRev(UnaryInstr),
 }
