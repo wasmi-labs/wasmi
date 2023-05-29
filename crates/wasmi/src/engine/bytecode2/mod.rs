@@ -2,6 +2,9 @@
 
 mod immediate;
 
+#[cfg(test)]
+mod tests;
+
 use self::immediate::{Immediate16, Immediate32};
 use super::const_pool::ConstRef;
 
@@ -29,26 +32,20 @@ pub struct BinInstr {
 pub struct BinInstrImm16 {
     /// The register storing the result of the computation.
     result: Register,
-    /// The register holding the left-hand side value.
-    lhs: Register,
-    /// The immediate right-hand side value.
-    rhs: Immediate16,
-}
-
-/// A binary instruction with an immediate left-hand side value.
-///
-/// # Note
-///
-/// - Optimized for small constant values that fit into 16-bit.
-/// - Required for non commutative binary instructions.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct BinInstrImm16Rev {
-    /// The register storing the result of the computation.
-    result: Register,
-    /// The immediate left-hand side value.
-    lhs: Immediate16,
-    /// The register holding the right-hand side value.
-    rhs: Register,
+    /// The register holding one of the operands.
+    /// 
+    /// # Note
+    /// 
+    /// The instruction decides if this operand is the left-hand or
+    /// right-hand operand for the computation.
+    reg_in: Register,
+    /// The 16-bit immediate value.
+    /// 
+    /// # Note
+    /// 
+    /// The instruction decides if this operand is the left-hand or
+    /// right-hand operand for the computation.
+    imm_in: Immediate16,
 }
 
 /// A unary instruction.
@@ -139,7 +136,7 @@ pub enum Instruction {
     ///
     /// - Optimized for small constant values that fit into 16-bit.
     /// - Required instruction since `i32` subtraction is not commutative.
-    I32SubImm16Rev(BinInstrImm16Rev),
+    I32SubImm16Rev(BinInstrImm16),
     /// `i32` subtract immediate instruction: `r0 = r1 * c0`
     ///
     /// # Encoding
@@ -186,7 +183,7 @@ pub enum Instruction {
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Optimized for small constant values that fit into 16-bit.
     /// - Required instruction since `i32` signed-division is not commutative.
-    I32DivSImm16Rev(BinInstrImm16Rev),
+    I32DivSImm16Rev(BinInstrImm16),
     /// `i32` singed-division immediate instruction: `r0 = r1 / c0`
     ///
     /// # Encoding
@@ -219,7 +216,7 @@ pub enum Instruction {
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Optimized for small constant values that fit into 16-bit.
     /// - Required instruction since `i32` signed-division is not commutative.
-    I32DivUImm16Rev(BinInstrImm16Rev),
+    I32DivUImm16Rev(BinInstrImm16),
     /// `i32` unsinged-division immediate instruction: `r0 = r1 / c0`
     ///
     /// # Encoding
@@ -251,7 +248,7 @@ pub enum Instruction {
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Optimized for small constant values that fit into 16-bit.
     /// - Required instruction since `i32` signed-remainder is not commutative.
-    I32RemSImm16Rev(BinInstrImm16Rev),
+    I32RemSImm16Rev(BinInstrImm16),
     /// `i32` singed-remainder immediate instruction: `r0 = r1 % c0`
     ///
     /// # Encoding
@@ -284,7 +281,7 @@ pub enum Instruction {
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Optimized for small constant values that fit into 16-bit.
     /// - Required instruction since `i32` unsigned-remainder is not commutative.
-    I32RemUImm16Rev(BinInstrImm16Rev),
+    I32RemUImm16Rev(BinInstrImm16),
     /// `i32` unsigned-remainder immediate instruction: `r0 = r1 % c0`
     ///
     /// # Encoding
@@ -360,7 +357,7 @@ pub enum Instruction {
     ///
     /// - Optimized for small constant values that fit into 16-bit.
     /// - Required instruction since `i32` logical shift-left is not commutative.
-    I32ShlImm16Rev(BinInstrImm16Rev),
+    I32ShlImm16Rev(BinInstrImm16),
     /// `i32` logical shift-left immediate instruction: `r0 = r1 << c0`
     ///
     /// # Encoding
@@ -389,7 +386,7 @@ pub enum Instruction {
     ///
     /// - Optimized for small constant values that fit into 16-bit.
     /// - Required instruction since `i32` logical shift-right is not commutative.
-    I32ShrUImm16Rev(BinInstrImm16Rev),
+    I32ShrUImm16Rev(BinInstrImm16),
     /// `i32` logical shift-right immediate instruction: `r0 = r1 >> c0`
     ///
     /// # Encoding
@@ -418,7 +415,7 @@ pub enum Instruction {
     ///
     /// - Optimized for small constant values that fit into 16-bit.
     /// - Required instruction since `i32` arithmetic shift-right is not commutative.
-    I32ShrSImm16Rev(BinInstrImm16Rev),
+    I32ShrSImm16Rev(BinInstrImm16),
     /// `i32` arithmetic shift-right immediate instruction: `r0 = r1 >> c0`
     ///
     /// # Encoding
@@ -447,7 +444,7 @@ pub enum Instruction {
     ///
     /// - Optimized for small constant values that fit into 16-bit.
     /// - Required instruction since `i32` rotate-left is not commutative.
-    I32RotlImm16Rev(BinInstrImm16Rev),
+    I32RotlImm16Rev(BinInstrImm16),
     /// `i32` rotate-left immediate instruction: `r0 = rotate_left(r1, c0)`
     ///
     /// # Encoding
@@ -476,7 +473,7 @@ pub enum Instruction {
     ///
     /// - Optimized for small constant values that fit into 16-bit.
     /// - Required instruction since `i32` rotate-right is not commutative.
-    I32RotrImm16Rev(BinInstrImm16Rev),
+    I32RotrImm16Rev(BinInstrImm16),
     /// `i32` rotate-right immediate instruction: `r0 = rotate_right(r1, c0)`
     ///
     /// # Encoding
