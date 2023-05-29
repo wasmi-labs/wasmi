@@ -3,17 +3,16 @@ use alloc::{
     collections::{btree_map, BTreeMap},
     vec::Vec,
 };
-use intx::U24;
 use wasmi_core::UntypedValue;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ConstRef(U24);
+pub struct ConstRef(u32);
 
 impl TryFrom<usize> for ConstRef {
     type Error = TranslationError;
 
     fn try_from(index: usize) -> Result<Self, Self::Error> {
-        match U24::try_from(index as u64) {
+        match u32::try_from(index) {
             Ok(index) => Ok(Self(index)),
             Err(_) => Err(TranslationError::new(
                 TranslationErrorInner::ConstRefOutOfBounds,
@@ -25,7 +24,7 @@ impl TryFrom<usize> for ConstRef {
 impl ConstRef {
     /// Returns the index of the [`ConstRef`] as `usize` value.
     pub fn to_usize(self) -> usize {
-        u32::from(self.0) as usize
+        self.0 as usize
     }
 }
 
