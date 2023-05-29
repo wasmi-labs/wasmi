@@ -105,6 +105,7 @@ impl ConstPoolView<'_> {
     /// Returns the [`UntypedValue`] for the given [`ConstRef`] if existing.
     ///
     /// Returns `None` is the [`ConstPool`] does not store a value for the [`ConstRef`].
+    #[inline]
     pub fn get(&self, cref: ConstRef) -> Option<UntypedValue> {
         self.idx2const.get(cref.to_usize()).copied()
     }
