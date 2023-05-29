@@ -84,7 +84,6 @@ impl ConstPool {
     }
 
     /// Returns the read-only [`ConstPoolView`] of this [`ConstPool`].
-    #[inline]
     pub fn view(&self) -> ConstPoolView {
         ConstPoolView {
             idx2const: &self.idx2const,
