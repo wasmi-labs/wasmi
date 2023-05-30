@@ -90,7 +90,7 @@ pub enum Instruction {
     /// If it is ever executed for example due to the result of a
     /// bug in the interpreter the execution will trap.
     ConstRef(ConstRef),
-    /// An [`Immediate32`] instruction parameter.
+    /// An [`Const32`] instruction parameter.
     ///
     /// # Note
     ///
@@ -98,7 +98,7 @@ pub enum Instruction {
     /// it only serves as data for other actual instructions.
     /// If it is ever executed for example due to the result of a
     /// bug in the interpreter the execution will trap.
-    Immediate32(Const32),
+    Const32(Const32),
 
     /// `i32` count-leading-zeros (clz) instruction.
     I32Clz(UnaryInstr),
@@ -119,7 +119,7 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
     I32AddImm(UnaryInstr),
 
     /// `i32` subtract instruction: `r0 = r1 - r2`
@@ -141,14 +141,14 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
     I32SubImm(UnaryInstr),
     /// `i32` subtract immediate instruction: `r0 = c0 * r1`
     ///
     /// # Encoding
     ///
     /// - Guarantees that the right-hand side operand is not zero.
-    /// - This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// - This [`Instruction`] must be followed by an [`Instruction::Const32`].
     /// - Required instruction since `i32` signed-division is not commutative.
     I32SubImmRev(UnaryInstr),
 
@@ -164,7 +164,7 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
     I32MulImm(UnaryInstr),
 
     /// `i32` singed-division instruction: `r0 = r1 / r2`
@@ -189,14 +189,14 @@ pub enum Instruction {
     /// # Encoding
     ///
     /// - Guarantees that the right-hand side operand is not zero.
-    /// - This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// - This [`Instruction`] must be followed by an [`Instruction::Const32`].
     I32DivSImm(UnaryInstr),
     /// `i32` singed-division immediate instruction: `r0 = r1 / c0`
     ///
     /// # Encoding
     ///
     /// - Guarantees that the right-hand side operand is not zero.
-    /// - This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// - This [`Instruction`] must be followed by an [`Instruction::Const32`].
     /// - Required instruction since `i32` signed-division is not commutative.
     I32DivSImmRev(UnaryInstr),
 
@@ -221,14 +221,14 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
     I32DivUImm(UnaryInstr),
     /// `i32` unsinged-division immediate instruction: `r0 = c0 / r1`
     ///
     /// # Encoding
     ///
     /// - Guarantees that the right-hand side operand is not zero.
-    /// - This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// - This [`Instruction`] must be followed by an [`Instruction::Const32`].
     /// - Required instruction since `i32` signed-division is not commutative.
     I32DivUImmRev(UnaryInstr),
 
@@ -254,14 +254,14 @@ pub enum Instruction {
     /// # Encoding
     ///
     /// - Guarantees that the right-hand side operand is not zero.
-    /// - This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// - This [`Instruction`] must be followed by an [`Instruction::Const32`].
     I32RemSImm(UnaryInstr),
     /// `i32` singed-remainder immediate instruction: `r0 = r1 % c0`
     ///
     /// # Encoding
     ///
     /// - Guarantees that the right-hand side operand is not zero.
-    /// - This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// - This [`Instruction`] must be followed by an [`Instruction::Const32`].
     /// - Required instruction since `i32` signed-remainder is not commutative.
     I32RemSImmRev(UnaryInstr),
 
@@ -287,14 +287,14 @@ pub enum Instruction {
     /// # Encoding
     ///
     /// - Guarantees that the right-hand side operand is not zero.
-    /// - This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// - This [`Instruction`] must be followed by an [`Instruction::Const32`].
     I32RemUImm(UnaryInstr),
     /// `i32` unsigned-remainder immediate instruction: `r0 = r1 % c0`
     ///
     /// # Encoding
     ///
     /// - Guarantees that the right-hand side operand is not zero.
-    /// - This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// - This [`Instruction`] must be followed by an [`Instruction::Const32`].
     /// - Required instruction since `i32` unsigned-remainder is not commutative.
     I32RemUImmRev(UnaryInstr),
 
@@ -310,7 +310,7 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
     I32AndImm(UnaryInstr),
 
     /// `i32` bitwise-or instruction: `r0 = r1 & r2`
@@ -325,7 +325,7 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
     I32OrImm(UnaryInstr),
 
     /// `i32` bitwise-or instruction: `r0 = r1 ^ r2`
@@ -340,7 +340,7 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
     I32XorImm(UnaryInstr),
 
     /// `i32` logical shift-left instruction: `r0 = r1 << r2`
@@ -362,13 +362,13 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
     I32ShlImm(UnaryInstr),
     /// `i32` logical shift-left immediate instruction: `r0 = r1 << c0`
     ///
     /// # Encoding
     ///
-    /// - This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// - This [`Instruction`] must be followed by an [`Instruction::Const32`].
     /// - Required instruction since `i32` logical shift-left is not commutative.
     I32ShlImmRev(UnaryInstr),
 
@@ -391,13 +391,13 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
     I32ShrUImm(UnaryInstr),
     /// `i32` logical shift-right immediate instruction: `r0 = r1 >> c0`
     ///
     /// # Encoding
     ///
-    /// - This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// - This [`Instruction`] must be followed by an [`Instruction::Const32`].
     /// - Required instruction since `i32` logical shift-right is not commutative.
     I32ShrUImmRev(UnaryInstr),
 
@@ -420,13 +420,13 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
     I32ShrSImm(UnaryInstr),
     /// `i32` arithmetic shift-right immediate instruction: `r0 = r1 >> c0`
     ///
     /// # Encoding
     ///
-    /// - This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// - This [`Instruction`] must be followed by an [`Instruction::Const32`].
     /// - Required instruction since `i32` arithmetic shift-right is not commutative.
     I32ShrSImmRev(UnaryInstr),
 
@@ -449,13 +449,13 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
     I32RotlImm(UnaryInstr),
     /// `i32` rotate-left immediate instruction: `r0 = rotate_left(r1, c0)`
     ///
     /// # Encoding
     ///
-    /// - This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// - This [`Instruction`] must be followed by an [`Instruction::Const32`].
     /// - Required instruction since `i32` rotate-left is not commutative.
     I32RotlImmRev(UnaryInstr),
 
@@ -478,13 +478,13 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
     I32RotrImm(UnaryInstr),
     /// `i32` rotate-right immediate instruction: `r0 = rotate_right(r1, c0)`
     ///
     /// # Encoding
     ///
-    /// - This [`Instruction`] must be followed by an [`Instruction::Immediate32`].
+    /// - This [`Instruction`] must be followed by an [`Instruction::Const32`].
     /// - Required instruction since `i32` rotate-right is not commutative.
     I32RotrImmRev(UnaryInstr),
 }
