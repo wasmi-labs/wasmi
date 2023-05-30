@@ -216,9 +216,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn execute(mut self) -> Result<WasmOutcome, TrapCode> {
         use Instruction as Instr;
         loop {
-            let instr = self.ip.get();
-            println!("{instr:?}");
-            match *instr {
+            match *self.ip.get() {
                 Instr::LocalGet(local_depth) => self.visit_local_get(local_depth),
                 Instr::LocalSet(local_depth) => self.visit_local_set(local_depth),
                 Instr::LocalTee(local_depth) => self.visit_local_tee(local_depth),
