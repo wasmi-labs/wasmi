@@ -6,7 +6,7 @@ mod immediate;
 mod tests;
 
 use self::immediate::{Const16, Const32};
-use super::{const_pool::ConstRef, bytecode::GlobalIdx};
+use super::{bytecode::GlobalIdx, const_pool::ConstRef};
 
 /// An index into a register.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -57,24 +57,6 @@ pub struct UnaryInstr {
     input: Register,
 }
 
-/// A `global.get` instruction.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct GlobalGetInstr {
-    /// The register storing the result of the `global.get` instruction.
-    result: Register,
-    /// The index identifying the global variable for the `global.get` instruction.
-    global: GlobalIdx,
-}
-
-/// A `global.set` instruction.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct GlobalSetInstr {
-    /// The index identifying the global variable for the `global.set` instruction.
-    global: GlobalIdx,
-    /// The register holding the value to be stored in the global variable.
-    input: Register,
-}
-
 /// A `wasmi` instruction.
 ///
 /// Actually `wasmi` instructions are composed of so-called instruction words.
@@ -119,9 +101,19 @@ pub enum Instruction {
     Const32(Const32),
 
     /// Wasm `global.get` equivalent `wasmi` instruction.
-    GlobalGet(GlobalGetInstr),
+    GlobalGet {
+        /// The register storing the result of the `global.get` instruction.
+        result: Register,
+        /// The index identifying the global variable for the `global.get` instruction.
+        global: GlobalIdx,
+    },
     /// Wasm `global.set` equivalent `wasmi` instruction.
-    GlobalSet(GlobalSetInstr),
+    GlobalSet {
+        /// The index identifying the global variable for the `global.set` instruction.
+        global: GlobalIdx,
+        /// The register holding the value to be stored in the global variable.
+        input: Register,
+    },
 
     /// `i32` equality comparison instruction: `r0 = r1 == r2`
     I32Eq(BinInstr),
