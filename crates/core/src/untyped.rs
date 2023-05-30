@@ -106,7 +106,7 @@ impl Ord for UntypedValueInner {
 impl From<bool> for UntypedValueInner {
     #[inline]
     fn from(value: bool) -> Self {
-        Self::from(value as i32)
+        Self::from(i32::from(value))
     }
 }
 
