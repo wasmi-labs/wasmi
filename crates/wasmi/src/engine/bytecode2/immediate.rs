@@ -8,9 +8,9 @@ use wasmi_core::F32;
 /// Upon use the small 16-bit value has to be sign-extended to
 /// the actual integer type, e.g. `i32` or `i64`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct Immediate16(i16);
+pub struct Const16(i16);
 
-impl Immediate16 {
+impl Const16 {
     /// Creates an [`Immediate16`] from the given `i32` value if possible.
     pub fn from_i32(value: i32) -> Option<Self> {
         i16::try_from(value).ok().map(Self)
@@ -51,9 +51,9 @@ impl Immediate16 {
 /// Upon use the small 32-bit value has to be sign-extended to
 /// the actual integer type, e.g. `i32` or `i64`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct Immediate32(u32);
+pub struct Const32(u32);
 
-impl Immediate32 {
+impl Const32 {
     /// Creates an [`Immediate32`] from the given `u32` value.
     pub fn from_u32(value: u32) -> Self {
         Self(value)

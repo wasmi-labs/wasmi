@@ -5,7 +5,7 @@ mod immediate;
 #[cfg(test)]
 mod tests;
 
-use self::immediate::{Immediate16, Immediate32};
+use self::immediate::{Const16, Const32};
 use super::const_pool::ConstRef;
 
 /// An index into a register.
@@ -45,7 +45,7 @@ pub struct BinInstrImm16 {
     ///
     /// The instruction decides if this operand is the left-hand or
     /// right-hand operand for the computation.
-    imm_in: Immediate16,
+    imm_in: Const16,
 }
 
 /// A unary instruction.
@@ -98,7 +98,7 @@ pub enum Instruction {
     /// it only serves as data for other actual instructions.
     /// If it is ever executed for example due to the result of a
     /// bug in the interpreter the execution will trap.
-    Immediate32(Immediate32),
+    Immediate32(Const32),
 
     /// `i32` count-leading-zeros (clz) instruction.
     I32Clz(UnaryInstr),
