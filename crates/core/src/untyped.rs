@@ -14,7 +14,8 @@ use crate::{
     F64,
 };
 use core::{
-    fmt::{self, Display},
+    cmp::Ordering,
+    fmt::{self, Debug, Display},
     ops::{Neg, Shl, Shr},
 };
 use paste::paste;
@@ -28,6 +29,119 @@ pub struct UntypedValue {
     /// This inner value is required to have enough bits to represent
     /// all fundamental WebAssembly types `i32`, `i64`, `f32` and `f64`.
     bits: u64,
+}
+
+/// The inner structure of the [`UntypedValue`].
+#[derive(Copy, Clone)]
+union UntypedValueInner {
+    /// The `i32` value.
+    ///
+    /// # Note
+    ///
+    /// Used for (signed) `i32` instructions.
+    i32: i32,
+    /// The `u32` value.
+    ///
+    /// # Note
+    ///
+    /// Used for unsigned `i32` instructions.
+    u32: u32,
+    /// The `i64` value.
+    ///
+    /// # Note
+    ///
+    /// Used for (signed) `i64` instructions.
+    i64: i64,
+    /// The `u64` value.
+    ///
+    /// # Note
+    ///
+    /// Used for unsigned `u64` instructions.
+    /// Also acts as a default type for [`UntypedValueInner`]`.
+    u64: u64,
+    /// The `f32` value.
+    ///
+    /// # Note
+    ///
+    /// Used for `f32` instructions.
+    f32: f32,
+    /// The `f64` value.
+    ///
+    /// # Note
+    ///
+    /// Used for `f64` instructions.
+    f64: f64,
+}
+
+impl Default for UntypedValueInner {
+    #[inline]
+    fn default() -> Self {
+        Self::from(0u64)
+    }
+}
+
+impl PartialEq for UntypedValueInner {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        u64::from(*self) == u64::from(*other)
+    }
+}
+
+impl Eq for UntypedValueInner {}
+
+impl PartialOrd for UntypedValueInner {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        u64::from(*self).partial_cmp(&u64::from(*other))
+    }
+}
+
+impl Ord for UntypedValueInner {
+    #[inline]
+    fn cmp(&self, other: &Self) -> Ordering {
+        u64::from(*self).cmp(&u64::from(*other))
+    }
+}
+
+impl From<bool> for UntypedValueInner {
+    #[inline]
+    fn from(value: bool) -> Self {
+        Self::from(value as i32)
+    }
+}
+
+impl From<UntypedValueInner> for bool {
+    #[inline]
+    fn from(value: UntypedValueInner) -> Self {
+        i32::from(value) != 0
+    }
+}
+
+macro_rules! impl_from_for {
+    ( $( $ty:ident ),* ) => {
+        $(
+            impl From<$ty> for UntypedValueInner {
+                #[inline]
+                fn from(value: $ty) -> Self {
+                    Self { $ty: value }
+                }
+            }
+
+            impl From<UntypedValueInner> for $ty {
+                #[inline]
+                fn from(value: UntypedValueInner) -> Self {
+                    unsafe { value.$ty }
+                }
+            }
+        )*
+    };
+}
+impl_from_for!(i32, u32, i64, u64, f32, f64);
+
+impl Debug for UntypedValueInner {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "0x{:X}", u64::from(*self))
+    }
 }
 
 impl UntypedValue {
