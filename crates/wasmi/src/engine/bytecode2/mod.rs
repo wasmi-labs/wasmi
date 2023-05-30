@@ -657,7 +657,9 @@ pub enum Instruction {
     ///
     /// # Note
     ///
-    /// Optimized for small constant values that fit into 16-bit.
+    /// For shift instructions the right-hand side rotate amount is always
+    /// less-than the bitwidth of the shifted value type. Therefore the small
+    /// value optimization can always be applied.
     I32ShlImm16(BinInstrImm16),
     /// `i32` logical shift-left immediate instruction: `r0 = c0 << r1`
     ///
@@ -666,12 +668,6 @@ pub enum Instruction {
     /// - Optimized for small constant values that fit into 16-bit.
     /// - Required instruction since `i32` logical shift-left is not commutative.
     I32ShlImm16Rev(BinInstrImm16),
-    /// `i32` logical shift-left immediate instruction: `r0 = r1 << c0`
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
-    I32ShlImm(UnaryInstr),
     /// `i32` logical shift-left immediate instruction: `r0 = r1 << c0`
     ///
     /// # Encoding
@@ -686,8 +682,10 @@ pub enum Instruction {
     ///
     /// # Note
     ///
-    /// Optimized for small constant values that fit into 16-bit.
-    I32ShrUImm16(BinInstrImm16),
+    /// For shift instructions the right-hand side rotate amount is always
+    /// less-than the bitwidth of the shifted value type. Therefore the small
+    /// value optimization can always be applied.
+    I32ShrUImm(BinInstrImm16),
     /// `i32` logical shift-right immediate instruction: `r0 = c0 >> r1`
     ///
     /// # Note
@@ -695,12 +693,6 @@ pub enum Instruction {
     /// - Optimized for small constant values that fit into 16-bit.
     /// - Required instruction since `i32` logical shift-right is not commutative.
     I32ShrUImm16Rev(BinInstrImm16),
-    /// `i32` logical shift-right immediate instruction: `r0 = r1 >> c0`
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
-    I32ShrUImm(UnaryInstr),
     /// `i32` logical shift-right immediate instruction: `r0 = r1 >> c0`
     ///
     /// # Encoding
@@ -715,8 +707,10 @@ pub enum Instruction {
     ///
     /// # Note
     ///
-    /// Optimized for small constant values that fit into 16-bit.
-    I32ShrSImm16(BinInstrImm16),
+    /// For shift instructions the right-hand side rotate amount is always
+    /// less-than the bitwidth of the shifted value type. Therefore the small
+    /// value optimization can always be applied.
+    I32ShrSImm(BinInstrImm16),
     /// `i32` arithmetic shift-right immediate instruction: `r0 = c0 >> r1`
     ///
     /// # Note
@@ -724,12 +718,6 @@ pub enum Instruction {
     /// - Optimized for small constant values that fit into 16-bit.
     /// - Required instruction since `i32` arithmetic shift-right is not commutative.
     I32ShrSImm16Rev(BinInstrImm16),
-    /// `i32` arithmetic shift-right immediate instruction: `r0 = r1 >> c0`
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
-    I32ShrSImm(UnaryInstr),
     /// `i32` arithmetic shift-right immediate instruction: `r0 = r1 >> c0`
     ///
     /// # Encoding
@@ -744,8 +732,10 @@ pub enum Instruction {
     ///
     /// # Note
     ///
-    /// Optimized for small constant values that fit into 16-bit.
-    I32RotlImm16(BinInstrImm16),
+    /// For rotate instructions the right-hand side rotate amount is always
+    /// less-than the bitwidth of the rotated value type. Therefore the small
+    /// value optimization can always be applied.
+    I32RotlImm(BinInstrImm16),
     /// `i32` rotate-left immediate instruction: `r0 = rotate_left(c0, r1)`
     ///
     /// # Note
@@ -753,12 +743,6 @@ pub enum Instruction {
     /// - Optimized for small constant values that fit into 16-bit.
     /// - Required instruction since `i32` rotate-left is not commutative.
     I32RotlImm16Rev(BinInstrImm16),
-    /// `i32` rotate-left immediate instruction: `r0 = rotate_left(r1, c0)`
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
-    I32RotlImm(UnaryInstr),
     /// `i32` rotate-left immediate instruction: `r0 = rotate_left(r1, c0)`
     ///
     /// # Encoding
@@ -773,8 +757,10 @@ pub enum Instruction {
     ///
     /// # Note
     ///
-    /// Optimized for small constant values that fit into 16-bit.
-    I32RotrImm16(BinInstrImm16),
+    /// For rotate instructions the right-hand side rotate amount is always
+    /// less-than the bitwidth of the rotated value type. Therefore the small
+    /// value optimization can always be applied.
+    I32RotrImm(BinInstrImm16),
     /// `i32` rotate-right immediate instruction: `r0 = rotate_right(c0, r1)`
     ///
     /// # Note
@@ -782,12 +768,6 @@ pub enum Instruction {
     /// - Optimized for small constant values that fit into 16-bit.
     /// - Required instruction since `i32` rotate-right is not commutative.
     I32RotrImm16Rev(BinInstrImm16),
-    /// `i32` rotate-right immediate instruction: `r0 = rotate_right(r1, c0)`
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
-    I32RotrImm(UnaryInstr),
     /// `i32` rotate-right immediate instruction: `r0 = rotate_right(r1, c0)`
     ///
     /// # Encoding
