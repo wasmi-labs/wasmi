@@ -100,6 +100,96 @@ pub enum Instruction {
     /// bug in the interpreter the execution will trap.
     Const32(Const32),
 
+    /// `i32` equality comparison instruction: `r0 = r1 == r2`
+    I32Eq(BinInstr),
+    /// `i32` equality comparison instruction with immediate: `r0 = r1 == c0`
+    ///
+    /// # Note
+    ///
+    /// Optimized for small constant values that fit into 16-bit.
+    I32EqImm16(BinInstrImm16),
+    /// `i32` equality comparison instruction with immediate: `r0 = r1 == c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    I32EqImm(UnaryInstr),
+
+    /// `i32` inequality comparison instruction: `r0 = r1 != r2`
+    I32Ne(BinInstr),
+    /// `i32` inequality comparison instruction with immediate: `r0 = r1 != c0`
+    ///
+    /// # Note
+    ///
+    /// Optimized for small constant values that fit into 16-bit.
+    I32NeImm16(BinInstrImm16),
+    /// `i32` inequality comparison instruction with immediate: `r0 = r1 != c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    I32NeImm(UnaryInstr),
+
+    /// `i32` less-than comparison instruction: `r0 = r1 < r2`
+    I32Lt(BinInstr),
+    /// `i32` less-than comparison instruction with immediate: `r0 = r1 < c0`
+    ///
+    /// # Note
+    ///
+    /// Optimized for small constant values that fit into 16-bit.
+    I32LtImm16(BinInstrImm16),
+    /// `i32` less-than comparison instruction with immediate: `r0 = r1 < c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    I32LtImm(UnaryInstr),
+
+    /// `i32` greater-than comparison instruction: `r0 = r1 > r2`
+    I32Gt(BinInstr),
+    /// `i32` greater-than comparison instruction with immediate: `r0 = r1 > c0`
+    ///
+    /// # Note
+    ///
+    /// Optimized for small constant values that fit into 16-bit.
+    I32GtImm16(BinInstrImm16),
+    /// `i32` greater-than comparison instruction with immediate: `r0 = r1 > c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    I32GtImm(UnaryInstr),
+
+    /// `i32` less-than or equals comparison instruction: `r0 = r1 <= r2`
+    I32Le(BinInstr),
+    /// `i32` less-than or equals comparison instruction with immediate: `r0 = r1 <= c0`
+    ///
+    /// # Note
+    ///
+    /// Optimized for small constant values that fit into 16-bit.
+    I32LeImm16(BinInstrImm16),
+    /// `i32` less-than or equals comparison instruction with immediate: `r0 = r1 <= c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    I32LeImm(UnaryInstr),
+
+    /// `i32` greater-than or equals comparison instruction: `r0 = r1 >= r2`
+    I32Ge(BinInstr),
+    /// `i32` greater-than or equals comparison instruction with immediate: `r0 = r1 >= c0`
+    ///
+    /// # Note
+    ///
+    /// Optimized for small constant values that fit into 16-bit.
+    I32GeImm16(BinInstrImm16),
+    /// `i32` greater-than or equals comparison instruction with immediate: `r0 = r1 >= c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    I32GeImm(UnaryInstr),
+
     /// `i32` count-leading-zeros (clz) instruction.
     I32Clz(UnaryInstr),
     /// `i32` count-trailing-zeros (ctz) instruction.
