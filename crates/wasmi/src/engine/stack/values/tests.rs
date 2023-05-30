@@ -35,15 +35,15 @@ impl ValueStack {
 fn drop_keep_works() {
     fn assert_drop_keep<E>(stack: &ValueStack, drop_keep: DropKeep, expected: E)
     where
-        E: IntoIterator,
-        E::Item: Into<UntypedValue>,
+        E: IntoIterator<Item = i32>,
     {
         let mut s = stack.clone();
         let mut sp = s.stack_ptr();
         sp.drop_keep(drop_keep);
         s.sync_stack_ptr(sp);
-        let expected: Vec<_> = expected.into_iter().map(Into::into).collect();
-        let actual: Vec<_> = s.iter().copied().collect();
+        let expected: Vec<i32> = expected.into_iter().collect();
+        println!("{expected:?}");
+        let actual: Vec<_> = s.iter().copied().map(i32::from).collect();
         assert_eq!(actual, expected, "test failed for {drop_keep:?}");
     }
 

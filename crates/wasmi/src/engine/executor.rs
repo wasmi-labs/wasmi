@@ -216,7 +216,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn execute(mut self) -> Result<WasmOutcome, TrapCode> {
         use Instruction as Instr;
         loop {
-            match *self.ip.get() {
+            let instr = self.ip.get();
+            println!("{instr:?}");
+            match *instr {
                 Instr::LocalGet(local_depth) => self.visit_local_get(local_depth),
                 Instr::LocalSet(local_depth) => self.visit_local_set(local_depth),
                 Instr::LocalTee(local_depth) => self.visit_local_tee(local_depth),
@@ -1122,7 +1124,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let (d, val, n) = self.sp.pop3();
         let n = i32::from(n) as usize;
         let offset = i32::from(d) as usize;
-        let byte = u8::from(val);
+        let byte = u32::from(val) as u8;
         self.consume_fuel_with(
             |costs| costs.fuel_for_bytes(n as u64),
             |this| {

@@ -26,9 +26,9 @@ use paste::paste;
 #[derive(Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct UntypedValue {
-    /// This inner value is required to have enough bits to represent
-    /// all fundamental WebAssembly types `i32`, `i64`, `f32` and `f64`.
-    bits: u64,
+    /// We use this inside the [`UntypedValue`] struct to keep the implementation
+    /// detail of it being a `union` type definition hidden.
+    inner: UntypedValueInner,
 }
 
 /// The inner structure of the [`UntypedValue`].
@@ -117,6 +117,34 @@ impl From<UntypedValueInner> for bool {
     }
 }
 
+impl From<F32> for UntypedValueInner {
+    #[inline]
+    fn from(value: F32) -> Self {
+        Self::from(value.to_float())
+    }
+}
+
+impl From<F64> for UntypedValueInner {
+    #[inline]
+    fn from(value: F64) -> Self {
+        Self::from(value.to_float())
+    }
+}
+
+impl From<UntypedValueInner> for F32 {
+    #[inline]
+    fn from(value: UntypedValueInner) -> Self {
+        Self::from_float(value.into())
+    }
+}
+
+impl From<UntypedValueInner> for F64 {
+    #[inline]
+    fn from(value: UntypedValueInner) -> Self {
+        Self::from_float(value.into())
+    }
+}
+
 macro_rules! impl_from_for {
     ( $( $ty:ident ),* ) => {
         $(
@@ -141,97 +169,37 @@ impl_from_for!(i32, u32, i64, u64, f32, f64);
 impl Debug for UntypedValueInner {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "0x{:X}", u64::from(*self))
+        // f.debug_struct("UntypedValueInner")
+        //     .field("value", &u64::from(*self))
+        //     .finish()
     }
 }
 
 impl UntypedValue {
     /// Returns the underlying bits of the [`UntypedValue`].
     pub fn to_bits(self) -> u64 {
-        self.bits
+        u64::from(self.inner)
     }
 }
 
-macro_rules! impl_from_untyped_for_int {
-    ( $( $int:ty ),* $(,)? ) => {
+macro_rules! impl_from_for_untyped {
+    ( $( $ty:ty ),* $(,)? ) => {
         $(
-            impl From<UntypedValue> for $int {
-                fn from(untyped: UntypedValue) -> Self {
-                    untyped.to_bits() as _
+            impl From<UntypedValue> for $ty {
+                fn from(value: UntypedValue) -> Self {
+                    value.inner.into()
+                }
+            }
+
+            impl From<$ty> for UntypedValue {
+                fn from(value: $ty) -> Self {
+                    Self { inner: UntypedValueInner::from(value) }
                 }
             }
         )*
     };
 }
-impl_from_untyped_for_int!(i8, i16, i32, i64, u8, u16, u32, u64);
-
-macro_rules! impl_from_untyped_for_float {
-    ( $( $float:ty ),* $(,)? ) => {
-        $(
-            impl From<UntypedValue> for $float {
-                fn from(untyped: UntypedValue) -> Self {
-                    Self::from_bits(untyped.to_bits() as _)
-                }
-            }
-        )*
-    };
-}
-impl_from_untyped_for_float!(f32, f64, F32, F64);
-
-impl From<UntypedValue> for bool {
-    fn from(untyped: UntypedValue) -> Self {
-        untyped.to_bits() != 0
-    }
-}
-
-macro_rules! impl_from_unsigned_prim {
-    ( $( $prim:ty ),* $(,)? ) => {
-        $(
-            impl From<$prim> for UntypedValue {
-                fn from(value: $prim) -> Self {
-                    Self { bits: value as _ }
-                }
-            }
-        )*
-    };
-}
-#[rustfmt::skip]
-impl_from_unsigned_prim!(
-    bool, u8, u16, u32, u64,
-);
-
-macro_rules! impl_from_signed_prim {
-    ( $( $prim:ty as $base:ty ),* $(,)? ) => {
-        $(
-            impl From<$prim> for UntypedValue {
-                fn from(value: $prim) -> Self {
-                    Self { bits: value as $base as _ }
-                }
-            }
-        )*
-    };
-}
-#[rustfmt::skip]
-impl_from_signed_prim!(
-    i8 as u8,
-    i16 as u16,
-    i32 as u32,
-    i64 as u64,
-);
-
-macro_rules! impl_from_float {
-    ( $( $float:ty ),* $(,)? ) => {
-        $(
-            impl From<$float> for UntypedValue {
-                fn from(value: $float) -> Self {
-                    Self {
-                        bits: value.to_bits() as _,
-                    }
-                }
-            }
-        )*
-    };
-}
-impl_from_float!(f32, f64, F32, F64);
+impl_from_for_untyped!(bool, i32, i64, u32, u64, f32, f64, F32, F64);
 
 macro_rules! op {
     ( $operator:tt ) => {{

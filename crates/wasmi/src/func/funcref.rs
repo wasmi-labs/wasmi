@@ -17,7 +17,18 @@ impl From<Func> for FuncRef {
 /// Type used to convert between [`FuncRef`] and [`UntypedValue`].
 union Transposer {
     funcref: FuncRef,
-    untyped: UntypedValue,
+    /// We use a `i64` type here since it also has 64-bits
+    /// like the `FuncRef` type and also it allows us to replace
+    /// calls to `funcref.is_null` with `i64.eqz` in the `wasmi`
+    /// bytecode.
+    i64: i64,
+}
+
+impl Transposer {
+    /// Creates a `null` [`Transposer`].
+    pub fn null() -> Self {
+        Self { i64: 0 }
+    }
 }
 
 #[test]
@@ -34,8 +45,11 @@ fn funcref_sizeof() {
 
 #[test]
 fn funcref_null_to_zero() {
-    assert_eq!(UntypedValue::from(FuncRef::null()), UntypedValue::from(0));
-    assert!(FuncRef::from(UntypedValue::from(0)).is_null());
+    assert_eq!(
+        UntypedValue::from(FuncRef::null()),
+        UntypedValue::from(0u64)
+    );
+    assert!(FuncRef::from(UntypedValue::from(0u64)).is_null());
 }
 
 impl From<UntypedValue> for FuncRef {
@@ -45,7 +59,13 @@ impl From<UntypedValue> for FuncRef {
         //         this operation cannot produce invalid [`FuncRef`]
         //         instances even though the input [`UntypedValue`]
         //         was modified arbitrarily.
-        unsafe { Transposer { untyped }.funcref }.canonicalize()
+        unsafe {
+            Transposer {
+                i64: untyped.into(),
+            }
+            .funcref
+        }
+        .canonicalize()
     }
 }
 
@@ -57,7 +77,7 @@ impl From<FuncRef> for UntypedValue {
         //         this operation cannot produce invalid [`UntypedValue`]
         //         instances even if it was possible to arbitrarily modify
         //         the input [`FuncRef`] instance.
-        unsafe { Transposer { funcref }.untyped }
+        unsafe { Transposer { funcref }.i64 }.into()
     }
 }
 
@@ -80,12 +100,7 @@ impl FuncRef {
         if self.is_null() {
             // Safety: This is safe since `0u64` can be bit
             //         interpreted as a valid `FuncRef` value.
-            return unsafe {
-                Transposer {
-                    untyped: UntypedValue::from(0u64),
-                }
-                .funcref
-            };
+            return unsafe { Transposer::null().funcref };
         }
         self
     }

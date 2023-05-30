@@ -1354,7 +1354,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         // Since `wasmi` bytecode is untyped we have no special `null` instructions
         // but simply reuse the `constant` instruction with an immediate value of 0.
         // Note that `FuncRef` and `ExternRef` are encoded as 64-bit values in `wasmi`.
-        self.visit_i32_const(0i32)
+        self.visit_i64_const(0)
     }
 
     fn visit_ref_is_null(&mut self) -> Result<(), TranslationError> {
