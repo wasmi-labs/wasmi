@@ -33,16 +33,16 @@ pub struct BinInstrImm16 {
     /// The register storing the result of the computation.
     result: Register,
     /// The register holding one of the operands.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// The instruction decides if this operand is the left-hand or
     /// right-hand operand for the computation.
     reg_in: Register,
     /// The 16-bit immediate value.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// The instruction decides if this operand is the left-hand or
     /// right-hand operand for the computation.
     imm_in: Immediate16,
