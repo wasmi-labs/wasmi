@@ -11,17 +11,17 @@ use wasmi_core::F32;
 pub struct Const16(i16);
 
 impl Const16 {
-    /// Creates an [`Immediate16`] from the given `i32` value if possible.
+    /// Creates an [`Const16`] from the given `i32` value if possible.
     pub fn from_i32(value: i32) -> Option<Self> {
         i16::try_from(value).ok().map(Self)
     }
 
-    /// Creates an [`Immediate16`] from the given `i64` value if possible.
+    /// Creates an [`Const16`] from the given `i64` value if possible.
     pub fn from_i64(value: i64) -> Option<Self> {
         i16::try_from(value).ok().map(Self)
     }
 
-    /// Creates an [`Immediate16`] from the given `u32` value if possible.
+    /// Creates an [`Const16`] from the given `u32` value if possible.
     pub fn from_u32(value: u32) -> Option<Self> {
         let value = u16::try_from(value).ok()? as i16;
         Some(Self(value))
@@ -54,22 +54,22 @@ impl Const16 {
 pub struct Const32(u32);
 
 impl Const32 {
-    /// Creates an [`Immediate32`] from the given `u32` value.
+    /// Creates an [`Const32`] from the given `u32` value.
     pub fn from_u32(value: u32) -> Self {
         Self(value)
     }
 
-    /// Creates an [`Immediate32`] from the given `i32` value.
+    /// Creates an [`Const32`] from the given `i32` value.
     pub fn from_i32(value: i32) -> Self {
         Self::from_u32(value as u32)
     }
 
-    /// Creates an [`Immediate32`] from the given [`F32`] value.
+    /// Creates an [`Const32`] from the given [`F32`] value.
     pub fn from_f32(value: F32) -> Self {
         Self::from_u32(value.to_bits())
     }
 
-    /// Creates an [`Immediate32`] from the given `i64` value if possible.
+    /// Creates an [`Const32`] from the given `i64` value if possible.
     pub fn from_i64(value: i64) -> Option<Self> {
         i32::try_from(value).ok().map(Self::from_i32)
     }
