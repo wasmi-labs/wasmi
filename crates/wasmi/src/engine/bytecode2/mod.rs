@@ -59,7 +59,7 @@ pub struct UnaryInstr {
 
 /// A `load` instruction with a 16-bit encoded offset parameter.
 ///
-/// # Note
+/// # Encoding
 ///
 /// This is an optimization over the more general [`LoadInstr`]
 /// for small offset values that can be encoded as 16-bit values.
@@ -75,7 +75,7 @@ pub struct LoadOffset16Instr {
 
 /// A general `load` instruction.
 ///
-/// # Note
+/// # Encoding
 ///
 /// This `load` instruction stores its offset parameter in a
 /// separate [`Instruction::Const32`] instruction that must
@@ -151,7 +151,8 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
     I32Load(LoadInstr),
     /// Wasm `i32.load` equivalent `wasmi` instruction.
     ///
@@ -163,7 +164,8 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
     I64Load(LoadInstr),
     /// Wasm `i64.load` equivalent `wasmi` instruction.
     ///
@@ -175,7 +177,8 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
     F32Load(LoadInstr),
     /// Wasm `f32.load` equivalent `wasmi` instruction.
     ///
@@ -187,7 +190,8 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
     F64Load(LoadInstr),
     /// Wasm `f64.load` equivalent `wasmi` instruction.
     ///
@@ -200,7 +204,8 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
     I32Load8s(LoadInstr),
     /// Wasm `i32.load8_s` equivalent `wasmi` instruction.
     ///
@@ -212,7 +217,8 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
     I32Load8u(LoadInstr),
     /// Wasm `i32.load8_u` equivalent `wasmi` instruction.
     ///
@@ -224,7 +230,8 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
     I32Load16s(LoadInstr),
     /// Wasm `i32.load16_s` equivalent `wasmi` instruction.
     ///
@@ -236,7 +243,8 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
     I32Load16u(LoadInstr),
     /// Wasm `i32.load16_u` equivalent `wasmi` instruction.
     ///
@@ -249,7 +257,8 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
     I64Load8s(LoadInstr),
     /// Wasm `i64.load8_s` equivalent `wasmi` instruction.
     ///
@@ -261,7 +270,8 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
     I64Load8u(LoadInstr),
     /// Wasm `i64.load8_u` equivalent `wasmi` instruction.
     ///
@@ -273,7 +283,8 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
     I64Load16s(LoadInstr),
     /// Wasm `i64.load16_s` equivalent `wasmi` instruction.
     ///
@@ -285,7 +296,8 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
     I64Load16u(LoadInstr),
     /// Wasm `i64.load16_u` equivalent `wasmi` instruction.
     ///
@@ -297,7 +309,8 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
     I64Load32s(LoadInstr),
     /// Wasm `i64.load32_s` equivalent `wasmi` instruction.
     ///
@@ -309,7 +322,8 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
     I64Load32u(LoadInstr),
     /// Wasm `i64.load32_u` equivalent `wasmi` instruction.
     ///
