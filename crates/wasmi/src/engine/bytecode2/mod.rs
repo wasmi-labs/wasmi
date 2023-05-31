@@ -992,6 +992,126 @@ pub enum Instruction {
     /// for small right-hand side constant values.
     I64GeUImm16(BinInstrImm16),
 
+    /// `f32` equality comparison instruction: `r0 = r1 == r2`
+    F32Eq(BinInstr),
+    /// `f32` equality comparison instruction with constant value: `r0 = r1 == c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that encodes the 32-bit right-hand side constant value.
+    F32EqImm(UnaryInstr),
+
+    /// `f64` equality comparison instruction: `r0 = r1 == r2`
+    F64Eq(BinInstr),
+    /// `f64` equality comparison instruction with constant value: `r0 = r1 == c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`]
+    /// that encodes the 64-bit right-hand side constant value.
+    F64EqImm(UnaryInstr),
+
+    /// `f32` inequality comparison instruction: `r0 = r1 != r2`
+    F32Ne(BinInstr),
+    /// `f32` inequality comparison instruction with constant value: `r0 = r1 != c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that encodes the 32-bit right-hand side constant value.
+    F32NeImm(UnaryInstr),
+
+    /// `f64` inequality comparison instruction: `r0 = r1 != r2`
+    F64Ne(BinInstr),
+    /// `f64` inequality comparison instruction with constant value: `r0 = r1 != c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`]
+    /// that encodes the 64-bit right-hand side constant value.
+    F64NeImm(UnaryInstr),
+
+    /// `f32` less-than comparison instruction: `r0 = r1 < r2`
+    F32Lt(BinInstr),
+    /// `f32` less-than comparison instruction with constant value: `r0 = r1 < c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that encodes the 32-bit right-hand side constant value.
+    F32LtImm(UnaryInstr),
+
+    /// `f64` less-than comparison instruction: `r0 = r1 < r2`
+    F64Lt(BinInstr),
+    /// `f64` less-than comparison instruction with constant value: `r0 = r1 < c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`]
+    /// that encodes the 64-bit right-hand side constant value.
+    F64LtImm(UnaryInstr),
+
+    /// `f32` less-than or equals comparison instruction: `r0 = r1 <= r2`
+    F32Le(BinInstr),
+    /// `f32` less-than or equals comparison instruction with constant value: `r0 = r1 <= c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that encodes the 32-bit right-hand side constant value.
+    F32LeImm(UnaryInstr),
+
+    /// `f64` less-than or equals comparison instruction: `r0 = r1 <= r2`
+    F64Le(BinInstr),
+    /// `f64` less-than or equals comparison instruction with constant value: `r0 = r1 <= c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`]
+    /// that encodes the 64-bit right-hand side constant value.
+    F64LeImm(UnaryInstr),
+
+    /// `f32` greater-than comparison instruction: `r0 = r1 > r2`
+    F32Gt(BinInstr),
+    /// `f32` greater-than comparison instruction with constant value: `r0 = r1 > c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that encodes the 32-bit right-hand side constant value.
+    F32GtImm(UnaryInstr),
+
+    /// `f64` greater-than comparison instruction: `r0 = r1 > r2`
+    F64Gt(BinInstr),
+    /// `f64` greater-than comparison instruction with constant value: `r0 = r1 > c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`]
+    /// that encodes the 64-bit right-hand side constant value.
+    F64GtImm(UnaryInstr),
+
+    /// `f32` greater-than or equals comparison instruction: `r0 = r1 >= r2`
+    F32Ge(BinInstr),
+    /// `f32` greater-than or equals comparison instruction with constant value: `r0 = r1 >= c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that encodes the 32-bit right-hand side constant value.
+    F32GeImm(UnaryInstr),
+
+    /// `f64` greater-than or equals comparison instruction: `r0 = r1 >= r2`
+    F64Ge(BinInstr),
+    /// `f64` greater-than or equals comparison instruction with constant value: `r0 = r1 >= c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`]
+    /// that encodes the 64-bit right-hand side constant value.
+    F64GeImm(UnaryInstr),
+
     /// `i32` count-leading-zeros (clz) instruction.
     I32Clz(UnaryInstr),
     /// `i32` count-trailing-zeros (ctz) instruction.
