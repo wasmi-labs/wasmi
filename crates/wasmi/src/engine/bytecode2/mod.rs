@@ -211,9 +211,9 @@ pub enum Instruction {
         input: Register,
     },
     /// Wasm `global.set` equivalent `wasmi` instruction.
-    /// 
+    ///
     /// # Encoding
-    /// 
+    ///
     /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`]
     /// that refers to the constant value being stored to the global variable.
     GlobalSetImm {
@@ -221,14 +221,14 @@ pub enum Instruction {
         global: GlobalIdx,
     },
     /// Wasm `global.set` equivalent `wasmi` instruction.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This is an optimization of [`Instruction::GlobalSetImm`] for constant
     /// values that can be encoded as 32-bit values.
-    /// 
+    ///
     /// # Encoding
-    /// 
+    ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that refers to the 32-bit constant value being stored to the global variable.
     GlobalSetImm32 {
