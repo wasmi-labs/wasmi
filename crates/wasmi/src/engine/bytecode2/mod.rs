@@ -210,6 +210,31 @@ pub enum Instruction {
         /// The register holding the value to be stored in the global variable.
         input: Register,
     },
+    /// Wasm `global.set` equivalent `wasmi` instruction.
+    /// 
+    /// # Encoding
+    /// 
+    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`]
+    /// that refers to the constant value being stored to the global variable.
+    GlobalSetImm {
+        /// The index identifying the global variable for the `global.set` instruction.
+        global: GlobalIdx,
+    },
+    /// Wasm `global.set` equivalent `wasmi` instruction.
+    /// 
+    /// # Note
+    /// 
+    /// This is an optimization of [`Instruction::GlobalSetImm`] for constant
+    /// values that can be encoded as 32-bit values.
+    /// 
+    /// # Encoding
+    /// 
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that refers to the 32-bit constant value being stored to the global variable.
+    GlobalSetImm32 {
+        /// The index identifying the global variable for the `global.set` instruction.
+        global: GlobalIdx,
+    },
 
     /// Wasm `i32.load` equivalent `wasmi` instruction.
     ///
