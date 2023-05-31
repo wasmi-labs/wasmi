@@ -51,12 +51,13 @@ impl Const16 {
 /// Upon use the small 32-bit value has to be sign-extended to
 /// the actual integer type, e.g. `i32` or `i64`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct Const32(u32);
+#[repr(align(2))] // 2-byte alignment is sufficient for `wasmi` bytecode
+pub struct Const32([u8; 4]);
 
 impl Const32 {
     /// Creates an [`Const32`] from the given `u32` value.
     pub fn from_u32(value: u32) -> Self {
-        Self(value)
+        Self(value.to_ne_bytes())
     }
 
     /// Creates an [`Const32`] from the given `i32` value.
@@ -81,7 +82,7 @@ impl Const32 {
     /// It is the responsibility of the user to validate type safety
     /// since access via this method is not type checked.
     pub fn to_u32(self) -> u32 {
-        self.0
+        u32::from_ne_bytes(self.0)
     }
 
     /// Returns an `i32` value from `self`.
