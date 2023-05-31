@@ -1114,10 +1114,16 @@ pub enum Instruction {
 
     /// `i32` count-leading-zeros (clz) instruction.
     I32Clz(UnaryInstr),
+    /// `i64` count-leading-zeros (clz) instruction.
+    I64Clz(UnaryInstr),
     /// `i32` count-trailing-zeros (ctz) instruction.
     I32Ctz(UnaryInstr),
+    /// `i64` count-trailing-zeros (ctz) instruction.
+    I64Ctz(UnaryInstr),
     /// `i32` pop-count instruction.
     I32Popcnt(UnaryInstr),
+    /// `i64` pop-count instruction.
+    I64Popcnt(UnaryInstr),
 
     /// `i32` add instruction: `r0 = r1 + r2`
     I32Add(BinInstr),
