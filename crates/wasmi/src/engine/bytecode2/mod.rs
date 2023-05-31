@@ -704,48 +704,102 @@ pub enum Instruction {
 
     /// `i32` signed greater-than comparison instruction: `r0 = r1 > r2`
     I32GtS(BinInstr),
-    /// `i32` signed greater-than comparison instruction with immediate: `r0 = r1 > c0`
-    ///
-    /// # Note
-    ///
-    /// Optimized for small constant values that fit into 16-bit.
-    I32GtSImm16(BinInstrImm16),
+    /// `i32` unsigned greater-than comparison instruction: `r0 = r1 > r2`
+    I32GtU(BinInstr),
     /// `i32` signed greater-than comparison instruction with immediate: `r0 = r1 > c0`
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that encodes the 32-bit right-hand side constant value.
     I32GtSImm(UnaryInstr),
+    /// `i32` unsigned greater-than comparison instruction with immediate: `r0 = r1 > c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that encodes the 32-bit right-hand side constant value.
+    I32GtUImm(UnaryInstr),
+    /// `i32` signed greater-than comparison instruction with immediate: `r0 = r1 > c0`
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I32GtSImm`]
+    /// for small right-hand side constant values.
+    I32GtSImm16(BinInstrImm16),
+    /// `i32` unsigned greater-than comparison instruction with immediate: `r0 = r1 > c0`
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I32GtUImm`]
+    /// for small right-hand side constant values.
+    I32GtUImm16(BinInstrImm16),
 
     /// `i32` signed less-than or equals comparison instruction: `r0 = r1 <= r2`
     I32LeS(BinInstr),
-    /// `i32` signed less-than or equals comparison instruction with immediate: `r0 = r1 <= c0`
-    ///
-    /// # Note
-    ///
-    /// Optimized for small constant values that fit into 16-bit.
-    I32LeSImm16(BinInstrImm16),
+    /// `i32` unsigned less-than or equals comparison instruction: `r0 = r1 <= r2`
+    I32LeU(BinInstr),
     /// `i32` signed less-than or equals comparison instruction with immediate: `r0 = r1 <= c0`
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that encodes the 32-bit right-hand side constant value.
     I32LeSImm(UnaryInstr),
+    /// `i32` unsigned less-than or equals comparison instruction with immediate: `r0 = r1 <= c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that encodes the 32-bit right-hand side constant value.
+    I32LeUImm(UnaryInstr),
+    /// `i32` signed less-than or equals comparison instruction with immediate: `r0 = r1 <= c0`
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I32LeSImm`]
+    /// for small right-hand side constant values.
+    I32LeSImm16(BinInstrImm16),
+    /// `i32` unsigned less-than or equals comparison instruction with immediate: `r0 = r1 <= c0`
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I32LeUImm`]
+    /// for small right-hand side constant values.
+    I32LeUImm16(BinInstrImm16),
 
     /// `i32` signed greater-than or equals comparison instruction: `r0 = r1 >= r2`
     I32GeS(BinInstr),
-    /// `i32` signed greater-than or equals comparison instruction with immediate: `r0 = r1 >= c0`
-    ///
-    /// # Note
-    ///
-    /// Optimized for small constant values that fit into 16-bit.
-    I32GeSImm16(BinInstrImm16),
+    /// `i32` unsigned greater-than or equals comparison instruction: `r0 = r1 >= r2`
+    I32GeU(BinInstr),
     /// `i32` signed greater-than or equals comparison instruction with immediate: `r0 = r1 >= c0`
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that encodes the 32-bit right-hand side constant value.
     I32GeSImm(UnaryInstr),
+    /// `i32` unsigned greater-than or equals comparison instruction with immediate: `r0 = r1 >= c0`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that encodes the 32-bit right-hand side constant value.
+    I32GeUImm(UnaryInstr),
+    /// `i32` signed greater-than or equals comparison instruction with immediate: `r0 = r1 >= c0`
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I32GeSImm`]
+    /// for small right-hand side constant values.
+    I32GeSImm16(BinInstrImm16),
+    /// `i32` unsigned greater-than or equals comparison instruction with immediate: `r0 = r1 >= c0`
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I32GeUImm`]
+    /// for small right-hand side constant values.
+    I32GeUImm16(BinInstrImm16),
 
     /// `i32` count-leading-zeros (clz) instruction.
     I32Clz(UnaryInstr),
