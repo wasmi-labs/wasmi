@@ -89,6 +89,70 @@ pub struct LoadInstr {
     ptr: Register,
 }
 
+/// A general `store` instruction.
+///
+/// # Encoding
+///
+/// This `store` instruction has its offset parameter in a
+/// separate [`Instruction::Const32`] instruction that must
+/// follow this [`Instruction`] immediately in the instruction
+/// sequence.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct StoreInstr {
+    /// The register storing the pointer of the `store` instruction.
+    ptr: Register,
+    /// The register storing the stored value of the `store` instruction.
+    value: Register,
+}
+
+/// A `store` instruction that stores a constant value.
+///
+/// # Encoding
+///
+/// This `store` instruction has its constant value parameter in
+/// a separate [`Instruction::Const32`] or [`Instruction::ConstRef`]
+/// instruction that must follow this [`Instruction`] immediately
+/// in the instruction sequence.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct StoreImmInstr {
+    /// The register storing the pointer of the `store` instruction.
+    ptr: Register,
+    /// The register storing the pointer offset of the `store` instruction.
+    offset: Const32,
+}
+
+/// A `store` instruction for small offset values.
+///
+/// # Note
+///
+/// This `store` instruction is an optimization of [`StoreInstr`] for
+/// `offset` values that can be encoded as a 16-bit value.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct StoreOffset16Instr {
+    /// The register storing the pointer of the `store` instruction.
+    ptr: Register,
+    /// The register storing the stored value of the `store` instruction.
+    value: Register,
+    /// The register storing the 16-bit encoded pointer offset of the `store` instruction.
+    offset: Const16,
+}
+
+/// A `store` instruction for small values of `offset` and `value`.
+///
+/// # Note
+///
+/// This `store` instruction is an optimization of [`StoreOffset16Instr`] for
+/// `offset` and `value` values that can be encoded as a 16-bit values.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct StoreImm16Offset16Instr {
+    /// The register storing the pointer of the `store` instruction.
+    ptr: Register,
+    /// The 16-bit encoded constant value of the `store` instruction.
+    value: Const16,
+    /// The 16-bit encoded pointer offset of the `store` instruction.
+    offset: Const16,
+}
+
 /// A `wasmi` instruction.
 ///
 /// Actually `wasmi` instructions are composed of so-called instruction words.
@@ -331,6 +395,245 @@ pub enum Instruction {
     ///
     /// Optimized [`Instruction`] for small 16-bit encoded offset value.
     I64Load32uOffset16(LoadOffset16Instr),
+
+    /// Wasm `i32.store` equivalent `wasmi` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
+    I32Store(StoreInstr),
+    /// Wasm `i32.store` equivalent `wasmi` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the constant value that is stored by the operation.
+    I32StoreImm(StoreImmInstr),
+    /// Wasm `i32.store` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I32Store`] for
+    /// `offset` values that can be encoded as a 16-bit value.
+    I32StoreOffset16(StoreOffset16Instr),
+
+    /// Wasm `i32.store8` equivalent `wasmi` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
+    I32Store8(StoreInstr),
+    /// Wasm `i32.store8` equivalent `wasmi` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the constant value that is stored by the operation.
+    I32Store8Imm(StoreImmInstr),
+    /// Wasm `i32.store8` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I32Store8`] for
+    /// `offset` values that can be encoded as a 16-bit value.
+    I32Store8Offset16(StoreOffset16Instr),
+    /// Wasm `i32.store8` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I32Store8Imm`] for
+    /// `offset` values that can be encoded as a 16-bit value.
+    I32Store8ImmOffset16(StoreImm16Offset16Instr),
+
+    /// Wasm `i32.store16` equivalent `wasmi` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
+    I32Store16(StoreInstr),
+    /// Wasm `i32.store16` equivalent `wasmi` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the constant value that is stored by the operation.
+    I32Store16Imm(StoreImmInstr),
+    /// Wasm `i32.store16` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I32Store16`] for
+    /// `offset` values that can be encoded as a 16-bit value.
+    I32Store16Offset16(StoreOffset16Instr),
+    /// Wasm `i32.store16` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I32Store16Imm`] for
+    /// `offset` values that can be encoded as a 16-bit value.
+    I32Store16ImmOffset16(StoreImm16Offset16Instr),
+
+    /// Wasm `i64.store` equivalent `wasmi` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
+    I64Store(StoreInstr),
+    /// Wasm `i64.store` equivalent `wasmi` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`]
+    /// that refers to the constant value to be stored with this operation.
+    I64StoreImm(StoreImmInstr),
+    /// Wasm `i64.store` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I64StoreImm`] that store
+    /// values that can be encoded as 32-bit values.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the 32-bit encoded constant value that is stored by
+    /// the operation.
+    I64StoreImm32(StoreImmInstr),
+    /// Wasm `i64.store` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I64Store`] for
+    /// `offset` values that can be encoded as a 16-bit value.
+    I64StoreOffset16(StoreOffset16Instr),
+
+    /// Wasm `i64.store8` equivalent `wasmi` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
+    I64Store8(StoreInstr),
+    /// Wasm `i64.store8` equivalent `wasmi` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the constant value that is stored by the operation.
+    I64Store8Imm(StoreImmInstr),
+    /// Wasm `i64.store8` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I64Store8`] for
+    /// `offset` values that can be encoded as a 16-bit value.
+    I64Store8Offset16(StoreOffset16Instr),
+    /// Wasm `i64.store8` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I64Store8Imm`] for
+    /// `offset` values that can be encoded as a 16-bit value.
+    I64Store8ImmOffset16(StoreImm16Offset16Instr),
+
+    /// Wasm `i64.store16` equivalent `wasmi` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
+    I64Store16(StoreInstr),
+    /// Wasm `i64.store16` equivalent `wasmi` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the constant value that is stored by the operation.
+    I64Store16Imm(StoreImmInstr),
+    /// Wasm `i64.store16` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I64Store16`] for
+    /// `offset` values that can be encoded as a 16-bit value.
+    I64Store16Offset16(StoreOffset16Instr),
+    /// Wasm `i64.store16` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I64Store16Imm`] for
+    /// `offset` values that can be encoded as a 16-bit value.
+    I64Store16ImmOffset16(StoreImm16Offset16Instr),
+
+    /// Wasm `i64.store32` equivalent `wasmi` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
+    I64Store32(StoreInstr),
+    /// Wasm `i64.store32` equivalent `wasmi` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the constant value that is stored by the operation.
+    I64Store32Imm(StoreImmInstr),
+    /// Wasm `i64.store32` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I64Store32`] for
+    /// `offset` values that can be encoded as a 16-bit value.
+    I64Store32Offset16(StoreOffset16Instr),
+
+    /// Wasm `f32.store` equivalent `wasmi` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
+    F32Store(StoreInstr),
+    /// Wasm `f32.store` equivalent `wasmi` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the constant value that is stored by the operation.
+    F32StoreImm(StoreImmInstr),
+    /// Wasm `f32.store` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::F32Store`] for
+    /// `offset` values that can be encoded as a 16-bit value.
+    F32StoreOffset16(StoreOffset16Instr),
+
+    /// Wasm `f32.store` equivalent `wasmi` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
+    /// that represents the `offset` for the load/store operation.
+    F64Store(StoreInstr),
+    /// Wasm `f32.store` equivalent `wasmi` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`]
+    /// that refers to the constant value to be stored with this operation.
+    F64StoreImm(StoreImmInstr),
+    /// Wasm `f64.store` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::F64Store`] for
+    /// `offset` values that can be encoded as a 16-bit value.
+    F64StoreOffset16(StoreOffset16Instr),
 
     /// `i32` equality comparison instruction: `r0 = r1 == r2`
     I32Eq(BinInstr),
