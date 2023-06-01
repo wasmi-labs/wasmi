@@ -258,7 +258,6 @@ pub enum Instruction {
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
-    /// encoding the `value` of the `table.set` instruction.
     TableSetImm {
         /// The register holding the `index` of the instruction.
         index: Register,
