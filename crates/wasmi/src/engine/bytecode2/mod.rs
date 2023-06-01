@@ -265,7 +265,7 @@ pub enum Instruction {
         /// A reference to the constant `value` of the instruction.
         value: ConstRef,
     },
-    /// A Wasm `table.set` immediate instruction.
+    /// A Wasm `table.set` instruction: `table[index] = value`
     ///
     /// # Note
     ///
@@ -280,7 +280,7 @@ pub enum Instruction {
         /// The 32-bit constant `value` of the instruction.
         value: Const32,
     },
-    /// A Wasm `table.set` immediate instruction.
+    /// A Wasm `table.set` instruction: `table[index] = value`
     ///
     /// # Note
     ///
@@ -295,7 +295,7 @@ pub enum Instruction {
         /// The register holding the `value` of the instruction.
         value: Register,
     },
-    /// A Wasm `table.set` immediate instruction.
+    /// A Wasm `table.set` instruction: `table[index] = value`
     ///
     /// # Note
     ///
@@ -308,7 +308,7 @@ pub enum Instruction {
     /// 1. [`Instruction::Const32`]: encoding the `index` of the instruction
     /// 2. [`Instruction::ConstRef`]: encoding the `value` of the instruction
     TableSetImmIndexImm(TableIdx),
-    /// A Wasm `table.set` immediate instruction.
+    /// A Wasm `table.set` instruction: `table[index] = value`
     ///
     /// # Note
     ///
