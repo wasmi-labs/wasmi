@@ -7,7 +7,7 @@ mod tests;
 
 use self::immediate::{Const16, Const32};
 use super::{
-    bytecode::{GlobalIdx, TableIdx, ElementSegmentIdx},
+    bytecode::{ElementSegmentIdx, GlobalIdx, TableIdx},
     const_pool::ConstRef,
 };
 
@@ -60,11 +60,7 @@ pub struct UnaryInstr {
     input: Register,
 }
 
-/// A unary instruction with immediate input.
-///
-/// # Note
-///
-/// This is an optimization over [`UnaryInstrImm`] for 32-bit constant inputs.
+/// A unary instruction with 32-bit immediate input.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct UnaryInstrImm32 {
     /// The register storing the result of the instruction.
@@ -571,6 +567,119 @@ pub enum Instruction {
     TableInitIii {
         /// The start index of the `src` table.
         src: Const32,
+    },
+
+    /// Wasm `table.fill <table>` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    TableFillRrr {
+        /// The start index of the table to fill.
+        dst: Register,
+        /// The value of the filled elements.
+        value: Register,
+        /// The number of elements to fill.
+        len: Register,
+    },
+    /// Wasm `table.fill <table>` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Const32`]: the number of elements to fill
+    /// 2. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    TableFillRri {
+        /// The start index of the table to fill.
+        dst: Register,
+        /// The value of the filled elements.
+        value: Register,
+    },
+    /// Wasm `table.fill <table>` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::ConstRef`]: a reference to the `value` to fill
+    /// 2. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    TableFillRir {
+        /// The start index of the table to fill.
+        dst: Register,
+        /// The number of elements to fill.
+        len: Register,
+    },
+    /// Wasm `table.fill <table>` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Const32`]: the number of elements to fill
+    /// 2. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    TableFillRii {
+        /// The start index of the table to fill.
+        dst: Register,
+        /// The value of the filled elements.
+        value: ConstRef,
+    },
+    /// Wasm `table.fill <table>` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Const32`]: the start index of the table to fill
+    /// 2. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    TableFillIrr {
+        /// The value of the filled elements.
+        value: Register,
+        /// The number of elements to fill.
+        len: Register,
+    },
+    /// Wasm `table.fill <table>` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Const32`]: the number of elements to fill
+    /// 2. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    TableFillIri {
+        /// The start index of the table to fill.
+        dst: Const32,
+        /// The value of the filled elements.
+        value: Register,
+    },
+    /// Wasm `table.fill <table>` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::ConstRef`]: a reference to the `value` to fill
+    /// 2. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    TableFillIir {
+        /// The start index of the table to fill.
+        dst: Const32,
+        /// The number of elements to fill.
+        len: Register,
+    },
+    /// Wasm `table.fill <table>` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::ConstRef`]: a reference to the `value` to fill
+    /// 2. [`Instruction::Const32`]: the number of elements to fill
+    /// 3. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    TableFillIii {
+        /// The start index of the table to fill.
+        dst: Const32,
     },
 
     /// Wasm `global.get` equivalent `wasmi` instruction.
