@@ -322,6 +322,127 @@ pub enum Instruction {
     /// 2. [`Instruction::Const32`]: encoding the 32-bit `value` of the instruction
     TableSetImmIndexImm32(TableIdx),
 
+    /// Wasm `table.copy <src> <dst>` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    /// 2. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    TableCopyRrr {
+        /// The start index of the `src` table.
+        src: Register,
+        /// The start index of the `dst` table.
+        dst: Register,
+        /// The number of copied elements.
+        len: Register,
+    },
+    /// Wasm `table.copy <src> <dst>` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Const32`]: the `len` value for the instruction
+    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    /// 3. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    TableCopyRri {
+        /// The start index of the `src` table.
+        src: Register,
+        /// The start index of the `dst` table.
+        dst: Register,
+    },
+    /// Wasm `table.copy <src> <dst>` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Const32`]: the `dst` value for the instruction
+    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    /// 3. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    TableCopyRir {
+        /// The start index of the `src` table.
+        src: Register,
+        /// The number of copied elements.
+        len: Register,
+    },
+    /// Wasm `table.copy <src> <dst>` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Const32`]: the `len` value for the instruction
+    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    /// 3. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    TableCopyRii {
+        /// The start index of the `src` table.
+        src: Register,
+        /// The start index of the `dst` table.
+        dst: Const32,
+    },
+    /// Wasm `table.copy <src> <dst>` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Const32`]: the `src` value for the instruction
+    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    /// 3. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    TableCopyIrr {
+        /// The start index of the `dst` table.
+        dst: Register,
+        /// The number of copied elements.
+        len: Register,
+    },
+    /// Wasm `table.copy <src> <dst>` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Const32`]: the `len` value for the instruction
+    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    /// 3. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    TableCopyIri {
+        /// The start index of the `src` table.
+        src: Const32,
+        /// The start index of the `dst` table.
+        dst: Register,
+    },
+    /// Wasm `table.copy <src> <dst>` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Const32`]: the `dst` value for the instruction
+    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    /// 3. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    TableCopyIir {
+        /// The start index of the `src` table.
+        src: Const32,
+        /// The number of copied elements.
+        len: Register,
+    },
+    /// Wasm `table.copy <src> <dst>` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Const32`]: the `dst` value for the instruction
+    /// 1. [`Instruction::Const32`]: the `len` value for the instruction
+    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    /// 3. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    TableCopyIii {
+        /// The start index of the `src` table.
+        src: Const32,
+    },
+
     /// Wasm `global.get` equivalent `wasmi` instruction.
     GlobalGet {
         /// The register storing the result of the instruction.
