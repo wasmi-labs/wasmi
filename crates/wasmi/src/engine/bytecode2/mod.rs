@@ -2072,4 +2072,130 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`].
     F64CopysignImmRev(UnaryInstr),
+
+    /// Wasm `i32.wrap_i64` instruction.
+    I32WrapI64(UnaryInstr),
+    /// Wasm `i64.extend_i32_s` instruction.
+    I64ExtendI32S(UnaryInstr),
+    /// Wasm `i64.extend_i32_u` instruction.
+    I64ExtendI32U(UnaryInstr),
+
+    /// Wasm `i32.trunc_f32_s` instruction.
+    I32TruncF32S(UnaryInstr),
+    /// Wasm `i32.trunc_f32_u` instruction.
+    I32TruncF32U(UnaryInstr),
+    /// Wasm `i32.trunc_f64_s` instruction.
+    I32TruncF64S(UnaryInstr),
+    /// Wasm `i32.trunc_f64_u` instruction.
+    I32TruncF64U(UnaryInstr),
+    /// Wasm `i64.trunc_f32_s` instruction.
+    I64TruncF32S(UnaryInstr),
+    /// Wasm `i64.trunc_f32_u` instruction.
+    I64TruncF32U(UnaryInstr),
+    /// Wasm `i64.trunc_f64_s` instruction.
+    I64TruncF64S(UnaryInstr),
+    /// Wasm `i64.trunc_f64_u` instruction.
+    I64TruncF64U(UnaryInstr),
+
+    /// Wasm `i32.trunc_sat_f32_s` instruction.
+    ///
+    /// # Note
+    ///
+    /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
+    I32TruncSatF32S(UnaryInstr),
+    /// Wasm `i32.trunc_sat_f32_u` instruction.
+    ///
+    /// # Note
+    ///
+    /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
+    I32TruncSatF32U(UnaryInstr),
+    /// Wasm `i32.trunc_sat_f64_s` instruction.
+    ///
+    /// # Note
+    ///
+    /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
+    I32TruncSatF64S(UnaryInstr),
+    /// Wasm `i32.trunc_sat_f64_u` instruction.
+    ///
+    /// # Note
+    ///
+    /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
+    I32TruncSatF64U(UnaryInstr),
+    /// Wasm `i64.trunc_sat_f32_s` instruction.
+    ///
+    /// # Note
+    ///
+    /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
+    I64TruncSatF32S(UnaryInstr),
+    /// Wasm `i64.trunc_sat_f32_u` instruction.
+    ///
+    /// # Note
+    ///
+    /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
+    I64TruncSatF32U(UnaryInstr),
+    /// Wasm `i64.trunc_sat_f64_s` instruction.
+    ///
+    /// # Note
+    ///
+    /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
+    I64TruncSatF64S(UnaryInstr),
+    /// Wasm `i64.trunc_sat_f64_u` instruction.
+    ///
+    /// # Note
+    ///
+    /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
+    I64TruncSatF64U(UnaryInstr),
+
+    /// Wasm `i32.extend8_s` instruction.
+    ///
+    /// # Note
+    ///
+    /// Instruction from the Wasm `sign-extension` proposal.
+    I32Extend8S,
+    /// Wasm `i32.extend16_s` instruction.
+    ///
+    /// # Note
+    ///
+    /// Instruction from the Wasm `sign-extension` proposal.
+    I32Extend16S,
+    /// Wasm `i64.extend8_s` instruction.
+    ///
+    /// # Note
+    ///
+    /// Instruction from the Wasm `sign-extension` proposal.
+    I64Extend8S,
+    /// Wasm `i64.extend16_s` instruction.
+    ///
+    /// # Note
+    ///
+    /// Instruction from the Wasm `sign-extension` proposal.
+    I64Extend16S,
+    /// Wasm `i64.extend32_s` instruction.
+    ///
+    /// # Note
+    ///
+    /// Instruction from the Wasm `sign-extension` proposal.
+    I64Extend32S,
+
+    /// Wasm `f32.demote_f64` instruction.
+    F32DemoteF64(UnaryInstr),
+    /// Wasm `f64.promote_f32` instruction.
+    F64PromoteF32(UnaryInstr),
+
+    /// Wasm `f32.convert_i32_s` instruction.
+    F32ConvertI32S(UnaryInstr),
+    /// Wasm `f32.convert_i32_u` instruction.
+    F32ConvertI32U(UnaryInstr),
+    /// Wasm `f32.convert_i64_s` instruction.
+    F32ConvertI64S(UnaryInstr),
+    /// Wasm `f32.convert_i64_u` instruction.
+    F32ConvertI64U(UnaryInstr),
+    /// Wasm `f64.convert_i32_s` instruction.
+    F64ConvertI32S(UnaryInstr),
+    /// Wasm `f64.convert_i32_u` instruction.
+    F64ConvertI32U(UnaryInstr),
+    /// Wasm `f64.convert_i64_s` instruction.
+    F64ConvertI64S(UnaryInstr),
+    /// Wasm `f64.convert_i64_u` instruction.
+    F64ConvertI64U(UnaryInstr),
 }
