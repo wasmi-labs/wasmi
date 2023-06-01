@@ -435,9 +435,9 @@ pub enum Instruction {
     /// This [`Instruction`] must be followed by
     ///
     /// 1. [`Instruction::Const32`]: the `dst` value for the instruction
-    /// 1. [`Instruction::Const32`]: the `len` value for the instruction
-    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
-    /// 3. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    /// 2. [`Instruction::Const32`]: the `len` value for the instruction
+    /// 3. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    /// 4. [`Instruction::TableIdx`]: the `dst` Wasm table instance
     TableCopyIii {
         /// The start index of the `src` table.
         src: Const32,
