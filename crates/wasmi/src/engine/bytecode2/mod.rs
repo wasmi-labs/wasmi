@@ -1858,4 +1858,33 @@ pub enum Instruction {
     /// - Optimized variant of [`Instruction::I64RotlImmRev`] for 16-bit constant values.
     /// - Required instruction since rotate-right is not commutative.
     I64RotrImm16Rev(BinInstrImm16),
+
+    /// Wasm `f32.abs` instruction.
+    F32Abs(UnaryInstr),
+    /// Wasm `f64.abs` instruction.
+    F64Abs(UnaryInstr),
+    /// Wasm `f32.neg` instruction.
+    F32Neg(UnaryInstr),
+    /// Wasm `f64.neg` instruction.
+    F64Neg(UnaryInstr),
+    /// Wasm `f32.ceil` instruction.
+    F32Ceil(UnaryInstr),
+    /// Wasm `f64.ceil` instruction.
+    F64Ceil(UnaryInstr),
+    /// Wasm `f32.floor` instruction.
+    F32Floor(UnaryInstr),
+    /// Wasm `f64.floor` instruction.
+    F64Floor(UnaryInstr),
+    /// Wasm `f32.trunc` instruction.
+    F32Trunc(UnaryInstr),
+    /// Wasm `f64.trunc` instruction.
+    F64Trunc(UnaryInstr),
+    /// Wasm `f32.nearest` instruction.
+    F32Nearest(UnaryInstr),
+    /// Wasm `f64.nearest` instruction.
+    F64Nearest(UnaryInstr),
+    /// Wasm `f32.sqrt` instruction.
+    F32Sqrt(UnaryInstr),
+    /// Wasm `f64.sqrt` instruction.
+    F64Sqrt(UnaryInstr),
 }
