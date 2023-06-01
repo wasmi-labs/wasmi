@@ -1887,4 +1887,189 @@ pub enum Instruction {
     F32Sqrt(UnaryInstr),
     /// Wasm `f64.sqrt` instruction.
     F64Sqrt(UnaryInstr),
+
+    /// Wasm `f32.add` instruction: `r0 = r1 + r2`
+    F32Add(BinInstr),
+    /// Wasm `f64.add` instruction: `r0 = r1 + r2`
+    F64Add(BinInstr),
+    /// Wasm `f32.add` instruction with immediate: `r0 = r1 + c0`
+    /// 
+    /// # Encoding
+    /// 
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    F32AddImm(UnaryInstr),
+    /// Wasm `f64.add` instruction with immediate: `r0 = r1 + c0`
+    /// 
+    /// # Encoding
+    /// 
+    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`].
+    F64AddImm(UnaryInstr),
+
+    /// Wasm `f32.sub` instruction: `r0 = r1 - r2`
+    F32Sub(BinInstr),
+    /// Wasm `f64.sub` instruction: `r0 = r1 - r2`
+    F64Sub(BinInstr),
+    /// Wasm `f32.sub` instruction with immediate: `r0 = r1 - c0`
+    /// 
+    /// # Encoding
+    /// 
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    F32SubImm(UnaryInstr),
+    /// Wasm `f64.sub` instruction with immediate: `r0 = r1 - c0`
+    /// 
+    /// # Encoding
+    /// 
+    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`].
+    F64SubImm(UnaryInstr),
+    /// Wasm `f32.sub` instruction with immediate: `r0 = c0 - r1`
+    /// 
+    /// # Note
+    /// 
+    /// Reversed form of [`Instruction::F32SubImm`] with left-hand side immediate value.
+    /// This is required since this instruction is not commutative.
+    /// 
+    /// # Encoding
+    /// 
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    F32SubImmRev(UnaryInstr),
+    /// Wasm `f64.sub` instruction with immediate: `r0 = c0 - r1`
+    /// 
+    /// # Note
+    /// 
+    /// Reversed form of [`Instruction::F64SubImm`] with left-hand side immediate value.
+    /// This is required since this instruction is not commutative.
+    /// 
+    /// # Encoding
+    /// 
+    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`].
+    F64SubImmRev(UnaryInstr),
+
+    /// Wasm `f32.mul` instruction: `r0 = r1 * r2`
+    F32Mul(BinInstr),
+    /// Wasm `f64.mul` instruction: `r0 = r1 * r2`
+    F64Mul(BinInstr),
+    /// Wasm `f32.mul` instruction with immediate: `r0 = r1 * c0`
+    /// 
+    /// # Encoding
+    /// 
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    F32MulImm(UnaryInstr),
+    /// Wasm `f64.mul` instruction with immediate: `r0 = r1 * c0`
+    /// 
+    /// # Encoding
+    /// 
+    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`].
+    F64MulImm(UnaryInstr),
+
+    /// Wasm `f32.div` instruction: `r0 = r1 / r2`
+    F32Div(BinInstr),
+    /// Wasm `f64.div` instruction: `r0 = r1 / r2`
+    F64Div(BinInstr),
+    /// Wasm `f32.div` instruction with immediate: `r0 = r1 / c0`
+    /// 
+    /// # Encoding
+    /// 
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    F32DivImm(UnaryInstr),
+    /// Wasm `f64.div` instruction with immediate: `r0 = r1 / c0`
+    /// 
+    /// # Encoding
+    /// 
+    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`].
+    F64DivImm(UnaryInstr),
+    /// Wasm `f32.div` instruction with immediate: `r0 = c0 / r1`
+    /// 
+    /// # Note
+    /// 
+    /// Reversed form of [`Instruction::F32DivImm`] with left-hand side immediate value.
+    /// This is required since this instruction is not commutative.
+    /// 
+    /// # Encoding
+    /// 
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    F32DivImmRev(UnaryInstr),
+    /// Wasm `f64.div` instruction with immediate: `r0 = c0 / r1`
+    /// 
+    /// # Note
+    /// 
+    /// Reversed form of [`Instruction::F64DivImm`] with left-hand side immediate value.
+    /// This is required since this instruction is not commutative.
+    /// 
+    /// # Encoding
+    /// 
+    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`].
+    F64DivImmRev(UnaryInstr),
+
+    /// Wasm `f32.min` instruction: `r0 = min(r1, r2)`
+    F32Min(BinInstr),
+    /// Wasm `f64.min` instruction: `r0 = min(r1, r2)`
+    F64Min(BinInstr),
+    /// Wasm `f32.min` instruction with immediate: `r0 = min(r1, c0)`
+    /// 
+    /// # Encoding
+    /// 
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    F32MinImm(UnaryInstr),
+    /// Wasm `f64.min` instruction with immediate: `r0 = min(r1, c0)`
+    /// 
+    /// # Encoding
+    /// 
+    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`].
+    F64MinImm(UnaryInstr),
+
+    /// Wasm `f32.max` instruction: `r0 = max(r1, r2)`
+    F32Max(BinInstr),
+    /// Wasm `f64.max` instruction: `r0 = max(r1, r2)`
+    F64Max(BinInstr),
+    /// Wasm `f32.max` instruction with immediate: `r0 = max(r1, c0)`
+    /// 
+    /// # Encoding
+    /// 
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    F32MaxImm(UnaryInstr),
+    /// Wasm `f64.max` instruction with immediate: `r0 = max(r1, c0)`
+    /// 
+    /// # Encoding
+    /// 
+    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`].
+    F64MaxImm(UnaryInstr),
+
+    /// Wasm `f32.copysign` instruction: `r0 = copysign(r1, r2)`
+    F32Copysign(BinInstr),
+    /// Wasm `f64.copysign` instruction: `r0 = copysign(r1, r2)`
+    F64Copysign(BinInstr),
+    /// Wasm `f32.copysign` instruction with immediate: `r0 = copysign(r1, c0)`
+    /// 
+    /// # Encoding
+    /// 
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    F32CopysignImm(UnaryInstr),
+    /// Wasm `f64.copysign` instruction with immediate: `r0 = copysign(r1, c0)`
+    /// 
+    /// # Encoding
+    /// 
+    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`].
+    F64CopysignImm(UnaryInstr),
+    /// Wasm `f32.copysign` instruction with immediate: `r0 = copysign(c0, r1)`
+    /// 
+    /// # Note
+    /// 
+    /// Reversed form of [`Instruction::F32CopysignImm`] with left-hand side immediate value.
+    /// This is required since this instruction is not commutative.
+    /// 
+    /// # Encoding
+    /// 
+    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
+    F32CopysignImmRev(UnaryInstr),
+    /// Wasm `f64.copysign` instruction with immediate: `r0 = copysign(c0, r1)`
+    /// 
+    /// # Note
+    /// 
+    /// Reversed form of [`Instruction::F64CopysignImm`] with left-hand side immediate value.
+    /// This is required since this instruction is not commutative.
+    /// 
+    /// # Encoding
+    /// 
+    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`].
+    F64CopysignImmRev(UnaryInstr),
 }
