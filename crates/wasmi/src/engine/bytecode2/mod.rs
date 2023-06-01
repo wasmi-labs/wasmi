@@ -288,7 +288,7 @@ pub enum Instruction {
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
-    TableSetImmIndex {
+    TableSetAtImm {
         /// The 32-bit constant `index` of the instruction.
         index: Const32,
         /// The register holding the `value` of the instruction.
@@ -306,13 +306,13 @@ pub enum Instruction {
     ///
     /// 1. [`Instruction::Const32`]: encoding the `index` of the instruction
     /// 2. [`Instruction::ConstRef`]: encoding the `value` of the instruction
-    TableSetImmIndexImm(TableIdx),
+    TableSetImmAtImm(TableIdx),
     /// A Wasm `table.set` instruction: `table[index] = value`
     ///
     /// # Note
     ///
     /// This is a variant of [`Instruction::TableSetImm32`] for constant indices.
-    /// This is an optimization of [`Instruction::TableSetImmIndexImm`] for 32-bit values.
+    /// This is an optimization of [`Instruction::TableSetImmAtImm`] for 32-bit values.
     ///
     /// # Encoding
     ///
@@ -320,7 +320,7 @@ pub enum Instruction {
     ///
     /// 1. [`Instruction::Const32`]: encoding the `index` of the instruction
     /// 2. [`Instruction::Const32`]: encoding the 32-bit `value` of the instruction
-    TableSetImmIndexImm32(TableIdx),
+    TableSetImm32AtImm(TableIdx),
 
     /// Wasm `table.copy <src> <dst>` instruction.
     ///
