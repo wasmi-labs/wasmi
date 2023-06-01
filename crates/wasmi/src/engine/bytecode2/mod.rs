@@ -302,7 +302,7 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be follow by
+    /// This [`Instruction`] must be followed by
     ///
     /// 1. [`Instruction::Const32`]: encoding the `index` of the instruction
     /// 2. [`Instruction::ConstRef`]: encoding the `value` of the instruction
@@ -316,7 +316,7 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be follow by
+    /// This [`Instruction`] must be followed by
     ///
     /// 1. [`Instruction::Const32`]: encoding the `index` of the instruction
     /// 2. [`Instruction::Const32`]: encoding the 32-bit `value` of the instruction
