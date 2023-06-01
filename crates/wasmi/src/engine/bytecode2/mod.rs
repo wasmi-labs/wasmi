@@ -6,7 +6,10 @@ mod immediate;
 mod tests;
 
 use self::immediate::{Const16, Const32};
-use super::{bytecode::GlobalIdx, const_pool::ConstRef};
+use super::{
+    bytecode::{GlobalIdx, TableIdx},
+    const_pool::ConstRef,
+};
 
 /// An index into a register.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -51,10 +54,23 @@ pub struct BinInstrImm16 {
 /// A unary instruction.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct UnaryInstr {
-    /// The register storing the result of the computation.
+    /// The register storing the result of the instruction.
     result: Register,
-    /// The register holding the input of the computation.
+    /// The register holding the input of the instruction.
     input: Register,
+}
+
+/// A unary instruction with immediate input.
+///
+/// # Note
+///
+/// This is an optimization over [`UnaryInstrImm`] for 32-bit constant inputs.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct UnaryInstrImm32 {
+    /// The register storing the result of the instruction.
+    result: Register,
+    /// The 32-bit constant value input of the instruction.
+    input: Const32,
 }
 
 /// A `load` instruction with a 16-bit encoded offset parameter.
@@ -177,6 +193,15 @@ pub struct StoreImm16Offset16Instr {
 /// - `cN`: Constant (immediate) value
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Instruction {
+    /// A [`TableIdx`] instruction parameter.
+    ///
+    /// # Note
+    ///
+    /// This [`Instruction`] must not be executed directly since
+    /// it only serves as data for other actual instructions.
+    /// If it is ever executed for example due to the result of a
+    /// bug in the interpreter the execution will trap.
+    TableIdx(TableIdx),
     /// A [`ConstRef`] instruction parameter.
     ///
     /// # Note
@@ -196,9 +221,111 @@ pub enum Instruction {
     /// bug in the interpreter the execution will trap.
     Const32(Const32),
 
+    /// A Wasm `table.get` instruction: `result = table[index]`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
+    TableGet(UnaryInstr),
+    /// A Wasm `table.get` immediate instruction: `result = table[index]`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
+    TableGetImm(UnaryInstrImm32),
+
+    /// A Wasm `table.size` instruction.
+    TableSize {
+        /// The register storing the result of the instruction.
+        result: Register,
+        /// The index identifying the table for the instruction.
+        table: TableIdx,
+    },
+
+    /// A Wasm `table.set` instruction: `table[index] = value`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
+    TableSet {
+        /// The register holding the `index` of the instruction.
+        index: Register,
+        /// The register holding the `value` of the instruction.
+        value: Register,
+    },
+    /// A Wasm `table.set` instruction: `table[index] = value`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
+    /// encoding the `value` of the `table.set` instruction.
+    TableSetImm {
+        /// The register holding the `index` of the instruction.
+        index: Register,
+        /// A reference to the constant `value` of the instruction.
+        value: ConstRef,
+    },
+    /// A Wasm `table.set` immediate instruction.
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::TableSetImm`] for 32-bit values.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
+    TableSetImm32 {
+        /// The register holding the `index` of the instruction.
+        index: Register,
+        /// The 32-bit constant `value` of the instruction.
+        value: Const32,
+    },
+    /// A Wasm `table.set` immediate instruction.
+    ///
+    /// # Note
+    ///
+    /// This is a variant of [`Instruction::TableSet`] for constant indices.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
+    TableSetImmIndex {
+        /// The 32-bit constant `index` of the instruction.
+        index: Const32,
+        /// The register holding the `value` of the instruction.
+        value: Register,
+    },
+    /// A Wasm `table.set` immediate instruction.
+    ///
+    /// # Note
+    ///
+    /// This is a variant of [`Instruction::TableSetImm`] for constant indices.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be follow by
+    ///
+    /// 1. [`Instruction::Const32`]: encoding the `index` of the instruction
+    /// 2. [`Instruction::ConstRef`]: encoding the `value` of the instruction
+    TableSetImmIndexImm(TableIdx),
+    /// A Wasm `table.set` immediate instruction.
+    ///
+    /// # Note
+    ///
+    /// This is a variant of [`Instruction::TableSetImm32`] for constant indices.
+    /// This is an optimization of [`Instruction::TableSetImmIndexImm`] for 32-bit values.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be follow by
+    ///
+    /// 1. [`Instruction::Const32`]: encoding the `index` of the instruction
+    /// 2. [`Instruction::Const32`]: encoding the 32-bit `value` of the instruction
+    TableSetImmIndexImm32(TableIdx),
+
     /// Wasm `global.get` equivalent `wasmi` instruction.
     GlobalGet {
-        /// The register storing the result of the `global.get` instruction.
+        /// The register storing the result of the instruction.
         result: Register,
         /// The index identifying the global variable for the `global.get` instruction.
         global: GlobalIdx,
