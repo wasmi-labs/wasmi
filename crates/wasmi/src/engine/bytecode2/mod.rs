@@ -682,6 +682,74 @@ pub enum Instruction {
         dst: Const32,
     },
 
+    /// Wasm `table.grow <table>` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
+    TableGrow {
+        /// Register holding the result of the instruction.
+        result: Register,
+        /// The number of elements to add to the table.
+        delta: Register,
+        /// The value that is used to fill up the new cells.
+        value: Register,
+    },
+    /// Wasm `table.grow <table>` instruction.
+    ///
+    /// # Note
+    ///
+    /// A variant of [`Instruction::TableGrow`] with constant `delta`.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Const32`]: the `delta` number of elements to add to the table
+    /// 2. [`Instruction::TableIdx`]: the Wasm table that shall be grown
+    TableGrowByImm {
+        /// Register holding the result of the instruction.
+        result: Register,
+        /// The value that is used to fill up the new cells.
+        value: Register,
+    },
+    /// Wasm `table.grow <table>` instruction.
+    ///
+    /// # Note
+    ///
+    /// A variant of [`Instruction::TableGrow`] with constant fill `value`.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::ConstRef`]: the `value` that is used to fill up the new cells
+    /// 2. [`Instruction::TableIdx`]: the Wasm table that shall be grown
+    TableGrowValImm {
+        /// Register holding the result of the instruction.
+        result: Register,
+        /// The `delta` number of elements to add to the table.
+        delta: Register,
+    },
+    /// Wasm `table.grow <table>` instruction.
+    ///
+    /// # Note
+    ///
+    /// A variant of [`Instruction::TableGrow`] with constant `value` and `delta`.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::ConstRef`]: the `value` that is used to fill up the new cells
+    /// 2. [`Instruction::TableIdx`]: the Wasm table that shall be grown
+    TableGrowByImmValImm {
+        /// Register holding the result of the instruction.
+        result: Register,
+        /// The `delta` number of elements to add to the table.
+        delta: Const32,
+    },
+
     /// Wasm `global.get` equivalent `wasmi` instruction.
     GlobalGet {
         /// The register storing the result of the instruction.
