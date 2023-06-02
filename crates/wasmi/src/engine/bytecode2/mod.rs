@@ -5,6 +5,8 @@ mod immediate;
 #[cfg(test)]
 mod tests;
 
+use wasmi_core::TrapCode;
+
 use self::immediate::{Const16, Const32};
 use super::{
     bytecode::{DataSegmentIdx, ElementSegmentIdx, GlobalIdx, TableIdx},
@@ -243,6 +245,16 @@ pub enum Instruction {
     /// If it is ever executed for example due to the result of a
     /// bug in the interpreter the execution will trap.
     Register(Register),
+
+    /// Traps the execution with the given [`TrapCode`].
+    /// 
+    /// # Note
+    /// 
+    /// Used to represent Wasm `unreachable` instruction
+    /// as well as code paths that are determined to always
+    /// lead to traps during execution. For example division
+    /// by constant zero.
+    Trap(TrapCode),
 
     /// A Wasm `select` or `select <ty>` instruction.
     ///
