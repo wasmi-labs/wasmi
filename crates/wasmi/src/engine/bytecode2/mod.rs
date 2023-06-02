@@ -9,8 +9,6 @@ mod tests;
 #[cfg(doc)]
 use self::provider::ProviderSlice;
 
-use wasmi_core::TrapCode;
-
 use self::{
     immediate::{Const16, Const32},
     provider::ProviderSliceRef,
@@ -19,6 +17,7 @@ use super::{
     bytecode::{DataSegmentIdx, ElementSegmentIdx, GlobalIdx, TableIdx},
     const_pool::ConstRef,
 };
+use wasmi_core::TrapCode;
 
 /// An index into a register.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
