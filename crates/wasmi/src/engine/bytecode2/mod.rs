@@ -338,6 +338,8 @@ pub enum Instruction {
 
     /// Wasm `table.copy <dst> <src>` instruction.
     ///
+    /// Copies elements from `table<src>[src..src+len]` to `table<dst>[dst..dst+len]`.
+    ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by
@@ -353,6 +355,8 @@ pub enum Instruction {
         len: Register,
     },
     /// Wasm `table.copy <dst> <src>` instruction.
+    ///
+    /// Copies elements from `table<src>[src..src+len]` to `table<dst>[dst..dst+len]`.
     ///
     /// # Note
     ///
@@ -375,6 +379,8 @@ pub enum Instruction {
     },
     /// Wasm `table.copy <dst> <src>` instruction.
     ///
+    /// Copies elements from `table<src>[src..src+len]` to `table<dst>[dst..dst+len]`.
+    ///
     /// # Note
     ///
     /// Variants of [`Instruction::TableCopy`] with constant values for
@@ -395,6 +401,8 @@ pub enum Instruction {
         len: Register,
     },
     /// Wasm `table.copy <dst> <src>` instruction.
+    ///
+    /// Copies elements from `table<src>[src..src+len]` to `table<dst>[dst..dst+len]`.
     ///
     /// # Note
     ///
@@ -418,6 +426,8 @@ pub enum Instruction {
     },
     /// Wasm `table.copy <dst> <src>` instruction.
     ///
+    /// Copies elements from `table<src>[src..src+len]` to `table<dst>[dst..dst+len]`.
+    ///
     /// # Note
     ///
     /// Variants of [`Instruction::TableCopy`] with constant values for
@@ -438,6 +448,8 @@ pub enum Instruction {
         len: Register,
     },
     /// Wasm `table.copy <dst> <src>` instruction.
+    ///
+    /// Copies elements from `table<src>[src..src+len]` to `table<dst>[dst..dst+len]`.
     ///
     /// # Note
     ///
@@ -461,6 +473,8 @@ pub enum Instruction {
     },
     /// Wasm `table.copy <dst> <src>` instruction.
     ///
+    /// Copies elements from `table<src>[src..src+len]` to `table<dst>[dst..dst+len]`.
+    ///
     /// # Note
     ///
     /// Variants of [`Instruction::TableCopy`] with constant values for
@@ -482,6 +496,8 @@ pub enum Instruction {
         len: Register,
     },
     /// Wasm `table.copy <dst> <src>` instruction.
+    ///
+    /// Copies elements from `table<src>[src..src+len]` to `table<dst>[dst..dst+len]`.
     ///
     /// # Note
     ///
@@ -506,6 +522,8 @@ pub enum Instruction {
 
     /// Wasm `table.init <table> <elem>` instruction.
     ///
+    /// Initializes elements in `table[dst..dst+len]` from `elem[src..src+len]`.
+    ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by
@@ -521,6 +539,8 @@ pub enum Instruction {
         len: Register,
     },
     /// Wasm `table.init <table> <elem>` instruction.
+    ///
+    /// Initializes elements in `table[dst..dst+len]` from `elem[src..src+len]`.
     ///
     /// # Note
     ///
@@ -543,6 +563,8 @@ pub enum Instruction {
     },
     /// Wasm `table.init <table> <elem>` instruction.
     ///
+    /// Initializes elements in `table[dst..dst+len]` from `elem[src..src+len]`.
+    ///
     /// # Note
     ///
     /// Variants of [`Instruction::TableInit`] with constant values for
@@ -563,6 +585,8 @@ pub enum Instruction {
         len: Register,
     },
     /// Wasm `table.init <table> <elem>` instruction.
+    ///
+    /// Initializes elements in `table[dst..dst+len]` from `elem[src..src+len]`.
     ///
     /// # Note
     ///
@@ -586,6 +610,8 @@ pub enum Instruction {
     },
     /// Wasm `table.init <table> <elem>` instruction.
     ///
+    /// Initializes elements in `table[dst..dst+len]` from `elem[src..src+len]`.
+    ///
     /// # Note
     ///
     /// Variants of [`Instruction::TableInit`] with constant values for
@@ -606,6 +632,8 @@ pub enum Instruction {
         len: Register,
     },
     /// Wasm `table.init <table> <elem>` instruction.
+    ///
+    /// Initializes elements in `table[dst..dst+len]` from `elem[src..src+len]`.
     ///
     /// # Note
     ///
@@ -629,6 +657,8 @@ pub enum Instruction {
     },
     /// Wasm `table.init <table> <elem>` instruction.
     ///
+    /// Initializes elements in `table[dst..dst+len]` from `elem[src..src+len]`.
+    ///
     /// # Note
     ///
     /// Variants of [`Instruction::TableInit`] with constant values for
@@ -650,6 +680,8 @@ pub enum Instruction {
         len: Register,
     },
     /// Wasm `table.init <table> <elem>` instruction.
+    ///
+    /// Initializes elements in `table[dst..dst+len]` from `elem[src..src+len]`.
     ///
     /// # Note
     ///
