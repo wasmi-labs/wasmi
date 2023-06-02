@@ -352,7 +352,7 @@ pub enum Instruction {
     /// 1. [`Instruction::Const32`]: the `len` value for the instruction
     /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
     /// 3. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    TableCopyRri {
+    TableCopyRrc {
         /// The start index of the `src` table.
         src: Register,
         /// The start index of the `dst` table.
@@ -367,7 +367,7 @@ pub enum Instruction {
     /// 1. [`Instruction::Const32`]: the `dst` value for the instruction
     /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
     /// 3. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    TableCopyRir {
+    TableCopyRcr {
         /// The start index of the `src` table.
         src: Register,
         /// The number of copied elements.
@@ -382,7 +382,7 @@ pub enum Instruction {
     /// 1. [`Instruction::Const32`]: the `len` value for the instruction
     /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
     /// 3. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    TableCopyRii {
+    TableCopyRcc {
         /// The start index of the `src` table.
         src: Register,
         /// The start index of the `dst` table.
@@ -397,7 +397,7 @@ pub enum Instruction {
     /// 1. [`Instruction::Const32`]: the `src` value for the instruction
     /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
     /// 3. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    TableCopyIrr {
+    TableCopyCrr {
         /// The start index of the `dst` table.
         dst: Register,
         /// The number of copied elements.
@@ -412,7 +412,7 @@ pub enum Instruction {
     /// 1. [`Instruction::Const32`]: the `len` value for the instruction
     /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
     /// 3. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    TableCopyIri {
+    TableCopyCrc {
         /// The start index of the `src` table.
         src: Const32,
         /// The start index of the `dst` table.
@@ -427,7 +427,7 @@ pub enum Instruction {
     /// 1. [`Instruction::Const32`]: the `dst` value for the instruction
     /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
     /// 3. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    TableCopyIir {
+    TableCopyCcr {
         /// The start index of the `src` table.
         src: Const32,
         /// The number of copied elements.
@@ -443,7 +443,7 @@ pub enum Instruction {
     /// 2. [`Instruction::Const32`]: the `len` value for the instruction
     /// 3. [`Instruction::TableIdx`]: the `src` Wasm table instance
     /// 4. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    TableCopyIii {
+    TableCopyCcc {
         /// The start index of the `src` table.
         src: Const32,
     },
@@ -473,7 +473,7 @@ pub enum Instruction {
     /// 1. [`Instruction::Const32`]: the `len` value for the instruction
     /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
     /// 3. [`Instruction::ElementSegmentIdx`]: the `dst` Wasm table instance
-    TableInitRri {
+    TableInitRrc {
         /// The start index of the `src` table.
         src: Register,
         /// The start index of the `elem` element segment.
@@ -488,7 +488,7 @@ pub enum Instruction {
     /// 1. [`Instruction::Const32`]: the start index of the `elem` element segment
     /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
     /// 3. [`Instruction::ElementSegmentIdx`]: the `elem` Wasm element segment
-    TableInitRir {
+    TableInitRcr {
         /// The start index of the `src` table.
         src: Register,
         /// The number of copied elements.
@@ -503,7 +503,7 @@ pub enum Instruction {
     /// 1. [`Instruction::Const32`]: the number of copied elements
     /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
     /// 3. [`Instruction::ElementSegmentIdx`]: the `elem` Wasm element segment
-    TableInitRii {
+    TableInitRcc {
         /// The start index of the `src` table.
         src: Register,
         /// The start index of the `elem` element segment.
@@ -518,7 +518,7 @@ pub enum Instruction {
     /// 1. [`Instruction::Const32`]: the start index of the `src` table
     /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
     /// 3. [`Instruction::ElementSegmentIdx`]: the `elem` Wasm element segment
-    TableInitIrr {
+    TableInitCrr {
         /// The start index of the `elem` element segment.
         elem: Register,
         /// The number of copied elements.
@@ -533,7 +533,7 @@ pub enum Instruction {
     /// 1. [`Instruction::Const32`]: the number of copied elements
     /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
     /// 3. [`Instruction::ElementSegmentIdx`]: the `elem` Wasm element segment
-    TableInitIri {
+    TableInitCrc {
         /// The start index of the `src` table.
         src: Const32,
         /// The start index of the `elem` element segment.
@@ -548,7 +548,7 @@ pub enum Instruction {
     /// 1. [`Instruction::Const32`]: the start index of the `elem` element segment
     /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
     /// 3. [`Instruction::ElementSegmentIdx`]: the `elem` Wasm element segment
-    TableInitIir {
+    TableInitCcr {
         /// The start index of the `src` table.
         src: Const32,
         /// The number of copied elements.
@@ -564,7 +564,7 @@ pub enum Instruction {
     /// 2. [`Instruction::Const32`]: the number of copied elements
     /// 3. [`Instruction::TableIdx`]: the `src` Wasm table instance
     /// 4. [`Instruction::ElementSegmentIdx`]: the `elem` Wasm element segment
-    TableInitIii {
+    TableInitCcc {
         /// The start index of the `src` table.
         src: Const32,
     },
@@ -592,7 +592,7 @@ pub enum Instruction {
     ///
     /// 1. [`Instruction::Const32`]: the number of elements to fill
     /// 2. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    TableFillRri {
+    TableFillRrc {
         /// The start index of the table to fill.
         dst: Register,
         /// The value of the filled elements.
@@ -606,7 +606,7 @@ pub enum Instruction {
     ///
     /// 1. [`Instruction::ConstRef`]: a reference to the `value` to fill
     /// 2. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    TableFillRir {
+    TableFillRcr {
         /// The start index of the table to fill.
         dst: Register,
         /// The number of elements to fill.
@@ -620,7 +620,7 @@ pub enum Instruction {
     ///
     /// 1. [`Instruction::Const32`]: the number of elements to fill
     /// 2. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    TableFillRii {
+    TableFillRcc {
         /// The start index of the table to fill.
         dst: Register,
         /// The value of the filled elements.
@@ -634,7 +634,7 @@ pub enum Instruction {
     ///
     /// 1. [`Instruction::Const32`]: the start index of the table to fill
     /// 2. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    TableFillIrr {
+    TableFillCrr {
         /// The value of the filled elements.
         value: Register,
         /// The number of elements to fill.
@@ -648,7 +648,7 @@ pub enum Instruction {
     ///
     /// 1. [`Instruction::Const32`]: the number of elements to fill
     /// 2. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    TableFillIri {
+    TableFillCrc {
         /// The start index of the table to fill.
         dst: Const32,
         /// The value of the filled elements.
@@ -662,7 +662,7 @@ pub enum Instruction {
     ///
     /// 1. [`Instruction::ConstRef`]: a reference to the `value` to fill
     /// 2. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    TableFillIir {
+    TableFillCcr {
         /// The start index of the table to fill.
         dst: Const32,
         /// The number of elements to fill.
@@ -677,7 +677,7 @@ pub enum Instruction {
     /// 1. [`Instruction::ConstRef`]: a reference to the `value` to fill
     /// 2. [`Instruction::Const32`]: the number of elements to fill
     /// 3. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    TableFillIii {
+    TableFillCcc {
         /// The start index of the table to fill.
         dst: Const32,
     },
