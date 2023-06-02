@@ -6,6 +6,9 @@ mod provider;
 #[cfg(test)]
 mod tests;
 
+#[cfg(doc)]
+use self::provider::ProviderSlice;
+
 use wasmi_core::TrapCode;
 
 use self::{
@@ -306,9 +309,9 @@ pub enum Instruction {
     ///
     /// # Note
     ///
-    /// Returns values as stored in the referenced [`ValueSlice`].
+    /// Returns values as stored in the referenced [`ProviderSlice`].
     ReturnValues {
-        /// Identifier for a [`ValueSlice`].
+        /// Identifier for a [`ProviderSlice`].
         values: ProviderSliceRef,
     },
 
