@@ -336,7 +336,7 @@ pub enum Instruction {
     /// 2. [`Instruction::Const32`]: encoding the 32-bit `value` of the instruction
     TableSetImm32AtImm(TableIdx),
 
-    /// Wasm `table.copy <src> <dst>` instruction.
+    /// Wasm `table.copy <dst> <src>` instruction.
     ///
     /// # Encoding
     ///
@@ -344,117 +344,164 @@ pub enum Instruction {
     ///
     /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
     /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
-    TableCopyRrr {
-        /// The start index of the `src` table.
-        src: Register,
+    TableCopy {
         /// The start index of the `dst` table.
         dst: Register,
+        /// The start index of the `src` table.
+        src: Register,
         /// The number of copied elements.
         len: Register,
     },
     /// Wasm `table.copy <dst> <src>` instruction.
     ///
+    /// # Note
+    ///
+    /// Variants of [`Instruction::TableCopy`] with constant values for
+    ///
+    /// - `len`: the number of copied elements
+    ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::Const32`]: the `len` value for the instruction
+    /// 1. [`Instruction::Const32`] - `len`: the number of copied elements
     /// 2. [`Instruction::TableIdx`]: the `dst` Wasm table instance
     /// 3. [`Instruction::TableIdx`]: the `src` Wasm table instance
     TableCopyRrc {
-        /// The start index of the `src` table.
-        src: Register,
         /// The start index of the `dst` table.
         dst: Register,
+        /// The start index of the `src` table.
+        src: Register,
     },
     /// Wasm `table.copy <dst> <src>` instruction.
+    ///
+    /// # Note
+    ///
+    /// Variants of [`Instruction::TableCopy`] with constant values for
+    ///
+    /// - `src`: the start index of the `src` table
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::Const32`]: the `dst` value for the instruction
+    /// 1. [`Instruction::Const32`] - `src`: the start index of the `src` table
     /// 2. [`Instruction::TableIdx`]: the `dst` Wasm table instance
     /// 3. [`Instruction::TableIdx`]: the `src` Wasm table instance
     TableCopyRcr {
-        /// The start index of the `src` table.
-        src: Register,
+        /// The start index of the `dst` table.
+        dst: Register,
         /// The number of copied elements.
         len: Register,
     },
     /// Wasm `table.copy <dst> <src>` instruction.
     ///
+    /// # Note
+    ///
+    /// Variants of [`Instruction::TableCopy`] with constant values for
+    ///
+    /// - `src`: the start index of the `src` table
+    /// - `len`: the number of copied elements
+    ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::Const32`]: the `len` value for the instruction
+    /// 1. [`Instruction::Const32`] - `len`: the number of copied elements
     /// 2. [`Instruction::TableIdx`]: the `dst` Wasm table instance
     /// 3. [`Instruction::TableIdx`]: the `src` Wasm table instance
     TableCopyRcc {
-        /// The start index of the `src` table.
-        src: Register,
         /// The start index of the `dst` table.
-        dst: Const32,
+        dst: Register,
+        /// The start index of the `src` table.
+        src: Const32,
     },
     /// Wasm `table.copy <dst> <src>` instruction.
+    ///
+    /// # Note
+    ///
+    /// Variants of [`Instruction::TableCopy`] with constant values for
+    ///
+    /// - `dst`: the start index of the `dst` table
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::Const32`]: the `src` value for the instruction
+    /// 1. [`Instruction::Const32`] - `dst`: the start index of the `dst` table
     /// 2. [`Instruction::TableIdx`]: the `dst` Wasm table instance
     /// 3. [`Instruction::TableIdx`]: the `src` Wasm table instance
     TableCopyCrr {
-        /// The start index of the `dst` table.
-        dst: Register,
+        /// The start index of the `src` table.
+        src: Register,
         /// The number of copied elements.
         len: Register,
     },
     /// Wasm `table.copy <dst> <src>` instruction.
     ///
+    /// # Note
+    ///
+    /// Variants of [`Instruction::TableCopy`] with constant values for
+    ///
+    /// - `dst`: the start index of the `dst` table
+    /// - `len`: the number of copied elements
+    ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::Const32`]: the `len` value for the instruction
+    /// 1. [`Instruction::Const32`] - `len`: the number of copied elements
     /// 2. [`Instruction::TableIdx`]: the `dst` Wasm table instance
     /// 3. [`Instruction::TableIdx`]: the `src` Wasm table instance
     TableCopyCrc {
-        /// The start index of the `src` table.
-        src: Const32,
         /// The start index of the `dst` table.
-        dst: Register,
+        dst: Const32,
+        /// The start index of the `src` table.
+        src: Register,
     },
     /// Wasm `table.copy <dst> <src>` instruction.
+    ///
+    /// # Note
+    ///
+    /// Variants of [`Instruction::TableCopy`] with constant values for
+    ///
+    /// - `dst`: the start index of the `dst` table
+    /// - `src`: the start index of the `src` table
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::Const32`]: the `dst` value for the instruction
+    /// 1. [`Instruction::Const32`] - `src`: the start index of the `src` table
     /// 2. [`Instruction::TableIdx`]: the `dst` Wasm table instance
     /// 3. [`Instruction::TableIdx`]: the `src` Wasm table instance
     TableCopyCcr {
-        /// The start index of the `src` table.
-        src: Const32,
+        /// The start index of the `dst` table.
+        dst: Const32,
         /// The number of copied elements.
         len: Register,
     },
     /// Wasm `table.copy <dst> <src>` instruction.
     ///
+    /// # Note
+    ///
+    /// Variants of [`Instruction::TableCopy`] with constant values for
+    ///
+    /// - `dst`: the start index of the `dst` table
+    /// - `src`: the start index of the `src` table
+    /// - `len`: the number of copied elements
+    ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::Const32`]: the `dst` value for the instruction
-    /// 2. [`Instruction::Const32`]: the `len` value for the instruction
+    /// 1. [`Instruction::Const32`] - `src`: the start index of the `src` table
+    /// 1. [`Instruction::Const32`] - `len`: the number of copied elements
     /// 2. [`Instruction::TableIdx`]: the `dst` Wasm table instance
     /// 3. [`Instruction::TableIdx`]: the `src` Wasm table instance
     TableCopyCcc {
-        /// The start index of the `src` table.
-        src: Const32,
+        /// The start index of the `dst` table.
+        dst: Const32,
     },
 
     /// Wasm `table.init <table> <elem>` instruction.
