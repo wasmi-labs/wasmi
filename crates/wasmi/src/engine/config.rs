@@ -35,6 +35,12 @@ pub struct Config {
     floats: bool,
     /// Is `true` if `wasmi` executions shall consume fuel.
     consume_fuel: bool,
+    /// Is `true` if `wasmi` shall translate to register-machine bytecode.
+    ///
+    /// # Note
+    ///
+    /// This is an experimental feature and might cause crashes or bugs.
+    register_machine_translation: bool,
     /// The fuel consumption mode of the `wasmi` [`Engine`](crate::Engine).
     fuel_consumption_mode: FuelConsumptionMode,
     /// The configured fuel costs of all `wasmi` bytecode instructions.
@@ -206,6 +212,7 @@ impl Default for Config {
             extended_const: false,
             floats: true,
             consume_fuel: false,
+            register_machine_translation: false,
             fuel_costs: FuelCosts::default(),
             fuel_consumption_mode: FuelConsumptionMode::default(),
         }
@@ -341,6 +348,14 @@ impl Config {
     /// Enabled by default.
     pub fn floats(&mut self, enable: bool) -> &mut Self {
         self.floats = enable;
+        self
+    }
+
+    /// Enable or disable translation to register-machine bytecode.
+    ///
+    /// Enabled by default.
+    pub fn register_machine_translation(&mut self, enable: bool) -> &mut Self {
+        self.register_machine_translation = enable;
         self
     }
 
