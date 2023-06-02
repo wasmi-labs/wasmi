@@ -948,6 +948,8 @@ pub enum Instruction {
     },
 
     /// Wasm `memory.copy` instruction.
+    ///
+    /// Copies bytes from `memory[src..src+len]` to `memory[dst..dst+len]`.
     MemoryCopy {
         /// The start index of the `src` memory buffer.
         src: Register,
@@ -957,6 +959,8 @@ pub enum Instruction {
         len: Register,
     },
     /// Wasm `memory.copy` instruction.
+    ///
+    /// Copies bytes from `memory[src..src+len]` to `memory[dst..dst+len]`.
     ///
     /// # Note
     ///
@@ -977,6 +981,8 @@ pub enum Instruction {
     },
     /// Wasm `memory.copy` instruction.
     ///
+    /// Copies bytes from `memory[src..src+len]` to `memory[dst..dst+len]`.
+    ///
     /// # Note
     ///
     /// Variant of [`Instruction::MemoryCopy`] with constant value for
@@ -995,6 +1001,8 @@ pub enum Instruction {
         len: Register,
     },
     /// Wasm `memory.copy` instruction.
+    ///
+    /// Copies bytes from `memory[src..src+len]` to `memory[dst..dst+len]`.
     ///
     /// # Note
     ///
@@ -1016,6 +1024,8 @@ pub enum Instruction {
     },
     /// Wasm `memory.copy` instruction.
     ///
+    /// Copies bytes from `memory[src..src+len]` to `memory[dst..dst+len]`.
+    ///
     /// # Note
     ///
     /// Variant of [`Instruction::MemoryCopy`] with constant value for
@@ -1034,6 +1044,8 @@ pub enum Instruction {
         len: Register,
     },
     /// Wasm `memory.copy` instruction.
+    ///
+    /// Copies bytes from `memory[src..src+len]` to `memory[dst..dst+len]`.
     ///
     /// # Note
     ///
@@ -1055,6 +1067,8 @@ pub enum Instruction {
     },
     /// Wasm `memory.copy` instruction.
     ///
+    /// Copies bytes from `memory[src..src+len]` to `memory[dst..dst+len]`.
+    ///
     /// # Note
     ///
     /// Variant of [`Instruction::MemoryCopy`] with constant value for
@@ -1074,6 +1088,8 @@ pub enum Instruction {
         len: Register,
     },
     /// Wasm `memory.copy` instruction.
+    ///
+    /// Copies bytes from `memory[src..src+len]` to `memory[dst..dst+len]`.
     ///
     /// # Note
     ///
@@ -1095,6 +1111,8 @@ pub enum Instruction {
     },
 
     /// Wasm `memory.fill` instruction.
+    ///
+    /// Sets bytes of `memory[dst..dst+len]` to `value`.
     MemoryFill {
         /// The start index of the memory to fill.
         dst: Register,
@@ -1104,6 +1122,8 @@ pub enum Instruction {
         len: Register,
     },
     /// Wasm `memory.fill` instruction.
+    ///
+    /// Sets bytes of `memory[dst..dst+len]` to `value`.
     ///
     /// # Note
     ///
@@ -1124,6 +1144,8 @@ pub enum Instruction {
     },
     /// Wasm `memory.fill` instruction.
     ///
+    /// Sets bytes of `memory[dst..dst+len]` to `value`.
+    ///
     /// # Note
     ///
     /// Variant of [`Instruction::MemoryFill`] with constant value for
@@ -1138,6 +1160,8 @@ pub enum Instruction {
         len: Register,
     },
     /// Wasm `memory.fill` instruction.
+    ///
+    /// Sets bytes of `memory[dst..dst+len]` to `value`.
     ///
     /// # Note
     ///
@@ -1159,6 +1183,8 @@ pub enum Instruction {
     },
     /// Wasm `memory.fill` instruction.
     ///
+    /// Sets bytes of `memory[dst..dst+len]` to `value`.
+    ///
     /// # Note
     ///
     /// Variant of [`Instruction::MemoryFill`] with constant value for
@@ -1177,6 +1203,8 @@ pub enum Instruction {
         len: Register,
     },
     /// Wasm `memory.fill` instruction.
+    ///
+    /// Sets bytes of `memory[dst..dst+len]` to `value`.
     ///
     /// # Note
     ///
@@ -1198,6 +1226,8 @@ pub enum Instruction {
     },
     /// Wasm `memory.fill` instruction.
     ///
+    /// Sets bytes of `memory[dst..dst+len]` to `value`.
+    ///
     /// # Note
     ///
     /// Variant of [`Instruction::MemoryFill`] with constant value for
@@ -1217,6 +1247,8 @@ pub enum Instruction {
         len: Register,
     },
     /// Wasm `memory.fill` instruction.
+    ///
+    /// Sets bytes of `memory[dst..dst+len]` to `value`.
     ///
     /// # Note
     ///
@@ -1238,7 +1270,9 @@ pub enum Instruction {
         value: u8,
     },
 
-    /// Wasm `memory.init <elem>` instruction.
+    /// Wasm `memory.init <data>` instruction.
+    ///
+    /// Initializes bytes of `memory[dst..dst+len]` from `data[src..src+len]`.
     ///
     /// # Encoding
     ///
@@ -1253,7 +1287,9 @@ pub enum Instruction {
         /// The number of bytes to initialize.
         len: Register,
     },
-    /// Wasm `memory.init <elem>` instruction.
+    /// Wasm `memory.init <data>` instruction.
+    ///
+    /// Initializes bytes of `memory[dst..dst+len]` from `data[src..src+len]`.
     ///
     /// # Note
     ///
@@ -1273,7 +1309,9 @@ pub enum Instruction {
         /// The start index of the data segment.
         src: Register,
     },
-    /// Wasm `memory.init <elem>` instruction.
+    /// Wasm `memory.init <data>` instruction.
+    ///
+    /// Initializes bytes of `memory[dst..dst+len]` from `data[src..src+len]`.
     ///
     /// # Note
     ///
@@ -1293,7 +1331,9 @@ pub enum Instruction {
         /// The number of bytes to initialize.
         len: Register,
     },
-    /// Wasm `memory.init <elem>` instruction.
+    /// Wasm `memory.init <data>` instruction.
+    ///
+    /// Initializes bytes of `memory[dst..dst+len]` from `data[src..src+len]`.
     ///
     /// # Note
     ///
@@ -1314,7 +1354,9 @@ pub enum Instruction {
         /// The start index of the data segment.
         src: Const32,
     },
-    /// Wasm `memory.init <elem>` instruction.
+    /// Wasm `memory.init <data>` instruction.
+    ///
+    /// Initializes bytes of `memory[dst..dst+len]` from `data[src..src+len]`.
     ///
     /// # Note
     ///
@@ -1334,7 +1376,9 @@ pub enum Instruction {
         /// The number of bytes to initialize.
         len: Register,
     },
-    /// Wasm `memory.init <elem>` instruction.
+    /// Wasm `memory.init <data>` instruction.
+    ///
+    /// Initializes bytes of `memory[dst..dst+len]` from `data[src..src+len]`.
     ///
     /// # Note
     ///
@@ -1355,7 +1399,9 @@ pub enum Instruction {
         /// The start index of the data segment.
         src: Register,
     },
-    /// Wasm `memory.init <elem>` instruction.
+    /// Wasm `memory.init <data>` instruction.
+    ///
+    /// Initializes bytes of `memory[dst..dst+len]` from `data[src..src+len]`.
     ///
     /// # Note
     ///
