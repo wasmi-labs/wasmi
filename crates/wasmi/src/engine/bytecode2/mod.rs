@@ -812,6 +812,153 @@ pub enum Instruction {
         value: u8,
     },
 
+    /// Wasm `memory.copy` instruction.
+    MemoryCopy {
+        /// The start index of the `src` memory buffer.
+        src: Register,
+        /// The start index of the `dst` memory buffer.
+        dst: Register,
+        /// The number of copied bytes.
+        len: Register,
+    },
+    /// Wasm `memory.copy` instruction.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::MemoryCopy`] with constant value for
+    ///
+    /// - `len` number of copied bytes
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Const32`]: the number of copied bytes
+    MemoryCopyRrc {
+        /// The start index of the `src` memory buffer.
+        src: Register,
+        /// The start index of the `dst` memory buffer.
+        dst: Register,
+    },
+    /// Wasm `memory.copy` instruction.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::MemoryCopy`] with constant value for
+    ///
+    /// - `dst` start index
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Const32`]: the start index of the `dst` memory buffer
+    MemoryCopyRcr {
+        /// The start index of the `src` memory buffer.
+        src: Register,
+        /// The number of copied bytes.
+        len: Register,
+    },
+    /// Wasm `memory.copy` instruction.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::MemoryCopy`] with constant value for
+    ///
+    /// - `dst` start index
+    /// - `len` number of copied bytes
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Const32`]: the number of copied bytes
+    MemoryCopyRcc {
+        /// The start index of the `src` memory buffer.
+        src: Register,
+        /// The start index of the `dst` memory buffer.
+        dst: Const32,
+    },
+    /// Wasm `memory.copy` instruction.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::MemoryCopy`] with constant value for
+    ///
+    /// - `src` start index
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Const32`]: the start index of the `src` memory buffer
+    MemoryCopyCrr {
+        /// The start index of the `dst` memory buffer.
+        dst: Register,
+        /// The number of copied bytes.
+        len: Register,
+    },
+    /// Wasm `memory.copy` instruction.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::MemoryCopy`] with constant value for
+    ///
+    /// - `src` start index
+    /// - `len` number of copied bytes
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Const32`]: the number of copied bytes
+    MemoryCopyCrc {
+        /// The start index of the `src` memory buffer.
+        src: Const32,
+        /// The start index of the `dst` memory buffer.
+        dst: Register,
+    },
+    /// Wasm `memory.copy` instruction.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::MemoryCopy`] with constant value for
+    ///
+    /// - `src` start index
+    /// - `dst` start index
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Const32`]: the start index of the `dst` memory buffer
+    MemoryCopyCcr {
+        /// The start index of the `src` memory buffer.
+        src: Const32,
+        /// The number of copied bytes.
+        len: Register,
+    },
+    /// Wasm `memory.copy` instruction.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::MemoryCopy`] with constant value for
+    ///
+    /// - `src` start index
+    /// - `dst` start index
+    /// - `len` number of copied bytes
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Const32`]: the start index of the `dst` memory buffer
+    /// 2. [`Instruction::Const32`]: the number of copied bytes
+    MemoryCopyCcc {
+        /// The start index of the `src` memory buffer.
+        src: Const32,
+    },
+
     /// Wasm `global.get` equivalent `wasmi` instruction.
     GlobalGet {
         /// The register storing the result of the instruction.
