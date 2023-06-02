@@ -1,13 +1,17 @@
 #![allow(dead_code)]
 
 mod immediate;
+mod provider;
 
 #[cfg(test)]
 mod tests;
 
 use wasmi_core::TrapCode;
 
-use self::immediate::{Const16, Const32};
+use self::{
+    immediate::{Const16, Const32},
+    provider::ProviderSliceRef,
+};
 use super::{
     bytecode::{DataSegmentIdx, ElementSegmentIdx, GlobalIdx, TableIdx},
     const_pool::ConstRef,
@@ -247,14 +251,66 @@ pub enum Instruction {
     Register(Register),
 
     /// Traps the execution with the given [`TrapCode`].
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// Used to represent Wasm `unreachable` instruction
     /// as well as code paths that are determined to always
     /// lead to traps during execution. For example division
     /// by constant zero.
     Trap(TrapCode),
+
+    /// A Wasm `return` instruction.
+    ///
+    /// # Note
+    ///
+    /// Returns nothing.
+    Return,
+    /// A Wasm `return` instruction.
+    ///
+    /// # Note
+    ///
+    /// Returns a single value stored in a register.
+    ReturnReg {
+        /// The returned value.
+        value: Register,
+    },
+    /// A Wasm `return` instruction.
+    ///
+    /// # Note
+    ///
+    /// Returns a single constant value referenced via [`ConstRef`].
+    ReturnImm {
+        /// The returned constant value.
+        value: ConstRef,
+    },
+    /// A Wasm `return` instruction.
+    ///
+    /// # Note
+    ///
+    /// Returns a single 32-bit constant value.
+    ReturnImm32 {
+        /// The returned 32-bit constant value.
+        value: Const32,
+    },
+    /// A Wasm `return` instruction.
+    ///
+    /// # Note
+    ///
+    /// Returns a single 32-bit encoded `i64` constant value.
+    ReturnI64Imm32 {
+        /// The returned constant value.
+        value: Const32,
+    },
+    /// A Wasm `return` instruction.
+    ///
+    /// # Note
+    ///
+    /// Returns values as stored in the referenced [`ValueSlice`].
+    ReturnValues {
+        /// Identifier for a [`ValueSlice`].
+        values: ProviderSliceRef,
+    },
 
     /// A Wasm `select` or `select <ty>` instruction.
     ///
