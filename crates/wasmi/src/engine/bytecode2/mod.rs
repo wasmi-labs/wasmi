@@ -225,7 +225,7 @@ pub enum Instruction {
     /// If it is ever executed for example due to the result of a
     /// bug in the interpreter the execution will trap.
     ConstRef(ConstRef),
-    /// An [`Const32`] instruction parameter.
+    /// A [`Const32`] instruction parameter.
     ///
     /// # Note
     ///
@@ -234,6 +234,178 @@ pub enum Instruction {
     /// If it is ever executed for example due to the result of a
     /// bug in the interpreter the execution will trap.
     Const32(Const32),
+    /// A [`Register`] instruction parameter.
+    ///
+    /// # Note
+    ///
+    /// This [`Instruction`] must not be executed directly since
+    /// it only serves as data for other actual instructions.
+    /// If it is ever executed for example due to the result of a
+    /// bug in the interpreter the execution will trap.
+    Register(Register),
+
+    /// A Wasm `select` or `select <ty>` instruction.
+    ///
+    /// Inspect `condition` and if `condition != 0`:
+    ///
+    /// - `true` : store `lhs` into `result`
+    /// - `false`: store `rhs` into `result`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Register`] - `rhs`: Value returned if `condition` is zero
+    Select {
+        /// The register holding the result of the instruction.
+        result: Register,
+        /// The `condition` that determines which value to store into `result`.
+        condition: Register,
+        /// Value returned if `condition` is non-zero.
+        lhs: Register,
+    },
+    /// A Wasm `select` or `select <ty>` instruction.
+    ///
+    /// Inspect `condition` and if `condition != 0`:
+    ///
+    /// - `true` : store `lhs` into `result`
+    /// - `false`: store `rhs` into `result`
+    ///
+    /// # Note
+    ///
+    /// This is a variant of [`Instruction::Select`] with a constant value for `rhs`.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::ConstRef`] - `rhs`: Value returned if `condition` is zero
+    SelectRhsImm {
+        /// The register holding the result of the instruction.
+        result: Register,
+        /// The `condition` that determines which value to store into `result`.
+        condition: Register,
+        /// Value returned if `condition` is non-zero.
+        lhs: Register,
+    },
+    /// A Wasm `select` or `select <ty>` instruction.
+    ///
+    /// Inspect `condition` and if `condition != 0`:
+    ///
+    /// - `true` : store `lhs` into `result`
+    /// - `false`: store `rhs` into `result`
+    ///
+    /// # Note
+    ///
+    /// This is a variant of [`Instruction::SelectRhsImm`] where `rhs` is a 32-bit constant value.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Const32`] - `rhs`: Value returned if `condition` is zero
+    SelectRhsImm32 {
+        /// The register holding the result of the instruction.
+        result: Register,
+        /// The `condition` that determines which value to store into `result`.
+        condition: Register,
+        /// Value returned if `condition` is non-zero.
+        lhs: Register,
+    },
+    /// A Wasm `select` or `select <ty>` instruction.
+    ///
+    /// Inspect `condition` and if `condition != 0`:
+    ///
+    /// - `true` : store `lhs` into `result`
+    /// - `false`: store `rhs` into `result`
+    ///
+    /// # Note
+    ///
+    /// This is a variant of [`Instruction::Select`] with a constant value for `lhs`.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::ConstRef`] - `lhs`: Value returned if `condition` is non-zero
+    SelectLhsImm {
+        /// The register holding the result of the instruction.
+        result: Register,
+        /// The `condition` that determines which value to store into `result`.
+        condition: Register,
+        /// Value returned if `condition` is non-zero.
+        rhs: Register,
+    },
+    /// A Wasm `select` or `select <ty>` instruction.
+    ///
+    /// Inspect `condition` and if `condition != 0`:
+    ///
+    /// - `true` : store `lhs` into `result`
+    /// - `false`: store `rhs` into `result`
+    ///
+    /// # Note
+    ///
+    /// This is a variant of [`Instruction::SelectLhsImm`] where `lhs` is a 32-bit constant value.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Const32`] - `lhs`: Value returned if `condition` is non-zero
+    SelectLhsImm32 {
+        /// The register holding the result of the instruction.
+        result: Register,
+        /// The `condition` that determines which value to store into `result`.
+        condition: Register,
+        /// Value returned if `condition` is non-zero.
+        rhs: Register,
+    },
+    /// A Wasm `select` or `select <ty>` instruction.
+    ///
+    /// Inspect `condition` and if `condition != 0`:
+    ///
+    /// - `true` : store `lhs` into `result`
+    /// - `false`: store `rhs` into `result`
+    ///
+    /// # Note
+    ///
+    /// This is a variant of [`Instruction::Select`] with a constant value for `lhs` and `rhs`.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::ConstRef`] - `lhs`: Value returned if `condition` is non-zero
+    /// 1. [`Instruction::ConstRef`] - `rhs`: Value returned if `condition` is zero
+    SelectImm {
+        /// The register holding the result of the instruction.
+        result: Register,
+        /// The `condition` that determines which value to store into `result`.
+        condition: Register,
+    },
+    /// A Wasm `select` or `select <ty>` instruction.
+    ///
+    /// Inspect `condition` and if `condition != 0`:
+    ///
+    /// - `true` : store `lhs` into `result`
+    /// - `false`: store `rhs` into `result`
+    ///
+    /// # Note
+    ///
+    /// This is a variant of [`Instruction::Select`] with a 32-bit constant value for `lhs` and `rhs`.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::Const32`] - `lhs`: Value returned if `condition` is non-zero
+    /// 1. [`Instruction::Const32`] - `rhs`: Value returned if `condition` is zero
+    SelectImm32 {
+        /// The register holding the result of the instruction.
+        result: Register,
+        /// The `condition` that determines which value to store into `result`.
+        condition: Register,
+    },
 
     /// A Wasm `table.get` instruction: `result = table[index]`
     ///
