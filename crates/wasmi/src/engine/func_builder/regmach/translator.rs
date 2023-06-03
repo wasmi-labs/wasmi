@@ -1,6 +1,6 @@
 //! Register-machine bytecode Wasm function body translator.
 
-#![allow(dead_code, unused_imports)] // TODO: remove
+#![allow(unused_imports)] // TODO: remove
 
 use crate::{
     engine::{
