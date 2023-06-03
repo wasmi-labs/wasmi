@@ -1,3 +1,4 @@
+use super::TranslationError2;
 use crate::engine::bytecode::DropKeepError;
 use alloc::boxed::Box;
 use core::fmt::{self, Display};
@@ -54,6 +55,7 @@ impl Display for TranslationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &*self.inner {
             TranslationErrorInner::Validate(error) => error.fmt(f),
+            TranslationErrorInner::Regmach(error) => error.fmt(f),
             TranslationErrorInner::UnsupportedBlockType(error) => {
                 write!(f, "encountered unsupported Wasm block type: {error:?}")
             }
@@ -86,9 +88,17 @@ impl Display for TranslationError {
     }
 }
 
+impl From<TranslationError2> for TranslationError {
+    fn from(error: TranslationError2) -> Self {
+        Self::new(TranslationErrorInner::Regmach(error))
+    }
+}
+
 /// The inner error type encapsulating internal [`TranslationError`] state.
 #[derive(Debug)]
 pub enum TranslationErrorInner {
+    /// Error encountered when translation to register machine bytecode.
+    Regmach(TranslationError2),
     /// There was either a problem parsing a Wasm input OR validating a Wasm input.
     Validate(wasmparser::BinaryReaderError),
     /// Encountered an unsupported Wasm block type.

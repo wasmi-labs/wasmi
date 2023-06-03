@@ -4,6 +4,7 @@ mod error;
 mod inst_builder;
 mod labels;
 mod locals_registry;
+mod regmach;
 mod translator;
 mod value_stack;
 
@@ -15,6 +16,11 @@ use self::{
 pub use self::{
     error::{TranslationError, TranslationErrorInner},
     inst_builder::{Instr, InstructionsBuilder, RelativeDepth},
+    regmach::{
+        FuncTranslator as FuncTranslator2,
+        FuncTranslatorAllocations as FuncTranslatorAllocations2,
+        TranslationError as TranslationError2,
+    },
     translator::FuncTranslatorAllocations,
 };
 use super::CompiledFunc;
@@ -36,6 +42,15 @@ pub struct FuncBuilder<'parser> {
     validator: FuncValidator,
     /// The underlying Wasm to `wasmi` bytecode translator.
     translator: FuncTranslator<'parser>,
+    /// Is `true` if register-machine based `wasmi` bytecode shall be translated.
+    translate_regmach: bool,
+    /// The underlying Wasm to `wasmi` bytecode translator.
+    ///
+    /// # Note
+    ///
+    /// This is the function translator that generates the register-machine
+    /// based `wasmi` bytecode.
+    translator2: FuncTranslator2<'parser>,
 }
 
 impl<'parser> FuncBuilder<'parser> {
@@ -46,11 +61,14 @@ impl<'parser> FuncBuilder<'parser> {
         res: ModuleResources<'parser>,
         validator: FuncValidator,
         allocations: FuncTranslatorAllocations,
+        allocations2: FuncTranslatorAllocations2,
     ) -> Self {
         Self {
             pos: 0,
             validator,
+            translate_regmach: res.engine().config().register_machine_translation(),
             translator: FuncTranslator::new(func, compiled_func, res, allocations),
+            translator2: FuncTranslator2::new(func, compiled_func, res, allocations2),
         }
     }
 
@@ -93,23 +111,29 @@ impl<'parser> FuncBuilder<'parser> {
         self.translator.finish()?;
         let allocations = ReusableAllocations {
             translation: self.translator.into_allocations(),
+            translation2: self.translator2.into_allocations(),
             validation: self.validator.into_allocations(),
         };
         Ok(allocations)
     }
 
     /// Translates into `wasmi` bytecode if the current code path is reachable.
-    fn validate_then_translate<V, T>(
+    fn validate_then_translate<V, T, T2>(
         &mut self,
         validate: V,
         translate: T,
+        translate2: T2,
     ) -> Result<(), TranslationError>
     where
         V: FnOnce(&mut FuncValidator) -> Result<(), BinaryReaderError>,
         T: FnOnce(&mut FuncTranslator<'parser>) -> Result<(), TranslationError>,
+        T2: FnOnce(&mut FuncTranslator2<'parser>) -> Result<(), TranslationError>,
     {
         validate(&mut self.validator)?;
         translate(&mut self.translator)?;
+        if self.translate_regmach {
+            translate2(&mut self.translator2)?;
+        }
         Ok(())
     }
 }
@@ -121,10 +145,12 @@ macro_rules! impl_visit_operator {
         // the other impls make use of.
         fn $visit(&mut self, $arg: $argty) -> Self::Output {
             let offset = self.current_pos();
-            let arg_cloned = $arg.clone();
+            let targets_cloned = $arg.clone();
+            let targets_cloned2 = $arg.clone();
             self.validate_then_translate(
-                |validator| validator.visitor(offset).$visit(arg_cloned),
-                |translator| translator.$visit($arg),
+                |validator| validator.visitor(offset).$visit(targets_cloned),
+                |translator| translator.$visit(targets_cloned2),
+                |translator2| translator2.$visit($arg).map_err(Into::into),
             )
         }
         impl_visit_operator!($($rest)*);
@@ -153,6 +179,7 @@ macro_rules! impl_visit_operator {
             self.validate_then_translate(
                 |v| v.visitor(offset).$visit($($($arg),*)?),
                 |t| t.$visit($($($arg),*)?),
+                |t2| t2.$visit($($($arg),*)?).map_err(Into::into),
             )
         }
         impl_visit_operator!($($rest)*);

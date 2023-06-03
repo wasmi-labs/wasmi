@@ -1,7 +1,7 @@
 pub use self::block_type::BlockType;
 use super::{parser::ReusableAllocations, FuncIdx, ModuleResources};
 use crate::{
-    engine::{CompiledFunc, FuncBuilder, FuncTranslatorAllocations},
+    engine::{CompiledFunc, FuncBuilder, FuncTranslatorAllocations, FuncTranslatorAllocations2},
     errors::ModuleError,
 };
 use wasmparser::{FuncValidator, FunctionBody, ValidatorResources};
@@ -28,8 +28,18 @@ pub fn translate<'parser>(
     validator: FuncValidator<ValidatorResources>,
     res: ModuleResources<'parser>,
     allocations: FuncTranslatorAllocations,
+    allocations2: FuncTranslatorAllocations2,
 ) -> Result<ReusableAllocations, ModuleError> {
-    FunctionTranslator::new(func, compiled_func, func_body, validator, res, allocations).translate()
+    FunctionTranslator::new(
+        func,
+        compiled_func,
+        func_body,
+        validator,
+        res,
+        allocations,
+        allocations2,
+    )
+    .translate()
 }
 
 /// Translates Wasm bytecode into `wasmi` bytecode for a single Wasm function.
@@ -49,8 +59,16 @@ impl<'parser> FunctionTranslator<'parser> {
         validator: FuncValidator<ValidatorResources>,
         res: ModuleResources<'parser>,
         allocations: FuncTranslatorAllocations,
+        allocations2: FuncTranslatorAllocations2,
     ) -> Self {
-        let func_builder = FuncBuilder::new(func, compiled_func, res, validator, allocations);
+        let func_builder = FuncBuilder::new(
+            func,
+            compiled_func,
+            res,
+            validator,
+            allocations,
+            allocations2,
+        );
         Self {
             func_body,
             func_builder,

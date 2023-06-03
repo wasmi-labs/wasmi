@@ -13,7 +13,7 @@ use super::{
     Read,
 };
 use crate::{
-    engine::{CompiledFunc, FuncTranslatorAllocations},
+    engine::{CompiledFunc, FuncTranslatorAllocations, FuncTranslatorAllocations2},
     Engine,
     FuncType,
     MemoryType,
@@ -74,6 +74,7 @@ pub struct ModuleParser<'engine> {
 #[derive(Default)]
 pub struct ReusableAllocations {
     pub translation: FuncTranslatorAllocations,
+    pub translation2: FuncTranslatorAllocations2,
     pub validation: FuncValidatorAllocations,
 }
 
@@ -512,6 +513,7 @@ impl<'engine> ModuleParser<'engine> {
             validator.into_validator(allocations.validation),
             module_resources,
             allocations.translation,
+            allocations.translation2,
         )?;
         let _ = replace(&mut self.allocations, allocations);
         Ok(())

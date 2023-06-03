@@ -354,9 +354,14 @@ impl Config {
     /// Enable or disable translation to register-machine bytecode.
     ///
     /// Enabled by default.
-    pub fn register_machine_translation(&mut self, enable: bool) -> &mut Self {
+    pub fn set_register_machine_translation(&mut self, enable: bool) -> &mut Self {
         self.register_machine_translation = enable;
         self
+    }
+
+    /// Returns `true` if register-machine bytecode translation is enabled.
+    pub fn register_machine_translation(&self) -> bool {
+        self.register_machine_translation
     }
 
     /// Configures whether `wasmi` will consume fuel during execution to either halt execution as desired.

@@ -24,6 +24,7 @@ pub use self::{
     func_builder::{
         FuncBuilder,
         FuncTranslatorAllocations,
+        FuncTranslatorAllocations2,
         Instr,
         RelativeDepth,
         TranslationError,
