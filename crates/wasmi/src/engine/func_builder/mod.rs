@@ -81,6 +81,9 @@ impl<'parser> FuncBuilder<'parser> {
     ) -> Result<(), TranslationError> {
         self.validator.define_locals(offset, amount, value_type)?;
         self.translator.register_locals(amount);
+        if self.translate_regmach {
+            self.translator2.register_locals(amount);
+        }
         Ok(())
     }
 
@@ -92,7 +95,11 @@ impl<'parser> FuncBuilder<'parser> {
     /// and function parameters. After this function call no more locals and parameters may
     /// be added to this function translation.
     pub fn finish_translate_locals(&mut self) -> Result<(), TranslationError> {
-        self.translator.finish_translate_locals()
+        self.translator.finish_translate_locals()?;
+        if self.translate_regmach {
+            self.translator2.finish_translate_locals()?;
+        }
+        Ok(())
     }
 
     /// Updates the current position within the Wasm binary while parsing operators.
@@ -109,6 +116,9 @@ impl<'parser> FuncBuilder<'parser> {
     pub fn finish(mut self, offset: usize) -> Result<ReusableAllocations, TranslationError> {
         self.validator.finish(offset)?;
         self.translator.finish()?;
+        if self.translate_regmach {
+            self.translator2.finish()?;
+        }
         let allocations = ReusableAllocations {
             translation: self.translator.into_allocations(),
             translation2: self.translator2.into_allocations(),

@@ -21,6 +21,7 @@ use crate::{
         DropKeep,
         Instr,
         RelativeDepth,
+        TranslationError,
     },
     module::{
         BlockType,
@@ -87,5 +88,30 @@ impl<'parser> FuncTranslator<'parser> {
     /// Consumes `self` and returns the underlying reusable [`FuncTranslatorAllocations`].
     pub fn into_allocations(self) -> FuncTranslatorAllocations {
         self.alloc
+    }
+
+    /// Registers an `amount` of local variables.
+    ///
+    /// # Panics
+    ///
+    /// If too many local variables have been registered.
+    pub fn register_locals(&mut self, _amount: u32) {
+        todo!()
+    }
+
+    /// This informs the [`FuncTranslator`] that the function header translation is finished.
+    ///
+    /// # Note
+    ///
+    /// This was introduced to properly calculate the fuel costs for all local variables
+    /// and function parameters. After this function call no more locals and parameters may
+    /// be added to this function translation.
+    pub fn finish_translate_locals(&mut self) -> Result<(), TranslationError> {
+        todo!()
+    }
+
+    /// Finishes constructing the function and returns its [`CompiledFunc`].
+    pub fn finish(&mut self) -> Result<(), TranslationError> {
+        todo!()
     }
 }
