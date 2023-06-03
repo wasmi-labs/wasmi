@@ -9,7 +9,7 @@ mod tests;
 
 #[cfg(doc)]
 use self::provider::ProviderSlice;
-
+pub use self::utils::Register;
 use self::{
     immediate::{Const16, Const32},
     provider::ProviderSliceRef,
@@ -18,7 +18,6 @@ use self::{
         BinInstrImm16,
         LoadInstr,
         LoadOffset16Instr,
-        Register,
         StoreImm16Offset16Instr,
         StoreImmInstr,
         StoreInstr,
