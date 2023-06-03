@@ -1,4 +1,5 @@
 use crate::engine::bytecode2::Instruction;
+use alloc::vec::Vec;
 
 /// Reference to an encoded [`Instruction`] in the [`Instruction`] stream of an [`InstrEncoder`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
