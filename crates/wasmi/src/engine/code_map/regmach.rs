@@ -7,7 +7,7 @@
 
 use wasmi_arena::ArenaIndex;
 use wasmi_core::TrapCode;
-
+use alloc::vec::Vec;
 use super::{CompiledFunc, InstructionsRef};
 use crate::engine::bytecode2::Instruction;
 
