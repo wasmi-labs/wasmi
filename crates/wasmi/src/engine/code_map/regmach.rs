@@ -5,11 +5,11 @@
 //! This is the data structure specialized to handle compiled
 //! register machine based bytecode functions.
 
-use wasmi_arena::ArenaIndex;
-use wasmi_core::TrapCode;
-use alloc::vec::Vec;
 use super::{CompiledFunc, InstructionsRef};
 use crate::engine::bytecode2::Instruction;
+use alloc::vec::Vec;
+use wasmi_arena::ArenaIndex;
+use wasmi_core::TrapCode;
 
 /// Meta information about a [`CompiledFunc`].
 #[derive(Debug, Copy, Clone)]
