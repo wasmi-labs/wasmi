@@ -3,6 +3,9 @@ use crate::engine::{bytecode2::Register, func_builder::TranslationErrorInner, Tr
 use alloc::collections::btree_set::BTreeSet;
 use core::cmp::max;
 
+#[cfg(doc)]
+use super::instr_encoder::InstrEncoder;
+
 /// The register allocator using during translation.
 ///
 /// # Note
@@ -275,7 +278,7 @@ impl RegisterAlloc {
 ///
 /// # Note
 ///
-/// This is usually implemented by the [`InstrEncoder`](super::InstrEncoder)
+/// This is usually implemented by the [`InstrEncoder`]
 /// so that the [`InstrEncoder`] can be informed by the [`RegisterAlloc`] about
 /// storage space allocated registers that need to be defragmented.
 pub trait DefragRegister {
