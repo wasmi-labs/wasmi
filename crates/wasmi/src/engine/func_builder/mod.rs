@@ -57,6 +57,7 @@ impl<'parser> FuncBuilder<'parser> {
     pub fn new(
         func: FuncIdx,
         compiled_func: CompiledFunc,
+        compiled_func_2: CompiledFunc,
         res: ModuleResources<'parser>,
         validator: FuncValidator,
         allocations: FuncTranslatorAllocations,
@@ -67,7 +68,7 @@ impl<'parser> FuncBuilder<'parser> {
             validator,
             translate_regmach: res.engine().config().register_machine_translation(),
             translator: FuncTranslator::new(func, compiled_func, res, allocations),
-            translator2: FuncTranslator2::new(func, compiled_func, res, allocations2),
+            translator2: FuncTranslator2::new(func, compiled_func_2, res, allocations2),
         }
     }
 

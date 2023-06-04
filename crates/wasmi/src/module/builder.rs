@@ -231,15 +231,12 @@ impl<'engine> ModuleBuilder<'engine> {
             self.imports.funcs.len(),
             "tried to initialize module function declarations twice"
         );
-        let regmach_enabled = self.engine().config().register_machine_translation();
         for func in funcs {
             let func_type_idx = func?;
             let func_type = self.func_types[func_type_idx.into_u32() as usize];
             self.funcs.push(func_type);
             self.compiled_funcs.push(self.engine.alloc_func());
-            if regmach_enabled {
-                self.compiled_funcs_2.push(self.engine.alloc_func_2());
-            }
+            self.compiled_funcs_2.push(self.engine.alloc_func_2());
         }
         Ok(())
     }

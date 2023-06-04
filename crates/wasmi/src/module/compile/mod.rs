@@ -24,6 +24,7 @@ mod block_type;
 pub fn translate<'parser>(
     func: FuncIdx,
     compiled_func: CompiledFunc,
+    compiled_func_2: CompiledFunc,
     func_body: FunctionBody<'parser>,
     validator: FuncValidator<ValidatorResources>,
     res: ModuleResources<'parser>,
@@ -33,6 +34,7 @@ pub fn translate<'parser>(
     FunctionTranslator::new(
         func,
         compiled_func,
+        compiled_func_2,
         func_body,
         validator,
         res,
@@ -55,6 +57,7 @@ impl<'parser> FunctionTranslator<'parser> {
     fn new(
         func: FuncIdx,
         compiled_func: CompiledFunc,
+        compiled_func_2: CompiledFunc,
         func_body: FunctionBody<'parser>,
         validator: FuncValidator<ValidatorResources>,
         res: ModuleResources<'parser>,
@@ -64,6 +67,7 @@ impl<'parser> FunctionTranslator<'parser> {
         let func_builder = FuncBuilder::new(
             func,
             compiled_func,
+            compiled_func_2,
             res,
             validator,
             allocations,
