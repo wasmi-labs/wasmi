@@ -2,6 +2,7 @@
 
 #![allow(unused_imports)] // TODO: remove
 
+use super::{instr_encoder::InstrEncoder, ProviderStack};
 use crate::{
     engine::{
         bytecode::{
@@ -44,7 +45,12 @@ use wasmparser::VisitOperator;
 
 /// Reusable allocations of a [`FuncTranslator`].
 #[derive(Debug, Default)]
-pub struct FuncTranslatorAllocations {}
+pub struct FuncTranslatorAllocations {
+    /// The stack of input locals or constants during translation.
+    providers: ProviderStack,
+    /// The instruction sequence encoder.
+    instr_encoder: InstrEncoder,
+}
 
 /// Type concerned with translating from Wasm bytecode to `wasmi` bytecode.
 pub struct FuncTranslator<'parser> {
