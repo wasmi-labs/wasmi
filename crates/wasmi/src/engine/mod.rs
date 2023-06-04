@@ -205,7 +205,7 @@ impl Engine {
     ///
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
-    pub(super) fn init_func_2<I>(&self, func: CompiledFunc, len_registers: usize, instrs: I)
+    pub(super) fn init_func_2<I>(&self, func: CompiledFunc, len_registers: u16, instrs: I)
     where
         I: IntoIterator<Item = Instruction2>,
     {
@@ -491,7 +491,7 @@ impl EngineInner {
     ///
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
-    fn init_func_2<I>(&self, func: CompiledFunc, len_registers: usize, instrs: I)
+    fn init_func_2<I>(&self, func: CompiledFunc, len_registers: u16, instrs: I)
     where
         I: IntoIterator<Item = Instruction2>,
     {

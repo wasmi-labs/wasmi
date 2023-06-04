@@ -136,6 +136,11 @@ impl RegisterAlloc {
         self.next_storage = u16::MAX;
     }
 
+    /// Returns the number of registers allocated by the [`RegisterAlloc`].
+    pub fn len_registers(&self) -> u16 {
+        self.len_registers
+    }
+
     /// Registers an `amount` of function inputs or local variables.
     ///
     /// # Errors

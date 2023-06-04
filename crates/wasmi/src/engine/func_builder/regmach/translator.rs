@@ -121,6 +121,12 @@ impl<'parser> FuncTranslator<'parser> {
     /// Finishes constructing the function and returns its [`CompiledFunc`].
     pub fn finish(&mut self) -> Result<(), TranslationError> {
         self.alloc.reg_alloc.defrag(&mut self.alloc.instr_encoder);
-        todo!()
+        self.alloc.instr_encoder.update_branch_offsets()?;
+        let len_registers = self.alloc.reg_alloc.len_registers();
+        let instrs = self.alloc.instr_encoder.drain_instrs();
+        self.res
+            .engine()
+            .init_func_2(self.compiled_func, len_registers, instrs);
+        Ok(())
     }
 }

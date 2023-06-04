@@ -17,14 +17,14 @@ pub struct FuncHeader {
     /// A reference to the sequence of [`Instruction`] of the [`CompiledFunc`].
     iref: InstructionsRef,
     /// The number of registers used by the [`CompiledFunc`] in total.
-    len_registers: usize,
+    len_registers: u16,
     /// The number of instructions of the [`CompiledFunc`].
-    len_instrs: usize,
+    len_instrs: u32,
 }
 
 impl FuncHeader {
     /// Create a new initialized [`FuncHeader`].
-    pub fn new(iref: InstructionsRef, len_registers: usize, len_instrs: usize) -> Self {
+    pub fn new(iref: InstructionsRef, len_registers: u16, len_instrs: u32) -> Self {
         Self {
             iref,
             len_registers,
@@ -52,7 +52,7 @@ impl FuncHeader {
     }
 
     /// Returns the number of registers used by the [`CompiledFunc`].
-    pub fn len_registers(&self) -> usize {
+    pub fn len_registers(&self) -> u16 {
         self.len_registers
     }
 }
@@ -106,7 +106,7 @@ impl CodeMap {
     ///
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
-    pub fn init_func<I>(&mut self, func: CompiledFunc, len_registers: usize, instrs: I)
+    pub fn init_func<I>(&mut self, func: CompiledFunc, len_registers: u16, instrs: I)
     where
         I: IntoIterator<Item = Instruction>,
     {
@@ -116,7 +116,8 @@ impl CodeMap {
         );
         let start = self.instrs.len();
         self.instrs.extend(instrs);
-        let len_instrs = self.instrs.len() - start;
+        let len_instrs = u32::try_from(self.instrs.len() - start)
+            .unwrap_or_else(|_| panic!("tried to initialize function with too many instructions"));
         let iref = InstructionsRef::new(start);
         self.headers[func.into_usize()] = FuncHeader::new(iref, len_registers, len_instrs);
     }
@@ -137,7 +138,7 @@ impl CodeMap {
     pub fn get_instrs(&self, func_body: CompiledFunc) -> &[Instruction] {
         let header = self.header(func_body);
         let start = header.iref.to_usize();
-        let end = start + header.len_instrs;
+        let end = start + header.len_instrs as usize;
         &self.instrs[start..end]
     }
 }
