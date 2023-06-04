@@ -263,7 +263,7 @@ impl RegisterAlloc {
     /// registers do not have consecutive index spaces for technical reasons. This is why we
     /// store the definition site and users of storage space allocated registers so that we
     /// can defrag exactly those registers and make the allocated register space compact.
-    pub fn defrag(&mut self, state: &mut dyn DefragRegister) {
+    pub fn defrag(&mut self, state: &mut impl DefragRegister) {
         assert!(matches!(self.phase, AllocPhase::Alloc));
         self.phase = AllocPhase::Defrag;
         if self.next_dynamic == self.next_storage {
