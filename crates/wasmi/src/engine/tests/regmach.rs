@@ -101,7 +101,7 @@ fn assert_func_body<E>(
             engine.resolve_func_type(&func_type, Clone::clone),
         );
     }
-    if let Some(unexpected) = engine.resolve_instr(func_body, len_expected) {
+    if let Some(unexpected) = engine.resolve_instr_2(func_body, len_expected) {
         panic!("encountered unexpected instruction at position {len_expected}: {unexpected:?}",);
     }
 }
