@@ -252,7 +252,7 @@ impl RegisterAlloc {
     /// registers do not have consecutive index spaces for technical reasons. This is why we
     /// store the definition site and users of storage space allocated registers so that we
     /// can defrag exactly those registers and make the allocated register space compact.
-    pub fn defrag(&mut self, defrag_register: fn(user: Instr, reg: Register, new_reg: Register)) {
+    pub fn defrag(&mut self, state: &mut dyn DefragRegister) {
         assert!(matches!(self.phase, AllocPhase::Alloc));
         self.phase = AllocPhase::Defrag;
         if self.next_dynamic == self.next_storage {
@@ -265,8 +265,20 @@ impl RegisterAlloc {
             let reg = user.reg();
             let instr = user.user();
             let new_reg = Register::from_u16(self.next_storage);
-            defrag_register(instr, reg, new_reg);
+            state.defrag_register(instr, reg, new_reg);
             self.next_storage += 1;
         }
     }
+}
+
+/// Allows to defragment the index of registers of instructions.
+///
+/// # Note
+///
+/// This is usually implemented by the [`InstrEncoder`](super::InstrEncoder)
+/// so that the [`InstrEncoder`] can be informed by the [`RegisterAlloc`] about
+/// storage space allocated registers that need to be defragmented.
+pub trait DefragRegister {
+    /// Adjusts [`Register`] `reg` of [`Instr`] `user` to [`Register`] `new_reg`.
+    fn defrag_register(&mut self, user: Instr, reg: Register, new_reg: Register);
 }
