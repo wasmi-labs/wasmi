@@ -103,8 +103,8 @@ impl<'parser> FuncTranslator<'parser> {
     /// # Panics
     ///
     /// If too many local variables have been registered.
-    pub fn register_locals(&mut self, _amount: u32) {
-        todo!()
+    pub fn register_locals(&mut self, amount: u32) -> Result<(), TranslationError> {
+        self.alloc.reg_alloc.register_locals(amount)
     }
 
     /// This informs the [`FuncTranslator`] that the function header translation is finished.
@@ -115,11 +115,12 @@ impl<'parser> FuncTranslator<'parser> {
     /// and function parameters. After this function call no more locals and parameters may
     /// be added to this function translation.
     pub fn finish_translate_locals(&mut self) -> Result<(), TranslationError> {
-        todo!()
+        Ok(()) // TODO: not needed at the moment. We might be able to remove this entirely.
     }
 
     /// Finishes constructing the function and returns its [`CompiledFunc`].
     pub fn finish(&mut self) -> Result<(), TranslationError> {
+        self.alloc.reg_alloc.defrag(&mut self.alloc.instr_encoder);
         todo!()
     }
 }

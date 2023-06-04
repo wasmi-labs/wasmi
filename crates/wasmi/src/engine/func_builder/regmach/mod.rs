@@ -2,7 +2,6 @@
 
 #![allow(dead_code)] // TODO: remove
 
-mod error;
 mod instr_encoder;
 mod provider;
 mod register_alloc;
@@ -10,7 +9,8 @@ mod translator;
 mod visit;
 
 pub use self::{
-    error::TranslationError,
+    instr_encoder::InstrEncoder,
     provider::{Provider, ProviderStack},
+    register_alloc::{DefragRegister, RegisterAlloc},
     translator::{FuncTranslator, FuncTranslatorAllocations},
 };

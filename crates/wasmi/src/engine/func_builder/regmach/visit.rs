@@ -1,6 +1,7 @@
 #![allow(unused_variables)]
 
-use super::{FuncTranslator, TranslationError};
+use super::FuncTranslator;
+use crate::engine::TranslationError;
 use wasmparser::VisitOperator;
 
 macro_rules! impl_visit_operator {

@@ -1,5 +1,8 @@
-use super::instr_encoder::Instr;
-use crate::engine::{bytecode2::Register, func_builder::TranslationErrorInner, TranslationError};
+use crate::engine::{
+    bytecode2::Register,
+    func_builder::{Instr, TranslationErrorInner},
+    TranslationError,
+};
 use alloc::collections::btree_set::BTreeSet;
 use core::cmp::max;
 

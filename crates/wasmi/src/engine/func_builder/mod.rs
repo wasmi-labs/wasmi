@@ -4,7 +4,7 @@ mod error;
 mod inst_builder;
 mod labels;
 mod locals_registry;
-mod regmach;
+pub(crate) mod regmach;
 mod translator;
 mod value_stack;
 
@@ -19,7 +19,6 @@ pub use self::{
     regmach::{
         FuncTranslator as FuncTranslator2,
         FuncTranslatorAllocations as FuncTranslatorAllocations2,
-        TranslationError as TranslationError2,
     },
     translator::FuncTranslatorAllocations,
 };
@@ -82,7 +81,7 @@ impl<'parser> FuncBuilder<'parser> {
         self.validator.define_locals(offset, amount, value_type)?;
         self.translator.register_locals(amount);
         if self.translate_regmach {
-            self.translator2.register_locals(amount);
+            self.translator2.register_locals(amount)?;
         }
         Ok(())
     }
