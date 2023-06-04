@@ -52,14 +52,6 @@ impl Instruction {
     ///
     /// If `self` is not a branch [`Instruction`].
     pub fn update_branch_offset(&mut self, _new_offset: BranchOffset) {
-        match self {
-            // TODO: define register-machine based branch instructions
-            // Instruction::Br(offset)
-            // | Instruction::BrIfEqz(offset)
-            // | Instruction::BrIfNez(offset)
-            // | Instruction::BrAdjust(offset)
-            // | Instruction::BrAdjustIfNez(offset) => offset.init(new_offset),
-            _ => panic!("tried to update branch offset of a non-branch instruction: {self:?}"),
-        }
+        panic!("tried to update branch offset of a non-branch instruction: {self:?}")
     }
 }
