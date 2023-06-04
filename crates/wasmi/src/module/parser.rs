@@ -509,13 +509,11 @@ impl<'engine> ModuleParser<'engine> {
         let allocations = take(&mut self.allocations);
         let allocations = translate(
             func,
-            compiled_func,
-            compiled_func_2,
+            (compiled_func, compiled_func_2),
             func_body,
             validator.into_validator(allocations.validation),
             module_resources,
-            allocations.translation,
-            allocations.translation2,
+            (allocations.translation, allocations.translation2),
         )?;
         let _ = replace(&mut self.allocations, allocations);
         Ok(())
