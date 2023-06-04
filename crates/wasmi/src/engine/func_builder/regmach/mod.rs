@@ -5,6 +5,7 @@
 mod error;
 mod instr_encoder;
 mod provider;
+mod register_alloc;
 mod translator;
 mod visit;
 

@@ -4,8 +4,20 @@ use super::{Const16, Const32};
 use super::Instruction;
 
 /// An index into a register.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Register(u16);
+
+impl Register {
+    /// Create a [`Register`] from the given `u16` index.
+    pub fn from_u16(index: u16) -> Self {
+        Self(index)
+    }
+
+    /// Returns the index of the [`Register`] as `u16` value.
+    pub fn to_u16(self) -> u16 {
+        self.0
+    }
+}
 
 /// A binary [`Register`] based instruction.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
