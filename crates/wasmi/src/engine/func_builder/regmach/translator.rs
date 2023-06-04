@@ -2,7 +2,7 @@
 
 #![allow(unused_imports)] // TODO: remove
 
-use super::{instr_encoder::InstrEncoder, ProviderStack};
+use super::{instr_encoder::InstrEncoder, register_alloc::RegisterAlloc, ProviderStack};
 use crate::{
     engine::{
         bytecode::{
@@ -50,6 +50,8 @@ pub struct FuncTranslatorAllocations {
     providers: ProviderStack,
     /// The instruction sequence encoder.
     instr_encoder: InstrEncoder,
+    /// The register allocator.
+    reg_alloc: RegisterAlloc,
 }
 
 /// Type concerned with translating from Wasm bytecode to `wasmi` bytecode.
