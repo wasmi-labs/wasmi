@@ -8,7 +8,7 @@ pub struct ControlStack {
 }
 
 impl ControlStack {
-    /// Resets the [`ControlFlowStack`] to allow for reuse.
+    /// Resets the [`ControlStack`] to allow for reuse.
     pub fn reset(&mut self) {
         self.frames.clear()
     }
@@ -19,17 +19,17 @@ impl ControlStack {
         relative_depth as usize == self.len() - 1
     }
 
-    /// Returns the current depth of the stack of the [`ControlFlowStack`].
+    /// Returns the current depth of the stack of the [`ControlStack`].
     pub fn len(&self) -> usize {
         self.frames.len()
     }
 
-    /// Returns `true` if the [`ControlFlowStack`] is empty.
+    /// Returns `true` if the [`ControlStack`] is empty.
     pub fn is_empty(&self) -> bool {
         self.frames.len() == 0
     }
 
-    /// Pushes a new control flow frame to the [`ControlFlowStack`].
+    /// Pushes a new control flow frame to the [`ControlStack`].
     pub fn push_frame<T>(&mut self, frame: T)
     where
         T: Into<ControlFrame>,
@@ -37,11 +37,11 @@ impl ControlStack {
         self.frames.push(frame.into())
     }
 
-    /// Pops the last control flow frame from the [`ControlFlowStack`].
+    /// Pops the last control flow frame from the [`ControlStack`].
     ///
     /// # Panics
     ///
-    /// If the [`ControlFlowStack`] is empty.
+    /// If the [`ControlStack`] is empty.
     pub fn pop_frame(&mut self) -> ControlFrame {
         self.frames
             .pop()
@@ -58,7 +58,7 @@ impl ControlStack {
 
     /// Returns a shared reference to the control flow frame at the given `depth`.
     ///
-    /// A `depth` of 0 is equal to calling [`ControlFlowStack::last`].
+    /// A `depth` of 0 is equal to calling [`ControlStack::last`].
     ///
     /// # Panics
     ///
