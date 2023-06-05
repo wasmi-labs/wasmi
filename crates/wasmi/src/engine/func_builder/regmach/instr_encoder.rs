@@ -32,13 +32,18 @@ impl InstrSequence {
         self.instrs.clear();
     }
 
+    /// Returns the next [`Instr`].
+    fn next_instr(&self) -> Instr {
+        Instr::from_usize(self.instrs.len())
+    }
+
     /// Pushes an [`Instruction`] to the instruction sequence and returns its [`Instr`].
     ///
     /// # Errors
     ///
     /// If there are too many instructions in the instruction sequence.
     fn push(&mut self, instruction: Instruction) -> Result<Instr, TranslationError> {
-        let instr = Instr::from_usize(self.instrs.len());
+        let instr = self.next_instr();
         self.instrs.push(instruction);
         Ok(instr)
     }
@@ -81,6 +86,36 @@ impl InstrEncoder {
     /// Creates a new unresolved label and returns its [`LabelRef`].
     pub fn new_label(&mut self) -> LabelRef {
         self.labels.new_label()
+    }
+
+    /// Resolve the label at the current instruction position.
+    ///
+    /// Does nothing if the label has already been resolved.
+    ///
+    /// # Note
+    ///
+    /// This is used at a position of the Wasm bytecode where it is clear that
+    /// the given label can be resolved properly.
+    /// This usually takes place when encountering the Wasm `End` operand for example.
+    pub fn pin_label_if_unpinned(&mut self, label: LabelRef) {
+        self.labels.try_pin_label(label, self.instrs.next_instr())
+    }
+
+    /// Resolve the label at the current instruction position.
+    ///
+    /// # Note
+    ///
+    /// This is used at a position of the Wasm bytecode where it is clear that
+    /// the given label can be resolved properly.
+    /// This usually takes place when encountering the Wasm `End` operand for example.
+    ///
+    /// # Panics
+    ///
+    /// If the label has already been resolved.
+    pub fn pin_label(&mut self, label: LabelRef) {
+        self.labels
+            .pin_label(label, self.instrs.next_instr())
+            .unwrap_or_else(|err| panic!("failed to pin label: {err}"));
     }
 
     /// Updates the branch offsets of all branch instructions inplace.
