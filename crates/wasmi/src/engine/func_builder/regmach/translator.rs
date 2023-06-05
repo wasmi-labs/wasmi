@@ -238,8 +238,7 @@ impl<'parser> FuncTranslator<'parser> {
     ///
     /// Returns `None` if gas metering is disabled.
     fn consume_fuel_instr(&self) -> Option<Instr> {
-        // self.alloc.control_frames.last().consume_fuel_instr() // TODO
-        None
+        self.alloc.control_stack.last().consume_fuel_instr()
     }
 
     /// Adds fuel to the most recent [`Instruction::ConsumeFuel`] in the translation process.
