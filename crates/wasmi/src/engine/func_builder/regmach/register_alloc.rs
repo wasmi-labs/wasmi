@@ -4,7 +4,7 @@ use crate::engine::{
     TranslationError,
 };
 use alloc::collections::btree_set::BTreeSet;
-use core::cmp::max;
+use core::cmp::{max, min};
 
 #[cfg(doc)]
 use super::instr_encoder::InstrEncoder;
@@ -57,14 +57,14 @@ pub struct RegisterAlloc {
     phase: AllocPhase,
     /// The combined number of registered function inputs and local variables.
     len_locals: u16,
-    /// The total number of allocated registers.
-    len_registers: u16,
     /// The index for the next dynamically allocated register.
     next_dynamic: u16,
     /// The maximum index registered for a dynamically allocated register.
     max_dynamic: u16,
     /// The index for the next register allocated to the storage.
     next_storage: u16,
+    /// The minimum index registered for a storage allocated register.
+    min_storage: u16,
     /// Storage register users and definition sites.
     storage_users: BTreeSet<RegisterUser>,
 }
@@ -131,14 +131,17 @@ impl RegisterAlloc {
     pub fn reset(&mut self) {
         self.phase = AllocPhase::Init;
         self.len_locals = 0;
-        self.len_registers = 0;
         self.next_dynamic = 0;
+        self.max_dynamic = 0;
         self.next_storage = u16::MAX;
+        self.min_storage = u16::MAX;
     }
 
     /// Returns the number of registers allocated by the [`RegisterAlloc`].
     pub fn len_registers(&self) -> u16 {
-        self.len_registers
+        let len_dynamic = self.max_dynamic - self.len_locals;
+        let len_storage = u16::MAX - self.min_storage;
+        self.len_locals + len_dynamic + len_storage
     }
 
     /// Registers an `amount` of function inputs or local variables.
@@ -152,18 +155,16 @@ impl RegisterAlloc {
     /// If the current [`AllocPhase`] is not [`AllocPhase::Init`].
     pub fn register_locals(&mut self, amount: u32) -> Result<(), TranslationError> {
         /// Bumps `len_locals` by `amount` if possible.
-        fn bump_locals(len_registers: u16, len_locals: u16, amount: u32) -> Option<(u16, u16)> {
+        fn bump_locals(len_locals: u16, amount: u32) -> Option<u16> {
             let amount = u16::try_from(amount).ok()?;
-            let len_locals = len_locals.checked_add(amount)?;
-            let len_registers = len_registers.checked_add(amount)?;
-            Some((len_registers, len_locals))
+            len_locals.checked_add(amount)
         }
         assert!(matches!(self.phase, AllocPhase::Init));
-        (self.len_registers, self.len_locals) =
-            bump_locals(self.len_registers, self.len_locals, amount).ok_or_else(|| {
-                TranslationError::new(TranslationErrorInner::AllocatedTooManyRegisters)
-            })?;
+        self.len_locals = bump_locals(self.len_locals, amount).ok_or_else(|| {
+            TranslationError::new(TranslationErrorInner::AllocatedTooManyRegisters)
+        })?;
         self.next_dynamic = self.len_locals;
+        self.max_dynamic = self.len_locals;
         Ok(())
     }
 
@@ -192,8 +193,8 @@ impl RegisterAlloc {
             ));
         }
         let reg = Register::from_u16(self.next_dynamic);
-        self.max_dynamic = max(self.max_dynamic, self.next_dynamic);
         self.next_dynamic += 1;
+        self.max_dynamic = max(self.max_dynamic, self.next_dynamic);
         Ok(reg)
     }
 
@@ -223,6 +224,7 @@ impl RegisterAlloc {
         let reg = Register::from_u16(self.next_storage);
         self.storage_users.insert(RegisterUser::new(reg, def_site));
         self.next_storage -= 1;
+        self.min_storage = min(self.min_storage, self.next_storage);
         Ok(reg)
     }
 
