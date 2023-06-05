@@ -145,16 +145,6 @@ impl<'parser> FuncTranslator<'parser> {
         Ok(())
     }
 
-    /// Returns a shared reference to the underlying [`Engine`].
-    fn engine(&self) -> &Engine {
-        self.res.engine()
-    }
-
-    /// Consumes `self` and returns the underlying reusable [`FuncTranslatorAllocations`].
-    pub fn into_allocations(self) -> FuncTranslatorAllocations {
-        self.alloc
-    }
-
     /// Registers an `amount` of local variables.
     ///
     /// # Panics
@@ -185,6 +175,16 @@ impl<'parser> FuncTranslator<'parser> {
             .engine()
             .init_func_2(self.compiled_func, len_registers, instrs);
         Ok(())
+    }
+
+    /// Returns a shared reference to the underlying [`Engine`].
+    fn engine(&self) -> &Engine {
+        self.res.engine()
+    }
+
+    /// Consumes `self` and returns the underlying reusable [`FuncTranslatorAllocations`].
+    pub fn into_allocations(self) -> FuncTranslatorAllocations {
+        self.alloc
     }
 
     /// Returns the [`FuncType`] of the function that is currently translated.
