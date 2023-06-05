@@ -1,7 +1,10 @@
 #![allow(unused_variables)]
 
-use super::FuncTranslator;
-use crate::engine::TranslationError;
+use super::{FuncTranslator, Provider};
+use crate::engine::{
+    bytecode2::{BinInstr, Instruction, Register},
+    TranslationError,
+};
 use wasmparser::VisitOperator;
 
 macro_rules! impl_visit_operator {
@@ -81,7 +84,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_end(&mut self) -> Self::Output {
-        todo!()
+        self.visit_return()
     }
 
     fn visit_br(&mut self, relative_depth: u32) -> Self::Output {
@@ -97,7 +100,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_return(&mut self) -> Self::Output {
-        todo!()
+        self.alloc
+            .instr_encoder
+            .push_instr(Instruction::ReturnReg {
+                value: Register::from_u16(2),
+            })?;
+        Ok(())
     }
 
     fn visit_call(&mut self, function_index: u32) -> Self::Output {
@@ -134,7 +142,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_local_get(&mut self, local_index: u32) -> Self::Output {
-        todo!()
+        let reg = self.local_to_reg(local_index)?;
+        self.alloc.providers.push_register(reg);
+        Ok(())
     }
 
     fn visit_local_set(&mut self, local_index: u32) -> Self::Output {
@@ -430,7 +440,26 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_add(&mut self) -> Self::Output {
-        todo!()
+        let rhs = self.alloc.providers.pop();
+        let lhs = self.alloc.providers.pop();
+        match (lhs, rhs) {
+            (Provider::Register(lhs), Provider::Register(rhs)) => {
+                let result = self.alloc.reg_alloc.push_dynamic()?;
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::I32Add(BinInstr { result, lhs, rhs }))?;
+                Ok(())
+            }
+            (Provider::Register(lhs), Provider::Const(rhs)) => {
+                todo!()
+            }
+            (Provider::Const(lhs), Provider::Register(rhs)) => {
+                todo!()
+            }
+            (Provider::Const(lhs), Provider::Const(rhs)) => {
+                todo!()
+            }
+        }
     }
 
     fn visit_i32_sub(&mut self) -> Self::Output {

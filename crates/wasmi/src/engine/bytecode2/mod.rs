@@ -10,7 +10,7 @@ mod tests;
 #[cfg(doc)]
 use self::provider::ProviderSlice;
 pub use self::utils::Register;
-use self::{
+pub(crate) use self::{
     immediate::{Const16, Const32},
     provider::ProviderSliceRef,
     utils::{

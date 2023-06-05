@@ -2,9 +2,13 @@
 
 #![allow(unused_imports)] // TODO: remove
 
-use super::create_module;
+use super::{create_module, wat2wasm};
 use crate::{
-    engine::{bytecode2::Instruction, CompiledFunc, DedupFuncType},
+    engine::{
+        bytecode2::{BinInstr, Instruction, Register},
+        CompiledFunc,
+        DedupFuncType,
+    },
     Config,
     Engine,
     Module,
@@ -104,4 +108,30 @@ fn assert_func_body<E>(
     if let Some(unexpected) = engine.resolve_instr_2(func_body, len_expected) {
         panic!("encountered unexpected instruction at position {len_expected}: {unexpected:?}",);
     }
+}
+
+#[test]
+fn i32_add() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param i32) (param i32) (result i32)
+                local.get 0
+                local.get 1
+                i32.add
+            )
+        )
+    "#,
+    );
+    let expected = [
+        Instruction::I32Add(BinInstr {
+            result: Register::from_u16(2),
+            lhs: Register::from_u16(0),
+            rhs: Register::from_u16(1),
+        }),
+        Instruction::ReturnReg {
+            value: Register::from_u16(2),
+        },
+    ];
+    assert_func_bodies(wasm, [expected]);
 }

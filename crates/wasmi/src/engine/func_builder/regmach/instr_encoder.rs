@@ -142,6 +142,11 @@ impl InstrEncoder {
     ) -> Result<(), TranslationError> {
         self.instrs.get_mut(instr).bump_fuel_consumption(delta)
     }
+
+    /// Push the [`Instruction`] to the [`InstrEncoder`].
+    pub fn push_instr(&mut self, instr: Instruction) -> Result<Instr, TranslationError> {
+        self.instrs.push(instr)
+    }
 }
 
 impl InstrEncoder {

@@ -152,13 +152,17 @@ impl RegisterAlloc {
     /// If the current [`AllocPhase`] is not [`AllocPhase::Init`].
     pub fn register_locals(&mut self, amount: u32) -> Result<(), TranslationError> {
         /// Bumps `len_locals` by `amount` if possible.
-        fn bump_locals(len_locals: u16, amount: u32) -> Option<u16> {
+        fn bump_locals(len_registers: u16, len_locals: u16, amount: u32) -> Option<(u16, u16)> {
             let amount = u16::try_from(amount).ok()?;
-            len_locals.checked_add(amount)
+            let len_locals = len_locals.checked_add(amount)?;
+            let len_registers = len_registers.checked_add(amount)?;
+            Some((len_registers, len_locals))
         }
         assert!(matches!(self.phase, AllocPhase::Init));
-        self.len_locals = bump_locals(self.len_locals, amount)
-            .ok_or_else(|| TranslationError::new(TranslationErrorInner::TooManyRegistersNeeded))?;
+        (self.len_registers, self.len_locals) =
+            bump_locals(self.len_registers, self.len_locals, amount).ok_or_else(|| {
+                TranslationError::new(TranslationErrorInner::AllocatedTooManyRegisters)
+            })?;
         self.next_dynamic = self.len_locals;
         Ok(())
     }
@@ -184,7 +188,7 @@ impl RegisterAlloc {
         self.assert_alloc_phase();
         if self.next_dynamic == self.next_storage {
             return Err(TranslationError::new(
-                TranslationErrorInner::TooManyRegistersNeeded,
+                TranslationErrorInner::AllocatedTooManyRegisters,
             ));
         }
         let reg = Register::from_u16(self.next_dynamic);
@@ -213,7 +217,7 @@ impl RegisterAlloc {
         self.assert_alloc_phase();
         if self.next_dynamic == self.next_storage {
             return Err(TranslationError::new(
-                TranslationErrorInner::TooManyRegistersNeeded,
+                TranslationErrorInner::AllocatedTooManyRegisters,
             ));
         }
         let reg = Register::from_u16(self.next_storage);

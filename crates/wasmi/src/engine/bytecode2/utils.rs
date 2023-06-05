@@ -23,11 +23,11 @@ impl Register {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct BinInstr {
     /// The register storing the result of the computation.
-    result: Register,
+    pub result: Register,
     /// The register holding the left-hand side value.
-    lhs: Register,
+    pub lhs: Register,
     /// The register holding the right-hand side value.
-    rhs: Register,
+    pub rhs: Register,
 }
 
 /// A binary instruction with an immediate right-hand side value.
@@ -38,39 +38,39 @@ pub struct BinInstr {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct BinInstrImm16 {
     /// The register storing the result of the computation.
-    result: Register,
+    pub result: Register,
     /// The register holding one of the operands.
     ///
     /// # Note
     ///
     /// The instruction decides if this operand is the left-hand or
     /// right-hand operand for the computation.
-    reg_in: Register,
+    pub reg_in: Register,
     /// The 16-bit immediate value.
     ///
     /// # Note
     ///
     /// The instruction decides if this operand is the left-hand or
     /// right-hand operand for the computation.
-    imm_in: Const16,
+    pub imm_in: Const16,
 }
 
 /// A unary instruction.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct UnaryInstr {
     /// The register storing the result of the instruction.
-    result: Register,
+    pub result: Register,
     /// The register holding the input of the instruction.
-    input: Register,
+    pub input: Register,
 }
 
 /// A unary instruction with 32-bit immediate input.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct UnaryInstrImm32 {
     /// The register storing the result of the instruction.
-    result: Register,
+    pub result: Register,
     /// The 32-bit constant value input of the instruction.
-    input: Const32,
+    pub input: Const32,
 }
 
 /// A `load` instruction with a 16-bit encoded offset parameter.
@@ -82,11 +82,11 @@ pub struct UnaryInstrImm32 {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct LoadOffset16Instr {
     /// The register storing the result of the `load` instruction.
-    result: Register,
+    pub result: Register,
     /// The register storing the pointer of the `load` instruction.
-    ptr: Register,
+    pub ptr: Register,
     /// The 16-bit encoded offset of the `load` instruction.
-    offset: Const16,
+    pub offset: Const16,
 }
 
 /// A general `load` instruction.
@@ -100,9 +100,9 @@ pub struct LoadOffset16Instr {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct LoadInstr {
     /// The register storing the result of the `load` instruction.
-    result: Register,
+    pub result: Register,
     /// The register storing the pointer of the `load` instruction.
-    ptr: Register,
+    pub ptr: Register,
 }
 
 /// A general `store` instruction.
@@ -116,9 +116,9 @@ pub struct LoadInstr {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct StoreInstr {
     /// The register storing the pointer of the `store` instruction.
-    ptr: Register,
+    pub ptr: Register,
     /// The register storing the stored value of the `store` instruction.
-    value: Register,
+    pub value: Register,
 }
 
 /// A `store` instruction that stores a constant value.
@@ -132,9 +132,9 @@ pub struct StoreInstr {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct StoreImmInstr {
     /// The register storing the pointer of the `store` instruction.
-    ptr: Register,
+    pub ptr: Register,
     /// The register storing the pointer offset of the `store` instruction.
-    offset: Const32,
+    pub offset: Const32,
 }
 
 /// A `store` instruction for small offset values.
@@ -146,11 +146,11 @@ pub struct StoreImmInstr {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct StoreOffset16Instr {
     /// The register storing the pointer of the `store` instruction.
-    ptr: Register,
+    pub ptr: Register,
     /// The register storing the stored value of the `store` instruction.
-    value: Register,
+    pub value: Register,
     /// The register storing the 16-bit encoded pointer offset of the `store` instruction.
-    offset: Const16,
+    pub offset: Const16,
 }
 
 /// A `store` instruction for small values of `offset` and `value`.
@@ -162,9 +162,9 @@ pub struct StoreOffset16Instr {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct StoreImm16Offset16Instr {
     /// The register storing the pointer of the `store` instruction.
-    ptr: Register,
+    pub ptr: Register,
     /// The 16-bit encoded constant value of the `store` instruction.
-    value: Const16,
+    pub value: Const16,
     /// The 16-bit encoded pointer offset of the `store` instruction.
-    offset: Const16,
+    pub offset: Const16,
 }

@@ -82,11 +82,14 @@ impl Display for TranslationError {
                     "fuel required to execute a block is out of bounds for wasmi bytecode"
                 )
             }
-            TranslationErrorInner::TooManyRegistersNeeded => {
+            TranslationErrorInner::AllocatedTooManyRegisters => {
                 write!(
                     f,
                     "translation requires more registers for a function than available"
                 )
+            }
+            TranslationErrorInner::RegisterOutOfBounds => {
+                write!(f, "tried to access out of bounds register index")
             }
         }
     }
@@ -112,5 +115,7 @@ pub enum TranslationErrorInner {
     /// The constant reference index is out of bounds.
     ConstRefOutOfBounds,
     /// Tried to allocate more registers than possible.
-    TooManyRegistersNeeded,
+    AllocatedTooManyRegisters,
+    /// Tried to use an out of bounds register index.
+    RegisterOutOfBounds,
 }
