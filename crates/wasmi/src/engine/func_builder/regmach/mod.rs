@@ -5,17 +5,15 @@
 mod control_frame;
 mod control_stack;
 mod instr_encoder;
-mod provider;
-mod register_alloc;
+mod stack;
 mod visit;
 
-use self::control_frame::BlockControlFrame;
+use self::{control_frame::BlockControlFrame, stack::ValueStack};
 pub use self::{
     control_frame::{ControlFrame, ControlFrameKind},
     control_stack::ControlStack,
     instr_encoder::InstrEncoder,
-    provider::{Provider, ProviderStack},
-    register_alloc::{DefragRegister, RegisterAlloc},
+    stack::{DefragRegister, Provider, ProviderStack, RegisterAlloc},
 };
 use crate::{
     engine::{
@@ -60,12 +58,10 @@ use wasmparser::VisitOperator;
 /// Reusable allocations of a [`FuncTranslator`].
 #[derive(Debug, Default)]
 pub struct FuncTranslatorAllocations {
-    /// The stack of input locals or constants during translation.
-    providers: ProviderStack,
+    /// The emulated value stack.
+    stack: ValueStack,
     /// The instruction sequence encoder.
     instr_encoder: InstrEncoder,
-    /// The register allocator.
-    reg_alloc: RegisterAlloc,
     /// The control stack.
     control_stack: ControlStack,
 }
@@ -73,9 +69,8 @@ pub struct FuncTranslatorAllocations {
 impl FuncTranslatorAllocations {
     /// Resets the [`FuncTranslatorAllocations`].
     fn reset(&mut self) {
-        self.providers.reset();
+        self.stack.reset();
         self.instr_encoder.reset();
-        self.reg_alloc.reset();
     }
 }
 
@@ -148,7 +143,7 @@ impl<'parser> FuncTranslator<'parser> {
     /// Registers the function parameters in the emulated value stack.
     fn init_func_params(&mut self) -> Result<(), TranslationError> {
         for _param_type in self.func_type().params() {
-            self.alloc.reg_alloc.register_locals(1)?;
+            self.alloc.stack.register_locals(1)?;
         }
         Ok(())
     }
@@ -159,7 +154,7 @@ impl<'parser> FuncTranslator<'parser> {
     ///
     /// If too many local variables have been registered.
     pub fn register_locals(&mut self, amount: u32) -> Result<(), TranslationError> {
-        self.alloc.reg_alloc.register_locals(amount)
+        self.alloc.stack.register_locals(amount)
     }
 
     /// This informs the [`FuncTranslator`] that the function header translation is finished.
@@ -181,9 +176,9 @@ impl<'parser> FuncTranslator<'parser> {
 
     /// Finishes constructing the function and returns its [`CompiledFunc`].
     pub fn finish(&mut self) -> Result<(), TranslationError> {
-        self.alloc.reg_alloc.defrag(&mut self.alloc.instr_encoder);
+        self.alloc.stack.defrag(&mut self.alloc.instr_encoder);
         self.alloc.instr_encoder.update_branch_offsets()?;
-        let len_registers = self.alloc.reg_alloc.len_registers();
+        let len_registers = self.alloc.stack.len_registers();
         let instrs = self.alloc.instr_encoder.drain_instrs();
         self.res
             .engine()
@@ -265,22 +260,5 @@ impl<'parser> FuncTranslator<'parser> {
                 .bump_fuel_consumption(instr, delta)?;
         }
         Ok(())
-    }
-
-    /// Converts a Wasm local index into a `wasmi` [`Register`] index.
-    ///
-    /// # Errors
-    ///
-    /// - If the local index is out of bounds for the `wasmi` [`Register`] index space.
-    /// - If the local index refers to a [`Register`] index that is not allocated.
-    fn local_to_reg(&self, local_index: u32) -> Result<Register, TranslationError> {
-        let index = u16::try_from(local_index)
-            .map_err(|_| TranslationError::new(TranslationErrorInner::RegisterOutOfBounds))?;
-        if index >= self.alloc.reg_alloc.len_registers() {
-            return Err(TranslationError::new(
-                TranslationErrorInner::RegisterOutOfBounds,
-            ));
-        }
-        Ok(Register::from_u16(index))
     }
 }

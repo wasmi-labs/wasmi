@@ -1,6 +1,6 @@
 #![allow(unused_variables)]
 
-use super::{FuncTranslator, Provider};
+use super::{stack::Provider, FuncTranslator};
 use crate::engine::{
     bytecode2::{BinInstr, Instruction, Register},
     TranslationError,
@@ -142,8 +142,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_local_get(&mut self, local_index: u32) -> Self::Output {
-        let reg = self.local_to_reg(local_index)?;
-        self.alloc.providers.push_register(reg);
+        self.alloc.stack.push_local(local_index)?;
         Ok(())
     }
 
@@ -440,11 +439,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_add(&mut self) -> Self::Output {
-        let rhs = self.alloc.providers.pop();
-        let lhs = self.alloc.providers.pop();
+        let rhs = self.alloc.stack.pop();
+        let lhs = self.alloc.stack.pop();
         match (lhs, rhs) {
             (Provider::Register(lhs), Provider::Register(rhs)) => {
-                let result = self.alloc.reg_alloc.push_dynamic()?;
+                let result = self.alloc.stack.push_dynamic()?;
                 self.alloc
                     .instr_encoder
                     .push_instr(Instruction::I32Add(BinInstr { result, lhs, rhs }))?;

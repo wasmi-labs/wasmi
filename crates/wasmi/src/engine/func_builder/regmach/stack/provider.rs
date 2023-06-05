@@ -2,13 +2,17 @@ use crate::engine::bytecode2::Register;
 use alloc::vec::{Drain, Vec};
 use wasmi_core::UntypedValue;
 
-/// Providers are inputs to `wasmi` bytecode instructions.
+/// Tagged providers are inputs to `wasmi` bytecode instructions.
 ///
 /// Either a [`Register`] or a constant [`UntypedValue`].
 #[derive(Debug, Copy, Clone)]
-pub enum Provider {
-    /// A register.
-    Register(Register),
+pub enum TaggedProvider {
+    /// A register referring to a function parameter or local variable.
+    Local(Register),
+    /// A register referring to a dynamically allocated register.
+    Dynamic(Register),
+    /// A register referring to a storage allocated register.
+    Storage(Register),
     /// An untyped constant value.
     Const(UntypedValue),
 }
@@ -21,7 +25,7 @@ pub enum Provider {
 #[derive(Debug, Default)]
 pub struct ProviderStack {
     /// The internal stack of providers.
-    providers: Vec<Provider>,
+    providers: Vec<TaggedProvider>,
 }
 
 impl ProviderStack {
@@ -31,13 +35,23 @@ impl ProviderStack {
     }
 
     /// Pushes a provider to the [`ProviderStack`].
-    pub fn push(&mut self, provider: Provider) {
+    fn push(&mut self, provider: TaggedProvider) {
         self.providers.push(provider);
     }
 
-    /// Pushes a [`Register`] to the [`ProviderStack`].
-    pub fn push_register(&mut self, reg: Register) {
-        self.push(Provider::Register(reg));
+    /// Pushes a [`Register`] to the [`ProviderStack`] referring to a function parameter or local variable.
+    pub fn push_local(&mut self, reg: Register) {
+        self.push(TaggedProvider::Local(reg));
+    }
+
+    /// Pushes a dynamically allocated [`Register`] to the [`ProviderStack`].
+    pub fn push_dynamic(&mut self, reg: Register) {
+        self.push(TaggedProvider::Local(reg));
+    }
+
+    /// Pushes a storage allocated [`Register`] to the [`ProviderStack`].
+    pub fn push_storage(&mut self, reg: Register) {
+        self.push(TaggedProvider::Local(reg));
     }
 
     /// Pushes a constant value to the [`ProviderStack`].
@@ -45,7 +59,7 @@ impl ProviderStack {
     where
         T: Into<UntypedValue>,
     {
-        self.push(Provider::Const(value.into()));
+        self.push(TaggedProvider::Const(value.into()));
     }
 
     /// Pops the top-most [`Provider`] from the [`ProviderStack`].
@@ -53,18 +67,18 @@ impl ProviderStack {
     /// # Panics
     ///
     /// If the [`ProviderStack`] is empty.
-    pub fn pop(&mut self) -> Provider {
+    pub fn pop(&mut self) -> TaggedProvider {
         self.providers
             .pop()
             .unwrap_or_else(|| panic!("tried to pop provider from empty provider stack"))
     }
 
-    /// Pops the two top-most [`Provider`] items from the [`ProviderStack`].
+    /// Pops the two top-most [`TaggedProvider`] items from the [`ProviderStack`].
     ///
     /// # Panics
     ///
-    /// If the [`ProviderStack`] does not contain at least two [`Provider`] items.
-    pub fn pop2(&mut self) -> (Provider, Provider) {
+    /// If the [`ProviderStack`] does not contain at least two [`TaggedProvider`] items.
+    pub fn pop2(&mut self) -> (TaggedProvider, TaggedProvider) {
         let rhs = self.pop();
         let lhs = self.pop();
         (lhs, rhs)
@@ -75,18 +89,18 @@ impl ProviderStack {
     /// # Panics
     ///
     /// If the [`ProviderStack`] does not contain at least three [`Provider`] items.
-    pub fn pop3(&mut self) -> (Provider, Provider, Provider) {
+    pub fn pop3(&mut self) -> (TaggedProvider, TaggedProvider, TaggedProvider) {
         let (snd, trd) = self.pop2();
         let fst = self.pop();
         (fst, snd, trd)
     }
 
-    /// Pops the `n` top-most [`Provider`] items from the [`ProviderStack`].
+    /// Pops the `n` top-most [`TaggedProvider`] items from the [`ProviderStack`].
     ///
     /// # Panics
     ///
-    /// If the [`ProviderStack`] does not contain at least `n` [`Provider`] items.
-    pub fn pop_n(&mut self, n: usize) -> Drain<Provider> {
+    /// If the [`ProviderStack`] does not contain at least `n` [`TaggedProvider`] items.
+    pub fn pop_n(&mut self, n: usize) -> Drain<TaggedProvider> {
         let len = self.providers.len();
         assert!(
             n <= len,

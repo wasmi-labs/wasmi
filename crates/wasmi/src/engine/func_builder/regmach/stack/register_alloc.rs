@@ -6,9 +6,6 @@ use crate::engine::{
 use alloc::collections::btree_set::BTreeSet;
 use core::cmp::{max, min};
 
-#[cfg(doc)]
-use super::instr_encoder::InstrEncoder;
-
 /// The register allocator using during translation.
 ///
 /// # Note
@@ -137,6 +134,11 @@ impl RegisterAlloc {
         self.min_storage = u16::MAX;
     }
 
+    /// Returns thenumber of registers allocated as function parameters or locals.
+    pub fn len_locals(&self) -> u16 {
+        self.len_locals
+    }
+
     /// Returns the number of registers allocated by the [`RegisterAlloc`].
     pub fn len_registers(&self) -> u16 {
         let len_dynamic = self.max_dynamic - self.len_locals;
@@ -249,16 +251,31 @@ impl RegisterAlloc {
     ///
     /// - If the dynamic register allocation stack is empty.
     /// - If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
-    pub fn pop_storage(&mut self, user: Instr) {
+    pub fn pop_storage(&mut self) {
         self.assert_alloc_phase();
         assert_ne!(
             self.next_storage,
             u16::MAX,
             "storage register allocation stack is empty"
         );
-        let reg = Register::from_u16(self.next_storage);
-        self.storage_users.insert(RegisterUser::new(reg, user));
         self.next_storage += 1;
+    }
+
+    /// Registers the [`Instr`] user for [`Register`] if `reg` is allocated in storage space.
+    ///
+    /// # Note
+    ///
+    /// This is required in order to update [`Register`] indices of storage space
+    /// allocated registers after register allocation is finished.
+    pub fn register_user(&mut self, reg: Register, user: Instr) {
+        if self.is_storage(reg) {
+            self.storage_users.insert(RegisterUser::new(reg, user));
+        }
+    }
+
+    /// Returns `true` if the [`Register`] is allocated in the storage space.
+    fn is_storage(&self, reg: Register) -> bool {
+        self.min_storage < reg.to_u16()
     }
 
     /// Defragments the allocated registers space.
