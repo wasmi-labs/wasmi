@@ -62,7 +62,7 @@ impl ProviderStack {
         self.push(TaggedProvider::Const(value.into()));
     }
 
-    /// Pops the top-most [`Provider`] from the [`ProviderStack`].
+    /// Pops the top-most [`TaggedProvider`] from the [`ProviderStack`].
     ///
     /// # Panics
     ///
@@ -84,11 +84,11 @@ impl ProviderStack {
         (lhs, rhs)
     }
 
-    /// Pops the three top-most [`Provider`] items from the [`ProviderStack`].
+    /// Pops the three top-most [`TaggedProvider`] items from the [`ProviderStack`].
     ///
     /// # Panics
     ///
-    /// If the [`ProviderStack`] does not contain at least three [`Provider`] items.
+    /// If the [`ProviderStack`] does not contain at least three [`TaggedProvider`] items.
     pub fn pop3(&mut self) -> (TaggedProvider, TaggedProvider, TaggedProvider) {
         let (snd, trd) = self.pop2();
         let fst = self.pop();

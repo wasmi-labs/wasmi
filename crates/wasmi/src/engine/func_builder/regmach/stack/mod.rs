@@ -51,7 +51,7 @@ impl ValueStack {
     ///
     /// # Panics
     ///
-    /// If the current [`AllocPhase`] is not [`AllocPhase::Init`].
+    /// If the [`RegisterAlloc`] is not in its initialization phase.
     pub fn register_locals(&mut self, amount: u32) -> Result<(), TranslationError> {
         self.reg_alloc.register_locals(amount)
     }

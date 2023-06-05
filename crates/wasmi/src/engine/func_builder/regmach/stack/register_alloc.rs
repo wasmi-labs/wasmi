@@ -6,6 +6,9 @@ use crate::engine::{
 use alloc::collections::btree_set::BTreeSet;
 use core::cmp::{max, min};
 
+#[cfg(doc)]
+use crate::engine::func_builder::regmach::InstrEncoder;
+
 /// The register allocator using during translation.
 ///
 /// # Note
