@@ -27,8 +27,9 @@ use self::{
     },
 };
 use super::{
-    bytecode::{DataSegmentIdx, ElementSegmentIdx, GlobalIdx, TableIdx},
+    bytecode::{BlockFuel, DataSegmentIdx, ElementSegmentIdx, GlobalIdx, TableIdx},
     const_pool::ConstRef,
+    TranslationError,
 };
 use wasmi_core::TrapCode;
 
@@ -120,6 +121,12 @@ pub enum Instruction {
     /// lead to traps during execution. For example division
     /// by constant zero.
     Trap(TrapCode),
+    /// Instruction generated to consume fuel for its associated basic block.
+    ///
+    /// # Note
+    ///
+    /// These instructions are only generated if fuel metering is enabled.
+    ConsumeFuel(BlockFuel),
 
     /// A Wasm `return` instruction.
     ///
@@ -3548,4 +3555,25 @@ pub enum Instruction {
     F64ConvertI64S(UnaryInstr),
     /// Wasm `f64.convert_i64_u` instruction.
     F64ConvertI64U(UnaryInstr),
+}
+
+impl Instruction {
+    /// Convenience method to create a new [`Instruction::ConsumeFuel`].
+    pub fn consume_fuel(amount: u64) -> Result<Self, TranslationError> {
+        let block_fuel = BlockFuel::try_from(amount)?;
+        Ok(Self::ConsumeFuel(block_fuel))
+    }
+
+    /// Increases the fuel consumption of the [`Instruction::ConsumeFuel`] instruction by `delta`.
+    ///
+    /// # Panics
+    ///
+    /// - If `self` is not a [`Instruction::ConsumeFuel`] instruction.
+    /// - If the new fuel consumption overflows the internal `u64` value.
+    pub fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), TranslationError> {
+        match self {
+            Self::ConsumeFuel(block_fuel) => block_fuel.bump_by(delta),
+            instr => panic!("expected Instruction::ConsumeFuel but found: {instr:?}"),
+        }
+    }
 }

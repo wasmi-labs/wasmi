@@ -2,7 +2,13 @@
 
 #![allow(unused_imports)] // TODO: remove
 
-use super::{instr_encoder::InstrEncoder, register_alloc::RegisterAlloc, ProviderStack};
+use super::{
+    control_frame::BlockControlFrame,
+    instr_encoder::InstrEncoder,
+    register_alloc::RegisterAlloc,
+    ControlStack,
+    ProviderStack,
+};
 use crate::{
     engine::{
         bytecode::{
@@ -52,6 +58,17 @@ pub struct FuncTranslatorAllocations {
     instr_encoder: InstrEncoder,
     /// The register allocator.
     reg_alloc: RegisterAlloc,
+    /// The control stack.
+    control_stack: ControlStack,
+}
+
+impl FuncTranslatorAllocations {
+    /// Resets the [`FuncTranslatorAllocations`].
+    fn reset(&mut self) {
+        self.providers.reset();
+        self.instr_encoder.reset();
+        self.reg_alloc.reset();
+    }
 }
 
 /// Type concerned with translating from Wasm bytecode to `wasmi` bytecode.
@@ -83,7 +100,7 @@ impl<'parser> FuncTranslator<'parser> {
         compiled_func: CompiledFunc,
         res: ModuleResources<'parser>,
         alloc: FuncTranslatorAllocations,
-    ) -> Self {
+    ) -> Result<Self, TranslationError> {
         Self {
             func,
             compiled_func,
@@ -91,6 +108,46 @@ impl<'parser> FuncTranslator<'parser> {
             reachable: true,
             alloc,
         }
+        .init()
+    }
+
+    /// Initializes a newly constructed [`FuncTranslator`].
+    fn init(mut self) -> Result<Self, TranslationError> {
+        self.alloc.reset();
+        self.init_func_body_block()?;
+        self.init_func_params()?;
+        Ok(self)
+    }
+
+    /// Registers the `block` control frame surrounding the entire function body.
+    fn init_func_body_block(&mut self) -> Result<(), TranslationError> {
+        let func_type = self.res.get_type_of_func(self.func);
+        let block_type = BlockType::func_type(func_type);
+        let end_label = self.alloc.instr_encoder.new_label();
+        let consume_fuel = self
+            .is_fuel_metering_enabled()
+            .then(|| {
+                self.alloc
+                    .instr_encoder
+                    .push_consume_fuel_instr(self.fuel_costs().base)
+            })
+            .transpose()?;
+        let block_frame = BlockControlFrame::new(block_type, end_label, 0, consume_fuel);
+        self.alloc.control_stack.push_frame(block_frame);
+        Ok(())
+    }
+
+    /// Registers the function parameters in the emulated value stack.
+    fn init_func_params(&mut self) -> Result<(), TranslationError> {
+        for _param_type in self.func_type().params() {
+            self.alloc.reg_alloc.register_locals(1)?;
+        }
+        Ok(())
+    }
+
+    /// Returns a shared reference to the underlying [`Engine`].
+    fn engine(&self) -> &Engine {
+        self.res.engine()
     }
 
     /// Consumes `self` and returns the underlying reusable [`FuncTranslatorAllocations`].
@@ -127,6 +184,73 @@ impl<'parser> FuncTranslator<'parser> {
         self.res
             .engine()
             .init_func_2(self.compiled_func, len_registers, instrs);
+        Ok(())
+    }
+
+    /// Returns the [`FuncType`] of the function that is currently translated.
+    fn func_type(&self) -> FuncType {
+        let dedup_func_type = self.res.get_type_of_func(self.func);
+        self.engine()
+            .resolve_func_type(dedup_func_type, Clone::clone)
+    }
+
+    /// Resolves the [`FuncType`] of the given [`FuncTypeIdx`].
+    fn func_type_at(&self, func_type_index: SignatureIdx) -> FuncType {
+        let func_type_index = FuncTypeIdx::from(func_type_index.to_u32()); // TODO: use the same type
+        let dedup_func_type = self.res.get_func_type(func_type_index);
+        self.res
+            .engine()
+            .resolve_func_type(dedup_func_type, Clone::clone)
+    }
+
+    /// Resolves the [`FuncType`] of the given [`FuncIdx`].
+    fn func_type_of(&self, func_index: FuncIdx) -> FuncType {
+        let dedup_func_type = self.res.get_type_of_func(func_index);
+        self.res
+            .engine()
+            .resolve_func_type(dedup_func_type, Clone::clone)
+    }
+
+    /// Returns `true` if the code at the current translation position is reachable.
+    fn is_reachable(&self) -> bool {
+        self.reachable
+    }
+
+    /// Returns `true` if fuel metering is enabled for the [`Engine`].
+    ///
+    /// # Note
+    ///
+    /// This is important for the [`FuncTranslator`] to know since it
+    /// has to create [`Instruction::ConsumeFuel`] instructions on the start
+    /// of basic blocks such as Wasm `block`, `if` and `loop` that account
+    /// for all the instructions that are going to be executed within their
+    /// respective scope.
+    fn is_fuel_metering_enabled(&self) -> bool {
+        self.engine().config().get_consume_fuel()
+    }
+
+    /// Returns the configured [`FuelCosts`] of the [`Engine`].
+    fn fuel_costs(&self) -> &FuelCosts {
+        self.engine().config().fuel_costs()
+    }
+
+    /// Returns the most recent [`Instruction::ConsumeFuel`] in the translation process.
+    ///
+    /// Returns `None` if gas metering is disabled.
+    fn consume_fuel_instr(&self) -> Option<Instr> {
+        // self.alloc.control_frames.last().consume_fuel_instr() // TODO
+        None
+    }
+
+    /// Adds fuel to the most recent [`Instruction::ConsumeFuel`] in the translation process.
+    ///
+    /// Does nothing if gas metering is disabled.
+    fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), TranslationError> {
+        if let Some(instr) = self.consume_fuel_instr() {
+            self.alloc
+                .instr_encoder
+                .bump_fuel_consumption(instr, delta)?;
+        }
         Ok(())
     }
 }

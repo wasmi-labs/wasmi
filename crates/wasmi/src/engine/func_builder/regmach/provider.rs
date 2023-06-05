@@ -25,6 +25,11 @@ pub struct ProviderStack {
 }
 
 impl ProviderStack {
+    /// Resets the [`ProviderStack`].
+    pub fn reset(&mut self) {
+        self.providers.clear()
+    }
+
     /// Pushes a provider to the [`ProviderStack`].
     pub fn push(&mut self, provider: Provider) {
         self.providers.push(provider);

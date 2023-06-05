@@ -62,14 +62,14 @@ impl<'parser> FuncBuilder<'parser> {
         validator: FuncValidator,
         allocations: FuncTranslatorAllocations,
         allocations2: FuncTranslatorAllocations2,
-    ) -> Self {
-        Self {
+    ) -> Result<Self, TranslationError> {
+        Ok(Self {
             pos: 0,
             validator,
             translate_regmach: res.engine().config().register_machine_translation(),
             translator: FuncTranslator::new(func, compiled_func, res, allocations),
-            translator2: FuncTranslator2::new(func, compiled_func_2, res, allocations2),
-        }
+            translator2: FuncTranslator2::new(func, compiled_func_2, res, allocations2)?,
+        })
     }
 
     /// Translates the given local variables for the translated function.

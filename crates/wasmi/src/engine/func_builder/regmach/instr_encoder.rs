@@ -2,7 +2,10 @@ use super::DefragRegister;
 use crate::engine::{
     bytecode::BranchOffset,
     bytecode2::{Instruction, Register},
-    func_builder::{labels::LabelRegistry, Instr},
+    func_builder::{
+        labels::{LabelRef, LabelRegistry},
+        Instr,
+    },
     TranslationError,
 };
 use alloc::vec::{Drain, Vec};
@@ -11,22 +14,59 @@ use alloc::vec::{Drain, Vec};
 #[derive(Debug, Default)]
 pub struct InstrEncoder {
     /// Already encoded [`Instruction`] words.
-    instrs: Vec<Instruction>,
+    instrs: InstrSequence,
     /// Unresolved and unpinned labels created during function translation.
     labels: LabelRegistry,
 }
 
-impl InstrEncoder {
-    /// Updates the branch offsets of all branch instructions inplace.
+/// The sequence of encoded [`Instruction`].
+#[derive(Debug, Default)]
+pub struct InstrSequence {
+    /// Already encoded [`Instruction`] words.
+    instrs: Vec<Instruction>,
+}
+
+impl InstrSequence {
+    /// Resets the [`InstrSequence`].
+    pub fn reset(&mut self) {
+        self.instrs.clear();
+    }
+
+    /// Pushes an [`Instruction`] to the instruction sequence and returns its [`Instr`].
+    ///
+    /// # Errors
+    ///
+    /// If there are too many instructions in the instruction sequence.
+    fn push(&mut self, instruction: Instruction) -> Result<Instr, TranslationError> {
+        let instr = Instr::from_usize(self.instrs.len());
+        self.instrs.push(instruction);
+        Ok(instr)
+    }
+
+    /// Returns the [`Instruction`] associated to the [`Instr`] for this [`InstrSequence`].
     ///
     /// # Panics
     ///
-    /// If this is used before all branching labels have been pinned.
-    pub fn update_branch_offsets(&mut self) -> Result<(), TranslationError> {
-        for (user, offset) in self.labels.resolved_users() {
-            self.instrs[user.into_usize()].update_branch_offset(offset?);
-        }
-        Ok(())
+    /// If no [`Instruction`] is associated to the [`Instr`] for this [`InstrSequence`].
+    fn get_mut(&mut self, instr: Instr) -> &mut Instruction {
+        &mut self.instrs[instr.into_usize()]
+    }
+
+    /// Return an iterator over the sequence of generated [`Instruction`].
+    ///
+    /// # Note
+    ///
+    /// The [`InstrSequence`] will be in an empty state after this operation.
+    pub fn drain(&mut self) -> Drain<Instruction> {
+        self.instrs.drain(..)
+    }
+}
+
+impl InstrEncoder {
+    /// Resets the [`InstrEncoder`].
+    pub fn reset(&mut self) {
+        self.instrs.reset();
+        self.labels.reset();
     }
 
     /// Return an iterator over the sequence of generated [`Instruction`].
@@ -35,7 +75,44 @@ impl InstrEncoder {
     ///
     /// The [`InstrEncoder`] will be in an empty state after this operation.
     pub fn drain_instrs(&mut self) -> Drain<Instruction> {
-        self.instrs.drain(..)
+        self.instrs.drain()
+    }
+
+    /// Creates a new unresolved label and returns its [`LabelRef`].
+    pub fn new_label(&mut self) -> LabelRef {
+        self.labels.new_label()
+    }
+
+    /// Updates the branch offsets of all branch instructions inplace.
+    ///
+    /// # Panics
+    ///
+    /// If this is used before all branching labels have been pinned.
+    pub fn update_branch_offsets(&mut self) -> Result<(), TranslationError> {
+        for (user, offset) in self.labels.resolved_users() {
+            self.instrs.get_mut(user).update_branch_offset(offset?);
+        }
+        Ok(())
+    }
+
+    /// Bumps consumed fuel for [`Instruction::ConsumeFuel`] of `instr` by `delta`.
+    ///
+    /// # Errors
+    ///
+    /// If consumed fuel is out of bounds after this operation.
+    pub fn bump_fuel_consumption(
+        &mut self,
+        instr: Instr,
+        delta: u64,
+    ) -> Result<(), TranslationError> {
+        self.instrs.get_mut(instr).bump_fuel_consumption(delta)
+    }
+}
+
+impl InstrEncoder {
+    /// Pushes an [`Instruction::ConsumeFuel`] with base fuel costs to the [`InstrEncoder`].
+    pub fn push_consume_fuel_instr(&mut self, block_fuel: u64) -> Result<Instr, TranslationError> {
+        self.instrs.push(Instruction::consume_fuel(block_fuel)?)
     }
 }
 

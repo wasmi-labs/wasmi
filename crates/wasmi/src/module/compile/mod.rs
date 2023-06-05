@@ -36,7 +36,7 @@ pub fn translate<'parser>(
         validator,
         res,
         (allocations, allocations2),
-    )
+    )?
     .translate()
 }
 
@@ -57,7 +57,7 @@ impl<'parser> FunctionTranslator<'parser> {
         validator: FuncValidator<ValidatorResources>,
         res: ModuleResources<'parser>,
         (allocations, allocations_2): (FuncTranslatorAllocations, FuncTranslatorAllocations2),
-    ) -> Self {
+    ) -> Result<Self, ModuleError> {
         let func_builder = FuncBuilder::new(
             func,
             compiled_func,
@@ -66,11 +66,11 @@ impl<'parser> FunctionTranslator<'parser> {
             validator,
             allocations,
             allocations_2,
-        );
-        Self {
+        )?;
+        Ok(Self {
             func_body,
             func_builder,
-        }
+        })
     }
 
     /// Starts translation of the Wasm stream into `wasmi` bytecode.
