@@ -206,7 +206,7 @@ fn i32_add_imm_big() {
             result: Register::from_u16(1),
             input: Register::from_u16(0),
         }),
-        Instruction::Const32(Const32::from_i32(u16::MAX as i32)),
+        Instruction::Const32(Const32::from_i32(i32::from(u16::MAX))),
         Instruction::ReturnReg {
             value: Register::from_u16(1),
         },
@@ -232,7 +232,7 @@ fn i32_add_imm_big_rev() {
             result: Register::from_u16(1),
             input: Register::from_u16(0),
         }),
-        Instruction::Const32(Const32::from_i32(u16::MAX as i32)),
+        Instruction::Const32(Const32::from_i32(i32::from(u16::MAX))),
         Instruction::ReturnReg {
             value: Register::from_u16(1),
         },
