@@ -5,7 +5,7 @@
 use super::{create_module, wat2wasm};
 use crate::{
     engine::{
-        bytecode2::{BinInstr, BinInstrImm16, Const16, Const32, Instruction, Register},
+        bytecode2::{BinInstr, BinInstrImm16, Const16, Const32, Instruction, Register, UnaryInstr},
         CompiledFunc,
         DedupFuncType,
     },
@@ -181,6 +181,58 @@ fn i32_add_imm_rev() {
             reg_in: Register::from_u16(0),
             imm_in: Const16::from_i16(1),
         }),
+        Instruction::ReturnReg {
+            value: Register::from_u16(1),
+        },
+    ];
+    assert_func_bodies(wasm, [expected]);
+}
+
+#[test]
+fn i32_add_imm_big() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param i32) (result i32)
+                local.get 0
+                i32.const 65535 ;; u16::MAX
+                i32.add
+            )
+        )
+    "#,
+    );
+    let expected = [
+        Instruction::I32AddImm(UnaryInstr {
+            result: Register::from_u16(1),
+            input: Register::from_u16(0),
+        }),
+        Instruction::Const32(Const32::from_i32(u16::MAX as i32)),
+        Instruction::ReturnReg {
+            value: Register::from_u16(1),
+        },
+    ];
+    assert_func_bodies(wasm, [expected]);
+}
+
+#[test]
+fn i32_add_imm_big_rev() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param i32) (result i32)
+                i32.const 65535 ;; u16::MAX
+                local.get 0
+                i32.add
+            )
+        )
+    "#,
+    );
+    let expected = [
+        Instruction::I32AddImm(UnaryInstr {
+            result: Register::from_u16(1),
+            input: Register::from_u16(0),
+        }),
+        Instruction::Const32(Const32::from_i32(u16::MAX as i32)),
         Instruction::ReturnReg {
             value: Register::from_u16(1),
         },
