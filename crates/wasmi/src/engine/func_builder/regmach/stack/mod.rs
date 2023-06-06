@@ -56,7 +56,7 @@ impl ValueStack {
         self.reg_alloc.register_locals(amount)
     }
 
-    /// Finishes [`AllocPhase::Init`].
+    /// Finishes the local variable registration phase.
     ///
     /// # Note
     ///
