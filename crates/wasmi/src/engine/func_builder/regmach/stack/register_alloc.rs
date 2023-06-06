@@ -173,12 +173,22 @@ impl RegisterAlloc {
         Ok(())
     }
 
+    /// Finishes [`AllocPhase::Init`].
+    ///
+    /// # Note
+    ///
+    /// After this operation no local variable can be registered anymore.
+    /// However, it is then possible to push and pop dynamic and storage registers to the stack.
+    pub fn finish_register_locals(&mut self) {
+        assert!(matches!(self.phase, AllocPhase::Init));
+        self.phase = AllocPhase::Alloc;
+    }
+
     /// Asserts that the [`RegisterAlloc`] is in [`AllocPhase::Init`] or [`AllocPhase::Alloc`].
     ///
     /// Makes sure the [`RegisterAlloc`] is in [`AllocPhase::Alloc`] after this call.
     fn assert_alloc_phase(&mut self) {
-        assert!(matches!(self.phase, AllocPhase::Init | AllocPhase::Alloc));
-        self.phase = AllocPhase::Alloc;
+        assert!(matches!(self.phase, AllocPhase::Alloc));
     }
 
     /// Allocates a new [`Register`] on the dynamic allocation stack and returns it.
@@ -276,8 +286,13 @@ impl RegisterAlloc {
         }
     }
 
-    /// Returns `true` if the [`Register`] is allocated in the storage space.
-    fn is_storage(&self, reg: Register) -> bool {
+    /// Returns `true` if the [`Register`] is allocated in the dynamic register space.
+    pub fn is_dynamic(&self, reg: Register) -> bool {
+        self.len_locals <= reg.to_u16() && reg.to_u16() < self.max_dynamic
+    }
+
+    /// Returns `true` if the [`Register`] is allocated in the storage register space.
+    pub fn is_storage(&self, reg: Register) -> bool {
         self.min_storage < reg.to_u16()
     }
 

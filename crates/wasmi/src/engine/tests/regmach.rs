@@ -5,7 +5,7 @@
 use super::{create_module, wat2wasm};
 use crate::{
     engine::{
-        bytecode2::{BinInstr, Instruction, Register},
+        bytecode2::{BinInstr, BinInstrImm16, Const16, Const32, Instruction, Register},
         CompiledFunc,
         DedupFuncType,
     },
@@ -133,5 +133,114 @@ fn i32_add() {
             value: Register::from_u16(2),
         },
     ];
+    assert_func_bodies(wasm, [expected]);
+}
+
+#[test]
+fn i32_add_imm() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param i32) (result i32)
+                local.get 0
+                i32.const 1
+                i32.add
+            )
+        )
+    "#,
+    );
+    let expected = [
+        Instruction::I32AddImm16(BinInstrImm16 {
+            result: Register::from_u16(1),
+            reg_in: Register::from_u16(0),
+            imm_in: Const16::from_i16(1),
+        }),
+        Instruction::ReturnReg {
+            value: Register::from_u16(1),
+        },
+    ];
+    assert_func_bodies(wasm, [expected]);
+}
+
+#[test]
+fn i32_add_imm_rev() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param i32) (result i32)
+                i32.const 1
+                local.get 0
+                i32.add
+            )
+        )
+    "#,
+    );
+    let expected = [
+        Instruction::I32AddImm16(BinInstrImm16 {
+            result: Register::from_u16(1),
+            reg_in: Register::from_u16(0),
+            imm_in: Const16::from_i16(1),
+        }),
+        Instruction::ReturnReg {
+            value: Register::from_u16(1),
+        },
+    ];
+    assert_func_bodies(wasm, [expected]);
+}
+
+#[test]
+fn i32_add_zero() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param i32) (result i32)
+                local.get 0
+                i32.const 0
+                i32.add
+            )
+        )
+    "#,
+    );
+    let expected = [Instruction::ReturnReg {
+        value: Register::from_u16(0),
+    }];
+    assert_func_bodies(wasm, [expected]);
+}
+
+#[test]
+fn i32_add_zero_rev() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param i32) (result i32)
+                i32.const 0
+                local.get 0
+                i32.add
+            )
+        )
+    "#,
+    );
+    let expected = [Instruction::ReturnReg {
+        value: Register::from_u16(0),
+    }];
+    assert_func_bodies(wasm, [expected]);
+}
+
+#[test]
+fn i32_add_consteval() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (result i32)
+                i32.const 1
+                i32.const 2
+                i32.add
+            )
+        )
+    "#,
+    );
+    let expected = [Instruction::ReturnImm32 {
+        value: Const32::from_u32(3),
+    }];
     assert_func_bodies(wasm, [expected]);
 }

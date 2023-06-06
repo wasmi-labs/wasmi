@@ -165,12 +165,7 @@ impl<'parser> FuncTranslator<'parser> {
     /// and function parameters. After this function call no more locals and parameters may
     /// be added to this function translation.
     pub fn finish_translate_locals(&mut self) -> Result<(), TranslationError> {
-        // TODO: not needed at the moment since we are required to
-        //       calculate all required registers in order to properly
-        //       adjust the consume fuel instruction of the function entry
-        //       block. However, this only is determined at the end of the
-        //       translation process. Therefore we might not really need
-        //       this method at all and maybe can remove this later.
+        self.alloc.stack.finish_register_locals();
         Ok(())
     }
 

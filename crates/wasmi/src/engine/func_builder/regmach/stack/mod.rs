@@ -56,6 +56,41 @@ impl ValueStack {
         self.reg_alloc.register_locals(amount)
     }
 
+    /// Finishes [`AllocPhase::Init`].
+    ///
+    /// # Note
+    ///
+    /// After this operation no local variable can be registered anymore.
+    /// However, it is then possible to push and pop dynamic and storage registers to the stack.
+    pub fn finish_register_locals(&mut self) {
+        self.reg_alloc.finish_register_locals()
+    }
+
+    /// Pushes a constant value to the [`ProviderStack`].
+    pub fn push_const<T>(&mut self, value: T)
+    where
+        T: Into<UntypedValue>,
+    {
+        self.providers.push_const(value)
+    }
+
+    /// Pushes the given [`Register`] to the [`ValueStack`].
+    pub fn push_register(&mut self, reg: Register) -> Result<(), TranslationError> {
+        if self.reg_alloc.is_dynamic(reg) {
+            self.reg_alloc.push_dynamic()?;
+            self.providers.push_dynamic(reg);
+            return Ok(());
+        }
+        if self.reg_alloc.is_storage(reg) {
+            // self.reg_alloc.push_storage()?; TODO
+            self.providers.push_storage(reg);
+            // return Ok(())
+            todo!() // see above lines
+        }
+        self.providers.push_local(reg);
+        Ok(())
+    }
+
     /// Pushes a [`Register`] to the [`ValueStack`] referring to a function parameter or local variable.
     pub fn push_local(&mut self, local_index: u32) -> Result<Register, TranslationError> {
         let index = u16::try_from(local_index)

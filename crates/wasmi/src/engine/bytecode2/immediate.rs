@@ -11,6 +11,12 @@ use wasmi_core::F32;
 pub struct Const16(i16);
 
 impl Const16 {
+    /// Creates an [`Const16`] from the given `i16` value.
+    #[cfg(test)]
+    pub fn from_i16(value: i16) -> Self {
+        Self(value)
+    }
+
     /// Creates an [`Const16`] from the given `i32` value if possible.
     pub fn from_i32(value: i32) -> Option<Self> {
         i16::try_from(value).ok().map(Self)

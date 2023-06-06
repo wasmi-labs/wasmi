@@ -2,9 +2,10 @@
 
 use super::{stack::Provider, FuncTranslator};
 use crate::engine::{
-    bytecode2::{BinInstr, Instruction, Register},
+    bytecode2::{BinInstr, BinInstrImm16, Const16, Const32, Instruction, Register, UnaryInstr},
     TranslationError,
 };
+use wasmi_core::UntypedValue;
 use wasmparser::VisitOperator;
 
 macro_rules! impl_visit_operator {
@@ -100,11 +101,19 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_return(&mut self) -> Self::Output {
-        self.alloc
-            .instr_encoder
-            .push_instr(Instruction::ReturnReg {
-                value: Register::from_u16(2),
-            })?;
+        match self.alloc.stack.pop() {
+            Provider::Register(value) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::ReturnReg { value })?;
+            }
+            Provider::Const(value) => {
+                let value = Const32::from_i32(i32::from(value));
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::ReturnImm32 { value })?;
+            }
+        }
         Ok(())
     }
 
@@ -263,7 +272,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_const(&mut self, value: i32) -> Self::Output {
-        todo!()
+        self.alloc.stack.push_const(value);
+        Ok(())
     }
 
     fn visit_i64_const(&mut self, value: i64) -> Self::Output {
@@ -449,14 +459,41 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     .push_instr(Instruction::I32Add(BinInstr { result, lhs, rhs }))?;
                 Ok(())
             }
-            (Provider::Register(lhs), Provider::Const(rhs)) => {
-                todo!()
-            }
-            (Provider::Const(lhs), Provider::Register(rhs)) => {
-                todo!()
+            (Provider::Const(imm_in), Provider::Register(reg_in))
+            | (Provider::Register(reg_in), Provider::Const(imm_in)) => {
+                let value = i32::from(imm_in);
+                if value == 0 {
+                    self.alloc.stack.push_register(reg_in)?;
+                    return Ok(());
+                }
+                if let Some(rhs) = Const16::from_i32(value) {
+                    let result = self.alloc.stack.push_dynamic()?;
+                    self.alloc
+                        .instr_encoder
+                        .push_instr(Instruction::I32AddImm16(BinInstrImm16 {
+                            result,
+                            reg_in,
+                            imm_in: rhs,
+                        }))?;
+                    return Ok(());
+                }
+                let result = self.alloc.stack.push_dynamic()?;
+                let rhs = Const32::from_i32(value);
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::I32AddImm(UnaryInstr {
+                        result,
+                        input: reg_in,
+                    }))?;
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::Const32(rhs))?;
+                Ok(())
             }
             (Provider::Const(lhs), Provider::Const(rhs)) => {
-                todo!()
+                let result = UntypedValue::i32_add(lhs, rhs);
+                self.alloc.stack.push_const(result);
+                Ok(())
             }
         }
     }
