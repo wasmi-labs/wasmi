@@ -497,7 +497,52 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_mul(&mut self) -> Self::Output {
-        todo!()
+        let rhs = self.alloc.stack.pop();
+        let lhs = self.alloc.stack.pop();
+        match (lhs, rhs) {
+            (Provider::Register(lhs), Provider::Register(rhs)) => {
+                let result = self.alloc.stack.push_dynamic()?;
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::i32_mul(result, lhs, rhs))?;
+                Ok(())
+            }
+            (Provider::Const(imm_in), Provider::Register(reg_in))
+            | (Provider::Register(reg_in), Provider::Const(imm_in)) => {
+                let value = i32::from(imm_in);
+                if value == 0 {
+                    // Optimization: `add x * 0` is always `0`
+                    self.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    return Ok(());
+                }
+                if value == 1 {
+                    // Optimization: `add x * 1` is always `x`
+                    self.alloc.stack.push_register(reg_in)?;
+                    return Ok(());
+                }
+                if let Some(rhs) = Const16::from_i32(value) {
+                    // Optimization: We can use a compact instruction for small constants.
+                    let result = self.alloc.stack.push_dynamic()?;
+                    self.alloc
+                        .instr_encoder
+                        .push_instr(Instruction::i32_mul_imm16(result, reg_in, rhs))?;
+                    return Ok(());
+                }
+                let result = self.alloc.stack.push_dynamic()?;
+                let rhs = Const32::from_i32(value);
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::i32_mul_imm(result, reg_in))?;
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::Const32(rhs))?;
+                Ok(())
+            }
+            (Provider::Const(lhs), Provider::Const(rhs)) => {
+                self.alloc.stack.push_const(UntypedValue::i32_mul(lhs, rhs));
+                Ok(())
+            }
+        }
     }
 
     fn visit_i32_div_s(&mut self) -> Self::Output {
