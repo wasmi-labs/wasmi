@@ -456,43 +456,37 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 let result = self.alloc.stack.push_dynamic()?;
                 self.alloc
                     .instr_encoder
-                    .push_instr(Instruction::I32Add(BinInstr { result, lhs, rhs }))?;
+                    .push_instr(Instruction::i32_add(result, lhs, rhs))?;
                 Ok(())
             }
             (Provider::Const(imm_in), Provider::Register(reg_in))
             | (Provider::Register(reg_in), Provider::Const(imm_in)) => {
                 let value = i32::from(imm_in);
                 if value == 0 {
+                    // Optimization: `add x + 0` is same as `x`
                     self.alloc.stack.push_register(reg_in)?;
                     return Ok(());
                 }
                 if let Some(rhs) = Const16::from_i32(value) {
+                    // Optimization: We can use a compact instruction for small constants.
                     let result = self.alloc.stack.push_dynamic()?;
                     self.alloc
                         .instr_encoder
-                        .push_instr(Instruction::I32AddImm16(BinInstrImm16 {
-                            result,
-                            reg_in,
-                            imm_in: rhs,
-                        }))?;
+                        .push_instr(Instruction::i32_add_imm16(result, reg_in, rhs))?;
                     return Ok(());
                 }
                 let result = self.alloc.stack.push_dynamic()?;
                 let rhs = Const32::from_i32(value);
                 self.alloc
                     .instr_encoder
-                    .push_instr(Instruction::I32AddImm(UnaryInstr {
-                        result,
-                        input: reg_in,
-                    }))?;
+                    .push_instr(Instruction::i32_add_imm(result, reg_in))?;
                 self.alloc
                     .instr_encoder
                     .push_instr(Instruction::Const32(rhs))?;
                 Ok(())
             }
             (Provider::Const(lhs), Provider::Const(rhs)) => {
-                let result = UntypedValue::i32_add(lhs, rhs);
-                self.alloc.stack.push_const(result);
+                self.alloc.stack.push_const(UntypedValue::i32_add(lhs, rhs));
                 Ok(())
             }
         }

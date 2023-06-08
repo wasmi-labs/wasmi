@@ -30,6 +30,13 @@ pub struct BinInstr {
     pub rhs: Register,
 }
 
+impl BinInstr {
+    /// Creates a new [`BinInstr`].
+    pub fn new(result: Register, lhs: Register, rhs: Register) -> Self {
+        Self { result, lhs, rhs }
+    }
+}
+
 /// A binary instruction with an immediate right-hand side value.
 ///
 /// # Note
@@ -55,6 +62,17 @@ pub struct BinInstrImm16 {
     pub imm_in: Const16,
 }
 
+impl BinInstrImm16 {
+    /// Creates a new [`BinInstrImm16`].
+    pub fn new(result: Register, reg_in: Register, imm_in: Const16) -> Self {
+        Self {
+            result,
+            reg_in,
+            imm_in,
+        }
+    }
+}
+
 /// A unary instruction.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct UnaryInstr {
@@ -62,6 +80,13 @@ pub struct UnaryInstr {
     pub result: Register,
     /// The register holding the input of the instruction.
     pub input: Register,
+}
+
+impl UnaryInstr {
+    /// Creates a new [`UnaryInstr`].
+    pub fn new(result: Register, input: Register) -> Self {
+        Self { result, input }
+    }
 }
 
 /// A unary instruction with 32-bit immediate input.
