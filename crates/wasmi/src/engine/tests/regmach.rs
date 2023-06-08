@@ -124,11 +124,11 @@ fn i32_add() {
     "#,
     );
     let expected = [
-        Instruction::I32Add(BinInstr {
-            result: Register::from_u16(2),
-            lhs: Register::from_u16(0),
-            rhs: Register::from_u16(1),
-        }),
+        Instruction::i32_add(
+            Register::from_u16(2),
+            Register::from_u16(0),
+            Register::from_u16(1),
+        ),
         Instruction::ReturnReg {
             value: Register::from_u16(2),
         },
@@ -150,11 +150,11 @@ fn i32_add_imm() {
     "#,
     );
     let expected = [
-        Instruction::I32AddImm16(BinInstrImm16 {
-            result: Register::from_u16(1),
-            reg_in: Register::from_u16(0),
-            imm_in: Const16::from_i16(1),
-        }),
+        Instruction::i32_add_imm16(
+            Register::from_u16(1),
+            Register::from_u16(0),
+            Const16::from_i16(1),
+        ),
         Instruction::ReturnReg {
             value: Register::from_u16(1),
         },
@@ -176,11 +176,11 @@ fn i32_add_imm_rev() {
     "#,
     );
     let expected = [
-        Instruction::I32AddImm16(BinInstrImm16 {
-            result: Register::from_u16(1),
-            reg_in: Register::from_u16(0),
-            imm_in: Const16::from_i16(1),
-        }),
+        Instruction::i32_add_imm16(
+            Register::from_u16(1),
+            Register::from_u16(0),
+            Const16::from_i16(1),
+        ),
         Instruction::ReturnReg {
             value: Register::from_u16(1),
         },
@@ -202,10 +202,7 @@ fn i32_add_imm_big() {
     "#,
     );
     let expected = [
-        Instruction::I32AddImm(UnaryInstr {
-            result: Register::from_u16(1),
-            input: Register::from_u16(0),
-        }),
+        Instruction::i32_add_imm(Register::from_u16(1), Register::from_u16(0)),
         Instruction::Const32(Const32::from_i32(i32::from(u16::MAX))),
         Instruction::ReturnReg {
             value: Register::from_u16(1),
@@ -228,10 +225,7 @@ fn i32_add_imm_big_rev() {
     "#,
     );
     let expected = [
-        Instruction::I32AddImm(UnaryInstr {
-            result: Register::from_u16(1),
-            input: Register::from_u16(0),
-        }),
+        Instruction::i32_add_imm(Register::from_u16(1), Register::from_u16(0)),
         Instruction::Const32(Const32::from_i32(i32::from(u16::MAX))),
         Instruction::ReturnReg {
             value: Register::from_u16(1),
