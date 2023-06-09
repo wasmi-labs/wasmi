@@ -3,32 +3,32 @@ use super::*;
 const WASM_OP: WasmOp = WasmOp::I32("mul");
 
 #[test]
-fn i32_mul() {
+fn reg_reg() {
     test_binary_reg_reg(WASM_OP, Instruction::i32_mul)
 }
 
 #[test]
-fn i32_mul_imm16() {
+fn reg_imm16() {
     test_binary_reg_imm16(WASM_OP, Instruction::i32_mul_imm16)
 }
 
 #[test]
-fn i32_mul_imm16_rev() {
+fn reg_imm16_rev() {
     test_binary_reg_imm16_rev(WASM_OP, Instruction::i32_mul_imm16)
 }
 
 #[test]
-fn i32_mul_imm() {
+fn reg_imm() {
     test_binary_reg_imm32(WASM_OP, Instruction::i32_mul_imm)
 }
 
 #[test]
-fn i32_mul_imm_rev() {
+fn reg_imm_rev() {
     test_binary_reg_imm32_rev(WASM_OP, Instruction::i32_mul_imm)
 }
 
 #[test]
-fn i32_mul_zero() {
+fn reg_zero() {
     let expected = [Instruction::ReturnImm32 {
         value: Const32::from_u32(0),
     }];
@@ -36,7 +36,7 @@ fn i32_mul_zero() {
 }
 
 #[test]
-fn i32_mul_zero_rev() {
+fn reg_zero_rev() {
     let expected = [Instruction::ReturnImm32 {
         value: Const32::from_u32(0),
     }];
@@ -44,7 +44,7 @@ fn i32_mul_zero_rev() {
 }
 
 #[test]
-fn i32_mul_one() {
+fn reg_one() {
     let expected = [Instruction::ReturnReg {
         value: Register::from_u16(0),
     }];
@@ -52,7 +52,7 @@ fn i32_mul_one() {
 }
 
 #[test]
-fn i32_mul_one_rev() {
+fn reg_one_rev() {
     let expected = [Instruction::ReturnReg {
         value: Register::from_u16(0),
     }];
@@ -60,7 +60,7 @@ fn i32_mul_one_rev() {
 }
 
 #[test]
-fn i32_mul_consteval() {
+fn consteval() {
     let lhs = 1;
     let rhs = 2;
     test_binary_consteval(
