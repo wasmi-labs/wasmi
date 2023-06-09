@@ -60,6 +60,24 @@ impl Const16 {
 #[repr(align(2))] // 2-byte alignment is sufficient for `wasmi` bytecode
 pub struct Const32([u8; 4]);
 
+impl From<i32> for Const32 {
+    fn from(value: i32) -> Self {
+        Const32::from_i32(value)
+    }
+}
+
+impl From<u32> for Const32 {
+    fn from(value: u32) -> Self {
+        Const32::from_u32(value)
+    }
+}
+
+impl From<F32> for Const32 {
+    fn from(value: F32) -> Self {
+        Const32::from_f32(value)
+    }
+}
+
 impl Const32 {
     /// Creates an [`Const32`] from the given `u32` value.
     pub fn from_u32(value: u32) -> Self {

@@ -1,4 +1,4 @@
-use super::{BinInstr, BinInstrImm16, Const16, Instruction, Register, UnaryInstr};
+use super::{BinInstr, BinInstrImm16, Const16, Const32, Instruction, Register, UnaryInstr};
 
 macro_rules! constructor_for {
     (
@@ -29,6 +29,11 @@ macro_rules! constructor_for {
 }
 
 impl Instruction {
+    /// Creates a new [`Instruction::Const32`] from the given `value`.
+    pub fn const32(value: impl Into<Const32>) -> Self {
+        Self::Const32(value.into())
+    }
+
     constructor_for! {
         fn i32_add(binary) -> Self::I32Add;
         fn i32_add_imm(binary_imm) -> Self::I32AddImm;

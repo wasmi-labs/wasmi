@@ -27,7 +27,7 @@ use crate::{
             SignatureIdx,
             TableIdx,
         },
-        bytecode2::{Instruction, Register},
+        bytecode2::{Const16, Const32, Instruction, Register},
         config::FuelCosts,
         func_builder::TranslationErrorInner,
         CompiledFunc,
@@ -255,5 +255,85 @@ impl<'parser> FuncTranslator<'parser> {
                 .bump_fuel_consumption(instr, delta)?;
         }
         Ok(())
+    }
+
+    /// A `i32` variant of the [`Self::translate_binary_commutative`] method.
+    fn translate_binary_commutative_i32(
+        &mut self,
+        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+        make_instr_imm: fn(result: Register, lhs: Register) -> Instruction,
+        make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
+        consteval: fn(UntypedValue, UntypedValue) -> UntypedValue,
+        apply_opt: fn(&mut Self, reg: Register, value: i32) -> Result<bool, TranslationError>,
+    ) -> Result<(), TranslationError> {
+        self.translate_binary_commutative(
+            make_instr,
+            make_instr_imm,
+            |_this, value: UntypedValue| Instruction::const32(i32::from(value)),
+            make_instr_imm16,
+            consteval,
+            |this, reg: Register, value: UntypedValue| apply_opt(this, reg, i32::from(value)),
+        )
+    }
+
+    /// Translate a commutative binary `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// - This applies several optimization that are valid for all commutative
+    ///   binary instructions such as `i32.add` or `i64.mul`.
+    /// - Its various function arguments allow it to be used generically for `i32`
+    ///   instructions as well as for `i64`, `f32` and `f64` types.
+    /// - Applies constant evaluation if both operands are constant values.
+    ///
+    /// The `apply_opt` closure allows the user of this API to implement custom
+    /// optmization logic for the respective translated instruction in the case
+    /// that one of the operands is a constant value.
+    fn translate_binary_commutative(
+        &mut self,
+        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+        make_instr_imm: fn(result: Register, lhs: Register) -> Instruction,
+        make_instr_imm_rhs: fn(&mut Self, value: UntypedValue) -> Instruction,
+        make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
+        consteval: fn(UntypedValue, UntypedValue) -> UntypedValue,
+        apply_opt: impl FnOnce(&mut Self, Register, UntypedValue) -> Result<bool, TranslationError>,
+    ) -> Result<(), TranslationError> {
+        let rhs = self.alloc.stack.pop();
+        let lhs = self.alloc.stack.pop();
+        match (lhs, rhs) {
+            (Provider::Register(lhs), Provider::Register(rhs)) => {
+                let result = self.alloc.stack.push_dynamic()?;
+                self.alloc
+                    .instr_encoder
+                    .push_instr(make_instr(result, lhs, rhs))?;
+                Ok(())
+            }
+            (Provider::Register(reg_in), Provider::Const(imm_in))
+            | (Provider::Const(imm_in), Provider::Register(reg_in)) => {
+                if apply_opt(self, reg_in, imm_in)? {
+                    // If `apply_opt` returns `true` it applied its optimization and we can return.
+                    return Ok(());
+                }
+                if let Some(rhs) = Const16::from_i64(i64::from(imm_in)) {
+                    // Optimization: We can use a compact instruction for small constants.
+                    let result = self.alloc.stack.push_dynamic()?;
+                    self.alloc
+                        .instr_encoder
+                        .push_instr(make_instr_imm16(result, reg_in, rhs))?;
+                    return Ok(());
+                }
+                let result = self.alloc.stack.push_dynamic()?;
+                self.alloc
+                    .instr_encoder
+                    .push_instr(make_instr_imm(result, reg_in))?;
+                let rhs_instr = make_instr_imm_rhs(self, imm_in);
+                self.alloc.instr_encoder.push_instr(rhs_instr)?;
+                Ok(())
+            }
+            (Provider::Const(lhs), Provider::Const(rhs)) => {
+                self.alloc.stack.push_const(consteval(lhs, rhs));
+                Ok(())
+            }
+        }
     }
 }

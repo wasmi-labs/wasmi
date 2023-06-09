@@ -449,47 +449,20 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_add(&mut self) -> Self::Output {
-        let rhs = self.alloc.stack.pop();
-        let lhs = self.alloc.stack.pop();
-        match (lhs, rhs) {
-            (Provider::Register(lhs), Provider::Register(rhs)) => {
-                let result = self.alloc.stack.push_dynamic()?;
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::i32_add(result, lhs, rhs))?;
-                Ok(())
-            }
-            (Provider::Const(imm_in), Provider::Register(reg_in))
-            | (Provider::Register(reg_in), Provider::Const(imm_in)) => {
-                let value = i32::from(imm_in);
+        self.translate_binary_commutative_i32(
+            Instruction::i32_add,
+            Instruction::i32_add_imm,
+            Instruction::i32_add_imm16,
+            UntypedValue::i32_add,
+            |this, reg: Register, value: i32| {
                 if value == 0 {
                     // Optimization: `add x + 0` is same as `x`
-                    self.alloc.stack.push_register(reg_in)?;
-                    return Ok(());
+                    this.alloc.stack.push_register(reg)?;
+                    return Ok(true);
                 }
-                if let Some(rhs) = Const16::from_i32(value) {
-                    // Optimization: We can use a compact instruction for small constants.
-                    let result = self.alloc.stack.push_dynamic()?;
-                    self.alloc
-                        .instr_encoder
-                        .push_instr(Instruction::i32_add_imm16(result, reg_in, rhs))?;
-                    return Ok(());
-                }
-                let result = self.alloc.stack.push_dynamic()?;
-                let rhs = Const32::from_i32(value);
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::i32_add_imm(result, reg_in))?;
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::Const32(rhs))?;
-                Ok(())
-            }
-            (Provider::Const(lhs), Provider::Const(rhs)) => {
-                self.alloc.stack.push_const(UntypedValue::i32_add(lhs, rhs));
-                Ok(())
-            }
-        }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_i32_sub(&mut self) -> Self::Output {
@@ -497,52 +470,25 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_mul(&mut self) -> Self::Output {
-        let rhs = self.alloc.stack.pop();
-        let lhs = self.alloc.stack.pop();
-        match (lhs, rhs) {
-            (Provider::Register(lhs), Provider::Register(rhs)) => {
-                let result = self.alloc.stack.push_dynamic()?;
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::i32_mul(result, lhs, rhs))?;
-                Ok(())
-            }
-            (Provider::Const(imm_in), Provider::Register(reg_in))
-            | (Provider::Register(reg_in), Provider::Const(imm_in)) => {
-                let value = i32::from(imm_in);
+        self.translate_binary_commutative_i32(
+            Instruction::i32_mul,
+            Instruction::i32_mul_imm,
+            Instruction::i32_mul_imm16,
+            UntypedValue::i32_mul,
+            |this, reg: Register, value: i32| {
                 if value == 0 {
                     // Optimization: `add x * 0` is always `0`
-                    self.alloc.stack.push_const(UntypedValue::from(0_i32));
-                    return Ok(());
+                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    return Ok(true);
                 }
                 if value == 1 {
                     // Optimization: `add x * 1` is always `x`
-                    self.alloc.stack.push_register(reg_in)?;
-                    return Ok(());
+                    this.alloc.stack.push_register(reg)?;
+                    return Ok(true);
                 }
-                if let Some(rhs) = Const16::from_i32(value) {
-                    // Optimization: We can use a compact instruction for small constants.
-                    let result = self.alloc.stack.push_dynamic()?;
-                    self.alloc
-                        .instr_encoder
-                        .push_instr(Instruction::i32_mul_imm16(result, reg_in, rhs))?;
-                    return Ok(());
-                }
-                let result = self.alloc.stack.push_dynamic()?;
-                let rhs = Const32::from_i32(value);
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::i32_mul_imm(result, reg_in))?;
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::Const32(rhs))?;
-                Ok(())
-            }
-            (Provider::Const(lhs), Provider::Const(rhs)) => {
-                self.alloc.stack.push_const(UntypedValue::i32_mul(lhs, rhs));
-                Ok(())
-            }
-        }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_i32_div_s(&mut self) -> Self::Output {
