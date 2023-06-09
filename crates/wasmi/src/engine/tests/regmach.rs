@@ -13,6 +13,8 @@ use crate::{
     Engine,
     Module,
 };
+use core::fmt::Display;
+use wasmi_core::UntypedValue;
 
 /// Asserts that the given `wasm` bytes yield functions with expected instructions.
 ///
@@ -110,21 +112,23 @@ fn assert_func_body<E>(
     }
 }
 
-#[test]
-fn i32_add() {
-    let wasm = wat2wasm(
+fn test_binary_reg_reg(
+    wasm_op: &str,
+    make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+) {
+    let wasm = wat2wasm(&format!(
         r#"
         (module
             (func (param i32) (param i32) (result i32)
                 local.get 0
                 local.get 1
-                i32.add
+                i32.{wasm_op}
             )
         )
     "#,
-    );
+    ));
     let expected = [
-        Instruction::i32_add(
+        make_instr(
             Register::from_u16(2),
             Register::from_u16(0),
             Register::from_u16(1),
@@ -134,382 +138,284 @@ fn i32_add() {
         },
     ];
     assert_func_bodies(wasm, [expected]);
+}
+
+fn test_binary_reg_imm16(
+    wasm_op: &str,
+    make_instr: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
+) {
+    /// This constant value fits into 16 bit and is kinda uninteresting for optimizations.
+    const VALUE: i16 = 100;
+    let wasm = wat2wasm(&format!(
+        r#"
+        (module
+            (func (param i32) (result i32)
+                local.get 0
+                i32.const {VALUE}
+                i32.{wasm_op}
+            )
+        )
+    "#,
+    ));
+    let expected = [
+        make_instr(
+            Register::from_u16(1),
+            Register::from_u16(0),
+            Const16::from_i16(VALUE),
+        ),
+        Instruction::ReturnReg {
+            value: Register::from_u16(1),
+        },
+    ];
+    assert_func_bodies(wasm, [expected]);
+}
+
+/// Variant of [`test_binary_reg_imm16`] where both operands are swapped.
+fn test_binary_reg_imm16_rev(
+    wasm_op: &str,
+    make_instr: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
+) {
+    /// This constant value fits into 16 bit and is kinda uninteresting for optimizations.
+    const VALUE: i16 = 100;
+    let wasm = wat2wasm(&format!(
+        r#"
+        (module
+            (func (param i32) (result i32)
+                i32.const {VALUE}
+                local.get 0
+                i32.{wasm_op}
+            )
+        )
+    "#,
+    ));
+    let expected = [
+        make_instr(
+            Register::from_u16(1),
+            Register::from_u16(0),
+            Const16::from_i16(VALUE),
+        ),
+        Instruction::ReturnReg {
+            value: Register::from_u16(1),
+        },
+    ];
+    assert_func_bodies(wasm, [expected]);
+}
+
+fn test_binary_reg_imm(
+    wasm_op: &str,
+    make_instr: fn(result: Register, lhs: Register) -> Instruction,
+) {
+    /// Does not fit into 16 bit value.
+    const VALUE: i32 = i32::MAX;
+    let expected = [
+        make_instr(Register::from_u16(1), Register::from_u16(0)),
+        Instruction::Const32(Const32::from_i32(VALUE)),
+        Instruction::ReturnReg {
+            value: Register::from_u16(1),
+        },
+    ];
+    test_binary_reg_imm_with(wasm_op, VALUE, expected)
+}
+
+/// Variant of [`test_binary_reg_imm`] where both operands are swapped.
+fn test_binary_reg_imm_rev(
+    wasm_op: &str,
+    make_instr: fn(result: Register, lhs: Register) -> Instruction,
+) {
+    /// Does not fit into 16 bit value.
+    const VALUE: i32 = i32::MAX;
+    let expected = [
+        make_instr(Register::from_u16(1), Register::from_u16(0)),
+        Instruction::Const32(Const32::from_i32(VALUE)),
+        Instruction::ReturnReg {
+            value: Register::from_u16(1),
+        },
+    ];
+    test_binary_reg_imm_rev_with(wasm_op, VALUE, expected)
+}
+
+fn test_binary_reg_imm_with<V, E>(wasm_op: &str, value: V, expected: E)
+where
+    V: Copy + Display,
+    E: IntoIterator<Item = Instruction>,
+    <E as IntoIterator>::IntoIter: ExactSizeIterator,
+{
+    let wasm = wat2wasm(&format!(
+        r#"
+        (module
+            (func (param i32) (result i32)
+                local.get 0
+                i32.const {value}
+                i32.{wasm_op}
+            )
+        )
+    "#,
+    ));
+    assert_func_bodies(wasm, [expected]);
+}
+
+fn test_binary_reg_imm_rev_with<T, E>(wasm_op: &str, value: T, expected: E)
+where
+    T: Copy + Display,
+    E: IntoIterator<Item = Instruction>,
+    <E as IntoIterator>::IntoIter: ExactSizeIterator,
+{
+    let wasm = wat2wasm(&format!(
+        r#"
+        (module
+            (func (param i32) (result i32)
+                i32.const {value}
+                local.get 0
+                i32.{wasm_op}
+            )
+        )
+    "#,
+    ));
+    assert_func_bodies(wasm, [expected]);
+}
+
+fn test_binary_consteval<T, E>(wasm_op: &str, lhs: T, rhs: T, expected: E)
+where
+    T: Copy + Display,
+    E: IntoIterator<Item = Instruction>,
+    <E as IntoIterator>::IntoIter: ExactSizeIterator,
+{
+    let wasm = wat2wasm(&format!(
+        r#"
+        (module
+            (func (result i32)
+                i32.const {lhs}
+                i32.const {rhs}
+                i32.{wasm_op}
+            )
+        )
+    "#,
+    ));
+    assert_func_bodies(wasm, [expected]);
+}
+
+#[test]
+fn i32_add() {
+    test_binary_reg_reg("add", Instruction::i32_add)
+}
+
+#[test]
+fn i32_add_imm16() {
+    test_binary_reg_imm16("add", Instruction::i32_add_imm16)
+}
+
+#[test]
+fn i32_add_imm16_rev() {
+    test_binary_reg_imm16_rev("add", Instruction::i32_add_imm16)
 }
 
 #[test]
 fn i32_add_imm() {
-    let wasm = wat2wasm(
-        r#"
-        (module
-            (func (param i32) (result i32)
-                local.get 0
-                i32.const 1
-                i32.add
-            )
-        )
-    "#,
-    );
-    let expected = [
-        Instruction::i32_add_imm16(
-            Register::from_u16(1),
-            Register::from_u16(0),
-            Const16::from_i16(1),
-        ),
-        Instruction::ReturnReg {
-            value: Register::from_u16(1),
-        },
-    ];
-    assert_func_bodies(wasm, [expected]);
+    test_binary_reg_imm("add", Instruction::i32_add_imm)
 }
 
 #[test]
 fn i32_add_imm_rev() {
-    let wasm = wat2wasm(
-        r#"
-        (module
-            (func (param i32) (result i32)
-                i32.const 1
-                local.get 0
-                i32.add
-            )
-        )
-    "#,
-    );
-    let expected = [
-        Instruction::i32_add_imm16(
-            Register::from_u16(1),
-            Register::from_u16(0),
-            Const16::from_i16(1),
-        ),
-        Instruction::ReturnReg {
-            value: Register::from_u16(1),
-        },
-    ];
-    assert_func_bodies(wasm, [expected]);
-}
-
-#[test]
-fn i32_add_imm_big() {
-    let big_value = i32::from(u16::MAX);
-    let wasm = wat2wasm(&format!(
-        r#"
-        (module
-            (func (param i32) (result i32)
-                local.get 0
-                i32.const {big_value}
-                i32.add
-            )
-        )
-    "#,
-    ));
-    let expected = [
-        Instruction::i32_add_imm(Register::from_u16(1), Register::from_u16(0)),
-        Instruction::Const32(Const32::from_i32(big_value)),
-        Instruction::ReturnReg {
-            value: Register::from_u16(1),
-        },
-    ];
-    assert_func_bodies(wasm, [expected]);
-}
-
-#[test]
-fn i32_add_imm_big_rev() {
-    let big_value = i32::from(u16::MAX);
-    let wasm = wat2wasm(&format!(
-        r#"
-        (module
-            (func (param i32) (result i32)
-                i32.const {big_value}
-                local.get 0
-                i32.add
-            )
-        )
-    "#,
-    ));
-    let expected = [
-        Instruction::i32_add_imm(Register::from_u16(1), Register::from_u16(0)),
-        Instruction::Const32(Const32::from_i32(big_value)),
-        Instruction::ReturnReg {
-            value: Register::from_u16(1),
-        },
-    ];
-    assert_func_bodies(wasm, [expected]);
+    test_binary_reg_imm_rev("add", Instruction::i32_add_imm)
 }
 
 #[test]
 fn i32_add_zero() {
-    let wasm = wat2wasm(
-        r#"
-        (module
-            (func (param i32) (result i32)
-                local.get 0
-                i32.const 0
-                i32.add
-            )
-        )
-    "#,
-    );
     let expected = [Instruction::ReturnReg {
         value: Register::from_u16(0),
     }];
-    assert_func_bodies(wasm, [expected]);
+    test_binary_reg_imm_with("add", 0i32, expected)
 }
 
 #[test]
 fn i32_add_zero_rev() {
-    let wasm = wat2wasm(
-        r#"
-        (module
-            (func (param i32) (result i32)
-                i32.const 0
-                local.get 0
-                i32.add
-            )
-        )
-    "#,
-    );
     let expected = [Instruction::ReturnReg {
         value: Register::from_u16(0),
     }];
-    assert_func_bodies(wasm, [expected]);
+    test_binary_reg_imm_rev_with("add", 0i32, expected)
 }
 
 #[test]
 fn i32_add_consteval() {
-    let wasm = wat2wasm(
-        r#"
-        (module
-            (func (result i32)
-                i32.const 1
-                i32.const 2
-                i32.add
-            )
-        )
-    "#,
-    );
-    let expected = [Instruction::ReturnImm32 {
-        value: Const32::from_u32(3),
-    }];
-    assert_func_bodies(wasm, [expected]);
+    let lhs = 1;
+    let rhs = 2;
+    test_binary_consteval(
+        "add",
+        lhs,
+        rhs,
+        [Instruction::ReturnImm32 {
+            value: Const32::from_i32(lhs + rhs),
+        }],
+    )
 }
 
 #[test]
 fn i32_mul() {
-    let wasm = wat2wasm(
-        r#"
-        (module
-            (func (param i32) (param i32) (result i32)
-                local.get 0
-                local.get 1
-                i32.mul
-            )
-        )
-    "#,
-    );
-    let expected = [
-        Instruction::i32_mul(
-            Register::from_u16(2),
-            Register::from_u16(0),
-            Register::from_u16(1),
-        ),
-        Instruction::ReturnReg {
-            value: Register::from_u16(2),
-        },
-    ];
-    assert_func_bodies(wasm, [expected]);
+    test_binary_reg_reg("mul", Instruction::i32_mul)
+}
+
+#[test]
+fn i32_mul_imm16() {
+    test_binary_reg_imm16("mul", Instruction::i32_mul_imm16)
+}
+
+#[test]
+fn i32_mul_imm16_rev() {
+    test_binary_reg_imm16_rev("mul", Instruction::i32_mul_imm16)
 }
 
 #[test]
 fn i32_mul_imm() {
-    let wasm = wat2wasm(
-        r#"
-        (module
-            (func (param i32) (result i32)
-                local.get 0
-                i32.const 10
-                i32.mul
-            )
-        )
-    "#,
-    );
-    let expected = [
-        Instruction::i32_mul_imm16(
-            Register::from_u16(1),
-            Register::from_u16(0),
-            Const16::from_i16(10),
-        ),
-        Instruction::ReturnReg {
-            value: Register::from_u16(1),
-        },
-    ];
-    assert_func_bodies(wasm, [expected]);
+    test_binary_reg_imm("mul", Instruction::i32_mul_imm)
 }
 
 #[test]
 fn i32_mul_imm_rev() {
-    let wasm = wat2wasm(
-        r#"
-        (module
-            (func (param i32) (result i32)
-                i32.const 10
-                local.get 0
-                i32.mul
-            )
-        )
-    "#,
-    );
-    let expected = [
-        Instruction::i32_mul_imm16(
-            Register::from_u16(1),
-            Register::from_u16(0),
-            Const16::from_i16(10),
-        ),
-        Instruction::ReturnReg {
-            value: Register::from_u16(1),
-        },
-    ];
-    assert_func_bodies(wasm, [expected]);
-}
-
-#[test]
-fn i32_mul_imm_big() {
-    let big_value = i32::from(u16::MAX);
-    let wasm = wat2wasm(&format!(
-        r#"
-        (module
-            (func (param i32) (result i32)
-                local.get 0
-                i32.const {big_value}
-                i32.mul
-            )
-        )
-    "#,
-    ));
-    let expected = [
-        Instruction::i32_mul_imm(Register::from_u16(1), Register::from_u16(0)),
-        Instruction::Const32(Const32::from_i32(big_value)),
-        Instruction::ReturnReg {
-            value: Register::from_u16(1),
-        },
-    ];
-    assert_func_bodies(wasm, [expected]);
-}
-
-#[test]
-fn i32_mul_imm_big_rev() {
-    let big_value = i32::from(u16::MAX);
-    let wasm = wat2wasm(&format!(
-        r#"
-        (module
-            (func (param i32) (result i32)
-                i32.const {big_value}
-                local.get 0
-                i32.mul
-            )
-        )
-    "#,
-    ));
-    let expected = [
-        Instruction::i32_mul_imm(Register::from_u16(1), Register::from_u16(0)),
-        Instruction::Const32(Const32::from_i32(big_value)),
-        Instruction::ReturnReg {
-            value: Register::from_u16(1),
-        },
-    ];
-    assert_func_bodies(wasm, [expected]);
+    test_binary_reg_imm_rev("mul", Instruction::i32_mul_imm)
 }
 
 #[test]
 fn i32_mul_zero() {
-    let wasm = wat2wasm(
-        r#"
-        (module
-            (func (param i32) (result i32)
-                local.get 0
-                i32.const 0
-                i32.mul
-            )
-        )
-    "#,
-    );
     let expected = [Instruction::ReturnImm32 {
         value: Const32::from_u32(0),
     }];
-    assert_func_bodies(wasm, [expected]);
+    test_binary_reg_imm_with("mul", 0_i32, expected)
 }
 
 #[test]
 fn i32_mul_zero_rev() {
-    let wasm = wat2wasm(
-        r#"
-        (module
-            (func (param i32) (result i32)
-                i32.const 0
-                local.get 0
-                i32.mul
-            )
-        )
-    "#,
-    );
     let expected = [Instruction::ReturnImm32 {
         value: Const32::from_u32(0),
     }];
-    assert_func_bodies(wasm, [expected]);
+    test_binary_reg_imm_rev_with("mul", 0_i32, expected)
 }
 
 #[test]
 fn i32_mul_one() {
-    let wasm = wat2wasm(
-        r#"
-        (module
-            (func (param i32) (result i32)
-                local.get 0
-                i32.const 1
-                i32.mul
-            )
-        )
-    "#,
-    );
     let expected = [Instruction::ReturnReg {
         value: Register::from_u16(0),
     }];
-    assert_func_bodies(wasm, [expected]);
+    test_binary_reg_imm_with("mul", 1_i32, expected)
 }
 
 #[test]
 fn i32_mul_one_rev() {
-    let wasm = wat2wasm(
-        r#"
-        (module
-            (func (param i32) (result i32)
-                i32.const 1
-                local.get 0
-                i32.mul
-            )
-        )
-    "#,
-    );
     let expected = [Instruction::ReturnReg {
         value: Register::from_u16(0),
     }];
-    assert_func_bodies(wasm, [expected]);
+    test_binary_reg_imm_rev_with("mul", 1_i32, expected)
 }
 
 #[test]
 fn i32_mul_consteval() {
-    let wasm = wat2wasm(
-        r#"
-        (module
-            (func (result i32)
-                i32.const 2
-                i32.const 3
-                i32.mul
-            )
-        )
-    "#,
-    );
-    let expected = [Instruction::ReturnImm32 {
-        value: Const32::from_u32(6),
-    }];
-    assert_func_bodies(wasm, [expected]);
+    let lhs = 1;
+    let rhs = 2;
+    test_binary_consteval(
+        "mul",
+        lhs,
+        rhs,
+        [Instruction::ReturnImm32 {
+            value: Const32::from_i32(lhs * rhs),
+        }],
+    )
 }
