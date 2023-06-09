@@ -43,8 +43,11 @@ impl Instruction {
         fn i64_add_imm16(binary_imm16) -> Self::I32AddImm16;
 
         fn i32_mul(binary) -> Self::I32Mul;
+        fn i64_mul(binary) -> Self::I64Mul;
         fn i32_mul_imm(binary_imm) -> Self::I32MulImm;
+        fn i64_mul_imm(binary_imm) -> Self::I64MulImm;
         fn i32_mul_imm16(binary_imm16) -> Self::I32MulImm16;
+        fn i64_mul_imm16(binary_imm16) -> Self::I64MulImm16;
 
         fn i32_and(binary) -> Self::I32And;
         fn i64_and(binary) -> Self::I64And;

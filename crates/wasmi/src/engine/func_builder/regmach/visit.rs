@@ -677,7 +677,26 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_mul(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_commutative_i64(
+            Instruction::i64_mul,
+            Instruction::i64_mul_imm,
+            Instruction::i64_mul_imm16,
+            UntypedValue::i64_mul,
+            Self::no_custom_opt,
+            |this, reg: Register, value: i64| {
+                if value == 0 {
+                    // Optimization: `add x * 0` is always `0`
+                    this.alloc.stack.push_const(UntypedValue::from(0_i64));
+                    return Ok(true);
+                }
+                if value == 1 {
+                    // Optimization: `add x * 1` is always `x`
+                    this.alloc.stack.push_register(reg)?;
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_i64_div_s(&mut self) -> Self::Output {
