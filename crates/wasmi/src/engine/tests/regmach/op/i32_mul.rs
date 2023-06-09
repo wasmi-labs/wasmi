@@ -1,6 +1,6 @@
 use super::*;
 
-const WASM_OP: &str = "mul";
+const WASM_OP: WasmOp = WasmOp::I32("mul");
 
 #[test]
 fn i32_mul() {

@@ -17,4 +17,5 @@ use super::{
     Const32,
     Instruction,
     Register,
+    WasmOp,
 };

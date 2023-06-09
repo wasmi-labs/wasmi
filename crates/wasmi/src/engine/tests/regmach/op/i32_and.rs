@@ -1,6 +1,6 @@
 use super::*;
 
-const WASM_OP: &str = "and";
+const WASM_OP: WasmOp = WasmOp::I32("and");
 
 #[test]
 fn same_reg() {
