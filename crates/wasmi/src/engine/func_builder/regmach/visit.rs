@@ -510,15 +510,94 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_and(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_commutative_i32(
+            Instruction::i32_and,
+            Instruction::i32_and_imm,
+            Instruction::i32_and_imm16,
+            UntypedValue::i32_and,
+            |this, lhs, rhs| {
+                if lhs == rhs {
+                    // Optimization: `x & x` is always just `x`
+                    this.alloc.stack.push_register(lhs)?;
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, reg: Register, value: i32| {
+                if value == -1 {
+                    // Optimization: `x & -1` is same as `x`
+                    //
+                    // Note: This is due to the fact that -1
+                    // in twos-complements only contains 1 bits.
+                    this.alloc.stack.push_register(reg)?;
+                    return Ok(true);
+                }
+                if value == 0 {
+                    // Optimization: `x & 0` is same as `0`
+                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_i32_or(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_commutative_i32(
+            Instruction::i32_or,
+            Instruction::i32_or_imm,
+            Instruction::i32_or_imm16,
+            UntypedValue::i32_or,
+            |this, lhs, rhs| {
+                if lhs == rhs {
+                    // Optimization: `x | x` is always just `x`
+                    this.alloc.stack.push_register(lhs)?;
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, reg: Register, value: i32| {
+                if value == -1 {
+                    // Optimization: `x | -1` is same as `-1`
+                    //
+                    // Note: This is due to the fact that -1
+                    // in twos-complements only contains 1 bits.
+                    this.alloc.stack.push_const(UntypedValue::from(-1_i32));
+                    return Ok(true);
+                }
+                if value == 0 {
+                    // Optimization: `x | 0` is same as `x`
+                    this.alloc.stack.push_register(reg)?;
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_i32_xor(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_commutative_i32(
+            Instruction::i32_xor,
+            Instruction::i32_xor_imm,
+            Instruction::i32_xor_imm16,
+            UntypedValue::i32_xor,
+            |this, lhs, rhs| {
+                if lhs == rhs {
+                    // Optimization: `x ^ x` is always `0`
+                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, reg: Register, value: i32| {
+                if value == 0 {
+                    // Optimization: `x ^ 0` is same as `x`
+                    this.alloc.stack.push_register(reg)?;
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_i32_shl(&mut self) -> Self::Output {

@@ -1,30 +1,38 @@
 use super::*;
 
-const WASM_OP: &str = "add";
+const WASM_OP: &str = "xor";
+
+#[test]
+fn same_reg() {
+    let expected = [Instruction::ReturnImm32 {
+        value: Const32::from_i32(0),
+    }];
+    test_binary_same_reg(WASM_OP, expected)
+}
 
 #[test]
 fn reg_reg() {
-    test_binary_reg_reg(WASM_OP, Instruction::i32_add)
+    test_binary_reg_reg(WASM_OP, Instruction::i32_xor)
 }
 
 #[test]
 fn reg_imm16() {
-    test_binary_reg_imm16(WASM_OP, Instruction::i32_add_imm16)
+    test_binary_reg_imm16(WASM_OP, Instruction::i32_xor_imm16)
 }
 
 #[test]
 fn reg_imm16_rev() {
-    test_binary_reg_imm16_rev(WASM_OP, Instruction::i32_add_imm16)
+    test_binary_reg_imm16_rev(WASM_OP, Instruction::i32_xor_imm16)
 }
 
 #[test]
 fn reg_imm() {
-    test_binary_reg_imm(WASM_OP, Instruction::i32_add_imm)
+    test_binary_reg_imm(WASM_OP, Instruction::i32_xor_imm)
 }
 
 #[test]
 fn reg_imm_rev() {
-    test_binary_reg_imm_rev(WASM_OP, Instruction::i32_add_imm)
+    test_binary_reg_imm_rev(WASM_OP, Instruction::i32_xor_imm)
 }
 
 #[test]
@@ -45,14 +53,14 @@ fn reg_zero_rev() {
 
 #[test]
 fn consteval() {
-    let lhs = 1;
-    let rhs = 2;
+    let lhs = 10;
+    let rhs = 20;
     test_binary_consteval(
         WASM_OP,
         lhs,
         rhs,
         [Instruction::ReturnImm32 {
-            value: Const32::from_i32(lhs + rhs),
+            value: Const32::from_i32(lhs ^ rhs),
         }],
     )
 }

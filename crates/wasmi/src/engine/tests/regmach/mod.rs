@@ -295,3 +295,22 @@ where
     ));
     assert_func_bodies(wasm, [expected]);
 }
+
+fn test_binary_same_reg<E>(wasm_op: &str, expected: E)
+where
+    E: IntoIterator<Item = Instruction>,
+    <E as IntoIterator>::IntoIter: ExactSizeIterator,
+{
+    let wasm = wat2wasm(&format!(
+        r#"
+        (module
+            (func (param i32) (result i32)
+                local.get 0
+                local.get 0
+                i32.{wasm_op}
+            )
+        )
+    "#,
+    ));
+    assert_func_bodies(wasm, [expected]);
+}

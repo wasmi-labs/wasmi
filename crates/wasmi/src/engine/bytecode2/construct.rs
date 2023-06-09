@@ -42,5 +42,17 @@ impl Instruction {
         fn i32_mul(binary) -> Self::I32Mul;
         fn i32_mul_imm(binary_imm) -> Self::I32MulImm;
         fn i32_mul_imm16(binary_imm16) -> Self::I32MulImm16;
+
+        fn i32_and(binary) -> Self::I32And;
+        fn i32_and_imm(binary_imm) -> Self::I32AndImm;
+        fn i32_and_imm16(binary_imm16) -> Self::I32AndImm16;
+
+        fn i32_or(binary) -> Self::I32Or;
+        fn i32_or_imm(binary_imm) -> Self::I32OrImm;
+        fn i32_or_imm16(binary_imm16) -> Self::I32OrImm16;
+
+        fn i32_xor(binary) -> Self::I32Xor;
+        fn i32_xor_imm(binary_imm) -> Self::I32XorImm;
+        fn i32_xor_imm16(binary_imm16) -> Self::I32XorImm16;
     }
 }
