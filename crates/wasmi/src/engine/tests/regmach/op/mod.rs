@@ -5,6 +5,7 @@ mod i32_or;
 mod i32_xor;
 mod i64_add;
 mod i64_and;
+mod i64_or;
 
 use super::{
     test_binary_consteval,

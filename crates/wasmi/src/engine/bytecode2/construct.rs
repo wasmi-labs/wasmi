@@ -54,8 +54,11 @@ impl Instruction {
         fn i64_and_imm16(binary_imm16) -> Self::I64AndImm16;
 
         fn i32_or(binary) -> Self::I32Or;
+        fn i64_or(binary) -> Self::I64Or;
         fn i32_or_imm(binary_imm) -> Self::I32OrImm;
+        fn i64_or_imm(binary_imm) -> Self::I64OrImm;
         fn i32_or_imm16(binary_imm16) -> Self::I32OrImm16;
+        fn i64_or_imm16(binary_imm16) -> Self::I64OrImm16;
 
         fn i32_xor(binary) -> Self::I32Xor;
         fn i32_xor_imm(binary_imm) -> Self::I32XorImm;
