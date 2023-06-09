@@ -763,7 +763,28 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_xor(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_commutative_i64(
+            Instruction::i64_xor,
+            Instruction::i64_xor_imm,
+            Instruction::i64_xor_imm16,
+            UntypedValue::i64_xor,
+            |this, lhs, rhs| {
+                if lhs == rhs {
+                    // Optimization: `x ^ x` is always `0`
+                    this.alloc.stack.push_const(UntypedValue::from(0_i64));
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, reg: Register, value: i64| {
+                if value == 0 {
+                    // Optimization: `x ^ 0` is same as `x`
+                    this.alloc.stack.push_register(reg)?;
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_i64_shl(&mut self) -> Self::Output {
