@@ -10,6 +10,26 @@ use wasmi_core::F32;
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Const16(i16);
 
+/// Error that may occur upon converting values to [`Const16`].
+#[derive(Debug, Copy, Clone)]
+pub struct OutOfBoundsConst16;
+
+impl TryFrom<i32> for Const16 {
+    type Error = OutOfBoundsConst16;
+
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        Self::from_i32(value).ok_or(OutOfBoundsConst16)
+    }
+}
+
+impl TryFrom<i64> for Const16 {
+    type Error = OutOfBoundsConst16;
+
+    fn try_from(value: i64) -> Result<Self, Self::Error> {
+        Self::from_i64(value).ok_or(OutOfBoundsConst16)
+    }
+}
+
 impl Const16 {
     /// Creates an [`Const16`] from the given `i16` value.
     #[cfg(test)]
@@ -60,21 +80,33 @@ impl Const16 {
 #[repr(align(2))] // 2-byte alignment is sufficient for `wasmi` bytecode
 pub struct Const32([u8; 4]);
 
+/// Error that may occur upon converting values to [`Const32`].
+#[derive(Debug, Copy, Clone)]
+pub struct OutOfBoundsConst32;
+
+impl TryFrom<i64> for Const32 {
+    type Error = OutOfBoundsConst32;
+
+    fn try_from(value: i64) -> Result<Self, Self::Error> {
+        Self::from_i64(value).ok_or(OutOfBoundsConst32)
+    }
+}
+
 impl From<i32> for Const32 {
     fn from(value: i32) -> Self {
-        Const32::from_i32(value)
+        Self::from_i32(value)
     }
 }
 
 impl From<u32> for Const32 {
     fn from(value: u32) -> Self {
-        Const32::from_u32(value)
+        Self::from_u32(value)
     }
 }
 
 impl From<F32> for Const32 {
     fn from(value: F32) -> Self {
-        Const32::from_f32(value)
+        Self::from_f32(value)
     }
 }
 
