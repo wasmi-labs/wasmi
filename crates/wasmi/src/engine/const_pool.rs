@@ -22,6 +22,16 @@ impl TryFrom<usize> for ConstRef {
 }
 
 impl ConstRef {
+    /// Creates a new [`ConstRef`] from the given `u32` index.
+    ///
+    /// # Note
+    ///
+    /// This primarily is a function used for testing bytecode translation.
+    #[cfg(test)]
+    pub fn from_u32(index: u32) -> Self {
+        Self(index)
+    }
+
     /// Returns the index of the [`ConstRef`] as `usize` value.
     pub fn to_usize(self) -> usize {
         self.0 as usize

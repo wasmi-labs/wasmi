@@ -36,8 +36,11 @@ impl Instruction {
 
     constructor_for! {
         fn i32_add(binary) -> Self::I32Add;
+        fn i64_add(binary) -> Self::I32Add;
         fn i32_add_imm(binary_imm) -> Self::I32AddImm;
+        fn i64_add_imm(binary_imm) -> Self::I32AddImm;
         fn i32_add_imm16(binary_imm16) -> Self::I32AddImm16;
+        fn i64_add_imm16(binary_imm16) -> Self::I32AddImm16;
 
         fn i32_mul(binary) -> Self::I32Mul;
         fn i32_mul_imm(binary_imm) -> Self::I32MulImm;

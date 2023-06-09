@@ -5,7 +5,7 @@ use crate::engine::{
     bytecode2::{BinInstr, BinInstrImm16, Const16, Const32, Instruction, Register, UnaryInstr},
     TranslationError,
 };
-use wasmi_core::UntypedValue;
+use wasmi_core::{UntypedValue, ValueType};
 use wasmparser::VisitOperator;
 
 macro_rules! impl_visit_operator {
@@ -101,19 +101,40 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_return(&mut self) -> Self::Output {
-        match self.alloc.stack.pop() {
-            Provider::Register(value) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::ReturnReg { value })?;
+        let instr = match self.func_type().results() {
+            [] => {
+                // Case: Function returns nothing therefore all return statements must return nothing.
+                Instruction::Return
             }
-            Provider::Const(value) => {
-                let value = Const32::from_i32(i32::from(value));
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::ReturnImm32 { value })?;
+            [ValueType::I32] => match self.alloc.stack.pop() {
+                // Case: Function returns a single `i32` value which allows for special operator.
+                Provider::Register(value) => Instruction::ReturnReg { value },
+                Provider::Const(value) => Instruction::ReturnImm32 {
+                    value: Const32::from_i32(i32::from(value)),
+                },
+            },
+            [ValueType::I64] => match self.alloc.stack.pop() {
+                // Case: Function returns a single `i64` value which allows for special operator.
+                Provider::Register(value) => Instruction::ReturnReg { value },
+                Provider::Const(value) => {
+                    if let Ok(value) = Const32::try_from(i64::from(value)) {
+                        Instruction::ReturnI64Imm32 { value }
+                    } else {
+                        Instruction::ReturnImm {
+                            value: self.engine().alloc_const(value)?,
+                        }
+                    }
+                }
+            },
+            [ValueType::F32] => {
+                todo!()
             }
-        }
+            [ValueType::F64] => {
+                todo!()
+            }
+            _ => todo!(),
+        };
+        self.alloc.instr_encoder.push_instr(instr)?;
         Ok(())
     }
 
@@ -277,7 +298,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_const(&mut self, value: i64) -> Self::Output {
-        todo!()
+        self.alloc.stack.push_const(value);
+        Ok(())
     }
 
     fn visit_f32_const(&mut self, value: wasmparser::Ieee32) -> Self::Output {
@@ -633,7 +655,21 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_add(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_commutative_i64(
+            Instruction::i64_add,
+            Instruction::i64_add_imm,
+            Instruction::i64_add_imm16,
+            UntypedValue::i64_add,
+            Self::no_custom_opt,
+            |this, reg: Register, value: i64| {
+                if value == 0 {
+                    // Optimization: `add x + 0` is same as `x`
+                    this.alloc.stack.push_register(reg)?;
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_i64_sub(&mut self) -> Self::Output {

@@ -19,12 +19,12 @@ fn i32_mul_imm16_rev() {
 
 #[test]
 fn i32_mul_imm() {
-    test_binary_reg_imm(WASM_OP, Instruction::i32_mul_imm)
+    test_binary_reg_imm32(WASM_OP, Instruction::i32_mul_imm)
 }
 
 #[test]
 fn i32_mul_imm_rev() {
-    test_binary_reg_imm_rev(WASM_OP, Instruction::i32_mul_imm)
+    test_binary_reg_imm32_rev(WASM_OP, Instruction::i32_mul_imm)
 }
 
 #[test]

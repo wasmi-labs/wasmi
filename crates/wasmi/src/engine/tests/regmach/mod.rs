@@ -8,6 +8,7 @@ use super::{create_module, wat2wasm};
 use crate::{
     engine::{
         bytecode2::{BinInstr, BinInstrImm16, Const16, Const32, Instruction, Register, UnaryInstr},
+        const_pool::ConstRef,
         CompiledFunc,
         DedupFuncType,
     },
@@ -266,7 +267,7 @@ fn test_binary_reg_imm16_rev(
     assert_func_bodies(wasm, [expected]);
 }
 
-fn test_binary_reg_imm(
+fn test_binary_reg_imm32(
     wasm_op: WasmOp,
     make_instr: fn(result: Register, lhs: Register) -> Instruction,
 ) {
@@ -282,8 +283,8 @@ fn test_binary_reg_imm(
     test_binary_reg_imm_with(wasm_op, VALUE, expected)
 }
 
-/// Variant of [`test_binary_reg_imm`] where both operands are swapped.
-fn test_binary_reg_imm_rev(
+/// Variant of [`test_binary_reg_imm32`] where both operands are swapped.
+fn test_binary_reg_imm32_rev(
     wasm_op: WasmOp,
     make_instr: fn(result: Register, lhs: Register) -> Instruction,
 ) {
@@ -297,6 +298,39 @@ fn test_binary_reg_imm_rev(
         },
     ];
     test_binary_reg_imm_rev_with(wasm_op, VALUE, expected)
+}
+
+fn test_binary_reg_imm64(
+    wasm_op: WasmOp,
+    make_instr: fn(result: Register, lhs: Register) -> Instruction,
+) {
+    /// Does not fit into 16 bit value.
+    const VALUE: i32 = i32::MAX;
+    let expected = [
+        make_instr(Register::from_u16(1), Register::from_u16(0)),
+        Instruction::ConstRef(ConstRef::from_u32(0)),
+        Instruction::ReturnReg {
+            value: Register::from_u16(1),
+        },
+    ];
+    test_binary_reg_imm_with(wasm_op, VALUE, expected)
+}
+
+/// Variant of [`test_binary_reg_imm64`] where both operands are swapped.
+fn test_binary_reg_imm64_rev(
+    wasm_op: WasmOp,
+    make_instr: fn(result: Register, lhs: Register) -> Instruction,
+) {
+    /// Does not fit into 16 bit value.
+    const VALUE: i32 = i32::MAX;
+    let expected = [
+        make_instr(Register::from_u16(1), Register::from_u16(0)),
+        Instruction::ConstRef(ConstRef::from_u32(0)),
+        Instruction::ReturnReg {
+            value: Register::from_u16(1),
+        },
+    ];
+    test_binary_reg_imm_with(wasm_op, VALUE, expected)
 }
 
 fn test_binary_reg_imm_with<V, E>(wasm_op: WasmOp, value: V, expected: E)
