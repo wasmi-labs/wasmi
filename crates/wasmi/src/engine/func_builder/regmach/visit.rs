@@ -454,6 +454,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i32_add_imm,
             Instruction::i32_add_imm16,
             UntypedValue::i32_add,
+            Self::no_custom_opt,
             |this, reg: Register, value: i32| {
                 if value == 0 {
                     // Optimization: `add x + 0` is same as `x`
@@ -475,6 +476,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i32_mul_imm,
             Instruction::i32_mul_imm16,
             UntypedValue::i32_mul,
+            Self::no_custom_opt,
             |this, reg: Register, value: i32| {
                 if value == 0 {
                     // Optimization: `add x * 0` is always `0`
