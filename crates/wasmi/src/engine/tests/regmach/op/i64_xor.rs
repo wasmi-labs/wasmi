@@ -22,7 +22,7 @@ fn reg_imm16() {
 
 #[test]
 fn reg_imm16_rev() {
-    test_binary_reg_imm16_rev(WASM_OP, Instruction::i64_xor_imm16)
+    test_binary_reg_imm16_rev(WASM_OP, swap_ops!(Instruction::i64_xor_imm16))
 }
 
 #[test]

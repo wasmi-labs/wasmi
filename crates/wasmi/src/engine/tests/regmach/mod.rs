@@ -22,7 +22,7 @@ use wasmi_core::UntypedValue;
 /// Used to swap operands of a `rev` variant [`Instruction`] constructor.
 macro_rules! swap_ops {
     ($fn_name:path) => {
-        |result: Register, lhs: Register, rhs: Const16| -> Instruction {
+        |result: Register, lhs: Const16, rhs: Register| -> Instruction {
             $fn_name(result, rhs, lhs)
         }
     };
@@ -249,7 +249,7 @@ fn test_binary_reg_imm16(
 /// Variant of [`test_binary_reg_imm16`] where both operands are swapped.
 fn test_binary_reg_imm16_rev(
     wasm_op: WasmOp,
-    make_instr: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
+    make_instr: fn(result: Register, lhs: Const16, rhs: Register) -> Instruction,
 ) {
     /// This constant value fits into 16 bit and is kinda uninteresting for optimizations.
     const VALUE: i16 = 100;
@@ -268,8 +268,8 @@ fn test_binary_reg_imm16_rev(
     let expected = [
         make_instr(
             Register::from_u16(1),
-            Register::from_u16(0),
             Const16::from_i16(VALUE),
+            Register::from_u16(0),
         ),
         Instruction::ReturnReg {
             value: Register::from_u16(1),
