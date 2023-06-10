@@ -257,6 +257,154 @@ impl<'parser> FuncTranslator<'parser> {
         Ok(())
     }
 
+    /// Translate a non-commutative binary `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// - This applies several optimization that are valid for all non-commutative
+    ///   binary instructions such as `i32.sub` or `i64.rotl`.
+    /// - Its various function arguments allow it to be used generically for `i32`
+    ///   instructions as well as for `i64`, `f32` and `f64` types.
+    /// - Applies constant evaluation if both operands are constant values.
+    ///
+    /// - The `make_instr_opt` closure allows to implement custom optimization
+    ///   logic for the case that both operands are registers.
+    /// - The `make_instr_reg_imm_opt` closure allows to implement custom optmization
+    ///   logic for the case that the right-hand side operand is a constant value.
+    /// - The `make_instr_imm_reg_opt` closure allows to implement custom optmization
+    ///   logic for the case that the left-hand side operand is a constant value.
+    #[allow(clippy::too_many_arguments)]
+    fn translate_binary<T>(
+        &mut self,
+        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+        make_instr_imm: fn(result: Register, lhs: Register) -> Instruction,
+        make_instr_imm_rev: fn(result: Register, lhs: Register) -> Instruction,
+        make_instr_imm_rhs: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
+        make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
+        make_instr_imm16_rev: fn(result: Register, lhs: Const16, rhs: Register) -> Instruction,
+        consteval: fn(UntypedValue, UntypedValue) -> UntypedValue,
+        make_instr_opt: fn(
+            &mut Self,
+            lhs: Register,
+            rhs: Register,
+        ) -> Result<bool, TranslationError>,
+        make_instr_reg_imm_opt: fn(
+            &mut Self,
+            lhs: Register,
+            rhs: T,
+        ) -> Result<bool, TranslationError>,
+        make_instr_imm_reg_opt: fn(
+            &mut Self,
+            lhs: T,
+            rhs: Register,
+        ) -> Result<bool, TranslationError>,
+    ) -> Result<(), TranslationError>
+    where
+        T: Copy + From<UntypedValue> + Into<UntypedValue> + TryInto<Const16>,
+    {
+        let rhs = self.alloc.stack.pop();
+        let lhs = self.alloc.stack.pop();
+        match (lhs, rhs) {
+            (Provider::Register(lhs), Provider::Register(rhs)) => {
+                if make_instr_opt(self, lhs, rhs)? {
+                    // Case: the custom logic applied its optimization and we can return.
+                    return Ok(());
+                }
+                let result = self.alloc.stack.push_dynamic()?;
+                self.alloc
+                    .instr_encoder
+                    .push_instr(make_instr(result, lhs, rhs))?;
+                Ok(())
+            }
+            (Provider::Register(lhs), Provider::Const(rhs)) => {
+                if make_instr_reg_imm_opt(self, lhs, T::from(rhs))? {
+                    // Case: the custom logic applied its optimization and we can return.
+                    return Ok(());
+                }
+                if let Ok(rhs) = T::from(rhs).try_into() {
+                    // Optimization: We can use a compact instruction for small constants.
+                    let result = self.alloc.stack.push_dynamic()?;
+                    self.alloc
+                        .instr_encoder
+                        .push_instr(make_instr_imm16(result, lhs, rhs))?;
+                    return Ok(());
+                }
+                let result = self.alloc.stack.push_dynamic()?;
+                self.alloc
+                    .instr_encoder
+                    .push_instr(make_instr_imm(result, lhs))?;
+                let rhs_instr = make_instr_imm_rhs(self, T::from(rhs))?;
+                self.alloc.instr_encoder.push_instr(rhs_instr)?;
+                Ok(())
+            }
+            (Provider::Const(lhs), Provider::Register(rhs)) => {
+                if make_instr_imm_reg_opt(self, T::from(lhs), rhs)? {
+                    // Case: the custom logic applied its optimization and we can return.
+                    return Ok(());
+                }
+                if let Ok(lhs) = T::from(lhs).try_into() {
+                    // Optimization: We can use a compact instruction for small constants.
+                    let result = self.alloc.stack.push_dynamic()?;
+                    self.alloc
+                        .instr_encoder
+                        .push_instr(make_instr_imm16_rev(result, lhs, rhs))?;
+                    return Ok(());
+                }
+                let result = self.alloc.stack.push_dynamic()?;
+                self.alloc
+                    .instr_encoder
+                    .push_instr(make_instr_imm_rev(result, rhs))?;
+                let rhs_instr = make_instr_imm_rhs(self, T::from(lhs))?;
+                self.alloc.instr_encoder.push_instr(rhs_instr)?;
+                Ok(())
+            }
+            (Provider::Const(lhs), Provider::Const(rhs)) => {
+                self.alloc.stack.push_const(consteval(lhs, rhs));
+                Ok(())
+            }
+        }
+    }
+
+    /// Convenience method for [`Self::translate_binary`] when translating `i32` instructions.
+    #[allow(clippy::too_many_arguments)]
+    fn translate_binary_i32(
+        &mut self,
+        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+        make_instr_imm: fn(result: Register, lhs: Register) -> Instruction,
+        make_instr_imm_rev: fn(result: Register, lhs: Register) -> Instruction,
+        make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
+        make_instr_imm16_rev: fn(result: Register, lhs: Const16, rhs: Register) -> Instruction,
+        consteval: fn(UntypedValue, UntypedValue) -> UntypedValue,
+        make_instr_opt: fn(
+            &mut Self,
+            lhs: Register,
+            rhs: Register,
+        ) -> Result<bool, TranslationError>,
+        make_instr_reg_imm_opt: fn(
+            &mut Self,
+            lhs: Register,
+            rhs: i32,
+        ) -> Result<bool, TranslationError>,
+        make_instr_imm_reg_opt: fn(
+            &mut Self,
+            lhs: i32,
+            rhs: Register,
+        ) -> Result<bool, TranslationError>,
+    ) -> Result<(), TranslationError> {
+        self.translate_binary::<i32>(
+            make_instr,
+            make_instr_imm,
+            make_instr_imm_rev,
+            Self::make_instr_imm_rhs_i32,
+            make_instr_imm16,
+            make_instr_imm16_rev,
+            consteval,
+            make_instr_opt,
+            make_instr_reg_imm_opt,
+            make_instr_imm_reg_opt,
+        )
+    }
+
     /// Translate a commutative binary `wasmi` instruction.
     ///
     /// # Note
@@ -393,10 +541,10 @@ impl<'parser> FuncTranslator<'parser> {
     }
 
     /// Can be used for [`Self::translate_binary_commutative`] if no custom optimization shall be applied.
-    pub fn no_custom_opt(
+    pub fn no_custom_opt<Lhs, Rhs>(
         &mut self,
-        _lhs: Register,
-        _rhs: Register,
+        _lhs: Lhs,
+        _rhs: Rhs,
     ) -> Result<bool, TranslationError> {
         Ok(false)
     }

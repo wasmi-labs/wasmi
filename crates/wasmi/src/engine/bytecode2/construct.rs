@@ -26,6 +26,12 @@ macro_rules! constructor_for {
             Self::$op_code(BinInstrImm16::new(result, lhs, rhs))
         }
     };
+    ( @impl fn $fn_name:ident(binary_imm16_rev) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Register, lhs: Const16, rhs: Register) -> Self {
+            Self::$op_code(BinInstrImm16::new(result, rhs, lhs))
+        }
+    };
 }
 
 impl Instruction {
@@ -41,6 +47,12 @@ impl Instruction {
         fn i64_add_imm(binary_imm) -> Self::I32AddImm;
         fn i32_add_imm16(binary_imm16) -> Self::I32AddImm16;
         fn i64_add_imm16(binary_imm16) -> Self::I32AddImm16;
+
+        fn i32_sub(binary) -> Self::I32Sub;
+        fn i32_sub_imm(binary_imm) -> Self::I32SubImm;
+        fn i32_sub_imm_rev(binary_imm) -> Self::I32SubImm;
+        fn i32_sub_imm16(binary_imm16) -> Self::I32SubImm16;
+        fn i32_sub_imm16_rev(binary_imm16_rev) -> Self::I32SubImm16;
 
         fn i32_mul(binary) -> Self::I32Mul;
         fn i64_mul(binary) -> Self::I64Mul;

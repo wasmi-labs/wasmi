@@ -19,6 +19,17 @@ use crate::{
 use std::fmt::Display;
 use wasmi_core::UntypedValue;
 
+/// Used to swap operands of a `rev` variant [`Instruction`] constructor.
+macro_rules! swap_ops {
+    ($fn_name:path) => {
+        |result: Register, lhs: Register, rhs: Const16| -> Instruction {
+            $fn_name(result, rhs, lhs)
+        }
+    };
+}
+
+use swap_ops;
+
 /// Asserts that the given `wasm` bytes yield functions with expected instructions.
 ///
 /// Uses the given [`Config`] to configure the [`Engine`] that the tests are run on.

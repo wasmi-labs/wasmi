@@ -489,7 +489,31 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_sub(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_i32(
+            Instruction::i32_sub,
+            Instruction::i32_sub_imm,
+            Instruction::i32_sub_imm_rev,
+            Instruction::i32_sub_imm16,
+            Instruction::i32_sub_imm16_rev,
+            UntypedValue::i32_sub,
+            |this, lhs: Register, rhs: Register| {
+                if lhs == rhs {
+                    // Optimization: `sub x - x` is always `0`
+                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: Register, rhs: i32| {
+                if rhs == 0 {
+                    // Optimization: `sub x - 0` is same as `x`
+                    this.alloc.stack.push_register(lhs)?;
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            Self::no_custom_opt,
+        )
     }
 
     fn visit_i32_mul(&mut self) -> Self::Output {
