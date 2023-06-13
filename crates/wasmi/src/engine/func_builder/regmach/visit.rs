@@ -928,7 +928,22 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_shr_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_shift(
+            Instruction::i64_shr_s,
+            Instruction::i64_shr_s_imm,
+            Self::make_instr_imm_param_i64,
+            Instruction::i64_shr_s_imm_rev,
+            Instruction::i64_shr_s_imm16_rev,
+            UntypedValue::i64_shr_s,
+            |this, lhs: i64, rhs: Register| {
+                if lhs == -1 {
+                    // Optimization: `-1 >> x` is always `-1` for every valid `x`
+                    this.alloc.stack.push_const(lhs);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_i64_shr_u(&mut self) -> Self::Output {
