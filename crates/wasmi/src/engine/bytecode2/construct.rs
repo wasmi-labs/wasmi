@@ -94,6 +94,11 @@ impl Instruction {
         fn i32_rotl_imm_rev(binary_imm) -> Self::I32RotlImmRev;
         fn i32_rotl_imm16_rev(binary_imm16_rev) -> Self::I32RotlImm16Rev;
 
+        fn i64_rotl(binary) -> Self::I64Rotl;
+        fn i64_rotl_imm(binary_imm16) -> Self::I64RotlImm;
+        fn i64_rotl_imm_rev(binary_imm) -> Self::I64RotlImmRev;
+        fn i64_rotl_imm16_rev(binary_imm16_rev) -> Self::I64RotlImm16Rev;
+
         fn i32_rotr(binary) -> Self::I32Rotr;
         fn i32_rotr_imm(binary_imm16) -> Self::I32RotrImm;
         fn i32_rotr_imm_rev(binary_imm) -> Self::I32RotrImmRev;
