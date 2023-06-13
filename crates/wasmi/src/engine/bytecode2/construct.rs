@@ -74,6 +74,11 @@ impl Instruction {
         fn i32_shr_u_imm_rev(binary_imm) -> Self::I32ShrUImmRev;
         fn i32_shr_u_imm16_rev(binary_imm16_rev) -> Self::I32ShrUImm16Rev;
 
+        fn i64_shr_u(binary) -> Self::I64ShrU;
+        fn i64_shr_u_imm(binary_imm16) -> Self::I64ShrUImm;
+        fn i64_shr_u_imm_rev(binary_imm) -> Self::I64ShrUImmRev;
+        fn i64_shr_u_imm16_rev(binary_imm16_rev) -> Self::I64ShrUImm16Rev;
+
         fn i32_shr_s(binary) -> Self::I32ShrS;
         fn i32_shr_s_imm(binary_imm16) -> Self::I32ShrSImm;
         fn i32_shr_s_imm_rev(binary_imm) -> Self::I32ShrSImmRev;
