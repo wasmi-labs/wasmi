@@ -13,6 +13,7 @@ mod i64_add;
 mod i64_and;
 mod i64_mul;
 mod i64_or;
+mod i64_shl;
 mod i64_sub;
 mod i64_xor;
 

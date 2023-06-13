@@ -916,7 +916,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_shl(&mut self) -> Self::Output {
-        todo!()
+        self.translate_shift(
+            Instruction::i64_shl,
+            Instruction::i64_shl_imm,
+            Self::make_instr_imm_param_i64,
+            Instruction::i64_shl_imm_rev,
+            Instruction::i64_shl_imm16_rev,
+            UntypedValue::i64_shl,
+            Self::no_custom_opt,
+        )
     }
 
     fn visit_i64_shr_s(&mut self) -> Self::Output {
