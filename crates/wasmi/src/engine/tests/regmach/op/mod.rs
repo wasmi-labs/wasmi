@@ -2,6 +2,7 @@ mod i32_add;
 mod i32_and;
 mod i32_mul;
 mod i32_or;
+mod i32_rotl;
 mod i32_shl;
 mod i32_shr_s;
 mod i32_shr_u;
