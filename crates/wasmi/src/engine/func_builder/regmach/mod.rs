@@ -360,7 +360,7 @@ impl<'parser> FuncTranslator<'parser> {
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
         make_instr_imm: fn(result: Register, lhs: Register) -> Instruction,
         make_instr_imm_rev: fn(result: Register, lhs: Register) -> Instruction,
-        make_instr_imm_rhs: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
+        make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
         make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
         make_instr_imm16_rev: fn(result: Register, lhs: Const16, rhs: Register) -> Instruction,
         consteval: fn(UntypedValue, UntypedValue) -> UntypedValue,
@@ -402,7 +402,7 @@ impl<'parser> FuncTranslator<'parser> {
                     // Optimization was applied: return early.
                     return Ok(());
                 }
-                self.push_binary_instr_imm(lhs, T::from(rhs), make_instr_imm, make_instr_imm_rhs)
+                self.push_binary_instr_imm(lhs, T::from(rhs), make_instr_imm, make_instr_imm_param)
             }
             (Provider::Const(lhs), Provider::Register(rhs)) => {
                 if make_instr_imm_reg_opt(self, T::from(lhs), rhs)? {
@@ -421,7 +421,7 @@ impl<'parser> FuncTranslator<'parser> {
                     rhs,
                     T::from(lhs),
                     make_instr_imm_rev,
-                    make_instr_imm_rhs,
+                    make_instr_imm_param,
                 )
             }
             (Provider::Const(lhs), Provider::Const(rhs)) => {
@@ -460,7 +460,7 @@ impl<'parser> FuncTranslator<'parser> {
             make_instr,
             make_instr_imm,
             make_instr_imm_rev,
-            Self::make_instr_imm_rhs_i32,
+            Self::make_instr_imm_param_i32,
             make_instr_imm16,
             make_instr_imm16_rev,
             consteval,
@@ -500,7 +500,7 @@ impl<'parser> FuncTranslator<'parser> {
             make_instr,
             make_instr_imm,
             make_instr_imm_rev,
-            Self::make_instr_imm_rhs_i64,
+            Self::make_instr_imm_param_i64,
             make_instr_imm16,
             make_instr_imm16_rev,
             consteval,
@@ -536,7 +536,7 @@ impl<'parser> FuncTranslator<'parser> {
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
         make_instr_imm: fn(result: Register, lhs: Register) -> Instruction,
-        make_instr_imm_rhs: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
+        make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
         make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
         consteval: fn(UntypedValue, UntypedValue) -> UntypedValue,
         make_instr_opt: fn(
@@ -573,7 +573,7 @@ impl<'parser> FuncTranslator<'parser> {
                     reg_in,
                     T::from(imm_in),
                     make_instr_imm,
-                    make_instr_imm_rhs,
+                    make_instr_imm_param,
                 )
             }
             (Provider::Const(lhs), Provider::Const(rhs)) => {
@@ -604,7 +604,7 @@ impl<'parser> FuncTranslator<'parser> {
         self.translate_binary_commutative::<i32>(
             make_instr,
             make_instr_imm,
-            Self::make_instr_imm_rhs_i32,
+            Self::make_instr_imm_param_i32,
             make_instr_imm16,
             consteval,
             make_instr_opt,
@@ -634,7 +634,7 @@ impl<'parser> FuncTranslator<'parser> {
         self.translate_binary_commutative::<i64>(
             make_instr,
             make_instr_imm,
-            Self::make_instr_imm_rhs_i64,
+            Self::make_instr_imm_param_i64,
             make_instr_imm16,
             consteval,
             make_instr_opt,
@@ -670,12 +670,18 @@ impl<'parser> FuncTranslator<'parser> {
     }
 
     /// Can be used for [`Self::translate_binary`] (and variants) to create immediate `i32` instructions.
-    pub fn make_instr_imm_rhs_i32(&mut self, value: i32) -> Result<Instruction, TranslationError> {
+    pub fn make_instr_imm_param_i32(
+        &mut self,
+        value: i32,
+    ) -> Result<Instruction, TranslationError> {
         Ok(Instruction::const32(value))
     }
 
     /// Can be used for [`Self::translate_binary`] (and variants) to create immediate `i64` instructions.
-    pub fn make_instr_imm_rhs_i64(&mut self, value: i64) -> Result<Instruction, TranslationError> {
+    pub fn make_instr_imm_param_i64(
+        &mut self,
+        value: i64,
+    ) -> Result<Instruction, TranslationError> {
         let cref = self.engine().alloc_const(UntypedValue::from(value))?;
         Ok(Instruction::ConstRef(cref))
     }
