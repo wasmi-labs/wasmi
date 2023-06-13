@@ -341,7 +341,7 @@ fn test_binary_reg_imm64_rev(
             value: Register::from_u16(1),
         },
     ];
-    test_binary_reg_imm_with(wasm_op, VALUE, expected)
+    test_binary_reg_imm_rev_with(wasm_op, VALUE, expected)
 }
 
 fn test_binary_reg_imm_with<V, E>(wasm_op: WasmOp, value: V, expected: E)
