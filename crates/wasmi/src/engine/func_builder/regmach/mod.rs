@@ -1,6 +1,6 @@
 //! Function translation for the register-machine bytecode based `wasmi` engine.
 
-#![allow(dead_code, unused_imports)] // TODO: remove
+#![allow(unused_imports)] // TODO: remove
 
 mod control_frame;
 mod control_stack;
