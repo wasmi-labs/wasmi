@@ -309,6 +309,28 @@ impl<'parser> FuncTranslator<'parser> {
         Ok(())
     }
 
+    /// Pushes a binary instruction with a generic immediate value.
+    ///
+    /// # Note
+    ///
+    /// The resulting binary instruction always takes up two instruction
+    /// words for its encoding in the [`Instruction`] sequence.
+    fn push_binary_instr_imm<T>(
+        &mut self,
+        reg_in: Register,
+        imm_in: T,
+        make_instr_imm: fn(result: Register, reg_in: Register) -> Instruction,
+        make_instr_imm_param: fn(&mut Self, imm_in: T) -> Result<Instruction, TranslationError>,
+    ) -> Result<(), TranslationError> {
+        let result = self.alloc.stack.push_dynamic()?;
+        self.alloc
+            .instr_encoder
+            .push_instr(make_instr_imm(result, reg_in))?;
+        let rhs_instr = make_instr_imm_param(self, imm_in)?;
+        self.alloc.instr_encoder.push_instr(rhs_instr)?;
+        Ok(())
+    }
+
     /// Translate a non-commutative binary `wasmi` instruction.
     ///
     /// # Note
@@ -380,13 +402,7 @@ impl<'parser> FuncTranslator<'parser> {
                     // Optimization was applied: return early.
                     return Ok(());
                 }
-                let result = self.alloc.stack.push_dynamic()?;
-                self.alloc
-                    .instr_encoder
-                    .push_instr(make_instr_imm(result, lhs))?;
-                let rhs_instr = make_instr_imm_rhs(self, T::from(rhs))?;
-                self.alloc.instr_encoder.push_instr(rhs_instr)?;
-                Ok(())
+                self.push_binary_instr_imm(lhs, T::from(rhs), make_instr_imm, make_instr_imm_rhs)
             }
             (Provider::Const(lhs), Provider::Register(rhs)) => {
                 if make_instr_imm_reg_opt(self, T::from(lhs), rhs)? {
@@ -401,13 +417,12 @@ impl<'parser> FuncTranslator<'parser> {
                         .push_instr(make_instr_imm16_rev(result, lhs, rhs))?;
                     return Ok(());
                 }
-                let result = self.alloc.stack.push_dynamic()?;
-                self.alloc
-                    .instr_encoder
-                    .push_instr(make_instr_imm_rev(result, rhs))?;
-                let rhs_instr = make_instr_imm_rhs(self, T::from(lhs))?;
-                self.alloc.instr_encoder.push_instr(rhs_instr)?;
-                Ok(())
+                self.push_binary_instr_imm(
+                    rhs,
+                    T::from(lhs),
+                    make_instr_imm_rev,
+                    make_instr_imm_rhs,
+                )
             }
             (Provider::Const(lhs), Provider::Const(rhs)) => {
                 self.push_binary_consteval(lhs, rhs, consteval)
@@ -554,13 +569,12 @@ impl<'parser> FuncTranslator<'parser> {
                     // Optimization was applied: return early.
                     return Ok(());
                 }
-                let result = self.alloc.stack.push_dynamic()?;
-                self.alloc
-                    .instr_encoder
-                    .push_instr(make_instr_imm(result, reg_in))?;
-                let rhs_instr = make_instr_imm_rhs(self, T::from(imm_in))?;
-                self.alloc.instr_encoder.push_instr(rhs_instr)?;
-                Ok(())
+                self.push_binary_instr_imm(
+                    reg_in,
+                    T::from(imm_in),
+                    make_instr_imm,
+                    make_instr_imm_rhs,
+                )
             }
             (Provider::Const(lhs), Provider::Const(rhs)) => {
                 self.push_binary_consteval(lhs, rhs, consteval)
