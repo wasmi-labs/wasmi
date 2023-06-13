@@ -709,7 +709,22 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_rotr(&mut self) -> Self::Output {
-        todo!()
+        self.translate_shift(
+            Instruction::i32_rotr,
+            Instruction::i32_rotr_imm,
+            Self::make_instr_imm_param_i32,
+            Instruction::i32_rotr_imm_rev,
+            Instruction::i32_rotr_imm16_rev,
+            UntypedValue::i32_rotr,
+            |this, lhs: i32, rhs: Register| {
+                if lhs == -1 {
+                    // Optimization: `-1.rotate_right(x)` is always `-1` for every valid `x`
+                    this.alloc.stack.push_const(lhs);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_i64_clz(&mut self) -> Self::Output {
