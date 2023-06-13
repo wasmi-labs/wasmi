@@ -14,6 +14,7 @@ mod i64_and;
 mod i64_mul;
 mod i64_or;
 mod i64_rotl;
+mod i64_rotr;
 mod i64_shl;
 mod i64_shr_s;
 mod i64_shr_u;
