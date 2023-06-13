@@ -643,7 +643,7 @@ impl<'parser> FuncTranslator<'parser> {
     ///
     /// This variant is used for [`Instruction`] constructors with 2 parameters.
     pub fn make_instr2_unreachable<Lhs, Rhs>(_lhs: Lhs, _rhs: Rhs) -> Instruction {
-        unreachable!("cannot reach this bytecode construction")
+        unreachable!("must not reach this bytecode construction")
     }
 
     /// Can be used for [`Self::translate_binary`] (and variants) if the construction cannot be reached.
@@ -652,7 +652,7 @@ impl<'parser> FuncTranslator<'parser> {
     ///
     /// This variant is used for [`Instruction`] constructors with 3 parameters.
     pub fn make_instr3_unreachable<T0, T1, T2>(_t0: T0, _t1: T1, _t2: T2) -> Instruction {
-        unreachable!("cannot reach this bytecode construction")
+        unreachable!("must not reach this bytecode construction")
     }
 
     /// Can be used for [`Self::translate_binary`] (and variants) to create immediate `i32` instructions.
