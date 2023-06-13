@@ -298,6 +298,17 @@ impl<'parser> FuncTranslator<'parser> {
         Ok(false)
     }
 
+    /// Evaluates the constants and pushes the proper result to the value stack.
+    fn push_binary_consteval(
+        &mut self,
+        lhs: UntypedValue,
+        rhs: UntypedValue,
+        consteval: fn(UntypedValue, UntypedValue) -> UntypedValue,
+    ) -> Result<(), TranslationError> {
+        self.alloc.stack.push_const(consteval(lhs, rhs));
+        Ok(())
+    }
+
     /// Translate a non-commutative binary `wasmi` instruction.
     ///
     /// # Note
@@ -399,8 +410,7 @@ impl<'parser> FuncTranslator<'parser> {
                 Ok(())
             }
             (Provider::Const(lhs), Provider::Const(rhs)) => {
-                self.alloc.stack.push_const(consteval(lhs, rhs));
-                Ok(())
+                self.push_binary_consteval(lhs, rhs, consteval)
             }
         }
     }
@@ -553,8 +563,7 @@ impl<'parser> FuncTranslator<'parser> {
                 Ok(())
             }
             (Provider::Const(lhs), Provider::Const(rhs)) => {
-                self.alloc.stack.push_const(consteval(lhs, rhs));
-                Ok(())
+                self.push_binary_consteval(lhs, rhs, consteval)
             }
         }
     }
