@@ -32,7 +32,6 @@ impl TryFrom<i64> for Const16 {
 
 impl Const16 {
     /// Creates an [`Const16`] from the given `i16` value.
-    #[cfg(test)]
     pub fn from_i16(value: i16) -> Self {
         Self(value)
     }

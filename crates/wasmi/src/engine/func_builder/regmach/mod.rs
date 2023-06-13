@@ -6,9 +6,10 @@ mod control_frame;
 mod control_stack;
 mod instr_encoder;
 mod stack;
+mod utils;
 mod visit;
 
-use self::{control_frame::BlockControlFrame, stack::ValueStack};
+use self::{control_frame::BlockControlFrame, stack::ValueStack, utils::WasmInteger};
 pub use self::{
     control_frame::{ControlFrame, ControlFrameKind},
     control_stack::ControlStack,
@@ -373,7 +374,7 @@ impl<'parser> FuncTranslator<'parser> {
     ///
     /// Used for translating the following Wasm operators to `wasmi` bytecode:
     ///
-    /// - `{i32, i64}.{sub, shl, shr_s, shr_u, rotl, rotr}`
+    /// - `{i32, i64}.sub`
     /// - `{f32, f64}.{sub, div, copysign}`
     #[allow(clippy::too_many_arguments)]
     fn translate_binary<T>(
@@ -653,6 +654,86 @@ impl<'parser> FuncTranslator<'parser> {
             make_instr_opt,
             make_instr_imm_opt,
         )
+    }
+
+    /// Translate a shift or rotate `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// - This applies several optimization that are valid for all shift or rotate instructions.
+    /// - Its various function arguments allow it to be used for generic Wasm types.
+    /// - Applies constant evaluation if both operands are constant values.
+    ///
+    /// - The `make_instr_imm_reg_opt` closure allows to implement custom optmization
+    ///   logic for the case the shifted value operand is a constant value.
+    ///
+    /// # Usage
+    ///
+    /// Used for translating the following Wasm operators to `wasmi` bytecode:
+    ///
+    /// - `{i32, i64}.{shl, shr_s, shr_u, rotl, rotr}`
+    #[allow(clippy::too_many_arguments)]
+    fn translate_shift<T>(
+        &mut self,
+        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+        make_instr_imm: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
+        make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
+        make_instr_imm_rev: fn(result: Register, rhs: Register) -> Instruction,
+        make_instr_imm16_rev: fn(result: Register, lhs: Const16, rhs: Register) -> Instruction,
+        consteval: fn(UntypedValue, UntypedValue) -> UntypedValue,
+        make_instr_imm_reg_opt: fn(
+            &mut Self,
+            lhs: T,
+            rhs: Register,
+        ) -> Result<bool, TranslationError>,
+    ) -> Result<(), TranslationError>
+    where
+        T: WasmInteger,
+    {
+        match self.alloc.stack.pop2() {
+            (Provider::Register(lhs), Provider::Register(rhs)) => {
+                self.push_binary_instr(lhs, rhs, make_instr)
+            }
+            (Provider::Register(lhs), Provider::Const(rhs)) => {
+                let rhs = T::from(rhs).as_shift_amount();
+                if rhs == 0 {
+                    // Optimization: Shifting or rotating by zero bits is a no-op.
+                    self.alloc.stack.push_register(lhs)?;
+                    return Ok(());
+                }
+                let result = self.alloc.stack.push_dynamic()?;
+                self.alloc.instr_encoder.push_instr(make_instr_imm(
+                    result,
+                    lhs,
+                    Const16::from_i16(rhs),
+                ))?;
+                Ok(())
+            }
+            (Provider::Const(lhs), Provider::Register(rhs)) => {
+                if make_instr_imm_reg_opt(self, T::from(lhs), rhs)? {
+                    // Custom optimization was applied: return early
+                    return Ok(());
+                }
+                if T::from(lhs).eq_zero() {
+                    // Optimization: Shifting or rotating a zero value is a no-op.
+                    self.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    return Ok(());
+                }
+                if self.try_push_binary_instr_imm16_rev(T::from(lhs), rhs, make_instr_imm16_rev)? {
+                    // Optimization was applied: return early.
+                    return Ok(());
+                }
+                self.push_binary_instr_imm(
+                    rhs,
+                    T::from(lhs),
+                    make_instr_imm_rev,
+                    make_instr_imm_param,
+                )
+            }
+            (Provider::Const(lhs), Provider::Const(rhs)) => {
+                self.push_binary_consteval(lhs, rhs, consteval)
+            }
+        }
     }
 
     /// Can be used for [`Self::translate_binary`] (and variants) if no custom optimization shall be applied.
