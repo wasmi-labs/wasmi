@@ -405,6 +405,46 @@ impl<'parser> FuncTranslator<'parser> {
         )
     }
 
+    /// Convenience method for [`Self::translate_binary`] when translating `i64` instructions.
+    #[allow(clippy::too_many_arguments)]
+    fn translate_binary_i64(
+        &mut self,
+        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+        make_instr_imm: fn(result: Register, lhs: Register) -> Instruction,
+        make_instr_imm_rev: fn(result: Register, lhs: Register) -> Instruction,
+        make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
+        make_instr_imm16_rev: fn(result: Register, lhs: Const16, rhs: Register) -> Instruction,
+        consteval: fn(UntypedValue, UntypedValue) -> UntypedValue,
+        make_instr_opt: fn(
+            &mut Self,
+            lhs: Register,
+            rhs: Register,
+        ) -> Result<bool, TranslationError>,
+        make_instr_reg_imm_opt: fn(
+            &mut Self,
+            lhs: Register,
+            rhs: i64,
+        ) -> Result<bool, TranslationError>,
+        make_instr_imm_reg_opt: fn(
+            &mut Self,
+            lhs: i64,
+            rhs: Register,
+        ) -> Result<bool, TranslationError>,
+    ) -> Result<(), TranslationError> {
+        self.translate_binary::<i64>(
+            make_instr,
+            make_instr_imm,
+            make_instr_imm_rev,
+            Self::make_instr_imm_rhs_i64,
+            make_instr_imm16,
+            make_instr_imm16_rev,
+            consteval,
+            make_instr_opt,
+            make_instr_reg_imm_opt,
+            make_instr_imm_reg_opt,
+        )
+    }
+
     /// Translate a commutative binary `wasmi` instruction.
     ///
     /// # Note
