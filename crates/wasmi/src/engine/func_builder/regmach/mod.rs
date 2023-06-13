@@ -404,9 +404,7 @@ impl<'parser> FuncTranslator<'parser> {
     where
         T: Copy + From<UntypedValue> + Into<UntypedValue> + TryInto<Const16>,
     {
-        let rhs = self.alloc.stack.pop();
-        let lhs = self.alloc.stack.pop();
-        match (lhs, rhs) {
+        match self.alloc.stack.pop2() {
             (Provider::Register(lhs), Provider::Register(rhs)) => {
                 if make_instr_opt(self, lhs, rhs)? {
                     // Case: the custom logic applied its optimization and we can return.
@@ -566,9 +564,7 @@ impl<'parser> FuncTranslator<'parser> {
     where
         T: Copy + From<UntypedValue> + Into<UntypedValue> + TryInto<Const16>,
     {
-        let rhs = self.alloc.stack.pop();
-        let lhs = self.alloc.stack.pop();
-        match (lhs, rhs) {
+        match self.alloc.stack.pop2() {
             (Provider::Register(lhs), Provider::Register(rhs)) => {
                 if make_instr_opt(self, lhs, rhs)? {
                     // Case: the custom logic applied its optimization and we can return.
