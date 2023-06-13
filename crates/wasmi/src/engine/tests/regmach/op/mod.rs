@@ -3,6 +3,7 @@ mod i32_and;
 mod i32_mul;
 mod i32_or;
 mod i32_shl;
+mod i32_shr_u;
 mod i32_sub;
 mod i32_xor;
 mod i64_add;

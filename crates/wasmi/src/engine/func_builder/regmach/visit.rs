@@ -663,7 +663,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_shr_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_shift(
+            Instruction::i32_shr_u,
+            Instruction::i32_shr_u_imm,
+            Self::make_instr_imm_param_i32,
+            Instruction::i32_shr_u_imm_rev,
+            Instruction::i32_shr_u_imm16_rev,
+            UntypedValue::i32_shr_u,
+            Self::no_custom_opt,
+        )
     }
 
     fn visit_i32_rotl(&mut self) -> Self::Output {
