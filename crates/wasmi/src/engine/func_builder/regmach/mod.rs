@@ -594,7 +594,7 @@ impl<'parser> FuncTranslator<'parser> {
         )
     }
 
-    /// Can be used for [`Self::translate_binary_commutative`] if no custom optimization shall be applied.
+    /// Can be used for [`Self::translate_binary`] (and variants) if no custom optimization shall be applied.
     pub fn no_custom_opt<Lhs, Rhs>(
         &mut self,
         _lhs: Lhs,
@@ -603,12 +603,30 @@ impl<'parser> FuncTranslator<'parser> {
         Ok(false)
     }
 
-    /// Can be used for [`Self::translate_binary_commutative`] to create immediate `i32` instructions.
+    /// Can be used for [`Self::translate_binary`] (and variants) if the construction cannot be reached.
+    ///
+    /// # Note
+    ///
+    /// This variant is used for [`Instruction`] constructors with 2 parameters.
+    pub fn make_instr2_unreachable<Lhs, Rhs>(_lhs: Lhs, _rhs: Rhs) -> Instruction {
+        unreachable!("cannot reach this bytecode construction")
+    }
+
+    /// Can be used for [`Self::translate_binary`] (and variants) if the construction cannot be reached.
+    ///
+    /// # Note
+    ///
+    /// This variant is used for [`Instruction`] constructors with 3 parameters.
+    pub fn make_instr3_unreachable<T0, T1, T2>(_t0: T0, _t1: T1, _t2: T2) -> Instruction {
+        unreachable!("cannot reach this bytecode construction")
+    }
+
+    /// Can be used for [`Self::translate_binary`] (and variants) to create immediate `i32` instructions.
     pub fn make_instr_imm_rhs_i32(&mut self, value: i32) -> Result<Instruction, TranslationError> {
         Ok(Instruction::const32(value))
     }
 
-    /// Can be used for [`Self::translate_binary_commutative`] to create immediate `i64` instructions.
+    /// Can be used for [`Self::translate_binary`] (and variants) to create immediate `i64` instructions.
     pub fn make_instr_imm_rhs_i64(&mut self, value: i64) -> Result<Instruction, TranslationError> {
         let cref = self.engine().alloc_const(UntypedValue::from(value))?;
         Ok(Instruction::ConstRef(cref))

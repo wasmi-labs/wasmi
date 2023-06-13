@@ -647,7 +647,43 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_shl(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_i32(
+            Instruction::i32_shl,
+            Self::make_instr2_unreachable,
+            Instruction::i32_shl_imm_rev,
+            Self::make_instr3_unreachable,
+            Instruction::i32_shl_imm16_rev,
+            UntypedValue::i32_shl,
+            Self::no_custom_opt,
+            |this, lhs: Register, rhs: i32| {
+                let shift_amount = rhs % 32;
+                if shift_amount == 0 {
+                    // Optimization: `x << C` where `C % 32 == 0` is same as `x`
+                    this.alloc.stack.push_register(lhs)?;
+                    return Ok(true);
+                }
+                // Since the shift amount always fits into 16-bit values
+                // we can always use a compact encoding for shift instructions
+                // that have a constant value for the shift amount.
+                //
+                // This replaces the calls to `make_instr_imm` and `make_instr_imm16`.
+                let result = this.alloc.stack.push_dynamic()?;
+                let rhs = Const16::from_i32(shift_amount)
+                    .unwrap_or_else(|| panic!("shift amount always fits in 16 bit values"));
+                this.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::i32_shl_imm(result, lhs, rhs))?;
+                Ok(true)
+            },
+            |this, lhs: i32, rhs: Register| {
+                if lhs == 0 {
+                    // Optimization: `0 << x` is same as `0`
+                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_i32_shr_s(&mut self) -> Self::Output {
