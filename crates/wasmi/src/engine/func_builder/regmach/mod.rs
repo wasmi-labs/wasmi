@@ -257,6 +257,47 @@ impl<'parser> FuncTranslator<'parser> {
         Ok(())
     }
 
+    /// Pushes a binary instruction with two register inputs `lhs` and `rhs`.
+    fn push_binary_instr(
+        &mut self,
+        lhs: Register,
+        rhs: Register,
+        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+    ) -> Result<(), TranslationError> {
+        let result = self.alloc.stack.push_dynamic()?;
+        self.alloc
+            .instr_encoder
+            .push_instr(make_instr(result, lhs, rhs))?;
+        Ok(())
+    }
+
+    /// Pushes a binary instruction if the immediate operand can be encoded in 16 bits.
+    ///
+    /// # Note
+    ///
+    /// - Returns `Ok(true)` is the optmization was applied.
+    /// - Returns `Ok(false)` is the optimization could not be applied.
+    /// - Returns `Err(_)` if a translation error occured.
+    fn try_push_binary_instr_imm16<T>(
+        &mut self,
+        reg_in: Register,
+        imm_in: T,
+        make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
+    ) -> Result<bool, TranslationError>
+    where
+        T: Copy + TryInto<Const16>,
+    {
+        if let Ok(rhs) = imm_in.try_into() {
+            // Optimization: We can use a compact instruction for small constants.
+            let result = self.alloc.stack.push_dynamic()?;
+            self.alloc
+                .instr_encoder
+                .push_instr(make_instr_imm16(result, reg_in, rhs))?;
+            return Ok(true);
+        }
+        Ok(false)
+    }
+
     /// Translate a non-commutative binary `wasmi` instruction.
     ///
     /// # Note
@@ -317,23 +358,15 @@ impl<'parser> FuncTranslator<'parser> {
                     // Case: the custom logic applied its optimization and we can return.
                     return Ok(());
                 }
-                let result = self.alloc.stack.push_dynamic()?;
-                self.alloc
-                    .instr_encoder
-                    .push_instr(make_instr(result, lhs, rhs))?;
-                Ok(())
+                self.push_binary_instr(lhs, rhs, make_instr)
             }
             (Provider::Register(lhs), Provider::Const(rhs)) => {
                 if make_instr_reg_imm_opt(self, lhs, T::from(rhs))? {
                     // Case: the custom logic applied its optimization and we can return.
                     return Ok(());
                 }
-                if let Ok(rhs) = T::from(rhs).try_into() {
-                    // Optimization: We can use a compact instruction for small constants.
-                    let result = self.alloc.stack.push_dynamic()?;
-                    self.alloc
-                        .instr_encoder
-                        .push_instr(make_instr_imm16(result, lhs, rhs))?;
+                if self.try_push_binary_instr_imm16(lhs, T::from(rhs), make_instr_imm16)? {
+                    // Optimization was applied: return early.
                     return Ok(());
                 }
                 let result = self.alloc.stack.push_dynamic()?;
@@ -499,24 +532,16 @@ impl<'parser> FuncTranslator<'parser> {
                     // Case: the custom logic applied its optimization and we can return.
                     return Ok(());
                 }
-                let result = self.alloc.stack.push_dynamic()?;
-                self.alloc
-                    .instr_encoder
-                    .push_instr(make_instr(result, lhs, rhs))?;
-                Ok(())
+                self.push_binary_instr(lhs, rhs, make_instr)
             }
             (Provider::Register(reg_in), Provider::Const(imm_in))
             | (Provider::Const(imm_in), Provider::Register(reg_in)) => {
                 if make_instr_imm_opt(self, reg_in, T::from(imm_in))? {
-                    // Case: the custom logic applied its optimization and we can return.
+                    // Custom logic applied its optimization: return early.
                     return Ok(());
                 }
-                if let Ok(rhs) = T::from(imm_in).try_into() {
-                    // Optimization: We can use a compact instruction for small constants.
-                    let result = self.alloc.stack.push_dynamic()?;
-                    self.alloc
-                        .instr_encoder
-                        .push_instr(make_instr_imm16(result, reg_in, rhs))?;
+                if self.try_push_binary_instr_imm16(reg_in, T::from(imm_in), make_instr_imm16)? {
+                    // Optimization was applied: return early.
                     return Ok(());
                 }
                 let result = self.alloc.stack.push_dynamic()?;
