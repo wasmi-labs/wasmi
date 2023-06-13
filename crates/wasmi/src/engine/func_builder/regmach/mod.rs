@@ -273,11 +273,11 @@ impl<'parser> FuncTranslator<'parser> {
     ///   logic for the case that the right-hand side operand is a constant value.
     /// - The `make_instr_imm_reg_opt` closure allows to implement custom optmization
     ///   logic for the case that the left-hand side operand is a constant value.
-    /// 
+    ///
     /// # Usage
-    /// 
+    ///
     /// Used for translating the following Wasm operators to `wasmi` bytecode:
-    /// 
+    ///
     /// - `{i32, i64}.{sub, shl, shr_s, shr_u, rotl, rotr}`
     #[allow(clippy::too_many_arguments)]
     fn translate_binary<T>(
@@ -465,11 +465,11 @@ impl<'parser> FuncTranslator<'parser> {
     ///   logic for the case that both operands are registers.
     /// - The `make_instr_imm_opt` closure allows to implement custom optmization
     ///   logic for the case that one of the operands is a constant value.
-    /// 
+    ///
     /// # Usage
-    /// 
+    ///
     /// Used for translating the following Wasm operators to `wasmi` bytecode:
-    /// 
+    ///
     /// - `{i32, i64}.{add, mul, and, or, xor}`
     #[allow(clippy::too_many_arguments)]
     fn translate_binary_commutative<T>(
