@@ -626,66 +626,6 @@ impl<'parser> FuncTranslator<'parser> {
         }
     }
 
-    /// Convenience method for [`Self::translate_binary_commutative`] when translating `i32` instructions.
-    #[allow(clippy::too_many_arguments)]
-    fn translate_binary_commutative_i32(
-        &mut self,
-        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        make_instr_imm: fn(result: Register, lhs: Register) -> Instruction,
-        make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
-        consteval: fn(UntypedValue, UntypedValue) -> UntypedValue,
-        make_instr_opt: fn(
-            &mut Self,
-            lhs: Register,
-            rhs: Register,
-        ) -> Result<bool, TranslationError>,
-        make_instr_imm_opt: fn(
-            &mut Self,
-            lhs: Register,
-            rhs: i32,
-        ) -> Result<bool, TranslationError>,
-    ) -> Result<(), TranslationError> {
-        self.translate_binary_commutative::<i32>(
-            make_instr,
-            make_instr_imm,
-            Self::make_instr_imm_param_i32,
-            make_instr_imm16,
-            consteval,
-            make_instr_opt,
-            make_instr_imm_opt,
-        )
-    }
-
-    /// Convenience method for [`Self::translate_binary_commutative`] when translating `i64` instructions.
-    #[allow(clippy::too_many_arguments)]
-    fn translate_binary_commutative_i64(
-        &mut self,
-        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        make_instr_imm: fn(result: Register, lhs: Register) -> Instruction,
-        make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
-        consteval: fn(UntypedValue, UntypedValue) -> UntypedValue,
-        make_instr_opt: fn(
-            &mut Self,
-            lhs: Register,
-            rhs: Register,
-        ) -> Result<bool, TranslationError>,
-        make_instr_imm_opt: fn(
-            &mut Self,
-            lhs: Register,
-            rhs: i64,
-        ) -> Result<bool, TranslationError>,
-    ) -> Result<(), TranslationError> {
-        self.translate_binary_commutative::<i64>(
-            make_instr,
-            make_instr_imm,
-            Self::make_instr_imm_param_i64,
-            make_instr_imm16,
-            consteval,
-            make_instr_opt,
-            make_instr_imm_opt,
-        )
-    }
-
     /// Translate a shift or rotate `wasmi` instruction.
     ///
     /// # Note

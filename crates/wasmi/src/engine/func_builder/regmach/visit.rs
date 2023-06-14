@@ -472,9 +472,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_add(&mut self) -> Self::Output {
-        self.translate_binary_commutative_i32(
+        self.translate_binary_commutative(
             Instruction::i32_add,
             Instruction::i32_add_imm,
+            Self::make_instr_imm_param_i32,
             Instruction::i32_add_imm16,
             UntypedValue::i32_add,
             Self::no_custom_opt,
@@ -518,9 +519,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_mul(&mut self) -> Self::Output {
-        self.translate_binary_commutative_i32(
+        self.translate_binary_commutative(
             Instruction::i32_mul,
             Instruction::i32_mul_imm,
+            Self::make_instr_imm_param_i32,
             Instruction::i32_mul_imm16,
             UntypedValue::i32_mul,
             Self::no_custom_opt,
@@ -614,9 +616,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_and(&mut self) -> Self::Output {
-        self.translate_binary_commutative_i32(
+        self.translate_binary_commutative(
             Instruction::i32_and,
             Instruction::i32_and_imm,
+            Self::make_instr_imm_param_i32,
             Instruction::i32_and_imm16,
             UntypedValue::i32_and,
             |this, lhs, rhs| {
@@ -647,9 +650,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_or(&mut self) -> Self::Output {
-        self.translate_binary_commutative_i32(
+        self.translate_binary_commutative(
             Instruction::i32_or,
             Instruction::i32_or_imm,
+            Self::make_instr_imm_param_i32,
             Instruction::i32_or_imm16,
             UntypedValue::i32_or,
             |this, lhs, rhs| {
@@ -680,9 +684,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_xor(&mut self) -> Self::Output {
-        self.translate_binary_commutative_i32(
+        self.translate_binary_commutative(
             Instruction::i32_xor,
             Instruction::i32_xor_imm,
+            Self::make_instr_imm_param_i32,
             Instruction::i32_xor_imm16,
             UntypedValue::i32_xor,
             |this, lhs, rhs| {
@@ -798,9 +803,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_add(&mut self) -> Self::Output {
-        self.translate_binary_commutative_i64(
+        self.translate_binary_commutative(
             Instruction::i64_add,
             Instruction::i64_add_imm,
+            Self::make_instr_imm_param_i64,
             Instruction::i64_add_imm16,
             UntypedValue::i64_add,
             Self::no_custom_opt,
@@ -844,9 +850,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_mul(&mut self) -> Self::Output {
-        self.translate_binary_commutative_i64(
+        self.translate_binary_commutative(
             Instruction::i64_mul,
             Instruction::i64_mul_imm,
+            Self::make_instr_imm_param_i64,
             Instruction::i64_mul_imm16,
             UntypedValue::i64_mul,
             Self::no_custom_opt,
@@ -883,9 +890,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_and(&mut self) -> Self::Output {
-        self.translate_binary_commutative_i64(
+        self.translate_binary_commutative(
             Instruction::i64_and,
             Instruction::i64_and_imm,
+            Self::make_instr_imm_param_i64,
             Instruction::i64_and_imm16,
             UntypedValue::i64_and,
             |this, lhs, rhs| {
@@ -916,9 +924,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_or(&mut self) -> Self::Output {
-        self.translate_binary_commutative_i64(
+        self.translate_binary_commutative(
             Instruction::i64_or,
             Instruction::i64_or_imm,
+            Self::make_instr_imm_param_i64,
             Instruction::i64_or_imm16,
             UntypedValue::i64_or,
             |this, lhs, rhs| {
@@ -949,9 +958,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_xor(&mut self) -> Self::Output {
-        self.translate_binary_commutative_i64(
+        self.translate_binary_commutative(
             Instruction::i64_xor,
             Instruction::i64_xor_imm,
+            Self::make_instr_imm_param_i64,
             Instruction::i64_xor_imm16,
             UntypedValue::i64_xor,
             |this, lhs, rhs| {
