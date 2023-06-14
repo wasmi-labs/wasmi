@@ -544,7 +544,31 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_div_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_divrem(
+            Instruction::i32_div_s,
+            Instruction::i32_div_s_imm,
+            Instruction::i32_div_s_imm_rev,
+            Self::make_instr_imm_param_i32,
+            Instruction::i32_div_s_imm16,
+            Instruction::i32_div_s_imm16_rev,
+            UntypedValue::i32_div_s,
+            |this, lhs: Register, rhs: Register| {
+                if lhs == rhs {
+                    // Optimization: `x / x` is always `1`
+                    this.alloc.stack.push_const(UntypedValue::from(1_i32));
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: Register, rhs: i32| {
+                if rhs == 1 {
+                    // Optimization: `x / 1` is always `x`
+                    this.alloc.stack.push_register(lhs)?;
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_i32_div_u(&mut self) -> Self::Output {
