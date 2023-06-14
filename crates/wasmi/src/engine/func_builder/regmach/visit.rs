@@ -1,6 +1,6 @@
 #![allow(unused_variables)]
 
-use super::{stack::Provider, FuncTranslator};
+use super::{bail_unreachable, stack::Provider, FuncTranslator};
 use crate::engine::{
     bytecode2::{BinInstr, BinInstrImm16, Const16, Const32, Instruction, Register, UnaryInstr},
     TranslationError,
@@ -53,23 +53,6 @@ impl FuncTranslator<'_> {
     fn unsupported_operator(&self, name: &str) -> Result<(), TranslationError> {
         panic!("tried to translate an unsupported Wasm operator: {name}")
     }
-}
-
-/// Bail out early in case the current code is unreachable.
-///
-/// # Note
-///
-/// - This should be prepended to most Wasm operator translation procedures.
-/// - If we are in unreachable code most Wasm translation is skipped. Only
-///   certain control flow operators such as `End` are going through the
-///   translation process. In particular the `End` operator may end unreachable
-///   code blocks.
-macro_rules! bail_unreachable {
-    ($this:ident) => {{
-        if !$this.is_reachable() {
-            return Ok(());
-        }
-    }};
 }
 
 impl<'a> VisitOperator<'a> for FuncTranslator<'a> {

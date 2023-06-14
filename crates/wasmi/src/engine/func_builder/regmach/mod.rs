@@ -97,6 +97,24 @@ pub struct FuncTranslator<'parser> {
     alloc: FuncTranslatorAllocations,
 }
 
+/// Bail out early in case the current code is unreachable.
+///
+/// # Note
+///
+/// - This should be prepended to most Wasm operator translation procedures.
+/// - If we are in unreachable code most Wasm translation is skipped. Only
+///   certain control flow operators such as `End` are going through the
+///   translation process. In particular the `End` operator may end unreachable
+///   code blocks.
+macro_rules! bail_unreachable {
+    ($this:ident) => {{
+        if !$this.is_reachable() {
+            return Ok(());
+        }
+    }};
+}
+use bail_unreachable;
+
 impl<'parser> FuncTranslator<'parser> {
     /// Creates a new [`FuncTranslator`].
     pub fn new(
@@ -355,6 +373,7 @@ impl<'parser> FuncTranslator<'parser> {
 
     /// Translates a [`TrapCode`] as [`Instruction`].
     fn translate_trap(&mut self, trap_code: TrapCode) -> Result<(), TranslationError> {
+        bail_unreachable!(self);
         self.alloc
             .instr_encoder
             .push_instr(Instruction::Trap(trap_code))?;
@@ -414,6 +433,7 @@ impl<'parser> FuncTranslator<'parser> {
     where
         T: Copy + From<UntypedValue> + Into<UntypedValue> + TryInto<Const16>,
     {
+        bail_unreachable!(self);
         match self.alloc.stack.pop2() {
             (Provider::Register(lhs), Provider::Register(rhs)) => {
                 if make_instr_opt(self, lhs, rhs)? {
@@ -574,6 +594,7 @@ impl<'parser> FuncTranslator<'parser> {
     where
         T: Copy + From<UntypedValue> + Into<UntypedValue> + TryInto<Const16>,
     {
+        bail_unreachable!(self);
         match self.alloc.stack.pop2() {
             (Provider::Register(lhs), Provider::Register(rhs)) => {
                 if make_instr_opt(self, lhs, rhs)? {
@@ -699,6 +720,7 @@ impl<'parser> FuncTranslator<'parser> {
     where
         T: WasmInteger,
     {
+        bail_unreachable!(self);
         match self.alloc.stack.pop2() {
             (Provider::Register(lhs), Provider::Register(rhs)) => {
                 self.push_binary_instr(lhs, rhs, make_instr)
