@@ -548,64 +548,31 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_div_u(&mut self) -> Self::Output {
-        match self.alloc.stack.pop2() {
-            (Provider::Register(lhs), Provider::Register(rhs)) => {
+        self.translate_divrem(
+            Instruction::i32_div_u,
+            Instruction::i32_div_u_imm,
+            Instruction::i32_div_u_imm_rev,
+            Self::make_instr_imm_param_i32,
+            Instruction::i32_div_u_imm16,
+            Instruction::i32_div_u_imm16_rev,
+            UntypedValue::i32_div_u,
+            |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x / x` is always `1`
-                    self.alloc.stack.push_const(UntypedValue::from(1_i32));
-                    return Ok(());
+                    this.alloc.stack.push_const(UntypedValue::from(1_i32));
+                    return Ok(true);
                 }
-                self.push_binary_instr(lhs, rhs, Instruction::i32_div_u)
-            }
-            (Provider::Register(lhs), Provider::Const(rhs)) => {
-                let rhs = i32::from(rhs);
-                if rhs == 0 {
-                    // Optimization: division by zero always traps
-                    self.translate_trap(TrapCode::IntegerDivisionByZero)?;
-                    return Ok(());
-                }
+                Ok(false)
+            },
+            |this, lhs: Register, rhs: i32| {
                 if rhs == 1 {
                     // Optimization: `x / 1` is always `x`
-                    self.alloc.stack.push_register(lhs)?;
-                    return Ok(());
+                    this.alloc.stack.push_register(lhs)?;
+                    return Ok(true);
                 }
-                if self.try_push_binary_instr_imm16(lhs, rhs, Instruction::i32_div_u_imm16)? {
-                    // Optimization was applied: return early.
-                    return Ok(());
-                }
-                self.push_binary_instr_imm(
-                    lhs,
-                    rhs,
-                    Instruction::i32_div_u_imm,
-                    Self::make_instr_imm_param_i32,
-                )
-            }
-            (Provider::Const(lhs), Provider::Register(rhs)) => {
-                if self.try_push_binary_instr_imm16_rev(
-                    i32::from(lhs),
-                    rhs,
-                    Instruction::i32_div_u_imm16_rev,
-                )? {
-                    // Optimization was applied: return early.
-                    return Ok(());
-                }
-                self.push_binary_instr_imm(
-                    rhs,
-                    i32::from(lhs),
-                    Instruction::i32_div_u_imm_rev,
-                    Self::make_instr_imm_param_i32,
-                )
-            }
-            (Provider::Const(lhs), Provider::Const(rhs)) => {
-                match UntypedValue::i32_div_u(lhs, rhs) {
-                    Ok(result) => {
-                        self.alloc.stack.push_const(result);
-                        Ok(())
-                    }
-                    Err(trap_code) => self.translate_trap(trap_code),
-                }
-            }
-        }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_i32_rem_s(&mut self) -> Self::Output {

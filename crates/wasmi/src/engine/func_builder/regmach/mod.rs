@@ -627,6 +627,93 @@ impl<'parser> FuncTranslator<'parser> {
         }
     }
 
+    /// Translate an integer division or remainder `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// - This applies several optimization that are valid for all `div` or `rem` instructions.
+    /// - Its various function arguments allow it to be used for `i32` and `i64` types.
+    /// - Applies constant evaluation if both operands are constant values.
+    ///
+    /// - The `make_instr_reg_imm_opt` closure allows to implement custom optmization
+    ///   logic for the case the right-hand side operand is a constant value.
+    ///
+    /// # Usage
+    ///
+    /// Used for translating the following Wasm operators to `wasmi` bytecode:
+    ///
+    /// - `{i32, i64}.{div_u, div_s, rem_u, rem_s}`
+    #[allow(clippy::too_many_arguments)]
+    pub fn translate_divrem<T>(
+        &mut self,
+        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+        make_instr_imm: fn(result: Register, lhs: Register) -> Instruction,
+        make_instr_imm_rev: fn(result: Register, lhs: Register) -> Instruction,
+        make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
+        make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
+        make_instr_imm16_rev: fn(result: Register, lhs: Const16, rhs: Register) -> Instruction,
+        consteval: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
+        make_instr_opt: fn(
+            &mut Self,
+            lhs: Register,
+            rhs: Register,
+        ) -> Result<bool, TranslationError>,
+        make_instr_reg_imm_opt: fn(
+            &mut Self,
+            lhs: Register,
+            rhs: T,
+        ) -> Result<bool, TranslationError>,
+    ) -> Result<(), TranslationError>
+    where
+        T: WasmInteger,
+    {
+        bail_unreachable!(self);
+        match self.alloc.stack.pop2() {
+            (Provider::Register(lhs), Provider::Register(rhs)) => {
+                if make_instr_opt(self, lhs, rhs)? {
+                    // Custom optimization was applied: return early
+                    return Ok(());
+                }
+                self.push_binary_instr(lhs, rhs, make_instr)
+            }
+            (Provider::Register(lhs), Provider::Const(rhs)) => {
+                if T::from(rhs).eq_zero() {
+                    // Optimization: division by zero always traps
+                    self.translate_trap(TrapCode::IntegerDivisionByZero)?;
+                    return Ok(());
+                }
+                if make_instr_reg_imm_opt(self, lhs, T::from(rhs))? {
+                    // Custom optimization was applied: return early
+                    return Ok(());
+                }
+                if self.try_push_binary_instr_imm16(lhs, T::from(rhs), make_instr_imm16)? {
+                    // Optimization was applied: return early.
+                    return Ok(());
+                }
+                self.push_binary_instr_imm(lhs, T::from(rhs), make_instr_imm, make_instr_imm_param)
+            }
+            (Provider::Const(lhs), Provider::Register(rhs)) => {
+                if self.try_push_binary_instr_imm16_rev(T::from(lhs), rhs, make_instr_imm16_rev)? {
+                    // Optimization was applied: return early.
+                    return Ok(());
+                }
+                self.push_binary_instr_imm(
+                    rhs,
+                    T::from(lhs),
+                    make_instr_imm_rev,
+                    make_instr_imm_param,
+                )
+            }
+            (Provider::Const(lhs), Provider::Const(rhs)) => match consteval(lhs, rhs) {
+                Ok(result) => {
+                    self.alloc.stack.push_const(result);
+                    Ok(())
+                }
+                Err(trap_code) => self.translate_trap(trap_code),
+            },
+        }
+    }
+
     /// Can be used for [`Self::translate_binary`] (and variants) if no custom optimization shall be applied.
     pub fn no_custom_opt<Lhs, Rhs>(
         &mut self,
