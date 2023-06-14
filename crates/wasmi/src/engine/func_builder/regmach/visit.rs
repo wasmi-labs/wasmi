@@ -491,10 +491,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_sub(&mut self) -> Self::Output {
-        self.translate_binary_i32(
+        self.translate_binary(
             Instruction::i32_sub,
             Instruction::i32_sub_imm,
             Instruction::i32_sub_imm_rev,
+            Self::make_instr_imm_param_i32,
             Instruction::i32_sub_imm16,
             Instruction::i32_sub_imm16_rev,
             UntypedValue::i32_sub,
@@ -822,10 +823,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_sub(&mut self) -> Self::Output {
-        self.translate_binary_i64(
+        self.translate_binary(
             Instruction::i64_sub,
             Instruction::i64_sub_imm,
             Instruction::i64_sub_imm_rev,
+            Self::make_instr_imm_param_i64,
             Instruction::i64_sub_imm16,
             Instruction::i64_sub_imm16_rev,
             UntypedValue::i64_sub,
