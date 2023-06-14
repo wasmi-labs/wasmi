@@ -5,7 +5,7 @@ use crate::engine::{
     bytecode2::{BinInstr, BinInstrImm16, Const16, Const32, Instruction, Register, UnaryInstr},
     TranslationError,
 };
-use wasmi_core::{UntypedValue, ValueType};
+use wasmi_core::{TrapCode, UntypedValue, ValueType};
 use wasmparser::VisitOperator;
 
 macro_rules! impl_visit_operator {
@@ -55,6 +55,23 @@ impl FuncTranslator<'_> {
     }
 }
 
+/// Bail out early in case the current code is unreachable.
+///
+/// # Note
+///
+/// - This should be prepended to most Wasm operator translation procedures.
+/// - If we are in unreachable code most Wasm translation is skipped. Only
+///   certain control flow operators such as `End` are going through the
+///   translation process. In particular the `End` operator may end unreachable
+///   code blocks.
+macro_rules! bail_unreachable {
+    ($this:ident) => {{
+        if !$this.is_reachable() {
+            return Ok(());
+        }
+    }};
+}
+
 impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     type Output = Result<(), TranslationError>;
 
@@ -101,6 +118,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_return(&mut self) -> Self::Output {
+        bail_unreachable!(self);
         let instr = match self.func_type().results() {
             [] => {
                 // Case: Function returns nothing therefore all return statements must return nothing.
@@ -544,7 +562,64 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_div_u(&mut self) -> Self::Output {
-        todo!()
+        match self.alloc.stack.pop2() {
+            (Provider::Register(lhs), Provider::Register(rhs)) => {
+                if lhs == rhs {
+                    // Optimization: `x / x` is always `1`
+                    self.alloc.stack.push_const(UntypedValue::from(1_i32));
+                    return Ok(());
+                }
+                self.push_binary_instr(lhs, rhs, Instruction::i32_div_u)
+            }
+            (Provider::Register(lhs), Provider::Const(rhs)) => {
+                let rhs = i32::from(rhs);
+                if rhs == 0 {
+                    // Optimization: division by zero always traps
+                    self.translate_trap(TrapCode::IntegerDivisionByZero)?;
+                    return Ok(());
+                }
+                if rhs == 1 {
+                    // Optimization: `x / 1` is always `x`
+                    self.alloc.stack.push_register(lhs)?;
+                    return Ok(());
+                }
+                if self.try_push_binary_instr_imm16(lhs, rhs, Instruction::i32_div_u_imm16)? {
+                    // Optimization was applied: return early.
+                    return Ok(());
+                }
+                self.push_binary_instr_imm(
+                    lhs,
+                    rhs,
+                    Instruction::i32_div_u_imm,
+                    Self::make_instr_imm_param_i32,
+                )
+            }
+            (Provider::Const(lhs), Provider::Register(rhs)) => {
+                if self.try_push_binary_instr_imm16_rev(
+                    i32::from(lhs),
+                    rhs,
+                    Instruction::i32_div_u_imm16_rev,
+                )? {
+                    // Optimization was applied: return early.
+                    return Ok(());
+                }
+                self.push_binary_instr_imm(
+                    rhs,
+                    i32::from(lhs),
+                    Instruction::i32_div_u_imm_rev,
+                    Self::make_instr_imm_param_i32,
+                )
+            }
+            (Provider::Const(lhs), Provider::Const(rhs)) => {
+                match UntypedValue::i32_div_u(lhs, rhs) {
+                    Ok(result) => {
+                        self.alloc.stack.push_const(result);
+                        Ok(())
+                    }
+                    Err(trap_code) => self.translate_trap(trap_code),
+                }
+            }
+        }
     }
 
     fn visit_i32_rem_s(&mut self) -> Self::Output {

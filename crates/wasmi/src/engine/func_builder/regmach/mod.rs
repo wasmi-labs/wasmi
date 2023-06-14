@@ -53,7 +53,7 @@ use crate::{
     Mutability,
 };
 use alloc::vec::Vec;
-use wasmi_core::{UntypedValue, ValueType, F32, F64};
+use wasmi_core::{TrapCode, UntypedValue, ValueType, F32, F64};
 use wasmparser::VisitOperator;
 
 /// Reusable allocations of a [`FuncTranslator`].
@@ -350,6 +350,15 @@ impl<'parser> FuncTranslator<'parser> {
             .push_instr(make_instr_imm(result, reg_in))?;
         let rhs_instr = make_instr_imm_param(self, imm_in)?;
         self.alloc.instr_encoder.push_instr(rhs_instr)?;
+        Ok(())
+    }
+
+    /// Translates a [`TrapCode`] as [`Instruction`].
+    fn translate_trap(&mut self, trap_code: TrapCode) -> Result<(), TranslationError> {
+        self.alloc
+            .instr_encoder
+            .push_instr(Instruction::Trap(trap_code))?;
+        self.reachable = false;
         Ok(())
     }
 

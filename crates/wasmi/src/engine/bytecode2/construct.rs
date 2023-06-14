@@ -66,6 +66,12 @@ impl Instruction {
         fn i32_mul_imm16(binary_imm16) -> Self::I32MulImm16;
         fn i64_mul_imm16(binary_imm16) -> Self::I64MulImm16;
 
+        fn i32_div_u(binary) -> Self::I32DivU;
+        fn i32_div_u_imm(binary_imm) -> Self::I32DivUImm;
+        fn i32_div_u_imm_rev(binary_imm) -> Self::I32DivUImm;
+        fn i32_div_u_imm16(binary_imm16) -> Self::I32DivUImm16;
+        fn i32_div_u_imm16_rev(binary_imm16_rev) -> Self::I32DivUImm16;
+
         fn i32_and(binary) -> Self::I32And;
         fn i64_and(binary) -> Self::I64And;
         fn i32_and_imm(binary_imm) -> Self::I32AndImm;
