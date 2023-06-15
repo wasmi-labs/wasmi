@@ -628,7 +628,31 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_rem_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_divrem(
+            Instruction::i32_rem_u,
+            Instruction::i32_rem_u_imm,
+            Instruction::i32_rem_u_imm_rev,
+            Self::make_instr_imm_param_i32,
+            Instruction::i32_rem_u_imm16,
+            Instruction::i32_rem_u_imm16_rev,
+            UntypedValue::i32_rem_u,
+            |this, lhs: Register, rhs: Register| {
+                if lhs == rhs {
+                    // Optimization: `x % x` is always `0`
+                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: Register, rhs: i32| {
+                if rhs == 1 {
+                    // Optimization: `x % 1` is always `0`
+                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_i32_and(&mut self) -> Self::Output {

@@ -78,6 +78,12 @@ impl Instruction {
         fn i32_div_s_imm16(binary_imm16) -> Self::I32DivSImm16;
         fn i32_div_s_imm16_rev(binary_imm16_rev) -> Self::I32DivSImm16;
 
+        fn i32_rem_u(binary) -> Self::I32RemU;
+        fn i32_rem_u_imm(binary_imm) -> Self::I32RemUImm;
+        fn i32_rem_u_imm_rev(binary_imm) -> Self::I32RemUImm;
+        fn i32_rem_u_imm16(binary_imm16) -> Self::I32RemUImm16;
+        fn i32_rem_u_imm16_rev(binary_imm16_rev) -> Self::I32RemUImm16;
+
         fn i32_rem_s(binary) -> Self::I32RemS;
         fn i32_rem_s_imm(binary_imm) -> Self::I32RemSImm;
         fn i32_rem_s_imm_rev(binary_imm) -> Self::I32RemSImm;
