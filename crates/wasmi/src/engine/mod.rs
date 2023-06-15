@@ -23,7 +23,7 @@ pub use self::{
     bytecode::DropKeep,
     bytecode2::Instruction as Instruction2,
     code_map::{CodeMap2, CompiledFunc},
-    config::{Config, FuelConsumptionMode},
+    config::{Config, EngineBackend, FuelConsumptionMode},
     func_builder::{
         FuncBuilder,
         FuncTranslatorAllocations,

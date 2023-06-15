@@ -35,16 +35,21 @@ pub struct Config {
     floats: bool,
     /// Is `true` if `wasmi` executions shall consume fuel.
     consume_fuel: bool,
-    /// Is `true` if `wasmi` shall translate to register-machine bytecode.
-    ///
-    /// # Note
-    ///
-    /// This is an experimental feature and might cause crashes or bugs.
-    register_machine_translation: bool,
+    /// Tells the [`Engine`] which executor backend to use.
+    backend: EngineBackend,
     /// The fuel consumption mode of the `wasmi` [`Engine`](crate::Engine).
     fuel_consumption_mode: FuelConsumptionMode,
     /// The configured fuel costs of all `wasmi` bytecode instructions.
     fuel_costs: FuelCosts,
+}
+
+/// The backend executor of an [`Engine`].
+#[derive(Debug, Copy, Clone)]
+pub enum EngineBackend {
+    /// Translate and execute via a stack machine backend.
+    StackMachine,
+    /// Translate and execute via a register machine backend.
+    RegisterMachine,
 }
 
 /// The fuel consumption mode of the `wasmi` [`Engine`].
@@ -212,7 +217,7 @@ impl Default for Config {
             extended_const: false,
             floats: true,
             consume_fuel: false,
-            register_machine_translation: false,
+            backend: EngineBackend::StackMachine,
             fuel_costs: FuelCosts::default(),
             fuel_consumption_mode: FuelConsumptionMode::default(),
         }
@@ -351,17 +356,15 @@ impl Config {
         self
     }
 
-    /// Enable or disable translation to register-machine bytecode.
-    ///
-    /// Enabled by default.
-    pub fn set_register_machine_translation(&mut self, enable: bool) -> &mut Self {
-        self.register_machine_translation = enable;
+    /// Sets the [`Engine`](crate::Engine) backend that is used for execution.
+    pub fn set_engine_backend(&mut self, backend: EngineBackend) -> &mut Self {
+        self.backend = backend;
         self
     }
 
-    /// Returns `true` if register-machine bytecode translation is enabled.
-    pub fn register_machine_translation(&self) -> bool {
-        self.register_machine_translation
+    /// Returns the used [`EngineBackend`] of the [`Engine`](crate::Engine).
+    pub fn engine_backend(&self) -> EngineBackend {
+        self.backend
     }
 
     /// Configures whether `wasmi` will consume fuel during execution to either halt execution as desired.

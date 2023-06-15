@@ -14,6 +14,7 @@ use crate::{
     },
     Config,
     Engine,
+    EngineBackend,
     Module,
 };
 use std::fmt::Display;
@@ -49,7 +50,7 @@ where
     <T as IntoIterator>::IntoIter: ExactSizeIterator,
 {
     let mut config = Config::default();
-    config.set_register_machine_translation(true);
+    config.set_engine_backend(EngineBackend::RegisterMachine);
     assert_func_bodies_with_config(wasm_bytes, &config, expected)
 }
 
