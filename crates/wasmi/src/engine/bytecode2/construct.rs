@@ -91,6 +91,12 @@ impl Instruction {
         fn i32_div_s_imm16(binary_imm16) -> Self::I32DivSImm16;
         fn i32_div_s_imm16_rev(binary_imm16_rev) -> Self::I32DivSImm16;
 
+        fn i64_div_s(binary) -> Self::I64DivS;
+        fn i64_div_s_imm(binary_imm) -> Self::I64DivSImm;
+        fn i64_div_s_imm_rev(binary_imm) -> Self::I64DivSImm;
+        fn i64_div_s_imm16(binary_imm16) -> Self::I64DivSImm16;
+        fn i64_div_s_imm16_rev(binary_imm16_rev) -> Self::I64DivSImm16;
+
         fn i32_rem_u(binary) -> Self::I32RemU;
         fn i32_rem_u_imm(binary_imm) -> Self::I32RemUImm;
         fn i32_rem_u_imm_rev(binary_imm) -> Self::I32RemUImm;

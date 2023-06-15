@@ -915,7 +915,31 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_div_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_divrem(
+            Instruction::i64_div_s,
+            Instruction::i64_div_s_imm,
+            Instruction::i64_div_s_imm_rev,
+            Self::make_instr_imm_param_i64,
+            Instruction::i64_div_s_imm16,
+            Instruction::i64_div_s_imm16_rev,
+            UntypedValue::i64_div_s,
+            |this, lhs: Register, rhs: Register| {
+                if lhs == rhs {
+                    // Optimization: `x / x` is always `1`
+                    this.alloc.stack.push_const(UntypedValue::from(1_i64));
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: Register, rhs: i64| {
+                if rhs == 1 {
+                    // Optimization: `x / 1` is always `x`
+                    this.alloc.stack.push_register(lhs)?;
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_i64_div_u(&mut self) -> Self::Output {
