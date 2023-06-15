@@ -35,7 +35,7 @@ pub struct Config {
     floats: bool,
     /// Is `true` if `wasmi` executions shall consume fuel.
     consume_fuel: bool,
-    /// Tells the [`Engine`] which executor backend to use.
+    /// Tells the [`Engine`](crate::Engine) which executor backend to use.
     backend: EngineBackend,
     /// The fuel consumption mode of the `wasmi` [`Engine`](crate::Engine).
     fuel_consumption_mode: FuelConsumptionMode,
@@ -43,7 +43,7 @@ pub struct Config {
     fuel_costs: FuelCosts,
 }
 
-/// The backend executor of an [`Engine`].
+/// The backend executor of an [`Engine`](crate::Engine).
 #[derive(Debug, Copy, Clone)]
 pub enum EngineBackend {
     /// Translate and execute via a stack machine backend.

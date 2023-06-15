@@ -44,7 +44,7 @@ pub struct FuncBuilder<'parser> {
     validator: FuncValidator,
     /// The underlying Wasm to `wasmi` bytecode translator.
     translator: FuncTranslator<'parser>,
-    /// The execution backend that the [`Engine`] uses.
+    /// The execution backend that the [`Engine`](crate::Engine) uses.
     backend: EngineBackend,
     /// The underlying Wasm to `wasmi` bytecode translator.
     ///
