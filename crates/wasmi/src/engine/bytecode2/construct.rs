@@ -41,30 +41,37 @@ impl Instruction {
     }
 
     constructor_for! {
+        // Integer Arithmetic
+
         fn i32_add(binary) -> Self::I32Add;
-        fn i64_add(binary) -> Self::I32Add;
         fn i32_add_imm(binary_imm) -> Self::I32AddImm;
-        fn i64_add_imm(binary_imm) -> Self::I32AddImm;
         fn i32_add_imm16(binary_imm16) -> Self::I32AddImm16;
+
+        fn i64_add(binary) -> Self::I32Add;
+        fn i64_add_imm(binary_imm) -> Self::I32AddImm;
         fn i64_add_imm16(binary_imm16) -> Self::I32AddImm16;
 
         fn i32_sub(binary) -> Self::I32Sub;
-        fn i64_sub(binary) -> Self::I64Sub;
         fn i32_sub_imm(binary_imm) -> Self::I32SubImm;
-        fn i64_sub_imm(binary_imm) -> Self::I64SubImm;
         fn i32_sub_imm_rev(binary_imm) -> Self::I32SubImm;
-        fn i64_sub_imm_rev(binary_imm) -> Self::I64SubImm;
         fn i32_sub_imm16(binary_imm16) -> Self::I32SubImm16;
-        fn i64_sub_imm16(binary_imm16) -> Self::I64SubImm16;
         fn i32_sub_imm16_rev(binary_imm16_rev) -> Self::I32SubImm16;
+
+        fn i64_sub(binary) -> Self::I64Sub;
+        fn i64_sub_imm(binary_imm) -> Self::I64SubImm;
+        fn i64_sub_imm_rev(binary_imm) -> Self::I64SubImm;
+        fn i64_sub_imm16(binary_imm16) -> Self::I64SubImm16;
         fn i64_sub_imm16_rev(binary_imm16_rev) -> Self::I64SubImm16;
 
         fn i32_mul(binary) -> Self::I32Mul;
-        fn i64_mul(binary) -> Self::I64Mul;
         fn i32_mul_imm(binary_imm) -> Self::I32MulImm;
-        fn i64_mul_imm(binary_imm) -> Self::I64MulImm;
         fn i32_mul_imm16(binary_imm16) -> Self::I32MulImm16;
+
+        fn i64_mul(binary) -> Self::I64Mul;
+        fn i64_mul_imm(binary_imm) -> Self::I64MulImm;
         fn i64_mul_imm16(binary_imm16) -> Self::I64MulImm16;
+
+        // Integer Division & Remainder
 
         fn i32_div_u(binary) -> Self::I32DivU;
         fn i32_div_u_imm(binary_imm) -> Self::I32DivUImm;
@@ -90,26 +97,33 @@ impl Instruction {
         fn i32_rem_s_imm16(binary_imm16) -> Self::I32RemSImm16;
         fn i32_rem_s_imm16_rev(binary_imm16_rev) -> Self::I32RemSImm16;
 
+        // Integer Bitwise Logic
+
         fn i32_and(binary) -> Self::I32And;
-        fn i64_and(binary) -> Self::I64And;
         fn i32_and_imm(binary_imm) -> Self::I32AndImm;
-        fn i64_and_imm(binary_imm) -> Self::I64AndImm;
         fn i32_and_imm16(binary_imm16) -> Self::I32AndImm16;
+
+        fn i64_and(binary) -> Self::I64And;
+        fn i64_and_imm(binary_imm) -> Self::I64AndImm;
         fn i64_and_imm16(binary_imm16) -> Self::I64AndImm16;
 
         fn i32_or(binary) -> Self::I32Or;
-        fn i64_or(binary) -> Self::I64Or;
         fn i32_or_imm(binary_imm) -> Self::I32OrImm;
-        fn i64_or_imm(binary_imm) -> Self::I64OrImm;
         fn i32_or_imm16(binary_imm16) -> Self::I32OrImm16;
+
+        fn i64_or(binary) -> Self::I64Or;
+        fn i64_or_imm(binary_imm) -> Self::I64OrImm;
         fn i64_or_imm16(binary_imm16) -> Self::I64OrImm16;
 
         fn i32_xor(binary) -> Self::I32Xor;
-        fn i64_xor(binary) -> Self::I64Xor;
         fn i32_xor_imm(binary_imm) -> Self::I32XorImm;
-        fn i64_xor_imm(binary_imm) -> Self::I64XorImm;
         fn i32_xor_imm16(binary_imm16) -> Self::I32XorImm16;
+
+        fn i64_xor(binary) -> Self::I64Xor;
+        fn i64_xor_imm(binary_imm) -> Self::I64XorImm;
         fn i64_xor_imm16(binary_imm16) -> Self::I64XorImm16;
+
+        // Integer Shift & Rotate
 
         fn i32_shl(binary) -> Self::I32Shl;
         fn i32_shl_imm(binary_imm16) -> Self::I32ShlImm;
