@@ -19,6 +19,7 @@ mod i64_div_s;
 mod i64_div_u;
 mod i64_mul;
 mod i64_or;
+mod i64_rem_s;
 mod i64_rem_u;
 mod i64_rotl;
 mod i64_rotr;
