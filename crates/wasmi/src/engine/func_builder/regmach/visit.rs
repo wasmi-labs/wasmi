@@ -1216,27 +1216,27 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_f32_neg(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::f32_neg, UntypedValue::f32_neg)
     }
 
     fn visit_f32_ceil(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::f32_ceil, UntypedValue::f32_ceil)
     }
 
     fn visit_f32_floor(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::f32_floor, UntypedValue::f32_floor)
     }
 
     fn visit_f32_trunc(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::f32_trunc, UntypedValue::f32_trunc)
     }
 
     fn visit_f32_nearest(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::f32_nearest, UntypedValue::f32_nearest)
     }
 
     fn visit_f32_sqrt(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::f32_sqrt, UntypedValue::f32_sqrt)
     }
 
     fn visit_f32_add(&mut self) -> Self::Output {
@@ -1272,27 +1272,27 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_f64_neg(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::f64_neg, UntypedValue::f64_neg)
     }
 
     fn visit_f64_ceil(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::f64_ceil, UntypedValue::f64_ceil)
     }
 
     fn visit_f64_floor(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::f64_floor, UntypedValue::f64_floor)
     }
 
     fn visit_f64_trunc(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::f64_trunc, UntypedValue::f64_trunc)
     }
 
     fn visit_f64_nearest(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::f64_nearest, UntypedValue::f64_nearest)
     }
 
     fn visit_f64_sqrt(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::f64_sqrt, UntypedValue::f64_sqrt)
     }
 
     fn visit_f64_add(&mut self) -> Self::Output {

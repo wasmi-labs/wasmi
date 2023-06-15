@@ -95,7 +95,8 @@ where
         )
     "#,
     ));
-    let expected = [<T as WasmType>::return_imm_instr(&eval(input))];
+    let instr = <T as WasmType>::return_imm_instr(&eval(input));
+    let expected = [instr];
     assert_func_bodies(wasm, [expected]);
 }
 
@@ -195,8 +196,126 @@ mod f32_abs {
 
     #[test]
     fn imm() {
-        unary_imm::<f32>(OP_NAME, 42.0, f32::abs);
-        unary_imm::<f32>(OP_NAME, -42.0, f32::abs);
+        unary_imm::<f32>(OP_NAME, 42.5, f32::abs);
+        unary_imm::<f32>(OP_NAME, -42.5, f32::abs);
+    }
+}
+
+mod f32_neg {
+    use super::*;
+
+    const OP_NAME: &str = "neg";
+
+    #[test]
+    fn reg() {
+        unary_reg::<f32>(OP_NAME, Instruction::f32_neg);
+    }
+
+    #[test]
+    fn imm() {
+        use core::ops::Neg as _;
+        unary_imm::<f32>(OP_NAME, 42.5, f32::neg);
+        unary_imm::<f32>(OP_NAME, -42.5, f32::neg);
+    }
+}
+
+mod f32_ceil {
+    use super::*;
+
+    const OP_NAME: &str = "ceil";
+
+    #[test]
+    fn reg() {
+        unary_reg::<f32>(OP_NAME, Instruction::f32_ceil);
+    }
+
+    #[test]
+    fn imm() {
+        unary_imm::<f32>(OP_NAME, 42.5, f32::ceil);
+        unary_imm::<f32>(OP_NAME, -42.5, f32::ceil);
+    }
+}
+
+mod f32_floor {
+    use super::*;
+
+    const OP_NAME: &str = "floor";
+
+    #[test]
+    fn reg() {
+        unary_reg::<f32>(OP_NAME, Instruction::f32_floor);
+    }
+
+    #[test]
+    fn imm() {
+        unary_imm::<f32>(OP_NAME, 42.5, f32::floor);
+        unary_imm::<f32>(OP_NAME, -42.5, f32::floor);
+    }
+}
+
+mod f32_trunc {
+    use super::*;
+
+    const OP_NAME: &str = "trunc";
+
+    #[test]
+    fn reg() {
+        unary_reg::<f32>(OP_NAME, Instruction::f32_trunc);
+    }
+
+    #[test]
+    fn imm() {
+        unary_imm::<f32>(OP_NAME, 42.5, f32::trunc);
+        unary_imm::<f32>(OP_NAME, -42.5, f32::trunc);
+    }
+}
+
+mod f32_nearest {
+    use super::*;
+    use wasmi_core::UntypedValue;
+
+    const OP_NAME: &str = "nearest";
+
+    /// We simply use the `f32_nearest` implementation from the `wasmi_core` crate.
+    ///
+    /// # Note
+    ///
+    /// Rust currently does not ship with a proper rounding function for floats
+    /// that has the same behavior as mandated by the WebAssembly specification.
+    /// There is an issue to add a proper `round_ties_even` to Rust and we should
+    /// use it once it is stabilized.
+    ///
+    /// More information here: https://github.com/rust-lang/rust/issues/96710
+    fn f32_nearest(input: f32) -> f32 {
+        f32::from(UntypedValue::f32_nearest(UntypedValue::from(input)))
+    }
+
+    #[test]
+    fn reg() {
+        unary_reg::<f32>(OP_NAME, Instruction::f32_nearest);
+    }
+
+    #[test]
+    fn imm() {
+        unary_imm::<f32>(OP_NAME, 42.5, f32_nearest);
+        unary_imm::<f32>(OP_NAME, -42.5, f32_nearest);
+    }
+}
+
+mod f32_sqrt {
+    use super::*;
+
+    const OP_NAME: &str = "sqrt";
+
+    #[test]
+    fn reg() {
+        unary_reg::<f32>(OP_NAME, Instruction::f32_sqrt);
+    }
+
+    #[test]
+    fn imm() {
+        unary_imm::<f32>(OP_NAME, 42.5, f32::sqrt);
+        unary_imm::<f32>(OP_NAME, -42.5, f32::sqrt);
     }
 }
 
@@ -212,7 +331,125 @@ mod f64_abs {
 
     #[test]
     fn imm() {
-        unary_imm::<f64>(OP_NAME, 42.0, f64::abs);
-        unary_imm::<f64>(OP_NAME, -42.0, f64::abs);
+        unary_imm::<f64>(OP_NAME, 42.5, f64::abs);
+        unary_imm::<f64>(OP_NAME, -42.5, f64::abs);
+    }
+}
+
+mod f64_neg {
+    use super::*;
+
+    const OP_NAME: &str = "neg";
+
+    #[test]
+    fn reg() {
+        unary_reg::<f64>(OP_NAME, Instruction::f64_neg);
+    }
+
+    #[test]
+    fn imm() {
+        use core::ops::Neg as _;
+        unary_imm::<f64>(OP_NAME, 42.5, f64::neg);
+        unary_imm::<f64>(OP_NAME, -42.5, f64::neg);
+    }
+}
+
+mod f64_ceil {
+    use super::*;
+
+    const OP_NAME: &str = "ceil";
+
+    #[test]
+    fn reg() {
+        unary_reg::<f64>(OP_NAME, Instruction::f64_ceil);
+    }
+
+    #[test]
+    fn imm() {
+        unary_imm::<f64>(OP_NAME, 42.5, f64::ceil);
+        unary_imm::<f64>(OP_NAME, -42.5, f64::ceil);
+    }
+}
+
+mod f64_floor {
+    use super::*;
+
+    const OP_NAME: &str = "floor";
+
+    #[test]
+    fn reg() {
+        unary_reg::<f64>(OP_NAME, Instruction::f64_floor);
+    }
+
+    #[test]
+    fn imm() {
+        unary_imm::<f64>(OP_NAME, 42.5, f64::floor);
+        unary_imm::<f64>(OP_NAME, -42.5, f64::floor);
+    }
+}
+
+mod f64_trunc {
+    use super::*;
+
+    const OP_NAME: &str = "trunc";
+
+    #[test]
+    fn reg() {
+        unary_reg::<f64>(OP_NAME, Instruction::f64_trunc);
+    }
+
+    #[test]
+    fn imm() {
+        unary_imm::<f64>(OP_NAME, 42.5, f64::trunc);
+        unary_imm::<f64>(OP_NAME, -42.5, f64::trunc);
+    }
+}
+
+mod f64_nearest {
+    use super::*;
+    use wasmi_core::UntypedValue;
+
+    const OP_NAME: &str = "nearest";
+
+    /// We simply use the `f32_nearest` implementation from the `wasmi_core` crate.
+    ///
+    /// # Note
+    ///
+    /// Rust currently does not ship with a proper rounding function for floats
+    /// that has the same behavior as mandated by the WebAssembly specification.
+    /// There is an issue to add a proper `round_ties_even` to Rust and we should
+    /// use it once it is stabilized.
+    ///
+    /// More information here: https://github.com/rust-lang/rust/issues/96710
+    fn f64_nearest(input: f64) -> f64 {
+        f64::from(UntypedValue::f64_nearest(UntypedValue::from(input)))
+    }
+
+    #[test]
+    fn reg() {
+        unary_reg::<f64>(OP_NAME, Instruction::f64_nearest);
+    }
+
+    #[test]
+    fn imm() {
+        unary_imm::<f64>(OP_NAME, 42.5, f64_nearest);
+        unary_imm::<f64>(OP_NAME, -42.5, f64_nearest);
+    }
+}
+
+mod f64_sqrt {
+    use super::*;
+
+    const OP_NAME: &str = "sqrt";
+
+    #[test]
+    fn reg() {
+        unary_reg::<f64>(OP_NAME, Instruction::f64_sqrt);
+    }
+
+    #[test]
+    fn imm() {
+        unary_imm::<f64>(OP_NAME, 42.5, f64::sqrt);
+        unary_imm::<f64>(OP_NAME, -42.5, f64::sqrt);
     }
 }

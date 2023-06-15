@@ -60,8 +60,20 @@ impl Instruction {
         // Float Unary
 
         fn f32_abs(unary) -> Self::F32Abs;
+        fn f32_neg(unary) -> Self::F32Neg;
+        fn f32_ceil(unary) -> Self::F32Ceil;
+        fn f32_floor(unary) -> Self::F32Floor;
+        fn f32_trunc(unary) -> Self::F32Trunc;
+        fn f32_nearest(unary) -> Self::F32Nearest;
+        fn f32_sqrt(unary) -> Self::F32Sqrt;
 
         fn f64_abs(unary) -> Self::F64Abs;
+        fn f64_neg(unary) -> Self::F64Neg;
+        fn f64_ceil(unary) -> Self::F64Ceil;
+        fn f64_floor(unary) -> Self::F64Floor;
+        fn f64_trunc(unary) -> Self::F64Trunc;
+        fn f64_nearest(unary) -> Self::F64Nearest;
+        fn f64_sqrt(unary) -> Self::F64Sqrt;
 
         // Integer Arithmetic
 
