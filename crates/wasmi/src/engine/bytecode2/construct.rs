@@ -57,6 +57,12 @@ impl Instruction {
         fn i64_ctz(unary) -> Self::I64Ctz;
         fn i64_popcnt(unary) -> Self::I64Popcnt;
 
+        // Float Unary
+
+        fn f32_abs(unary) -> Self::F32Abs;
+
+        fn f64_abs(unary) -> Self::F64Abs;
+
         // Integer Arithmetic
 
         fn i32_add(binary) -> Self::I32Add;

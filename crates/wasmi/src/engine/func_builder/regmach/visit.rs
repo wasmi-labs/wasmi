@@ -5,7 +5,7 @@ use crate::engine::{
     bytecode2::{BinInstr, BinInstrImm16, Const16, Const32, Instruction, Register, UnaryInstr},
     TranslationError,
 };
-use wasmi_core::{TrapCode, UntypedValue, ValueType};
+use wasmi_core::{TrapCode, UntypedValue, ValueType, F32, F64};
 use wasmparser::VisitOperator;
 
 macro_rules! impl_visit_operator {
@@ -127,12 +127,20 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     }
                 }
             },
-            [ValueType::F32] => {
-                todo!()
-            }
-            [ValueType::F64] => {
-                todo!()
-            }
+            [ValueType::F32] => match self.alloc.stack.pop() {
+                // Case: Function returns a single `f32` value which allows for special operator.
+                Provider::Register(value) => Instruction::ReturnReg { value },
+                Provider::Const(value) => Instruction::ReturnImm32 {
+                    value: Const32::from_f32(F32::from(value)),
+                },
+            },
+            [ValueType::F64] => match self.alloc.stack.pop() {
+                // Case: Function returns a single `f64` value which allows for special operator.
+                Provider::Register(value) => Instruction::ReturnReg { value },
+                Provider::Const(value) => Instruction::ReturnImm {
+                    value: self.engine().alloc_const(value)?,
+                },
+            },
             _ => todo!(),
         };
         self.alloc.instr_encoder.push_instr(instr)?;
@@ -304,11 +312,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_f32_const(&mut self, value: wasmparser::Ieee32) -> Self::Output {
-        todo!()
+        self.alloc.stack.push_const(F32::from_bits(value.bits()));
+        Ok(())
     }
 
     fn visit_f64_const(&mut self, value: wasmparser::Ieee64) -> Self::Output {
-        todo!()
+        self.alloc.stack.push_const(F64::from_bits(value.bits()));
+        Ok(())
     }
 
     fn visit_ref_null(&mut self, ty: wasmparser::ValType) -> Self::Output {
@@ -1202,7 +1212,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_f32_abs(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::f32_abs, UntypedValue::f32_abs)
     }
 
     fn visit_f32_neg(&mut self) -> Self::Output {
@@ -1258,7 +1268,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_f64_abs(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::f64_abs, UntypedValue::f64_abs)
     }
 
     fn visit_f64_neg(&mut self) -> Self::Output {

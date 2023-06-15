@@ -1,5 +1,7 @@
 use super::*;
+use crate::engine::const_pool::ConstRef;
 use std::fmt::Display;
+use wasmi_core::F32;
 
 pub trait WasmType: Display {
     const NAME: &'static str;
@@ -21,9 +23,13 @@ impl WasmType for i64 {
     const NAME: &'static str = "i64";
 
     fn return_imm_instr(&self) -> Instruction {
-        let result = i32::try_from(*self).unwrap();
-        Instruction::ReturnI64Imm32 {
-            value: Const32::from_i32(result),
+        match i32::try_from(*self) {
+            Ok(value) => Instruction::ReturnI64Imm32 {
+                value: Const32::from_i32(value),
+            },
+            Err(_) => Instruction::ReturnImm {
+                value: ConstRef::from_u32(0),
+            },
         }
     }
 }
@@ -32,7 +38,9 @@ impl WasmType for f32 {
     const NAME: &'static str = "f32";
 
     fn return_imm_instr(&self) -> Instruction {
-        todo!()
+        Instruction::ReturnImm32 {
+            value: Const32::from_f32(F32::from(*self)),
+        }
     }
 }
 
@@ -40,7 +48,9 @@ impl WasmType for f64 {
     const NAME: &'static str = "f64";
 
     fn return_imm_instr(&self) -> Instruction {
-        todo!()
+        Instruction::ReturnImm {
+            value: ConstRef::from_u32(0),
+        }
     }
 }
 
@@ -170,5 +180,39 @@ mod i64_popcnt {
     #[test]
     fn imm() {
         unary_imm::<i64>("popcnt", 42, |input| i64::from(input.count_ones()));
+    }
+}
+
+mod f32_abs {
+    use super::*;
+
+    const OP_NAME: &str = "abs";
+
+    #[test]
+    fn reg() {
+        unary_reg::<f32>(OP_NAME, Instruction::f32_abs);
+    }
+
+    #[test]
+    fn imm() {
+        unary_imm::<f32>(OP_NAME, 42.0, f32::abs);
+        unary_imm::<f32>(OP_NAME, -42.0, f32::abs);
+    }
+}
+
+mod f64_abs {
+    use super::*;
+
+    const OP_NAME: &str = "abs";
+
+    #[test]
+    fn reg() {
+        unary_reg::<f64>(OP_NAME, Instruction::f64_abs);
+    }
+
+    #[test]
+    fn imm() {
+        unary_imm::<f64>(OP_NAME, 42.0, f64::abs);
+        unary_imm::<f64>(OP_NAME, -42.0, f64::abs);
     }
 }
