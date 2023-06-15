@@ -617,8 +617,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 Ok(false)
             },
             |this, lhs: Register, rhs: i32| {
-                if rhs == 1 {
-                    // Optimization: `x % 1` is always `0`
+                if rhs == 1 || rhs == -1 {
+                    // Optimization: `x % 1` or `x % -1` is always `0`
                     this.alloc.stack.push_const(UntypedValue::from(0_i32));
                     return Ok(true);
                 }

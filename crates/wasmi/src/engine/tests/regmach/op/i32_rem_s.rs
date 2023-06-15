@@ -51,6 +51,14 @@ fn reg_one() {
 }
 
 #[test]
+fn reg_minus_one() {
+    let expected = [Instruction::ReturnImm32 {
+        value: Const32::from_i32(0),
+    }];
+    test_binary_reg_imm_with(WASM_OP, -1_i32, expected)
+}
+
+#[test]
 fn consteval() {
     let lhs = -13;
     let rhs = 5;
