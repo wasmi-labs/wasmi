@@ -70,7 +70,7 @@ where
 }
 
 /// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary `wasmi` instruction.
-fn unary_imm<T>(wasm_op: &str, input: T, result: T)
+fn unary_imm<T>(wasm_op: &str, input: T, eval: fn(input: T) -> T)
 where
     T: WasmType,
 {
@@ -85,7 +85,7 @@ where
         )
     "#,
     ));
-    let expected = [<T as WasmType>::return_imm_instr(&result)];
+    let expected = [<T as WasmType>::return_imm_instr(&eval(input))];
     assert_func_bodies(wasm, [expected]);
 }
 
@@ -99,7 +99,7 @@ mod i32_clz {
 
     #[test]
     fn imm() {
-        unary_imm::<i32>("clz", 42, 42_i32.leading_zeros() as i32);
+        unary_imm::<i32>("clz", 42, |input| input.leading_zeros() as _);
     }
 }
 
@@ -113,7 +113,7 @@ mod i64_clz {
 
     #[test]
     fn imm() {
-        unary_imm::<i64>("clz", 42, 42_i64.leading_zeros() as i64);
+        unary_imm::<i64>("clz", 42, |input| input.leading_zeros() as _);
     }
 }
 
@@ -127,7 +127,7 @@ mod i32_ctz {
 
     #[test]
     fn imm() {
-        unary_imm::<i32>("ctz", 42, 42_i32.trailing_zeros() as i32);
+        unary_imm::<i32>("ctz", 42, |input| input.trailing_zeros() as _);
     }
 }
 
@@ -141,7 +141,7 @@ mod i64_ctz {
 
     #[test]
     fn imm() {
-        unary_imm::<i64>("ctz", 42, 42_i64.trailing_zeros() as i64);
+        unary_imm::<i64>("ctz", 42, |input| input.trailing_zeros() as _);
     }
 }
 
@@ -155,7 +155,7 @@ mod i32_popcnt {
 
     #[test]
     fn imm() {
-        unary_imm::<i32>("popcnt", 42, 42_i32.count_ones() as i32);
+        unary_imm::<i32>("popcnt", 42, |input| input.count_ones() as _);
     }
 }
 
@@ -169,6 +169,6 @@ mod i64_popcnt {
 
     #[test]
     fn imm() {
-        unary_imm::<i64>("popcnt", 42, 42_i64.count_ones() as i64);
+        unary_imm::<i64>("popcnt", 42, |input| input.count_ones() as _);
     }
 }
