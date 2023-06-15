@@ -113,7 +113,7 @@ mod i64_clz {
 
     #[test]
     fn imm() {
-        unary_imm::<i64>("clz", 42, |input| input.leading_zeros() as _);
+        unary_imm::<i64>("clz", 42, |input| i64::from(input.leading_zeros()));
     }
 }
 
@@ -141,7 +141,7 @@ mod i64_ctz {
 
     #[test]
     fn imm() {
-        unary_imm::<i64>("ctz", 42, |input| input.trailing_zeros() as _);
+        unary_imm::<i64>("ctz", 42, |input| i64::from(input.trailing_zeros()));
     }
 }
 
@@ -169,6 +169,6 @@ mod i64_popcnt {
 
     #[test]
     fn imm() {
-        unary_imm::<i64>("popcnt", 42, |input| input.count_ones() as _);
+        unary_imm::<i64>("popcnt", 42, |input| i64::from(input.count_ones()));
     }
 }
