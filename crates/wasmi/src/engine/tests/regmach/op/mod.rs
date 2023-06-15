@@ -28,8 +28,10 @@ mod i64_shr_s;
 mod i64_shr_u;
 mod i64_sub;
 mod i64_xor;
+mod unary;
 
 use super::{
+    assert_func_bodies,
     swap_ops,
     test_binary_consteval,
     test_binary_reg_imm16,
@@ -42,6 +44,7 @@ use super::{
     test_binary_reg_imm_with,
     test_binary_reg_reg,
     test_binary_same_reg,
+    wat2wasm,
     Const16,
     Const32,
     Instruction,

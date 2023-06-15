@@ -8,6 +8,12 @@ macro_rules! constructor_for {
     ) => {
         $( constructor_for! { @impl fn $fn_name($mode) -> Self::$op_code } )*
     };
+    ( @impl fn $fn_name:ident(unary) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Register, input: Register) -> Self {
+            Self::$op_code(UnaryInstr::new(result, input))
+        }
+    };
     ( @impl fn $fn_name:ident(binary) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
         pub fn $fn_name(result: Register, lhs: Register, rhs: Register) -> Self {
@@ -41,6 +47,16 @@ impl Instruction {
     }
 
     constructor_for! {
+        // Integer Unary
+
+        fn i32_clz(unary) -> Self::I32Clz;
+        fn i32_ctz(unary) -> Self::I32Ctz;
+        fn i32_popcnt(unary) -> Self::I32Popcnt;
+
+        fn i64_clz(unary) -> Self::I64Clz;
+        fn i64_ctz(unary) -> Self::I64Ctz;
+        fn i64_popcnt(unary) -> Self::I64Popcnt;
+
         // Integer Arithmetic
 
         fn i32_add(binary) -> Self::I32Add;

@@ -739,4 +739,25 @@ impl<'parser> FuncTranslator<'parser> {
         let cref = self.engine().alloc_const(UntypedValue::from(value))?;
         Ok(Instruction::ConstRef(cref))
     }
+
+    /// Translates a unary Wasm instruction to `wasmi` bytecode.
+    pub fn translate_unary(
+        &mut self,
+        make_instr: fn(result: Register, input: Register) -> Instruction,
+        consteval: fn(input: UntypedValue) -> UntypedValue,
+    ) -> Result<(), TranslationError> {
+        match self.alloc.stack.pop() {
+            Provider::Register(input) => {
+                let result = self.alloc.stack.push_dynamic()?;
+                self.alloc
+                    .instr_encoder
+                    .push_instr(make_instr(result, input))?;
+                Ok(())
+            }
+            Provider::Const(input) => {
+                self.alloc.stack.push_const(consteval(input));
+                Ok(())
+            }
+        }
+    }
 }
