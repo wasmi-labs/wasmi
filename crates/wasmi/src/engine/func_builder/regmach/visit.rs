@@ -610,7 +610,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             UntypedValue::i32_rem_s,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
-                    // Optimization: `x / x` is always `1`
+                    // Optimization: `x % x` is always `0`
                     this.alloc.stack.push_const(UntypedValue::from(0_i32));
                     return Ok(true);
                 }
@@ -618,7 +618,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             },
             |this, lhs: Register, rhs: i32| {
                 if rhs == 1 {
-                    // Optimization: `x / 1` is always `x`
+                    // Optimization: `x % 1` is always `0`
                     this.alloc.stack.push_const(UntypedValue::from(0_i32));
                     return Ok(true);
                 }
