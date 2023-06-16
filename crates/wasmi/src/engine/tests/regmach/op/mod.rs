@@ -1,3 +1,4 @@
+mod f32_add;
 mod i32_add;
 mod i32_and;
 mod i32_div_s;

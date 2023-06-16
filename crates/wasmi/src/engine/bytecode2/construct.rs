@@ -75,6 +75,11 @@ impl Instruction {
         fn f64_nearest(unary) -> Self::F64Nearest;
         fn f64_sqrt(unary) -> Self::F64Sqrt;
 
+        // Float Arithmetic
+
+        fn f32_add(binary) -> Self::F32Add;
+        fn f32_add_imm(binary_imm) -> Self::F32AddImm;
+
         // Integer Arithmetic
 
         fn i32_add(binary) -> Self::I32Add;
