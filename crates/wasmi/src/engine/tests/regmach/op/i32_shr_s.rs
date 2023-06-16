@@ -9,7 +9,7 @@ fn reg_reg() {
 
 #[test]
 fn reg_imm_rev() {
-    test_binary_reg_imm32_rev(WASM_OP, Instruction::i32_shr_s_imm_rev)
+    test_binary_reg_imm32_rev(WASM_OP, i32::MAX, Instruction::i32_shr_s_imm_rev)
 }
 
 #[test]

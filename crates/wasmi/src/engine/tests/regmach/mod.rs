@@ -211,37 +211,39 @@ fn test_binary_reg_imm16_rev(
     assert_func_bodies(wasm, [expected]);
 }
 
-fn test_binary_reg_imm32(
+fn test_binary_reg_imm32<T>(
     wasm_op: WasmOp,
+    value: T,
     make_instr: fn(result: Register, lhs: Register) -> Instruction,
-) {
-    /// Does not fit into 16 bit value.
-    const VALUE: i32 = i32::MAX;
+) where
+    T: Copy + Display + Into<Const32>,
+{
     let expected = [
         make_instr(Register::from_u16(1), Register::from_u16(0)),
-        Instruction::Const32(Const32::from_i32(VALUE)),
+        Instruction::const32(value),
         Instruction::ReturnReg {
             value: Register::from_u16(1),
         },
     ];
-    test_binary_reg_imm_with(wasm_op, VALUE, expected)
+    test_binary_reg_imm_with(wasm_op, value, expected)
 }
 
 /// Variant of [`test_binary_reg_imm32`] where both operands are swapped.
-fn test_binary_reg_imm32_rev(
+fn test_binary_reg_imm32_rev<T>(
     wasm_op: WasmOp,
+    value: T,
     make_instr: fn(result: Register, lhs: Register) -> Instruction,
-) {
-    /// Does not fit into 16 bit value.
-    const VALUE: i32 = i32::MAX;
+) where
+    T: Copy + Display + Into<Const32>,
+{
     let expected = [
         make_instr(Register::from_u16(1), Register::from_u16(0)),
-        Instruction::Const32(Const32::from_i32(VALUE)),
+        Instruction::const32(value),
         Instruction::ReturnReg {
             value: Register::from_u16(1),
         },
     ];
-    test_binary_reg_imm_rev_with(wasm_op, VALUE, expected)
+    test_binary_reg_imm_rev_with(wasm_op, value, expected)
 }
 
 fn test_binary_reg_imm64(

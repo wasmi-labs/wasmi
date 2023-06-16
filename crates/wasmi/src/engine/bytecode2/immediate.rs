@@ -103,6 +103,12 @@ impl From<u32> for Const32 {
     }
 }
 
+impl From<f32> for Const32 {
+    fn from(value: f32) -> Self {
+        Self::from(F32::from(value))
+    }
+}
+
 impl From<F32> for Const32 {
     fn from(value: F32) -> Self {
         Self::from_f32(value)
