@@ -98,6 +98,7 @@ impl TranslationTest {
         &self.expected_consts
     }
 
+    /// Add an expected function with its instructions.
     pub fn expect_func<I>(&mut self, instrs: I) -> &mut Self
     where
         I: IntoIterator<Item = Instruction>,
@@ -108,6 +109,7 @@ impl TranslationTest {
         self
     }
 
+    /// Add an expected constant value stored in the constant pool.
     pub fn expect_const<T>(&mut self, cref: ConstRef, value: T) -> &mut Self
     where
         T: Into<UntypedValue>,
@@ -119,6 +121,11 @@ impl TranslationTest {
         self
     }
 
+    /// Runs the [`TranslationTest`].
+    ///
+    /// # Panics
+    ///
+    /// If the translation test was not successful.
     pub fn run(&self) {
         let module = create_module(self.config(), self.wasm());
         let engine = module.engine();
@@ -126,6 +133,7 @@ impl TranslationTest {
         self.assert_consts(engine);
     }
 
+    /// Asserts that all expected functions of the translated Wasm module are as expected.
     fn assert_funcs(&self, engine: &Engine, module: &Module) {
         {
             let len_compiled = module.internal_funcs().len();
@@ -143,6 +151,7 @@ impl TranslationTest {
         }
     }
 
+    /// Asserts that the expected function of the translated Wasm module is as expected.
     fn assert_func(
         &self,
         engine: &Engine,
@@ -180,6 +189,7 @@ impl TranslationTest {
         }
     }
 
+    /// Asserts that all expected constant values of the translated Wasm module are as expected.
     fn assert_consts(&self, engine: &Engine) {
         for expected_const in self.expected_consts() {
             let cref = expected_const.cref;
