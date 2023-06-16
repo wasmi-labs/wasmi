@@ -12,7 +12,7 @@ use wasmi_core::UntypedValue;
 #[derive(Debug)]
 pub struct TranslationTest {
     /// The input Wasm bytes.
-    wasm: Vec<u8>,
+    wasm: Box<[u8]>,
     /// The config under which the engine is tested.
     config: Config,
     /// The expected functions and their instructions.
@@ -71,7 +71,7 @@ impl TranslationTest {
             cfg
         };
         Self {
-            wasm: bytes.as_ref().to_vec(),
+            wasm: bytes.as_ref().into(),
             config,
             expected_funcs: Vec::new(),
             expected_consts: Vec::new(),
