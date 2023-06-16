@@ -1252,7 +1252,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     this.alloc.stack.push_const(value);
                     return Ok(true);
                 }
-                if value.abs() == 0.0 {
+                if value == 0.0 || value == -0.0 {
                     // Optimization: `add x + 0` is same as `x`
                     this.alloc.stack.push_register(reg)?;
                     return Ok(true);
