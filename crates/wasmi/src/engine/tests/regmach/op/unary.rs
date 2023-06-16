@@ -76,7 +76,7 @@ where
             value: Register::from_u16(1),
         },
     ];
-    TranslationTest::new(&wasm).expect_func(expected).run();
+    TranslationTest::new(wasm).expect_func(expected).run();
 }
 
 /// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary `wasmi` instruction.
@@ -96,12 +96,9 @@ where
     "#,
     ));
     let instr = <T as WasmType>::return_imm_instr(&eval(input));
-    let mut testcase = TranslationTest::new(&wasm);
-    match &instr {
-        Instruction::ReturnImm { value } => {
-            testcase.expect_const(*value, eval(input));
-        }
-        _ => {}
+    let mut testcase = TranslationTest::new(wasm);
+    if let Instruction::ReturnImm { value } = &instr {
+        testcase.expect_const(*value, eval(input));
     }
     testcase.expect_func([instr]).run();
 }

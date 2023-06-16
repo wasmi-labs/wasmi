@@ -155,7 +155,7 @@ impl TranslationTest {
         let func_type = engine.resolve_func_type(&func_type, Clone::clone);
         for (index, actual, expected) in
             expected_instrs
-                .into_iter()
+                .iter()
                 .copied()
                 .enumerate()
                 .map(|(index, expected_instr)| {
