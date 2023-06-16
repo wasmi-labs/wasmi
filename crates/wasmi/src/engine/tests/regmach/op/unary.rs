@@ -1,9 +1,9 @@
 use super::*;
-use crate::engine::const_pool::ConstRef;
+use crate::engine::{const_pool::ConstRef, tests::regmach::driver::TranslationTest};
 use std::fmt::Display;
-use wasmi_core::F32;
+use wasmi_core::{UntypedValue, F32};
 
-pub trait WasmType: Display {
+pub trait WasmType: Copy + Display + Into<UntypedValue> {
     const NAME: &'static str;
 
     fn return_imm_instr(&self) -> Instruction;
@@ -76,7 +76,7 @@ where
             value: Register::from_u16(1),
         },
     ];
-    assert_func_bodies(wasm, [expected]);
+    TranslationTest::new(&wasm).expect_func(expected).run();
 }
 
 /// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary `wasmi` instruction.
@@ -96,8 +96,14 @@ where
     "#,
     ));
     let instr = <T as WasmType>::return_imm_instr(&eval(input));
-    let expected = [instr];
-    assert_func_bodies(wasm, [expected]);
+    let mut testcase = TranslationTest::new(&wasm);
+    match &instr {
+        Instruction::ReturnImm { value } => {
+            testcase.expect_const(*value, eval(input));
+        }
+        _ => {}
+    }
+    testcase.expect_func([instr]).run();
 }
 
 mod i32_clz {

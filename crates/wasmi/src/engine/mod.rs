@@ -153,6 +153,16 @@ impl Engine {
         self.inner.alloc_const(value)
     }
 
+    /// Returns the [`UntypedValue`] of the [`ConstRef`] if any.
+    ///
+    /// # Note
+    ///
+    /// This is a test API and only meant for testing purposes.
+    #[cfg(test)]
+    pub(super) fn get_const(&self, cref: ConstRef) -> Option<UntypedValue> {
+        self.inner.get_const(cref)
+    }
+
     /// Resolves a deduplicated function type into a [`FuncType`] entity.
     ///
     /// # Panics
@@ -448,6 +458,16 @@ impl EngineInner {
     /// If too many constant values have been allocated for the [`EngineInner`] this way.
     fn alloc_const(&self, value: UntypedValue) -> Result<ConstRef, TranslationError> {
         self.res.write().const_pool.alloc(value)
+    }
+
+    /// Returns the [`UntypedValue`] of the [`ConstRef`] if any.
+    ///
+    /// # Note
+    ///
+    /// This is a test API and only meant for testing purposes.
+    #[cfg(test)]
+    pub(super) fn get_const(&self, cref: ConstRef) -> Option<UntypedValue> {
+        self.res.read().const_pool.get(cref)
     }
 
     /// Allocates a new uninitialized [`CompiledFunc`] to the [`EngineInner`].
