@@ -485,7 +485,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_binary_commutative(
             Instruction::i32_add,
             Instruction::i32_add_imm,
-            Self::make_instr_imm_param_i32,
+            Self::make_instr_imm_param_32,
             Instruction::i32_add_imm16,
             UntypedValue::i32_add,
             Self::no_custom_opt,
@@ -505,7 +505,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i32_sub,
             Instruction::i32_sub_imm,
             Instruction::i32_sub_imm_rev,
-            Self::make_instr_imm_param_i32,
+            Self::make_instr_imm_param_32,
             Instruction::i32_sub_imm16,
             Instruction::i32_sub_imm16_rev,
             UntypedValue::i32_sub,
@@ -533,7 +533,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_binary_commutative(
             Instruction::i32_mul,
             Instruction::i32_mul_imm,
-            Self::make_instr_imm_param_i32,
+            Self::make_instr_imm_param_32,
             Instruction::i32_mul_imm16,
             UntypedValue::i32_mul,
             Self::no_custom_opt,
@@ -558,7 +558,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i32_div_s,
             Instruction::i32_div_s_imm,
             Instruction::i32_div_s_imm_rev,
-            Self::make_instr_imm_param_i32,
+            Self::make_instr_imm_param_32,
             Instruction::i32_div_s_imm16,
             Instruction::i32_div_s_imm16_rev,
             UntypedValue::i32_div_s,
@@ -586,7 +586,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i32_div_u,
             Instruction::i32_div_u_imm,
             Instruction::i32_div_u_imm_rev,
-            Self::make_instr_imm_param_i32,
+            Self::make_instr_imm_param_32,
             Instruction::i32_div_u_imm16,
             Instruction::i32_div_u_imm16_rev,
             UntypedValue::i32_div_u,
@@ -614,7 +614,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i32_rem_s,
             Instruction::i32_rem_s_imm,
             Instruction::i32_rem_s_imm_rev,
-            Self::make_instr_imm_param_i32,
+            Self::make_instr_imm_param_32,
             Instruction::i32_rem_s_imm16,
             Instruction::i32_rem_s_imm16_rev,
             UntypedValue::i32_rem_s,
@@ -642,7 +642,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i32_rem_u,
             Instruction::i32_rem_u_imm,
             Instruction::i32_rem_u_imm_rev,
-            Self::make_instr_imm_param_i32,
+            Self::make_instr_imm_param_32,
             Instruction::i32_rem_u_imm16,
             Instruction::i32_rem_u_imm16_rev,
             UntypedValue::i32_rem_u,
@@ -669,7 +669,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_binary_commutative(
             Instruction::i32_and,
             Instruction::i32_and_imm,
-            Self::make_instr_imm_param_i32,
+            Self::make_instr_imm_param_32,
             Instruction::i32_and_imm16,
             UntypedValue::i32_and,
             |this, lhs, rhs| {
@@ -703,7 +703,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_binary_commutative(
             Instruction::i32_or,
             Instruction::i32_or_imm,
-            Self::make_instr_imm_param_i32,
+            Self::make_instr_imm_param_32,
             Instruction::i32_or_imm16,
             UntypedValue::i32_or,
             |this, lhs, rhs| {
@@ -737,7 +737,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_binary_commutative(
             Instruction::i32_xor,
             Instruction::i32_xor_imm,
-            Self::make_instr_imm_param_i32,
+            Self::make_instr_imm_param_32,
             Instruction::i32_xor_imm16,
             UntypedValue::i32_xor,
             |this, lhs, rhs| {
@@ -763,7 +763,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_shift(
             Instruction::i32_shl,
             Instruction::i32_shl_imm,
-            Self::make_instr_imm_param_i32,
+            Self::make_instr_imm_param_32::<i32>,
             Instruction::i32_shl_imm_rev,
             Instruction::i32_shl_imm16_rev,
             UntypedValue::i32_shl,
@@ -775,7 +775,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_shift(
             Instruction::i32_shr_s,
             Instruction::i32_shr_s_imm,
-            Self::make_instr_imm_param_i32,
+            Self::make_instr_imm_param_32,
             Instruction::i32_shr_s_imm_rev,
             Instruction::i32_shr_s_imm16_rev,
             UntypedValue::i32_shr_s,
@@ -794,7 +794,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_shift(
             Instruction::i32_shr_u,
             Instruction::i32_shr_u_imm,
-            Self::make_instr_imm_param_i32,
+            Self::make_instr_imm_param_32::<i32>,
             Instruction::i32_shr_u_imm_rev,
             Instruction::i32_shr_u_imm16_rev,
             UntypedValue::i32_shr_u,
@@ -806,7 +806,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_shift(
             Instruction::i32_rotl,
             Instruction::i32_rotl_imm,
-            Self::make_instr_imm_param_i32,
+            Self::make_instr_imm_param_32,
             Instruction::i32_rotl_imm_rev,
             Instruction::i32_rotl_imm16_rev,
             UntypedValue::i32_rotl,
@@ -825,7 +825,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_shift(
             Instruction::i32_rotr,
             Instruction::i32_rotr_imm,
-            Self::make_instr_imm_param_i32,
+            Self::make_instr_imm_param_32,
             Instruction::i32_rotr_imm_rev,
             Instruction::i32_rotr_imm16_rev,
             UntypedValue::i32_rotr,
@@ -856,7 +856,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_binary_commutative(
             Instruction::i64_add,
             Instruction::i64_add_imm,
-            Self::make_instr_imm_param_i64,
+            Self::make_instr_imm_param_64,
             Instruction::i64_add_imm16,
             UntypedValue::i64_add,
             Self::no_custom_opt,
@@ -876,7 +876,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i64_sub,
             Instruction::i64_sub_imm,
             Instruction::i64_sub_imm_rev,
-            Self::make_instr_imm_param_i64,
+            Self::make_instr_imm_param_64,
             Instruction::i64_sub_imm16,
             Instruction::i64_sub_imm16_rev,
             UntypedValue::i64_sub,
@@ -904,7 +904,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_binary_commutative(
             Instruction::i64_mul,
             Instruction::i64_mul_imm,
-            Self::make_instr_imm_param_i64,
+            Self::make_instr_imm_param_64,
             Instruction::i64_mul_imm16,
             UntypedValue::i64_mul,
             Self::no_custom_opt,
@@ -929,7 +929,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i64_div_s,
             Instruction::i64_div_s_imm,
             Instruction::i64_div_s_imm_rev,
-            Self::make_instr_imm_param_i64,
+            Self::make_instr_imm_param_64,
             Instruction::i64_div_s_imm16,
             Instruction::i64_div_s_imm16_rev,
             UntypedValue::i64_div_s,
@@ -957,7 +957,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i64_div_u,
             Instruction::i64_div_u_imm,
             Instruction::i64_div_u_imm_rev,
-            Self::make_instr_imm_param_i64,
+            Self::make_instr_imm_param_64,
             Instruction::i64_div_u_imm16,
             Instruction::i64_div_u_imm16_rev,
             UntypedValue::i64_div_u,
@@ -985,7 +985,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i64_rem_s,
             Instruction::i64_rem_s_imm,
             Instruction::i64_rem_s_imm_rev,
-            Self::make_instr_imm_param_i64,
+            Self::make_instr_imm_param_64,
             Instruction::i64_rem_s_imm16,
             Instruction::i64_rem_s_imm16_rev,
             UntypedValue::i64_rem_s,
@@ -1013,7 +1013,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i64_rem_u,
             Instruction::i64_rem_u_imm,
             Instruction::i64_rem_u_imm_rev,
-            Self::make_instr_imm_param_i64,
+            Self::make_instr_imm_param_64,
             Instruction::i64_rem_u_imm16,
             Instruction::i64_rem_u_imm16_rev,
             UntypedValue::i64_rem_u,
@@ -1040,7 +1040,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_binary_commutative(
             Instruction::i64_and,
             Instruction::i64_and_imm,
-            Self::make_instr_imm_param_i64,
+            Self::make_instr_imm_param_64,
             Instruction::i64_and_imm16,
             UntypedValue::i64_and,
             |this, lhs, rhs| {
@@ -1074,7 +1074,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_binary_commutative(
             Instruction::i64_or,
             Instruction::i64_or_imm,
-            Self::make_instr_imm_param_i64,
+            Self::make_instr_imm_param_64,
             Instruction::i64_or_imm16,
             UntypedValue::i64_or,
             |this, lhs, rhs| {
@@ -1108,7 +1108,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_binary_commutative(
             Instruction::i64_xor,
             Instruction::i64_xor_imm,
-            Self::make_instr_imm_param_i64,
+            Self::make_instr_imm_param_64,
             Instruction::i64_xor_imm16,
             UntypedValue::i64_xor,
             |this, lhs, rhs| {
@@ -1134,7 +1134,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_shift(
             Instruction::i64_shl,
             Instruction::i64_shl_imm,
-            Self::make_instr_imm_param_i64,
+            Self::make_instr_imm_param_64::<i64>,
             Instruction::i64_shl_imm_rev,
             Instruction::i64_shl_imm16_rev,
             UntypedValue::i64_shl,
@@ -1146,7 +1146,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_shift(
             Instruction::i64_shr_s,
             Instruction::i64_shr_s_imm,
-            Self::make_instr_imm_param_i64,
+            Self::make_instr_imm_param_64,
             Instruction::i64_shr_s_imm_rev,
             Instruction::i64_shr_s_imm16_rev,
             UntypedValue::i64_shr_s,
@@ -1165,7 +1165,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_shift(
             Instruction::i64_shr_u,
             Instruction::i64_shr_u_imm,
-            Self::make_instr_imm_param_i64,
+            Self::make_instr_imm_param_64::<i64>,
             Instruction::i64_shr_u_imm_rev,
             Instruction::i64_shr_u_imm16_rev,
             UntypedValue::i64_shr_u,
@@ -1177,7 +1177,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_shift(
             Instruction::i64_rotl,
             Instruction::i64_rotl_imm,
-            Self::make_instr_imm_param_i64,
+            Self::make_instr_imm_param_64,
             Instruction::i64_rotl_imm_rev,
             Instruction::i64_rotl_imm16_rev,
             UntypedValue::i64_rotl,
@@ -1196,7 +1196,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_shift(
             Instruction::i64_rotr,
             Instruction::i64_rotr_imm,
-            Self::make_instr_imm_param_i64,
+            Self::make_instr_imm_param_64,
             Instruction::i64_rotr_imm_rev,
             Instruction::i64_rotr_imm16_rev,
             UntypedValue::i64_rotr,

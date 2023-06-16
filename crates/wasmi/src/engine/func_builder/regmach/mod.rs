@@ -723,20 +723,20 @@ impl<'parser> FuncTranslator<'parser> {
         Ok(false)
     }
 
-    /// Can be used for [`Self::translate_binary`] (and variants) to create immediate `i32` instructions.
-    pub fn make_instr_imm_param_i32(
-        &mut self,
-        value: i32,
-    ) -> Result<Instruction, TranslationError> {
+    /// Can be used for [`Self::translate_binary`] (and variants) to create 32-bit immediate instructions.
+    pub fn make_instr_imm_param_32<T>(&mut self, value: T) -> Result<Instruction, TranslationError>
+    where
+        T: Into<Const32>,
+    {
         Ok(Instruction::const32(value))
     }
 
-    /// Can be used for [`Self::translate_binary`] (and variants) to create immediate `i64` instructions.
-    pub fn make_instr_imm_param_i64(
-        &mut self,
-        value: i64,
-    ) -> Result<Instruction, TranslationError> {
-        let cref = self.engine().alloc_const(UntypedValue::from(value))?;
+    /// Can be used for [`Self::translate_binary`] (and variants) to create 64-bit immediate instructions.
+    pub fn make_instr_imm_param_64<T>(&mut self, value: T) -> Result<Instruction, TranslationError>
+    where
+        T: Into<UntypedValue>,
+    {
+        let cref = self.engine().alloc_const(value.into())?;
         Ok(Instruction::ConstRef(cref))
     }
 
