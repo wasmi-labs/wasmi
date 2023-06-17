@@ -83,6 +83,9 @@ impl Instruction {
         fn f32_mul(binary) -> Self::F32Mul;
         fn f32_mul_imm(binary_imm) -> Self::F32MulImm;
 
+        fn f32_min(binary) -> Self::F32Min;
+        fn f32_min_imm(binary_imm) -> Self::F32MinImm;
+
         // Integer Arithmetic
 
         fn i32_add(binary) -> Self::I32Add;
