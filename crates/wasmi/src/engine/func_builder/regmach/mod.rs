@@ -9,7 +9,11 @@ mod stack;
 mod utils;
 mod visit;
 
-use self::{control_frame::BlockControlFrame, stack::ValueStack, utils::WasmInteger};
+use self::{
+    control_frame::BlockControlFrame,
+    stack::ValueStack,
+    utils::{WasmFloat, WasmInteger},
+};
 pub use self::{
     control_frame::{ControlFrame, ControlFrameKind},
     control_stack::ControlStack,
@@ -578,7 +582,7 @@ impl<'parser> FuncTranslator<'parser> {
         make_instr_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, TranslationError>,
     ) -> Result<(), TranslationError>
     where
-        T: Copy + From<UntypedValue> + Into<UntypedValue>,
+        T: WasmFloat,
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
@@ -591,6 +595,11 @@ impl<'parser> FuncTranslator<'parser> {
             }
             (Provider::Register(reg_in), Provider::Const(imm_in))
             | (Provider::Const(imm_in), Provider::Register(reg_in)) => {
+                if T::from(imm_in).is_nan() {
+                    // Optimization: non-canonicalized NaN propagation.
+                    self.alloc.stack.push_const(T::from(imm_in));
+                    return Ok(());
+                }
                 if make_instr_imm_opt(self, reg_in, T::from(imm_in))? {
                     // Custom logic applied its optimization: return early.
                     return Ok(());

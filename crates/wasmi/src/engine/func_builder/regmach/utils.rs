@@ -54,3 +54,25 @@ impl WasmInteger for i64 {
         self == -1
     }
 }
+
+/// A WebAssembly float. Either `f32` or `f64`.
+///
+/// # Note
+///
+/// This trait provides some utility methods useful for translation.
+pub trait WasmFloat: Copy + Into<UntypedValue> + From<UntypedValue> {
+    /// Returns `true` if `self` is any kind of NaN value.
+    fn is_nan(self) -> bool;
+}
+
+impl WasmFloat for f32 {
+    fn is_nan(self) -> bool {
+        self.is_nan()
+    }
+}
+
+impl WasmFloat for f64 {
+    fn is_nan(self) -> bool {
+        self.is_nan()
+    }
+}

@@ -1247,11 +1247,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             UntypedValue::f32_add,
             Self::no_custom_opt,
             |this, reg: Register, value: f32| {
-                if value.is_nan() {
-                    // Optimization: non-canonicalized NaN propagation.
-                    this.alloc.stack.push_const(value);
-                    return Ok(true);
-                }
                 if value == 0.0 || value == -0.0 {
                     // Optimization: `add x + 0` is same as `x`
                     this.alloc.stack.push_register(reg)?;
@@ -1270,20 +1265,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_fbinary_commutative(
             Instruction::f32_mul,
             Instruction::f32_mul_imm,
-            Self::make_instr_imm_param_32,
+            Self::make_instr_imm_param_32::<f32>,
             UntypedValue::f32_mul,
             Self::no_custom_opt,
-            |this, reg: Register, value: f32| {
-                // Unfortunately we cannot apply `x * 0` or `0 * x` optimizations
-                // since Wasm mandates different behaviors if `x` is infinite or
-                // NaN in these cases.
-                if value.is_nan() {
-                    // Optimization: non-canonicalized NaN propagation.
-                    this.alloc.stack.push_const(value);
-                    return Ok(true);
-                }
-                Ok(false)
-            },
+            // Unfortunately we cannot apply `x * 0` or `0 * x` optimizations
+            // since Wasm mandates different behaviors if `x` is infinite or
+            // NaN in these cases.
+            Self::no_custom_opt,
         )
     }
 
@@ -1299,11 +1287,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             UntypedValue::f32_min,
             Self::no_custom_opt,
             |this, reg: Register, value: f32| {
-                if value.is_nan() {
-                    // Optimization: non-canonicalized NaN propagation.
-                    this.alloc.stack.push_const(value);
-                    return Ok(true);
-                }
                 if value.is_infinite() && value.is_sign_positive() {
                     // Optimization: `min(x, +inf)` is same as `x`
                     this.alloc.stack.push_register(reg)?;
@@ -1322,11 +1305,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             UntypedValue::f32_max,
             Self::no_custom_opt,
             |this, reg: Register, value: f32| {
-                if value.is_nan() {
-                    // Optimization: non-canonicalized NaN propagation.
-                    this.alloc.stack.push_const(value);
-                    return Ok(true);
-                }
                 if value.is_infinite() && value.is_sign_negative() {
                     // Optimization: `max(x, -inf)` is same as `x`
                     this.alloc.stack.push_register(reg)?;
