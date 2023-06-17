@@ -1373,7 +1373,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_f32_copysign(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fcopysign(
+            Instruction::f32_copysign,
+            Instruction::f32_copysign_imm,
+            Instruction::f32_copysign_imm_rev,
+            Self::make_instr_imm_param_32::<f32>,
+            UntypedValue::f32_copysign,
+        )
     }
 
     fn visit_f64_abs(&mut self) -> Self::Output {

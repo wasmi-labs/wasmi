@@ -1,4 +1,4 @@
-use crate::engine::bytecode2::Const16;
+use crate::engine::bytecode2::{Const16, Sign};
 use wasmi_core::UntypedValue;
 
 /// A WebAssembly integer. Either `i32` or `i64`.
@@ -63,16 +63,33 @@ impl WasmInteger for i64 {
 pub trait WasmFloat: Copy + Into<UntypedValue> + From<UntypedValue> {
     /// Returns `true` if `self` is any kind of NaN value.
     fn is_nan(self) -> bool;
+
+    /// Returns the [`Sign`] of `self`.
+    fn sign(self) -> Sign;
 }
 
 impl WasmFloat for f32 {
     fn is_nan(self) -> bool {
         self.is_nan()
     }
+
+    fn sign(self) -> Sign {
+        match self.is_sign_positive() {
+            true => Sign::Pos,
+            false => Sign::Neg,
+        }
+    }
 }
 
 impl WasmFloat for f64 {
     fn is_nan(self) -> bool {
         self.is_nan()
+    }
+
+    fn sign(self) -> Sign {
+        match self.is_sign_positive() {
+            true => Sign::Pos,
+            false => Sign::Neg,
+        }
     }
 }

@@ -32,7 +32,7 @@ use crate::{
             SignatureIdx,
             TableIdx,
         },
-        bytecode2::{Const16, Const32, Instruction, Register},
+        bytecode2::{Const16, Const32, Instruction, Register, Sign},
         config::FuelCosts,
         func_builder::TranslationErrorInner,
         CompiledFunc,
@@ -553,6 +553,53 @@ impl<'parser> FuncTranslator<'parser> {
                     make_instr_imm_param,
                 )
             }
+            (Provider::Const(lhs), Provider::Const(rhs)) => {
+                self.push_binary_consteval(lhs, rhs, consteval)
+            }
+        }
+    }
+
+    /// Translate `wasmi` float `{f32,f64}.copysign` instructions.
+    ///
+    /// # Note
+    ///
+    /// - This applies several optimization that are valid for copysign instructions.
+    /// - Applies constant evaluation if both operands are constant values.
+    fn translate_fcopysign<T>(
+        &mut self,
+        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+        make_instr_imm: fn(result: Register, lhs: Register, rhs: Sign) -> Instruction,
+        make_instr_imm_rev: fn(result: Register, rhs: Register) -> Instruction,
+        make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
+        consteval: fn(UntypedValue, UntypedValue) -> UntypedValue,
+    ) -> Result<(), TranslationError>
+    where
+        T: WasmFloat,
+    {
+        bail_unreachable!(self);
+        match self.alloc.stack.pop2() {
+            (Provider::Register(lhs), Provider::Register(rhs)) => {
+                if lhs == rhs {
+                    // Optimization: `copysign x x` is always just `x`
+                    self.alloc.stack.push_register(lhs)?;
+                    return Ok(());
+                }
+                self.push_binary_instr(lhs, rhs, make_instr)
+            }
+            (Provider::Register(lhs), Provider::Const(rhs)) => {
+                let sign = T::from(rhs).sign();
+                let result = self.alloc.stack.push_dynamic()?;
+                self.alloc
+                    .instr_encoder
+                    .push_instr(make_instr_imm(result, lhs, sign))?;
+                Ok(())
+            }
+            (Provider::Const(lhs), Provider::Register(rhs)) => self.push_binary_instr_imm(
+                rhs,
+                T::from(lhs),
+                make_instr_imm_rev,
+                make_instr_imm_param,
+            ),
             (Provider::Const(lhs), Provider::Const(rhs)) => {
                 self.push_binary_consteval(lhs, rhs, consteval)
             }

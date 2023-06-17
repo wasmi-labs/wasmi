@@ -1,4 +1,13 @@
-use super::{BinInstr, BinInstrImm16, Const16, Const32, Instruction, Register, UnaryInstr};
+use super::{
+    utils::{CopysignImmInstr, Sign},
+    BinInstr,
+    BinInstrImm16,
+    Const16,
+    Const32,
+    Instruction,
+    Register,
+    UnaryInstr,
+};
 
 macro_rules! constructor_for {
     (
@@ -44,6 +53,16 @@ impl Instruction {
     /// Creates a new [`Instruction::Const32`] from the given `value`.
     pub fn const32(value: impl Into<Const32>) -> Self {
         Self::Const32(value.into())
+    }
+
+    /// Creates a new [`Instruction::F32CopysignImm`] instruction.
+    pub fn f32_copysign_imm(result: Register, lhs: Register, rhs: Sign) -> Self {
+        Self::F32CopysignImm(CopysignImmInstr { result, lhs, rhs })
+    }
+
+    /// Creates a new [`Instruction::F64CopysignImm`] instruction.
+    pub fn f64_copysign_imm(result: Register, lhs: Register, rhs: Sign) -> Self {
+        Self::F64CopysignImm(CopysignImmInstr { result, lhs, rhs })
     }
 
     constructor_for! {
@@ -108,6 +127,12 @@ impl Instruction {
 
         fn f64_max(binary) -> Self::F64Max;
         fn f64_max_imm(binary_imm) -> Self::F64MaxImm;
+
+        fn f32_copysign(binary) -> Self::F32Copysign;
+        fn f32_copysign_imm_rev(binary_imm) -> Self::F32CopysignImmRev;
+
+        fn f64_copysign(binary) -> Self::F64Copysign;
+        fn f64_copysign_imm_rev(binary_imm) -> Self::F64CopysignImmRev;
 
         // Integer Arithmetic
 

@@ -193,3 +193,23 @@ pub struct StoreImm16Offset16Instr {
     /// The 16-bit encoded pointer offset of the `store` instruction.
     pub offset: Const16,
 }
+
+/// The sign of a value.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum Sign {
+    /// Positive sign.
+    Pos,
+    /// Negative sign.
+    Neg,
+}
+
+/// The `f32.copysign` or `f64.copysign` instruction with an immediate value.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct CopysignImmInstr {
+    /// The result register.
+    pub result: Register,
+    /// The input register.
+    pub lhs: Register,
+    /// The sign to copy.
+    pub rhs: Sign,
+}

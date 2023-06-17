@@ -17,8 +17,10 @@ pub(crate) use self::{
     utils::{
         BinInstr,
         BinInstrImm16,
+        CopysignImmInstr,
         LoadInstr,
         LoadOffset16Instr,
+        Sign,
         StoreImm16Offset16Instr,
         StoreImmInstr,
         StoreInstr,
@@ -3397,17 +3399,9 @@ pub enum Instruction {
     /// Wasm `f64.copysign` instruction: `r0 = copysign(r1, r2)`
     F64Copysign(BinInstr),
     /// Wasm `f32.copysign` instruction with immediate: `r0 = copysign(r1, c0)`
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`].
-    F32CopysignImm(UnaryInstr),
+    F32CopysignImm(CopysignImmInstr),
     /// Wasm `f64.copysign` instruction with immediate: `r0 = copysign(r1, c0)`
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`].
-    F64CopysignImm(UnaryInstr),
+    F64CopysignImm(CopysignImmInstr),
     /// Wasm `f32.copysign` instruction with immediate: `r0 = copysign(c0, r1)`
     ///
     /// # Note
