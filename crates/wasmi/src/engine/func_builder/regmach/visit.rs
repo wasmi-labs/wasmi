@@ -1370,7 +1370,17 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_f64_mul(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary_commutative(
+            Instruction::f64_mul,
+            Instruction::f64_mul_imm,
+            Self::make_instr_imm_param_64::<f64>,
+            UntypedValue::f64_mul,
+            Self::no_custom_opt,
+            // Unfortunately we cannot apply `x * 0` or `0 * x` optimizations
+            // since Wasm mandates different behaviors if `x` is infinite or
+            // NaN in these cases.
+            Self::no_custom_opt,
+        )
     }
 
     fn visit_f64_div(&mut self) -> Self::Output {
