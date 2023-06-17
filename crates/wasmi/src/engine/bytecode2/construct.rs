@@ -86,6 +86,9 @@ impl Instruction {
         fn f32_min(binary) -> Self::F32Min;
         fn f32_min_imm(binary_imm) -> Self::F32MinImm;
 
+        fn f32_max(binary) -> Self::F32Max;
+        fn f32_max_imm(binary_imm) -> Self::F32MaxImm;
+
         // Integer Arithmetic
 
         fn i32_add(binary) -> Self::I32Add;

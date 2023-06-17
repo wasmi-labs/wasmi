@@ -1315,7 +1315,26 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_f32_max(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary_commutative(
+            Instruction::f32_max,
+            Instruction::f32_max_imm,
+            Self::make_instr_imm_param_32,
+            UntypedValue::f32_max,
+            Self::no_custom_opt,
+            |this, reg: Register, value: f32| {
+                if value.is_nan() {
+                    // Optimization: non-canonicalized NaN propagation.
+                    this.alloc.stack.push_const(value);
+                    return Ok(true);
+                }
+                if value.is_infinite() && value.is_sign_negative() {
+                    // Optimization: `max(x, -inf)` is same as `x`
+                    this.alloc.stack.push_register(reg)?;
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_f32_copysign(&mut self) -> Self::Output {
