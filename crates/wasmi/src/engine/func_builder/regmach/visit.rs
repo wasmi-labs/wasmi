@@ -1266,11 +1266,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             UntypedValue::f32_sub,
             Self::no_custom_opt,
             |this, lhs: Register, rhs: f32| {
-                if rhs.is_nan() {
-                    // Optimization: non-canonicalized NaN propagation.
-                    this.alloc.stack.push_const(rhs);
-                    return Ok(true);
-                }
                 if rhs == 0.0 && rhs.is_sign_positive() {
                     // Optimization: `x - 0` is same as `x`
                     //
@@ -1281,17 +1276,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 }
                 Ok(false)
             },
-            |this, lhs: f32, rhs: Register| {
-                if lhs.is_nan() {
-                    // Optimization: non-canonicalized NaN propagation.
-                    this.alloc.stack.push_const(lhs);
-                    return Ok(true);
-                }
-                // Unfortuantely we cannot optimize for the case that `lhs == 0.0`
-                // since the Wasm specification mandates different behavior in
-                // dependence of `rhs` which we do not know at this point.
-                Ok(false)
-            },
+            // Unfortuantely we cannot optimize for the case that `lhs == 0.0`
+            // since the Wasm specification mandates different behavior in
+            // dependence of `rhs` which we do not know at this point.
+            Self::no_custom_opt,
         )
     }
 
@@ -1310,29 +1298,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_f32_div(&mut self) -> Self::Output {
-        self.translate_fbinary(
+        self.translate_fbinary::<f32>(
             Instruction::f32_div,
             Instruction::f32_div_imm,
             Instruction::f32_div_imm_rev,
             Self::make_instr_imm_param_32,
             UntypedValue::f32_div,
             Self::no_custom_opt,
-            |this, lhs: Register, rhs: f32| {
-                if rhs.is_nan() {
-                    // Optimization: non-canonicalized NaN propagation.
-                    this.alloc.stack.push_const(rhs);
-                    return Ok(true);
-                }
-                Ok(false)
-            },
-            |this, lhs: f32, rhs: Register| {
-                if lhs.is_nan() {
-                    // Optimization: non-canonicalized NaN propagation.
-                    this.alloc.stack.push_const(lhs);
-                    return Ok(true);
-                }
-                Ok(false)
-            },
+            Self::no_custom_opt,
+            Self::no_custom_opt,
         )
     }
 
