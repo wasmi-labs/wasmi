@@ -1267,7 +1267,24 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_f32_mul(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary_commutative(
+            Instruction::f32_mul,
+            Instruction::f32_mul_imm,
+            Self::make_instr_imm_param_32,
+            UntypedValue::f32_mul,
+            Self::no_custom_opt,
+            |this, reg: Register, value: f32| {
+                // Unfortunately we cannot apply `x * 0` or `0 * x` optimizations
+                // since Wasm mandates different behaviors if `x` is infinite or
+                // NaN in these cases.
+                if value.is_nan() {
+                    // Optimization: non-canonicalized NaN propagation.
+                    this.alloc.stack.push_const(value);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_f32_div(&mut self) -> Self::Output {
