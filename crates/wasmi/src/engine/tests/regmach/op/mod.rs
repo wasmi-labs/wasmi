@@ -10,6 +10,7 @@ mod f64_copysign;
 mod f64_max;
 mod f64_min;
 mod f64_mul;
+mod f64_sub;
 mod i32_add;
 mod i32_and;
 mod i32_div_s;

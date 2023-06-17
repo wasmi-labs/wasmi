@@ -1403,7 +1403,29 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_f64_sub(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(
+            Instruction::f64_sub,
+            Instruction::f64_sub_imm,
+            Instruction::f64_sub_imm_rev,
+            Self::make_instr_imm_param_64,
+            UntypedValue::f64_sub,
+            Self::no_custom_opt,
+            |this, lhs: Register, rhs: f64| {
+                if rhs == 0.0 && rhs.is_sign_positive() {
+                    // Optimization: `x - 0` is same as `x`
+                    //
+                    // Note due to behavior dictated by the Wasm specification
+                    // we cannot apply this optimization for negative zeros.
+                    this.alloc.stack.push_register(lhs)?;
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            // Unfortuantely we cannot optimize for the case that `lhs == 0.0`
+            // since the Wasm specification mandates different behavior in
+            // dependence of `rhs` which we do not know at this point.
+            Self::no_custom_opt,
+        )
     }
 
     fn visit_f64_mul(&mut self) -> Self::Output {

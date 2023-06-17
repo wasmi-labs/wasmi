@@ -106,6 +106,10 @@ impl Instruction {
         fn f32_sub_imm(binary_imm) -> Self::F32SubImm;
         fn f32_sub_imm_rev(binary_imm) -> Self::F32SubImmRev;
 
+        fn f64_sub(binary) -> Self::F64Sub;
+        fn f64_sub_imm(binary_imm) -> Self::F64SubImm;
+        fn f64_sub_imm_rev(binary_imm) -> Self::F64SubImmRev;
+
         fn f32_mul(binary) -> Self::F32Mul;
         fn f32_mul_imm(binary_imm) -> Self::F32MulImm;
 
