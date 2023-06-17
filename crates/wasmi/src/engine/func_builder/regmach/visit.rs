@@ -1310,7 +1310,30 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_f32_div(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(
+            Instruction::f32_div,
+            Instruction::f32_div_imm,
+            Instruction::f32_div_imm_rev,
+            Self::make_instr_imm_param_32,
+            UntypedValue::f32_div,
+            Self::no_custom_opt,
+            |this, lhs: Register, rhs: f32| {
+                if rhs.is_nan() {
+                    // Optimization: non-canonicalized NaN propagation.
+                    this.alloc.stack.push_const(rhs);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: f32, rhs: Register| {
+                if lhs.is_nan() {
+                    // Optimization: non-canonicalized NaN propagation.
+                    this.alloc.stack.push_const(lhs);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_f32_min(&mut self) -> Self::Output {

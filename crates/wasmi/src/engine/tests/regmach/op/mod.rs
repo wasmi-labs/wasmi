@@ -1,4 +1,5 @@
 mod f32_add;
+mod f32_div;
 mod f32_max;
 mod f32_min;
 mod f32_mul;

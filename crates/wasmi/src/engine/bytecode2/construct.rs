@@ -93,6 +93,10 @@ impl Instruction {
         fn f64_mul(binary) -> Self::F64Mul;
         fn f64_mul_imm(binary_imm) -> Self::F64MulImm;
 
+        fn f32_div(binary) -> Self::F32Div;
+        fn f32_div_imm(binary_imm) -> Self::F32DivImm;
+        fn f32_div_imm_rev(binary_imm) -> Self::F32DivImmRev;
+
         fn f32_min(binary) -> Self::F32Min;
         fn f32_min_imm(binary_imm) -> Self::F32MinImm;
 
