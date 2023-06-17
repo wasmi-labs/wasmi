@@ -1271,8 +1271,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     this.alloc.stack.push_const(rhs);
                     return Ok(true);
                 }
-                if rhs == 0.0 || rhs == -0.0 {
-                    // Optimization: `add x + 0` is same as `x`
+                if rhs == 0.0 && rhs.is_sign_positive() {
+                    // Optimization: `x - 0` is same as `x`
+                    //
+                    // Note due to behavior dictated by the Wasm specification
+                    // we cannot apply this optimization for negative zeros.
                     this.alloc.stack.push_register(lhs)?;
                     return Ok(true);
                 }
