@@ -3,6 +3,7 @@ mod f32_max;
 mod f32_min;
 mod f32_mul;
 mod f64_add;
+mod f64_max;
 mod f64_min;
 mod f64_mul;
 mod i32_add;
