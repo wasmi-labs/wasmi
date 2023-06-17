@@ -28,12 +28,12 @@ fn reg_imm16_rev() {
 
 #[test]
 fn reg_imm() {
-    test_binary_reg_imm64(WASM_OP, Instruction::i64_rem_s_imm)
+    test_binary_reg_imm64(WASM_OP, i64::MAX, Instruction::i64_rem_s_imm)
 }
 
 #[test]
 fn reg_imm_rev() {
-    test_binary_reg_imm64_rev(WASM_OP, Instruction::i64_rem_s_imm)
+    test_binary_reg_imm64_rev(WASM_OP, i64::MAX, Instruction::i64_rem_s_imm)
 }
 
 #[test]
