@@ -1443,7 +1443,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_f64_div(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary::<f64>(
+            Instruction::f64_div,
+            Instruction::f64_div_imm,
+            Instruction::f64_div_imm_rev,
+            Self::make_instr_imm_param_64,
+            UntypedValue::f64_div,
+            Self::no_custom_opt,
+            Self::no_custom_opt,
+            Self::no_custom_opt,
+        )
     }
 
     fn visit_f64_min(&mut self) -> Self::Output {

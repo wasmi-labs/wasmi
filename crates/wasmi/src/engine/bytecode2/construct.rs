@@ -120,6 +120,10 @@ impl Instruction {
         fn f32_div_imm(binary_imm) -> Self::F32DivImm;
         fn f32_div_imm_rev(binary_imm) -> Self::F32DivImmRev;
 
+        fn f64_div(binary) -> Self::F64Div;
+        fn f64_div_imm(binary_imm) -> Self::F64DivImm;
+        fn f64_div_imm_rev(binary_imm) -> Self::F64DivImmRev;
+
         fn f32_min(binary) -> Self::F32Min;
         fn f32_min_imm(binary_imm) -> Self::F32MinImm;
 
