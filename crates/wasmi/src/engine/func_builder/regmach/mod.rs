@@ -385,14 +385,13 @@ impl<'parser> FuncTranslator<'parser> {
         Ok(())
     }
 
-    /// Translate a non-commutative binary `wasmi` instruction.
+    /// Translate a non-commutative binary `wasmi` integer instruction.
     ///
     /// # Note
     ///
     /// - This applies several optimization that are valid for all non-commutative
     ///   binary instructions such as `i32.sub` or `i64.rotl`.
-    /// - Its various function arguments allow it to be used generically for `i32`
-    ///   instructions as well as for `i64`, `f32` and `f64` types.
+    /// - Its various function arguments allow it to be used generically for `i32` and `i64` types.
     /// - Applies constant evaluation if both operands are constant values.
     ///
     /// - The `make_instr_opt` closure allows to implement custom optimization
@@ -407,7 +406,6 @@ impl<'parser> FuncTranslator<'parser> {
     /// Used for translating the following Wasm operators to `wasmi` bytecode:
     ///
     /// - `{i32, i64}.sub`
-    /// - `{f32, f64}.{sub, div, copysign}`
     #[allow(clippy::too_many_arguments)]
     fn translate_binary<T>(
         &mut self,
@@ -464,6 +462,88 @@ impl<'parser> FuncTranslator<'parser> {
                 }
                 if self.try_push_binary_instr_imm16_rev(T::from(lhs), rhs, make_instr_imm16_rev)? {
                     // Optimization was applied: return early.
+                    return Ok(());
+                }
+                self.push_binary_instr_imm(
+                    rhs,
+                    T::from(lhs),
+                    make_instr_imm_rev,
+                    make_instr_imm_param,
+                )
+            }
+            (Provider::Const(lhs), Provider::Const(rhs)) => {
+                self.push_binary_consteval(lhs, rhs, consteval)
+            }
+        }
+    }
+
+    /// Translate a non-commutative binary `wasmi` float instruction.
+    ///
+    /// # Note
+    ///
+    /// - This applies several optimization that are valid for all
+    ///   non-commutative binary instructions.
+    /// - Its various function arguments allow it to be used generically for `f32` and `f64` types.
+    /// - Applies constant evaluation if both operands are constant values.
+    ///
+    /// - The `make_instr_opt` closure allows to implement custom optimization
+    ///   logic for the case that both operands are registers.
+    /// - The `make_instr_reg_imm_opt` closure allows to implement custom optmization
+    ///   logic for the case that the right-hand side operand is a constant value.
+    /// - The `make_instr_imm_reg_opt` closure allows to implement custom optmization
+    ///   logic for the case that the left-hand side operand is a constant value.
+    ///
+    /// # Usage
+    ///
+    /// Used for translating the following Wasm operators to `wasmi` bytecode:
+    ///
+    /// - `{f32, f64}.{sub, div, copysign}`
+    #[allow(clippy::too_many_arguments)]
+    fn translate_fbinary<T>(
+        &mut self,
+        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+        make_instr_imm: fn(result: Register, lhs: Register) -> Instruction,
+        make_instr_imm_rev: fn(result: Register, lhs: Register) -> Instruction,
+        make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
+        consteval: fn(UntypedValue, UntypedValue) -> UntypedValue,
+        make_instr_opt: fn(
+            &mut Self,
+            lhs: Register,
+            rhs: Register,
+        ) -> Result<bool, TranslationError>,
+        make_instr_reg_imm_opt: fn(
+            &mut Self,
+            lhs: Register,
+            rhs: T,
+        ) -> Result<bool, TranslationError>,
+        make_instr_imm_reg_opt: fn(
+            &mut Self,
+            lhs: T,
+            rhs: Register,
+        ) -> Result<bool, TranslationError>,
+    ) -> Result<(), TranslationError>
+    where
+        T: WasmFloat,
+    {
+        bail_unreachable!(self);
+        match self.alloc.stack.pop2() {
+            (Provider::Register(lhs), Provider::Register(rhs)) => {
+                if make_instr_opt(self, lhs, rhs)? {
+                    // Case: the custom logic applied its optimization and we can return.
+                    return Ok(());
+                }
+                self.push_binary_instr(lhs, rhs, make_instr)
+            }
+            (Provider::Register(lhs), Provider::Const(rhs)) => {
+                if make_instr_reg_imm_opt(self, lhs, T::from(rhs))? {
+                    // Case: the custom logic applied its optimization and we can return.
+                    return Ok(());
+                }
+                self.push_binary_instr_imm(lhs, T::from(rhs), make_instr_imm, make_instr_imm_param)
+            }
+            (Provider::Const(lhs), Provider::Register(rhs)) => {
+                if make_instr_imm_reg_opt(self, T::from(lhs), rhs)? {
+                    // Case: the custom logic applied its optimization and we can return.
                     return Ok(());
                 }
                 self.push_binary_instr_imm(

@@ -1258,7 +1258,38 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_f32_sub(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(
+            Instruction::f32_sub,
+            Instruction::f32_sub_imm,
+            Instruction::f32_sub_imm_rev,
+            Self::make_instr_imm_param_32,
+            UntypedValue::f32_sub,
+            Self::no_custom_opt,
+            |this, lhs: Register, rhs: f32| {
+                if rhs.is_nan() {
+                    // Optimization: non-canonicalized NaN propagation.
+                    this.alloc.stack.push_const(rhs);
+                    return Ok(true);
+                }
+                if rhs == 0.0 || rhs == -0.0 {
+                    // Optimization: `add x + 0` is same as `x`
+                    this.alloc.stack.push_register(lhs)?;
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: f32, rhs: Register| {
+                if lhs.is_nan() {
+                    // Optimization: non-canonicalized NaN propagation.
+                    this.alloc.stack.push_const(lhs);
+                    return Ok(true);
+                }
+                // Unfortuantely we cannot optimize for the case that `lhs == 0.0`
+                // since the Wasm specification mandates different behavior in
+                // dependence of `rhs` which we do not know at this point.
+                Ok(false)
+            },
+        )
     }
 
     fn visit_f32_mul(&mut self) -> Self::Output {
