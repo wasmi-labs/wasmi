@@ -22,17 +22,18 @@ fn reg_nan() {
     // Note: Unfortunately we cannot use convenience functions
     //       for test case since f32 NaN `Display` implementation
     //       differs from what the `wat2wasm` parser expects.
-    let wasm = wat2wasm(
+    let ty = WASM_OP.ty();
+    let wasm = wat2wasm(&format!(
         r#"
         (module
-            (func (param f32) (result f32)
+            (func (param {ty}) (result {ty})
                 local.get 0
-                f32.const nan
-                f32.add
+                {ty}.const nan
+                {WASM_OP}
             )
         )
     "#,
-    );
+    ));
     let expected = [Instruction::ReturnImm32 {
         value: Const32::from(f32::NAN),
     }];
@@ -44,17 +45,18 @@ fn nan_reg() {
     // Note: Unfortunately we cannot use convenience functions
     //       for test case since f32 NaN `Display` implementation
     //       differs from what the `wat2wasm` parser expects.
-    let wasm = wat2wasm(
+    let ty = WASM_OP.ty();
+    let wasm = wat2wasm(&format!(
         r#"
         (module
-            (func (param f32) (result f32)
-                f32.const nan
+            (func (param {ty}) (result {ty})
+                {ty}.const nan
                 local.get 0
-                f32.add
+                {WASM_OP}
             )
         )
     "#,
-    );
+    ));
     let expected = [Instruction::ReturnImm32 {
         value: Const32::from(f32::NAN),
     }];
