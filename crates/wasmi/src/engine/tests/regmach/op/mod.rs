@@ -2,6 +2,7 @@ mod f32_add;
 mod f32_max;
 mod f32_min;
 mod f32_mul;
+mod f64_add;
 mod i32_add;
 mod i32_and;
 mod i32_div_s;
@@ -51,7 +52,9 @@ use super::{
     wat2wasm,
     Const16,
     Const32,
+    ConstRef,
     Instruction,
     Register,
+    TranslationTest,
     WasmOp,
 };

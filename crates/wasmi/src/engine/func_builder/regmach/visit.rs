@@ -1348,7 +1348,21 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_f64_add(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary_commutative(
+            Instruction::f64_add,
+            Instruction::f64_add_imm,
+            Self::make_instr_imm_param_64,
+            UntypedValue::f64_add,
+            Self::no_custom_opt,
+            |this, reg: Register, value: f64| {
+                if value == 0.0 || value == -0.0 {
+                    // Optimization: `add x + 0` is same as `x`
+                    this.alloc.stack.push_register(reg)?;
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_f64_sub(&mut self) -> Self::Output {
