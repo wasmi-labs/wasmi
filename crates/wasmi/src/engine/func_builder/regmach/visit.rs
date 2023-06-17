@@ -1487,7 +1487,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_f64_copysign(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fcopysign(
+            Instruction::f64_copysign,
+            Instruction::f64_copysign_imm,
+            Instruction::f64_copysign_imm_rev,
+            Self::make_instr_imm_param_64::<f64>,
+            UntypedValue::f64_copysign,
+        )
     }
 
     fn visit_i32_wrap_i64(&mut self) -> Self::Output {

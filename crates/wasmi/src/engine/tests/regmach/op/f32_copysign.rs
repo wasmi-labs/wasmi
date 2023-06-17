@@ -18,8 +18,8 @@ fn reg_imm() {
             },
         ]
     }
-    test_binary_reg_imm_with(WASM_OP, 1.0, make_instrs(Sign::Pos));
-    test_binary_reg_imm_with(WASM_OP, -1.0, make_instrs(Sign::Neg));
+    test_binary_reg_imm_with(WASM_OP, 1.0_f32, make_instrs(Sign::Pos));
+    test_binary_reg_imm_with(WASM_OP, -1.0_f32, make_instrs(Sign::Neg));
 }
 
 #[test]
