@@ -48,6 +48,8 @@ mod i64_div_s;
 mod i64_div_u;
 mod i64_eq;
 mod i64_eqz;
+mod i64_gt_s;
+mod i64_lt_s;
 mod i64_mul;
 mod i64_ne;
 mod i64_or;
