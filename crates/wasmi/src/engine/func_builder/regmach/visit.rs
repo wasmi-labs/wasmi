@@ -358,8 +358,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             UntypedValue::i32_eq,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
-                    // Optimization: `x == x` is always `true` or `1`
-                    this.alloc.stack.push_const(UntypedValue::from(1_i32));
+                    // Optimization: `x == x` is always `true`
+                    this.alloc.stack.push_const(true);
                     return Ok(true);
                 }
                 Ok(false)
@@ -377,8 +377,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             UntypedValue::i32_ne,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
-                    // Optimization: `x != x` is always `false` or `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    // Optimization: `x != x` is always `false`
+                    this.alloc.stack.push_const(false);
                     return Ok(true);
                 }
                 Ok(false)
@@ -398,24 +398,24 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             UntypedValue::i32_lt_s,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
-                    // Optimization: `x < x` is always `false` or `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    // Optimization: `x < x` is always `false`
+                    this.alloc.stack.push_const(false);
                     return Ok(true);
                 }
                 Ok(false)
             },
             |this, lhs: Register, rhs: i32| {
                 if rhs == i32::MIN {
-                    // Optimization: `x < MIN` is always `false` or `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    // Optimization: `x < MIN` is always `false`
+                    this.alloc.stack.push_const(false);
                     return Ok(true);
                 }
                 Ok(false)
             },
             |this, lhs: i32, rhs: Register| {
                 if lhs == i32::MAX {
-                    // Optimization: `MAX < x` is always `false` or `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    // Optimization: `MAX < x` is always `false`
+                    this.alloc.stack.push_const(false);
                     return Ok(true);
                 }
                 Ok(false)
@@ -438,24 +438,24 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             UntypedValue::i32_gt_s,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
-                    // Optimization: `x < x` is always `false` or `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    // Optimization: `x < x` is always `false`
+                    this.alloc.stack.push_const(false);
                     return Ok(true);
                 }
                 Ok(false)
             },
             |this, lhs: Register, rhs: i32| {
                 if rhs == i32::MAX {
-                    // Optimization: `x > MAX` is always `false` or `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    // Optimization: `x > MAX` is always `false`
+                    this.alloc.stack.push_const(false);
                     return Ok(true);
                 }
                 Ok(false)
             },
             |this, lhs: i32, rhs: Register| {
                 if lhs == i32::MIN {
-                    // Optimization: `MIN > x` is always `false` or `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    // Optimization: `MIN > x` is always `false`
+                    this.alloc.stack.push_const(false);
                     return Ok(true);
                 }
                 Ok(false)
@@ -499,8 +499,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             UntypedValue::i64_eq,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
-                    // Optimization: `x == x` is always `true` or `1`
-                    this.alloc.stack.push_const(UntypedValue::from(1_i32));
+                    // Optimization: `x == x` is always `true`
+                    this.alloc.stack.push_const(true);
                     return Ok(true);
                 }
                 Ok(false)
@@ -518,8 +518,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             UntypedValue::i64_ne,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
-                    // Optimization: `x != x` is always `false` or `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    // Optimization: `x != x` is always `false`
+                    this.alloc.stack.push_const(false);
                     return Ok(true);
                 }
                 Ok(false)
@@ -568,16 +568,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             UntypedValue::f32_eq,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
-                    // Optimization: `x == x` is always `true` or `1`
-                    this.alloc.stack.push_const(UntypedValue::from(1_i32));
+                    // Optimization: `x == x` is always `true`
+                    this.alloc.stack.push_const(true);
                     return Ok(true);
                 }
                 Ok(false)
             },
             |this, reg_in: Register, imm_in: f32| {
                 if imm_in.is_nan() {
-                    // Optimization: `NaN == x` or `x == NaN` is always `false` or `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    // Optimization: `NaN == x` or `x == NaN` is always `false`
+                    this.alloc.stack.push_const(false);
                     return Ok(true);
                 }
                 Ok(false)
@@ -593,16 +593,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             UntypedValue::f32_ne,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
-                    // Optimization: `x != x` is always `false` or `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    // Optimization: `x != x` is always `false`
+                    this.alloc.stack.push_const(false);
                     return Ok(true);
                 }
                 Ok(false)
             },
             |this, reg_in: Register, imm_in: f32| {
                 if imm_in.is_nan() {
-                    // Optimization: `NaN == x` or `x == NaN` is always `true` or `1`
-                    this.alloc.stack.push_const(UntypedValue::from(1_i32));
+                    // Optimization: `NaN == x` or `x == NaN` is always `true`
+                    this.alloc.stack.push_const(true);
                     return Ok(true);
                 }
                 Ok(false)
@@ -634,16 +634,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             UntypedValue::f64_eq,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
-                    // Optimization: `x == x` is always `true` or `1`
-                    this.alloc.stack.push_const(UntypedValue::from(1_i32));
+                    // Optimization: `x == x` is always `true`
+                    this.alloc.stack.push_const(true);
                     return Ok(true);
                 }
                 Ok(false)
             },
             |this, reg_in: Register, imm_in: f64| {
                 if imm_in.is_nan() {
-                    // Optimization: `NaN == x` or `x == NaN` is always `false` or `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    // Optimization: `NaN == x` or `x == NaN` is always `false`
+                    this.alloc.stack.push_const(false);
                     return Ok(true);
                 }
                 Ok(false)
@@ -659,16 +659,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             UntypedValue::f64_ne,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
-                    // Optimization: `x != x` is always `false` or `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    // Optimization: `x != x` is always `false`
+                    this.alloc.stack.push_const(false);
                     return Ok(true);
                 }
                 Ok(false)
             },
             |this, reg_in: Register, imm_in: f64| {
                 if imm_in.is_nan() {
-                    // Optimization: `NaN == x` or `x == NaN` is always `true` or `1`
-                    this.alloc.stack.push_const(UntypedValue::from(1_i32));
+                    // Optimization: `NaN == x` or `x == NaN` is always `true`
+                    this.alloc.stack.push_const(true);
                     return Ok(true);
                 }
                 Ok(false)
