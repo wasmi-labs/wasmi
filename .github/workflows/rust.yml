@@ -258,12 +258,12 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-miri-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-miri-
-      - name: Clippy (--lib)
+      - name: Miri (--lib)
         uses: actions-rs/cargo@v1
         with:
           command: miri
           args: test --lib --workspace
-      - name: Clippy (--doc)
+      - name: Miri (--doc)
         uses: actions-rs/cargo@v1
         with:
           command: miri
