@@ -8,6 +8,15 @@ use crate::engine::{
 use wasmi_core::{TrapCode, UntypedValue, ValueType, F32, F64};
 use wasmparser::VisitOperator;
 
+/// Used to swap operands of a `rev` variant [`Instruction`] constructor.
+macro_rules! swap_ops {
+    ($fn_name:path) => {
+        |result: Register, lhs: Const16, rhs: Register| -> Instruction {
+            $fn_name(result, rhs, lhs)
+        }
+    };
+}
+
 macro_rules! impl_visit_operator {
     ( @mvp $($rest:tt)* ) => {
         impl_visit_operator!(@@skipped $($rest)*);
@@ -379,7 +388,39 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_lt_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary(
+            Instruction::i32_lt_s,
+            Instruction::i32_lt_s_imm,
+            Instruction::i32_gt_s_imm,
+            Self::make_instr_imm_param_32,
+            Instruction::i32_lt_s_imm16,
+            swap_ops!(Instruction::i32_gt_s_imm16),
+            UntypedValue::i32_lt_s,
+            |this, lhs: Register, rhs: Register| {
+                if lhs == rhs {
+                    // Optimization: `x < x` is always `false` or `0`
+                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: Register, rhs: i32| {
+                if rhs == i32::MIN {
+                    // Optimization: `x < MIN` is always `false` or `0`
+                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: i32, rhs: Register| {
+                if lhs == i32::MAX {
+                    // Optimization: `MAX < x` is always `false` or `0`
+                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_i32_lt_u(&mut self) -> Self::Output {
@@ -387,7 +428,39 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_gt_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary(
+            Instruction::i32_gt_s,
+            Instruction::i32_gt_s_imm,
+            Instruction::i32_lt_s_imm,
+            Self::make_instr_imm_param_32,
+            Instruction::i32_gt_s_imm16,
+            swap_ops!(Instruction::i32_lt_s_imm16),
+            UntypedValue::i32_gt_s,
+            |this, lhs: Register, rhs: Register| {
+                if lhs == rhs {
+                    // Optimization: `x < x` is always `false` or `0`
+                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: Register, rhs: i32| {
+                if rhs == i32::MAX {
+                    // Optimization: `x > MAX` is always `false` or `0`
+                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: i32, rhs: Register| {
+                if lhs == i32::MIN {
+                    // Optimization: `MIN > x` is always `false` or `0`
+                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_i32_gt_u(&mut self) -> Self::Output {

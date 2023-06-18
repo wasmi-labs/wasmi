@@ -160,6 +160,14 @@ impl Instruction {
         fn i64_ne_imm(binary_imm) -> Self::I64NeImm;
         fn i64_ne_imm16(binary_imm16) -> Self::I64NeImm16;
 
+        fn i32_lt_s(binary) -> Self::I32LtS;
+        fn i32_lt_s_imm(binary_imm) -> Self::I32LtSImm;
+        fn i32_lt_s_imm16(binary_imm16) -> Self::I32LtSImm16;
+
+        fn i32_gt_s(binary) -> Self::I32GtS;
+        fn i32_gt_s_imm(binary_imm) -> Self::I32GtSImm;
+        fn i32_gt_s_imm16(binary_imm16) -> Self::I32GtSImm16;
+
         // Float Comparison
 
         fn f32_eq(binary) -> Self::F32Eq;

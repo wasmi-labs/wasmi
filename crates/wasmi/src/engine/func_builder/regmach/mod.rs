@@ -405,7 +405,7 @@ impl<'parser> FuncTranslator<'parser> {
     ///
     /// Used for translating the following Wasm operators to `wasmi` bytecode:
     ///
-    /// - `{i32, i64}.sub`
+    /// - `{i32, i64}.{sub, lt_s, lt_u, le_s, le_u, gt_s, gt_u, ge_s, ge_u}`
     #[allow(clippy::too_many_arguments)]
     fn translate_binary<T>(
         &mut self,

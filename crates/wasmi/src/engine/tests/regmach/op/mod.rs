@@ -22,6 +22,8 @@ mod i32_div_s;
 mod i32_div_u;
 mod i32_eq;
 mod i32_eqz;
+mod i32_gt_s;
+mod i32_lt_s;
 mod i32_mul;
 mod i32_ne;
 mod i32_or;
