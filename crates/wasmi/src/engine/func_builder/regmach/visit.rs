@@ -532,7 +532,39 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_le_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary(
+            Instruction::i32_le_s,
+            Instruction::i32_le_s_imm,
+            Instruction::i32_ge_s_imm,
+            Self::make_instr_imm_param_32,
+            Instruction::i32_le_s_imm16,
+            swap_ops!(Instruction::i32_ge_s_imm16),
+            UntypedValue::i32_le_s,
+            |this, lhs: Register, rhs: Register| {
+                if lhs == rhs {
+                    // Optimization: `x <= x` is always `true`
+                    this.alloc.stack.push_const(true);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: Register, rhs: i32| {
+                if rhs == i32::MAX {
+                    // Optimization: `x <= MAX` is always `true`
+                    this.alloc.stack.push_const(true);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: i32, rhs: Register| {
+                if lhs == i32::MIN {
+                    // Optimization: `MIN <= x` is always `true`
+                    this.alloc.stack.push_const(true);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_i32_le_u(&mut self) -> Self::Output {
@@ -540,7 +572,39 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_ge_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary(
+            Instruction::i32_ge_s,
+            Instruction::i32_ge_s_imm,
+            Instruction::i32_le_s_imm,
+            Self::make_instr_imm_param_32,
+            Instruction::i32_ge_s_imm16,
+            swap_ops!(Instruction::i32_le_s_imm16),
+            UntypedValue::i32_ge_s,
+            |this, lhs: Register, rhs: Register| {
+                if lhs == rhs {
+                    // Optimization: `x >= x` is always `true`
+                    this.alloc.stack.push_const(true);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: Register, rhs: i32| {
+                if rhs == i32::MIN {
+                    // Optimization: `x >= MIN` is always `true`
+                    this.alloc.stack.push_const(true);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: i32, rhs: Register| {
+                if lhs == i32::MAX {
+                    // Optimization: `MAX >= x` is always `true`
+                    this.alloc.stack.push_const(true);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_i32_ge_u(&mut self) -> Self::Output {
