@@ -865,19 +865,147 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_le_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary(
+            Instruction::i64_le_s,
+            Instruction::i64_le_s_imm,
+            Instruction::i64_ge_s_imm,
+            Self::make_instr_imm_param_64,
+            Instruction::i64_le_s_imm16,
+            swap_ops!(Instruction::i64_ge_s_imm16),
+            UntypedValue::i64_le_s,
+            |this, lhs: Register, rhs: Register| {
+                if lhs == rhs {
+                    // Optimization: `x <= x` is always `true`
+                    this.alloc.stack.push_const(true);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: Register, rhs: i64| {
+                if rhs == i64::MAX {
+                    // Optimization: `x <= MAX` is always `true`
+                    this.alloc.stack.push_const(true);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: i64, rhs: Register| {
+                if lhs == i64::MIN {
+                    // Optimization: `MIN <= x` is always `true`
+                    this.alloc.stack.push_const(true);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_i64_le_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary(
+            Instruction::i64_le_u,
+            Instruction::i64_le_u_imm,
+            Instruction::i64_ge_u_imm,
+            Self::make_instr_imm_param_64,
+            Instruction::i64_le_u_imm16,
+            swap_ops!(Instruction::i64_ge_u_imm16),
+            UntypedValue::i64_le_u,
+            |this, lhs: Register, rhs: Register| {
+                if lhs == rhs {
+                    // Optimization: `x <= x` is always `true`
+                    this.alloc.stack.push_const(true);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: Register, rhs: u64| {
+                if rhs == u64::MAX {
+                    // Optimization: `x <= MAX` is always `true`
+                    this.alloc.stack.push_const(true);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: u64, rhs: Register| {
+                if lhs == u64::MIN {
+                    // Optimization: `MIN <= x` is always `true`
+                    this.alloc.stack.push_const(true);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_i64_ge_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary(
+            Instruction::i64_ge_s,
+            Instruction::i64_ge_s_imm,
+            Instruction::i64_le_s_imm,
+            Self::make_instr_imm_param_64,
+            Instruction::i64_ge_s_imm16,
+            swap_ops!(Instruction::i64_le_s_imm16),
+            UntypedValue::i64_ge_s,
+            |this, lhs: Register, rhs: Register| {
+                if lhs == rhs {
+                    // Optimization: `x >= x` is always `true`
+                    this.alloc.stack.push_const(true);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: Register, rhs: i64| {
+                if rhs == i64::MIN {
+                    // Optimization: `x >= MIN` is always `true`
+                    this.alloc.stack.push_const(true);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: i64, rhs: Register| {
+                if lhs == i64::MAX {
+                    // Optimization: `MAX >= x` is always `true`
+                    this.alloc.stack.push_const(true);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_i64_ge_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary(
+            Instruction::i64_ge_u,
+            Instruction::i64_ge_u_imm,
+            Instruction::i64_le_u_imm,
+            Self::make_instr_imm_param_64,
+            Instruction::i64_ge_u_imm16,
+            swap_ops!(Instruction::i64_le_u_imm16),
+            UntypedValue::i64_ge_u,
+            |this, lhs: Register, rhs: Register| {
+                if lhs == rhs {
+                    // Optimization: `x >= x` is always `true`
+                    this.alloc.stack.push_const(true);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: Register, rhs: u64| {
+                if rhs == u64::MIN {
+                    // Optimization: `x >= MIN` is always `true`
+                    this.alloc.stack.push_const(true);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: u64, rhs: Register| {
+                if lhs == u64::MAX {
+                    // Optimization: `MAX >= x` is always `true`
+                    this.alloc.stack.push_const(true);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_f32_eq(&mut self) -> Self::Output {
