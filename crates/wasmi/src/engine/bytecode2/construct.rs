@@ -172,6 +172,10 @@ impl Instruction {
         fn i32_le_s_imm(binary_imm) -> Self::I32LeSImm;
         fn i32_le_s_imm16(binary_imm16) -> Self::I32LeSImm16;
 
+        fn i32_le_u(binary) -> Self::I32LeU;
+        fn i32_le_u_imm(binary_imm) -> Self::I32LeUImm;
+        fn i32_le_u_imm16(binary_imm16) -> Self::I32LeUImm16;
+
         fn i32_gt_s(binary) -> Self::I32GtS;
         fn i32_gt_s_imm(binary_imm) -> Self::I32GtSImm;
         fn i32_gt_s_imm16(binary_imm16) -> Self::I32GtSImm16;
@@ -183,6 +187,10 @@ impl Instruction {
         fn i32_ge_s(binary) -> Self::I32GeS;
         fn i32_ge_s_imm(binary_imm) -> Self::I32GeSImm;
         fn i32_ge_s_imm16(binary_imm16) -> Self::I32GeSImm16;
+
+        fn i32_ge_u(binary) -> Self::I32GeU;
+        fn i32_ge_u_imm(binary_imm) -> Self::I32GeUImm;
+        fn i32_ge_u_imm16(binary_imm16) -> Self::I32GeUImm16;
 
         // Float Comparison
 
