@@ -431,7 +431,22 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_ne(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_commutative::<i64>(
+            Instruction::i64_ne,
+            Instruction::i64_ne_imm,
+            Self::make_instr_imm_param_64,
+            Instruction::i64_ne_imm16,
+            UntypedValue::i64_ne,
+            |this, lhs: Register, rhs: Register| {
+                if lhs == rhs {
+                    // Optimization: `x != x` is always `false` or `0`
+                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            Self::no_custom_opt,
+        )
     }
 
     fn visit_i64_lt_s(&mut self) -> Self::Output {
