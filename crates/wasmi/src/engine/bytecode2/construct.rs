@@ -165,6 +165,9 @@ impl Instruction {
         fn f32_eq(binary) -> Self::F32Eq;
         fn f32_eq_imm(binary_imm) -> Self::F32EqImm;
 
+        fn f32_ne(binary) -> Self::F32Ne;
+        fn f32_ne_imm(binary_imm) -> Self::F32NeImm;
+
         // Integer Arithmetic
 
         fn i32_add(binary) -> Self::I32Add;

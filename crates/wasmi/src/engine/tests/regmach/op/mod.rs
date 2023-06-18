@@ -5,6 +5,7 @@ mod f32_eq;
 mod f32_max;
 mod f32_min;
 mod f32_mul;
+mod f32_ne;
 mod f32_sub;
 mod f64_add;
 mod f64_copysign;
