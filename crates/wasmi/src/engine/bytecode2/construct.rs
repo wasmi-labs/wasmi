@@ -142,6 +142,12 @@ impl Instruction {
         fn f64_copysign(binary) -> Self::F64Copysign;
         fn f64_copysign_imm_rev(binary_imm) -> Self::F64CopysignImmRev;
 
+        // Integer Comparison
+
+        fn i32_eq(binary) -> Self::I32Eq;
+        fn i32_eq_imm(binary_imm) -> Self::I32EqImm;
+        fn i32_eq_imm16(binary_imm16) -> Self::I32EqImm16;
+
         // Integer Arithmetic
 
         fn i32_add(binary) -> Self::I32Add;

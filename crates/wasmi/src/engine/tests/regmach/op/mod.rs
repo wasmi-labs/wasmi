@@ -16,6 +16,7 @@ mod i32_add;
 mod i32_and;
 mod i32_div_s;
 mod i32_div_u;
+mod i32_eq;
 mod i32_mul;
 mod i32_or;
 mod i32_rem_s;
