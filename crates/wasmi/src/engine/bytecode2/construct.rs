@@ -172,6 +172,10 @@ impl Instruction {
         fn i32_lt_u_imm(binary_imm) -> Self::I32LtUImm;
         fn i32_lt_u_imm16(binary_imm16) -> Self::I32LtUImm16;
 
+        fn i64_lt_u(binary) -> Self::I64LtU;
+        fn i64_lt_u_imm(binary_imm) -> Self::I64LtUImm;
+        fn i64_lt_u_imm16(binary_imm16) -> Self::I64LtUImm16;
+
         fn i32_le_s(binary) -> Self::I32LeS;
         fn i32_le_s_imm(binary_imm) -> Self::I32LeSImm;
         fn i32_le_s_imm16(binary_imm16) -> Self::I32LeSImm16;
@@ -191,6 +195,10 @@ impl Instruction {
         fn i32_gt_u(binary) -> Self::I32GtU;
         fn i32_gt_u_imm(binary_imm) -> Self::I32GtUImm;
         fn i32_gt_u_imm16(binary_imm16) -> Self::I32GtUImm16;
+
+        fn i64_gt_u(binary) -> Self::I64GtU;
+        fn i64_gt_u_imm(binary_imm) -> Self::I64GtUImm;
+        fn i64_gt_u_imm16(binary_imm16) -> Self::I64GtUImm16;
 
         fn i32_ge_s(binary) -> Self::I32GeS;
         fn i32_ge_s_imm(binary_imm) -> Self::I32GeSImm;

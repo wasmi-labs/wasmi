@@ -38,6 +38,14 @@ impl TryFrom<i64> for Const16 {
     }
 }
 
+impl TryFrom<u64> for Const16 {
+    type Error = OutOfBoundsConst16;
+
+    fn try_from(value: u64) -> Result<Self, Self::Error> {
+        Self::from_u64(value).ok_or(OutOfBoundsConst16)
+    }
+}
+
 impl Const16 {
     /// Creates an [`Const16`] from the given `i16` value.
     pub fn from_i16(value: i16) -> Self {
@@ -49,13 +57,19 @@ impl Const16 {
         i16::try_from(value).ok().map(Self)
     }
 
+    /// Creates an [`Const16`] from the given `u32` value if possible.
+    pub fn from_u32(value: u32) -> Option<Self> {
+        let value = u16::try_from(value).ok()? as i16;
+        Some(Self(value))
+    }
+
     /// Creates an [`Const16`] from the given `i64` value if possible.
     pub fn from_i64(value: i64) -> Option<Self> {
         i16::try_from(value).ok().map(Self)
     }
 
-    /// Creates an [`Const16`] from the given `u32` value if possible.
-    pub fn from_u32(value: u32) -> Option<Self> {
+    /// Creates an [`Const16`] from the given `u64` value if possible.
+    pub fn from_u64(value: u64) -> Option<Self> {
         let value = u16::try_from(value).ok()? as i16;
         Some(Self(value))
     }
