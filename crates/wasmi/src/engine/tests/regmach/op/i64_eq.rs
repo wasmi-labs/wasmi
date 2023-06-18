@@ -5,7 +5,7 @@ const WASM_OP: WasmOp = WasmOp::cmp(WasmType::I64, "eq");
 #[test]
 fn same_reg() {
     let expected = [Instruction::ReturnImm32 {
-        value: Const32::from_i32(1),
+        value: Const32::from(true),
     }];
     test_binary_same_reg(WASM_OP, expected)
 }
@@ -42,7 +42,7 @@ fn consteval() {
         1,
         1,
         [Instruction::ReturnImm32 {
-            value: Const32::from_i32(1),
+            value: Const32::from(true),
         }],
     );
     test_binary_consteval(
@@ -50,7 +50,7 @@ fn consteval() {
         42,
         5,
         [Instruction::ReturnImm32 {
-            value: Const32::from_i32(0),
+            value: Const32::from(false),
         }],
     );
 }

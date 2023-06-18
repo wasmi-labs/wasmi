@@ -5,7 +5,7 @@ const WASM_OP: WasmOp = WasmOp::cmp(WasmType::F64, "eq");
 #[test]
 fn same_reg() {
     let expected = [Instruction::ReturnImm32 {
-        value: Const32::from_i32(1),
+        value: Const32::from(true),
     }];
     test_binary_same_reg(WASM_OP, expected)
 }
@@ -44,7 +44,7 @@ fn reg_nan() {
     "#,
     ));
     let expected = [Instruction::ReturnImm32 {
-        value: Const32::from(0),
+        value: Const32::from(false),
     }];
     assert_func_bodies(wasm, [expected]);
 }
@@ -68,7 +68,7 @@ fn nan_reg() {
     "#,
     ));
     let expected = [Instruction::ReturnImm32 {
-        value: Const32::from(0),
+        value: Const32::from(false),
     }];
     assert_func_bodies(wasm, [expected]);
 }

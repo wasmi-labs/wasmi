@@ -5,7 +5,7 @@ const WASM_OP: WasmOp = WasmOp::binary(WasmType::I32, "lt_u");
 #[test]
 fn same_reg() {
     let expected = [Instruction::ReturnImm32 {
-        value: Const32::from_i32(0),
+        value: Const32::from(false),
     }];
     test_binary_same_reg(WASM_OP, expected)
 }
@@ -38,7 +38,7 @@ fn reg_imm_rev() {
 #[test]
 fn reg_min() {
     let expected = [Instruction::ReturnImm32 {
-        value: Const32::from_i32(0),
+        value: Const32::from(false),
     }];
     test_binary_reg_imm_with(WASM_OP, u32::MIN, expected)
 }
@@ -46,7 +46,7 @@ fn reg_min() {
 #[test]
 fn max_reg() {
     let expected = [Instruction::ReturnImm32 {
-        value: Const32::from_i32(0),
+        value: Const32::from(false),
     }];
     test_binary_reg_imm_rev_with(WASM_OP, u32::MAX, expected)
 }
@@ -60,7 +60,7 @@ fn consteval() {
         lhs,
         rhs,
         [Instruction::ReturnImm32 {
-            value: Const32::from_i32(i32::from(lhs < rhs)),
+            value: Const32::from(lhs < rhs),
         }],
     )
 }

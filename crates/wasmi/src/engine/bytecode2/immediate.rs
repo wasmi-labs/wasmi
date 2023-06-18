@@ -99,6 +99,12 @@ impl TryFrom<i64> for Const32 {
     }
 }
 
+impl From<bool> for Const32 {
+    fn from(value: bool) -> Self {
+        Self::from_bool(value)
+    }
+}
+
 impl From<i32> for Const32 {
     fn from(value: i32) -> Self {
         Self::from_i32(value)
@@ -124,6 +130,11 @@ impl From<F32> for Const32 {
 }
 
 impl Const32 {
+    /// Creates a [`Const32`] from the given `bool` value.
+    pub fn from_bool(value: bool) -> Self {
+        Self::from_u32(u32::from(value))
+    }
+
     /// Creates an [`Const32`] from the given `u32` value.
     pub fn from_u32(value: u32) -> Self {
         Self(value.to_ne_bytes())

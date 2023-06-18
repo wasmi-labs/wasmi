@@ -41,7 +41,7 @@ fn imm_with(value: i32) {
     ));
     TranslationTest::new(wasm)
         .expect_func([Instruction::ReturnImm32 {
-            value: Const32::from(i32::from(value == 0)),
+            value: Const32::from(value == 0),
         }])
         .run();
 }
