@@ -634,7 +634,7 @@ impl<'parser> FuncTranslator<'parser> {
     ///
     /// Used for translating the following Wasm operators to `wasmi` bytecode:
     ///
-    /// - `{i32, i64}.{add, mul, and, or, xor}`
+    /// - `{i32, i64}.{eq, ne, add, mul, and, or, xor}`
     #[allow(clippy::too_many_arguments)]
     fn translate_binary_commutative<T>(
         &mut self,
