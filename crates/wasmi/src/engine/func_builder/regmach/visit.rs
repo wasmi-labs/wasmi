@@ -411,7 +411,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_eqz(&mut self) -> Self::Output {
-        todo!()
+        bail_unreachable!(self);
+        // Push a zero on the value stack so we can translate `i64.eqz` as `i64.eq(x, 0)`.
+        self.alloc.stack.push_const(0_i64);
+        self.visit_i64_eq()
     }
 
     fn visit_i64_eq(&mut self) -> Self::Output {
