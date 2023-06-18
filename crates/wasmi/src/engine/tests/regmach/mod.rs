@@ -67,15 +67,9 @@ where
 #[derive(Debug, Copy, Clone)]
 pub enum WasmOp {
     /// For Wasm functions with signature: `fn(T, T) -> T`
-    Binary {
-        ty: WasmType,
-        op: &'static str,
-    },
+    Binary { ty: WasmType, op: &'static str },
     /// For Wasm functions with signature: `fn(T, T) -> i32`
-    Cmp {
-        ty: WasmType,
-        op: &'static str,
-    },
+    Cmp { ty: WasmType, op: &'static str },
 }
 
 impl WasmOp {
