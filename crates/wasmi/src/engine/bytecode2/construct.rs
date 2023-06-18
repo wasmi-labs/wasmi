@@ -148,6 +148,10 @@ impl Instruction {
         fn i32_eq_imm(binary_imm) -> Self::I32EqImm;
         fn i32_eq_imm16(binary_imm16) -> Self::I32EqImm16;
 
+        fn i64_eq(binary) -> Self::I64Eq;
+        fn i64_eq_imm(binary_imm) -> Self::I64EqImm;
+        fn i64_eq_imm16(binary_imm16) -> Self::I64EqImm16;
+
         fn i32_ne(binary) -> Self::I32Ne;
         fn i32_ne_imm(binary_imm) -> Self::I32NeImm;
         fn i32_ne_imm16(binary_imm16) -> Self::I32NeImm16;

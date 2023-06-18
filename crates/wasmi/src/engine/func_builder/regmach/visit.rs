@@ -412,7 +412,22 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_eq(&mut self) -> Self::Output {
-        todo!()
+        self.translate_binary_commutative::<i64>(
+            Instruction::i64_eq,
+            Instruction::i64_eq_imm,
+            Self::make_instr_imm_param_64,
+            Instruction::i64_eq_imm16,
+            UntypedValue::i64_eq,
+            |this, lhs: Register, rhs: Register| {
+                if lhs == rhs {
+                    // Optimization: `x == x` is always `true` or `1`
+                    this.alloc.stack.push_const(UntypedValue::from(1_i32));
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            Self::no_custom_opt,
+        )
     }
 
     fn visit_i64_ne(&mut self) -> Self::Output {

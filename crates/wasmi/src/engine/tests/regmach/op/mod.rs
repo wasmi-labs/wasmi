@@ -33,6 +33,7 @@ mod i64_add;
 mod i64_and;
 mod i64_div_s;
 mod i64_div_u;
+mod i64_eq;
 mod i64_mul;
 mod i64_or;
 mod i64_rem_s;
