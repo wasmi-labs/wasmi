@@ -1,6 +1,6 @@
 use super::*;
 
-const WASM_OP: WasmOp = WasmOp::binary(WasmType::I32, "gt_s");
+const WASM_OP: WasmOp = WasmOp::cmp(WasmType::I32, "gt_s");
 
 #[test]
 fn same_reg() {
