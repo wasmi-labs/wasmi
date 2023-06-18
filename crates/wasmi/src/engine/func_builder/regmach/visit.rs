@@ -365,7 +365,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             UntypedValue::i32_ne,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
-                    // Optimization: `x == x` is always `false` or `0`
+                    // Optimization: `x != x` is always `false` or `0`
                     this.alloc.stack.push_const(UntypedValue::from(0_i32));
                     return Ok(true);
                 }
