@@ -470,7 +470,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             UntypedValue::i32_gt_s,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
-                    // Optimization: `x < x` is always `false`
+                    // Optimization: `x > x` is always `false`
                     this.alloc.stack.push_const(false);
                     return Ok(true);
                 }
@@ -506,7 +506,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             UntypedValue::i32_gt_u,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
-                    // Optimization: `x < x` is always `false`
+                    // Optimization: `x > x` is always `false`
                     this.alloc.stack.push_const(false);
                     return Ok(true);
                 }
@@ -803,7 +803,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             UntypedValue::i64_gt_s,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
-                    // Optimization: `x < x` is always `false`
+                    // Optimization: `x > x` is always `false`
                     this.alloc.stack.push_const(false);
                     return Ok(true);
                 }
@@ -839,7 +839,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             UntypedValue::i64_gt_u,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
-                    // Optimization: `x < x` is always `false`
+                    // Optimization: `x > x` is always `false`
                     this.alloc.stack.push_const(false);
                     return Ok(true);
                 }
