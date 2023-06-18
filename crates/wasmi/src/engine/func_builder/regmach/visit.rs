@@ -334,7 +334,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_eqz(&mut self) -> Self::Output {
-        todo!()
+        bail_unreachable!(self);
+        // Push a zero on the value stack so we can translate `i32.eqz` as `i32.eq(x, 0)`.
+        self.alloc.stack.push_const(0_i32);
+        self.visit_i32_eq()
     }
 
     fn visit_i32_eq(&mut self) -> Self::Output {
