@@ -579,7 +579,28 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_f64_ne(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary_commutative::<f64>(
+            Instruction::f64_ne,
+            Instruction::f64_ne_imm,
+            Self::make_instr_imm_param_64,
+            UntypedValue::f64_ne,
+            |this, lhs: Register, rhs: Register| {
+                if lhs == rhs {
+                    // Optimization: `x != x` is always `false` or `0`
+                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, reg_in: Register, imm_in: f64| {
+                if imm_in.is_nan() {
+                    // Optimization: `NaN == x` or `x == NaN` is always `true` or `1`
+                    this.alloc.stack.push_const(UntypedValue::from(1_i32));
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_f64_lt(&mut self) -> Self::Output {

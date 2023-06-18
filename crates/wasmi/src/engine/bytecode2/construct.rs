@@ -171,6 +171,9 @@ impl Instruction {
         fn f32_ne(binary) -> Self::F32Ne;
         fn f32_ne_imm(binary_imm) -> Self::F32NeImm;
 
+        fn f64_ne(binary) -> Self::F64Ne;
+        fn f64_ne_imm(binary_imm) -> Self::F64NeImm;
+
         // Integer Arithmetic
 
         fn i32_add(binary) -> Self::I32Add;

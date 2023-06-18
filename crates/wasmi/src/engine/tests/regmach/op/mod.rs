@@ -14,6 +14,7 @@ mod f64_eq;
 mod f64_max;
 mod f64_min;
 mod f64_mul;
+mod f64_ne;
 mod f64_sub;
 mod i32_add;
 mod i32_and;
