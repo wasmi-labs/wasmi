@@ -1,7 +1,7 @@
 use super::*;
 use crate::engine::bytecode2::Sign;
 
-const WASM_OP: WasmOp = WasmOp::F64("copysign");
+const WASM_OP: WasmOp = WasmOp::binary(WasmType::F64, "copysign");
 
 #[test]
 fn reg_reg() {

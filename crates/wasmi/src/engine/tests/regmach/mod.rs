@@ -21,7 +21,7 @@ use crate::{
     Module,
 };
 use std::fmt::Display;
-use wasmi_core::UntypedValue;
+use wasmi_core::{UntypedValue, ValueType};
 
 /// Used to swap operands of a `rev` variant [`Instruction`] constructor.
 macro_rules! swap_ops {
@@ -66,32 +66,62 @@ where
 /// This type is mainly used for test Wasm blob generation.
 #[derive(Debug, Copy, Clone)]
 pub enum WasmOp {
-    I32(&'static str),
-    I64(&'static str),
-    F32(&'static str),
-    F64(&'static str),
+    /// For Wasm functions with signature: `fn(T, T) -> T`
+    Binary {
+        ty: WasmType,
+        op: &'static str,
+    },
+    /// For Wasm functions with signature: `fn(T, T) -> i32`
+    Cmp {
+        ty: WasmType,
+        op: &'static str,
+    },
 }
 
 impl WasmOp {
-    /// Returns the [`WasmType`] of the [`WasmOp`].
-    pub fn ty(&self) -> WasmType {
+    /// Create a new binary [`WasmOp`] for the given [`ValueType`]: `fn(T, T) -> T`
+    pub const fn binary(ty: WasmType, op: &'static str) -> Self {
+        Self::Binary { ty, op }
+    }
+
+    /// Create a new compare [`WasmOp`] for the given [`ValueType`]: `fn(T, T) -> i32`
+    pub const fn cmp(ty: WasmType, op: &'static str) -> Self {
+        Self::Cmp { ty, op }
+    }
+
+    /// Returns the parameter [`ValueType`] of the [`WasmOp`].
+    pub fn param_ty(&self) -> WasmType {
         match self {
-            WasmOp::I32(_) => WasmType::I32,
-            WasmOp::I64(_) => WasmType::I64,
-            WasmOp::F32(_) => WasmType::F32,
-            WasmOp::F64(_) => WasmType::F64,
+            Self::Binary { ty, op: _ } => *ty,
+            Self::Cmp { ty, op: _ } => *ty,
+        }
+    }
+
+    /// Returns the result [`ValueType`] of the [`WasmOp`].
+    pub fn result_ty(&self) -> WasmType {
+        match self {
+            Self::Binary { ty, op: _ } => *ty,
+            Self::Cmp { ty: _, op: _ } => WasmType::I32,
+        }
+    }
+
+    /// Returns the display [`ValueType`] of the [`WasmOp`].
+    pub fn display_ty(&self) -> WasmType {
+        self.param_ty()
+    }
+
+    /// Returns the operator identifier of the [`WasmOp`].
+    pub fn op(&self) -> &'static str {
+        match self {
+            WasmOp::Binary { ty: _, op } => op,
+            WasmOp::Cmp { ty: _, op } => op,
         }
     }
 }
 
 impl Display for WasmOp {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        match self {
-            Self::I32(op) => write!(f, "{}.{op}", self.ty()),
-            Self::I64(op) => write!(f, "{}.{op}", self.ty()),
-            Self::F32(op) => write!(f, "{}.{op}", self.ty()),
-            Self::F64(op) => write!(f, "{}.{op}", self.ty()),
-        }
+        write!(f, "{}.{}", self.display_ty(), self.op())
     }
 }
 
@@ -123,11 +153,12 @@ fn test_binary_reg_reg(
     wasm_op: WasmOp,
     make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
 ) {
-    let wasm_ty = wasm_op.ty();
+    let param_ty = wasm_op.param_ty();
+    let result_ty = wasm_op.result_ty();
     let wasm = wat2wasm(&format!(
         r#"
         (module
-            (func (param {wasm_ty}) (param {wasm_ty}) (result {wasm_ty})
+            (func (param {param_ty}) (param {param_ty}) (result {result_ty})
                 local.get 0
                 local.get 1
                 {wasm_op}
@@ -154,13 +185,14 @@ fn test_binary_reg_imm16(
 ) {
     /// This constant value fits into 16 bit and is kinda uninteresting for optimizations.
     const VALUE: i16 = 100;
-    let wasm_ty = wasm_op.ty();
+    let param_ty = wasm_op.param_ty();
+    let result_ty = wasm_op.result_ty();
     let wasm = wat2wasm(&format!(
         r#"
         (module
-            (func (param {wasm_ty}) (result {wasm_ty})
+            (func (param {param_ty}) (result {result_ty})
                 local.get 0
-                {wasm_ty}.const {VALUE}
+                {param_ty}.const {VALUE}
                 {wasm_op}
             )
         )
@@ -186,12 +218,13 @@ fn test_binary_reg_imm16_rev(
 ) {
     /// This constant value fits into 16 bit and is kinda uninteresting for optimizations.
     const VALUE: i16 = 100;
-    let wasm_ty = wasm_op.ty();
+    let param_ty = wasm_op.param_ty();
+    let result_ty = wasm_op.result_ty();
     let wasm = wat2wasm(&format!(
         r#"
         (module
-            (func (param {wasm_ty}) (result {wasm_ty})
-                {wasm_ty}.const {VALUE}
+            (func (param {param_ty}) (result {result_ty})
+                {param_ty}.const {VALUE}
                 local.get 0
                 {wasm_op}
             )
@@ -287,13 +320,14 @@ where
     E: IntoIterator<Item = Instruction>,
     <E as IntoIterator>::IntoIter: ExactSizeIterator,
 {
-    let wasm_ty = wasm_op.ty();
+    let param_ty = wasm_op.param_ty();
+    let result_ty = wasm_op.result_ty();
     let wasm = wat2wasm(&format!(
         r#"
         (module
-            (func (param {wasm_ty}) (result {wasm_ty})
+            (func (param {param_ty}) (result {result_ty})
                 local.get 0
-                {wasm_ty}.const {value}
+                {param_ty}.const {value}
                 {wasm_op}
             )
         )
@@ -308,12 +342,13 @@ where
     E: IntoIterator<Item = Instruction>,
     <E as IntoIterator>::IntoIter: ExactSizeIterator,
 {
-    let wasm_ty = wasm_op.ty();
+    let param_ty = wasm_op.param_ty();
+    let result_ty = wasm_op.result_ty();
     let wasm = wat2wasm(&format!(
         r#"
         (module
-            (func (param {wasm_ty}) (result {wasm_ty})
-                {wasm_ty}.const {value}
+            (func (param {param_ty}) (result {result_ty})
+                {param_ty}.const {value}
                 local.get 0
                 {wasm_op}
             )
@@ -329,13 +364,14 @@ where
     E: IntoIterator<Item = Instruction>,
     <E as IntoIterator>::IntoIter: ExactSizeIterator,
 {
-    let wasm_ty = wasm_op.ty();
+    let param_ty = wasm_op.param_ty();
+    let result_ty = wasm_op.result_ty();
     let wasm = wat2wasm(&format!(
         r#"
         (module
-            (func (result {wasm_ty})
-                {wasm_ty}.const {lhs}
-                {wasm_ty}.const {rhs}
+            (func (result {result_ty})
+                {param_ty}.const {lhs}
+                {param_ty}.const {rhs}
                 {wasm_op}
             )
         )
@@ -349,11 +385,12 @@ where
     E: IntoIterator<Item = Instruction>,
     <E as IntoIterator>::IntoIter: ExactSizeIterator,
 {
-    let wasm_ty = wasm_op.ty();
+    let param_ty = wasm_op.param_ty();
+    let result_ty = wasm_op.result_ty();
     let wasm = wat2wasm(&format!(
         r#"
         (module
-            (func (param {wasm_ty}) (result {wasm_ty})
+            (func (param {param_ty}) (result {result_ty})
                 local.get 0
                 local.get 0
                 {wasm_op}

@@ -1,7 +1,7 @@
 use super::*;
 use wasmi_core::TrapCode;
 
-const WASM_OP: WasmOp = WasmOp::I32("rem_s");
+const WASM_OP: WasmOp = WasmOp::binary(WasmType::I32, "rem_s");
 
 #[test]
 fn same_reg() {

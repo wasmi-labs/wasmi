@@ -1,6 +1,6 @@
 use super::*;
 
-const WASM_OP: WasmOp = WasmOp::I32("sub");
+const WASM_OP: WasmOp = WasmOp::binary(WasmType::I32, "sub");
 
 #[test]
 fn same_reg() {

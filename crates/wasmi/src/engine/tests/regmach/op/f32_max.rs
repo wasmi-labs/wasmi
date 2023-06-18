@@ -1,6 +1,6 @@
 use super::*;
 
-const WASM_OP: WasmOp = WasmOp::F32("max");
+const WASM_OP: WasmOp = WasmOp::binary(WasmType::F32, "max");
 
 #[test]
 fn reg_reg() {
@@ -22,7 +22,7 @@ fn reg_nan() {
     // Note: Unfortunately we cannot use convenience functions
     //       for test case since f32 NaN `Display` implementation
     //       differs from what the `wat2wasm` parser expects.
-    let ty = WASM_OP.ty();
+    let ty = WASM_OP.result_ty();
     let wasm = wat2wasm(&format!(
         r#"
         (module
@@ -45,7 +45,7 @@ fn nan_reg() {
     // Note: Unfortunately we cannot use convenience functions
     //       for test case since f32 NaN `Display` implementation
     //       differs from what the `wat2wasm` parser expects.
-    let ty = WASM_OP.ty();
+    let ty = WASM_OP.result_ty();
     let wasm = wat2wasm(&format!(
         r#"
         (module

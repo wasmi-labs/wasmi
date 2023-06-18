@@ -68,4 +68,5 @@ use super::{
     Register,
     TranslationTest,
     WasmOp,
+    WasmType,
 };

@@ -1,6 +1,6 @@
 use super::*;
 
-const WASM_OP: WasmOp = WasmOp::I64("or");
+const WASM_OP: WasmOp = WasmOp::binary(WasmType::I64, "or");
 
 #[test]
 fn same_reg() {

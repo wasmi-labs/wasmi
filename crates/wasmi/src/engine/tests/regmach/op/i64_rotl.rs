@@ -1,6 +1,6 @@
 use super::*;
 
-const WASM_OP: WasmOp = WasmOp::I64("rotl");
+const WASM_OP: WasmOp = WasmOp::binary(WasmType::I64, "rotl");
 
 #[test]
 fn reg_reg() {

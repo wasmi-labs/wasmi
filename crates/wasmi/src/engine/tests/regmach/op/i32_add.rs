@@ -1,6 +1,6 @@
 use super::*;
 
-const WASM_OP: WasmOp = WasmOp::I32("add");
+const WASM_OP: WasmOp = WasmOp::binary(WasmType::I32, "add");
 
 #[test]
 fn reg_reg() {
