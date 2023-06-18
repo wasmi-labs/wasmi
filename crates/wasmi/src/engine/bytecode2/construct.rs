@@ -160,6 +160,11 @@ impl Instruction {
         fn i64_ne_imm(binary_imm) -> Self::I64NeImm;
         fn i64_ne_imm16(binary_imm16) -> Self::I64NeImm16;
 
+        // Float Comparison
+
+        fn f32_eq(binary) -> Self::F32Eq;
+        fn f32_eq_imm(binary_imm) -> Self::F32EqImm;
+
         // Integer Arithmetic
 
         fn i32_add(binary) -> Self::I32Add;

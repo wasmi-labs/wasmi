@@ -732,13 +732,13 @@ impl<'parser> FuncTranslator<'parser> {
             }
             (Provider::Register(reg_in), Provider::Const(imm_in))
             | (Provider::Const(imm_in), Provider::Register(reg_in)) => {
+                if make_instr_imm_opt(self, reg_in, T::from(imm_in))? {
+                    // Custom logic applied its optimization: return early.
+                    return Ok(());
+                }
                 if T::from(imm_in).is_nan() {
                     // Optimization: non-canonicalized NaN propagation.
                     self.alloc.stack.push_const(T::from(imm_in));
-                    return Ok(());
-                }
-                if make_instr_imm_opt(self, reg_in, T::from(imm_in))? {
-                    // Custom logic applied its optimization: return early.
                     return Ok(());
                 }
                 self.push_binary_instr_imm(

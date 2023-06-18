@@ -488,7 +488,28 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_f32_eq(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary_commutative::<f32>(
+            Instruction::f32_eq,
+            Instruction::f32_eq_imm,
+            Self::make_instr_imm_param_32,
+            UntypedValue::f32_eq,
+            |this, lhs: Register, rhs: Register| {
+                if lhs == rhs {
+                    // Optimization: `x == x` is always `true` or `1`
+                    this.alloc.stack.push_const(UntypedValue::from(1_i32));
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, reg_in: Register, imm_in: f32| {
+                if imm_in.is_nan() {
+                    // Optimization: `NaN == x` or `x == NaN` is always `false` or `0`
+                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_f32_ne(&mut self) -> Self::Output {
