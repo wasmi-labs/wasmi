@@ -22,6 +22,14 @@ impl TryFrom<i32> for Const16 {
     }
 }
 
+impl TryFrom<u32> for Const16 {
+    type Error = OutOfBoundsConst16;
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        Self::from_u32(value).ok_or(OutOfBoundsConst16)
+    }
+}
+
 impl TryFrom<i64> for Const16 {
     type Error = OutOfBoundsConst16;
 
