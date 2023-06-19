@@ -535,25 +535,25 @@ impl<'parser> FuncTranslator<'parser> {
                 self.push_binary_instr(lhs, rhs, make_instr)
             }
             (Provider::Register(lhs), Provider::Const(rhs)) => {
+                if make_instr_reg_imm_opt(self, lhs, T::from(rhs))? {
+                    // Case: the custom logic applied its optimization and we can return.
+                    return Ok(());
+                }
                 if T::from(rhs).is_nan() {
                     // Optimization: non-canonicalized NaN propagation.
                     self.alloc.stack.push_const(rhs);
                     return Ok(());
                 }
-                if make_instr_reg_imm_opt(self, lhs, T::from(rhs))? {
-                    // Case: the custom logic applied its optimization and we can return.
-                    return Ok(());
-                }
                 self.push_binary_instr_imm(lhs, T::from(rhs), make_instr_imm, make_instr_imm_param)
             }
             (Provider::Const(lhs), Provider::Register(rhs)) => {
+                if make_instr_imm_reg_opt(self, T::from(lhs), rhs)? {
+                    // Case: the custom logic applied its optimization and we can return.
+                    return Ok(());
+                }
                 if T::from(lhs).is_nan() {
                     // Optimization: non-canonicalized NaN propagation.
                     self.alloc.stack.push_const(lhs);
-                    return Ok(());
-                }
-                if make_instr_imm_reg_opt(self, T::from(lhs), rhs)? {
-                    // Case: the custom logic applied its optimization and we can return.
                     return Ok(());
                 }
                 self.push_binary_instr_imm(

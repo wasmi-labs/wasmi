@@ -2,6 +2,8 @@ mod f32_add;
 mod f32_copysign;
 mod f32_div;
 mod f32_eq;
+mod f32_gt;
+mod f32_lt;
 mod f32_max;
 mod f32_min;
 mod f32_mul;

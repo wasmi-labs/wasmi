@@ -238,6 +238,12 @@ impl Instruction {
         fn f64_ne(binary) -> Self::F64Ne;
         fn f64_ne_imm(binary_imm) -> Self::F64NeImm;
 
+        fn f32_lt(binary) -> Self::F32Lt;
+        fn f32_lt_imm(binary_imm) -> Self::F32LtImm;
+
+        fn f32_gt(binary) -> Self::F32Gt;
+        fn f32_gt_imm(binary_imm) -> Self::F32GtImm;
+
         // Integer Arithmetic
 
         fn i32_add(binary) -> Self::I32Add;
