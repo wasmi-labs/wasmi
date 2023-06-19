@@ -241,8 +241,14 @@ impl Instruction {
         fn f32_lt(binary) -> Self::F32Lt;
         fn f32_lt_imm(binary_imm) -> Self::F32LtImm;
 
+        fn f32_le(binary) -> Self::F32Le;
+        fn f32_le_imm(binary_imm) -> Self::F32LeImm;
+
         fn f32_gt(binary) -> Self::F32Gt;
         fn f32_gt_imm(binary_imm) -> Self::F32GtImm;
+
+        fn f32_ge(binary) -> Self::F32Ge;
+        fn f32_ge_imm(binary_imm) -> Self::F32GeImm;
 
         // Integer Arithmetic
 

@@ -1147,11 +1147,71 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_f32_le(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(
+            Instruction::f32_le,
+            Instruction::f32_le_imm,
+            Instruction::f32_ge_imm,
+            Self::make_instr_imm_param_32,
+            UntypedValue::f32_le,
+            |this, lhs: Register, rhs: Register| {
+                if lhs == rhs {
+                    // Optimization: `x < x` is always `true`
+                    this.alloc.stack.push_const(true);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: Register, rhs: f32| {
+                if rhs.is_nan() {
+                    // Optimization: `x <= NAN` is always `false`
+                    this.alloc.stack.push_const(false);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: f32, rhs: Register| {
+                if lhs.is_nan() {
+                    // Optimization: `NAN <= x` is always `false`
+                    this.alloc.stack.push_const(false);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_f32_ge(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(
+            Instruction::f32_ge,
+            Instruction::f32_ge_imm,
+            Instruction::f32_le_imm,
+            Self::make_instr_imm_param_32,
+            UntypedValue::f32_ge,
+            |this, lhs: Register, rhs: Register| {
+                if lhs == rhs {
+                    // Optimization: `x >= x` is always `true`
+                    this.alloc.stack.push_const(true);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: Register, rhs: f32| {
+                if rhs.is_nan() {
+                    // Optimization: `x >= NAN` is always `false`
+                    this.alloc.stack.push_const(false);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: f32, rhs: Register| {
+                if lhs.is_nan() {
+                    // Optimization: `NAN >= x` is always `false`
+                    this.alloc.stack.push_const(false);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_f64_eq(&mut self) -> Self::Output {
