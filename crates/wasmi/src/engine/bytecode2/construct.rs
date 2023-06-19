@@ -241,14 +241,26 @@ impl Instruction {
         fn f32_lt(binary) -> Self::F32Lt;
         fn f32_lt_imm(binary_imm) -> Self::F32LtImm;
 
+        fn f64_lt(binary) -> Self::F64Lt;
+        fn f64_lt_imm(binary_imm) -> Self::F64LtImm;
+
         fn f32_le(binary) -> Self::F32Le;
         fn f32_le_imm(binary_imm) -> Self::F32LeImm;
+
+        fn f64_le(binary) -> Self::F64Le;
+        fn f64_le_imm(binary_imm) -> Self::F64LeImm;
 
         fn f32_gt(binary) -> Self::F32Gt;
         fn f32_gt_imm(binary_imm) -> Self::F32GtImm;
 
+        fn f64_gt(binary) -> Self::F64Gt;
+        fn f64_gt_imm(binary_imm) -> Self::F64GtImm;
+
         fn f32_ge(binary) -> Self::F32Ge;
         fn f32_ge_imm(binary_imm) -> Self::F32GeImm;
+
+        fn f64_ge(binary) -> Self::F64Ge;
+        fn f64_ge_imm(binary_imm) -> Self::F64GeImm;
 
         // Integer Arithmetic
 

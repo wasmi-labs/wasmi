@@ -1265,11 +1265,91 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_f64_lt(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(
+            Instruction::f64_lt,
+            Instruction::f64_lt_imm,
+            Instruction::f64_gt_imm,
+            Self::make_instr_imm_param_64,
+            UntypedValue::f64_lt,
+            |this, lhs: Register, rhs: Register| {
+                if lhs == rhs {
+                    // Optimization: `x < x` is always `false`
+                    this.alloc.stack.push_const(false);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: Register, rhs: f64| {
+                if rhs.is_nan() {
+                    // Optimization: `x < NAN` is always `false`
+                    this.alloc.stack.push_const(false);
+                    return Ok(true);
+                }
+                if rhs.is_infinite() && rhs.is_sign_negative() {
+                    // Optimization: `x < -INF` is always `false`
+                    this.alloc.stack.push_const(false);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: f64, rhs: Register| {
+                if lhs.is_nan() {
+                    // Optimization: `NAN < x` is always `false`
+                    this.alloc.stack.push_const(false);
+                    return Ok(true);
+                }
+                if lhs.is_infinite() && lhs.is_sign_positive() {
+                    // Optimization: `+INF < x` is always `false`
+                    this.alloc.stack.push_const(false);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_f64_gt(&mut self) -> Self::Output {
-        todo!()
+        self.translate_fbinary(
+            Instruction::f64_gt,
+            Instruction::f64_gt_imm,
+            Instruction::f64_lt_imm,
+            Self::make_instr_imm_param_64,
+            UntypedValue::f64_gt,
+            |this, lhs: Register, rhs: Register| {
+                if lhs == rhs {
+                    // Optimization: `x > x` is always `false`
+                    this.alloc.stack.push_const(false);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: Register, rhs: f64| {
+                if rhs.is_nan() {
+                    // Optimization: `x > NAN` is always `false`
+                    this.alloc.stack.push_const(false);
+                    return Ok(true);
+                }
+                if rhs.is_infinite() && rhs.is_sign_positive() {
+                    // Optimization: `x > INF` is always `false`
+                    this.alloc.stack.push_const(false);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+            |this, lhs: f64, rhs: Register| {
+                if lhs.is_nan() {
+                    // Optimization: `NAN > x` is always `false`
+                    this.alloc.stack.push_const(false);
+                    return Ok(true);
+                }
+                if lhs.is_infinite() && lhs.is_sign_negative() {
+                    // Optimization: `-INF > x` is always `false`
+                    this.alloc.stack.push_const(false);
+                    return Ok(true);
+                }
+                Ok(false)
+            },
+        )
     }
 
     fn visit_f64_le(&mut self) -> Self::Output {
