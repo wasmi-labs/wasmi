@@ -10,6 +10,9 @@ use super::{
     Instruction,
     Register,
     UnaryInstr,
+    LoadInstr,
+    LoadAtInstr,
+    LoadOffset16Instr,
 };
 
 macro_rules! constructor_for {
@@ -48,6 +51,24 @@ macro_rules! constructor_for {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
         pub fn $fn_name(result: Register, lhs: Const16, rhs: Register) -> Self {
             Self::$op_code(BinInstrImm16::new(result, rhs, lhs))
+        }
+    };
+    ( @impl fn $fn_name:ident(load) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Register, ptr: Register) -> Self {
+            Self::$op_code(LoadInstr::new(result, ptr))
+        }
+    };
+    ( @impl fn $fn_name:ident(load_at) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Register, address: Const32) -> Self {
+            Self::$op_code(LoadAtInstr::new(result, address))
+        }
+    };
+    ( @impl fn $fn_name:ident(load_offset16) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Register, ptr: Register, offset: Const16) -> Self {
+            Self::$op_code(LoadOffset16Instr::new(result, ptr, offset))
         }
     };
 }
@@ -98,6 +119,56 @@ impl Instruction {
     }
 
     constructor_for! {
+        // Load
+
+        fn i32_load(load) -> Self::I32Load;
+        fn i32_load_at(load_at) -> Self::I32LoadAt;
+        fn i32_load_offset16(load_offset16) -> Self::I32LoadOffset16;
+
+        fn i32_load8_s(load) -> Self::I32Load8s;
+        fn i32_load8_s_at(load_at) -> Self::I32Load8sAt;
+        fn i32_load8_s_offset16(load_offset16) -> Self::I32Load8sOffset16;
+
+        fn i32_load8_u(load) -> Self::I32Load8u;
+        fn i32_load8_u_at(load_at) -> Self::I32Load8uAt;
+        fn i32_load8_u_offset16(load_offset16) -> Self::I32Load8uOffset16;
+
+        fn i32_load16_s(load) -> Self::I32Load16s;
+        fn i32_load16_s_at(load_at) -> Self::I32Load16sAt;
+        fn i32_load16_s_offset16(load_offset16) -> Self::I32Load16sOffset16;
+
+        fn i32_load16_u(load) -> Self::I32Load16u;
+        fn i32_load16_u_at(load_at) -> Self::I32Load16uAt;
+        fn i32_load16_u_offset16(load_offset16) -> Self::I32Load16uOffset16;
+
+        fn i64_load(load) -> Self::I64Load;
+        fn i64_load_at(load_at) -> Self::I64LoadAt;
+        fn i64_load_offset16(load_offset16) -> Self::I64LoadOffset16;
+
+        fn i64_load8_s(load) -> Self::I64Load8s;
+        fn i64_load8_s_at(load_at) -> Self::I64Load8sAt;
+        fn i64_load8_s_offset16(load_offset16) -> Self::I64Load8sOffset16;
+
+        fn i64_load8_u(load) -> Self::I64Load8u;
+        fn i64_load8_u_at(load_at) -> Self::I64Load8uAt;
+        fn i64_load8_u_offset16(load_offset16) -> Self::I64Load8uOffset16;
+
+        fn i64_load16_s(load) -> Self::I64Load16s;
+        fn i64_load16_s_at(load_at) -> Self::I64Load16sAt;
+        fn i64_load16_s_offset16(load_offset16) -> Self::I64Load16sOffset16;
+
+        fn i64_load16_u(load) -> Self::I64Load16u;
+        fn i64_load16_u_at(load_at) -> Self::I64Load16uAt;
+        fn i64_load16_u_offset16(load_offset16) -> Self::I64Load16uOffset16;
+
+        fn f32_load(load) -> Self::F32Load;
+        fn f32_load_at(load_at) -> Self::F32LoadAt;
+        fn f32_load_offset16(load_offset16) -> Self::F32LoadOffset16;
+
+        fn f64_load(load) -> Self::F32Load;
+        fn f64_load_at(load_at) -> Self::F32LoadAt;
+        fn f64_load_offset16(load_offset16) -> Self::F32LoadOffset16;
+
         // Integer Unary
 
         fn i32_clz(unary) -> Self::I32Clz;

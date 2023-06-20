@@ -120,13 +120,27 @@ pub struct LoadInstr {
     pub ptr: Register,
 }
 
+impl LoadInstr {
+    /// Create a new [`LoadInstr`].
+    pub fn new(result: Register, ptr: Register) -> Self {
+        Self { result, ptr }
+    }
+}
+
 /// A `load` instruction loading from a constant address.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct LoadAtInstr {
     /// The register storing the result of the `load` instruction.
     pub result: Register,
     /// The `ptr+offset` address of the `load` instruction.
-    pub ptr: Const32,
+    pub address: Const32,
+}
+
+impl LoadAtInstr {
+    /// Create a new [`LoadAtInstr`].
+    pub fn new(result: Register, address: Const32) -> Self {
+        Self { result, address }
+    }
 }
 
 /// A `load` instruction with a 16-bit encoded offset parameter.
@@ -143,6 +157,13 @@ pub struct LoadOffset16Instr {
     pub ptr: Register,
     /// The 16-bit encoded offset of the `load` instruction.
     pub offset: Const16,
+}
+
+impl LoadOffset16Instr {
+    /// Create a new [`LoadOffset16Instr`].
+    pub fn new(result: Register, ptr: Register, offset: Const16) -> Self {
+        Self { result, ptr, offset }
+    }
 }
 
 /// A general `store` instruction.
