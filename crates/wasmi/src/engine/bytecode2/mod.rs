@@ -1868,6 +1868,12 @@ pub enum Instruction {
     ///
     /// # Note
     ///
+    /// Variant of [`Instruction::I64Load32u`] with a constant load address.
+    I64Load32uAt(LoadAtInstr),
+    /// Wasm `i64.load32_u` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
     /// Variant of [`Instruction::I64Load32u`] for small offset values.
     I64Load32uOffset16(LoadOffset16Instr),
 

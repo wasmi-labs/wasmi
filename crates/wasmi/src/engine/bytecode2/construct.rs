@@ -8,11 +8,11 @@ use super::{
     Const16,
     Const32,
     Instruction,
+    LoadAtInstr,
+    LoadInstr,
+    LoadOffset16Instr,
     Register,
     UnaryInstr,
-    LoadInstr,
-    LoadAtInstr,
-    LoadOffset16Instr,
 };
 
 macro_rules! constructor_for {
@@ -160,6 +160,14 @@ impl Instruction {
         fn i64_load16_u(load) -> Self::I64Load16u;
         fn i64_load16_u_at(load_at) -> Self::I64Load16uAt;
         fn i64_load16_u_offset16(load_offset16) -> Self::I64Load16uOffset16;
+
+        fn i64_load32_s(load) -> Self::I64Load32s;
+        fn i64_load32_s_at(load_at) -> Self::I64Load32sAt;
+        fn i64_load32_s_offset16(load_offset16) -> Self::I64Load32sOffset16;
+
+        fn i64_load32_u(load) -> Self::I64Load32u;
+        fn i64_load32_u_at(load_at) -> Self::I64Load32uAt;
+        fn i64_load32_u_offset16(load_offset16) -> Self::I64Load32uOffset16;
 
         fn f32_load(load) -> Self::F32Load;
         fn f32_load_at(load_at) -> Self::F32LoadAt;

@@ -162,7 +162,11 @@ pub struct LoadOffset16Instr {
 impl LoadOffset16Instr {
     /// Create a new [`LoadOffset16Instr`].
     pub fn new(result: Register, ptr: Register, offset: Const16) -> Self {
-        Self { result, ptr, offset }
+        Self {
+            result,
+            ptr,
+            offset,
+        }
     }
 }
 
