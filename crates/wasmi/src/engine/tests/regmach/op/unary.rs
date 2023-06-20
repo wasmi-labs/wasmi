@@ -72,9 +72,7 @@ where
     ));
     let expected = [
         make_instr(Register::from_u16(1), Register::from_u16(0)),
-        Instruction::ReturnReg {
-            value: Register::from_u16(1),
-        },
+        Instruction::return_reg(1),
     ];
     TranslationTest::new(wasm).expect_func(expected).run();
 }

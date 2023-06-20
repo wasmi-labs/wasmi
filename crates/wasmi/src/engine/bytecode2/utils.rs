@@ -7,6 +7,12 @@ use super::Instruction;
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Register(u16);
 
+impl From<u16> for Register {
+    fn from(index: u16) -> Self {
+        Self::from_u16(index)
+    }
+}
+
 impl Register {
     /// Create a [`Register`] from the given `u16` index.
     pub fn from_u16(index: u16) -> Self {

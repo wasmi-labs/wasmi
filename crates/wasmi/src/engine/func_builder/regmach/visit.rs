@@ -118,14 +118,14 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             }
             [ValueType::I32] => match self.alloc.stack.pop() {
                 // Case: Function returns a single `i32` value which allows for special operator.
-                Provider::Register(value) => Instruction::ReturnReg { value },
+                Provider::Register(value) => Instruction::return_reg(value),
                 Provider::Const(value) => Instruction::ReturnImm32 {
                     value: Const32::from_i32(i32::from(value)),
                 },
             },
             [ValueType::I64] => match self.alloc.stack.pop() {
                 // Case: Function returns a single `i64` value which allows for special operator.
-                Provider::Register(value) => Instruction::ReturnReg { value },
+                Provider::Register(value) => Instruction::return_reg(value),
                 Provider::Const(value) => {
                     if let Ok(value) = Const32::try_from(i64::from(value)) {
                         Instruction::ReturnI64Imm32 { value }
@@ -138,14 +138,14 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             },
             [ValueType::F32] => match self.alloc.stack.pop() {
                 // Case: Function returns a single `f32` value which allows for special operator.
-                Provider::Register(value) => Instruction::ReturnReg { value },
+                Provider::Register(value) => Instruction::return_reg(value),
                 Provider::Const(value) => Instruction::ReturnImm32 {
                     value: Const32::from_f32(F32::from(value)),
                 },
             },
             [ValueType::F64] => match self.alloc.stack.pop() {
                 // Case: Function returns a single `f64` value which allows for special operator.
-                Provider::Register(value) => Instruction::ReturnReg { value },
+                Provider::Register(value) => Instruction::return_reg(value),
                 Provider::Const(value) => Instruction::ReturnImm {
                     value: self.engine().alloc_const(value)?,
                 },

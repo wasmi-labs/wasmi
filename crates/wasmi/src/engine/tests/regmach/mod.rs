@@ -166,9 +166,7 @@ fn test_binary_reg_reg(
             Register::from_u16(0),
             Register::from_u16(1),
         ),
-        Instruction::ReturnReg {
-            value: Register::from_u16(2),
-        },
+        Instruction::return_reg(2),
     ];
     assert_func_bodies(wasm, [expected]);
 }
@@ -198,9 +196,7 @@ fn test_binary_reg_imm16(
             Register::from_u16(0),
             Const16::from_i16(VALUE),
         ),
-        Instruction::ReturnReg {
-            value: Register::from_u16(1),
-        },
+        Instruction::return_reg(1),
     ];
     assert_func_bodies(wasm, [expected]);
 }
@@ -231,9 +227,7 @@ fn test_binary_reg_imm16_rev(
             Const16::from_i16(VALUE),
             Register::from_u16(0),
         ),
-        Instruction::ReturnReg {
-            value: Register::from_u16(1),
-        },
+        Instruction::return_reg(1),
     ];
     assert_func_bodies(wasm, [expected]);
 }
@@ -248,9 +242,7 @@ fn test_binary_reg_imm32<T>(
     let expected = [
         make_instr(Register::from_u16(1), Register::from_u16(0)),
         Instruction::const32(value),
-        Instruction::ReturnReg {
-            value: Register::from_u16(1),
-        },
+        Instruction::return_reg(1),
     ];
     test_binary_reg_imm_with(wasm_op, value, expected)
 }
@@ -266,9 +258,7 @@ fn test_binary_reg_imm32_rev<T>(
     let expected = [
         make_instr(Register::from_u16(1), Register::from_u16(0)),
         Instruction::const32(value),
-        Instruction::ReturnReg {
-            value: Register::from_u16(1),
-        },
+        Instruction::return_reg(1),
     ];
     test_binary_reg_imm_rev_with(wasm_op, value, expected)
 }
@@ -283,9 +273,7 @@ fn test_binary_reg_imm64<T>(
     let expected = [
         make_instr(Register::from_u16(1), Register::from_u16(0)),
         Instruction::ConstRef(ConstRef::from_u32(0)),
-        Instruction::ReturnReg {
-            value: Register::from_u16(1),
-        },
+        Instruction::return_reg(1),
     ];
     test_binary_reg_imm_with(wasm_op, value, expected)
 }
@@ -301,9 +289,7 @@ fn test_binary_reg_imm64_rev<T>(
     let expected = [
         make_instr(Register::from_u16(1), Register::from_u16(0)),
         Instruction::ConstRef(ConstRef::from_u32(0)),
-        Instruction::ReturnReg {
-            value: Register::from_u16(1),
-        },
+        Instruction::return_reg(1),
     ];
     test_binary_reg_imm_rev_with(wasm_op, value, expected)
 }

@@ -29,17 +29,13 @@ fn nan_reg() {
 
 #[test]
 fn reg_zero() {
-    let expected = [Instruction::ReturnReg {
-        value: Register::from_u16(0),
-    }];
+    let expected = [Instruction::return_reg(0)];
     test_binary_reg_imm_with(WASM_OP, 0.0_f32, expected)
 }
 
 #[test]
 fn reg_zero_rev() {
-    let expected = [Instruction::ReturnReg {
-        value: Register::from_u16(0),
-    }];
+    let expected = [Instruction::return_reg(0)];
     test_binary_reg_imm_rev_with(WASM_OP, 0.0_f32, expected)
 }
 

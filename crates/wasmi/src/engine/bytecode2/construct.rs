@@ -58,6 +58,13 @@ impl Instruction {
         Self::Const32(value.into())
     }
 
+    /// Creates a new [`Instruction::ReturnReg`] from the given [`Register`] index.
+    pub fn return_reg(index: impl Into<Register>) -> Self {
+        Self::ReturnReg {
+            value: index.into(),
+        }
+    }
+
     /// Creates a new [`Instruction::ReturnImm32`] from the given `value`.
     pub fn return_imm32(value: impl Into<Const32>) -> Self {
         Self::ReturnImm32 {

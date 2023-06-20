@@ -4,9 +4,7 @@ const WASM_OP: WasmOp = WasmOp::binary(WasmType::I64, "and");
 
 #[test]
 fn same_reg() {
-    let expected = [Instruction::ReturnReg {
-        value: Register::from_u16(0),
-    }];
+    let expected = [Instruction::return_reg(0)];
     test_binary_same_reg(WASM_OP, expected)
 }
 
@@ -53,17 +51,13 @@ fn reg_zero_rev() {
 
 #[test]
 fn reg_ones() {
-    let expected = [Instruction::ReturnReg {
-        value: Register::from_u16(0),
-    }];
+    let expected = [Instruction::return_reg(0)];
     test_binary_reg_imm_with(WASM_OP, -1_i32, expected)
 }
 
 #[test]
 fn reg_ones_rev() {
-    let expected = [Instruction::ReturnReg {
-        value: Register::from_u16(0),
-    }];
+    let expected = [Instruction::return_reg(0)];
     test_binary_reg_imm_rev_with(WASM_OP, -1_i32, expected)
 }
 

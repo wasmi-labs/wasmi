@@ -21,9 +21,7 @@ fn reg() {
                 Register::from_u16(0),
                 Const16::from_i16(0),
             ),
-            Instruction::ReturnReg {
-                value: Register::from_u16(1),
-            },
+            Instruction::return_reg(1),
         ])
         .run();
 }

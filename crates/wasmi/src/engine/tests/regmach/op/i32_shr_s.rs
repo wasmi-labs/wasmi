@@ -19,17 +19,13 @@ fn reg_imm16_rev() {
 
 #[test]
 fn reg_zero() {
-    let expected = [Instruction::ReturnReg {
-        value: Register::from_u16(0),
-    }];
+    let expected = [Instruction::return_reg(0)];
     test_binary_reg_imm_with(WASM_OP, 0_i32, expected)
 }
 
 #[test]
 fn reg_0_after_mod32() {
-    let expected = [Instruction::ReturnReg {
-        value: Register::from_u16(0),
-    }];
+    let expected = [Instruction::return_reg(0)];
     test_binary_reg_imm_with(WASM_OP, 0_i32, expected);
     test_binary_reg_imm_with(WASM_OP, 32_i32, expected);
     test_binary_reg_imm_with(WASM_OP, 64_i32, expected);
@@ -43,9 +39,7 @@ fn reg_1_after_mod32() {
             Register::from_u16(0),
             Const16::from_i16(1),
         ),
-        Instruction::ReturnReg {
-            value: Register::from_u16(1),
-        },
+        Instruction::return_reg(1),
     ];
     test_binary_reg_imm_with(WASM_OP, 1_i32, expected);
     test_binary_reg_imm_with(WASM_OP, 33_i32, expected);

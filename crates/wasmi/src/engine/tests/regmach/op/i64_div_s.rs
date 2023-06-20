@@ -44,9 +44,7 @@ fn reg_zero() {
 
 #[test]
 fn reg_one() {
-    let expected = [Instruction::ReturnReg {
-        value: Register::from_u16(0),
-    }];
+    let expected = [Instruction::return_reg(0)];
     test_binary_reg_imm_with(WASM_OP, 1_i64, expected)
 }
 

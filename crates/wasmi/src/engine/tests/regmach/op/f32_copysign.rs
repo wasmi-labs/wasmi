@@ -13,9 +13,7 @@ fn reg_imm() {
     fn make_instrs(sign: Sign) -> [Instruction; 2] {
         [
             Instruction::f32_copysign_imm(Register::from_u16(1), Register::from_u16(0), sign),
-            Instruction::ReturnReg {
-                value: Register::from_u16(1),
-            },
+            Instruction::return_reg(1),
         ]
     }
     test_binary_reg_imm_with(WASM_OP, 1.0_f32, make_instrs(Sign::Pos));
