@@ -1,6 +1,7 @@
 //! Tests for the register-machine `wasmi` engine translation implementation.
 
 #![allow(unused_imports)] // TODO: remove
+// #![cfg(not(miri))]
 
 pub mod driver;
 mod op;
