@@ -58,7 +58,7 @@ use crate::{
 };
 use alloc::vec::Vec;
 use wasmi_core::{TrapCode, UntypedValue, ValueType, F32, F64};
-use wasmparser::VisitOperator;
+use wasmparser::{MemArg, VisitOperator};
 
 /// Reusable allocations of a [`FuncTranslator`].
 #[derive(Debug, Default)]
@@ -954,6 +954,7 @@ impl<'parser> FuncTranslator<'parser> {
         make_instr: fn(result: Register, input: Register) -> Instruction,
         consteval: fn(input: UntypedValue) -> UntypedValue,
     ) -> Result<(), TranslationError> {
+        bail_unreachable!(self);
         match self.alloc.stack.pop() {
             Provider::Register(input) => {
                 let result = self.alloc.stack.push_dynamic()?;
@@ -965,6 +966,77 @@ impl<'parser> FuncTranslator<'parser> {
             Provider::Const(input) => {
                 self.alloc.stack.push_const(consteval(input));
                 Ok(())
+            }
+        }
+    }
+
+    /// Returns the 32-bit [`MemArg`] offset.
+    ///
+    /// # Panics
+    ///
+    /// If the [`MemArg`] offset is not 32-bit.
+    fn memarg_offset(memarg: MemArg) -> u32 {
+        u32::try_from(memarg.offset).unwrap_or_else(|_| {
+            panic!(
+                "encountered 64-bit memory load/store offset: {}",
+                memarg.offset
+            )
+        })
+    }
+
+    /// Translates a Wasm `load` instruction to `wasmi` bytecode.
+    ///
+    /// # Note
+    ///
+    /// This chooses the right encoding for the given `load` instruction.
+    /// If `ptr+offset` is a constant value the address is pre-calculated.
+    ///
+    /// # Usage
+    ///
+    /// Used for translating the following Wasm operators to `wasmi` bytecode:
+    ///
+    /// - `{i32, i64, f32, f64}.load`
+    /// - `i32.{load8_s, load8_u, load16_s, load16_u}`
+    /// - `i64.{load8_s, load8_u, load16_s, load16_u load32_s, load32_u}`
+    pub fn translate_load(
+        &mut self,
+        memarg: MemArg,
+        make_instr: fn(result: Register, ptr: Register) -> Instruction,
+        make_instr_offset16: fn(result: Register, ptr: Register, offset: Const16) -> Instruction,
+        make_instr_at: fn(result: Register, address: Const32) -> Instruction,
+    ) -> Result<(), TranslationError> {
+        bail_unreachable!(self);
+        let offset = Self::memarg_offset(memarg);
+        match self.alloc.stack.pop() {
+            Provider::Register(ptr) => {
+                if let Ok(offset) = Const16::try_from(offset) {
+                    let result = self.alloc.stack.push_dynamic()?;
+                    self.alloc
+                        .instr_encoder
+                        .push_instr(make_instr_offset16(result, ptr, offset))?;
+                    return Ok(());
+                }
+                let result = self.alloc.stack.push_dynamic()?;
+                self.alloc
+                    .instr_encoder
+                    .push_instr(make_instr(result, ptr))?;
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::const32(offset))?;
+                Ok(())
+            }
+            Provider::Const(ptr) => {
+                let ptr = u32::from(ptr);
+                match ptr.checked_add(offset) {
+                    Some(address) => {
+                        let result = self.alloc.stack.push_dynamic()?;
+                        self.alloc
+                            .instr_encoder
+                            .push_instr(make_instr_at(result, Const32::from(address)))?;
+                        Ok(())
+                    }
+                    None => self.translate_trap(TrapCode::MemoryOutOfBounds),
+                }
             }
         }
     }

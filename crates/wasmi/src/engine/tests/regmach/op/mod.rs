@@ -76,6 +76,7 @@ mod i64_shr_s;
 mod i64_shr_u;
 mod i64_sub;
 mod i64_xor;
+mod load;
 mod unary;
 
 use super::{

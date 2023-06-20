@@ -52,6 +52,11 @@ impl Const16 {
         Self(value)
     }
 
+    /// Creates an [`Const16`] from the given `u16` value.
+    pub fn from_u16(value: u16) -> Self {
+        Self::from_i16(value as i16)
+    }
+
     /// Creates an [`Const16`] from the given `i32` value if possible.
     pub fn from_i32(value: i32) -> Option<Self> {
         i16::try_from(value).ok().map(Self)

@@ -71,6 +71,8 @@ pub enum WasmOp {
     Binary { ty: WasmType, op: &'static str },
     /// For Wasm functions with signature: `fn(T, T) -> i32`
     Cmp { ty: WasmType, op: &'static str },
+    /// For Wasm `load` instructions.
+    Load { ty: WasmType, op: &'static str },
 }
 
 impl WasmOp {
@@ -84,11 +86,17 @@ impl WasmOp {
         Self::Cmp { ty, op }
     }
 
+    /// Create a new `load` [`WasmOp`] for the given [`ValueType`].
+    pub const fn load(ty: WasmType, op: &'static str) -> Self {
+        Self::Load { ty, op }
+    }
+
     /// Returns the parameter [`ValueType`] of the [`WasmOp`].
     pub fn param_ty(&self) -> WasmType {
         match self {
             Self::Binary { ty, op: _ } => *ty,
             Self::Cmp { ty, op: _ } => *ty,
+            Self::Load { .. } => panic!("load instructions have no parameters"),
         }
     }
 
@@ -97,12 +105,17 @@ impl WasmOp {
         match self {
             Self::Binary { ty, op: _ } => *ty,
             Self::Cmp { ty: _, op: _ } => WasmType::I32,
+            Self::Load { ty, op: _ } => *ty,
         }
     }
 
     /// Returns the display [`ValueType`] of the [`WasmOp`].
     pub fn display_ty(&self) -> WasmType {
-        self.param_ty()
+        match self {
+            Self::Binary { .. } => self.param_ty(),
+            Self::Cmp { .. } => self.param_ty(),
+            Self::Load { .. } => self.result_ty(),
+        }
     }
 
     /// Returns the operator identifier of the [`WasmOp`].
@@ -110,6 +123,7 @@ impl WasmOp {
         match self {
             WasmOp::Binary { ty: _, op } => op,
             WasmOp::Cmp { ty: _, op } => op,
+            WasmOp::Load { ty: _, op } => op,
         }
     }
 }
