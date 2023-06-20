@@ -3599,31 +3599,31 @@ pub enum Instruction {
     /// # Note
     ///
     /// Instruction from the Wasm `sign-extension` proposal.
-    I32Extend8S,
+    I32Extend8S(UnaryInstr),
     /// Wasm `i32.extend16_s` instruction.
     ///
     /// # Note
     ///
     /// Instruction from the Wasm `sign-extension` proposal.
-    I32Extend16S,
+    I32Extend16S(UnaryInstr),
     /// Wasm `i64.extend8_s` instruction.
     ///
     /// # Note
     ///
     /// Instruction from the Wasm `sign-extension` proposal.
-    I64Extend8S,
-    /// Wasm `i64.extend16_s` instruction.
+    I64Extend8S(UnaryInstr),
+    /// Wasm(UnaryInstr) `i64.extend16_s` instruction.
     ///
     /// # Note
     ///
     /// Instruction from the Wasm `sign-extension` proposal.
-    I64Extend16S,
+    I64Extend16S(UnaryInstr),
     /// Wasm `i64.extend32_s` instruction.
     ///
     /// # Note
     ///
     /// Instruction from the Wasm `sign-extension` proposal.
-    I64Extend32S,
+    I64Extend32S(UnaryInstr),
 
     /// Wasm `f32.demote_f64` instruction.
     F32DemoteF64(UnaryInstr),

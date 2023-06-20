@@ -452,3 +452,104 @@ mod f64_sqrt {
         unary_imm::<f64>(OP_NAME, -42.5, f64::sqrt);
     }
 }
+
+macro_rules! wrap_untyped {
+    ($name:ident) => {
+        |input| <_>::from(UntypedValue::$name(UntypedValue::from(input)))
+    };
+}
+
+mod i32_extend8_s {
+    use super::*;
+
+    const OP_NAME: &str = "extend8_s";
+
+    #[test]
+    fn reg() {
+        unary_reg::<i32>(OP_NAME, Instruction::i32_extend8_s);
+    }
+
+    #[test]
+    fn imm() {
+        let consteval = wrap_untyped!(i32_extend8_s);
+        unary_imm::<i32>(OP_NAME, 0xFF, consteval);
+        unary_imm::<i32>(OP_NAME, 42, consteval);
+        unary_imm::<i32>(OP_NAME, -42, consteval);
+    }
+}
+
+mod i32_extend16_s {
+    use super::*;
+
+    const OP_NAME: &str = "extend16_s";
+
+    #[test]
+    fn reg() {
+        unary_reg::<i32>(OP_NAME, Instruction::i32_extend16_s);
+    }
+
+    #[test]
+    fn imm() {
+        let consteval = wrap_untyped!(i32_extend16_s);
+        unary_imm::<i32>(OP_NAME, 0xFFFF, consteval);
+        unary_imm::<i32>(OP_NAME, 42, consteval);
+        unary_imm::<i32>(OP_NAME, -42, consteval);
+    }
+}
+
+mod i64_extend8_s {
+    use super::*;
+
+    const OP_NAME: &str = "extend8_s";
+
+    #[test]
+    fn reg() {
+        unary_reg::<i64>(OP_NAME, Instruction::i64_extend8_s);
+    }
+
+    #[test]
+    fn imm() {
+        let consteval = wrap_untyped!(i64_extend8_s);
+        unary_imm::<i64>(OP_NAME, 0xFF, consteval);
+        unary_imm::<i64>(OP_NAME, 42, consteval);
+        unary_imm::<i64>(OP_NAME, -42, consteval);
+    }
+}
+
+mod i64_extend16_s {
+    use super::*;
+
+    const OP_NAME: &str = "extend16_s";
+
+    #[test]
+    fn reg() {
+        unary_reg::<i64>(OP_NAME, Instruction::i64_extend16_s);
+    }
+
+    #[test]
+    fn imm() {
+        let consteval = wrap_untyped!(i64_extend16_s);
+        unary_imm::<i64>(OP_NAME, 0xFFFF, consteval);
+        unary_imm::<i64>(OP_NAME, 42, consteval);
+        unary_imm::<i64>(OP_NAME, -42, consteval);
+    }
+}
+
+mod i64_extend32_s {
+    use super::*;
+
+    const OP_NAME: &str = "extend32_s";
+
+    #[test]
+    fn reg() {
+        unary_reg::<i64>(OP_NAME, Instruction::i64_extend32_s);
+    }
+
+    #[test]
+    fn imm() {
+        let consteval = wrap_untyped!(i64_extend32_s);
+        unary_imm::<i64>(OP_NAME, 0xFFFF_FFFF, consteval);
+        unary_imm::<i64>(OP_NAME, 42, consteval);
+        unary_imm::<i64>(OP_NAME, -42, consteval);
+    }
+}

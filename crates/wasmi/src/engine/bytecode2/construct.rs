@@ -531,5 +531,12 @@ impl Instruction {
         fn i64_rotr_imm_rev(binary_imm) -> Self::I64RotrImmRev;
         fn i64_rotr_imm16_rev(binary_imm16_rev) -> Self::I64RotrImm16Rev;
 
+        // Conversions
+
+        fn i32_extend8_s(unary) -> Self::I32Extend8S;
+        fn i32_extend16_s(unary) -> Self::I32Extend16S;
+        fn i64_extend8_s(unary) -> Self::I64Extend8S;
+        fn i64_extend16_s(unary) -> Self::I64Extend16S;
+        fn i64_extend32_s(unary) -> Self::I64Extend32S;
     }
 }
