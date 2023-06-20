@@ -104,22 +104,6 @@ pub struct UnaryInstrImm32 {
     pub input: Const32,
 }
 
-/// A `load` instruction with a 16-bit encoded offset parameter.
-///
-/// # Encoding
-///
-/// This is an optimization over the more general [`LoadInstr`]
-/// for small offset values that can be encoded as 16-bit values.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct LoadOffset16Instr {
-    /// The register storing the result of the `load` instruction.
-    pub result: Register,
-    /// The register storing the pointer of the `load` instruction.
-    pub ptr: Register,
-    /// The 16-bit encoded offset of the `load` instruction.
-    pub offset: Const16,
-}
-
 /// A general `load` instruction.
 ///
 /// # Encoding
@@ -134,6 +118,31 @@ pub struct LoadInstr {
     pub result: Register,
     /// The register storing the pointer of the `load` instruction.
     pub ptr: Register,
+}
+
+/// A `load` instruction loading from a constant address.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct LoadAtInstr {
+    /// The register storing the result of the `load` instruction.
+    pub result: Register,
+    /// The `ptr+offset` address of the `load` instruction.
+    pub ptr: Const32,
+}
+
+/// A `load` instruction with a 16-bit encoded offset parameter.
+///
+/// # Encoding
+///
+/// This is an optimization over the more general [`LoadInstr`]
+/// for small offset values that can be encoded as 16-bit values.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct LoadOffset16Instr {
+    /// The register storing the result of the `load` instruction.
+    pub result: Register,
+    /// The register storing the pointer of the `load` instruction.
+    pub ptr: Register,
+    /// The 16-bit encoded offset of the `load` instruction.
+    pub offset: Const16,
 }
 
 /// A general `store` instruction.
