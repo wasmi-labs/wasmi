@@ -24,9 +24,7 @@ impl WasmType for i64 {
 
     fn return_imm_instr(&self) -> Instruction {
         match i32::try_from(*self) {
-            Ok(value) => Instruction::ReturnI64Imm32 {
-                value: Const32::from_i32(value),
-            },
+            Ok(value) => Instruction::return_i64imm32(value),
             Err(_) => Instruction::ReturnImm {
                 value: ConstRef::from_u32(0),
             },

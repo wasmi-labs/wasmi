@@ -47,17 +47,13 @@ fn reg_zero_rev() {
 
 #[test]
 fn reg_ones() {
-    let expected = [Instruction::ReturnI64Imm32 {
-        value: Const32::from_i32(-1),
-    }];
+    let expected = [Instruction::return_i64imm32(-1)];
     test_binary_reg_imm_with(WASM_OP, -1_i64, expected)
 }
 
 #[test]
 fn reg_ones_rev() {
-    let expected = [Instruction::ReturnI64Imm32 {
-        value: Const32::from_i32(-1),
-    }];
+    let expected = [Instruction::return_i64imm32(-1)];
     test_binary_reg_imm_rev_with(WASM_OP, -1_i64, expected)
 }
 
@@ -65,12 +61,5 @@ fn reg_ones_rev() {
 fn consteval() {
     let lhs = 10;
     let rhs = 20;
-    test_binary_consteval(
-        WASM_OP,
-        lhs,
-        rhs,
-        [Instruction::ReturnI64Imm32 {
-            value: Const32::from_i32(lhs | rhs),
-        }],
-    )
+    test_binary_consteval(WASM_OP, lhs, rhs, [Instruction::return_i64imm32(lhs | rhs)])
 }

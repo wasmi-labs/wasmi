@@ -127,8 +127,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 // Case: Function returns a single `i64` value which allows for special operator.
                 Provider::Register(value) => Instruction::return_reg(value),
                 Provider::Const(value) => {
-                    if let Ok(value) = Const32::try_from(i64::from(value)) {
-                        Instruction::ReturnI64Imm32 { value }
+                    if let Ok(value) = i32::try_from(i64::from(value)) {
+                        Instruction::return_i64imm32(value)
                     } else {
                         Instruction::ReturnImm {
                             value: self.engine().alloc_const(value)?,

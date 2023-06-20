@@ -5,9 +5,7 @@ const WASM_OP: WasmOp = WasmOp::binary(WasmType::I64, "rem_u");
 
 #[test]
 fn same_reg() {
-    let expected = [Instruction::ReturnI64Imm32 {
-        value: Const32::from_i32(0),
-    }];
+    let expected = [Instruction::return_i64imm32(0)];
     test_binary_same_reg(WASM_OP, expected)
 }
 
@@ -44,9 +42,7 @@ fn reg_zero() {
 
 #[test]
 fn reg_one() {
-    let expected = [Instruction::ReturnI64Imm32 {
-        value: Const32::from_i32(0),
-    }];
+    let expected = [Instruction::return_i64imm32(0)];
     test_binary_reg_imm_with(WASM_OP, 1_i64, expected)
 }
 
@@ -54,14 +50,7 @@ fn reg_one() {
 fn consteval() {
     let lhs = 13;
     let rhs = 5;
-    test_binary_consteval(
-        WASM_OP,
-        lhs,
-        rhs,
-        [Instruction::ReturnI64Imm32 {
-            value: Const32::from_i32(lhs % rhs),
-        }],
-    )
+    test_binary_consteval(WASM_OP, lhs, rhs, [Instruction::return_i64imm32(lhs % rhs)])
 }
 
 #[test]
