@@ -49,50 +49,12 @@ fn neg_inf_reg() {
 
 #[test]
 fn reg_nan() {
-    // Note: Unfortunately we cannot use convenience functions
-    //       for test case since f32 NaN `Display` implementation
-    //       differs from what the `wat2wasm` parser expects.
-    let param_ty = WASM_OP.param_ty();
-    let result_ty = WASM_OP.result_ty();
-    let wasm = wat2wasm(&format!(
-        r#"
-        (module
-            (func (param {param_ty}) (result {result_ty})
-                local.get 0
-                {param_ty}.const nan
-                {WASM_OP}
-            )
-        )
-    "#,
-    ));
-    let expected = [Instruction::ReturnImm32 {
-        value: Const32::from(false),
-    }];
-    assert_func_bodies(wasm, [expected]);
+    test_reg_nan(WASM_OP, [Instruction::return_imm32(false)]);
 }
 
 #[test]
 fn nan_reg() {
-    // Note: Unfortunately we cannot use convenience functions
-    //       for test case since f32 NaN `Display` implementation
-    //       differs from what the `wat2wasm` parser expects.
-    let param_ty = WASM_OP.param_ty();
-    let result_ty = WASM_OP.result_ty();
-    let wasm = wat2wasm(&format!(
-        r#"
-        (module
-            (func (param {param_ty}) (result {result_ty})
-                {param_ty}.const nan
-                local.get 0
-                {WASM_OP}
-            )
-        )
-    "#,
-    ));
-    let expected = [Instruction::ReturnImm32 {
-        value: Const32::from(false),
-    }];
-    assert_func_bodies(wasm, [expected]);
+    test_nan_reg(WASM_OP, [Instruction::return_imm32(false)]);
 }
 
 #[test]

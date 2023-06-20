@@ -394,3 +394,67 @@ where
     ));
     assert_func_bodies(wasm, [expected]);
 }
+
+fn test_reg_nan<E>(wasm_op: WasmOp, expected: E)
+where
+    E: IntoIterator<Item = Instruction>,
+    <E as IntoIterator>::IntoIter: ExactSizeIterator,
+{
+    test_reg_nan_ext(wasm_op, expected).run()
+}
+
+fn test_reg_nan_ext<E>(wasm_op: WasmOp, expected: E) -> TranslationTest
+where
+    E: IntoIterator<Item = Instruction>,
+    <E as IntoIterator>::IntoIter: ExactSizeIterator,
+{
+    assert!(matches!(wasm_op.param_ty(), WasmType::F32 | WasmType::F64));
+    let param_ty = wasm_op.param_ty();
+    let result_ty = wasm_op.result_ty();
+    let wasm = wat2wasm(&format!(
+        r#"
+        (module
+            (func (param {param_ty}) (result {result_ty})
+                local.get 0
+                {param_ty}.const nan
+                {wasm_op}
+            )
+        )
+    "#,
+    ));
+    let mut testcase = TranslationTest::new(wasm);
+    testcase.expect_func(expected);
+    testcase
+}
+
+fn test_nan_reg<E>(wasm_op: WasmOp, expected: E)
+where
+    E: IntoIterator<Item = Instruction>,
+    <E as IntoIterator>::IntoIter: ExactSizeIterator,
+{
+    test_nan_reg_ext(wasm_op, expected).run()
+}
+
+fn test_nan_reg_ext<E>(wasm_op: WasmOp, expected: E) -> TranslationTest
+where
+    E: IntoIterator<Item = Instruction>,
+    <E as IntoIterator>::IntoIter: ExactSizeIterator,
+{
+    assert!(matches!(wasm_op.param_ty(), WasmType::F32 | WasmType::F64));
+    let param_ty = wasm_op.param_ty();
+    let result_ty = wasm_op.result_ty();
+    let wasm = wat2wasm(&format!(
+        r#"
+        (module
+            (func (param {param_ty}) (result {result_ty})
+                local.get 0
+                {param_ty}.const nan
+                {wasm_op}
+            )
+        )
+    "#,
+    ));
+    let mut testcase = TranslationTest::new(wasm);
+    testcase.expect_func(expected);
+    testcase
+}

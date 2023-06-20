@@ -1,3 +1,6 @@
+#[cfg(test)]
+use crate::engine::const_pool::ConstRef;
+
 use super::{
     utils::{CopysignImmInstr, Sign},
     BinInstr,
@@ -53,6 +56,28 @@ impl Instruction {
     /// Creates a new [`Instruction::Const32`] from the given `value`.
     pub fn const32(value: impl Into<Const32>) -> Self {
         Self::Const32(value.into())
+    }
+
+    /// Creates a new [`Instruction::ReturnImm32`] from the given `value`.
+    pub fn return_imm32(value: impl Into<Const32>) -> Self {
+        Self::ReturnImm32 {
+            value: value.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::ReturnImm32`] from the given `value`.
+    #[cfg(test)]
+    pub fn return_cref(index: u32) -> Self {
+        Self::ReturnImm {
+            value: ConstRef::from_u32(index),
+        }
+    }
+
+    /// Creates a new [`Instruction::ReturnImm32`] from the given `value`.
+    pub fn return_i64imm32(value: i32) -> Self {
+        Self::ReturnI64Imm32 {
+            value: value.into(),
+        }
     }
 
     /// Creates a new [`Instruction::F32CopysignImm`] instruction.

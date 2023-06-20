@@ -6,6 +6,8 @@ use crate::{
     EngineBackend,
     Module,
 };
+use core::sync::atomic::Ordering;
+use std::sync::atomic::AtomicBool;
 use wasmi_core::UntypedValue;
 
 /// A test driver for translation tests.
@@ -19,6 +21,16 @@ pub struct TranslationTest {
     expected_funcs: Vec<ExpectedFunc>,
     /// The expected constant values in the constant pool.
     expected_consts: Vec<ExpectedConst>,
+    /// Is `true` if the [`TranslationTest`] has been run at least once.
+    has_run: AtomicBool,
+}
+
+impl Drop for TranslationTest {
+    fn drop(&mut self) {
+        if !self.has_run.load(Ordering::SeqCst) {
+            panic!("TranslationTest did not run at least once. This is probably a bug!")
+        }
+    }
 }
 
 /// An entry for an expected function body stored in the engine under test.
@@ -75,6 +87,7 @@ impl TranslationTest {
             config,
             expected_funcs: Vec::new(),
             expected_consts: Vec::new(),
+            has_run: AtomicBool::from(false),
         }
     }
 
@@ -131,6 +144,7 @@ impl TranslationTest {
         let engine = module.engine();
         self.assert_funcs(engine, &module);
         self.assert_consts(engine);
+        self.has_run.store(true, Ordering::SeqCst);
     }
 
     /// Asserts that all expected functions of the translated Wasm module are as expected.

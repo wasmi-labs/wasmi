@@ -19,50 +19,14 @@ fn reg_imm_rev() {
 
 #[test]
 fn reg_nan() {
-    // Note: Unfortunately we cannot use convenience functions
-    //       for test case since NaN `Display` implementation
-    //       differs from what the `wat2wasm` parser expects.
-    let ty = WASM_OP.result_ty();
-    let wasm = wat2wasm(&format!(
-        r#"
-        (module
-            (func (param {ty}) (result {ty})
-                local.get 0
-                {ty}.const nan
-                {WASM_OP}
-            )
-        )
-    "#,
-    ));
-    TranslationTest::new(wasm)
-        .expect_func([Instruction::ReturnImm {
-            value: ConstRef::from_u32(0),
-        }])
+    test_reg_nan_ext(WASM_OP, [Instruction::return_cref(0)])
         .expect_const(ConstRef::from_u32(0), f64::NAN)
         .run();
 }
 
 #[test]
 fn nan_reg() {
-    // Note: Unfortunately we cannot use convenience functions
-    //       for test case since f32 NaN `Display` implementation
-    //       differs from what the `wat2wasm` parser expects.
-    let ty = WASM_OP.result_ty();
-    let wasm = wat2wasm(&format!(
-        r#"
-        (module
-            (func (param {ty}) (result {ty})
-                {ty}.const nan
-                local.get 0
-                {WASM_OP}
-            )
-        )
-    "#,
-    ));
-    TranslationTest::new(wasm)
-        .expect_func([Instruction::ReturnImm {
-            value: ConstRef::from_u32(0),
-        }])
+    test_nan_reg_ext(WASM_OP, [Instruction::return_cref(0)])
         .expect_const(ConstRef::from_u32(0), f64::NAN)
         .run();
 }
