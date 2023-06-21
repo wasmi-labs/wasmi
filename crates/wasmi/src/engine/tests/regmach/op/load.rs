@@ -7,14 +7,11 @@ fn test_load(
     offset: u32,
     make_instr: fn(result: Register, ptr: Register) -> Instruction,
 ) {
-    println!("-2");
     assert!(
         offset > u32::from(u16::MAX),
         "offset must not be 16-bit encodable in this testcase"
     );
-    println!("-1");
     let result_ty = wasm_op.result_ty();
-    println!("0");
     let wasm = wat2wasm(&format!(
         r#"
         (module
@@ -26,7 +23,6 @@ fn test_load(
         )
     "#,
     ));
-    println!("1");
     TranslationTest::new(wasm)
         .expect_func([
             make_instr(Register::from_u16(1), Register::from_u16(0)),
