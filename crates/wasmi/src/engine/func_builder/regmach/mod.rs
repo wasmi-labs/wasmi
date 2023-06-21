@@ -984,6 +984,21 @@ impl<'parser> FuncTranslator<'parser> {
         })
     }
 
+    /// Calculates the effective address `ptr+offset` and calls `f(address)` if valid.
+    ///
+    /// Encodes a [`TrapCode::MemoryOutOfBounds`] trap instruction if the effective address is invalid.
+    fn effective_address_and(
+        &mut self,
+        ptr: UntypedValue,
+        offset: u32,
+        f: impl FnOnce(&mut Self, u32) -> Result<(), TranslationError>,
+    ) -> Result<(), TranslationError> {
+        match u32::from(ptr).checked_add(offset) {
+            Some(address) => f(self, address),
+            None => self.translate_trap(TrapCode::MemoryOutOfBounds),
+        }
+    }
+
     /// Translates a Wasm `load` instruction to `wasmi` bytecode.
     ///
     /// # Note
@@ -1025,19 +1040,13 @@ impl<'parser> FuncTranslator<'parser> {
                     .push_instr(Instruction::const32(offset))?;
                 Ok(())
             }
-            Provider::Const(ptr) => {
-                let ptr = u32::from(ptr);
-                match ptr.checked_add(offset) {
-                    Some(address) => {
-                        let result = self.alloc.stack.push_dynamic()?;
-                        self.alloc
-                            .instr_encoder
-                            .push_instr(make_instr_at(result, Const32::from(address)))?;
-                        Ok(())
-                    }
-                    None => self.translate_trap(TrapCode::MemoryOutOfBounds),
-                }
-            }
+            Provider::Const(ptr) => self.effective_address_and(ptr, offset, |this, address| {
+                let result = this.alloc.stack.push_dynamic()?;
+                this.alloc
+                    .instr_encoder
+                    .push_instr(make_instr_at(result, Const32::from(address)))?;
+                Ok(())
+            }),
         }
     }
 
@@ -1091,28 +1100,22 @@ impl<'parser> FuncTranslator<'parser> {
                 Ok(())
             }
             (Provider::Const(ptr), Provider::Register(value)) => {
-                match u32::from(ptr).checked_add(offset) {
-                    Some(address) => {
-                        self.alloc
-                            .instr_encoder
-                            .push_instr(make_instr_at(Const32::from(address), value))?;
-                        Ok(())
-                    }
-                    None => self.translate_trap(TrapCode::MemoryOutOfBounds),
-                }
+                self.effective_address_and(ptr, offset, |this, address| {
+                    this.alloc
+                        .instr_encoder
+                        .push_instr(make_instr_at(Const32::from(address), value))?;
+                    Ok(())
+                })
             }
             (Provider::Const(ptr), Provider::Const(value)) => {
-                match u32::from(ptr).checked_add(offset) {
-                    Some(address) => {
-                        self.alloc
-                            .instr_encoder
-                            .push_instr(make_instr_imm_at(Const32::from(address)))?;
-                        let param = make_instr_imm_param(self, T::from(value))?;
-                        self.alloc.instr_encoder.push_instr(param)?;
-                        Ok(())
-                    }
-                    None => self.translate_trap(TrapCode::MemoryOutOfBounds),
-                }
+                self.effective_address_and(ptr, offset, |this, address| {
+                    this.alloc
+                        .instr_encoder
+                        .push_instr(make_instr_imm_at(Const32::from(address)))?;
+                    let param = make_instr_imm_param(this, T::from(value))?;
+                    this.alloc.instr_encoder.push_instr(param)?;
+                    Ok(())
+                })
             }
         }
     }
