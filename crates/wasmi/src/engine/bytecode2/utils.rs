@@ -177,7 +177,7 @@ impl LoadOffset16Instr {
 /// # Encoding
 ///
 /// `T` determines how the stored value is encoded for this
-/// [`Instruction`::StoreInstr`] as encoded by the next instruction
+/// [`StoreInstr`] as encoded by the next instruction
 /// word in the encoded [`Instruction`] sequence.
 ///
 /// 1. [`Instruction::Register`]: load the stored value from the register.
@@ -197,7 +197,7 @@ pub struct StoreInstr<T> {
 ///
 /// # Note
 ///
-/// Variant of [`StoreInstr`] and [`StoreImmInstr`] for constant address values.
+/// Variant of [`StoreInstr`] for constant address values.
 ///
 /// # Encoding
 ///
