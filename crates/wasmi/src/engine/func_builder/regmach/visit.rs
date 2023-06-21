@@ -2586,7 +2586,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_wrap_i64(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::i32_wrap_i64, UntypedValue::i32_wrap_i64)
     }
 
     fn visit_i32_trunc_f32_s(&mut self) -> Self::Output {
@@ -2606,11 +2606,17 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_extend_i32_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(
+            Instruction::i64_extend_i32_s,
+            UntypedValue::i64_extend_i32_s,
+        )
     }
 
     fn visit_i64_extend_i32_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(
+            Instruction::i64_extend_i32_u,
+            UntypedValue::i64_extend_i32_u,
+        )
     }
 
     fn visit_i64_trunc_f32_s(&mut self) -> Self::Output {

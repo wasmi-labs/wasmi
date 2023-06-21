@@ -617,5 +617,9 @@ impl Instruction {
         fn i64_extend8_s(unary) -> Self::I64Extend8S;
         fn i64_extend16_s(unary) -> Self::I64Extend16S;
         fn i64_extend32_s(unary) -> Self::I64Extend32S;
+
+        fn i32_wrap_i64(unary) -> Self::I32WrapI64;
+        fn i64_extend_i32_s(unary) -> Self::I64ExtendI32S;
+        fn i64_extend_i32_u(unary) -> Self::I64ExtendI32U;
     }
 }
