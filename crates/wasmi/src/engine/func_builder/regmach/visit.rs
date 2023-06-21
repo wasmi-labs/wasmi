@@ -381,27 +381,55 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_store8(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+        self.translate_store_trunc::<i32>(
+            memarg,
+            Instruction::i32_store8,
+            Instruction::i32_store8_imm,
+            Self::make_instr_imm_param_32,
+            Instruction::i32_store8_at,
+            |address, value| Instruction::i32_store8_imm_at(address, value as i8),
+        )
     }
 
     fn visit_i32_store16(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+        self.translate_store_trunc::<i32>(
+            memarg,
+            Instruction::i32_store16,
+            Instruction::i32_store16_imm,
+            Self::make_instr_imm_param_32,
+            Instruction::i32_store16_at,
+            |address, value| Instruction::i32_store16_imm_at(address, value as i16),
+        )
     }
 
     fn visit_i64_store8(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+        self.translate_store_trunc::<i64>(
+            memarg,
+            Instruction::i64_store8,
+            Instruction::i64_store8_imm,
+            |_this, value| Ok(Instruction::const32(value as i8)),
+            Instruction::i64_store8_at,
+            |address, value| Instruction::i64_store8_imm_at(address, value as i8),
+        )
     }
 
     fn visit_i64_store16(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+        self.translate_store_trunc::<i64>(
+            memarg,
+            Instruction::i64_store16,
+            Instruction::i64_store16_imm,
+            |_this, value| Ok(Instruction::const32(value as i16)),
+            Instruction::i64_store16_at,
+            |address, value| Instruction::i64_store16_imm_at(address, value as i16),
+        )
     }
 
     fn visit_i64_store32(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_store::<i32>(
+        self.translate_store::<i64>(
             memarg,
             Instruction::i64_store32,
             Instruction::i64_store32_imm,
-            Self::make_instr_imm_param_32,
+            |_this, value| Ok(Instruction::const32(value as i32)),
             Instruction::i64_store32_at,
             Instruction::i64_store32_imm_at,
         )

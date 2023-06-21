@@ -124,6 +124,18 @@ impl From<bool> for Const32 {
     }
 }
 
+impl From<i8> for Const32 {
+    fn from(value: i8) -> Self {
+        Self::from_u32(value as u32)
+    }
+}
+
+impl From<i16> for Const32 {
+    fn from(value: i16) -> Self {
+        Self::from_u32(value as u32)
+    }
+}
+
 impl From<i32> for Const32 {
     fn from(value: i32) -> Self {
         Self::from_i32(value)

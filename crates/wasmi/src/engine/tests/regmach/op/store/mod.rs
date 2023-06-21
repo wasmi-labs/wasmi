@@ -3,8 +3,12 @@ use super::*;
 mod f32_store;
 mod f64_store;
 mod i32_store;
+mod i32_store16;
+mod i32_store8;
 mod i64_store;
+mod i64_store16;
 mod i64_store32;
+mod i64_store8;
 
 use core::fmt::Display;
 use wasmi_core::TrapCode;
@@ -155,6 +159,39 @@ fn test_store_imm_at<T>(
         .expect_func([
             make_instr(Const32::from(address)),
             make_instr_param(value),
+            Instruction::Return,
+        ])
+        .run();
+}
+
+fn test_store_imm_n_at<T>(
+    wasm_op: WasmOp,
+    ptr: u32,
+    offset: u32,
+    value: T,
+    make_instr: fn(address: Const32, value: T) -> Instruction,
+) where
+    T: Copy + Display,
+{
+    let address = ptr
+        .checked_add(offset)
+        .expect("testcase requires valid ptr+offset address");
+    let param_ty = wasm_op.param_ty();
+    let wasm = wat2wasm(&format!(
+        r#"
+        (module
+            (memory 1)
+            (func
+                i32.const {ptr}
+                {param_ty}.const {value}
+                {wasm_op} offset={offset}
+            )
+        )
+    "#,
+    ));
+    TranslationTest::new(wasm)
+        .expect_func([
+            make_instr(Const32::from(address), value),
             Instruction::Return,
         ])
         .run();
