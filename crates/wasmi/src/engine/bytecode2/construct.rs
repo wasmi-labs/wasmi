@@ -12,6 +12,8 @@ use super::{
     LoadInstr,
     LoadOffset16Instr,
     Register,
+    StoreAtInstr,
+    StoreInstr,
     UnaryInstr,
 };
 
@@ -69,6 +71,36 @@ macro_rules! constructor_for {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
         pub fn $fn_name(result: Register, ptr: Register, offset: Const16) -> Self {
             Self::$op_code(LoadOffset16Instr::new(result, ptr, offset))
+        }
+    };
+    ( @impl fn $fn_name:ident(store) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(ptr: Register, offset: Const32) -> Self {
+            Self::$op_code(StoreInstr::new(ptr, offset))
+        }
+    };
+    ( @impl fn $fn_name:ident(store_at) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(address: Const32, value: Register) -> Self {
+            Self::$op_code(StoreAtInstr::new(address, value))
+        }
+    };
+    ( @impl fn $fn_name:ident(store8_imm_at) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(address: Const32, value: i8) -> Self {
+            Self::$op_code(StoreAtInstr::new(address, value))
+        }
+    };
+    ( @impl fn $fn_name:ident(store16_imm_at) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(address: Const32, value: i16) -> Self {
+            Self::$op_code(StoreAtInstr::new(address, value))
+        }
+    };
+    ( @impl fn $fn_name:ident(store_imm_at) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(address: Const32) -> Self {
+            Self::$op_code(StoreAtInstr::new(address, ()))
         }
     };
 }
@@ -176,6 +208,53 @@ impl Instruction {
         fn f64_load(load) -> Self::F32Load;
         fn f64_load_at(load_at) -> Self::F32LoadAt;
         fn f64_load_offset16(load_offset16) -> Self::F32LoadOffset16;
+
+        // Store
+
+        fn i32_store(store) -> Self::I32Store;
+        fn i32_store_imm(store) -> Self::I32StoreImm;
+        fn i32_store_at(store_at) -> Self::I32StoreAt;
+        fn i32_store_imm_at(store_imm_at) -> Self::I32StoreImmAt;
+
+        fn i32_store8(store) -> Self::I32Store8;
+        fn i32_store8_imm(store) -> Self::I32Store8Imm;
+        fn i32_store8_at(store_at) -> Self::I32Store8At;
+        fn i32_store8_imm_at(store8_imm_at) -> Self::I32Store8ImmAt;
+
+        fn i32_store16(store) -> Self::I32Store16;
+        fn i32_store16_imm(store) -> Self::I32Store16Imm;
+        fn i32_store16_at(store_at) -> Self::I32Store16At;
+        fn i32_store16_imm_at(store16_imm_at) -> Self::I32Store16ImmAt;
+
+        fn i64_store(store) -> Self::I64Store;
+        fn i64_store_imm(store) -> Self::I64StoreImm;
+        fn i64_store_at(store_at) -> Self::I64StoreAt;
+        fn i64_store_imm_at(store_imm_at) -> Self::I64StoreImmAt;
+
+        fn i64_store8(store) -> Self::I64Store8;
+        fn i64_store8_imm(store) -> Self::I64Store8Imm;
+        fn i64_store8_at(store_at) -> Self::I64Store8At;
+        fn i64_store8_imm_at(store8_imm_at) -> Self::I64Store8ImmAt;
+
+        fn i64_store16(store) -> Self::I64Store16;
+        fn i64_store16_imm(store) -> Self::I64Store16Imm;
+        fn i64_store16_at(store_at) -> Self::I64Store16At;
+        fn i64_store16_imm_at(store16_imm_at) -> Self::I64Store16ImmAt;
+
+        fn i64_store32(store) -> Self::I64Store32;
+        fn i64_store32_imm(store) -> Self::I64Store32Imm;
+        fn i64_store32_at(store_at) -> Self::I64Store32At;
+        fn i64_store32_imm_at(store_imm_at) -> Self::I64Store32ImmAt;
+
+        fn f32_store(store) -> Self::F32Store;
+        fn f32_store_imm(store) -> Self::F32StoreImm;
+        fn f32_store_at(store_at) -> Self::F32StoreAt;
+        fn f32_store_imm_at(store_imm_at) -> Self::F32StoreImmAt;
+
+        fn f64_store(store) -> Self::F64Store;
+        fn f64_store_imm(store) -> Self::F64StoreImm;
+        fn f64_store_at(store_at) -> Self::F64StoreAt;
+        fn f64_store_imm_at(store_imm_at) -> Self::F64StoreImmAt;
 
         // Integer Unary
 

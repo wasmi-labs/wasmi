@@ -193,6 +193,17 @@ pub struct StoreInstr<T> {
     pub value: PhantomData<T>,
 }
 
+impl<T> StoreInstr<T> {
+    /// Creates a new [`StoreInstr`].
+    pub fn new(ptr: Register, offset: Const32) -> Self {
+        Self {
+            ptr,
+            offset,
+            value: PhantomData,
+        }
+    }
+}
+
 /// A `store` instruction.
 ///
 /// # Note
@@ -213,6 +224,13 @@ pub struct StoreAtInstr<T> {
     pub address: Const32,
     /// The value to be stored if `T != ()`.
     pub value: T,
+}
+
+impl<T> StoreAtInstr<T> {
+    /// Creates a new [`StoreAtInstr`].
+    pub fn new(address: Const32, value: T) -> Self {
+        Self { address, value }
+    }
 }
 
 /// The sign of a value.
