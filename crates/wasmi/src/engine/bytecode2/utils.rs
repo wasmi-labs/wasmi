@@ -1,3 +1,5 @@
+use core::marker::PhantomData;
+
 use super::{Const16, Const32};
 
 #[cfg(doc)]
@@ -174,64 +176,43 @@ impl LoadOffset16Instr {
 ///
 /// # Encoding
 ///
-/// This `store` instruction has its offset parameter in a
-/// separate [`Instruction::Const32`] instruction that must
-/// follow this [`Instruction`] immediately in the instruction
-/// sequence.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct StoreInstr {
-    /// The register storing the pointer of the `store` instruction.
-    pub ptr: Register,
-    /// The register storing the stored value of the `store` instruction.
-    pub value: Register,
-}
-
-/// A `store` instruction that stores a constant value.
+/// `T` determines how the stored value is encoded for this
+/// [`Instruction`::StoreInstr`] as encoded by the next instruction
+/// word in the encoded [`Instruction`] sequence.
 ///
-/// # Encoding
-///
-/// This `store` instruction has its constant value parameter in
-/// a separate [`Instruction::Const32`] or [`Instruction::ConstRef`]
-/// instruction that must follow this [`Instruction`] immediately
-/// in the instruction sequence.
+/// 1. [`Instruction::Register`]: load the stored value from the register.
+/// 1. [`Instruction::Const32`]: holding the 32-bit encoded value.
+/// 1. [`Instruction::ConstRef`]: holding a reference to the stored value.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct StoreImmInstr {
+pub struct StoreInstr<T> {
     /// The register storing the pointer of the `store` instruction.
     pub ptr: Register,
     /// The register storing the pointer offset of the `store` instruction.
     pub offset: Const32,
+    /// A type marker to store information about the encoding of the value.
+    pub value: PhantomData<T>,
 }
 
-/// A `store` instruction for small offset values.
+/// A `store` instruction.
 ///
 /// # Note
 ///
-/// This `store` instruction is an optimization of [`StoreInstr`] for
-/// `offset` values that can be encoded as a 16-bit value.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct StoreOffset16Instr {
-    /// The register storing the pointer of the `store` instruction.
-    pub ptr: Register,
-    /// The register storing the stored value of the `store` instruction.
-    pub value: Register,
-    /// The register storing the 16-bit encoded pointer offset of the `store` instruction.
-    pub offset: Const16,
-}
-
-/// A `store` instruction for small values of `offset` and `value`.
+/// Variant of [`StoreInstr`] and [`StoreImmInstr`] for constant address values.
 ///
-/// # Note
+/// # Encoding
 ///
-/// This `store` instruction is an optimization of [`StoreOffset16Instr`] for
-/// `offset` and `value` values that can be encoded as a 16-bit values.
+/// Demands different encoding and interpretation based on `T`:
+///
+/// 1. `T is Register`: The stored `value` is loaded from the register.
+/// 1. `T is ()`: The stored `value` is encoded as [`Instruction::Const32`]
+///    or [`Instruction::ConstRef`] in the next instruction word.
+/// 1. Otherwise `T` is stored inline, e.g. as `i8` or `i16` value.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct StoreImm16Offset16Instr {
-    /// The register storing the pointer of the `store` instruction.
-    pub ptr: Register,
-    /// The 16-bit encoded constant value of the `store` instruction.
-    pub value: Const16,
-    /// The 16-bit encoded pointer offset of the `store` instruction.
-    pub offset: Const16,
+pub struct StoreAtInstr<T> {
+    /// The constant address to store the value.
+    pub address: Const32,
+    /// The value to be stored if `T != ()`.
+    pub value: T,
 }
 
 /// The sign of a value.
