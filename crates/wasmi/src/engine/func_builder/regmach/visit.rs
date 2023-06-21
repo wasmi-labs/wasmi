@@ -337,19 +337,47 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+        self.translate_store::<i32>(
+            memarg,
+            Instruction::i32_store,
+            Instruction::i32_store_imm,
+            Self::make_instr_imm_param_32,
+            Instruction::i32_store_at,
+            Instruction::i32_store_imm_at,
+        )
     }
 
     fn visit_i64_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+        self.translate_store::<i64>(
+            memarg,
+            Instruction::i64_store,
+            Instruction::i64_store_imm,
+            Self::make_instr_imm_param_64,
+            Instruction::i64_store_at,
+            Instruction::i64_store_imm_at,
+        )
     }
 
     fn visit_f32_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+        self.translate_store::<f32>(
+            memarg,
+            Instruction::f32_store,
+            Instruction::f32_store_imm,
+            Self::make_instr_imm_param_32,
+            Instruction::f32_store_at,
+            Instruction::f32_store_imm_at,
+        )
     }
 
     fn visit_f64_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+        self.translate_store::<f64>(
+            memarg,
+            Instruction::f64_store,
+            Instruction::f64_store_imm,
+            Self::make_instr_imm_param_64,
+            Instruction::f64_store_at,
+            Instruction::f64_store_imm_at,
+        )
     }
 
     fn visit_i32_store8(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
@@ -369,7 +397,14 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_store32(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        todo!()
+        self.translate_store::<i32>(
+            memarg,
+            Instruction::i64_store32,
+            Instruction::i64_store32_imm,
+            Self::make_instr_imm_param_32,
+            Instruction::i64_store32_at,
+            Instruction::i64_store32_imm_at,
+        )
     }
 
     fn visit_memory_size(&mut self, mem: u32, mem_byte: u8) -> Self::Output {

@@ -1040,4 +1040,80 @@ impl<'parser> FuncTranslator<'parser> {
             }
         }
     }
+
+    /// Translates a Wasm `store` instruction to `wasmi` bytecode.
+    ///
+    /// # Note
+    ///
+    /// This chooses the right encoding for the given `store` instruction.
+    /// If `ptr+offset` is a constant value the address is pre-calculated.
+    ///
+    /// # Usage
+    ///
+    /// Used for translating the following Wasm operators to `wasmi` bytecode:
+    ///
+    /// - `{i32, i64, f32, f64}.store`
+    /// - `i64.store32`
+    ///
+    /// Not used for these Wasm `store` instructions:
+    ///
+    /// - `{i32, i64}.{store8, store16}`
+    fn translate_store<T>(
+        &mut self,
+        memarg: MemArg,
+        make_instr: fn(ptr: Register, offset: Const32) -> Instruction,
+        make_instr_imm: fn(ptr: Register, offset: Const32) -> Instruction,
+        make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
+        make_instr_at: fn(address: Const32, value: Register) -> Instruction,
+        make_instr_imm_at: fn(address: Const32) -> Instruction,
+    ) -> Result<(), TranslationError>
+    where
+        T: Copy + From<UntypedValue>,
+    {
+        bail_unreachable!(self);
+        let offset = Self::memarg_offset(memarg);
+        match self.alloc.stack.pop2() {
+            (Provider::Register(ptr), Provider::Register(value)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(make_instr(ptr, Const32::from(offset)))?;
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::Register(value))?;
+                Ok(())
+            }
+            (Provider::Register(ptr), Provider::Const(value)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(make_instr_imm(ptr, Const32::from(offset)))?;
+                let param = make_instr_imm_param(self, T::from(value))?;
+                self.alloc.instr_encoder.push_instr(param)?;
+                Ok(())
+            }
+            (Provider::Const(ptr), Provider::Register(value)) => {
+                match u32::from(ptr).checked_add(offset) {
+                    Some(address) => {
+                        self.alloc
+                            .instr_encoder
+                            .push_instr(make_instr_at(Const32::from(address), value))?;
+                        Ok(())
+                    }
+                    None => self.translate_trap(TrapCode::MemoryOutOfBounds),
+                }
+            }
+            (Provider::Const(ptr), Provider::Const(value)) => {
+                match u32::from(ptr).checked_add(offset) {
+                    Some(address) => {
+                        self.alloc
+                            .instr_encoder
+                            .push_instr(make_instr_imm_at(Const32::from(address)))?;
+                        let param = make_instr_imm_param(self, T::from(value))?;
+                        self.alloc.instr_encoder.push_instr(param)?;
+                        Ok(())
+                    }
+                    None => self.translate_trap(TrapCode::MemoryOutOfBounds),
+                }
+            }
+        }
+    }
 }

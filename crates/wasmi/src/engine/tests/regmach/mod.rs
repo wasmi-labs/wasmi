@@ -73,6 +73,8 @@ pub enum WasmOp {
     Cmp { ty: WasmType, op: &'static str },
     /// For Wasm `load` instructions.
     Load { ty: WasmType, op: &'static str },
+    /// For Wasm `store` instructions.
+    Store { ty: WasmType, op: &'static str },
 }
 
 impl WasmOp {
@@ -91,12 +93,18 @@ impl WasmOp {
         Self::Load { ty, op }
     }
 
+    /// Create a new `store` [`WasmOp`] for the given [`ValueType`].
+    pub const fn store(ty: WasmType, op: &'static str) -> Self {
+        Self::Store { ty, op }
+    }
+
     /// Returns the parameter [`ValueType`] of the [`WasmOp`].
     pub fn param_ty(&self) -> WasmType {
         match self {
             Self::Binary { ty, op: _ } => *ty,
             Self::Cmp { ty, op: _ } => *ty,
             Self::Load { .. } => panic!("load instructions have no parameters"),
+            Self::Store { ty, op: _ } => *ty,
         }
     }
 
@@ -106,6 +114,7 @@ impl WasmOp {
             Self::Binary { ty, op: _ } => *ty,
             Self::Cmp { ty: _, op: _ } => WasmType::I32,
             Self::Load { ty, op: _ } => *ty,
+            Self::Store { .. } => panic!("store instructions have no results"),
         }
     }
 
@@ -115,6 +124,7 @@ impl WasmOp {
             Self::Binary { .. } => self.param_ty(),
             Self::Cmp { .. } => self.param_ty(),
             Self::Load { .. } => self.result_ty(),
+            Self::Store { .. } => self.param_ty(),
         }
     }
 
@@ -124,6 +134,7 @@ impl WasmOp {
             WasmOp::Binary { ty: _, op } => op,
             WasmOp::Cmp { ty: _, op } => op,
             WasmOp::Load { ty: _, op } => op,
+            WasmOp::Store { ty: _, op } => op,
         }
     }
 }
