@@ -271,7 +271,7 @@ pub enum Instruction {
         result: Register,
         /// The `condition` that determines which value to store into `result`.
         condition: Register,
-        /// Value returned if `condition` is non-zero.
+        /// Value returned if `condition` is zero.
         rhs: Register,
     },
     /// A Wasm `select` or `select <ty>` instruction.
@@ -295,7 +295,7 @@ pub enum Instruction {
         result: Register,
         /// The `condition` that determines which value to store into `result`.
         condition: Register,
-        /// Value returned if `condition` is non-zero.
+        /// Value returned if `condition` is zero.
         rhs: Register,
     },
     /// A Wasm `select` or `select <ty>` instruction.
@@ -311,15 +311,19 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by
+    /// This [`Instruction`] must be followed by another [`Instruction::SelectImm`].
     ///
-    /// 1. [`Instruction::ConstRef`] - `lhs`: Value returned if `condition` is non-zero
-    /// 1. [`Instruction::ConstRef`] - `rhs`: Value returned if `condition` is zero
+    /// - The first [`Instruction::SelectImm`] encodes
+    ///     - `reg`: The `result` [`Register`]
+    ///     - `cref`: The `lhs` [`ConstRef`] (taken if `condition` is non-zero)
+    /// - The second [`Instruction::SelectImm`] encodes
+    ///     - `reg`: The `condition` [`Register`]
+    ///     - `cref`: The `rhs` [`ConstRef`] (taken if `condition` is zero)
     SelectImm {
-        /// The register holding the result of the instruction.
-        result: Register,
-        /// The `condition` that determines which value to store into `result`.
-        condition: Register,
+        /// Either the `result` or the `condition` [`Register`].
+        reg: Register,
+        /// Either the `lhs` or `rhs` [`ConstRef`].
+        cref: Register,
     },
     /// A Wasm `select` or `select <ty>` instruction.
     ///
@@ -334,15 +338,19 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by
+    /// This [`Instruction`] must be followed by another [`Instruction::SelectImm32`].
     ///
-    /// 1. [`Instruction::Const32`] - `lhs`: Value returned if `condition` is non-zero
-    /// 1. [`Instruction::Const32`] - `rhs`: Value returned if `condition` is zero
+    /// - The first [`Instruction::SelectImm32`] encodes
+    ///     - `reg`: The `result` [`Register`]
+    ///     - `cref`: The `lhs` [`Const32`] (taken if `condition` is non-zero)
+    /// - The second [`Instruction::SelectImm32`] encodes
+    ///     - `reg`: The `condition` [`Register`]
+    ///     - `cref`: The `rhs` [`Const32`] (taken if `condition` is zero)
     SelectImm32 {
-        /// The register holding the result of the instruction.
-        result: Register,
-        /// The `condition` that determines which value to store into `result`.
-        condition: Register,
+        /// Either the `result` or the `condition` [`Register`].
+        reg: Register,
+        /// Either the `lhs` or `rhs` [`Const32`].
+        value: Const32,
     },
 
     /// A Wasm `table.get` instruction: `result = table[index]`
