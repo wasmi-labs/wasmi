@@ -16,6 +16,7 @@ use super::{
     StoreInstr,
     UnaryInstr,
 };
+use crate::engine::bytecode2;
 
 macro_rules! constructor_for {
     (
@@ -138,6 +139,11 @@ impl Instruction {
         Self::ReturnI64Imm32 {
             value: value.into(),
         }
+    }
+
+    /// Creates a new [`Instruction::GlobalGet`].
+    pub fn global_get(result: Register, global: bytecode2::GlobalIdx) -> Self {
+        Self::GlobalGet { result, global }
     }
 
     /// Creates a new [`Instruction::F32CopysignImm`] instruction.

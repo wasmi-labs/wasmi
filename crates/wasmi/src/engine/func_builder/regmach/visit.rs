@@ -1,9 +1,15 @@
 #![allow(unused_variables)]
 
 use super::{bail_unreachable, stack::Provider, FuncTranslator};
-use crate::engine::{
-    bytecode2::{BinInstr, BinInstrImm16, Const16, Const32, Instruction, Register, UnaryInstr},
-    TranslationError,
+use crate::{
+    engine::{
+        bytecode,
+        bytecode2,
+        bytecode2::{BinInstr, BinInstrImm16, Const16, Const32, Instruction, Register, UnaryInstr},
+        TranslationError,
+    },
+    module,
+    Mutability,
 };
 use wasmi_core::{TrapCode, UntypedValue, ValueType, F32, F64};
 use wasmparser::VisitOperator;
@@ -203,7 +209,30 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_global_get(&mut self, global_index: u32) -> Self::Output {
-        todo!()
+        bail_unreachable!(self);
+        let global_idx = module::GlobalIdx::from(global_index);
+        let (global_type, init_value) = self.res.get_global(global_idx);
+        if let (Mutability::Const, Some(init_expr)) = (global_type.mutability(), init_value) {
+            if let Some(value) = init_expr.eval_const() {
+                // Optmization: Access to immutable internally defined global variables
+                //              can be replaced with their constant initialization value.
+                self.alloc.stack.push_const(value);
+                return Ok(());
+            }
+            if let Some(func_index) = init_expr.funcref() {
+                // Optimization: Forward to `ref.func x` translation.
+                self.visit_ref_func(func_index.into_u32())?;
+                return Ok(());
+            }
+        }
+        // Case: The `global.get` instruction accesses a mutable or imported
+        //       global variable and thus cannot be optimized away.
+        let global_idx = bytecode::GlobalIdx::from(global_index);
+        let result = self.alloc.stack.push_dynamic()?;
+        self.alloc
+            .instr_encoder
+            .push_instr(Instruction::global_get(result, global_idx))?;
+        Ok(())
     }
 
     fn visit_global_set(&mut self, global_index: u32) -> Self::Output {
