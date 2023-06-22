@@ -3,11 +3,12 @@
 #![allow(unused_imports)] // TODO: remove
 #![cfg(not(miri))]
 
+mod display_wasm;
 pub mod driver;
 mod op;
+pub mod wasm_type;
 
-use self::driver::TranslationTest;
-
+use self::{display_wasm::DisplayWasm, driver::TranslationTest};
 use super::{create_module, wat2wasm};
 use crate::{
     engine::{
