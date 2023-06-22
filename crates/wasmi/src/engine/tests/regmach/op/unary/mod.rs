@@ -6,6 +6,55 @@ use crate::engine::{const_pool::ConstRef, tests::regmach::driver::TranslationTes
 use std::fmt::Display;
 use wasmi_core::{UntypedValue, F32};
 
+/// [`Display`] wrapper for `T` where `T` is a Wasm type.
+pub struct DisplayWasm<T>(T);
+
+macro_rules! impl_from {
+    ( $( $ty:ty ),* $(,)? ) => {
+        $(
+            impl From<$ty> for DisplayWasm<$ty> {
+                fn from(value: $ty) -> Self {
+                    Self(value)
+                }
+            }
+        )*
+    };
+}
+impl_from!(i32, i64, f32, f64);
+
+impl Display for DisplayWasm<i32> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl Display for DisplayWasm<i64> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+macro_rules! impl_display_for_float {
+    ( $float_ty:ty ) => {
+        impl Display for DisplayWasm<$float_ty> {
+            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                let value = self.0;
+                if value.is_nan() && value.is_sign_positive() {
+                    // Special rule required because Rust and Wasm have different NaN formats.
+                    return write!(f, "nan");
+                }
+                if value.is_nan() && value.is_sign_negative() {
+                    // Special rule required because Rust and Wasm have different NaN formats.
+                    return write!(f, "-nan");
+                }
+                write!(f, "{}", value)
+            }
+        }
+    };
+}
+impl_display_for_float!(f32);
+impl_display_for_float!(f64);
+
 pub trait WasmType: Copy + Display + Into<UntypedValue> + From<UntypedValue> {
     const NAME: &'static str;
 
@@ -91,14 +140,16 @@ fn conversion_imm<I, O>(wasm_op: &str, input: I, eval: fn(input: I) -> O)
 where
     I: WasmType,
     O: WasmType,
+    DisplayWasm<I>: From<I> + Display,
 {
     let param_ty = <I as WasmType>::NAME;
     let result_ty = <O as WasmType>::NAME;
-    let wasm = wat2wasm(&format!(
+    let wasm_input = DisplayWasm::from(input);
+    let wasm: Vec<u8> = wat2wasm(&format!(
         r#"
         (module
             (func (result {result_ty})
-                {param_ty}.const {input}
+                {param_ty}.const {wasm_input}
                 {result_ty}.{wasm_op}
             )
         )
@@ -116,6 +167,7 @@ where
 fn unary_imm<T>(wasm_op: &str, input: T, eval: fn(input: T) -> T)
 where
     T: WasmType,
+    DisplayWasm<T>: From<T> + Display,
 {
     conversion_imm::<T, T>(wasm_op, input, eval)
 }
