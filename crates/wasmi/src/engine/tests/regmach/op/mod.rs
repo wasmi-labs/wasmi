@@ -25,6 +25,7 @@ mod f64_mul;
 mod f64_ne;
 mod f64_sub;
 mod global_get;
+mod global_set;
 mod i32_add;
 mod i32_and;
 mod i32_div_s;

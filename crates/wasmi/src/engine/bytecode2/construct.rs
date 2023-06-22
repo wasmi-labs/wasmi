@@ -1,6 +1,3 @@
-#[cfg(test)]
-use crate::engine::const_pool::ConstRef;
-
 use super::{
     utils::{CopysignImmInstr, Sign},
     BinInstr,
@@ -16,7 +13,7 @@ use super::{
     StoreInstr,
     UnaryInstr,
 };
-use crate::engine::bytecode2;
+use crate::engine::{bytecode2, const_pool::ConstRef};
 
 macro_rules! constructor_for {
     (
@@ -112,6 +109,11 @@ impl Instruction {
         Self::Const32(value.into())
     }
 
+    /// Creates a new [`Instruction::ConstRef`] from the given [`ConstRef`].
+    pub fn const_ref(cref: impl Into<ConstRef>) -> Self {
+        Self::ConstRef(cref.into())
+    }
+
     /// Creates a new [`Instruction::ReturnReg`] from the given [`Register`] index.
     pub fn return_reg(index: impl Into<Register>) -> Self {
         Self::ReturnReg {
@@ -144,6 +146,21 @@ impl Instruction {
     /// Creates a new [`Instruction::GlobalGet`].
     pub fn global_get(result: Register, global: bytecode2::GlobalIdx) -> Self {
         Self::GlobalGet { result, global }
+    }
+
+    /// Creates a new [`Instruction::GlobalSet`].
+    pub fn global_set(global: bytecode2::GlobalIdx, input: Register) -> Self {
+        Self::GlobalSet { global, input }
+    }
+
+    /// Creates a new [`Instruction::GlobalSetImm`].
+    pub fn global_set_imm(global: bytecode2::GlobalIdx) -> Self {
+        Self::GlobalSetImm { global }
+    }
+
+    /// Creates a new [`Instruction::GlobalSetImm32`].
+    pub fn global_set_imm32(global: bytecode2::GlobalIdx) -> Self {
+        Self::GlobalSetImm32 { global }
     }
 
     /// Creates a new [`Instruction::F32CopysignImm`] instruction.

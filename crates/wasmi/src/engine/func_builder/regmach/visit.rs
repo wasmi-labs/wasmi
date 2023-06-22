@@ -236,7 +236,50 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_global_set(&mut self, global_index: u32) -> Self::Output {
-        todo!()
+        bail_unreachable!(self);
+        let global = bytecode::GlobalIdx::from(global_index);
+        match self.alloc.stack.pop() {
+            Provider::Register(input) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::global_set(global, input))?;
+                Ok(())
+            }
+            Provider::Const(input) => {
+                let (global_type, _init_value) =
+                    self.res.get_global(module::GlobalIdx::from(global_index));
+                match global_type.content() {
+                    ValueType::I32 => {
+                        self.alloc
+                            .instr_encoder
+                            .push_instr(Instruction::global_set_imm32(global))?;
+                        self.alloc
+                            .instr_encoder
+                            .push_instr(Instruction::const32(i32::from(input)))?;
+                        Ok(())
+                    }
+                    ValueType::F32 => {
+                        self.alloc
+                            .instr_encoder
+                            .push_instr(Instruction::global_set_imm32(global))?;
+                        self.alloc
+                            .instr_encoder
+                            .push_instr(Instruction::const32(f32::from(input)))?;
+                        Ok(())
+                    }
+                    ValueType::I64 | ValueType::F64 | ValueType::FuncRef | ValueType::ExternRef => {
+                        let cref = self.engine().alloc_const(input)?;
+                        self.alloc
+                            .instr_encoder
+                            .push_instr(Instruction::global_set_imm(global))?;
+                        self.alloc
+                            .instr_encoder
+                            .push_instr(Instruction::const_ref(cref))?;
+                        Ok(())
+                    }
+                }
+            }
+        }
     }
 
     fn visit_i32_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
