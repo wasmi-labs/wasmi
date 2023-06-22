@@ -621,5 +621,38 @@ impl Instruction {
         fn i32_wrap_i64(unary) -> Self::I32WrapI64;
         fn i64_extend_i32_s(unary) -> Self::I64ExtendI32S;
         fn i64_extend_i32_u(unary) -> Self::I64ExtendI32U;
+
+        fn f32_demote_f64(unary) -> Self::F32DemoteF64;
+        fn f64_promote_f32(unary) -> Self::F64PromoteF32;
+
+        fn i32_trunc_f32_s(unary) -> Self::I32TruncF32S;
+        fn i32_trunc_f32_u(unary) -> Self::I32TruncF32U;
+        fn i32_trunc_f64_s(unary) -> Self::I32TruncF64S;
+        fn i32_trunc_f64_u(unary) -> Self::I32TruncF64U;
+
+        fn i64_trunc_f32_s(unary) -> Self::I64TruncF32S;
+        fn i64_trunc_f32_u(unary) -> Self::I64TruncF32U;
+        fn i64_trunc_f64_s(unary) -> Self::I64TruncF64S;
+        fn i64_trunc_f64_u(unary) -> Self::I64TruncF64U;
+
+        fn i32_trunc_sat_f32_s(unary) -> Self::I32TruncSatF32S;
+        fn i32_trunc_sat_f32_u(unary) -> Self::I32TruncSatF32U;
+        fn i32_trunc_sat_f64_s(unary) -> Self::I32TruncSatF64S;
+        fn i32_trunc_sat_f64_u(unary) -> Self::I32TruncSatF64U;
+
+        fn i64_trunc_sat_f32_s(unary) -> Self::I64TruncSatF32S;
+        fn i64_trunc_sat_f32_u(unary) -> Self::I64TruncSatF32U;
+        fn i64_trunc_sat_f64_s(unary) -> Self::I64TruncSatF64S;
+        fn i64_trunc_sat_f64_u(unary) -> Self::I64TruncSatF64U;
+
+        fn f32_convert_i32_s(unary) -> Self::F32ConvertI32S;
+        fn f32_convert_i32_u(unary) -> Self::F32ConvertI32U;
+        fn f32_convert_i64_s(unary) -> Self::F32ConvertI64S;
+        fn f32_convert_i64_u(unary) -> Self::F32ConvertI64U;
+
+        fn f64_convert_i32_s(unary) -> Self::F64ConvertI32S;
+        fn f64_convert_i32_u(unary) -> Self::F64ConvertI32U;
+        fn f64_convert_i64_s(unary) -> Self::F64ConvertI64S;
+        fn f64_convert_i64_u(unary) -> Self::F64ConvertI64U;
     }
 }

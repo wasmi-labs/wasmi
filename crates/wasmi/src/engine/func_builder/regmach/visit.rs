@@ -2590,19 +2590,19 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_trunc_f32_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary_fallible(Instruction::i32_trunc_f32_s, UntypedValue::i32_trunc_f32_s)
     }
 
     fn visit_i32_trunc_f32_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary_fallible(Instruction::i32_trunc_f32_u, UntypedValue::i32_trunc_f32_u)
     }
 
     fn visit_i32_trunc_f64_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary_fallible(Instruction::i32_trunc_f64_s, UntypedValue::i32_trunc_f64_s)
     }
 
     fn visit_i32_trunc_f64_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary_fallible(Instruction::i32_trunc_f64_u, UntypedValue::i32_trunc_f64_u)
     }
 
     fn visit_i64_extend_i32_s(&mut self) -> Self::Output {
@@ -2620,75 +2620,108 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_trunc_f32_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary_fallible(Instruction::i64_trunc_f32_s, UntypedValue::i64_trunc_f32_s)
     }
 
     fn visit_i64_trunc_f32_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary_fallible(Instruction::i64_trunc_f32_u, UntypedValue::i64_trunc_f32_u)
     }
 
     fn visit_i64_trunc_f64_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary_fallible(Instruction::i64_trunc_f64_s, UntypedValue::i64_trunc_f64_s)
     }
 
     fn visit_i64_trunc_f64_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary_fallible(Instruction::i64_trunc_f64_u, UntypedValue::i64_trunc_f64_u)
     }
 
     fn visit_f32_convert_i32_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(
+            Instruction::f32_convert_i32_s,
+            UntypedValue::f32_convert_i32_s,
+        )
     }
 
     fn visit_f32_convert_i32_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(
+            Instruction::f32_convert_i32_u,
+            UntypedValue::f32_convert_i32_u,
+        )
     }
 
     fn visit_f32_convert_i64_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(
+            Instruction::f32_convert_i64_s,
+            UntypedValue::f32_convert_i64_s,
+        )
     }
 
     fn visit_f32_convert_i64_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(
+            Instruction::f32_convert_i64_u,
+            UntypedValue::f32_convert_i64_u,
+        )
     }
 
     fn visit_f32_demote_f64(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::f32_demote_f64, UntypedValue::f32_demote_f64)
     }
 
     fn visit_f64_convert_i32_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(
+            Instruction::f64_convert_i32_s,
+            UntypedValue::f64_convert_i32_s,
+        )
     }
 
     fn visit_f64_convert_i32_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(
+            Instruction::f64_convert_i32_u,
+            UntypedValue::f64_convert_i32_u,
+        )
     }
 
     fn visit_f64_convert_i64_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(
+            Instruction::f64_convert_i64_s,
+            UntypedValue::f64_convert_i64_s,
+        )
     }
 
     fn visit_f64_convert_i64_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(
+            Instruction::f64_convert_i64_u,
+            UntypedValue::f64_convert_i64_u,
+        )
     }
 
     fn visit_f64_promote_f32(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(Instruction::f64_promote_f32, UntypedValue::f64_promote_f32)
     }
 
     fn visit_i32_reinterpret_f32(&mut self) -> Self::Output {
-        todo!()
+        // Nothing to do for reinterpret instructions since they are no-op,
+        // have no equivalent `wasmi` instruction and the translation process
+        // currently is untyped.
+        //
+        // TODO: The latter might change to support untyped `select` instructions
+        // which will require bookkeeping for reinterpret instructions.
+        Ok(())
     }
 
     fn visit_i64_reinterpret_f64(&mut self) -> Self::Output {
-        todo!()
+        // TODO: see comment in `visit_i32_reinterpret_f32`
+        Ok(())
     }
 
     fn visit_f32_reinterpret_i32(&mut self) -> Self::Output {
-        todo!()
+        // TODO: see comment in `visit_i32_reinterpret_f32`
+        Ok(())
     }
 
     fn visit_f64_reinterpret_i64(&mut self) -> Self::Output {
-        todo!()
+        // TODO: see comment in `visit_i32_reinterpret_f32`
+        Ok(())
     }
 
     fn visit_i32_extend8_s(&mut self) -> Self::Output {
@@ -2712,35 +2745,59 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_trunc_sat_f32_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(
+            Instruction::i32_trunc_sat_f32_s,
+            UntypedValue::i32_trunc_sat_f32_s,
+        )
     }
 
     fn visit_i32_trunc_sat_f32_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(
+            Instruction::i32_trunc_sat_f32_u,
+            UntypedValue::i32_trunc_sat_f32_u,
+        )
     }
 
     fn visit_i32_trunc_sat_f64_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(
+            Instruction::i32_trunc_sat_f64_s,
+            UntypedValue::i32_trunc_sat_f64_s,
+        )
     }
 
     fn visit_i32_trunc_sat_f64_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(
+            Instruction::i32_trunc_sat_f64_u,
+            UntypedValue::i32_trunc_sat_f64_u,
+        )
     }
 
     fn visit_i64_trunc_sat_f32_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(
+            Instruction::i64_trunc_sat_f32_s,
+            UntypedValue::i64_trunc_sat_f32_s,
+        )
     }
 
     fn visit_i64_trunc_sat_f32_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(
+            Instruction::i64_trunc_sat_f32_u,
+            UntypedValue::i64_trunc_sat_f32_u,
+        )
     }
 
     fn visit_i64_trunc_sat_f64_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(
+            Instruction::i64_trunc_sat_f64_s,
+            UntypedValue::i64_trunc_sat_f64_s,
+        )
     }
 
     fn visit_i64_trunc_sat_f64_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_unary(
+            Instruction::i64_trunc_sat_f64_u,
+            UntypedValue::i64_trunc_sat_f64_u,
+        )
     }
 
     fn visit_memory_init(&mut self, data_index: u32, mem: u32) -> Self::Output {

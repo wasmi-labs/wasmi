@@ -970,6 +970,31 @@ impl<'parser> FuncTranslator<'parser> {
         }
     }
 
+    /// Translates a fallible unary Wasm instruction to `wasmi` bytecode.
+    pub fn translate_unary_fallible(
+        &mut self,
+        make_instr: fn(result: Register, input: Register) -> Instruction,
+        consteval: fn(input: UntypedValue) -> Result<UntypedValue, TrapCode>,
+    ) -> Result<(), TranslationError> {
+        bail_unreachable!(self);
+        match self.alloc.stack.pop() {
+            Provider::Register(input) => {
+                let result = self.alloc.stack.push_dynamic()?;
+                self.alloc
+                    .instr_encoder
+                    .push_instr(make_instr(result, input))?;
+                Ok(())
+            }
+            Provider::Const(input) => match consteval(input) {
+                Ok(result) => {
+                    self.alloc.stack.push_const(result);
+                    Ok(())
+                }
+                Err(trap_code) => self.translate_trap(trap_code),
+            },
+        }
+    }
+
     /// Returns the 32-bit [`MemArg`] offset.
     ///
     /// # Panics
