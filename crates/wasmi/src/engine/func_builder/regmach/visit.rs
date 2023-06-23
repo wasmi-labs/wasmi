@@ -8,7 +8,7 @@ use crate::{
         bytecode2::{BinInstr, BinInstrImm16, Const16, Const32, Instruction, Register, UnaryInstr},
         TranslationError,
     },
-    module,
+    module::{self, WasmiValueType},
     Mutability,
 };
 use wasmi_core::{TrapCode, UntypedValue, ValueType, F32, F64};
@@ -149,13 +149,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     value: Const32::from_f32(F32::from(value)),
                 },
             },
-            [ValueType::F64] => match self.alloc.stack.pop() {
-                // Case: Function returns a single `f64` value which allows for special operator.
-                Provider::Register(value) => Instruction::return_reg(value),
-                Provider::Const(value) => Instruction::ReturnImm {
-                    value: self.engine().alloc_const(value)?,
-                },
-            },
+            [ValueType::F64 | ValueType::FuncRef | ValueType::ExternRef] => {
+                match self.alloc.stack.pop() {
+                    // Case: Function returns a single `f64` value which allows for special operator.
+                    Provider::Register(value) => Instruction::return_reg(value),
+                    Provider::Const(value) => Instruction::ReturnImm {
+                        value: self.engine().alloc_const(value)?,
+                    },
+                }
+            }
             _ => todo!(),
         };
         self.alloc.instr_encoder.push_instr(instr)?;
@@ -192,7 +194,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_typed_select(&mut self, ty: wasmparser::ValType) -> Self::Output {
-        todo!()
+        self.translate_select(WasmiValueType::from(ty).into_inner())
     }
 
     fn visit_local_get(&mut self, local_index: u32) -> Self::Output {

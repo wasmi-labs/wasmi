@@ -132,6 +132,13 @@ impl ValueStack {
         (lhs, rhs)
     }
 
+    /// Pops the top-most [`Provider`] from the [`ValueStack`].
+    pub fn pop3(&mut self) -> (Provider, Provider, Provider) {
+        let (v1, v2) = self.pop2();
+        let v0 = self.pop();
+        (v0, v1, v2)
+    }
+
     /// Registers the [`Instr`] user for [`Register`] if `reg` is allocated in storage space.
     ///
     /// # Note

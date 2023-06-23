@@ -173,6 +173,64 @@ impl Instruction {
         Self::F64CopysignImm(CopysignImmInstr { result, lhs, rhs })
     }
 
+    /// Creates a new [`Instruction::Select`].
+    pub fn select(result: Register, condition: Register, lhs: Register) -> Self {
+        Self::Select {
+            result,
+            condition,
+            lhs,
+        }
+    }
+
+    /// Creates a new [`Instruction::SelectImm`].
+    pub fn select_imm(reg: Register, cref: ConstRef) -> Self {
+        Self::SelectImm { reg, cref }
+    }
+
+    /// Creates a new [`Instruction::SelectImm32`].
+    pub fn select_imm32(reg: Register, value: impl Into<Const32>) -> Self {
+        Self::SelectImm32 {
+            reg,
+            value: value.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::SelectRhsImm`].
+    pub fn select_imm_rhs(result: Register, condition: Register, lhs: Register) -> Self {
+        Self::SelectRhsImm {
+            result,
+            condition,
+            lhs,
+        }
+    }
+
+    /// Creates a new [`Instruction::SelectRhsImm32`].
+    pub fn select_imm32_rhs(result: Register, condition: Register, lhs: Register) -> Self {
+        Self::SelectRhsImm32 {
+            result,
+            condition,
+            lhs,
+        }
+    }
+
+    /// Creates a new [`Instruction::SelectLhsImm`].
+    pub fn select_imm_lhs(result: Register, condition: Register, rhs: Register) -> Self {
+        Self::SelectLhsImm {
+            result,
+            condition,
+            rhs,
+        }
+    }
+
+    /// Creates a new [`Instruction::SelectLhsImm32`].
+    pub fn select_imm32_lhs(result: Register, condition: Register, rhs: Register) -> Self {
+        Self::SelectLhsImm32 {
+            result,
+            condition,
+            rhs,
+        }
+    }
+
     constructor_for! {
         // Load
 

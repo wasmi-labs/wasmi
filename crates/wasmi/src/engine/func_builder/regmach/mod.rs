@@ -1207,4 +1207,180 @@ impl<'parser> FuncTranslator<'parser> {
             }
         }
     }
+
+    /// Translates a Wasm `select` or `select <ty>` instruction.
+    ///
+    /// # Note
+    ///
+    /// - This applies constant propagation in case `condition` is a constant value.
+    /// - If both `lhs` and `rhs` are equal registers or constant values `lhs` is forwarded.
+    /// - Properly chooses the correct `select` instruction encoding and optimizes for
+    ///   cases with 32-bit constant values.
+    fn translate_select(&mut self, ty: ValueType) -> Result<(), TranslationError> {
+        bail_unreachable!(self);
+        let (lhs, rhs, condition) = self.alloc.stack.pop3();
+        match condition {
+            Provider::Const(condition) => match (bool::from(condition), lhs, rhs) {
+                // # Optimization
+                //
+                // Since the `condition` is a constant value we can forward `lhs` or `rhs` statically.
+                (true, Provider::Register(reg), _) | (false, _, Provider::Register(reg)) => {
+                    self.alloc.stack.push_register(reg)?;
+                    Ok(())
+                }
+                (true, Provider::Const(value), _) | (false, _, Provider::Const(value)) => {
+                    self.alloc.stack.push_const(value);
+                    Ok(())
+                }
+            },
+            Provider::Register(condition) => match (lhs, rhs) {
+                (Provider::Register(lhs), Provider::Register(rhs)) => {
+                    if lhs == rhs {
+                        // # Optimization
+                        //
+                        // Both `lhs` and `rhs` are equal registers
+                        // and thus will always yield the same value.
+                        self.alloc.stack.push_register(lhs)?;
+                        return Ok(());
+                    }
+                    let result = self.alloc.stack.push_dynamic()?;
+                    self.alloc
+                        .instr_encoder
+                        .push_instr(Instruction::select(result, condition, lhs))?;
+                    self.alloc
+                        .instr_encoder
+                        .push_instr(Instruction::Register(rhs))?;
+                    Ok(())
+                }
+                (Provider::Register(lhs), Provider::Const(rhs)) => {
+                    fn push_select_imm32_rhs(
+                        this: &mut FuncTranslator<'_>,
+                        result: Register,
+                        condition: Register,
+                        lhs: Register,
+                        rhs: impl Into<Const32>,
+                    ) -> Result<(), TranslationError> {
+                        this.alloc
+                            .instr_encoder
+                            .push_instr(Instruction::select_imm32_rhs(result, condition, lhs))?;
+                        this.alloc
+                            .instr_encoder
+                            .push_instr(Instruction::const32(rhs))?;
+                        Ok(())
+                    }
+
+                    let result = self.alloc.stack.push_dynamic()?;
+                    match ty {
+                        ValueType::I32 => {
+                            push_select_imm32_rhs(self, result, condition, lhs, i32::from(rhs))
+                        }
+                        ValueType::F32 => {
+                            push_select_imm32_rhs(self, result, condition, lhs, f32::from(rhs))
+                        }
+                        ValueType::I64
+                        | ValueType::F64
+                        | ValueType::FuncRef
+                        | ValueType::ExternRef => {
+                            let rhs_cref = self.engine().alloc_const(rhs)?;
+                            self.alloc
+                                .instr_encoder
+                                .push_instr(Instruction::select_imm_rhs(result, condition, lhs))?;
+                            self.alloc
+                                .instr_encoder
+                                .push_instr(Instruction::const_ref(rhs_cref))?;
+                            Ok(())
+                        }
+                    }
+                }
+                (Provider::Const(lhs), Provider::Register(rhs)) => {
+                    fn push_select_imm32_lhs(
+                        this: &mut FuncTranslator<'_>,
+                        result: Register,
+                        condition: Register,
+                        lhs: impl Into<Const32>,
+                        rhs: Register,
+                    ) -> Result<(), TranslationError> {
+                        this.alloc
+                            .instr_encoder
+                            .push_instr(Instruction::select_imm32_lhs(result, condition, rhs))?;
+                        this.alloc
+                            .instr_encoder
+                            .push_instr(Instruction::const32(lhs))?;
+                        Ok(())
+                    }
+
+                    let result = self.alloc.stack.push_dynamic()?;
+                    match ty {
+                        ValueType::I32 => {
+                            push_select_imm32_lhs(self, result, condition, i32::from(lhs), rhs)
+                        }
+                        ValueType::F32 => {
+                            push_select_imm32_lhs(self, result, condition, f32::from(lhs), rhs)
+                        }
+                        ValueType::I64
+                        | ValueType::F64
+                        | ValueType::FuncRef
+                        | ValueType::ExternRef => {
+                            let lhs_cref = self.engine().alloc_const(lhs)?;
+                            self.alloc
+                                .instr_encoder
+                                .push_instr(Instruction::select_imm_lhs(result, condition, rhs))?;
+                            self.alloc
+                                .instr_encoder
+                                .push_instr(Instruction::const_ref(lhs_cref))?;
+                            Ok(())
+                        }
+                    }
+                }
+                (Provider::Const(lhs), Provider::Const(rhs)) => {
+                    fn push_select_imm32(
+                        this: &mut FuncTranslator<'_>,
+                        reg: Register,
+                        value: impl Into<Const32>,
+                    ) -> Result<(), TranslationError> {
+                        this.alloc
+                            .instr_encoder
+                            .push_instr(Instruction::select_imm32(reg, value))?;
+                        Ok(())
+                    }
+
+                    if lhs == rhs {
+                        // # Optimization
+                        //
+                        // Both `lhs` and `rhs` are equal registers
+                        // and thus will always yield the same value.
+                        self.alloc.stack.push_const(lhs);
+                        return Ok(());
+                    }
+                    let result = self.alloc.stack.push_dynamic()?;
+                    match ty {
+                        ValueType::I32 => {
+                            push_select_imm32(self, result, i32::from(lhs))?;
+                            push_select_imm32(self, condition, i32::from(rhs))?;
+                            Ok(())
+                        }
+                        ValueType::F32 => {
+                            push_select_imm32(self, result, f32::from(lhs))?;
+                            push_select_imm32(self, condition, f32::from(rhs))?;
+                            Ok(())
+                        }
+                        ValueType::I64
+                        | ValueType::F64
+                        | ValueType::FuncRef
+                        | ValueType::ExternRef => {
+                            let lhs_cref = self.engine().alloc_const(lhs)?;
+                            let rhs_cref = self.engine().alloc_const(rhs)?;
+                            self.alloc
+                                .instr_encoder
+                                .push_instr(Instruction::select_imm(result, lhs_cref))?;
+                            self.alloc
+                                .instr_encoder
+                                .push_instr(Instruction::select_imm(condition, rhs_cref))?;
+                            Ok(())
+                        }
+                    }
+                }
+            },
+        }
+    }
 }

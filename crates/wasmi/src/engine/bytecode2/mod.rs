@@ -323,7 +323,7 @@ pub enum Instruction {
         /// Either the `result` or the `condition` [`Register`].
         reg: Register,
         /// Either the `lhs` or `rhs` [`ConstRef`].
-        cref: Register,
+        cref: ConstRef,
     },
     /// A Wasm `select` or `select <ty>` instruction.
     ///
