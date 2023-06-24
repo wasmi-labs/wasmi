@@ -46,6 +46,8 @@ impl From<TypedValue> for UntypedValue {
 /// abstraction since [`Value`] is optimized towards being a
 /// user facing type whereas [`TypedValue`] is focusing on
 /// performance and efficiency in computations.
+/// 
+/// [`Value`]: [`crate::core::Value`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct TypedValue {
     /// The type of the value.
