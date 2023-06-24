@@ -194,7 +194,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_typed_select(&mut self, ty: wasmparser::ValType) -> Self::Output {
-        self.translate_select(WasmiValueType::from(ty).into_inner())
+        self.translate_select(Some(WasmiValueType::from(ty).into_inner()))
     }
 
     fn visit_local_get(&mut self, local_index: u32) -> Self::Output {

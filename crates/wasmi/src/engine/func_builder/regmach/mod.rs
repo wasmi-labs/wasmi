@@ -1218,7 +1218,7 @@ impl<'parser> FuncTranslator<'parser> {
     /// - If both `lhs` and `rhs` are equal registers or constant values `lhs` is forwarded.
     /// - Properly chooses the correct `select` instruction encoding and optimizes for
     ///   cases with 32-bit constant values.
-    fn translate_select(&mut self, ty: ValueType) -> Result<(), TranslationError> {
+    fn translate_select(&mut self, type_hint: Option<ValueType>) -> Result<(), TranslationError> {
         bail_unreachable!(self);
         let (lhs, rhs, condition) = self.alloc.stack.pop3();
         match condition {
@@ -1271,8 +1271,11 @@ impl<'parser> FuncTranslator<'parser> {
                         Ok(())
                     }
 
+                    if let Some(type_hint) = type_hint {
+                        debug_assert_eq!(rhs.ty(), type_hint);
+                    }
                     let result = self.alloc.stack.push_dynamic()?;
-                    match ty {
+                    match rhs.ty() {
                         ValueType::I32 => {
                             push_select_imm32_rhs(self, result, condition, lhs, i32::from(rhs))
                         }
@@ -1311,8 +1314,11 @@ impl<'parser> FuncTranslator<'parser> {
                         Ok(())
                     }
 
+                    if let Some(type_hint) = type_hint {
+                        debug_assert_eq!(lhs.ty(), type_hint);
+                    }
                     let result = self.alloc.stack.push_dynamic()?;
-                    match ty {
+                    match lhs.ty() {
                         ValueType::I32 => {
                             push_select_imm32_lhs(self, result, condition, i32::from(lhs), rhs)
                         }
@@ -1346,6 +1352,10 @@ impl<'parser> FuncTranslator<'parser> {
                         Ok(())
                     }
 
+                    debug_assert_eq!(lhs.ty(), rhs.ty());
+                    if let Some(type_hint) = type_hint {
+                        debug_assert_eq!(lhs.ty(), type_hint);
+                    }
                     if lhs == rhs {
                         // # Optimization
                         //
@@ -1355,7 +1365,7 @@ impl<'parser> FuncTranslator<'parser> {
                         return Ok(());
                     }
                     let result = self.alloc.stack.push_dynamic()?;
-                    match ty {
+                    match lhs.ty() {
                         ValueType::I32 => {
                             push_select_imm32(self, result, i32::from(lhs))?;
                             push_select_imm32(self, condition, i32::from(rhs))?;
