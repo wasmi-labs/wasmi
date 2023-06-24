@@ -5,6 +5,7 @@ pub use self::{
     provider::{ProviderStack, TaggedProvider},
     register_alloc::{DefragRegister, RegisterAlloc},
 };
+use super::{Typed, TypedValue};
 use crate::engine::{
     bytecode2::Register,
     func_builder::TranslationErrorInner,
@@ -21,7 +22,7 @@ pub enum Provider {
     /// A register.
     Register(Register),
     /// An untyped constant value.
-    Const(UntypedValue),
+    Const(TypedValue),
 }
 
 /// The value stack.
@@ -69,7 +70,7 @@ impl ValueStack {
     /// Pushes a constant value to the [`ProviderStack`].
     pub fn push_const<T>(&mut self, value: T)
     where
-        T: Into<UntypedValue>,
+        T: Into<TypedValue>,
     {
         self.providers.push_const(value)
     }

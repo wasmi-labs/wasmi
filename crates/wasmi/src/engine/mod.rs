@@ -149,8 +149,11 @@ impl Engine {
     /// # Errors
     ///
     /// If too many constant values have been allocated for the [`Engine`] this way.
-    pub(super) fn alloc_const(&self, value: UntypedValue) -> Result<ConstRef, TranslationError> {
-        self.inner.alloc_const(value)
+    pub(super) fn alloc_const(
+        &self,
+        value: impl Into<UntypedValue>,
+    ) -> Result<ConstRef, TranslationError> {
+        self.inner.alloc_const(value.into())
     }
 
     /// Returns the [`UntypedValue`] of the [`ConstRef`] if any.

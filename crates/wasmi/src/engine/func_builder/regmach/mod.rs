@@ -6,12 +6,14 @@ mod control_frame;
 mod control_stack;
 mod instr_encoder;
 mod stack;
+mod typed_value;
 mod utils;
 mod visit;
 
 use self::{
     control_frame::BlockControlFrame,
     stack::ValueStack,
+    typed_value::{Typed, TypedValue},
     utils::{WasmFloat, WasmInteger},
 };
 pub use self::{
@@ -345,9 +347,9 @@ impl<'parser> FuncTranslator<'parser> {
     /// Evaluates the constants and pushes the proper result to the value stack.
     fn push_binary_consteval(
         &mut self,
-        lhs: UntypedValue,
-        rhs: UntypedValue,
-        consteval: fn(UntypedValue, UntypedValue) -> UntypedValue,
+        lhs: TypedValue,
+        rhs: TypedValue,
+        consteval: fn(TypedValue, TypedValue) -> TypedValue,
     ) -> Result<(), TranslationError> {
         self.alloc.stack.push_const(consteval(lhs, rhs));
         Ok(())
@@ -415,7 +417,7 @@ impl<'parser> FuncTranslator<'parser> {
         make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
         make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
         make_instr_imm16_rev: fn(result: Register, lhs: Const16, rhs: Register) -> Instruction,
-        consteval: fn(UntypedValue, UntypedValue) -> UntypedValue,
+        consteval: fn(TypedValue, TypedValue) -> TypedValue,
         make_instr_opt: fn(
             &mut Self,
             lhs: Register,
@@ -433,7 +435,7 @@ impl<'parser> FuncTranslator<'parser> {
         ) -> Result<bool, TranslationError>,
     ) -> Result<(), TranslationError>
     where
-        T: Copy + From<UntypedValue> + Into<UntypedValue> + TryInto<Const16>,
+        T: Copy + From<TypedValue> + Into<TypedValue> + TryInto<Const16>,
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
@@ -505,7 +507,7 @@ impl<'parser> FuncTranslator<'parser> {
         make_instr_imm: fn(result: Register, lhs: Register) -> Instruction,
         make_instr_imm_rev: fn(result: Register, lhs: Register) -> Instruction,
         make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
-        consteval: fn(UntypedValue, UntypedValue) -> UntypedValue,
+        consteval: fn(TypedValue, TypedValue) -> TypedValue,
         make_instr_opt: fn(
             &mut Self,
             lhs: Register,
@@ -581,7 +583,7 @@ impl<'parser> FuncTranslator<'parser> {
         make_instr_imm: fn(result: Register, lhs: Register, rhs: Sign) -> Instruction,
         make_instr_imm_rev: fn(result: Register, rhs: Register) -> Instruction,
         make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
-        consteval: fn(UntypedValue, UntypedValue) -> UntypedValue,
+        consteval: fn(TypedValue, TypedValue) -> TypedValue,
     ) -> Result<(), TranslationError>
     where
         T: WasmFloat,
@@ -642,7 +644,7 @@ impl<'parser> FuncTranslator<'parser> {
         make_instr_imm: fn(result: Register, lhs: Register) -> Instruction,
         make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
         make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
-        consteval: fn(UntypedValue, UntypedValue) -> UntypedValue,
+        consteval: fn(TypedValue, TypedValue) -> TypedValue,
         make_instr_opt: fn(
             &mut Self,
             lhs: Register,
@@ -651,7 +653,7 @@ impl<'parser> FuncTranslator<'parser> {
         make_instr_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, TranslationError>,
     ) -> Result<(), TranslationError>
     where
-        T: Copy + From<UntypedValue> + Into<UntypedValue> + TryInto<Const16>,
+        T: Copy + From<TypedValue> + Into<TypedValue> + TryInto<Const16>,
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
@@ -710,7 +712,7 @@ impl<'parser> FuncTranslator<'parser> {
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
         make_instr_imm: fn(result: Register, lhs: Register) -> Instruction,
         make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
-        consteval: fn(UntypedValue, UntypedValue) -> UntypedValue,
+        consteval: fn(TypedValue, TypedValue) -> TypedValue,
         make_instr_opt: fn(
             &mut Self,
             lhs: Register,
@@ -778,7 +780,7 @@ impl<'parser> FuncTranslator<'parser> {
         make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
         make_instr_imm_rev: fn(result: Register, rhs: Register) -> Instruction,
         make_instr_imm16_rev: fn(result: Register, lhs: Const16, rhs: Register) -> Instruction,
-        consteval: fn(UntypedValue, UntypedValue) -> UntypedValue,
+        consteval: fn(TypedValue, TypedValue) -> TypedValue,
         make_instr_imm_reg_opt: fn(
             &mut Self,
             lhs: T,
@@ -815,7 +817,7 @@ impl<'parser> FuncTranslator<'parser> {
                 }
                 if T::from(lhs).eq_zero() {
                     // Optimization: Shifting or rotating a zero value is a no-op.
-                    self.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    self.alloc.stack.push_const(lhs);
                     return Ok(());
                 }
                 if self.try_push_binary_instr_imm16_rev(T::from(lhs), rhs, make_instr_imm16_rev)? {
@@ -860,7 +862,7 @@ impl<'parser> FuncTranslator<'parser> {
         make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
         make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
         make_instr_imm16_rev: fn(result: Register, lhs: Const16, rhs: Register) -> Instruction,
-        consteval: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
+        consteval: fn(TypedValue, TypedValue) -> Result<TypedValue, TrapCode>,
         make_instr_opt: fn(
             &mut Self,
             lhs: Register,
@@ -952,7 +954,7 @@ impl<'parser> FuncTranslator<'parser> {
     pub fn translate_unary(
         &mut self,
         make_instr: fn(result: Register, input: Register) -> Instruction,
-        consteval: fn(input: UntypedValue) -> UntypedValue,
+        consteval: fn(input: TypedValue) -> TypedValue,
     ) -> Result<(), TranslationError> {
         bail_unreachable!(self);
         match self.alloc.stack.pop() {
@@ -974,7 +976,7 @@ impl<'parser> FuncTranslator<'parser> {
     pub fn translate_unary_fallible(
         &mut self,
         make_instr: fn(result: Register, input: Register) -> Instruction,
-        consteval: fn(input: UntypedValue) -> Result<UntypedValue, TrapCode>,
+        consteval: fn(input: TypedValue) -> Result<TypedValue, TrapCode>,
     ) -> Result<(), TranslationError> {
         bail_unreachable!(self);
         match self.alloc.stack.pop() {
@@ -1014,7 +1016,7 @@ impl<'parser> FuncTranslator<'parser> {
     /// Encodes a [`TrapCode::MemoryOutOfBounds`] trap instruction if the effective address is invalid.
     fn effective_address_and(
         &mut self,
-        ptr: UntypedValue,
+        ptr: TypedValue,
         offset: u32,
         f: impl FnOnce(&mut Self, u32) -> Result<(), TranslationError>,
     ) -> Result<(), TranslationError> {
@@ -1102,7 +1104,7 @@ impl<'parser> FuncTranslator<'parser> {
         make_instr_imm_at: fn(address: Const32) -> Instruction,
     ) -> Result<(), TranslationError>
     where
-        T: Copy + From<UntypedValue>,
+        T: Copy + From<TypedValue>,
     {
         bail_unreachable!(self);
         let offset = Self::memarg_offset(memarg);
@@ -1167,7 +1169,7 @@ impl<'parser> FuncTranslator<'parser> {
         make_instr_imm_at: fn(address: Const32, value: T) -> Instruction,
     ) -> Result<(), TranslationError>
     where
-        T: Copy + From<UntypedValue>,
+        T: Copy + From<TypedValue>,
     {
         bail_unreachable!(self);
         let offset = Self::memarg_offset(memarg);
@@ -1381,6 +1383,23 @@ impl<'parser> FuncTranslator<'parser> {
                     }
                 }
             },
+        }
+    }
+
+    /// Translates a Wasm `reinterpret` instruction.
+    pub fn translate_reinterpret(&mut self, ty: ValueType) -> Result<(), TranslationError> {
+        bail_unreachable!(self);
+        match self.alloc.stack.pop() {
+            Provider::Register(reg) => {
+                // Nothing to do in this case so we simply push the popped register back.
+                self.alloc.stack.push_register(reg)?;
+                Ok(())
+            }
+            Provider::Const(value) => {
+                // In case of a constant value we have to adjust for its new type and push it back.
+                self.alloc.stack.push_const(value.reinterpret(ty));
+                Ok(())
+            }
         }
     }
 }

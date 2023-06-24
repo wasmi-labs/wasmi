@@ -1,6 +1,6 @@
 #![allow(unused_variables)]
 
-use super::{bail_unreachable, stack::Provider, FuncTranslator};
+use super::{bail_unreachable, stack::Provider, FuncTranslator, Typed, TypedValue};
 use crate::{
     engine::{
         bytecode,
@@ -214,11 +214,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         bail_unreachable!(self);
         let global_idx = module::GlobalIdx::from(global_index);
         let (global_type, init_value) = self.res.get_global(global_idx);
+        let content = global_type.content();
         if let (Mutability::Const, Some(init_expr)) = (global_type.mutability(), init_value) {
             if let Some(value) = init_expr.eval_const() {
                 // Optmization: Access to immutable internally defined global variables
                 //              can be replaced with their constant initialization value.
-                self.alloc.stack.push_const(value);
+                self.alloc.stack.push_const(TypedValue::new(content, value));
                 return Ok(());
             }
             if let Some(func_index) = init_expr.funcref() {
@@ -562,7 +563,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i32_eq_imm,
             Self::make_instr_imm_param_32,
             Instruction::i32_eq_imm16,
-            UntypedValue::i32_eq,
+            TypedValue::i32_eq,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x == x` is always `true`
@@ -581,7 +582,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i32_ne_imm,
             Self::make_instr_imm_param_32,
             Instruction::i32_ne_imm16,
-            UntypedValue::i32_ne,
+            TypedValue::i32_ne,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x != x` is always `false`
@@ -602,7 +603,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_32,
             Instruction::i32_lt_s_imm16,
             swap_ops!(Instruction::i32_gt_s_imm16),
-            UntypedValue::i32_lt_s,
+            TypedValue::i32_lt_s,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x < x` is always `false`
@@ -638,7 +639,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_32,
             Instruction::i32_lt_u_imm16,
             swap_ops!(Instruction::i32_gt_u_imm16),
-            UntypedValue::i32_lt_u,
+            TypedValue::i32_lt_u,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x < x` is always `false`
@@ -674,7 +675,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_32,
             Instruction::i32_gt_s_imm16,
             swap_ops!(Instruction::i32_lt_s_imm16),
-            UntypedValue::i32_gt_s,
+            TypedValue::i32_gt_s,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x > x` is always `false`
@@ -710,7 +711,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_32,
             Instruction::i32_gt_u_imm16,
             swap_ops!(Instruction::i32_lt_u_imm16),
-            UntypedValue::i32_gt_u,
+            TypedValue::i32_gt_u,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x > x` is always `false`
@@ -746,7 +747,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_32,
             Instruction::i32_le_s_imm16,
             swap_ops!(Instruction::i32_ge_s_imm16),
-            UntypedValue::i32_le_s,
+            TypedValue::i32_le_s,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x <= x` is always `true`
@@ -782,7 +783,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_32,
             Instruction::i32_le_u_imm16,
             swap_ops!(Instruction::i32_ge_u_imm16),
-            UntypedValue::i32_le_u,
+            TypedValue::i32_le_u,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x <= x` is always `true`
@@ -818,7 +819,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_32,
             Instruction::i32_ge_s_imm16,
             swap_ops!(Instruction::i32_le_s_imm16),
-            UntypedValue::i32_ge_s,
+            TypedValue::i32_ge_s,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x >= x` is always `true`
@@ -854,7 +855,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_32,
             Instruction::i32_ge_u_imm16,
             swap_ops!(Instruction::i32_le_u_imm16),
-            UntypedValue::i32_ge_u,
+            TypedValue::i32_ge_u,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x >= x` is always `true`
@@ -895,7 +896,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i64_eq_imm,
             Self::make_instr_imm_param_64,
             Instruction::i64_eq_imm16,
-            UntypedValue::i64_eq,
+            TypedValue::i64_eq,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x == x` is always `true`
@@ -914,7 +915,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i64_ne_imm,
             Self::make_instr_imm_param_64,
             Instruction::i64_ne_imm16,
-            UntypedValue::i64_ne,
+            TypedValue::i64_ne,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x != x` is always `false`
@@ -935,7 +936,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_64,
             Instruction::i64_lt_s_imm16,
             swap_ops!(Instruction::i64_gt_s_imm16),
-            UntypedValue::i64_lt_s,
+            TypedValue::i64_lt_s,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x < x` is always `false`
@@ -971,7 +972,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_64,
             Instruction::i64_lt_u_imm16,
             swap_ops!(Instruction::i64_gt_u_imm16),
-            UntypedValue::i64_lt_u,
+            TypedValue::i64_lt_u,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x < x` is always `false`
@@ -1007,7 +1008,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_64,
             Instruction::i64_gt_s_imm16,
             swap_ops!(Instruction::i64_lt_s_imm16),
-            UntypedValue::i64_gt_s,
+            TypedValue::i64_gt_s,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x > x` is always `false`
@@ -1043,7 +1044,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_64,
             Instruction::i64_gt_u_imm16,
             swap_ops!(Instruction::i64_lt_u_imm16),
-            UntypedValue::i64_gt_u,
+            TypedValue::i64_gt_u,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x > x` is always `false`
@@ -1079,7 +1080,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_64,
             Instruction::i64_le_s_imm16,
             swap_ops!(Instruction::i64_ge_s_imm16),
-            UntypedValue::i64_le_s,
+            TypedValue::i64_le_s,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x <= x` is always `true`
@@ -1115,7 +1116,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_64,
             Instruction::i64_le_u_imm16,
             swap_ops!(Instruction::i64_ge_u_imm16),
-            UntypedValue::i64_le_u,
+            TypedValue::i64_le_u,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x <= x` is always `true`
@@ -1151,7 +1152,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_64,
             Instruction::i64_ge_s_imm16,
             swap_ops!(Instruction::i64_le_s_imm16),
-            UntypedValue::i64_ge_s,
+            TypedValue::i64_ge_s,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x >= x` is always `true`
@@ -1187,7 +1188,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_64,
             Instruction::i64_ge_u_imm16,
             swap_ops!(Instruction::i64_le_u_imm16),
-            UntypedValue::i64_ge_u,
+            TypedValue::i64_ge_u,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x >= x` is always `true`
@@ -1220,7 +1221,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f32_eq,
             Instruction::f32_eq_imm,
             Self::make_instr_imm_param_32,
-            UntypedValue::f32_eq,
+            TypedValue::f32_eq,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x == x` is always `true`
@@ -1245,7 +1246,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f32_ne,
             Instruction::f32_ne_imm,
             Self::make_instr_imm_param_32,
-            UntypedValue::f32_ne,
+            TypedValue::f32_ne,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x != x` is always `false`
@@ -1271,7 +1272,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f32_lt_imm,
             Instruction::f32_gt_imm,
             Self::make_instr_imm_param_32,
-            UntypedValue::f32_lt,
+            TypedValue::f32_lt,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x < x` is always `false`
@@ -1315,7 +1316,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f32_gt_imm,
             Instruction::f32_lt_imm,
             Self::make_instr_imm_param_32,
-            UntypedValue::f32_gt,
+            TypedValue::f32_gt,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x > x` is always `false`
@@ -1359,7 +1360,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f32_le_imm,
             Instruction::f32_ge_imm,
             Self::make_instr_imm_param_32,
-            UntypedValue::f32_le,
+            TypedValue::f32_le,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x < x` is always `true`
@@ -1393,7 +1394,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f32_ge_imm,
             Instruction::f32_le_imm,
             Self::make_instr_imm_param_32,
-            UntypedValue::f32_ge,
+            TypedValue::f32_ge,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x >= x` is always `true`
@@ -1426,7 +1427,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f64_eq,
             Instruction::f64_eq_imm,
             Self::make_instr_imm_param_64,
-            UntypedValue::f64_eq,
+            TypedValue::f64_eq,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x == x` is always `true`
@@ -1451,7 +1452,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f64_ne,
             Instruction::f64_ne_imm,
             Self::make_instr_imm_param_64,
-            UntypedValue::f64_ne,
+            TypedValue::f64_ne,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x != x` is always `false`
@@ -1477,7 +1478,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f64_lt_imm,
             Instruction::f64_gt_imm,
             Self::make_instr_imm_param_64,
-            UntypedValue::f64_lt,
+            TypedValue::f64_lt,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x < x` is always `false`
@@ -1521,7 +1522,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f64_gt_imm,
             Instruction::f64_lt_imm,
             Self::make_instr_imm_param_64,
-            UntypedValue::f64_gt,
+            TypedValue::f64_gt,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x > x` is always `false`
@@ -1565,7 +1566,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f64_le_imm,
             Instruction::f64_ge_imm,
             Self::make_instr_imm_param_64,
-            UntypedValue::f64_le,
+            TypedValue::f64_le,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x < x` is always `true`
@@ -1599,7 +1600,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f64_ge_imm,
             Instruction::f64_le_imm,
             Self::make_instr_imm_param_64,
-            UntypedValue::f64_ge,
+            TypedValue::f64_ge,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x >= x` is always `true`
@@ -1628,15 +1629,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_clz(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::i32_clz, UntypedValue::i32_clz)
+        self.translate_unary(Instruction::i32_clz, TypedValue::i32_clz)
     }
 
     fn visit_i32_ctz(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::i32_ctz, UntypedValue::i32_ctz)
+        self.translate_unary(Instruction::i32_ctz, TypedValue::i32_ctz)
     }
 
     fn visit_i32_popcnt(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::i32_popcnt, UntypedValue::i32_popcnt)
+        self.translate_unary(Instruction::i32_popcnt, TypedValue::i32_popcnt)
     }
 
     fn visit_i32_add(&mut self) -> Self::Output {
@@ -1645,7 +1646,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i32_add_imm,
             Self::make_instr_imm_param_32,
             Instruction::i32_add_imm16,
-            UntypedValue::i32_add,
+            TypedValue::i32_add,
             Self::no_custom_opt,
             |this, reg: Register, value: i32| {
                 if value == 0 {
@@ -1666,11 +1667,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_32,
             Instruction::i32_sub_imm16,
             Instruction::i32_sub_imm16_rev,
-            UntypedValue::i32_sub,
+            TypedValue::i32_sub,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `sub x - x` is always `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    this.alloc.stack.push_const(0_i32);
                     return Ok(true);
                 }
                 Ok(false)
@@ -1693,12 +1694,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i32_mul_imm,
             Self::make_instr_imm_param_32,
             Instruction::i32_mul_imm16,
-            UntypedValue::i32_mul,
+            TypedValue::i32_mul,
             Self::no_custom_opt,
             |this, reg: Register, value: i32| {
                 if value == 0 {
                     // Optimization: `add x * 0` is always `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    this.alloc.stack.push_const(0_i32);
                     return Ok(true);
                 }
                 if value == 1 {
@@ -1719,11 +1720,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_32,
             Instruction::i32_div_s_imm16,
             Instruction::i32_div_s_imm16_rev,
-            UntypedValue::i32_div_s,
+            TypedValue::i32_div_s,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x / x` is always `1`
-                    this.alloc.stack.push_const(UntypedValue::from(1_i32));
+                    this.alloc.stack.push_const(1_i32);
                     return Ok(true);
                 }
                 Ok(false)
@@ -1747,11 +1748,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_32,
             Instruction::i32_div_u_imm16,
             Instruction::i32_div_u_imm16_rev,
-            UntypedValue::i32_div_u,
+            TypedValue::i32_div_u,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x / x` is always `1`
-                    this.alloc.stack.push_const(UntypedValue::from(1_i32));
+                    this.alloc.stack.push_const(1_i32);
                     return Ok(true);
                 }
                 Ok(false)
@@ -1775,11 +1776,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_32,
             Instruction::i32_rem_s_imm16,
             Instruction::i32_rem_s_imm16_rev,
-            UntypedValue::i32_rem_s,
+            TypedValue::i32_rem_s,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x % x` is always `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    this.alloc.stack.push_const(0_i32);
                     return Ok(true);
                 }
                 Ok(false)
@@ -1787,7 +1788,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             |this, lhs: Register, rhs: i32| {
                 if rhs == 1 || rhs == -1 {
                     // Optimization: `x % 1` or `x % -1` is always `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    this.alloc.stack.push_const(0_i32);
                     return Ok(true);
                 }
                 Ok(false)
@@ -1803,11 +1804,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_32,
             Instruction::i32_rem_u_imm16,
             Instruction::i32_rem_u_imm16_rev,
-            UntypedValue::i32_rem_u,
+            TypedValue::i32_rem_u,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x % x` is always `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    this.alloc.stack.push_const(0_i32);
                     return Ok(true);
                 }
                 Ok(false)
@@ -1815,7 +1816,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             |this, lhs: Register, rhs: i32| {
                 if rhs == 1 {
                     // Optimization: `x % 1` is always `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    this.alloc.stack.push_const(0_i32);
                     return Ok(true);
                 }
                 Ok(false)
@@ -1829,7 +1830,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i32_and_imm,
             Self::make_instr_imm_param_32,
             Instruction::i32_and_imm16,
-            UntypedValue::i32_and,
+            TypedValue::i32_and,
             |this, lhs, rhs| {
                 if lhs == rhs {
                     // Optimization: `x & x` is always just `x`
@@ -1849,7 +1850,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 }
                 if value == 0 {
                     // Optimization: `x & 0` is same as `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    this.alloc.stack.push_const(0_i32);
                     return Ok(true);
                 }
                 Ok(false)
@@ -1863,7 +1864,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i32_or_imm,
             Self::make_instr_imm_param_32,
             Instruction::i32_or_imm16,
-            UntypedValue::i32_or,
+            TypedValue::i32_or,
             |this, lhs, rhs| {
                 if lhs == rhs {
                     // Optimization: `x | x` is always just `x`
@@ -1878,7 +1879,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     //
                     // Note: This is due to the fact that -1
                     // in twos-complements only contains 1 bits.
-                    this.alloc.stack.push_const(UntypedValue::from(-1_i32));
+                    this.alloc.stack.push_const(-1_i32);
                     return Ok(true);
                 }
                 if value == 0 {
@@ -1897,11 +1898,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i32_xor_imm,
             Self::make_instr_imm_param_32,
             Instruction::i32_xor_imm16,
-            UntypedValue::i32_xor,
+            TypedValue::i32_xor,
             |this, lhs, rhs| {
                 if lhs == rhs {
                     // Optimization: `x ^ x` is always `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i32));
+                    this.alloc.stack.push_const(0_i32);
                     return Ok(true);
                 }
                 Ok(false)
@@ -1924,7 +1925,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_32::<i32>,
             Instruction::i32_shl_imm_rev,
             Instruction::i32_shl_imm16_rev,
-            UntypedValue::i32_shl,
+            TypedValue::i32_shl,
             Self::no_custom_opt,
         )
     }
@@ -1936,7 +1937,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_32,
             Instruction::i32_shr_s_imm_rev,
             Instruction::i32_shr_s_imm16_rev,
-            UntypedValue::i32_shr_s,
+            TypedValue::i32_shr_s,
             |this, lhs: i32, rhs: Register| {
                 if lhs == -1 {
                     // Optimization: `-1 >> x` is always `-1` for every valid `x`
@@ -1955,7 +1956,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_32::<i32>,
             Instruction::i32_shr_u_imm_rev,
             Instruction::i32_shr_u_imm16_rev,
-            UntypedValue::i32_shr_u,
+            TypedValue::i32_shr_u,
             Self::no_custom_opt,
         )
     }
@@ -1967,7 +1968,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_32,
             Instruction::i32_rotl_imm_rev,
             Instruction::i32_rotl_imm16_rev,
-            UntypedValue::i32_rotl,
+            TypedValue::i32_rotl,
             |this, lhs: i32, rhs: Register| {
                 if lhs == -1 {
                     // Optimization: `-1.rotate_left(x)` is always `-1` for every valid `x`
@@ -1986,7 +1987,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_32,
             Instruction::i32_rotr_imm_rev,
             Instruction::i32_rotr_imm16_rev,
-            UntypedValue::i32_rotr,
+            TypedValue::i32_rotr,
             |this, lhs: i32, rhs: Register| {
                 if lhs == -1 {
                     // Optimization: `-1.rotate_right(x)` is always `-1` for every valid `x`
@@ -1999,15 +2000,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_clz(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::i64_clz, UntypedValue::i64_clz)
+        self.translate_unary(Instruction::i64_clz, TypedValue::i64_clz)
     }
 
     fn visit_i64_ctz(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::i64_ctz, UntypedValue::i64_ctz)
+        self.translate_unary(Instruction::i64_ctz, TypedValue::i64_ctz)
     }
 
     fn visit_i64_popcnt(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::i64_popcnt, UntypedValue::i64_popcnt)
+        self.translate_unary(Instruction::i64_popcnt, TypedValue::i64_popcnt)
     }
 
     fn visit_i64_add(&mut self) -> Self::Output {
@@ -2016,7 +2017,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i64_add_imm,
             Self::make_instr_imm_param_64,
             Instruction::i64_add_imm16,
-            UntypedValue::i64_add,
+            TypedValue::i64_add,
             Self::no_custom_opt,
             |this, reg: Register, value: i64| {
                 if value == 0 {
@@ -2037,11 +2038,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_64,
             Instruction::i64_sub_imm16,
             Instruction::i64_sub_imm16_rev,
-            UntypedValue::i64_sub,
+            TypedValue::i64_sub,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `sub x - x` is always `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i64));
+                    this.alloc.stack.push_const(0_i64);
                     return Ok(true);
                 }
                 Ok(false)
@@ -2064,12 +2065,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i64_mul_imm,
             Self::make_instr_imm_param_64,
             Instruction::i64_mul_imm16,
-            UntypedValue::i64_mul,
+            TypedValue::i64_mul,
             Self::no_custom_opt,
             |this, reg: Register, value: i64| {
                 if value == 0 {
                     // Optimization: `add x * 0` is always `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i64));
+                    this.alloc.stack.push_const(0_i64);
                     return Ok(true);
                 }
                 if value == 1 {
@@ -2090,11 +2091,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_64,
             Instruction::i64_div_s_imm16,
             Instruction::i64_div_s_imm16_rev,
-            UntypedValue::i64_div_s,
+            TypedValue::i64_div_s,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x / x` is always `1`
-                    this.alloc.stack.push_const(UntypedValue::from(1_i64));
+                    this.alloc.stack.push_const(1_i64);
                     return Ok(true);
                 }
                 Ok(false)
@@ -2118,11 +2119,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_64,
             Instruction::i64_div_u_imm16,
             Instruction::i64_div_u_imm16_rev,
-            UntypedValue::i64_div_u,
+            TypedValue::i64_div_u,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x / x` is always `1`
-                    this.alloc.stack.push_const(UntypedValue::from(1_i64));
+                    this.alloc.stack.push_const(1_i64);
                     return Ok(true);
                 }
                 Ok(false)
@@ -2146,11 +2147,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_64,
             Instruction::i64_rem_s_imm16,
             Instruction::i64_rem_s_imm16_rev,
-            UntypedValue::i64_rem_s,
+            TypedValue::i64_rem_s,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x % x` is always `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i64));
+                    this.alloc.stack.push_const(0_i64);
                     return Ok(true);
                 }
                 Ok(false)
@@ -2158,7 +2159,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             |this, lhs: Register, rhs: i64| {
                 if rhs == 1 || rhs == -1 {
                     // Optimization: `x % 1` or `x % -1` is always `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i64));
+                    this.alloc.stack.push_const(0_i64);
                     return Ok(true);
                 }
                 Ok(false)
@@ -2174,11 +2175,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_64,
             Instruction::i64_rem_u_imm16,
             Instruction::i64_rem_u_imm16_rev,
-            UntypedValue::i64_rem_u,
+            TypedValue::i64_rem_u,
             |this, lhs: Register, rhs: Register| {
                 if lhs == rhs {
                     // Optimization: `x % x` is always `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i64));
+                    this.alloc.stack.push_const(0_i64);
                     return Ok(true);
                 }
                 Ok(false)
@@ -2186,7 +2187,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             |this, lhs: Register, rhs: i64| {
                 if rhs == 1 {
                     // Optimization: `x % 1` is always `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i64));
+                    this.alloc.stack.push_const(0_i64);
                     return Ok(true);
                 }
                 Ok(false)
@@ -2200,7 +2201,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i64_and_imm,
             Self::make_instr_imm_param_64,
             Instruction::i64_and_imm16,
-            UntypedValue::i64_and,
+            TypedValue::i64_and,
             |this, lhs, rhs| {
                 if lhs == rhs {
                     // Optimization: `x & x` is always just `x`
@@ -2220,7 +2221,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 }
                 if value == 0 {
                     // Optimization: `x & 0` is same as `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i64));
+                    this.alloc.stack.push_const(0_i64);
                     return Ok(true);
                 }
                 Ok(false)
@@ -2234,7 +2235,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i64_or_imm,
             Self::make_instr_imm_param_64,
             Instruction::i64_or_imm16,
-            UntypedValue::i64_or,
+            TypedValue::i64_or,
             |this, lhs, rhs| {
                 if lhs == rhs {
                     // Optimization: `x | x` is always just `x`
@@ -2249,7 +2250,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     //
                     // Note: This is due to the fact that -1
                     // in twos-complements only contains 1 bits.
-                    this.alloc.stack.push_const(UntypedValue::from(-1_i64));
+                    this.alloc.stack.push_const(-1_i64);
                     return Ok(true);
                 }
                 if value == 0 {
@@ -2268,11 +2269,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i64_xor_imm,
             Self::make_instr_imm_param_64,
             Instruction::i64_xor_imm16,
-            UntypedValue::i64_xor,
+            TypedValue::i64_xor,
             |this, lhs, rhs| {
                 if lhs == rhs {
                     // Optimization: `x ^ x` is always `0`
-                    this.alloc.stack.push_const(UntypedValue::from(0_i64));
+                    this.alloc.stack.push_const(0_i64);
                     return Ok(true);
                 }
                 Ok(false)
@@ -2295,7 +2296,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_64::<i64>,
             Instruction::i64_shl_imm_rev,
             Instruction::i64_shl_imm16_rev,
-            UntypedValue::i64_shl,
+            TypedValue::i64_shl,
             Self::no_custom_opt,
         )
     }
@@ -2307,7 +2308,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_64,
             Instruction::i64_shr_s_imm_rev,
             Instruction::i64_shr_s_imm16_rev,
-            UntypedValue::i64_shr_s,
+            TypedValue::i64_shr_s,
             |this, lhs: i64, rhs: Register| {
                 if lhs == -1 {
                     // Optimization: `-1 >> x` is always `-1` for every valid `x`
@@ -2326,7 +2327,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_64::<i64>,
             Instruction::i64_shr_u_imm_rev,
             Instruction::i64_shr_u_imm16_rev,
-            UntypedValue::i64_shr_u,
+            TypedValue::i64_shr_u,
             Self::no_custom_opt,
         )
     }
@@ -2338,7 +2339,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_64,
             Instruction::i64_rotl_imm_rev,
             Instruction::i64_rotl_imm16_rev,
-            UntypedValue::i64_rotl,
+            TypedValue::i64_rotl,
             |this, lhs: i64, rhs: Register| {
                 if lhs == -1 {
                     // Optimization: `-1 >> x` is always `-1` for every valid `x`
@@ -2357,7 +2358,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Self::make_instr_imm_param_64,
             Instruction::i64_rotr_imm_rev,
             Instruction::i64_rotr_imm16_rev,
-            UntypedValue::i64_rotr,
+            TypedValue::i64_rotr,
             |this, lhs: i64, rhs: Register| {
                 if lhs == -1 {
                     // Optimization: `-1 >> x` is always `-1` for every valid `x`
@@ -2370,31 +2371,31 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_f32_abs(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f32_abs, UntypedValue::f32_abs)
+        self.translate_unary(Instruction::f32_abs, TypedValue::f32_abs)
     }
 
     fn visit_f32_neg(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f32_neg, UntypedValue::f32_neg)
+        self.translate_unary(Instruction::f32_neg, TypedValue::f32_neg)
     }
 
     fn visit_f32_ceil(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f32_ceil, UntypedValue::f32_ceil)
+        self.translate_unary(Instruction::f32_ceil, TypedValue::f32_ceil)
     }
 
     fn visit_f32_floor(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f32_floor, UntypedValue::f32_floor)
+        self.translate_unary(Instruction::f32_floor, TypedValue::f32_floor)
     }
 
     fn visit_f32_trunc(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f32_trunc, UntypedValue::f32_trunc)
+        self.translate_unary(Instruction::f32_trunc, TypedValue::f32_trunc)
     }
 
     fn visit_f32_nearest(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f32_nearest, UntypedValue::f32_nearest)
+        self.translate_unary(Instruction::f32_nearest, TypedValue::f32_nearest)
     }
 
     fn visit_f32_sqrt(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f32_sqrt, UntypedValue::f32_sqrt)
+        self.translate_unary(Instruction::f32_sqrt, TypedValue::f32_sqrt)
     }
 
     fn visit_f32_add(&mut self) -> Self::Output {
@@ -2402,7 +2403,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f32_add,
             Instruction::f32_add_imm,
             Self::make_instr_imm_param_32,
-            UntypedValue::f32_add,
+            TypedValue::f32_add,
             Self::no_custom_opt,
             |this, reg: Register, value: f32| {
                 if value == 0.0 || value == -0.0 {
@@ -2421,7 +2422,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f32_sub_imm,
             Instruction::f32_sub_imm_rev,
             Self::make_instr_imm_param_32,
-            UntypedValue::f32_sub,
+            TypedValue::f32_sub,
             Self::no_custom_opt,
             |this, lhs: Register, rhs: f32| {
                 if rhs == 0.0 && rhs.is_sign_positive() {
@@ -2446,7 +2447,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f32_mul,
             Instruction::f32_mul_imm,
             Self::make_instr_imm_param_32::<f32>,
-            UntypedValue::f32_mul,
+            TypedValue::f32_mul,
             Self::no_custom_opt,
             // Unfortunately we cannot apply `x * 0` or `0 * x` optimizations
             // since Wasm mandates different behaviors if `x` is infinite or
@@ -2461,7 +2462,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f32_div_imm,
             Instruction::f32_div_imm_rev,
             Self::make_instr_imm_param_32,
-            UntypedValue::f32_div,
+            TypedValue::f32_div,
             Self::no_custom_opt,
             Self::no_custom_opt,
             Self::no_custom_opt,
@@ -2473,7 +2474,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f32_min,
             Instruction::f32_min_imm,
             Self::make_instr_imm_param_32,
-            UntypedValue::f32_min,
+            TypedValue::f32_min,
             Self::no_custom_opt,
             |this, reg: Register, value: f32| {
                 if value.is_infinite() && value.is_sign_positive() {
@@ -2491,7 +2492,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f32_max,
             Instruction::f32_max_imm,
             Self::make_instr_imm_param_32,
-            UntypedValue::f32_max,
+            TypedValue::f32_max,
             Self::no_custom_opt,
             |this, reg: Register, value: f32| {
                 if value.is_infinite() && value.is_sign_negative() {
@@ -2510,36 +2511,36 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f32_copysign_imm,
             Instruction::f32_copysign_imm_rev,
             Self::make_instr_imm_param_32::<f32>,
-            UntypedValue::f32_copysign,
+            TypedValue::f32_copysign,
         )
     }
 
     fn visit_f64_abs(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f64_abs, UntypedValue::f64_abs)
+        self.translate_unary(Instruction::f64_abs, TypedValue::f64_abs)
     }
 
     fn visit_f64_neg(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f64_neg, UntypedValue::f64_neg)
+        self.translate_unary(Instruction::f64_neg, TypedValue::f64_neg)
     }
 
     fn visit_f64_ceil(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f64_ceil, UntypedValue::f64_ceil)
+        self.translate_unary(Instruction::f64_ceil, TypedValue::f64_ceil)
     }
 
     fn visit_f64_floor(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f64_floor, UntypedValue::f64_floor)
+        self.translate_unary(Instruction::f64_floor, TypedValue::f64_floor)
     }
 
     fn visit_f64_trunc(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f64_trunc, UntypedValue::f64_trunc)
+        self.translate_unary(Instruction::f64_trunc, TypedValue::f64_trunc)
     }
 
     fn visit_f64_nearest(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f64_nearest, UntypedValue::f64_nearest)
+        self.translate_unary(Instruction::f64_nearest, TypedValue::f64_nearest)
     }
 
     fn visit_f64_sqrt(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f64_sqrt, UntypedValue::f64_sqrt)
+        self.translate_unary(Instruction::f64_sqrt, TypedValue::f64_sqrt)
     }
 
     fn visit_f64_add(&mut self) -> Self::Output {
@@ -2547,7 +2548,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f64_add,
             Instruction::f64_add_imm,
             Self::make_instr_imm_param_64,
-            UntypedValue::f64_add,
+            TypedValue::f64_add,
             Self::no_custom_opt,
             |this, reg: Register, value: f64| {
                 if value == 0.0 || value == -0.0 {
@@ -2566,7 +2567,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f64_sub_imm,
             Instruction::f64_sub_imm_rev,
             Self::make_instr_imm_param_64,
-            UntypedValue::f64_sub,
+            TypedValue::f64_sub,
             Self::no_custom_opt,
             |this, lhs: Register, rhs: f64| {
                 if rhs == 0.0 && rhs.is_sign_positive() {
@@ -2591,7 +2592,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f64_mul,
             Instruction::f64_mul_imm,
             Self::make_instr_imm_param_64::<f64>,
-            UntypedValue::f64_mul,
+            TypedValue::f64_mul,
             Self::no_custom_opt,
             // Unfortunately we cannot apply `x * 0` or `0 * x` optimizations
             // since Wasm mandates different behaviors if `x` is infinite or
@@ -2606,7 +2607,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f64_div_imm,
             Instruction::f64_div_imm_rev,
             Self::make_instr_imm_param_64,
-            UntypedValue::f64_div,
+            TypedValue::f64_div,
             Self::no_custom_opt,
             Self::no_custom_opt,
             Self::no_custom_opt,
@@ -2618,7 +2619,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f64_min,
             Instruction::f64_min_imm,
             Self::make_instr_imm_param_64,
-            UntypedValue::f64_min,
+            TypedValue::f64_min,
             Self::no_custom_opt,
             |this, reg: Register, value: f64| {
                 if value.is_infinite() && value.is_sign_positive() {
@@ -2636,7 +2637,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f64_max,
             Instruction::f64_max_imm,
             Self::make_instr_imm_param_64,
-            UntypedValue::f64_max,
+            TypedValue::f64_max,
             Self::no_custom_opt,
             |this, reg: Register, value: f64| {
                 if value.is_infinite() && value.is_sign_negative() {
@@ -2655,222 +2656,207 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f64_copysign_imm,
             Instruction::f64_copysign_imm_rev,
             Self::make_instr_imm_param_64::<f64>,
-            UntypedValue::f64_copysign,
+            TypedValue::f64_copysign,
         )
     }
 
     fn visit_i32_wrap_i64(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::i32_wrap_i64, UntypedValue::i32_wrap_i64)
+        self.translate_unary(Instruction::i32_wrap_i64, TypedValue::i32_wrap_i64)
     }
 
     fn visit_i32_trunc_f32_s(&mut self) -> Self::Output {
-        self.translate_unary_fallible(Instruction::i32_trunc_f32_s, UntypedValue::i32_trunc_f32_s)
+        self.translate_unary_fallible(Instruction::i32_trunc_f32_s, TypedValue::i32_trunc_f32_s)
     }
 
     fn visit_i32_trunc_f32_u(&mut self) -> Self::Output {
-        self.translate_unary_fallible(Instruction::i32_trunc_f32_u, UntypedValue::i32_trunc_f32_u)
+        self.translate_unary_fallible(Instruction::i32_trunc_f32_u, TypedValue::i32_trunc_f32_u)
     }
 
     fn visit_i32_trunc_f64_s(&mut self) -> Self::Output {
-        self.translate_unary_fallible(Instruction::i32_trunc_f64_s, UntypedValue::i32_trunc_f64_s)
+        self.translate_unary_fallible(Instruction::i32_trunc_f64_s, TypedValue::i32_trunc_f64_s)
     }
 
     fn visit_i32_trunc_f64_u(&mut self) -> Self::Output {
-        self.translate_unary_fallible(Instruction::i32_trunc_f64_u, UntypedValue::i32_trunc_f64_u)
+        self.translate_unary_fallible(Instruction::i32_trunc_f64_u, TypedValue::i32_trunc_f64_u)
     }
 
     fn visit_i64_extend_i32_s(&mut self) -> Self::Output {
-        self.translate_unary(
-            Instruction::i64_extend_i32_s,
-            UntypedValue::i64_extend_i32_s,
-        )
+        self.translate_unary(Instruction::i64_extend_i32_s, TypedValue::i64_extend_i32_s)
     }
 
     fn visit_i64_extend_i32_u(&mut self) -> Self::Output {
-        self.translate_unary(
-            Instruction::i64_extend_i32_u,
-            UntypedValue::i64_extend_i32_u,
-        )
+        self.translate_unary(Instruction::i64_extend_i32_u, TypedValue::i64_extend_i32_u)
     }
 
     fn visit_i64_trunc_f32_s(&mut self) -> Self::Output {
-        self.translate_unary_fallible(Instruction::i64_trunc_f32_s, UntypedValue::i64_trunc_f32_s)
+        self.translate_unary_fallible(Instruction::i64_trunc_f32_s, TypedValue::i64_trunc_f32_s)
     }
 
     fn visit_i64_trunc_f32_u(&mut self) -> Self::Output {
-        self.translate_unary_fallible(Instruction::i64_trunc_f32_u, UntypedValue::i64_trunc_f32_u)
+        self.translate_unary_fallible(Instruction::i64_trunc_f32_u, TypedValue::i64_trunc_f32_u)
     }
 
     fn visit_i64_trunc_f64_s(&mut self) -> Self::Output {
-        self.translate_unary_fallible(Instruction::i64_trunc_f64_s, UntypedValue::i64_trunc_f64_s)
+        self.translate_unary_fallible(Instruction::i64_trunc_f64_s, TypedValue::i64_trunc_f64_s)
     }
 
     fn visit_i64_trunc_f64_u(&mut self) -> Self::Output {
-        self.translate_unary_fallible(Instruction::i64_trunc_f64_u, UntypedValue::i64_trunc_f64_u)
+        self.translate_unary_fallible(Instruction::i64_trunc_f64_u, TypedValue::i64_trunc_f64_u)
     }
 
     fn visit_f32_convert_i32_s(&mut self) -> Self::Output {
         self.translate_unary(
             Instruction::f32_convert_i32_s,
-            UntypedValue::f32_convert_i32_s,
+            TypedValue::f32_convert_i32_s,
         )
     }
 
     fn visit_f32_convert_i32_u(&mut self) -> Self::Output {
         self.translate_unary(
             Instruction::f32_convert_i32_u,
-            UntypedValue::f32_convert_i32_u,
+            TypedValue::f32_convert_i32_u,
         )
     }
 
     fn visit_f32_convert_i64_s(&mut self) -> Self::Output {
         self.translate_unary(
             Instruction::f32_convert_i64_s,
-            UntypedValue::f32_convert_i64_s,
+            TypedValue::f32_convert_i64_s,
         )
     }
 
     fn visit_f32_convert_i64_u(&mut self) -> Self::Output {
         self.translate_unary(
             Instruction::f32_convert_i64_u,
-            UntypedValue::f32_convert_i64_u,
+            TypedValue::f32_convert_i64_u,
         )
     }
 
     fn visit_f32_demote_f64(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f32_demote_f64, UntypedValue::f32_demote_f64)
+        self.translate_unary(Instruction::f32_demote_f64, TypedValue::f32_demote_f64)
     }
 
     fn visit_f64_convert_i32_s(&mut self) -> Self::Output {
         self.translate_unary(
             Instruction::f64_convert_i32_s,
-            UntypedValue::f64_convert_i32_s,
+            TypedValue::f64_convert_i32_s,
         )
     }
 
     fn visit_f64_convert_i32_u(&mut self) -> Self::Output {
         self.translate_unary(
             Instruction::f64_convert_i32_u,
-            UntypedValue::f64_convert_i32_u,
+            TypedValue::f64_convert_i32_u,
         )
     }
 
     fn visit_f64_convert_i64_s(&mut self) -> Self::Output {
         self.translate_unary(
             Instruction::f64_convert_i64_s,
-            UntypedValue::f64_convert_i64_s,
+            TypedValue::f64_convert_i64_s,
         )
     }
 
     fn visit_f64_convert_i64_u(&mut self) -> Self::Output {
         self.translate_unary(
             Instruction::f64_convert_i64_u,
-            UntypedValue::f64_convert_i64_u,
+            TypedValue::f64_convert_i64_u,
         )
     }
 
     fn visit_f64_promote_f32(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f64_promote_f32, UntypedValue::f64_promote_f32)
+        self.translate_unary(Instruction::f64_promote_f32, TypedValue::f64_promote_f32)
     }
 
     fn visit_i32_reinterpret_f32(&mut self) -> Self::Output {
-        // Nothing to do for reinterpret instructions since they are no-op,
-        // have no equivalent `wasmi` instruction and the translation process
-        // currently is untyped.
-        //
-        // TODO: The latter might change to support untyped `select` instructions
-        // which will require bookkeeping for reinterpret instructions.
-        Ok(())
+        self.translate_reinterpret(ValueType::I32)
     }
 
     fn visit_i64_reinterpret_f64(&mut self) -> Self::Output {
-        // TODO: see comment in `visit_i32_reinterpret_f32`
-        Ok(())
+        self.translate_reinterpret(ValueType::I64)
     }
 
     fn visit_f32_reinterpret_i32(&mut self) -> Self::Output {
-        // TODO: see comment in `visit_i32_reinterpret_f32`
-        Ok(())
+        self.translate_reinterpret(ValueType::F32)
     }
 
     fn visit_f64_reinterpret_i64(&mut self) -> Self::Output {
-        // TODO: see comment in `visit_i32_reinterpret_f32`
-        Ok(())
+        self.translate_reinterpret(ValueType::F64)
     }
 
     fn visit_i32_extend8_s(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::i32_extend8_s, UntypedValue::i32_extend8_s)
+        self.translate_unary(Instruction::i32_extend8_s, TypedValue::i32_extend8_s)
     }
 
     fn visit_i32_extend16_s(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::i32_extend16_s, UntypedValue::i32_extend16_s)
+        self.translate_unary(Instruction::i32_extend16_s, TypedValue::i32_extend16_s)
     }
 
     fn visit_i64_extend8_s(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::i64_extend8_s, UntypedValue::i64_extend8_s)
+        self.translate_unary(Instruction::i64_extend8_s, TypedValue::i64_extend8_s)
     }
 
     fn visit_i64_extend16_s(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::i64_extend16_s, UntypedValue::i64_extend16_s)
+        self.translate_unary(Instruction::i64_extend16_s, TypedValue::i64_extend16_s)
     }
 
     fn visit_i64_extend32_s(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::i64_extend32_s, UntypedValue::i64_extend32_s)
+        self.translate_unary(Instruction::i64_extend32_s, TypedValue::i64_extend32_s)
     }
 
     fn visit_i32_trunc_sat_f32_s(&mut self) -> Self::Output {
         self.translate_unary(
             Instruction::i32_trunc_sat_f32_s,
-            UntypedValue::i32_trunc_sat_f32_s,
+            TypedValue::i32_trunc_sat_f32_s,
         )
     }
 
     fn visit_i32_trunc_sat_f32_u(&mut self) -> Self::Output {
         self.translate_unary(
             Instruction::i32_trunc_sat_f32_u,
-            UntypedValue::i32_trunc_sat_f32_u,
+            TypedValue::i32_trunc_sat_f32_u,
         )
     }
 
     fn visit_i32_trunc_sat_f64_s(&mut self) -> Self::Output {
         self.translate_unary(
             Instruction::i32_trunc_sat_f64_s,
-            UntypedValue::i32_trunc_sat_f64_s,
+            TypedValue::i32_trunc_sat_f64_s,
         )
     }
 
     fn visit_i32_trunc_sat_f64_u(&mut self) -> Self::Output {
         self.translate_unary(
             Instruction::i32_trunc_sat_f64_u,
-            UntypedValue::i32_trunc_sat_f64_u,
+            TypedValue::i32_trunc_sat_f64_u,
         )
     }
 
     fn visit_i64_trunc_sat_f32_s(&mut self) -> Self::Output {
         self.translate_unary(
             Instruction::i64_trunc_sat_f32_s,
-            UntypedValue::i64_trunc_sat_f32_s,
+            TypedValue::i64_trunc_sat_f32_s,
         )
     }
 
     fn visit_i64_trunc_sat_f32_u(&mut self) -> Self::Output {
         self.translate_unary(
             Instruction::i64_trunc_sat_f32_u,
-            UntypedValue::i64_trunc_sat_f32_u,
+            TypedValue::i64_trunc_sat_f32_u,
         )
     }
 
     fn visit_i64_trunc_sat_f64_s(&mut self) -> Self::Output {
         self.translate_unary(
             Instruction::i64_trunc_sat_f64_s,
-            UntypedValue::i64_trunc_sat_f64_s,
+            TypedValue::i64_trunc_sat_f64_s,
         )
     }
 
     fn visit_i64_trunc_sat_f64_u(&mut self) -> Self::Output {
         self.translate_unary(
             Instruction::i64_trunc_sat_f64_u,
-            UntypedValue::i64_trunc_sat_f64_u,
+            TypedValue::i64_trunc_sat_f64_u,
         )
     }
 

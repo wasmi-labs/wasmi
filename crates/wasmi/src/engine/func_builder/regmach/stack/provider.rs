@@ -1,6 +1,7 @@
-use crate::engine::bytecode2::Register;
+use super::TypedValue;
+use crate::{engine::bytecode2::Register, ExternRef, FuncRef};
 use alloc::vec::{Drain, Vec};
-use wasmi_core::UntypedValue;
+use wasmi_core::{UntypedValue, ValueType, F32, F64};
 
 /// Tagged providers are inputs to `wasmi` bytecode instructions.
 ///
@@ -14,7 +15,7 @@ pub enum TaggedProvider {
     /// A register referring to a storage allocated register.
     Storage(Register),
     /// An untyped constant value.
-    Const(UntypedValue),
+    Const(TypedValue),
 }
 
 /// The stack of providers.
@@ -57,7 +58,7 @@ impl ProviderStack {
     /// Pushes a constant value to the [`ProviderStack`].
     pub fn push_const<T>(&mut self, value: T)
     where
-        T: Into<UntypedValue>,
+        T: Into<TypedValue>,
     {
         self.push(TaggedProvider::Const(value.into()));
     }

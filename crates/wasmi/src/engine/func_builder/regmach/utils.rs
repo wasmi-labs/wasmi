@@ -1,3 +1,4 @@
+use super::TypedValue;
 use crate::engine::bytecode2::{Const16, Sign};
 use wasmi_core::UntypedValue;
 
@@ -7,7 +8,7 @@ use wasmi_core::UntypedValue;
 ///
 /// This trait provides some utility methods useful for translation.
 pub trait WasmInteger:
-    Copy + Eq + From<i32> + From<UntypedValue> + Into<UntypedValue> + TryInto<Const16>
+    Copy + Eq + From<i32> + From<TypedValue> + Into<TypedValue> + TryInto<Const16>
 {
     /// Returns the `i16` shift amount.
     ///
@@ -60,7 +61,7 @@ impl WasmInteger for i64 {
 /// # Note
 ///
 /// This trait provides some utility methods useful for translation.
-pub trait WasmFloat: Copy + Into<UntypedValue> + From<UntypedValue> {
+pub trait WasmFloat: Copy + Into<TypedValue> + From<TypedValue> {
     /// Returns `true` if `self` is any kind of NaN value.
     fn is_nan(self) -> bool;
 
