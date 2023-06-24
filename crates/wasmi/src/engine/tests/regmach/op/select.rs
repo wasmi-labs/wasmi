@@ -6,7 +6,44 @@ use crate::{
     FuncRef,
     Value,
 };
+use core::{fmt, fmt::Display};
 use wasmi_core::{UntypedValue, F32, F64};
+
+/// Tells which kind of `select` instruction to test.
+#[derive(Debug, Copy, Clone)]
+enum SelectKind {
+    /// The untyped Wasm `select` instruction.
+    Select,
+    /// The typed Wasm `select (result <ty>)` instruction
+    /// introduced in the `reference-types` Wasm proposal.
+    TypedSelect,
+}
+
+/// Display a `select` or typed `select (result <ty>)` instruction as demanded by Wasm.
+struct DisplaySelect {
+    /// The kind of the `select` instruction.
+    kind: SelectKind,
+    /// The `result` type of the `select` instruction.
+    ty: ValueType,
+}
+
+impl DisplaySelect {
+    /// Creates a new [`DisplaySelect`].
+    fn new(kind: SelectKind, ty: ValueType) -> Self {
+        Self { kind, ty }
+    }
+}
+
+impl Display for DisplaySelect {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.kind {
+            SelectKind::Select => write!(f, "select"),
+            SelectKind::TypedSelect => {
+                write!(f, "select (result {})", DisplayValueType::from(self.ty))
+            }
+        }
+    }
+}
 
 /// Returns the `return` instruction to return a single [`Value`].
 ///
@@ -61,8 +98,9 @@ fn param_for_value(
     }
 }
 
-fn test_reg(result_ty: ValueType) {
+fn test_reg(kind: SelectKind, result_ty: ValueType) {
     let display_ty = DisplayValueType::from(result_ty);
+    let display_select = DisplaySelect::new(kind, result_ty);
     let wasm = wat2wasm(&format!(
         r#"
         (module
@@ -71,7 +109,7 @@ fn test_reg(result_ty: ValueType) {
                 local.get $lhs
                 local.get $rhs
                 local.get $condition
-                select (result {display_ty})
+                {display_select}
             )
         )
     "#,
@@ -91,16 +129,21 @@ fn test_reg(result_ty: ValueType) {
 
 #[test]
 fn reg() {
-    test_reg(ValueType::I32);
-    test_reg(ValueType::I64);
-    test_reg(ValueType::F32);
-    test_reg(ValueType::F64);
-    test_reg(ValueType::FuncRef);
-    test_reg(ValueType::ExternRef);
+    fn test_for(kind: SelectKind) {
+        test_reg(kind, ValueType::I32);
+        test_reg(kind, ValueType::I64);
+        test_reg(kind, ValueType::F32);
+        test_reg(kind, ValueType::F64);
+    }
+    test_for(SelectKind::Select);
+    test_for(SelectKind::TypedSelect);
+    test_reg(SelectKind::TypedSelect, ValueType::FuncRef);
+    test_reg(SelectKind::TypedSelect, ValueType::ExternRef);
 }
 
-fn test_same_reg(result_ty: ValueType) {
+fn test_same_reg(kind: SelectKind, result_ty: ValueType) {
     let display_ty = DisplayValueType::from(result_ty);
+    let display_select = DisplaySelect::new(kind, result_ty);
     let wasm = wat2wasm(&format!(
         r#"
         (module
@@ -109,7 +152,7 @@ fn test_same_reg(result_ty: ValueType) {
                 local.get $input
                 local.get $input
                 local.get $condition
-                select (result {display_ty})
+                {display_select}
             )
         )
     "#,
@@ -121,17 +164,22 @@ fn test_same_reg(result_ty: ValueType) {
 
 #[test]
 fn same_reg() {
-    test_same_reg(ValueType::I32);
-    test_same_reg(ValueType::I64);
-    test_same_reg(ValueType::F32);
-    test_same_reg(ValueType::F64);
-    test_same_reg(ValueType::FuncRef);
-    test_same_reg(ValueType::ExternRef);
+    fn test_for(kind: SelectKind) {
+        test_same_reg(kind, ValueType::I32);
+        test_same_reg(kind, ValueType::I64);
+        test_same_reg(kind, ValueType::F32);
+        test_same_reg(kind, ValueType::F64);
+    }
+    test_for(SelectKind::Select);
+    test_for(SelectKind::TypedSelect);
+    test_reg(SelectKind::TypedSelect, ValueType::FuncRef);
+    test_reg(SelectKind::TypedSelect, ValueType::ExternRef);
 }
 
-fn test_same_imm(input: Value) {
+fn test_same_imm(kind: SelectKind, input: Value) {
     let display_ty = DisplayValueType::from(input.ty());
     let display_input = DisplayValue::from(input.clone());
+    let display_select = DisplaySelect::new(kind, input.ty());
     let wasm = wat2wasm(&format!(
         r#"
         (module
@@ -140,7 +188,7 @@ fn test_same_imm(input: Value) {
                 {display_ty}.const {display_input}
                 {display_ty}.const {display_input}
                 local.get $condition
-                select (result {display_ty})
+                {display_select}
             )
         )
     "#,
@@ -152,15 +200,20 @@ fn test_same_imm(input: Value) {
 
 #[test]
 fn same_imm() {
-    test_same_imm(Value::I32(42));
-    test_same_imm(Value::I64(42));
-    test_same_imm(Value::F32(F32::from(42.5)));
-    test_same_imm(Value::F64(F64::from(42.5)));
+    fn test_for(kind: SelectKind) {
+        test_same_imm(kind, Value::I32(42));
+        test_same_imm(kind, Value::I64(42));
+        test_same_imm(kind, Value::F32(F32::from(42.5)));
+        test_same_imm(kind, Value::F64(F64::from(42.5)));
+    }
+    test_for(SelectKind::Select);
+    test_for(SelectKind::TypedSelect);
 }
 
-fn test_reg_imm(rhs: Value) {
+fn test_reg_imm(kind: SelectKind, rhs: Value) {
     let display_ty = DisplayValueType::from(rhs.ty());
     let display_rhs = DisplayValue::from(rhs.clone());
+    let display_select = DisplaySelect::new(kind, rhs.ty());
     let wasm = wat2wasm(&format!(
         r#"
         (module
@@ -169,7 +222,7 @@ fn test_reg_imm(rhs: Value) {
                 local.get $lhs
                 {display_ty}.const {display_rhs}
                 local.get $condition
-                select (result {display_ty})
+                {display_select}
             )
         )
     "#,
@@ -192,15 +245,20 @@ fn test_reg_imm(rhs: Value) {
 
 #[test]
 fn reg_imm() {
-    test_reg_imm(Value::I32(42));
-    test_reg_imm(Value::I64(42));
-    test_reg_imm(Value::F32(F32::from(42.5)));
-    test_reg_imm(Value::F64(F64::from(42.5)));
+    fn test_for(kind: SelectKind) {
+        test_reg_imm(kind, Value::I32(42));
+        test_reg_imm(kind, Value::I64(42));
+        test_reg_imm(kind, Value::F32(F32::from(42.5)));
+        test_reg_imm(kind, Value::F64(F64::from(42.5)));
+    }
+    test_for(SelectKind::Select);
+    test_for(SelectKind::TypedSelect);
 }
 
-fn test_imm_reg(lhs: Value) {
+fn test_imm_reg(kind: SelectKind, lhs: Value) {
     let display_ty = DisplayValueType::from(lhs.ty());
     let display_lhs = DisplayValue::from(lhs.clone());
+    let display_select = DisplaySelect::new(kind, lhs.ty());
     let wasm = wat2wasm(&format!(
         r#"
         (module
@@ -209,7 +267,7 @@ fn test_imm_reg(lhs: Value) {
                 {display_ty}.const {display_lhs}
                 local.get $rhs
                 local.get $condition
-                select (result {display_ty})
+                {display_select}
             )
         )
     "#,
@@ -232,13 +290,17 @@ fn test_imm_reg(lhs: Value) {
 
 #[test]
 fn imm_reg() {
-    test_imm_reg(Value::I32(42));
-    test_imm_reg(Value::I64(42));
-    test_imm_reg(Value::F32(F32::from(42.5)));
-    test_imm_reg(Value::F64(F64::from(42.5)));
+    fn test_for(kind: SelectKind) {
+        test_imm_reg(kind, Value::I32(42));
+        test_imm_reg(kind, Value::I64(42));
+        test_imm_reg(kind, Value::F32(F32::from(42.5)));
+        test_imm_reg(kind, Value::F64(F64::from(42.5)));
+    }
+    test_for(SelectKind::Select);
+    test_for(SelectKind::TypedSelect);
 }
 
-fn test_imm(lhs: Value, rhs: Value) {
+fn test_imm(kind: SelectKind, lhs: Value, rhs: Value) {
     assert_eq!(lhs.ty(), rhs.ty());
     assert_ne!(
         UntypedValue::from(lhs.clone()),
@@ -248,6 +310,7 @@ fn test_imm(lhs: Value, rhs: Value) {
     let display_ty = DisplayValueType::from(lhs.ty());
     let display_lhs = DisplayValue::from(lhs.clone());
     let display_rhs = DisplayValue::from(rhs.clone());
+    let display_select = DisplaySelect::new(kind, lhs.ty());
     let wasm = wat2wasm(&format!(
         r#"
         (module
@@ -256,7 +319,7 @@ fn test_imm(lhs: Value, rhs: Value) {
                 {display_ty}.const {display_lhs}
                 {display_ty}.const {display_rhs}
                 local.get $condition
-                select (result {display_ty})
+                {display_select}
             )
         )
     "#,
@@ -304,18 +367,31 @@ fn test_imm(lhs: Value, rhs: Value) {
 
 #[test]
 fn imm() {
-    test_imm(Value::I32(42), Value::I32(5));
-    test_imm(Value::I64(42), Value::I64(5));
-    test_imm(Value::F32(F32::from(42.5)), Value::F32(F32::from(5.0)));
-    test_imm(Value::F64(F64::from(42.5)), Value::F64(F64::from(5.0)));
+    fn test_for(kind: SelectKind) {
+        test_imm(kind, Value::I32(42), Value::I32(5));
+        test_imm(kind, Value::I64(42), Value::I64(5));
+        test_imm(
+            kind,
+            Value::F32(F32::from(42.5)),
+            Value::F32(F32::from(5.0)),
+        );
+        test_imm(
+            kind,
+            Value::F64(F64::from(42.5)),
+            Value::F64(F64::from(5.0)),
+        );
+    }
+    test_for(SelectKind::Select);
+    test_for(SelectKind::TypedSelect);
 }
 
-fn test_const_condition_reg(condition: bool, result_ty: ValueType) {
+fn test_const_condition_reg(kind: SelectKind, condition: bool, result_ty: ValueType) {
     let display_ty = DisplayValueType::from(result_ty);
     let condition_i32 = i32::from(condition);
     let lhs = Register::from_u16(0);
     let rhs = Register::from_u16(1);
     let picked_reg = if condition { lhs } else { rhs };
+    let display_select = DisplaySelect::new(kind, result_ty);
     let wasm = wat2wasm(&format!(
         r#"
         (module
@@ -324,7 +400,7 @@ fn test_const_condition_reg(condition: bool, result_ty: ValueType) {
                 local.get $lhs
                 local.get $rhs
                 i32.const {condition_i32}
-                select (result {display_ty})
+                {display_select}
             )
         )
     "#,
@@ -336,22 +412,27 @@ fn test_const_condition_reg(condition: bool, result_ty: ValueType) {
 
 #[test]
 fn const_condition_reg() {
-    fn test_with(condition: bool) {
-        test_const_condition_reg(condition, ValueType::I32);
-        test_const_condition_reg(condition, ValueType::I64);
-        test_const_condition_reg(condition, ValueType::F32);
-        test_const_condition_reg(condition, ValueType::F64);
-        test_const_condition_reg(condition, ValueType::FuncRef);
-        test_const_condition_reg(condition, ValueType::ExternRef);
+    fn test_with(kind: SelectKind, condition: bool) {
+        test_const_condition_reg(kind, condition, ValueType::I32);
+        test_const_condition_reg(kind, condition, ValueType::I64);
+        test_const_condition_reg(kind, condition, ValueType::F32);
+        test_const_condition_reg(kind, condition, ValueType::F64);
+        if matches!(kind, SelectKind::TypedSelect) {
+            test_const_condition_reg(kind, condition, ValueType::FuncRef);
+            test_const_condition_reg(kind, condition, ValueType::ExternRef);
+        }
     }
-    test_with(true);
-    test_with(false);
+    test_with(SelectKind::Select, true);
+    test_with(SelectKind::Select, false);
+    test_with(SelectKind::TypedSelect, true);
+    test_with(SelectKind::TypedSelect, false);
 }
 
-fn test_const_condition_reg_imm(condition: bool, rhs: Value) {
+fn test_const_condition_reg_imm(kind: SelectKind, condition: bool, rhs: Value) {
     let display_ty = DisplayValueType::from(rhs.ty());
     let display_rhs = DisplayValue::from(rhs.clone());
     let condition_i32 = i32::from(condition);
+    let display_select = DisplaySelect::new(kind, rhs.ty());
     let wasm = wat2wasm(&format!(
         r#"
         (module
@@ -360,7 +441,7 @@ fn test_const_condition_reg_imm(condition: bool, rhs: Value) {
                 local.get $lhs
                 {display_ty}.const {display_rhs}
                 i32.const {condition_i32}
-                select (result {display_ty})
+                {display_select}
             )
         )
     "#,
@@ -376,20 +457,23 @@ fn test_const_condition_reg_imm(condition: bool, rhs: Value) {
 
 #[test]
 fn const_condition_reg_imm() {
-    fn test_with(condition: bool) {
-        test_const_condition_reg_imm(condition, Value::I32(42));
-        test_const_condition_reg_imm(condition, Value::I64(42));
-        test_const_condition_reg_imm(condition, Value::F32(F32::from(42.5)));
-        test_const_condition_reg_imm(condition, Value::F64(F64::from(42.5)));
+    fn test_with(kind: SelectKind, condition: bool) {
+        test_const_condition_reg_imm(kind, condition, Value::I32(42));
+        test_const_condition_reg_imm(kind, condition, Value::I64(42));
+        test_const_condition_reg_imm(kind, condition, Value::F32(F32::from(42.5)));
+        test_const_condition_reg_imm(kind, condition, Value::F64(F64::from(42.5)));
     }
-    test_with(true);
-    test_with(false);
+    test_with(SelectKind::Select, true);
+    test_with(SelectKind::Select, false);
+    test_with(SelectKind::TypedSelect, true);
+    test_with(SelectKind::TypedSelect, false);
 }
 
-fn test_const_condition_imm_reg(condition: bool, lhs: Value) {
+fn test_const_condition_imm_reg(kind: SelectKind, condition: bool, lhs: Value) {
     let display_ty = DisplayValueType::from(lhs.ty());
     let display_lhs = DisplayValue::from(lhs.clone());
     let condition_i32 = i32::from(condition);
+    let display_select = DisplaySelect::new(kind, lhs.ty());
     let wasm = wat2wasm(&format!(
         r#"
         (module
@@ -398,7 +482,7 @@ fn test_const_condition_imm_reg(condition: bool, lhs: Value) {
                 {display_ty}.const {display_lhs}
                 local.get $rhs
                 i32.const {condition_i32}
-                select (result {display_ty})
+                {display_select}
             )
         )
     "#,
@@ -414,21 +498,24 @@ fn test_const_condition_imm_reg(condition: bool, lhs: Value) {
 
 #[test]
 fn const_condition_imm_reg() {
-    fn test_with(condition: bool) {
-        test_const_condition_imm_reg(condition, Value::I32(42));
-        test_const_condition_imm_reg(condition, Value::I64(42));
-        test_const_condition_imm_reg(condition, Value::F32(F32::from(42.5)));
-        test_const_condition_imm_reg(condition, Value::F64(F64::from(42.5)));
+    fn test_with(kind: SelectKind, condition: bool) {
+        test_const_condition_imm_reg(kind, condition, Value::I32(42));
+        test_const_condition_imm_reg(kind, condition, Value::I64(42));
+        test_const_condition_imm_reg(kind, condition, Value::F32(F32::from(42.5)));
+        test_const_condition_imm_reg(kind, condition, Value::F64(F64::from(42.5)));
     }
-    test_with(true);
-    test_with(false);
+    test_with(SelectKind::Select, true);
+    test_with(SelectKind::Select, false);
+    test_with(SelectKind::TypedSelect, true);
+    test_with(SelectKind::TypedSelect, false);
 }
 
-fn test_const_condition_imm(condition: bool, lhs: Value, rhs: Value) {
+fn test_const_condition_imm(kind: SelectKind, condition: bool, lhs: Value, rhs: Value) {
     assert_eq!(lhs.ty(), rhs.ty());
     let display_ty = DisplayValueType::from(lhs.ty());
     let display_lhs = DisplayValue::from(lhs.clone());
     let display_rhs = DisplayValue::from(rhs.clone());
+    let display_select = DisplaySelect::new(kind, lhs.ty());
     let condition_i32 = i32::from(condition);
     let wasm = wat2wasm(&format!(
         r#"
@@ -438,7 +525,7 @@ fn test_const_condition_imm(condition: bool, lhs: Value, rhs: Value) {
                 {display_ty}.const {display_lhs}
                 {display_ty}.const {display_rhs}
                 i32.const {condition_i32}
-                select (result {display_ty})
+                {display_select}
             )
         )
     "#,
@@ -454,20 +541,24 @@ fn test_const_condition_imm(condition: bool, lhs: Value, rhs: Value) {
 
 #[test]
 fn const_condition_imm() {
-    fn test_with(condition: bool) {
-        test_const_condition_imm(condition, Value::I32(42), Value::I32(5));
-        test_const_condition_imm(condition, Value::I64(42), Value::I64(5));
+    fn test_with(kind: SelectKind, condition: bool) {
+        test_const_condition_imm(kind, condition, Value::I32(42), Value::I32(5));
+        test_const_condition_imm(kind, condition, Value::I64(42), Value::I64(5));
         test_const_condition_imm(
+            kind,
             condition,
             Value::F32(F32::from(42.5)),
             Value::F32(F32::from(5.0)),
         );
         test_const_condition_imm(
+            kind,
             condition,
             Value::F64(F64::from(42.5)),
             Value::F64(F64::from(5.0)),
         );
     }
-    test_with(true);
-    test_with(false);
+    test_with(SelectKind::Select, true);
+    test_with(SelectKind::Select, false);
+    test_with(SelectKind::TypedSelect, true);
+    test_with(SelectKind::TypedSelect, false);
 }

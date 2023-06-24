@@ -190,7 +190,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_select(&mut self) -> Self::Output {
-        todo!()
+        self.translate_select(None)
     }
 
     fn visit_typed_select(&mut self, ty: wasmparser::ValType) -> Self::Output {
