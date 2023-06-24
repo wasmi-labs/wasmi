@@ -46,7 +46,7 @@ impl From<TypedValue> for UntypedValue {
 /// abstraction since [`Value`] is optimized towards being a
 /// user facing type whereas [`TypedValue`] is focusing on
 /// performance and efficiency in computations.
-/// 
+///
 /// [`Value`]: [`crate::core::Value`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct TypedValue {
@@ -138,40 +138,40 @@ macro_rules! impl_forwarding {
         )*
     };
     ( @impl #[fallible] fn $name:ident($lhs_ty:ty, $rhs_ty:ty) -> $result_ty:ty ) => {
-        pub fn $name(lhs: TypedValue, rhs: TypedValue) -> Result<TypedValue, TrapCode> {
-            debug_assert!(matches!(lhs.ty(), <$lhs_ty as Typed>::TY));
-            debug_assert!(matches!(rhs.ty(), <$rhs_ty as Typed>::TY));
-            Ok(TypedValue::new(
+        pub fn $name(self, other: Self) -> Result<Self, TrapCode> {
+            debug_assert!(matches!(self.ty(), <$lhs_ty as Typed>::TY));
+            debug_assert!(matches!(other.ty(), <$rhs_ty as Typed>::TY));
+            Ok(Self::new(
                 <<$result_ty as ResultType>::Ok as Typed>::TY,
-                UntypedValue::$name(UntypedValue::from(lhs), UntypedValue::from(rhs))?,
+                UntypedValue::$name(UntypedValue::from(self), UntypedValue::from(other))?,
             ))
         }
     };
     ( @impl fn $name:ident($lhs_ty:ty, $rhs_ty:ty) -> $result_ty:ty ) => {
-        pub fn $name(lhs: TypedValue, rhs: TypedValue) -> TypedValue {
-            debug_assert!(matches!(lhs.ty(), <$lhs_ty as Typed>::TY));
-            debug_assert!(matches!(rhs.ty(), <$rhs_ty as Typed>::TY));
-            TypedValue::new(
+        pub fn $name(self, other: Self) -> Self {
+            debug_assert!(matches!(self.ty(), <$lhs_ty as Typed>::TY));
+            debug_assert!(matches!(other.ty(), <$rhs_ty as Typed>::TY));
+            Self::new(
                 <$result_ty as Typed>::TY,
-                UntypedValue::$name(UntypedValue::from(lhs), UntypedValue::from(rhs)),
+                UntypedValue::$name(UntypedValue::from(self), UntypedValue::from(other)),
             )
         }
     };
     ( @impl #[fallible] fn $name:ident($input_ty:ty) -> $result_ty:ty ) => {
-        pub fn $name(input: TypedValue) -> Result<TypedValue, TrapCode> {
-            debug_assert!(matches!(input.ty(), <$input_ty as Typed>::TY));
-            Ok(TypedValue::new(
+        pub fn $name(self) -> Result<Self, TrapCode> {
+            debug_assert!(matches!(self.ty(), <$input_ty as Typed>::TY));
+            Ok(Self::new(
                 <<$result_ty as ResultType>::Ok as Typed>::TY,
-                UntypedValue::$name(UntypedValue::from(input))?,
+                UntypedValue::$name(UntypedValue::from(self))?,
             ))
         }
     };
     ( @impl fn $name:ident($input_ty:ty) -> $result_ty:ty ) => {
-        pub fn $name(input: TypedValue) -> TypedValue {
-            debug_assert!(matches!(input.ty(), <$input_ty as Typed>::TY));
-            TypedValue::new(
+        pub fn $name(self) -> Self {
+            debug_assert!(matches!(self.ty(), <$input_ty as Typed>::TY));
+            Self::new(
                 <$result_ty as Typed>::TY,
-                UntypedValue::$name(UntypedValue::from(input)),
+                UntypedValue::$name(UntypedValue::from(self)),
             )
         }
     };
