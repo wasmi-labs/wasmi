@@ -3,7 +3,7 @@ pub use self::{
     error::TableError,
 };
 use super::{AsContext, AsContextMut, Stored};
-use crate::{module::FuncIdx, value::WithType, Func, FuncRef, Value};
+use crate::{module::FuncIdx, store::ResourceLimiterRef, value::WithType, Func, FuncRef, Value};
 use alloc::vec::Vec;
 use core::cmp::max;
 use wasmi_arena::ArenaIndex;
@@ -145,8 +145,23 @@ impl TableEntity {
     /// # Errors
     ///
     /// If `init` does not match the [`TableType`] element type.
-    pub fn new(ty: TableType, init: Value) -> Result<Self, TableError> {
+    pub fn new(
+        ty: TableType,
+        init: Value,
+        limiter: &mut ResourceLimiterRef<'_>,
+    ) -> Result<Self, TableError> {
         ty.matches_element_type(init.ty())?;
+
+        if let Some(limiter) = &mut limiter.0 {
+            if limiter.table_growing(0, ty.minimum(), ty.maximum())? {
+                return Err(TableError::GrowOutOfBounds {
+                    maximum: ty.maximum().unwrap_or(u32::MAX),
+                    current: 0,
+                    delta: ty.minimum(),
+                });
+            }
+        }
+
         let elements = vec![init.into(); ty.minimum() as usize];
         Ok(Self { ty, elements })
     }
@@ -183,9 +198,14 @@ impl TableEntity {
     ///
     /// - If the table is grown beyond its maximum limits.
     /// - If `value` does not match the [`Table`] element type.
-    pub fn grow(&mut self, delta: u32, init: Value) -> Result<u32, TableError> {
+    pub fn grow(
+        &mut self,
+        delta: u32,
+        init: Value,
+        limiter: &mut ResourceLimiterRef<'_>,
+    ) -> Result<u32, TableError> {
         self.ty().matches_element_type(init.ty())?;
-        self.grow_untyped(delta, init.into())
+        self.grow_untyped(delta, init.into(), limiter)
     }
 
     /// Grows the table by the given amount of elements.
@@ -201,19 +221,45 @@ impl TableEntity {
     /// # Errors
     ///
     /// If the table is grown beyond its maximum limits.
-    pub fn grow_untyped(&mut self, delta: u32, init: UntypedValue) -> Result<u32, TableError> {
-        let maximum = self.ty.maximum().unwrap_or(u32::MAX);
+    pub fn grow_untyped(
+        &mut self,
+        delta: u32,
+        init: UntypedValue,
+        limiter: &mut ResourceLimiterRef<'_>,
+    ) -> Result<u32, TableError> {
+        // ResourceLimiter gets first look at the request.
         let current = self.size();
-        let new_len = current
-            .checked_add(delta)
-            .filter(|&new_len| new_len <= maximum)
-            .ok_or(TableError::GrowOutOfBounds {
-                maximum,
-                current,
-                delta,
-            })? as usize;
-        self.elements.resize(new_len, init);
-        Ok(current)
+        let desired = current.checked_add(delta);
+        let maximum = self.ty.maximum();
+        if let Some(limiter) = &mut limiter.0 {
+            if !limiter.table_growing(current, desired.unwrap_or(u32::MAX), maximum)? {
+                return Err(TableError::GrowOutOfBounds {
+                    maximum: maximum.unwrap_or(u32::MAX),
+                    current,
+                    delta,
+                });
+            }
+        }
+
+        let maximum = maximum.unwrap_or(u32::MAX);
+        if let Some(desired) = desired {
+            if desired <= maximum {
+                self.elements.resize(desired as usize, init);
+                return Ok(current);
+            }
+        }
+
+        let err = TableError::GrowOutOfBounds {
+            maximum,
+            current,
+            delta,
+        };
+
+        // If there was an error, ResourceLimiter gets to see.
+        if let Some(limiter) = &mut limiter.0 {
+            limiter.table_grow_failed(&err);
+        }
+        Err(err)
     }
 
     /// Converts the internal [`UntypedValue`] into a [`Value`] for this [`Table`] element type.
@@ -473,8 +519,13 @@ impl Table {
     ///
     /// If `init` does not match the [`TableType`] element type.
     pub fn new(mut ctx: impl AsContextMut, ty: TableType, init: Value) -> Result<Self, TableError> {
-        let entity = TableEntity::new(ty, init)?;
-        let table = ctx.as_context_mut().store.inner.alloc_table(entity);
+        let store = ctx.as_context_mut().store;
+        let mut resource_limiter = ResourceLimiterRef(match &mut store.limiter {
+            Some(q) => Some(q.0(&mut store.data)),
+            None => None,
+        });
+        let entity = TableEntity::new(ty, init, &mut resource_limiter)?;
+        let table = store.inner.alloc_table(entity);
         Ok(table)
     }
 
@@ -535,12 +586,13 @@ impl Table {
         mut ctx: impl AsContextMut,
         delta: u32,
         init: Value,
+        limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u32, TableError> {
         ctx.as_context_mut()
             .store
             .inner
             .resolve_table_mut(self)
-            .grow(delta, init)
+            .grow(delta, init, limiter)
     }
 
     /// Returns the [`Table`] element value at `index`.

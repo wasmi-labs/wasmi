@@ -24,6 +24,7 @@ use crate::{
         ValueStack,
     },
     func::FuncEntity,
+    store::ResourceLimiterRef,
     table::TableEntity,
     FuelConsumptionMode,
     Func,
@@ -92,15 +93,25 @@ pub enum ReturnOutcome {
 ///
 /// If the Wasm execution traps.
 #[inline(never)]
-pub fn execute_wasm<'engine>(
-    ctx: &mut StoreInner,
+pub fn execute_wasm<'ctx, 'engine>(
+    ctx: &'ctx mut StoreInner,
     cache: &'engine mut InstanceCache,
     value_stack: &'engine mut ValueStack,
     call_stack: &'engine mut CallStack,
     code_map: &'engine CodeMap,
     const_pool: ConstPoolView<'engine>,
+    resource_limiter: ResourceLimiterRef<'ctx>,
 ) -> Result<WasmOutcome, TrapCode> {
-    Executor::new(ctx, cache, value_stack, call_stack, code_map, const_pool).execute()
+    Executor::new(
+        ctx,
+        cache,
+        value_stack,
+        call_stack,
+        code_map,
+        const_pool,
+        resource_limiter,
+    )
+    .execute()
 }
 
 /// The function signature of Wasm load operations.
@@ -168,6 +179,7 @@ struct Executor<'ctx, 'engine> {
     code_map: &'engine CodeMap,
     /// A read-only view to a pool of constant values.
     const_pool: ConstPoolView<'engine>,
+    resource_limiter: ResourceLimiterRef<'ctx>,
 }
 
 macro_rules! forward_call {
@@ -195,6 +207,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         call_stack: &'engine mut CallStack,
         code_map: &'engine CodeMap,
         const_pool: ConstPoolView<'engine>,
+        resource_limiter: ResourceLimiterRef<'ctx>,
     ) -> Self {
         let frame = call_stack.pop().expect("must have frame on the call stack");
         let sp = value_stack.stack_ptr();
@@ -208,6 +221,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             call_stack,
             code_map,
             const_pool,
+            resource_limiter,
         }
     }
 
@@ -1097,7 +1111,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 let new_pages = this
                     .ctx
                     .resolve_memory_mut(memory)
-                    .grow(delta)
+                    .grow(delta, &mut this.resource_limiter)
                     .map(u32::from)
                     .map_err(|_| EntityGrowError::InvalidGrow)?;
                 // The `memory.grow` operation might have invalidated the cached
@@ -1219,7 +1233,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 let table = this.cache.get_table(this.ctx, table_index);
                 this.ctx
                     .resolve_table_mut(&table)
-                    .grow_untyped(delta, init)
+                    .grow_untyped(delta, init, &mut this.resource_limiter)
                     .map_err(|_| EntityGrowError::InvalidGrow)
             },
         );

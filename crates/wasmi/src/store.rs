@@ -9,6 +9,7 @@ use crate::{
     ElementSegmentEntity,
     ElementSegmentIdx,
     Engine,
+    Error,
     Func,
     FuncEntity,
     FuncIdx,
@@ -67,6 +68,22 @@ impl StoreIdx {
 /// A stored entity.
 pub type Stored<Idx> = GuardedEntity<StoreIdx, Idx>;
 
+pub struct ResourceLimiterRef<'a>(pub(crate) Option<&'a mut (dyn crate::ResourceLimiter)>);
+impl<'a> core::fmt::Debug for ResourceLimiterRef<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ResourceLimiterRef(...)")
+    }
+}
+
+pub(crate) struct ResourceLimiterQuery<T>(
+    pub(crate) Box<dyn FnMut(&mut T) -> &mut (dyn crate::ResourceLimiter) + Send + Sync>,
+);
+impl<T> core::fmt::Debug for ResourceLimiterQuery<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ResourceLimiterQuery(...)")
+    }
+}
+
 /// The store that owns all data associated to Wasm modules.
 #[derive(Debug)]
 pub struct Store<T> {
@@ -80,7 +97,8 @@ pub struct Store<T> {
     /// Stored host function trampolines.
     trampolines: Arena<TrampolineIdx, TrampolineEntity<T>>,
     /// User provided host data owned by the [`Store`].
-    data: T,
+    pub(crate) data: T,
+    pub(crate) limiter: Option<ResourceLimiterQuery<T>>,
 }
 
 /// The inner store that owns all data not associated to the host state.
@@ -114,6 +132,14 @@ pub struct StoreInner {
     engine: Engine,
     /// The fuel of the [`Store`].
     fuel: Fuel,
+
+    // Numbers of resources instantiated in this store, and their limits
+    instance_count: usize,
+    instance_limit: usize,
+    memory_count: usize,
+    memory_limit: usize,
+    table_count: usize,
+    table_limit: usize,
 }
 
 #[test]
@@ -236,6 +262,17 @@ impl StoreInner {
             elems: Arena::new(),
             extern_objects: Arena::new(),
             fuel: Fuel::default(),
+
+            // Counts and limits of instances, memories and tables tracked by
+            // ResourceLimiter. Counts are kept separate from the sizes of arenas
+            // above in order to allow checking "up front" in a single early and
+            // fallible call to [Store::bump_resource_counts].
+            instance_count: 0,
+            instance_limit: crate::limits::DEFAULT_INSTANCE_LIMIT,
+            memory_count: 0,
+            memory_limit: crate::limits::DEFAULT_MEMORY_LIMIT,
+            table_count: 0,
+            table_limit: crate::limits::DEFAULT_TABLE_LIMIT,
         }
     }
 
@@ -691,6 +728,7 @@ impl<T> Store<T> {
             inner: StoreInner::new(engine),
             trampolines: Arena::new(),
             data,
+            limiter: None,
         }
     }
 
@@ -712,6 +750,57 @@ impl<T> Store<T> {
     /// Consumes `self` and returns its user provided data.
     pub fn into_data(self) -> T {
         self.data
+    }
+
+    pub fn limiter(
+        &mut self,
+        mut limiter: impl FnMut(&mut T) -> &mut (dyn crate::ResourceLimiter) + Send + Sync + 'static,
+    ) {
+        let inner = &mut self.inner;
+        let (instance_limit, table_limit, memory_limit) = {
+            let l = limiter(&mut self.data);
+            (l.instances(), l.tables(), l.memories())
+        };
+        inner.instance_limit = instance_limit;
+        inner.table_limit = table_limit;
+        inner.memory_limit = memory_limit;
+        self.limiter = Some(ResourceLimiterQuery(Box::new(limiter)))
+    }
+
+    pub fn bump_resource_counts(&mut self, module: &crate::Module) -> Result<(), Error> {
+        fn bump(
+            slot: &mut usize,
+            max: usize,
+            amt: usize,
+            err: impl FnOnce() -> Error,
+        ) -> Result<(), Error> {
+            let new = slot.saturating_add(amt);
+            if new > max {
+                return Err(err());
+            }
+            *slot = new;
+            Ok(())
+        }
+
+        let inner = &mut self.inner;
+        bump(&mut inner.instance_count, inner.instance_limit, 1, || {
+            crate::module::InstantiationError::TooManyInstances.into()
+        })?;
+        bump(
+            &mut inner.memory_count,
+            inner.memory_limit,
+            module.len_memories(),
+            || crate::memory::MemoryError::TooManyMemories.into(),
+        )?;
+        bump(
+            &mut inner.table_count,
+            inner.table_limit,
+            module.len_tables(),
+            || crate::table::TableError::TooManyTables.into(),
+        )?;
+        // TODO: maybe also limit globals, imports and exports? These are not in
+        // the wasmtime-based ResourceLimiter API.
+        Ok(())
     }
 
     /// Returns `true` if fuel metering has been enabled.

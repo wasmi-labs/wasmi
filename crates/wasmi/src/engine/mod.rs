@@ -48,6 +48,7 @@ pub(crate) use self::{
 use crate::{
     core::{Trap, TrapCode},
     func::FuncEntity,
+    store::ResourceLimiterRef,
     AsContext,
     AsContextMut,
     Func,
@@ -798,6 +799,11 @@ impl<'engine> EngineExecutor<'engine> {
         let call_stack = &mut self.stack.frames;
         let code_map = &self.res.code_map;
         let const_pool = self.res.const_pool.view();
+        let resource_limiter = ResourceLimiterRef(match &mut ctx.store.limiter {
+            Some(q) => Some(q.0(&mut ctx.store.data)),
+            None => None,
+        });
+
         execute_wasm(
             store_inner,
             cache,
@@ -805,6 +811,7 @@ impl<'engine> EngineExecutor<'engine> {
             call_stack,
             code_map,
             const_pool,
+            resource_limiter,
         )
         .map_err(make_trap)
     }
