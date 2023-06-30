@@ -75,8 +75,14 @@ impl<'a> core::fmt::Debug for ResourceLimiterRef<'a> {
     }
 }
 
-pub(crate) struct ResourceLimiterQuery<T>(
-    pub(crate) Box<dyn FnMut(&mut T) -> &mut (dyn crate::ResourceLimiter) + Send + Sync>,
+impl<'a> ResourceLimiterRef<'a> {
+    pub fn as_resource_limiter(&mut self) -> &mut Option<&'a mut dyn crate::ResourceLimiter> {
+        &mut self.0
+    }
+}
+
+struct ResourceLimiterQuery<T>(
+    Box<dyn FnMut(&mut T) -> &mut (dyn crate::ResourceLimiter) + Send + Sync>,
 );
 impl<T> core::fmt::Debug for ResourceLimiterQuery<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -97,8 +103,8 @@ pub struct Store<T> {
     /// Stored host function trampolines.
     trampolines: Arena<TrampolineIdx, TrampolineEntity<T>>,
     /// User provided host data owned by the [`Store`].
-    pub(crate) data: T,
-    pub(crate) limiter: Option<ResourceLimiterQuery<T>>,
+    data: T,
+    limiter: Option<ResourceLimiterQuery<T>>,
 }
 
 /// The inner store that owns all data not associated to the host state.
@@ -801,6 +807,16 @@ impl<T> Store<T> {
         // TODO: maybe also limit globals, imports and exports? These are not in
         // the wasmtime-based ResourceLimiter API.
         Ok(())
+    }
+
+    pub(crate) fn store_inner_and_resource_limiter_ref(
+        &mut self,
+    ) -> (&mut StoreInner, ResourceLimiterRef) {
+        let resource_limiter = ResourceLimiterRef(match &mut self.limiter {
+            Some(q) => Some(q.0(&mut self.data)),
+            None => None,
+        });
+        (&mut self.inner, resource_limiter)
     }
 
     /// Returns `true` if fuel metering has been enabled.

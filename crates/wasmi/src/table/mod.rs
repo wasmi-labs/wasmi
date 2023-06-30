@@ -152,7 +152,7 @@ impl TableEntity {
     ) -> Result<Self, TableError> {
         ty.matches_element_type(init.ty())?;
 
-        if let Some(limiter) = &mut limiter.0 {
+        if let Some(limiter) = limiter.as_resource_limiter() {
             if limiter.table_growing(0, ty.minimum(), ty.maximum())? {
                 return Err(TableError::GrowOutOfBounds {
                     maximum: ty.maximum().unwrap_or(u32::MAX),
@@ -231,7 +231,7 @@ impl TableEntity {
         let current = self.size();
         let desired = current.checked_add(delta);
         let maximum = self.ty.maximum();
-        if let Some(limiter) = &mut limiter.0 {
+        if let Some(limiter) = limiter.as_resource_limiter() {
             if !limiter.table_growing(current, desired.unwrap_or(u32::MAX), maximum)? {
                 return Err(TableError::GrowOutOfBounds {
                     maximum: maximum.unwrap_or(u32::MAX),
@@ -256,7 +256,7 @@ impl TableEntity {
         };
 
         // If there was an error, ResourceLimiter gets to see.
-        if let Some(limiter) = &mut limiter.0 {
+        if let Some(limiter) = limiter.as_resource_limiter() {
             limiter.table_grow_failed(&err);
         }
         Err(err)
@@ -519,13 +519,12 @@ impl Table {
     ///
     /// If `init` does not match the [`TableType`] element type.
     pub fn new(mut ctx: impl AsContextMut, ty: TableType, init: Value) -> Result<Self, TableError> {
-        let store = ctx.as_context_mut().store;
-        let mut resource_limiter = ResourceLimiterRef(match &mut store.limiter {
-            Some(q) => Some(q.0(&mut store.data)),
-            None => None,
-        });
+        let (inner, mut resource_limiter) = ctx
+            .as_context_mut()
+            .store
+            .store_inner_and_resource_limiter_ref();
         let entity = TableEntity::new(ty, init, &mut resource_limiter)?;
-        let table = store.inner.alloc_table(entity);
+        let table = inner.alloc_table(entity);
         Ok(table)
     }
 
@@ -586,13 +585,14 @@ impl Table {
         mut ctx: impl AsContextMut,
         delta: u32,
         init: Value,
-        limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u32, TableError> {
-        ctx.as_context_mut()
+        let (inner, mut limiter) = ctx
+            .as_context_mut()
             .store
-            .inner
+            .store_inner_and_resource_limiter_ref();
+        inner
             .resolve_table_mut(self)
-            .grow(delta, init, limiter)
+            .grow(delta, init, &mut limiter)
     }
 
     /// Returns the [`Table`] element value at `index`.
