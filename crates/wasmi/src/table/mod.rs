@@ -161,7 +161,7 @@ impl TableEntity {
         ty.matches_element_type(init.ty())?;
 
         if let Some(limiter) = limiter.as_resource_limiter() {
-            if limiter.table_growing(0, ty.minimum(), ty.maximum())? {
+            if !limiter.table_growing(0, ty.minimum(), ty.maximum())? {
                 // Here there's no meaningful way to map Ok(false) to
                 // INVALID_GROWTH_ERRCODE, so we just translate it to an
                 // appropriate Err(...)
