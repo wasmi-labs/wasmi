@@ -146,7 +146,7 @@ pub use self::{
     },
     global::{Global, GlobalType, Mutability},
     instance::{Export, ExportsIter, Extern, ExternType, Instance},
-    limits::ResourceLimiter,
+    limits::{ResourceLimiter, StoreLimits, StoreLimitsBuilder},
     linker::Linker,
     memory::{Memory, MemoryType},
     module::{
