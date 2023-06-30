@@ -793,7 +793,7 @@ impl<'engine> EngineExecutor<'engine> {
             code.into()
         }
 
-        let (store_inner, resource_limiter) = ctx.store.store_inner_and_resource_limiter_ref();
+        let (store_inner, mut resource_limiter) = ctx.store.store_inner_and_resource_limiter_ref();
         let value_stack = &mut self.stack.values;
         let call_stack = &mut self.stack.frames;
         let code_map = &self.res.code_map;
@@ -806,7 +806,7 @@ impl<'engine> EngineExecutor<'engine> {
             call_stack,
             code_map,
             const_pool,
-            resource_limiter,
+            &mut resource_limiter,
         )
         .map_err(make_trap)
     }

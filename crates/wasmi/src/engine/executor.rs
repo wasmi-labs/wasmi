@@ -100,7 +100,7 @@ pub fn execute_wasm<'ctx, 'engine>(
     call_stack: &'engine mut CallStack,
     code_map: &'engine CodeMap,
     const_pool: ConstPoolView<'engine>,
-    resource_limiter: ResourceLimiterRef<'ctx>,
+    resource_limiter: &'ctx mut ResourceLimiterRef<'ctx>,
 ) -> Result<WasmOutcome, TrapCode> {
     Executor::new(
         ctx,
@@ -179,7 +179,7 @@ struct Executor<'ctx, 'engine> {
     code_map: &'engine CodeMap,
     /// A read-only view to a pool of constant values.
     const_pool: ConstPoolView<'engine>,
-    resource_limiter: ResourceLimiterRef<'ctx>,
+    resource_limiter: &'ctx mut ResourceLimiterRef<'ctx>,
 }
 
 macro_rules! forward_call {
@@ -207,7 +207,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         call_stack: &'engine mut CallStack,
         code_map: &'engine CodeMap,
         const_pool: ConstPoolView<'engine>,
-        resource_limiter: ResourceLimiterRef<'ctx>,
+        resource_limiter: &'ctx mut ResourceLimiterRef<'ctx>,
     ) -> Self {
         let frame = call_stack.pop().expect("must have frame on the call stack");
         let sp = value_stack.stack_ptr();
