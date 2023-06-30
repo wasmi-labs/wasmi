@@ -1112,8 +1112,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     .ctx
                     .resolve_memory_mut(memory)
                     .grow(delta, &mut this.resource_limiter)
-                    .map(u32::from)
-                    .map_err(|_| EntityGrowError::InvalidGrow)?;
+                    .map(u32::from)?;
                 // The `memory.grow` operation might have invalidated the cached
                 // linear memory so we need to reset it in order for the cache to
                 // reload in case it is used again.
@@ -1231,10 +1230,11 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             |costs| costs.fuel_for_elements(u64::from(delta)),
             |this| {
                 let table = this.cache.get_table(this.ctx, table_index);
-                this.ctx
-                    .resolve_table_mut(&table)
-                    .grow_untyped(delta, init, &mut this.resource_limiter)
-                    .map_err(|_| EntityGrowError::InvalidGrow)
+                this.ctx.resolve_table_mut(&table).grow_untyped(
+                    delta,
+                    init,
+                    &mut this.resource_limiter,
+                )
             },
         );
         let result = match result {

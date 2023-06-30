@@ -7,14 +7,7 @@ use core::{fmt, fmt::Display};
 #[non_exhaustive]
 pub enum TableError {
     /// Occurs when growing a table out of its set bounds.
-    GrowOutOfBounds {
-        /// The maximum allowed table size.
-        maximum: u32,
-        /// The current table size before the growth operation.
-        current: u32,
-        /// The amount of requested invalid growth.
-        delta: u32,
-    },
+    GrowOutOfBounds,
     /// Occurs when operating with a [`Table`](crate::Table) and mismatching element types.
     ElementTypeMismatch {
         /// Expected element type for the [`Table`](crate::Table).
@@ -44,16 +37,8 @@ pub enum TableError {
 impl Display for TableError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::GrowOutOfBounds {
-                maximum,
-                current,
-                delta,
-            } => {
-                write!(
-                    f,
-                    "tried to grow table with size of {current} and maximum of \
-                    {maximum} by {delta} out of bounds",
-                )
+            Self::GrowOutOfBounds => {
+                write!(f, "out of bounds table growth")
             }
             Self::ElementTypeMismatch { expected, actual } => {
                 write!(f, "encountered mismatching table element type, expected {expected:?} but found {actual:?}")

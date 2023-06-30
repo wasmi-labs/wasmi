@@ -5,7 +5,7 @@ mod error;
 #[cfg(test)]
 mod tests;
 
-use crate::store::ResourceLimiterRef;
+use crate::{engine::executor::EntityGrowError, store::ResourceLimiterRef};
 
 use self::buffer::ByteBuffer;
 pub use self::{
@@ -14,7 +14,7 @@ pub use self::{
 };
 use super::{AsContext, AsContextMut, StoreContext, StoreContextMut, Stored};
 use wasmi_arena::ArenaIndex;
-use wasmi_core::Pages;
+use wasmi_core::{Pages, TrapCode};
 
 /// A raw index to a linear memory entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -140,6 +140,9 @@ impl MemoryEntity {
 
         if let Some(limiter) = limiter.as_resource_limiter() {
             if !limiter.memory_growing(0, initial_len.unwrap_or(usize::MAX), maximum_len)? {
+                // Here there's no meaningful way to map Ok(false) to
+                // INVALID_GROWTH_ERRCODE, so we just translate it to an
+                // appropriate Err(...)
                 return Err(MemoryError::OutOfBoundsAllocation);
             }
         }
@@ -195,7 +198,7 @@ impl MemoryEntity {
         &mut self,
         additional: Pages,
         limiter: &mut ResourceLimiterRef<'_>,
-    ) -> Result<Pages, MemoryError> {
+    ) -> Result<Pages, EntityGrowError> {
         let current_pages = self.current_pages();
         if additional == Pages::from(0) {
             // Nothing to do in this case. Bail out early.
@@ -213,12 +216,14 @@ impl MemoryEntity {
                 .to_bytes()
                 .unwrap_or(usize::MAX);
             let maximum_size = maximum_pages.to_bytes();
-            if !limiter.memory_growing(current_size, desired_size, maximum_size)? {
-                return Err(MemoryError::OutOfBoundsGrowth);
+            match limiter.memory_growing(current_size, desired_size, maximum_size) {
+                Ok(true) => (),
+                Ok(false) => return Err(EntityGrowError::InvalidGrow),
+                Err(_) => return Err(EntityGrowError::TrapCode(TrapCode::GrowthOperationLimited)),
             }
         }
 
-        let ret: Result<Pages, MemoryError>;
+        let mut ret: Result<Pages, EntityGrowError> = Err(EntityGrowError::InvalidGrow);
 
         if let Some(new_pages) = desired_pages {
             if new_pages <= maximum_pages {
@@ -228,20 +233,14 @@ impl MemoryEntity {
                     self.bytes.grow(new_size);
                     self.current_pages = new_pages;
                     ret = Ok(current_pages)
-                } else {
-                    ret = Err(MemoryError::OutOfBoundsAllocation);
                 }
-            } else {
-                ret = Err(MemoryError::OutOfBoundsGrowth);
             }
-        } else {
-            ret = Err(MemoryError::OutOfBoundsGrowth);
         }
 
         // If there was an error, ResourceLimiter gets to see.
         if let Err(e) = &ret {
             if let Some(limiter) = limiter.as_resource_limiter() {
-                limiter.memory_grow_failed(e)
+                limiter.memory_grow_failed(&MemoryError::OutOfBoundsGrowth)
             }
         }
 
@@ -386,6 +385,7 @@ impl Memory {
         inner
             .resolve_memory_mut(self)
             .grow(additional, &mut limiter)
+            .map_err(|_| MemoryError::OutOfBoundsGrowth)
     }
 
     /// Returns a shared slice to the bytes underlying the [`Memory`].
