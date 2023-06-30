@@ -31,7 +31,7 @@ impl Display for MemoryError {
                 write!(f, "out of bounds memory allocation")
             }
             Self::OutOfBoundsGrowth => {
-                write!(f, "out fo bounds memory growth")
+                write!(f, "out of bounds memory growth")
             }
             Self::OutOfBoundsAccess => {
                 write!(f, "out of bounds memory access")
