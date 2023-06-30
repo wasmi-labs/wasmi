@@ -257,7 +257,7 @@ impl ResourceLimiter for StoreLimits {
 
     fn table_growing(
         &mut self,
-        current: u32,
+        _current: u32,
         desired: u32,
         maximum: Option<u32>,
     ) -> Result<bool, TableError> {

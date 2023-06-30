@@ -238,7 +238,7 @@ impl MemoryEntity {
         }
 
         // If there was an error, ResourceLimiter gets to see.
-        if let Err(e) = &ret {
+        if ret.is_err() {
             if let Some(limiter) = limiter.as_resource_limiter() {
                 limiter.memory_grow_failed(&MemoryError::OutOfBoundsGrowth)
             }

@@ -586,7 +586,6 @@ impl Table {
         mut ctx: impl AsContextMut,
         delta: u32,
         init: Value,
-        limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u32, TableError> {
         let (inner, mut limiter) = ctx
             .as_context_mut()
