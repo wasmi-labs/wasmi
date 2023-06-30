@@ -57,7 +57,10 @@ impl Module {
         let handle = context.as_context_mut().store.inner.alloc_instance();
         let mut builder = InstanceEntity::build(self);
 
-        context.as_context_mut().store.bump_resource_counts(self)?;
+        #[cfg(feature = "std")]
+        {
+            context.as_context_mut().store.bump_resource_counts(self)?;
+        }
 
         self.extract_imports(&mut context, &mut builder, externals)?;
         self.extract_functions(&mut context, &mut builder, handle);

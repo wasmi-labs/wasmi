@@ -1,3 +1,5 @@
+#[cfg(feature = "std")]
+use crate::Error;
 use crate::{
     engine::DedupFuncType,
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
@@ -9,7 +11,6 @@ use crate::{
     ElementSegmentEntity,
     ElementSegmentIdx,
     Engine,
-    Error,
     Func,
     FuncEntity,
     FuncIdx,
@@ -81,9 +82,11 @@ impl<'a> ResourceLimiterRef<'a> {
     }
 }
 
+#[cfg(feature = "std")]
 struct ResourceLimiterQuery<T>(
     Box<dyn FnMut(&mut T) -> &mut (dyn crate::ResourceLimiter) + Send + Sync>,
 );
+#[cfg(feature = "std")]
 impl<T> core::fmt::Debug for ResourceLimiterQuery<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "ResourceLimiterQuery(...)")
@@ -104,6 +107,8 @@ pub struct Store<T> {
     trampolines: Arena<TrampolineIdx, TrampolineEntity<T>>,
     /// User provided host data owned by the [`Store`].
     data: T,
+    /// User provided hook to retrieve a [`ResourceLimiter`].
+    #[cfg(feature = "std")]
     limiter: Option<ResourceLimiterQuery<T>>,
 }
 
@@ -140,11 +145,17 @@ pub struct StoreInner {
     fuel: Fuel,
 
     // Numbers of resources instantiated in this store, and their limits
+    #[cfg(feature = "std")]
     instance_count: usize,
+    #[cfg(feature = "std")]
     instance_limit: usize,
+    #[cfg(feature = "std")]
     memory_count: usize,
+    #[cfg(feature = "std")]
     memory_limit: usize,
+    #[cfg(feature = "std")]
     table_count: usize,
+    #[cfg(feature = "std")]
     table_limit: usize,
 }
 
@@ -273,11 +284,17 @@ impl StoreInner {
             // ResourceLimiter. Counts are kept separate from the sizes of arenas
             // above in order to allow checking "up front" in a single early and
             // fallible call to [Store::bump_resource_counts].
+            #[cfg(feature = "std")]
             instance_count: 0,
+            #[cfg(feature = "std")]
             instance_limit: crate::limits::DEFAULT_INSTANCE_LIMIT,
+            #[cfg(feature = "std")]
             memory_count: 0,
+            #[cfg(feature = "std")]
             memory_limit: crate::limits::DEFAULT_MEMORY_LIMIT,
+            #[cfg(feature = "std")]
             table_count: 0,
+            #[cfg(feature = "std")]
             table_limit: crate::limits::DEFAULT_TABLE_LIMIT,
         }
     }
@@ -734,6 +751,7 @@ impl<T> Store<T> {
             inner: StoreInner::new(engine),
             trampolines: Arena::new(),
             data,
+            #[cfg(feature = "std")]
             limiter: None,
         }
     }
@@ -758,6 +776,7 @@ impl<T> Store<T> {
         self.data
     }
 
+    #[cfg(feature = "std")]
     pub fn limiter(
         &mut self,
         mut limiter: impl FnMut(&mut T) -> &mut (dyn crate::ResourceLimiter) + Send + Sync + 'static,
@@ -773,6 +792,7 @@ impl<T> Store<T> {
         self.limiter = Some(ResourceLimiterQuery(Box::new(limiter)))
     }
 
+    #[cfg(feature = "std")]
     pub fn bump_resource_counts(&mut self, module: &crate::Module) -> Result<(), Error> {
         fn bump(
             slot: &mut usize,
@@ -809,6 +829,7 @@ impl<T> Store<T> {
         Ok(())
     }
 
+    #[cfg(feature = "std")]
     pub(crate) fn store_inner_and_resource_limiter_ref(
         &mut self,
     ) -> (&mut StoreInner, ResourceLimiterRef) {
@@ -817,6 +838,13 @@ impl<T> Store<T> {
             None => None,
         });
         (&mut self.inner, resource_limiter)
+    }
+
+    #[cfg(not(feature = "std"))]
+    pub(crate) fn store_inner_and_resource_limiter_ref(
+        &mut self,
+    ) -> (&mut StoreInner, ResourceLimiterRef) {
+        (&mut self.inner, ResourceLimiterRef(None))
     }
 
     /// Returns `true` if fuel metering has been enabled.
