@@ -338,8 +338,12 @@ impl ModuleInstance {
                     locals: body.locals().to_vec(),
                     code,
                 };
-                let func_instance =
-                    FuncInstance::alloc_internal(Rc::downgrade(&instance.0), signature, func_body);
+                let func_instance = FuncInstance::alloc_internal(
+                    Rc::downgrade(&instance.0),
+                    signature,
+                    func_body,
+                    index,
+                );
 
                 if let Some(tracer) = tracer.clone() {
                     tracer

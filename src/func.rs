@@ -55,6 +55,7 @@ pub(crate) enum FuncInstanceInternal {
         signature: Rc<Signature>,
         module: Weak<ModuleInstance>,
         body: Rc<FuncBody>,
+        image_func_index: usize,
     },
     Host {
         signature: Signature,
@@ -67,16 +68,14 @@ impl PartialEq for FuncInstanceInternal {
         match (self, other) {
             (
                 Self::Internal {
-                    signature: l_signature,
-                    body: l_body,
+                    image_func_index: l_image_func_index,
                     ..
                 },
                 Self::Internal {
-                    signature: r_signature,
-                    body: r_body,
+                    image_func_index: r_image_func_index,
                     ..
                 },
-            ) => l_signature == r_signature && l_body == r_body,
+            ) => l_image_func_index == r_image_func_index,
             (
                 Self::Host {
                     signature: l_signature,
@@ -144,11 +143,13 @@ impl FuncInstance {
         module: Weak<ModuleInstance>,
         signature: Rc<Signature>,
         body: FuncBody,
+        image_func_index: usize,
     ) -> FuncRef {
         let func = FuncInstanceInternal::Internal {
             signature,
             module,
             body: Rc::new(body),
+            image_func_index,
         };
         FuncRef(Rc::new(FuncInstance(func)))
     }
