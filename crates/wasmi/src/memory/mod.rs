@@ -316,6 +316,7 @@ impl Memory {
             .as_context_mut()
             .store
             .store_inner_and_resource_limiter_ref();
+
         let entity = MemoryEntity::new(ty, &mut resource_limiter)?;
         let memory = inner.alloc_memory(entity);
         Ok(memory)

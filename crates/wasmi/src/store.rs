@@ -1,10 +1,11 @@
 #[cfg(feature = "std")]
-use crate::Error;
 use crate::{
     engine::DedupFuncType,
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
     func::{Trampoline, TrampolineEntity, TrampolineIdx},
-    memory::DataSegment,
+    memory::{DataSegment, MemoryError},
+    module::InstantiationError,
+    table::TableError,
     DataSegmentEntity,
     DataSegmentIdx,
     ElementSegment,
@@ -143,20 +144,6 @@ pub struct StoreInner {
     engine: Engine,
     /// The fuel of the [`Store`].
     fuel: Fuel,
-
-    // Numbers of resources instantiated in this store, and their limits
-    #[cfg(feature = "std")]
-    instance_count: usize,
-    #[cfg(feature = "std")]
-    instance_limit: usize,
-    #[cfg(feature = "std")]
-    memory_count: usize,
-    #[cfg(feature = "std")]
-    memory_limit: usize,
-    #[cfg(feature = "std")]
-    table_count: usize,
-    #[cfg(feature = "std")]
-    table_limit: usize,
 }
 
 #[test]
@@ -279,23 +266,6 @@ impl StoreInner {
             elems: Arena::new(),
             extern_objects: Arena::new(),
             fuel: Fuel::default(),
-
-            // Counts and limits of instances, memories and tables tracked by
-            // ResourceLimiter. Counts are kept separate from the sizes of arenas
-            // above in order to allow checking "up front" in a single early and
-            // fallible call to [Store::bump_resource_counts].
-            #[cfg(feature = "std")]
-            instance_count: 0,
-            #[cfg(feature = "std")]
-            instance_limit: crate::limits::DEFAULT_INSTANCE_LIMIT,
-            #[cfg(feature = "std")]
-            memory_count: 0,
-            #[cfg(feature = "std")]
-            memory_limit: crate::limits::DEFAULT_MEMORY_LIMIT,
-            #[cfg(feature = "std")]
-            table_count: 0,
-            #[cfg(feature = "std")]
-            table_limit: crate::limits::DEFAULT_TABLE_LIMIT,
         }
     }
 
@@ -779,53 +749,47 @@ impl<T> Store<T> {
     #[cfg(feature = "std")]
     pub fn limiter(
         &mut self,
-        mut limiter: impl FnMut(&mut T) -> &mut (dyn crate::ResourceLimiter) + Send + Sync + 'static,
+        limiter: impl FnMut(&mut T) -> &mut (dyn crate::ResourceLimiter) + Send + Sync + 'static,
     ) {
-        let inner = &mut self.inner;
-        let (instance_limit, table_limit, memory_limit) = {
-            let l = limiter(&mut self.data);
-            (l.instances(), l.tables(), l.memories())
-        };
-        inner.instance_limit = instance_limit;
-        inner.table_limit = table_limit;
-        inner.memory_limit = memory_limit;
         self.limiter = Some(ResourceLimiterQuery(Box::new(limiter)))
     }
 
-    #[cfg(feature = "std")]
-    pub fn bump_resource_counts(&mut self, module: &crate::Module) -> Result<(), Error> {
-        fn bump(
-            slot: &mut usize,
-            max: usize,
-            amt: usize,
-            err: impl FnOnce() -> Error,
-        ) -> Result<(), Error> {
-            let new = slot.saturating_add(amt);
-            if new > max {
-                return Err(err());
+    pub(crate) fn check_new_instances_limit(
+        &mut self,
+        num_new_instances: usize,
+    ) -> Result<(), InstantiationError> {
+        let (inner, mut limiter) = self.store_inner_and_resource_limiter_ref();
+        if let Some(limiter) = limiter.as_resource_limiter() {
+            if inner.instances.len().saturating_add(num_new_instances) > limiter.instances() {
+                return Err(InstantiationError::TooManyInstances.into());
             }
-            *slot = new;
-            Ok(())
         }
+        Ok(())
+    }
 
-        let inner = &mut self.inner;
-        bump(&mut inner.instance_count, inner.instance_limit, 1, || {
-            crate::module::InstantiationError::TooManyInstances.into()
-        })?;
-        bump(
-            &mut inner.memory_count,
-            inner.memory_limit,
-            module.len_memories(),
-            || crate::memory::MemoryError::TooManyMemories.into(),
-        )?;
-        bump(
-            &mut inner.table_count,
-            inner.table_limit,
-            module.len_tables(),
-            || crate::table::TableError::TooManyTables.into(),
-        )?;
-        // TODO: maybe also limit globals, imports and exports? These are not in
-        // the wasmtime-based ResourceLimiter API.
+    pub(crate) fn check_new_memories_limit(
+        &mut self,
+        num_new_memories: usize,
+    ) -> Result<(), MemoryError> {
+        let (inner, mut limiter) = self.store_inner_and_resource_limiter_ref();
+        if let Some(limiter) = limiter.as_resource_limiter() {
+            if inner.memories.len().saturating_add(num_new_memories) > limiter.memories() {
+                return Err(MemoryError::TooManyMemories);
+            }
+        }
+        Ok(())
+    }
+
+    pub(crate) fn check_new_tables_limit(
+        &mut self,
+        num_new_tables: usize,
+    ) -> Result<(), TableError> {
+        let (inner, mut limiter) = self.store_inner_and_resource_limiter_ref();
+        if let Some(limiter) = limiter.as_resource_limiter() {
+            if inner.tables.len().saturating_add(num_new_tables) > limiter.tables() {
+                return Err(TableError::TooManyTables);
+            }
+        }
         Ok(())
     }
 

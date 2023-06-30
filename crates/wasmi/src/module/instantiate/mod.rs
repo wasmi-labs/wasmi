@@ -54,13 +54,12 @@ impl Module {
     where
         I: IntoIterator<Item = Extern>,
     {
+        context
+            .as_context_mut()
+            .store
+            .check_new_instances_limit(1)?;
         let handle = context.as_context_mut().store.inner.alloc_instance();
         let mut builder = InstanceEntity::build(self);
-
-        #[cfg(feature = "std")]
-        {
-            context.as_context_mut().store.bump_resource_counts(self)?;
-        }
 
         self.extract_imports(&mut context, &mut builder, externals)?;
         self.extract_functions(&mut context, &mut builder, handle);
@@ -192,6 +191,10 @@ impl Module {
         context: &mut impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
     ) -> Result<(), InstantiationError> {
+        context
+            .as_context_mut()
+            .store
+            .check_new_tables_limit(self.len_tables())?;
         for table_type in self.internal_tables().copied() {
             let init = Value::default(table_type.element());
             let table = Table::new(context.as_context_mut(), table_type, init)?;
@@ -210,6 +213,10 @@ impl Module {
         context: &mut impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
     ) -> Result<(), MemoryError> {
+        context
+            .as_context_mut()
+            .store
+            .check_new_memories_limit(self.len_memories())?;
         for memory_type in self.internal_memories().copied() {
             let memory = Memory::new(context.as_context_mut(), memory_type)?;
             builder.push_memory(memory);
