@@ -1,4 +1,3 @@
-#[cfg(feature = "std")]
 use crate::{
     engine::DedupFuncType,
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
@@ -29,6 +28,8 @@ use crate::{
     TableEntity,
     TableIdx,
 };
+#[cfg(feature = "std")]
+use alloc::boxed::Box;
 use core::{
     fmt::{self, Debug},
     sync::atomic::{AtomicU32, Ordering},
@@ -83,11 +84,9 @@ impl<'a> ResourceLimiterRef<'a> {
     }
 }
 
-#[cfg(feature = "std")]
 struct ResourceLimiterQuery<T>(
     Box<dyn FnMut(&mut T) -> &mut (dyn crate::ResourceLimiter) + Send + Sync>,
 );
-#[cfg(feature = "std")]
 impl<T> core::fmt::Debug for ResourceLimiterQuery<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "ResourceLimiterQuery(...)")
@@ -109,7 +108,6 @@ pub struct Store<T> {
     /// User provided host data owned by the [`Store`].
     data: T,
     /// User provided hook to retrieve a [`ResourceLimiter`].
-    #[cfg(feature = "std")]
     limiter: Option<ResourceLimiterQuery<T>>,
 }
 
@@ -721,7 +719,6 @@ impl<T> Store<T> {
             inner: StoreInner::new(engine),
             trampolines: Arena::new(),
             data,
-            #[cfg(feature = "std")]
             limiter: None,
         }
     }
@@ -746,7 +743,6 @@ impl<T> Store<T> {
         self.data
     }
 
-    #[cfg(feature = "std")]
     pub fn limiter(
         &mut self,
         limiter: impl FnMut(&mut T) -> &mut (dyn crate::ResourceLimiter) + Send + Sync + 'static,
@@ -793,7 +789,6 @@ impl<T> Store<T> {
         Ok(())
     }
 
-    #[cfg(feature = "std")]
     pub(crate) fn store_inner_and_resource_limiter_ref(
         &mut self,
     ) -> (&mut StoreInner, ResourceLimiterRef) {
@@ -802,13 +797,6 @@ impl<T> Store<T> {
             None => None,
         });
         (&mut self.inner, resource_limiter)
-    }
-
-    #[cfg(not(feature = "std"))]
-    pub(crate) fn store_inner_and_resource_limiter_ref(
-        &mut self,
-    ) -> (&mut StoreInner, ResourceLimiterRef) {
-        (&mut self.inner, ResourceLimiterRef(None))
     }
 
     /// Returns `true` if fuel metering has been enabled.
