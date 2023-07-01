@@ -1,3 +1,5 @@
+//! Translation tests for all Wasm `load` instructions.
+
 use wasmi_core::TrapCode;
 
 use super::*;

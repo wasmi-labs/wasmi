@@ -1,3 +1,9 @@
+//! Translation tests for all generic binary Wasm instructions that do not fit a certain group.
+//!
+//! # Note
+//!
+//! These tests include Wasm arithmetic, logical, bitwise, shift and rotate instructions.
+
 use super::*;
 
 mod f32_add;

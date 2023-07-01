@@ -1,3 +1,18 @@
+//! Translation tests for all Wasm comparison instructions.
+//!
+//! These include the following Wasm instructions:
+//!
+//! `{i32, i64, f32, f64}.{eq, ne}`
+//! `{i32, i64}.{lt_s, lt_u, gt_s, gt_u, le_s, le_u, ge_s, ge_u}`
+//! `{f32, f64}.{lt, gt, le, ge}`
+//! `{i32, i64}.eqz`
+//!
+//! # Note
+//!
+//! Technically `{i32, i64}.eqz` are unary instructions but we still
+//! include them here since in `wasmi` bytecode these are represented by
+//! more generic comparison instructions.
+
 use super::*;
 
 mod f32_eq;

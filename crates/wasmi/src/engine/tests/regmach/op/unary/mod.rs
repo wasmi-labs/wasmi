@@ -1,3 +1,5 @@
+//! Translation tests for all unary Wasm instructions.
+
 mod conversion;
 mod op;
 

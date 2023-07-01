@@ -1,3 +1,5 @@
+//! Translation tests for all Wasm `store` instructions.
+
 use super::*;
 
 mod f32_store;
