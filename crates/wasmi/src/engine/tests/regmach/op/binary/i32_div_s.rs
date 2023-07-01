@@ -39,13 +39,13 @@ fn reg_imm_rev() {
 #[test]
 fn reg_zero() {
     let expected = [Instruction::Trap(TrapCode::IntegerDivisionByZero)];
-    test_binary_reg_imm_with(WASM_OP, 0_i32, expected)
+    test_binary_reg_imm_with(WASM_OP, 0_i32, expected).run()
 }
 
 #[test]
 fn reg_one() {
     let expected = [Instruction::return_reg(0)];
-    test_binary_reg_imm_with(WASM_OP, 1_i32, expected)
+    test_binary_reg_imm_with(WASM_OP, 1_i32, expected).run()
 }
 
 #[test]

@@ -16,8 +16,8 @@ fn reg_imm() {
             Instruction::return_reg(1),
         ]
     }
-    test_binary_reg_imm_with(WASM_OP, 1.0_f32, make_instrs(Sign::Pos));
-    test_binary_reg_imm_with(WASM_OP, -1.0_f32, make_instrs(Sign::Neg));
+    test_binary_reg_imm_with(WASM_OP, 1.0_f32, make_instrs(Sign::Pos)).run();
+    test_binary_reg_imm_with(WASM_OP, -1.0_f32, make_instrs(Sign::Neg)).run();
 }
 
 #[test]

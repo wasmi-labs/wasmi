@@ -20,15 +20,15 @@ fn reg_imm16_rev() {
 #[test]
 fn reg_zero() {
     let expected = [Instruction::return_reg(0)];
-    test_binary_reg_imm_with(WASM_OP, 0_i32, expected)
+    test_binary_reg_imm_with(WASM_OP, 0_i32, expected).run()
 }
 
 #[test]
 fn reg_0_after_mod32() {
     let expected = [Instruction::return_reg(0)];
-    test_binary_reg_imm_with(WASM_OP, 0_i32, expected);
-    test_binary_reg_imm_with(WASM_OP, 64_i32, expected);
-    test_binary_reg_imm_with(WASM_OP, 128_i32, expected);
+    test_binary_reg_imm_with(WASM_OP, 0_i32, expected).run();
+    test_binary_reg_imm_with(WASM_OP, 64_i32, expected).run();
+    test_binary_reg_imm_with(WASM_OP, 128_i32, expected).run();
 }
 
 #[test]
@@ -41,15 +41,15 @@ fn reg_1_after_mod32() {
         ),
         Instruction::return_reg(1),
     ];
-    test_binary_reg_imm_with(WASM_OP, 1_i32, expected);
-    test_binary_reg_imm_with(WASM_OP, 65_i32, expected);
-    test_binary_reg_imm_with(WASM_OP, 129_i32, expected);
+    test_binary_reg_imm_with(WASM_OP, 1_i32, expected).run();
+    test_binary_reg_imm_with(WASM_OP, 65_i32, expected).run();
+    test_binary_reg_imm_with(WASM_OP, 129_i32, expected).run();
 }
 
 #[test]
 fn zero_reg() {
     let expected = [Instruction::return_i64imm32(0)];
-    test_binary_reg_imm_rev_with(WASM_OP, 0_i32, expected)
+    test_binary_reg_imm_rev_with(WASM_OP, 0_i32, expected).run()
 }
 
 #[test]

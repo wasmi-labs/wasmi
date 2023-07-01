@@ -272,7 +272,7 @@ fn test_binary_reg_imm32<T>(
         Instruction::const32(value),
         Instruction::return_reg(1),
     ];
-    test_binary_reg_imm_with(wasm_op, value, expected)
+    test_binary_reg_imm_with(wasm_op, value, expected).run()
 }
 
 /// Variant of [`test_binary_reg_imm32`] where both operands are swapped.
@@ -289,7 +289,7 @@ fn test_binary_reg_imm32_rev<T>(
         Instruction::const32(value),
         Instruction::return_reg(1),
     ];
-    test_binary_reg_imm_rev_with(wasm_op, value, expected)
+    test_binary_reg_imm_rev_with(wasm_op, value, expected).run()
 }
 
 fn test_binary_reg_imm64<T>(
@@ -305,7 +305,7 @@ fn test_binary_reg_imm64<T>(
         Instruction::ConstRef(ConstRef::from_u32(0)),
         Instruction::return_reg(1),
     ];
-    test_binary_reg_imm_with(wasm_op, value, expected)
+    test_binary_reg_imm_with(wasm_op, value, expected).run()
 }
 
 /// Variant of [`test_binary_reg_imm64`] where both operands are swapped.
@@ -322,10 +322,10 @@ fn test_binary_reg_imm64_rev<T>(
         Instruction::ConstRef(ConstRef::from_u32(0)),
         Instruction::return_reg(1),
     ];
-    test_binary_reg_imm_rev_with(wasm_op, value, expected)
+    test_binary_reg_imm_rev_with(wasm_op, value, expected).run()
 }
 
-fn test_binary_reg_imm_with<T, E>(wasm_op: WasmOp, value: T, expected: E)
+fn test_binary_reg_imm_with<T, E>(wasm_op: WasmOp, value: T, expected: E) -> TranslationTest
 where
     T: Copy,
     DisplayWasm<T>: Display,
@@ -346,10 +346,12 @@ where
         )
     "#,
     ));
-    assert_func_bodies(wasm, [expected]);
+    let mut testcase = TranslationTest::new(wasm);
+    testcase.expect_func(expected);
+    testcase
 }
 
-fn test_binary_reg_imm_rev_with<T, E>(wasm_op: WasmOp, value: T, expected: E)
+fn test_binary_reg_imm_rev_with<T, E>(wasm_op: WasmOp, value: T, expected: E) -> TranslationTest
 where
     T: Copy,
     DisplayWasm<T>: Display,
@@ -370,7 +372,9 @@ where
         )
     "#,
     ));
-    assert_func_bodies(wasm, [expected]);
+    let mut testcase = TranslationTest::new(wasm);
+    testcase.expect_func(expected);
+    testcase
 }
 
 fn test_binary_consteval<T, E>(wasm_op: WasmOp, lhs: T, rhs: T, expected: E)
@@ -417,68 +421,4 @@ where
     "#,
     ));
     assert_func_bodies(wasm, [expected]);
-}
-
-fn test_reg_nan<E>(wasm_op: WasmOp, expected: E)
-where
-    E: IntoIterator<Item = Instruction>,
-    <E as IntoIterator>::IntoIter: ExactSizeIterator,
-{
-    test_reg_nan_ext(wasm_op, expected).run()
-}
-
-fn test_reg_nan_ext<E>(wasm_op: WasmOp, expected: E) -> TranslationTest
-where
-    E: IntoIterator<Item = Instruction>,
-    <E as IntoIterator>::IntoIter: ExactSizeIterator,
-{
-    assert!(matches!(wasm_op.param_ty(), WasmType::F32 | WasmType::F64));
-    let param_ty = wasm_op.param_ty();
-    let result_ty = wasm_op.result_ty();
-    let wasm = wat2wasm(&format!(
-        r#"
-        (module
-            (func (param {param_ty}) (result {result_ty})
-                local.get 0
-                {param_ty}.const nan
-                {wasm_op}
-            )
-        )
-    "#,
-    ));
-    let mut testcase = TranslationTest::new(wasm);
-    testcase.expect_func(expected);
-    testcase
-}
-
-fn test_nan_reg<E>(wasm_op: WasmOp, expected: E)
-where
-    E: IntoIterator<Item = Instruction>,
-    <E as IntoIterator>::IntoIter: ExactSizeIterator,
-{
-    test_nan_reg_ext(wasm_op, expected).run()
-}
-
-fn test_nan_reg_ext<E>(wasm_op: WasmOp, expected: E) -> TranslationTest
-where
-    E: IntoIterator<Item = Instruction>,
-    <E as IntoIterator>::IntoIter: ExactSizeIterator,
-{
-    assert!(matches!(wasm_op.param_ty(), WasmType::F32 | WasmType::F64));
-    let param_ty = wasm_op.param_ty();
-    let result_ty = wasm_op.result_ty();
-    let wasm = wat2wasm(&format!(
-        r#"
-        (module
-            (func (param {param_ty}) (result {result_ty})
-                local.get 0
-                {param_ty}.const nan
-                {wasm_op}
-            )
-        )
-    "#,
-    ));
-    let mut testcase = TranslationTest::new(wasm);
-    testcase.expect_func(expected);
-    testcase
 }

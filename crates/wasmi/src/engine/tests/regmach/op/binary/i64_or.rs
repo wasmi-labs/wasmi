@@ -36,25 +36,25 @@ fn reg_imm_rev() {
 #[test]
 fn reg_zero() {
     let expected = [Instruction::return_reg(0)];
-    test_binary_reg_imm_with(WASM_OP, 0i64, expected)
+    test_binary_reg_imm_with(WASM_OP, 0i64, expected).run()
 }
 
 #[test]
 fn reg_zero_rev() {
     let expected = [Instruction::return_reg(0)];
-    test_binary_reg_imm_rev_with(WASM_OP, 0i64, expected)
+    test_binary_reg_imm_rev_with(WASM_OP, 0i64, expected).run()
 }
 
 #[test]
 fn reg_ones() {
     let expected = [Instruction::return_i64imm32(-1)];
-    test_binary_reg_imm_with(WASM_OP, -1_i64, expected)
+    test_binary_reg_imm_with(WASM_OP, -1_i64, expected).run()
 }
 
 #[test]
 fn reg_ones_rev() {
     let expected = [Instruction::return_i64imm32(-1)];
-    test_binary_reg_imm_rev_with(WASM_OP, -1_i64, expected)
+    test_binary_reg_imm_rev_with(WASM_OP, -1_i64, expected).run()
 }
 
 #[test]

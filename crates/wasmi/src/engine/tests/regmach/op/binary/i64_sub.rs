@@ -36,7 +36,7 @@ fn reg_imm_rev() {
 #[test]
 fn reg_zero() {
     let expected = [Instruction::return_reg(0)];
-    test_binary_reg_imm_with(WASM_OP, 0i32, expected)
+    test_binary_reg_imm_with(WASM_OP, 0i32, expected).run()
 }
 
 #[test]

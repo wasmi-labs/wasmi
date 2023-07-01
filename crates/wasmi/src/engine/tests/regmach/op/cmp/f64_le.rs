@@ -27,12 +27,12 @@ fn reg_imm_rev() {
 
 #[test]
 fn reg_nan() {
-    test_reg_nan(WASM_OP, [Instruction::return_imm32(false)]);
+    test_binary_reg_imm_with(WASM_OP, f64::NAN, [Instruction::return_imm32(false)]).run()
 }
 
 #[test]
 fn nan_reg() {
-    test_nan_reg(WASM_OP, [Instruction::return_imm32(false)]);
+    test_binary_reg_imm_rev_with(WASM_OP, f64::NAN, [Instruction::return_imm32(false)]).run()
 }
 
 #[test]

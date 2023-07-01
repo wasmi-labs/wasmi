@@ -40,7 +40,7 @@ fn reg_min() {
     let expected = [Instruction::ReturnImm32 {
         value: Const32::from(true),
     }];
-    test_binary_reg_imm_with(WASM_OP, u32::MIN, expected)
+    test_binary_reg_imm_with(WASM_OP, u32::MIN, expected).run()
 }
 
 #[test]
@@ -48,7 +48,7 @@ fn max_reg() {
     let expected = [Instruction::ReturnImm32 {
         value: Const32::from(true),
     }];
-    test_binary_reg_imm_rev_with(WASM_OP, u32::MAX, expected)
+    test_binary_reg_imm_rev_with(WASM_OP, u32::MAX, expected).run()
 }
 
 #[test]
