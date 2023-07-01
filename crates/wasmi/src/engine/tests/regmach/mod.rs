@@ -264,7 +264,8 @@ fn test_binary_reg_imm32<T>(
     value: T,
     make_instr: fn(result: Register, lhs: Register) -> Instruction,
 ) where
-    T: Copy + Display + Into<Const32>,
+    T: Copy + Into<Const32>,
+    DisplayWasm<T>: Display,
 {
     let expected = [
         make_instr(Register::from_u16(1), Register::from_u16(0)),
@@ -280,7 +281,8 @@ fn test_binary_reg_imm32_rev<T>(
     value: T,
     make_instr: fn(result: Register, lhs: Register) -> Instruction,
 ) where
-    T: Copy + Display + Into<Const32>,
+    T: Copy + Into<Const32>,
+    DisplayWasm<T>: Display,
 {
     let expected = [
         make_instr(Register::from_u16(1), Register::from_u16(0)),
@@ -295,7 +297,8 @@ fn test_binary_reg_imm64<T>(
     value: T,
     make_instr: fn(result: Register, lhs: Register) -> Instruction,
 ) where
-    T: Copy + Display,
+    T: Copy,
+    DisplayWasm<T>: Display,
 {
     let expected = [
         make_instr(Register::from_u16(1), Register::from_u16(0)),
@@ -311,7 +314,8 @@ fn test_binary_reg_imm64_rev<T>(
     value: T,
     make_instr: fn(result: Register, lhs: Register) -> Instruction,
 ) where
-    T: Copy + Display,
+    T: Copy,
+    DisplayWasm<T>: Display,
 {
     let expected = [
         make_instr(Register::from_u16(1), Register::from_u16(0)),
@@ -321,20 +325,22 @@ fn test_binary_reg_imm64_rev<T>(
     test_binary_reg_imm_rev_with(wasm_op, value, expected)
 }
 
-fn test_binary_reg_imm_with<V, E>(wasm_op: WasmOp, value: V, expected: E)
+fn test_binary_reg_imm_with<T, E>(wasm_op: WasmOp, value: T, expected: E)
 where
-    V: Copy + Display,
+    T: Copy,
+    DisplayWasm<T>: Display,
     E: IntoIterator<Item = Instruction>,
     <E as IntoIterator>::IntoIter: ExactSizeIterator,
 {
     let param_ty = wasm_op.param_ty();
     let result_ty = wasm_op.result_ty();
+    let display_value = DisplayWasm::from(value);
     let wasm = wat2wasm(&format!(
         r#"
         (module
             (func (param {param_ty}) (result {result_ty})
                 local.get 0
-                {param_ty}.const {value}
+                {param_ty}.const {display_value}
                 {wasm_op}
             )
         )
@@ -345,17 +351,19 @@ where
 
 fn test_binary_reg_imm_rev_with<T, E>(wasm_op: WasmOp, value: T, expected: E)
 where
-    T: Copy + Display,
+    T: Copy,
+    DisplayWasm<T>: Display,
     E: IntoIterator<Item = Instruction>,
     <E as IntoIterator>::IntoIter: ExactSizeIterator,
 {
     let param_ty = wasm_op.param_ty();
     let result_ty = wasm_op.result_ty();
+    let display_value = DisplayWasm::from(value);
     let wasm = wat2wasm(&format!(
         r#"
         (module
             (func (param {param_ty}) (result {result_ty})
-                {param_ty}.const {value}
+                {param_ty}.const {display_value}
                 local.get 0
                 {wasm_op}
             )
@@ -367,18 +375,21 @@ where
 
 fn test_binary_consteval<T, E>(wasm_op: WasmOp, lhs: T, rhs: T, expected: E)
 where
-    T: Copy + Display,
+    T: Copy,
+    DisplayWasm<T>: Display,
     E: IntoIterator<Item = Instruction>,
     <E as IntoIterator>::IntoIter: ExactSizeIterator,
 {
     let param_ty = wasm_op.param_ty();
     let result_ty = wasm_op.result_ty();
+    let display_lhs = DisplayWasm::from(lhs);
+    let display_rhs = DisplayWasm::from(rhs);
     let wasm = wat2wasm(&format!(
         r#"
         (module
             (func (result {result_ty})
-                {param_ty}.const {lhs}
-                {param_ty}.const {rhs}
+                {param_ty}.const {display_lhs}
+                {param_ty}.const {display_rhs}
                 {wasm_op}
             )
         )
