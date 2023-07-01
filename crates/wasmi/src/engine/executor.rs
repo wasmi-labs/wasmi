@@ -102,16 +102,8 @@ pub fn execute_wasm<'ctx, 'engine>(
     const_pool: ConstPoolView<'engine>,
     resource_limiter: &'ctx mut ResourceLimiterRef<'ctx>,
 ) -> Result<WasmOutcome, TrapCode> {
-    Executor::new(
-        ctx,
-        cache,
-        value_stack,
-        call_stack,
-        code_map,
-        const_pool,
-        resource_limiter,
-    )
-    .execute()
+    Executor::new(ctx, cache, value_stack, call_stack, code_map, const_pool)
+        .execute(resource_limiter)
 }
 
 /// The function signature of Wasm load operations.
@@ -179,7 +171,6 @@ struct Executor<'ctx, 'engine> {
     code_map: &'engine CodeMap,
     /// A read-only view to a pool of constant values.
     const_pool: ConstPoolView<'engine>,
-    resource_limiter: &'ctx mut ResourceLimiterRef<'ctx>,
 }
 
 macro_rules! forward_call {
@@ -207,7 +198,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         call_stack: &'engine mut CallStack,
         code_map: &'engine CodeMap,
         const_pool: ConstPoolView<'engine>,
-        resource_limiter: &'ctx mut ResourceLimiterRef<'ctx>,
     ) -> Self {
         let frame = call_stack.pop().expect("must have frame on the call stack");
         let sp = value_stack.stack_ptr();
@@ -221,13 +211,15 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             call_stack,
             code_map,
             const_pool,
-            resource_limiter,
         }
     }
 
     /// Executes the function frame until it returns or traps.
     #[inline(always)]
-    fn execute(mut self) -> Result<WasmOutcome, TrapCode> {
+    fn execute(
+        mut self,
+        resource_limiter: &'ctx mut ResourceLimiterRef<'ctx>,
+    ) -> Result<WasmOutcome, TrapCode> {
         use Instruction as Instr;
         loop {
             match *self.ip.get() {
@@ -294,13 +286,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::I64Store16(offset) => self.visit_i64_store_16(offset)?,
                 Instr::I64Store32(offset) => self.visit_i64_store_32(offset)?,
                 Instr::MemorySize => self.visit_memory_size(),
-                Instr::MemoryGrow => self.visit_memory_grow()?,
+                Instr::MemoryGrow => self.visit_memory_grow(&mut *resource_limiter)?,
                 Instr::MemoryFill => self.visit_memory_fill()?,
                 Instr::MemoryCopy => self.visit_memory_copy()?,
                 Instr::MemoryInit(segment) => self.visit_memory_init(segment)?,
                 Instr::DataDrop(segment) => self.visit_data_drop(segment),
                 Instr::TableSize(table) => self.visit_table_size(table),
-                Instr::TableGrow(table) => self.visit_table_grow(table)?,
+                Instr::TableGrow(table) => self.visit_table_grow(table, &mut *resource_limiter)?,
                 Instr::TableFill(table) => self.visit_table_fill(table)?,
                 Instr::TableGet(table) => self.visit_table_get(table)?,
                 Instr::TableSet(table) => self.visit_table_set(table)?,
@@ -1091,7 +1083,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     #[inline(always)]
-    fn visit_memory_grow(&mut self) -> Result<(), TrapCode> {
+    fn visit_memory_grow(
+        &mut self,
+        resource_limiter: &mut ResourceLimiterRef<'ctx>,
+    ) -> Result<(), TrapCode> {
         let delta: u32 = self.sp.pop_as();
         let delta = match Pages::new(delta) {
             Some(pages) => pages,
@@ -1111,7 +1106,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 let new_pages = this
                     .ctx
                     .resolve_memory_mut(memory)
-                    .grow(delta, &mut this.resource_limiter)
+                    .grow(delta, resource_limiter)
                     .map(u32::from)?;
                 // The `memory.grow` operation might have invalidated the cached
                 // linear memory so we need to reset it in order for the cache to
@@ -1223,18 +1218,20 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     #[inline(always)]
-    fn visit_table_grow(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
+    fn visit_table_grow(
+        &mut self,
+        table_index: TableIdx,
+        resource_limiter: &mut ResourceLimiterRef<'ctx>,
+    ) -> Result<(), TrapCode> {
         let (init, delta) = self.sp.pop2();
         let delta: u32 = delta.into();
         let result = self.consume_fuel_with(
             |costs| costs.fuel_for_elements(u64::from(delta)),
             |this| {
                 let table = this.cache.get_table(this.ctx, table_index);
-                this.ctx.resolve_table_mut(&table).grow_untyped(
-                    delta,
-                    init,
-                    &mut this.resource_limiter,
-                )
+                this.ctx
+                    .resolve_table_mut(&table)
+                    .grow_untyped(delta, init, resource_limiter)
             },
         );
         let result = match result {
