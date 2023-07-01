@@ -76,6 +76,7 @@ impl ExpectedConst {
 
 impl TranslationTest {
     /// Creates a new [`TranslationTest`] for the given Webassembly `bytes`.
+    #[must_use]
     pub fn new(bytes: impl AsRef<[u8]>) -> Self {
         let config = {
             let mut cfg = Config::default();
