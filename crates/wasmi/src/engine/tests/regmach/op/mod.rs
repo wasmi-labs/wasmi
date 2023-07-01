@@ -1,3 +1,4 @@
+mod binary;
 mod cmp;
 mod global_get;
 mod global_set;
@@ -5,7 +6,6 @@ mod load;
 mod select;
 mod store;
 mod unary;
-mod binary;
 
 use super::{
     assert_func_bodies,
