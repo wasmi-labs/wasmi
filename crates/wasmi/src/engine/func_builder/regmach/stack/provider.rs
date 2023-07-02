@@ -35,7 +35,7 @@ impl ProviderStack {
         self.providers.clear()
     }
 
-    /// Returns the number of [`TaggedProviders`] on the [`ProviderStack`].
+    /// Returns the number of [`TaggedProvider`] on the [`ProviderStack`].
     pub fn len(&self) -> usize {
         self.providers.len()
     }

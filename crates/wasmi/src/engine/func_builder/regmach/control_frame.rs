@@ -37,7 +37,7 @@ impl BlockHeight {
             .map_err(TranslationError::new)
     }
 
-    /// Returns the `u16` value of the [`StackHeight`].
+    /// Returns the `u16` value of the [`BlockHeight`].
     pub fn into_u16(self) -> u16 {
         self.0
     }
@@ -489,7 +489,7 @@ impl ControlFrame {
         }
     }
 
-    /// Returns the [`BlockHeihgt`] upon entering the control flow frame.
+    /// Returns the [`BlockHeight`] upon entering the control flow frame.
     ///
     /// # Note
     ///
