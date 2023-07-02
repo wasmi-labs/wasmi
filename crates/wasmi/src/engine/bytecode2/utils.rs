@@ -25,6 +25,102 @@ impl Register {
     pub fn to_u16(self) -> u16 {
         self.0
     }
+
+    /// Returns the [`Register`] with the next contiguous index.
+    fn next(self) -> Register {
+        Self(self.0.wrapping_add(1))
+    }
+
+    /// Returns the [`Register`] with the previous contiguous index.
+    fn prev(self) -> Register {
+        Self(self.0.wrapping_sub(1))
+    }
+}
+
+/// A [`RegisterSlice`].
+///
+/// # Note
+///
+/// - Represents an amount of contiguous [`Register`] indices.
+/// - For the sake of space efficiency the actual number of [`Register`]
+///   of the [`RegisterSlice`] is stored externally and provided in
+///   [`RegisterSlice::iter`] when there is a need to iterate over
+///   the [`Register`] of the [`RegisterSlice`].
+///
+/// The caller is responsible for providing the correct length.
+/// Due to Wasm validation guided bytecode construction we assert
+/// that the externally stored length is valid.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct RegisterSlice(Register);
+
+impl RegisterSlice {
+    /// Creates a new [`RegisterSlice`] starting with the given `start` [`Register`].
+    pub fn new(start: Register) -> Self {
+        Self(start)
+    }
+
+    /// Returns a [`RegisterSliceIter`] yielding `len` [`Register`].
+    pub fn iter(self, len: usize) -> RegisterSliceIter {
+        RegisterSliceIter::new(self.0, len)
+    }
+}
+
+/// A [`RegisterSliceIter`] iterator yielding contiguous [`Register`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct RegisterSliceIter {
+    /// The next [`Register`] in the [`RegisterSliceIter`].
+    next: Register,
+    /// The last [`Register`] in the [`RegisterSliceIter`].
+    last: Register,
+}
+
+impl RegisterSliceIter {
+    /// Creates a new [`RegisterSliceIter`] for the given `start` [`Register`] and length `len`.
+    ///
+    /// # Panics
+    ///
+    /// If the `start..end` [`Register`] slice indices are out of bounds.
+    fn new(start: Register, len: usize) -> Self {
+        let len = u16::try_from(len)
+            .unwrap_or_else(|_| panic!("out of bounds length for register slice: {len}"));
+        let next = start;
+        let last_index = start
+            .0
+            .checked_add(len)
+            .expect("overflowing register index for register slice");
+        let last = Register(last_index);
+        Self { next, last }
+    }
+}
+
+impl Iterator for RegisterSliceIter {
+    type Item = Register;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.next == self.last {
+            return None;
+        }
+        let reg = self.next;
+        self.next = self.next.next();
+        Some(reg)
+    }
+}
+
+impl DoubleEndedIterator for RegisterSliceIter {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        if self.next == self.last {
+            return None;
+        }
+        let reg: Register = self.last;
+        self.last = self.last.prev();
+        Some(reg)
+    }
+}
+
+impl ExactSizeIterator for RegisterSliceIter {
+    fn len(&self) -> usize {
+        usize::from(self.last.0.abs_diff(self.next.0))
+    }
 }
 
 /// A binary [`Register`] based instruction.
