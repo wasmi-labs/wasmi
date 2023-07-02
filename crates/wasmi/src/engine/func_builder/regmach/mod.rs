@@ -11,7 +11,13 @@ mod utils;
 mod visit;
 
 use self::{
-    control_frame::{BlockControlFrame, BlockHeight},
+    control_frame::{
+        BlockControlFrame,
+        BlockHeight,
+        IfControlFrame,
+        LoopControlFrame,
+        UnreachableControlFrame,
+    },
     stack::ValueStack,
     typed_value::{Typed, TypedValue},
     utils::{WasmFloat, WasmInteger},
@@ -281,6 +287,53 @@ impl<'parser> FuncTranslator<'parser> {
                 .bump_fuel_consumption(instr, delta)?;
         }
         Ok(())
+    }
+
+    /// Translates the `end` of a Wasm `block` control frame.
+    fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), TranslationError> {
+        if self.alloc.control_stack.is_empty() {
+            // We dropped the Wasm `block` that encloses the function itself so we can return.
+            return self.visit_return();
+        }
+        if self.reachable && frame.is_branched_to() {
+            // If the end of the `block` is reachable AND
+            // there are branches to the end of the `block`
+            // prior, we need to copy the results to the
+            // block result registers.
+            //
+            // # Note
+            //
+            // We can skip this step if the above condition is
+            // not met since the code at this point is either
+            // unreachable OR there is only one source of results
+            // and thus there is no need to copy the results around.
+            todo!()
+        }
+        // Since the `block` is now sealed we can pin its end label.
+        self.alloc.instr_encoder.pin_label(frame.end_label());
+        if self.reachable || frame.is_branched_to() {
+            // We reset reachability in case the end of the `block` was reachable.
+            self.reachable = true;
+        }
+        Ok(())
+    }
+
+    /// Translates the `end` of a Wasm `loop` control frame.
+    fn translate_end_loop(&mut self, _frame: LoopControlFrame) -> Result<(), TranslationError> {
+        todo!()
+    }
+
+    /// Translates the `end` of a Wasm `if` control frame.
+    fn translate_end_if(&mut self, _frame: IfControlFrame) -> Result<(), TranslationError> {
+        todo!()
+    }
+
+    /// Translates the `end` of an unreachable control frame.
+    fn translate_end_unreachable(
+        &mut self,
+        _frame: UnreachableControlFrame,
+    ) -> Result<(), TranslationError> {
+        todo!()
     }
 
     /// Pushes a binary instruction with two register inputs `lhs` and `rhs`.

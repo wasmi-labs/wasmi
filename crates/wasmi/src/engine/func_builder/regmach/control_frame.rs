@@ -48,6 +48,8 @@ impl BlockHeight {
 pub struct BlockControlFrame {
     /// The type of the [`BlockControlFrame`].
     block_type: BlockType,
+    /// The number of branches to this [`BlockControlFrame`].
+    len_branches: usize,
     /// The value stack height upon entering the [`BlockControlFrame`].
     stack_height: BlockHeight,
     /// Label representing the end of the [`BlockControlFrame`].
@@ -71,10 +73,21 @@ impl BlockControlFrame {
     ) -> Self {
         Self {
             block_type,
+            len_branches: 0,
             stack_height,
             end_label,
             consume_fuel,
         }
+    }
+
+    /// Returns `true` if at least one branch targets this [`BlockControlFrame`].
+    pub fn is_branched_to(&self) -> bool {
+        self.len_branches() >= 1
+    }
+
+    /// Returns the number of branches to this [`BlockControlFrame`].
+    fn len_branches(&self) -> usize {
+        self.len_branches
     }
 
     /// Returns the label for the branch destination of the [`BlockControlFrame`].
@@ -120,6 +133,8 @@ impl BlockControlFrame {
 pub struct LoopControlFrame {
     /// The type of the [`LoopControlFrame`].
     block_type: BlockType,
+    /// The number of branches to this [`BlockControlFrame`].
+    len_branches: usize,
     /// The value stack height upon entering the [`LoopControlFrame`].
     stack_height: BlockHeight,
     /// Label representing the head of the [`LoopControlFrame`].
@@ -142,10 +157,21 @@ impl LoopControlFrame {
     ) -> Self {
         Self {
             block_type,
+            len_branches: 0,
             stack_height,
             head_label,
             consume_fuel,
         }
+    }
+
+    /// Returns `true` if at least one branch targets this [`LoopControlFrame`].
+    pub fn is_branched_to(&self) -> bool {
+        self.len_branches() >= 1
+    }
+
+    /// Returns the number of branches to this [`LoopControlFrame`].
+    fn len_branches(&self) -> usize {
+        self.len_branches
     }
 
     /// Returns the label for the branch destination of the [`LoopControlFrame`].
@@ -182,6 +208,8 @@ impl LoopControlFrame {
 pub struct IfControlFrame {
     /// The type of the [`IfControlFrame`].
     block_type: BlockType,
+    /// The number of branches to this [`BlockControlFrame`].
+    len_branches: usize,
     /// The value stack height upon entering the [`IfControlFrame`].
     stack_height: BlockHeight,
     /// Label representing the end of the [`IfControlFrame`].
@@ -230,12 +258,23 @@ impl IfControlFrame {
         );
         Self {
             block_type,
+            len_branches: 0,
             stack_height,
             end_label,
             else_label,
             end_of_then_is_reachable: None,
             consume_fuel,
         }
+    }
+
+    /// Returns `true` if at least one branch targets this [`IfControlFrame`].
+    pub fn is_branched_to(&self) -> bool {
+        self.len_branches() >= 1
+    }
+
+    /// Returns the number of branches to this [`IfControlFrame`].
+    fn len_branches(&self) -> usize {
+        self.len_branches
     }
 
     /// Returns the label for the branch destination of the [`IfControlFrame`].
@@ -405,6 +444,30 @@ impl ControlFrame {
             Self::Unreachable(frame) => panic!(
                 "tried to get `branch_destination` for an unreachable control frame: {frame:?}"
             ),
+        }
+    }
+
+    /// Returns `true` if at least one branch targets this [`ControlFrame`].
+    pub fn is_branched_to(&self) -> bool {
+        match self {
+            Self::Block(frame) => frame.is_branched_to(),
+            Self::Loop(frame) => frame.is_branched_to(),
+            Self::If(frame) => frame.is_branched_to(),
+            Self::Unreachable(frame) => {
+                panic!("tried to get `is_branched_to` for an unreachable control frame: {frame:?}")
+            }
+        }
+    }
+
+    /// Returns the number of branches to the [`ControlFrame`].
+    fn len_branches(&self) -> usize {
+        match self {
+            Self::Block(frame) => frame.len_branches(),
+            Self::Loop(frame) => frame.len_branches(),
+            Self::If(frame) => frame.len_branches(),
+            Self::Unreachable(frame) => {
+                panic!("tried to get `len_branches` for an unreachable control frame: {frame:?}")
+            }
         }
     }
 

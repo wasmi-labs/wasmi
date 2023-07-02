@@ -2,7 +2,7 @@
 
 use super::{
     bail_unreachable,
-    control_frame::{BlockControlFrame, BlockHeight, UnreachableControlFrame},
+    control_frame::{BlockControlFrame, BlockHeight, ControlFrame, UnreachableControlFrame},
     stack::Provider,
     ControlFrameKind,
     FuncTranslator,
@@ -134,7 +134,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_end(&mut self) -> Self::Output {
-        self.visit_return()
+        match self.alloc.control_stack.pop_frame() {
+            ControlFrame::Block(frame) => self.translate_end_block(frame),
+            ControlFrame::Loop(frame) => self.translate_end_loop(frame),
+            ControlFrame::If(frame) => self.translate_end_if(frame),
+            ControlFrame::Unreachable(frame) => self.translate_end_unreachable(frame),
+        }
     }
 
     fn visit_br(&mut self, relative_depth: u32) -> Self::Output {
