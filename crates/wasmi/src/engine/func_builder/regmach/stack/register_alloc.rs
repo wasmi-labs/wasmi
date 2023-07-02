@@ -1,3 +1,4 @@
+use super::{Provider, TaggedProvider};
 use crate::engine::{
     bytecode2::Register,
     func_builder::{Instr, TranslationErrorInner},

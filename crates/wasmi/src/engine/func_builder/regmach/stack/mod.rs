@@ -12,6 +12,7 @@ use crate::engine::{
     Instr,
     TranslationError,
 };
+use alloc::vec::Drain;
 use wasmi_core::UntypedValue;
 
 /// Tagged providers are inputs to `wasmi` bytecode instructions.
@@ -136,6 +137,21 @@ impl ValueStack {
         let (v1, v2) = self.pop2();
         let v0 = self.pop();
         (v0, v1, v2)
+    }
+
+    /// Popn the `n` top-most [`Provider`] from the [`ValueStack`] and store them in `result`.
+    ///
+    /// # Note
+    ///
+    /// - The top-most [`Provider`] will be the n-th item in `result`.
+    /// - The `result` [`Vec`] will be cleared before refilled.
+    pub fn pop_n(&mut self, n: usize, result: &mut Vec<Provider>) {
+        result.clear();
+        for _ in 0..n {
+            let provider = self.pop();
+            result.push(provider);
+        }
+        result[..].reverse()
     }
 
     /// Registers the [`Instr`] user for [`Register`] if `reg` is allocated in storage space.
