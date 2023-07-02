@@ -143,6 +143,32 @@ impl Instruction {
         }
     }
 
+    /// Creates a new [`Instruction::Copy`].
+    pub fn copy(result: Register, value: Register) -> Self {
+        Self::Copy { result, value }
+    }
+
+    /// Creates a new [`Instruction::CopyImm`].
+    pub fn copy_imm(result: Register, value: ConstRef) -> Self {
+        Self::CopyImm { result, value }
+    }
+
+    /// Creates a new [`Instruction::CopyImm32`].
+    pub fn copy_imm32(result: Register, value: impl Into<Const32>) -> Self {
+        Self::CopyImm32 {
+            result,
+            value: value.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::CopyI64Imm32`].
+    pub fn copy_i64imm32(result: Register, value: i32) -> Self {
+        Self::CopyImm32 {
+            result,
+            value: value.into(),
+        }
+    }
+
     /// Creates a new [`Instruction::GlobalGet`].
     pub fn global_get(result: Register, global: bytecode2::GlobalIdx) -> Self {
         Self::GlobalGet { result, global }

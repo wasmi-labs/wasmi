@@ -182,6 +182,54 @@ pub enum Instruction {
         values: ProviderSliceRef,
     },
 
+    /// Copies `value` to `result`.
+    ///
+    /// # Note
+    ///
+    /// This is a `wasmi` utility instruction used to translate Wasm control flow.
+    Copy {
+        /// The register holding the result of the instruction.
+        result: Register,
+        /// The register holding the value to copy.
+        value: Register,
+    },
+    /// Copies the immediate `value` to `result`.
+    ///
+    /// # Note
+    ///
+    /// Read [`Instruction::Copy`] for more information about this instruction.
+    CopyImm {
+        /// The register holding the result of the instruction.
+        result: Register,
+        /// A reference to the immediate value to copy.
+        value: ConstRef,
+    },
+    /// Copies the 32-bit immediate `value` to `result`.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::CopyImm`] for 32-bit encoded immediate values.
+    /// Read [`Instruction::Copy`] for more information about this instruction.
+    CopyImm32 {
+        /// The register holding the result of the instruction.
+        result: Register,
+        /// The 32-bit encoded immediate value to copy.
+        value: Const32,
+    },
+    /// Copies the 32-bit encoded `i64` immediate `value` to `result`.
+    ///
+    /// # Note
+    ///
+    /// - Variant of [`Instruction::CopyImm`] for 32-bit encodable `i64` immediate values.
+    /// - Upon execution the 32-bit encoded `i32` `value` is sign extended to `i64` and copied into `result`.
+    /// - Read [`Instruction::Copy`] for more information about this instruction.
+    CopyI64Imm32 {
+        /// The register holding the result of the instruction.
+        result: Register,
+        /// The 32-bit encoded `i64` immediate value to copy.
+        value: Const32,
+    },
+
     /// A Wasm `select` or `select <ty>` instruction.
     ///
     /// Inspect `condition` and if `condition != 0`:
