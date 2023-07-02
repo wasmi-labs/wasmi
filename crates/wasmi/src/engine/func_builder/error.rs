@@ -91,6 +91,9 @@ impl Display for TranslationError {
             TranslationErrorInner::RegisterOutOfBounds => {
                 write!(f, "tried to access out of bounds register index")
             }
+            TranslationErrorInner::EmulatedValueStackOverflow => {
+                write!(f, "function requires value stack with out of bounds depth")
+            }
         }
     }
 }
@@ -118,4 +121,6 @@ pub enum TranslationErrorInner {
     AllocatedTooManyRegisters,
     /// Tried to use an out of bounds register index.
     RegisterOutOfBounds,
+    /// Pushed too many values on the emulated value stack during translation.
+    EmulatedValueStackOverflow,
 }

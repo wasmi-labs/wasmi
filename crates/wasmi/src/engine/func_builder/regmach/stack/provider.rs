@@ -35,6 +35,11 @@ impl ProviderStack {
         self.providers.clear()
     }
 
+    /// Returns the number of [`TaggedProviders`] on the [`ProviderStack`].
+    pub fn len(&self) -> usize {
+        self.providers.len()
+    }
+
     /// Pushes a provider to the [`ProviderStack`].
     fn push(&mut self, provider: TaggedProvider) {
         self.providers.push(provider);

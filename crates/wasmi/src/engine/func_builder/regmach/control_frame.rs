@@ -1,7 +1,47 @@
+#[cfg(doc)]
+use super::ValueStack;
 use crate::{
-    engine::{func_builder::labels::LabelRef, Instr},
+    engine::{
+        func_builder::{labels::LabelRef, TranslationErrorInner},
+        Instr,
+        TranslationError,
+    },
     module::BlockType,
+    Engine,
 };
+
+/// The height of the [`ValueStack`] upon entering the control frame without its parameters.
+///
+/// # Note
+///
+/// Used to truncate the [`ValueStack`] after successfully translating a control
+/// frame or when encountering unreachable code during its translation.
+#[derive(Debug, Default, Copy, Clone)]
+pub struct BlockHeight(u16);
+
+impl BlockHeight {
+    /// Creates a new [`BlockHeight`] for the given [`ValueStack`] `height` and [`BlockType`].
+    pub fn new(
+        engine: &Engine,
+        height: usize,
+        block_type: BlockType,
+    ) -> Result<Self, TranslationError> {
+        fn new_impl(engine: &Engine, height: usize, block_type: BlockType) -> Option<BlockHeight> {
+            let len_params = u16::try_from(block_type.len_params(engine)).ok()?;
+            let height = u16::try_from(height).ok()?;
+            let block_height = height.checked_sub(len_params)?;
+            Some(Self(block_height))
+        }
+        new_impl(engine, height, block_type)
+            .ok_or_else(|| TranslationErrorInner::EmulatedValueStackOverflow)
+            .map_err(TranslationError::new)
+    }
+
+    /// Returns the `u16` value of the [`StackHeight`].
+    pub fn into_u16(self) -> u16 {
+        self.0
+    }
+}
 
 /// A Wasm `block` control flow frame.
 #[derive(Debug, Copy, Clone)]
@@ -9,7 +49,7 @@ pub struct BlockControlFrame {
     /// The type of the [`BlockControlFrame`].
     block_type: BlockType,
     /// The value stack height upon entering the [`BlockControlFrame`].
-    stack_height: u32,
+    stack_height: BlockHeight,
     /// Label representing the end of the [`BlockControlFrame`].
     end_label: LabelRef,
     /// Instruction to consume fuel upon entering the basic block if fuel metering is enabled.
@@ -26,7 +66,7 @@ impl BlockControlFrame {
     pub fn new(
         block_type: BlockType,
         end_label: LabelRef,
-        stack_height: u32,
+        stack_height: BlockHeight,
         consume_fuel: Option<Instr>,
     ) -> Self {
         Self {
@@ -51,8 +91,8 @@ impl BlockControlFrame {
         self.end_label
     }
 
-    /// Returns the value stack height upon entering the [`BlockControlFrame`].
-    pub fn stack_height(&self) -> u32 {
+    /// Returns the [`BlockHeight`] of the [`BlockControlFrame`].
+    pub fn block_height(&self) -> BlockHeight {
         self.stack_height
     }
 
@@ -81,7 +121,7 @@ pub struct LoopControlFrame {
     /// The type of the [`LoopControlFrame`].
     block_type: BlockType,
     /// The value stack height upon entering the [`LoopControlFrame`].
-    stack_height: u32,
+    stack_height: BlockHeight,
     /// Label representing the head of the [`LoopControlFrame`].
     head_label: LabelRef,
     /// Instruction to consume fuel upon entering the basic block if fuel metering is enabled.
@@ -97,7 +137,7 @@ impl LoopControlFrame {
     pub fn new(
         block_type: BlockType,
         head_label: LabelRef,
-        stack_height: u32,
+        stack_height: BlockHeight,
         consume_fuel: Option<Instr>,
     ) -> Self {
         Self {
@@ -117,8 +157,8 @@ impl LoopControlFrame {
         self.head_label
     }
 
-    /// Returns the value stack height upon entering the [`LoopControlFrame`].
-    pub fn stack_height(&self) -> u32 {
+    /// Returns the [`BlockHeight`] of the [`LoopControlFrame`].
+    pub fn block_height(&self) -> BlockHeight {
         self.stack_height
     }
 
@@ -143,7 +183,7 @@ pub struct IfControlFrame {
     /// The type of the [`IfControlFrame`].
     block_type: BlockType,
     /// The value stack height upon entering the [`IfControlFrame`].
-    stack_height: u32,
+    stack_height: BlockHeight,
     /// Label representing the end of the [`IfControlFrame`].
     end_label: LabelRef,
     /// Label representing the optional `else` branch of the [`IfControlFrame`].
@@ -181,7 +221,7 @@ impl IfControlFrame {
         block_type: BlockType,
         end_label: LabelRef,
         else_label: LabelRef,
-        stack_height: u32,
+        stack_height: BlockHeight,
         consume_fuel: Option<Instr>,
     ) -> Self {
         assert_ne!(
@@ -217,8 +257,8 @@ impl IfControlFrame {
         self.else_label
     }
 
-    /// Returns the value stack height upon entering the [`IfControlFrame`].
-    pub fn stack_height(&self) -> u32 {
+    /// Returns the [`BlockHeight`] of the [`IfControlFrame`].
+    pub fn block_height(&self) -> BlockHeight {
         self.stack_height
     }
 
@@ -386,12 +426,16 @@ impl ControlFrame {
         }
     }
 
-    /// Returns the value stack height upon entering the control flow frame.
-    pub fn stack_height(&self) -> Option<u32> {
+    /// Returns the [`BlockHeihgt`] upon entering the control flow frame.
+    ///
+    /// # Note
+    ///
+    /// The [`UnreachableControlFrame`] does not need or have a [`BlockHeight`].
+    pub fn block_height(&self) -> Option<BlockHeight> {
         match self {
-            Self::Block(frame) => Some(frame.stack_height()),
-            Self::Loop(frame) => Some(frame.stack_height()),
-            Self::If(frame) => Some(frame.stack_height()),
+            Self::Block(frame) => Some(frame.block_height()),
+            Self::Loop(frame) => Some(frame.block_height()),
+            Self::If(frame) => Some(frame.block_height()),
             Self::Unreachable(_frame) => None,
         }
     }

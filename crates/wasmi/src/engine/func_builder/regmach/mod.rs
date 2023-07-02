@@ -11,7 +11,7 @@ mod utils;
 mod visit;
 
 use self::{
-    control_frame::BlockControlFrame,
+    control_frame::{BlockControlFrame, BlockHeight},
     stack::ValueStack,
     typed_value::{Typed, TypedValue},
     utils::{WasmFloat, WasmInteger},
@@ -160,7 +160,8 @@ impl<'parser> FuncTranslator<'parser> {
                     .push_consume_fuel_instr(self.fuel_costs().base)
             })
             .transpose()?;
-        let block_frame = BlockControlFrame::new(block_type, end_label, 0, consume_fuel);
+        let block_frame =
+            BlockControlFrame::new(block_type, end_label, BlockHeight::default(), consume_fuel);
         self.alloc.control_stack.push_frame(block_frame);
         Ok(())
     }

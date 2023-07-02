@@ -39,6 +39,15 @@ impl ValueStack {
         self.reg_alloc.reset();
     }
 
+    /// Returns the number of [`Provider`] on the [`ValueStack`].
+    ///
+    /// # Note
+    ///
+    /// This is the same as the height of the [`ValueStack`].
+    pub fn height(&self) -> usize {
+        self.providers.len()
+    }
+
     /// Returns the number of registers allocated by the [`RegisterAlloc`].
     pub fn len_registers(&self) -> u16 {
         self.reg_alloc.len_registers()

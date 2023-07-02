@@ -1,4 +1,5 @@
 mod binary;
+mod block;
 mod cmp;
 mod global_get;
 mod global_set;

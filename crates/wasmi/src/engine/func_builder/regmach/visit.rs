@@ -1,6 +1,14 @@
 #![allow(unused_variables)]
 
-use super::{bail_unreachable, stack::Provider, FuncTranslator, Typed, TypedValue};
+use super::{
+    bail_unreachable,
+    control_frame::{BlockControlFrame, BlockHeight, UnreachableControlFrame},
+    stack::Provider,
+    ControlFrameKind,
+    FuncTranslator,
+    Typed,
+    TypedValue,
+};
 use crate::{
     engine::{
         bytecode,
@@ -8,7 +16,7 @@ use crate::{
         bytecode2::{BinInstr, BinInstrImm16, Const16, Const32, Instruction, Register, UnaryInstr},
         TranslationError,
     },
-    module::{self, WasmiValueType},
+    module::{self, BlockType, WasmiValueType},
     Mutability,
 };
 use wasmi_core::{TrapCode, UntypedValue, ValueType, F32, F64};
@@ -83,8 +91,34 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         todo!()
     }
 
-    fn visit_block(&mut self, blockty: wasmparser::BlockType) -> Self::Output {
-        todo!()
+    fn visit_block(&mut self, block_type: wasmparser::BlockType) -> Self::Output {
+        let block_type = BlockType::new(block_type, self.res);
+        if self.is_reachable() {
+            // Inherit [`Instruction::ConsumeFuel`] from parent control frame.
+            //
+            // # Note
+            //
+            // This is an optimization to reduce the number of [`Instruction::ConsumeFuel`]
+            // and is applicable since Wasm `block` are entered unconditionally.
+            let consume_fuel = self.alloc.control_stack.last().consume_fuel_instr();
+            let stack_height =
+                BlockHeight::new(self.engine(), self.alloc.stack.height(), block_type)?;
+            let end_label = self.alloc.instr_encoder.new_label();
+            self.alloc.control_stack.push_frame(BlockControlFrame::new(
+                block_type,
+                end_label,
+                stack_height,
+                consume_fuel,
+            ));
+        } else {
+            self.alloc
+                .control_stack
+                .push_frame(UnreachableControlFrame::new(
+                    ControlFrameKind::Block,
+                    block_type,
+                ));
+        }
+        Ok(())
     }
 
     fn visit_loop(&mut self, blockty: wasmparser::BlockType) -> Self::Output {
@@ -161,6 +195,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             _ => todo!(),
         };
         self.alloc.instr_encoder.push_instr(instr)?;
+        self.reachable = false;
         Ok(())
     }
 
