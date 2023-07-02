@@ -46,6 +46,18 @@ impl TryFrom<u64> for Const16 {
     }
 }
 
+impl From<i16> for Const16 {
+    fn from(value: i16) -> Self {
+        Self::from_i16(value)
+    }
+}
+
+impl From<u16> for Const16 {
+    fn from(value: u16) -> Self {
+        Self::from_u16(value)
+    }
+}
+
 impl Const16 {
     /// Creates an [`Const16`] from the given `i16` value.
     pub fn from_i16(value: i16) -> Self {

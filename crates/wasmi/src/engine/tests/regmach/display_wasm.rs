@@ -13,6 +13,18 @@ impl<T> From<T> for DisplayWasm<T> {
     }
 }
 
+impl Display for DisplayWasm<i16> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl Display for DisplayWasm<u16> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 impl Display for DisplayWasm<i32> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "{}", self.0)

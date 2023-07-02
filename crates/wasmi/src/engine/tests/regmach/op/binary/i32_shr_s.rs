@@ -14,7 +14,7 @@ fn reg_imm_rev() {
 
 #[test]
 fn reg_imm16_rev() {
-    test_binary_reg_imm16_rev(WASM_OP, Instruction::i32_shr_s_imm16_rev)
+    test_binary_reg_imm16_rev::<i16>(WASM_OP, 100, Instruction::i32_shr_s_imm16_rev)
 }
 
 #[test]

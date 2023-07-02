@@ -198,62 +198,62 @@ fn test_binary_reg_reg(
     assert_func_bodies(wasm, [expected]);
 }
 
-fn test_binary_reg_imm16(
+fn test_binary_reg_imm16<T>(
     wasm_op: WasmOp,
+    value: T,
     make_instr: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
-) {
-    /// This constant value fits into 16 bit and is kinda uninteresting for optimizations.
-    const VALUE: i16 = 100;
+) where
+    T: Copy + Into<Const16>,
+    DisplayWasm<T>: Display,
+{
     let param_ty = wasm_op.param_ty();
     let result_ty = wasm_op.result_ty();
+    let display_value = DisplayWasm::from(value);
     let wasm = wat2wasm(&format!(
         r#"
         (module
             (func (param {param_ty}) (result {result_ty})
                 local.get 0
-                {param_ty}.const {VALUE}
+                {param_ty}.const {display_value}
                 {wasm_op}
             )
         )
     "#,
     ));
+    let immediate: Const16 = value.into();
     let expected = [
-        make_instr(
-            Register::from_u16(1),
-            Register::from_u16(0),
-            Const16::from_i16(VALUE),
-        ),
+        make_instr(Register::from_u16(1), Register::from_u16(0), immediate),
         Instruction::return_reg(1),
     ];
     assert_func_bodies(wasm, [expected]);
 }
 
 /// Variant of [`test_binary_reg_imm16`] where both operands are swapped.
-fn test_binary_reg_imm16_rev(
+fn test_binary_reg_imm16_rev<T>(
     wasm_op: WasmOp,
+    value: T,
     make_instr: fn(result: Register, lhs: Const16, rhs: Register) -> Instruction,
-) {
-    /// This constant value fits into 16 bit and is kinda uninteresting for optimizations.
-    const VALUE: i16 = 100;
+) where
+    T: Copy + Into<Const16>,
+    DisplayWasm<T>: Display,
+{
     let param_ty = wasm_op.param_ty();
     let result_ty = wasm_op.result_ty();
+    let display_value = DisplayWasm::from(value);
     let wasm = wat2wasm(&format!(
         r#"
         (module
             (func (param {param_ty}) (result {result_ty})
-                {param_ty}.const {VALUE}
+                {param_ty}.const {display_value}
                 local.get 0
                 {wasm_op}
             )
         )
     "#,
     ));
+    let immediate: Const16 = value.into();
     let expected = [
-        make_instr(
-            Register::from_u16(1),
-            Const16::from_i16(VALUE),
-            Register::from_u16(0),
-        ),
+        make_instr(Register::from_u16(1), immediate, Register::from_u16(0)),
         Instruction::return_reg(1),
     ];
     assert_func_bodies(wasm, [expected]);
