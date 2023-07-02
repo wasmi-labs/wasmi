@@ -141,11 +141,11 @@ impl TranslationTest {
     ///
     /// If the translation test was not successful.
     pub fn run(&self) {
+        self.has_run.store(true, Ordering::SeqCst);
         let module = create_module(self.config(), self.wasm());
         let engine = module.engine();
         self.assert_funcs(engine, &module);
         self.assert_consts(engine);
-        self.has_run.store(true, Ordering::SeqCst);
     }
 
     /// Asserts that all expected functions of the translated Wasm module are as expected.
