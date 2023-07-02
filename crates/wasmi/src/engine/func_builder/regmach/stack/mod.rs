@@ -12,7 +12,7 @@ use crate::engine::{
     Instr,
     TranslationError,
 };
-use alloc::vec::Drain;
+use alloc::vec::{Drain, Vec};
 use wasmi_core::UntypedValue;
 
 /// Tagged providers are inputs to `wasmi` bytecode instructions.
