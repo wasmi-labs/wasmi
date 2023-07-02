@@ -137,6 +137,22 @@ impl RegisterAlloc {
         self.min_storage = u16::MAX;
     }
 
+    /// Adjusts the [`RegisterAlloc`] for the popped [`TaggedProvider`] and returns a [`Provider`].
+    pub fn pop_provider(&mut self, provider: TaggedProvider) -> Provider {
+        match provider {
+            TaggedProvider::Local(reg) => Provider::Register(reg),
+            TaggedProvider::Dynamic(reg) => {
+                self.pop_dynamic();
+                Provider::Register(reg)
+            }
+            TaggedProvider::Storage(reg) => {
+                self.pop_storage();
+                Provider::Register(reg)
+            }
+            TaggedProvider::Const(value) => Provider::Const(value),
+        }
+    }
+
     /// Returns thenumber of registers allocated as function parameters or locals.
     pub fn len_locals(&self) -> u16 {
         self.len_locals

@@ -121,18 +121,7 @@ impl ValueStack {
 
     /// Pops the top-most [`Provider`] from the [`ValueStack`].
     pub fn pop(&mut self) -> Provider {
-        match self.providers.pop() {
-            TaggedProvider::Local(reg) => Provider::Register(reg),
-            TaggedProvider::Dynamic(reg) => {
-                self.reg_alloc.pop_dynamic();
-                Provider::Register(reg)
-            }
-            TaggedProvider::Storage(reg) => {
-                self.reg_alloc.pop_storage();
-                Provider::Register(reg)
-            }
-            TaggedProvider::Const(value) => Provider::Const(value),
-        }
+        self.reg_alloc.pop_provider(self.providers.pop())
     }
 
     /// Pops the top-most [`Provider`] from the [`ValueStack`].
