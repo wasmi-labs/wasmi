@@ -13,7 +13,7 @@ use super::{
     StoreInstr,
     UnaryInstr,
 };
-use crate::engine::{bytecode2, const_pool::ConstRef};
+use crate::engine::{bytecode::BranchOffset, bytecode2, const_pool::ConstRef};
 
 macro_rules! constructor_for {
     (
@@ -141,6 +141,21 @@ impl Instruction {
         Self::ReturnI64Imm32 {
             value: value.into(),
         }
+    }
+
+    /// Creates a new [`Instruction::Branch`] for the given `offset`.
+    pub fn branch(offset: BranchOffset) -> Self {
+        Self::Branch { offset }
+    }
+
+    /// Creates a new [`Instruction::BranchEqz`] for the given `condition` and `offset`.
+    pub fn branch_eqz(condition: Register, offset: BranchOffset) -> Self {
+        Self::BranchEqz { condition, offset }
+    }
+
+    /// Creates a new [`Instruction::BranchNez`] for the given `condition` and `offset`.
+    pub fn branch_nez(condition: Register, offset: BranchOffset) -> Self {
+        Self::BranchNez { condition, offset }
     }
 
     /// Creates a new [`Instruction::Copy`].

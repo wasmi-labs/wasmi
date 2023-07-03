@@ -31,7 +31,7 @@ pub(crate) use self::{
     },
 };
 use super::{
-    bytecode::{BlockFuel, DataSegmentIdx, ElementSegmentIdx, GlobalIdx, TableIdx},
+    bytecode::{BlockFuel, BranchOffset, DataSegmentIdx, ElementSegmentIdx, GlobalIdx, TableIdx},
     const_pool::ConstRef,
     TranslationError,
 };
@@ -182,6 +182,35 @@ pub enum Instruction {
     ReturnValues {
         /// Identifier for a [`ProviderSlice`].
         values: ProviderSliceRef,
+    },
+
+    /// A Wasm `br` instruction.
+    Branch {
+        /// The branching offset for the instruction pointer.
+        offset: BranchOffset,
+    },
+    /// A conditional branch instruction.
+    ///
+    /// # Note
+    ///
+    /// - The branch is taken if `condition` evaluates to zero.
+    /// - Partially translated from negated Wasm `br_if` instructions.
+    BranchEqz {
+        /// The register holding the condition to evaluate against zero.
+        condition: Register,
+        /// The branching offset for the instruction pointer.
+        offset: BranchOffset,
+    },
+    /// A Wasm `br_if` instruction.
+    ///
+    /// # Note
+    ///
+    /// The branch is taken if `condition` evaluates to zero.
+    BranchNez {
+        /// The register holding the condition to evaluate against zero.
+        condition: Register,
+        /// The branching offset for the instruction pointer.
+        offset: BranchOffset,
     },
 
     /// Copies `value` to `result`.
