@@ -756,7 +756,7 @@ impl<T> Store<T> {
         let (inner, mut limiter) = self.store_inner_and_resource_limiter_ref();
         if let Some(limiter) = limiter.as_resource_limiter() {
             if inner.instances.len().saturating_add(num_new_instances) > limiter.instances() {
-                return Err(InstantiationError::TooManyInstances.into());
+                return Err(InstantiationError::TooManyInstances);
             }
         }
         Ok(())

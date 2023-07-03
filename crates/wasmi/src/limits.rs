@@ -51,6 +51,8 @@ pub trait ResourceLimiter {
     /// [`Memory::grow`](crate::Memory::grow) an error will be returned from
     /// those methods.
     ///
+    /// # Errors
+    ///
     /// If `Err(e)` is returned then the `memory.grow` function will behave
     /// as if a trap has been raised. Note that this is not necessarily
     /// compliant with the WebAssembly specification but it can be a handy and
@@ -71,8 +73,10 @@ pub trait ResourceLimiter {
     /// * `maximum` is either the table's maximum or a maximum from an instance
     ///   allocator.  A value of `None` indicates that the table is unbounded.
     ///
+    /// # Errors
+    ///
     /// See the details on the return values for `memory_growing` for what the
-    /// return value of this function indicates.
+    /// return values of this function indicates.
     fn table_growing(
         &mut self,
         current: u32,
@@ -203,6 +207,12 @@ impl StoreLimitsBuilder {
     }
 }
 
+impl Default for StoreLimitsBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Provides limits for a [`Store`](crate::Store).
 ///
 /// This type is created with a [`StoreLimitsBuilder`] and is typically used in
@@ -245,7 +255,7 @@ impl ResourceLimiter for StoreLimits {
             Some(limit) if desired > limit => false,
             _ => match maximum {
                 Some(max) if desired > max => false,
-                _ => true,
+                Some(_) | None => true,
             },
         };
         if !allow && self.trap_on_grow_failure {
@@ -265,13 +275,13 @@ impl ResourceLimiter for StoreLimits {
             Some(limit) if desired > limit => false,
             _ => match maximum {
                 Some(max) if desired > max => false,
-                _ => true,
+                Some(_) | None => true,
             },
         };
         if !allow && self.trap_on_grow_failure {
             Err(TableError::GrowOutOfBounds {
                 maximum: maximum.unwrap_or(u32::MAX),
-                current: current,
+                current,
                 delta: desired - current,
             })
         } else {
