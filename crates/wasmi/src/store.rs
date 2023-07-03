@@ -71,7 +71,7 @@ impl StoreIdx {
 /// A stored entity.
 pub type Stored<Idx> = GuardedEntity<StoreIdx, Idx>;
 
-pub struct ResourceLimiterRef<'a>(pub(crate) Option<&'a mut (dyn crate::ResourceLimiter)>);
+pub struct ResourceLimiterRef<'a>(Option<&'a mut (dyn crate::ResourceLimiter)>);
 impl<'a> core::fmt::Debug for ResourceLimiterRef<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "ResourceLimiterRef(...)")
