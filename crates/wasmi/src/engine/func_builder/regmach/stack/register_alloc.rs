@@ -311,7 +311,7 @@ impl RegisterAlloc {
         fn pop_impl(this: &mut RegisterAlloc, n: usize) -> Option<()> {
             let n = u16::try_from(n).ok()?;
             let new_next_dynamic = this.next_dynamic.checked_sub(n)?;
-            if !(this.len_locals <= new_next_dynamic) {
+            if this.len_locals > new_next_dynamic {
                 return None;
             }
             this.next_dynamic = new_next_dynamic;
