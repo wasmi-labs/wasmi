@@ -104,9 +104,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let stack_height =
                 BlockHeight::new(self.engine(), self.alloc.stack.height(), block_type)?;
             let end_label = self.alloc.instr_encoder.new_label();
+            let len_block_params = block_type.len_params(self.engine()) as usize;
+            let len_branch_params = block_type.len_results(self.engine()) as usize;
+            let branch_params = self.alloc_branch_params(len_block_params, len_branch_params)?;
             self.alloc.control_stack.push_frame(BlockControlFrame::new(
                 block_type,
                 end_label,
+                branch_params,
                 stack_height,
                 consume_fuel,
             ));

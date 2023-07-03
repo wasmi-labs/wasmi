@@ -6,11 +6,15 @@ pub use self::{
     register_alloc::{DefragRegister, RegisterAlloc},
 };
 use super::{Typed, TypedValue};
-use crate::engine::{
-    bytecode2::Register,
-    func_builder::TranslationErrorInner,
-    Instr,
-    TranslationError,
+use crate::{
+    engine::{
+        bytecode2::{Register, RegisterSlice},
+        func_builder::TranslationErrorInner,
+        Instr,
+        TranslationError,
+    },
+    module::BlockType,
+    Engine,
 };
 use alloc::vec::{Drain, Vec};
 use wasmi_core::UntypedValue;
@@ -86,6 +90,10 @@ impl ValueStack {
     }
 
     /// Pushes the given [`Register`] to the [`ValueStack`].
+    ///
+    /// # Errors
+    ///
+    /// If too many registers have been registered.
     pub fn push_register(&mut self, reg: Register) -> Result<(), TranslationError> {
         if self.reg_alloc.is_dynamic(reg) {
             self.reg_alloc.push_dynamic()?;
@@ -103,6 +111,10 @@ impl ValueStack {
     }
 
     /// Pushes a [`Register`] to the [`ValueStack`] referring to a function parameter or local variable.
+    ///
+    /// # Errors
+    ///
+    /// If too many registers have been registered.
     pub fn push_local(&mut self, local_index: u32) -> Result<Register, TranslationError> {
         let index = u16::try_from(local_index)
             .ok()
@@ -114,6 +126,10 @@ impl ValueStack {
     }
 
     /// Pushes a dynamically allocated [`Register`] to the [`ValueStack`].
+    ///
+    /// # Errors
+    ///
+    /// If too many registers have been registered.
     pub fn push_dynamic(&mut self) -> Result<Register, TranslationError> {
         let reg = self.reg_alloc.push_dynamic()?;
         self.providers.push_dynamic(reg);
@@ -152,6 +168,38 @@ impl ValueStack {
             result.push(provider);
         }
         result[..].reverse()
+    }
+
+    /// Pushes the given `providers` into the [`ValueStack`].
+    ///
+    /// # Errors
+    ///
+    /// If too many registers have been registered.
+    pub fn push_n(&mut self, providers: &[Provider]) -> Result<(), TranslationError> {
+        for provider in providers {
+            match *provider {
+                Provider::Register(register) => self.push_register(register)?,
+                Provider::Const(value) => self.push_const(value),
+            }
+        }
+        Ok(())
+    }
+
+    /// Returns a [`RegisterSlice`] of `n` registers as if they were dynamically allocated.
+    ///
+    /// # Note
+    ///
+    /// - This procedure does not push anything onto the [`ValueStack`].
+    /// - This is primarily used to allocate branch parameters for control
+    ///    flow frames such as Wasm `block`, `loop` and `if`.
+    ///
+    /// # Errors
+    ///
+    /// If this procedure would allocate more registers than are available.
+    pub fn peek_dynamic_n(&mut self, n: usize) -> Result<RegisterSlice, TranslationError> {
+        let registers = self.reg_alloc.push_dynamic_n(n)?;
+        self.reg_alloc.pop_dynamic_n(n);
+        Ok(registers)
     }
 
     /// Registers the [`Instr`] user for [`Register`] if `reg` is allocated in storage space.

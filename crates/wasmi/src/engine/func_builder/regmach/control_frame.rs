@@ -2,6 +2,7 @@
 use super::ValueStack;
 use crate::{
     engine::{
+        bytecode2::{RegisterSlice, RegisterSliceIter},
         func_builder::{labels::LabelRef, TranslationErrorInner},
         Instr,
         TranslationError,
@@ -54,6 +55,14 @@ pub struct BlockControlFrame {
     stack_height: BlockHeight,
     /// Label representing the end of the [`BlockControlFrame`].
     end_label: LabelRef,
+    /// The branch parameters of the [`BlockControlFrame`].
+    ///
+    /// # Note
+    ///
+    /// These are the registers that store the results of
+    /// the [`BlockControlFrame`] upon taking a branch to it.
+    /// Note that branching to a [`BlockControlFrame`] exits it.
+    branch_params: RegisterSlice,
     /// Instruction to consume fuel upon entering the basic block if fuel metering is enabled.
     ///
     /// # Note
@@ -68,6 +77,7 @@ impl BlockControlFrame {
     pub fn new(
         block_type: BlockType,
         end_label: LabelRef,
+        branch_params: RegisterSlice,
         stack_height: BlockHeight,
         consume_fuel: Option<Instr>,
     ) -> Self {
@@ -76,6 +86,7 @@ impl BlockControlFrame {
             len_branches: 0,
             stack_height,
             end_label,
+            branch_params,
             consume_fuel,
         }
     }
@@ -88,6 +99,12 @@ impl BlockControlFrame {
     /// Returns the number of branches to this [`BlockControlFrame`].
     fn len_branches(&self) -> usize {
         self.len_branches
+    }
+
+    /// Returns an iterator over the registers holding the branching parameters of the [`BlockControlFrame`].
+    pub fn branch_params(&self, engine: &Engine) -> RegisterSliceIter {
+        self.branch_params
+            .iter(self.block_type().len_results(engine) as usize)
     }
 
     /// Returns the label for the branch destination of the [`BlockControlFrame`].
@@ -139,6 +156,14 @@ pub struct LoopControlFrame {
     stack_height: BlockHeight,
     /// Label representing the head of the [`LoopControlFrame`].
     head_label: LabelRef,
+    /// The branch parameters of the [`LoopControlFrame`].
+    ///
+    /// # Note
+    ///
+    /// These are the registers that store the inputs of
+    /// the [`LoopControlFrame`] upon taking a branch to it.
+    /// Note that branching to a [`LoopControlFrame`] re-enters it.
+    branch_params: RegisterSlice,
     /// Instruction to consume fuel upon entering the basic block if fuel metering is enabled.
     ///
     /// # Note
@@ -153,6 +178,7 @@ impl LoopControlFrame {
         block_type: BlockType,
         head_label: LabelRef,
         stack_height: BlockHeight,
+        branch_params: RegisterSlice,
         consume_fuel: Option<Instr>,
     ) -> Self {
         Self {
@@ -160,6 +186,7 @@ impl LoopControlFrame {
             len_branches: 0,
             stack_height,
             head_label,
+            branch_params,
             consume_fuel,
         }
     }
@@ -172,6 +199,12 @@ impl LoopControlFrame {
     /// Returns the number of branches to this [`LoopControlFrame`].
     fn len_branches(&self) -> usize {
         self.len_branches
+    }
+
+    /// Returns an iterator over the registers holding the branching parameters of the [`LoopControlFrame`].
+    pub fn branch_params(&self, engine: &Engine) -> RegisterSliceIter {
+        self.branch_params
+            .iter(self.block_type().len_params(engine) as usize)
     }
 
     /// Returns the label for the branch destination of the [`LoopControlFrame`].
@@ -216,6 +249,15 @@ pub struct IfControlFrame {
     end_label: LabelRef,
     /// Label representing the optional `else` branch of the [`IfControlFrame`].
     else_label: LabelRef,
+    /// The branch parameters of the [`IfControlFrame`].
+    ///
+    /// # Note
+    ///
+    /// These are the registers that store the results of
+    /// the [`IfControlFrame`] upon taking a branch to it.
+    /// Note that branching to a [`IfControlFrame`] exits it.
+    /// The behavior is the same for the `then` and `else` blocks.
+    branch_params: RegisterSlice,
     /// End of `then` branch is reachable.
     ///
     /// # Note
@@ -250,6 +292,7 @@ impl IfControlFrame {
         end_label: LabelRef,
         else_label: LabelRef,
         stack_height: BlockHeight,
+        branch_params: RegisterSlice,
         consume_fuel: Option<Instr>,
     ) -> Self {
         assert_ne!(
@@ -262,6 +305,7 @@ impl IfControlFrame {
             stack_height,
             end_label,
             else_label,
+            branch_params,
             end_of_then_is_reachable: None,
             consume_fuel,
         }
@@ -275,6 +319,12 @@ impl IfControlFrame {
     /// Returns the number of branches to this [`IfControlFrame`].
     fn len_branches(&self) -> usize {
         self.len_branches
+    }
+
+    /// Returns an iterator over the registers holding the branching parameters of the [`IfControlFrame`].
+    pub fn branch_params(&self, engine: &Engine) -> RegisterSliceIter {
+        self.branch_params
+            .iter(self.block_type().len_results(engine) as usize)
     }
 
     /// Returns the label for the branch destination of the [`IfControlFrame`].
@@ -432,6 +482,18 @@ impl ControlFrame {
             ControlFrame::Loop(_) => ControlFrameKind::Loop,
             ControlFrame::If(_) => ControlFrameKind::If,
             ControlFrame::Unreachable(frame) => frame.kind(),
+        }
+    }
+
+    /// Returns an iterator over the registers holding the branch parameters of the [`ControlFrame`].
+    pub fn branch_params(&self, engine: &Engine) -> RegisterSliceIter {
+        match self {
+            Self::Block(frame) => frame.branch_params(engine),
+            Self::Loop(frame) => frame.branch_params(engine),
+            Self::If(frame) => frame.branch_params(engine),
+            Self::Unreachable(frame) => {
+                panic!("tried to get `branch_params` for an unreachable control frame: {frame:?}")
+            }
         }
     }
 

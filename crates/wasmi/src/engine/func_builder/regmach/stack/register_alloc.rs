@@ -1,6 +1,6 @@
 use super::{Provider, TaggedProvider};
 use crate::engine::{
-    bytecode2::Register,
+    bytecode2::{Register, RegisterSlice},
     func_builder::{Instr, TranslationErrorInner},
     TranslationError,
 };
@@ -204,7 +204,7 @@ impl RegisterAlloc {
     /// Asserts that the [`RegisterAlloc`] is in [`AllocPhase::Init`] or [`AllocPhase::Alloc`].
     ///
     /// Makes sure the [`RegisterAlloc`] is in [`AllocPhase::Alloc`] after this call.
-    fn assert_alloc_phase(&mut self) {
+    fn assert_alloc_phase(&self) {
         assert!(matches!(self.phase, AllocPhase::Alloc));
     }
 
@@ -228,6 +228,32 @@ impl RegisterAlloc {
         self.next_dynamic += 1;
         self.max_dynamic = max(self.max_dynamic, self.next_dynamic);
         Ok(reg)
+    }
+
+    /// Allocates `n` new [`Register`] on the dynamic allocation stack and returns them.
+    ///
+    /// # Errors
+    ///
+    /// If too many registers have been registered.
+    ///
+    /// # Panics
+    ///
+    /// If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
+    pub fn push_dynamic_n(&mut self, n: usize) -> Result<RegisterSlice, TranslationError> {
+        fn next_dynamic_n(this: &mut RegisterAlloc, n: usize) -> Option<RegisterSlice> {
+            let n = u16::try_from(n).ok()?;
+            let next_dynamic = this.next_dynamic.checked_add(n)?;
+            if next_dynamic >= this.next_storage {
+                return None;
+            }
+            let register = RegisterSlice::new(Register::from_u16(this.next_dynamic));
+            this.next_dynamic += n;
+            this.max_dynamic = max(this.max_dynamic, this.next_dynamic);
+            Some(register)
+        }
+        self.assert_alloc_phase();
+        next_dynamic_n(self, n)
+            .ok_or_else(|| TranslationError::new(TranslationErrorInner::AllocatedTooManyRegisters))
     }
 
     /// Allocates a new [`Register`] on the storage allocation stack and returns it.
@@ -273,6 +299,26 @@ impl RegisterAlloc {
             "dynamic register allocation stack is empty"
         );
         self.next_dynamic -= 1;
+    }
+
+    /// Pops the `n` top-most dynamically allocated [`Register`] from the allocation stack.
+    ///
+    /// # Panics
+    ///
+    /// - If the dynamic register allocation stack is empty.
+    /// - If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
+    pub fn pop_dynamic_n(&mut self, n: usize) {
+        fn pop_impl(this: &mut RegisterAlloc, n: usize) -> Option<()> {
+            let n = u16::try_from(n).ok()?;
+            let new_next_dynamic = this.next_dynamic.checked_sub(n)?;
+            if !(this.len_locals <= new_next_dynamic) {
+                return None;
+            }
+            this.next_dynamic = new_next_dynamic;
+            Some(())
+        }
+        self.assert_alloc_phase();
+        pop_impl(self, n).expect("dynamic register underflow")
     }
 
     /// Pops the top-most dynamically allocated [`Register`] from the allocation stack.

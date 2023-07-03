@@ -112,6 +112,20 @@ impl ProviderStack {
             n <= len,
             "tried to pop {n} items from provider stack with only {len} items"
         );
-        self.providers.drain(len - n..)
+        self.providers.drain((len - n)..)
+    }
+
+    /// Peeks the `n` top-most [`TaggedProvider`] items of the [`ProviderStack`].
+    ///
+    /// # Panics
+    ///
+    /// If the [`ProviderStack`] does not contain at least `n` [`TaggedProvider`] items.
+    pub fn peek_n(&self, n: usize) -> &[TaggedProvider] {
+        let len = self.providers.len();
+        assert!(
+            n <= len,
+            "tried to peek {n} items from provider stack with only {len} items"
+        );
+        &self.providers[(len - n)..]
     }
 }

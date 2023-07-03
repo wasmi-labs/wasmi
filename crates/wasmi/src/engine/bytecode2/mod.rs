@@ -21,6 +21,8 @@ pub(crate) use self::{
         LoadAtInstr,
         LoadInstr,
         LoadOffset16Instr,
+        RegisterSlice,
+        RegisterSliceIter,
         Sign,
         StoreAtInstr,
         StoreInstr,

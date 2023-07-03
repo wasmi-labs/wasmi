@@ -40,7 +40,7 @@ use crate::{
             SignatureIdx,
             TableIdx,
         },
-        bytecode2::{Const16, Const32, Instruction, Register, Sign},
+        bytecode2::{Const16, Const32, Instruction, Register, RegisterSlice, Sign},
         config::FuelCosts,
         func_builder::TranslationErrorInner,
         CompiledFunc,
@@ -170,8 +170,18 @@ impl<'parser> FuncTranslator<'parser> {
                     .push_consume_fuel_instr(self.fuel_costs().base)
             })
             .transpose()?;
-        let block_frame =
-            BlockControlFrame::new(block_type, end_label, BlockHeight::default(), consume_fuel);
+        // Note: we use a dummy `RegisterSlice` as placeholder.
+        //
+        // We can do this since the branch parameters of the function enclosing block
+        // are never used due to optimizations to directly return to the caller instead.
+        let branch_params = RegisterSlice::new(Register::from_u16(0));
+        let block_frame = BlockControlFrame::new(
+            block_type,
+            end_label,
+            branch_params,
+            BlockHeight::default(),
+            consume_fuel,
+        );
         self.alloc.control_stack.push_frame(block_frame);
         Ok(())
     }
@@ -391,6 +401,50 @@ impl<'parser> FuncTranslator<'parser> {
         _frame: UnreachableControlFrame,
     ) -> Result<(), TranslationError> {
         todo!()
+    }
+
+    /// Allocate control flow block branch parameters.
+    ///
+    /// # Note
+    ///
+    /// The naive description of this algorithm is as follows:
+    ///
+    /// 1. Pop off all block parameters of the control flow block from
+    ///    the stack and store them temporarily in the `buffer`.
+    /// 2. For each branch parameter dynamically allocate a register.
+    ///    - Note: All dynamically allocated registers must be contiguous.
+    ///    - These registers serve as the registers and to hold the branch
+    ///      parameters upon branching to the control flow block and are
+    ///      going to be returned via [`RegisterSlice`].
+    /// 3. Drop all dynamically allocated branch parameter registers again.
+    /// 4. Push the block parameters stored in the `buffer` back onto the stack.
+    /// 5. Return the result registers of step 2.
+    ///
+    /// The `buffer` will be empty after this operation.
+    ///
+    /// # Dev. Note
+    ///
+    /// The current implementation is naive and rather inefficient
+    /// for the purpose of simplicity and correctness and should be
+    /// optimized if it turns out to be a bottleneck.
+    ///
+    /// # Errors
+    ///
+    /// If this procedure would allocate more registers than are available.
+    fn alloc_branch_params(
+        &mut self,
+        len_block_params: usize,
+        len_branch_params: usize,
+    ) -> Result<RegisterSlice, TranslationError> {
+        let params = &mut self.alloc.buffer;
+        // Pop the block parameters off the stack.
+        self.alloc.stack.pop_n(len_block_params, params);
+        // Peek the branch parameter registers which are going to be returned.
+        let branch_params = self.alloc.stack.peek_dynamic_n(len_branch_params)?;
+        // Push the block parameters onto the stack again as if nothing happened.
+        self.alloc.stack.push_n(params)?;
+        params.clear();
+        Ok(branch_params)
     }
 
     /// Pushes a binary instruction with two register inputs `lhs` and `rhs`.
