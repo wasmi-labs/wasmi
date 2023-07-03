@@ -28,7 +28,6 @@ use crate::{
     TableEntity,
     TableIdx,
 };
-#[cfg(not(feature = "std"))]
 use alloc::boxed::Box;
 use core::{
     fmt::{self, Debug},
