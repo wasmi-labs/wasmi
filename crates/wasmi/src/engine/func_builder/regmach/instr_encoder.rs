@@ -168,7 +168,12 @@ impl Instruction {
     /// # Panics
     ///
     /// If `self` is not a branch [`Instruction`].
-    pub fn update_branch_offset(&mut self, _new_offset: BranchOffset) {
-        panic!("tried to update branch offset of a non-branch instruction: {self:?}")
+    pub fn update_branch_offset(&mut self, new_offset: BranchOffset) {
+        match self {
+            Instruction::Branch { offset }
+            | Instruction::BranchEqz { offset, .. }
+            | Instruction::BranchNez { offset, .. } => offset.init(new_offset),
+            _ => panic!("tried to update branch offset of a non-branch instruction: {self:?}"),
+        }
     }
 }
