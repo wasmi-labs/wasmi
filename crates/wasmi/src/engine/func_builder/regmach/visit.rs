@@ -84,11 +84,17 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     wasmparser::for_each_operator!(impl_visit_operator);
 
     fn visit_unreachable(&mut self) -> Self::Output {
-        todo!()
+        bail_unreachable!(self);
+        self.alloc
+            .instr_encoder
+            .push_instr(Instruction::Trap(TrapCode::UnreachableCodeReached))?;
+        self.reachable = false;
+        Ok(())
     }
 
     fn visit_nop(&mut self) -> Self::Output {
-        todo!()
+        // Nothing to do for Wasm `nop` instructions.
+        Ok(())
     }
 
     fn visit_block(&mut self, block_type: wasmparser::BlockType) -> Self::Output {
