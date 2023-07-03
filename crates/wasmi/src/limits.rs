@@ -257,7 +257,7 @@ impl ResourceLimiter for StoreLimits {
 
     fn table_growing(
         &mut self,
-        _current: u32,
+        current: u32,
         desired: u32,
         maximum: Option<u32>,
     ) -> Result<bool, TableError> {
@@ -269,7 +269,11 @@ impl ResourceLimiter for StoreLimits {
             },
         };
         if !allow && self.trap_on_grow_failure {
-            Err(TableError::GrowOutOfBounds)
+            Err(TableError::GrowOutOfBounds {
+                maximum: maximum.unwrap_or(u32::MAX),
+                current: current,
+                delta: desired - current,
+            })
         } else {
             Ok(allow)
         }

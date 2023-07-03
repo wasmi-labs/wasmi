@@ -165,7 +165,11 @@ impl TableEntity {
                 // Here there's no meaningful way to map Ok(false) to
                 // INVALID_GROWTH_ERRCODE, so we just translate it to an
                 // appropriate Err(...)
-                return Err(TableError::GrowOutOfBounds);
+                return Err(TableError::GrowOutOfBounds {
+                    maximum: ty.maximum().unwrap_or(u32::MAX),
+                    current: 0,
+                    delta: ty.minimum(),
+                });
             }
         }
 
@@ -258,7 +262,11 @@ impl TableEntity {
 
         // If there was an error, ResourceLimiter gets to see.
         if let Some(limiter) = limiter.as_resource_limiter() {
-            limiter.table_grow_failed(&TableError::GrowOutOfBounds);
+            limiter.table_grow_failed(&TableError::GrowOutOfBounds {
+                maximum,
+                current,
+                delta,
+            });
         }
         Err(EntityGrowError::InvalidGrow)
     }
@@ -591,10 +599,16 @@ impl Table {
             .as_context_mut()
             .store
             .store_inner_and_resource_limiter_ref();
-        inner
-            .resolve_table_mut(self)
+        let table = inner.resolve_table_mut(self);
+        let current = table.size();
+        let maximum = table.ty().maximum().unwrap_or(u32::MAX);
+        table
             .grow(delta, init, &mut limiter)
-            .map_err(|_| TableError::GrowOutOfBounds)
+            .map_err(|_| TableError::GrowOutOfBounds {
+                maximum,
+                current,
+                delta,
+            })
     }
 
     /// Returns the [`Table`] element value at `index`.
