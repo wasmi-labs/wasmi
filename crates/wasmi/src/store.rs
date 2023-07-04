@@ -752,6 +752,9 @@ impl<T> Store<T> {
         self.data
     }
 
+    /// Installs a function into the [`Store`] that will be called with the user
+    /// data type `T` to retrieve a [`ResourceLimiter`] any time a limited,
+    /// growable resource such as a linear memory or table is grown.
     pub fn limiter(
         &mut self,
         limiter: impl FnMut(&mut T) -> &mut (dyn ResourceLimiter) + Send + Sync + 'static,
