@@ -89,7 +89,7 @@ impl<'a> ResourceLimiterRef<'a> {
 
 /// A wrapper around a boxed `dyn FnMut(&mut T)` returning a `&mut dyn`
 /// [`ResourceLimiter`]; in other words a function that one can call to retrieve
-/// a [`ResourceLimiter`] from the [`State`] object's user data type `T`.
+/// a [`ResourceLimiter`] from the [`Store`] object's user data type `T`.
 ///
 /// This wrapper exists both to make types a little easier to read and to
 /// provide a `Debug` impl so that `#[derive(Debug)]` works on structs that
