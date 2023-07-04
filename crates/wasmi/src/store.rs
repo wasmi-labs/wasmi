@@ -24,6 +24,7 @@ use crate::{
     Memory,
     MemoryEntity,
     MemoryIdx,
+    ResourceLimiter,
     Table,
     TableEntity,
     TableIdx,
@@ -70,7 +71,10 @@ impl StoreIdx {
 /// A stored entity.
 pub type Stored<Idx> = GuardedEntity<StoreIdx, Idx>;
 
-pub struct ResourceLimiterRef<'a>(Option<&'a mut (dyn crate::ResourceLimiter)>);
+/// A wrapper around an optional `&mut dyn` [`ResourceLimiter`], that exists
+/// both to make types a little easier to read and to provide a `Debug` impl so
+/// that `#[derive(Debug)]` works on structs that contain it.
+pub struct ResourceLimiterRef<'a>(Option<&'a mut (dyn ResourceLimiter)>);
 impl<'a> core::fmt::Debug for ResourceLimiterRef<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "ResourceLimiterRef(...)")
@@ -78,14 +82,19 @@ impl<'a> core::fmt::Debug for ResourceLimiterRef<'a> {
 }
 
 impl<'a> ResourceLimiterRef<'a> {
-    pub fn as_resource_limiter(&mut self) -> &mut Option<&'a mut dyn crate::ResourceLimiter> {
+    pub fn as_resource_limiter(&mut self) -> &mut Option<&'a mut dyn ResourceLimiter> {
         &mut self.0
     }
 }
 
-struct ResourceLimiterQuery<T>(
-    Box<dyn FnMut(&mut T) -> &mut (dyn crate::ResourceLimiter) + Send + Sync>,
-);
+/// A wrapper around a boxed `dyn FnMut(&mut T)` returning a `&mut dyn`
+/// [`ResourceLimiter`]; in other words a function that one can call to retrieve
+/// a [`ResourceLimiter`] from the [`State`] object's user data type `T`.
+///
+/// This wrapper exists both to make types a little easier to read and to
+/// provide a `Debug` impl so that `#[derive(Debug)]` works on structs that
+/// contain it.
+struct ResourceLimiterQuery<T>(Box<dyn FnMut(&mut T) -> &mut (dyn ResourceLimiter) + Send + Sync>);
 impl<T> core::fmt::Debug for ResourceLimiterQuery<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "ResourceLimiterQuery(...)")
@@ -106,7 +115,8 @@ pub struct Store<T> {
     trampolines: Arena<TrampolineIdx, TrampolineEntity<T>>,
     /// User provided host data owned by the [`Store`].
     data: T,
-    /// User provided hook to retrieve a [`crate::ResourceLimiter`].
+    /// User provided hook to retrieve a
+    /// [`ResourceLimiter`](crate::ResourceLimiter).
     limiter: Option<ResourceLimiterQuery<T>>,
 }
 
@@ -744,7 +754,7 @@ impl<T> Store<T> {
 
     pub fn limiter(
         &mut self,
-        limiter: impl FnMut(&mut T) -> &mut (dyn crate::ResourceLimiter) + Send + Sync + 'static,
+        limiter: impl FnMut(&mut T) -> &mut (dyn ResourceLimiter) + Send + Sync + 'static,
     ) {
         self.limiter = Some(ResourceLimiterQuery(Box::new(limiter)))
     }
