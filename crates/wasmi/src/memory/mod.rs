@@ -5,6 +5,8 @@ mod error;
 #[cfg(test)]
 mod tests;
 
+use crate::{engine::executor::EntityGrowError, store::ResourceLimiterRef};
+
 use self::buffer::ByteBuffer;
 pub use self::{
     data::{DataSegment, DataSegmentEntity, DataSegmentIdx},
@@ -12,7 +14,7 @@ pub use self::{
 };
 use super::{AsContext, AsContextMut, StoreContext, StoreContextMut, Stored};
 use wasmi_arena::ArenaIndex;
-use wasmi_core::Pages;
+use wasmi_core::{Pages, TrapCode};
 
 /// A raw index to a linear memory entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -127,17 +129,38 @@ pub struct MemoryEntity {
 
 impl MemoryEntity {
     /// Creates a new memory entity with the given memory type.
-    pub fn new(memory_type: MemoryType) -> Result<Self, MemoryError> {
+    pub fn new(
+        memory_type: MemoryType,
+        limiter: &mut ResourceLimiterRef<'_>,
+    ) -> Result<Self, MemoryError> {
         let initial_pages = memory_type.initial_pages();
-        let initial_len = initial_pages
-            .to_bytes()
-            .ok_or(MemoryError::OutOfBoundsAllocation)?;
-        let memory = Self {
-            bytes: ByteBuffer::new(initial_len),
-            memory_type,
-            current_pages: initial_pages,
-        };
-        Ok(memory)
+        let initial_len = initial_pages.to_bytes();
+        let maximum_pages = memory_type.maximum_pages().unwrap_or_else(Pages::max);
+        let maximum_len = maximum_pages.to_bytes();
+
+        if let Some(limiter) = limiter.as_resource_limiter() {
+            if !limiter.memory_growing(0, initial_len.unwrap_or(usize::MAX), maximum_len)? {
+                // Here there's no meaningful way to map Ok(false) to
+                // INVALID_GROWTH_ERRCODE, so we just translate it to an
+                // appropriate Err(...)
+                return Err(MemoryError::OutOfBoundsAllocation);
+            }
+        }
+
+        if let Some(initial_len) = initial_len {
+            let memory = Self {
+                bytes: ByteBuffer::new(initial_len),
+                memory_type,
+                current_pages: initial_pages,
+            };
+            Ok(memory)
+        } else {
+            let err = MemoryError::OutOfBoundsAllocation;
+            if let Some(limiter) = limiter.as_resource_limiter() {
+                limiter.memory_grow_failed(&err)
+            }
+            Err(err)
+        }
     }
 
     /// Returns the memory type of the linear memory.
@@ -171,25 +194,57 @@ impl MemoryEntity {
     ///
     /// If the linear memory would grow beyond its maximum limit after
     /// the grow operation.
-    pub fn grow(&mut self, additional: Pages) -> Result<Pages, MemoryError> {
+    pub fn grow(
+        &mut self,
+        additional: Pages,
+        limiter: &mut ResourceLimiterRef<'_>,
+    ) -> Result<Pages, EntityGrowError> {
         let current_pages = self.current_pages();
         if additional == Pages::from(0) {
             // Nothing to do in this case. Bail out early.
             return Ok(current_pages);
         }
+
         let maximum_pages = self.ty().maximum_pages().unwrap_or_else(Pages::max);
-        let new_pages = current_pages
-            .checked_add(additional)
-            .filter(|&new_pages| new_pages <= maximum_pages)
-            .ok_or(MemoryError::OutOfBoundsGrowth)?;
-        let new_size = new_pages
-            .to_bytes()
-            .ok_or(MemoryError::OutOfBoundsAllocation)?;
-        // At this point it is okay to grow the underlying virtual memory
-        // by the given amount of additional pages.
-        self.bytes.grow(new_size);
-        self.current_pages = new_pages;
-        Ok(current_pages)
+        let desired_pages = current_pages.checked_add(additional);
+
+        // ResourceLimiter gets first look at the request.
+        if let Some(limiter) = limiter.as_resource_limiter() {
+            let current_size = current_pages.to_bytes().unwrap_or(usize::MAX);
+            let desired_size = desired_pages
+                .unwrap_or_else(Pages::max)
+                .to_bytes()
+                .unwrap_or(usize::MAX);
+            let maximum_size = maximum_pages.to_bytes();
+            match limiter.memory_growing(current_size, desired_size, maximum_size) {
+                Ok(true) => (),
+                Ok(false) => return Err(EntityGrowError::InvalidGrow),
+                Err(_) => return Err(EntityGrowError::TrapCode(TrapCode::GrowthOperationLimited)),
+            }
+        }
+
+        let mut ret: Result<Pages, EntityGrowError> = Err(EntityGrowError::InvalidGrow);
+
+        if let Some(new_pages) = desired_pages {
+            if new_pages <= maximum_pages {
+                if let Some(new_size) = new_pages.to_bytes() {
+                    // At this point it is okay to grow the underlying virtual memory
+                    // by the given amount of additional pages.
+                    self.bytes.grow(new_size);
+                    self.current_pages = new_pages;
+                    ret = Ok(current_pages)
+                }
+            }
+        }
+
+        // If there was an error, ResourceLimiter gets to see.
+        if ret.is_err() {
+            if let Some(limiter) = limiter.as_resource_limiter() {
+                limiter.memory_grow_failed(&MemoryError::OutOfBoundsGrowth)
+            }
+        }
+
+        ret
     }
 
     /// Returns a shared slice to the bytes underlying to the byte buffer.
@@ -257,8 +312,13 @@ impl Memory {
     ///
     /// If more than [`u32::MAX`] much linear memory is allocated.
     pub fn new(mut ctx: impl AsContextMut, ty: MemoryType) -> Result<Self, MemoryError> {
-        let entity = MemoryEntity::new(ty)?;
-        let memory = ctx.as_context_mut().store.inner.alloc_memory(entity);
+        let (inner, mut resource_limiter) = ctx
+            .as_context_mut()
+            .store
+            .store_inner_and_resource_limiter_ref();
+
+        let entity = MemoryEntity::new(ty, &mut resource_limiter)?;
+        let memory = inner.alloc_memory(entity);
         Ok(memory)
     }
 
@@ -319,11 +379,14 @@ impl Memory {
         mut ctx: impl AsContextMut,
         additional: Pages,
     ) -> Result<Pages, MemoryError> {
-        ctx.as_context_mut()
+        let (inner, mut limiter) = ctx
+            .as_context_mut()
             .store
-            .inner
+            .store_inner_and_resource_limiter_ref();
+        inner
             .resolve_memory_mut(self)
-            .grow(additional)
+            .grow(additional, &mut limiter)
+            .map_err(|_| MemoryError::OutOfBoundsGrowth)
     }
 
     /// Returns a shared slice to the bytes underlying the [`Memory`].

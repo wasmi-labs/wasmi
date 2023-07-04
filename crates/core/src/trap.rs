@@ -284,6 +284,13 @@ pub enum TrapCode {
     /// internal bytecode so that fuel is consumed for each executed instruction.
     /// This is useful to deterministically halt or yield a WebAssembly execution.
     OutOfFuel,
+
+    /// This trap is raised when a growth operation was attempted and an
+    /// installed `wasmi::ResourceLimiter` returned `Err(...)` from the
+    /// associated `table_growing` or `memory_growing` method, indicating a
+    /// desire on the part of the embedder to trap the interpreter rather than
+    /// merely fail the growth operation.
+    GrowthOperationLimited,
 }
 
 impl TrapCode {
@@ -305,6 +312,7 @@ impl TrapCode {
             Self::StackOverflow => "call stack exhausted",
             Self::BadSignature => "indirect call type mismatch",
             Self::OutOfFuel => "all fuel consumed by WebAssembly",
+            Self::GrowthOperationLimited => "growth operation limited",
         }
     }
 }

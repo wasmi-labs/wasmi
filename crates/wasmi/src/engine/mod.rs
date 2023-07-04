@@ -793,11 +793,12 @@ impl<'engine> EngineExecutor<'engine> {
             code.into()
         }
 
-        let store_inner = &mut ctx.store.inner;
+        let (store_inner, mut resource_limiter) = ctx.store.store_inner_and_resource_limiter_ref();
         let value_stack = &mut self.stack.values;
         let call_stack = &mut self.stack.frames;
         let code_map = &self.res.code_map;
         let const_pool = self.res.const_pool.view();
+
         execute_wasm(
             store_inner,
             cache,
@@ -805,6 +806,7 @@ impl<'engine> EngineExecutor<'engine> {
             call_stack,
             code_map,
             const_pool,
+            &mut resource_limiter,
         )
         .map_err(make_trap)
     }

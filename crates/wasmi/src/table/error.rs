@@ -38,6 +38,7 @@ pub enum TableError {
         /// The [`TableType`] which is supposed to be a supertype of `ty`.
         other: TableType,
     },
+    TooManyTables,
 }
 
 impl Display for TableError {
@@ -51,7 +52,7 @@ impl Display for TableError {
                 write!(
                     f,
                     "tried to grow table with size of {current} and maximum of \
-                    {maximum} by {delta} out of bounds",
+                                    {maximum} by {delta} out of bounds",
                 )
             }
             Self::ElementTypeMismatch { expected, actual } => {
@@ -69,6 +70,9 @@ impl Display for TableError {
             }
             Self::InvalidSubtype { ty, other } => {
                 write!(f, "table type {ty:?} is not a subtype of {other:?}",)
+            }
+            Self::TooManyTables => {
+                write!(f, "too many tables")
             }
         }
     }

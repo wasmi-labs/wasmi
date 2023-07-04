@@ -173,9 +173,7 @@ impl<Results> Default for CallResultsTuple<Results> {
 impl<Results> Copy for CallResultsTuple<Results> {}
 impl<Results> Clone for CallResultsTuple<Results> {
     fn clone(&self) -> Self {
-        Self {
-            _marker: PhantomData,
-        }
+        *self
     }
 }
 

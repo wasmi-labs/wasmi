@@ -49,6 +49,7 @@ pub enum InstantiationError {
         /// The index of the found `start` function.
         index: u32,
     },
+    TooManyInstances,
 }
 
 #[cfg(feature = "std")]
@@ -85,6 +86,7 @@ impl Display for InstantiationError {
             Self::Table(error) => Display::fmt(error, f),
             Self::Memory(error) => Display::fmt(error, f),
             Self::Global(error) => Display::fmt(error, f),
+            Self::TooManyInstances => write!(f, "too many instances")
         }
     }
 }
