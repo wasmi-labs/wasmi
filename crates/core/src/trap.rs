@@ -286,10 +286,10 @@ pub enum TrapCode {
     OutOfFuel,
 
     /// This trap is raised when a growth operation was attempted and an
-    /// installed [`ResourceLimiter`](crate::ResourceLimiter) returned
-    /// `Err(...)` from the associated `table_growing` or `memory_growing`
-    /// method, indicating a desire on the part of the embedder to trap the
-    /// interpreter rather than merely fail the growth operation.
+    /// installed `wasmi::ResourceLimiter` returned `Err(...)` from the
+    /// associated `table_growing` or `memory_growing` method, indicating a
+    /// desire on the part of the embedder to trap the interpreter rather than
+    /// merely fail the growth operation.
     GrowthOperationLimited,
 }
 
