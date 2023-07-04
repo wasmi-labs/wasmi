@@ -93,6 +93,7 @@ mod externref;
 mod func;
 mod global;
 mod instance;
+mod limits;
 mod linker;
 mod memory;
 mod module;
@@ -146,6 +147,7 @@ pub use self::{
     },
     global::{Global, GlobalType, Mutability},
     instance::{Export, ExportsIter, Extern, ExternType, Instance},
+    limits::{ResourceLimiter, StoreLimits, StoreLimitsBuilder},
     linker::Linker,
     memory::{Memory, MemoryType},
     module::{

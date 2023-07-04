@@ -20,6 +20,8 @@ pub enum MemoryError {
         /// The [`MemoryType`] which is supposed to be a supertype of `ty`.
         other: MemoryType,
     },
+    /// Tried to create too many memories
+    TooManyMemories,
 }
 
 impl Display for MemoryError {
@@ -29,7 +31,7 @@ impl Display for MemoryError {
                 write!(f, "out of bounds memory allocation")
             }
             Self::OutOfBoundsGrowth => {
-                write!(f, "out fo bounds memory growth")
+                write!(f, "out of bounds memory growth")
             }
             Self::OutOfBoundsAccess => {
                 write!(f, "out of bounds memory access")
@@ -39,6 +41,9 @@ impl Display for MemoryError {
             }
             Self::InvalidSubtype { ty, other } => {
                 write!(f, "memory type {ty:?} is not a subtype of {other:?}",)
+            }
+            Self::TooManyMemories => {
+                write!(f, "too many memories")
             }
         }
     }

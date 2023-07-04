@@ -24,6 +24,7 @@ use crate::{
         ValueStack,
     },
     func::FuncEntity,
+    store::ResourceLimiterRef,
     table::TableEntity,
     FuelConsumptionMode,
     Func,
@@ -92,15 +93,17 @@ pub enum ReturnOutcome {
 ///
 /// If the Wasm execution traps.
 #[inline(never)]
-pub fn execute_wasm<'engine>(
-    ctx: &mut StoreInner,
+pub fn execute_wasm<'ctx, 'engine>(
+    ctx: &'ctx mut StoreInner,
     cache: &'engine mut InstanceCache,
     value_stack: &'engine mut ValueStack,
     call_stack: &'engine mut CallStack,
     code_map: &'engine CodeMap,
     const_pool: ConstPoolView<'engine>,
+    resource_limiter: &'ctx mut ResourceLimiterRef<'ctx>,
 ) -> Result<WasmOutcome, TrapCode> {
-    Executor::new(ctx, cache, value_stack, call_stack, code_map, const_pool).execute()
+    Executor::new(ctx, cache, value_stack, call_stack, code_map, const_pool)
+        .execute(resource_limiter)
 }
 
 /// The function signature of Wasm load operations.
@@ -213,7 +216,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes the function frame until it returns or traps.
     #[inline(always)]
-    fn execute(mut self) -> Result<WasmOutcome, TrapCode> {
+    fn execute(
+        mut self,
+        resource_limiter: &'ctx mut ResourceLimiterRef<'ctx>,
+    ) -> Result<WasmOutcome, TrapCode> {
         use Instruction as Instr;
         loop {
             match *self.ip.get() {
@@ -280,13 +286,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::I64Store16(offset) => self.visit_i64_store_16(offset)?,
                 Instr::I64Store32(offset) => self.visit_i64_store_32(offset)?,
                 Instr::MemorySize => self.visit_memory_size(),
-                Instr::MemoryGrow => self.visit_memory_grow()?,
+                Instr::MemoryGrow => self.visit_memory_grow(&mut *resource_limiter)?,
                 Instr::MemoryFill => self.visit_memory_fill()?,
                 Instr::MemoryCopy => self.visit_memory_copy()?,
                 Instr::MemoryInit(segment) => self.visit_memory_init(segment)?,
                 Instr::DataDrop(segment) => self.visit_data_drop(segment),
                 Instr::TableSize(table) => self.visit_table_size(table),
-                Instr::TableGrow(table) => self.visit_table_grow(table)?,
+                Instr::TableGrow(table) => self.visit_table_grow(table, &mut *resource_limiter)?,
                 Instr::TableFill(table) => self.visit_table_fill(table)?,
                 Instr::TableGet(table) => self.visit_table_get(table)?,
                 Instr::TableSet(table) => self.visit_table_set(table)?,
@@ -1077,7 +1083,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     #[inline(always)]
-    fn visit_memory_grow(&mut self) -> Result<(), TrapCode> {
+    fn visit_memory_grow(
+        &mut self,
+        resource_limiter: &mut ResourceLimiterRef<'ctx>,
+    ) -> Result<(), TrapCode> {
         let delta: u32 = self.sp.pop_as();
         let delta = match Pages::new(delta) {
             Some(pages) => pages,
@@ -1097,9 +1106,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 let new_pages = this
                     .ctx
                     .resolve_memory_mut(memory)
-                    .grow(delta)
-                    .map(u32::from)
-                    .map_err(|_| EntityGrowError::InvalidGrow)?;
+                    .grow(delta, resource_limiter)
+                    .map(u32::from)?;
                 // The `memory.grow` operation might have invalidated the cached
                 // linear memory so we need to reset it in order for the cache to
                 // reload in case it is used again.
@@ -1210,7 +1218,11 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     #[inline(always)]
-    fn visit_table_grow(&mut self, table_index: TableIdx) -> Result<(), TrapCode> {
+    fn visit_table_grow(
+        &mut self,
+        table_index: TableIdx,
+        resource_limiter: &mut ResourceLimiterRef<'ctx>,
+    ) -> Result<(), TrapCode> {
         let (init, delta) = self.sp.pop2();
         let delta: u32 = delta.into();
         let result = self.consume_fuel_with(
@@ -1219,8 +1231,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 let table = this.cache.get_table(this.ctx, table_index);
                 this.ctx
                     .resolve_table_mut(&table)
-                    .grow_untyped(delta, init)
-                    .map_err(|_| EntityGrowError::InvalidGrow)
+                    .grow_untyped(delta, init, resource_limiter)
             },
         );
         let result = match result {

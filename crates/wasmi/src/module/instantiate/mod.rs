@@ -8,7 +8,7 @@ pub use self::{error::InstantiationError, pre::InstancePre};
 use super::{element::ElementSegmentKind, export, ConstExpr, DataSegmentKind, Module};
 use crate::{
     func::WasmFuncEntity,
-    memory::DataSegment,
+    memory::{DataSegment, MemoryError},
     value::WithType,
     AsContext,
     AsContextMut,
@@ -54,13 +54,17 @@ impl Module {
     where
         I: IntoIterator<Item = Extern>,
     {
+        context
+            .as_context_mut()
+            .store
+            .check_new_instances_limit(1)?;
         let handle = context.as_context_mut().store.inner.alloc_instance();
         let mut builder = InstanceEntity::build(self);
 
         self.extract_imports(&mut context, &mut builder, externals)?;
         self.extract_functions(&mut context, &mut builder, handle);
         self.extract_tables(&mut context, &mut builder)?;
-        self.extract_memories(&mut context, &mut builder);
+        self.extract_memories(&mut context, &mut builder)?;
         self.extract_globals(&mut context, &mut builder);
         self.extract_exports(&mut builder);
         self.extract_start_fn(&mut builder);
@@ -187,6 +191,10 @@ impl Module {
         context: &mut impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
     ) -> Result<(), InstantiationError> {
+        context
+            .as_context_mut()
+            .store
+            .check_new_tables_limit(self.len_tables())?;
         for table_type in self.internal_tables().copied() {
             let init = Value::default(table_type.element());
             let table = Table::new(context.as_context_mut(), table_type, init)?;
@@ -204,17 +212,16 @@ impl Module {
         &self,
         context: &mut impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
-    ) {
+    ) -> Result<(), MemoryError> {
+        context
+            .as_context_mut()
+            .store
+            .check_new_memories_limit(self.len_memories())?;
         for memory_type in self.internal_memories().copied() {
-            let memory =
-                Memory::new(context.as_context_mut(), memory_type).unwrap_or_else(|error| {
-                    panic!(
-                        "encountered unexpected invalid memory type \
-                        {memory_type:?} after Wasm validation: {error}",
-                    )
-                });
+            let memory = Memory::new(context.as_context_mut(), memory_type)?;
             builder.push_memory(memory);
         }
+        Ok(())
     }
 
     /// Extracts the Wasm global variables from the module and stores them into the [`Store`].

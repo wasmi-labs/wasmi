@@ -2,7 +2,9 @@ use crate::{
     engine::DedupFuncType,
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
     func::{Trampoline, TrampolineEntity, TrampolineIdx},
-    memory::DataSegment,
+    memory::{DataSegment, MemoryError},
+    module::InstantiationError,
+    table::TableError,
     DataSegmentEntity,
     DataSegmentIdx,
     ElementSegment,
@@ -22,10 +24,12 @@ use crate::{
     Memory,
     MemoryEntity,
     MemoryIdx,
+    ResourceLimiter,
     Table,
     TableEntity,
     TableIdx,
 };
+use alloc::boxed::Box;
 use core::{
     fmt::{self, Debug},
     sync::atomic::{AtomicU32, Ordering},
@@ -67,6 +71,36 @@ impl StoreIdx {
 /// A stored entity.
 pub type Stored<Idx> = GuardedEntity<StoreIdx, Idx>;
 
+/// A wrapper around an optional `&mut dyn` [`ResourceLimiter`], that exists
+/// both to make types a little easier to read and to provide a `Debug` impl so
+/// that `#[derive(Debug)]` works on structs that contain it.
+pub struct ResourceLimiterRef<'a>(Option<&'a mut (dyn ResourceLimiter)>);
+impl<'a> core::fmt::Debug for ResourceLimiterRef<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ResourceLimiterRef(...)")
+    }
+}
+
+impl<'a> ResourceLimiterRef<'a> {
+    pub fn as_resource_limiter(&mut self) -> &mut Option<&'a mut dyn ResourceLimiter> {
+        &mut self.0
+    }
+}
+
+/// A wrapper around a boxed `dyn FnMut(&mut T)` returning a `&mut dyn`
+/// [`ResourceLimiter`]; in other words a function that one can call to retrieve
+/// a [`ResourceLimiter`] from the [`Store`] object's user data type `T`.
+///
+/// This wrapper exists both to make types a little easier to read and to
+/// provide a `Debug` impl so that `#[derive(Debug)]` works on structs that
+/// contain it.
+struct ResourceLimiterQuery<T>(Box<dyn FnMut(&mut T) -> &mut (dyn ResourceLimiter) + Send + Sync>);
+impl<T> core::fmt::Debug for ResourceLimiterQuery<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ResourceLimiterQuery(...)")
+    }
+}
+
 /// The store that owns all data associated to Wasm modules.
 #[derive(Debug)]
 pub struct Store<T> {
@@ -81,6 +115,9 @@ pub struct Store<T> {
     trampolines: Arena<TrampolineIdx, TrampolineEntity<T>>,
     /// User provided host data owned by the [`Store`].
     data: T,
+    /// User provided hook to retrieve a
+    /// [`ResourceLimiter`](crate::ResourceLimiter).
+    limiter: Option<ResourceLimiterQuery<T>>,
 }
 
 /// The inner store that owns all data not associated to the host state.
@@ -691,6 +728,7 @@ impl<T> Store<T> {
             inner: StoreInner::new(engine),
             trampolines: Arena::new(),
             data,
+            limiter: None,
         }
     }
 
@@ -712,6 +750,65 @@ impl<T> Store<T> {
     /// Consumes `self` and returns its user provided data.
     pub fn into_data(self) -> T {
         self.data
+    }
+
+    /// Installs a function into the [`Store`] that will be called with the user
+    /// data type `T` to retrieve a [`ResourceLimiter`] any time a limited,
+    /// growable resource such as a linear memory or table is grown.
+    pub fn limiter(
+        &mut self,
+        limiter: impl FnMut(&mut T) -> &mut (dyn ResourceLimiter) + Send + Sync + 'static,
+    ) {
+        self.limiter = Some(ResourceLimiterQuery(Box::new(limiter)))
+    }
+
+    pub(crate) fn check_new_instances_limit(
+        &mut self,
+        num_new_instances: usize,
+    ) -> Result<(), InstantiationError> {
+        let (inner, mut limiter) = self.store_inner_and_resource_limiter_ref();
+        if let Some(limiter) = limiter.as_resource_limiter() {
+            if inner.instances.len().saturating_add(num_new_instances) > limiter.instances() {
+                return Err(InstantiationError::TooManyInstances);
+            }
+        }
+        Ok(())
+    }
+
+    pub(crate) fn check_new_memories_limit(
+        &mut self,
+        num_new_memories: usize,
+    ) -> Result<(), MemoryError> {
+        let (inner, mut limiter) = self.store_inner_and_resource_limiter_ref();
+        if let Some(limiter) = limiter.as_resource_limiter() {
+            if inner.memories.len().saturating_add(num_new_memories) > limiter.memories() {
+                return Err(MemoryError::TooManyMemories);
+            }
+        }
+        Ok(())
+    }
+
+    pub(crate) fn check_new_tables_limit(
+        &mut self,
+        num_new_tables: usize,
+    ) -> Result<(), TableError> {
+        let (inner, mut limiter) = self.store_inner_and_resource_limiter_ref();
+        if let Some(limiter) = limiter.as_resource_limiter() {
+            if inner.tables.len().saturating_add(num_new_tables) > limiter.tables() {
+                return Err(TableError::TooManyTables);
+            }
+        }
+        Ok(())
+    }
+
+    pub(crate) fn store_inner_and_resource_limiter_ref(
+        &mut self,
+    ) -> (&mut StoreInner, ResourceLimiterRef) {
+        let resource_limiter = ResourceLimiterRef(match &mut self.limiter {
+            Some(q) => Some(q.0(&mut self.data)),
+            None => None,
+        });
+        (&mut self.inner, resource_limiter)
     }
 
     /// Returns `true` if fuel metering has been enabled.
