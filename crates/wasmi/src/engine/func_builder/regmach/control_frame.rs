@@ -101,6 +101,11 @@ impl BlockControlFrame {
         self.len_branches
     }
 
+    /// Bumps the number of branches to this [`BlockControlFrame`] by 1.
+    fn bump_branches(&mut self) {
+        self.len_branches += 1;
+    }
+
     /// Returns an iterator over the registers holding the branching parameters of the [`BlockControlFrame`].
     pub fn branch_params(&self, engine: &Engine) -> RegisterSliceIter {
         self.branch_params
@@ -199,6 +204,11 @@ impl LoopControlFrame {
     /// Returns the number of branches to this [`LoopControlFrame`].
     fn len_branches(&self) -> usize {
         self.len_branches
+    }
+
+    /// Bumps the number of branches to this [`LoopControlFrame`] by 1.
+    fn bump_branches(&mut self) {
+        self.len_branches += 1;
     }
 
     /// Returns an iterator over the registers holding the branching parameters of the [`LoopControlFrame`].
@@ -319,6 +329,11 @@ impl IfControlFrame {
     /// Returns the number of branches to this [`IfControlFrame`].
     fn len_branches(&self) -> usize {
         self.len_branches
+    }
+
+    /// Bumps the number of branches to this [`IfControlFrame`] by 1.
+    fn bump_branches(&mut self) {
+        self.len_branches += 1;
     }
 
     /// Returns an iterator over the registers holding the branching parameters of the [`IfControlFrame`].
@@ -529,6 +544,18 @@ impl ControlFrame {
             Self::If(frame) => frame.len_branches(),
             Self::Unreachable(frame) => {
                 panic!("tried to get `len_branches` for an unreachable control frame: {frame:?}")
+            }
+        }
+    }
+
+    /// Bumps the number of branches to this [`ControlFrame`] by 1.
+    fn bump_branches(&mut self) {
+        match self {
+            ControlFrame::Block(frame) => frame.bump_branches(),
+            ControlFrame::Loop(frame) => frame.bump_branches(),
+            ControlFrame::If(frame) => frame.bump_branches(),
+            Self::Unreachable(frame) => {
+                panic!("tried to `bump_branches` on an unreachable control frame: {frame:?}")
             }
         }
     }
