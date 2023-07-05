@@ -562,19 +562,18 @@ impl ControlFrame {
 
     /// Returns a label which should be resolved at the `End` Wasm opcode.
     ///
-    /// All [`ControlFrame`] kinds have it except [`ControlFrame::Loop`].
-    /// In order to a [`ControlFrame::Loop`] to branch outside it is required
-    /// to be wrapped in another control frame such as [`ControlFrame::Block`].
-    pub fn end_label(&self) -> LabelRef {
+    /// # Note
+    ///
+    /// The [`LoopControlFrame`] does not have an `end_label` since all
+    /// branches targeting it are branching to the loop header instead.
+    /// Exiting a [`LoopControlFrame`] is simply done by leaving its scope
+    /// or branching to a parent [`ControlFrame`].
+    pub fn end_label(&self) -> Option<LabelRef> {
         match self {
-            Self::Block(frame) => frame.end_label(),
-            Self::If(frame) => frame.end_label(),
-            Self::Loop(frame) => {
-                panic!("tried to get `end_label` for a loop control frame: {frame:?}")
-            }
-            Self::Unreachable(frame) => {
-                panic!("tried to get `end_label` for an unreachable control frame: {frame:?}")
-            }
+            Self::Block(frame) => Some(frame.end_label()),
+            Self::If(frame) => Some(frame.end_label()),
+            Self::Loop(_frame) => None,
+            Self::Unreachable(_frame) => None,
         }
     }
 
