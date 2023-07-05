@@ -519,7 +519,7 @@ impl ControlFrame {
             Self::Loop(frame) => frame.branch_destination(),
             Self::If(frame) => frame.branch_destination(),
             Self::Unreachable(frame) => panic!(
-                "tried to get `branch_destination` for an unreachable control frame: {frame:?}"
+                "tried to call `branch_destination` for an unreachable control frame: {frame:?}"
             ),
         }
     }
@@ -531,7 +531,7 @@ impl ControlFrame {
             Self::Loop(frame) => frame.is_branched_to(),
             Self::If(frame) => frame.is_branched_to(),
             Self::Unreachable(frame) => {
-                panic!("tried to get `is_branched_to` for an unreachable control frame: {frame:?}")
+                panic!("tried to call `is_branched_to` for an unreachable control frame: {frame:?}")
             }
         }
     }
@@ -543,7 +543,7 @@ impl ControlFrame {
             Self::Loop(frame) => frame.len_branches(),
             Self::If(frame) => frame.len_branches(),
             Self::Unreachable(frame) => {
-                panic!("tried to get `len_branches` for an unreachable control frame: {frame:?}")
+                panic!("tried to call `len_branches` for an unreachable control frame: {frame:?}")
             }
         }
     }
