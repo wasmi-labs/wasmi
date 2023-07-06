@@ -1,6 +1,9 @@
 use super::Register;
 use wasmi_core::UntypedValue;
 
+#[cfg(doc)]
+use super::Instruction;
+
 /// A light-weight reference to a [`ProviderSlice`].
 ///
 /// # Dev. Note
@@ -18,7 +21,7 @@ pub struct ProviderSliceRef([u8; 4]);
 /// # Note
 ///
 /// Usually used for instructions with arbitrary many inputs.
-/// Examples of this are [`Instruction::ReturnProviders`] and
+/// Examples of this are [`Instruction::ReturnMany`] and
 /// certain call instructions for handling their parameters.
 pub struct ProviderSlice<'a> {
     /// The [`Provider`] values of the slice.
