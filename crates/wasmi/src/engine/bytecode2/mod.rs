@@ -329,7 +329,7 @@ pub enum Instruction {
         /// The register holding the result of the instruction.
         result: Register,
         /// The 32-bit encoded `i64` immediate value to copy.
-        value: Const32,
+        value: I64Const32,
     },
 
     /// A Wasm `select` or `select <ty>` instruction.
