@@ -180,7 +180,7 @@ pub enum Instruction {
     /// # Note
     ///
     /// Returns values as stored in the [`ProviderSliceRef`].
-    ReturnValues {
+    ReturnMany {
         /// Identifier for a [`ProviderSlice`].
         values: ProviderSliceRef,
     },
