@@ -123,6 +123,26 @@ impl ExactSizeIterator for RegisterSliceIter {
     }
 }
 
+/// A 32-bit encoded `i64` value.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct I64Const32(Const32);
+
+impl I64Const32 {
+    /// Creates a new [`I64Const32`] from the given `i32` value.
+    ///
+    /// # Note
+    ///
+    /// The `value` represents an already truncated `i64` value.
+    pub fn new(value: i32) -> Self {
+        Self(Const32::from_i32(value))
+    }
+
+    /// Returns the 32-bit encoded `i64` value.
+    pub fn into_i64(self) -> i64 {
+        i64::from(self.0.to_i32())
+    }
+}
+
 /// A binary [`Register`] based instruction.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct BinInstr {

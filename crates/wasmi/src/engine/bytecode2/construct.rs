@@ -1,5 +1,5 @@
 use super::{
-    utils::{CopysignImmInstr, Sign},
+    utils::{CopysignImmInstr, I64Const32, Sign},
     BinInstr,
     BinInstrImm16,
     Const16,
@@ -8,6 +8,7 @@ use super::{
     LoadAtInstr,
     LoadInstr,
     LoadOffset16Instr,
+    ProviderSliceRef,
     Register,
     StoreAtInstr,
     StoreInstr,
@@ -141,6 +142,37 @@ impl Instruction {
         Self::ReturnI64Imm32 {
             value: value.into(),
         }
+    }
+
+    /// Creates a new [`Instruction::ReturnNez`] for the given `condition`.
+    pub fn return_nez(condition: Register) -> Self {
+        Self::ReturnNez { condition }
+    }
+
+    /// Creates a new [`Instruction::ReturnNezImm`] for the given `condition` and `value`.
+    pub fn return_nez_imm(condition: Register, value: ConstRef) -> Self {
+        Self::ReturnNezImm { condition, value }
+    }
+
+    /// Creates a new [`Instruction::ReturnNezImm32`] for the given `condition` and `value`.
+    pub fn return_nez_imm32(condition: Register, value: impl Into<Const32>) -> Self {
+        Self::ReturnNezImm32 {
+            condition,
+            value: value.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::ReturnNezI64Imm32`] for the given `condition` and `value`.
+    pub fn return_nez_i64imm32(condition: Register, value: i32) -> Self {
+        Self::ReturnNezI64Imm32 {
+            condition,
+            value: I64Const32::new(value),
+        }
+    }
+
+    /// Creates a new [`Instruction::ReturnNezMany`] for the given `condition` and `values`.
+    pub fn return_nez_many(condition: Register, values: ProviderSliceRef) -> Self {
+        Self::ReturnNezMany { condition, values }
     }
 
     /// Creates a new [`Instruction::Branch`] for the given `offset`.

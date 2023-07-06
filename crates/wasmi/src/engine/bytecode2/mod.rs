@@ -10,6 +10,7 @@ mod tests;
 
 #[cfg(doc)]
 use self::provider::ProviderSlice;
+use self::utils::I64Const32;
 pub use self::utils::Register;
 pub(crate) use self::{
     immediate::{Const16, Const32},
@@ -178,9 +179,79 @@ pub enum Instruction {
     ///
     /// # Note
     ///
-    /// Returns values as stored in the referenced [`ProviderSlice`].
+    /// Returns values as stored in the [`ProviderSliceRef`].
     ReturnValues {
         /// Identifier for a [`ProviderSlice`].
+        values: ProviderSliceRef,
+    },
+
+    /// A conditional `return` instruction.
+    ///
+    /// # Note
+    ///
+    /// This is used to translate certain conditional Wasm branches such as `br_if`.
+    /// Returns back to the caller if and only if the `condition` value is non zero.
+    ReturnNez {
+        /// The register holding the condition to evaluate against zero.
+        condition: Register,
+    },
+    /// A conditional `return` instruction.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::ReturnNez`] returning a single
+    /// [`Register`] value if the `condition` evaluates to `true`.
+    ReturnNezReg {
+        /// The register holding the condition to evaluate against zero.
+        condition: Register,
+        /// The returned value.
+        value: Register,
+    },
+    /// A conditional `return` instruction.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::ReturnNez`] returning a single
+    /// [`ConstRef`] value if the `condition` evaluates to `true`.
+    ReturnNezImm {
+        /// The register holding the condition to evaluate against zero.
+        condition: Register,
+        /// The returned value.
+        value: ConstRef,
+    },
+    /// A conditional `return` instruction.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::ReturnNezImm`] returning a single
+    /// [`Const32`] value if the `condition` evaluates to `true`.
+    ReturnNezImm32 {
+        /// The register holding the condition to evaluate against zero.
+        condition: Register,
+        /// The returned value.
+        value: Const32,
+    },
+    /// A conditional `return` instruction.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::ReturnNezImm`] returning a single
+    /// 32-bit encoded [`i64`] value if the `condition` evaluates to `true`.
+    ReturnNezI64Imm32 {
+        /// The register holding the condition to evaluate against zero.
+        condition: Register,
+        /// The returned value.
+        value: I64Const32,
+    },
+    /// A conditional `return` instruction.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::ReturnNez`] returning two or more values.
+    ReturnNezMany {
+        /// The register holding the condition to evaluate against zero.
+        condition: Register,
+        /// The returned values.
         values: ProviderSliceRef,
     },
 
