@@ -483,6 +483,19 @@ impl EngineInner {
         self.res.write().func_types.alloc_func_type(func_type)
     }
 
+    /// Resolves a deduplicated function type into a [`FuncType`] entity.
+    ///
+    /// # Panics
+    ///
+    /// - If the deduplicated function type is not owned by the engine.
+    /// - If the deduplicated function type cannot be resolved to its entity.
+    fn resolve_func_type<F, R>(&self, func_type: &DedupFuncType, f: F) -> R
+    where
+        F: FnOnce(&FuncType) -> R,
+    {
+        f(self.res.read().func_types.resolve_func_type(func_type))
+    }
+
     /// Allocates a new constant value to the [`EngineInner`].
     ///
     /// # Errors
@@ -583,13 +596,6 @@ impl EngineInner {
             .write()
             .code_map_2
             .init_func(func, len_registers, instrs)
-    }
-
-    fn resolve_func_type<F, R>(&self, func_type: &DedupFuncType, f: F) -> R
-    where
-        F: FnOnce(&FuncType) -> R,
-    {
-        f(self.res.read().func_types.resolve_func_type(func_type))
     }
 
     #[cfg(test)]
