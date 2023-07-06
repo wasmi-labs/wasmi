@@ -1,6 +1,6 @@
-use crate::engine::{func_builder::TranslationErrorInner, TranslationError};
-
 use super::{Const32, Register};
+use crate::engine::{func_builder::TranslationErrorInner, TranslationError};
+use alloc::vec::Vec;
 use wasmi_core::UntypedValue;
 
 #[cfg(doc)]
