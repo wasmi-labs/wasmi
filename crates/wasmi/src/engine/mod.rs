@@ -38,6 +38,7 @@ pub use self::{
 };
 use self::{
     bytecode::Instruction,
+    bytecode2::{Provider, ProviderSliceAlloc, ProviderSliceRef},
     cache::InstanceCache,
     code_map::CodeMap,
     const_pool::{ConstPool, ConstPoolView, ConstRef},
@@ -177,6 +178,34 @@ impl Engine {
         F: FnOnce(&FuncType) -> R,
     {
         self.inner.resolve_func_type(func_type, f)
+    }
+
+    /// Allocates a new [`Provider`] slice to the [`Engine`].
+    ///
+    /// # Errors
+    ///
+    /// If too many or too large [`Provider`] slices have been allcated.
+    pub(super) fn alloc_providers<I>(
+        &self,
+        providers: I,
+    ) -> Result<ProviderSliceRef, TranslationError>
+    where
+        I: IntoIterator<Item = Provider>,
+    {
+        self.inner.alloc_providers(providers)
+    }
+
+    /// Stores the [`Provider`] slice of the [`ProviderSliceRef`] in `buffer` if any.
+    ///
+    /// The `buffer` is cleared before refilling with the [`Provider`] slice.
+    /// This will overwrite any data previously stored in `buffer`.
+    ///
+    /// # Note
+    ///
+    /// This is a test API and only meant for testing purposes.
+    #[cfg(test)]
+    pub(super) fn get_providers(&self, slice: ProviderSliceRef, buffer: &mut Vec<Provider>) {
+        self.inner.get_providers(slice, buffer)
     }
 
     /// Allocates a new uninitialized [`CompiledFunc`] to the [`Engine`].
@@ -473,6 +502,38 @@ impl EngineInner {
         self.res.read().const_pool.get(cref)
     }
 
+    /// Allocates a new [`Provider`] slice to the [`EngineInner`].
+    ///
+    /// # Errors
+    ///
+    /// If too many or too large [`Provider`] slices have been allcated.
+    pub(super) fn alloc_providers<I>(
+        &self,
+        providers: I,
+    ) -> Result<ProviderSliceRef, TranslationError>
+    where
+        I: IntoIterator<Item = Provider>,
+    {
+        self.res.write().providers.alloc(providers)
+    }
+
+    /// Stores the [`Provider`] slice of the [`ProviderSliceRef`] in `buffer` if any.
+    ///
+    /// The `buffer` is cleared before refilling with the [`Provider`] slice.
+    /// This will overwrite any data previously stored in `buffer`.
+    ///
+    /// # Note
+    ///
+    /// This is a test API and only meant for testing purposes.
+    #[cfg(test)]
+    pub(super) fn get_providers(&self, slice: ProviderSliceRef, buffer: &mut Vec<Provider>) {
+        let res = self.res.read();
+        buffer.clear();
+        if let Some(providers) = res.providers.get(slice) {
+            buffer.extend_from_slice(providers);
+        }
+    }
+
     /// Allocates a new uninitialized [`CompiledFunc`] to the [`EngineInner`].
     ///
     /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
@@ -669,6 +730,8 @@ pub struct EngineResources {
     /// The engine deduplicates function types to make the equality
     /// comparison very fast. This helps to speed up indirect calls.
     func_types: FuncTypeRegistry,
+    /// Allocator and resolver for provider slices.
+    providers: ProviderSliceAlloc,
 }
 
 impl EngineResources {
@@ -680,6 +743,7 @@ impl EngineResources {
             code_map_2: CodeMap2::default(),
             const_pool: ConstPool::default(),
             func_types: FuncTypeRegistry::new(engine_idx),
+            providers: ProviderSliceAlloc::default(),
         }
     }
 }

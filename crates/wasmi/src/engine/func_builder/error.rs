@@ -94,6 +94,9 @@ impl Display for TranslationError {
             TranslationErrorInner::EmulatedValueStackOverflow => {
                 write!(f, "function requires value stack with out of bounds depth")
             }
+            TranslationErrorInner::ProviderSliceOverflow => {
+                write!(f, "tried to allocate too many or too large provider slices")
+            }
         }
     }
 }
@@ -123,4 +126,6 @@ pub enum TranslationErrorInner {
     RegisterOutOfBounds,
     /// Pushed too many values on the emulated value stack during translation.
     EmulatedValueStackOverflow,
+    /// Tried to allocate too many or large provider slices.
+    ProviderSliceOverflow,
 }

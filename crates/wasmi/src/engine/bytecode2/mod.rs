@@ -10,18 +10,19 @@ mod tests;
 
 #[cfg(doc)]
 use self::provider::ProviderSlice;
-use self::utils::I64Const32;
-pub use self::utils::Register;
+
 pub(crate) use self::{
     immediate::{Const16, Const32},
-    provider::ProviderSliceRef,
+    provider::{Provider, ProviderSliceAlloc, ProviderSliceRef},
     utils::{
         BinInstr,
         BinInstrImm16,
         CopysignImmInstr,
+        I64Const32,
         LoadAtInstr,
         LoadInstr,
         LoadOffset16Instr,
+        Register,
         RegisterSlice,
         RegisterSliceIter,
         Sign,
