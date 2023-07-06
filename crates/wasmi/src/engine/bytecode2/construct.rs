@@ -210,9 +210,9 @@ impl Instruction {
 
     /// Creates a new [`Instruction::CopyI64Imm32`].
     pub fn copy_i64imm32(result: Register, value: i32) -> Self {
-        Self::CopyImm32 {
+        Self::CopyI64Imm32 {
             result,
-            value: value.into(),
+            value: I64Const32::new(value),
         }
     }
 
