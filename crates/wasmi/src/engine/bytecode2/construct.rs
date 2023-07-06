@@ -144,6 +144,13 @@ impl Instruction {
         }
     }
 
+    /// Creates a new [`Instruction::ReturnMany`] from the given `values`.
+    pub fn return_many(values: ProviderSliceRef) -> Self {
+        Self::ReturnMany {
+            values
+        }
+    }
+
     /// Creates a new [`Instruction::ReturnNez`] for the given `condition`.
     pub fn return_nez(condition: Register) -> Self {
         Self::ReturnNez { condition }
