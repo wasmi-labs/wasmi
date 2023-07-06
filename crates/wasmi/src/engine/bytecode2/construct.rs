@@ -140,7 +140,7 @@ impl Instruction {
     /// Creates a new [`Instruction::ReturnImm32`] from the given `value`.
     pub fn return_i64imm32(value: i32) -> Self {
         Self::ReturnI64Imm32 {
-            value: value.into(),
+            value: I64Const32::new(value),
         }
     }
 
