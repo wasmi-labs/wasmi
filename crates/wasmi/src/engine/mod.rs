@@ -145,6 +145,19 @@ impl Engine {
         self.inner.alloc_func_type(func_type)
     }
 
+    /// Resolves a deduplicated function type into a [`FuncType`] entity.
+    ///
+    /// # Panics
+    ///
+    /// - If the deduplicated function type is not owned by the engine.
+    /// - If the deduplicated function type cannot be resolved to its entity.
+    pub(super) fn resolve_func_type<F, R>(&self, func_type: &DedupFuncType, f: F) -> R
+    where
+        F: FnOnce(&FuncType) -> R,
+    {
+        self.inner.resolve_func_type(func_type, f)
+    }
+
     /// Allocates a new constant value to the [`Engine`].
     ///
     /// # Errors
@@ -165,19 +178,6 @@ impl Engine {
     #[cfg(test)]
     pub(super) fn get_const(&self, cref: ConstRef) -> Option<UntypedValue> {
         self.inner.get_const(cref)
-    }
-
-    /// Resolves a deduplicated function type into a [`FuncType`] entity.
-    ///
-    /// # Panics
-    ///
-    /// - If the deduplicated function type is not owned by the engine.
-    /// - If the deduplicated function type cannot be resolved to its entity.
-    pub(super) fn resolve_func_type<F, R>(&self, func_type: &DedupFuncType, f: F) -> R
-    where
-        F: FnOnce(&FuncType) -> R,
-    {
-        self.inner.resolve_func_type(func_type, f)
     }
 
     /// Allocates a new [`Provider`] slice to the [`Engine`].
