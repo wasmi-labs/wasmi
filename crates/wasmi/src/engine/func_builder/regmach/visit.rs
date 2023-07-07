@@ -205,7 +205,19 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     },
                 }
             }
-            _ => todo!(),
+            results => {
+                self.alloc
+                    .stack
+                    .pop_n(results.len(), &mut self.alloc.buffer);
+                let providers = self
+                    .alloc
+                    .buffer
+                    .iter()
+                    .copied()
+                    .map(TypedProvider::into_untyped);
+                let sref = self.res.engine().alloc_providers(providers)?;
+                Instruction::return_many(sref)
+            }
         };
         self.alloc.instr_encoder.push_instr(instr)?;
         self.reachable = false;
