@@ -33,18 +33,6 @@ impl ProviderSliceRef {
     }
 }
 
-/// A [`Provider`] slice.
-///
-/// # Note
-///
-/// Usually used for instructions with arbitrary many inputs.
-/// Examples of this are [`Instruction::ReturnMany`] and
-/// certain call instructions for handling their parameters.
-pub struct ProviderSlice<'a> {
-    /// The [`Provider`] values of the slice.
-    values: &'a [Provider],
-}
-
 /// A provider for an input to an [`Instruction`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Provider {
