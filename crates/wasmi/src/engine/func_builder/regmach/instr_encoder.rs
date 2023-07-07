@@ -1,14 +1,18 @@
-use super::DefragRegister;
-use crate::engine::{
-    bytecode::BranchOffset,
-    bytecode2::{Instruction, Register},
-    func_builder::{
-        labels::{LabelRef, LabelRegistry},
-        Instr,
+use super::{DefragRegister, TypedProvider};
+use crate::{
+    engine::{
+        bytecode::BranchOffset,
+        bytecode2::{Instruction, Register},
+        func_builder::{
+            labels::{LabelRef, LabelRegistry},
+            Instr,
+        },
+        TranslationError,
     },
-    TranslationError,
+    Engine,
 };
 use alloc::vec::{Drain, Vec};
+use wasmi_core::{UntypedValue, ValueType};
 
 /// Encodes `wasmi` bytecode instructions to an [`Instruction`] stream.
 #[derive(Debug, Default)]
@@ -146,6 +150,54 @@ impl InstrEncoder {
     /// Push the [`Instruction`] to the [`InstrEncoder`].
     pub fn push_instr(&mut self, instr: Instruction) -> Result<Instr, TranslationError> {
         self.instrs.push(instr)
+    }
+
+    /// Encode a `copy result <- value` instruction.
+    ///
+    /// # Note
+    ///
+    /// Applies optimizations for `copy x <- x` and properly selects the
+    /// most optimized `copy` instruction variant for the given `value`.
+    pub fn encode_copy(
+        &mut self,
+        engine: &Engine,
+        result: Register,
+        value: TypedProvider,
+    ) -> Result<(), TranslationError> {
+        /// Convenience function to create an [`Instruction::CopyImm`].
+        fn copy_imm(
+            engine: &Engine,
+            result: Register,
+            value: impl Into<UntypedValue>,
+        ) -> Result<Instruction, TranslationError> {
+            let cref = engine.alloc_const(value.into())?;
+            Ok(Instruction::copy_imm(result, cref))
+        }
+        match value {
+            TypedProvider::Register(value) => {
+                if result == value {
+                    // Optimization: copying from register `x` into `x` is a no-op.
+                    return Ok(());
+                }
+                self.push_instr(Instruction::copy(result, value))?;
+                Ok(())
+            }
+            TypedProvider::Const(value) => {
+                let instruction = match value.ty() {
+                    ValueType::I32 => Instruction::copy_imm32(result, i32::from(value)),
+                    ValueType::F32 => Instruction::copy_imm32(result, f32::from(value)),
+                    ValueType::I64 => match i32::try_from(i64::from(value)) {
+                        Ok(value) => Instruction::copy_i64imm32(result, value),
+                        Err(_) => copy_imm(engine, result, value)?,
+                    },
+                    ValueType::F64 => copy_imm(engine, result, value)?,
+                    ValueType::FuncRef => copy_imm(engine, result, value)?,
+                    ValueType::ExternRef => copy_imm(engine, result, value)?,
+                };
+                self.push_instr(instruction)?;
+                Ok(())
+            }
+        }
     }
 }
 

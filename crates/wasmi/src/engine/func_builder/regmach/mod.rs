@@ -29,7 +29,15 @@ pub use self::{
 use crate::{
     engine::{
         bytecode::SignatureIdx,
-        bytecode2::{Const16, Const32, Instruction, Register, RegisterSlice, Sign},
+        bytecode2::{
+            Const16,
+            Const32,
+            Instruction,
+            Register,
+            RegisterSlice,
+            RegisterSliceIter,
+            Sign,
+        },
         config::FuelCosts,
         CompiledFunc,
         Instr,
@@ -276,55 +284,25 @@ impl<'parser> FuncTranslator<'parser> {
         Ok(())
     }
 
-    /// Convenience function to copy the results when finalizing a control flow frame.
-    fn translate_end_copy_results(
+    /// Convenience function to copy the parameters when branching to a control frame.
+    fn translate_copy_branch_params(
         &mut self,
-        block_type: BlockType,
+        mut branch_params: RegisterSliceIter,
     ) -> Result<(), TranslationError> {
-        /// Convenience function to create an [`Instruction::CopyImm`].
-        fn copy_imm(
-            engine: &Engine,
-            result: Register,
-            value: impl Into<UntypedValue>,
-        ) -> Result<Instruction, TranslationError> {
-            let cref = engine.alloc_const(value.into())?;
-            Ok(Instruction::copy_imm(result, cref))
-        }
-
-        if block_type.len_results(self.engine()) == 0 {
-            // If the block does not have results there is no need to copy anything.
+        if branch_params.len() == 0 {
+            // If the block does not have branch parameters there is no need to copy anything.
             return Ok(());
         }
-        let len_results = block_type.len_results(self.engine()) as usize;
-        self.alloc.stack.pop_n(len_results, &mut self.alloc.buffer);
-        for provider in &self.alloc.buffer {
+        self.alloc
+            .stack
+            .pop_n(branch_params.len(), &mut self.alloc.buffer);
+        let engine = self.res.engine();
+        for provider in self.alloc.buffer.iter().copied() {
             let result = self.alloc.stack.push_dynamic()?;
-            match *provider {
-                TypedProvider::Register(value) => {
-                    if result == value {
-                        // Optimization: copying from register `x` into `x` is a no-op.
-                        continue;
-                    }
-                    self.alloc
-                        .instr_encoder
-                        .push_instr(Instruction::copy(result, value))?;
-                }
-                TypedProvider::Const(value) => {
-                    let engine = self.engine();
-                    let instruction = match value.ty() {
-                        ValueType::I32 => Instruction::copy_imm32(result, i32::from(value)),
-                        ValueType::F32 => Instruction::copy_imm32(result, f32::from(value)),
-                        ValueType::I64 => match i32::try_from(i64::from(value)) {
-                            Ok(value) => Instruction::copy_i64imm32(result, value),
-                            Err(_) => copy_imm(engine, result, value)?,
-                        },
-                        ValueType::F64 => copy_imm(engine, result, value)?,
-                        ValueType::FuncRef => copy_imm(engine, result, value)?,
-                        ValueType::ExternRef => copy_imm(engine, result, value)?,
-                    };
-                    self.alloc.instr_encoder.push_instr(instruction)?;
-                }
-            };
+            debug_assert_eq!(branch_params.next(), Some(result));
+            self.alloc
+                .instr_encoder
+                .encode_copy(engine, result, provider)?;
         }
         Ok(())
     }
@@ -347,7 +325,7 @@ impl<'parser> FuncTranslator<'parser> {
             // not met since the code at this point is either
             // unreachable OR there is only one source of results
             // and thus there is no need to copy the results around.
-            self.translate_end_copy_results(frame.block_type())?;
+            self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
         }
         // Since the `block` is now sealed we can pin its end label.
         self.alloc.instr_encoder.pin_label(frame.end_label());
