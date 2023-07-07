@@ -151,6 +151,11 @@ impl Instruction {
         Self::ReturnNez { condition }
     }
 
+    /// Creates a new [`Instruction::ReturnNezReg`] for the given `condition` and `value`.
+    pub fn return_nez_reg(condition: Register, value: Register) -> Self {
+        Self::ReturnNezReg { condition, value }
+    }
+
     /// Creates a new [`Instruction::ReturnNezImm`] for the given `condition` and `value`.
     pub fn return_nez_imm(condition: Register, value: ConstRef) -> Self {
         Self::ReturnNezImm { condition, value }
