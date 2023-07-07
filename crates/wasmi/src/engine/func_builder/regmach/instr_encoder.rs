@@ -122,6 +122,27 @@ impl InstrEncoder {
             .unwrap_or_else(|err| panic!("failed to pin label: {err}"));
     }
 
+    /// Try resolving the [`LabelRef`] for the currently constructed instruction.
+    ///
+    /// Returns an uninitialized [`BranchOffset`] if the `label` cannot yet
+    /// be resolved and defers resolution to later.
+    pub fn try_resolve_label(&mut self, label: LabelRef) -> Result<BranchOffset, TranslationError> {
+        let user = self.instrs.next_instr();
+        self.try_resolve_label_for(label, user)
+    }
+
+    /// Try resolving the [`LabelRef`] for the given [`Instr`].
+    ///
+    /// Returns an uninitialized [`BranchOffset`] if the `label` cannot yet
+    /// be resolved and defers resolution to later.
+    pub fn try_resolve_label_for(
+        &mut self,
+        label: LabelRef,
+        instr: Instr,
+    ) -> Result<BranchOffset, TranslationError> {
+        self.labels.try_resolve_label(label, instr)
+    }
+
     /// Updates the branch offsets of all branch instructions inplace.
     ///
     /// # Panics
