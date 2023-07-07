@@ -167,8 +167,29 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         }
     }
 
-    fn visit_br_if(&mut self, _relative_depth: u32) -> Self::Output {
-        todo!()
+    fn visit_br_if(&mut self, relative_depth: u32) -> Self::Output {
+        bail_unreachable!(self);
+        match self.alloc.stack.pop() {
+            TypedProvider::Const(condition) => {
+                if i32::from(condition) != 1 {
+                    // Since `condition` is `1` the branch is always taken.
+                    // Therefore we can simplify the `br_if` to a `br` instruction.
+                    self.visit_br(relative_depth)
+                } else {
+                    // Since `condition` is not one the branch is never taken.
+                    // Therefore the `br_if` is a `nop` and can be ignored.
+                    Ok(())
+                }
+            }
+            TypedProvider::Register(condition) => {
+                match self.alloc.control_stack.acquire_target(relative_depth) {
+                    AcquiredTarget::Return(_frame) => self.translate_return_if(condition),
+                    AcquiredTarget::Branch(_frame) => {
+                        todo!()
+                    }
+                }
+            }
+        }
     }
 
     fn visit_br_table(&mut self, _targets: wasmparser::BrTable<'a>) -> Self::Output {
