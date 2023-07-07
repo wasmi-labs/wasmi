@@ -154,8 +154,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         match self.alloc.control_stack.acquire_target(relative_depth) {
             AcquiredTarget::Return(_frame) => self.visit_return(),
             AcquiredTarget::Branch(frame) => {
+                let branch_dst = frame.branch_destination();
                 let branch_params = frame.branch_params(self.engine());
                 self.translate_copy_branch_params(branch_params)?;
+                let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::branch(branch_offset))?;
                 self.reachable = false;
                 Ok(())
             }
