@@ -8,9 +8,6 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
-#[cfg(doc)]
-use self::provider::ProviderSlice;
-
 pub(crate) use self::{
     immediate::{Const16, Const32},
     provider::{Provider, ProviderSliceAlloc, ProviderSliceRef, UntypedProvider},
@@ -182,7 +179,7 @@ pub enum Instruction {
     ///
     /// Returns values as stored in the [`ProviderSliceRef`].
     ReturnMany {
-        /// Identifier for a [`ProviderSlice`].
+        /// Identifier for a [`Provider`] slice.
         values: ProviderSliceRef,
     },
 
