@@ -9,7 +9,7 @@ use super::{
 use crate::{
     engine::{
         bytecode,
-        bytecode2::{Const16, Const32, Instruction, Register},
+        bytecode2::{Const16, Instruction, Register},
         func_builder::regmach::control_stack::AcquiredTarget,
         TranslationError,
     },
@@ -185,9 +185,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             [ValueType::I32] => match self.alloc.stack.pop() {
                 // Case: Function returns a single `i32` value which allows for special operator.
                 TypedProvider::Register(value) => Instruction::return_reg(value),
-                TypedProvider::Const(value) => Instruction::ReturnImm32 {
-                    value: Const32::from_i32(i32::from(value)),
-                },
+                TypedProvider::Const(value) => Instruction::return_imm32(i32::from(value)),
             },
             [ValueType::I64] => match self.alloc.stack.pop() {
                 // Case: Function returns a single `i64` value which allows for special operator.
@@ -196,26 +194,22 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     if let Ok(value) = i32::try_from(i64::from(value)) {
                         Instruction::return_i64imm32(value)
                     } else {
-                        Instruction::ReturnImm {
-                            value: self.engine().alloc_const(value)?,
-                        }
+                        Instruction::return_imm(self.engine().alloc_const(value)?)
                     }
                 }
             },
             [ValueType::F32] => match self.alloc.stack.pop() {
                 // Case: Function returns a single `f32` value which allows for special operator.
                 TypedProvider::Register(value) => Instruction::return_reg(value),
-                TypedProvider::Const(value) => Instruction::ReturnImm32 {
-                    value: Const32::from_f32(F32::from(value)),
-                },
+                TypedProvider::Const(value) => Instruction::return_imm32(F32::from(value)),
             },
             [ValueType::F64 | ValueType::FuncRef | ValueType::ExternRef] => {
                 match self.alloc.stack.pop() {
                     // Case: Function returns a single `f64` value which allows for special operator.
                     TypedProvider::Register(value) => Instruction::return_reg(value),
-                    TypedProvider::Const(value) => Instruction::ReturnImm {
-                        value: self.engine().alloc_const(value)?,
-                    },
+                    TypedProvider::Const(value) => {
+                        Instruction::return_imm(self.engine().alloc_const(value)?)
+                    }
                 }
             }
             results => {
