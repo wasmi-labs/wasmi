@@ -1,6 +1,5 @@
-use core::marker::PhantomData;
-
 use super::{Const16, Const32};
+use core::marker::PhantomData;
 
 #[cfg(doc)]
 use super::Instruction;
