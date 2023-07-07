@@ -26,7 +26,7 @@ pub use self::{
     control_frame::{ControlFrame, ControlFrameKind},
     control_stack::ControlStack,
     instr_encoder::InstrEncoder,
-    stack::{DefragRegister, Provider, ProviderStack, RegisterAlloc},
+    stack::{DefragRegister, ProviderStack, RegisterAlloc, TypedProvider},
 };
 use crate::{
     engine::{
