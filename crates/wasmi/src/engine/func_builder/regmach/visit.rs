@@ -153,8 +153,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         bail_unreachable!(self);
         match self.alloc.control_stack.acquire_target(relative_depth) {
             AcquiredTarget::Return(_frame) => self.visit_return(),
-            AcquiredTarget::Branch(_frame) => {
-                todo!()
+            AcquiredTarget::Branch(frame) => {
+                let branch_params = frame.branch_params(self.engine());
+                self.translate_copy_branch_params(branch_params)?;
+                self.reachable = false;
+                Ok(())
             }
         }
     }
