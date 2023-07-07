@@ -172,11 +172,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         match self.alloc.stack.pop() {
             TypedProvider::Const(condition) => {
                 if i32::from(condition) != 1 {
-                    // Since `condition` is `1` the branch is always taken.
+                    // Case: `condition == 1` so the branch is always taken.
                     // Therefore we can simplify the `br_if` to a `br` instruction.
                     self.visit_br(relative_depth)
                 } else {
-                    // Since `condition` is not one the branch is never taken.
+                    // Case: `condition != 1` so the branch is never taken.
                     // Therefore the `br_if` is a `nop` and can be ignored.
                     Ok(())
                 }
