@@ -6,7 +6,7 @@ use wasmi_core::UntypedValue;
 #[cfg(doc)]
 use super::Instruction;
 
-/// A light-weight reference to a [`ProviderSlice`].
+/// A light-weight reference to a [`Provider`] slice.
 ///
 /// # Dev. Note
 ///

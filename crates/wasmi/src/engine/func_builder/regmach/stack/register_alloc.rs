@@ -138,7 +138,7 @@ impl RegisterAlloc {
         self.min_storage = u16::MAX;
     }
 
-    /// Adjusts the [`RegisterAlloc`] for the popped [`TaggedProvider`] and returns a [`Provider`].
+    /// Adjusts the [`RegisterAlloc`] for the popped [`TaggedProvider`] and returns a [`TypedProvider`].
     pub fn pop_provider(&mut self, provider: TaggedProvider) -> TypedProvider {
         match provider {
             TaggedProvider::Local(reg) => TypedProvider::Register(reg),

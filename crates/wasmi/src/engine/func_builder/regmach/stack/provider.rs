@@ -2,6 +2,9 @@ use super::TypedValue;
 use crate::engine::bytecode2::Register;
 use alloc::vec::{Drain, Vec};
 
+#[cfg(doc)]
+use wasmi_core::UntypedValue;
+
 /// Tagged providers are inputs to `wasmi` bytecode instructions.
 ///
 /// Either a [`Register`] or a constant [`UntypedValue`].
