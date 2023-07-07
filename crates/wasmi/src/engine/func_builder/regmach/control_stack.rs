@@ -1,6 +1,15 @@
 use super::ControlFrame;
 use alloc::vec::Vec;
 
+/// An acquired branch target.
+#[derive(Debug, Copy, Clone)]
+pub enum AcquiredTarget<'a> {
+    /// The branch targets the function enclosing `block` and therefore is a `return`.
+    Return(&'a ControlFrame),
+    /// The branch targets a regular [`ControlFrame`].
+    Branch(&'a ControlFrame),
+}
+
 /// The stack of control flow frames.
 #[derive(Debug, Default)]
 pub struct ControlStack {
@@ -74,5 +83,15 @@ impl ControlStack {
                     but there are only {len} control flow frames",
                 )
             })
+    }
+
+    /// Acquires the target [`ControlFrame`] at the given relative `depth`.
+    pub fn acquire_target(&self, depth: u32) -> AcquiredTarget {
+        let frame = self.nth_back(depth);
+        if self.is_root(depth) {
+            AcquiredTarget::Return(frame)
+        } else {
+            AcquiredTarget::Branch(frame)
+        }
     }
 }
