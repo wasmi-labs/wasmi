@@ -11,7 +11,9 @@ use crate::{
         bytecode2::{Register, RegisterSlice},
         func_builder::TranslationErrorInner,
         Instr,
+        Provider,
         TranslationError,
+        UntypedProvider,
     },
     module::BlockType,
     Engine,
@@ -19,15 +21,24 @@ use crate::{
 use alloc::vec::{Drain, Vec};
 use wasmi_core::UntypedValue;
 
-/// Tagged providers are inputs to `wasmi` bytecode instructions.
+/// Typed inputs to `wasmi` bytecode instructions.
 ///
 /// Either a [`Register`] or a constant [`UntypedValue`].
-#[derive(Debug, Copy, Clone)]
-pub enum Provider {
-    /// A register.
-    Register(Register),
-    /// An untyped constant value.
-    Const(TypedValue),
+///
+/// # Note
+///
+/// The [`TypedProvider`] is used primarily during translation of a `wasmi`
+/// function where types of constant values play an important role.
+pub type TypedProvider = Provider<TypedValue>;
+
+impl TypedProvider {
+    /// Converts the [`TypedProvider`] to a resolved [`UntypedProvider`].
+    pub fn into_untyped(self) -> UntypedProvider {
+        match self {
+            Self::Register(register) => UntypedProvider::Register(register),
+            Self::Const(value) => UntypedProvider::Const(UntypedValue::from(value)),
+        }
+    }
 }
 
 /// The value stack.
@@ -137,19 +148,19 @@ impl ValueStack {
     }
 
     /// Pops the top-most [`Provider`] from the [`ValueStack`].
-    pub fn pop(&mut self) -> Provider {
+    pub fn pop(&mut self) -> TypedProvider {
         self.reg_alloc.pop_provider(self.providers.pop())
     }
 
     /// Pops the top-most [`Provider`] from the [`ValueStack`].
-    pub fn pop2(&mut self) -> (Provider, Provider) {
+    pub fn pop2(&mut self) -> (TypedProvider, TypedProvider) {
         let rhs = self.pop();
         let lhs = self.pop();
         (lhs, rhs)
     }
 
     /// Pops the top-most [`Provider`] from the [`ValueStack`].
-    pub fn pop3(&mut self) -> (Provider, Provider, Provider) {
+    pub fn pop3(&mut self) -> (TypedProvider, TypedProvider, TypedProvider) {
         let (v1, v2) = self.pop2();
         let v0 = self.pop();
         (v0, v1, v2)
@@ -161,7 +172,7 @@ impl ValueStack {
     ///
     /// - The top-most [`Provider`] will be the n-th item in `result`.
     /// - The `result` [`Vec`] will be cleared before refilled.
-    pub fn pop_n(&mut self, n: usize, result: &mut Vec<Provider>) {
+    pub fn pop_n(&mut self, n: usize, result: &mut Vec<TypedProvider>) {
         result.clear();
         for _ in 0..n {
             let provider = self.pop();
@@ -175,11 +186,11 @@ impl ValueStack {
     /// # Errors
     ///
     /// If too many registers have been registered.
-    pub fn push_n(&mut self, providers: &[Provider]) -> Result<(), TranslationError> {
+    pub fn push_n(&mut self, providers: &[TypedProvider]) -> Result<(), TranslationError> {
         for provider in providers {
             match *provider {
-                Provider::Register(register) => self.push_register(register)?,
-                Provider::Const(value) => self.push_const(value),
+                TypedProvider::Register(register) => self.push_register(register)?,
+                TypedProvider::Const(value) => self.push_const(value),
             }
         }
         Ok(())

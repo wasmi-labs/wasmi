@@ -13,7 +13,7 @@ use self::provider::ProviderSlice;
 
 pub(crate) use self::{
     immediate::{Const16, Const32},
-    provider::{Provider, ProviderSliceAlloc, ProviderSliceRef},
+    provider::{Provider, ProviderSliceAlloc, ProviderSliceRef, UntypedProvider},
     utils::{
         BinInstr,
         BinInstrImm16,

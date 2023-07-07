@@ -1,4 +1,4 @@
-use super::{Provider, TaggedProvider};
+use super::{TaggedProvider, TypedProvider};
 use crate::engine::{
     bytecode2::{Register, RegisterSlice},
     func_builder::{Instr, TranslationErrorInner},
@@ -139,18 +139,18 @@ impl RegisterAlloc {
     }
 
     /// Adjusts the [`RegisterAlloc`] for the popped [`TaggedProvider`] and returns a [`Provider`].
-    pub fn pop_provider(&mut self, provider: TaggedProvider) -> Provider {
+    pub fn pop_provider(&mut self, provider: TaggedProvider) -> TypedProvider {
         match provider {
-            TaggedProvider::Local(reg) => Provider::Register(reg),
+            TaggedProvider::Local(reg) => TypedProvider::Register(reg),
             TaggedProvider::Dynamic(reg) => {
                 self.pop_dynamic();
-                Provider::Register(reg)
+                TypedProvider::Register(reg)
             }
             TaggedProvider::Storage(reg) => {
                 self.pop_storage();
-                Provider::Register(reg)
+                TypedProvider::Register(reg)
             }
-            TaggedProvider::Const(value) => Provider::Const(value),
+            TaggedProvider::Const(value) => TypedProvider::Const(value),
         }
     }
 

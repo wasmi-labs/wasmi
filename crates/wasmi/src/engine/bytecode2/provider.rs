@@ -35,27 +35,35 @@ impl ProviderSliceRef {
 
 /// A provider for an input to an [`Instruction`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum Provider {
+pub enum Provider<T> {
     /// A [`Register`] value.
     Register(Register),
-    /// An immediate [`UntypedValue`].
-    Immediate(UntypedValue),
+    /// An immediate (or constant) value.
+    Const(T),
 }
 
-impl From<Register> for Provider {
+/// An untyped [`Provider`].
+///
+/// # Note
+///
+/// The [`UntypedProvider`] is primarily used for execution of
+/// `wasmi` bytecode where typing usually no longer plays a role.
+pub type UntypedProvider = Provider<UntypedValue>;
+
+impl From<Register> for UntypedProvider {
     fn from(register: Register) -> Self {
         Self::Register(register)
     }
 }
 
-impl From<UntypedValue> for Provider {
+impl From<UntypedValue> for UntypedProvider {
     fn from(register: UntypedValue) -> Self {
-        Self::Immediate(register)
+        Self::Const(register)
     }
 }
 
-impl Provider {
-    /// Creates a new immediate value [`Provider`].
+impl UntypedProvider {
+    /// Creates a new immediate value [`UntypedProvider`].
     pub fn immediate(value: impl Into<UntypedValue>) -> Self {
         Self::from(value.into())
     }
@@ -67,14 +75,14 @@ pub struct ProviderSliceAlloc {
     /// The start indices of each [`ProviderSliceRef`].
     starts: Vec<usize>,
     /// All [`Provider`] of all allocated [`Provider`] slices.
-    providers: Vec<Provider>,
+    providers: Vec<UntypedProvider>,
 }
 
 impl ProviderSliceAlloc {
-    /// Allocates a new [`Provider`] slice and returns its [`ProviderSliceRef`].
+    /// Allocates a new [`UntypedProvider`] slice and returns its [`ProviderSliceRef`].
     pub fn alloc<I>(&mut self, providers: I) -> Result<ProviderSliceRef, TranslationError>
     where
-        I: IntoIterator<Item = Provider>,
+        I: IntoIterator<Item = UntypedProvider>,
     {
         let start = self.providers.len();
         self.providers.extend(providers);
@@ -90,8 +98,8 @@ impl ProviderSliceAlloc {
         Some((start, end))
     }
 
-    /// Returns the [`Provider`] slice of the given [`ProviderSliceRef`] if any.
-    pub fn get(&self, slice: ProviderSliceRef) -> Option<&[Provider]> {
+    /// Returns the [`UntypedProvider`] slice of the given [`ProviderSliceRef`] if any.
+    pub fn get(&self, slice: ProviderSliceRef) -> Option<&[UntypedProvider]> {
         let (start, end) = self.get_start_end(slice)?;
         match end {
             Some(end) => Some(&self.providers[start..end]),

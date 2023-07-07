@@ -80,7 +80,7 @@ pub struct FuncTranslatorAllocations {
     /// The control stack.
     control_stack: ControlStack,
     /// Buffer to store providers when popped from the [`ValueStack`] in bulk.
-    buffer: Vec<Provider>,
+    buffer: Vec<TypedProvider>,
 }
 
 impl FuncTranslatorAllocations {
@@ -327,7 +327,7 @@ impl<'parser> FuncTranslator<'parser> {
         for provider in &self.alloc.buffer {
             let result = self.alloc.stack.push_dynamic()?;
             match *provider {
-                Provider::Register(value) => {
+                TypedProvider::Register(value) => {
                     if result == value {
                         // Optimization: copying from register `x` into `x` is a no-op.
                         continue;
@@ -336,7 +336,7 @@ impl<'parser> FuncTranslator<'parser> {
                         .instr_encoder
                         .push_instr(Instruction::copy(result, value))?;
                 }
-                Provider::Const(value) => {
+                TypedProvider::Const(value) => {
                     let engine = self.engine();
                     let instruction = match value.ty() {
                         ValueType::I32 => Instruction::copy_imm32(result, i32::from(value)),
@@ -604,14 +604,14 @@ impl<'parser> FuncTranslator<'parser> {
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
-            (Provider::Register(lhs), Provider::Register(rhs)) => {
+            (TypedProvider::Register(lhs), TypedProvider::Register(rhs)) => {
                 if make_instr_opt(self, lhs, rhs)? {
                     // Case: the custom logic applied its optimization and we can return.
                     return Ok(());
                 }
                 self.push_binary_instr(lhs, rhs, make_instr)
             }
-            (Provider::Register(lhs), Provider::Const(rhs)) => {
+            (TypedProvider::Register(lhs), TypedProvider::Const(rhs)) => {
                 if make_instr_reg_imm_opt(self, lhs, T::from(rhs))? {
                     // Case: the custom logic applied its optimization and we can return.
                     return Ok(());
@@ -622,7 +622,7 @@ impl<'parser> FuncTranslator<'parser> {
                 }
                 self.push_binary_instr_imm(lhs, T::from(rhs), make_instr_imm, make_instr_imm_param)
             }
-            (Provider::Const(lhs), Provider::Register(rhs)) => {
+            (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
                 if make_instr_imm_reg_opt(self, T::from(lhs), rhs)? {
                     // Case: the custom logic applied its optimization and we can return.
                     return Ok(());
@@ -638,7 +638,7 @@ impl<'parser> FuncTranslator<'parser> {
                     make_instr_imm_param,
                 )
             }
-            (Provider::Const(lhs), Provider::Const(rhs)) => {
+            (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
                 self.push_binary_consteval(lhs, rhs, consteval)
             }
         }
@@ -694,14 +694,14 @@ impl<'parser> FuncTranslator<'parser> {
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
-            (Provider::Register(lhs), Provider::Register(rhs)) => {
+            (TypedProvider::Register(lhs), TypedProvider::Register(rhs)) => {
                 if make_instr_opt(self, lhs, rhs)? {
                     // Case: the custom logic applied its optimization and we can return.
                     return Ok(());
                 }
                 self.push_binary_instr(lhs, rhs, make_instr)
             }
-            (Provider::Register(lhs), Provider::Const(rhs)) => {
+            (TypedProvider::Register(lhs), TypedProvider::Const(rhs)) => {
                 if make_instr_reg_imm_opt(self, lhs, T::from(rhs))? {
                     // Case: the custom logic applied its optimization and we can return.
                     return Ok(());
@@ -713,7 +713,7 @@ impl<'parser> FuncTranslator<'parser> {
                 }
                 self.push_binary_instr_imm(lhs, T::from(rhs), make_instr_imm, make_instr_imm_param)
             }
-            (Provider::Const(lhs), Provider::Register(rhs)) => {
+            (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
                 if make_instr_imm_reg_opt(self, T::from(lhs), rhs)? {
                     // Case: the custom logic applied its optimization and we can return.
                     return Ok(());
@@ -730,7 +730,7 @@ impl<'parser> FuncTranslator<'parser> {
                     make_instr_imm_param,
                 )
             }
-            (Provider::Const(lhs), Provider::Const(rhs)) => {
+            (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
                 self.push_binary_consteval(lhs, rhs, consteval)
             }
         }
@@ -755,7 +755,7 @@ impl<'parser> FuncTranslator<'parser> {
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
-            (Provider::Register(lhs), Provider::Register(rhs)) => {
+            (TypedProvider::Register(lhs), TypedProvider::Register(rhs)) => {
                 if lhs == rhs {
                     // Optimization: `copysign x x` is always just `x`
                     self.alloc.stack.push_register(lhs)?;
@@ -763,7 +763,7 @@ impl<'parser> FuncTranslator<'parser> {
                 }
                 self.push_binary_instr(lhs, rhs, make_instr)
             }
-            (Provider::Register(lhs), Provider::Const(rhs)) => {
+            (TypedProvider::Register(lhs), TypedProvider::Const(rhs)) => {
                 let sign = T::from(rhs).sign();
                 let result = self.alloc.stack.push_dynamic()?;
                 self.alloc
@@ -771,13 +771,9 @@ impl<'parser> FuncTranslator<'parser> {
                     .push_instr(make_instr_imm(result, lhs, sign))?;
                 Ok(())
             }
-            (Provider::Const(lhs), Provider::Register(rhs)) => self.push_binary_instr_imm(
-                rhs,
-                T::from(lhs),
-                make_instr_imm_rev,
-                make_instr_imm_param,
-            ),
-            (Provider::Const(lhs), Provider::Const(rhs)) => {
+            (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => self
+                .push_binary_instr_imm(rhs, T::from(lhs), make_instr_imm_rev, make_instr_imm_param),
+            (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
                 self.push_binary_consteval(lhs, rhs, consteval)
             }
         }
@@ -822,15 +818,15 @@ impl<'parser> FuncTranslator<'parser> {
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
-            (Provider::Register(lhs), Provider::Register(rhs)) => {
+            (TypedProvider::Register(lhs), TypedProvider::Register(rhs)) => {
                 if make_instr_opt(self, lhs, rhs)? {
                     // Case: the custom logic applied its optimization and we can return.
                     return Ok(());
                 }
                 self.push_binary_instr(lhs, rhs, make_instr)
             }
-            (Provider::Register(reg_in), Provider::Const(imm_in))
-            | (Provider::Const(imm_in), Provider::Register(reg_in)) => {
+            (TypedProvider::Register(reg_in), TypedProvider::Const(imm_in))
+            | (TypedProvider::Const(imm_in), TypedProvider::Register(reg_in)) => {
                 if make_instr_imm_opt(self, reg_in, T::from(imm_in))? {
                     // Custom logic applied its optimization: return early.
                     return Ok(());
@@ -846,7 +842,7 @@ impl<'parser> FuncTranslator<'parser> {
                     make_instr_imm_param,
                 )
             }
-            (Provider::Const(lhs), Provider::Const(rhs)) => {
+            (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
                 self.push_binary_consteval(lhs, rhs, consteval)
             }
         }
@@ -890,15 +886,15 @@ impl<'parser> FuncTranslator<'parser> {
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
-            (Provider::Register(lhs), Provider::Register(rhs)) => {
+            (TypedProvider::Register(lhs), TypedProvider::Register(rhs)) => {
                 if make_instr_opt(self, lhs, rhs)? {
                     // Case: the custom logic applied its optimization and we can return.
                     return Ok(());
                 }
                 self.push_binary_instr(lhs, rhs, make_instr)
             }
-            (Provider::Register(reg_in), Provider::Const(imm_in))
-            | (Provider::Const(imm_in), Provider::Register(reg_in)) => {
+            (TypedProvider::Register(reg_in), TypedProvider::Const(imm_in))
+            | (TypedProvider::Const(imm_in), TypedProvider::Register(reg_in)) => {
                 if make_instr_imm_opt(self, reg_in, T::from(imm_in))? {
                     // Custom logic applied its optimization: return early.
                     return Ok(());
@@ -915,7 +911,7 @@ impl<'parser> FuncTranslator<'parser> {
                     make_instr_imm_param,
                 )
             }
-            (Provider::Const(lhs), Provider::Const(rhs)) => {
+            (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
                 self.push_binary_consteval(lhs, rhs, consteval)
             }
         }
@@ -957,10 +953,10 @@ impl<'parser> FuncTranslator<'parser> {
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
-            (Provider::Register(lhs), Provider::Register(rhs)) => {
+            (TypedProvider::Register(lhs), TypedProvider::Register(rhs)) => {
                 self.push_binary_instr(lhs, rhs, make_instr)
             }
-            (Provider::Register(lhs), Provider::Const(rhs)) => {
+            (TypedProvider::Register(lhs), TypedProvider::Const(rhs)) => {
                 let rhs = T::from(rhs).as_shift_amount();
                 if rhs == 0 {
                     // Optimization: Shifting or rotating by zero bits is a no-op.
@@ -975,7 +971,7 @@ impl<'parser> FuncTranslator<'parser> {
                 ))?;
                 Ok(())
             }
-            (Provider::Const(lhs), Provider::Register(rhs)) => {
+            (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
                 if make_instr_imm_reg_opt(self, T::from(lhs), rhs)? {
                     // Custom optimization was applied: return early
                     return Ok(());
@@ -996,7 +992,7 @@ impl<'parser> FuncTranslator<'parser> {
                     make_instr_imm_param,
                 )
             }
-            (Provider::Const(lhs), Provider::Const(rhs)) => {
+            (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
                 self.push_binary_consteval(lhs, rhs, consteval)
             }
         }
@@ -1044,14 +1040,14 @@ impl<'parser> FuncTranslator<'parser> {
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
-            (Provider::Register(lhs), Provider::Register(rhs)) => {
+            (TypedProvider::Register(lhs), TypedProvider::Register(rhs)) => {
                 if make_instr_opt(self, lhs, rhs)? {
                     // Custom optimization was applied: return early
                     return Ok(());
                 }
                 self.push_binary_instr(lhs, rhs, make_instr)
             }
-            (Provider::Register(lhs), Provider::Const(rhs)) => {
+            (TypedProvider::Register(lhs), TypedProvider::Const(rhs)) => {
                 if T::from(rhs).eq_zero() {
                     // Optimization: division by zero always traps
                     self.translate_trap(TrapCode::IntegerDivisionByZero)?;
@@ -1067,7 +1063,7 @@ impl<'parser> FuncTranslator<'parser> {
                 }
                 self.push_binary_instr_imm(lhs, T::from(rhs), make_instr_imm, make_instr_imm_param)
             }
-            (Provider::Const(lhs), Provider::Register(rhs)) => {
+            (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
                 if self.try_push_binary_instr_imm16_rev(T::from(lhs), rhs, make_instr_imm16_rev)? {
                     // Optimization was applied: return early.
                     return Ok(());
@@ -1079,7 +1075,7 @@ impl<'parser> FuncTranslator<'parser> {
                     make_instr_imm_param,
                 )
             }
-            (Provider::Const(lhs), Provider::Const(rhs)) => match consteval(lhs, rhs) {
+            (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => match consteval(lhs, rhs) {
                 Ok(result) => {
                     self.alloc.stack.push_const(result);
                     Ok(())
@@ -1123,14 +1119,14 @@ impl<'parser> FuncTranslator<'parser> {
     ) -> Result<(), TranslationError> {
         bail_unreachable!(self);
         match self.alloc.stack.pop() {
-            Provider::Register(input) => {
+            TypedProvider::Register(input) => {
                 let result = self.alloc.stack.push_dynamic()?;
                 self.alloc
                     .instr_encoder
                     .push_instr(make_instr(result, input))?;
                 Ok(())
             }
-            Provider::Const(input) => {
+            TypedProvider::Const(input) => {
                 self.alloc.stack.push_const(consteval(input));
                 Ok(())
             }
@@ -1145,14 +1141,14 @@ impl<'parser> FuncTranslator<'parser> {
     ) -> Result<(), TranslationError> {
         bail_unreachable!(self);
         match self.alloc.stack.pop() {
-            Provider::Register(input) => {
+            TypedProvider::Register(input) => {
                 let result = self.alloc.stack.push_dynamic()?;
                 self.alloc
                     .instr_encoder
                     .push_instr(make_instr(result, input))?;
                 Ok(())
             }
-            Provider::Const(input) => match consteval(input) {
+            TypedProvider::Const(input) => match consteval(input) {
                 Ok(result) => {
                     self.alloc.stack.push_const(result);
                     Ok(())
@@ -1215,7 +1211,7 @@ impl<'parser> FuncTranslator<'parser> {
         bail_unreachable!(self);
         let offset = Self::memarg_offset(memarg);
         match self.alloc.stack.pop() {
-            Provider::Register(ptr) => {
+            TypedProvider::Register(ptr) => {
                 if let Ok(offset) = Const16::try_from(offset) {
                     let result = self.alloc.stack.push_dynamic()?;
                     self.alloc
@@ -1232,13 +1228,15 @@ impl<'parser> FuncTranslator<'parser> {
                     .push_instr(Instruction::const32(offset))?;
                 Ok(())
             }
-            Provider::Const(ptr) => self.effective_address_and(ptr, offset, |this, address| {
-                let result = this.alloc.stack.push_dynamic()?;
-                this.alloc
-                    .instr_encoder
-                    .push_instr(make_instr_at(result, Const32::from(address)))?;
-                Ok(())
-            }),
+            TypedProvider::Const(ptr) => {
+                self.effective_address_and(ptr, offset, |this, address| {
+                    let result = this.alloc.stack.push_dynamic()?;
+                    this.alloc
+                        .instr_encoder
+                        .push_instr(make_instr_at(result, Const32::from(address)))?;
+                    Ok(())
+                })
+            }
         }
     }
 
@@ -1274,7 +1272,7 @@ impl<'parser> FuncTranslator<'parser> {
         bail_unreachable!(self);
         let offset = Self::memarg_offset(memarg);
         match self.alloc.stack.pop2() {
-            (Provider::Register(ptr), Provider::Register(value)) => {
+            (TypedProvider::Register(ptr), TypedProvider::Register(value)) => {
                 self.alloc
                     .instr_encoder
                     .push_instr(make_instr(ptr, Const32::from(offset)))?;
@@ -1283,7 +1281,7 @@ impl<'parser> FuncTranslator<'parser> {
                     .push_instr(Instruction::Register(value))?;
                 Ok(())
             }
-            (Provider::Register(ptr), Provider::Const(value)) => {
+            (TypedProvider::Register(ptr), TypedProvider::Const(value)) => {
                 self.alloc
                     .instr_encoder
                     .push_instr(make_instr_imm(ptr, Const32::from(offset)))?;
@@ -1291,15 +1289,14 @@ impl<'parser> FuncTranslator<'parser> {
                 self.alloc.instr_encoder.push_instr(param)?;
                 Ok(())
             }
-            (Provider::Const(ptr), Provider::Register(value)) => {
-                self.effective_address_and(ptr, offset, |this, address| {
+            (TypedProvider::Const(ptr), TypedProvider::Register(value)) => self
+                .effective_address_and(ptr, offset, |this, address| {
                     this.alloc
                         .instr_encoder
                         .push_instr(make_instr_at(Const32::from(address), value))?;
                     Ok(())
-                })
-            }
-            (Provider::Const(ptr), Provider::Const(value)) => {
+                }),
+            (TypedProvider::Const(ptr), TypedProvider::Const(value)) => {
                 self.effective_address_and(ptr, offset, |this, address| {
                     this.alloc
                         .instr_encoder
@@ -1339,7 +1336,7 @@ impl<'parser> FuncTranslator<'parser> {
         bail_unreachable!(self);
         let offset = Self::memarg_offset(memarg);
         match self.alloc.stack.pop2() {
-            (Provider::Register(ptr), Provider::Register(value)) => {
+            (TypedProvider::Register(ptr), TypedProvider::Register(value)) => {
                 self.alloc
                     .instr_encoder
                     .push_instr(make_instr(ptr, Const32::from(offset)))?;
@@ -1348,7 +1345,7 @@ impl<'parser> FuncTranslator<'parser> {
                     .push_instr(Instruction::Register(value))?;
                 Ok(())
             }
-            (Provider::Register(ptr), Provider::Const(value)) => {
+            (TypedProvider::Register(ptr), TypedProvider::Const(value)) => {
                 self.alloc
                     .instr_encoder
                     .push_instr(make_instr_imm(ptr, Const32::from(offset)))?;
@@ -1356,15 +1353,14 @@ impl<'parser> FuncTranslator<'parser> {
                 self.alloc.instr_encoder.push_instr(param)?;
                 Ok(())
             }
-            (Provider::Const(ptr), Provider::Register(value)) => {
-                self.effective_address_and(ptr, offset, |this, address| {
+            (TypedProvider::Const(ptr), TypedProvider::Register(value)) => self
+                .effective_address_and(ptr, offset, |this, address| {
                     this.alloc
                         .instr_encoder
                         .push_instr(make_instr_at(Const32::from(address), value))?;
                     Ok(())
-                })
-            }
-            (Provider::Const(ptr), Provider::Const(value)) => {
+                }),
+            (TypedProvider::Const(ptr), TypedProvider::Const(value)) => {
                 self.effective_address_and(ptr, offset, |this, address| {
                     this.alloc
                         .instr_encoder
@@ -1387,21 +1383,23 @@ impl<'parser> FuncTranslator<'parser> {
         bail_unreachable!(self);
         let (lhs, rhs, condition) = self.alloc.stack.pop3();
         match condition {
-            Provider::Const(condition) => match (bool::from(condition), lhs, rhs) {
+            TypedProvider::Const(condition) => match (bool::from(condition), lhs, rhs) {
                 // # Optimization
                 //
                 // Since the `condition` is a constant value we can forward `lhs` or `rhs` statically.
-                (true, Provider::Register(reg), _) | (false, _, Provider::Register(reg)) => {
+                (true, TypedProvider::Register(reg), _)
+                | (false, _, TypedProvider::Register(reg)) => {
                     self.alloc.stack.push_register(reg)?;
                     Ok(())
                 }
-                (true, Provider::Const(value), _) | (false, _, Provider::Const(value)) => {
+                (true, TypedProvider::Const(value), _)
+                | (false, _, TypedProvider::Const(value)) => {
                     self.alloc.stack.push_const(value);
                     Ok(())
                 }
             },
-            Provider::Register(condition) => match (lhs, rhs) {
-                (Provider::Register(lhs), Provider::Register(rhs)) => {
+            TypedProvider::Register(condition) => match (lhs, rhs) {
+                (TypedProvider::Register(lhs), TypedProvider::Register(rhs)) => {
                     if lhs == rhs {
                         // # Optimization
                         //
@@ -1419,7 +1417,7 @@ impl<'parser> FuncTranslator<'parser> {
                         .push_instr(Instruction::Register(rhs))?;
                     Ok(())
                 }
-                (Provider::Register(lhs), Provider::Const(rhs)) => {
+                (TypedProvider::Register(lhs), TypedProvider::Const(rhs)) => {
                     fn push_select_imm32_rhs(
                         this: &mut FuncTranslator<'_>,
                         result: Register,
@@ -1462,7 +1460,7 @@ impl<'parser> FuncTranslator<'parser> {
                         }
                     }
                 }
-                (Provider::Const(lhs), Provider::Register(rhs)) => {
+                (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
                     fn push_select_imm32_lhs(
                         this: &mut FuncTranslator<'_>,
                         result: Register,
@@ -1505,7 +1503,7 @@ impl<'parser> FuncTranslator<'parser> {
                         }
                     }
                 }
-                (Provider::Const(lhs), Provider::Const(rhs)) => {
+                (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
                     fn push_select_imm32(
                         this: &mut FuncTranslator<'_>,
                         reg: Register,
@@ -1565,12 +1563,12 @@ impl<'parser> FuncTranslator<'parser> {
     pub fn translate_reinterpret(&mut self, ty: ValueType) -> Result<(), TranslationError> {
         bail_unreachable!(self);
         match self.alloc.stack.pop() {
-            Provider::Register(reg) => {
+            TypedProvider::Register(reg) => {
                 // Nothing to do in this case so we simply push the popped register back.
                 self.alloc.stack.push_register(reg)?;
                 Ok(())
             }
-            Provider::Const(value) => {
+            TypedProvider::Const(value) => {
                 // In case of a constant value we have to adjust for its new type and push it back.
                 self.alloc.stack.push_const(value.reinterpret(ty));
                 Ok(())

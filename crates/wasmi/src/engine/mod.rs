@@ -38,7 +38,7 @@ pub use self::{
 };
 use self::{
     bytecode::Instruction,
-    bytecode2::{Provider, ProviderSliceAlloc, ProviderSliceRef},
+    bytecode2::{Provider, ProviderSliceAlloc, ProviderSliceRef, UntypedProvider},
     cache::InstanceCache,
     code_map::CodeMap,
     const_pool::{ConstPool, ConstPoolView, ConstRef},
@@ -190,7 +190,7 @@ impl Engine {
         providers: I,
     ) -> Result<ProviderSliceRef, TranslationError>
     where
-        I: IntoIterator<Item = Provider>,
+        I: IntoIterator<Item = UntypedProvider>,
     {
         self.inner.alloc_providers(providers)
     }
@@ -204,7 +204,7 @@ impl Engine {
     ///
     /// This is a test API and only meant for testing purposes.
     #[cfg(test)]
-    pub(super) fn get_providers(&self, slice: ProviderSliceRef, buffer: &mut Vec<Provider>) {
+    pub(super) fn get_providers(&self, slice: ProviderSliceRef, buffer: &mut Vec<UntypedProvider>) {
         self.inner.get_providers(slice, buffer)
     }
 
@@ -525,7 +525,7 @@ impl EngineInner {
         providers: I,
     ) -> Result<ProviderSliceRef, TranslationError>
     where
-        I: IntoIterator<Item = Provider>,
+        I: IntoIterator<Item = UntypedProvider>,
     {
         self.res.write().providers.alloc(providers)
     }
@@ -539,7 +539,7 @@ impl EngineInner {
     ///
     /// This is a test API and only meant for testing purposes.
     #[cfg(test)]
-    pub(super) fn get_providers(&self, slice: ProviderSliceRef, buffer: &mut Vec<Provider>) {
+    pub(super) fn get_providers(&self, slice: ProviderSliceRef, buffer: &mut Vec<UntypedProvider>) {
         let res = self.res.read();
         buffer.clear();
         if let Some(providers) = res.providers.get(slice) {
