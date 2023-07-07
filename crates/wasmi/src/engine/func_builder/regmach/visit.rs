@@ -12,6 +12,7 @@ use crate::{
         bytecode,
         bytecode2,
         bytecode2::{BinInstr, BinInstrImm16, Const16, Const32, Instruction, Register, UnaryInstr},
+        func_builder::regmach::control_stack::AcquiredTarget,
         TranslationError,
     },
     module::{self, BlockType, WasmiValueType},
@@ -151,7 +152,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_br(&mut self, relative_depth: u32) -> Self::Output {
-        todo!()
+        bail_unreachable!(self);
+        match self.alloc.control_stack.acquire_target(relative_depth) {
+            AcquiredTarget::Return(_frame) => self.visit_return(),
+            AcquiredTarget::Branch(_frame) => {
+                todo!()
+            }
+        }
     }
 
     fn visit_br_if(&mut self, _relative_depth: u32) -> Self::Output {
