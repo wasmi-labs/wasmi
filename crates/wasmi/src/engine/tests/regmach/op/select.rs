@@ -51,7 +51,7 @@ impl Display for DisplaySelect {
 fn return_for_value(testcase: &mut TranslationTest, value: Value) -> Instruction {
     fn return_cref(testcase: &mut TranslationTest, value: UntypedValue) -> Instruction {
         testcase.expect_const(ConstRef::from_u32(0), value);
-        Instruction::return_cref(0)
+        Instruction::return_imm(ConstRef::from_u32(0))
     }
     match value {
         Value::I32(value) => Instruction::return_imm32(value),

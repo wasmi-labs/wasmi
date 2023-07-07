@@ -19,16 +19,24 @@ fn reg_imm_rev() {
 
 #[test]
 fn reg_nan() {
-    test_binary_reg_imm_with(WASM_OP, f64::NAN, [Instruction::return_cref(0)])
-        .expect_const(ConstRef::from_u32(0), f64::NAN)
-        .run()
+    test_binary_reg_imm_with(
+        WASM_OP,
+        f64::NAN,
+        [Instruction::return_imm(ConstRef::from_u32(0))],
+    )
+    .expect_const(ConstRef::from_u32(0), f64::NAN)
+    .run()
 }
 
 #[test]
 fn nan_reg() {
-    test_binary_reg_imm_rev_with(WASM_OP, f64::NAN, [Instruction::return_cref(0)])
-        .expect_const(ConstRef::from_u32(0), f64::NAN)
-        .run()
+    test_binary_reg_imm_rev_with(
+        WASM_OP,
+        f64::NAN,
+        [Instruction::return_imm(ConstRef::from_u32(0))],
+    )
+    .expect_const(ConstRef::from_u32(0), f64::NAN)
+    .run()
 }
 
 #[test]

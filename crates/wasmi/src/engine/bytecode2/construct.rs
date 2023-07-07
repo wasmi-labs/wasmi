@@ -122,18 +122,15 @@ impl Instruction {
         }
     }
 
+    /// Creates a new [`Instruction::ReturnImm`] from the given `value`.
+    pub fn return_imm(value: ConstRef) -> Self {
+        Self::ReturnImm { value }
+    }
+
     /// Creates a new [`Instruction::ReturnImm32`] from the given `value`.
     pub fn return_imm32(value: impl Into<Const32>) -> Self {
         Self::ReturnImm32 {
             value: value.into(),
-        }
-    }
-
-    /// Creates a new [`Instruction::ReturnImm32`] from the given `value`.
-    #[cfg(test)]
-    pub fn return_cref(index: u32) -> Self {
-        Self::ReturnImm {
-            value: ConstRef::from_u32(index),
         }
     }
 
