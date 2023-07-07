@@ -1,7 +1,5 @@
 //! Function translation for the register-machine bytecode based `wasmi` engine.
 
-#![allow(unused_imports)] // TODO: remove
-
 mod control_frame;
 mod control_stack;
 mod instr_encoder;
@@ -19,7 +17,7 @@ use self::{
         UnreachableControlFrame,
     },
     stack::ValueStack,
-    typed_value::{Typed, TypedValue},
+    typed_value::TypedValue,
     utils::{WasmFloat, WasmInteger},
 };
 pub use self::{
@@ -30,44 +28,19 @@ pub use self::{
 };
 use crate::{
     engine::{
-        bytecode::{
-            self,
-            AddressOffset,
-            BranchOffset,
-            BranchTableTargets,
-            DataSegmentIdx,
-            ElementSegmentIdx,
-            SignatureIdx,
-            TableIdx,
-        },
+        bytecode::SignatureIdx,
         bytecode2::{Const16, Const32, Instruction, Register, RegisterSlice, Sign},
         config::FuelCosts,
-        func_builder::TranslationErrorInner,
         CompiledFunc,
-        DropKeep,
         Instr,
-        RelativeDepth,
         TranslationError,
     },
-    module::{
-        BlockType,
-        ConstExpr,
-        FuncIdx,
-        FuncTypeIdx,
-        GlobalIdx,
-        MemoryIdx,
-        ModuleResources,
-        DEFAULT_MEMORY_INDEX,
-    },
+    module::{BlockType, FuncIdx, FuncTypeIdx, ModuleResources},
     Engine,
-    ExternRef,
-    FuncRef,
     FuncType,
-    GlobalType,
-    Mutability,
 };
 use alloc::vec::Vec;
-use wasmi_core::{TrapCode, UntypedValue, ValueType, F32, F64};
+use wasmi_core::{TrapCode, UntypedValue, ValueType};
 use wasmparser::{MemArg, VisitOperator};
 
 /// Reusable allocations of a [`FuncTranslator`].

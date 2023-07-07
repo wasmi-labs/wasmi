@@ -1,7 +1,6 @@
 use super::TypedValue;
-use crate::{engine::bytecode2::Register, ExternRef, FuncRef};
+use crate::engine::bytecode2::Register;
 use alloc::vec::{Drain, Vec};
-use wasmi_core::{UntypedValue, ValueType, F32, F64};
 
 /// Tagged providers are inputs to `wasmi` bytecode instructions.
 ///

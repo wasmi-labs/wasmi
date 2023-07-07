@@ -5,20 +5,16 @@ pub use self::{
     provider::{ProviderStack, TaggedProvider},
     register_alloc::{DefragRegister, RegisterAlloc},
 };
-use super::{Typed, TypedValue};
-use crate::{
-    engine::{
-        bytecode2::{Register, RegisterSlice},
-        func_builder::TranslationErrorInner,
-        Instr,
-        Provider,
-        TranslationError,
-        UntypedProvider,
-    },
-    module::BlockType,
-    Engine,
+use super::TypedValue;
+use crate::engine::{
+    bytecode2::{Register, RegisterSlice},
+    func_builder::TranslationErrorInner,
+    Instr,
+    Provider,
+    TranslationError,
+    UntypedProvider,
 };
-use alloc::vec::{Drain, Vec};
+use alloc::vec::Vec;
 use wasmi_core::UntypedValue;
 
 /// Typed inputs to `wasmi` bytecode instructions.

@@ -4,21 +4,19 @@ use super::{
     stack::TypedProvider,
     ControlFrameKind,
     FuncTranslator,
-    Typed,
     TypedValue,
 };
 use crate::{
     engine::{
         bytecode,
-        bytecode2,
-        bytecode2::{BinInstr, BinInstrImm16, Const16, Const32, Instruction, Register, UnaryInstr},
+        bytecode2::{Const16, Const32, Instruction, Register},
         func_builder::regmach::control_stack::AcquiredTarget,
         TranslationError,
     },
     module::{self, BlockType, WasmiValueType},
     Mutability,
 };
-use wasmi_core::{TrapCode, UntypedValue, ValueType, F32, F64};
+use wasmi_core::{TrapCode, ValueType, F32, F64};
 use wasmparser::VisitOperator;
 
 /// Used to swap operands of a `rev` variant [`Instruction`] constructor.

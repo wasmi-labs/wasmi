@@ -1,6 +1,5 @@
 use super::TypedValue;
 use crate::engine::bytecode2::{Const16, Sign};
-use wasmi_core::UntypedValue;
 
 /// A WebAssembly integer. Either `i32` or `i64`.
 ///
