@@ -152,10 +152,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_br(&mut self, relative_depth: u32) -> Self::Output {
         bail_unreachable!(self);
         match self.alloc.control_stack.acquire_target(relative_depth) {
-            AcquiredTarget::Return(_frame) => self.visit_return(),
+            AcquiredTarget::Return(_frame) => self.translate_return(),
             AcquiredTarget::Branch(frame) => {
+                frame.bump_branches();
                 let branch_dst = frame.branch_destination();
-                let branch_params = frame.branch_params(self.engine());
+                let branch_params = frame.branch_params(self.res.engine());
                 self.translate_copy_branch_params(branch_params)?;
                 let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
                 self.alloc
