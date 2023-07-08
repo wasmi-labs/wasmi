@@ -249,58 +249,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_return(&mut self) -> Self::Output {
         bail_unreachable!(self);
-        let instr = match self.func_type().results() {
-            [] => {
-                // Case: Function returns nothing therefore all return statements must return nothing.
-                Instruction::Return
-            }
-            [ValueType::I32] => match self.alloc.stack.pop() {
-                // Case: Function returns a single `i32` value which allows for special operator.
-                TypedProvider::Register(value) => Instruction::return_reg(value),
-                TypedProvider::Const(value) => Instruction::return_imm32(i32::from(value)),
-            },
-            [ValueType::I64] => match self.alloc.stack.pop() {
-                // Case: Function returns a single `i64` value which allows for special operator.
-                TypedProvider::Register(value) => Instruction::return_reg(value),
-                TypedProvider::Const(value) => {
-                    if let Ok(value) = i32::try_from(i64::from(value)) {
-                        Instruction::return_i64imm32(value)
-                    } else {
-                        Instruction::return_imm(self.engine().alloc_const(value)?)
-                    }
-                }
-            },
-            [ValueType::F32] => match self.alloc.stack.pop() {
-                // Case: Function returns a single `f32` value which allows for special operator.
-                TypedProvider::Register(value) => Instruction::return_reg(value),
-                TypedProvider::Const(value) => Instruction::return_imm32(F32::from(value)),
-            },
-            [ValueType::F64 | ValueType::FuncRef | ValueType::ExternRef] => {
-                match self.alloc.stack.pop() {
-                    // Case: Function returns a single `f64` value which allows for special operator.
-                    TypedProvider::Register(value) => Instruction::return_reg(value),
-                    TypedProvider::Const(value) => {
-                        Instruction::return_imm(self.engine().alloc_const(value)?)
-                    }
-                }
-            }
-            results => {
-                self.alloc
-                    .stack
-                    .pop_n(results.len(), &mut self.alloc.buffer);
-                let providers = self
-                    .alloc
-                    .buffer
-                    .iter()
-                    .copied()
-                    .map(TypedProvider::into_untyped);
-                let sref = self.res.engine().alloc_providers(providers)?;
-                Instruction::return_many(sref)
-            }
-        };
-        self.alloc.instr_encoder.push_instr(instr)?;
-        self.reachable = false;
-        Ok(())
+        self.translate_return()
     }
 
     fn visit_call(&mut self, _function_index: u32) -> Self::Output {
