@@ -1643,7 +1643,6 @@ impl<'parser> FuncTranslator<'parser> {
             }
         };
         self.alloc.instr_encoder.push_instr(instr)?;
-        self.reachable = false;
         Ok(())
     }
 }
