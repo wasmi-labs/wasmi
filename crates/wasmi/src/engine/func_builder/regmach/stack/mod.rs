@@ -177,6 +177,26 @@ impl ValueStack {
         result[..].reverse()
     }
 
+    /// Peeks the `n` top-most [`Provider`] from the [`ValueStack`] and store them in `result`.
+    ///
+    /// # Note
+    ///
+    /// - The top-most [`Provider`] will be the n-th item in `result`.
+    /// - The `result` [`Vec`] will be cleared before refilled.
+    pub fn peek_n(&mut self, n: usize, result: &mut Vec<TypedProvider>) {
+        result.clear();
+        let peeked = self.providers.peek_n(n);
+        for provider in peeked {
+            let provider = match *provider {
+                TaggedProvider::Local(register)
+                | TaggedProvider::Dynamic(register)
+                | TaggedProvider::Storage(register) => TypedProvider::Register(register),
+                TaggedProvider::Const(value) => TypedProvider::Const(value),
+            };
+            result.push(provider);
+        }
+    }
+
     /// Pushes the given `providers` into the [`ValueStack`].
     ///
     /// # Errors

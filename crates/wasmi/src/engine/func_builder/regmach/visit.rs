@@ -186,13 +186,14 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 match self.alloc.control_stack.acquire_target(relative_depth) {
                     AcquiredTarget::Return(_frame) => self.translate_return_if(condition),
                     AcquiredTarget::Branch(frame) => {
+                        frame.bump_branches();
                         let branch_dst = frame.branch_destination();
-                        let branch_offset =
-                            self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
-                        let branch_params = frame.branch_params(self.engine());
+                        let branch_params = frame.branch_params(self.res.engine());
                         if branch_params.len() == 0 {
                             // Case: no values need to be copied so we can directly
                             //       encode the `br_if` as efficient `branch_nez`.
+                            let branch_offset =
+                                self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
                             self.alloc
                                 .instr_encoder
                                 .push_instr(Instruction::branch_nez(condition, branch_offset))?;
@@ -200,19 +201,21 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                         }
                         self.alloc
                             .stack
-                            .pop_n(branch_params.len(), &mut self.alloc.buffer);
+                            .peek_n(branch_params.len(), &mut self.alloc.buffer);
                         if self
                             .alloc
                             .buffer
                             .iter()
                             .copied()
-                            .eq(branch_params.clone().map(TypedProvider::Register))
+                            .eq(branch_params.map(TypedProvider::Register))
                         {
                             // Case: the providers on the stack are already as
                             //       expected by the branch params and therefore
                             //       no copies are required.
                             //
                             // This means we can encode the `br_if` as efficient `branch_nez`.
+                            let branch_offset =
+                                self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
                             self.alloc
                                 .instr_encoder
                                 .push_instr(Instruction::branch_nez(condition, branch_offset))?;
@@ -229,10 +232,20 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                         //       control frame.
                         let skip_label = self.alloc.instr_encoder.new_label();
                         let skip_offset = self.alloc.instr_encoder.try_resolve_label(skip_label)?;
+                        debug_assert!(!skip_offset.is_init());
                         self.alloc
                             .instr_encoder
                             .push_instr(Instruction::branch_eqz(condition, skip_offset))?;
-                        self.translate_copy_branch_params(branch_params)?;
+                        for (result, value) in branch_params.zip(self.alloc.buffer.iter().copied())
+                        {
+                            self.alloc.instr_encoder.encode_copy(
+                                self.res.engine(),
+                                result,
+                                value,
+                            )?;
+                        }
+                        let branch_offset =
+                            self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
                         self.alloc
                             .instr_encoder
                             .push_instr(Instruction::branch(branch_offset))?;
