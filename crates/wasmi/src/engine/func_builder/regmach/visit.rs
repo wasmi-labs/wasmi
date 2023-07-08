@@ -184,8 +184,59 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             TypedProvider::Register(condition) => {
                 match self.alloc.control_stack.acquire_target(relative_depth) {
                     AcquiredTarget::Return(_frame) => self.translate_return_if(condition),
-                    AcquiredTarget::Branch(_frame) => {
-                        todo!()
+                    AcquiredTarget::Branch(frame) => {
+                        let branch_dst = frame.branch_destination();
+                        let branch_offset =
+                            self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
+                        let branch_params = frame.branch_params(self.engine());
+                        if branch_params.len() == 0 {
+                            // Case: no values need to be copied so we can directly
+                            //       encode the `br_if` as efficient `branch_nez`.
+                            self.alloc
+                                .instr_encoder
+                                .push_instr(Instruction::branch_nez(condition, branch_offset))?;
+                            return Ok(());
+                        }
+                        self.alloc
+                            .stack
+                            .pop_n(branch_params.len(), &mut self.alloc.buffer);
+                        if self
+                            .alloc
+                            .buffer
+                            .iter()
+                            .copied()
+                            .eq(branch_params.clone().map(TypedProvider::Register))
+                        {
+                            // Case: the providers on the stack are already as
+                            //       expected by the branch params and therefore
+                            //       no copies are required.
+                            //
+                            // This means we can encode the `br_if` as efficient `branch_nez`.
+                            self.alloc
+                                .instr_encoder
+                                .push_instr(Instruction::branch_nez(condition, branch_offset))?;
+                            return Ok(());
+                        }
+                        // Case: We need to copy the branch inputs to where the
+                        //       control frame expects them before actually branching
+                        //       to it.
+                        //       We do this by performing a negated `br_eqz` and skip
+                        //       the copy process with it in cases where no branch is
+                        //       needed.
+                        //       Otherwise we copy the values to their expected locations
+                        //       and finally perform the actual branch to the target
+                        //       control frame.
+                        let skip_label = self.alloc.instr_encoder.new_label();
+                        let skip_offset = self.alloc.instr_encoder.try_resolve_label(skip_label)?;
+                        self.alloc
+                            .instr_encoder
+                            .push_instr(Instruction::branch_eqz(condition, skip_offset))?;
+                        self.translate_copy_branch_params(branch_params)?;
+                        self.alloc
+                            .instr_encoder
+                            .push_instr(Instruction::branch(branch_offset))?;
+                        self.alloc.instr_encoder.pin_label(skip_label);
+                        Ok(())
                     }
                 }
             }
