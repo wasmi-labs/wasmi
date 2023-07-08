@@ -2,12 +2,12 @@ use super::ControlFrame;
 use alloc::vec::Vec;
 
 /// An acquired branch target.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub enum AcquiredTarget<'a> {
     /// The branch targets the function enclosing `block` and therefore is a `return`.
-    Return(&'a ControlFrame),
+    Return(&'a mut ControlFrame),
     /// The branch targets a regular [`ControlFrame`].
-    Branch(&'a ControlFrame),
+    Branch(&'a mut ControlFrame),
 }
 
 /// The stack of control flow frames.
@@ -72,10 +72,10 @@ impl ControlStack {
     /// # Panics
     ///
     /// If `depth` exceeds the length of the stack of control flow frames.
-    pub fn nth_back(&self, depth: u32) -> &ControlFrame {
+    pub fn nth_back_mut(&mut self, depth: u32) -> &mut ControlFrame {
         let len = self.len();
         self.frames
-            .iter()
+            .iter_mut()
             .nth_back(depth as usize)
             .unwrap_or_else(|| {
                 panic!(
@@ -86,9 +86,10 @@ impl ControlStack {
     }
 
     /// Acquires the target [`ControlFrame`] at the given relative `depth`.
-    pub fn acquire_target(&self, depth: u32) -> AcquiredTarget {
-        let frame = self.nth_back(depth);
-        if self.is_root(depth) {
+    pub fn acquire_target(&mut self, depth: u32) -> AcquiredTarget {
+        let is_root = self.is_root(depth);
+        let frame = self.nth_back_mut(depth);
+        if is_root {
             AcquiredTarget::Return(frame)
         } else {
             AcquiredTarget::Branch(frame)
