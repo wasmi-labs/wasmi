@@ -54,12 +54,12 @@ impl ProviderStack {
 
     /// Pushes a dynamically allocated [`Register`] to the [`ProviderStack`].
     pub fn push_dynamic(&mut self, reg: Register) {
-        self.push(TaggedProvider::Local(reg));
+        self.push(TaggedProvider::Dynamic(reg));
     }
 
     /// Pushes a storage allocated [`Register`] to the [`ProviderStack`].
     pub fn push_storage(&mut self, reg: Register) {
-        self.push(TaggedProvider::Local(reg));
+        self.push(TaggedProvider::Storage(reg));
     }
 
     /// Pushes a constant value to the [`ProviderStack`].
