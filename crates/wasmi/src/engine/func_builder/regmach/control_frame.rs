@@ -549,7 +549,7 @@ impl ControlFrame {
     }
 
     /// Bumps the number of branches to this [`ControlFrame`] by 1.
-    fn bump_branches(&mut self) {
+    pub fn bump_branches(&mut self) {
         match self {
             ControlFrame::Block(frame) => frame.bump_branches(),
             ControlFrame::Loop(frame) => frame.bump_branches(),
