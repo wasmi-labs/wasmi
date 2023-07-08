@@ -49,7 +49,7 @@ use crate::{
 };
 use alloc::vec::Vec;
 use wasmi_core::{TrapCode, UntypedValue, ValueType, F32};
-use wasmparser::{MemArg, VisitOperator};
+use wasmparser::MemArg;
 
 /// Reusable allocations of a [`FuncTranslator`].
 #[derive(Debug, Default)]
@@ -287,7 +287,7 @@ impl<'parser> FuncTranslator<'parser> {
     /// Convenience function to copy the parameters when branching to a control frame.
     fn translate_copy_branch_params(
         &mut self,
-        mut branch_params: RegisterSliceIter,
+        branch_params: RegisterSliceIter,
     ) -> Result<(), TranslationError> {
         if branch_params.len() == 0 {
             // If the block does not have branch parameters there is no need to copy anything.
@@ -297,12 +297,11 @@ impl<'parser> FuncTranslator<'parser> {
             .stack
             .pop_n(branch_params.len(), &mut self.alloc.buffer);
         let engine = self.res.engine();
-        for provider in self.alloc.buffer.iter().copied() {
-            let result = self.alloc.stack.push_dynamic()?;
-            debug_assert_eq!(branch_params.next(), Some(result));
+        for (result, value) in branch_params.zip(self.alloc.buffer.iter().copied()) {
+            self.alloc.stack.push_register(result)?;
             self.alloc
                 .instr_encoder
-                .encode_copy(engine, result, provider)?;
+                .encode_copy(engine, result, value)?;
         }
         Ok(())
     }
