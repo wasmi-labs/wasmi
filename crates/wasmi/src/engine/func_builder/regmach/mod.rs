@@ -310,8 +310,9 @@ impl<'parser> FuncTranslator<'parser> {
     /// Translates the `end` of a Wasm `block` control frame.
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), TranslationError> {
         if self.alloc.control_stack.is_empty() {
+            bail_unreachable!(self);
             // We dropped the Wasm `block` that encloses the function itself so we can return.
-            return self.visit_return();
+            return self.translate_return();
         }
         if self.reachable && frame.is_branched_to() {
             // If the end of the `block` is reachable AND
@@ -326,6 +327,9 @@ impl<'parser> FuncTranslator<'parser> {
             // unreachable OR there is only one source of results
             // and thus there is no need to copy the results around.
             self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
+            for result in frame.branch_params(self.res.engine()) {
+                self.alloc.stack.push_register(result)?;
+            }
         }
         // Since the `block` is now sealed we can pin its end label.
         self.alloc.instr_encoder.pin_label(frame.end_label());
