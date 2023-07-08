@@ -321,3 +321,41 @@ fn branch_if_to_func_block_0() {
         ])
         .run()
 }
+
+#[test]
+fn consteval_branch_if_to_func_block_false() {
+    let wasm = wat2wasm(
+        r"
+        (module
+            (func (param i32) (result i32)
+                (i32.const 10)
+                (i32.const 0)
+                (br_if 0)
+                (drop)
+                (i32.const 20)
+            )
+        )",
+    );
+    TranslationTest::new(wasm)
+        .expect_func([Instruction::return_imm32(20_i32)])
+        .run()
+}
+
+#[test]
+fn consteval_branch_if_to_func_block_true() {
+    let wasm = wat2wasm(
+        r"
+        (module
+            (func (param i32) (result i32)
+                (i32.const 10)
+                (i32.const 1)
+                (br_if 0)
+                (drop)
+                (i32.const 20)
+            )
+        )",
+    );
+    TranslationTest::new(wasm)
+        .expect_func([Instruction::return_imm32(10_i32)])
+        .run()
+}
