@@ -51,6 +51,14 @@ impl ValueStack {
         self.reg_alloc.reset();
     }
 
+    /// Pops [`Provider`] from the [`ValueStack`] until it has the given stack `height`.
+    pub fn trunc(&mut self, height: usize) {
+        assert!(height <= self.height());
+        while self.height() != height {
+            self.pop();
+        }
+    }
+
     /// Returns the number of [`Provider`] on the [`ValueStack`].
     ///
     /// # Note
