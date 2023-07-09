@@ -1594,14 +1594,14 @@ impl<'parser> FuncTranslator<'parser> {
                 // Case: Function returns nothing therefore all return statements must return nothing.
                 Instruction::return_nez(condition)
             }
-            [ValueType::I32] => match self.alloc.stack.pop() {
+            [ValueType::I32] => match self.alloc.stack.peek() {
                 // Case: Function returns a single `i32` value which allows for special operator.
                 TypedProvider::Register(value) => Instruction::return_nez_reg(condition, value),
                 TypedProvider::Const(value) => {
                     Instruction::return_nez_imm32(condition, i32::from(value))
                 }
             },
-            [ValueType::I64] => match self.alloc.stack.pop() {
+            [ValueType::I64] => match self.alloc.stack.peek() {
                 // Case: Function returns a single `i64` value which allows for special operator.
                 TypedProvider::Register(value) => Instruction::return_nez_reg(condition, value),
                 TypedProvider::Const(value) => {
@@ -1612,7 +1612,7 @@ impl<'parser> FuncTranslator<'parser> {
                     }
                 }
             },
-            [ValueType::F32] => match self.alloc.stack.pop() {
+            [ValueType::F32] => match self.alloc.stack.peek() {
                 // Case: Function returns a single `f32` value which allows for special operator.
                 TypedProvider::Register(value) => Instruction::return_nez_reg(condition, value),
                 TypedProvider::Const(value) => {
@@ -1620,7 +1620,7 @@ impl<'parser> FuncTranslator<'parser> {
                 }
             },
             [ValueType::F64 | ValueType::FuncRef | ValueType::ExternRef] => {
-                match self.alloc.stack.pop() {
+                match self.alloc.stack.peek() {
                     // Case: Function returns a single `f64` value which allows for special operator.
                     TypedProvider::Register(value) => Instruction::return_nez_reg(condition, value),
                     TypedProvider::Const(value) => {
@@ -1631,7 +1631,7 @@ impl<'parser> FuncTranslator<'parser> {
             results => {
                 self.alloc
                     .stack
-                    .pop_n(results.len(), &mut self.alloc.buffer);
+                    .peek_n(results.len(), &mut self.alloc.buffer);
                 let providers = self
                     .alloc
                     .buffer

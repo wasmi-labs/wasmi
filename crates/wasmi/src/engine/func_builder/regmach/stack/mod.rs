@@ -148,6 +148,16 @@ impl ValueStack {
         self.reg_alloc.pop_provider(self.providers.pop())
     }
 
+    /// Peeks the top-most [`Provider`] from the [`ValueStack`].
+    pub fn peek(&self) -> TypedProvider {
+        match self.providers.peek() {
+            TaggedProvider::Local(register)
+            | TaggedProvider::Dynamic(register)
+            | TaggedProvider::Storage(register) => TypedProvider::Register(register),
+            TaggedProvider::Const(value) => TypedProvider::Const(value),
+        }
+    }
+
     /// Pops the top-most [`Provider`] from the [`ValueStack`].
     pub fn pop2(&mut self) -> (TypedProvider, TypedProvider) {
         let rhs = self.pop();

@@ -75,6 +75,18 @@ impl ProviderStack {
     /// # Panics
     ///
     /// If the [`ProviderStack`] is empty.
+    pub fn peek(&self) -> TaggedProvider {
+        self.providers
+            .last()
+            .copied()
+            .unwrap_or_else(|| panic!("tried to peek provider from empty provider stack"))
+    }
+
+    /// Pops the top-most [`TaggedProvider`] from the [`ProviderStack`].
+    ///
+    /// # Panics
+    ///
+    /// If the [`ProviderStack`] is empty.
     pub fn pop(&mut self) -> TaggedProvider {
         self.providers
             .pop()
