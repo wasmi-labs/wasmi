@@ -1,6 +1,5 @@
-use crate::engine::bytecode::BranchOffset;
-
 use super::*;
+use crate::engine::bytecode::BranchOffset;
 
 #[test]
 fn empty_block() {
