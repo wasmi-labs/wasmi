@@ -298,7 +298,6 @@ impl<'parser> FuncTranslator<'parser> {
             .pop_n(branch_params.len(), &mut self.alloc.buffer);
         let engine = self.res.engine();
         for (result, value) in branch_params.zip(self.alloc.buffer.iter().copied()) {
-            self.alloc.stack.push_register(result)?;
             self.alloc
                 .instr_encoder
                 .encode_copy(engine, result, value)?;
