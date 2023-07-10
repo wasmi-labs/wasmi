@@ -160,6 +160,37 @@ fn branch_if_results_1() {
         .run()
 }
 
+/// Variant of the [`branch_if_results_1`] test where it is possible to avoid copies.
+///
+/// # Note
+///
+/// Copy elision is possible since the registers on top of the stack
+/// are the same as the expected block results when translating the Wasm `br_if`.
+/// We achieve this by using expressions as inputs such as `(i32.clz (local.get 0))`.
+#[test]
+fn branch_if_results_1_avoid_copy() {
+    let wasm = wat2wasm(
+        r"
+        (module
+            (func (param i32 i32) (result i32)
+                (i32.clz (local.get 0))
+                (i32.ctz (local.get 1))
+                (block (param i32 i32) (result i32)
+                    (br_if 0)
+                )
+            )
+        )",
+    );
+    TranslationTest::new(wasm)
+        .expect_func([
+            Instruction::i32_clz(Register::from_u16(2), Register::from_u16(0)),
+            Instruction::i32_ctz(Register::from_u16(3), Register::from_u16(1)),
+            Instruction::branch_nez(Register::from_u16(3), BranchOffset::from(1)),
+            Instruction::return_reg(Register::from_u16(2)),
+        ])
+        .run()
+}
+
 #[test]
 fn branch_if_results_2() {
     let wasm = wat2wasm(
@@ -184,6 +215,42 @@ fn branch_if_results_2() {
             Instruction::branch(BranchOffset::from(3)),
             Instruction::copy(Register::from_u16(3), Register::from_u16(0)),
             Instruction::copy(Register::from_u16(4), Register::from_u16(1)),
+            Instruction::i32_add(
+                Register::from_u16(3),
+                Register::from_u16(3),
+                Register::from_u16(4),
+            ),
+            Instruction::return_reg(Register::from_u16(3)),
+        ])
+        .run()
+}
+
+/// Variant of the [`branch_if_results_2`] test where it is possible to avoid copies.
+///
+/// # Note
+///
+/// Read the docs on [`branch_if_results_1_avoid_copy`] test for more information.
+#[test]
+fn branch_if_results_2_avoid_copy() {
+    let wasm = wat2wasm(
+        r"
+        (module
+            (func (param i32 i32 i32) (result i32)
+                (i32.clz (local.get 0))
+                (i32.ctz (local.get 1))
+                (local.get 2)
+                (block (param i32 i32 i32) (result i32 i32)
+                    (br_if 0)
+                )
+                (i32.add)
+            )
+        )",
+    );
+    TranslationTest::new(wasm)
+        .expect_func([
+            Instruction::i32_clz(Register::from_u16(3), Register::from_u16(0)),
+            Instruction::i32_ctz(Register::from_u16(4), Register::from_u16(1)),
+            Instruction::branch_nez(Register::from_u16(2), BranchOffset::from(1)),
             Instruction::i32_add(
                 Register::from_u16(3),
                 Register::from_u16(3),
