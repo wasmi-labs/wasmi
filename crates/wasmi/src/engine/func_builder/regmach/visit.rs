@@ -96,35 +96,34 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_block(&mut self, block_type: wasmparser::BlockType) -> Self::Output {
         let block_type = BlockType::new(block_type, self.res);
-        if self.is_reachable() {
-            // Inherit [`Instruction::ConsumeFuel`] from parent control frame.
-            //
-            // # Note
-            //
-            // This is an optimization to reduce the number of [`Instruction::ConsumeFuel`]
-            // and is applicable since Wasm `block` are entered unconditionally.
-            let consume_fuel = self.alloc.control_stack.last().consume_fuel_instr();
-            let stack_height =
-                BlockHeight::new(self.engine(), self.alloc.stack.height(), block_type)?;
-            let end_label = self.alloc.instr_encoder.new_label();
-            let len_block_params = block_type.len_params(self.engine()) as usize;
-            let len_branch_params = block_type.len_results(self.engine()) as usize;
-            let branch_params = self.alloc_branch_params(len_block_params, len_branch_params)?;
-            self.alloc.control_stack.push_frame(BlockControlFrame::new(
-                block_type,
-                end_label,
-                branch_params,
-                stack_height,
-                consume_fuel,
-            ));
-        } else {
+        if !self.is_reachable() {
             self.alloc
                 .control_stack
                 .push_frame(UnreachableControlFrame::new(
                     ControlFrameKind::Block,
                     block_type,
                 ));
+            return Ok(());
         }
+        // Inherit [`Instruction::ConsumeFuel`] from parent control frame.
+        //
+        // # Note
+        //
+        // This is an optimization to reduce the number of [`Instruction::ConsumeFuel`]
+        // and is applicable since Wasm `block` are entered unconditionally.
+        let consume_fuel = self.alloc.control_stack.last().consume_fuel_instr();
+        let stack_height = BlockHeight::new(self.engine(), self.alloc.stack.height(), block_type)?;
+        let end_label = self.alloc.instr_encoder.new_label();
+        let len_block_params = block_type.len_params(self.engine()) as usize;
+        let len_branch_params = block_type.len_results(self.engine()) as usize;
+        let branch_params = self.alloc_branch_params(len_block_params, len_branch_params)?;
+        self.alloc.control_stack.push_frame(BlockControlFrame::new(
+            block_type,
+            end_label,
+            branch_params,
+            stack_height,
+            consume_fuel,
+        ));
         Ok(())
     }
 
