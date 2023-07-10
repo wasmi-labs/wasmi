@@ -234,6 +234,26 @@ impl ValueStack {
     ///
     /// # Note
     ///
+    /// - This procedure pushes dynamic [`Register`] onto the [`ValueStack`].
+    /// - This is primarily used to allocate branch parameters for control
+    ///    flow frames such as Wasm `block`, `loop` and `if` as well as for
+    ///    instructions that may return multiple values such as `call`.
+    ///
+    /// # Errors
+    ///
+    /// If this procedure would allocate more registers than are available.
+    pub fn push_dynamic_n(&mut self, n: usize) -> Result<RegisterSlice, TranslationError> {
+        let registers = self.reg_alloc.push_dynamic_n(n)?;
+        for register in registers.iter(n) {
+            self.providers.push_dynamic(register);
+        }
+        Ok(registers)
+    }
+
+    /// Returns a [`RegisterSlice`] of `n` registers as if they were dynamically allocated.
+    ///
+    /// # Note
+    ///
     /// - This procedure does not push anything onto the [`ValueStack`].
     /// - This is primarily used to allocate branch parameters for control
     ///    flow frames such as Wasm `block`, `loop` and `if`.

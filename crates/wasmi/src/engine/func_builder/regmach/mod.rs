@@ -265,6 +265,11 @@ impl<'parser> FuncTranslator<'parser> {
         self.engine().config().fuel_costs()
     }
 
+    /// Creates an [`Instruction::ConsumeFuel`] with base costs.
+    fn make_consume_fuel_base(&self) -> Instruction {
+        Instruction::consume_fuel(self.fuel_costs().base).expect("base fuel costs must be valid")
+    }
+
     /// Returns the most recent [`Instruction::ConsumeFuel`] in the translation process.
     ///
     /// Returns `None` if gas metering is disabled.
@@ -345,8 +350,23 @@ impl<'parser> FuncTranslator<'parser> {
     }
 
     /// Translates the `end` of a Wasm `loop` control frame.
-    fn translate_end_loop(&mut self, _frame: LoopControlFrame) -> Result<(), TranslationError> {
-        todo!()
+    fn translate_end_loop(&mut self, frame: LoopControlFrame) -> Result<(), TranslationError> {
+        debug_assert!(
+            !self.alloc.control_stack.is_empty(),
+            "control stack must not be empty since its first element is always a `block`"
+        );
+        if self.reachable {
+            // If the end of the `loop` is reachable we need
+            // to copy the results to the loop result registers.
+            //
+            // There is no need to truncate the provider stack
+            // or push `loop` result registers back onto it because
+            // `loop` frames always only have one exit point right
+            // at their end. If Wasm validation succeeds we can simply
+            // take whatever is on top of the provider stack at that point.
+            self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
+        }
+        Ok(())
     }
 
     /// Translates the `end` of a Wasm `if` control frame.

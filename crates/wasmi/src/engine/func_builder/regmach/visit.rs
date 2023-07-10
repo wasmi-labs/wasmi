@@ -1,6 +1,12 @@
 use super::{
     bail_unreachable,
-    control_frame::{BlockControlFrame, BlockHeight, ControlFrame, UnreachableControlFrame},
+    control_frame::{
+        BlockControlFrame,
+        BlockHeight,
+        ControlFrame,
+        LoopControlFrame,
+        UnreachableControlFrame,
+    },
     stack::TypedProvider,
     ControlFrameKind,
     FuncTranslator,
@@ -97,6 +103,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_block(&mut self, block_type: wasmparser::BlockType) -> Self::Output {
         let block_type = BlockType::new(block_type, self.res);
         if !self.is_reachable() {
+            // We keep track of unreachable control flow frames so that we
+            // can associated `end` operators to their respective control flow
+            // frames and precisely know when the code is reachable again.
             self.alloc
                 .control_stack
                 .push_frame(UnreachableControlFrame::new(
@@ -127,8 +136,55 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         Ok(())
     }
 
-    fn visit_loop(&mut self, _blockty: wasmparser::BlockType) -> Self::Output {
-        todo!()
+    fn visit_loop(&mut self, block_type: wasmparser::BlockType) -> Self::Output {
+        let block_type = BlockType::new(block_type, self.res);
+        if !self.is_reachable() {
+            // See `visit_block` for rational of tracking unreachable control flow.
+            self.alloc
+                .control_stack
+                .push_frame(UnreachableControlFrame::new(
+                    ControlFrameKind::Loop,
+                    block_type,
+                ));
+            return Ok(());
+        }
+        // Copy `loop` parameters over to where it expects its branch parameters.
+        let len_block_params = block_type.len_params(self.engine()) as usize;
+        self.alloc
+            .stack
+            .pop_n(len_block_params, &mut self.alloc.buffer);
+        let branch_params = self.alloc.stack.push_dynamic_n(len_block_params)?;
+        let engine = self.res.engine();
+        for (param, value) in branch_params
+            .iter(len_block_params)
+            .zip(self.alloc.buffer.iter().copied())
+        {
+            self.alloc.instr_encoder.encode_copy(engine, param, value)?;
+        }
+        // Create loop header label and immediately pin it.
+        let stack_height = BlockHeight::new(self.engine(), self.alloc.stack.height(), block_type)?;
+        let header = self.alloc.instr_encoder.new_label();
+        self.alloc.instr_encoder.pin_label(header);
+        // Optionally create the loop's [`Instruction::ConsumeFuel`].
+        //
+        // This is handling the fuel required for a single iteration of the loop.
+        let consume_fuel = self
+            .is_fuel_metering_enabled()
+            .then(|| {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(self.make_consume_fuel_base())
+            })
+            .transpose()?;
+        // Finally create the loop control frame.
+        self.alloc.control_stack.push_frame(LoopControlFrame::new(
+            block_type,
+            header,
+            stack_height,
+            branch_params,
+            consume_fuel,
+        ));
+        Ok(())
     }
 
     fn visit_if(&mut self, _blockty: wasmparser::BlockType) -> Self::Output {
