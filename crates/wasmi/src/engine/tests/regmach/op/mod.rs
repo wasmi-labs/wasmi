@@ -1,5 +1,6 @@
 mod binary;
 mod block;
+mod br;
 mod br_if;
 mod cmp;
 mod global_get;
