@@ -7,6 +7,7 @@ use crate::{
     Value,
 };
 use core::fmt::Display;
+use wasmi_core::UntypedValue;
 
 #[test]
 fn consteval_return() {
@@ -55,6 +56,134 @@ fn consteval_return_1() {
     }
     test_for(true);
     test_for(false);
+}
+
+#[test]
+fn consteval_return_1_imm() {
+    fn test_for<T>(condition: bool, if_true: T, if_false: T)
+    where
+        T: WasmType,
+        DisplayWasm<T>: Display,
+    {
+        let expected: UntypedValue = match condition {
+            true => if_true.into(),
+            false => if_false.into(),
+        };
+        let condition = DisplayWasm::from(i32::from(condition));
+        let display_ty = DisplayValueType::from(<T as WasmType>::VALUE_TYPE);
+        let display_if_true = DisplayWasm::from(if_true);
+        let display_if_false = DisplayWasm::from(if_false);
+        let wasm = wat2wasm(&format!(
+            r"
+            (module
+                (func (result {display_ty})
+                    ({display_ty}.const {display_if_true})
+                    (i32.const {condition}) ;; br_if condition
+                    (br_if 0)
+                    (drop)
+                    ({display_ty}.const {display_if_false})
+                )
+            )",
+        ));
+        let cref = ConstRef::from_u32(0);
+        TranslationTest::new(wasm)
+            .expect_func([Instruction::return_imm(cref)])
+            .expect_const(cref, expected)
+            .run()
+    }
+    /// Run the test for both sign polarities of the `br_if` condition.
+    fn test_for_both<T>(if_true: T, if_false: T)
+    where
+        T: WasmType,
+        DisplayWasm<T>: Display,
+    {
+        test_for::<T>(true, if_true, if_false);
+        test_for::<T>(false, if_true, if_false);
+    }
+    test_for_both::<i64>(i64::MIN, i64::MAX);
+    test_for_both::<i64>(i64::from(i32::MIN) - 1, i64::from(i32::MAX) + 1);
+    test_for_both::<f64>(0.0, -1.0);
+    test_for_both::<f64>(5.5, -42.25);
+}
+
+#[test]
+fn consteval_return_1_imm32() {
+    fn test_for<T>(condition: bool, if_true: T, if_false: T)
+    where
+        T: WasmType + Into<Const32>,
+        DisplayWasm<T>: Display,
+    {
+        let expected: Const32 = match condition {
+            true => if_true.into(),
+            false => if_false.into(),
+        };
+        let condition = DisplayWasm::from(i32::from(condition));
+        let display_ty = DisplayValueType::from(<T as WasmType>::VALUE_TYPE);
+        let display_if_true = DisplayWasm::from(if_true);
+        let display_if_false = DisplayWasm::from(if_false);
+        let wasm = wat2wasm(&format!(
+            r"
+            (module
+                (func (result {display_ty})
+                    ({display_ty}.const {display_if_true})
+                    (i32.const {condition}) ;; br_if condition
+                    (br_if 0)
+                    (drop)
+                    ({display_ty}.const {display_if_false})
+                )
+            )",
+        ));
+        TranslationTest::new(wasm)
+            .expect_func([Instruction::return_imm32(expected)])
+            .run()
+    }
+    /// Run the test for both sign polarities of the `br_if` condition.
+    fn test_for_both<T>(if_true: T, if_false: T)
+    where
+        T: WasmType + Into<Const32>,
+        DisplayWasm<T>: Display,
+    {
+        test_for::<T>(true, if_true, if_false);
+        test_for::<T>(false, if_true, if_false);
+    }
+    test_for_both::<i32>(5, 42);
+    test_for_both::<f32>(5.5, -42.25);
+}
+
+#[test]
+fn consteval_return_1_i64imm32() {
+    fn test_for(condition: bool, if_true: i32, if_false: i32) {
+        let expected: i32 = match condition {
+            true => if_true,
+            false => if_false,
+        };
+        let condition = DisplayWasm::from(i32::from(condition));
+        let display_if_true = DisplayWasm::from(if_true);
+        let display_if_false = DisplayWasm::from(if_false);
+        let wasm = wat2wasm(&format!(
+            r"
+            (module
+                (func (result i64)
+                    (i64.const {display_if_true})
+                    (i32.const {condition}) ;; br_if condition
+                    (br_if 0)
+                    (drop)
+                    (i64.const {display_if_false})
+                )
+            )",
+        ));
+        TranslationTest::new(wasm)
+            .expect_func([Instruction::return_i64imm32(expected)])
+            .run()
+    }
+    /// Run the test for both sign polarities of the `br_if` condition.
+    fn test_for_both(if_true: i32, if_false: i32) {
+        test_for(true, if_true, if_false);
+        test_for(false, if_true, if_false);
+    }
+    test_for_both(0, -1);
+    test_for_both(5, 42);
+    test_for_both(i32::MIN, i32::MAX);
 }
 
 #[test]
