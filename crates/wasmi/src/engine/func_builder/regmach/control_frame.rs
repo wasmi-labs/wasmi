@@ -257,8 +257,6 @@ pub struct IfControlFrame {
     stack_height: BlockHeight,
     /// Label representing the end of the [`IfControlFrame`].
     end_label: LabelRef,
-    /// Label representing the optional `else` branch of the [`IfControlFrame`].
-    else_label: LabelRef,
     /// The branch parameters of the [`IfControlFrame`].
     ///
     /// # Note
@@ -268,6 +266,68 @@ pub struct IfControlFrame {
     /// Note that branching to a [`IfControlFrame`] exits it.
     /// The behavior is the same for the `then` and `else` blocks.
     branch_params: RegisterSlice,
+    /// Instruction to consume fuel upon entering the basic block if fuel metering is enabled.
+    ///
+    /// This is used for both `then` and `else` branches. When entering the `else`
+    /// block this field is updated to represent the [`Instruction::ConsumeFuel`]
+    /// of the `else` branch instead of the `then` branch. This is possible because
+    /// only one of them is needed at the same time during translation.
+    ///
+    /// # Note
+    ///
+    /// - This must be `Some` if fuel metering is enabled and `None` otherwise.
+    /// - An `if` control frame only needs its own [`ConsumeFuel`] instruction if
+    ///   both `then` and `else` branches are reachable. Otherwise we inherit the
+    ///   [`ConsumeFuel`] instruction from the parent control frame as we do for
+    ///   `block` control frames.
+    ///
+    /// [`ConsumeFuel`]: enum.Instruction.html#variant.ConsumeFuel
+    consume_fuel: Option<Instr>,
+    /// The reachability of the `then` and `else` blocks of the [`IfControlFrame`].
+    pub reachability: IfReachability,
+}
+
+/// The reachability of the `if` control flow frame.
+#[derive(Debug, Copy, Clone)]
+pub enum IfReachability {
+    /// Both, `then` and `else` blocks of the `if` are reachable.
+    ///
+    /// # Note
+    ///
+    /// This variant does not mean that necessarily both `then` and `else`
+    /// blocks do exist and are non-empty. The `then` block might still be
+    /// empty and the `then` block might still be missing.
+    Both(IfReachabilityBoth),
+    /// Only the `then` block of the `if` is reachable.
+    ///
+    /// # Note
+    ///
+    /// This case happens only in case the `if` has a `true` constant condition.
+    OnlyThen,
+    /// Only the `else` block of the `if` is reachable.
+    ///
+    /// # Note
+    ///
+    /// This case happens only in case the `if` has a `false` constant condition.
+    OnlyElse,
+}
+
+impl IfReachability {
+    /// Creates an [`IfReachability`] when both `then` and `else` parts are reachable.
+    pub fn both(else_label: LabelRef, else_height: BlockHeight) -> Self {
+        Self::Both(IfReachabilityBoth {
+            else_label,
+            end_of_then_is_reachable: None,
+            else_height,
+        })
+    }
+}
+
+/// The reachability of the `if` control flow frame when both arms can be reached.
+#[derive(Debug, Copy, Clone)]
+pub struct IfReachabilityBoth {
+    /// Label representing the optional `else` branch of the [`IfControlFrame`].
+    else_label: LabelRef,
     /// End of `then` branch is reachable.
     ///
     /// # Note
@@ -280,19 +340,56 @@ pub struct IfControlFrame {
     /// - An `end_of_else_is_reachable` field is not needed since it will
     ///   be easily computed once the translation reaches the end of the `if`.
     end_of_then_is_reachable: Option<bool>,
-    /// Instruction to consume fuel upon entering the basic block if fuel metering is enabled.
-    ///
-    /// This is used for both `then` and `else` blocks. When entering the `else`
-    /// block this field is updated to represent the [`ConsumeFuel`] instruction
-    /// of the `else` block instead of the `then` block. This is possible because
-    /// only one of them is needed at the same time during translation.
+    /// The height to truncate the [`ValueStack`] when reaching `else`.
     ///
     /// # Note
     ///
-    /// This must be `Some` if fuel metering is enabled and `None` otherwise.
+    /// When encountering an `if` control frame we duplicate the `if` block
+    /// parameters on the [`ValueStack`] so that we can use the same parameters
+    /// for both `then` and `else` parts of the `if` control frame. If we did
+    /// not do this we would be required to store the duplicated `if` parameters
+    /// somewhere else where it would be less efficient to do so.
+    else_height: BlockHeight,
+}
+
+impl IfReachabilityBoth {
+    /// Returns the height to truncate the [`ValueStack`] when reaching `else`.
     ///
-    /// [`ConsumeFuel`]: enum.Instruction.html#variant.ConsumeFuel
-    consume_fuel: Option<Instr>,
+    /// # Note
+    ///
+    /// This is required in order to restore the stack when duplicating
+    /// `if` block parameters to cover the `else` case efficiently.
+    pub fn else_height(&self) -> BlockHeight {
+        self.else_height
+    }
+
+    /// Returns the label to the optional `else` of the [`IfControlFrame`].
+    pub fn else_label(&self) -> LabelRef {
+        self.else_label
+    }
+
+    /// Updates the reachability of the end of the `then` branch.
+    ///
+    /// # Note
+    ///
+    /// This is expected to be called when visiting the `else` of an
+    /// `if` control frame to inform the `if` control frame if the
+    /// end of the `then` block is reachable. This information is
+    /// important to decide whether code coming after the entire `if`
+    /// control frame is reachable again.
+    ///
+    /// # Panics
+    ///
+    /// If this information has already been provided prior.
+    pub fn update_end_of_then_reachability(&mut self, reachable: bool) {
+        assert!(self.end_of_then_is_reachable.is_none());
+        self.end_of_then_is_reachable = Some(reachable);
+    }
+
+    /// Returns `true` if the `else` block has been visited.
+    pub fn visited_else(&self) -> bool {
+        self.end_of_then_is_reachable.is_some()
+    }
 }
 
 impl IfControlFrame {
@@ -300,24 +397,25 @@ impl IfControlFrame {
     pub fn new(
         block_type: BlockType,
         end_label: LabelRef,
-        else_label: LabelRef,
         stack_height: BlockHeight,
         branch_params: RegisterSlice,
         consume_fuel: Option<Instr>,
+        reachability: IfReachability,
     ) -> Self {
-        assert_ne!(
-            end_label, else_label,
-            "end and else labels must be different"
-        );
+        if let IfReachability::Both(info) = reachability {
+            assert_ne!(
+                end_label, info.else_label,
+                "end and else labels must be different"
+            );
+        }
         Self {
             block_type,
             len_branches: 0,
             stack_height,
             end_label,
-            else_label,
             branch_params,
-            end_of_then_is_reachable: None,
             consume_fuel,
+            reachability,
         }
     }
 
@@ -356,11 +454,6 @@ impl IfControlFrame {
         self.end_label
     }
 
-    /// Returns the label to the optional `else` of the [`IfControlFrame`].
-    pub fn else_label(&self) -> LabelRef {
-        self.else_label
-    }
-
     /// Returns the [`BlockHeight`] of the [`IfControlFrame`].
     pub fn block_height(&self) -> BlockHeight {
         self.stack_height
@@ -371,17 +464,7 @@ impl IfControlFrame {
         self.block_type
     }
 
-    /// Updates the reachability of the end of the `then` branch.
-    ///
-    /// # Panics
-    ///
-    /// If this information has already been provided prior.
-    pub fn update_end_of_then_reachability(&mut self, reachable: bool) {
-        assert!(self.end_of_then_is_reachable.is_none());
-        self.end_of_then_is_reachable = Some(reachable);
-    }
-
-    /// Returns a reference to the [`ConsumeFuel`] instruction of the [`BlockControlFrame`] if any.
+    /// Returns a reference to the [`ConsumeFuel`] instruction of the [`IfControlFrame`] if any.
     ///
     /// Returns `None` if fuel metering is disabled.
     ///
@@ -404,6 +487,10 @@ impl IfControlFrame {
     /// This is required since the `consume_fuel` field represents the [`ConsumeFuel`]
     /// instruction for both `then` and `else` blocks. This is possible because only one
     /// of them is needed at the same time during translation.
+    ///
+    /// # Panics
+    ///
+    /// If the `consume_fuel` field was not already `Some`.
     ///
     /// [`ConsumeFuel`]: enum.Instruction.html#variant.ConsumeFuel
     pub fn update_consume_fuel_instr(&mut self, instr: Instr) {
