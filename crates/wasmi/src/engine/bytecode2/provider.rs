@@ -70,12 +70,21 @@ impl UntypedProvider {
 }
 
 /// An allocater for [`Provider`] slices.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct ProviderSliceAlloc {
-    /// The start indices of each [`ProviderSliceRef`].
-    starts: Vec<usize>,
+    /// The end indices of each [`ProviderSliceRef`].
+    ends: Vec<usize>,
     /// All [`Provider`] of all allocated [`Provider`] slices.
     providers: Vec<UntypedProvider>,
+}
+
+impl Default for ProviderSliceAlloc {
+    fn default() -> Self {
+        Self {
+            ends: vec![0],
+            providers: Vec::new(),
+        }
+    }
 }
 
 impl ProviderSliceAlloc {
@@ -84,26 +93,32 @@ impl ProviderSliceAlloc {
     where
         I: IntoIterator<Item = UntypedProvider>,
     {
-        let start = self.providers.len();
+        let before = self.providers.len();
         self.providers.extend(providers);
-        self.starts.push(start);
-        ProviderSliceRef::from_index(start)
+        let end = self.providers.len();
+        if before == end {
+            // The allocated slice was empty.
+            return ProviderSliceRef::from_index(0);
+        }
+        let index = self.ends.len();
+        self.ends.push(end);
+        ProviderSliceRef::from_index(index)
     }
 
     /// Returns the `start..end` range of the given [`ProviderSliceRef`] if any.
-    fn get_start_end(&self, slice: ProviderSliceRef) -> Option<(usize, Option<usize>)> {
+    fn get_start_end(&self, slice: ProviderSliceRef) -> Option<(Option<usize>, usize)> {
         let index = slice.into_index();
-        let start = self.starts.get(index).copied()?;
-        let end = self.starts.get(index + 1).copied();
+        let end = self.ends.get(index).copied()?;
+        let start = index.checked_sub(1).map(|index| self.ends[index]);
         Some((start, end))
     }
 
     /// Returns the [`UntypedProvider`] slice of the given [`ProviderSliceRef`] if any.
     pub fn get(&self, slice: ProviderSliceRef) -> Option<&[UntypedProvider]> {
         let (start, end) = self.get_start_end(slice)?;
-        match end {
-            Some(end) => Some(&self.providers[start..end]),
-            None => Some(&self.providers[start..]),
+        match start {
+            Some(start) => Some(&self.providers[start..end]),
+            None => Some(&self.providers[..end]),
         }
     }
 }
