@@ -71,14 +71,14 @@ impl UntypedProvider {
 
 /// An allocater for [`Provider`] slices.
 #[derive(Debug)]
-pub struct ProviderSliceAlloc {
+pub struct ProviderSliceAlloc<T> {
     /// The end indices of each [`ProviderSliceRef`].
     ends: Vec<usize>,
     /// All [`Provider`] of all allocated [`Provider`] slices.
-    providers: Vec<UntypedProvider>,
+    providers: Vec<Provider<T>>,
 }
 
-impl Default for ProviderSliceAlloc {
+impl<T> Default for ProviderSliceAlloc<T> {
     fn default() -> Self {
         Self {
             ends: vec![0],
@@ -87,11 +87,11 @@ impl Default for ProviderSliceAlloc {
     }
 }
 
-impl ProviderSliceAlloc {
-    /// Allocates a new [`UntypedProvider`] slice and returns its [`ProviderSliceRef`].
+impl<T> ProviderSliceAlloc<T> {
+    /// Allocates a new [`Provider`] slice and returns its [`ProviderSliceRef`].
     pub fn alloc<I>(&mut self, providers: I) -> Result<ProviderSliceRef, TranslationError>
     where
-        I: IntoIterator<Item = UntypedProvider>,
+        I: IntoIterator<Item = Provider<T>>,
     {
         let before = self.providers.len();
         self.providers.extend(providers);
@@ -113,8 +113,8 @@ impl ProviderSliceAlloc {
         Some((start, end))
     }
 
-    /// Returns the [`UntypedProvider`] slice of the given [`ProviderSliceRef`] if any.
-    pub fn get(&self, slice: ProviderSliceRef) -> Option<&[UntypedProvider]> {
+    /// Returns the [`Provider`] slice of the given [`ProviderSliceRef`] if any.
+    pub fn get(&self, slice: ProviderSliceRef) -> Option<&[Provider<T>]> {
         let (start, end) = self.get_start_end(slice)?;
         match start {
             Some(start) => Some(&self.providers[start..end]),

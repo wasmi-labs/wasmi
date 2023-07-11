@@ -737,7 +737,7 @@ pub struct EngineResources {
     /// comparison very fast. This helps to speed up indirect calls.
     func_types: FuncTypeRegistry,
     /// Allocator and resolver for provider slices.
-    providers: ProviderSliceAlloc,
+    providers: ProviderSliceAlloc<UntypedValue>,
 }
 
 impl EngineResources {
