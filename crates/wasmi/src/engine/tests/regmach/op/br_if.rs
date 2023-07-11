@@ -11,6 +11,27 @@ use core::fmt::Display;
 #[test]
 fn consteval_return() {
     fn test_for(condition: bool) {
+        let condition = DisplayWasm::from(i32::from(condition));
+        let wasm = wat2wasm(&format!(
+            r"
+            (module
+                (func (param i32)
+                    (i32.const {condition}) ;; br_if condition
+                    (br_if 0)
+                )
+            )",
+        ));
+        TranslationTest::new(wasm)
+            .expect_func([Instruction::Return])
+            .run()
+    }
+    test_for(true);
+    test_for(false);
+}
+
+#[test]
+fn consteval_return_1() {
+    fn test_for(condition: bool) {
         let expected = match condition {
             true => Register::from_u16(0),
             false => Register::from_u16(1),
