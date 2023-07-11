@@ -13,41 +13,21 @@ impl<T> From<T> for DisplayWasm<T> {
     }
 }
 
-impl Display for DisplayWasm<i16> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{}", self.0)
-    }
+macro_rules! impl_display_for_int {
+    ( $float_ty:ty ) => {
+        impl Display for DisplayWasm<$float_ty> {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                write!(f, "{}", self.0)
+            }
+        }
+    };
 }
-
-impl Display for DisplayWasm<u16> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl Display for DisplayWasm<i32> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl Display for DisplayWasm<u32> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl Display for DisplayWasm<i64> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl Display for DisplayWasm<u64> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
+impl_display_for_int!(i16);
+impl_display_for_int!(u16);
+impl_display_for_int!(i32);
+impl_display_for_int!(u32);
+impl_display_for_int!(i64);
+impl_display_for_int!(u64);
 
 macro_rules! impl_display_for_float {
     ( $float_ty:ty ) => {
