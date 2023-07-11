@@ -269,8 +269,8 @@ pub struct IfControlFrame {
     /// Instruction to consume fuel upon entering the basic block if fuel metering is enabled.
     ///
     /// This is used for both `then` and `else` branches. When entering the `else`
-    /// block this field is updated to represent the [`Instruction::ConsumeFuel`]
-    /// of the `else` branch instead of the `then` branch. This is possible because
+    /// block this field is updated to represent the [`ConsumeFuel`] of the
+    /// `else` branch instead of the `then` branch. This is possible because
     /// only one of them is needed at the same time during translation.
     ///
     /// # Note
