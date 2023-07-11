@@ -397,8 +397,8 @@ impl IfControlFrame {
     pub fn new(
         block_type: BlockType,
         end_label: LabelRef,
-        stack_height: BlockHeight,
         branch_params: RegisterSlice,
+        stack_height: BlockHeight,
         consume_fuel: Option<Instr>,
         reachability: IfReachability,
     ) -> Self {
