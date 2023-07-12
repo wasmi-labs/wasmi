@@ -388,6 +388,11 @@ impl<'parser> FuncTranslator<'parser> {
         }
         if let Some(else_label) = frame.else_label() {
             self.alloc.instr_encoder.pin_label_if_unpinned(else_label);
+            if !frame.visited_else() {
+                // Since there was no `else` branch the `else` providers
+                // are still on the stack and need to be popped.
+                self.alloc.control_stack.pop_else_providers();
+            }
         }
         self.alloc.instr_encoder.pin_label(frame.end_label());
         if frame.is_branched_to() {

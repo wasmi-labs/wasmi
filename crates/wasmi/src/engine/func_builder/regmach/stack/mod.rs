@@ -104,6 +104,19 @@ impl ValueStack {
         self.providers.push_const(value)
     }
 
+    /// Pushes the given [`TypedProvider`] to the [`ValueStack`].
+    ///
+    /// # Note
+    ///
+    /// This is a convenice method for [`ValueStack::push_register`] and [`ValueStack::push_const`].
+    pub fn push_provider(&mut self, provider: TypedProvider) -> Result<(), TranslationError> {
+        match provider {
+            Provider::Register(register) => self.push_register(register)?,
+            Provider::Const(value) => self.push_const(value),
+        }
+        Ok(())
+    }
+
     /// Pushes the given [`Register`] to the [`ValueStack`].
     ///
     /// # Errors

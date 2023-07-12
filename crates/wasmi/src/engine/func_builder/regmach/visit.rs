@@ -326,12 +326,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 .stack
                 .trunc(frame.block_height().into_u16() as usize);
             for provider in self.alloc.control_stack.pop_else_providers() {
-                match provider {
-                    TypedProvider::Register(register) => {
-                        self.alloc.stack.push_register(register)?
-                    }
-                    TypedProvider::Const(value) => self.alloc.stack.push_const(value),
-                }
+                self.alloc.stack.push_provider(provider)?;
             }
         }
         match (frame.is_then_reachable(), frame.is_else_reachable()) {
@@ -352,9 +347,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 debug_assert!(!self.reachable);
                 self.reachable = true;
             }
-            _ => unreachable!("these cases are already covered above"),
+            _ => {}
         }
-        todo!()
+        // At last we need to push the popped and adjusted [`IfControlFrame`] back.
+        self.alloc.control_stack.push_frame(frame);
+        Ok(())
     }
 
     fn visit_end(&mut self) -> Self::Output {
