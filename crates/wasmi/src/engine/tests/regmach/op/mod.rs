@@ -5,6 +5,7 @@ mod br_if;
 mod cmp;
 mod global_get;
 mod global_set;
+mod if_;
 mod load;
 mod loop_;
 mod return_;
