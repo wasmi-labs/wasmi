@@ -1,8 +1,5 @@
 use crate::{core::ValueType, Value};
-use core::{
-    fmt,
-    fmt::{write, Display},
-};
+use core::{fmt, fmt::Display};
 
 /// [`Display`] wrapper for a value `T` where `T` is a Wasm type.
 pub struct DisplayWasm<T>(T);

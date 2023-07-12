@@ -1,4 +1,4 @@
-use super::{create_module, wat2wasm};
+use super::create_module;
 use crate::{
     engine::{bytecode2::Instruction, const_pool::ConstRef, CompiledFunc, DedupFuncType},
     Config,

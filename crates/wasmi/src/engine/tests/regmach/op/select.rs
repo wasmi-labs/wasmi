@@ -2,8 +2,6 @@ use super::*;
 use crate::{
     core::ValueType,
     engine::tests::regmach::display_wasm::{DisplayValue, DisplayValueType},
-    ExternRef,
-    FuncRef,
     Value,
 };
 use core::{fmt, fmt::Display};

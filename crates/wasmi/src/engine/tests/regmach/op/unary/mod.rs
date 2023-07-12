@@ -4,10 +4,10 @@ mod conversion;
 mod op;
 
 use super::*;
-use crate::engine::{const_pool::ConstRef, tests::regmach::driver::TranslationTest};
+use crate::engine::tests::regmach::driver::TranslationTest;
 use std::fmt::Display;
 use wasm_type::WasmType;
-use wasmi_core::{TrapCode, UntypedValue, F32};
+use wasmi_core::{TrapCode, UntypedValue};
 
 /// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary `wasmi` instruction.
 fn conversion_reg_with<I, O, E>(wasm_op: &str, expected: E)

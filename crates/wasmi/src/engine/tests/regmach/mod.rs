@@ -1,6 +1,5 @@
 //! Tests for the register-machine `wasmi` engine translation implementation.
 
-#![allow(unused_imports)] // TODO: remove
 #![cfg(not(miri))]
 
 mod display_wasm;
@@ -10,20 +9,11 @@ pub mod wasm_type;
 
 use self::{display_wasm::DisplayWasm, driver::TranslationTest};
 use super::{create_module, wat2wasm};
-use crate::{
-    engine::{
-        bytecode2::{BinInstr, BinInstrImm16, Const16, Const32, Instruction, Register, UnaryInstr},
-        const_pool::ConstRef,
-        CompiledFunc,
-        DedupFuncType,
-    },
-    Config,
-    Engine,
-    EngineBackend,
-    Module,
+use crate::engine::{
+    bytecode2::{Const16, Const32, Instruction, Register},
+    const_pool::ConstRef,
 };
 use std::fmt::Display;
-use wasmi_core::{UntypedValue, ValueType};
 
 /// Used to swap operands of a `rev` variant [`Instruction`] constructor.
 macro_rules! swap_ops {

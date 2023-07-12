@@ -13,7 +13,6 @@ mod store;
 mod unary;
 
 use super::{
-    assert_func_bodies,
     swap_ops,
     test_binary_consteval,
     test_binary_reg_imm16,

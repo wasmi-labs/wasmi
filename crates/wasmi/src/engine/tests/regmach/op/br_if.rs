@@ -1,10 +1,7 @@
 use super::*;
-use crate::{
-    engine::{
-        bytecode::BranchOffset,
-        tests::regmach::{display_wasm::DisplayValueType, wasm_type::WasmType},
-    },
-    Value,
+use crate::engine::{
+    bytecode::BranchOffset,
+    tests::regmach::{display_wasm::DisplayValueType, wasm_type::WasmType},
 };
 use core::fmt::Display;
 use wasmi_core::UntypedValue;
