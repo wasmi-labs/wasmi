@@ -347,7 +347,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 debug_assert!(!self.reachable);
                 self.reachable = true;
             }
-            _ => {}
+            (false, false) => unreachable!(
+                "the if control frame is reachable so either then or else must be reachable"
+            ),
+            (true, true) => {
+                // Note: this case has already been handled above.
+            }
         }
         // At last we need to push the popped and adjusted [`IfControlFrame`] back.
         self.alloc.control_stack.push_frame(frame);
