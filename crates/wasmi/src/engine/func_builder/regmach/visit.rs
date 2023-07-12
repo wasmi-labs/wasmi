@@ -4,6 +4,8 @@ use super::{
         BlockControlFrame,
         BlockHeight,
         ControlFrame,
+        IfControlFrame,
+        IfReachability,
         LoopControlFrame,
         UnreachableControlFrame,
     },
@@ -187,11 +189,171 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         Ok(())
     }
 
-    fn visit_if(&mut self, _blockty: wasmparser::BlockType) -> Self::Output {
-        todo!()
+    fn visit_if(&mut self, block_type: wasmparser::BlockType) -> Self::Output {
+        let block_type = BlockType::new(block_type, self.res);
+        if !self.is_reachable() {
+            // We keep track of unreachable control flow frames so that we
+            // can associated `end` operators to their respective control flow
+            // frames and precisely know when the code is reachable again.
+            self.alloc
+                .control_stack
+                .push_frame(UnreachableControlFrame::new(
+                    ControlFrameKind::If,
+                    block_type,
+                ));
+            return Ok(());
+        }
+        let condition = self.alloc.stack.pop();
+        let stack_height = BlockHeight::new(self.engine(), self.alloc.stack.height(), block_type)?;
+        let end_label = self.alloc.instr_encoder.new_label();
+        let len_block_params = block_type.len_params(self.engine()) as usize;
+        let len_branch_params = block_type.len_results(self.engine()) as usize;
+        let branch_params = self.alloc_branch_params(len_block_params, len_branch_params)?;
+        let (reachability, consume_fuel) = match condition {
+            TypedProvider::Const(condition) => {
+                // Case: the `if` condition is a constant value and
+                //       therefore it is known upfront which branch
+                //       it will take.
+                //       Furthermore the non-taken branch is known
+                //       to be unreachable code.
+                let reachability = match i32::from(condition) != 0 {
+                    true => IfReachability::OnlyThen,
+                    false => {
+                        // We know that the `then` block is unreachable therefore
+                        // we update the reachability until we see the `else` branch.
+                        self.reachable = false;
+                        IfReachability::OnlyElse
+                    }
+                };
+                // An `if` control frame with a constant condition behaves very
+                // similarly to a Wasm `block`. Therefore we can apply the same
+                // optimization and inherit the [`Instruction::ConsumeFuel`] of
+                // the parent control frame.
+                let consume_fuel = self.alloc.control_stack.last().consume_fuel_instr();
+                (reachability, consume_fuel)
+            }
+            TypedProvider::Register(condition) => {
+                // Push the `if` parameters on the `else` provider stack for
+                // later use in case we eventually visit the `else` branch.
+                self.alloc
+                    .stack
+                    .peek_n(len_block_params, &mut self.alloc.buffer);
+                self.alloc
+                    .control_stack
+                    .push_else_providers(self.alloc.buffer.iter().copied())?;
+                // Create the `else` label and the conditional branch to `else`.
+                let else_label = self.alloc.instr_encoder.new_label();
+                let else_offset = self.alloc.instr_encoder.try_resolve_label(else_label)?;
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::branch_eqz(condition, else_offset))?;
+                let reachability = IfReachability::both(else_label);
+                // Optionally create the [`Instruction::ConsumeFuel`] for the `then` branch.
+                //
+                // # Note
+                //
+                // The [`Instruction::ConsumeFuel`] for the `else` branch is
+                // created on the fly when visiting the `else` block.
+                let consume_fuel = self
+                    .is_fuel_metering_enabled()
+                    .then(|| {
+                        self.alloc
+                            .instr_encoder
+                            .push_instr(self.make_consume_fuel_base())
+                    })
+                    .transpose()?;
+                (reachability, consume_fuel)
+            }
+        };
+        self.alloc.control_stack.push_frame(IfControlFrame::new(
+            block_type,
+            end_label,
+            branch_params,
+            stack_height,
+            consume_fuel,
+            reachability,
+        ));
+        Ok(())
     }
 
     fn visit_else(&mut self) -> Self::Output {
+        let mut frame = match self.alloc.control_stack.pop_frame() {
+            ControlFrame::If(frame) => frame,
+            ControlFrame::Unreachable(frame) if matches!(frame.kind(), ControlFrameKind::If) => {
+                // Case: `else` branch for unreachable `if` block.
+                //
+                // In this case we can simply ignore the entire `else`
+                // branch since it is unreachable anyways.
+                self.alloc.control_stack.push_frame(frame);
+                return Ok(());
+            }
+            unexpected => panic!(
+                "expected `if` control flow frame on top for `else` but found: {:?}",
+                unexpected,
+            ),
+        };
+        if let Some(else_label) = frame.else_label() {
+            // Case: the `if` control frame has reachable `then` and `else` branches.
+            debug_assert!(frame.is_then_reachable());
+            debug_assert!(frame.is_else_reachable());
+            frame.update_end_of_then_reachability(self.reachable);
+            let branch_params = frame.branch_params(self.engine());
+            if self.reachable {
+                self.translate_copy_branch_params(branch_params)?;
+                let end_offset = self
+                    .alloc
+                    .instr_encoder
+                    .try_resolve_label(frame.end_label())?;
+                // We are jumping to the end of the `if` so technically we need to bump branches.
+                frame.bump_branches();
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::branch(end_offset))?;
+            }
+            self.reachable = true;
+            self.alloc.instr_encoder.pin_label(else_label);
+            if self.is_fuel_metering_enabled() {
+                let instr = self
+                    .alloc
+                    .instr_encoder
+                    .push_instr(self.make_consume_fuel_base())?;
+                frame.update_consume_fuel_instr(instr);
+            }
+            // At this point we can restore the `else` branch parameters
+            // so that the `else` branch translation has the same set of
+            // parameters as the `then` branch.
+            self.alloc
+                .stack
+                .trunc(frame.block_height().into_u16() as usize);
+            for provider in self.alloc.control_stack.pop_else_providers() {
+                match provider {
+                    TypedProvider::Register(register) => {
+                        self.alloc.stack.push_register(register)?
+                    }
+                    TypedProvider::Const(value) => self.alloc.stack.push_const(value),
+                }
+            }
+        }
+        match (frame.is_then_reachable(), frame.is_else_reachable()) {
+            (true, false) => {
+                // Case: only `then` branch is reachable.
+                //
+                // Not much needs to be done since an `if` control frame
+                // where only one branch is statically reachable is similar
+                // to a `block` control frame.
+                self.reachable = false;
+            }
+            (false, true) => {
+                // Case: only `else` branch is reachable.
+                //
+                // Not much needs to be done since an `if` control frame
+                // where only one branch is statically reachable is similar
+                // to a `block` control frame.
+                debug_assert!(!self.reachable);
+                self.reachable = true;
+            }
+            _ => unreachable!("these cases are already covered above"),
+        }
         todo!()
     }
 

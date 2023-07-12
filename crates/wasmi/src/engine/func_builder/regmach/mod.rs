@@ -368,8 +368,39 @@ impl<'parser> FuncTranslator<'parser> {
     }
 
     /// Translates the `end` of a Wasm `if` control frame.
-    fn translate_end_if(&mut self, _frame: IfControlFrame) -> Result<(), TranslationError> {
-        todo!()
+    fn translate_end_if(&mut self, frame: IfControlFrame) -> Result<(), TranslationError> {
+        if self.reachable && frame.is_branched_to() {
+            // If the end of the `if` is reachable AND
+            // there are branches to the end of the `block`
+            // prior, we need to copy the results to the
+            // control frame result registers.
+            //
+            // # Note
+            //
+            // We can skip this step if the above condition is
+            // not met since the code at this point is either
+            // unreachable OR there is only one source of results
+            // and thus there is no need to copy the results around.
+            self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
+        }
+        if let Some(else_label) = frame.else_label() {
+            self.alloc.instr_encoder.pin_label_if_unpinned(else_label);
+        }
+        self.alloc.instr_encoder.pin_label(frame.end_label());
+        if frame.is_branched_to() {
+            // Case: branches to this block exist so we cannot treat the
+            //       basic block as a no-op and instead have to put its
+            //       block results on top of the stack.
+            self.alloc
+                .stack
+                .trunc(frame.block_height().into_u16() as usize);
+            for result in frame.branch_params(self.engine()) {
+                self.alloc.stack.push_register(result)?;
+            }
+        }
+        // We reset reachability in case the end of the `block` was reachable.
+        self.reachable = self.reachable || frame.is_branched_to();
+        Ok(())
     }
 
     /// Translates the `end` of an unreachable control frame.

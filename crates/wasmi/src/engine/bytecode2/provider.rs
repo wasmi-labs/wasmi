@@ -1,6 +1,10 @@
 use super::{Const32, Register};
 use crate::engine::{func_builder::TranslationErrorInner, TranslationError};
-use alloc::{vec, vec::Vec};
+use alloc::{
+    vec,
+    vec::{Drain, Vec},
+};
+use core::ops::Range;
 use wasmi_core::UntypedValue;
 
 #[cfg(doc)]
@@ -106,19 +110,57 @@ impl<T> ProviderSliceAlloc<T> {
     }
 
     /// Returns the `start..end` range of the given [`ProviderSliceRef`] if any.
-    fn get_start_end(&self, slice: ProviderSliceRef) -> Option<(Option<usize>, usize)> {
+    fn ref_to_range(&self, slice: ProviderSliceRef) -> Option<Range<usize>> {
         let index = slice.into_index();
         let end = self.ends.get(index).copied()?;
-        let start = index.checked_sub(1).map(|index| self.ends[index]);
-        Some((start, end))
+        let start = index
+            .checked_sub(1)
+            .map(|index| self.ends[index])
+            .unwrap_or(0);
+        Some(start..end)
     }
 
     /// Returns the [`Provider`] slice of the given [`ProviderSliceRef`] if any.
     pub fn get(&self, slice: ProviderSliceRef) -> Option<&[Provider<T>]> {
-        let (start, end) = self.get_start_end(slice)?;
-        match start {
-            Some(start) => Some(&self.providers[start..end]),
-            None => Some(&self.providers[..end]),
+        self.ref_to_range(slice).map(|range| &self.providers[range])
+    }
+}
+
+/// A [`Provider`] slice stack.
+#[derive(Debug)]
+pub struct ProviderSliceStack<T> {
+    /// The end indices of each [`ProviderSliceRef`].
+    ends: Vec<usize>,
+    /// All [`Provider`] of all allocated [`Provider`] slices.
+    providers: Vec<Provider<T>>,
+}
+
+impl<T> Default for ProviderSliceStack<T> {
+    fn default() -> Self {
+        Self {
+            ends: Vec::new(),
+            providers: Vec::new(),
         }
+    }
+}
+
+impl<T> ProviderSliceStack<T> {
+    /// Pushes a new [`Provider`] slice and returns its [`ProviderSliceRef`].
+    pub fn push<I>(&mut self, providers: I) -> Result<ProviderSliceRef, TranslationError>
+    where
+        I: IntoIterator<Item = Provider<T>>,
+    {
+        self.providers.extend(providers);
+        let end = self.providers.len();
+        let index = self.ends.len();
+        self.ends.push(end);
+        ProviderSliceRef::from_index(index)
+    }
+
+    /// Pops the top-most [`Provider`] slice from the [`ProviderSliceAlloc`] and returns it.
+    pub fn pop(&mut self) -> Option<Drain<Provider<T>>> {
+        let end = self.ends.pop()?;
+        let start = self.ends.last().copied().unwrap_or(0);
+        Some(self.providers.drain(start..end))
     }
 }

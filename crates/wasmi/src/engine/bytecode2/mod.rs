@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 mod construct;
 mod immediate;
 mod provider;
@@ -10,7 +8,13 @@ mod tests;
 
 pub(crate) use self::{
     immediate::{Const16, Const32},
-    provider::{Provider, ProviderSliceAlloc, ProviderSliceRef, UntypedProvider},
+    provider::{
+        Provider,
+        ProviderSliceAlloc,
+        ProviderSliceRef,
+        ProviderSliceStack,
+        UntypedProvider,
+    },
     utils::{
         BinInstr,
         BinInstrImm16,

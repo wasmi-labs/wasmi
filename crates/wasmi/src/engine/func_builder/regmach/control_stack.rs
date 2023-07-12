@@ -1,5 +1,9 @@
-use super::ControlFrame;
-use alloc::vec::Vec;
+use super::{typed_value::TypedValue, ControlFrame};
+use crate::engine::{
+    bytecode2::{Provider, ProviderSliceStack},
+    TranslationError,
+};
+use alloc::vec::{Drain, Vec};
 
 /// An acquired branch target.
 #[derive(Debug)]
@@ -13,7 +17,18 @@ pub enum AcquiredTarget<'a> {
 /// The stack of control flow frames.
 #[derive(Debug, Default)]
 pub struct ControlStack {
+    /// The stack of control frames such as `block`, `loop` and `if`.
     frames: Vec<ControlFrame>,
+    /// Special stack for parameters of `else` blocks.
+    ///
+    /// # Note
+    ///
+    /// This is required since both `then` and `else` branches of an
+    /// `if` control frame have the same input providers. However,
+    /// during translation of the `then` branch these inputs have
+    /// already been consumed. Therefore we need to duplicate them
+    /// here to push them back on the stack once we see the `else` branch.
+    else_providers: ProviderSliceStack<TypedValue>,
 }
 
 impl ControlStack {
@@ -55,6 +70,26 @@ impl ControlStack {
         self.frames
             .pop()
             .expect("tried to pop control flow frame from empty control flow stack")
+    }
+
+    /// Push a [`Provider`] slice for the `else` branch of an [`IfControlFrame`] to the [`ControlStack`].
+    ///
+    /// [`IfControlFrame`]: super::control_frame::IfControlFrame
+    pub fn push_else_providers<I>(&mut self, providers: I) -> Result<(), TranslationError>
+    where
+        I: IntoIterator<Item = Provider<TypedValue>>,
+    {
+        self.else_providers.push(providers)?;
+        Ok(())
+    }
+
+    /// Pops the top-most [`Provider`] slice of an `else` branch of an [`IfControlFrame`] to the [`ControlStack`].
+    ///
+    /// [`IfControlFrame`]: super::control_frame::IfControlFrame
+    pub fn pop_else_providers(&mut self) -> Drain<Provider<TypedValue>> {
+        self.else_providers
+            .pop()
+            .expect("missing else providers for `else` branch")
     }
 
     /// Returns the last control flow frame on the control stack.
