@@ -1,3 +1,5 @@
+#![allow(dead_code)] // TODO: remove
+
 //! Data structure storing information about compiled functions.
 //!
 //! # Note

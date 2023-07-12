@@ -160,6 +160,7 @@ impl InstrEncoder {
     /// # Errors
     ///
     /// If consumed fuel is out of bounds after this operation.
+    #[allow(dead_code)] // TODO: remove
     pub fn bump_fuel_consumption(
         &mut self,
         instr: Instr,

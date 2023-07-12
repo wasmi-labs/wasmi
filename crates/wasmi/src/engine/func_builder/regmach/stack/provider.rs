@@ -93,28 +93,6 @@ impl ProviderStack {
             .unwrap_or_else(|| panic!("tried to pop provider from empty provider stack"))
     }
 
-    /// Pops the two top-most [`TaggedProvider`] items from the [`ProviderStack`].
-    ///
-    /// # Panics
-    ///
-    /// If the [`ProviderStack`] does not contain at least two [`TaggedProvider`] items.
-    pub fn pop2(&mut self) -> (TaggedProvider, TaggedProvider) {
-        let rhs = self.pop();
-        let lhs = self.pop();
-        (lhs, rhs)
-    }
-
-    /// Pops the three top-most [`TaggedProvider`] items from the [`ProviderStack`].
-    ///
-    /// # Panics
-    ///
-    /// If the [`ProviderStack`] does not contain at least three [`TaggedProvider`] items.
-    pub fn pop3(&mut self) -> (TaggedProvider, TaggedProvider, TaggedProvider) {
-        let (snd, trd) = self.pop2();
-        let fst = self.pop();
-        (fst, snd, trd)
-    }
-
     /// Pops the `n` top-most [`TaggedProvider`] items from the [`ProviderStack`].
     ///
     /// # Panics

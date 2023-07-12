@@ -1,3 +1,5 @@
+#![allow(dead_code)] // TODO: remove
+
 //! Function translation for the register-machine bytecode based `wasmi` engine.
 
 mod control_frame;
@@ -69,6 +71,7 @@ impl FuncTranslatorAllocations {
     fn reset(&mut self) {
         self.stack.reset();
         self.instr_encoder.reset();
+        self.control_stack.reset();
     }
 }
 

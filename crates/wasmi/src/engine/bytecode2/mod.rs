@@ -1,3 +1,5 @@
+#![allow(dead_code)] // TODO: remove
+
 mod construct;
 mod immediate;
 mod provider;

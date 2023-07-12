@@ -1,3 +1,5 @@
+#![allow(dead_code)] // TODO: remove
+
 #[cfg(doc)]
 use super::ValueStack;
 use crate::{

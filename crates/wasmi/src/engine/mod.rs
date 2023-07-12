@@ -1,7 +1,5 @@
 //! The `wasmi` interpreter.
 
-#![allow(dead_code)] // TODO: remove
-
 pub mod bytecode;
 mod bytecode2;
 mod cache;
@@ -204,6 +202,7 @@ impl Engine {
     ///
     /// This is a test API and only meant for testing purposes.
     #[cfg(test)]
+    #[allow(dead_code)]
     pub(super) fn get_providers(&self, slice: ProviderSliceRef, buffer: &mut Vec<UntypedProvider>) {
         self.inner.get_providers(slice, buffer)
     }

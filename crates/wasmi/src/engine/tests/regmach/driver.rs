@@ -45,7 +45,6 @@ impl ExpectedFunc {
     pub fn new<I>(instrs: I) -> Self
     where
         I: IntoIterator<Item = Instruction>,
-        <I as IntoIterator>::IntoIter: ExactSizeIterator,
     {
         Self {
             instrs: instrs.into_iter().collect(),
@@ -69,8 +68,11 @@ pub struct ExpectedConst {
 
 impl ExpectedConst {
     /// Create a new [`ExpectedConst`] for `cref` expecting `value`.
-    pub fn new(cref: ConstRef, value: UntypedValue) -> Self {
-        Self { cref, value }
+    pub fn new(cref: ConstRef, value: impl Into<UntypedValue>) -> Self {
+        Self {
+            cref,
+            value: value.into(),
+        }
     }
 }
 
@@ -117,9 +119,7 @@ impl TranslationTest {
     where
         I: IntoIterator<Item = Instruction>,
     {
-        self.expected_funcs.push(ExpectedFunc {
-            instrs: instrs.into_iter().collect(),
-        });
+        self.expected_funcs.push(ExpectedFunc::new(instrs));
         self
     }
 
@@ -128,10 +128,7 @@ impl TranslationTest {
     where
         T: Into<UntypedValue>,
     {
-        self.expected_consts.push(ExpectedConst {
-            cref,
-            value: value.into(),
-        });
+        self.expected_consts.push(ExpectedConst::new(cref, value));
         self
     }
 
