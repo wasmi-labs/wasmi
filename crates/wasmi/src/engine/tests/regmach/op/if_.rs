@@ -23,6 +23,31 @@ fn simple_if_then() {
 }
 
 #[test]
+fn simple_if_then_nested() {
+    let wasm = wat2wasm(
+        r"
+        (module
+            (func (param i32 i32)
+                (if (local.get 0)
+                    (then
+                        (if (local.get 1)
+                            (then)
+                        )
+                    )
+                )
+            )
+        )",
+    );
+    TranslationTest::new(wasm)
+        .expect_func([
+            Instruction::branch_eqz(Register::from_u16(0), BranchOffset::from(2)),
+            Instruction::branch_eqz(Register::from_u16(1), BranchOffset::from(1)),
+            Instruction::Return,
+        ])
+        .run()
+}
+
+#[test]
 fn if_then_global_set() {
     let wasm = wat2wasm(
         r"
@@ -182,6 +207,42 @@ fn simple_if_then_else() {
     TranslationTest::new(wasm)
         .expect_func([
             Instruction::branch_eqz(Register::from_u16(0), BranchOffset::from(2)),
+            Instruction::branch(BranchOffset::from(1)),
+            Instruction::Return,
+        ])
+        .run()
+}
+
+#[test]
+fn simple_if_then_else_nested() {
+    let wasm = wat2wasm(
+        r"
+        (module
+            (func (param i32 i32)
+                (if (local.get 0)
+                    (then
+                        (if (local.get 1)
+                            (then)
+                            (else (nop)) ;; `nop` required so that `else` is not dropped
+                        )
+                    )
+                    (else
+                        (if (local.get 1)
+                            (then)
+                            (else (nop)) ;; `nop` required so that `else` is not dropped
+                        )
+                    )
+                )
+            )
+        )",
+    );
+    TranslationTest::new(wasm)
+        .expect_func([
+            Instruction::branch_eqz(Register::from_u16(0), BranchOffset::from(4)),
+            Instruction::branch_eqz(Register::from_u16(1), BranchOffset::from(2)),
+            Instruction::branch(BranchOffset::from(1)),
+            Instruction::branch(BranchOffset::from(3)),
+            Instruction::branch_eqz(Register::from_u16(1), BranchOffset::from(2)),
             Instruction::branch(BranchOffset::from(1)),
             Instruction::Return,
         ])
