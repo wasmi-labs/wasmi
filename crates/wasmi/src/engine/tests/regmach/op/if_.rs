@@ -189,6 +189,40 @@ fn simple_if_then_else() {
 }
 
 #[test]
+fn if_then_else_with_params() {
+    let wasm = wat2wasm(
+        r"
+        (module
+            (func (param i32 i32 i32) (result i32)
+                (local.get 1)
+                (local.get 2)
+                (if (param i32 i32) (result i32) (local.get 0)
+                    (then (i32.add))
+                    (else (i32.mul))
+                )
+            )
+        )",
+    );
+    TranslationTest::new(wasm)
+        .expect_func([
+            Instruction::branch_eqz(Register::from_u16(0), BranchOffset::from(3)),
+            Instruction::i32_add(
+                Register::from_u16(3),
+                Register::from_u16(1),
+                Register::from_u16(2),
+            ),
+            Instruction::branch(BranchOffset::from(2)),
+            Instruction::i32_mul(
+                Register::from_u16(3),
+                Register::from_u16(1),
+                Register::from_u16(2),
+            ),
+            Instruction::return_reg(Register::from_u16(3)),
+        ])
+        .run()
+}
+
+#[test]
 fn const_condition() {
     fn test_for(condition: bool) {
         let true_value = 10_i32;
