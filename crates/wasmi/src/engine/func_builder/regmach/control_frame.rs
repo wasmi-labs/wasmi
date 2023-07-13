@@ -285,6 +285,18 @@ pub struct IfControlFrame {
     ///
     /// [`ConsumeFuel`]: enum.Instruction.html#variant.ConsumeFuel
     consume_fuel: Option<Instr>,
+    /// End of `then` branch is reachable.
+    ///
+    /// # Note
+    ///
+    /// - This is `None` upon entering the `if` control flow frame.
+    ///   Once the optional `else` case or the `end` of the `if` control
+    ///   flow frame is reached this field will be computed.
+    /// - This information is important to know how to continue after a
+    ///   diverging `if` control flow frame.
+    /// - An `end_of_else_is_reachable` field is not needed since it will
+    ///   be easily computed once the translation reaches the end of the `if`.
+    end_of_then_is_reachable: Option<bool>,
     /// The reachability of the `then` and `else` blocks of the [`IfControlFrame`].
     reachability: IfReachability,
 }
@@ -299,7 +311,7 @@ pub enum IfReachability {
     /// This variant does not mean that necessarily both `then` and `else`
     /// blocks do exist and are non-empty. The `then` block might still be
     /// empty and the `then` block might still be missing.
-    Both(IfReachabilityBoth),
+    Both { else_label: LabelRef },
     /// Only the `then` block of the `if` is reachable.
     ///
     /// # Note
@@ -317,59 +329,7 @@ pub enum IfReachability {
 impl IfReachability {
     /// Creates an [`IfReachability`] when both `then` and `else` parts are reachable.
     pub fn both(else_label: LabelRef) -> Self {
-        Self::Both(IfReachabilityBoth {
-            else_label,
-            end_of_then_is_reachable: None,
-        })
-    }
-}
-
-/// The reachability of the `if` control flow frame when both arms can be reached.
-#[derive(Debug, Copy, Clone)]
-pub struct IfReachabilityBoth {
-    /// Label representing the optional `else` branch of the [`IfControlFrame`].
-    else_label: LabelRef,
-    /// End of `then` branch is reachable.
-    ///
-    /// # Note
-    ///
-    /// - This is `None` upon entering the `if` control flow frame.
-    ///   Once the optional `else` case or the `end` of the `if` control
-    ///   flow frame is reached this field will be computed.
-    /// - This information is important to know how to continue after a
-    ///   diverging `if` control flow frame.
-    /// - An `end_of_else_is_reachable` field is not needed since it will
-    ///   be easily computed once the translation reaches the end of the `if`.
-    end_of_then_is_reachable: Option<bool>,
-}
-
-impl IfReachabilityBoth {
-    /// Returns the label to the optional `else` of the [`IfControlFrame`].
-    pub fn else_label(&self) -> LabelRef {
-        self.else_label
-    }
-
-    /// Updates the reachability of the end of the `then` branch.
-    ///
-    /// # Note
-    ///
-    /// This is expected to be called when visiting the `else` of an
-    /// `if` control frame to inform the `if` control frame if the
-    /// end of the `then` block is reachable. This information is
-    /// important to decide whether code coming after the entire `if`
-    /// control frame is reachable again.
-    ///
-    /// # Panics
-    ///
-    /// If this information has already been provided prior.
-    pub fn update_end_of_then_reachability(&mut self, reachable: bool) {
-        assert!(self.end_of_then_is_reachable.is_none());
-        self.end_of_then_is_reachable = Some(reachable);
-    }
-
-    /// Returns `true` if the `else` block has been visited.
-    pub fn visited_else(&self) -> bool {
-        self.end_of_then_is_reachable.is_some()
+        Self::Both { else_label }
     }
 }
 
@@ -383,12 +343,16 @@ impl IfControlFrame {
         consume_fuel: Option<Instr>,
         reachability: IfReachability,
     ) -> Self {
-        if let IfReachability::Both(info) = reachability {
+        if let IfReachability::Both { else_label } = reachability {
             assert_ne!(
-                end_label, info.else_label,
+                end_label, else_label,
                 "end and else labels must be different"
             );
         }
+        let end_of_then_is_reachable = match reachability {
+            IfReachability::Both { .. } | IfReachability::OnlyThen => None,
+            IfReachability::OnlyElse => Some(false),
+        };
         Self {
             block_type,
             len_branches: 0,
@@ -396,6 +360,7 @@ impl IfControlFrame {
             end_label,
             branch_params,
             consume_fuel,
+            end_of_then_is_reachable,
             reachability,
         }
     }
@@ -438,7 +403,7 @@ impl IfControlFrame {
     /// Returns the label to the `else` branch of the [`IfControlFrame`].
     pub fn else_label(&self) -> Option<LabelRef> {
         match self.reachability {
-            IfReachability::Both(reachability) => Some(reachability.else_label()),
+            IfReachability::Both { else_label } => Some(else_label),
             IfReachability::OnlyThen | IfReachability::OnlyElse => None,
         }
     }
@@ -450,7 +415,7 @@ impl IfControlFrame {
     /// The `then` branch is unreachable if the `if` condition is a constant `false` value.
     pub fn is_then_reachable(&self) -> bool {
         match self.reachability {
-            IfReachability::Both(_) | IfReachability::OnlyThen => true,
+            IfReachability::Both { .. } | IfReachability::OnlyThen => true,
             IfReachability::OnlyElse => false,
         }
     }
@@ -462,7 +427,7 @@ impl IfControlFrame {
     /// The `else` branch is unreachable if the `if` condition is a constant `true` value.
     pub fn is_else_reachable(&self) -> bool {
         match self.reachability {
-            IfReachability::Both(_) | IfReachability::OnlyElse => true,
+            IfReachability::Both { .. } | IfReachability::OnlyElse => true,
             IfReachability::OnlyThen => false,
         }
     }
@@ -479,28 +444,20 @@ impl IfControlFrame {
     ///
     /// # Panics
     ///
-    /// - If this information has already been provided prior.
-    /// - When trying to use this method on `if` blocks that are statically
-    ///   known to only have a reachable `then` OR `else` block but not both.
+    /// If this information has already been provided prior.
     pub fn update_end_of_then_reachability(&mut self, reachable: bool) {
-        match &mut self.reachability {
-            IfReachability::Both(reachability) => {
-                reachability.update_end_of_then_reachability(reachable)
-            }
-            IfReachability::OnlyThen | IfReachability::OnlyElse => {
-                panic!("tried to update `then` reachability while this is statically known already")
-            }
-        }
+        assert!(self.end_of_then_is_reachable.is_none());
+        self.end_of_then_is_reachable = Some(reachable);
     }
 
-    /// Returns `true` if the `else` branch has been seen and visited already.
+    /// Returns `true` if the end of the `then` branch is reachable.
+    pub fn is_end_of_then_reachable(&self) -> bool {
+        self.end_of_then_is_reachable.expect("") // TODO: add proper message
+    }
+
+    /// Returns `true` if the `else` block has been visited.
     pub fn visited_else(&self) -> bool {
-        match &self.reachability {
-            IfReachability::Both(reachability) => reachability.visited_else(),
-            IfReachability::OnlyThen | IfReachability::OnlyElse => {
-                panic!("information not available for if with static condition")
-            }
-        }
+        self.end_of_then_is_reachable.is_some()
     }
 
     /// Returns the [`BlockHeight`] of the [`IfControlFrame`].

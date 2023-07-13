@@ -407,7 +407,15 @@ impl<'parser> FuncTranslator<'parser> {
             }
         }
         // We reset reachability in case the end of the `block` was reachable.
-        self.reachable = self.reachable || frame.is_branched_to();
+        match (frame.is_then_reachable(), frame.is_else_reachable()) {
+            (true, false) => {
+                self.reachable = frame.is_end_of_then_reachable() || frame.is_branched_to();
+            }
+            (_, true) => {
+                self.reachable = self.reachable || frame.is_branched_to();
+            }
+            _ => unreachable!("if control frame is reachable so at least one of then or else must be reachable as well"),
+        }
         Ok(())
     }
 

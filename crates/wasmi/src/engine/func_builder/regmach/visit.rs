@@ -336,6 +336,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 // Not much needs to be done since an `if` control frame
                 // where only one branch is statically reachable is similar
                 // to a `block` control frame.
+                frame.update_end_of_then_reachability(self.reachable);
                 self.reachable = false;
             }
             (false, true) => {
