@@ -1,5 +1,5 @@
 use super::*;
-use crate::engine::bytecode::BranchOffset;
+use crate::engine::bytecode::{BranchOffset, GlobalIdx};
 use wasmi_core::TrapCode;
 
 #[test]
@@ -18,6 +18,31 @@ fn simple_if_then() {
         .expect_func([
             Instruction::branch_eqz(Register::from_u16(0), BranchOffset::from(1)),
             Instruction::Return,
+        ])
+        .run()
+}
+
+#[test]
+fn if_then_global_set() {
+    let wasm = wat2wasm(
+        r"
+        (module
+            (global $g (mut i32) (i32.const 0))
+            (func (param i32 i32) (result i32)
+                (if (local.get 0)
+                    (then
+                        (global.set $g (local.get 1))
+                    )
+                )
+                (i32.const 10)
+            )
+        )",
+    );
+    TranslationTest::new(wasm)
+        .expect_func([
+            Instruction::branch_eqz(Register::from_u16(0), BranchOffset::from(2)),
+            Instruction::global_set(GlobalIdx::from(0), Register::from_u16(1)),
+            Instruction::return_imm32(Const32::from(10_i32)),
         ])
         .run()
 }
