@@ -45,9 +45,96 @@ fn if_then_return() {
     TranslationTest::new(wasm)
         .expect_func([
             Instruction::branch_eqz(Register::from_u16(0), BranchOffset::from(3)),
-            Instruction::i32_add(Register::from_u16(3), Register::from_u16(1), Register::from_u16(2)),
+            Instruction::i32_add(
+                Register::from_u16(3),
+                Register::from_u16(1),
+                Register::from_u16(2),
+            ),
             Instruction::return_reg(Register::from_u16(3)),
             Instruction::return_imm32(Const32::from(0_i32)),
+        ])
+        .run()
+}
+
+#[test]
+fn if_then_else_return() {
+    let wasm = wat2wasm(
+        r"
+        (module
+            (func (param i32) (result i32)
+                (if (local.get 0)
+                    (then
+                        (return (i32.const 10))
+                    )
+                    (else
+                        (return (i32.const 20))
+                    )
+                )
+                (i32.const 30)
+            )
+        )",
+    );
+    TranslationTest::new(wasm)
+        .expect_func([
+            Instruction::branch_eqz(Register::from_u16(0), BranchOffset::from(2)),
+            Instruction::return_imm32(Const32::from(10_i32)),
+            Instruction::return_imm32(Const32::from(20_i32)),
+        ])
+        .run()
+}
+
+#[test]
+fn if_then_br_else() {
+    let wasm = wat2wasm(
+        r"
+        (module
+            (func (param i32) (result i32)
+                (if (local.get 0)
+                    (then
+                        (br 0)
+                    )
+                    (else
+                        (return (i32.const 10))
+                    )
+                )
+                (i32.const 20)
+            )
+        )",
+    );
+    TranslationTest::new(wasm)
+        .expect_func([
+            Instruction::branch_eqz(Register::from_u16(0), BranchOffset::from(2)),
+            Instruction::branch(BranchOffset::from(2)),
+            Instruction::return_imm32(Const32::from(10_i32)),
+            Instruction::return_imm32(Const32::from(20_i32)),
+        ])
+        .run()
+}
+
+#[test]
+fn if_then_else_br() {
+    let wasm = wat2wasm(
+        r"
+        (module
+            (func (param i32) (result i32)
+                (if (local.get 0)
+                    (then
+                        (return (i32.const 10))
+                    )
+                    (else
+                        (br 0)
+                    )
+                )
+                (i32.const 20)
+            )
+        )",
+    );
+    TranslationTest::new(wasm)
+        .expect_func([
+            Instruction::branch_eqz(Register::from_u16(0), BranchOffset::from(2)),
+            Instruction::return_imm32(Const32::from(10_i32)),
+            Instruction::branch(BranchOffset::from(1)),
+            Instruction::return_imm32(Const32::from(20_i32)),
         ])
         .run()
 }
@@ -183,6 +270,84 @@ fn const_condition_trap_else() {
                 Register::from_u16(1),
             ),
             Instruction::return_reg(Register::from_u16(2)),
+        ],
+    );
+    test_for(false, [Instruction::Trap(TrapCode::UnreachableCodeReached)]);
+}
+
+#[test]
+fn const_condition_br_if_then() {
+    fn test_for<I>(condition: bool, instrs: I)
+    where
+        I: IntoIterator<Item = Instruction>,
+    {
+        let condition = i32::from(condition);
+        let wasm = wat2wasm(&format!(
+            r"
+            (module
+                (func (param i32) (result i32)
+                    (i32.const {condition})
+                    (if
+                        (then
+                            (unreachable)
+                        )
+                        (else
+                            (local.get 0) ;; br_if condition
+                            (br_if 0)
+                            (unreachable)
+                        )
+                    )
+                    (i32.const 1)
+                )
+            )",
+        ));
+        TranslationTest::new(wasm).expect_func(instrs).run()
+    }
+    test_for(true, [Instruction::Trap(TrapCode::UnreachableCodeReached)]);
+    test_for(
+        false,
+        [
+            Instruction::branch_nez(Register::from_u16(0), BranchOffset::from(2)),
+            Instruction::Trap(TrapCode::UnreachableCodeReached),
+            Instruction::return_imm32(Const32::from(1_i32)),
+        ],
+    );
+}
+
+#[test]
+fn const_condition_br_if_else() {
+    fn test_for<I>(condition: bool, instrs: I)
+    where
+        I: IntoIterator<Item = Instruction>,
+    {
+        let condition = i32::from(condition);
+        let wasm = wat2wasm(&format!(
+            r"
+            (module
+                (func (param i32) (result i32)
+                    (i32.const {condition})
+                    (if
+                        (then
+                            (local.get 0) ;; br_if condition
+                            (br_if 0)
+                            (unreachable)
+                        )
+                        (else
+                            (unreachable)
+                        )
+                    )
+                    (i32.const 1)
+                )
+            )",
+        ));
+        TranslationTest::new(wasm).expect_func(instrs).run()
+    }
+    test_for(
+        true,
+        [
+            Instruction::branch_nez(Register::from_u16(0), BranchOffset::from(2)),
+            Instruction::Trap(TrapCode::UnreachableCodeReached),
+            Instruction::return_imm32(Const32::from(1_i32)),
         ],
     );
     test_for(false, [Instruction::Trap(TrapCode::UnreachableCodeReached)]);
