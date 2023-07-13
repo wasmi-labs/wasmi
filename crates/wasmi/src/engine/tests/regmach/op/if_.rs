@@ -23,6 +23,36 @@ fn simple_if_then() {
 }
 
 #[test]
+fn if_then_return() {
+    let wasm = wat2wasm(
+        r"
+        (module
+            (func (param i32 i32 i32) (result i32)
+                (if (local.get 0)
+                    (then
+                        (return
+                            (i32.add
+                                (local.get 1)
+                                (local.get 2)
+                            )
+                        )
+                    )
+                )
+                (i32.const 0)
+            )
+        )",
+    );
+    TranslationTest::new(wasm)
+        .expect_func([
+            Instruction::branch_eqz(Register::from_u16(0), BranchOffset::from(3)),
+            Instruction::i32_add(Register::from_u16(3), Register::from_u16(1), Register::from_u16(2)),
+            Instruction::return_reg(Register::from_u16(3)),
+            Instruction::return_imm32(Const32::from(0_i32)),
+        ])
+        .run()
+}
+
+#[test]
 fn simple_if_then_else() {
     let wasm = wat2wasm(
         r"
