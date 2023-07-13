@@ -844,21 +844,25 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_const(&mut self, value: i32) -> Self::Output {
+        bail_unreachable!(self);
         self.alloc.stack.push_const(value);
         Ok(())
     }
 
     fn visit_i64_const(&mut self, value: i64) -> Self::Output {
+        bail_unreachable!(self);
         self.alloc.stack.push_const(value);
         Ok(())
     }
 
     fn visit_f32_const(&mut self, value: wasmparser::Ieee32) -> Self::Output {
+        bail_unreachable!(self);
         self.alloc.stack.push_const(F32::from_bits(value.bits()));
         Ok(())
     }
 
     fn visit_f64_const(&mut self, value: wasmparser::Ieee64) -> Self::Output {
+        bail_unreachable!(self);
         self.alloc.stack.push_const(F64::from_bits(value.bits()));
         Ok(())
     }
