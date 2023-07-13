@@ -1,5 +1,6 @@
 use super::*;
 use crate::engine::bytecode::BranchOffset;
+use wasmi_core::TrapCode;
 
 #[test]
 fn simple_if_then() {
@@ -73,4 +74,86 @@ fn const_condition() {
     }
     test_for(true);
     test_for(false);
+}
+
+#[test]
+fn const_condition_trap_then() {
+    fn test_for<I>(condition: bool, instrs: I)
+    where
+        I: IntoIterator<Item = Instruction>,
+    {
+        let condition = i32::from(condition);
+        let wasm = wat2wasm(&format!(
+            r"
+            (module
+                (func (param i32 i32) (result i32)
+                    (i32.const {condition})
+                    (if (result i32 i32)
+                        (then
+                            (unreachable)
+                        )
+                        (else
+                            (local.get 0)
+                            (local.get 1)
+                        )
+                    )
+                    (i32.add)
+                )
+            )",
+        ));
+        TranslationTest::new(wasm).expect_func(instrs).run()
+    }
+    test_for(true, [Instruction::Trap(TrapCode::UnreachableCodeReached)]);
+    test_for(
+        false,
+        [
+            Instruction::i32_add(
+                Register::from_u16(2),
+                Register::from_u16(0),
+                Register::from_u16(1),
+            ),
+            Instruction::return_reg(Register::from_u16(2)),
+        ],
+    );
+}
+
+#[test]
+fn const_condition_trap_else() {
+    fn test_for<I>(condition: bool, instrs: I)
+    where
+        I: IntoIterator<Item = Instruction>,
+    {
+        let condition = i32::from(condition);
+        let wasm = wat2wasm(&format!(
+            r"
+            (module
+                (func (param i32 i32) (result i32)
+                    (i32.const {condition})
+                    (if (result i32 i32)
+                        (then
+                            (local.get 0)
+                            (local.get 1)
+                        )
+                        (else
+                            (unreachable)
+                        )
+                    )
+                    (i32.add)
+                )
+            )",
+        ));
+        TranslationTest::new(wasm).expect_func(instrs).run()
+    }
+    test_for(
+        true,
+        [
+            Instruction::i32_add(
+                Register::from_u16(2),
+                Register::from_u16(0),
+                Register::from_u16(1),
+            ),
+            Instruction::return_reg(Register::from_u16(2)),
+        ],
+    );
+    test_for(false, [Instruction::Trap(TrapCode::UnreachableCodeReached)]);
 }
