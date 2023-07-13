@@ -411,8 +411,11 @@ impl<'parser> FuncTranslator<'parser> {
             (true, false) => {
                 self.reachable = frame.is_end_of_then_reachable() || frame.is_branched_to();
             }
-            (_, true) => {
+            (false, true) => {
                 self.reachable = self.reachable || frame.is_branched_to();
+            }
+            (true, true) => {
+                self.reachable = self.reachable || frame.is_branched_to() || !frame.visited_else();
             }
             _ => unreachable!("if control frame is reachable so at least one of then or else must be reachable as well"),
         }
