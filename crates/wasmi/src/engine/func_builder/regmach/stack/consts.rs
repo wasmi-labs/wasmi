@@ -13,22 +13,22 @@ use core::slice::Iter as SliceIter;
 ///
 /// - Those constant values are identified by their associated [`Register`].
 /// - All constant values are also deduplicated so that no duplicates
-///   are stored in a single [`ConstPool`]. This also means that deciding if two
+///   are stored in a [`FuncLocalConsts`]. This also means that deciding if two
 ///   [`Register`] values refer to the equal constant values can be efficiently
 ///   done by comparing the [`Register`] indices without resolving to their
 ///   underlying constant values.
 #[derive(Debug, Default)]
 pub struct FuncLocalConsts {
-    /// Mapping from constant [`UntypedValue`] values to [`ConstRef`] indices.
+    /// Mapping from constant [`UntypedValue`] values to [`Register`] indices.
     const2idx: BTreeMap<UntypedValue, Register>,
-    /// Mapping from [`ConstRef`] indices to constant [`UntypedValue`] values.
+    /// Mapping from [`Register`] indices to constant [`UntypedValue`] values.
     idx2const: Vec<UntypedValue>,
     /// The [`Register`] index for the next allocated function local constant value.
     next_idx: i16,
 }
 
 impl FuncLocalConsts {
-    /// Resets the [`FuncLocalConst`] data structure.
+    /// Resets the [`FuncLocalConsts`] data structure.
     pub fn reset(&mut self) {
         self.const2idx.clear();
         self.idx2const.clear();
@@ -61,16 +61,16 @@ impl FuncLocalConsts {
         self.next_idx.abs_diff(Self::first_index())
     }
 
-    /// Allocates a new constant `value` on the [`ConstPool`] and returns its identifier.
+    /// Allocates a new constant `value` on the [`FuncLocalConsts`] and returns its identifier.
     ///
     /// # Note
     ///
-    /// If the constant `value` already exists in this [`ConstPool`] no new value is
+    /// If the constant `value` already exists in this [`FuncLocalConsts`] no new value is
     /// allocated and the identifier of the existing constant `value` returned instead.
     ///
     /// # Errors
     ///
-    /// If too many constant values have been allocated for this [`ConstPool`].
+    /// If too many constant values have been allocated for this [`FuncLocalConsts`].
     pub fn alloc(&mut self, value: UntypedValue) -> Result<Register, TranslationError> {
         if self.next_idx == Self::last_index() {
             return Err(TranslationError::new(
