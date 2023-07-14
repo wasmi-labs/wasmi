@@ -35,8 +35,8 @@ fn reg_0_after_mod32() {
 fn reg_1_after_mod32() {
     let expected = [
         Instruction::i64_shr_s_imm(
-            Register::from_u16(1),
-            Register::from_u16(0),
+            Register::from_i16(1),
+            Register::from_i16(0),
             Const16::from_i16(1),
         ),
         Instruction::return_reg(1),

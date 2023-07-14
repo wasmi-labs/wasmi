@@ -26,7 +26,7 @@ pub use self::{
     control_frame::{ControlFrame, ControlFrameKind},
     control_stack::ControlStack,
     instr_encoder::InstrEncoder,
-    stack::{DefragRegister, ProviderStack, RegisterAlloc, TypedProvider},
+    stack::{DefragRegister, FuncLocalConstsIter, ProviderStack, RegisterAlloc, TypedProvider},
 };
 use crate::{
     engine::{
@@ -158,7 +158,7 @@ impl<'parser> FuncTranslator<'parser> {
         //
         // We can do this since the branch parameters of the function enclosing block
         // are never used due to optimizations to directly return to the caller instead.
-        let branch_params = RegisterSlice::new(Register::from_u16(0));
+        let branch_params = RegisterSlice::new(Register::from_i16(0));
         let block_frame = BlockControlFrame::new(
             block_type,
             end_label,
@@ -204,10 +204,11 @@ impl<'parser> FuncTranslator<'parser> {
         self.alloc.stack.defrag(&mut self.alloc.instr_encoder);
         self.alloc.instr_encoder.update_branch_offsets()?;
         let len_registers = self.alloc.stack.len_registers();
+        let func_consts = self.alloc.stack.func_local_consts();
         let instrs = self.alloc.instr_encoder.drain_instrs();
         self.res
             .engine()
-            .init_func_2(self.compiled_func, len_registers, instrs);
+            .init_func_2(self.compiled_func, len_registers, func_consts, instrs);
         Ok(())
     }
 

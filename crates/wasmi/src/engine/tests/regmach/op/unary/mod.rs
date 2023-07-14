@@ -40,7 +40,7 @@ fn conversion_reg<I, O>(
     O: WasmType,
 {
     let expected = [
-        make_instr(Register::from_u16(1), Register::from_u16(0)),
+        make_instr(Register::from_i16(1), Register::from_i16(0)),
         Instruction::return_reg(1),
     ];
     conversion_reg_with::<I, O, _>(wasm_op, expected)

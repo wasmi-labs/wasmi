@@ -24,7 +24,7 @@ where
     ));
     TranslationTest::new(wasm)
         .expect_func([
-            Instruction::global_set(GlobalIdx::from(0), Register::from_u16(0)),
+            Instruction::global_set(GlobalIdx::from(0), Register::from_i16(0)),
             Instruction::Return,
         ])
         .run()

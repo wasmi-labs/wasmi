@@ -29,7 +29,7 @@ fn as_return_1() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::return_reg(Register::from_u16(0))])
+        .expect_func([Instruction::return_reg(Register::from_i16(0))])
         .run()
 }
 

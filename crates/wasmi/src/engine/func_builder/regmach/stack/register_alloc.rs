@@ -59,13 +59,13 @@ pub struct RegisterAlloc {
     /// The combined number of registered function inputs and local variables.
     len_locals: u16,
     /// The index for the next dynamically allocated register.
-    next_dynamic: u16,
+    next_dynamic: i16,
     /// The maximum index registered for a dynamically allocated register.
-    max_dynamic: u16,
+    max_dynamic: i16,
     /// The index for the next register allocated to the storage.
-    next_storage: u16,
+    next_storage: i16,
     /// The minimum index registered for a storage allocated register.
-    min_storage: u16,
+    min_storage: i16,
     /// Storage register users and definition sites.
     storage_users: BTreeSet<RegisterUser>,
 }
@@ -128,14 +128,17 @@ enum AllocPhase {
 }
 
 impl RegisterAlloc {
+    /// The maximum amount of local variables (and function parameters) a function may define.
+    const MAX_LEN_LOCALS: u16 = i16::MAX as u16;
+
     /// Resets the [`RegisterAlloc`] to start compiling a new function.
     pub fn reset(&mut self) {
         self.phase = AllocPhase::Init;
         self.len_locals = 0;
         self.next_dynamic = 0;
         self.max_dynamic = 0;
-        self.next_storage = u16::MAX;
-        self.min_storage = u16::MAX;
+        self.next_storage = i16::MAX;
+        self.min_storage = i16::MAX;
     }
 
     /// Adjusts the [`RegisterAlloc`] for the popped [`TaggedProvider`] and returns a [`TypedProvider`].
@@ -159,11 +162,14 @@ impl RegisterAlloc {
         self.len_locals
     }
 
+    /// Returns the minimum index of any dynamically allocated [`Register`].
+    pub fn min_dynamic(&self) -> i16 {
+        self.len_locals() as i16
+    }
+
     /// Returns the number of registers allocated by the [`RegisterAlloc`].
     pub fn len_registers(&self) -> u16 {
-        let len_dynamic = self.max_dynamic - self.len_locals;
-        let len_storage = u16::MAX - self.min_storage;
-        self.len_locals + len_dynamic + len_storage
+        (i16::MAX as u16) - self.max_dynamic.abs_diff(self.min_storage)
     }
 
     /// Registers an `amount` of function inputs or local variables.
@@ -179,14 +185,19 @@ impl RegisterAlloc {
         /// Bumps `len_locals` by `amount` if possible.
         fn bump_locals(len_locals: u16, amount: u32) -> Option<u16> {
             let amount = u16::try_from(amount).ok()?;
-            len_locals.checked_add(amount)
+            let new_len = len_locals.checked_add(amount)?;
+            if new_len >= RegisterAlloc::MAX_LEN_LOCALS {
+                return None;
+            }
+            Some(new_len)
         }
         assert!(matches!(self.phase, AllocPhase::Init));
         self.len_locals = bump_locals(self.len_locals, amount).ok_or_else(|| {
             TranslationError::new(TranslationErrorInner::AllocatedTooManyRegisters)
         })?;
-        self.next_dynamic = self.len_locals;
-        self.max_dynamic = self.len_locals;
+        // We can convert `len_locals` to `i16` because it is always without bounds of `0..i16::MAX`.
+        self.next_dynamic = self.len_locals as i16;
+        self.max_dynamic = self.len_locals as i16;
         Ok(())
     }
 
@@ -224,7 +235,7 @@ impl RegisterAlloc {
                 TranslationErrorInner::AllocatedTooManyRegisters,
             ));
         }
-        let reg = Register::from_u16(self.next_dynamic);
+        let reg = Register::from_i16(self.next_dynamic);
         self.next_dynamic += 1;
         self.max_dynamic = max(self.max_dynamic, self.next_dynamic);
         Ok(reg)
@@ -241,12 +252,12 @@ impl RegisterAlloc {
     /// If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
     pub fn push_dynamic_n(&mut self, n: usize) -> Result<RegisterSlice, TranslationError> {
         fn next_dynamic_n(this: &mut RegisterAlloc, n: usize) -> Option<RegisterSlice> {
-            let n = u16::try_from(n).ok()?;
+            let n = i16::try_from(n).ok()?;
             let next_dynamic = this.next_dynamic.checked_add(n)?;
             if next_dynamic >= this.next_storage {
                 return None;
             }
-            let register = RegisterSlice::new(Register::from_u16(this.next_dynamic));
+            let register = RegisterSlice::new(Register::from_i16(this.next_dynamic));
             this.next_dynamic += n;
             this.max_dynamic = max(this.max_dynamic, this.next_dynamic);
             Some(register)
@@ -279,7 +290,7 @@ impl RegisterAlloc {
                 TranslationErrorInner::AllocatedTooManyRegisters,
             ));
         }
-        let reg = Register::from_u16(self.next_storage);
+        let reg = Register::from_i16(self.next_storage);
         self.storage_users.insert(RegisterUser::new(reg, def_site));
         self.next_storage -= 1;
         self.min_storage = min(self.min_storage, self.next_storage);
@@ -295,7 +306,8 @@ impl RegisterAlloc {
     pub fn pop_dynamic(&mut self) {
         self.assert_alloc_phase();
         assert_ne!(
-            self.next_dynamic, self.len_locals,
+            self.next_dynamic,
+            self.min_dynamic(),
             "dynamic register allocation stack is empty"
         );
         self.next_dynamic -= 1;
@@ -309,9 +321,9 @@ impl RegisterAlloc {
     /// - If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
     pub fn pop_dynamic_n(&mut self, n: usize) {
         fn pop_impl(this: &mut RegisterAlloc, n: usize) -> Option<()> {
-            let n = u16::try_from(n).ok()?;
+            let n = i16::try_from(n).ok()?;
             let new_next_dynamic = this.next_dynamic.checked_sub(n)?;
-            if this.len_locals > new_next_dynamic {
+            if new_next_dynamic < this.min_dynamic() {
                 return None;
             }
             this.next_dynamic = new_next_dynamic;
@@ -331,7 +343,7 @@ impl RegisterAlloc {
         self.assert_alloc_phase();
         assert_ne!(
             self.next_storage,
-            u16::MAX,
+            i16::MAX,
             "storage register allocation stack is empty"
         );
         self.next_storage += 1;
@@ -351,12 +363,12 @@ impl RegisterAlloc {
 
     /// Returns `true` if the [`Register`] is allocated in the dynamic register space.
     pub fn is_dynamic(&self, reg: Register) -> bool {
-        self.len_locals <= reg.to_u16() && reg.to_u16() < self.max_dynamic
+        self.min_dynamic() <= reg.to_i16() && reg.to_i16() < self.max_dynamic
     }
 
     /// Returns `true` if the [`Register`] is allocated in the storage register space.
     pub fn is_storage(&self, reg: Register) -> bool {
-        self.min_storage < reg.to_u16()
+        self.min_storage < reg.to_i16()
     }
 
     /// Defragments the allocated registers space.
@@ -379,7 +391,7 @@ impl RegisterAlloc {
         for user in &self.storage_users {
             let reg = user.reg();
             let instr = user.user();
-            let new_reg = Register::from_u16(self.next_storage);
+            let new_reg = Register::from_i16(self.next_storage);
             state.defrag_register(instr, reg, new_reg);
             self.next_storage += 1;
         }

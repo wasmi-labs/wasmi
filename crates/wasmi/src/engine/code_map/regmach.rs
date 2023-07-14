@@ -8,13 +8,13 @@
 //! register machine based bytecode functions.
 
 use super::{CompiledFunc, InstructionsRef};
-use crate::engine::bytecode2::Instruction;
+use crate::engine::{bytecode2::Instruction, func_builder::regmach::FuncLocalConstsIter};
 use alloc::vec::Vec;
 use wasmi_arena::ArenaIndex;
-use wasmi_core::TrapCode;
+use wasmi_core::{TrapCode, UntypedValue};
 
 /// Meta information about a [`CompiledFunc`].
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct FuncHeader {
     /// A reference to the sequence of [`Instruction`] of the [`CompiledFunc`].
     iref: InstructionsRef,
@@ -22,15 +22,23 @@ pub struct FuncHeader {
     len_registers: u16,
     /// The number of instructions of the [`CompiledFunc`].
     len_instrs: u32,
+    /// The constant values local to the [`CompiledFunc`].
+    func_consts: Box<[UntypedValue]>,
 }
 
 impl FuncHeader {
     /// Create a new initialized [`FuncHeader`].
-    pub fn new(iref: InstructionsRef, len_registers: u16, len_instrs: u32) -> Self {
+    pub fn new(
+        iref: InstructionsRef,
+        len_registers: u16,
+        func_consts: FuncLocalConstsIter,
+        len_instrs: u32,
+    ) -> Self {
         Self {
             iref,
             len_registers,
             len_instrs,
+            func_consts: func_consts.collect(),
         }
     }
 
@@ -40,6 +48,7 @@ impl FuncHeader {
             iref: InstructionsRef::uninit(),
             len_registers: 0,
             len_instrs: 0,
+            func_consts: [].into(),
         }
     }
 
@@ -108,8 +117,13 @@ impl CodeMap {
     ///
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
-    pub fn init_func<I>(&mut self, func: CompiledFunc, len_registers: u16, instrs: I)
-    where
+    pub fn init_func<I>(
+        &mut self,
+        func: CompiledFunc,
+        len_registers: u16,
+        func_locals: FuncLocalConstsIter,
+        instrs: I,
+    ) where
         I: IntoIterator<Item = Instruction>,
     {
         assert!(
@@ -121,7 +135,8 @@ impl CodeMap {
         let len_instrs = u32::try_from(self.instrs.len() - start)
             .unwrap_or_else(|_| panic!("tried to initialize function with too many instructions"));
         let iref = InstructionsRef::new(start);
-        self.headers[func.into_usize()] = FuncHeader::new(iref, len_registers, len_instrs);
+        self.headers[func.into_usize()] =
+            FuncHeader::new(iref, len_registers, func_locals, len_instrs);
     }
 
     /// Returns the [`FuncHeader`] of the [`CompiledFunc`].

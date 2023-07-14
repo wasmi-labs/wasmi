@@ -112,10 +112,10 @@ fn test_reg(kind: SelectKind, result_ty: ValueType) {
         )
     "#,
     ));
-    let condition = Register::from_u16(0);
-    let lhs = Register::from_u16(1);
-    let rhs = Register::from_u16(2);
-    let result = Register::from_u16(3);
+    let condition = Register::from_i16(0);
+    let lhs = Register::from_i16(1);
+    let rhs = Register::from_i16(2);
+    let result = Register::from_i16(3);
     TranslationTest::new(wasm)
         .expect_func([
             Instruction::select(result, condition, lhs),
@@ -156,7 +156,7 @@ fn test_same_reg(kind: SelectKind, result_ty: ValueType) {
     "#,
     ));
     TranslationTest::new(wasm)
-        .expect_func([Instruction::return_reg(Register::from_u16(1))])
+        .expect_func([Instruction::return_reg(Register::from_i16(1))])
         .run();
 }
 
@@ -226,9 +226,9 @@ fn test_reg_imm(kind: SelectKind, rhs: Value) {
     "#,
     ));
     let mut testcase = TranslationTest::new(wasm);
-    let result = Register::from_u16(2);
-    let condition = Register::from_u16(0);
-    let lhs = Register::from_u16(1);
+    let result = Register::from_i16(2);
+    let condition = Register::from_i16(0);
+    let lhs = Register::from_i16(1);
     let select_instr = match rhs.ty() {
         ValueType::I32 | ValueType::F32 => Instruction::select_imm32_rhs(result, condition, lhs),
         ValueType::I64 | ValueType::F64 | ValueType::FuncRef | ValueType::ExternRef => {
@@ -271,9 +271,9 @@ fn test_imm_reg(kind: SelectKind, lhs: Value) {
     "#,
     ));
     let mut testcase = TranslationTest::new(wasm);
-    let result = Register::from_u16(2);
-    let condition = Register::from_u16(0);
-    let rhs = Register::from_u16(1);
+    let result = Register::from_i16(2);
+    let condition = Register::from_i16(0);
+    let rhs = Register::from_i16(1);
     let select_instr = match lhs.ty() {
         ValueType::I32 | ValueType::F32 => Instruction::select_imm32_lhs(result, condition, rhs),
         ValueType::I64 | ValueType::F64 | ValueType::FuncRef | ValueType::ExternRef => {
@@ -323,8 +323,8 @@ fn test_imm(kind: SelectKind, lhs: Value, rhs: Value) {
     "#,
     ));
     let mut testcase = TranslationTest::new(wasm);
-    let result = Register::from_u16(1);
-    let condition = Register::from_u16(0);
+    let result = Register::from_i16(1);
+    let condition = Register::from_i16(0);
     match (lhs, rhs) {
         (Value::I32(lhs), Value::I32(rhs)) => {
             testcase.expect_func([
@@ -386,8 +386,8 @@ fn imm() {
 fn test_const_condition_reg(kind: SelectKind, condition: bool, result_ty: ValueType) {
     let display_ty = DisplayValueType::from(result_ty);
     let condition_i32 = i32::from(condition);
-    let lhs = Register::from_u16(0);
-    let rhs = Register::from_u16(1);
+    let lhs = Register::from_i16(0);
+    let rhs = Register::from_i16(1);
     let picked_reg = if condition { lhs } else { rhs };
     let display_select = DisplaySelect::new(kind, result_ty);
     let wasm = wat2wasm(&format!(
@@ -446,7 +446,7 @@ fn test_const_condition_reg_imm(kind: SelectKind, condition: bool, rhs: Value) {
     ));
     let mut testcase = TranslationTest::new(wasm);
     let picked_instr = if condition {
-        Instruction::return_reg(Register::from_u16(0))
+        Instruction::return_reg(Register::from_i16(0))
     } else {
         return_for_value(&mut testcase, rhs)
     };
@@ -487,7 +487,7 @@ fn test_const_condition_imm_reg(kind: SelectKind, condition: bool, lhs: Value) {
     ));
     let mut testcase = TranslationTest::new(wasm);
     let picked_instr = if !condition {
-        Instruction::return_reg(Register::from_u16(0))
+        Instruction::return_reg(Register::from_i16(0))
     } else {
         return_for_value(&mut testcase, lhs)
     };

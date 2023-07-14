@@ -97,6 +97,12 @@ impl Display for TranslationError {
             TranslationErrorInner::ProviderSliceOverflow => {
                 write!(f, "tried to allocate too many or too large provider slices")
             }
+            TranslationErrorInner::TooManyFuncLocalConstValues => {
+                write!(
+                    f,
+                    "tried to allocate too many function local constant values"
+                )
+            }
         }
     }
 }
@@ -128,4 +134,6 @@ pub enum TranslationErrorInner {
     EmulatedValueStackOverflow,
     /// Tried to allocate too many or large provider slices.
     ProviderSliceOverflow,
+    /// Tried to allocate too many function local constant values.
+    TooManyFuncLocalConstValues,
 }

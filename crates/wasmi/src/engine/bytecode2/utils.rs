@@ -6,23 +6,28 @@ use super::Instruction;
 
 /// An index into a register.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Register(u16);
+pub struct Register(i16);
 
-impl From<u16> for Register {
-    fn from(index: u16) -> Self {
-        Self::from_u16(index)
+impl From<i16> for Register {
+    fn from(index: i16) -> Self {
+        Self::from_i16(index)
     }
 }
 
 impl Register {
     /// Create a [`Register`] from the given `u16` index.
-    pub fn from_u16(index: u16) -> Self {
+    pub fn from_i16(index: i16) -> Self {
         Self(index)
     }
 
     /// Returns the index of the [`Register`] as `u16` value.
-    pub fn to_u16(self) -> u16 {
+    pub fn to_i16(self) -> i16 {
         self.0
+    }
+
+    /// Returns `true` if this [`Register`] refers to a function local constant value.
+    pub fn is_const(self) -> bool {
+        self.0.is_negative()
     }
 
     /// Returns the [`Register`] with the next contiguous index.
@@ -80,7 +85,7 @@ impl RegisterSliceIter {
     ///
     /// If the `start..end` [`Register`] slice indices are out of bounds.
     fn new(start: Register, len: usize) -> Self {
-        let len = u16::try_from(len)
+        let len = i16::try_from(len)
             .unwrap_or_else(|_| panic!("out of bounds length for register slice: {len}"));
         let next = start;
         let last_index = start

@@ -40,8 +40,8 @@ fn test_store(
     ));
     TranslationTest::new(wasm)
         .expect_func([
-            make_instr(Register::from_u16(0), Const32::from(offset)),
-            Instruction::Register(Register::from_u16(1)),
+            make_instr(Register::from_i16(0), Const32::from(offset)),
+            Instruction::Register(Register::from_i16(1)),
             Instruction::Return,
         ])
         .run();
@@ -71,7 +71,7 @@ fn test_store_imm<T>(
     ));
     TranslationTest::new(wasm)
         .expect_func([
-            make_instr(Register::from_u16(0), Const32::from(offset)),
+            make_instr(Register::from_i16(0), Const32::from(offset)),
             make_instr_param(value),
             Instruction::Return,
         ])
@@ -102,7 +102,7 @@ fn test_store_at(
     ));
     TranslationTest::new(wasm)
         .expect_func([
-            make_instr(Const32::from(address), Register::from_u16(0)),
+            make_instr(Const32::from(address), Register::from_i16(0)),
             Instruction::Return,
         ])
         .run();

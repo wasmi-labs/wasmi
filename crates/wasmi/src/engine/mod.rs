@@ -41,6 +41,7 @@ use self::{
     code_map::CodeMap,
     const_pool::{ConstPool, ConstPoolView, ConstRef},
     executor::{execute_wasm, WasmOutcome},
+    func_builder::regmach::FuncLocalConstsIter,
     func_types::FuncTypeRegistry,
     resumable::ResumableCallBase,
     stack::{FuncFrame, Stack, ValueStack},
@@ -246,11 +247,17 @@ impl Engine {
     ///
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
-    pub(super) fn init_func_2<I>(&self, func: CompiledFunc, len_registers: u16, instrs: I)
-    where
+    pub(super) fn init_func_2<I>(
+        &self,
+        func: CompiledFunc,
+        len_registers: u16,
+        func_locals: FuncLocalConstsIter,
+        instrs: I,
+    ) where
         I: IntoIterator<Item = Instruction2>,
     {
-        self.inner.init_func_2(func, len_registers, instrs)
+        self.inner
+            .init_func_2(func, len_registers, func_locals, instrs)
     }
 
     /// Resolves the [`CompiledFunc`] to the underlying `wasmi` bytecode instructions.
@@ -587,14 +594,19 @@ impl EngineInner {
     ///
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
-    fn init_func_2<I>(&self, func: CompiledFunc, len_registers: u16, instrs: I)
-    where
+    fn init_func_2<I>(
+        &self,
+        func: CompiledFunc,
+        len_registers: u16,
+        func_locals: FuncLocalConstsIter,
+        instrs: I,
+    ) where
         I: IntoIterator<Item = Instruction2>,
     {
         self.res
             .write()
             .code_map_2
-            .init_func(func, len_registers, instrs)
+            .init_func(func, len_registers, func_locals, instrs)
     }
 
     #[cfg(test)]

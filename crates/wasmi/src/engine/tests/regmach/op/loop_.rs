@@ -40,8 +40,8 @@ fn identity_loop_1() {
     );
     TranslationTest::new(wasm)
         .expect_func([
-            Instruction::copy(Register::from_u16(1), Register::from_u16(0)),
-            Instruction::return_reg(Register::from_u16(1)),
+            Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
+            Instruction::return_reg(Register::from_i16(1)),
         ])
         .run()
 }
@@ -61,8 +61,8 @@ fn identity_loop_1_nested() {
     );
     TranslationTest::new(wasm)
         .expect_func([
-            Instruction::copy(Register::from_u16(1), Register::from_u16(0)),
-            Instruction::return_reg(Register::from_u16(1)),
+            Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
+            Instruction::return_reg(Register::from_i16(1)),
         ])
         .run()
 }
@@ -82,14 +82,14 @@ fn identity_loop_2() {
     );
     TranslationTest::new(wasm)
         .expect_func([
-            Instruction::copy(Register::from_u16(2), Register::from_u16(0)),
-            Instruction::copy(Register::from_u16(3), Register::from_u16(1)),
+            Instruction::copy(Register::from_i16(2), Register::from_i16(0)),
+            Instruction::copy(Register::from_i16(3), Register::from_i16(1)),
             Instruction::i32_add(
-                Register::from_u16(2),
-                Register::from_u16(2),
-                Register::from_u16(3),
+                Register::from_i16(2),
+                Register::from_i16(2),
+                Register::from_i16(3),
             ),
-            Instruction::return_reg(Register::from_u16(2)),
+            Instruction::return_reg(Register::from_i16(2)),
         ])
         .run()
 }
@@ -111,14 +111,14 @@ fn identity_loop_2_nested() {
     );
     TranslationTest::new(wasm)
         .expect_func([
-            Instruction::copy(Register::from_u16(2), Register::from_u16(0)),
-            Instruction::copy(Register::from_u16(3), Register::from_u16(1)),
+            Instruction::copy(Register::from_i16(2), Register::from_i16(0)),
+            Instruction::copy(Register::from_i16(3), Register::from_i16(1)),
             Instruction::i32_add(
-                Register::from_u16(2),
-                Register::from_u16(2),
-                Register::from_u16(3),
+                Register::from_i16(2),
+                Register::from_i16(2),
+                Register::from_i16(3),
             ),
-            Instruction::return_reg(Register::from_u16(2)),
+            Instruction::return_reg(Register::from_i16(2)),
         ])
         .run()
 }
@@ -151,7 +151,7 @@ fn repeat_loop_1() {
     );
     TranslationTest::new(wasm)
         .expect_func([
-            Instruction::copy(Register::from_u16(1), Register::from_u16(0)),
+            Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
             Instruction::branch(BranchOffset::from(0)),
         ])
         .run()
@@ -174,8 +174,8 @@ fn repeat_loop_1_copy() {
     );
     TranslationTest::new(wasm)
         .expect_func([
-            Instruction::copy(Register::from_u16(2), Register::from_u16(0)),
-            Instruction::copy(Register::from_u16(2), Register::from_u16(1)),
+            Instruction::copy(Register::from_i16(2), Register::from_i16(0)),
+            Instruction::copy(Register::from_i16(2), Register::from_i16(1)),
             Instruction::branch(BranchOffset::from(-1)),
         ])
         .run()

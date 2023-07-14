@@ -1,7 +1,9 @@
+mod consts;
 mod provider;
 mod register_alloc;
 
 pub use self::{
+    consts::{FuncLocalConsts, FuncLocalConstsIter},
     provider::{ProviderStack, TaggedProvider},
     register_alloc::{DefragRegister, RegisterAlloc},
 };
@@ -42,6 +44,7 @@ impl TypedProvider {
 pub struct ValueStack {
     providers: ProviderStack,
     reg_alloc: RegisterAlloc,
+    consts: FuncLocalConsts,
 }
 
 impl ValueStack {
@@ -49,6 +52,7 @@ impl ValueStack {
     pub fn reset(&mut self) {
         self.providers.reset();
         self.reg_alloc.reset();
+        self.consts.reset();
     }
 
     /// Pops [`Provider`] from the [`ValueStack`] until it has the given stack `height`.
@@ -70,7 +74,8 @@ impl ValueStack {
 
     /// Returns the number of registers allocated by the [`RegisterAlloc`].
     pub fn len_registers(&self) -> u16 {
-        self.reg_alloc.len_registers()
+        // The addition won't overflow since both operands are in the range of `0..i16::MAX`.
+        self.consts.len_consts() + self.reg_alloc.len_registers()
     }
 
     /// Registers an `amount` of function inputs or local variables.
@@ -94,6 +99,31 @@ impl ValueStack {
     /// However, it is then possible to push and pop dynamic and storage registers to the stack.
     pub fn finish_register_locals(&mut self) {
         self.reg_alloc.finish_register_locals()
+    }
+
+    /// Allocates a new function local constant value and returns its [`Register`].
+    ///
+    /// # Note
+    ///
+    /// Constant values allocated this way are deduplicated and return shared [`Register`].
+    pub fn alloc_const<T>(&mut self, value: T) -> Result<Register, TranslationError>
+    where
+        T: Into<UntypedValue>,
+    {
+        self.consts.alloc(value.into())
+    }
+
+    /// Returns the allocated function local constant values in reversed allocation order.
+    ///
+    /// # Note
+    ///
+    /// Upon calling a function all of its function local constant values are
+    /// inserted into the current execution call frame in reversed allocation order
+    /// and accessed via negative [`Register`] index where the 0 index is referring
+    /// to the first function local and the -1 index is referring to the first
+    /// allocated function local constant value.
+    pub fn func_local_consts(&self) -> FuncLocalConstsIter {
+        self.consts.iter()
     }
 
     /// Pushes a constant value to the [`ProviderStack`].
@@ -144,11 +174,11 @@ impl ValueStack {
     ///
     /// If too many registers have been registered.
     pub fn push_local(&mut self, local_index: u32) -> Result<Register, TranslationError> {
-        let index = u16::try_from(local_index)
+        let index = i16::try_from(local_index)
             .ok()
-            .filter(|&value| value <= self.reg_alloc.len_locals())
+            .filter(|&value| value as u16 <= self.reg_alloc.len_locals())
             .ok_or_else(|| TranslationError::new(TranslationErrorInner::RegisterOutOfBounds))?;
-        let reg = Register::from_u16(index);
+        let reg = Register::from_i16(index);
         self.providers.push_local(reg);
         Ok(reg)
     }

@@ -39,7 +39,7 @@ fn identity_block_1() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::return_reg(Register::from_u16(0))])
+        .expect_func([Instruction::return_reg(Register::from_i16(0))])
         .run()
 }
 
@@ -57,7 +57,7 @@ fn identity_block_2() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::return_reg(Register::from_u16(0))])
+        .expect_func([Instruction::return_reg(Register::from_i16(0))])
         .run()
 }
 
@@ -75,7 +75,7 @@ fn nested_identity_block_1() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::return_reg(Register::from_u16(0))])
+        .expect_func([Instruction::return_reg(Register::from_i16(0))])
         .run()
 }
 
@@ -95,7 +95,7 @@ fn nested_identity_block_2() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::return_reg(Register::from_u16(0))])
+        .expect_func([Instruction::return_reg(Register::from_i16(0))])
         .run()
 }
 
@@ -134,9 +134,9 @@ fn branched_block_1() {
     );
     TranslationTest::new(wasm)
         .expect_func([
-            Instruction::copy(Register::from_u16(1), Register::from_u16(0)),
+            Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
             Instruction::branch(BranchOffset::from(1)),
-            Instruction::return_reg(Register::from_u16(1)),
+            Instruction::return_reg(Register::from_i16(1)),
         ])
         .run()
 }
@@ -158,10 +158,10 @@ fn branched_block_2() {
     );
     TranslationTest::new(wasm)
         .expect_func([
-            Instruction::copy(Register::from_u16(2), Register::from_u16(0)),
-            Instruction::copy(Register::from_u16(3), Register::from_u16(1)),
+            Instruction::copy(Register::from_i16(2), Register::from_i16(0)),
+            Instruction::copy(Register::from_i16(3), Register::from_i16(1)),
             Instruction::branch(BranchOffset::from(1)),
-            Instruction::return_reg(Register::from_u16(2)),
+            Instruction::return_reg(Register::from_i16(2)),
         ])
         .run()
 }
@@ -181,7 +181,7 @@ fn branch_if_block_0() {
     );
     TranslationTest::new(wasm)
         .expect_func([
-            Instruction::branch_nez(Register::from_u16(0), BranchOffset::from(1)),
+            Instruction::branch_nez(Register::from_i16(0), BranchOffset::from(1)),
             Instruction::Return,
         ])
         .run()
@@ -203,11 +203,11 @@ fn branch_if_block_1() {
     );
     TranslationTest::new(wasm)
         .expect_func([
-            Instruction::branch_eqz(Register::from_u16(1), BranchOffset::from(3)),
-            Instruction::copy(Register::from_u16(2), Register::from_u16(0)),
+            Instruction::branch_eqz(Register::from_i16(1), BranchOffset::from(3)),
+            Instruction::copy(Register::from_i16(2), Register::from_i16(0)),
             Instruction::branch(BranchOffset::from(2)),
-            Instruction::copy(Register::from_u16(2), Register::from_u16(0)),
-            Instruction::return_reg(Register::from_u16(2)),
+            Instruction::copy(Register::from_i16(2), Register::from_i16(0)),
+            Instruction::return_reg(Register::from_i16(2)),
         ])
         .run()
 }
@@ -239,7 +239,7 @@ fn branch_to_func_block_1() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::return_reg(Register::from_u16(0))])
+        .expect_func([Instruction::return_reg(Register::from_i16(0))])
         .run()
 }
 
@@ -274,6 +274,6 @@ fn branch_to_func_block_nested_1() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::return_reg(Register::from_u16(0))])
+        .expect_func([Instruction::return_reg(Register::from_i16(0))])
         .run()
 }

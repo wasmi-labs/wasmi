@@ -12,7 +12,7 @@ fn reg_reg() {
 fn reg_imm() {
     fn make_instrs(sign: Sign) -> [Instruction; 2] {
         [
-            Instruction::f32_copysign_imm(Register::from_u16(1), Register::from_u16(0), sign),
+            Instruction::f32_copysign_imm(Register::from_i16(1), Register::from_i16(0), sign),
             Instruction::return_reg(1),
         ]
     }

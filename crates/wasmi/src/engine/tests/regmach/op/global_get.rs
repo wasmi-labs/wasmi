@@ -30,8 +30,8 @@ where
     ));
     TranslationTest::new(wasm)
         .expect_func([
-            Instruction::global_get(Register::from_u16(0), GlobalIdx::from(0)),
-            Instruction::return_reg(Register::from_u16(0)),
+            Instruction::global_get(Register::from_i16(0), GlobalIdx::from(0)),
+            Instruction::return_reg(Register::from_i16(0)),
         ])
         .run()
 }
@@ -127,8 +127,8 @@ where
     ));
     TranslationTest::new(wasm)
         .expect_func([
-            Instruction::global_get(Register::from_u16(0), GlobalIdx::from(0)),
-            Instruction::return_reg(Register::from_u16(0)),
+            Instruction::global_get(Register::from_i16(0), GlobalIdx::from(0)),
+            Instruction::return_reg(Register::from_i16(0)),
         ])
         .run()
 }

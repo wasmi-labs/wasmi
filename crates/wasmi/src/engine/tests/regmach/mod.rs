@@ -179,9 +179,9 @@ fn test_binary_reg_reg(
     ));
     let expected = [
         make_instr(
-            Register::from_u16(2),
-            Register::from_u16(0),
-            Register::from_u16(1),
+            Register::from_i16(2),
+            Register::from_i16(0),
+            Register::from_i16(1),
         ),
         Instruction::return_reg(2),
     ];
@@ -212,7 +212,7 @@ fn test_binary_reg_imm16<T>(
     ));
     let immediate: Const16 = value.into();
     let expected = [
-        make_instr(Register::from_u16(1), Register::from_u16(0), immediate),
+        make_instr(Register::from_i16(1), Register::from_i16(0), immediate),
         Instruction::return_reg(1),
     ];
     assert_func_bodies(wasm, [expected]);
@@ -243,7 +243,7 @@ fn test_binary_reg_imm16_rev<T>(
     ));
     let immediate: Const16 = value.into();
     let expected = [
-        make_instr(Register::from_u16(1), immediate, Register::from_u16(0)),
+        make_instr(Register::from_i16(1), immediate, Register::from_i16(0)),
         Instruction::return_reg(1),
     ];
     assert_func_bodies(wasm, [expected]);
@@ -258,7 +258,7 @@ fn test_binary_reg_imm32<T>(
     DisplayWasm<T>: Display,
 {
     let expected = [
-        make_instr(Register::from_u16(1), Register::from_u16(0)),
+        make_instr(Register::from_i16(1), Register::from_i16(0)),
         Instruction::const32(value),
         Instruction::return_reg(1),
     ];
@@ -275,7 +275,7 @@ fn test_binary_reg_imm32_rev<T>(
     DisplayWasm<T>: Display,
 {
     let expected = [
-        make_instr(Register::from_u16(1), Register::from_u16(0)),
+        make_instr(Register::from_i16(1), Register::from_i16(0)),
         Instruction::const32(value),
         Instruction::return_reg(1),
     ];
@@ -291,7 +291,7 @@ fn test_binary_reg_imm64<T>(
     DisplayWasm<T>: Display,
 {
     let expected = [
-        make_instr(Register::from_u16(1), Register::from_u16(0)),
+        make_instr(Register::from_i16(1), Register::from_i16(0)),
         Instruction::ConstRef(ConstRef::from_u32(0)),
         Instruction::return_reg(1),
     ];
@@ -308,7 +308,7 @@ fn test_binary_reg_imm64_rev<T>(
     DisplayWasm<T>: Display,
 {
     let expected = [
-        make_instr(Register::from_u16(1), Register::from_u16(0)),
+        make_instr(Register::from_i16(1), Register::from_i16(0)),
         Instruction::ConstRef(ConstRef::from_u32(0)),
         Instruction::return_reg(1),
     ];
