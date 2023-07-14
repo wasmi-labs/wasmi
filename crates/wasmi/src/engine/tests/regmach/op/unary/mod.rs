@@ -28,7 +28,9 @@ where
         )
     "#,
     ));
-    TranslationTest::new(wasm).expect_func(expected).run();
+    TranslationTest::new(wasm)
+        .expect_func_instrs(expected)
+        .run();
 }
 
 /// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary `wasmi` instruction.
@@ -77,9 +79,9 @@ where
     let instr = <O as WasmType>::return_imm_instr(&eval(input));
     let mut testcase = TranslationTest::new(wasm);
     if let Instruction::ReturnImm { value } = &instr {
-        testcase.expect_const(*value, eval(input));
+        testcase.expect_cref(*value, eval(input));
     }
-    testcase.expect_func([instr]).run();
+    testcase.expect_func_instrs([instr]).run();
 }
 
 /// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary `wasmi` instruction.
@@ -113,6 +115,6 @@ where
     ));
     let trap_code = eval(input);
     TranslationTest::new(wasm)
-        .expect_func([Instruction::Trap(trap_code)])
+        .expect_func_instrs([Instruction::Trap(trap_code)])
         .run();
 }

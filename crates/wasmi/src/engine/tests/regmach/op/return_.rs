@@ -13,7 +13,7 @@ fn as_return() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::Return])
+        .expect_func_instrs([Instruction::Return])
         .run()
 }
 
@@ -29,7 +29,7 @@ fn as_return_1() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::return_reg(Register::from_i16(0))])
+        .expect_func_instrs([Instruction::return_reg(Register::from_i16(0))])
         .run()
 }
 
@@ -53,8 +53,8 @@ fn as_return_1_imm() {
         ));
         let cref = ConstRef::from_u32(0);
         TranslationTest::new(wasm)
-            .expect_func([Instruction::return_imm(cref)])
-            .expect_const(cref, value.into())
+            .expect_func_instrs([Instruction::return_imm(cref)])
+            .expect_cref(cref, value.into())
             .run()
     }
     test_for::<i64>(i64::MIN);
@@ -86,7 +86,7 @@ fn as_return_1_imm32() {
             )",
         ));
         TranslationTest::new(wasm)
-            .expect_func([Instruction::return_imm32(value)])
+            .expect_func_instrs([Instruction::return_imm32(value)])
             .run()
     }
     test_for::<i32>(5);
@@ -109,7 +109,7 @@ fn as_return_1_i64imm32() {
             )",
         ));
         TranslationTest::new(wasm)
-            .expect_func([Instruction::return_i64imm32(value)])
+            .expect_func_instrs([Instruction::return_i64imm32(value)])
             .run()
     }
     test_for(0);

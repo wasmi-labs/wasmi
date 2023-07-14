@@ -20,7 +20,7 @@ fn consteval_return() {
             )",
         ));
         TranslationTest::new(wasm)
-            .expect_func([Instruction::Return])
+            .expect_func_instrs([Instruction::Return])
             .run()
     }
     test_for(true);
@@ -48,7 +48,7 @@ fn consteval_return_1() {
             )",
         ));
         TranslationTest::new(wasm)
-            .expect_func([Instruction::return_reg(expected)])
+            .expect_func_instrs([Instruction::return_reg(expected)])
             .run()
     }
     test_for(true);
@@ -84,8 +84,8 @@ fn consteval_return_1_imm() {
         ));
         let cref = ConstRef::from_u32(0);
         TranslationTest::new(wasm)
-            .expect_func([Instruction::return_imm(cref)])
-            .expect_const(cref, expected)
+            .expect_func_instrs([Instruction::return_imm(cref)])
+            .expect_cref(cref, expected)
             .run()
     }
     /// Run the test for both sign polarities of the `br_if` condition.
@@ -131,7 +131,7 @@ fn consteval_return_1_imm32() {
             )",
         ));
         TranslationTest::new(wasm)
-            .expect_func([Instruction::return_imm32(expected)])
+            .expect_func_instrs([Instruction::return_imm32(expected)])
             .run()
     }
     /// Run the test for both sign polarities of the `br_if` condition.
@@ -170,7 +170,7 @@ fn consteval_return_1_i64imm32() {
             )",
         ));
         TranslationTest::new(wasm)
-            .expect_func([Instruction::return_i64imm32(expected)])
+            .expect_func_instrs([Instruction::return_i64imm32(expected)])
             .run()
     }
     /// Run the test for both sign polarities of the `br_if` condition.
@@ -200,7 +200,7 @@ fn consteval_branch_always() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::copy(Register::from_i16(2), Register::from_i16(0)),
             Instruction::branch(BranchOffset::from(1)),
             Instruction::return_reg(Register::from_i16(2)),
@@ -225,7 +225,7 @@ fn consteval_branch_never() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::return_reg(Register::from_i16(1))])
+        .expect_func_instrs([Instruction::return_reg(Register::from_i16(1))])
         .run()
 }
 
@@ -241,7 +241,7 @@ fn return_if_results_0() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::return_nez(Register::from_i16(0)),
             Instruction::Return,
         ])
@@ -261,7 +261,7 @@ fn return_if_results_1() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::return_nez_reg(Register::from_i16(1), Register::from_i16(0)),
             Instruction::return_reg(Register::from_i16(0)),
         ])
@@ -289,11 +289,11 @@ fn return_if_results_1_imm() {
         ));
         let cref = ConstRef::from_u32(0);
         TranslationTest::new(wasm)
-            .expect_func([
+            .expect_func_instrs([
                 Instruction::return_nez_imm(Register::from_i16(0), cref),
                 Instruction::return_imm(cref),
             ])
-            .expect_const(cref, returned_value)
+            .expect_cref(cref, returned_value)
             .run()
     }
 
@@ -330,7 +330,7 @@ fn return_if_results_1_imm32() {
         ));
         let const32: Const32 = returned_value.into();
         TranslationTest::new(wasm)
-            .expect_func([
+            .expect_func_instrs([
                 Instruction::return_nez_imm32(Register::from_i16(0), const32),
                 Instruction::return_imm32(const32),
             ])
@@ -361,7 +361,7 @@ fn return_if_results_1_i64imm32() {
             )",
         ));
         TranslationTest::new(wasm)
-            .expect_func([
+            .expect_func_instrs([
                 Instruction::return_nez_i64imm32(Register::from_i16(0), returned_value),
                 Instruction::return_i64imm32(returned_value),
             ])
@@ -389,7 +389,7 @@ fn branch_if_results_0() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::branch_nez(Register::from_i16(0), BranchOffset::from(1)),
             Instruction::Return,
         ])
@@ -411,7 +411,7 @@ fn branch_if_results_1() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::branch_eqz(Register::from_i16(1), BranchOffset::from(3)),
             Instruction::copy(Register::from_i16(2), Register::from_i16(0)),
             Instruction::branch(BranchOffset::from(2)),
@@ -443,7 +443,7 @@ fn branch_if_results_1_avoid_copy() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::i32_clz(Register::from_i16(2), Register::from_i16(0)),
             Instruction::i32_ctz(Register::from_i16(3), Register::from_i16(1)),
             Instruction::branch_nez(Register::from_i16(3), BranchOffset::from(1)),
@@ -469,7 +469,7 @@ fn branch_if_results_2() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::branch_eqz(Register::from_i16(2), BranchOffset::from(4)),
             Instruction::copy(Register::from_i16(3), Register::from_i16(0)),
             Instruction::copy(Register::from_i16(4), Register::from_i16(1)),
@@ -508,7 +508,7 @@ fn branch_if_results_2_avoid_copy() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::i32_clz(Register::from_i16(3), Register::from_i16(0)),
             Instruction::i32_ctz(Register::from_i16(4), Register::from_i16(1)),
             Instruction::branch_nez(Register::from_i16(2), BranchOffset::from(1)),

@@ -10,7 +10,7 @@ fn empty_block() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::Return])
+        .expect_func_instrs([Instruction::Return])
         .run()
 }
 
@@ -23,7 +23,7 @@ fn nested_empty_block() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::Return])
+        .expect_func_instrs([Instruction::Return])
         .run()
 }
 
@@ -39,7 +39,7 @@ fn identity_block_1() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::return_reg(Register::from_i16(0))])
+        .expect_func_instrs([Instruction::return_reg(Register::from_i16(0))])
         .run()
 }
 
@@ -57,7 +57,7 @@ fn identity_block_2() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::return_reg(Register::from_i16(0))])
+        .expect_func_instrs([Instruction::return_reg(Register::from_i16(0))])
         .run()
 }
 
@@ -75,7 +75,7 @@ fn nested_identity_block_1() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::return_reg(Register::from_i16(0))])
+        .expect_func_instrs([Instruction::return_reg(Register::from_i16(0))])
         .run()
 }
 
@@ -95,7 +95,7 @@ fn nested_identity_block_2() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::return_reg(Register::from_i16(0))])
+        .expect_func_instrs([Instruction::return_reg(Register::from_i16(0))])
         .run()
 }
 
@@ -112,7 +112,7 @@ fn branched_block_0() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::branch(BranchOffset::from(1)),
             Instruction::Return,
         ])
@@ -133,7 +133,7 @@ fn branched_block_1() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
             Instruction::branch(BranchOffset::from(1)),
             Instruction::return_reg(Register::from_i16(1)),
@@ -157,7 +157,7 @@ fn branched_block_2() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::copy(Register::from_i16(2), Register::from_i16(0)),
             Instruction::copy(Register::from_i16(3), Register::from_i16(1)),
             Instruction::branch(BranchOffset::from(1)),
@@ -180,7 +180,7 @@ fn branch_if_block_0() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::branch_nez(Register::from_i16(0), BranchOffset::from(1)),
             Instruction::Return,
         ])
@@ -202,7 +202,7 @@ fn branch_if_block_1() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::branch_eqz(Register::from_i16(1), BranchOffset::from(3)),
             Instruction::copy(Register::from_i16(2), Register::from_i16(0)),
             Instruction::branch(BranchOffset::from(2)),
@@ -223,7 +223,7 @@ fn branch_to_func_block_0() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::Return])
+        .expect_func_instrs([Instruction::Return])
         .run()
 }
 
@@ -239,7 +239,7 @@ fn branch_to_func_block_1() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::return_reg(Register::from_i16(0))])
+        .expect_func_instrs([Instruction::return_reg(Register::from_i16(0))])
         .run()
 }
 
@@ -256,7 +256,7 @@ fn branch_to_func_block_nested_0() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::Return])
+        .expect_func_instrs([Instruction::Return])
         .run()
 }
 
@@ -274,6 +274,6 @@ fn branch_to_func_block_nested_1() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::return_reg(Register::from_i16(0))])
+        .expect_func_instrs([Instruction::return_reg(Register::from_i16(0))])
         .run()
 }

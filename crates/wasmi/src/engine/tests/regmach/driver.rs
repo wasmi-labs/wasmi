@@ -20,7 +20,7 @@ pub struct TranslationTest {
     /// The expected functions and their instructions.
     expected_funcs: Vec<ExpectedFunc>,
     /// The expected constant values in the constant pool.
-    expected_consts: Vec<ExpectedConst>,
+    expected_crefs: Vec<ExpectedCref>,
     /// Is `true` if the [`TranslationTest`] has been run at least once.
     has_run: AtomicBool,
 }
@@ -38,6 +38,8 @@ impl Drop for TranslationTest {
 pub struct ExpectedFunc {
     /// The instructions of the expected function.
     instrs: Vec<Instruction>,
+    /// The function local constant values.
+    consts: Vec<UntypedValue>,
 }
 
 impl ExpectedFunc {
@@ -46,27 +48,128 @@ impl ExpectedFunc {
     where
         I: IntoIterator<Item = Instruction>,
     {
+        let instrs: Vec<_> = instrs.into_iter().collect();
+        assert!(
+            !instrs.is_empty(),
+            "an expected function must have instructions"
+        );
         Self {
-            instrs: instrs.into_iter().collect(),
+            instrs,
+            consts: Vec::new(),
         }
     }
 
+    /// Add expected function local constant values to this [`ExpectedFunc`].
+    ///
+    /// # Note
+    ///
+    /// The function local constant values are in the order of their expected
+    /// and deduplicated allocations during the translation phase.
+    ///
+    /// # Panics
+    ///
+    /// - If the `consts` iterator yields no values.
+    /// - If this [`ExpectedFunc`] already expects some function local constant values.
+    pub fn consts<I, T>(mut self, consts: I) -> Self
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<UntypedValue>,
+    {
+        assert!(
+            self.expected_consts().is_empty(),
+            "tried to call `expect_consts` twice"
+        );
+        self.consts.extend(consts.into_iter().map(Into::into));
+        assert!(
+            !self.expected_consts().is_empty(),
+            "called `expect_consts` with empty set"
+        );
+        self
+    }
+
     /// Returns the expected [`Instruction`] sequence of the [`ExpectedFunc`] as slice.
-    pub fn instrs(&self) -> &[Instruction] {
+    fn expected_instrs(&self) -> &[Instruction] {
         &self.instrs
+    }
+
+    /// Returns the expected function local constant values of the [`ExpectedFunc`] as slice.
+    fn expected_consts(&self) -> &[UntypedValue] {
+        &self.consts
+    }
+
+    /// Asserts that properties of the [`ExpectedFunc`] have been translated as expected.
+    fn assert_func(&self, engine: &Engine, func_type: DedupFuncType, compiled_func: CompiledFunc) {
+        self.assert_instrs(engine, compiled_func, func_type);
+        self.assert_consts(engine, compiled_func);
+    }
+
+    /// Asserts that the instructions of the [`ExpectedFunc`] have been translated as expected.
+    fn assert_instrs(
+        &self,
+        engine: &Engine,
+        compiled_func: CompiledFunc,
+        func_type: DedupFuncType,
+    ) {
+        let expected_instrs = self.expected_instrs();
+        let len_expected = expected_instrs.len();
+        let func_type = engine.resolve_func_type(&func_type, Clone::clone);
+        for (index, actual, expected) in
+            expected_instrs
+                .iter()
+                .copied()
+                .enumerate()
+                .map(|(index, expected_instr)| {
+                    let actual_instr =
+                        engine
+                            .resolve_instr_2(compiled_func, index)
+                            .unwrap_or_else(|| {
+                                panic!("missing instruction at index {index} for {compiled_func:?} ({func_type:?})")
+                            });
+                    (index, actual_instr, expected_instr)
+                })
+        {
+            assert!(
+                actual == expected,
+                "instruction mismatch at index {index} for {compiled_func:?} ({func_type:?})\n    \
+                    - expected: {expected:?}\n    \
+                    - found: {actual:?}",
+            );
+        }
+        if let Some(unexpected) = engine.resolve_instr_2(compiled_func, len_expected) {
+            panic!("unexpected instruction at index {len_expected}: {unexpected:?}");
+        }
+    }
+
+    /// Asserts that the function local constant values of the [`ExpectedFunc`] have been translated as expected.
+    fn assert_consts(&self, engine: &Engine, func: CompiledFunc) {
+        let expected_consts = self.expected_consts();
+        for (index, expected_value) in expected_consts.iter().copied().enumerate() {
+            let actual_value = engine.get_func_const_2(func, index).unwrap_or_else(|| {
+                panic!("missing function local constant value of for {func:?} at index {index}")
+            });
+            assert_eq!(
+                actual_value, expected_value,
+                "function local constant value mismatch for {func:?} at index {index}"
+            );
+        }
+        // Check that there are not more function local constants than we already expected.
+        let len_consts = expected_consts.len();
+        if let Some(unexpected) = engine.get_func_const_2(func, len_consts) {
+            panic!("unexpected function local constant value (= {unexpected:?}) for {func:?} at index {len_consts}")
+        }
     }
 }
 
 /// An entry for an expected constant value stored in the pool of constant values.
 #[derive(Debug)]
-pub struct ExpectedConst {
+pub struct ExpectedCref {
     /// The [`ConstRef`] identifying the constant value under test.
     pub cref: ConstRef,
     /// The expected value of the constant value under test.
     pub value: UntypedValue,
 }
 
-impl ExpectedConst {
+impl ExpectedCref {
     /// Create a new [`ExpectedConst`] for `cref` expecting `value`.
     pub fn new(cref: ConstRef, value: impl Into<UntypedValue>) -> Self {
         Self {
@@ -89,7 +192,7 @@ impl TranslationTest {
             wasm: bytes.as_ref().into(),
             config,
             expected_funcs: Vec::new(),
-            expected_consts: Vec::new(),
+            expected_crefs: Vec::new(),
             has_run: AtomicBool::from(false),
         }
     }
@@ -110,25 +213,39 @@ impl TranslationTest {
     }
 
     /// Returns all [`ExpectedConst`] for the test case.
-    fn expected_consts(&self) -> &[ExpectedConst] {
-        &self.expected_consts
+    ///
+    /// # Note
+    ///
+    /// We are going to deprecate this function over time
+    /// since it was superseeded by [`TranslationTest::expected_consts`].
+    fn expected_crefs(&self) -> &[ExpectedCref] {
+        &self.expected_crefs
     }
 
     /// Add an expected function with its instructions.
-    pub fn expect_func<I>(&mut self, instrs: I) -> &mut Self
+    ///
+    /// # Note
+    ///
+    /// This is a convenience method for [`TranslationTest::expect_func_ext`].
+    pub fn expect_func_instrs<I>(&mut self, instrs: I) -> &mut Self
     where
         I: IntoIterator<Item = Instruction>,
     {
-        self.expected_funcs.push(ExpectedFunc::new(instrs));
+        self.expect_func(ExpectedFunc::new(instrs))
+    }
+
+    /// Add an [`ExpectedFunc`].
+    pub fn expect_func(&mut self, func: ExpectedFunc) -> &mut Self {
+        self.expected_funcs.push(func);
         self
     }
 
     /// Add an expected constant value stored in the constant pool.
-    pub fn expect_const<T>(&mut self, cref: ConstRef, value: T) -> &mut Self
+    pub fn expect_cref<T>(&mut self, cref: ConstRef, value: T) -> &mut Self
     where
         T: Into<UntypedValue>,
     {
-        self.expected_consts.push(ExpectedConst::new(cref, value));
+        self.expected_crefs.push(ExpectedCref::new(cref, value));
         self
     }
 
@@ -142,7 +259,7 @@ impl TranslationTest {
         let module = create_module(self.config(), self.wasm());
         let engine = module.engine();
         self.assert_funcs(engine, &module);
-        self.assert_consts(engine);
+        self.assert_crefs(engine);
     }
 
     /// Asserts that all expected functions of the translated Wasm module are as expected.
@@ -159,51 +276,13 @@ impl TranslationTest {
         for ((func_type, compiled_func), expected_func) in
             module.internal_funcs().zip(self.expected_funcs())
         {
-            self.assert_func(engine, func_type, compiled_func, expected_func);
-        }
-    }
-
-    /// Asserts that the expected function of the translated Wasm module is as expected.
-    fn assert_func(
-        &self,
-        engine: &Engine,
-        func_type: DedupFuncType,
-        compiled_func: CompiledFunc,
-        expected_func: &ExpectedFunc,
-    ) {
-        let expected_instrs = expected_func.instrs();
-        let len_expected = expected_instrs.len();
-        let func_type = engine.resolve_func_type(&func_type, Clone::clone);
-        for (index, actual, expected) in
-            expected_instrs
-                .iter()
-                .copied()
-                .enumerate()
-                .map(|(index, expected_instr)| {
-                    let actual_instr =
-                        engine
-                            .resolve_instr_2(compiled_func, index)
-                            .unwrap_or_else(|| {
-                                panic!("missing instruction at index {index} for {compiled_func:?} ({func_type:?})")
-                            });
-                    (index, actual_instr, expected_instr)
-                })
-        {
-            assert!(
-                actual == expected,
-                "instruction mismatch at index {index} for {compiled_func:?} ({func_type:?})\n    \
-                - expected: {expected:?}\n    \
-                - found: {actual:?}",
-            );
-        }
-        if let Some(unexpected) = engine.resolve_instr_2(compiled_func, len_expected) {
-            panic!("unexpected instruction at index {len_expected}: {unexpected:?}");
+            expected_func.assert_func(engine, func_type, compiled_func);
         }
     }
 
     /// Asserts that all expected constant values of the translated Wasm module are as expected.
-    fn assert_consts(&self, engine: &Engine) {
-        for expected_const in self.expected_consts() {
+    fn assert_crefs(&self, engine: &Engine) {
+        for expected_const in self.expected_crefs() {
             let cref = expected_const.cref;
             let actual_value = engine
                 .get_const(cref)

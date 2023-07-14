@@ -48,7 +48,7 @@ impl Display for DisplaySelect {
 /// Also adds an `expect_const` case to [`TranslationTest`] if necessary.
 fn return_for_value(testcase: &mut TranslationTest, value: Value) -> Instruction {
     fn return_cref(testcase: &mut TranslationTest, value: UntypedValue) -> Instruction {
-        testcase.expect_const(ConstRef::from_u32(0), value);
+        testcase.expect_cref(ConstRef::from_u32(0), value);
         Instruction::return_imm(ConstRef::from_u32(0))
     }
     match value {
@@ -76,7 +76,7 @@ fn param_for_value(
 ) -> Instruction {
     fn cref(testcase: &mut TranslationTest, value: UntypedValue) -> Instruction {
         let cref = ConstRef::from_u32(0);
-        testcase.expect_const(cref, value);
+        testcase.expect_cref(cref, value);
         Instruction::ConstRef(cref)
     }
     match value {
@@ -117,7 +117,7 @@ fn test_reg(kind: SelectKind, result_ty: ValueType) {
     let rhs = Register::from_i16(2);
     let result = Register::from_i16(3);
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::select(result, condition, lhs),
             Instruction::Register(rhs),
             Instruction::return_reg(result),
@@ -156,7 +156,7 @@ fn test_same_reg(kind: SelectKind, result_ty: ValueType) {
     "#,
     ));
     TranslationTest::new(wasm)
-        .expect_func([Instruction::return_reg(Register::from_i16(1))])
+        .expect_func_instrs([Instruction::return_reg(Register::from_i16(1))])
         .run();
 }
 
@@ -193,7 +193,7 @@ fn test_same_imm(kind: SelectKind, input: Value) {
     ));
     let mut testcase = TranslationTest::new(wasm);
     let return_instr = return_for_value(&mut testcase, input);
-    testcase.expect_func([return_instr]).run();
+    testcase.expect_func_instrs([return_instr]).run();
 }
 
 #[test]
@@ -237,7 +237,7 @@ fn test_reg_imm(kind: SelectKind, rhs: Value) {
     };
     let param_instr = param_for_value(&mut testcase, rhs, false);
     testcase
-        .expect_func([select_instr, param_instr, Instruction::return_reg(result)])
+        .expect_func_instrs([select_instr, param_instr, Instruction::return_reg(result)])
         .run();
 }
 
@@ -282,7 +282,7 @@ fn test_imm_reg(kind: SelectKind, lhs: Value) {
     };
     let param_instr = param_for_value(&mut testcase, lhs, false);
     testcase
-        .expect_func([select_instr, param_instr, Instruction::return_reg(result)])
+        .expect_func_instrs([select_instr, param_instr, Instruction::return_reg(result)])
         .run();
 }
 
@@ -327,36 +327,36 @@ fn test_imm(kind: SelectKind, lhs: Value, rhs: Value) {
     let condition = Register::from_i16(0);
     match (lhs, rhs) {
         (Value::I32(lhs), Value::I32(rhs)) => {
-            testcase.expect_func([
+            testcase.expect_func_instrs([
                 Instruction::select_imm32(result, Const32::from(lhs)),
                 Instruction::select_imm32(condition, Const32::from(rhs)),
                 Instruction::return_reg(result),
             ]);
         }
         (Value::I64(lhs), Value::I64(rhs)) => {
-            testcase.expect_func([
+            testcase.expect_func_instrs([
                 Instruction::select_imm(result, ConstRef::from_u32(0)),
                 Instruction::select_imm(condition, ConstRef::from_u32(1)),
                 Instruction::return_reg(result),
             ]);
-            testcase.expect_const(ConstRef::from_u32(0), lhs);
-            testcase.expect_const(ConstRef::from_u32(1), rhs);
+            testcase.expect_cref(ConstRef::from_u32(0), lhs);
+            testcase.expect_cref(ConstRef::from_u32(1), rhs);
         }
         (Value::F32(lhs), Value::F32(rhs)) => {
-            testcase.expect_func([
+            testcase.expect_func_instrs([
                 Instruction::select_imm32(result, Const32::from(lhs)),
                 Instruction::select_imm32(condition, Const32::from(rhs)),
                 Instruction::return_reg(result),
             ]);
         }
         (Value::F64(lhs), Value::F64(rhs)) => {
-            testcase.expect_func([
+            testcase.expect_func_instrs([
                 Instruction::select_imm(result, ConstRef::from_u32(0)),
                 Instruction::select_imm(condition, ConstRef::from_u32(1)),
                 Instruction::return_reg(result),
             ]);
-            testcase.expect_const(ConstRef::from_u32(0), lhs);
-            testcase.expect_const(ConstRef::from_u32(1), rhs);
+            testcase.expect_cref(ConstRef::from_u32(0), lhs);
+            testcase.expect_cref(ConstRef::from_u32(1), rhs);
         }
         _ => unreachable!(),
     };
@@ -404,7 +404,7 @@ fn test_const_condition_reg(kind: SelectKind, condition: bool, result_ty: ValueT
     "#,
     ));
     TranslationTest::new(wasm)
-        .expect_func([Instruction::return_reg(picked_reg)])
+        .expect_func_instrs([Instruction::return_reg(picked_reg)])
         .run();
 }
 
@@ -450,7 +450,7 @@ fn test_const_condition_reg_imm(kind: SelectKind, condition: bool, rhs: Value) {
     } else {
         return_for_value(&mut testcase, rhs)
     };
-    testcase.expect_func([picked_instr]).run();
+    testcase.expect_func_instrs([picked_instr]).run();
 }
 
 #[test]
@@ -491,7 +491,7 @@ fn test_const_condition_imm_reg(kind: SelectKind, condition: bool, lhs: Value) {
     } else {
         return_for_value(&mut testcase, lhs)
     };
-    testcase.expect_func([picked_instr]).run();
+    testcase.expect_func_instrs([picked_instr]).run();
 }
 
 #[test]
@@ -534,7 +534,7 @@ fn test_const_condition_imm(kind: SelectKind, condition: bool, lhs: Value, rhs: 
     } else {
         return_for_value(&mut testcase, rhs)
     };
-    testcase.expect_func([picked_instr]).run();
+    testcase.expect_func_instrs([picked_instr]).run();
 }
 
 #[test]

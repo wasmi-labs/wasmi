@@ -39,7 +39,7 @@ fn test_store(
     "#,
     ));
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             make_instr(Register::from_i16(0), Const32::from(offset)),
             Instruction::Register(Register::from_i16(1)),
             Instruction::Return,
@@ -70,7 +70,7 @@ fn test_store_imm<T>(
     "#,
     ));
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             make_instr(Register::from_i16(0), Const32::from(offset)),
             make_instr_param(value),
             Instruction::Return,
@@ -101,7 +101,7 @@ fn test_store_at(
     "#,
     ));
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             make_instr(Const32::from(address), Register::from_i16(0)),
             Instruction::Return,
         ])
@@ -127,7 +127,7 @@ fn test_store_at_overflow(wasm_op: WasmOp, ptr: u32, offset: u32) {
     "#,
     ));
     TranslationTest::new(wasm)
-        .expect_func([Instruction::Trap(TrapCode::MemoryOutOfBounds)])
+        .expect_func_instrs([Instruction::Trap(TrapCode::MemoryOutOfBounds)])
         .run();
 }
 
@@ -158,7 +158,7 @@ fn test_store_imm_at<T>(
     "#,
     ));
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             make_instr(Const32::from(address)),
             make_instr_param(value),
             Instruction::Return,
@@ -192,7 +192,7 @@ fn test_store_imm_n_at<T>(
     "#,
     ));
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             make_instr(Const32::from(address), value),
             Instruction::Return,
         ])
@@ -221,6 +221,6 @@ where
     "#,
     ));
     TranslationTest::new(wasm)
-        .expect_func([Instruction::Trap(TrapCode::MemoryOutOfBounds)])
+        .expect_func_instrs([Instruction::Trap(TrapCode::MemoryOutOfBounds)])
         .run();
 }

@@ -1,13 +1,17 @@
 //! Tests for the register-machine `wasmi` engine translation implementation.
 
 #![cfg(not(miri))]
+#![allow(dead_code, unused_imports)] // TODO: remove
 
 mod display_wasm;
 pub mod driver;
 mod op;
 pub mod wasm_type;
 
-use self::{display_wasm::DisplayWasm, driver::TranslationTest};
+use self::{
+    display_wasm::DisplayWasm,
+    driver::{ExpectedFunc, TranslationTest},
+};
 use super::{create_module, wat2wasm};
 use crate::engine::{
     bytecode2::{Const16, Const32, Instruction, Register},
@@ -46,7 +50,7 @@ where
 {
     let mut testcase = TranslationTest::new(wasm_bytes.as_ref());
     for instrs in expected {
-        testcase.expect_func(instrs);
+        testcase.expect_func_instrs(instrs);
     }
     testcase.run();
 }
@@ -337,7 +341,7 @@ where
     "#,
     ));
     let mut testcase = TranslationTest::new(wasm);
-    testcase.expect_func(expected);
+    testcase.expect_func_instrs(expected);
     testcase
 }
 
@@ -363,7 +367,7 @@ where
     "#,
     ));
     let mut testcase = TranslationTest::new(wasm);
-    testcase.expect_func(expected);
+    testcase.expect_func_instrs(expected);
     testcase
 }
 

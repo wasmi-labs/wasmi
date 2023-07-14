@@ -10,7 +10,7 @@ fn empty_loop() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::Return])
+        .expect_func_instrs([Instruction::Return])
         .run()
 }
 
@@ -23,7 +23,7 @@ fn nested_empty_loop() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::Return])
+        .expect_func_instrs([Instruction::Return])
         .run()
 }
 
@@ -39,7 +39,7 @@ fn identity_loop_1() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
             Instruction::return_reg(Register::from_i16(1)),
         ])
@@ -60,7 +60,7 @@ fn identity_loop_1_nested() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
             Instruction::return_reg(Register::from_i16(1)),
         ])
@@ -81,7 +81,7 @@ fn identity_loop_2() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::copy(Register::from_i16(2), Register::from_i16(0)),
             Instruction::copy(Register::from_i16(3), Register::from_i16(1)),
             Instruction::i32_add(
@@ -110,7 +110,7 @@ fn identity_loop_2_nested() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::copy(Register::from_i16(2), Register::from_i16(0)),
             Instruction::copy(Register::from_i16(3), Register::from_i16(1)),
             Instruction::i32_add(
@@ -134,7 +134,7 @@ fn repeat_loop() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::branch(BranchOffset::from(0))])
+        .expect_func_instrs([Instruction::branch(BranchOffset::from(0))])
         .run()
 }
 
@@ -150,7 +150,7 @@ fn repeat_loop_1() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
             Instruction::branch(BranchOffset::from(0)),
         ])
@@ -173,7 +173,7 @@ fn repeat_loop_1_copy() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::copy(Register::from_i16(2), Register::from_i16(0)),
             Instruction::copy(Register::from_i16(2), Register::from_i16(1)),
             Instruction::branch(BranchOffset::from(-1)),

@@ -23,7 +23,7 @@ where
     "#,
     ));
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::global_set(GlobalIdx::from(0), Register::from_i16(0)),
             Instruction::Return,
         ])
@@ -58,7 +58,7 @@ where
     "#,
     ));
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::global_set_imm32(GlobalIdx::from(0)),
             Instruction::const32(value),
             Instruction::Return,
@@ -97,12 +97,12 @@ where
     ));
     let cref = ConstRef::from_u32(0);
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::global_set_imm(GlobalIdx::from(0)),
             Instruction::const_ref(cref),
             Instruction::Return,
         ])
-        .expect_const(cref, value)
+        .expect_cref(cref, value)
         .run()
 }
 

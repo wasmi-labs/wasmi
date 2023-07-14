@@ -29,7 +29,7 @@ where
     "#,
     ));
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::global_get(Register::from_i16(0), GlobalIdx::from(0)),
             Instruction::return_reg(Register::from_i16(0)),
         ])
@@ -80,7 +80,7 @@ where
     "#,
     ));
     let instr = <T as WasmType>::return_imm_instr(&value);
-    TranslationTest::new(wasm).expect_func([instr]).run()
+    TranslationTest::new(wasm).expect_func_instrs([instr]).run()
 }
 
 #[test]
@@ -126,7 +126,7 @@ where
     "#,
     ));
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             Instruction::global_get(Register::from_i16(0), GlobalIdx::from(0)),
             Instruction::return_reg(Register::from_i16(0)),
         ])

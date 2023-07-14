@@ -26,7 +26,7 @@ fn test_load(
     "#,
     ));
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             make_instr(Register::from_i16(1), Register::from_i16(0)),
             Instruction::const32(offset),
             Instruction::return_reg(Register::from_i16(1)),
@@ -52,7 +52,7 @@ fn test_load_offset16(
     "#,
     ));
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             make_instr_offset16(
                 Register::from_i16(1),
                 Register::from_i16(0),
@@ -85,7 +85,7 @@ fn test_load_at(
         .checked_add(offset)
         .expect("ptr+offset must be valid in this testcase");
     TranslationTest::new(wasm)
-        .expect_func([
+        .expect_func_instrs([
             make_instr_at(Register::from_i16(0), Const32::from(address)),
             Instruction::return_reg(Register::from_i16(0)),
         ])
@@ -110,7 +110,7 @@ fn test_load_at_overflow(wasm_op: WasmOp, ptr: u32, offset: u32) {
         "ptr+offset must overflow in this testcase"
     );
     TranslationTest::new(wasm)
-        .expect_func([Instruction::Trap(TrapCode::MemoryOutOfBounds)])
+        .expect_func_instrs([Instruction::Trap(TrapCode::MemoryOutOfBounds)])
         .run();
 }
 

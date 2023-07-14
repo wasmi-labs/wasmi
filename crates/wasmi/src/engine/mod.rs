@@ -295,12 +295,25 @@ impl Engine {
     /// - If the [`CompiledFunc`] is invalid for the [`Engine`].
     /// - If register machine bytecode translation is disabled.
     #[cfg(test)]
-    pub(crate) fn resolve_instr_2(
-        &self,
-        func_body: CompiledFunc,
-        index: usize,
-    ) -> Option<Instruction2> {
-        self.inner.resolve_instr_2(func_body, index)
+    pub(crate) fn resolve_instr_2(&self, func: CompiledFunc, index: usize) -> Option<Instruction2> {
+        self.inner.resolve_instr_2(func, index)
+    }
+
+    /// Resolves the function local constant of [`CompiledFunc`] at `index` if any.
+    ///
+    /// # Note
+    ///
+    /// This API is intended for unit testing purposes and shall not be used
+    /// outside of this context. The function bodies are intended to be data
+    /// private to the `wasmi` interpreter.
+    ///
+    /// # Panics
+    ///
+    /// - If the [`CompiledFunc`] is invalid for the [`Engine`].
+    /// - If register machine bytecode translation is disabled.
+    #[cfg(test)]
+    fn get_func_const_2(&self, func: CompiledFunc, index: usize) -> Option<UntypedValue> {
+        self.inner.get_func_const_2(func, index)
     }
 
     /// Executes the given [`Func`] with parameters `params`.
@@ -619,15 +632,21 @@ impl EngineInner {
     }
 
     #[cfg(test)]
-    pub(crate) fn resolve_instr_2(
-        &self,
-        func_body: CompiledFunc,
-        index: usize,
-    ) -> Option<Instruction2> {
+    pub(crate) fn resolve_instr_2(&self, func: CompiledFunc, index: usize) -> Option<Instruction2> {
         self.res
             .read()
             .code_map_2
-            .get_instrs(func_body)
+            .get_instrs(func)
+            .get(index)
+            .copied()
+    }
+
+    #[cfg(test)]
+    fn get_func_const_2(&self, func: CompiledFunc, index: usize) -> Option<UntypedValue> {
+        self.res
+            .read()
+            .code_map_2
+            .get_consts(func)
             .get(index)
             .copied()
     }

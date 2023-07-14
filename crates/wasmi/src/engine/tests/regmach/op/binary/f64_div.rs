@@ -24,7 +24,7 @@ fn reg_nan() {
         f64::NAN,
         [Instruction::return_imm(ConstRef::from_u32(0))],
     )
-    .expect_const(ConstRef::from_u32(0), f64::NAN)
+    .expect_cref(ConstRef::from_u32(0), f64::NAN)
     .run()
 }
 
@@ -35,7 +35,7 @@ fn nan_reg() {
         f64::NAN,
         [Instruction::return_imm(ConstRef::from_u32(0))],
     )
-    .expect_const(ConstRef::from_u32(0), f64::NAN)
+    .expect_cref(ConstRef::from_u32(0), f64::NAN)
     .run()
 }
 

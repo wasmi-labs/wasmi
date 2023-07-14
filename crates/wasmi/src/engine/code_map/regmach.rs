@@ -152,11 +152,17 @@ impl CodeMap {
 
     /// Returns the sequence of instructions of the compiled [`CompiledFunc`].
     #[cfg(test)]
-    pub fn get_instrs(&self, func_body: CompiledFunc) -> &[Instruction] {
-        let header = self.header(func_body);
+    pub fn get_instrs(&self, func: CompiledFunc) -> &[Instruction] {
+        let header = self.header(func);
         let start = header.iref.to_usize();
         let end = start + header.len_instrs as usize;
         &self.instrs[start..end]
+    }
+
+    /// Returns the sequence of instructions of the compiled [`CompiledFunc`].
+    #[cfg(test)]
+    pub fn get_consts(&self, func: CompiledFunc) -> &[UntypedValue] {
+        &self.header(func).func_consts[..]
     }
 }
 

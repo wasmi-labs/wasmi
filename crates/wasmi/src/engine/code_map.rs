@@ -204,7 +204,7 @@ impl CodeMap {
         &self.headers[func_body.into_usize()]
     }
 
-    /// Resolves the instruction at `index` of the compiled [`CompiledFunc`].
+    /// Resolves the instruction at `index` of the [`CompiledFunc`].
     #[cfg(test)]
     pub fn get_instr(&self, func_body: CompiledFunc, index: usize) -> Option<&Instruction> {
         let header = self.header(func_body);
