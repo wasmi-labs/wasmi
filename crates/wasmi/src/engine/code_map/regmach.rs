@@ -9,7 +9,7 @@
 
 use super::{CompiledFunc, InstructionsRef};
 use crate::engine::{bytecode2::Instruction, func_builder::regmach::FuncLocalConstsIter};
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
 use wasmi_arena::ArenaIndex;
 use wasmi_core::{TrapCode, UntypedValue};
 

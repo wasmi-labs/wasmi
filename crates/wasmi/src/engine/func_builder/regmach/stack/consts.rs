@@ -3,7 +3,10 @@ use crate::{
     core::UntypedValue,
     engine::{func_builder::TranslationErrorInner, TranslationError},
 };
-use alloc::collections::{btree_map, BTreeMap};
+use alloc::{
+    collections::{btree_map, BTreeMap},
+    vec::Vec,
+};
 use core::slice::Iter as SliceIter;
 
 /// A pool of deduplicated function local constant values.
