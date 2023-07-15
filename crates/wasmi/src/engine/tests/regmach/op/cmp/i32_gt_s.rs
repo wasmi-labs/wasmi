@@ -27,12 +27,12 @@ fn reg_imm16_rev() {
 
 #[test]
 fn reg_imm() {
-    test_binary_reg_imm32(WASM_OP, 100_000, Instruction::i32_gt_s_imm)
+    test_binary_reg_imm32(WASM_OP, 100_000, Instruction::i32_gt_s)
 }
 
 #[test]
 fn reg_imm_rev() {
-    test_binary_reg_imm32_rev(WASM_OP, 100_000, Instruction::i32_lt_s_imm)
+    test_binary_reg_imm32_rev(WASM_OP, 100_000, Instruction::i32_gt_s)
 }
 
 #[test]

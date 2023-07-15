@@ -556,17 +556,41 @@ impl<'parser> FuncTranslator<'parser> {
     /// words for its encoding in the [`Instruction`] sequence.
     fn push_binary_instr_imm<T>(
         &mut self,
-        reg_in: Register,
-        imm_in: T,
-        make_instr_imm: fn(result: Register, reg_in: Register) -> Instruction,
-        make_instr_imm_param: fn(&mut Self, imm_in: T) -> Result<Instruction, TranslationError>,
-    ) -> Result<(), TranslationError> {
+        lhs: Register,
+        rhs: T,
+        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+    ) -> Result<(), TranslationError>
+    where
+        T: Into<UntypedValue>,
+    {
         let result = self.alloc.stack.push_dynamic()?;
+        let rhs = self.alloc.stack.alloc_const(rhs)?;
         self.alloc
             .instr_encoder
-            .push_instr(make_instr_imm(result, reg_in))?;
-        let rhs_instr = make_instr_imm_param(self, imm_in)?;
-        self.alloc.instr_encoder.push_instr(rhs_instr)?;
+            .push_instr(make_instr(result, lhs, rhs))?;
+        Ok(())
+    }
+
+    /// Pushes a binary instruction with a generic immediate value.
+    ///
+    /// # Note
+    ///
+    /// The resulting binary instruction always takes up two instruction
+    /// words for its encoding in the [`Instruction`] sequence.
+    fn push_binary_instr_imm_rev<T>(
+        &mut self,
+        lhs: T,
+        rhs: Register,
+        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+    ) -> Result<(), TranslationError>
+    where
+        T: Into<UntypedValue>,
+    {
+        let result = self.alloc.stack.push_dynamic()?;
+        let lhs = self.alloc.stack.alloc_const(lhs)?;
+        self.alloc
+            .instr_encoder
+            .push_instr(make_instr(result, lhs, rhs))?;
         Ok(())
     }
 
@@ -605,9 +629,6 @@ impl<'parser> FuncTranslator<'parser> {
     fn translate_binary<T>(
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        make_instr_imm: fn(result: Register, lhs: Register) -> Instruction,
-        make_instr_imm_rev: fn(result: Register, lhs: Register) -> Instruction,
-        make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
         make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
         make_instr_imm16_rev: fn(result: Register, lhs: Const16, rhs: Register) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
@@ -648,7 +669,7 @@ impl<'parser> FuncTranslator<'parser> {
                     // Optimization was applied: return early.
                     return Ok(());
                 }
-                self.push_binary_instr_imm(lhs, T::from(rhs), make_instr_imm, make_instr_imm_param)
+                self.push_binary_instr_imm(lhs, rhs, make_instr)
             }
             (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
                 if make_instr_imm_reg_opt(self, T::from(lhs), rhs)? {
@@ -659,12 +680,7 @@ impl<'parser> FuncTranslator<'parser> {
                     // Optimization was applied: return early.
                     return Ok(());
                 }
-                self.push_binary_instr_imm(
-                    rhs,
-                    T::from(lhs),
-                    make_instr_imm_rev,
-                    make_instr_imm_param,
-                )
+                self.push_binary_instr_imm_rev(lhs, rhs, make_instr)
             }
             (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
                 self.push_binary_consteval(lhs, rhs, consteval)
@@ -697,9 +713,6 @@ impl<'parser> FuncTranslator<'parser> {
     fn translate_fbinary<T>(
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        make_instr_imm: fn(result: Register, lhs: Register) -> Instruction,
-        make_instr_imm_rev: fn(result: Register, lhs: Register) -> Instruction,
-        make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
         make_instr_opt: fn(
             &mut Self,
@@ -739,7 +752,7 @@ impl<'parser> FuncTranslator<'parser> {
                     self.alloc.stack.push_const(rhs);
                     return Ok(());
                 }
-                self.push_binary_instr_imm(lhs, T::from(rhs), make_instr_imm, make_instr_imm_param)
+                self.push_binary_instr_imm(lhs, rhs, make_instr)
             }
             (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
                 if make_instr_imm_reg_opt(self, T::from(lhs), rhs)? {
@@ -751,12 +764,7 @@ impl<'parser> FuncTranslator<'parser> {
                     self.alloc.stack.push_const(lhs);
                     return Ok(());
                 }
-                self.push_binary_instr_imm(
-                    rhs,
-                    T::from(lhs),
-                    make_instr_imm_rev,
-                    make_instr_imm_param,
-                )
+                self.push_binary_instr_imm_rev(lhs, rhs, make_instr)
             }
             (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
                 self.push_binary_consteval(lhs, rhs, consteval)
@@ -774,8 +782,6 @@ impl<'parser> FuncTranslator<'parser> {
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
         make_instr_imm: fn(result: Register, lhs: Register, rhs: Sign) -> Instruction,
-        make_instr_imm_rev: fn(result: Register, rhs: Register) -> Instruction,
-        make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
     ) -> Result<(), TranslationError>
     where
@@ -799,8 +805,9 @@ impl<'parser> FuncTranslator<'parser> {
                     .push_instr(make_instr_imm(result, lhs, sign))?;
                 Ok(())
             }
-            (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => self
-                .push_binary_instr_imm(rhs, T::from(lhs), make_instr_imm_rev, make_instr_imm_param),
+            (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
+                self.push_binary_instr_imm_rev(lhs, rhs, make_instr)
+            }
             (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
                 self.push_binary_consteval(lhs, rhs, consteval)
             }
@@ -830,8 +837,6 @@ impl<'parser> FuncTranslator<'parser> {
     fn translate_binary_commutative<T>(
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        make_instr_imm: fn(result: Register, lhs: Register) -> Instruction,
-        make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
         make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
         make_instr_opt: fn(
@@ -842,7 +847,7 @@ impl<'parser> FuncTranslator<'parser> {
         make_instr_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, TranslationError>,
     ) -> Result<(), TranslationError>
     where
-        T: Copy + From<TypedValue> + Into<TypedValue> + TryInto<Const16>,
+        T: Copy + From<TypedValue> + TryInto<Const16>,
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
@@ -863,12 +868,7 @@ impl<'parser> FuncTranslator<'parser> {
                     // Optimization was applied: return early.
                     return Ok(());
                 }
-                self.push_binary_instr_imm(
-                    reg_in,
-                    T::from(imm_in),
-                    make_instr_imm,
-                    make_instr_imm_param,
-                )
+                self.push_binary_instr_imm(reg_in, imm_in, make_instr)
             }
             (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
                 self.push_binary_consteval(lhs, rhs, consteval)
@@ -899,8 +899,6 @@ impl<'parser> FuncTranslator<'parser> {
     fn translate_fbinary_commutative<T>(
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        make_instr_imm: fn(result: Register, lhs: Register) -> Instruction,
-        make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
         make_instr_opt: fn(
             &mut Self,
@@ -932,12 +930,7 @@ impl<'parser> FuncTranslator<'parser> {
                     self.alloc.stack.push_const(T::from(imm_in));
                     return Ok(());
                 }
-                self.push_binary_instr_imm(
-                    reg_in,
-                    T::from(imm_in),
-                    make_instr_imm,
-                    make_instr_imm_param,
-                )
+                self.push_binary_instr_imm(reg_in, imm_in, make_instr)
             }
             (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
                 self.push_binary_consteval(lhs, rhs, consteval)
@@ -966,8 +959,6 @@ impl<'parser> FuncTranslator<'parser> {
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
         make_instr_imm: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
-        make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
-        make_instr_imm_rev: fn(result: Register, rhs: Register) -> Instruction,
         make_instr_imm16_rev: fn(result: Register, lhs: Const16, rhs: Register) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
         make_instr_imm_reg_opt: fn(
@@ -1013,12 +1004,7 @@ impl<'parser> FuncTranslator<'parser> {
                     // Optimization was applied: return early.
                     return Ok(());
                 }
-                self.push_binary_instr_imm(
-                    rhs,
-                    T::from(lhs),
-                    make_instr_imm_rev,
-                    make_instr_imm_param,
-                )
+                self.push_binary_instr_imm_rev(lhs, rhs, make_instr)
             }
             (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
                 self.push_binary_consteval(lhs, rhs, consteval)
@@ -1046,9 +1032,6 @@ impl<'parser> FuncTranslator<'parser> {
     pub fn translate_divrem<T>(
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        make_instr_imm: fn(result: Register, lhs: Register) -> Instruction,
-        make_instr_imm_rev: fn(result: Register, lhs: Register) -> Instruction,
-        make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
         make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
         make_instr_imm16_rev: fn(result: Register, lhs: Const16, rhs: Register) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> Result<TypedValue, TrapCode>,
@@ -1089,19 +1072,14 @@ impl<'parser> FuncTranslator<'parser> {
                     // Optimization was applied: return early.
                     return Ok(());
                 }
-                self.push_binary_instr_imm(lhs, T::from(rhs), make_instr_imm, make_instr_imm_param)
+                self.push_binary_instr_imm(lhs, rhs, make_instr)
             }
             (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
                 if self.try_push_binary_instr_imm16_rev(T::from(lhs), rhs, make_instr_imm16_rev)? {
                     // Optimization was applied: return early.
                     return Ok(());
                 }
-                self.push_binary_instr_imm(
-                    rhs,
-                    T::from(lhs),
-                    make_instr_imm_rev,
-                    make_instr_imm_param,
-                )
+                self.push_binary_instr_imm_rev(lhs, rhs, make_instr)
             }
             (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => match consteval(lhs, rhs) {
                 Ok(result) => {

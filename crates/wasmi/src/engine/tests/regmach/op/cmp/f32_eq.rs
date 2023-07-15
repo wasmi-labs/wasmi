@@ -17,12 +17,12 @@ fn reg_reg() {
 
 #[test]
 fn reg_imm() {
-    test_binary_reg_imm32(WASM_OP, 1.0_f32, Instruction::f32_eq_imm)
+    test_binary_reg_imm32(WASM_OP, 1.0_f32, Instruction::f32_eq)
 }
 
 #[test]
 fn reg_imm_rev() {
-    test_binary_reg_imm32_rev(WASM_OP, 1.0_f32, Instruction::f32_eq_imm)
+    test_binary_reg_imm32_rev_commutative(WASM_OP, 1.0_f32, Instruction::f32_eq)
 }
 
 #[test]

@@ -29,6 +29,7 @@ macro_rules! swap_ops {
 }
 
 use swap_ops;
+use wasmi_core::UntypedValue;
 
 /// Asserts that the given `wasm` bytes yield functions with expected instructions.
 ///
@@ -192,12 +193,9 @@ fn test_binary_reg_reg(
     assert_func_bodies(wasm, [expected]);
 }
 
-fn test_binary_reg_imm16<T>(
-    wasm_op: WasmOp,
-    value: T,
-    make_instr: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
-) where
-    T: Copy + Into<Const16>,
+fn testcase_binary_reg_imm<T>(wasm_op: WasmOp, value: T) -> TranslationTest
+where
+    T: Copy,
     DisplayWasm<T>: Display,
 {
     let param_ty = wasm_op.param_ty();
@@ -214,12 +212,45 @@ fn test_binary_reg_imm16<T>(
         )
     "#,
     ));
+    TranslationTest::new(wasm)
+}
+
+fn testcase_binary_imm_reg<T>(wasm_op: WasmOp, value: T) -> TranslationTest
+where
+    T: Copy,
+    DisplayWasm<T>: Display,
+{
+    let param_ty = wasm_op.param_ty();
+    let result_ty = wasm_op.result_ty();
+    let display_value = DisplayWasm::from(value);
+    let wasm = wat2wasm(&format!(
+        r#"
+        (module
+            (func (param {param_ty}) (result {result_ty})
+                {param_ty}.const {display_value}
+                local.get 0
+                {wasm_op}
+            )
+        )
+    "#,
+    ));
+    TranslationTest::new(wasm)
+}
+
+fn test_binary_reg_imm16<T>(
+    wasm_op: WasmOp,
+    value: T,
+    make_instr: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
+) where
+    T: Copy + Into<Const16>,
+    DisplayWasm<T>: Display,
+{
     let immediate: Const16 = value.into();
     let expected = [
         make_instr(Register::from_i16(1), Register::from_i16(0), immediate),
         Instruction::return_reg(1),
     ];
-    assert_func_bodies(wasm, [expected]);
+    test_binary_reg_imm_with(wasm_op, value, expected).run()
 }
 
 /// Variant of [`test_binary_reg_imm16`] where both operands are swapped.
@@ -231,92 +262,77 @@ fn test_binary_reg_imm16_rev<T>(
     T: Copy + Into<Const16>,
     DisplayWasm<T>: Display,
 {
-    let param_ty = wasm_op.param_ty();
-    let result_ty = wasm_op.result_ty();
-    let display_value = DisplayWasm::from(value);
-    let wasm = wat2wasm(&format!(
-        r#"
-        (module
-            (func (param {param_ty}) (result {result_ty})
-                {param_ty}.const {display_value}
-                local.get 0
-                {wasm_op}
-            )
-        )
-    "#,
-    ));
     let immediate: Const16 = value.into();
     let expected = [
         make_instr(Register::from_i16(1), immediate, Register::from_i16(0)),
         Instruction::return_reg(1),
     ];
-    assert_func_bodies(wasm, [expected]);
+    test_binary_reg_imm_rev_with(wasm_op, value, expected).run()
 }
 
 fn test_binary_reg_imm32<T>(
     wasm_op: WasmOp,
     value: T,
-    make_instr: fn(result: Register, lhs: Register) -> Instruction,
+    make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
 ) where
-    T: Copy + Into<Const32>,
+    T: Copy + Into<UntypedValue>,
     DisplayWasm<T>: Display,
 {
     let expected = [
-        make_instr(Register::from_i16(1), Register::from_i16(0)),
-        Instruction::const32(value),
+        make_instr(
+            Register::from_i16(1),
+            Register::from_i16(0),
+            Register::from_i16(-1),
+        ),
         Instruction::return_reg(1),
     ];
-    test_binary_reg_imm_with(wasm_op, value, expected).run()
+    let mut testcase = testcase_binary_reg_imm(wasm_op, value);
+    testcase.expect_func(ExpectedFunc::new(expected).consts([value.into()]));
+    testcase.run()
 }
 
 /// Variant of [`test_binary_reg_imm32`] where both operands are swapped.
 fn test_binary_reg_imm32_rev<T>(
     wasm_op: WasmOp,
     value: T,
-    make_instr: fn(result: Register, lhs: Register) -> Instruction,
+    make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
 ) where
-    T: Copy + Into<Const32>,
+    T: Copy + Into<UntypedValue>,
     DisplayWasm<T>: Display,
 {
     let expected = [
-        make_instr(Register::from_i16(1), Register::from_i16(0)),
-        Instruction::const32(value),
+        make_instr(
+            Register::from_i16(1),
+            Register::from_i16(-1),
+            Register::from_i16(0),
+        ),
         Instruction::return_reg(1),
     ];
-    test_binary_reg_imm_rev_with(wasm_op, value, expected).run()
+    let mut testcase = testcase_binary_imm_reg(wasm_op, value);
+    testcase.expect_func(ExpectedFunc::new(expected).consts([value.into()]));
+    testcase.run()
 }
 
-fn test_binary_reg_imm64<T>(
+/// Variant of [`test_binary_reg_imm32`] where both operands are swapped.
+fn test_binary_reg_imm32_rev_commutative<T>(
     wasm_op: WasmOp,
     value: T,
-    make_instr: fn(result: Register, lhs: Register) -> Instruction,
+    make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
 ) where
-    T: Copy,
+    T: Copy + Into<UntypedValue>,
     DisplayWasm<T>: Display,
 {
     let expected = [
-        make_instr(Register::from_i16(1), Register::from_i16(0)),
-        Instruction::ConstRef(ConstRef::from_u32(0)),
+        make_instr(
+            Register::from_i16(1),
+            Register::from_i16(0),
+            Register::from_i16(-1),
+        ),
         Instruction::return_reg(1),
     ];
-    test_binary_reg_imm_with(wasm_op, value, expected).run()
-}
-
-/// Variant of [`test_binary_reg_imm64`] where both operands are swapped.
-fn test_binary_reg_imm64_rev<T>(
-    wasm_op: WasmOp,
-    value: T,
-    make_instr: fn(result: Register, lhs: Register) -> Instruction,
-) where
-    T: Copy,
-    DisplayWasm<T>: Display,
-{
-    let expected = [
-        make_instr(Register::from_i16(1), Register::from_i16(0)),
-        Instruction::ConstRef(ConstRef::from_u32(0)),
-        Instruction::return_reg(1),
-    ];
-    test_binary_reg_imm_rev_with(wasm_op, value, expected).run()
+    let mut testcase = testcase_binary_imm_reg(wasm_op, value);
+    testcase.expect_func(ExpectedFunc::new(expected).consts([value.into()]));
+    testcase.run()
 }
 
 fn test_binary_reg_imm_with<T, E>(wasm_op: WasmOp, value: T, expected: E) -> TranslationTest
@@ -326,21 +342,7 @@ where
     E: IntoIterator<Item = Instruction>,
     <E as IntoIterator>::IntoIter: ExactSizeIterator,
 {
-    let param_ty = wasm_op.param_ty();
-    let result_ty = wasm_op.result_ty();
-    let display_value = DisplayWasm::from(value);
-    let wasm = wat2wasm(&format!(
-        r#"
-        (module
-            (func (param {param_ty}) (result {result_ty})
-                local.get 0
-                {param_ty}.const {display_value}
-                {wasm_op}
-            )
-        )
-    "#,
-    ));
-    let mut testcase = TranslationTest::new(wasm);
+    let mut testcase = testcase_binary_reg_imm(wasm_op, value);
     testcase.expect_func_instrs(expected);
     testcase
 }
@@ -352,21 +354,7 @@ where
     E: IntoIterator<Item = Instruction>,
     <E as IntoIterator>::IntoIter: ExactSizeIterator,
 {
-    let param_ty = wasm_op.param_ty();
-    let result_ty = wasm_op.result_ty();
-    let display_value = DisplayWasm::from(value);
-    let wasm = wat2wasm(&format!(
-        r#"
-        (module
-            (func (param {param_ty}) (result {result_ty})
-                {param_ty}.const {display_value}
-                local.get 0
-                {wasm_op}
-            )
-        )
-    "#,
-    ));
-    let mut testcase = TranslationTest::new(wasm);
+    let mut testcase = testcase_binary_imm_reg(wasm_op, value);
     testcase.expect_func_instrs(expected);
     testcase
 }

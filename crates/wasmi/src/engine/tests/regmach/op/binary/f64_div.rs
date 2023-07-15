@@ -9,12 +9,12 @@ fn reg_reg() {
 
 #[test]
 fn reg_imm() {
-    test_binary_reg_imm64(WASM_OP, 1.0_f32, Instruction::f64_div_imm)
+    test_binary_reg_imm32(WASM_OP, 1.0_f64, Instruction::f64_div)
 }
 
 #[test]
 fn reg_imm_rev() {
-    test_binary_reg_imm64_rev(WASM_OP, 1.0_f32, Instruction::f64_div_imm_rev)
+    test_binary_reg_imm32_rev(WASM_OP, 1.0_f64, Instruction::f64_div)
 }
 
 #[test]
