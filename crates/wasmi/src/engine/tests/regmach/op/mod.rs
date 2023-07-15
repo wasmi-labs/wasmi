@@ -14,6 +14,7 @@ mod store;
 mod unary;
 
 use super::{
+    driver::ExpectedFunc,
     swap_ops,
     test_binary_consteval,
     test_binary_reg_imm16,
@@ -25,6 +26,9 @@ use super::{
     test_binary_reg_imm_with,
     test_binary_reg_reg,
     test_binary_same_reg,
+    testcase_binary_consteval,
+    testcase_binary_imm_reg,
+    testcase_binary_reg_imm,
     wasm_type,
     wat2wasm,
     AnyConst16,

@@ -1,7 +1,7 @@
 use super::*;
 use crate::engine::{
     bytecode::BranchOffset,
-    tests::regmach::{display_wasm::DisplayValueType, wasm_type::WasmType},
+    tests::regmach::{display_wasm::DisplayValueType, driver::ExpectedFunc, wasm_type::WasmType},
 };
 use core::fmt::Display;
 use wasmi_core::UntypedValue;
@@ -82,10 +82,11 @@ fn consteval_return_1_imm() {
                 )
             )",
         ));
-        let cref = ConstRef::from_u32(0);
         TranslationTest::new(wasm)
-            .expect_func_instrs([Instruction::return_imm(cref)])
-            .expect_cref(cref, expected)
+            .expect_func(
+                ExpectedFunc::new([Instruction::return_reg(Register::from_i16(-1))])
+                    .consts([expected]),
+            )
             .run()
     }
     /// Run the test for both sign polarities of the `br_if` condition.
@@ -289,10 +290,13 @@ fn return_if_results_1_imm() {
         ));
         let cref = ConstRef::from_u32(0);
         TranslationTest::new(wasm)
-            .expect_func_instrs([
-                Instruction::return_nez_imm(Register::from_i16(0), cref),
-                Instruction::return_imm(cref),
-            ])
+            .expect_func(
+                ExpectedFunc::new([
+                    Instruction::return_nez_imm(Register::from_i16(0), cref),
+                    Instruction::return_reg(Register::from_i16(-1)),
+                ])
+                .consts([returned_value]),
+            )
             .expect_cref(cref, returned_value)
             .run()
     }

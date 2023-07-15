@@ -1,4 +1,4 @@
-use super::{AnyConst32, Const16, Const32};
+use super::{Const16, Const32};
 use core::marker::PhantomData;
 
 #[cfg(doc)]
@@ -195,15 +195,6 @@ impl UnaryInstr {
     pub fn new(result: Register, input: Register) -> Self {
         Self { result, input }
     }
-}
-
-/// A unary instruction with 32-bit immediate input.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct UnaryInstrImm32 {
-    /// The register storing the result of the instruction.
-    pub result: Register,
-    /// The 32-bit constant value input of the instruction.
-    pub input: AnyConst32,
 }
 
 /// A general `load` instruction.

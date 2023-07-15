@@ -31,7 +31,6 @@ pub(crate) use self::{
         StoreAtInstr,
         StoreInstr,
         UnaryInstr,
-        UnaryInstrImm32,
     },
 };
 use super::{
@@ -150,15 +149,6 @@ pub enum Instruction {
     ReturnReg {
         /// The returned value.
         value: Register,
-    },
-    /// A Wasm `return` instruction.
-    ///
-    /// # Note
-    ///
-    /// Returns a single constant value referenced via [`ConstRef`].
-    ReturnImm {
-        /// The returned constant value.
-        value: ConstRef,
     },
     /// A Wasm `return` instruction.
     ///
@@ -511,13 +501,23 @@ pub enum Instruction {
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
-    TableGet(UnaryInstr),
+    TableGet {
+        /// The register storing the result of the instruction.
+        result: Register,
+        /// The register storing the index of the table element to get.
+        index: Const32<u32>,
+    },
     /// A Wasm `table.get` immediate instruction: `result = table[index]`
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
-    TableGetImm(UnaryInstrImm32),
+    TableGetImm {
+        /// The register storing the result of the instruction.
+        result: Register,
+        /// The index of the table element to get.
+        index: Const32<u32>,
+    },
 
     /// A Wasm `table.size` instruction.
     TableSize {

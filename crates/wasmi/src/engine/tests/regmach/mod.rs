@@ -363,12 +363,10 @@ where
     testcase
 }
 
-fn test_binary_consteval<T, E>(wasm_op: WasmOp, lhs: T, rhs: T, expected: E)
+fn testcase_binary_consteval<T>(wasm_op: WasmOp, lhs: T, rhs: T) -> TranslationTest
 where
     T: Copy,
     DisplayWasm<T>: Display,
-    E: IntoIterator<Item = Instruction>,
-    <E as IntoIterator>::IntoIter: ExactSizeIterator,
 {
     let param_ty = wasm_op.param_ty();
     let result_ty = wasm_op.result_ty();
@@ -385,7 +383,19 @@ where
         )
     "#,
     ));
-    assert_func_bodies(wasm, [expected]);
+    TranslationTest::new(wasm)
+}
+
+fn test_binary_consteval<T, E>(wasm_op: WasmOp, lhs: T, rhs: T, expected: E)
+where
+    T: Copy,
+    DisplayWasm<T>: Display,
+    E: IntoIterator<Item = Instruction>,
+    <E as IntoIterator>::IntoIter: ExactSizeIterator,
+{
+    testcase_binary_consteval(wasm_op, lhs, rhs)
+        .expect_func_instrs(expected)
+        .run()
 }
 
 fn test_binary_same_reg<E>(wasm_op: WasmOp, expected: E)

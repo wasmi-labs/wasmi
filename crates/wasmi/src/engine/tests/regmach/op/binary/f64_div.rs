@@ -19,36 +19,30 @@ fn reg_imm_rev() {
 
 #[test]
 fn reg_nan() {
-    test_binary_reg_imm_with(
-        WASM_OP,
-        f64::NAN,
-        [Instruction::return_imm(ConstRef::from_u32(0))],
-    )
-    .expect_cref(ConstRef::from_u32(0), f64::NAN)
-    .run()
+    testcase_binary_reg_imm(WASM_OP, f64::NAN)
+        .expect_func(
+            ExpectedFunc::new([Instruction::return_reg(Register::from_i16(-1))]).consts([f64::NAN]),
+        )
+        .run();
 }
 
 #[test]
 fn nan_reg() {
-    test_binary_reg_imm_rev_with(
-        WASM_OP,
-        f64::NAN,
-        [Instruction::return_imm(ConstRef::from_u32(0))],
-    )
-    .expect_cref(ConstRef::from_u32(0), f64::NAN)
-    .run()
+    testcase_binary_imm_reg(WASM_OP, f64::NAN)
+        .expect_func(
+            ExpectedFunc::new([Instruction::return_reg(Register::from_i16(-1))]).consts([f64::NAN]),
+        )
+        .run();
 }
 
 #[test]
 fn consteval() {
     let lhs = 13.0_f64;
     let rhs = 5.5;
-    test_binary_consteval(
-        WASM_OP,
-        lhs,
-        rhs,
-        [Instruction::ReturnImm {
-            value: ConstRef::from_u32(0),
-        }],
-    )
+    testcase_binary_consteval(WASM_OP, lhs, rhs)
+        .expect_func(
+            ExpectedFunc::new([Instruction::return_reg(Register::from_i16(-1))])
+                .consts([lhs / rhs]),
+        )
+        .run();
 }

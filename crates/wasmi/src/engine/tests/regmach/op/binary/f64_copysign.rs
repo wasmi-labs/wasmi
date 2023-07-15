@@ -27,21 +27,15 @@ fn reg_imm_rev() {
 
 #[test]
 fn consteval() {
-    let lhs = 13.0_f32;
-    test_binary_consteval(
-        WASM_OP,
-        lhs,
-        1.0,
-        [Instruction::ReturnImm {
-            value: ConstRef::from_u32(0),
-        }],
-    );
-    test_binary_consteval(
-        WASM_OP,
-        lhs,
-        -1.0,
-        [Instruction::ReturnImm {
-            value: ConstRef::from_u32(0),
-        }],
-    );
+    let lhs = 13.0_f64;
+    testcase_binary_consteval(WASM_OP, lhs, 1.0)
+        .expect_func(
+            ExpectedFunc::new([Instruction::return_reg(Register::from_i16(-1))]).consts([lhs]),
+        )
+        .run();
+    testcase_binary_consteval(WASM_OP, lhs, -1.0)
+        .expect_func(
+            ExpectedFunc::new([Instruction::return_reg(Register::from_i16(-1))]).consts([-lhs]),
+        )
+        .run();
 }

@@ -1607,7 +1607,7 @@ impl<'parser> FuncTranslator<'parser> {
                     if let Ok(value) = i32::try_from(i64::from(value)) {
                         Instruction::return_i64imm32(value)
                     } else {
-                        Instruction::return_imm(self.engine().alloc_const(value)?)
+                        Instruction::return_reg(self.alloc.stack.alloc_const(value)?)
                     }
                 }
             },
@@ -1621,7 +1621,7 @@ impl<'parser> FuncTranslator<'parser> {
                     // Case: Function returns a single `f64` value which allows for special operator.
                     TypedProvider::Register(value) => Instruction::return_reg(value),
                     TypedProvider::Const(value) => {
-                        Instruction::return_imm(self.engine().alloc_const(value)?)
+                        Instruction::return_reg(self.alloc.stack.alloc_const(value)?)
                     }
                 }
             }

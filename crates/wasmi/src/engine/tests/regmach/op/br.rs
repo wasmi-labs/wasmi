@@ -1,5 +1,9 @@
 use super::*;
-use crate::engine::tests::regmach::{display_wasm::DisplayValueType, wasm_type::WasmType};
+use crate::engine::tests::regmach::{
+    display_wasm::DisplayValueType,
+    driver::ExpectedFunc,
+    wasm_type::WasmType,
+};
 use core::fmt::Display;
 
 #[test]
@@ -51,10 +55,11 @@ fn as_return_1_imm() {
                 )
             )",
         ));
-        let cref = ConstRef::from_u32(0);
         TranslationTest::new(wasm)
-            .expect_func_instrs([Instruction::return_imm(cref)])
-            .expect_cref(cref, value.into())
+            .expect_func(
+                ExpectedFunc::new([Instruction::return_reg(Register::from_i16(-1))])
+                    .consts([value]),
+            )
             .run()
     }
     test_for::<i64>(i64::MIN);

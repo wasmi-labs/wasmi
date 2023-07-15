@@ -4,7 +4,7 @@ mod conversion;
 mod op;
 
 use super::*;
-use crate::engine::tests::regmach::driver::TranslationTest;
+use crate::engine::tests::regmach::driver::{ExpectedFunc, TranslationTest};
 use std::fmt::Display;
 use wasm_type::WasmType;
 use wasmi_core::{TrapCode, UntypedValue};
@@ -76,12 +76,16 @@ where
         )
     "#,
     ));
-    let instr = <O as WasmType>::return_imm_instr(&eval(input));
+    let result = eval(input);
+    let instr = <O as WasmType>::return_imm_instr(&result);
     let mut testcase = TranslationTest::new(wasm);
-    if let Instruction::ReturnImm { value } = &instr {
-        testcase.expect_cref(*value, eval(input));
+    if let Instruction::ReturnReg { value } = &instr {
+        assert!(value.is_const());
+        testcase.expect_func(ExpectedFunc::new([instr]).consts([result]));
+    } else {
+        testcase.expect_func_instrs([instr]);
     }
-    testcase.expect_func_instrs([instr]).run();
+    testcase.run();
 }
 
 /// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary `wasmi` instruction.

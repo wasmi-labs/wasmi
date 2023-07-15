@@ -159,11 +159,6 @@ impl Instruction {
         }
     }
 
-    /// Creates a new [`Instruction::ReturnImm`] from the given `value`.
-    pub fn return_imm(value: ConstRef) -> Self {
-        Self::ReturnImm { value }
-    }
-
     /// Creates a new [`Instruction::ReturnImm32`] from the given `value`.
     pub fn return_imm32(value: impl Into<AnyConst32>) -> Self {
         Self::ReturnImm32 {

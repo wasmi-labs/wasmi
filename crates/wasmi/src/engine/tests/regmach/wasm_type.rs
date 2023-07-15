@@ -3,7 +3,7 @@ use wasmi_core::ValueType;
 use crate::{
     core::{UntypedValue, F32},
     engine::{
-        bytecode2::{AnyConst32, Instruction},
+        bytecode2::{AnyConst32, Instruction, Register},
         ConstRef,
     },
 };
@@ -32,7 +32,7 @@ impl WasmType for i64 {
     fn return_imm_instr(&self) -> Instruction {
         match i32::try_from(*self) {
             Ok(value) => Instruction::return_i64imm32(value),
-            Err(_) => Instruction::return_imm(ConstRef::from_u32(0)),
+            Err(_) => Instruction::return_reg(Register::from_i16(-1)),
         }
     }
 }
@@ -42,9 +42,7 @@ impl WasmType for f32 {
     const VALUE_TYPE: ValueType = ValueType::F32;
 
     fn return_imm_instr(&self) -> Instruction {
-        Instruction::ReturnImm32 {
-            value: AnyConst32::from_f32(F32::from(*self)),
-        }
+        Instruction::return_imm32(F32::from(*self))
     }
 }
 
@@ -53,8 +51,6 @@ impl WasmType for f64 {
     const VALUE_TYPE: ValueType = ValueType::F64;
 
     fn return_imm_instr(&self) -> Instruction {
-        Instruction::ReturnImm {
-            value: ConstRef::from_u32(0),
-        }
+        Instruction::return_reg(Register::from_i16(-1))
     }
 }

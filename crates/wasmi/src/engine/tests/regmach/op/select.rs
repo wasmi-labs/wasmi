@@ -1,7 +1,10 @@
 use super::*;
 use crate::{
     core::ValueType,
-    engine::tests::regmach::display_wasm::{DisplayValue, DisplayValueType},
+    engine::tests::regmach::{
+        display_wasm::{DisplayValue, DisplayValueType},
+        driver::ExpectedFunc,
+    },
     Value,
 };
 use core::{fmt, fmt::Display};
@@ -46,20 +49,26 @@ impl Display for DisplaySelect {
 /// Returns the `return` instruction to return a single [`Value`].
 ///
 /// Also adds an `expect_const` case to [`TranslationTest`] if necessary.
-fn return_for_value(testcase: &mut TranslationTest, value: Value) -> Instruction {
-    fn return_cref(testcase: &mut TranslationTest, value: UntypedValue) -> Instruction {
-        testcase.expect_cref(ConstRef::from_u32(0), value);
-        Instruction::return_imm(ConstRef::from_u32(0))
+fn return_for_value(testcase: &mut TranslationTest, value: Value) {
+    fn return_cref(testcase: &mut TranslationTest, value: UntypedValue) {
+        testcase.expect_func(
+            ExpectedFunc::new([Instruction::return_reg(Register::from_i16(-1))]).consts([value]),
+        );
     }
     match value {
-        Value::I32(value) => Instruction::return_imm32(value),
+        Value::I32(value) => {
+            testcase.expect_func_instrs([Instruction::return_imm32(value)]);
+        }
         Value::I64(value) => {
             if let Ok(value) = i32::try_from(value) {
-                return Instruction::return_i64imm32(value);
+                testcase.expect_func_instrs([Instruction::return_i64imm32(value)]);
+            } else {
+                return_cref(testcase, value.into());
             }
-            return_cref(testcase, value.into())
         }
-        Value::F32(value) => Instruction::return_imm32(value),
+        Value::F32(value) => {
+            testcase.expect_func_instrs([Instruction::return_imm32(value)]);
+        }
         Value::F64(_value) => return_cref(testcase, value.into()),
         Value::FuncRef(_value) => return_cref(testcase, value.into()),
         Value::ExternRef(_value) => return_cref(testcase, value.into()),
@@ -192,8 +201,8 @@ fn test_same_imm(kind: SelectKind, input: Value) {
     "#,
     ));
     let mut testcase = TranslationTest::new(wasm);
-    let return_instr = return_for_value(&mut testcase, input);
-    testcase.expect_func_instrs([return_instr]).run();
+    return_for_value(&mut testcase, input);
+    testcase.run();
 }
 
 #[test]
@@ -445,12 +454,12 @@ fn test_const_condition_reg_imm(kind: SelectKind, condition: bool, rhs: Value) {
     "#,
     ));
     let mut testcase = TranslationTest::new(wasm);
-    let picked_instr = if condition {
-        Instruction::return_reg(Register::from_i16(0))
+    if condition {
+        testcase.expect_func_instrs([Instruction::return_reg(Register::from_i16(0))]);
     } else {
-        return_for_value(&mut testcase, rhs)
+        return_for_value(&mut testcase, rhs);
     };
-    testcase.expect_func_instrs([picked_instr]).run();
+    testcase.run();
 }
 
 #[test]
@@ -486,12 +495,12 @@ fn test_const_condition_imm_reg(kind: SelectKind, condition: bool, lhs: Value) {
     "#,
     ));
     let mut testcase = TranslationTest::new(wasm);
-    let picked_instr = if !condition {
-        Instruction::return_reg(Register::from_i16(0))
+    if !condition {
+        testcase.expect_func_instrs([Instruction::return_reg(Register::from_i16(0))]);
     } else {
         return_for_value(&mut testcase, lhs)
     };
-    testcase.expect_func_instrs([picked_instr]).run();
+    testcase.run();
 }
 
 #[test]
@@ -529,12 +538,12 @@ fn test_const_condition_imm(kind: SelectKind, condition: bool, lhs: Value, rhs: 
     "#,
     ));
     let mut testcase = TranslationTest::new(wasm);
-    let picked_instr = if condition {
+    if condition {
         return_for_value(&mut testcase, lhs)
     } else {
         return_for_value(&mut testcase, rhs)
     };
-    testcase.expect_func_instrs([picked_instr]).run();
+    testcase.run();
 }
 
 #[test]
