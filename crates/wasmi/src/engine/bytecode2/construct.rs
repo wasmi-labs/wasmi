@@ -229,11 +229,6 @@ impl Instruction {
         Self::Copy { result, value }
     }
 
-    /// Creates a new [`Instruction::CopyImm`].
-    pub fn copy_imm(result: Register, value: ConstRef) -> Self {
-        Self::CopyImm { result, value }
-    }
-
     /// Creates a new [`Instruction::CopyImm32`].
     pub fn copy_imm32(result: Register, value: impl Into<AnyConst32>) -> Self {
         Self::CopyImm32 {

@@ -306,11 +306,10 @@ impl<'parser> FuncTranslator<'parser> {
         self.alloc
             .stack
             .pop_n(branch_params.len(), &mut self.alloc.buffer);
-        let engine = self.res.engine();
         for (result, value) in branch_params.zip(self.alloc.buffer.iter().copied()) {
             self.alloc
                 .instr_encoder
-                .encode_copy(engine, result, value)?;
+                .encode_copy(&mut self.alloc.stack, result, value)?;
         }
         Ok(())
     }

@@ -156,12 +156,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             .stack
             .pop_n(len_block_params, &mut self.alloc.buffer);
         let branch_params = self.alloc.stack.push_dynamic_n(len_block_params)?;
-        let engine = self.res.engine();
         for (param, value) in branch_params
             .iter(len_block_params)
             .zip(self.alloc.buffer.iter().copied())
         {
-            self.alloc.instr_encoder.encode_copy(engine, param, value)?;
+            self.alloc
+                .instr_encoder
+                .encode_copy(&mut self.alloc.stack, param, value)?;
         }
         // Create loop header label and immediately pin it.
         let stack_height = BlockHeight::new(self.engine(), self.alloc.stack.height(), block_type)?;
@@ -459,7 +460,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                         for (result, value) in branch_params.zip(self.alloc.buffer.iter().copied())
                         {
                             self.alloc.instr_encoder.encode_copy(
-                                self.res.engine(),
+                                &mut self.alloc.stack,
                                 result,
                                 value,
                             )?;

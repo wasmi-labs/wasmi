@@ -1,15 +1,13 @@
 use super::{DefragRegister, TypedProvider};
-use crate::{
-    engine::{
-        bytecode::BranchOffset,
-        bytecode2::{Instruction, Register},
-        func_builder::{
-            labels::{LabelRef, LabelRegistry},
-            Instr,
-        },
-        TranslationError,
+use crate::engine::{
+    bytecode::BranchOffset,
+    bytecode2::{Instruction, Register},
+    func_builder::{
+        labels::{LabelRef, LabelRegistry},
+        regmach::stack::ValueStack,
+        Instr,
     },
-    Engine,
+    TranslationError,
 };
 use alloc::vec::{Drain, Vec};
 use wasmi_core::{UntypedValue, ValueType};
@@ -182,18 +180,18 @@ impl InstrEncoder {
     /// most optimized `copy` instruction variant for the given `value`.
     pub fn encode_copy(
         &mut self,
-        engine: &Engine,
+        stack: &mut ValueStack,
         result: Register,
         value: TypedProvider,
     ) -> Result<(), TranslationError> {
-        /// Convenience function to create an [`Instruction::CopyImm`].
+        /// Convenience to create an [`Instruction::Copy`] to copy a constant value.
         fn copy_imm(
-            engine: &Engine,
+            stack: &mut ValueStack,
             result: Register,
             value: impl Into<UntypedValue>,
         ) -> Result<Instruction, TranslationError> {
-            let cref = engine.alloc_const(value.into())?;
-            Ok(Instruction::copy_imm(result, cref))
+            let cref = stack.alloc_const(value.into())?;
+            Ok(Instruction::copy(result, cref))
         }
         match value {
             TypedProvider::Register(value) => {
@@ -210,11 +208,11 @@ impl InstrEncoder {
                     ValueType::F32 => Instruction::copy_imm32(result, f32::from(value)),
                     ValueType::I64 => match i32::try_from(i64::from(value)) {
                         Ok(value) => Instruction::copy_i64imm32(result, value),
-                        Err(_) => copy_imm(engine, result, value)?,
+                        Err(_) => copy_imm(stack, result, value)?,
                     },
-                    ValueType::F64 => copy_imm(engine, result, value)?,
-                    ValueType::FuncRef => copy_imm(engine, result, value)?,
-                    ValueType::ExternRef => copy_imm(engine, result, value)?,
+                    ValueType::F64 => copy_imm(stack, result, value)?,
+                    ValueType::FuncRef => copy_imm(stack, result, value)?,
+                    ValueType::ExternRef => copy_imm(stack, result, value)?,
                 };
                 self.push_instr(instruction)?;
                 Ok(())
