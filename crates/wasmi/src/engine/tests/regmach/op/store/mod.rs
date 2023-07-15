@@ -23,7 +23,7 @@ pub fn const_ref<T>(_value: T) -> Instruction {
 fn test_store(
     wasm_op: WasmOp,
     offset: u32,
-    make_instr: fn(ptr: Register, offset: AnyConst32) -> Instruction,
+    make_instr: fn(ptr: Register, offset: Const32<u32>) -> Instruction,
 ) {
     let param_ty = wasm_op.param_ty();
     let wasm = wat2wasm(&format!(
@@ -40,7 +40,7 @@ fn test_store(
     ));
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            make_instr(Register::from_i16(0), AnyConst32::from(offset)),
+            make_instr(Register::from_i16(0), Const32::from(offset)),
             Instruction::Register(Register::from_i16(1)),
             Instruction::Return,
         ])
@@ -51,7 +51,7 @@ fn test_store_imm<T>(
     wasm_op: WasmOp,
     offset: u32,
     value: T,
-    make_instr: fn(ptr: Register, offset: AnyConst32) -> Instruction,
+    make_instr: fn(ptr: Register, offset: Const32<u32>) -> Instruction,
     make_instr_param: fn(value: T) -> Instruction,
 ) where
     T: Copy + Display,
@@ -71,7 +71,7 @@ fn test_store_imm<T>(
     ));
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            make_instr(Register::from_i16(0), AnyConst32::from(offset)),
+            make_instr(Register::from_i16(0), Const32::from(offset)),
             make_instr_param(value),
             Instruction::Return,
         ])
@@ -82,7 +82,7 @@ fn test_store_at(
     wasm_op: WasmOp,
     ptr: u32,
     offset: u32,
-    make_instr: fn(address: AnyConst32, value: Register) -> Instruction,
+    make_instr: fn(address: Const32<u32>, value: Register) -> Instruction,
 ) {
     let address = ptr
         .checked_add(offset)
@@ -102,7 +102,7 @@ fn test_store_at(
     ));
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            make_instr(AnyConst32::from(address), Register::from_i16(0)),
+            make_instr(Const32::from(address), Register::from_i16(0)),
             Instruction::Return,
         ])
         .run();
@@ -136,7 +136,7 @@ fn test_store_imm_at<T>(
     ptr: u32,
     offset: u32,
     value: T,
-    make_instr: fn(address: AnyConst32) -> Instruction,
+    make_instr: fn(address: Const32<u32>) -> Instruction,
     make_instr_param: fn(value: T) -> Instruction,
 ) where
     T: Copy + Display,
@@ -159,7 +159,7 @@ fn test_store_imm_at<T>(
     ));
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            make_instr(AnyConst32::from(address)),
+            make_instr(Const32::from(address)),
             make_instr_param(value),
             Instruction::Return,
         ])
@@ -171,7 +171,7 @@ fn test_store_imm_n_at<T>(
     ptr: u32,
     offset: u32,
     value: T,
-    make_instr: fn(address: AnyConst32, value: T) -> Instruction,
+    make_instr: fn(address: Const32<u32>, value: T) -> Instruction,
 ) where
     T: Copy + Display,
 {
@@ -193,7 +193,7 @@ fn test_store_imm_n_at<T>(
     ));
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            make_instr(AnyConst32::from(address), value),
+            make_instr(Const32::from(address), value),
             Instruction::Return,
         ])
         .run();

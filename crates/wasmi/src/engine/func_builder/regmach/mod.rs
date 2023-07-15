@@ -1272,11 +1272,11 @@ impl<'parser> FuncTranslator<'parser> {
     fn translate_store<T>(
         &mut self,
         memarg: MemArg,
-        make_instr: fn(ptr: Register, offset: AnyConst32) -> Instruction,
-        make_instr_imm: fn(ptr: Register, offset: AnyConst32) -> Instruction,
+        make_instr: fn(ptr: Register, offset: Const32<u32>) -> Instruction,
+        make_instr_imm: fn(ptr: Register, offset: Const32<u32>) -> Instruction,
         make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
-        make_instr_at: fn(address: AnyConst32, value: Register) -> Instruction,
-        make_instr_imm_at: fn(address: AnyConst32) -> Instruction,
+        make_instr_at: fn(address: Const32<u32>, value: Register) -> Instruction,
+        make_instr_imm_at: fn(address: Const32<u32>) -> Instruction,
     ) -> Result<(), TranslationError>
     where
         T: Copy + From<TypedValue>,
@@ -1287,7 +1287,7 @@ impl<'parser> FuncTranslator<'parser> {
             (TypedProvider::Register(ptr), TypedProvider::Register(value)) => {
                 self.alloc
                     .instr_encoder
-                    .push_instr(make_instr(ptr, AnyConst32::from(offset)))?;
+                    .push_instr(make_instr(ptr, Const32::from(offset)))?;
                 self.alloc
                     .instr_encoder
                     .push_instr(Instruction::Register(value))?;
@@ -1296,7 +1296,7 @@ impl<'parser> FuncTranslator<'parser> {
             (TypedProvider::Register(ptr), TypedProvider::Const(value)) => {
                 self.alloc
                     .instr_encoder
-                    .push_instr(make_instr_imm(ptr, AnyConst32::from(offset)))?;
+                    .push_instr(make_instr_imm(ptr, Const32::from(offset)))?;
                 let param = make_instr_imm_param(self, T::from(value))?;
                 self.alloc.instr_encoder.push_instr(param)?;
                 Ok(())
@@ -1305,14 +1305,14 @@ impl<'parser> FuncTranslator<'parser> {
                 .effective_address_and(ptr, offset, |this, address| {
                     this.alloc
                         .instr_encoder
-                        .push_instr(make_instr_at(AnyConst32::from(address), value))?;
+                        .push_instr(make_instr_at(Const32::from(address), value))?;
                     Ok(())
                 }),
             (TypedProvider::Const(ptr), TypedProvider::Const(value)) => {
                 self.effective_address_and(ptr, offset, |this, address| {
                     this.alloc
                         .instr_encoder
-                        .push_instr(make_instr_imm_at(AnyConst32::from(address)))?;
+                        .push_instr(make_instr_imm_at(Const32::from(address)))?;
                     let param = make_instr_imm_param(this, T::from(value))?;
                     this.alloc.instr_encoder.push_instr(param)?;
                     Ok(())
@@ -1336,11 +1336,11 @@ impl<'parser> FuncTranslator<'parser> {
     fn translate_store_trunc<T>(
         &mut self,
         memarg: MemArg,
-        make_instr: fn(ptr: Register, offset: AnyConst32) -> Instruction,
-        make_instr_imm: fn(ptr: Register, offset: AnyConst32) -> Instruction,
+        make_instr: fn(ptr: Register, offset: Const32<u32>) -> Instruction,
+        make_instr_imm: fn(ptr: Register, offset: Const32<u32>) -> Instruction,
         make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
-        make_instr_at: fn(address: AnyConst32, value: Register) -> Instruction,
-        make_instr_imm_at: fn(address: AnyConst32, value: T) -> Instruction,
+        make_instr_at: fn(address: Const32<u32>, value: Register) -> Instruction,
+        make_instr_imm_at: fn(address: Const32<u32>, value: T) -> Instruction,
     ) -> Result<(), TranslationError>
     where
         T: Copy + From<TypedValue>,
@@ -1351,7 +1351,7 @@ impl<'parser> FuncTranslator<'parser> {
             (TypedProvider::Register(ptr), TypedProvider::Register(value)) => {
                 self.alloc
                     .instr_encoder
-                    .push_instr(make_instr(ptr, AnyConst32::from(offset)))?;
+                    .push_instr(make_instr(ptr, Const32::from(offset)))?;
                 self.alloc
                     .instr_encoder
                     .push_instr(Instruction::Register(value))?;
@@ -1360,7 +1360,7 @@ impl<'parser> FuncTranslator<'parser> {
             (TypedProvider::Register(ptr), TypedProvider::Const(value)) => {
                 self.alloc
                     .instr_encoder
-                    .push_instr(make_instr_imm(ptr, AnyConst32::from(offset)))?;
+                    .push_instr(make_instr_imm(ptr, Const32::from(offset)))?;
                 let param = make_instr_imm_param(self, T::from(value))?;
                 self.alloc.instr_encoder.push_instr(param)?;
                 Ok(())
@@ -1369,14 +1369,14 @@ impl<'parser> FuncTranslator<'parser> {
                 .effective_address_and(ptr, offset, |this, address| {
                     this.alloc
                         .instr_encoder
-                        .push_instr(make_instr_at(AnyConst32::from(address), value))?;
+                        .push_instr(make_instr_at(Const32::from(address), value))?;
                     Ok(())
                 }),
             (TypedProvider::Const(ptr), TypedProvider::Const(value)) => {
                 self.effective_address_and(ptr, offset, |this, address| {
                     this.alloc
                         .instr_encoder
-                        .push_instr(make_instr_imm_at(AnyConst32::from(address), T::from(value)))?;
+                        .push_instr(make_instr_imm_at(Const32::from(address), T::from(value)))?;
                     Ok(())
                 })
             }

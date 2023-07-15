@@ -308,14 +308,14 @@ pub struct StoreInstr<T> {
     /// The register storing the pointer of the `store` instruction.
     pub ptr: Register,
     /// The register storing the pointer offset of the `store` instruction.
-    pub offset: AnyConst32,
+    pub offset: Const32<u32>,
     /// A type marker to store information about the encoding of the value.
     pub value: PhantomData<T>,
 }
 
 impl<T> StoreInstr<T> {
     /// Creates a new [`StoreInstr`].
-    pub fn new(ptr: Register, offset: AnyConst32) -> Self {
+    pub fn new(ptr: Register, offset: Const32<u32>) -> Self {
         Self {
             ptr,
             offset,
@@ -341,14 +341,14 @@ impl<T> StoreInstr<T> {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct StoreAtInstr<T> {
     /// The constant address to store the value.
-    pub address: AnyConst32,
+    pub address: Const32<u32>,
     /// The value to be stored if `T != ()`.
     pub value: T,
 }
 
 impl<T> StoreAtInstr<T> {
     /// Creates a new [`StoreAtInstr`].
-    pub fn new(address: AnyConst32, value: T) -> Self {
+    pub fn new(address: Const32<u32>, value: T) -> Self {
         Self { address, value }
     }
 }

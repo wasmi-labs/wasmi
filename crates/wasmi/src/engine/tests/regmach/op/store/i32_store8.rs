@@ -51,7 +51,7 @@ fn at_overflow() {
 
 #[test]
 fn imm_at() {
-    fn make_instr(address: AnyConst32, value: i32) -> Instruction {
+    fn make_instr(address: Const32<u32>, value: i32) -> Instruction {
         Instruction::i32_store8_imm_at(address, value as i8)
     }
 

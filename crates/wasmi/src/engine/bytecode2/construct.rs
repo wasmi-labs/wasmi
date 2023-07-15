@@ -111,31 +111,31 @@ macro_rules! constructor_for {
     };
     ( @impl fn $fn_name:ident(store) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(ptr: Register, offset: AnyConst32) -> Self {
+        pub fn $fn_name(ptr: Register, offset: Const32<u32>) -> Self {
             Self::$op_code(StoreInstr::new(ptr, offset))
         }
     };
     ( @impl fn $fn_name:ident(store_at) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(address: AnyConst32, value: Register) -> Self {
+        pub fn $fn_name(address: Const32<u32>, value: Register) -> Self {
             Self::$op_code(StoreAtInstr::new(address, value))
         }
     };
     ( @impl fn $fn_name:ident(store8_imm_at) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(address: AnyConst32, value: i8) -> Self {
+        pub fn $fn_name(address: Const32<u32>, value: i8) -> Self {
             Self::$op_code(StoreAtInstr::new(address, value))
         }
     };
     ( @impl fn $fn_name:ident(store16_imm_at) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(address: AnyConst32, value: i16) -> Self {
+        pub fn $fn_name(address: Const32<u32>, value: i16) -> Self {
             Self::$op_code(StoreAtInstr::new(address, value))
         }
     };
     ( @impl fn $fn_name:ident(store_imm_at) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(address: AnyConst32) -> Self {
+        pub fn $fn_name(address: Const32<u32>) -> Self {
             Self::$op_code(StoreAtInstr::new(address, ()))
         }
     };
