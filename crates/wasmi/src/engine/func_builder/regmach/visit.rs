@@ -17,7 +17,7 @@ use super::{
 use crate::{
     engine::{
         bytecode,
-        bytecode2::{AnyConst16, Instruction, Register},
+        bytecode2::{Const16, Instruction, Register},
         func_builder::regmach::control_stack::AcquiredTarget,
         TranslationError,
     },
@@ -30,7 +30,7 @@ use wasmparser::VisitOperator;
 /// Used to swap operands of a `rev` variant [`Instruction`] constructor.
 macro_rules! swap_ops {
     ($fn_name:path) => {
-        |result: Register, lhs: AnyConst16, rhs: Register| -> Instruction {
+        |result: Register, lhs: Const16<_>, rhs: Register| -> Instruction {
             $fn_name(result, rhs, lhs)
         }
     };
@@ -1973,7 +1973,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_div_u(&mut self) -> Self::Output {
-        self.translate_divrem(
+        self.translate_divrem::<u32>(
             Instruction::i32_div_u,
             Instruction::i32_div_u_imm16,
             Instruction::i32_div_u_imm16_rev,
@@ -1986,7 +1986,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 }
                 Ok(false)
             },
-            |this, lhs: Register, rhs: i32| {
+            |this, lhs: Register, rhs: u32| {
                 if rhs == 1 {
                     // Optimization: `x / 1` is always `x`
                     this.alloc.stack.push_register(lhs)?;
@@ -2023,7 +2023,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_rem_u(&mut self) -> Self::Output {
-        self.translate_divrem(
+        self.translate_divrem::<u32>(
             Instruction::i32_rem_u,
             Instruction::i32_rem_u_imm16,
             Instruction::i32_rem_u_imm16_rev,
@@ -2036,7 +2036,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 }
                 Ok(false)
             },
-            |this, _lhs: Register, rhs: i32| {
+            |this, _lhs: Register, rhs: u32| {
                 if rhs == 1 {
                     // Optimization: `x % 1` is always `0`
                     this.alloc.stack.push_const(0_i32);
@@ -2309,7 +2309,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_div_u(&mut self) -> Self::Output {
-        self.translate_divrem(
+        self.translate_divrem::<u64>(
             Instruction::i64_div_u,
             Instruction::i64_div_u_imm16,
             Instruction::i64_div_u_imm16_rev,
@@ -2322,7 +2322,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 }
                 Ok(false)
             },
-            |this, lhs: Register, rhs: i64| {
+            |this, lhs: Register, rhs: u64| {
                 if rhs == 1 {
                     // Optimization: `x / 1` is always `x`
                     this.alloc.stack.push_register(lhs)?;
@@ -2359,7 +2359,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_rem_u(&mut self) -> Self::Output {
-        self.translate_divrem(
+        self.translate_divrem::<u64>(
             Instruction::i64_rem_u,
             Instruction::i64_rem_u_imm16,
             Instruction::i64_rem_u_imm16_rev,
@@ -2372,7 +2372,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 }
                 Ok(false)
             },
-            |this, _lhs: Register, rhs: i64| {
+            |this, _lhs: Register, rhs: u64| {
                 if rhs == 1 {
                     // Optimization: `x % 1` is always `0`
                     this.alloc.stack.push_const(0_i64);

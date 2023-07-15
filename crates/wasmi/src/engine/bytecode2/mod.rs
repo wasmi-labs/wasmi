@@ -2349,7 +2349,7 @@ pub enum Instruction {
     ///
     /// This is an optimization of [`Instruction::I32Eq`]
     /// for 16-bit right-hand side constant values.
-    I32EqImm16(BinInstrImm16),
+    I32EqImm16(BinInstrImm16<i32>),
 
     /// `i64` equality comparison instruction: `r0 = r1 == r2`
     I64Eq(BinInstr),
@@ -2359,7 +2359,7 @@ pub enum Instruction {
     ///
     /// This is an optimization of [`Instruction::I64Eq`]
     /// for 16-bit right-hand side constant values.
-    I64EqImm16(BinInstrImm16),
+    I64EqImm16(BinInstrImm16<i64>),
 
     /// `i32` inequality comparison instruction: `r0 = r1 != r2`
     I32Ne(BinInstr),
@@ -2369,7 +2369,7 @@ pub enum Instruction {
     ///
     /// This is an optimization of [`Instruction::I32Ne`]
     /// for 16-bit right-hand side constant values.
-    I32NeImm16(BinInstrImm16),
+    I32NeImm16(BinInstrImm16<i32>),
 
     /// `i64` inequality comparison instruction: `r0 = r1 != r2`
     I64Ne(BinInstr),
@@ -2379,7 +2379,7 @@ pub enum Instruction {
     ///
     /// This is an optimization of [`Instruction::I64Ne`]
     /// for 16-bit right-hand side constant values.
-    I64NeImm16(BinInstrImm16),
+    I64NeImm16(BinInstrImm16<i64>),
 
     /// `i32` signed less-than comparison instruction: `r0 = r1 < r2`
     I32LtS(BinInstr),
@@ -2391,14 +2391,14 @@ pub enum Instruction {
     ///
     /// This is an optimization of [`Instruction::I32LtS`]
     /// for small right-hand side constant values.
-    I32LtSImm16(BinInstrImm16),
+    I32LtSImm16(BinInstrImm16<i32>),
     /// `i32` unsigned less-than comparison instruction with immediate: `r0 = r1 < c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I32LtU`]
     /// for small right-hand side constant values.
-    I32LtUImm16(BinInstrImm16),
+    I32LtUImm16(BinInstrImm16<u32>),
 
     /// `i64` signed less-than comparison instruction: `r0 = r1 < r2`
     I64LtS(BinInstr),
@@ -2410,14 +2410,14 @@ pub enum Instruction {
     ///
     /// This is an optimization of [`Instruction::I64LtS`]
     /// for small right-hand side constant values.
-    I64LtSImm16(BinInstrImm16),
+    I64LtSImm16(BinInstrImm16<i64>),
     /// `i64` unsigned less-than comparison instruction with immediate: `r0 = r1 < c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I64LtU`]
     /// for small right-hand side constant values.
-    I64LtUImm16(BinInstrImm16),
+    I64LtUImm16(BinInstrImm16<u64>),
 
     /// `i32` signed greater-than comparison instruction: `r0 = r1 > r2`
     I32GtS(BinInstr),
@@ -2429,14 +2429,14 @@ pub enum Instruction {
     ///
     /// This is an optimization of [`Instruction::I32GtS`]
     /// for small right-hand side constant values.
-    I32GtSImm16(BinInstrImm16),
+    I32GtSImm16(BinInstrImm16<i32>),
     /// `i32` unsigned greater-than comparison instruction with immediate: `r0 = r1 > c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I32GtU`]
     /// for small right-hand side constant values.
-    I32GtUImm16(BinInstrImm16),
+    I32GtUImm16(BinInstrImm16<u32>),
 
     /// `i64` signed greater-than comparison instruction: `r0 = r1 > r2`
     I64GtS(BinInstr),
@@ -2448,14 +2448,14 @@ pub enum Instruction {
     ///
     /// This is an optimization of [`Instruction::I64GtS`]
     /// for small right-hand side constant values.
-    I64GtSImm16(BinInstrImm16),
+    I64GtSImm16(BinInstrImm16<i64>),
     /// `i64` unsigned greater-than comparison instruction with immediate: `r0 = r1 > c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I64GtU`]
     /// for small right-hand side constant values.
-    I64GtUImm16(BinInstrImm16),
+    I64GtUImm16(BinInstrImm16<u64>),
 
     /// `i32` signed less-than or equals comparison instruction: `r0 = r1 <= r2`
     I32LeS(BinInstr),
@@ -2467,14 +2467,14 @@ pub enum Instruction {
     ///
     /// This is an optimization of [`Instruction::I32LeS`]
     /// for small right-hand side constant values.
-    I32LeSImm16(BinInstrImm16),
+    I32LeSImm16(BinInstrImm16<i32>),
     /// `i32` unsigned less-than or equals comparison instruction with immediate: `r0 = r1 <= c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I32LeU`]
     /// for small right-hand side constant values.
-    I32LeUImm16(BinInstrImm16),
+    I32LeUImm16(BinInstrImm16<u32>),
 
     /// `i64` signed less-than or equals comparison instruction: `r0 = r1 <= r2`
     I64LeS(BinInstr),
@@ -2486,14 +2486,14 @@ pub enum Instruction {
     ///
     /// This is an optimization of [`Instruction::I64LeS`]
     /// for small right-hand side constant values.
-    I64LeSImm16(BinInstrImm16),
+    I64LeSImm16(BinInstrImm16<i64>),
     /// `i64` unsigned less-than or equals comparison instruction with immediate: `r0 = r1 <= c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I64LeU`]
     /// for small right-hand side constant values.
-    I64LeUImm16(BinInstrImm16),
+    I64LeUImm16(BinInstrImm16<u64>),
 
     /// `i32` signed greater-than or equals comparison instruction: `r0 = r1 >= r2`
     I32GeS(BinInstr),
@@ -2505,14 +2505,14 @@ pub enum Instruction {
     ///
     /// This is an optimization of [`Instruction::I32GeS`]
     /// for small right-hand side constant values.
-    I32GeSImm16(BinInstrImm16),
+    I32GeSImm16(BinInstrImm16<i32>),
     /// `i32` unsigned greater-than or equals comparison instruction with immediate: `r0 = r1 >= c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I32GeU`]
     /// for small right-hand side constant values.
-    I32GeUImm16(BinInstrImm16),
+    I32GeUImm16(BinInstrImm16<u32>),
 
     /// `i64` signed greater-than or equals comparison instruction: `r0 = r1 >= r2`
     I64GeS(BinInstr),
@@ -2524,14 +2524,14 @@ pub enum Instruction {
     ///
     /// This is an optimization of [`Instruction::I64GeS`]
     /// for small right-hand side constant values.
-    I64GeSImm16(BinInstrImm16),
+    I64GeSImm16(BinInstrImm16<i64>),
     /// `i64` unsigned greater-than or equals comparison instruction with immediate: `r0 = r1 >= c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I64GeU`]
     /// for small right-hand side constant values.
-    I64GeUImm16(BinInstrImm16),
+    I64GeUImm16(BinInstrImm16<u64>),
 
     /// `f32` equality comparison instruction: `r0 = r1 == r2`
     F32Eq(BinInstr),
@@ -2591,13 +2591,13 @@ pub enum Instruction {
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I32Add`] for 16-bit constant values.
-    I32AddImm16(BinInstrImm16),
+    I32AddImm16(BinInstrImm16<i32>),
     /// `i64` add (small) immediate instruction: `r0 = r1 + c0`
     ///
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I64Add`] for 16-bit constant values.
-    I64AddImm16(BinInstrImm16),
+    I64AddImm16(BinInstrImm16<i64>),
 
     /// `i32` subtract instruction: `r0 = r1 - r2`
     I32Sub(BinInstr),
@@ -2608,27 +2608,27 @@ pub enum Instruction {
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I32Sub`] for 16-bit constant values.
-    I32SubImm16(BinInstrImm16),
+    I32SubImm16(BinInstrImm16<i32>),
     /// `i64` subtract immediate instruction: `r0 = r1 - c0`
     ///
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I64Sub`] for 16-bit constant values.
-    I64SubImm16(BinInstrImm16),
+    I64SubImm16(BinInstrImm16<i64>),
     /// `i32` subtract immediate instruction: `r0 = c0 - r1`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I32Sub`] for 16-bit constant values.
     /// - Required instruction since subtraction is not commutative.
-    I32SubImm16Rev(BinInstrImm16),
+    I32SubImm16Rev(BinInstrImm16<i32>),
     /// `i64` subtract immediate instruction: `r0 = c0 - r1`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I64Sub`] for 16-bit constant values.
     /// - Required instruction since subtraction is not commutative.
-    I64SubImm16Rev(BinInstrImm16),
+    I64SubImm16Rev(BinInstrImm16<i64>),
 
     /// `i32` multiply instruction: `r0 = r1 * r2`
     I32Mul(BinInstr),
@@ -2639,13 +2639,13 @@ pub enum Instruction {
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I32Mul`] for 16-bit constant values.
-    I32MulImm16(BinInstrImm16),
+    I32MulImm16(BinInstrImm16<i32>),
     /// `i64` multiply immediate instruction: `r0 = r1 * c0`
     ///
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I64Mul`] for 16-bit constant values.
-    I64MulImm16(BinInstrImm16),
+    I64MulImm16(BinInstrImm16<i64>),
 
     /// `i32` singed-division instruction: `r0 = r1 / r2`
     I32DivS(BinInstr),
@@ -2657,14 +2657,14 @@ pub enum Instruction {
     ///
     /// - Optimized variant of [`Instruction::I32DivS`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
-    I32DivSImm16(BinInstrImm16),
+    I32DivSImm16(BinInstrImm16<i32>),
     /// `i64` singed-division immediate instruction: `r0 = r1 / c0`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I64DivS`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
-    I64DivSImm16(BinInstrImm16),
+    I64DivSImm16(BinInstrImm16<i64>),
     /// `i32` singed-division immediate instruction: `r0 = c0 / r1`
     ///
     /// # Note
@@ -2672,7 +2672,7 @@ pub enum Instruction {
     /// - Optimized variant of [`Instruction::I32DivU`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Required instruction since signed-division is not commutative.
-    I32DivSImm16Rev(BinInstrImm16),
+    I32DivSImm16Rev(BinInstrImm16<i32>),
     /// `i32` singed-division immediate instruction: `r0 = c0 / r1`
     ///
     /// # Note
@@ -2680,7 +2680,7 @@ pub enum Instruction {
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Required instruction since signed-division is not commutative.
     /// - Optimized variant of [`Instruction::I64DivU`] for 16-bit constant values.
-    I64DivSImm16Rev(BinInstrImm16),
+    I64DivSImm16Rev(BinInstrImm16<i64>),
 
     /// `i32` unsinged-division instruction: `r0 = r1 / r2`
     I32DivU(BinInstr),
@@ -2695,7 +2695,7 @@ pub enum Instruction {
     /// # Encoding
     ///
     /// Optimized variant of [`Instruction::I32DivU`] for 16-bit constant values.
-    I32DivUImm16(BinInstrImm16),
+    I32DivUImm16(BinInstrImm16<u32>),
     /// `i64` unsinged-division immediate instruction: `r0 = r1 / c0`
     ///
     /// # Note
@@ -2705,7 +2705,7 @@ pub enum Instruction {
     /// # Encoding
     ///
     /// Optimized variant of [`Instruction::I64DivU`] for 16-bit constant values.
-    I64DivUImm16(BinInstrImm16),
+    I64DivUImm16(BinInstrImm16<u64>),
     /// `i32` unsinged-division immediate instruction: `r0 = c0 / r1`
     ///
     /// # Note
@@ -2713,7 +2713,7 @@ pub enum Instruction {
     /// - Optimized variant of [`Instruction::I32DivU`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Required instruction since `i32` unsigned-division is not commutative.
-    I32DivUImm16Rev(BinInstrImm16),
+    I32DivUImm16Rev(BinInstrImm16<u32>),
     /// `i64` unsinged-division immediate instruction: `r0 = c0 / r1`
     ///
     /// # Note
@@ -2721,7 +2721,7 @@ pub enum Instruction {
     /// - Optimized variant of [`Instruction::I64DivU`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Required instruction since unsigned-division is not commutative.
-    I64DivUImm16Rev(BinInstrImm16),
+    I64DivUImm16Rev(BinInstrImm16<u64>),
 
     /// `i32` singed-remainder instruction: `r0 = r1 % r2`
     I32RemS(BinInstr),
@@ -2733,14 +2733,14 @@ pub enum Instruction {
     ///
     /// - Optimized variant of [`Instruction::I32RemS`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
-    I32RemSImm16(BinInstrImm16),
+    I32RemSImm16(BinInstrImm16<i32>),
     /// `i64` singed-remainder immediate instruction: `r0 = r1 % c0`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I64RemS`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
-    I64RemSImm16(BinInstrImm16),
+    I64RemSImm16(BinInstrImm16<i64>),
     /// `i32` singed-remainder immediate instruction: `r0 = c0 % r1`
     ///
     /// # Note
@@ -2748,7 +2748,7 @@ pub enum Instruction {
     /// - Optimized variant of [`Instruction::I32RemS`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Required instruction since `i32` signed-remainder is not commutative.
-    I32RemSImm16Rev(BinInstrImm16),
+    I32RemSImm16Rev(BinInstrImm16<i32>),
     /// `i64` singed-remainder immediate instruction: `r0 = c0 % r1`
     ///
     /// # Note
@@ -2756,7 +2756,7 @@ pub enum Instruction {
     /// - Optimized variant of [`Instruction::I64RemS`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Required instruction since signed-remainder is not commutative.
-    I64RemSImm16Rev(BinInstrImm16),
+    I64RemSImm16Rev(BinInstrImm16<i64>),
 
     /// `i32` unsigned-remainder instruction: `r0 = r1 % r2`
     I32RemU(BinInstr),
@@ -2768,14 +2768,14 @@ pub enum Instruction {
     ///
     /// - Optimized variant of [`Instruction::I32RemU`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
-    I32RemUImm16(BinInstrImm16),
+    I32RemUImm16(BinInstrImm16<u32>),
     /// `i64` singed-remainder immediate instruction: `r0 = r1 % c0`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I64RemU`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
-    I64RemUImm16(BinInstrImm16),
+    I64RemUImm16(BinInstrImm16<u64>),
     /// `i32` unsigned-remainder immediate instruction: `r0 = c0 % r1`
     ///
     /// # Note
@@ -2783,7 +2783,7 @@ pub enum Instruction {
     /// - Optimized variant of [`Instruction::I32RemU`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Required instruction since unsigned-remainder is not commutative.
-    I32RemUImm16Rev(BinInstrImm16),
+    I32RemUImm16Rev(BinInstrImm16<u32>),
     /// `i64` unsigned-remainder immediate instruction: `r0 = c0 % r1`
     ///
     /// # Note
@@ -2791,7 +2791,7 @@ pub enum Instruction {
     /// - Optimized variant of [`Instruction::I64RemU`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Required instruction since unsigned-remainder is not commutative.
-    I64RemUImm16Rev(BinInstrImm16),
+    I64RemUImm16Rev(BinInstrImm16<u64>),
 
     /// `i32` bitwise-and instruction: `r0 = r1 & r2`
     I32And(BinInstr),
@@ -2802,13 +2802,13 @@ pub enum Instruction {
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I32And`] for 16-bit constant values.
-    I32AndImm16(BinInstrImm16),
+    I32AndImm16(BinInstrImm16<i32>),
     /// `i64` bitwise-and (small) immediate instruction: `r0 = r1 & c0`
     ///
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I64And`] for 16-bit constant values.
-    I64AndImm16(BinInstrImm16),
+    I64AndImm16(BinInstrImm16<i64>),
 
     /// `i32` bitwise-or instruction: `r0 = r1 & r2`
     I32Or(BinInstr),
@@ -2819,13 +2819,13 @@ pub enum Instruction {
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I32Or`] for 16-bit constant values.
-    I32OrImm16(BinInstrImm16),
+    I32OrImm16(BinInstrImm16<i32>),
     /// `i64` bitwise-or (small) immediate instruction: `r0 = r1 & c0`
     ///
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I64Or`] for 16-bit constant values.
-    I64OrImm16(BinInstrImm16),
+    I64OrImm16(BinInstrImm16<i64>),
 
     /// `i32` bitwise-or instruction: `r0 = r1 ^ r2`
     I32Xor(BinInstr),
@@ -2836,13 +2836,13 @@ pub enum Instruction {
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I32Xor`] for 16-bit constant values.
-    I32XorImm16(BinInstrImm16),
+    I32XorImm16(BinInstrImm16<i32>),
     /// `i64` bitwise-or (small) immediate instruction: `r0 = r1 ^ c0`
     ///
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I64Xor`] for 16-bit constant values.
-    I64XorImm16(BinInstrImm16),
+    I64XorImm16(BinInstrImm16<i64>),
 
     /// `i32` logical shift-left instruction: `r0 = r1 << r2`
     I32Shl(BinInstr),
@@ -2854,28 +2854,28 @@ pub enum Instruction {
     ///
     /// It is possible to use [`BinInstrImm16`] since the shift amount must
     /// always be smaller than the size of the source type in bits.
-    I32ShlImm(BinInstrImm16),
+    I32ShlImm(BinInstrImm16<i32>),
     /// `i64` logical shift-left immediate instruction: `r0 = r1 << c0`
     ///
     /// # Note
     ///
     /// It is possible to use [`BinInstrImm16`] since the shift amount must
     /// always be smaller than the size of the source type in bits.
-    I64ShlImm(BinInstrImm16),
+    I64ShlImm(BinInstrImm16<i64>),
     /// `i32` logical shift-left immediate instruction: `r0 = c0 << r1`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I32Shl`] for 16-bit constant values.
     /// - Required instruction since logical shift-left is not commutative.
-    I32ShlImm16Rev(BinInstrImm16),
+    I32ShlImm16Rev(BinInstrImm16<i32>),
     /// `i64` logical shift-left immediate instruction: `r0 = c0 << r1`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I64Shl`] for 16-bit constant values.
     /// - Required instruction since logical shift-left is not commutative.
-    I64ShlImm16Rev(BinInstrImm16),
+    I64ShlImm16Rev(BinInstrImm16<i64>),
 
     /// `i32` logical shift-right instruction: `r0 = r1 >> r2`
     I32ShrU(BinInstr),
@@ -2887,28 +2887,28 @@ pub enum Instruction {
     ///
     /// It is possible to use [`BinInstrImm16`] since the shift amount must
     /// always be smaller than the size of the source type in bits.
-    I32ShrUImm(BinInstrImm16),
+    I32ShrUImm(BinInstrImm16<i32>),
     /// `i64` logical shift-right immediate instruction: `r0 = r1 >> c0`
     ///
     /// # Note
     ///
     /// It is possible to use [`BinInstrImm16`] since the shift amount must
     /// always be smaller than the size of the source type in bits.
-    I64ShrUImm(BinInstrImm16),
+    I64ShrUImm(BinInstrImm16<i64>),
     /// `i32` logical shift-right immediate instruction: `r0 = c0 >> r1`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I32ShrU`] for 16-bit constant values.
     /// - Required instruction since `i32` logical shift-right is not commutative.
-    I32ShrUImm16Rev(BinInstrImm16),
+    I32ShrUImm16Rev(BinInstrImm16<i32>),
     /// `i64` logical shift-right immediate instruction: `r0 = c0 >> r1`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I64ShrU`] for 16-bit constant values.
     /// - Required instruction since logical shift-right is not commutative.
-    I64ShrUImm16Rev(BinInstrImm16),
+    I64ShrUImm16Rev(BinInstrImm16<i64>),
 
     /// `i32` arithmetic shift-right instruction: `r0 = r1 >> r2`
     I32ShrS(BinInstr),
@@ -2920,28 +2920,28 @@ pub enum Instruction {
     ///
     /// It is possible to use [`BinInstrImm16`] since the shift amount must
     /// always be smaller than the size of the source type in bits.
-    I32ShrSImm(BinInstrImm16),
+    I32ShrSImm(BinInstrImm16<i32>),
     /// `i64` logical shift-right immediate instruction: `r0 = r1 >> c0`
     ///
     /// # Note
     ///
     /// It is possible to use [`BinInstrImm16`] since the shift amount must
     /// always be smaller than the size of the source type in bits.
-    I64ShrSImm(BinInstrImm16),
+    I64ShrSImm(BinInstrImm16<i64>),
     /// `i32` arithmetic shift-right immediate instruction: `r0 = c0 >> r1`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I32ShrS`] for 16-bit constant values.
     /// - Required instruction since `arithmetic shift-right is not commutative.
-    I32ShrSImm16Rev(BinInstrImm16),
+    I32ShrSImm16Rev(BinInstrImm16<i32>),
     /// `i64` arithmetic shift-right immediate instruction: `r0 = c0 >> r1`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I64ShrS`] for 16-bit constant values.
     /// - Required instruction since arithmetic shift-right is not commutative.
-    I64ShrSImm16Rev(BinInstrImm16),
+    I64ShrSImm16Rev(BinInstrImm16<i64>),
 
     /// `i32` rotate-left instruction: `r0 = rotate_left(r1, r2)`
     I32Rotl(BinInstr),
@@ -2953,28 +2953,28 @@ pub enum Instruction {
     ///
     /// It is possible to use [`BinInstrImm16`] since the shift amount must
     /// always be smaller than the size of the source type in bits.
-    I32RotlImm(BinInstrImm16),
+    I32RotlImm(BinInstrImm16<i32>),
     /// `i64` rotate-left immediate instruction: `r0 = rotate_left(r1, c0)`
     ///
     /// # Note
     ///
     /// It is possible to use [`BinInstrImm16`] since the shift amount must
     /// always be smaller than the size of the source type in bits.
-    I64RotlImm(BinInstrImm16),
+    I64RotlImm(BinInstrImm16<i64>),
     /// `i32` rotate-left immediate instruction: `r0 = rotate_left(c0, r1)`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I32Rotl`] for 16-bit constant values.
     /// - Required instruction since `i32` rotate-left is not commutative.
-    I32RotlImm16Rev(BinInstrImm16),
+    I32RotlImm16Rev(BinInstrImm16<i32>),
     /// `i64` rotate-left immediate instruction: `r0 = rotate_left(c0, r1)`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I64Rotl`] for 16-bit constant values.
     /// - Required instruction since rotate-left is not commutative.
-    I64RotlImm16Rev(BinInstrImm16),
+    I64RotlImm16Rev(BinInstrImm16<i64>),
 
     /// `i32` rotate-right instruction: `r0 = rotate_right(r1, r2)`
     I32Rotr(BinInstr),
@@ -2986,28 +2986,28 @@ pub enum Instruction {
     ///
     /// It is possible to use [`BinInstrImm16`] since the shift amount must
     /// always be smaller than the size of the source type in bits.
-    I32RotrImm(BinInstrImm16),
+    I32RotrImm(BinInstrImm16<i32>),
     /// `i64` rotate-right immediate instruction: `r0 = rotate_right(r1, c0)`
     ///
     /// # Note
     ///
     /// It is possible to use [`BinInstrImm16`] since the shift amount must
     /// always be smaller than the size of the source type in bits.
-    I64RotrImm(BinInstrImm16),
+    I64RotrImm(BinInstrImm16<i64>),
     /// `i32` rotate-right immediate instruction: `r0 = rotate_right(c0, r1)`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I32Rotl`] for 16-bit constant values.
     /// - Required instruction since rotate-right is not commutative.
-    I32RotrImm16Rev(BinInstrImm16),
+    I32RotrImm16Rev(BinInstrImm16<i32>),
     /// `i64` rotate-right immediate instruction: `r0 = rotate_right(c0, r1)`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I64Rotl`] for 16-bit constant values.
     /// - Required instruction since rotate-right is not commutative.
-    I64RotrImm16Rev(BinInstrImm16),
+    I64RotrImm16Rev(BinInstrImm16<i64>),
 
     /// Wasm `f32.abs` instruction.
     F32Abs(UnaryInstr),

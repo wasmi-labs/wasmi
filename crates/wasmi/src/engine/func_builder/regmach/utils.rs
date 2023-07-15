@@ -1,5 +1,5 @@
 use super::TypedValue;
-use crate::engine::bytecode2::{AnyConst16, Sign};
+use crate::engine::bytecode2::{AnyConst16, Const16, Sign};
 
 /// A WebAssembly integer. Either `i32` or `i64`.
 ///
@@ -7,7 +7,7 @@ use crate::engine::bytecode2::{AnyConst16, Sign};
 ///
 /// This trait provides some utility methods useful for translation.
 pub trait WasmInteger:
-    Copy + Eq + From<i32> + From<TypedValue> + Into<TypedValue> + TryInto<AnyConst16>
+    Copy + Eq + From<TypedValue> + Into<TypedValue> + TryInto<AnyConst16> + TryInto<Const16<Self>>
 {
     /// Returns the `i16` shift amount.
     ///
@@ -22,9 +22,6 @@ pub trait WasmInteger:
 
     /// Returns `true` if `self` is equal to zero (0).
     fn eq_zero(self) -> bool;
-
-    /// Returns `true` if `self` is equal to minus one (-1).
-    fn eq_minus_one(self) -> bool;
 }
 
 impl WasmInteger for i32 {
@@ -35,9 +32,15 @@ impl WasmInteger for i32 {
     fn eq_zero(self) -> bool {
         self == 0
     }
+}
 
-    fn eq_minus_one(self) -> bool {
-        self == -1
+impl WasmInteger for u32 {
+    fn as_shift_amount(self) -> i16 {
+        (self % 32) as i16
+    }
+
+    fn eq_zero(self) -> bool {
+        self == 0
     }
 }
 
@@ -49,9 +52,15 @@ impl WasmInteger for i64 {
     fn eq_zero(self) -> bool {
         self == 0
     }
+}
 
-    fn eq_minus_one(self) -> bool {
-        self == -1
+impl WasmInteger for u64 {
+    fn as_shift_amount(self) -> i16 {
+        (self % 64) as i16
+    }
+
+    fn eq_zero(self) -> bool {
+        self == 0
     }
 }
 

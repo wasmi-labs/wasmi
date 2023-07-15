@@ -17,12 +17,12 @@ fn reg_reg() {
 
 #[test]
 fn reg_imm16() {
-    test_binary_reg_imm16::<i16>(WASM_OP, 100, Instruction::i32_le_s_imm16)
+    test_binary_reg_imm16::<i32>(WASM_OP, 100, Instruction::i32_le_s_imm16)
 }
 
 #[test]
 fn reg_imm16_rev() {
-    test_binary_reg_imm16_rev::<i16>(WASM_OP, 100, swap_ops!(Instruction::i32_ge_s_imm16))
+    test_binary_reg_imm16_rev::<i32>(WASM_OP, 100, swap_ops!(Instruction::i32_ge_s_imm16))
 }
 
 #[test]

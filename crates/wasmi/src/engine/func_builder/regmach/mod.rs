@@ -32,7 +32,6 @@ use crate::{
     engine::{
         bytecode::SignatureIdx,
         bytecode2::{
-            AnyConst16,
             AnyConst32,
             Const16,
             Instruction,
@@ -501,10 +500,10 @@ impl<'parser> FuncTranslator<'parser> {
         &mut self,
         lhs: Register,
         rhs: T,
-        make_instr_imm16: fn(result: Register, lhs: Register, rhs: AnyConst16) -> Instruction,
+        make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
     ) -> Result<bool, TranslationError>
     where
-        T: Copy + TryInto<AnyConst16>,
+        T: Copy + TryInto<Const16<T>>,
     {
         if let Ok(rhs) = rhs.try_into() {
             // Optimization: We can use a compact instruction for small constants.
@@ -522,10 +521,10 @@ impl<'parser> FuncTranslator<'parser> {
         &mut self,
         lhs: T,
         rhs: Register,
-        make_instr_imm16: fn(result: Register, lhs: AnyConst16, rhs: Register) -> Instruction,
+        make_instr_imm16: fn(result: Register, lhs: Const16<T>, rhs: Register) -> Instruction,
     ) -> Result<bool, TranslationError>
     where
-        T: Copy + TryInto<AnyConst16>,
+        T: Copy + TryInto<Const16<T>>,
     {
         if let Ok(lhs) = lhs.try_into() {
             // Optimization: We can use a compact instruction for small constants.
@@ -630,8 +629,8 @@ impl<'parser> FuncTranslator<'parser> {
     fn translate_binary<T>(
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        make_instr_imm16: fn(result: Register, lhs: Register, rhs: AnyConst16) -> Instruction,
-        make_instr_imm16_rev: fn(result: Register, lhs: AnyConst16, rhs: Register) -> Instruction,
+        make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
+        make_instr_imm16_rev: fn(result: Register, lhs: Const16<T>, rhs: Register) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
         make_instr_opt: fn(
             &mut Self,
@@ -650,7 +649,7 @@ impl<'parser> FuncTranslator<'parser> {
         ) -> Result<bool, TranslationError>,
     ) -> Result<(), TranslationError>
     where
-        T: Copy + From<TypedValue> + Into<TypedValue> + TryInto<AnyConst16>,
+        T: Copy + From<TypedValue> + Into<TypedValue> + TryInto<Const16<T>>,
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
@@ -838,7 +837,7 @@ impl<'parser> FuncTranslator<'parser> {
     fn translate_binary_commutative<T>(
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        make_instr_imm16: fn(result: Register, lhs: Register, rhs: AnyConst16) -> Instruction,
+        make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
         make_instr_opt: fn(
             &mut Self,
@@ -848,7 +847,7 @@ impl<'parser> FuncTranslator<'parser> {
         make_instr_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, TranslationError>,
     ) -> Result<(), TranslationError>
     where
-        T: Copy + From<TypedValue> + TryInto<AnyConst16>,
+        T: Copy + From<TypedValue> + TryInto<Const16<T>>,
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
@@ -959,8 +958,8 @@ impl<'parser> FuncTranslator<'parser> {
     fn translate_shift<T>(
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        make_instr_imm: fn(result: Register, lhs: Register, rhs: AnyConst16) -> Instruction,
-        make_instr_imm16_rev: fn(result: Register, lhs: AnyConst16, rhs: Register) -> Instruction,
+        make_instr_imm: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
+        make_instr_imm16_rev: fn(result: Register, lhs: Const16<T>, rhs: Register) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
         make_instr_imm_reg_opt: fn(
             &mut Self,
@@ -970,6 +969,7 @@ impl<'parser> FuncTranslator<'parser> {
     ) -> Result<(), TranslationError>
     where
         T: WasmInteger,
+        Const16<T>: From<i16>,
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
@@ -987,7 +987,7 @@ impl<'parser> FuncTranslator<'parser> {
                 self.alloc.instr_encoder.push_instr(make_instr_imm(
                     result,
                     lhs,
-                    AnyConst16::from_i16(rhs),
+                    <Const16<T>>::from(rhs),
                 ))?;
                 Ok(())
             }
@@ -1033,8 +1033,8 @@ impl<'parser> FuncTranslator<'parser> {
     pub fn translate_divrem<T>(
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        make_instr_imm16: fn(result: Register, lhs: Register, rhs: AnyConst16) -> Instruction,
-        make_instr_imm16_rev: fn(result: Register, lhs: AnyConst16, rhs: Register) -> Instruction,
+        make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
+        make_instr_imm16_rev: fn(result: Register, lhs: Const16<T>, rhs: Register) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> Result<TypedValue, TrapCode>,
         make_instr_opt: fn(
             &mut Self,

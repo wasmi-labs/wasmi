@@ -84,6 +84,38 @@ impl From<Const16<u64>> for u64 {
     }
 }
 
+impl TryFrom<i32> for Const16<i32> {
+    type Error = OutOfBoundsConst16;
+
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        Self::from_i32(value).ok_or(OutOfBoundsConst16)
+    }
+}
+
+impl TryFrom<u32> for Const16<u32> {
+    type Error = OutOfBoundsConst16;
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        Self::from_u32(value).ok_or(OutOfBoundsConst16)
+    }
+}
+
+impl TryFrom<i64> for Const16<i64> {
+    type Error = OutOfBoundsConst16;
+
+    fn try_from(value: i64) -> Result<Self, Self::Error> {
+        Self::from_i64(value).ok_or(OutOfBoundsConst16)
+    }
+}
+
+impl TryFrom<u64> for Const16<u64> {
+    type Error = OutOfBoundsConst16;
+
+    fn try_from(value: u64) -> Result<Self, Self::Error> {
+        Self::from_u64(value).ok_or(OutOfBoundsConst16)
+    }
+}
+
 impl Const16<i32> {
     pub fn from_i32(value: i32) -> Option<Self> {
         i16::try_from(value).map(Self::from).ok()

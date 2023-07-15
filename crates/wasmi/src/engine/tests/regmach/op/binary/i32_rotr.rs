@@ -14,7 +14,7 @@ fn reg_imm_rev() {
 
 #[test]
 fn reg_imm16_rev() {
-    test_binary_reg_imm16_rev::<i16>(WASM_OP, 100, Instruction::i32_rotr_imm16_rev)
+    test_binary_reg_imm16_rev::<i32>(WASM_OP, 100, Instruction::i32_rotr_imm16_rev)
 }
 
 #[test]
@@ -37,7 +37,7 @@ fn reg_1_after_mod32() {
         Instruction::i32_rotr_imm(
             Register::from_i16(1),
             Register::from_i16(0),
-            AnyConst16::from_i16(1),
+            <Const16<i32>>::from(1),
         ),
         Instruction::return_reg(1),
     ];

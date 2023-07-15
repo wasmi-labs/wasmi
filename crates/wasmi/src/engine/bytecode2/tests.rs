@@ -6,6 +6,7 @@ fn bytecode_size() {
     assert_eq!(size_of::<Register>(), 2);
     assert_eq!(size_of::<UnaryInstr>(), 4);
     assert_eq!(size_of::<BinInstr>(), 6);
-    assert_eq!(size_of::<BinInstrImm16>(), 6);
+    assert_eq!(size_of::<BinInstrImm16<i32>>(), 6);
+    assert_eq!(size_of::<BinInstrImm16<i64>>(), 6);
     assert_eq!(size_of::<Instruction>(), 8);
 }

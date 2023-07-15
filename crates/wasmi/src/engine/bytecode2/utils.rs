@@ -1,4 +1,4 @@
-use super::{AnyConst16, AnyConst32, Const16};
+use super::{AnyConst32, Const16};
 use core::marker::PhantomData;
 
 #[cfg(doc)]
@@ -171,7 +171,7 @@ impl BinInstr {
 ///
 /// Optimized for small constant values that fit into 16-bit.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct BinInstrImm16 {
+pub struct BinInstrImm16<T> {
     /// The register storing the result of the computation.
     pub result: Register,
     /// The register holding one of the operands.
@@ -187,12 +187,12 @@ pub struct BinInstrImm16 {
     ///
     /// The instruction decides if this operand is the left-hand or
     /// right-hand operand for the computation.
-    pub imm_in: AnyConst16,
+    pub imm_in: Const16<T>,
 }
 
-impl BinInstrImm16 {
+impl<T> BinInstrImm16<T> {
     /// Creates a new [`BinInstrImm16`].
-    pub fn new(result: Register, reg_in: Register, imm_in: AnyConst16) -> Self {
+    pub fn new(result: Register, reg_in: Register, imm_in: Const16<T>) -> Self {
         Self {
             result,
             reg_in,

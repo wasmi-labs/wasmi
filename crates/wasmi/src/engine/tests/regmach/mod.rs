@@ -22,7 +22,7 @@ use std::fmt::Display;
 /// Used to swap operands of a `rev` variant [`Instruction`] constructor.
 macro_rules! swap_ops {
     ($fn_name:path) => {
-        |result: Register, lhs: AnyConst16, rhs: Register| -> Instruction {
+        |result: Register, lhs: Const16<_>, rhs: Register| -> Instruction {
             $fn_name(result, rhs, lhs)
         }
     };
@@ -240,12 +240,14 @@ where
 fn test_binary_reg_imm16<T>(
     wasm_op: WasmOp,
     value: T,
-    make_instr: fn(result: Register, lhs: Register, rhs: AnyConst16) -> Instruction,
+    make_instr: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
 ) where
-    T: Copy + Into<AnyConst16>,
+    T: Copy + TryInto<Const16<T>>,
     DisplayWasm<T>: Display,
 {
-    let immediate: AnyConst16 = value.into();
+    let immediate: Const16<T> = value
+        .try_into()
+        .unwrap_or_else(|_| panic!("failed to convert {} to Const16", DisplayWasm::from(value)));
     let expected = [
         make_instr(Register::from_i16(1), Register::from_i16(0), immediate),
         Instruction::return_reg(1),
@@ -257,12 +259,14 @@ fn test_binary_reg_imm16<T>(
 fn test_binary_reg_imm16_rev<T>(
     wasm_op: WasmOp,
     value: T,
-    make_instr: fn(result: Register, lhs: AnyConst16, rhs: Register) -> Instruction,
+    make_instr: fn(result: Register, lhs: Const16<T>, rhs: Register) -> Instruction,
 ) where
-    T: Copy + Into<AnyConst16>,
+    T: Copy + TryInto<Const16<T>>,
     DisplayWasm<T>: Display,
 {
-    let immediate: AnyConst16 = value.into();
+    let immediate: Const16<T> = value
+        .try_into()
+        .unwrap_or_else(|_| panic!("failed to convert {} to Const16", DisplayWasm::from(value)));
     let expected = [
         make_instr(Register::from_i16(1), immediate, Register::from_i16(0)),
         Instruction::return_reg(1),
