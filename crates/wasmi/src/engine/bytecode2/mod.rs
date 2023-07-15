@@ -9,7 +9,7 @@ mod utils;
 mod tests;
 
 pub(crate) use self::{
-    immediate::{Const16, Const32},
+    immediate::{AnyConst16, AnyConst32, Const16},
     provider::{
         Provider,
         ProviderSliceAlloc,
@@ -102,7 +102,7 @@ pub enum Instruction {
     /// If it is ever executed for example due to the result of a
     /// bug in the interpreter the execution will trap.
     ConstRef(ConstRef),
-    /// A [`Const32`] instruction parameter.
+    /// A [`AnyConst32`] instruction parameter.
     ///
     /// # Note
     ///
@@ -110,7 +110,7 @@ pub enum Instruction {
     /// it only serves as data for other actual instructions.
     /// If it is ever executed for example due to the result of a
     /// bug in the interpreter the execution will trap.
-    Const32(Const32),
+    Const32(AnyConst32),
     /// A [`Register`] instruction parameter.
     ///
     /// # Note
@@ -168,7 +168,7 @@ pub enum Instruction {
     /// Returns a single 32-bit constant value.
     ReturnImm32 {
         /// The returned 32-bit constant value.
-        value: Const32,
+        value: AnyConst32,
     },
     /// A Wasm `return` instruction.
     ///
@@ -228,12 +228,12 @@ pub enum Instruction {
     /// # Note
     ///
     /// Variant of [`Instruction::ReturnNezImm`] returning a single
-    /// [`Const32`] value if the `condition` evaluates to `true`.
+    /// [`AnyConst32`] value if the `condition` evaluates to `true`.
     ReturnNezImm32 {
         /// The register holding the condition to evaluate against zero.
         condition: Register,
         /// The returned value.
-        value: Const32,
+        value: AnyConst32,
     },
     /// A conditional `return` instruction.
     ///
@@ -320,7 +320,7 @@ pub enum Instruction {
         /// The register holding the result of the instruction.
         result: Register,
         /// The 32-bit encoded immediate value to copy.
-        value: Const32,
+        value: AnyConst32,
     },
     /// Copies the 32-bit encoded `i64` immediate `value` to `result`.
     ///
@@ -496,15 +496,15 @@ pub enum Instruction {
     ///
     /// - The first [`Instruction::SelectImm32`] encodes
     ///     - `reg`: The `result` [`Register`]
-    ///     - `cref`: The `lhs` [`Const32`] (taken if `condition` is non-zero)
+    ///     - `cref`: The `lhs` [`AnyConst32`] (taken if `condition` is non-zero)
     /// - The second [`Instruction::SelectImm32`] encodes
     ///     - `reg`: The `condition` [`Register`]
-    ///     - `cref`: The `rhs` [`Const32`] (taken if `condition` is zero)
+    ///     - `cref`: The `rhs` [`AnyConst32`] (taken if `condition` is zero)
     SelectImm32 {
         /// Either the `result` or the `condition` [`Register`].
         reg: Register,
-        /// Either the `lhs` or `rhs` [`Const32`].
-        value: Const32,
+        /// Either the `lhs` or `rhs` [`AnyConst32`].
+        value: AnyConst32,
     },
 
     /// A Wasm `table.get` instruction: `result = table[index]`
@@ -563,7 +563,7 @@ pub enum Instruction {
         /// The register holding the `index` of the instruction.
         index: Register,
         /// The 32-bit constant `value` of the instruction.
-        value: Const32,
+        value: AnyConst32,
     },
     /// A Wasm `table.set` instruction: `table[index] = value`
     ///
@@ -576,7 +576,7 @@ pub enum Instruction {
     /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
     TableSetAtImm {
         /// The 32-bit constant `index` of the instruction.
-        index: Const32,
+        index: AnyConst32,
         /// The register holding the `value` of the instruction.
         value: Register,
     },
@@ -694,7 +694,7 @@ pub enum Instruction {
         /// The start index of the `dst` table.
         dst: Register,
         /// The start index of the `src` table.
-        src: Const32,
+        src: AnyConst32,
     },
     /// Wasm `table.copy <dst> <src>` instruction.
     ///
@@ -739,7 +739,7 @@ pub enum Instruction {
     /// 3. [`Instruction::TableIdx`]: the `src` Wasm table instance
     TableCopyCrc {
         /// The start index of the `dst` table.
-        dst: Const32,
+        dst: AnyConst32,
         /// The start index of the `src` table.
         src: Register,
     },
@@ -763,7 +763,7 @@ pub enum Instruction {
     /// 3. [`Instruction::TableIdx`]: the `src` Wasm table instance
     TableCopyCcr {
         /// The start index of the `dst` table.
-        dst: Const32,
+        dst: AnyConst32,
         /// The number of copied elements.
         len: Register,
     },
@@ -789,7 +789,7 @@ pub enum Instruction {
     /// 3. [`Instruction::TableIdx`]: the `src` Wasm table instance
     TableCopyCcc {
         /// The start index of the `dst` table.
-        dst: Const32,
+        dst: AnyConst32,
     },
 
     /// Wasm `table.init <table> <elem>` instruction.
@@ -878,7 +878,7 @@ pub enum Instruction {
         /// The start index of the table.
         dst: Register,
         /// The start index of the element segment.
-        src: Const32,
+        src: AnyConst32,
     },
     /// Wasm `table.init <table> <elem>` instruction.
     ///
@@ -923,7 +923,7 @@ pub enum Instruction {
     /// 3. [`Instruction::ElementSegmentIdx`]: the `elem` Wasm element segment
     TableInitCrc {
         /// The start index of the table.
-        dst: Const32,
+        dst: AnyConst32,
         /// The start index of the element segment.
         src: Register,
     },
@@ -947,7 +947,7 @@ pub enum Instruction {
     /// 3. [`Instruction::ElementSegmentIdx`]: the Wasm element segment
     TableInitCcr {
         /// The start index of the table.
-        dst: Const32,
+        dst: AnyConst32,
         /// The number of copied elements.
         len: Register,
     },
@@ -973,7 +973,7 @@ pub enum Instruction {
     /// 4. [`Instruction::ElementSegmentIdx`]: the Wasm element segment
     TableInitCcc {
         /// The start index of the table.
-        dst: Const32,
+        dst: AnyConst32,
     },
 
     /// Wasm `table.fill <table>` instruction.
@@ -1057,7 +1057,7 @@ pub enum Instruction {
     /// 2. [`Instruction::TableIdx`]: the `dst` Wasm table instance
     TableFillCrc {
         /// The start index of the table to fill.
-        dst: Const32,
+        dst: AnyConst32,
         /// The value of the filled elements.
         value: Register,
     },
@@ -1071,7 +1071,7 @@ pub enum Instruction {
     /// 2. [`Instruction::TableIdx`]: the `dst` Wasm table instance
     TableFillCcr {
         /// The start index of the table to fill.
-        dst: Const32,
+        dst: AnyConst32,
         /// The number of elements to fill.
         len: Register,
     },
@@ -1086,7 +1086,7 @@ pub enum Instruction {
     /// 3. [`Instruction::TableIdx`]: the `dst` Wasm table instance
     TableFillCcc {
         /// The start index of the table to fill.
-        dst: Const32,
+        dst: AnyConst32,
     },
 
     /// Wasm `table.grow <table>` instruction.
@@ -1154,7 +1154,7 @@ pub enum Instruction {
         /// Register holding the result of the instruction.
         result: Register,
         /// The `delta` number of elements to add to the table.
-        delta: Const32,
+        delta: AnyConst32,
     },
 
     /// Wasm `memory.size` instruction.
@@ -1292,7 +1292,7 @@ pub enum Instruction {
         /// The start index of the `src` memory buffer.
         src: Register,
         /// The start index of the `dst` memory buffer.
-        dst: Const32,
+        dst: AnyConst32,
     },
     /// Wasm `memory.copy` instruction.
     ///
@@ -1333,7 +1333,7 @@ pub enum Instruction {
     /// 1. [`Instruction::Const32`]: the number of copied bytes
     MemoryCopyCrc {
         /// The start index of the `src` memory buffer.
-        src: Const32,
+        src: AnyConst32,
         /// The start index of the `dst` memory buffer.
         dst: Register,
     },
@@ -1355,7 +1355,7 @@ pub enum Instruction {
     /// 1. [`Instruction::Const32`]: the start index of the `dst` memory buffer
     MemoryCopyCcr {
         /// The start index of the `src` memory buffer.
-        src: Const32,
+        src: AnyConst32,
         /// The number of copied bytes.
         len: Register,
     },
@@ -1379,7 +1379,7 @@ pub enum Instruction {
     /// 2. [`Instruction::Const32`]: the number of copied bytes
     MemoryCopyCcc {
         /// The start index of the `src` memory buffer.
-        src: Const32,
+        src: AnyConst32,
     },
 
     /// Wasm `memory.fill` instruction.
@@ -1492,7 +1492,7 @@ pub enum Instruction {
     /// 1. [`Instruction::Const32`]: the number of copied bytes
     MemoryFillCrc {
         /// The start index of the memory to fill.
-        dst: Const32,
+        dst: AnyConst32,
         /// The byte value of the filled memory cells.
         value: Register,
     },
@@ -1537,7 +1537,7 @@ pub enum Instruction {
     /// 1. [`Instruction::Const32`]: the number of copied bytes
     MemoryFillCcc {
         /// The start index of the memory to fill.
-        dst: Const32,
+        dst: AnyConst32,
         /// The byte value of the filled memory cells.
         value: u8,
     },
@@ -1624,7 +1624,7 @@ pub enum Instruction {
         /// The start index of the memory to initialize.
         dst: Register,
         /// The start index of the data segment.
-        src: Const32,
+        src: AnyConst32,
     },
     /// Wasm `memory.init <data>` instruction.
     ///
@@ -1667,7 +1667,7 @@ pub enum Instruction {
     /// 1. [`Instruction::DataSegmentIdx`]: the data segment to initialize the memory
     MemoryInitCrc {
         /// The start index of the memory to initialize.
-        dst: Const32,
+        dst: AnyConst32,
         /// The start index of the data segment.
         src: Register,
     },
@@ -1690,7 +1690,7 @@ pub enum Instruction {
     /// 1. [`Instruction::DataSegmentIdx`]: the data segment to initialize the memory
     MemoryInitCcr {
         /// The start index of the memory to initialize.
-        dst: Const32,
+        dst: AnyConst32,
         /// The number of bytes to initialize.
         len: Register,
     },
@@ -1714,7 +1714,7 @@ pub enum Instruction {
     /// 1. [`Instruction::DataSegmentIdx`]: the data segment to initialize the memory
     MemoryInitCcc {
         /// The start index of the memory to initialize.
-        dst: Const32,
+        dst: AnyConst32,
     },
 
     /// Wasm `global.get` equivalent `wasmi` instruction.
@@ -2060,7 +2060,7 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the constant value that is stored by the operation.
-    I32StoreImm(StoreInstr<Const32>),
+    I32StoreImm(StoreInstr<AnyConst32>),
     /// Wasm `i32.store` equivalent `wasmi` instruction.
     ///
     /// # Note
@@ -2158,7 +2158,7 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`]
     /// that represents the constant value that is stored by the operation.
-    I64StoreImm(StoreInstr<Const32>),
+    I64StoreImm(StoreInstr<AnyConst32>),
     /// Wasm `i64.store` equivalent `wasmi` instruction.
     ///
     /// # Note
@@ -2194,7 +2194,7 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the constant value that is stored by the operation.
-    I64Store8Imm(StoreInstr<Const32>),
+    I64Store8Imm(StoreInstr<AnyConst32>),
     /// Wasm `i64.store8` equivalent `wasmi` instruction.
     ///
     /// # Note
@@ -2225,7 +2225,7 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the constant value that is stored by the operation.
-    I64Store16Imm(StoreInstr<Const32>),
+    I64Store16Imm(StoreInstr<AnyConst32>),
     /// Wasm `i64.store16` equivalent `wasmi` instruction.
     ///
     /// # Note
@@ -2256,7 +2256,7 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the constant value that is stored by the operation.
-    I64Store32Imm(StoreInstr<Const32>),
+    I64Store32Imm(StoreInstr<AnyConst32>),
     /// Wasm `i64.store32` equivalent `wasmi` instruction.
     ///
     /// # Note
@@ -2292,7 +2292,7 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the constant value that is stored by the operation.
-    F32StoreImm(StoreInstr<Const32>),
+    F32StoreImm(StoreInstr<AnyConst32>),
     /// Wasm `f32.store` equivalent `wasmi` instruction.
     ///
     /// # Note

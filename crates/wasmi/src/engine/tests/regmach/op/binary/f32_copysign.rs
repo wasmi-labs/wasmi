@@ -33,7 +33,7 @@ fn consteval() {
         lhs,
         1.0,
         [Instruction::ReturnImm32 {
-            value: Const32::from(lhs),
+            value: AnyConst32::from(lhs),
         }],
     );
     test_binary_consteval(
@@ -41,7 +41,7 @@ fn consteval() {
         lhs,
         -1.0,
         [Instruction::ReturnImm32 {
-            value: Const32::from(-lhs),
+            value: AnyConst32::from(-lhs),
         }],
     );
 }

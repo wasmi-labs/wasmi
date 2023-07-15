@@ -40,7 +40,7 @@ fn reg() {
 
 fn test_imm32<T>(value: T)
 where
-    T: WasmType + Default + Into<Const32>,
+    T: WasmType + Default + Into<AnyConst32>,
     DisplayWasm<T>: Display,
 {
     let ty = T::NAME;

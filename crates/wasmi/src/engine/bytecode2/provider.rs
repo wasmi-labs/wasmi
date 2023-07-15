@@ -1,4 +1,4 @@
-use super::{Const32, Register};
+use super::{AnyConst32, Register};
 use crate::engine::{func_builder::TranslationErrorInner, TranslationError};
 use alloc::{
     vec,
@@ -20,14 +20,14 @@ use super::Instruction;
 /// bloating up the [`Instruction`] type due to alignment
 /// constraints.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct ProviderSliceRef(Const32);
+pub struct ProviderSliceRef(AnyConst32);
 
 impl ProviderSliceRef {
     /// Returns a new [`ProviderSliceRef`] from the given `usize` index.
     fn from_index(index: usize) -> Result<Self, TranslationError> {
         u32::try_from(index)
             .map_err(|_| TranslationError::new(TranslationErrorInner::ProviderSliceOverflow))
-            .map(Const32::from)
+            .map(AnyConst32::from)
             .map(Self)
     }
 

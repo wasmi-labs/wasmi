@@ -42,7 +42,7 @@ fn consteval() {
         lhs,
         rhs,
         [Instruction::ReturnImm32 {
-            value: Const32::from(lhs - rhs),
+            value: AnyConst32::from(lhs - rhs),
         }],
     )
 }

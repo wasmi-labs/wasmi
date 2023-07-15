@@ -1,5 +1,5 @@
 use super::TypedValue;
-use crate::engine::bytecode2::{Const16, Sign};
+use crate::engine::bytecode2::{AnyConst16, Sign};
 
 /// A WebAssembly integer. Either `i32` or `i64`.
 ///
@@ -7,7 +7,7 @@ use crate::engine::bytecode2::{Const16, Sign};
 ///
 /// This trait provides some utility methods useful for translation.
 pub trait WasmInteger:
-    Copy + Eq + From<i32> + From<TypedValue> + Into<TypedValue> + TryInto<Const16>
+    Copy + Eq + From<i32> + From<TypedValue> + Into<TypedValue> + TryInto<AnyConst16>
 {
     /// Returns the `i16` shift amount.
     ///

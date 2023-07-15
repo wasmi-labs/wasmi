@@ -37,7 +37,7 @@ fn test_load(
 fn test_load_offset16(
     wasm_op: WasmOp,
     offset: u16,
-    make_instr_offset16: fn(result: Register, ptr: Register, offset: Const16) -> Instruction,
+    make_instr_offset16: fn(result: Register, ptr: Register, offset: Const16<u32>) -> Instruction,
 ) {
     let result_ty = wasm_op.result_ty();
     let wasm = wat2wasm(&format!(
@@ -56,7 +56,7 @@ fn test_load_offset16(
             make_instr_offset16(
                 Register::from_i16(1),
                 Register::from_i16(0),
-                Const16::from_u16(offset),
+                <Const16<u32>>::from(offset),
             ),
             Instruction::return_reg(Register::from_i16(1)),
         ])
@@ -67,7 +67,7 @@ fn test_load_at(
     wasm_op: WasmOp,
     ptr: u32,
     offset: u32,
-    make_instr_at: fn(result: Register, address: Const32) -> Instruction,
+    make_instr_at: fn(result: Register, address: AnyConst32) -> Instruction,
 ) {
     let result_ty = wasm_op.result_ty();
     let wasm = wat2wasm(&format!(
@@ -86,7 +86,7 @@ fn test_load_at(
         .expect("ptr+offset must be valid in this testcase");
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            make_instr_at(Register::from_i16(0), Const32::from(address)),
+            make_instr_at(Register::from_i16(0), AnyConst32::from(address)),
             Instruction::return_reg(Register::from_i16(0)),
         ])
         .run();

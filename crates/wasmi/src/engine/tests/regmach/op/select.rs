@@ -328,8 +328,8 @@ fn test_imm(kind: SelectKind, lhs: Value, rhs: Value) {
     match (lhs, rhs) {
         (Value::I32(lhs), Value::I32(rhs)) => {
             testcase.expect_func_instrs([
-                Instruction::select_imm32(result, Const32::from(lhs)),
-                Instruction::select_imm32(condition, Const32::from(rhs)),
+                Instruction::select_imm32(result, AnyConst32::from(lhs)),
+                Instruction::select_imm32(condition, AnyConst32::from(rhs)),
                 Instruction::return_reg(result),
             ]);
         }
@@ -344,8 +344,8 @@ fn test_imm(kind: SelectKind, lhs: Value, rhs: Value) {
         }
         (Value::F32(lhs), Value::F32(rhs)) => {
             testcase.expect_func_instrs([
-                Instruction::select_imm32(result, Const32::from(lhs)),
-                Instruction::select_imm32(condition, Const32::from(rhs)),
+                Instruction::select_imm32(result, AnyConst32::from(lhs)),
+                Instruction::select_imm32(condition, AnyConst32::from(rhs)),
                 Instruction::return_reg(result),
             ]);
         }

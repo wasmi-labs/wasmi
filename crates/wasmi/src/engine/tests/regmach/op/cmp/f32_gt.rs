@@ -5,7 +5,7 @@ const WASM_OP: WasmOp = WasmOp::cmp(WasmType::F32, "gt");
 #[test]
 fn same_reg() {
     let expected = [Instruction::ReturnImm32 {
-        value: Const32::from(false),
+        value: AnyConst32::from(false),
     }];
     test_binary_same_reg(WASM_OP, expected)
 }
@@ -31,7 +31,7 @@ fn reg_pos_inf() {
         WASM_OP,
         f32::INFINITY,
         [Instruction::ReturnImm32 {
-            value: Const32::from(false),
+            value: AnyConst32::from(false),
         }],
     )
     .run()
@@ -43,7 +43,7 @@ fn neg_inf_reg() {
         WASM_OP,
         f32::NEG_INFINITY,
         [Instruction::ReturnImm32 {
-            value: Const32::from(false),
+            value: AnyConst32::from(false),
         }],
     )
     .run()
@@ -66,7 +66,7 @@ fn consteval() {
         1.0,
         2.0,
         [Instruction::ReturnImm32 {
-            value: Const32::from(false),
+            value: AnyConst32::from(false),
         }],
     );
     test_binary_consteval(
@@ -74,7 +74,7 @@ fn consteval() {
         2.0,
         1.0,
         [Instruction::ReturnImm32 {
-            value: Const32::from(true),
+            value: AnyConst32::from(true),
         }],
     );
 }

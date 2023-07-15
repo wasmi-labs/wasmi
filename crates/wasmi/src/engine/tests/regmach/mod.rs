@@ -14,7 +14,7 @@ use self::{
 };
 use super::{create_module, wat2wasm};
 use crate::engine::{
-    bytecode2::{Const16, Const32, Instruction, Register},
+    bytecode2::{AnyConst16, AnyConst32, Const16, Instruction, Register},
     const_pool::ConstRef,
 };
 use std::fmt::Display;
@@ -22,7 +22,7 @@ use std::fmt::Display;
 /// Used to swap operands of a `rev` variant [`Instruction`] constructor.
 macro_rules! swap_ops {
     ($fn_name:path) => {
-        |result: Register, lhs: Const16, rhs: Register| -> Instruction {
+        |result: Register, lhs: AnyConst16, rhs: Register| -> Instruction {
             $fn_name(result, rhs, lhs)
         }
     };
@@ -240,12 +240,12 @@ where
 fn test_binary_reg_imm16<T>(
     wasm_op: WasmOp,
     value: T,
-    make_instr: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
+    make_instr: fn(result: Register, lhs: Register, rhs: AnyConst16) -> Instruction,
 ) where
-    T: Copy + Into<Const16>,
+    T: Copy + Into<AnyConst16>,
     DisplayWasm<T>: Display,
 {
-    let immediate: Const16 = value.into();
+    let immediate: AnyConst16 = value.into();
     let expected = [
         make_instr(Register::from_i16(1), Register::from_i16(0), immediate),
         Instruction::return_reg(1),
@@ -257,12 +257,12 @@ fn test_binary_reg_imm16<T>(
 fn test_binary_reg_imm16_rev<T>(
     wasm_op: WasmOp,
     value: T,
-    make_instr: fn(result: Register, lhs: Const16, rhs: Register) -> Instruction,
+    make_instr: fn(result: Register, lhs: AnyConst16, rhs: Register) -> Instruction,
 ) where
-    T: Copy + Into<Const16>,
+    T: Copy + Into<AnyConst16>,
     DisplayWasm<T>: Display,
 {
-    let immediate: Const16 = value.into();
+    let immediate: AnyConst16 = value.into();
     let expected = [
         make_instr(Register::from_i16(1), immediate, Register::from_i16(0)),
         Instruction::return_reg(1),

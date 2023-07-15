@@ -48,7 +48,7 @@ fn reg_zero_rev() {
 #[test]
 fn reg_ones() {
     let expected = [Instruction::ReturnImm32 {
-        value: Const32::from_i32(-1),
+        value: AnyConst32::from_i32(-1),
     }];
     test_binary_reg_imm_with(WASM_OP, -1_i32, expected).run()
 }
@@ -56,7 +56,7 @@ fn reg_ones() {
 #[test]
 fn reg_ones_rev() {
     let expected = [Instruction::ReturnImm32 {
-        value: Const32::from_i32(-1),
+        value: AnyConst32::from_i32(-1),
     }];
     test_binary_reg_imm_rev_with(WASM_OP, -1_i32, expected).run()
 }
@@ -70,7 +70,7 @@ fn consteval() {
         lhs,
         rhs,
         [Instruction::ReturnImm32 {
-            value: Const32::from_i32(lhs | rhs),
+            value: AnyConst32::from_i32(lhs | rhs),
         }],
     )
 }

@@ -37,7 +37,7 @@ fn reg_1_after_mod32() {
         Instruction::i64_shr_u_imm(
             Register::from_i16(1),
             Register::from_i16(0),
-            Const16::from_i16(1),
+            AnyConst16::from_i16(1),
         ),
         Instruction::return_reg(1),
     ];

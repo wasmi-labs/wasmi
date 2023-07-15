@@ -1,4 +1,4 @@
-use super::{Const16, Const32};
+use super::{AnyConst16, AnyConst32, Const16};
 use core::marker::PhantomData;
 
 #[cfg(doc)]
@@ -129,7 +129,7 @@ impl ExactSizeIterator for RegisterSliceIter {
 
 /// A 32-bit encoded `i64` value.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct I64Const32(Const32);
+pub struct I64Const32(AnyConst32);
 
 impl I64Const32 {
     /// Creates a new [`I64Const32`] from the given `i32` value.
@@ -138,7 +138,7 @@ impl I64Const32 {
     ///
     /// The `value` represents an already truncated `i64` value.
     pub fn new(value: i32) -> Self {
-        Self(Const32::from_i32(value))
+        Self(AnyConst32::from_i32(value))
     }
 
     /// Returns the 32-bit encoded `i64` value.
@@ -187,12 +187,12 @@ pub struct BinInstrImm16 {
     ///
     /// The instruction decides if this operand is the left-hand or
     /// right-hand operand for the computation.
-    pub imm_in: Const16,
+    pub imm_in: AnyConst16,
 }
 
 impl BinInstrImm16 {
     /// Creates a new [`BinInstrImm16`].
-    pub fn new(result: Register, reg_in: Register, imm_in: Const16) -> Self {
+    pub fn new(result: Register, reg_in: Register, imm_in: AnyConst16) -> Self {
         Self {
             result,
             reg_in,
@@ -223,7 +223,7 @@ pub struct UnaryInstrImm32 {
     /// The register storing the result of the instruction.
     pub result: Register,
     /// The 32-bit constant value input of the instruction.
-    pub input: Const32,
+    pub input: AnyConst32,
 }
 
 /// A general `load` instruction.
@@ -255,12 +255,12 @@ pub struct LoadAtInstr {
     /// The register storing the result of the `load` instruction.
     pub result: Register,
     /// The `ptr+offset` address of the `load` instruction.
-    pub address: Const32,
+    pub address: AnyConst32,
 }
 
 impl LoadAtInstr {
     /// Create a new [`LoadAtInstr`].
-    pub fn new(result: Register, address: Const32) -> Self {
+    pub fn new(result: Register, address: AnyConst32) -> Self {
         Self { result, address }
     }
 }
@@ -278,12 +278,12 @@ pub struct LoadOffset16Instr {
     /// The register storing the pointer of the `load` instruction.
     pub ptr: Register,
     /// The 16-bit encoded offset of the `load` instruction.
-    pub offset: Const16,
+    pub offset: Const16<u32>,
 }
 
 impl LoadOffset16Instr {
     /// Create a new [`LoadOffset16Instr`].
-    pub fn new(result: Register, ptr: Register, offset: Const16) -> Self {
+    pub fn new(result: Register, ptr: Register, offset: Const16<u32>) -> Self {
         Self {
             result,
             ptr,
@@ -308,14 +308,14 @@ pub struct StoreInstr<T> {
     /// The register storing the pointer of the `store` instruction.
     pub ptr: Register,
     /// The register storing the pointer offset of the `store` instruction.
-    pub offset: Const32,
+    pub offset: AnyConst32,
     /// A type marker to store information about the encoding of the value.
     pub value: PhantomData<T>,
 }
 
 impl<T> StoreInstr<T> {
     /// Creates a new [`StoreInstr`].
-    pub fn new(ptr: Register, offset: Const32) -> Self {
+    pub fn new(ptr: Register, offset: AnyConst32) -> Self {
         Self {
             ptr,
             offset,
@@ -341,14 +341,14 @@ impl<T> StoreInstr<T> {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct StoreAtInstr<T> {
     /// The constant address to store the value.
-    pub address: Const32,
+    pub address: AnyConst32,
     /// The value to be stored if `T != ()`.
     pub value: T,
 }
 
 impl<T> StoreAtInstr<T> {
     /// Creates a new [`StoreAtInstr`].
-    pub fn new(address: Const32, value: T) -> Self {
+    pub fn new(address: AnyConst32, value: T) -> Self {
         Self { address, value }
     }
 }

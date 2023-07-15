@@ -32,8 +32,9 @@ use crate::{
     engine::{
         bytecode::SignatureIdx,
         bytecode2::{
+            AnyConst16,
+            AnyConst32,
             Const16,
-            Const32,
             Instruction,
             Register,
             RegisterSlice,
@@ -500,10 +501,10 @@ impl<'parser> FuncTranslator<'parser> {
         &mut self,
         lhs: Register,
         rhs: T,
-        make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
+        make_instr_imm16: fn(result: Register, lhs: Register, rhs: AnyConst16) -> Instruction,
     ) -> Result<bool, TranslationError>
     where
-        T: Copy + TryInto<Const16>,
+        T: Copy + TryInto<AnyConst16>,
     {
         if let Ok(rhs) = rhs.try_into() {
             // Optimization: We can use a compact instruction for small constants.
@@ -521,10 +522,10 @@ impl<'parser> FuncTranslator<'parser> {
         &mut self,
         lhs: T,
         rhs: Register,
-        make_instr_imm16: fn(result: Register, lhs: Const16, rhs: Register) -> Instruction,
+        make_instr_imm16: fn(result: Register, lhs: AnyConst16, rhs: Register) -> Instruction,
     ) -> Result<bool, TranslationError>
     where
-        T: Copy + TryInto<Const16>,
+        T: Copy + TryInto<AnyConst16>,
     {
         if let Ok(lhs) = lhs.try_into() {
             // Optimization: We can use a compact instruction for small constants.
@@ -629,8 +630,8 @@ impl<'parser> FuncTranslator<'parser> {
     fn translate_binary<T>(
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
-        make_instr_imm16_rev: fn(result: Register, lhs: Const16, rhs: Register) -> Instruction,
+        make_instr_imm16: fn(result: Register, lhs: Register, rhs: AnyConst16) -> Instruction,
+        make_instr_imm16_rev: fn(result: Register, lhs: AnyConst16, rhs: Register) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
         make_instr_opt: fn(
             &mut Self,
@@ -649,7 +650,7 @@ impl<'parser> FuncTranslator<'parser> {
         ) -> Result<bool, TranslationError>,
     ) -> Result<(), TranslationError>
     where
-        T: Copy + From<TypedValue> + Into<TypedValue> + TryInto<Const16>,
+        T: Copy + From<TypedValue> + Into<TypedValue> + TryInto<AnyConst16>,
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
@@ -837,7 +838,7 @@ impl<'parser> FuncTranslator<'parser> {
     fn translate_binary_commutative<T>(
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
+        make_instr_imm16: fn(result: Register, lhs: Register, rhs: AnyConst16) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
         make_instr_opt: fn(
             &mut Self,
@@ -847,7 +848,7 @@ impl<'parser> FuncTranslator<'parser> {
         make_instr_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, TranslationError>,
     ) -> Result<(), TranslationError>
     where
-        T: Copy + From<TypedValue> + TryInto<Const16>,
+        T: Copy + From<TypedValue> + TryInto<AnyConst16>,
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
@@ -958,8 +959,8 @@ impl<'parser> FuncTranslator<'parser> {
     fn translate_shift<T>(
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        make_instr_imm: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
-        make_instr_imm16_rev: fn(result: Register, lhs: Const16, rhs: Register) -> Instruction,
+        make_instr_imm: fn(result: Register, lhs: Register, rhs: AnyConst16) -> Instruction,
+        make_instr_imm16_rev: fn(result: Register, lhs: AnyConst16, rhs: Register) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
         make_instr_imm_reg_opt: fn(
             &mut Self,
@@ -986,7 +987,7 @@ impl<'parser> FuncTranslator<'parser> {
                 self.alloc.instr_encoder.push_instr(make_instr_imm(
                     result,
                     lhs,
-                    Const16::from_i16(rhs),
+                    AnyConst16::from_i16(rhs),
                 ))?;
                 Ok(())
             }
@@ -1032,8 +1033,8 @@ impl<'parser> FuncTranslator<'parser> {
     pub fn translate_divrem<T>(
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16) -> Instruction,
-        make_instr_imm16_rev: fn(result: Register, lhs: Const16, rhs: Register) -> Instruction,
+        make_instr_imm16: fn(result: Register, lhs: Register, rhs: AnyConst16) -> Instruction,
+        make_instr_imm16_rev: fn(result: Register, lhs: AnyConst16, rhs: Register) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> Result<TypedValue, TrapCode>,
         make_instr_opt: fn(
             &mut Self,
@@ -1103,7 +1104,7 @@ impl<'parser> FuncTranslator<'parser> {
     /// Can be used for [`Self::translate_binary`] (and variants) to create 32-bit immediate instructions.
     pub fn make_instr_imm_param_32<T>(&mut self, value: T) -> Result<Instruction, TranslationError>
     where
-        T: Into<Const32>,
+        T: Into<AnyConst32>,
     {
         Ok(Instruction::const32(value))
     }
@@ -1211,14 +1212,18 @@ impl<'parser> FuncTranslator<'parser> {
         &mut self,
         memarg: MemArg,
         make_instr: fn(result: Register, ptr: Register) -> Instruction,
-        make_instr_offset16: fn(result: Register, ptr: Register, offset: Const16) -> Instruction,
-        make_instr_at: fn(result: Register, address: Const32) -> Instruction,
+        make_instr_offset16: fn(
+            result: Register,
+            ptr: Register,
+            offset: Const16<u32>,
+        ) -> Instruction,
+        make_instr_at: fn(result: Register, address: AnyConst32) -> Instruction,
     ) -> Result<(), TranslationError> {
         bail_unreachable!(self);
         let offset = Self::memarg_offset(memarg);
         match self.alloc.stack.pop() {
             TypedProvider::Register(ptr) => {
-                if let Ok(offset) = Const16::try_from(offset) {
+                if let Some(offset) = <Const16<u32>>::from_u32(offset) {
                     let result = self.alloc.stack.push_dynamic()?;
                     self.alloc
                         .instr_encoder
@@ -1239,7 +1244,7 @@ impl<'parser> FuncTranslator<'parser> {
                     let result = this.alloc.stack.push_dynamic()?;
                     this.alloc
                         .instr_encoder
-                        .push_instr(make_instr_at(result, Const32::from(address)))?;
+                        .push_instr(make_instr_at(result, AnyConst32::from(address)))?;
                     Ok(())
                 })
             }
@@ -1266,11 +1271,11 @@ impl<'parser> FuncTranslator<'parser> {
     fn translate_store<T>(
         &mut self,
         memarg: MemArg,
-        make_instr: fn(ptr: Register, offset: Const32) -> Instruction,
-        make_instr_imm: fn(ptr: Register, offset: Const32) -> Instruction,
+        make_instr: fn(ptr: Register, offset: AnyConst32) -> Instruction,
+        make_instr_imm: fn(ptr: Register, offset: AnyConst32) -> Instruction,
         make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
-        make_instr_at: fn(address: Const32, value: Register) -> Instruction,
-        make_instr_imm_at: fn(address: Const32) -> Instruction,
+        make_instr_at: fn(address: AnyConst32, value: Register) -> Instruction,
+        make_instr_imm_at: fn(address: AnyConst32) -> Instruction,
     ) -> Result<(), TranslationError>
     where
         T: Copy + From<TypedValue>,
@@ -1281,7 +1286,7 @@ impl<'parser> FuncTranslator<'parser> {
             (TypedProvider::Register(ptr), TypedProvider::Register(value)) => {
                 self.alloc
                     .instr_encoder
-                    .push_instr(make_instr(ptr, Const32::from(offset)))?;
+                    .push_instr(make_instr(ptr, AnyConst32::from(offset)))?;
                 self.alloc
                     .instr_encoder
                     .push_instr(Instruction::Register(value))?;
@@ -1290,7 +1295,7 @@ impl<'parser> FuncTranslator<'parser> {
             (TypedProvider::Register(ptr), TypedProvider::Const(value)) => {
                 self.alloc
                     .instr_encoder
-                    .push_instr(make_instr_imm(ptr, Const32::from(offset)))?;
+                    .push_instr(make_instr_imm(ptr, AnyConst32::from(offset)))?;
                 let param = make_instr_imm_param(self, T::from(value))?;
                 self.alloc.instr_encoder.push_instr(param)?;
                 Ok(())
@@ -1299,14 +1304,14 @@ impl<'parser> FuncTranslator<'parser> {
                 .effective_address_and(ptr, offset, |this, address| {
                     this.alloc
                         .instr_encoder
-                        .push_instr(make_instr_at(Const32::from(address), value))?;
+                        .push_instr(make_instr_at(AnyConst32::from(address), value))?;
                     Ok(())
                 }),
             (TypedProvider::Const(ptr), TypedProvider::Const(value)) => {
                 self.effective_address_and(ptr, offset, |this, address| {
                     this.alloc
                         .instr_encoder
-                        .push_instr(make_instr_imm_at(Const32::from(address)))?;
+                        .push_instr(make_instr_imm_at(AnyConst32::from(address)))?;
                     let param = make_instr_imm_param(this, T::from(value))?;
                     this.alloc.instr_encoder.push_instr(param)?;
                     Ok(())
@@ -1330,11 +1335,11 @@ impl<'parser> FuncTranslator<'parser> {
     fn translate_store_trunc<T>(
         &mut self,
         memarg: MemArg,
-        make_instr: fn(ptr: Register, offset: Const32) -> Instruction,
-        make_instr_imm: fn(ptr: Register, offset: Const32) -> Instruction,
+        make_instr: fn(ptr: Register, offset: AnyConst32) -> Instruction,
+        make_instr_imm: fn(ptr: Register, offset: AnyConst32) -> Instruction,
         make_instr_imm_param: fn(&mut Self, value: T) -> Result<Instruction, TranslationError>,
-        make_instr_at: fn(address: Const32, value: Register) -> Instruction,
-        make_instr_imm_at: fn(address: Const32, value: T) -> Instruction,
+        make_instr_at: fn(address: AnyConst32, value: Register) -> Instruction,
+        make_instr_imm_at: fn(address: AnyConst32, value: T) -> Instruction,
     ) -> Result<(), TranslationError>
     where
         T: Copy + From<TypedValue>,
@@ -1345,7 +1350,7 @@ impl<'parser> FuncTranslator<'parser> {
             (TypedProvider::Register(ptr), TypedProvider::Register(value)) => {
                 self.alloc
                     .instr_encoder
-                    .push_instr(make_instr(ptr, Const32::from(offset)))?;
+                    .push_instr(make_instr(ptr, AnyConst32::from(offset)))?;
                 self.alloc
                     .instr_encoder
                     .push_instr(Instruction::Register(value))?;
@@ -1354,7 +1359,7 @@ impl<'parser> FuncTranslator<'parser> {
             (TypedProvider::Register(ptr), TypedProvider::Const(value)) => {
                 self.alloc
                     .instr_encoder
-                    .push_instr(make_instr_imm(ptr, Const32::from(offset)))?;
+                    .push_instr(make_instr_imm(ptr, AnyConst32::from(offset)))?;
                 let param = make_instr_imm_param(self, T::from(value))?;
                 self.alloc.instr_encoder.push_instr(param)?;
                 Ok(())
@@ -1363,14 +1368,14 @@ impl<'parser> FuncTranslator<'parser> {
                 .effective_address_and(ptr, offset, |this, address| {
                     this.alloc
                         .instr_encoder
-                        .push_instr(make_instr_at(Const32::from(address), value))?;
+                        .push_instr(make_instr_at(AnyConst32::from(address), value))?;
                     Ok(())
                 }),
             (TypedProvider::Const(ptr), TypedProvider::Const(value)) => {
                 self.effective_address_and(ptr, offset, |this, address| {
                     this.alloc
                         .instr_encoder
-                        .push_instr(make_instr_imm_at(Const32::from(address), T::from(value)))?;
+                        .push_instr(make_instr_imm_at(AnyConst32::from(address), T::from(value)))?;
                     Ok(())
                 })
             }
@@ -1429,7 +1434,7 @@ impl<'parser> FuncTranslator<'parser> {
                         result: Register,
                         condition: Register,
                         lhs: Register,
-                        rhs: impl Into<Const32>,
+                        rhs: impl Into<AnyConst32>,
                     ) -> Result<(), TranslationError> {
                         this.alloc
                             .instr_encoder
@@ -1471,7 +1476,7 @@ impl<'parser> FuncTranslator<'parser> {
                         this: &mut FuncTranslator<'_>,
                         result: Register,
                         condition: Register,
-                        lhs: impl Into<Const32>,
+                        lhs: impl Into<AnyConst32>,
                         rhs: Register,
                     ) -> Result<(), TranslationError> {
                         this.alloc
@@ -1513,7 +1518,7 @@ impl<'parser> FuncTranslator<'parser> {
                     fn push_select_imm32(
                         this: &mut FuncTranslator<'_>,
                         reg: Register,
-                        value: impl Into<Const32>,
+                        value: impl Into<AnyConst32>,
                     ) -> Result<(), TranslationError> {
                         this.alloc
                             .instr_encoder

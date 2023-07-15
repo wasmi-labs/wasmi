@@ -17,7 +17,7 @@ use super::{
 use crate::{
     engine::{
         bytecode,
-        bytecode2::{Const16, Instruction, Register},
+        bytecode2::{AnyConst16, Instruction, Register},
         func_builder::regmach::control_stack::AcquiredTarget,
         TranslationError,
     },
@@ -30,7 +30,7 @@ use wasmparser::VisitOperator;
 /// Used to swap operands of a `rev` variant [`Instruction`] constructor.
 macro_rules! swap_ops {
     ($fn_name:path) => {
-        |result: Register, lhs: Const16, rhs: Register| -> Instruction {
+        |result: Register, lhs: AnyConst16, rhs: Register| -> Instruction {
             $fn_name(result, rhs, lhs)
         }
     };

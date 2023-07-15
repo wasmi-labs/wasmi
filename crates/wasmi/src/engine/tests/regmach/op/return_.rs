@@ -71,7 +71,7 @@ fn as_return_1_imm() {
 fn as_return_1_imm32() {
     fn test_for<T>(value: T)
     where
-        T: WasmType + Into<Const32>,
+        T: WasmType + Into<AnyConst32>,
         DisplayWasm<T>: Display,
     {
         let display_ty = DisplayValueType::from(<T as WasmType>::VALUE_TYPE);

@@ -1,9 +1,10 @@
 use super::{
     utils::{CopysignImmInstr, I64Const32, Sign},
+    AnyConst16,
+    AnyConst32,
     BinInstr,
     BinInstrImm16,
     Const16,
-    Const32,
     Instruction,
     LoadAtInstr,
     LoadInstr,
@@ -44,13 +45,13 @@ macro_rules! constructor_for {
     };
     ( @impl fn $fn_name:ident(binary_imm16) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: Register, rhs: Const16) -> Self {
+        pub fn $fn_name(result: Register, lhs: Register, rhs: AnyConst16) -> Self {
             Self::$op_code(BinInstrImm16::new(result, lhs, rhs))
         }
     };
     ( @impl fn $fn_name:ident(binary_imm16_rev) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: Const16, rhs: Register) -> Self {
+        pub fn $fn_name(result: Register, lhs: AnyConst16, rhs: Register) -> Self {
             Self::$op_code(BinInstrImm16::new(result, rhs, lhs))
         }
     };
@@ -62,43 +63,43 @@ macro_rules! constructor_for {
     };
     ( @impl fn $fn_name:ident(load_at) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, address: Const32) -> Self {
+        pub fn $fn_name(result: Register, address: AnyConst32) -> Self {
             Self::$op_code(LoadAtInstr::new(result, address))
         }
     };
     ( @impl fn $fn_name:ident(load_offset16) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, ptr: Register, offset: Const16) -> Self {
+        pub fn $fn_name(result: Register, ptr: Register, offset: Const16<u32>) -> Self {
             Self::$op_code(LoadOffset16Instr::new(result, ptr, offset))
         }
     };
     ( @impl fn $fn_name:ident(store) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(ptr: Register, offset: Const32) -> Self {
+        pub fn $fn_name(ptr: Register, offset: AnyConst32) -> Self {
             Self::$op_code(StoreInstr::new(ptr, offset))
         }
     };
     ( @impl fn $fn_name:ident(store_at) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(address: Const32, value: Register) -> Self {
+        pub fn $fn_name(address: AnyConst32, value: Register) -> Self {
             Self::$op_code(StoreAtInstr::new(address, value))
         }
     };
     ( @impl fn $fn_name:ident(store8_imm_at) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(address: Const32, value: i8) -> Self {
+        pub fn $fn_name(address: AnyConst32, value: i8) -> Self {
             Self::$op_code(StoreAtInstr::new(address, value))
         }
     };
     ( @impl fn $fn_name:ident(store16_imm_at) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(address: Const32, value: i16) -> Self {
+        pub fn $fn_name(address: AnyConst32, value: i16) -> Self {
             Self::$op_code(StoreAtInstr::new(address, value))
         }
     };
     ( @impl fn $fn_name:ident(store_imm_at) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(address: Const32) -> Self {
+        pub fn $fn_name(address: AnyConst32) -> Self {
             Self::$op_code(StoreAtInstr::new(address, ()))
         }
     };
@@ -106,7 +107,7 @@ macro_rules! constructor_for {
 
 impl Instruction {
     /// Creates a new [`Instruction::Const32`] from the given `value`.
-    pub fn const32(value: impl Into<Const32>) -> Self {
+    pub fn const32(value: impl Into<AnyConst32>) -> Self {
         Self::Const32(value.into())
     }
 
@@ -128,7 +129,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::ReturnImm32`] from the given `value`.
-    pub fn return_imm32(value: impl Into<Const32>) -> Self {
+    pub fn return_imm32(value: impl Into<AnyConst32>) -> Self {
         Self::ReturnImm32 {
             value: value.into(),
         }
@@ -162,7 +163,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::ReturnNezImm32`] for the given `condition` and `value`.
-    pub fn return_nez_imm32(condition: Register, value: impl Into<Const32>) -> Self {
+    pub fn return_nez_imm32(condition: Register, value: impl Into<AnyConst32>) -> Self {
         Self::ReturnNezImm32 {
             condition,
             value: value.into(),
@@ -208,7 +209,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CopyImm32`].
-    pub fn copy_imm32(result: Register, value: impl Into<Const32>) -> Self {
+    pub fn copy_imm32(result: Register, value: impl Into<AnyConst32>) -> Self {
         Self::CopyImm32 {
             result,
             value: value.into(),
@@ -268,7 +269,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::SelectImm32`].
-    pub fn select_imm32(reg: Register, value: impl Into<Const32>) -> Self {
+    pub fn select_imm32(reg: Register, value: impl Into<AnyConst32>) -> Self {
         Self::SelectImm32 {
             reg,
             value: value.into(),

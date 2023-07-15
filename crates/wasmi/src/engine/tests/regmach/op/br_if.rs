@@ -107,10 +107,10 @@ fn consteval_return_1_imm() {
 fn consteval_return_1_imm32() {
     fn test_for<T>(condition: bool, if_true: T, if_false: T)
     where
-        T: WasmType + Into<Const32>,
+        T: WasmType + Into<AnyConst32>,
         DisplayWasm<T>: Display,
     {
-        let expected: Const32 = match condition {
+        let expected: AnyConst32 = match condition {
             true => if_true.into(),
             false => if_false.into(),
         };
@@ -137,7 +137,7 @@ fn consteval_return_1_imm32() {
     /// Run the test for both sign polarities of the `br_if` condition.
     fn test_for_both<T>(if_true: T, if_false: T)
     where
-        T: WasmType + Into<Const32>,
+        T: WasmType + Into<AnyConst32>,
         DisplayWasm<T>: Display,
     {
         test_for::<T>(true, if_true, if_false);
@@ -313,7 +313,7 @@ fn return_if_results_1_imm() {
 fn return_if_results_1_imm32() {
     fn test_for<T>(returned_value: T)
     where
-        T: WasmType + Into<Const32>,
+        T: WasmType + Into<AnyConst32>,
         DisplayWasm<T>: Display,
     {
         let display_ty = DisplayValueType::from(<T as WasmType>::VALUE_TYPE);
@@ -328,7 +328,7 @@ fn return_if_results_1_imm32() {
                 )
             )",
         ));
-        let const32: Const32 = returned_value.into();
+        let const32: AnyConst32 = returned_value.into();
         TranslationTest::new(wasm)
             .expect_func_instrs([
                 Instruction::return_nez_imm32(Register::from_i16(0), const32),
