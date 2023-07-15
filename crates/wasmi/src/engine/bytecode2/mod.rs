@@ -21,7 +21,6 @@ pub(crate) use self::{
         BinInstr,
         BinInstrImm16,
         CopysignImmInstr,
-        I64Const32,
         LoadAtInstr,
         LoadInstr,
         LoadOffset16Instr,
@@ -177,7 +176,7 @@ pub enum Instruction {
     /// Returns a single 32-bit encoded `i64` constant value.
     ReturnI64Imm32 {
         /// The returned constant value.
-        value: I64Const32,
+        value: Const32<i64>,
     },
     /// A Wasm `return` instruction.
     ///
@@ -245,7 +244,7 @@ pub enum Instruction {
         /// The register holding the condition to evaluate against zero.
         condition: Register,
         /// The returned value.
-        value: I64Const32,
+        value: Const32<i64>,
     },
     /// A conditional `return` instruction.
     ///
@@ -333,7 +332,7 @@ pub enum Instruction {
         /// The register holding the result of the instruction.
         result: Register,
         /// The 32-bit encoded `i64` immediate value to copy.
-        value: I64Const32,
+        value: Const32<i64>,
     },
 
     /// A Wasm `select` or `select <ty>` instruction.

@@ -1,5 +1,5 @@
 use super::{
-    utils::{CopysignImmInstr, I64Const32, Sign},
+    utils::{CopysignImmInstr, Sign},
     AnyConst32,
     BinInstr,
     BinInstrImm16,
@@ -174,7 +174,7 @@ impl Instruction {
     /// Creates a new [`Instruction::ReturnImm32`] from the given `value`.
     pub fn return_i64imm32(value: i32) -> Self {
         Self::ReturnI64Imm32 {
-            value: I64Const32::new(value),
+            value: Const32::from(value),
         }
     }
 
@@ -210,7 +210,7 @@ impl Instruction {
     pub fn return_nez_i64imm32(condition: Register, value: i32) -> Self {
         Self::ReturnNezI64Imm32 {
             condition,
-            value: I64Const32::new(value),
+            value: Const32::from(value),
         }
     }
 
@@ -256,7 +256,7 @@ impl Instruction {
     pub fn copy_i64imm32(result: Register, value: i32) -> Self {
         Self::CopyI64Imm32 {
             result,
-            value: I64Const32::new(value),
+            value: Const32::from(value),
         }
     }
 
