@@ -1,4 +1,4 @@
-use super::{AnyConst32, Const16};
+use super::{AnyConst32, Const16, Const32};
 use core::marker::PhantomData;
 
 #[cfg(doc)]
@@ -255,12 +255,12 @@ pub struct LoadAtInstr {
     /// The register storing the result of the `load` instruction.
     pub result: Register,
     /// The `ptr+offset` address of the `load` instruction.
-    pub address: AnyConst32,
+    pub address: Const32<u32>,
 }
 
 impl LoadAtInstr {
     /// Create a new [`LoadAtInstr`].
-    pub fn new(result: Register, address: AnyConst32) -> Self {
+    pub fn new(result: Register, address: Const32<u32>) -> Self {
         Self { result, address }
     }
 }

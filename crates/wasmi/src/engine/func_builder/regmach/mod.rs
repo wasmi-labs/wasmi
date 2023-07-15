@@ -34,6 +34,7 @@ use crate::{
         bytecode2::{
             AnyConst32,
             Const16,
+            Const32,
             Instruction,
             Register,
             RegisterSlice,
@@ -1217,7 +1218,7 @@ impl<'parser> FuncTranslator<'parser> {
             ptr: Register,
             offset: Const16<u32>,
         ) -> Instruction,
-        make_instr_at: fn(result: Register, address: AnyConst32) -> Instruction,
+        make_instr_at: fn(result: Register, address: Const32<u32>) -> Instruction,
     ) -> Result<(), TranslationError> {
         bail_unreachable!(self);
         let offset = Self::memarg_offset(memarg);
@@ -1244,7 +1245,7 @@ impl<'parser> FuncTranslator<'parser> {
                     let result = this.alloc.stack.push_dynamic()?;
                     this.alloc
                         .instr_encoder
-                        .push_instr(make_instr_at(result, AnyConst32::from(address)))?;
+                        .push_instr(make_instr_at(result, Const32::from(address)))?;
                     Ok(())
                 })
             }

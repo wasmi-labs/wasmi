@@ -4,6 +4,7 @@ use super::{
     BinInstr,
     BinInstrImm16,
     Const16,
+    Const32,
     Instruction,
     LoadAtInstr,
     LoadInstr,
@@ -98,7 +99,7 @@ macro_rules! constructor_for {
     };
     ( @impl fn $fn_name:ident(load_at) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, address: AnyConst32) -> Self {
+        pub fn $fn_name(result: Register, address: Const32<u32>) -> Self {
             Self::$op_code(LoadAtInstr::new(result, address))
         }
     };

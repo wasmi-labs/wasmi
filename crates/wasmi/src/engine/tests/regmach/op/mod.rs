@@ -30,6 +30,7 @@ use super::{
     AnyConst16,
     AnyConst32,
     Const16,
+    Const32,
     ConstRef,
     DisplayWasm,
     Instruction,

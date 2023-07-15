@@ -9,7 +9,7 @@ mod utils;
 mod tests;
 
 pub(crate) use self::{
-    immediate::{AnyConst16, AnyConst32, Const16},
+    immediate::{AnyConst16, AnyConst32, Const16, Const32},
     provider::{
         Provider,
         ProviderSliceAlloc,

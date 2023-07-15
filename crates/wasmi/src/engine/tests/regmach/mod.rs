@@ -14,7 +14,7 @@ use self::{
 };
 use super::{create_module, wat2wasm};
 use crate::engine::{
-    bytecode2::{AnyConst16, AnyConst32, Const16, Instruction, Register},
+    bytecode2::{AnyConst16, AnyConst32, Const16, Const32, Instruction, Register},
     const_pool::ConstRef,
 };
 use std::fmt::Display;
