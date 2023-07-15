@@ -1666,7 +1666,7 @@ impl<'parser> FuncTranslator<'parser> {
                     if let Ok(value) = i32::try_from(i64::from(value)) {
                         Instruction::return_nez_i64imm32(condition, value)
                     } else {
-                        Instruction::return_nez_imm(condition, self.engine().alloc_const(value)?)
+                        Instruction::return_nez_reg(condition, self.alloc.stack.alloc_const(value)?)
                     }
                 }
             },
@@ -1682,7 +1682,7 @@ impl<'parser> FuncTranslator<'parser> {
                     // Case: Function returns a single `f64` value which allows for special operator.
                     TypedProvider::Register(value) => Instruction::return_nez_reg(condition, value),
                     TypedProvider::Const(value) => {
-                        Instruction::return_nez_imm(condition, self.engine().alloc_const(value)?)
+                        Instruction::return_nez_reg(condition, self.alloc.stack.alloc_const(value)?)
                     }
                 }
             }

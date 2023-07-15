@@ -288,16 +288,14 @@ fn return_if_results_1_imm() {
                 )
             )",
         ));
-        let cref = ConstRef::from_u32(0);
         TranslationTest::new(wasm)
             .expect_func(
                 ExpectedFunc::new([
-                    Instruction::return_nez_imm(Register::from_i16(0), cref),
+                    Instruction::return_nez_reg(Register::from_i16(0), Register::from_i16(-1)),
                     Instruction::return_reg(Register::from_i16(-1)),
                 ])
                 .consts([returned_value]),
             )
-            .expect_cref(cref, returned_value)
             .run()
     }
 

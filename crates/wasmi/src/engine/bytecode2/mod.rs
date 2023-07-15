@@ -205,18 +205,6 @@ pub enum Instruction {
     /// # Note
     ///
     /// Variant of [`Instruction::ReturnNez`] returning a single
-    /// [`ConstRef`] value if the `condition` evaluates to `true`.
-    ReturnNezImm {
-        /// The register holding the condition to evaluate against zero.
-        condition: Register,
-        /// The returned value.
-        value: ConstRef,
-    },
-    /// A conditional `return` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::ReturnNezImm`] returning a single
     /// [`AnyConst32`] value if the `condition` evaluates to `true`.
     ReturnNezImm32 {
         /// The register holding the condition to evaluate against zero.
@@ -228,7 +216,7 @@ pub enum Instruction {
     ///
     /// # Note
     ///
-    /// Variant of [`Instruction::ReturnNezImm`] returning a single
+    /// Variant of [`Instruction::ReturnNez`] returning a single
     /// 32-bit encoded [`i64`] value if the `condition` evaluates to `true`.
     ReturnNezI64Imm32 {
         /// The register holding the condition to evaluate against zero.
