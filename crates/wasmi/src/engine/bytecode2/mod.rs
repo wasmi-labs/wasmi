@@ -1735,7 +1735,7 @@ pub enum Instruction {
     ///
     /// # Note
     ///
-    /// Variant of [`GlobalSet`] for 16-bit encoded `i32` immutable `input` values.
+    /// Variant of [`Instruction::GlobalSet`] for 16-bit encoded `i32` immutable `input` values.
     GlobalSetI32Imm16 {
         /// The index identifying the global variable for the `global.set` instruction.
         global: GlobalIdx,
@@ -1746,7 +1746,7 @@ pub enum Instruction {
     ///
     /// # Note
     ///
-    /// Variant of [`GlobalSet`] for 16-bit encoded `i64` immutable `input` values.
+    /// Variant of [`Instruction::GlobalSet`] for 16-bit encoded `i64` immutable `input` values.
     GlobalSetI64Imm16 {
         /// The index identifying the global variable for the `global.set` instruction.
         global: GlobalIdx,
