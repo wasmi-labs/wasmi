@@ -1733,28 +1733,25 @@ pub enum Instruction {
     },
     /// Wasm `global.set` equivalent `wasmi` instruction.
     ///
-    /// # Encoding
+    /// # Note
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`]
-    /// that refers to the constant value being stored to the global variable.
-    GlobalSetImm {
+    /// Variant of [`GlobalSet`] for 16-bit encoded `i32` immutable `input` values.
+    GlobalSetI32Imm16 {
         /// The index identifying the global variable for the `global.set` instruction.
         global: GlobalIdx,
+        /// The 16-bit encoded `i32` value.
+        input: Const16<i32>,
     },
     /// Wasm `global.set` equivalent `wasmi` instruction.
     ///
     /// # Note
     ///
-    /// This is an optimization of [`Instruction::GlobalSetImm`] for constant
-    /// values that can be encoded as 32-bit values.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-    /// that refers to the 32-bit constant value being stored to the global variable.
-    GlobalSetImm32 {
+    /// Variant of [`GlobalSet`] for 16-bit encoded `i64` immutable `input` values.
+    GlobalSetI64Imm16 {
         /// The index identifying the global variable for the `global.set` instruction.
         global: GlobalIdx,
+        /// The 16-bit encoded `i64` value.
+        input: Const16<i64>,
     },
 
     /// Wasm `i32.load` equivalent `wasmi` instruction.

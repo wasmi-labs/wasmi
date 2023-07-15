@@ -577,36 +577,31 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             TypedProvider::Const(input) => {
                 let (global_type, _init_value) =
                     self.res.get_global(module::GlobalIdx::from(global_index));
+                debug_assert_eq!(global_type.content(), input.ty());
                 match global_type.content() {
                     ValueType::I32 => {
-                        self.alloc
-                            .instr_encoder
-                            .push_instr(Instruction::global_set_imm32(global))?;
-                        self.alloc
-                            .instr_encoder
-                            .push_instr(Instruction::const32(i32::from(input)))?;
-                        Ok(())
+                        if let Some(value) = Const16::from_i32(i32::from(input)) {
+                            self.alloc
+                                .instr_encoder
+                                .push_instr(Instruction::global_set_i32imm16(global, value))?;
+                            return Ok(());
+                        }
                     }
-                    ValueType::F32 => {
-                        self.alloc
-                            .instr_encoder
-                            .push_instr(Instruction::global_set_imm32(global))?;
-                        self.alloc
-                            .instr_encoder
-                            .push_instr(Instruction::const32(f32::from(input)))?;
-                        Ok(())
+                    ValueType::I64 => {
+                        if let Some(value) = Const16::from_i64(i64::from(input)) {
+                            self.alloc
+                                .instr_encoder
+                                .push_instr(Instruction::global_set_i64imm16(global, value))?;
+                            return Ok(());
+                        }
                     }
-                    ValueType::I64 | ValueType::F64 | ValueType::FuncRef | ValueType::ExternRef => {
-                        let cref = self.engine().alloc_const(input)?;
-                        self.alloc
-                            .instr_encoder
-                            .push_instr(Instruction::global_set_imm(global))?;
-                        self.alloc
-                            .instr_encoder
-                            .push_instr(Instruction::const_ref(cref))?;
-                        Ok(())
-                    }
-                }
+                    _ => (),
+                };
+                let cref = self.alloc.stack.alloc_const(input)?;
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::global_set(global, cref))?;
+                Ok(())
             }
         }
     }

@@ -269,14 +269,26 @@ impl Instruction {
         Self::GlobalSet { global, input }
     }
 
-    /// Creates a new [`Instruction::GlobalSetImm`].
-    pub fn global_set_imm(global: bytecode2::GlobalIdx) -> Self {
-        Self::GlobalSetImm { global }
+    /// Creates a new [`Instruction::GlobalSetI32Imm16`].
+    pub fn global_set_i32imm16(
+        global: bytecode2::GlobalIdx,
+        input: impl Into<Const16<i32>>,
+    ) -> Self {
+        Self::GlobalSetI32Imm16 {
+            global,
+            input: input.into(),
+        }
     }
 
-    /// Creates a new [`Instruction::GlobalSetImm32`].
-    pub fn global_set_imm32(global: bytecode2::GlobalIdx) -> Self {
-        Self::GlobalSetImm32 { global }
+    /// Creates a new [`Instruction::GlobalSetI64Imm16`].
+    pub fn global_set_i64imm16(
+        global: bytecode2::GlobalIdx,
+        input: impl Into<Const16<i64>>,
+    ) -> Self {
+        Self::GlobalSetI64Imm16 {
+            global,
+            input: input.into(),
+        }
     }
 
     /// Creates a new [`Instruction::F32CopysignImm`] instruction.
