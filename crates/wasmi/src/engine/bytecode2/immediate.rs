@@ -1,5 +1,9 @@
-use core::marker::PhantomData;
+use core::{fmt::Debug, marker::PhantomData};
 use wasmi_core::F32;
+
+/// Error that may occur upon converting values to [`Const16`].
+#[derive(Debug, Copy, Clone)]
+pub struct OutOfBoundsConst;
 
 /// A typed 16-bit encoded constant value.
 #[derive(Debug)]
@@ -85,34 +89,34 @@ impl From<Const16<u64>> for u64 {
 }
 
 impl TryFrom<i32> for Const16<i32> {
-    type Error = OutOfBoundsConst16;
+    type Error = OutOfBoundsConst;
 
     fn try_from(value: i32) -> Result<Self, Self::Error> {
-        Self::from_i32(value).ok_or(OutOfBoundsConst16)
+        Self::from_i32(value).ok_or(OutOfBoundsConst)
     }
 }
 
 impl TryFrom<u32> for Const16<u32> {
-    type Error = OutOfBoundsConst16;
+    type Error = OutOfBoundsConst;
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
-        Self::from_u32(value).ok_or(OutOfBoundsConst16)
+        Self::from_u32(value).ok_or(OutOfBoundsConst)
     }
 }
 
 impl TryFrom<i64> for Const16<i64> {
-    type Error = OutOfBoundsConst16;
+    type Error = OutOfBoundsConst;
 
     fn try_from(value: i64) -> Result<Self, Self::Error> {
-        Self::from_i64(value).ok_or(OutOfBoundsConst16)
+        Self::from_i64(value).ok_or(OutOfBoundsConst)
     }
 }
 
 impl TryFrom<u64> for Const16<u64> {
-    type Error = OutOfBoundsConst16;
+    type Error = OutOfBoundsConst;
 
     fn try_from(value: u64) -> Result<Self, Self::Error> {
-        Self::from_u64(value).ok_or(OutOfBoundsConst16)
+        Self::from_u64(value).ok_or(OutOfBoundsConst)
     }
 }
 
@@ -140,6 +144,139 @@ impl Const16<u64> {
     }
 }
 
+/// A typed 32-bit encoded constant value.
+pub struct Const32<T> {
+    /// The underlying untyped value.
+    inner: AnyConst32,
+    /// The type marker to satisfy the Rust type system.
+    marker: PhantomData<fn() -> T>,
+}
+
+impl<T> Debug for Const32<T>
+where
+    Self: Into<T>,
+    T: Debug,
+{
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let inner: T = (*self).into();
+        inner.fmt(f)
+    }
+}
+
+impl<T> Const32<T> {
+    /// Crete a new typed [`Const32`] value.
+    pub fn new(inner: AnyConst32) -> Self {
+        Self {
+            inner,
+            marker: PhantomData,
+        }
+    }
+}
+
+impl<T> Clone for Const32<T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<T> Copy for Const32<T> {}
+
+impl<T> PartialEq for Const32<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.inner == other.inner
+    }
+}
+
+impl<T> Eq for Const32<T> {}
+
+impl From<i32> for Const32<i32> {
+    fn from(value: i32) -> Self {
+        Self::new(AnyConst32::from_i32(value))
+    }
+}
+
+impl From<u32> for Const32<u32> {
+    fn from(value: u32) -> Self {
+        Self::new(AnyConst32::from_u32(value))
+    }
+}
+
+impl From<i32> for Const32<i64> {
+    fn from(value: i32) -> Self {
+        Self::new(AnyConst32::from_i32(value))
+    }
+}
+
+impl From<u32> for Const32<u64> {
+    fn from(value: u32) -> Self {
+        Self::new(AnyConst32::from_u32(value))
+    }
+}
+
+impl From<f32> for Const32<f32> {
+    fn from(value: f32) -> Self {
+        Self::new(AnyConst32::from_f32(F32::from(value)))
+    }
+}
+
+impl From<Const32<i32>> for i32 {
+    fn from(value: Const32<i32>) -> Self {
+        value.inner.to_i32()
+    }
+}
+
+impl From<Const32<u32>> for u32 {
+    fn from(value: Const32<u32>) -> Self {
+        value.inner.to_u32()
+    }
+}
+
+impl From<Const32<i64>> for i64 {
+    fn from(value: Const32<i64>) -> Self {
+        value.inner.to_i64()
+    }
+}
+
+impl From<Const32<u64>> for u64 {
+    fn from(value: Const32<u64>) -> Self {
+        value.inner.to_u64()
+    }
+}
+
+impl From<Const32<f32>> for f32 {
+    fn from(value: Const32<f32>) -> Self {
+        f32::from(value.inner.to_f32())
+    }
+}
+
+impl TryFrom<i64> for Const32<i64> {
+    type Error = OutOfBoundsConst;
+
+    fn try_from(value: i64) -> Result<Self, Self::Error> {
+        Self::from_i64(value).ok_or(OutOfBoundsConst)
+    }
+}
+
+impl TryFrom<u64> for Const32<u64> {
+    type Error = OutOfBoundsConst;
+
+    fn try_from(value: u64) -> Result<Self, Self::Error> {
+        Self::from_u64(value).ok_or(OutOfBoundsConst)
+    }
+}
+
+impl Const32<i64> {
+    pub fn from_i64(value: i64) -> Option<Self> {
+        i32::try_from(value).map(Self::from).ok()
+    }
+}
+
+impl Const32<u64> {
+    pub fn from_u64(value: u64) -> Option<Self> {
+        u32::try_from(value).map(Self::from).ok()
+    }
+}
+
 /// A 16-bit constant value of any type.
 ///
 /// # Note
@@ -150,39 +287,35 @@ impl Const16<u64> {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct AnyConst16(i16);
 
-/// Error that may occur upon converting values to [`Const16`].
-#[derive(Debug, Copy, Clone)]
-pub struct OutOfBoundsConst16;
-
 impl TryFrom<i32> for AnyConst16 {
-    type Error = OutOfBoundsConst16;
+    type Error = OutOfBoundsConst;
 
     fn try_from(value: i32) -> Result<Self, Self::Error> {
-        Self::from_i32(value).ok_or(OutOfBoundsConst16)
+        Self::from_i32(value).ok_or(OutOfBoundsConst)
     }
 }
 
 impl TryFrom<u32> for AnyConst16 {
-    type Error = OutOfBoundsConst16;
+    type Error = OutOfBoundsConst;
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
-        Self::from_u32(value).ok_or(OutOfBoundsConst16)
+        Self::from_u32(value).ok_or(OutOfBoundsConst)
     }
 }
 
 impl TryFrom<i64> for AnyConst16 {
-    type Error = OutOfBoundsConst16;
+    type Error = OutOfBoundsConst;
 
     fn try_from(value: i64) -> Result<Self, Self::Error> {
-        Self::from_i64(value).ok_or(OutOfBoundsConst16)
+        Self::from_i64(value).ok_or(OutOfBoundsConst)
     }
 }
 
 impl TryFrom<u64> for AnyConst16 {
-    type Error = OutOfBoundsConst16;
+    type Error = OutOfBoundsConst;
 
     fn try_from(value: u64) -> Result<Self, Self::Error> {
-        Self::from_u64(value).ok_or(OutOfBoundsConst16)
+        Self::from_u64(value).ok_or(OutOfBoundsConst)
     }
 }
 
@@ -381,5 +514,15 @@ impl AnyConst32 {
     /// since access via this method is not type checked.
     pub fn to_i64(self) -> i64 {
         i64::from(self.to_i32())
+    }
+
+    /// Returns an `u64` value from `self`.
+    ///
+    /// # Note
+    ///
+    /// It is the responsibility of the user to validate type safety
+    /// since access via this method is not type checked.
+    pub fn to_u64(self) -> u64 {
+        u64::from(self.to_u32())
     }
 }
