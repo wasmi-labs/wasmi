@@ -396,15 +396,11 @@ impl AnyConst16 {
 #[repr(align(2))] // 2-byte alignment is sufficient for `wasmi` bytecode
 pub struct AnyConst32([u8; 4]);
 
-/// Error that may occur upon converting values to [`AnyConst32`].
-#[derive(Debug, Copy, Clone)]
-pub struct OutOfBoundsConst32;
-
 impl TryFrom<i64> for AnyConst32 {
-    type Error = OutOfBoundsConst32;
+    type Error = OutOfBoundsConst;
 
     fn try_from(value: i64) -> Result<Self, Self::Error> {
-        Self::from_i64(value).ok_or(OutOfBoundsConst32)
+        Self::from_i64(value).ok_or(OutOfBoundsConst)
     }
 }
 
