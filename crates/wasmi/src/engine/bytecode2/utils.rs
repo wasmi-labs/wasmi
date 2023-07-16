@@ -1,5 +1,4 @@
 use super::{Const16, Const32};
-use core::marker::PhantomData;
 
 #[cfg(doc)]
 use super::Instruction;
@@ -267,31 +266,46 @@ impl LoadOffset16Instr {
 ///
 /// # Encoding
 ///
-/// `T` determines how the stored value is encoded for this
-/// [`StoreInstr`] as encoded by the next instruction
-/// word in the encoded [`Instruction`] sequence.
-///
-/// 1. [`Instruction::Register`]: load the stored value from the register.
-/// 1. [`Instruction::Const32`]: holding the 32-bit encoded value.
-/// 1. [`Instruction::ConstRef`]: holding a reference to the stored value.
+/// Must be followed by an [`Instruction::Register] to encode `value`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct StoreInstr<T> {
+pub struct StoreInstr {
     /// The register storing the pointer of the `store` instruction.
     pub ptr: Register,
     /// The register storing the pointer offset of the `store` instruction.
     pub offset: Const32<u32>,
-    /// A type marker to store information about the encoding of the value.
-    pub value: PhantomData<T>,
 }
 
-impl<T> StoreInstr<T> {
+impl StoreInstr {
     /// Creates a new [`StoreInstr`].
     pub fn new(ptr: Register, offset: Const32<u32>) -> Self {
-        Self {
-            ptr,
-            offset,
-            value: PhantomData,
-        }
+        Self { ptr, offset }
+    }
+}
+
+/// A `store` instruction.
+///
+/// # Note
+///
+/// - Variant of [`StoreInstr`] for 16-bit address offsets.
+/// - This allow encoding of the entire [`Instruction`] in a single word.
+///
+/// # Encoding
+///
+/// Must be followed by an [`Instruction::Register] to encode `value`.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct StoreOffset16Instr<T> {
+    /// The register storing the pointer of the `store` instruction.
+    pub ptr: Register,
+    /// The register storing the pointer offset of the `store` instruction.
+    pub offset: Const16<u32>,
+    /// The value to be stored.
+    pub value: T,
+}
+
+impl<T> StoreOffset16Instr<T> {
+    /// Creates a new [`StoreOffset16Instr`].
+    pub fn new(ptr: Register, offset: Const16<u32>, value: T) -> Self {
+        Self { ptr, offset, value }
     }
 }
 
@@ -303,17 +317,13 @@ impl<T> StoreInstr<T> {
 ///
 /// # Encoding
 ///
-/// Demands different encoding and interpretation based on `T`:
-///
 /// 1. `T is Register`: The stored `value` is loaded from the register.
-/// 1. `T is ()`: The stored `value` is encoded as [`Instruction::Const32`]
-///    or [`Instruction::ConstRef`] in the next instruction word.
 /// 1. Otherwise `T` is stored inline, e.g. as `i8` or `i16` value.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct StoreAtInstr<T> {
     /// The constant address to store the value.
     pub address: Const32<u32>,
-    /// The value to be stored if `T != ()`.
+    /// The value to be stored.
     pub value: T,
 }
 

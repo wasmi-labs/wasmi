@@ -8,6 +8,7 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
+use self::utils::StoreOffset16Instr;
 pub(crate) use self::{
     immediate::{AnyConst16, AnyConst32, Const16, Const32},
     provider::{
@@ -2014,305 +2015,128 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Register`]
-    /// that represents the `offset` for the load/store operation.
-    I32Store(StoreInstr<Register>),
-    /// Wasm `i32.store` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::I32Store`] for constant address values.
+    /// Must be followed by [`Instruction::Register`] to encode `value`.
+    I32Store(StoreInstr),
+    /// Variant of [`Instruction::I32Store`] for 16-bit `offset`.
+    I32StoreOffset16(StoreOffset16Instr<Register>),
+    /// Variant of [`Instruction::I32StoreOffset16`] for constant 16-bit `value`.
+    I32StoreOffset16Imm16(StoreOffset16Instr<Const16<i32>>),
+    /// Variant of [`Instruction::I32Store`] for constant `address`.
     I32StoreAt(StoreAtInstr<Register>),
-    /// Wasm `i32.store` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::I32Store`] for storing constant values.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-    /// that represents the constant value that is stored by the operation.
-    I32StoreImm(StoreInstr<AnyConst32>),
-    /// Wasm `i32.store` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::I32StoreImm`] for constant address values.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-    /// that represents the constant value that is stored by the operation.
-    I32StoreImmAt(StoreAtInstr<()>),
+    /// Variant of [`Instruction::I32StoreAt`] for constant 16-bit `value`.
+    I32StoreAtImm16(StoreAtInstr<Const16<i32>>),
 
     /// Wasm `i32.store8` equivalent `wasmi` instruction.
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Register`]
-    /// that represents the `offset` for the load/store operation.
-    I32Store8(StoreInstr<Register>),
-    /// Wasm `i32.store8` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::I32Store8`] for constant address values.
+    /// Must be followed by [`Instruction::Register`] to encode `value`.
+    I32Store8(StoreInstr),
+    /// Variant of [`Instruction::I32Store8`] for 16-bit `offset`.
+    I32Store8Offset16(StoreOffset16Instr<Register>),
+    /// Variant of [`Instruction::I32Store8Offset16`] for constant `value`.
+    I32Store8Offset16Imm(StoreOffset16Instr<i8>),
+    /// Variant of [`Instruction::I32Store8`] for constant `address`.
     I32Store8At(StoreAtInstr<Register>),
-    /// Wasm `i32.store8` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::I32Store8`] for storing constant values.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-    /// that represents the constant value that is stored by the operation.
-    I32Store8Imm(StoreInstr<i8>),
-    /// Wasm `i32.store8` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::I32Store8Imm`] for constant address values.
-    I32Store8ImmAt(StoreAtInstr<i8>),
+    /// Variant of [`Instruction::I32Store8At`] for constant `value`.
+    I32Store8AtImm(StoreAtInstr<i8>),
 
     /// Wasm `i32.store16` equivalent `wasmi` instruction.
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Register`]
-    /// that represents the `offset` for the load/store operation.
-    I32Store16(StoreInstr<Register>),
-    /// Wasm `i32.store16` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::I32Store16`] for constant address values.
+    /// Must be followed by [`Instruction::Register`] to encode `value`.
+    I32Store16(StoreInstr),
+    /// Variant of [`Instruction::I32Store16`] for 16-bit `offset`.
+    I32Store16Offset16(StoreOffset16Instr<Register>),
+    /// Variant of [`Instruction::I32Store16Offset16`] for constant `value`.
+    I32Store16Offset16Imm(StoreOffset16Instr<i16>),
+    /// Variant of [`Instruction::I32Store16`] for constant `address`.
     I32Store16At(StoreAtInstr<Register>),
-    /// Wasm `i32.store16` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::I32Store16`] for storing constant values.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-    /// that represents the constant value that is stored by the operation.
-    I32Store16Imm(StoreInstr<i16>),
-    /// Wasm `i32.store16` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::I32Store16Imm`] for constant address values.
-    I32Store16ImmAt(StoreAtInstr<i16>),
+    /// Variant of [`Instruction::I32Store16At`] for constant `value`.
+    I32Store16AtImm(StoreAtInstr<i16>),
 
     /// Wasm `i64.store` equivalent `wasmi` instruction.
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Register`]
-    /// that represents the `offset` for the load/store operation.
-    I64Store(StoreInstr<Register>),
-    /// Wasm `i64.store` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::I64Store`] for constant address values.
+    /// Must be followed by [`Instruction::Register`] to encode `value`.
+    I64Store(StoreInstr),
+    /// Variant of [`Instruction::I64Store`] for 16-bit `offset`.
+    I64StoreOffset16(StoreOffset16Instr<Register>),
+    /// Variant of [`Instruction::I64StoreOffset16`] for constant 16-bit `value`.
+    I64StoreOffset16Imm16(StoreOffset16Instr<Const16<i64>>),
+    /// Variant of [`Instruction::I64Store`] for constant `address`.
     I64StoreAt(StoreAtInstr<Register>),
-    /// Wasm `i64.store` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::I64Store`] for storing constant values.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`]
-    /// that represents the constant value that is stored by the operation.
-    I64StoreImm(StoreInstr<AnyConst32>),
-    /// Wasm `i64.store` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::I64StoreImm`] for constant address values.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`]
-    /// that represents the constant value that is stored by the operation.
-    I64StoreImmAt(StoreAtInstr<()>),
+    /// Variant of [`Instruction::I64StoreAt`] for 16-bit `value`.
+    I64StoreAtImm16(StoreAtInstr<Const16<i64>>),
 
     /// Wasm `i64.store8` equivalent `wasmi` instruction.
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Register`]
-    /// that represents the `offset` for the load/store operation.
-    I64Store8(StoreInstr<Register>),
-    /// Wasm `i64.store8` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::I64Store8`] for constant address values.
+    /// Must be followed by [`Instruction::Register`] to encode `value`.
+    I64Store8(StoreInstr),
+    /// Variant of [`Instruction::I64Store8`] for 16-bit `offset`.
+    I64Store8Offset16(StoreOffset16Instr<Register>),
+    /// Variant of [`Instruction::I64Store8Offset16`] for constant `value`.
+    I64Store8Offset16Imm(StoreOffset16Instr<i8>),
+    /// Variant of [`Instruction::I64Store8`] for constant `address`.
     I64Store8At(StoreAtInstr<Register>),
-    /// Wasm `i64.store8` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::I64Store8`] for storing constant values.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-    /// that represents the constant value that is stored by the operation.
-    I64Store8Imm(StoreInstr<AnyConst32>),
-    /// Wasm `i64.store8` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::I64Store8Imm`] for constant address values.
-    I64Store8ImmAt(StoreAtInstr<i8>),
+    /// Variant of [`Instruction::I64Store8At`] for constant `value`.
+    I64Store8AtImm(StoreAtInstr<i8>),
 
     /// Wasm `i64.store16` equivalent `wasmi` instruction.
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Register`]
-    /// that represents the `offset` for the load/store operation.
-    I64Store16(StoreInstr<Register>),
-    /// Wasm `i64.store16` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::I64Store16`] for constant address values.
+    /// Must be followed by [`Instruction::Register`] to encode `value`.
+    I64Store16(StoreInstr),
+    /// Variant of [`Instruction::I64Store16`] for 16-bit `offset`.
+    I64Store16Offset16(StoreOffset16Instr<Register>),
+    /// Variant of [`Instruction::I64Store16Offset16`] for constant `value`.
+    I64Store16Offset16Imm(StoreOffset16Instr<i16>),
+    /// Variant of [`Instruction::I64Store16`] for constant `address`.
     I64Store16At(StoreAtInstr<Register>),
-    /// Wasm `i64.store16` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::I64Store16`] for storing constant values.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-    /// that represents the constant value that is stored by the operation.
-    I64Store16Imm(StoreInstr<AnyConst32>),
-    /// Wasm `i64.store16` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::I64Store16Imm`] for constant address values.
-    I64Store16ImmAt(StoreAtInstr<i16>),
+    /// Variant of [`Instruction::I64Store16At`] for constant `value`.
+    I64Store16AtImm(StoreAtInstr<i16>),
 
     /// Wasm `i64.store32` equivalent `wasmi` instruction.
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Register`]
-    /// that represents the `offset` for the load/store operation.
-    I64Store32(StoreInstr<Register>),
-    /// Wasm `i64.store32` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::I64Store32`] for constant address values.
+    /// Must be followed by [`Instruction::Register`] to encode `value`.
+    I64Store32(StoreInstr),
+    /// Variant of [`Instruction::I64Store32`] for 16-bit `offset`.
+    I64Store32Offset16(StoreOffset16Instr<Register>),
+    /// Variant of [`Instruction::I64Store32Offset16`] for constant 16-bit `value`.
+    I64Store32Offset16Imm16(StoreOffset16Instr<Const16<i32>>),
+    /// Variant of [`Instruction::I64Store32`] for constant `address`.
     I64Store32At(StoreAtInstr<Register>),
-    /// Wasm `i64.store32` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::I64Store32`] for storing constant values.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-    /// that represents the constant value that is stored by the operation.
-    I64Store32Imm(StoreInstr<AnyConst32>),
-    /// Wasm `i64.store32` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::I64Store32Imm`] for constant address values.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-    /// that represents the constant value that is stored by the operation.
-    I64Store32ImmAt(StoreAtInstr<()>),
+    /// Variant of [`Instruction::I64Store32At`] for constant 16-bit `value`.
+    I64Store32AtImm16(StoreAtInstr<Const16<i32>>),
 
     /// Wasm `f32.store` equivalent `wasmi` instruction.
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Register`]
-    /// that represents the `offset` for the load/store operation.
-    F32Store(StoreInstr<Register>),
-    /// Wasm `f32.store` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::F32Store`] for constant address values.
+    /// Must be followed by an [`Instruction::Register`] to encode `value`.
+    F32Store(StoreInstr),
+    /// Variant of [`Instruction::F32Store`] for 16-bit `offset`.
+    F32StoreOffset16(StoreOffset16Instr<Register>),
+    /// Variant of [`Instruction::F32Store`] for constant `address`.
     F32StoreAt(StoreAtInstr<Register>),
-    /// Wasm `f32.store` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::F32Store`] for storing constant values.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-    /// that represents the constant value that is stored by the operation.
-    F32StoreImm(StoreInstr<AnyConst32>),
-    /// Wasm `f32.store` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::F32StoreImm`] for constant address values.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-    /// that represents the constant value that is stored by the operation.
-    F32StoreImmAt(StoreAtInstr<()>),
 
-    /// Wasm `f64.store` equivalent `wasmi` instruction.
+    /// Wasm `f32.store` equivalent `wasmi` instruction.
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::Register`]
-    /// that represents the `offset` for the load/store operation.
-    F64Store(StoreInstr<Register>),
-    /// Wasm `f64.store` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::F64Store`] for constant address values.
+    /// Must be followed by an [`Instruction::Register`] to encode `value`.
+    F64Store(StoreInstr),
+    /// Variant of [`Instruction::F32Store`] for 16-bit `offset`.
+    F64StoreOffset16(StoreOffset16Instr<Register>),
+    /// Variant of [`Instruction::F32Store`] for constant `address`.
     F64StoreAt(StoreAtInstr<Register>),
-    /// Wasm `f64.store` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::F64Store`] for storing constant values.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`]
-    /// that represents the constant value that is stored by the operation.
-    F64StoreImm(StoreInstr<ConstRef>),
-    /// Wasm `f64.store` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::F64StoreImm`] for constant address values.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::ConstRef`]
-    /// that represents the constant value that is stored by the operation.
-    F64StoreImmAt(StoreAtInstr<()>),
 
     /// `i32` equality comparison instruction: `r0 = r1 == r2`
     I32Eq(BinInstr),

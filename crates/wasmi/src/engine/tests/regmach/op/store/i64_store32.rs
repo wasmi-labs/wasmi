@@ -2,104 +2,90 @@ use super::*;
 
 const WASM_OP: WasmOp = WasmOp::store(WasmType::I64, "store32");
 
-fn make_instr_param(value: i64) -> Instruction {
-    Instruction::const32(value as i32)
-}
-
 #[test]
 fn reg() {
-    test_store(WASM_OP, 0, Instruction::i64_store32);
-    test_store(WASM_OP, 42, Instruction::i64_store32);
-    test_store(WASM_OP, u32::MAX, Instruction::i64_store32);
+    test_store(WASM_OP, Instruction::i64_store32);
 }
 
 #[test]
 fn imm() {
-    test_store_imm::<i64>(
+    test_store_imm::<i64>(WASM_OP, 0, Instruction::i64_store32);
+    test_store_imm::<i64>(WASM_OP, 1, Instruction::i64_store32);
+    test_store_imm::<i64>(WASM_OP, -1, Instruction::i64_store32);
+    test_store_imm::<i64>(WASM_OP, 42, Instruction::i64_store32);
+    test_store_imm::<i64>(WASM_OP, i64::MIN, Instruction::i64_store32);
+    test_store_imm::<i64>(WASM_OP, i64::MAX, Instruction::i64_store32);
+}
+
+#[test]
+fn offset16() {
+    test_store_offset16(WASM_OP, Instruction::i64_store32_offset16);
+}
+
+#[test]
+fn offset16_imm() {
+    test_store_offset16_imm::<i64>(
         WASM_OP,
-        0,
-        1,
-        Instruction::i64_store32_imm,
-        make_instr_param,
+        i64::from(i16::MIN) - 1,
+        Instruction::i64_store32_offset16,
     );
-    test_store_imm::<i64>(
+    test_store_offset16_imm::<i64>(
         WASM_OP,
-        42,
-        1,
-        Instruction::i64_store32_imm,
-        make_instr_param,
+        i64::from(i16::MAX) + 1,
+        Instruction::i64_store32_offset16,
     );
-    test_store_imm::<i64>(
+    test_store_offset16_imm::<i64>(WASM_OP, i64::MAX - 1, Instruction::i64_store32_offset16);
+    test_store_offset16_imm::<i64>(WASM_OP, i64::MIN + 1, Instruction::i64_store32_offset16);
+    test_store_offset16_imm::<i64>(WASM_OP, i64::MIN, Instruction::i64_store32_offset16);
+    test_store_offset16_imm::<i64>(WASM_OP, i64::MAX, Instruction::i64_store32_offset16);
+}
+
+#[test]
+fn offset16_imm16() {
+    test_store_offset16_imm16::<i16>(WASM_OP, 0, Instruction::i64_store32_offset16_imm16);
+    test_store_offset16_imm16::<i16>(WASM_OP, 1, Instruction::i64_store32_offset16_imm16);
+    test_store_offset16_imm16::<i16>(WASM_OP, -1, Instruction::i64_store32_offset16_imm16);
+    test_store_offset16_imm16::<i16>(
         WASM_OP,
-        u32::MAX,
-        1,
-        Instruction::i64_store32_imm,
-        make_instr_param,
+        i16::MIN + 1,
+        Instruction::i64_store32_offset16_imm16,
     );
+    test_store_offset16_imm16::<i16>(
+        WASM_OP,
+        i16::MAX - 1,
+        Instruction::i64_store32_offset16_imm16,
+    );
+    test_store_offset16_imm16::<i16>(WASM_OP, i16::MIN, Instruction::i64_store32_offset16_imm16);
+    test_store_offset16_imm16::<i16>(WASM_OP, i16::MAX, Instruction::i64_store32_offset16_imm16);
 }
 
 #[test]
 fn at() {
-    test_store_at(WASM_OP, 0, 0, Instruction::i64_store32_at);
-    test_store_at(WASM_OP, 5, 42, Instruction::i64_store32_at);
-    test_store_at(WASM_OP, 0, u32::MAX, Instruction::i64_store32_at);
-    test_store_at(WASM_OP, u32::MAX, 0, Instruction::i64_store32_at);
+    test_store_at(WASM_OP, Instruction::i64_store32_at);
 }
 
 #[test]
 fn at_overflow() {
-    test_store_at_overflow(WASM_OP, u32::MAX, 1);
-    test_store_at_overflow(WASM_OP, 1, u32::MAX);
-    test_store_at_overflow(WASM_OP, u32::MAX, u32::MAX);
+    test_store_at_overflow(WASM_OP);
 }
 
 #[test]
-fn imm_at() {
-    test_store_imm_at::<i64>(
+fn at_imm() {
+    test_store_at_imm::<i64>(
         WASM_OP,
-        0,
-        0,
-        1,
-        Instruction::i64_store32_imm_at,
-        make_instr_param,
+        i64::from(i16::MAX) + 1,
+        Instruction::i64_store32_at,
     );
-    test_store_imm_at::<i64>(
-        WASM_OP,
-        5,
-        42,
-        1,
-        Instruction::i64_store32_imm_at,
-        make_instr_param,
-    );
-    test_store_imm_at::<i64>(
-        WASM_OP,
-        42,
-        5,
-        1,
-        Instruction::i64_store32_imm_at,
-        make_instr_param,
-    );
-    test_store_imm_at::<i64>(
-        WASM_OP,
-        0,
-        u32::MAX,
-        1,
-        Instruction::i64_store32_imm_at,
-        make_instr_param,
-    );
-    test_store_imm_at::<i64>(
-        WASM_OP,
-        u32::MAX,
-        0,
-        1,
-        Instruction::i64_store32_imm_at,
-        make_instr_param,
-    );
+    test_store_at_imm::<i64>(WASM_OP, i64::MAX - 1, Instruction::i64_store32_at);
+    test_store_at_imm::<i64>(WASM_OP, i64::MAX, Instruction::i64_store32_at);
 }
 
 #[test]
 fn imm_at_overflow() {
-    test_store_imm_at_overflow(WASM_OP, 1, u32::MAX, 1);
-    test_store_imm_at_overflow(WASM_OP, u32::MAX, 1, 1);
-    test_store_imm_at_overflow(WASM_OP, u32::MAX, u32::MAX, 1);
+    test_store_at_imm_overflow(WASM_OP, 0);
+    test_store_at_imm_overflow(WASM_OP, 1);
+    test_store_at_imm_overflow(WASM_OP, -1);
+    test_store_at_imm_overflow(WASM_OP, 42);
+    test_store_at_imm_overflow(WASM_OP, i64::MIN);
+    test_store_at_imm_overflow(WASM_OP, i64::MAX);
 }

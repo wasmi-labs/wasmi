@@ -4,79 +4,62 @@ const WASM_OP: WasmOp = WasmOp::store(WasmType::F64, "store");
 
 #[test]
 fn reg() {
-    test_store(WASM_OP, 0, Instruction::f64_store);
-    test_store(WASM_OP, 42, Instruction::f64_store);
-    test_store(WASM_OP, u32::MAX, Instruction::f64_store);
+    test_store(WASM_OP, Instruction::f64_store);
 }
 
 #[test]
 fn imm() {
-    test_store_imm::<f64>(WASM_OP, 0, 1.0, Instruction::f64_store_imm, const_ref);
-    test_store_imm::<f64>(WASM_OP, 42, 1.0, Instruction::f64_store_imm, const_ref);
-    test_store_imm::<f64>(
-        WASM_OP,
-        u32::MAX,
-        1.0,
-        Instruction::f64_store_imm,
-        const_ref,
-    );
+    test_store_imm::<f64>(WASM_OP, 0.0, Instruction::f64_store);
+    test_store_imm::<f64>(WASM_OP, 1.0, Instruction::f64_store);
+    test_store_imm::<f64>(WASM_OP, -1.0, Instruction::f64_store);
+    test_store_imm::<f64>(WASM_OP, 42.25, Instruction::f64_store);
+    test_store_imm::<f64>(WASM_OP, f64::INFINITY, Instruction::f64_store);
+    test_store_imm::<f64>(WASM_OP, f64::NEG_INFINITY, Instruction::f64_store);
+    test_store_imm::<f64>(WASM_OP, f64::NAN, Instruction::f64_store);
+}
+
+#[test]
+fn offset16() {
+    test_store_offset16(WASM_OP, Instruction::f64_store_offset16);
+}
+
+#[test]
+fn offset16_imm() {
+    test_store_offset16_imm::<f64>(WASM_OP, 0.0, Instruction::f64_store_offset16);
+    test_store_offset16_imm::<f64>(WASM_OP, 1.0, Instruction::f64_store_offset16);
+    test_store_offset16_imm::<f64>(WASM_OP, -1.0, Instruction::f64_store_offset16);
+    test_store_offset16_imm::<f64>(WASM_OP, f64::INFINITY, Instruction::f64_store_offset16);
+    test_store_offset16_imm::<f64>(WASM_OP, f64::NEG_INFINITY, Instruction::f64_store_offset16);
+    test_store_offset16_imm::<f64>(WASM_OP, f64::NAN, Instruction::f64_store_offset16);
 }
 
 #[test]
 fn at() {
-    test_store_at(WASM_OP, 0, 0, Instruction::f64_store_at);
-    test_store_at(WASM_OP, 5, 42, Instruction::f64_store_at);
-    test_store_at(WASM_OP, 0, u32::MAX, Instruction::f64_store_at);
-    test_store_at(WASM_OP, u32::MAX, 0, Instruction::f64_store_at);
+    test_store_at(WASM_OP, Instruction::f64_store_at);
 }
 
 #[test]
 fn at_overflow() {
-    test_store_at_overflow(WASM_OP, u32::MAX, 1);
-    test_store_at_overflow(WASM_OP, 1, u32::MAX);
-    test_store_at_overflow(WASM_OP, u32::MAX, u32::MAX);
+    test_store_at_overflow(WASM_OP);
 }
 
 #[test]
-fn imm_at() {
-    test_store_imm_at::<f64>(WASM_OP, 0, 0, 1.0, Instruction::f64_store_imm_at, const_ref);
-    test_store_imm_at::<f64>(
-        WASM_OP,
-        5,
-        42,
-        1.0,
-        Instruction::f64_store_imm_at,
-        const_ref,
-    );
-    test_store_imm_at::<f64>(
-        WASM_OP,
-        42,
-        5,
-        1.0,
-        Instruction::f64_store_imm_at,
-        const_ref,
-    );
-    test_store_imm_at::<f64>(
-        WASM_OP,
-        0,
-        u32::MAX,
-        1.0,
-        Instruction::f64_store_imm_at,
-        const_ref,
-    );
-    test_store_imm_at::<f64>(
-        WASM_OP,
-        u32::MAX,
-        0,
-        1.0,
-        Instruction::f64_store_imm_at,
-        const_ref,
-    );
+fn at_imm() {
+    test_store_at_imm::<f64>(WASM_OP, 0.0, Instruction::f64_store_at);
+    test_store_at_imm::<f64>(WASM_OP, 1.0, Instruction::f64_store_at);
+    test_store_at_imm::<f64>(WASM_OP, -1.0, Instruction::f64_store_at);
+    test_store_at_imm::<f64>(WASM_OP, f64::NEG_INFINITY, Instruction::f64_store_at);
+    test_store_at_imm::<f64>(WASM_OP, f64::INFINITY, Instruction::f64_store_at);
+    test_store_at_imm::<f64>(WASM_OP, f64::NAN, Instruction::f64_store_at);
 }
 
 #[test]
-fn imm_at_overflow() {
-    test_store_imm_at_overflow(WASM_OP, 1, u32::MAX, 1);
-    test_store_imm_at_overflow(WASM_OP, u32::MAX, 1, 1);
-    test_store_imm_at_overflow(WASM_OP, u32::MAX, u32::MAX, 1);
+fn at_imm_overflow() {
+    test_store_at_imm_overflow(WASM_OP, 0.0);
+    test_store_at_imm_overflow(WASM_OP, 1.0);
+    test_store_at_imm_overflow(WASM_OP, -1.0);
+    test_store_at_imm_overflow(WASM_OP, 42.25);
+    test_store_at_imm_overflow(WASM_OP, f64::NEG_INFINITY);
+    test_store_at_imm_overflow(WASM_OP, f64::INFINITY);
+    test_store_at_imm_overflow(WASM_OP, f64::NAN);
 }

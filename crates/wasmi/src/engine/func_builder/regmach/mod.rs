@@ -1320,6 +1320,182 @@ impl<'parser> FuncTranslator<'parser> {
         }
     }
 
+    /// Translates Wasm integer `store` and `storeN` instructions to `wasmi` bytecode.
+    ///
+    /// # Note
+    ///
+    /// This chooses the most efficient encoding for the given `store` instruction.
+    /// If `ptr+offset` is a constant value the pointer address is pre-calculated.
+    ///
+    /// # Usage
+    ///
+    /// Used for translating the following Wasm operators to `wasmi` bytecode:
+    ///
+    /// - `{i32, i64}.{store, store8, store16, store32}`
+    fn translate_istore<T, U>(
+        &mut self,
+        memarg: MemArg,
+        make_instr: fn(ptr: Register, offset: Const32<u32>) -> Instruction,
+        make_instr_offset16: fn(ptr: Register, offset: u16, value: Register) -> Instruction,
+        make_instr_offset16_imm: fn(ptr: Register, offset: u16, value: U) -> Instruction,
+        make_instr_at: fn(address: Const32<u32>, value: Register) -> Instruction,
+        make_instr_at_imm: fn(address: Const32<u32>, value: U) -> Instruction,
+    ) -> Result<(), TranslationError>
+    where
+        T: Copy + From<TypedValue>,
+        U: TryFrom<T>,
+    {
+        bail_unreachable!(self);
+        let offset = Self::memarg_offset(memarg);
+        match self.alloc.stack.pop2() {
+            (TypedProvider::Register(ptr), TypedProvider::Register(value)) => {
+                if let Ok(offset) = u16::try_from(offset) {
+                    self.alloc
+                        .instr_encoder
+                        .push_instr(make_instr_offset16(ptr, offset, value))?;
+                    Ok(())
+                } else {
+                    self.alloc
+                        .instr_encoder
+                        .push_instr(make_instr(ptr, Const32::from(offset)))?;
+                    self.alloc
+                        .instr_encoder
+                        .push_instr(Instruction::Register(value))?;
+                    Ok(())
+                }
+            }
+            (TypedProvider::Register(ptr), TypedProvider::Const(value)) => {
+                let offset16 = u16::try_from(offset);
+                let value16 = U::try_from(T::from(value));
+                match (offset16, value16) {
+                    (Ok(offset), Ok(value)) => {
+                        self.alloc
+                            .instr_encoder
+                            .push_instr(make_instr_offset16_imm(ptr, offset, value))?;
+                        Ok(())
+                    }
+                    (Ok(offset), Err(_)) => {
+                        let value = self.alloc.stack.alloc_const(value)?;
+                        self.alloc
+                            .instr_encoder
+                            .push_instr(make_instr_offset16(ptr, offset, value))?;
+                        Ok(())
+                    }
+                    (Err(_), _) => {
+                        self.alloc
+                            .instr_encoder
+                            .push_instr(make_instr(ptr, Const32::from(offset)))?;
+                        self.alloc.instr_encoder.push_instr(Instruction::Register(
+                            self.alloc.stack.alloc_const(value)?,
+                        ))?;
+                        Ok(())
+                    }
+                }
+            }
+            (TypedProvider::Const(ptr), TypedProvider::Register(value)) => self
+                .effective_address_and(ptr, offset, |this, address| {
+                    this.alloc
+                        .instr_encoder
+                        .push_instr(make_instr_at(Const32::from(address), value))?;
+                    Ok(())
+                }),
+            (TypedProvider::Const(ptr), TypedProvider::Const(value)) => {
+                self.effective_address_and(ptr, offset, |this, address| {
+                    if let Ok(value) = U::try_from(T::from(value)) {
+                        this.alloc
+                            .instr_encoder
+                            .push_instr(make_instr_at_imm(Const32::from(address), value))?;
+                        Ok(())
+                    } else {
+                        let value = this.alloc.stack.alloc_const(value)?;
+                        this.alloc
+                            .instr_encoder
+                            .push_instr(make_instr_at(Const32::from(address), value))?;
+                        Ok(())
+                    }
+                })
+            }
+        }
+    }
+
+    /// Translates Wasm float `store` instructions to `wasmi` bytecode.
+    ///
+    /// # Note
+    ///
+    /// This chooses the most efficient encoding for the given `store` instruction.
+    /// If `ptr+offset` is a constant value the pointer address is pre-calculated.
+    ///
+    /// # Usage
+    ///
+    /// Used for translating the following Wasm operators to `wasmi` bytecode:
+    ///
+    /// - `{f32, f64}.store`
+    fn translate_fstore(
+        &mut self,
+        memarg: MemArg,
+        make_instr: fn(ptr: Register, offset: Const32<u32>) -> Instruction,
+        make_instr_offset16: fn(ptr: Register, offset: u16, value: Register) -> Instruction,
+        make_instr_at: fn(address: Const32<u32>, value: Register) -> Instruction,
+    ) -> Result<(), TranslationError> {
+        bail_unreachable!(self);
+        let offset = Self::memarg_offset(memarg);
+        match self.alloc.stack.pop2() {
+            (TypedProvider::Register(ptr), TypedProvider::Register(value)) => {
+                if let Ok(offset) = u16::try_from(offset) {
+                    self.alloc
+                        .instr_encoder
+                        .push_instr(make_instr_offset16(ptr, offset, value))?;
+                    Ok(())
+                } else {
+                    self.alloc
+                        .instr_encoder
+                        .push_instr(make_instr(ptr, Const32::from(offset)))?;
+                    self.alloc
+                        .instr_encoder
+                        .push_instr(Instruction::Register(value))?;
+                    Ok(())
+                }
+            }
+            (TypedProvider::Register(ptr), TypedProvider::Const(value)) => {
+                let offset16 = u16::try_from(offset);
+                match offset16 {
+                    Ok(offset) => {
+                        let value = self.alloc.stack.alloc_const(value)?;
+                        self.alloc
+                            .instr_encoder
+                            .push_instr(make_instr_offset16(ptr, offset, value))?;
+                        Ok(())
+                    }
+                    Err(_) => {
+                        self.alloc
+                            .instr_encoder
+                            .push_instr(make_instr(ptr, Const32::from(offset)))?;
+                        self.alloc.instr_encoder.push_instr(Instruction::Register(
+                            self.alloc.stack.alloc_const(value)?,
+                        ))?;
+                        Ok(())
+                    }
+                }
+            }
+            (TypedProvider::Const(ptr), TypedProvider::Register(value)) => self
+                .effective_address_and(ptr, offset, |this, address| {
+                    this.alloc
+                        .instr_encoder
+                        .push_instr(make_instr_at(Const32::from(address), value))?;
+                    Ok(())
+                }),
+            (TypedProvider::Const(ptr), TypedProvider::Const(value)) => {
+                self.effective_address_and(ptr, offset, |this, address| {
+                    let value = this.alloc.stack.alloc_const(value)?;
+                    this.alloc
+                        .instr_encoder
+                        .push_instr(make_instr_at(Const32::from(address), value))?;
+                    Ok(())
+                })
+            }
+        }
+    }
+
     /// Translates a Wasm `storeN` instruction to `wasmi` bytecode.
     ///
     /// # Note

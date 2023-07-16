@@ -19,6 +19,8 @@ macro_rules! impl_display_for_int {
         }
     };
 }
+impl_display_for_int!(i8);
+impl_display_for_int!(u8);
 impl_display_for_int!(i16);
 impl_display_for_int!(u16);
 impl_display_for_int!(i32);
