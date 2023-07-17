@@ -43,3 +43,51 @@ use super::{
     WasmOp,
     WasmType,
 };
+
+/// Creates an [`Instruction::ReturnI64Imm32`] from the given `i64` value.
+///
+/// # Panics
+///
+/// If the `value` cannot be converted into `i32` losslessly.
+#[track_caller]
+fn return_i64imm32_instr(value: i64) -> Instruction {
+    let const32 = <Const32<i64>>::from_i64(value)
+        .unwrap_or_else(|| panic!("value must be 32-bit encodable: {}", value));
+    Instruction::return_i64imm32(const32)
+}
+
+/// Creates an [`Instruction::ReturnNezI64Imm32`] from the given `i64` value.
+///
+/// # Panics
+///
+/// If the `value` cannot be converted into `i32` losslessly.
+#[track_caller]
+fn return_nez_i64imm32_instr(condition: Register, value: i64) -> Instruction {
+    let const32 = <Const32<i64>>::from_i64(value)
+        .unwrap_or_else(|| panic!("value must be 32-bit encodable: {}", value));
+    Instruction::return_nez_i64imm32(condition, const32)
+}
+
+/// Creates an [`Instruction::ReturnF64Imm32`] from the given `f64` value.
+///
+/// # Panics
+///
+/// If the `value` cannot be converted into `f32` losslessly.
+#[track_caller]
+fn return_f64imm32_instr(value: f64) -> Instruction {
+    let const32 = <Const32<f64>>::from_f64(value)
+        .unwrap_or_else(|| panic!("value must be 32-bit encodable: {}", value));
+    Instruction::return_f64imm32(const32)
+}
+
+/// Creates an [`Instruction::ReturnNezF64Imm32`] from the given `f64` value.
+///
+/// # Panics
+///
+/// If the `value` cannot be converted into `f32` losslessly.
+#[track_caller]
+fn return_nez_f64imm32_instr(condition: Register, value: f64) -> Instruction {
+    let const32 = <Const32<f64>>::from_f64(value)
+        .unwrap_or_else(|| panic!("value must be 32-bit encodable: {}", value));
+    Instruction::return_nez_f64imm32(condition, const32)
+}

@@ -173,6 +173,15 @@ pub enum Instruction {
     ///
     /// # Note
     ///
+    /// Returns a single 32-bit encoded `f64` constant value.
+    ReturnF64Imm32 {
+        /// The returned constant value.
+        value: Const32<f64>,
+    },
+    /// A Wasm `return` instruction.
+    ///
+    /// # Note
+    ///
     /// Returns values as stored in the [`ProviderSliceRef`].
     ReturnMany {
         /// Identifier for a [`Provider`] slice.
@@ -224,6 +233,18 @@ pub enum Instruction {
         condition: Register,
         /// The returned value.
         value: Const32<i64>,
+    },
+    /// A conditional `return` instruction.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::ReturnNez`] returning a single
+    /// 32-bit encoded [`f64`] value if the `condition` evaluates to `true`.
+    ReturnNezF64Imm32 {
+        /// The register holding the condition to evaluate against zero.
+        condition: Register,
+        /// The returned value.
+        value: Const32<f64>,
     },
     /// A conditional `return` instruction.
     ///

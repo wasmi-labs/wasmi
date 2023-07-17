@@ -60,7 +60,7 @@ fn return_for_value(testcase: &mut TranslationTest, value: Value) {
             testcase.expect_func_instrs([Instruction::return_imm32(value)]);
         }
         Value::I64(value) => {
-            if let Ok(value) = i32::try_from(value) {
+            if let Some(value) = <Const32<i64>>::from_i64(value) {
                 testcase.expect_func_instrs([Instruction::return_i64imm32(value)]);
             } else {
                 return_cref(testcase, value.into());
@@ -69,7 +69,13 @@ fn return_for_value(testcase: &mut TranslationTest, value: Value) {
         Value::F32(value) => {
             testcase.expect_func_instrs([Instruction::return_imm32(value)]);
         }
-        Value::F64(_value) => return_cref(testcase, value.into()),
+        Value::F64(value) => {
+            if let Some(value) = <Const32<f64>>::from_f64(f64::from(value)) {
+                testcase.expect_func_instrs([Instruction::return_f64imm32(value)]);
+            } else {
+                return_cref(testcase, value.into());
+            }
+        }
         Value::FuncRef(_value) => return_cref(testcase, value.into()),
         Value::ExternRef(_value) => return_cref(testcase, value.into()),
     }

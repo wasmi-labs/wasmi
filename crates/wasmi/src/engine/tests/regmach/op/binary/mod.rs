@@ -50,3 +50,13 @@ mod i64_shr_s;
 mod i64_shr_u;
 mod i64_sub;
 mod i64_xor;
+
+/// Creates an [`Instruction::ReturnF64Imm32`] from the given `f64` value.
+///
+/// # Panics
+///
+/// If the `value` cannot be converted into `f32` losslessly.
+fn return_f64imm32_instr(value: f64) -> Instruction {
+    let const32 = <Const32<f64>>::from_f64(value).expect("value must be 32-bit encodable");
+    Instruction::return_f64imm32(const32)
+}

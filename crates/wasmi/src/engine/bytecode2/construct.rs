@@ -179,10 +179,17 @@ impl Instruction {
         }
     }
 
-    /// Creates a new [`Instruction::ReturnImm32`] from the given `value`.
-    pub fn return_i64imm32(value: i32) -> Self {
+    /// Creates a new [`Instruction::ReturnI64Imm32`] from the given `value`.
+    pub fn return_i64imm32(value: impl Into<Const32<i64>>) -> Self {
         Self::ReturnI64Imm32 {
-            value: Const32::from(value),
+            value: value.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::ReturnF64Imm32`] from the given `value`.
+    pub fn return_f64imm32(value: impl Into<Const32<f64>>) -> Self {
+        Self::ReturnF64Imm32 {
+            value: value.into(),
         }
     }
 
@@ -210,10 +217,18 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::ReturnNezI64Imm32`] for the given `condition` and `value`.
-    pub fn return_nez_i64imm32(condition: Register, value: i32) -> Self {
+    pub fn return_nez_i64imm32(condition: Register, value: impl Into<Const32<i64>>) -> Self {
         Self::ReturnNezI64Imm32 {
             condition,
-            value: Const32::from(value),
+            value: value.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::ReturnNezI64Imm32`] for the given `condition` and `value`.
+    pub fn return_nez_f64imm32(condition: Register, value: impl Into<Const32<f64>>) -> Self {
+        Self::ReturnNezF64Imm32 {
+            condition,
+            value: value.into(),
         }
     }
 

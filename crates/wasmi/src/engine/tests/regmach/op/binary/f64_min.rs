@@ -20,18 +20,14 @@ fn reg_imm_rev() {
 #[test]
 fn reg_nan() {
     testcase_binary_reg_imm(WASM_OP, f64::NAN)
-        .expect_func(
-            ExpectedFunc::new([Instruction::return_reg(Register::from_i16(-1))]).consts([f64::NAN]),
-        )
+        .expect_func(ExpectedFunc::new([return_f64imm32_instr(f64::NAN)]))
         .run();
 }
 
 #[test]
 fn nan_reg() {
     testcase_binary_imm_reg(WASM_OP, f64::NAN)
-        .expect_func(
-            ExpectedFunc::new([Instruction::return_reg(Register::from_i16(-1))]).consts([f64::NAN]),
-        )
+        .expect_func(ExpectedFunc::new([return_f64imm32_instr(f64::NAN)]))
         .run();
 }
 
@@ -53,8 +49,6 @@ fn consteval() {
     let rhs = 2.0;
     let result = if rhs < lhs { rhs } else { lhs };
     testcase_binary_consteval(WASM_OP, lhs, rhs)
-        .expect_func(
-            ExpectedFunc::new([Instruction::return_reg(Register::from_i16(-1))]).consts([result]),
-        )
+        .expect_func(ExpectedFunc::new([return_f64imm32_instr(result)]))
         .run();
 }

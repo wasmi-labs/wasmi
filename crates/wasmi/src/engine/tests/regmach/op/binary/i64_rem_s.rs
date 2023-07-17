@@ -5,7 +5,7 @@ const WASM_OP: WasmOp = WasmOp::binary(WasmType::I64, "rem_s");
 
 #[test]
 fn same_reg() {
-    let expected = [Instruction::return_i64imm32(0)];
+    let expected = [return_i64imm32_instr(0)];
     test_binary_same_reg(WASM_OP, expected)
 }
 
@@ -42,13 +42,13 @@ fn reg_zero() {
 
 #[test]
 fn reg_one() {
-    let expected = [Instruction::return_i64imm32(0)];
+    let expected = [return_i64imm32_instr(0)];
     test_binary_reg_imm_with(WASM_OP, 1_i64, expected).run()
 }
 
 #[test]
 fn reg_minus_one() {
-    let expected = [Instruction::return_i64imm32(0)];
+    let expected = [return_i64imm32_instr(0)];
     test_binary_reg_imm_with(WASM_OP, -1_i64, expected).run()
 }
 
@@ -56,14 +56,14 @@ fn reg_minus_one() {
 fn consteval() {
     let lhs = -13;
     let rhs = 5;
-    test_binary_consteval(WASM_OP, lhs, rhs, [Instruction::return_i64imm32(lhs % rhs)])
+    test_binary_consteval(WASM_OP, lhs, rhs, [return_i64imm32_instr(lhs % rhs)])
 }
 
 #[test]
 fn consteval_2() {
     let lhs = i64::MIN;
     let rhs = -1;
-    test_binary_consteval(WASM_OP, lhs, rhs, [Instruction::return_i64imm32(0)])
+    test_binary_consteval(WASM_OP, lhs, rhs, [return_i64imm32_instr(0)])
 }
 
 #[test]

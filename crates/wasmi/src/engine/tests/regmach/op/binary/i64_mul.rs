@@ -29,13 +29,13 @@ fn reg_imm_rev() {
 
 #[test]
 fn reg_zero() {
-    let expected = [Instruction::return_i64imm32(0)];
+    let expected = [return_i64imm32_instr(0)];
     test_binary_reg_imm_with(WASM_OP, 0_i64, expected).run()
 }
 
 #[test]
 fn reg_zero_rev() {
-    let expected = [Instruction::return_i64imm32(0)];
+    let expected = [return_i64imm32_instr(0)];
     test_binary_reg_imm_rev_with(WASM_OP, 0_i64, expected).run()
 }
 
@@ -55,5 +55,5 @@ fn reg_one_rev() {
 fn consteval() {
     let lhs = 1;
     let rhs = 2;
-    test_binary_consteval(WASM_OP, lhs, rhs, [Instruction::return_i64imm32(lhs * rhs)])
+    test_binary_consteval(WASM_OP, lhs, rhs, [return_i64imm32_instr(lhs * rhs)])
 }

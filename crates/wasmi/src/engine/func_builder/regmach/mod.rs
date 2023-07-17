@@ -1779,7 +1779,7 @@ impl<'parser> FuncTranslator<'parser> {
                 // Case: Function returns a single `i64` value which allows for special operator.
                 TypedProvider::Register(value) => Instruction::return_reg(value),
                 TypedProvider::Const(value) => {
-                    if let Ok(value) = i32::try_from(i64::from(value)) {
+                    if let Some(value) = <Const32<i64>>::from_i64(i64::from(value)) {
                         Instruction::return_i64imm32(value)
                     } else {
                         Instruction::return_reg(self.alloc.stack.alloc_const(value)?)
@@ -1791,9 +1791,20 @@ impl<'parser> FuncTranslator<'parser> {
                 TypedProvider::Register(value) => Instruction::return_reg(value),
                 TypedProvider::Const(value) => Instruction::return_imm32(F32::from(value)),
             },
-            [ValueType::F64 | ValueType::FuncRef | ValueType::ExternRef] => {
+            [ValueType::F64] => match self.alloc.stack.pop() {
+                // Case: Function returns a single `f64` value which may allow for special operator.
+                TypedProvider::Register(value) => Instruction::return_reg(value),
+                TypedProvider::Const(value) => {
+                    if let Some(value) = <Const32<f64>>::from_f64(f64::from(value)) {
+                        Instruction::return_f64imm32(value)
+                    } else {
+                        Instruction::return_reg(self.alloc.stack.alloc_const(value)?)
+                    }
+                }
+            },
+            [ValueType::FuncRef | ValueType::ExternRef] => {
+                // Case: Function returns a single `externref` or `funcref`.
                 match self.alloc.stack.pop() {
-                    // Case: Function returns a single `f64` value which allows for special operator.
                     TypedProvider::Register(value) => Instruction::return_reg(value),
                     TypedProvider::Const(value) => {
                         Instruction::return_reg(self.alloc.stack.alloc_const(value)?)
@@ -1838,7 +1849,7 @@ impl<'parser> FuncTranslator<'parser> {
                 // Case: Function returns a single `i64` value which allows for special operator.
                 TypedProvider::Register(value) => Instruction::return_nez_reg(condition, value),
                 TypedProvider::Const(value) => {
-                    if let Ok(value) = i32::try_from(i64::from(value)) {
+                    if let Some(value) = <Const32<i64>>::from_i64(i64::from(value)) {
                         Instruction::return_nez_i64imm32(condition, value)
                     } else {
                         Instruction::return_nez_reg(condition, self.alloc.stack.alloc_const(value)?)
@@ -1852,9 +1863,20 @@ impl<'parser> FuncTranslator<'parser> {
                     Instruction::return_nez_imm32(condition, F32::from(value))
                 }
             },
-            [ValueType::F64 | ValueType::FuncRef | ValueType::ExternRef] => {
+            [ValueType::F64] => match self.alloc.stack.peek() {
+                // Case: Function returns a single `f64` value which allows for special operator.
+                TypedProvider::Register(value) => Instruction::return_nez_reg(condition, value),
+                TypedProvider::Const(value) => {
+                    if let Some(value) = <Const32<f64>>::from_f64(f64::from(value)) {
+                        Instruction::return_nez_f64imm32(condition, value)
+                    } else {
+                        Instruction::return_nez_reg(condition, self.alloc.stack.alloc_const(value)?)
+                    }
+                }
+            },
+            [ValueType::FuncRef | ValueType::ExternRef] => {
+                // Case: Function returns a single `externref` or `funcref` value which allows for special operator.
                 match self.alloc.stack.peek() {
-                    // Case: Function returns a single `f64` value which allows for special operator.
                     TypedProvider::Register(value) => Instruction::return_nez_reg(condition, value),
                     TypedProvider::Const(value) => {
                         Instruction::return_nez_reg(condition, self.alloc.stack.alloc_const(value)?)

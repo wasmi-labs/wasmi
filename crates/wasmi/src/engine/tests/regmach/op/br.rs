@@ -66,10 +66,11 @@ fn as_return_1_imm() {
     test_for::<i64>(i64::MAX);
     test_for::<i64>(i64::from(i32::MIN) - 1);
     test_for::<i64>(i64::from(i32::MAX) + 1);
-    test_for::<f64>(0.0);
-    test_for::<f64>(-1.0);
-    test_for::<f64>(5.5);
-    test_for::<f64>(-42.25);
+    test_for::<f64>(0.3);
+    test_for::<f64>(0.123456789);
+    test_for::<f64>(-0.123456789);
+    test_for::<f64>(0.987654321);
+    test_for::<f64>(-0.987654321);
 }
 
 #[test]
@@ -102,7 +103,7 @@ fn as_return_1_imm32() {
 
 #[test]
 fn as_return_1_i64imm32() {
-    fn test_for(value: i32) {
+    fn test_for(value: i64) {
         let display_value = DisplayWasm::from(value);
         let wasm = wat2wasm(&format!(
             r"
@@ -114,7 +115,7 @@ fn as_return_1_i64imm32() {
             )",
         ));
         TranslationTest::new(wasm)
-            .expect_func_instrs([Instruction::return_i64imm32(value)])
+            .expect_func_instrs([return_i64imm32_instr(value)])
             .run()
     }
     test_for(0);
@@ -122,4 +123,37 @@ fn as_return_1_i64imm32() {
     test_for(-1);
     test_for(5);
     test_for(-42);
+    test_for(i64::from(i32::MIN));
+    test_for(i64::from(i32::MAX));
+}
+
+#[test]
+fn as_return_1_f64imm32() {
+    fn test_for(value: f64) {
+        let display_value = DisplayWasm::from(value);
+        let wasm = wat2wasm(&format!(
+            r"
+            (module
+                (func (result f64)
+                    (f64.const {display_value})
+                    (br 0)
+                )
+            )",
+        ));
+        TranslationTest::new(wasm)
+            .expect_func_instrs([return_f64imm32_instr(value)])
+            .run()
+    }
+    test_for(0.0);
+    test_for(0.25);
+    test_for(-0.25);
+    test_for(0.5);
+    test_for(-0.5);
+    test_for(1.0);
+    test_for(-1.0);
+    test_for(-42.25);
+    test_for(f64::NEG_INFINITY);
+    test_for(f64::INFINITY);
+    test_for(f64::NAN);
+    test_for(f64::EPSILON);
 }

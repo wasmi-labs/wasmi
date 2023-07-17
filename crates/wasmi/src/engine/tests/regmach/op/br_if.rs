@@ -100,8 +100,8 @@ fn consteval_return_1_imm() {
     }
     test_for_both::<i64>(i64::MIN, i64::MAX);
     test_for_both::<i64>(i64::from(i32::MIN) - 1, i64::from(i32::MAX) + 1);
-    test_for_both::<f64>(0.0, -1.0);
-    test_for_both::<f64>(5.5, -42.25);
+    test_for_both::<f64>(0.3, -0.3);
+    test_for_both::<f64>(0.123456789, -0.987654321);
 }
 
 #[test]
@@ -150,8 +150,8 @@ fn consteval_return_1_imm32() {
 
 #[test]
 fn consteval_return_1_i64imm32() {
-    fn test_for(condition: bool, if_true: i32, if_false: i32) {
-        let expected: i32 = match condition {
+    fn test_for(condition: bool, if_true: i64, if_false: i64) {
+        let expected: i64 = match condition {
             true => if_true,
             false => if_false,
         };
@@ -171,17 +171,54 @@ fn consteval_return_1_i64imm32() {
             )",
         ));
         TranslationTest::new(wasm)
-            .expect_func_instrs([Instruction::return_i64imm32(expected)])
+            .expect_func_instrs([return_i64imm32_instr(expected)])
             .run()
     }
     /// Run the test for both sign polarities of the `br_if` condition.
-    fn test_for_both(if_true: i32, if_false: i32) {
+    fn test_for_both(if_true: i64, if_false: i64) {
         test_for(true, if_true, if_false);
         test_for(false, if_true, if_false);
     }
     test_for_both(0, -1);
     test_for_both(5, 42);
-    test_for_both(i32::MIN, i32::MAX);
+    test_for_both(i64::from(i32::MIN), i64::from(i32::MAX));
+}
+
+#[test]
+fn consteval_return_1_f64imm32() {
+    fn test_for(condition: bool, if_true: f64, if_false: f64) {
+        let expected: f64 = match condition {
+            true => if_true,
+            false => if_false,
+        };
+        let condition = DisplayWasm::from(i32::from(condition));
+        let display_if_true = DisplayWasm::from(if_true);
+        let display_if_false = DisplayWasm::from(if_false);
+        let wasm = wat2wasm(&format!(
+            r"
+            (module
+                (func (result f64)
+                    (f64.const {display_if_true})
+                    (i32.const {condition}) ;; br_if condition
+                    (br_if 0)
+                    (drop)
+                    (f64.const {display_if_false})
+                )
+            )",
+        ));
+        TranslationTest::new(wasm)
+            .expect_func_instrs([return_f64imm32_instr(expected)])
+            .run()
+    }
+    /// Run the test for both sign polarities of the `br_if` condition.
+    fn test_for_both(if_true: f64, if_false: f64) {
+        test_for(true, if_true, if_false);
+        test_for(false, if_true, if_false);
+    }
+    test_for_both(0.0, -1.0);
+    test_for_both(5.5, 42.25);
+    test_for_both(f64::NEG_INFINITY, f64::INFINITY);
+    test_for_both(f64::NAN, f64::EPSILON);
 }
 
 #[test]
@@ -304,11 +341,12 @@ fn return_if_results_1_imm() {
     test_for::<i64>(i64::MIN);
     test_for::<i64>(i64::MAX);
 
-    test_for::<f64>(0.0);
-    test_for::<f64>(1.0);
-    test_for::<f64>(-1.0);
-    test_for::<f64>(42.25);
-    test_for::<f64>(f64::NAN);
+    test_for::<f64>(0.3);
+    test_for::<f64>(-0.3);
+    test_for::<f64>(0.123456789);
+    test_for::<f64>(0.987654321);
+    test_for::<f64>(-0.123456789);
+    test_for::<f64>(-0.987654321);
 }
 
 #[test]
@@ -350,8 +388,8 @@ fn return_if_results_1_imm32() {
 
 #[test]
 fn return_if_results_1_i64imm32() {
-    fn test_for(returned_value: i32) {
-        let display_value = DisplayWasm::from(i64::from(returned_value));
+    fn test_for(returned_value: i64) {
+        let display_value = DisplayWasm::from(returned_value);
         let wasm = wat2wasm(&format!(
             r"
             (module
@@ -364,8 +402,8 @@ fn return_if_results_1_i64imm32() {
         ));
         TranslationTest::new(wasm)
             .expect_func_instrs([
-                Instruction::return_nez_i64imm32(Register::from_i16(0), returned_value),
-                Instruction::return_i64imm32(returned_value),
+                return_nez_i64imm32_instr(Register::from_i16(0), returned_value),
+                return_i64imm32_instr(returned_value),
             ])
             .run()
     }
@@ -373,8 +411,45 @@ fn return_if_results_1_i64imm32() {
     test_for(0);
     test_for(1);
     test_for(-1);
-    test_for(i32::MIN);
-    test_for(i32::MAX);
+    test_for(i64::from(i32::MIN) + 1);
+    test_for(i64::from(i32::MIN));
+    test_for(i64::from(i32::MAX) - 1);
+    test_for(i64::from(i32::MAX));
+}
+
+#[test]
+fn return_if_results_1_f64imm32() {
+    fn test_for(returned_value: f64) {
+        let display_value = DisplayWasm::from(returned_value);
+        let wasm = wat2wasm(&format!(
+            r"
+            (module
+                (func (param i32) (result f64)
+                    (f64.const {display_value})
+                    (local.get 0) ;; br_if condition
+                    (br_if 0)
+                )
+            )",
+        ));
+        TranslationTest::new(wasm)
+            .expect_func_instrs([
+                return_nez_f64imm32_instr(Register::from_i16(0), returned_value),
+                return_f64imm32_instr(returned_value),
+            ])
+            .run()
+    }
+
+    test_for(0.0);
+    test_for(0.25);
+    test_for(-0.25);
+    test_for(0.5);
+    test_for(-0.5);
+    test_for(1.0);
+    test_for(-1.0);
+    test_for(f64::NEG_INFINITY);
+    test_for(f64::INFINITY);
+    test_for(f64::NAN);
+    test_for(f64::EPSILON);
 }
 
 #[test]

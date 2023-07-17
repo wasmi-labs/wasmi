@@ -29,13 +29,9 @@ fn reg_imm_rev() {
 fn consteval() {
     let lhs = 13.0_f64;
     testcase_binary_consteval(WASM_OP, lhs, 1.0)
-        .expect_func(
-            ExpectedFunc::new([Instruction::return_reg(Register::from_i16(-1))]).consts([lhs]),
-        )
+        .expect_func(ExpectedFunc::new([return_f64imm32_instr(lhs)]))
         .run();
     testcase_binary_consteval(WASM_OP, lhs, -1.0)
-        .expect_func(
-            ExpectedFunc::new([Instruction::return_reg(Register::from_i16(-1))]).consts([-lhs]),
-        )
+        .expect_func(ExpectedFunc::new([return_f64imm32_instr(-lhs)]))
         .run();
 }
