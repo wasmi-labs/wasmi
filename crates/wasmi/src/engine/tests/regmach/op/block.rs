@@ -1,5 +1,9 @@
 use super::*;
-use crate::engine::bytecode::BranchOffset;
+use crate::engine::{
+    bytecode::BranchOffset,
+    tests::regmach::{display_wasm::DisplayValueType, wasm_type::WasmType},
+};
+use std::fmt::Display;
 
 #[test]
 fn empty_block() {
@@ -139,6 +143,149 @@ fn branched_block_1() {
             Instruction::return_reg(Register::from_i16(1)),
         ])
         .run()
+}
+
+fn testcase_branched_block_1_imm<T>(value: T) -> TranslationTest
+where
+    T: Copy + WasmType,
+    DisplayWasm<T>: Display,
+{
+    let display_type = DisplayValueType::from(T::VALUE_TYPE);
+    let display_value = DisplayWasm::from(value);
+    let wasm = wat2wasm(&format!(
+        r"
+        (module
+            (func (result {display_type})
+                (block (result {display_type})
+                    ({display_type}.const {display_value})
+                    (br 0)
+                )
+            )
+        )",
+    ));
+    TranslationTest::new(wasm)
+}
+
+#[test]
+fn branched_block_1_imm_i32() {
+    fn test_for_i32(value: i32) {
+        testcase_branched_block_1_imm::<i32>(value)
+            .expect_func_instrs([
+                Instruction::copy_imm32(Register::from_i16(0), AnyConst32::from(value)),
+                Instruction::branch(BranchOffset::from(1)),
+                Instruction::return_reg(Register::from_i16(0)),
+            ])
+            .run();
+    }
+    test_for_i32(0);
+    test_for_i32(1);
+    test_for_i32(-1);
+    test_for_i32(i32::MIN);
+    test_for_i32(i32::MAX);
+}
+
+#[test]
+fn branched_block_1_imm_i64imm32() {
+    fn test_for_i64imm32(value: i64) {
+        let const32 =
+            <Const32<i64>>::from_i64(value).expect("value must be 32-bit encodable for this test");
+        testcase_branched_block_1_imm::<i64>(value)
+            .expect_func_instrs([
+                Instruction::copy_i64imm32(Register::from_i16(0), const32),
+                Instruction::branch(BranchOffset::from(1)),
+                Instruction::return_reg(Register::from_i16(0)),
+            ])
+            .run();
+    }
+    test_for_i64imm32(0);
+    test_for_i64imm32(1);
+    test_for_i64imm32(-1);
+    test_for_i64imm32(i64::from(i32::MIN) + 1);
+    test_for_i64imm32(i64::from(i32::MIN));
+    test_for_i64imm32(i64::from(i32::MAX) - 1);
+    test_for_i64imm32(i64::from(i32::MAX));
+}
+
+#[test]
+fn branched_block_1_imm_i64() {
+    fn test_for_i64(value: i64) {
+        testcase_branched_block_1_imm::<i64>(value)
+            .expect_func(
+                ExpectedFunc::new([
+                    Instruction::copy(Register::from_i16(0), Register::from_i16(-1)),
+                    Instruction::branch(BranchOffset::from(1)),
+                    Instruction::return_reg(Register::from_i16(0)),
+                ])
+                .consts([value]),
+            )
+            .run();
+    }
+    test_for_i64(i64::from(i32::MIN) - 1);
+    test_for_i64(i64::from(i32::MAX) + 1);
+    test_for_i64(i64::MIN);
+    test_for_i64(i64::MAX);
+}
+
+#[test]
+fn branched_block_1_imm_f32() {
+    fn test_for_f32(value: f32) {
+        testcase_branched_block_1_imm::<f32>(value)
+            .expect_func_instrs([
+                Instruction::copy_imm32(Register::from_i16(0), AnyConst32::from(value)),
+                Instruction::branch(BranchOffset::from(1)),
+                Instruction::return_reg(Register::from_i16(0)),
+            ])
+            .run();
+    }
+    test_for_f32(0.0);
+    test_for_f32(1.0);
+    test_for_f32(-1.0);
+    test_for_f32(f32::INFINITY);
+    test_for_f32(f32::NEG_INFINITY);
+    test_for_f32(f32::NAN);
+}
+
+#[test]
+fn branched_block_1_imm_f64imm32() {
+    fn test_for_f64imm32(value: f64) {
+        let const32 = <Const32<f64>>::from_f64(value)
+            .expect("value must be losslessly 32-bit encodable for this test");
+        testcase_branched_block_1_imm::<f64>(value)
+            .expect_func_instrs([
+                Instruction::copy_f64imm32(Register::from_i16(0), const32),
+                Instruction::branch(BranchOffset::from(1)),
+                Instruction::return_reg(Register::from_i16(0)),
+            ])
+            .run();
+    }
+    test_for_f64imm32(0.0);
+    test_for_f64imm32(-0.25);
+    test_for_f64imm32(0.5);
+    test_for_f64imm32(1.0);
+    test_for_f64imm32(-1.0);
+    test_for_f64imm32(f64::INFINITY);
+    test_for_f64imm32(f64::NEG_INFINITY);
+    test_for_f64imm32(f64::NAN);
+    test_for_f64imm32(f64::EPSILON);
+}
+
+#[test]
+fn branched_block_1_imm_f64() {
+    fn test_for_f64(value: f64) {
+        testcase_branched_block_1_imm::<f64>(value)
+            .expect_func(
+                ExpectedFunc::new([
+                    Instruction::copy(Register::from_i16(0), Register::from_i16(-1)),
+                    Instruction::branch(BranchOffset::from(1)),
+                    Instruction::return_reg(Register::from_i16(0)),
+                ])
+                .consts([value]),
+            )
+            .run();
+    }
+    test_for_f64(0.3);
+    test_for_f64(0.123456789);
+    test_for_f64(0.987654321);
 }
 
 #[test]
