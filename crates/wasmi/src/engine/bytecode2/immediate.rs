@@ -213,7 +213,7 @@ impl From<u32> for Const32<u64> {
     }
 }
 
-impl From<f32> for Const32<f32> {
+impl From<f32> for Const32<f64> {
     fn from(value: f32) -> Self {
         Self::new(AnyConst32::from_f32(F32::from(value)))
     }

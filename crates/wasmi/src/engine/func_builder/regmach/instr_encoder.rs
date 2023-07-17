@@ -1,7 +1,7 @@
 use super::{DefragRegister, TypedProvider};
 use crate::engine::{
     bytecode::BranchOffset,
-    bytecode2::{Instruction, Register},
+    bytecode2::{Const32, Instruction, Register},
     func_builder::{
         labels::{LabelRef, LabelRegistry},
         regmach::stack::ValueStack,
@@ -206,11 +206,14 @@ impl InstrEncoder {
                 let instruction = match value.ty() {
                     ValueType::I32 => Instruction::copy_imm32(result, i32::from(value)),
                     ValueType::F32 => Instruction::copy_imm32(result, f32::from(value)),
-                    ValueType::I64 => match i32::try_from(i64::from(value)) {
-                        Ok(value) => Instruction::copy_i64imm32(result, value),
-                        Err(_) => copy_imm(stack, result, value)?,
+                    ValueType::I64 => match <Const32<i64>>::from_i64(i64::from(value)) {
+                        Some(value) => Instruction::copy_i64imm32(result, value),
+                        None => copy_imm(stack, result, value)?,
                     },
-                    ValueType::F64 => copy_imm(stack, result, value)?,
+                    ValueType::F64 => match <Const32<f64>>::from_f64(f64::from(value)) {
+                        Some(value) => Instruction::copy_f64imm32(result, value),
+                        None => copy_imm(stack, result, value)?,
+                    },
                     ValueType::FuncRef => copy_imm(stack, result, value)?,
                     ValueType::ExternRef => copy_imm(stack, result, value)?,
                 };

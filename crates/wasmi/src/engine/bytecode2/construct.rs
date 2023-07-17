@@ -251,10 +251,18 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CopyI64Imm32`].
-    pub fn copy_i64imm32(result: Register, value: i32) -> Self {
+    pub fn copy_i64imm32(result: Register, value: impl Into<Const32<i64>>) -> Self {
         Self::CopyI64Imm32 {
             result,
-            value: Const32::from(value),
+            value: value.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::CopyF64Imm32`].
+    pub fn copy_f64imm32(result: Register, value: impl Into<Const32<f64>>) -> Self {
+        Self::CopyF64Imm32 {
+            result,
+            value: value.into(),
         }
     }
 

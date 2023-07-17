@@ -302,6 +302,19 @@ pub enum Instruction {
         /// The 32-bit encoded `i64` immediate value to copy.
         value: Const32<i64>,
     },
+    /// Copies the 32-bit encoded `f64` immediate `value` to `result`.
+    ///
+    /// # Note
+    ///
+    /// - Variant of [`Instruction::Copy`] for 32-bit encodable `f64` immediate values.
+    /// - Upon execution the 32-bit encoded `f32` `value` is promoted to `f64` and copied into `result`.
+    /// - Read [`Instruction::Copy`] for more information about this instruction.
+    CopyF64Imm32 {
+        /// The register holding the result of the instruction.
+        result: Register,
+        /// The 32-bit encoded `i64` immediate value to copy.
+        value: Const32<f64>,
+    },
 
     /// A Wasm `select` or `select <ty>` instruction.
     ///
