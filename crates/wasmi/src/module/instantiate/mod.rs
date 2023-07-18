@@ -61,7 +61,7 @@ impl Module {
         let handle = context.as_context_mut().store.inner.alloc_instance();
         let mut builder = InstanceEntity::build(self);
 
-        self.extract_imports(&mut context, &mut builder, externals)?;
+        self.extract_imports(&context, &mut builder, externals)?;
         self.extract_functions(&mut context, &mut builder, handle);
         self.extract_tables(&mut context, &mut builder)?;
         self.extract_memories(&mut context, &mut builder)?;
@@ -93,7 +93,7 @@ impl Module {
     /// [`Func`]: [`crate::Func`]
     fn extract_imports<I>(
         &self,
-        context: &mut impl AsContextMut,
+        context: &impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
         externals: I,
     ) -> Result<(), InstantiationError>
