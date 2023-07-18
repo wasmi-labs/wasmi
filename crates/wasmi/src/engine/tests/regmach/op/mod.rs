@@ -51,6 +51,17 @@ use super::{
 ///
 /// If the `value` cannot be converted into `i32` losslessly.
 #[track_caller]
+fn u32imm16(value: u32) -> Const16<u32> {
+    <Const16<u32>>::from_u32(value)
+        .unwrap_or_else(|| panic!("value must be 16-bit encodable: {}", value))
+}
+
+/// Creates an [`Const32<i64>`] from the given `i64` value.
+///
+/// # Panics
+///
+/// If the `value` cannot be converted into `i32` losslessly.
+#[track_caller]
 fn i64imm32(value: i64) -> Const32<i64> {
     <Const32<i64>>::from_i64(value)
         .unwrap_or_else(|| panic!("value must be 32-bit encodable: {}", value))
