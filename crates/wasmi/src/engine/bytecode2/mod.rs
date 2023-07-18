@@ -35,7 +35,15 @@ pub(crate) use self::{
     },
 };
 use super::{
-    bytecode::{BlockFuel, BranchOffset, DataSegmentIdx, ElementSegmentIdx, GlobalIdx, TableIdx},
+    bytecode::{
+        BlockFuel,
+        BranchOffset,
+        DataSegmentIdx,
+        ElementSegmentIdx,
+        FuncIdx,
+        GlobalIdx,
+        TableIdx,
+    },
     const_pool::ConstRef,
     TranslationError,
 };
@@ -443,6 +451,14 @@ pub enum Instruction {
         lhs_or_rhs: Const32<f64>,
     },
 
+    /// A Wasm `ref.func` equivalent `wasmi` instruction.
+    RefFunc {
+        /// The register storing the result of the instruction.
+        result: Register,
+        /// The index of the referenced function.
+        func: FuncIdx,
+    },
+
     /// A Wasm `table.get` instruction: `result = table[index]`
     ///
     /// # Encoding
@@ -485,74 +501,17 @@ pub enum Instruction {
         /// The register holding the `value` of the instruction.
         value: Register,
     },
-    /// A Wasm `table.set` instruction: `table[index] = value`
+    /// Variant of [`Instruction::TableSet`] with constant `index` value.
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
-    TableSetImm {
-        /// The register holding the `index` of the instruction.
-        index: Register,
-        /// A reference to the constant `value` of the instruction.
-        value: ConstRef,
-    },
-    /// A Wasm `table.set` instruction: `table[index] = value`
-    ///
-    /// # Note
-    ///
-    /// This is an optimization of [`Instruction::TableSetImm`] for 32-bit values.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
-    TableSetImm32 {
-        /// The register holding the `index` of the instruction.
-        index: Register,
-        /// The 32-bit constant `value` of the instruction.
-        value: AnyConst32,
-    },
-    /// A Wasm `table.set` instruction: `table[index] = value`
-    ///
-    /// # Note
-    ///
-    /// This is a variant of [`Instruction::TableSet`] for constant indices.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
-    TableSetAtImm {
-        /// The 32-bit constant `index` of the instruction.
-        index: AnyConst32,
+    TableSetAt {
+        /// The constant `index` of the instruction.
+        index: Const32<u32>,
         /// The register holding the `value` of the instruction.
         value: Register,
     },
-    /// A Wasm `table.set` instruction: `table[index] = value`
-    ///
-    /// # Note
-    ///
-    /// This is a variant of [`Instruction::TableSetImm`] for constant indices.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::Const32`]: encoding the `index` of the instruction
-    /// 2. [`Instruction::ConstRef`]: encoding the `value` of the instruction
-    TableSetImmAtImm(TableIdx),
-    /// A Wasm `table.set` instruction: `table[index] = value`
-    ///
-    /// # Note
-    ///
-    /// This is a variant of [`Instruction::TableSetImm32`] for constant indices.
-    /// This is an optimization of [`Instruction::TableSetImmAtImm`] for 32-bit values.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::Const32`]: encoding the `index` of the instruction
-    /// 2. [`Instruction::Const32`]: encoding the 32-bit `value` of the instruction
-    TableSetImm32AtImm(TableIdx),
 
     /// Wasm `table.copy <dst> <src>` instruction.
     ///

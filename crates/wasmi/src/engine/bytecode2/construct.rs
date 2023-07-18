@@ -17,7 +17,7 @@ use super::{
     UnaryInstr,
 };
 use crate::engine::{
-    bytecode::{BranchOffset, TableIdx},
+    bytecode::{BranchOffset, FuncIdx, TableIdx},
     bytecode2,
     const_pool::ConstRef,
 };
@@ -385,6 +385,14 @@ impl Instruction {
         }
     }
 
+    /// Creates a new [`Instruction::RefFunc`] with the given `result` and `func`.
+    pub fn ref_func(result: Register, func: impl Into<FuncIdx>) -> Instruction {
+        Self::RefFunc {
+            result,
+            func: func.into(),
+        }
+    }
+
     /// Creates a new [`Instruction::TableGet`] with the given `result` and `table`.
     pub fn table_idx(table: impl Into<TableIdx>) -> Instruction {
         Self::TableIdx(table.into())
@@ -408,6 +416,19 @@ impl Instruction {
         Self::TableSize {
             result,
             table: table.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::TableSet`] with the given `index` and `value`.
+    pub fn table_set(index: Register, value: Register) -> Instruction {
+        Self::TableSet { index, value }
+    }
+
+    /// Creates a new [`Instruction::TableSetAt`] with the given `index` and `value`.
+    pub fn table_set_at(index: impl Into<Const32<u32>>, value: Register) -> Instruction {
+        Self::TableSetAt {
+            index: index.into(),
+            value,
         }
     }
 

@@ -22,6 +22,8 @@ use crate::{
         TranslationError,
     },
     module::{self, BlockType, WasmiValueType},
+    ExternRef,
+    FuncRef,
     Mutability,
 };
 use wasmi_core::{TrapCode, ValueType, F32, F64};
@@ -860,16 +862,29 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         Ok(())
     }
 
-    fn visit_ref_null(&mut self, _ty: wasmparser::ValType) -> Self::Output {
-        todo!()
+    fn visit_ref_null(&mut self, ty: wasmparser::ValType) -> Self::Output {
+        bail_unreachable!(self);
+        let type_hint = WasmiValueType::from(ty).into_inner();
+        let null = match type_hint {
+            ValueType::FuncRef => TypedValue::from(FuncRef::null()),
+            ValueType::ExternRef => TypedValue::from(ExternRef::null()),
+            _ => panic!("must be a Wasm reftype"),
+        };
+        self.alloc.stack.push_const(null);
+        Ok(())
     }
 
     fn visit_ref_is_null(&mut self) -> Self::Output {
         todo!()
     }
 
-    fn visit_ref_func(&mut self, _function_index: u32) -> Self::Output {
-        todo!()
+    fn visit_ref_func(&mut self, function_index: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let result = self.alloc.stack.push_dynamic()?;
+        self.alloc
+            .instr_encoder
+            .push_instr(Instruction::ref_func(result, function_index))?;
+        Ok(())
     }
 
     fn visit_i32_eqz(&mut self) -> Self::Output {
@@ -3046,8 +3061,37 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         Ok(())
     }
 
-    fn visit_table_set(&mut self, _table: u32) -> Self::Output {
-        todo!()
+    fn visit_table_set(&mut self, table: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let (index, value) = self.alloc.stack.pop2();
+        match (index, value) {
+            (TypedProvider::Register(index), TypedProvider::Register(value)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_set(index, value))?;
+            }
+            (TypedProvider::Register(index), TypedProvider::Const(value)) => {
+                let value = self.alloc.stack.alloc_const(value)?;
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_set(index, value))?;
+            }
+            (TypedProvider::Const(index), TypedProvider::Register(value)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_set_at(u32::from(index), value))?;
+            }
+            (TypedProvider::Const(index), TypedProvider::Const(value)) => {
+                let value = self.alloc.stack.alloc_const(value)?;
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_set_at(u32::from(index), value))?;
+            }
+        }
+        self.alloc
+            .instr_encoder
+            .push_instr(Instruction::table_idx(table))?;
+        Ok(())
     }
 
     fn visit_table_grow(&mut self, _table: u32) -> Self::Output {
