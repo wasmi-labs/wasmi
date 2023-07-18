@@ -406,8 +406,8 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] is always encoded as pair:
     ///
-    /// 1. [`Instruction::SelectXImm32`] encodes `result` and `lhs`
-    /// 2. [`Instruction::SelectXImm32`] encodes `condition` and `rhs`.
+    /// 1. [`Instruction::SelectImm32`] encodes `result` and `lhs`
+    /// 2. [`Instruction::SelectImm32`] encodes `condition` and `rhs`.
     SelectImm32 {
         /// Register storing either the `result` or the `condition`.
         result_or_condition: Register,
@@ -420,8 +420,8 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] is always encoded as pair:
     ///
-    /// 1. [`Instruction::SelectXI64Imm32`] encodes `result` and `lhs`
-    /// 2. [`Instruction::SelectXI64Imm32`] encodes `condition` and `rhs`.
+    /// 1. [`Instruction::SelectI64Imm32`] encodes `result` and `lhs`
+    /// 2. [`Instruction::SelectI64Imm32`] encodes `condition` and `rhs`.
     SelectI64Imm32 {
         /// Register storing either the `result` or the `condition`.
         result_or_condition: Register,
@@ -434,8 +434,8 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] is always encoded as pair:
     ///
-    /// 1. [`Instruction::SelectXF64Imm32`] encodes `result` and `lhs`
-    /// 2. [`Instruction::SelectXF64Imm32`] encodes `condition` and `rhs`.
+    /// 1. [`Instruction::SelectF64Imm32`] encodes `result` and `lhs`
+    /// 2. [`Instruction::SelectF64Imm32`] encodes `condition` and `rhs`.
     SelectF64Imm32 {
         /// Register storing either the `result` or the `condition`.
         result_or_condition: Register,
