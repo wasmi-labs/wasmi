@@ -1,0 +1,117 @@
+use super::*;
+use crate::{
+    core::ValueType,
+    engine::tests::regmach::{display_wasm::DisplayValueType, wasm_type::WasmType},
+    ExternRef,
+    FuncRef,
+};
+
+fn test_reg(ty: ValueType) {
+    let display_ty = DisplayValueType::from(ty);
+    let wasm = wat2wasm(&format!(
+        r"
+        (module
+            (table $t 10 {display_ty})
+            (func (param $value {display_ty}) (param $index i32) (result i32)
+                (local.get $value)
+                (local.get $index)
+                (table.grow $t)
+            )
+        )",
+    ));
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::table_grow(
+                Register::from_i16(2),
+                Register::from_i16(1),
+                Register::from_i16(0),
+            ),
+            Instruction::table_idx(0),
+            Instruction::return_reg(Register::from_i16(2)),
+        ])
+        .run();
+}
+
+#[test]
+fn reg() {
+    test_reg(ValueType::FuncRef);
+    test_reg(ValueType::ExternRef);
+}
+
+fn test_imm16(ty: ValueType, delta: u32) {
+    let display_ty = DisplayValueType::from(ty);
+    let wasm = wat2wasm(&format!(
+        r"
+        (module
+            (table $t 10 {display_ty})
+            (func (param $value {display_ty}) (result i32)
+                (local.get $value)
+                (i32.const {delta})
+                (table.grow $t)
+            )
+        )",
+    ));
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::table_grow_imm(
+                Register::from_i16(1),
+                u32imm16(delta),
+                Register::from_i16(0),
+            ),
+            Instruction::table_idx(0),
+            Instruction::return_reg(Register::from_i16(1)),
+        ])
+        .run();
+}
+
+#[test]
+fn imm16() {
+    fn test_for(delta: u32) {
+        test_imm16(ValueType::FuncRef, delta);
+        test_imm16(ValueType::ExternRef, delta);
+    }
+    test_for(0);
+    test_for(1);
+    test_for(u32::from(u16::MAX) - 1);
+    test_for(u32::from(u16::MAX));
+}
+
+fn test_imm(ty: ValueType, delta: u32) {
+    let display_ty = DisplayValueType::from(ty);
+    let wasm = wat2wasm(&format!(
+        r"
+        (module
+            (table $t 10 {display_ty})
+            (func (param $value {display_ty}) (result i32)
+                (local.get $value)
+                (i32.const {delta})
+                (table.grow $t)
+            )
+        )",
+    ));
+    TranslationTest::new(wasm)
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::table_grow(
+                    Register::from_i16(1),
+                    Register::from_i16(-1),
+                    Register::from_i16(0),
+                ),
+                Instruction::table_idx(0),
+                Instruction::return_reg(Register::from_i16(1)),
+            ])
+            .consts([delta]),
+        )
+        .run();
+}
+
+#[test]
+fn imm() {
+    fn test_for(delta: u32) {
+        test_imm(ValueType::FuncRef, delta);
+        test_imm(ValueType::ExternRef, delta);
+    }
+    test_for(u32::from(u16::MAX) + 1);
+    test_for(u32::MAX - 1);
+    test_for(u32::MAX);
+}

@@ -872,7 +872,9 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
     TableGrow {
         /// Register holding the result of the instruction.
         result: Register,
@@ -881,59 +883,20 @@ pub enum Instruction {
         /// The value that is used to fill up the new cells.
         value: Register,
     },
-    /// Wasm `table.grow <table>` instruction.
-    ///
-    /// # Note
-    ///
-    /// A variant of [`Instruction::TableGrow`] with constant `delta`.
+    /// Variant of [`Instruction::TableGrow`] with 16-bit constant `delta`.
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::Const32`]: the `delta` number of elements to add to the table
-    /// 2. [`Instruction::TableIdx`]: the Wasm table that shall be grown
-    TableGrowByImm {
+    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
+    TableGrowImm {
         /// Register holding the result of the instruction.
         result: Register,
+        /// The number of elements to add to the table.
+        delta: Const16<u32>,
         /// The value that is used to fill up the new cells.
         value: Register,
-    },
-    /// Wasm `table.grow <table>` instruction.
-    ///
-    /// # Note
-    ///
-    /// A variant of [`Instruction::TableGrow`] with constant fill `value`.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::ConstRef`]: the `value` that is used to fill up the new cells
-    /// 2. [`Instruction::TableIdx`]: the Wasm table that shall be grown
-    TableGrowValImm {
-        /// Register holding the result of the instruction.
-        result: Register,
-        /// The `delta` number of elements to add to the table.
-        delta: Register,
-    },
-    /// Wasm `table.grow <table>` instruction.
-    ///
-    /// # Note
-    ///
-    /// A variant of [`Instruction::TableGrow`] with constant `value` and `delta`.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::ConstRef`]: the `value` that is used to fill up the new cells
-    /// 2. [`Instruction::TableIdx`]: the Wasm table that shall be grown
-    TableGrowByImmValImm {
-        /// Register holding the result of the instruction.
-        result: Register,
-        /// The `delta` number of elements to add to the table.
-        delta: AnyConst32,
     },
 
     /// A Wasm `elem.drop` equalivalent `wasmi` instruction.

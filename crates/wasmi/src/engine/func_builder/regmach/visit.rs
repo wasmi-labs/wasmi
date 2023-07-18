@@ -3189,8 +3189,24 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         Ok(())
     }
 
-    fn visit_table_grow(&mut self, _table: u32) -> Self::Output {
-        todo!()
+    fn visit_table_grow(&mut self, table: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let (value, delta) = self.alloc.stack.pop2();
+        let delta = <Provider<Const16<u32>>>::new(delta, &mut self.alloc.stack)?;
+        let value = match value {
+            TypedProvider::Register(value) => value,
+            TypedProvider::Const(value) => self.alloc.stack.alloc_const(value)?,
+        };
+        let result = self.alloc.stack.push_dynamic()?;
+        let instr = match delta {
+            Provider::Register(delta) => Instruction::table_grow(result, delta, value),
+            Provider::Const(delta) => Instruction::table_grow_imm(result, delta, value),
+        };
+        self.alloc.instr_encoder.push_instr(instr)?;
+        self.alloc
+            .instr_encoder
+            .push_instr(Instruction::table_idx(table))?;
+        Ok(())
     }
 
     fn visit_table_size(&mut self, table: u32) -> Self::Output {

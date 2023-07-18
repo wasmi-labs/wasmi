@@ -673,6 +673,28 @@ impl Instruction {
         }
     }
 
+    /// Creates a new [`Instruction::TableGrow`] with the given `result`, `delta` and `value`.
+    pub fn table_grow(result: Register, delta: Register, value: Register) -> Instruction {
+        Self::TableGrow {
+            result,
+            delta,
+            value,
+        }
+    }
+
+    /// Creates a new [`Instruction::TableGrowImm`] with the given `result`, `delta` and `value`.
+    pub fn table_grow_imm(
+        result: Register,
+        delta: impl Into<Const16<u32>>,
+        value: Register,
+    ) -> Instruction {
+        Self::TableGrowImm {
+            result,
+            delta: delta.into(),
+            value,
+        }
+    }
+
     constructor_for! {
         // Load
 
