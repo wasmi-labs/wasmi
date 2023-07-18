@@ -3011,8 +3011,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         todo!()
     }
 
-    fn visit_data_drop(&mut self, _data_index: u32) -> Self::Output {
-        todo!()
+    fn visit_data_drop(&mut self, data_index: u32) -> Self::Output {
+        bail_unreachable!(self);
+        self.alloc
+            .instr_encoder
+            .push_instr(Instruction::DataDrop(data_index.into()))?;
+        Ok(())
     }
 
     fn visit_memory_copy(&mut self, _dst_mem: u32, _src_mem: u32) -> Self::Output {
@@ -3080,8 +3084,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         Ok(())
     }
 
-    fn visit_elem_drop(&mut self, _elem_index: u32) -> Self::Output {
-        todo!()
+    fn visit_elem_drop(&mut self, elem_index: u32) -> Self::Output {
+        bail_unreachable!(self);
+        self.alloc
+            .instr_encoder
+            .push_instr(Instruction::ElemDrop(elem_index.into()))?;
+        Ok(())
     }
 
     fn visit_table_copy(&mut self, dst_table: u32, src_table: u32) -> Self::Output {

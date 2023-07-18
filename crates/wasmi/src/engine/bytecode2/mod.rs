@@ -936,6 +936,11 @@ pub enum Instruction {
         delta: AnyConst32,
     },
 
+    /// A Wasm `elem.drop` equalivalent `wasmi` instruction.
+    ElemDrop(ElementSegmentIdx),
+    /// A Wasm `data.drop` equalivalent `wasmi` instruction.
+    DataDrop(DataSegmentIdx),
+
     /// Wasm `memory.size` instruction.
     MemorySize {
         /// Register holding the result of the instruction.
