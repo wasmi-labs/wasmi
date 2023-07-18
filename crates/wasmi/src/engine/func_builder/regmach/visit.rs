@@ -3023,8 +3023,61 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         todo!()
     }
 
-    fn visit_table_init(&mut self, _elem_index: u32, _table: u32) -> Self::Output {
-        todo!()
+    fn visit_table_init(&mut self, elem_index: u32, table: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let (dst, src, len) = self.alloc.stack.pop3();
+        let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
+        let src = <Provider<Const16<u32>>>::new(src, &mut self.alloc.stack)?;
+        let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
+        match (dst, src, len) {
+            (Provider::Register(dst), Provider::Register(src), Provider::Register(len)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_init(dst, src, len))?;
+            }
+            (Provider::Register(dst), Provider::Register(src), Provider::Const(len)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_init_exact(dst, src, len))?;
+            }
+            (Provider::Register(dst), Provider::Const(src), Provider::Register(len)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_init_from(dst, src, len))?;
+            }
+            (Provider::Register(dst), Provider::Const(src), Provider::Const(len)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_init_from_exact(dst, src, len))?;
+            }
+            (Provider::Const(dst), Provider::Register(src), Provider::Register(len)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_init_to(dst, src, len))?;
+            }
+            (Provider::Const(dst), Provider::Register(src), Provider::Const(len)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_init_to_exact(dst, src, len))?;
+            }
+            (Provider::Const(dst), Provider::Const(src), Provider::Register(len)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_init_from_to(dst, src, len))?;
+            }
+            (Provider::Const(dst), Provider::Const(src), Provider::Const(len)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_init_from_to_exact(dst, src, len))?;
+            }
+        };
+        self.alloc
+            .instr_encoder
+            .push_instr(Instruction::table_idx(table))?;
+        self.alloc
+            .instr_encoder
+            .push_instr(Instruction::elem_idx(elem_index))?;
+        Ok(())
     }
 
     fn visit_elem_drop(&mut self, _elem_index: u32) -> Self::Output {

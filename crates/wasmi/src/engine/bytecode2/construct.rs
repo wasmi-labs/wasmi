@@ -17,7 +17,7 @@ use super::{
     UnaryInstr,
 };
 use crate::engine::{
-    bytecode::{BranchOffset, FuncIdx, TableIdx},
+    bytecode::{BranchOffset, ElementSegmentIdx, FuncIdx, TableIdx},
     bytecode2,
     const_pool::ConstRef,
 };
@@ -393,9 +393,14 @@ impl Instruction {
         }
     }
 
-    /// Creates a new [`Instruction::TableGet`] with the given `result` and `table`.
-    pub fn table_idx(table: impl Into<TableIdx>) -> Instruction {
-        Self::TableIdx(table.into())
+    /// Creates a new [`Instruction::ElementSegmentIdx`] from the given `index`.
+    pub fn elem_idx(index: impl Into<ElementSegmentIdx>) -> Instruction {
+        Self::ElementSegmentIdx(index.into())
+    }
+
+    /// Creates a new [`Instruction::TableIdx`] from the given `index`.
+    pub fn table_idx(index: impl Into<TableIdx>) -> Instruction {
+        Self::TableIdx(index.into())
     }
 
     /// Creates a new [`Instruction::TableGet`] with the given `result` and `index`.
@@ -522,6 +527,102 @@ impl Instruction {
         len: impl Into<Const16<u32>>,
     ) -> Instruction {
         Self::TableCopyFromToExact {
+            dst: dst.into(),
+            src: src.into(),
+            len: len.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::TableInit`] with the given `dst`, `src` and `len`.
+    pub fn table_init(dst: Register, src: Register, len: Register) -> Instruction {
+        Self::TableInit { dst, src, len }
+    }
+
+    /// Creates a new [`Instruction::TableInitTo`] with the given `dst`, `src` and `len`.
+    pub fn table_init_to(
+        dst: impl Into<Const16<u32>>,
+        src: Register,
+        len: Register,
+    ) -> Instruction {
+        Self::TableInitTo {
+            dst: dst.into(),
+            src,
+            len,
+        }
+    }
+
+    /// Creates a new [`Instruction::TableInitFrom`] with the given `dst`, `src` and `len`.
+    pub fn table_init_from(
+        dst: Register,
+        src: impl Into<Const16<u32>>,
+        len: Register,
+    ) -> Instruction {
+        Self::TableInitFrom {
+            dst,
+            src: src.into(),
+            len,
+        }
+    }
+
+    /// Creates a new [`Instruction::TableInitFromTo`] with the given `dst`, `src` and `len`.
+    pub fn table_init_from_to(
+        dst: impl Into<Const16<u32>>,
+        src: impl Into<Const16<u32>>,
+        len: Register,
+    ) -> Instruction {
+        Self::TableInitFromTo {
+            dst: dst.into(),
+            src: src.into(),
+            len,
+        }
+    }
+
+    /// Creates a new [`Instruction::TableInitExact`] with the given `dst`, `src` and `len`.
+    pub fn table_init_exact(
+        dst: Register,
+        src: Register,
+        len: impl Into<Const16<u32>>,
+    ) -> Instruction {
+        Self::TableInitExact {
+            dst,
+            src,
+            len: len.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::TableInitToExact`] with the given `dst`, `src` and `len`.
+    pub fn table_init_to_exact(
+        dst: impl Into<Const16<u32>>,
+        src: Register,
+        len: impl Into<Const16<u32>>,
+    ) -> Instruction {
+        Self::TableInitToExact {
+            dst: dst.into(),
+            src,
+            len: len.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::TableInitFromExact`] with the given `dst`, `src` and `len`.
+    pub fn table_init_from_exact(
+        dst: Register,
+        src: impl Into<Const16<u32>>,
+        len: impl Into<Const16<u32>>,
+    ) -> Instruction {
+        Self::TableInitFromExact {
+            dst,
+            src: src.into(),
+            len: len.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::TableInitFromToExact`] with the given `dst`, `src` and `len`.
+    pub fn table_init_from_to_exact(
+        dst: impl Into<Const16<u32>>,
+        src: impl Into<Const16<u32>>,
+        len: impl Into<Const16<u32>>,
+    ) -> Instruction {
+        Self::TableInitFromToExact {
             dst: dst.into(),
             src: src.into(),
             len: len.into(),
