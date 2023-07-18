@@ -3032,30 +3032,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_table_copy(&mut self, dst_table: u32, src_table: u32) -> Self::Output {
-        impl Provider<Const16<u32>> {
-            /// Creates a new `table.copy` [`Provider`] from the general [`TypedProvider`].
-            fn new(
-                provider: TypedProvider,
-                stack: &mut ValueStack,
-            ) -> Result<Self, TranslationError> {
-                match provider {
-                    TypedProvider::Const(value) => match Const16::from_u32(u32::from(value)) {
-                        Some(value) => Ok(Self::Const(value)),
-                        None => {
-                            let register = stack.alloc_const(value)?;
-                            Ok(Self::Register(register))
-                        }
-                    },
-                    TypedProvider::Register(index) => Ok(Self::Register(index)),
-                }
-            }
-        }
-
         bail_unreachable!(self);
         let (dst, src, len) = self.alloc.stack.pop3();
-        let dst = Provider::new(dst, &mut self.alloc.stack)?;
-        let src = Provider::new(src, &mut self.alloc.stack)?;
-        let len = Provider::new(len, &mut self.alloc.stack)?;
+        let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
+        let src = <Provider<Const16<u32>>>::new(src, &mut self.alloc.stack)?;
+        let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
         match (dst, src, len) {
             (Provider::Register(dst), Provider::Register(src), Provider::Register(len)) => {
                 self.alloc
@@ -3177,5 +3158,26 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             .instr_encoder
             .push_instr(Instruction::table_size(result, table))?;
         Ok(())
+    }
+}
+
+impl Provider<Const16<u32>> {
+    /// Creates a new `table.copy` [`Provider`] from the general [`TypedProvider`].
+    ///
+    /// # Note
+    ///
+    /// This is a convenience function and used by translation
+    /// procedures for certain Wasm `table` instructions.
+    fn new(provider: TypedProvider, stack: &mut ValueStack) -> Result<Self, TranslationError> {
+        match provider {
+            TypedProvider::Const(value) => match Const16::from_u32(u32::from(value)) {
+                Some(value) => Ok(Self::Const(value)),
+                None => {
+                    let register = stack.alloc_const(value)?;
+                    Ok(Self::Register(register))
+                }
+            },
+            TypedProvider::Register(index) => Ok(Self::Register(index)),
+        }
     }
 }
