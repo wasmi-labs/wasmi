@@ -3033,48 +3033,33 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
         let src = <Provider<Const16<u32>>>::new(src, &mut self.alloc.stack)?;
         let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
-        match (dst, src, len) {
+        let instr = match (dst, src, len) {
             (Provider::Register(dst), Provider::Register(src), Provider::Register(len)) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_init(dst, src, len))?;
+                Instruction::table_init(dst, src, len)
             }
             (Provider::Register(dst), Provider::Register(src), Provider::Const(len)) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_init_exact(dst, src, len))?;
+                Instruction::table_init_exact(dst, src, len)
             }
             (Provider::Register(dst), Provider::Const(src), Provider::Register(len)) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_init_from(dst, src, len))?;
+                Instruction::table_init_from(dst, src, len)
             }
             (Provider::Register(dst), Provider::Const(src), Provider::Const(len)) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_init_from_exact(dst, src, len))?;
+                Instruction::table_init_from_exact(dst, src, len)
             }
             (Provider::Const(dst), Provider::Register(src), Provider::Register(len)) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_init_to(dst, src, len))?;
+                Instruction::table_init_to(dst, src, len)
             }
             (Provider::Const(dst), Provider::Register(src), Provider::Const(len)) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_init_to_exact(dst, src, len))?;
+                Instruction::table_init_to_exact(dst, src, len)
             }
             (Provider::Const(dst), Provider::Const(src), Provider::Register(len)) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_init_from_to(dst, src, len))?;
+                Instruction::table_init_from_to(dst, src, len)
             }
             (Provider::Const(dst), Provider::Const(src), Provider::Const(len)) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_init_from_to_exact(dst, src, len))?;
+                Instruction::table_init_from_to_exact(dst, src, len)
             }
         };
+        self.alloc.instr_encoder.push_instr(instr)?;
         self.alloc
             .instr_encoder
             .push_instr(Instruction::table_idx(table))?;
@@ -3098,48 +3083,33 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
         let src = <Provider<Const16<u32>>>::new(src, &mut self.alloc.stack)?;
         let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
-        match (dst, src, len) {
+        let instr = match (dst, src, len) {
             (Provider::Register(dst), Provider::Register(src), Provider::Register(len)) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_copy(dst, src, len))?;
+                Instruction::table_copy(dst, src, len)
             }
             (Provider::Register(dst), Provider::Register(src), Provider::Const(len)) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_copy_exact(dst, src, len))?;
+                Instruction::table_copy_exact(dst, src, len)
             }
             (Provider::Register(dst), Provider::Const(src), Provider::Register(len)) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_copy_from(dst, src, len))?;
+                Instruction::table_copy_from(dst, src, len)
             }
             (Provider::Register(dst), Provider::Const(src), Provider::Const(len)) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_copy_from_exact(dst, src, len))?;
+                Instruction::table_copy_from_exact(dst, src, len)
             }
             (Provider::Const(dst), Provider::Register(src), Provider::Register(len)) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_copy_to(dst, src, len))?;
+                Instruction::table_copy_to(dst, src, len)
             }
             (Provider::Const(dst), Provider::Register(src), Provider::Const(len)) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_copy_to_exact(dst, src, len))?;
+                Instruction::table_copy_to_exact(dst, src, len)
             }
             (Provider::Const(dst), Provider::Const(src), Provider::Register(len)) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_copy_from_to(dst, src, len))?;
+                Instruction::table_copy_from_to(dst, src, len)
             }
             (Provider::Const(dst), Provider::Const(src), Provider::Const(len)) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_copy_from_to_exact(dst, src, len))?;
+                Instruction::table_copy_from_to_exact(dst, src, len)
             }
         };
+        self.alloc.instr_encoder.push_instr(instr)?;
         self.alloc
             .instr_encoder
             .push_instr(Instruction::table_idx(dst_table))?;
@@ -3158,28 +3128,21 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             TypedProvider::Register(value) => value,
             TypedProvider::Const(value) => self.alloc.stack.alloc_const(value)?,
         };
-        match (dst, len) {
+        let instr = match (dst, len) {
             (Provider::Register(dst), Provider::Register(len)) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_fill(dst, len, value))?;
+                Instruction::table_fill(dst, len, value)
             }
             (Provider::Register(dst), Provider::Const(len)) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_fill_exact(dst, len, value))?;
+                Instruction::table_fill_exact(dst, len, value)
             }
             (Provider::Const(dst), Provider::Register(len)) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_fill_at(dst, len, value))?;
+                Instruction::table_fill_at(dst, len, value)
             }
             (Provider::Const(dst), Provider::Const(len)) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_fill_at_exact(dst, len, value))?;
+                Instruction::table_fill_at_exact(dst, len, value)
             }
         };
+        self.alloc.instr_encoder.push_instr(instr)?;
         self.alloc
             .instr_encoder
             .push_instr(Instruction::table_idx(table))?;
@@ -3211,30 +3174,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_table_set(&mut self, table: u32) -> Self::Output {
         bail_unreachable!(self);
         let (index, value) = self.alloc.stack.pop2();
-        match (index, value) {
-            (TypedProvider::Register(index), TypedProvider::Register(value)) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_set(index, value))?;
-            }
-            (TypedProvider::Register(index), TypedProvider::Const(value)) => {
-                let value = self.alloc.stack.alloc_const(value)?;
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_set(index, value))?;
-            }
-            (TypedProvider::Const(index), TypedProvider::Register(value)) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_set_at(u32::from(index), value))?;
-            }
-            (TypedProvider::Const(index), TypedProvider::Const(value)) => {
-                let value = self.alloc.stack.alloc_const(value)?;
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_set_at(u32::from(index), value))?;
-            }
-        }
+        let value = match value {
+            TypedProvider::Register(value) => value,
+            TypedProvider::Const(value) => self.alloc.stack.alloc_const(value)?,
+        };
+        let instr = match index {
+            TypedProvider::Register(index) => Instruction::table_set(index, value),
+            TypedProvider::Const(index) => Instruction::table_set_at(u32::from(index), value),
+        };
+        self.alloc.instr_encoder.push_instr(instr)?;
         self.alloc
             .instr_encoder
             .push_instr(Instruction::table_idx(table))?;
