@@ -34,7 +34,7 @@ impl Drop for TranslationTest {
 }
 
 /// An entry for an expected function body stored in the engine under test.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ExpectedFunc {
     /// The instructions of the expected function.
     instrs: Vec<Instruction>,

@@ -160,6 +160,16 @@ impl Instruction {
         Self::Const32(value.into())
     }
 
+    /// Creates a new [`Instruction::I64Const32`] from the given `value`.
+    pub fn i64const32(value: impl Into<Const32<i64>>) -> Self {
+        Self::I64Const32(value.into())
+    }
+
+    /// Creates a new [`Instruction::F64Const32`] from the given `value`.
+    pub fn f64const32(value: impl Into<Const32<f64>>) -> Self {
+        Self::F64Const32(value.into())
+    }
+
     /// Creates a new [`Instruction::ConstRef`] from the given [`ConstRef`].
     pub fn const_ref(cref: impl Into<ConstRef>) -> Self {
         Self::ConstRef(cref.into())
@@ -332,52 +342,42 @@ impl Instruction {
         }
     }
 
-    /// Creates a new [`Instruction::SelectImm`].
-    pub fn select_imm(reg: Register, cref: ConstRef) -> Self {
-        Self::SelectImm { reg, cref }
+    /// Creates a new [`Instruction::SelectRev`].
+    pub fn select_rev(result: Register, condition: Register, rhs: Register) -> Self {
+        Self::SelectRev {
+            result,
+            condition,
+            rhs,
+        }
     }
 
     /// Creates a new [`Instruction::SelectImm32`].
-    pub fn select_imm32(reg: Register, value: impl Into<AnyConst32>) -> Self {
+    pub fn select_imm32(result_or_condition: Register, lhs_or_rhs: impl Into<AnyConst32>) -> Self {
         Self::SelectImm32 {
-            reg,
-            value: value.into(),
+            result_or_condition,
+            lhs_or_rhs: lhs_or_rhs.into(),
         }
     }
 
-    /// Creates a new [`Instruction::SelectRhsImm`].
-    pub fn select_imm_rhs(result: Register, condition: Register, lhs: Register) -> Self {
-        Self::SelectRhsImm {
-            result,
-            condition,
-            lhs,
+    /// Creates a new [`Instruction::SelectI64Imm32`].
+    pub fn select_i64imm32(
+        result_or_condition: Register,
+        lhs_or_rhs: impl Into<Const32<i64>>,
+    ) -> Self {
+        Self::SelectI64Imm32 {
+            result_or_condition,
+            lhs_or_rhs: lhs_or_rhs.into(),
         }
     }
 
-    /// Creates a new [`Instruction::SelectRhsImm32`].
-    pub fn select_imm32_rhs(result: Register, condition: Register, lhs: Register) -> Self {
-        Self::SelectRhsImm32 {
-            result,
-            condition,
-            lhs,
-        }
-    }
-
-    /// Creates a new [`Instruction::SelectLhsImm`].
-    pub fn select_imm_lhs(result: Register, condition: Register, rhs: Register) -> Self {
-        Self::SelectLhsImm {
-            result,
-            condition,
-            rhs,
-        }
-    }
-
-    /// Creates a new [`Instruction::SelectLhsImm32`].
-    pub fn select_imm32_lhs(result: Register, condition: Register, rhs: Register) -> Self {
-        Self::SelectLhsImm32 {
-            result,
-            condition,
-            rhs,
+    /// Creates a new [`Instruction::SelectF64Imm32`].
+    pub fn select_f64imm32(
+        result_or_condition: Register,
+        lhs_or_rhs: impl Into<Const32<f64>>,
+    ) -> Self {
+        Self::SelectF64Imm32 {
+            result_or_condition,
+            lhs_or_rhs: lhs_or_rhs.into(),
         }
     }
 
