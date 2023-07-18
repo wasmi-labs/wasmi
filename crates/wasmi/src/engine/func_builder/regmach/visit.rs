@@ -17,8 +17,8 @@ use super::{
 use crate::{
     engine::{
         bytecode,
-        bytecode2::{Const16, Instruction, Register},
-        func_builder::regmach::control_stack::AcquiredTarget,
+        bytecode2::{Const16, Instruction, Provider, Register},
+        func_builder::regmach::{control_stack::AcquiredTarget, stack::ValueStack},
         TranslationError,
     },
     module::{self, BlockType, WasmiValueType},
@@ -3031,8 +3031,80 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         todo!()
     }
 
-    fn visit_table_copy(&mut self, _dst_table: u32, _src_table: u32) -> Self::Output {
-        todo!()
+    fn visit_table_copy(&mut self, dst_table: u32, src_table: u32) -> Self::Output {
+        impl Provider<Const16<u32>> {
+            /// Creates a new `table.copy` [`Provider`] from the general [`TypedProvider`].
+            fn new(
+                provider: TypedProvider,
+                stack: &mut ValueStack,
+            ) -> Result<Self, TranslationError> {
+                match provider {
+                    TypedProvider::Const(value) => match Const16::from_u32(u32::from(value)) {
+                        Some(value) => Ok(Self::Const(value)),
+                        None => {
+                            let register = stack.alloc_const(value)?;
+                            Ok(Self::Register(register))
+                        }
+                    },
+                    TypedProvider::Register(index) => Ok(Self::Register(index)),
+                }
+            }
+        }
+
+        bail_unreachable!(self);
+        let (dst, src, len) = self.alloc.stack.pop3();
+        let dst = Provider::new(dst, &mut self.alloc.stack)?;
+        let src = Provider::new(src, &mut self.alloc.stack)?;
+        let len = Provider::new(len, &mut self.alloc.stack)?;
+        match (dst, src, len) {
+            (Provider::Register(dst), Provider::Register(src), Provider::Register(len)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_copy(dst, src, len))?;
+            }
+            (Provider::Register(dst), Provider::Register(src), Provider::Const(len)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_copy_exact(dst, src, len))?;
+            }
+            (Provider::Register(dst), Provider::Const(src), Provider::Register(len)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_copy_from(dst, src, len))?;
+            }
+            (Provider::Register(dst), Provider::Const(src), Provider::Const(len)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_copy_from_exact(dst, src, len))?;
+            }
+            (Provider::Const(dst), Provider::Register(src), Provider::Register(len)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_copy_to(dst, src, len))?;
+            }
+            (Provider::Const(dst), Provider::Register(src), Provider::Const(len)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_copy_to_exact(dst, src, len))?;
+            }
+            (Provider::Const(dst), Provider::Const(src), Provider::Register(len)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_copy_from_to(dst, src, len))?;
+            }
+            (Provider::Const(dst), Provider::Const(src), Provider::Const(len)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_copy_from_to_exact(dst, src, len))?;
+            }
+        };
+        self.alloc
+            .instr_encoder
+            .push_instr(Instruction::table_idx(dst_table))?;
+        self.alloc
+            .instr_encoder
+            .push_instr(Instruction::table_idx(src_table))?;
+        Ok(())
     }
 
     fn visit_table_fill(&mut self, _table: u32) -> Self::Output {

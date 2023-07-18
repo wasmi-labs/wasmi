@@ -432,6 +432,102 @@ impl Instruction {
         }
     }
 
+    /// Creates a new [`Instruction::TableCopy`] with the given `dst`, `src` and `len`.
+    pub fn table_copy(dst: Register, src: Register, len: Register) -> Instruction {
+        Self::TableCopy { dst, src, len }
+    }
+
+    /// Creates a new [`Instruction::TableCopyTo`] with the given `dst`, `src` and `len`.
+    pub fn table_copy_to(
+        dst: impl Into<Const16<u32>>,
+        src: Register,
+        len: Register,
+    ) -> Instruction {
+        Self::TableCopyTo {
+            dst: dst.into(),
+            src,
+            len,
+        }
+    }
+
+    /// Creates a new [`Instruction::TableCopyFrom`] with the given `dst`, `src` and `len`.
+    pub fn table_copy_from(
+        dst: Register,
+        src: impl Into<Const16<u32>>,
+        len: Register,
+    ) -> Instruction {
+        Self::TableCopyFrom {
+            dst,
+            src: src.into(),
+            len,
+        }
+    }
+
+    /// Creates a new [`Instruction::TableCopyFromTo`] with the given `dst`, `src` and `len`.
+    pub fn table_copy_from_to(
+        dst: impl Into<Const16<u32>>,
+        src: impl Into<Const16<u32>>,
+        len: Register,
+    ) -> Instruction {
+        Self::TableCopyFromTo {
+            dst: dst.into(),
+            src: src.into(),
+            len,
+        }
+    }
+
+    /// Creates a new [`Instruction::TableCopyExact`] with the given `dst`, `src` and `len`.
+    pub fn table_copy_exact(
+        dst: Register,
+        src: Register,
+        len: impl Into<Const16<u32>>,
+    ) -> Instruction {
+        Self::TableCopyExact {
+            dst,
+            src,
+            len: len.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::TableCopyToExact`] with the given `dst`, `src` and `len`.
+    pub fn table_copy_to_exact(
+        dst: impl Into<Const16<u32>>,
+        src: Register,
+        len: impl Into<Const16<u32>>,
+    ) -> Instruction {
+        Self::TableCopyToExact {
+            dst: dst.into(),
+            src,
+            len: len.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::TableCopyFromExact`] with the given `dst`, `src` and `len`.
+    pub fn table_copy_from_exact(
+        dst: Register,
+        src: impl Into<Const16<u32>>,
+        len: impl Into<Const16<u32>>,
+    ) -> Instruction {
+        Self::TableCopyFromExact {
+            dst,
+            src: src.into(),
+            len: len.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::TableCopyFromToExact`] with the given `dst`, `src` and `len`.
+    pub fn table_copy_from_to_exact(
+        dst: impl Into<Const16<u32>>,
+        src: impl Into<Const16<u32>>,
+        len: impl Into<Const16<u32>>,
+    ) -> Instruction {
+        Self::TableCopyFromToExact {
+            dst: dst.into(),
+            src: src.into(),
+            len: len.into(),
+        }
+    }
+
     constructor_for! {
         // Load
 
