@@ -385,9 +385,9 @@ impl Instruction {
         }
     }
 
-    /// Creates a new [`Instruction::TableGet`] with the given `result` and `index`.
-    pub fn table_idx(index: impl Into<TableIdx>) -> Instruction {
-        Self::TableIdx(index.into())
+    /// Creates a new [`Instruction::TableGet`] with the given `result` and `table`.
+    pub fn table_idx(table: impl Into<TableIdx>) -> Instruction {
+        Self::TableIdx(table.into())
     }
 
     /// Creates a new [`Instruction::TableGet`] with the given `result` and `index`.
@@ -400,6 +400,14 @@ impl Instruction {
         Self::TableGetImm {
             result,
             index: index.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::TableSize`] with the given `result` and `table`.
+    pub fn table_size(result: Register, table: impl Into<TableIdx>) -> Instruction {
+        Self::TableSize {
+            result,
+            table: table.into(),
         }
     }
 

@@ -3054,7 +3054,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         todo!()
     }
 
-    fn visit_table_size(&mut self, _table: u32) -> Self::Output {
-        todo!()
+    fn visit_table_size(&mut self, table: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let result = self.alloc.stack.push_dynamic()?;
+        self.alloc
+            .instr_encoder
+            .push_instr(Instruction::table_size(result, table))?;
+        Ok(())
     }
 }
