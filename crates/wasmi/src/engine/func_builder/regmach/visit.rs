@@ -3041,15 +3041,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_table_get(&mut self, table: u32) -> Self::Output {
         bail_unreachable!(self);
-        match self.alloc.stack.pop() {
+        let index = self.alloc.stack.pop();
+        let result = self.alloc.stack.push_dynamic()?;
+        match index {
             TypedProvider::Register(index) => {
-                let result = self.alloc.stack.push_dynamic()?;
                 self.alloc
                     .instr_encoder
                     .push_instr(Instruction::table_get(result, index))?;
             }
             TypedProvider::Const(index) => {
-                let result = self.alloc.stack.push_dynamic()?;
                 self.alloc
                     .instr_encoder
                     .push_instr(Instruction::table_get_imm(result, u32::from(index)))?;
