@@ -19,8 +19,6 @@ pub struct TranslationTest {
     config: Config,
     /// The expected functions and their instructions.
     expected_funcs: Vec<ExpectedFunc>,
-    /// The expected constant values in the constant pool.
-    expected_crefs: Vec<ExpectedCref>,
     /// Is `true` if the [`TranslationTest`] has been run at least once.
     has_run: AtomicBool,
 }
@@ -160,25 +158,6 @@ impl ExpectedFunc {
     }
 }
 
-/// An entry for an expected constant value stored in the pool of constant values.
-#[derive(Debug)]
-pub struct ExpectedCref {
-    /// The [`ConstRef`] identifying the constant value under test.
-    pub cref: ConstRef,
-    /// The expected value of the constant value under test.
-    pub value: UntypedValue,
-}
-
-impl ExpectedCref {
-    /// Create a new [`ExpectedConst`] for `cref` expecting `value`.
-    pub fn new(cref: ConstRef, value: impl Into<UntypedValue>) -> Self {
-        Self {
-            cref,
-            value: value.into(),
-        }
-    }
-}
-
 impl TranslationTest {
     /// Creates a new [`TranslationTest`] for the given Webassembly `bytes`.
     #[must_use]
@@ -192,7 +171,6 @@ impl TranslationTest {
             wasm: bytes.as_ref().into(),
             config,
             expected_funcs: Vec::new(),
-            expected_crefs: Vec::new(),
             has_run: AtomicBool::from(false),
         }
     }
@@ -210,16 +188,6 @@ impl TranslationTest {
     /// Returns the sequence of [`ExpectedFunc`] for the test case.
     fn expected_funcs(&self) -> &[ExpectedFunc] {
         &self.expected_funcs
-    }
-
-    /// Returns all [`ExpectedConst`] for the test case.
-    ///
-    /// # Note
-    ///
-    /// We are going to deprecate this function over time
-    /// since it was superseeded by [`TranslationTest::expected_consts`].
-    fn expected_crefs(&self) -> &[ExpectedCref] {
-        &self.expected_crefs
     }
 
     /// Add an expected function with its instructions.
@@ -240,15 +208,6 @@ impl TranslationTest {
         self
     }
 
-    /// Add an expected constant value stored in the constant pool.
-    pub fn expect_cref<T>(&mut self, cref: ConstRef, value: T) -> &mut Self
-    where
-        T: Into<UntypedValue>,
-    {
-        self.expected_crefs.push(ExpectedCref::new(cref, value));
-        self
-    }
-
     /// Runs the [`TranslationTest`].
     ///
     /// # Panics
@@ -259,7 +218,6 @@ impl TranslationTest {
         let module = create_module(self.config(), self.wasm());
         let engine = module.engine();
         self.assert_funcs(engine, &module);
-        self.assert_crefs(engine);
     }
 
     /// Asserts that all expected functions of the translated Wasm module are as expected.
@@ -277,21 +235,6 @@ impl TranslationTest {
             module.internal_funcs().zip(self.expected_funcs())
         {
             expected_func.assert_func(engine, func_type, compiled_func);
-        }
-    }
-
-    /// Asserts that all expected constant values of the translated Wasm module are as expected.
-    fn assert_crefs(&self, engine: &Engine) {
-        for expected_const in self.expected_crefs() {
-            let cref = expected_const.cref;
-            let actual_value = engine
-                .get_const(cref)
-                .unwrap_or_else(|| panic!("missing entry for expected constant value: {cref:?}"));
-            let expected_value = expected_const.value;
-            assert_eq!(
-                actual_value, expected_value,
-                "{cref:?} (= {actual_value:?}) fails to match expected value {expected_value:?}",
-            );
         }
     }
 }
