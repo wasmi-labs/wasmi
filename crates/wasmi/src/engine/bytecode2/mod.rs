@@ -452,9 +452,9 @@ pub enum Instruction {
         /// The register storing the result of the instruction.
         result: Register,
         /// The register storing the index of the table element to get.
-        index: Const32<u32>,
+        index: Register,
     },
-    /// A Wasm `table.get` immediate instruction: `result = table[index]`
+    /// Variant of [`Instruction::TableGet`] with constant `index` value.
     ///
     /// # Encoding
     ///
@@ -462,7 +462,7 @@ pub enum Instruction {
     TableGetImm {
         /// The register storing the result of the instruction.
         result: Register,
-        /// The index of the table element to get.
+        /// The constant `index` value of the table element to get.
         index: Const32<u32>,
     },
 

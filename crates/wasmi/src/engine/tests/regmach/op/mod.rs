@@ -11,6 +11,7 @@ mod loop_;
 mod return_;
 mod select;
 mod store;
+mod table;
 mod unary;
 
 use super::{

@@ -16,7 +16,11 @@ use super::{
     StoreOffset16Instr,
     UnaryInstr,
 };
-use crate::engine::{bytecode::BranchOffset, bytecode2, const_pool::ConstRef};
+use crate::engine::{
+    bytecode::{BranchOffset, TableIdx},
+    bytecode2,
+    const_pool::ConstRef,
+};
 
 macro_rules! constructor_for {
     (
@@ -378,6 +382,24 @@ impl Instruction {
         Self::SelectF64Imm32 {
             result_or_condition,
             lhs_or_rhs: lhs_or_rhs.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::TableGet`] with the given `result` and `index`.
+    pub fn table_idx(index: impl Into<TableIdx>) -> Instruction {
+        Self::TableIdx(index.into())
+    }
+
+    /// Creates a new [`Instruction::TableGet`] with the given `result` and `index`.
+    pub fn table_get(result: Register, index: Register) -> Instruction {
+        Self::TableGet { result, index }
+    }
+
+    /// Creates a new [`Instruction::TableGetImm`] with the given `result` and `index`.
+    pub fn table_get_imm(result: Register, index: impl Into<Const32<u32>>) -> Instruction {
+        Self::TableGetImm {
+            result,
+            index: index.into(),
         }
     }
 

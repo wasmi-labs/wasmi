@@ -3024,8 +3024,26 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         todo!()
     }
 
-    fn visit_table_get(&mut self, _table: u32) -> Self::Output {
-        todo!()
+    fn visit_table_get(&mut self, table: u32) -> Self::Output {
+        bail_unreachable!(self);
+        match self.alloc.stack.pop() {
+            TypedProvider::Register(index) => {
+                let result = self.alloc.stack.push_dynamic()?;
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_get(result, index))?;
+            }
+            TypedProvider::Const(index) => {
+                let result = self.alloc.stack.push_dynamic()?;
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_get_imm(result, u32::from(index)))?;
+            }
+        }
+        self.alloc
+            .instr_encoder
+            .push_instr(Instruction::table_idx(table))?;
+        Ok(())
     }
 
     fn visit_table_set(&mut self, _table: u32) -> Self::Output {
