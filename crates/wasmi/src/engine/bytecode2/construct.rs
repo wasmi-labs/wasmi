@@ -629,6 +629,50 @@ impl Instruction {
         }
     }
 
+    /// Creates a new [`Instruction::TableFill`] with the given `dst`, `len` and `value`.
+    pub fn table_fill(dst: Register, len: Register, value: Register) -> Instruction {
+        Self::TableFill { dst, len, value }
+    }
+
+    /// Creates a new [`Instruction::TableFillAt`] with the given `dst`, `len` and `value`.
+    pub fn table_fill_at(
+        dst: impl Into<Const16<u32>>,
+        len: Register,
+        value: Register,
+    ) -> Instruction {
+        Self::TableFillAt {
+            dst: dst.into(),
+            len,
+            value,
+        }
+    }
+
+    /// Creates a new [`Instruction::TableFillExact`] with the given `dst`, `len` and `value`.
+    pub fn table_fill_exact(
+        dst: Register,
+        len: impl Into<Const16<u32>>,
+        value: Register,
+    ) -> Instruction {
+        Self::TableFillExact {
+            dst,
+            len: len.into(),
+            value,
+        }
+    }
+
+    /// Creates a new [`Instruction::TableFillAtExact`] with the given `dst`, `len` and `value`.
+    pub fn table_fill_at_exact(
+        dst: impl Into<Const16<u32>>,
+        len: impl Into<Const16<u32>>,
+        value: Register,
+    ) -> Instruction {
+        Self::TableFillAtExact {
+            dst: dst.into(),
+            len: len.into(),
+            value,
+        }
+    }
+
     constructor_for! {
         // Load
 

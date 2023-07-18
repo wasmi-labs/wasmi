@@ -3141,8 +3141,41 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         Ok(())
     }
 
-    fn visit_table_fill(&mut self, _table: u32) -> Self::Output {
-        todo!()
+    fn visit_table_fill(&mut self, table: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let (dst, value, len) = self.alloc.stack.pop3();
+        let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
+        let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
+        let value = match value {
+            TypedProvider::Register(value) => value,
+            TypedProvider::Const(value) => self.alloc.stack.alloc_const(value)?,
+        };
+        match (dst, len) {
+            (Provider::Register(dst), Provider::Register(len)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_fill(dst, len, value))?;
+            }
+            (Provider::Register(dst), Provider::Const(len)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_fill_exact(dst, len, value))?;
+            }
+            (Provider::Const(dst), Provider::Register(len)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_fill_at(dst, len, value))?;
+            }
+            (Provider::Const(dst), Provider::Const(len)) => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_fill_at_exact(dst, len, value))?;
+            }
+        };
+        self.alloc
+            .instr_encoder
+            .push_instr(Instruction::table_idx(table))?;
+        Ok(())
     }
 
     fn visit_table_get(&mut self, table: u32) -> Self::Output {
