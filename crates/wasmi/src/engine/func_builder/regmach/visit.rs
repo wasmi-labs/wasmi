@@ -830,8 +830,17 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         )
     }
 
-    fn visit_memory_size(&mut self, _mem: u32, _mem_byte: u8) -> Self::Output {
-        todo!()
+    fn visit_memory_size(&mut self, mem: u32, _mem_byte: u8) -> Self::Output {
+        debug_assert_eq!(
+            mem, 0,
+            "wasmi does not yet support the multi-memory Wasm proposal"
+        );
+        bail_unreachable!(self);
+        let result = self.alloc.stack.push_dynamic()?;
+        self.alloc
+            .instr_encoder
+            .push_instr(Instruction::memory_size(result))?;
+        Ok(())
     }
 
     fn visit_memory_grow(&mut self, _mem: u32, _mem_byte: u8) -> Self::Output {

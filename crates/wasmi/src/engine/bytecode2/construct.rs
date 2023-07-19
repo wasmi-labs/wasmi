@@ -663,6 +663,11 @@ impl Instruction {
         }
     }
 
+    /// Creates a new [`Instruction::MemorySize`] with the given `result`.
+    pub fn memory_size(result: Register) -> Self {
+        Self::MemorySize { result }
+    }
+
     constructor_for! {
         // Load
 

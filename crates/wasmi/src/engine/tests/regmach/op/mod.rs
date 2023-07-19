@@ -8,6 +8,7 @@ mod global_set;
 mod if_;
 mod load;
 mod loop_;
+mod memory;
 mod return_;
 mod select;
 mod store;
