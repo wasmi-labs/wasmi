@@ -3224,6 +3224,19 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             TypedProvider::Const(value) => self.alloc.stack.alloc_const(value)?,
         };
         let result = self.alloc.stack.push_dynamic()?;
+        if let Provider::Const(delta) = delta {
+            if u32::from(delta) == 0 {
+                // Case: growing by 0 elements.
+                //
+                // Since `table.grow` returns the `table.size` before the
+                // operation a `table.grow` with `delta` of 0 can be translated
+                // as `table.size` instruction instead.
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::table_size(result, table))?;
+                return Ok(());
+            }
+        }
         let instr = match delta {
             Provider::Register(delta) => Instruction::table_grow(result, delta, value),
             Provider::Const(delta) => Instruction::table_grow_imm(result, delta, value),

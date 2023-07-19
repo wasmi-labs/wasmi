@@ -70,10 +70,37 @@ fn imm16() {
         test_imm16(ValueType::FuncRef, delta);
         test_imm16(ValueType::ExternRef, delta);
     }
-    test_for(0);
     test_for(1);
+    test_for(42);
     test_for(u32::from(u16::MAX) - 1);
     test_for(u32::from(u16::MAX));
+}
+
+fn test_imm_zero(ty: ValueType) {
+    let display_ty = DisplayValueType::from(ty);
+    let wasm = wat2wasm(&format!(
+        r"
+        (module
+            (table $t 10 {display_ty})
+            (func (param $value {display_ty}) (result i32)
+                (local.get $value)
+                (i32.const 0)
+                (table.grow $t)
+            )
+        )",
+    ));
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::table_size(Register::from_i16(1), 0),
+            Instruction::return_reg(Register::from_i16(1)),
+        ])
+        .run();
+}
+
+#[test]
+fn imm_zero() {
+    test_imm_zero(ValueType::FuncRef);
+    test_imm_zero(ValueType::ExternRef);
 }
 
 fn test_imm(ty: ValueType, delta: u32) {
