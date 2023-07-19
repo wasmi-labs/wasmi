@@ -17,7 +17,7 @@ use super::{
     UnaryInstr,
 };
 use crate::engine::{
-    bytecode::{BranchOffset, ElementSegmentIdx, FuncIdx, TableIdx},
+    bytecode::{BranchOffset, DataSegmentIdx, ElementSegmentIdx, FuncIdx, TableIdx},
     bytecode2,
     const_pool::ConstRef,
 };
@@ -393,6 +393,11 @@ impl Instruction {
         }
     }
 
+    /// Creates a new [`Instruction::DataSegmentIdx`] from the given `index`.
+    pub fn data_idx(index: impl Into<DataSegmentIdx>) -> Self {
+        Self::DataSegmentIdx(index.into())
+    }
+
     /// Creates a new [`Instruction::ElementSegmentIdx`] from the given `index`.
     pub fn elem_idx(index: impl Into<ElementSegmentIdx>) -> Self {
         Self::ElementSegmentIdx(index.into())
@@ -759,6 +764,90 @@ impl Instruction {
         len: impl Into<Const16<u32>>,
     ) -> Self {
         Self::MemoryCopyFromToExact {
+            dst: dst.into(),
+            src: src.into(),
+            len: len.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::MemoryInit`] with the given `dst`, `src` and `len`.
+    pub fn memory_init(dst: Register, src: Register, len: Register) -> Self {
+        Self::MemoryInit { dst, src, len }
+    }
+
+    /// Creates a new [`Instruction::MemoryInitTo`] with the given `dst`, `src` and `len`.
+    pub fn memory_init_to(dst: impl Into<Const16<u32>>, src: Register, len: Register) -> Self {
+        Self::MemoryInitTo {
+            dst: dst.into(),
+            src,
+            len,
+        }
+    }
+
+    /// Creates a new [`Instruction::MemoryInitFrom`] with the given `dst`, `src` and `len`.
+    pub fn memory_init_from(dst: Register, src: impl Into<Const16<u32>>, len: Register) -> Self {
+        Self::MemoryInitFrom {
+            dst,
+            src: src.into(),
+            len,
+        }
+    }
+
+    /// Creates a new [`Instruction::MemoryInitFromTo`] with the given `dst`, `src` and `len`.
+    pub fn memory_init_from_to(
+        dst: impl Into<Const16<u32>>,
+        src: impl Into<Const16<u32>>,
+        len: Register,
+    ) -> Self {
+        Self::MemoryInitFromTo {
+            dst: dst.into(),
+            src: src.into(),
+            len,
+        }
+    }
+
+    /// Creates a new [`Instruction::MemoryInitExact`] with the given `dst`, `src` and `len`.
+    pub fn memory_init_exact(dst: Register, src: Register, len: impl Into<Const16<u32>>) -> Self {
+        Self::MemoryInitExact {
+            dst,
+            src,
+            len: len.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::MemoryInitToExact`] with the given `dst`, `src` and `len`.
+    pub fn memory_init_to_exact(
+        dst: impl Into<Const16<u32>>,
+        src: Register,
+        len: impl Into<Const16<u32>>,
+    ) -> Self {
+        Self::MemoryInitToExact {
+            dst: dst.into(),
+            src,
+            len: len.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::MemoryInitFromExact`] with the given `dst`, `src` and `len`.
+    pub fn memory_init_from_exact(
+        dst: Register,
+        src: impl Into<Const16<u32>>,
+        len: impl Into<Const16<u32>>,
+    ) -> Self {
+        Self::MemoryInitFromExact {
+            dst,
+            src: src.into(),
+            len: len.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::MemoryInitFromToExact`] with the given `dst`, `src` and `len`.
+    pub fn memory_init_from_to_exact(
+        dst: impl Into<Const16<u32>>,
+        src: impl Into<Const16<u32>>,
+        len: impl Into<Const16<u32>>,
+    ) -> Self {
+        Self::MemoryInitFromToExact {
             dst: dst.into(),
             src: src.into(),
             len: len.into(),

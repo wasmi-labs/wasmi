@@ -1101,169 +1101,117 @@ pub enum Instruction {
     ///
     /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
     MemoryInit {
-        /// The start index of the memory to initialize.
+        /// The start index of the `dst` memory.
         dst: Register,
-        /// The start index of the data segment.
+        /// The start index of the `src` data segment.
         src: Register,
         /// The number of bytes to initialize.
         len: Register,
     },
-    /// Wasm `memory.init <data>` instruction.
-    ///
-    /// Initializes bytes of `memory[dst..dst+len]` from `data[src..src+len]`.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::MemoryInit`] with constant value for
-    ///
-    /// - `len` number of initialized bytes
+    /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `dst` index.
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::Const32`]; the number of bytes to initialize
-    /// 1. [`Instruction::DataSegmentIdx`]: the data segment to initialize the memory
-    MemoryInitRrc {
-        /// The start index of the memory to initialize.
-        dst: Register,
-        /// The start index of the data segment.
+    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    MemoryInitTo {
+        /// The start index of the `dst` memory.
+        dst: Const16<u32>,
+        /// The start index of the `src` data segment.
         src: Register,
-    },
-    /// Wasm `memory.init <data>` instruction.
-    ///
-    /// Initializes bytes of `memory[dst..dst+len]` from `data[src..src+len]`.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::MemoryInit`] with constant value for
-    ///
-    /// - `src` start index of the data segment
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::Const32`]: the start index of the data segment
-    /// 1. [`Instruction::DataSegmentIdx`]: the data segment to initialize the memory
-    MemoryInitRcr {
-        /// The start index of the memory to initialize.
-        dst: Register,
-        /// The number of bytes to initialize.
+        /// The number of initialized bytes.
         len: Register,
     },
-    /// Wasm `memory.init <data>` instruction.
-    ///
-    /// Initializes bytes of `memory[dst..dst+len]` from `data[src..src+len]`.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::MemoryInit`] with constant value for
-    ///
-    /// - `src` start index of the data segment
-    /// - `len` number of initialized bytes
+    /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `src` index.
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::Const32`]; the number of bytes to initialize
-    /// 1. [`Instruction::DataSegmentIdx`]: the data segment to initialize the memory
-    MemoryInitRcc {
-        /// The start index of the memory to initialize.
+    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    MemoryInitFrom {
+        /// The start index of the `dst` memory.
         dst: Register,
-        /// The start index of the data segment.
-        src: AnyConst32,
-    },
-    /// Wasm `memory.init <data>` instruction.
-    ///
-    /// Initializes bytes of `memory[dst..dst+len]` from `data[src..src+len]`.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::MemoryInit`] with constant value for
-    ///
-    /// - `dst` start index of the initialized memory
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::Const32`]: the start index of the memory to initialize
-    /// 1. [`Instruction::DataSegmentIdx`]: the data segment to initialize the memory
-    MemoryInitCrr {
-        /// The start index of the data segment.
-        src: Register,
-        /// The number of bytes to initialize.
+        /// The start index of the `src` data segment.
+        src: Const16<u32>,
+        /// The number of initialized bytes.
         len: Register,
     },
-    /// Wasm `memory.init <data>` instruction.
-    ///
-    /// Initializes bytes of `memory[dst..dst+len]` from `data[src..src+len]`.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::MemoryInit`] with constant value for
-    ///
-    /// - `dst` start index of the initialized memory
-    /// - `len` number of initialized bytes
+    /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `dst` and `src` indices.
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::Const32`]; the number of bytes to initialize
-    /// 1. [`Instruction::DataSegmentIdx`]: the data segment to initialize the memory
-    MemoryInitCrc {
-        /// The start index of the memory to initialize.
-        dst: AnyConst32,
-        /// The start index of the data segment.
-        src: Register,
-    },
-    /// Wasm `memory.init <data>` instruction.
-    ///
-    /// Initializes bytes of `memory[dst..dst+len]` from `data[src..src+len]`.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::MemoryInit`] with constant value for
-    ///
-    /// - `dst` start index of the initialized memory
-    /// - `src` start index of the data segment
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::Const32`]: the start index of the data segment
-    /// 1. [`Instruction::DataSegmentIdx`]: the data segment to initialize the memory
-    MemoryInitCcr {
-        /// The start index of the memory to initialize.
-        dst: AnyConst32,
-        /// The number of bytes to initialize.
+    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    MemoryInitFromTo {
+        /// The start index of the `dst` memory.
+        dst: Const16<u32>,
+        /// The start index of the `src` data segment.
+        src: Const16<u32>,
+        /// The number of initialized bytes.
         len: Register,
     },
-
-    /// Wasm `memory.init <elem>` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::MemoryInit`] with constant value for
-    ///
-    /// - `dst` start index of the initialized memory
-    /// - `src` start index of the data segment
-    /// - `len` number of initialized bytes
+    /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` field.
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::Const32`]: the start index of the data segment
-    /// 1. [`Instruction::Const32`]; the number of bytes to initialize
-    /// 1. [`Instruction::DataSegmentIdx`]: the data segment to initialize the memory
-    MemoryInitCcc {
-        /// The start index of the memory to initialize.
-        dst: AnyConst32,
+    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    MemoryInitExact {
+        /// The start index of the `dst` memory.
+        dst: Register,
+        /// The start index of the `src` data segment.
+        src: Register,
+        /// The number of initialized bytes.
+        len: Const16<u32>,
+    },
+    /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` and `dst`.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    MemoryInitToExact {
+        /// The start index of the `dst` memory.
+        dst: Const16<u32>,
+        /// The start index of the `src` data segment.
+        src: Register,
+        /// The number of initialized bytes.
+        len: Const16<u32>,
+    },
+    /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` and `src`.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    MemoryInitFromExact {
+        /// The start index of the `dst` memory.
+        dst: Register,
+        /// The start index of the `src` data segment.
+        src: Const16<u32>,
+        /// The number of initialized bytes.
+        len: Const16<u32>,
+    },
+    /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` and `src`.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    MemoryInitFromToExact {
+        /// The start index of the `dst` memory.
+        dst: Const16<u32>,
+        /// The start index of the `src` data segment.
+        src: Const16<u32>,
+        /// The number of initialized bytes.
+        len: Const16<u32>,
     },
 
     /// Wasm `global.get` equivalent `wasmi` instruction.

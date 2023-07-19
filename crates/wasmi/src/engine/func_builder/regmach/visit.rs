@@ -3033,8 +3033,49 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         )
     }
 
-    fn visit_memory_init(&mut self, _data_index: u32, _mem: u32) -> Self::Output {
-        todo!()
+    fn visit_memory_init(&mut self, data_index: u32, _mem: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let (dst, src, len) = self.alloc.stack.pop3();
+        if let Provider::Const(len) = len {
+            if u32::from(len) == 0 {
+                // Case: `memory.copy` with `len` of zero is a no-op.
+                return Ok(());
+            }
+        }
+        let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
+        let src = <Provider<Const16<u32>>>::new(src, &mut self.alloc.stack)?;
+        let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
+        let instr = match (dst, src, len) {
+            (Provider::Register(dst), Provider::Register(src), Provider::Register(len)) => {
+                Instruction::memory_init(dst, src, len)
+            }
+            (Provider::Register(dst), Provider::Register(src), Provider::Const(len)) => {
+                Instruction::memory_init_exact(dst, src, len)
+            }
+            (Provider::Register(dst), Provider::Const(src), Provider::Register(len)) => {
+                Instruction::memory_init_from(dst, src, len)
+            }
+            (Provider::Register(dst), Provider::Const(src), Provider::Const(len)) => {
+                Instruction::memory_init_from_exact(dst, src, len)
+            }
+            (Provider::Const(dst), Provider::Register(src), Provider::Register(len)) => {
+                Instruction::memory_init_to(dst, src, len)
+            }
+            (Provider::Const(dst), Provider::Register(src), Provider::Const(len)) => {
+                Instruction::memory_init_to_exact(dst, src, len)
+            }
+            (Provider::Const(dst), Provider::Const(src), Provider::Register(len)) => {
+                Instruction::memory_init_from_to(dst, src, len)
+            }
+            (Provider::Const(dst), Provider::Const(src), Provider::Const(len)) => {
+                Instruction::memory_init_from_to_exact(dst, src, len)
+            }
+        };
+        self.alloc.instr_encoder.push_instr(instr)?;
+        self.alloc
+            .instr_encoder
+            .push_instr(Instruction::data_idx(data_index))?;
+        Ok(())
     }
 
     fn visit_data_drop(&mut self, data_index: u32) -> Self::Output {
