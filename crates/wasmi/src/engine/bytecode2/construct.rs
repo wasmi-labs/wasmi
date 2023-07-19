@@ -386,7 +386,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::RefFunc`] with the given `result` and `func`.
-    pub fn ref_func(result: Register, func: impl Into<FuncIdx>) -> Instruction {
+    pub fn ref_func(result: Register, func: impl Into<FuncIdx>) -> Self {
         Self::RefFunc {
             result,
             func: func.into(),
@@ -394,22 +394,22 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::ElementSegmentIdx`] from the given `index`.
-    pub fn elem_idx(index: impl Into<ElementSegmentIdx>) -> Instruction {
+    pub fn elem_idx(index: impl Into<ElementSegmentIdx>) -> Self {
         Self::ElementSegmentIdx(index.into())
     }
 
     /// Creates a new [`Instruction::TableIdx`] from the given `index`.
-    pub fn table_idx(index: impl Into<TableIdx>) -> Instruction {
+    pub fn table_idx(index: impl Into<TableIdx>) -> Self {
         Self::TableIdx(index.into())
     }
 
     /// Creates a new [`Instruction::TableGet`] with the given `result` and `index`.
-    pub fn table_get(result: Register, index: Register) -> Instruction {
+    pub fn table_get(result: Register, index: Register) -> Self {
         Self::TableGet { result, index }
     }
 
     /// Creates a new [`Instruction::TableGetImm`] with the given `result` and `index`.
-    pub fn table_get_imm(result: Register, index: impl Into<Const32<u32>>) -> Instruction {
+    pub fn table_get_imm(result: Register, index: impl Into<Const32<u32>>) -> Self {
         Self::TableGetImm {
             result,
             index: index.into(),
@@ -417,7 +417,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableSize`] with the given `result` and `table`.
-    pub fn table_size(result: Register, table: impl Into<TableIdx>) -> Instruction {
+    pub fn table_size(result: Register, table: impl Into<TableIdx>) -> Self {
         Self::TableSize {
             result,
             table: table.into(),
@@ -425,12 +425,12 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableSet`] with the given `index` and `value`.
-    pub fn table_set(index: Register, value: Register) -> Instruction {
+    pub fn table_set(index: Register, value: Register) -> Self {
         Self::TableSet { index, value }
     }
 
     /// Creates a new [`Instruction::TableSetAt`] with the given `index` and `value`.
-    pub fn table_set_at(index: impl Into<Const32<u32>>, value: Register) -> Instruction {
+    pub fn table_set_at(index: impl Into<Const32<u32>>, value: Register) -> Self {
         Self::TableSetAt {
             index: index.into(),
             value,
@@ -438,7 +438,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableCopy`] with the given `dst`, `src` and `len`.
-    pub fn table_copy(dst: Register, src: Register, len: Register) -> Instruction {
+    pub fn table_copy(dst: Register, src: Register, len: Register) -> Self {
         Self::TableCopy { dst, src, len }
     }
 
@@ -447,7 +447,7 @@ impl Instruction {
         dst: impl Into<Const16<u32>>,
         src: Register,
         len: Register,
-    ) -> Instruction {
+    ) -> Self {
         Self::TableCopyTo {
             dst: dst.into(),
             src,
@@ -460,7 +460,7 @@ impl Instruction {
         dst: Register,
         src: impl Into<Const16<u32>>,
         len: Register,
-    ) -> Instruction {
+    ) -> Self {
         Self::TableCopyFrom {
             dst,
             src: src.into(),
@@ -473,7 +473,7 @@ impl Instruction {
         dst: impl Into<Const16<u32>>,
         src: impl Into<Const16<u32>>,
         len: Register,
-    ) -> Instruction {
+    ) -> Self {
         Self::TableCopyFromTo {
             dst: dst.into(),
             src: src.into(),
@@ -486,7 +486,7 @@ impl Instruction {
         dst: Register,
         src: Register,
         len: impl Into<Const16<u32>>,
-    ) -> Instruction {
+    ) -> Self {
         Self::TableCopyExact {
             dst,
             src,
@@ -499,7 +499,7 @@ impl Instruction {
         dst: impl Into<Const16<u32>>,
         src: Register,
         len: impl Into<Const16<u32>>,
-    ) -> Instruction {
+    ) -> Self {
         Self::TableCopyToExact {
             dst: dst.into(),
             src,
@@ -512,7 +512,7 @@ impl Instruction {
         dst: Register,
         src: impl Into<Const16<u32>>,
         len: impl Into<Const16<u32>>,
-    ) -> Instruction {
+    ) -> Self {
         Self::TableCopyFromExact {
             dst,
             src: src.into(),
@@ -525,7 +525,7 @@ impl Instruction {
         dst: impl Into<Const16<u32>>,
         src: impl Into<Const16<u32>>,
         len: impl Into<Const16<u32>>,
-    ) -> Instruction {
+    ) -> Self {
         Self::TableCopyFromToExact {
             dst: dst.into(),
             src: src.into(),
@@ -534,7 +534,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableInit`] with the given `dst`, `src` and `len`.
-    pub fn table_init(dst: Register, src: Register, len: Register) -> Instruction {
+    pub fn table_init(dst: Register, src: Register, len: Register) -> Self {
         Self::TableInit { dst, src, len }
     }
 
@@ -543,7 +543,7 @@ impl Instruction {
         dst: impl Into<Const16<u32>>,
         src: Register,
         len: Register,
-    ) -> Instruction {
+    ) -> Self {
         Self::TableInitTo {
             dst: dst.into(),
             src,
@@ -556,7 +556,7 @@ impl Instruction {
         dst: Register,
         src: impl Into<Const16<u32>>,
         len: Register,
-    ) -> Instruction {
+    ) -> Self {
         Self::TableInitFrom {
             dst,
             src: src.into(),
@@ -569,7 +569,7 @@ impl Instruction {
         dst: impl Into<Const16<u32>>,
         src: impl Into<Const16<u32>>,
         len: Register,
-    ) -> Instruction {
+    ) -> Self {
         Self::TableInitFromTo {
             dst: dst.into(),
             src: src.into(),
@@ -582,7 +582,7 @@ impl Instruction {
         dst: Register,
         src: Register,
         len: impl Into<Const16<u32>>,
-    ) -> Instruction {
+    ) -> Self {
         Self::TableInitExact {
             dst,
             src,
@@ -595,7 +595,7 @@ impl Instruction {
         dst: impl Into<Const16<u32>>,
         src: Register,
         len: impl Into<Const16<u32>>,
-    ) -> Instruction {
+    ) -> Self {
         Self::TableInitToExact {
             dst: dst.into(),
             src,
@@ -608,7 +608,7 @@ impl Instruction {
         dst: Register,
         src: impl Into<Const16<u32>>,
         len: impl Into<Const16<u32>>,
-    ) -> Instruction {
+    ) -> Self {
         Self::TableInitFromExact {
             dst,
             src: src.into(),
@@ -621,7 +621,7 @@ impl Instruction {
         dst: impl Into<Const16<u32>>,
         src: impl Into<Const16<u32>>,
         len: impl Into<Const16<u32>>,
-    ) -> Instruction {
+    ) -> Self {
         Self::TableInitFromToExact {
             dst: dst.into(),
             src: src.into(),
@@ -630,7 +630,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableFill`] with the given `dst`, `len` and `value`.
-    pub fn table_fill(dst: Register, len: Register, value: Register) -> Instruction {
+    pub fn table_fill(dst: Register, len: Register, value: Register) -> Self {
         Self::TableFill { dst, len, value }
     }
 
@@ -639,7 +639,7 @@ impl Instruction {
         dst: impl Into<Const16<u32>>,
         len: Register,
         value: Register,
-    ) -> Instruction {
+    ) -> Self {
         Self::TableFillAt {
             dst: dst.into(),
             len,
@@ -652,7 +652,7 @@ impl Instruction {
         dst: Register,
         len: impl Into<Const16<u32>>,
         value: Register,
-    ) -> Instruction {
+    ) -> Self {
         Self::TableFillExact {
             dst,
             len: len.into(),
@@ -665,7 +665,7 @@ impl Instruction {
         dst: impl Into<Const16<u32>>,
         len: impl Into<Const16<u32>>,
         value: Register,
-    ) -> Instruction {
+    ) -> Self {
         Self::TableFillAtExact {
             dst: dst.into(),
             len: len.into(),
@@ -674,7 +674,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableGrow`] with the given `result`, `delta` and `value`.
-    pub fn table_grow(result: Register, delta: Register, value: Register) -> Instruction {
+    pub fn table_grow(result: Register, delta: Register, value: Register) -> Self {
         Self::TableGrow {
             result,
             delta,
@@ -687,7 +687,7 @@ impl Instruction {
         result: Register,
         delta: impl Into<Const16<u32>>,
         value: Register,
-    ) -> Instruction {
+    ) -> Self {
         Self::TableGrowImm {
             result,
             delta: delta.into(),
