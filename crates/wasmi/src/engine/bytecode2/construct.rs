@@ -681,6 +681,90 @@ impl Instruction {
         }
     }
 
+    /// Creates a new [`Instruction::MemoryCopy`] with the given `dst`, `src` and `len`.
+    pub fn memory_copy(dst: Register, src: Register, len: Register) -> Self {
+        Self::MemoryCopy { dst, src, len }
+    }
+
+    /// Creates a new [`Instruction::MemoryCopyTo`] with the given `dst`, `src` and `len`.
+    pub fn memory_copy_to(dst: impl Into<Const16<u32>>, src: Register, len: Register) -> Self {
+        Self::MemoryCopyTo {
+            dst: dst.into(),
+            src,
+            len,
+        }
+    }
+
+    /// Creates a new [`Instruction::MemoryCopyFrom`] with the given `dst`, `src` and `len`.
+    pub fn memory_copy_from(dst: Register, src: impl Into<Const16<u32>>, len: Register) -> Self {
+        Self::MemoryCopyFrom {
+            dst,
+            src: src.into(),
+            len,
+        }
+    }
+
+    /// Creates a new [`Instruction::MemoryCopyFromTo`] with the given `dst`, `src` and `len`.
+    pub fn memory_copy_from_to(
+        dst: impl Into<Const16<u32>>,
+        src: impl Into<Const16<u32>>,
+        len: Register,
+    ) -> Self {
+        Self::MemoryCopyFromTo {
+            dst: dst.into(),
+            src: src.into(),
+            len,
+        }
+    }
+
+    /// Creates a new [`Instruction::MemoryCopyExact`] with the given `dst`, `src` and `len`.
+    pub fn memory_copy_exact(dst: Register, src: Register, len: impl Into<Const16<u32>>) -> Self {
+        Self::MemoryCopyExact {
+            dst,
+            src,
+            len: len.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::MemoryCopyToExact`] with the given `dst`, `src` and `len`.
+    pub fn memory_copy_to_exact(
+        dst: impl Into<Const16<u32>>,
+        src: Register,
+        len: impl Into<Const16<u32>>,
+    ) -> Self {
+        Self::MemoryCopyToExact {
+            dst: dst.into(),
+            src,
+            len: len.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::MemoryCopyFromExact`] with the given `dst`, `src` and `len`.
+    pub fn memory_copy_from_exact(
+        dst: Register,
+        src: impl Into<Const16<u32>>,
+        len: impl Into<Const16<u32>>,
+    ) -> Self {
+        Self::MemoryCopyFromExact {
+            dst,
+            src: src.into(),
+            len: len.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::MemoryCopyFromToExact`] with the given `dst`, `src` and `len`.
+    pub fn memory_copy_from_to_exact(
+        dst: impl Into<Const16<u32>>,
+        src: impl Into<Const16<u32>>,
+        len: impl Into<Const16<u32>>,
+    ) -> Self {
+        Self::MemoryCopyFromToExact {
+            dst: dst.into(),
+            src: src.into(),
+            len: len.into(),
+        }
+    }
+
     constructor_for! {
         // Load
 

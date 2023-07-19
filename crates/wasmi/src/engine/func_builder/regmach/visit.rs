@@ -3046,7 +3046,45 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_memory_copy(&mut self, _dst_mem: u32, _src_mem: u32) -> Self::Output {
-        todo!()
+        bail_unreachable!(self);
+        let (dst, src, len) = self.alloc.stack.pop3();
+        if let Provider::Const(len) = len {
+            if u32::from(len) == 0 {
+                // Case: `memory.copy` with `len` of zero is a no-op.
+                return Ok(());
+            }
+        }
+        let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
+        let src = <Provider<Const16<u32>>>::new(src, &mut self.alloc.stack)?;
+        let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
+        let instr = match (dst, src, len) {
+            (Provider::Register(dst), Provider::Register(src), Provider::Register(len)) => {
+                Instruction::memory_copy(dst, src, len)
+            }
+            (Provider::Register(dst), Provider::Register(src), Provider::Const(len)) => {
+                Instruction::memory_copy_exact(dst, src, len)
+            }
+            (Provider::Register(dst), Provider::Const(src), Provider::Register(len)) => {
+                Instruction::memory_copy_from(dst, src, len)
+            }
+            (Provider::Register(dst), Provider::Const(src), Provider::Const(len)) => {
+                Instruction::memory_copy_from_exact(dst, src, len)
+            }
+            (Provider::Const(dst), Provider::Register(src), Provider::Register(len)) => {
+                Instruction::memory_copy_to(dst, src, len)
+            }
+            (Provider::Const(dst), Provider::Register(src), Provider::Const(len)) => {
+                Instruction::memory_copy_to_exact(dst, src, len)
+            }
+            (Provider::Const(dst), Provider::Const(src), Provider::Register(len)) => {
+                Instruction::memory_copy_from_to(dst, src, len)
+            }
+            (Provider::Const(dst), Provider::Const(src), Provider::Const(len)) => {
+                Instruction::memory_copy_from_to_exact(dst, src, len)
+            }
+        };
+        self.alloc.instr_encoder.push_instr(instr)?;
+        Ok(())
     }
 
     fn visit_memory_fill(&mut self, _mem: u32) -> Self::Output {

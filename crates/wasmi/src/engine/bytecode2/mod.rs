@@ -927,165 +927,93 @@ pub enum Instruction {
 
     /// Wasm `memory.copy` instruction.
     ///
-    /// Copies bytes from `memory[src..src+len]` to `memory[dst..dst+len]`.
+    /// Copies elements from `memory[src..src+len]` to `memory[dst..dst+len]`.
     MemoryCopy {
-        /// The start index of the `src` memory buffer.
-        src: Register,
-        /// The start index of the `dst` memory buffer.
+        /// The start index of the `dst` memory.
         dst: Register,
-        /// The number of copied bytes.
+        /// The start index of the `src` memory.
+        src: Register,
+        /// The number of copied elements.
         len: Register,
     },
-    /// Wasm `memory.copy` instruction.
-    ///
-    /// Copies bytes from `memory[src..src+len]` to `memory[dst..dst+len]`.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::MemoryCopy`] with constant value for
-    ///
-    /// - `len` number of copied bytes
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::Const32`]: the number of copied bytes
-    MemoryCopyRrc {
-        /// The start index of the `src` memory buffer.
+    /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `dst` index.
+    MemoryCopyTo {
+        /// The start index of the `dst` memory.
+        dst: Const16<u32>,
+        /// The start index of the `src` memory.
         src: Register,
-        /// The start index of the `dst` memory buffer.
-        dst: Register,
-    },
-    /// Wasm `memory.copy` instruction.
-    ///
-    /// Copies bytes from `memory[src..src+len]` to `memory[dst..dst+len]`.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::MemoryCopy`] with constant value for
-    ///
-    /// - `dst` start index
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::Const32`]: the start index of the `dst` memory buffer
-    MemoryCopyRcr {
-        /// The start index of the `src` memory buffer.
-        src: Register,
-        /// The number of copied bytes.
+        /// The number of copied elements.
         len: Register,
     },
-    /// Wasm `memory.copy` instruction.
-    ///
-    /// Copies bytes from `memory[src..src+len]` to `memory[dst..dst+len]`.
+    /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `src` index.
+    MemoryCopyFrom {
+        /// The start index of the `dst` memory.
+        dst: Register,
+        /// The start index of the `src` memory.
+        src: Const16<u32>,
+        /// The number of copied elements.
+        len: Register,
+    },
+    /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `dst` and `src` indices.
+    MemoryCopyFromTo {
+        /// The start index of the `dst` memory.
+        dst: Const16<u32>,
+        /// The start index of the `src` memory.
+        src: Const16<u32>,
+        /// The number of copied elements.
+        len: Register,
+    },
+    /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` field.
     ///
     /// # Note
     ///
-    /// Variant of [`Instruction::MemoryCopy`] with constant value for
-    ///
-    /// - `dst` start index
-    /// - `len` number of copied bytes
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::Const32`]: the number of copied bytes
-    MemoryCopyRcc {
-        /// The start index of the `src` memory buffer.
+    /// This instruction copies _exactly_ `len` elements between the memories.
+    MemoryCopyExact {
+        /// The start index of the `dst` table.
+        dst: Register,
+        /// The start index of the `src` table.
         src: Register,
-        /// The start index of the `dst` memory buffer.
-        dst: AnyConst32,
+        /// The number of copied elements.
+        len: Const16<u32>,
     },
-    /// Wasm `memory.copy` instruction.
-    ///
-    /// Copies bytes from `memory[src..src+len]` to `memory[dst..dst+len]`.
+    /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` and `dst`.
     ///
     /// # Note
     ///
-    /// Variant of [`Instruction::MemoryCopy`] with constant value for
+    /// This instruction copies _exactly_ `len` elements between the memories.
+    MemoryCopyToExact {
+        /// The start index of the `dst` table.
+        dst: Const16<u32>,
+        /// The start index of the `src` table.
+        src: Register,
+        /// The number of copied elements.
+        len: Const16<u32>,
+    },
+    /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` and `src`.
     ///
-    /// - `src` start index
+    /// # Note
     ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::Const32`]: the start index of the `src` memory buffer
-    MemoryCopyCrr {
-        /// The start index of the `dst` memory buffer.
+    /// This instruction copies _exactly_ `len` elements between the memories.
+    MemoryCopyFromExact {
+        /// The start index of the `dst` table.
         dst: Register,
-        /// The number of copied bytes.
-        len: Register,
+        /// The start index of the `src` table.
+        src: Const16<u32>,
+        /// The number of copied elements.
+        len: Const16<u32>,
     },
-    /// Wasm `memory.copy` instruction.
-    ///
-    /// Copies bytes from `memory[src..src+len]` to `memory[dst..dst+len]`.
+    /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` and `src`.
     ///
     /// # Note
     ///
-    /// Variant of [`Instruction::MemoryCopy`] with constant value for
-    ///
-    /// - `src` start index
-    /// - `len` number of copied bytes
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::Const32`]: the number of copied bytes
-    MemoryCopyCrc {
-        /// The start index of the `src` memory buffer.
-        src: AnyConst32,
-        /// The start index of the `dst` memory buffer.
-        dst: Register,
-    },
-    /// Wasm `memory.copy` instruction.
-    ///
-    /// Copies bytes from `memory[src..src+len]` to `memory[dst..dst+len]`.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::MemoryCopy`] with constant value for
-    ///
-    /// - `src` start index
-    /// - `dst` start index
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::Const32`]: the start index of the `dst` memory buffer
-    MemoryCopyCcr {
-        /// The start index of the `src` memory buffer.
-        src: AnyConst32,
-        /// The number of copied bytes.
-        len: Register,
-    },
-    /// Wasm `memory.copy` instruction.
-    ///
-    /// Copies bytes from `memory[src..src+len]` to `memory[dst..dst+len]`.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::MemoryCopy`] with constant value for
-    ///
-    /// - `src` start index
-    /// - `dst` start index
-    /// - `len` number of copied bytes
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::Const32`]: the start index of the `dst` memory buffer
-    /// 2. [`Instruction::Const32`]: the number of copied bytes
-    MemoryCopyCcc {
-        /// The start index of the `src` memory buffer.
-        src: AnyConst32,
+    /// This instruction copies _exactly_ `len` elements between the memories.
+    MemoryCopyFromToExact {
+        /// The start index of the `dst` memory.
+        dst: Const16<u32>,
+        /// The start index of the `src` memory.
+        src: Const16<u32>,
+        /// The number of copied elements.
+        len: Const16<u32>,
     },
 
     /// Wasm `memory.fill` instruction.
