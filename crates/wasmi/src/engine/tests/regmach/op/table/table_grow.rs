@@ -103,6 +103,38 @@ fn imm_zero() {
     test_imm_zero(ValueType::ExternRef);
 }
 
+fn test_imm_value_and_zero(ty: ValueType) {
+    let display_ty: DisplayValueType = DisplayValueType::from(ty);
+    let ref_ty = match ty {
+        ValueType::FuncRef => "func",
+        ValueType::ExternRef => "extern",
+        _ => panic!("invalid Wasm reftype"),
+    };
+    let wasm = wat2wasm(&format!(
+        r"
+        (module
+            (table $t 10 {display_ty})
+            (func (param $value {display_ty}) (result i32)
+                (ref.null {ref_ty})
+                (i32.const 0)
+                (table.grow $t)
+            )
+        )",
+    ));
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::table_size(Register::from_i16(1), 0),
+            Instruction::return_reg(Register::from_i16(1)),
+        ])
+        .run();
+}
+
+#[test]
+fn imm_value_and_zero() {
+    test_imm_value_and_zero(ValueType::FuncRef);
+    test_imm_value_and_zero(ValueType::ExternRef);
+}
+
 fn test_imm(ty: ValueType, delta: u32) {
     let display_ty = DisplayValueType::from(ty);
     let wasm = wat2wasm(&format!(
