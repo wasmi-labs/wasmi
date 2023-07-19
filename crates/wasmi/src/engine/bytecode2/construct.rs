@@ -19,7 +19,6 @@ use super::{
 use crate::engine::{
     bytecode::{BranchOffset, DataSegmentIdx, ElementSegmentIdx, FuncIdx, TableIdx},
     bytecode2,
-    const_pool::ConstRef,
 };
 
 macro_rules! constructor_for {
@@ -172,11 +171,6 @@ impl Instruction {
     /// Creates a new [`Instruction::F64Const32`] from the given `value`.
     pub fn f64const32(value: impl Into<Const32<f64>>) -> Self {
         Self::F64Const32(value.into())
-    }
-
-    /// Creates a new [`Instruction::ConstRef`] from the given [`ConstRef`].
-    pub fn const_ref(cref: impl Into<ConstRef>) -> Self {
-        Self::ConstRef(cref.into())
     }
 
     /// Creates a new [`Instruction::ReturnReg`] from the given [`Register`] index.

@@ -44,7 +44,6 @@ use super::{
         GlobalIdx,
         TableIdx,
     },
-    const_pool::ConstRef,
     TranslationError,
 };
 use wasmi_core::TrapCode;
@@ -100,15 +99,6 @@ pub enum Instruction {
     /// If it is ever executed for example due to the result of a
     /// bug in the interpreter the execution will trap.
     ElementSegmentIdx(ElementSegmentIdx),
-    /// A [`ConstRef`] instruction parameter.
-    ///
-    /// # Note
-    ///
-    /// This [`Instruction`] must not be executed directly since
-    /// it only serves as data for other actual instructions.
-    /// If it is ever executed for example due to the result of a
-    /// bug in the interpreter the execution will trap.
-    ConstRef(ConstRef),
     /// A [`AnyConst32`] instruction parameter.
     ///
     /// # Note
