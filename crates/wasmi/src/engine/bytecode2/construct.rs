@@ -443,11 +443,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableCopyTo`] with the given `dst`, `src` and `len`.
-    pub fn table_copy_to(
-        dst: impl Into<Const16<u32>>,
-        src: Register,
-        len: Register,
-    ) -> Self {
+    pub fn table_copy_to(dst: impl Into<Const16<u32>>, src: Register, len: Register) -> Self {
         Self::TableCopyTo {
             dst: dst.into(),
             src,
@@ -456,11 +452,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableCopyFrom`] with the given `dst`, `src` and `len`.
-    pub fn table_copy_from(
-        dst: Register,
-        src: impl Into<Const16<u32>>,
-        len: Register,
-    ) -> Self {
+    pub fn table_copy_from(dst: Register, src: impl Into<Const16<u32>>, len: Register) -> Self {
         Self::TableCopyFrom {
             dst,
             src: src.into(),
@@ -482,11 +474,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableCopyExact`] with the given `dst`, `src` and `len`.
-    pub fn table_copy_exact(
-        dst: Register,
-        src: Register,
-        len: impl Into<Const16<u32>>,
-    ) -> Self {
+    pub fn table_copy_exact(dst: Register, src: Register, len: impl Into<Const16<u32>>) -> Self {
         Self::TableCopyExact {
             dst,
             src,
@@ -539,11 +527,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableInitTo`] with the given `dst`, `src` and `len`.
-    pub fn table_init_to(
-        dst: impl Into<Const16<u32>>,
-        src: Register,
-        len: Register,
-    ) -> Self {
+    pub fn table_init_to(dst: impl Into<Const16<u32>>, src: Register, len: Register) -> Self {
         Self::TableInitTo {
             dst: dst.into(),
             src,
@@ -552,11 +536,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableInitFrom`] with the given `dst`, `src` and `len`.
-    pub fn table_init_from(
-        dst: Register,
-        src: impl Into<Const16<u32>>,
-        len: Register,
-    ) -> Self {
+    pub fn table_init_from(dst: Register, src: impl Into<Const16<u32>>, len: Register) -> Self {
         Self::TableInitFrom {
             dst,
             src: src.into(),
@@ -578,11 +558,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableInitExact`] with the given `dst`, `src` and `len`.
-    pub fn table_init_exact(
-        dst: Register,
-        src: Register,
-        len: impl Into<Const16<u32>>,
-    ) -> Self {
+    pub fn table_init_exact(dst: Register, src: Register, len: impl Into<Const16<u32>>) -> Self {
         Self::TableInitExact {
             dst,
             src,
@@ -635,11 +611,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableFillAt`] with the given `dst`, `len` and `value`.
-    pub fn table_fill_at(
-        dst: impl Into<Const16<u32>>,
-        len: Register,
-        value: Register,
-    ) -> Self {
+    pub fn table_fill_at(dst: impl Into<Const16<u32>>, len: Register, value: Register) -> Self {
         Self::TableFillAt {
             dst: dst.into(),
             len,
@@ -648,11 +620,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableFillExact`] with the given `dst`, `len` and `value`.
-    pub fn table_fill_exact(
-        dst: Register,
-        len: impl Into<Const16<u32>>,
-        value: Register,
-    ) -> Self {
+    pub fn table_fill_exact(dst: Register, len: impl Into<Const16<u32>>, value: Register) -> Self {
         Self::TableFillExact {
             dst,
             len: len.into(),
