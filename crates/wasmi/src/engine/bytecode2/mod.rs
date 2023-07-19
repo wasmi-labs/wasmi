@@ -909,61 +909,20 @@ pub enum Instruction {
         /// Register holding the result of the instruction.
         result: Register,
     },
+
     /// Wasm `memory.grow` instruction.
     MemoryGrow {
         /// Register holding the result of the instruction.
         result: Register,
         /// The number of pages to add to the memory.
         delta: Register,
-        /// The value that is used to fill up the new memory cells.
-        value: Register,
     },
-    /// Wasm `memory.grow` instruction.
-    ///
-    /// # Note
-    ///
-    /// A variant of [`Instruction::MemoryGrow`] with constant `delta`.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::Const32`]: the `delta` number of pages to add to the memory
-    MemoryGrowByImm {
-        /// Register holding the result of the instruction.
-        result: Register,
-        /// The value that is used to fill up the new memory cells.
-        value: Register,
-    },
-    /// Wasm `memory.grow` instruction.
-    ///
-    /// # Note
-    ///
-    /// A variant of [`Instruction::MemoryGrow`] with constant fill `value`.
-    MemoryGrowValImm {
+    /// Variant of [`Instruction::MemoryGrow`] with 16-bit constant `delta`.
+    MemoryGrowBy {
         /// Register holding the result of the instruction.
         result: Register,
         /// The number of pages to add to the memory.
-        delta: Register,
-        /// The value that is used to fill up the new memory cells.
-        value: u8,
-    },
-    /// Wasm `memory.grow <table>` instruction.
-    ///
-    /// # Note
-    ///
-    /// A variant of [`Instruction::MemoryGrow`] with constant `value` and `delta`.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::Const32`]: the `delta` number of pages to add to the memory
-    MemoryGrowByImmValImm {
-        /// Register holding the result of the instruction.
-        result: Register,
-        /// The value that is used to fill up the new memory cells.
-        value: u8,
+        delta: Const16<u32>,
     },
 
     /// Wasm `memory.copy` instruction.

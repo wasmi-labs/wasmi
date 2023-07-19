@@ -668,6 +668,19 @@ impl Instruction {
         Self::MemorySize { result }
     }
 
+    /// Creates a new [`Instruction::MemoryGrow`] with the given `result`, `delta`.
+    pub fn memory_grow(result: Register, delta: Register) -> Self {
+        Self::MemoryGrow { result, delta }
+    }
+
+    /// Creates a new [`Instruction::MemoryGrowBy`] with the given `result`, `delta` and `value`.
+    pub fn memory_grow_by(result: Register, delta: impl Into<Const16<u32>>) -> Self {
+        Self::MemoryGrowBy {
+            result,
+            delta: delta.into(),
+        }
+    }
+
     constructor_for! {
         // Load
 

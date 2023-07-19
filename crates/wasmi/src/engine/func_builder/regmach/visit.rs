@@ -844,7 +844,24 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_memory_grow(&mut self, _mem: u32, _mem_byte: u8) -> Self::Output {
-        todo!()
+        bail_unreachable!(self);
+        let delta = self.alloc.stack.pop();
+        let delta = <Provider<Const16<u32>>>::new(delta, &mut self.alloc.stack)?;
+        let result = self.alloc.stack.push_dynamic()?;
+        let instr = match delta {
+            Provider::Register(delta) => Instruction::memory_grow(result, delta),
+            Provider::Const(delta) if u32::from(delta) == 0 => {
+                // Case: growing by 0 pages.
+                //
+                // Since `memory.grow` returns the `memory.size` before the
+                // operation a `memory.grow` with `delta` of 0 can be translated
+                // as `memory.size` instruction instead.
+                Instruction::memory_size(result)
+            }
+            Provider::Const(delta) => Instruction::memory_grow_by(result, delta),
+        };
+        self.alloc.instr_encoder.push_instr(instr)?;
+        Ok(())
     }
 
     fn visit_i32_const(&mut self, value: i32) -> Self::Output {
@@ -3229,7 +3246,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 }
 
 impl Provider<Const16<u32>> {
-    /// Creates a new `table.copy` [`Provider`] from the general [`TypedProvider`].
+    /// Creates a new `table` or `memory` index [`Provider`] from the general [`TypedProvider`].
     ///
     /// # Note
     ///
