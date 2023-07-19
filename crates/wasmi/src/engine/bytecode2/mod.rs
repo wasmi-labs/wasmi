@@ -933,7 +933,7 @@ pub enum Instruction {
         dst: Register,
         /// The start index of the `src` memory.
         src: Register,
-        /// The number of copied elements.
+        /// The number of copied bytes.
         len: Register,
     },
     /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `dst` index.
@@ -942,7 +942,7 @@ pub enum Instruction {
         dst: Const16<u32>,
         /// The start index of the `src` memory.
         src: Register,
-        /// The number of copied elements.
+        /// The number of copied bytes.
         len: Register,
     },
     /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `src` index.
@@ -951,7 +951,7 @@ pub enum Instruction {
         dst: Register,
         /// The start index of the `src` memory.
         src: Const16<u32>,
-        /// The number of copied elements.
+        /// The number of copied bytes.
         len: Register,
     },
     /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `dst` and `src` indices.
@@ -960,7 +960,7 @@ pub enum Instruction {
         dst: Const16<u32>,
         /// The start index of the `src` memory.
         src: Const16<u32>,
-        /// The number of copied elements.
+        /// The number of copied bytes.
         len: Register,
     },
     /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` field.
@@ -969,11 +969,11 @@ pub enum Instruction {
     ///
     /// This instruction copies _exactly_ `len` elements between the memories.
     MemoryCopyExact {
-        /// The start index of the `dst` table.
+        /// The start index of the `dst` memory.
         dst: Register,
-        /// The start index of the `src` table.
+        /// The start index of the `src` memory.
         src: Register,
-        /// The number of copied elements.
+        /// The number of copied bytes.
         len: Const16<u32>,
     },
     /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` and `dst`.
@@ -982,11 +982,11 @@ pub enum Instruction {
     ///
     /// This instruction copies _exactly_ `len` elements between the memories.
     MemoryCopyToExact {
-        /// The start index of the `dst` table.
+        /// The start index of the `dst` memory.
         dst: Const16<u32>,
-        /// The start index of the `src` table.
+        /// The start index of the `src` memory.
         src: Register,
-        /// The number of copied elements.
+        /// The number of copied bytes.
         len: Const16<u32>,
     },
     /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` and `src`.
@@ -995,11 +995,11 @@ pub enum Instruction {
     ///
     /// This instruction copies _exactly_ `len` elements between the memories.
     MemoryCopyFromExact {
-        /// The start index of the `dst` table.
+        /// The start index of the `dst` memory.
         dst: Register,
-        /// The start index of the `src` table.
+        /// The start index of the `src` memory.
         src: Const16<u32>,
-        /// The number of copied elements.
+        /// The number of copied bytes.
         len: Const16<u32>,
     },
     /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` and `src`.
@@ -1012,7 +1012,7 @@ pub enum Instruction {
         dst: Const16<u32>,
         /// The start index of the `src` memory.
         src: Const16<u32>,
-        /// The number of copied elements.
+        /// The number of copied bytes.
         len: Const16<u32>,
     },
 
