@@ -765,6 +765,78 @@ impl Instruction {
         }
     }
 
+    /// Creates a new [`Instruction::MemoryFill`] with the given `dst`, `value` and `len`.
+    pub fn memory_fill(dst: Register, value: Register, len: Register) -> Self {
+        Self::MemoryFill { dst, value, len }
+    }
+
+    /// Creates a new [`Instruction::MemoryFillAt`] with the given `dst`, `value` and `len`.
+    pub fn memory_fill_at(dst: impl Into<Const16<u32>>, value: Register, len: Register) -> Self {
+        Self::MemoryFillAt {
+            dst: dst.into(),
+            value,
+            len,
+        }
+    }
+
+    /// Creates a new [`Instruction::MemoryFillImm`] with the given `dst`, `value` and `len`.
+    pub fn memory_fill_imm(dst: Register, value: u8, len: Register) -> Self {
+        Self::MemoryFillImm { dst, value, len }
+    }
+
+    /// Creates a new [`Instruction::MemoryFillExact`] with the given `dst`, `value` and `len`.
+    pub fn memory_fill_exact(dst: Register, value: Register, len: impl Into<Const16<u32>>) -> Self {
+        Self::MemoryFillExact {
+            dst,
+            value,
+            len: len.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::MemoryFillAtImm`] with the given `dst`, `value` and `len`.
+    pub fn memory_fill_at_imm(dst: impl Into<Const16<u32>>, value: u8, len: Register) -> Self {
+        Self::MemoryFillAtImm {
+            dst: dst.into(),
+            value,
+            len,
+        }
+    }
+
+    /// Creates a new [`Instruction::MemoryFillAtExact`] with the given `dst`, `value` and `len`.
+    pub fn memory_fill_at_exact(
+        dst: impl Into<Const16<u32>>,
+        value: Register,
+        len: impl Into<Const16<u32>>,
+    ) -> Self {
+        Self::MemoryFillAtExact {
+            dst: dst.into(),
+            value,
+            len: len.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::MemoryFillImmExact`] with the given `dst`, `value` and `len`.
+    pub fn memory_fill_imm_exact(dst: Register, value: u8, len: impl Into<Const16<u32>>) -> Self {
+        Self::MemoryFillImmExact {
+            dst,
+            value,
+            len: len.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::MemoryFillAtImmExact`] with the given `dst`, `value` and `len`.
+    pub fn memory_fill_at_imm_exact(
+        dst: impl Into<Const16<u32>>,
+        value: u8,
+        len: impl Into<Const16<u32>>,
+    ) -> Self {
+        Self::MemoryFillAtImmExact {
+            dst: dst.into(),
+            value,
+            len: len.into(),
+        }
+    }
+
     constructor_for! {
         // Load
 

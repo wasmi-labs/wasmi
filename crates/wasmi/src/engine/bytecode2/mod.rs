@@ -1022,158 +1022,73 @@ pub enum Instruction {
     MemoryFill {
         /// The start index of the memory to fill.
         dst: Register,
-        /// The byte value of the filled memory cells.
+        /// The byte value used to fill the memory.
         value: Register,
         /// The number of bytes to fill.
         len: Register,
     },
-    /// Wasm `memory.fill` instruction.
-    ///
-    /// Sets bytes of `memory[dst..dst+len]` to `value`.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::MemoryFill`] with constant value for
-    ///
-    /// - `len` number of copied bytes
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::Const32`]: the number of copied bytes
-    MemoryFillRrc {
+    /// Variant of [`Instruction::MemoryFill`] with 16-bit constant `dst` index.
+    MemoryFillAt {
+        /// The start index of the memory to fill.
+        dst: Const16<u32>,
+        /// The byte value used to fill the memory.
+        value: Register,
+        /// The number of bytes to fill.
+        len: Register,
+    },
+    /// Variant of [`Instruction::MemoryFill`] with constant fill `value`.
+    MemoryFillImm {
         /// The start index of the memory to fill.
         dst: Register,
-        /// The byte value of the filled memory cells.
-        value: Register,
+        /// The byte value used to fill the memory.
+        value: u8,
+        /// The number of bytes to fill.
+        len: Register,
     },
-    /// Wasm `memory.fill` instruction.
-    ///
-    /// Sets bytes of `memory[dst..dst+len]` to `value`.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::MemoryFill`] with constant value for
-    ///
-    /// - `value` of byte to fill the memory cells
-    MemoryFillRcr {
+    /// Variant of [`Instruction::MemoryFill`] with 16-bit constant `len` value.
+    MemoryFillExact {
         /// The start index of the memory to fill.
         dst: Register,
-        /// The byte value of the filled memory cells.
+        /// The byte value used to fill the memory.
+        value: Register,
+        /// The number of bytes to fill.
+        len: Const16<u32>,
+    },
+    /// Variant of [`Instruction::MemoryFill`] with constant `dst` index and `value`.
+    MemoryFillAtImm {
+        /// The start index of the memory to fill.
+        dst: Const16<u32>,
+        /// The byte value used to fill the memory.
         value: u8,
         /// The number of bytes to fill.
         len: Register,
     },
-    /// Wasm `memory.fill` instruction.
-    ///
-    /// Sets bytes of `memory[dst..dst+len]` to `value`.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::MemoryFill`] with constant value for
-    ///
-    /// - `value` of byte to fill the memory cells
-    /// - `len` number of copied bytes
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::Const32`]: the number of copied bytes
-    MemoryFillRcc {
+    /// Variant of [`Instruction::MemoryFill`] with constant `dst` index and `len`.
+    MemoryFillAtExact {
+        /// The start index of the memory to fill.
+        dst: Const16<u32>,
+        /// The byte value used to fill the memory.
+        value: Register,
+        /// The number of bytes to fill.
+        len: Const16<u32>,
+    },
+    /// Variant of [`Instruction::MemoryFill`] with constant fill `value` and `len`.
+    MemoryFillImmExact {
         /// The start index of the memory to fill.
         dst: Register,
-        /// The byte value of the filled memory cells.
-        value: u8,
-    },
-    /// Wasm `memory.fill` instruction.
-    ///
-    /// Sets bytes of `memory[dst..dst+len]` to `value`.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::MemoryFill`] with constant value for
-    ///
-    /// - `dst` start index
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::Const32`]: the start index of the `dst` memory buffer
-    MemoryFillCrr {
-        /// The byte value of the filled memory cells.
-        value: Register,
-        /// The number of bytes to fill.
-        len: Register,
-    },
-    /// Wasm `memory.fill` instruction.
-    ///
-    /// Sets bytes of `memory[dst..dst+len]` to `value`.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::MemoryFill`] with constant value for
-    ///
-    /// - `dst` start index
-    /// - `len` number of copied bytes
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::Const32`]: the number of copied bytes
-    MemoryFillCrc {
-        /// The start index of the memory to fill.
-        dst: AnyConst32,
-        /// The byte value of the filled memory cells.
-        value: Register,
-    },
-    /// Wasm `memory.fill` instruction.
-    ///
-    /// Sets bytes of `memory[dst..dst+len]` to `value`.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::MemoryFill`] with constant value for
-    ///
-    /// - `dst` start index
-    /// - `value` of byte to fill the memory cells
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::Const32`]: the start index of the `dst` memory buffer
-    MemoryFillCcr {
-        /// The byte value of the filled memory cells.
+        /// The byte value used to fill the memory.
         value: u8,
         /// The number of bytes to fill.
-        len: Register,
+        len: Const16<u32>,
     },
-    /// Wasm `memory.fill` instruction.
-    ///
-    /// Sets bytes of `memory[dst..dst+len]` to `value`.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::MemoryFill`] with constant value for
-    ///
-    /// - `dst` start index
-    /// - `value` of byte to fill the memory cells
-    /// - `len` number of copied bytes
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::Const32`]: the number of copied bytes
-    MemoryFillCcc {
+    /// Variant of [`Instruction::MemoryFill`] with constant `dst` index, fill `value` and `len`.
+    MemoryFillAtImmExact {
         /// The start index of the memory to fill.
-        dst: AnyConst32,
-        /// The byte value of the filled memory cells.
+        dst: Const16<u32>,
+        /// The byte value used to fill the memory.
         value: u8,
+        /// The number of bytes to fill.
+        len: Const16<u32>,
     },
 
     /// Wasm `memory.init <data>` instruction.

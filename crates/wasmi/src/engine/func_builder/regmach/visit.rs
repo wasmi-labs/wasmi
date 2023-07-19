@@ -3088,7 +3088,45 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_memory_fill(&mut self, _mem: u32) -> Self::Output {
-        todo!()
+        bail_unreachable!(self);
+        let (dst, value, len) = self.alloc.stack.pop3();
+        if let Provider::Const(len) = len {
+            if u32::from(len) == 0 {
+                // Case: `memory.fill` with `len` of zero is a no-op.
+                return Ok(());
+            }
+        }
+        let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
+        let value = <Provider<u8>>::new(value);
+        let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
+        let instr = match (dst, value, len) {
+            (Provider::Register(dst), Provider::Register(value), Provider::Register(len)) => {
+                Instruction::memory_fill(dst, value, len)
+            }
+            (Provider::Register(dst), Provider::Register(value), Provider::Const(len)) => {
+                Instruction::memory_fill_exact(dst, value, len)
+            }
+            (Provider::Register(dst), Provider::Const(value), Provider::Register(len)) => {
+                Instruction::memory_fill_imm(dst, value, len)
+            }
+            (Provider::Register(dst), Provider::Const(value), Provider::Const(len)) => {
+                Instruction::memory_fill_imm_exact(dst, value, len)
+            }
+            (Provider::Const(dst), Provider::Register(value), Provider::Register(len)) => {
+                Instruction::memory_fill_at(dst, value, len)
+            }
+            (Provider::Const(dst), Provider::Register(value), Provider::Const(len)) => {
+                Instruction::memory_fill_at_exact(dst, value, len)
+            }
+            (Provider::Const(dst), Provider::Const(value), Provider::Register(len)) => {
+                Instruction::memory_fill_at_imm(dst, value, len)
+            }
+            (Provider::Const(dst), Provider::Const(value), Provider::Const(len)) => {
+                Instruction::memory_fill_at_imm_exact(dst, value, len)
+            }
+        };
+        self.alloc.instr_encoder.push_instr(instr)?;
+        Ok(())
     }
 
     fn visit_table_init(&mut self, elem_index: u32, table: u32) -> Self::Output {
