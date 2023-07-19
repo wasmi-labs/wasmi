@@ -76,64 +76,50 @@ pub enum Instruction {
     ///
     /// # Note
     ///
-    /// This [`Instruction`] must not be executed directly since
-    /// it only serves as data for other actual instructions.
-    /// If it is ever executed for example due to the result of a
-    /// bug in the interpreter the execution will trap.
+    /// This [`Instruction`] only acts as a parameter to another
+    /// one and will never be executed itself directly.
     TableIdx(TableIdx),
     /// A [`DataSegmentIdx`] instruction parameter.
     ///
     /// # Note
     ///
-    /// This [`Instruction`] must not be executed directly since
-    /// it only serves as data for other actual instructions.
-    /// If it is ever executed for example due to the result of a
-    /// bug in the interpreter the execution will trap.
+    /// This [`Instruction`] only acts as a parameter to another
+    /// one and will never be executed itself directly.
     DataSegmentIdx(DataSegmentIdx),
     /// A [`ElementSegmentIdx`] instruction parameter.
     ///
     /// # Note
     ///
-    /// This [`Instruction`] must not be executed directly since
-    /// it only serves as data for other actual instructions.
-    /// If it is ever executed for example due to the result of a
-    /// bug in the interpreter the execution will trap.
+    /// This [`Instruction`] only acts as a parameter to another
+    /// one and will never be executed itself directly.
     ElementSegmentIdx(ElementSegmentIdx),
     /// A [`AnyConst32`] instruction parameter.
     ///
     /// # Note
     ///
-    /// This [`Instruction`] must not be executed directly since
-    /// it only serves as data for other actual instructions.
-    /// If it is ever executed for example due to the result of a
-    /// bug in the interpreter the execution will trap.
+    /// This [`Instruction`] only acts as a parameter to another
+    /// one and will never be executed itself directly.
     Const32(AnyConst32),
     /// A [`Const32<i64>`] instruction parameter.
     ///
     /// # Note
     ///
-    /// This [`Instruction`] must not be executed directly since
-    /// it only serves as data for other actual instructions.
-    /// If it is ever executed for example due to the result of a
-    /// bug in the interpreter the execution will trap.
+    /// This [`Instruction`] only acts as a parameter to another
+    /// one and will never be executed itself directly.
     I64Const32(Const32<i64>),
     /// A [`Const32<f64>`] instruction parameter.
     ///
     /// # Note
     ///
-    /// This [`Instruction`] must not be executed directly since
-    /// it only serves as data for other actual instructions.
-    /// If it is ever executed for example due to the result of a
-    /// bug in the interpreter the execution will trap.
+    /// This [`Instruction`] only acts as a parameter to another
+    /// one and will never be executed itself directly.
     F64Const32(Const32<f64>),
     /// A [`Register`] instruction parameter.
     ///
     /// # Note
     ///
-    /// This [`Instruction`] must not be executed directly since
-    /// it only serves as data for other actual instructions.
-    /// If it is ever executed for example due to the result of a
-    /// bug in the interpreter the execution will trap.
+    /// This [`Instruction`] only acts as a parameter to another
+    /// one and will never be executed itself directly.
     Register(Register),
 
     /// Traps the execution with the given [`TrapCode`].
