@@ -3218,12 +3218,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_table_grow(&mut self, table: u32) -> Self::Output {
         bail_unreachable!(self);
         let (value, delta) = self.alloc.stack.pop2();
-        let delta = <Provider<Const16<u32>>>::new(delta, &mut self.alloc.stack)?;
-        let value = match value {
-            TypedProvider::Register(value) => value,
-            TypedProvider::Const(value) => self.alloc.stack.alloc_const(value)?,
-        };
-        let result = self.alloc.stack.push_dynamic()?;
         if let Provider::Const(delta) = delta {
             if u32::from(delta) == 0 {
                 // Case: growing by 0 elements.
@@ -3231,12 +3225,19 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 // Since `table.grow` returns the `table.size` before the
                 // operation a `table.grow` with `delta` of 0 can be translated
                 // as `table.size` instruction instead.
+                let result = self.alloc.stack.push_dynamic()?;
                 self.alloc
                     .instr_encoder
                     .push_instr(Instruction::table_size(result, table))?;
                 return Ok(());
             }
         }
+        let delta = <Provider<Const16<u32>>>::new(delta, &mut self.alloc.stack)?;
+        let value = match value {
+            TypedProvider::Register(value) => value,
+            TypedProvider::Const(value) => self.alloc.stack.alloc_const(value)?,
+        };
+        let result = self.alloc.stack.push_dynamic()?;
         let instr = match delta {
             Provider::Register(delta) => Instruction::table_grow(result, delta, value),
             Provider::Const(delta) => Instruction::table_grow_imm(result, delta, value),
@@ -3255,6 +3256,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             .instr_encoder
             .push_instr(Instruction::table_size(result, table))?;
         Ok(())
+    }
+}
+
+impl Provider<u8> {
+    /// Creates a new `memory` value [`Provider`] from the general [`TypedProvider`].
+    fn new(provider: TypedProvider) -> Self {
+        match provider {
+            TypedProvider::Const(value) => Self::Const(u32::from(value) as u8),
+            TypedProvider::Register(register) => Self::Register(register),
+        }
     }
 }
 
