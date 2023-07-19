@@ -3148,6 +3148,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_table_fill(&mut self, table: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, value, len) = self.alloc.stack.pop3();
+        if let Provider::Const(len) = len {
+            if u32::from(len) == 0 {
+                // Case: `table.fill` with `len` of zero is a no-op.
+                return Ok(());
+            }
+        }
         let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
         let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
         let value = match value {

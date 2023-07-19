@@ -76,8 +76,21 @@ fn fill_exact16() {
         test_fill_exact16(ValueType::FuncRef, len);
         test_fill_exact16(ValueType::ExternRef, len);
     }
-    test_for(0);
+    test_for(1);
+    test_for(42);
     test_for(u32::from(u16::MAX));
+}
+
+fn test_fill_exact_zero(ty: ValueType) {
+    testcase_fill_exact(ty, 0)
+        .expect_func_instrs([Instruction::Return])
+        .run()
+}
+
+#[test]
+fn fill_exact_zero() {
+    test_fill_exact_zero(ValueType::FuncRef);
+    test_fill_exact_zero(ValueType::ExternRef);
 }
 
 fn test_fill_exact(ty: ValueType, len: u32) {
@@ -207,8 +220,30 @@ fn fill_at_exact16() {
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
         for len in values {
+            if len == 0 {
+                // We test this in another test case.
+                continue;
+            }
             test_for(dst, len);
         }
+    }
+}
+
+fn test_fill_at_exact_zero(ty: ValueType, dst: u32) {
+    testcase_fill_at_exact(ty, dst, 0)
+        .expect_func_instrs([Instruction::Return])
+        .run()
+}
+
+#[test]
+fn fill_at_exact_zero() {
+    fn test_for(dst: u32) {
+        test_fill_at_exact_zero(ValueType::FuncRef, dst);
+        test_fill_at_exact_zero(ValueType::ExternRef, dst);
+    }
+    let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
+    for dst in values {
+        test_for(dst);
     }
 }
 
