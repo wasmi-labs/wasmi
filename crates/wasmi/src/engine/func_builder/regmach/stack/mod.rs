@@ -8,13 +8,16 @@ pub use self::{
     register_alloc::{DefragRegister, RegisterAlloc},
 };
 use super::TypedValue;
-use crate::engine::{
-    func_builder::TranslationErrorInner,
-    Instr,
-    Provider,
-    TranslationError,
-    UntypedProvider,
+use crate::{
+    engine::{
         bytecode2::{Register, RegisterSpan},
+        func_builder::TranslationErrorInner,
+        Instr,
+        Provider,
+        TranslationError,
+        UntypedProvider,
+    },
+    FuncType,
 };
 use alloc::vec::Vec;
 use wasmi_core::UntypedValue;
@@ -61,6 +64,43 @@ impl ValueStack {
         while self.height() != height {
             self.pop();
         }
+    }
+
+    /// Adjusts the [`ValueStack`] given the [`FuncType`] of the call.
+    ///
+    /// - Returns the [`RegisterSpan`] for the `call` results.
+    /// - The `provider_buffer` will hold all [`Provider`] call parameters.
+    /// - The `params_buffer` will hold all call parameters converted to [`Register`]. \
+    ///   Any constant value parameter will be allocated as function local constant.
+    ///
+    /// # Note
+    ///
+    /// Both `provider_buffer` and `params_buffer` will be cleared before this operation.
+    ///
+    /// # Errors
+    ///
+    /// - If not enough call parameters are on the [`ValueStack`].
+    /// - If too many function local constants are being registered as call parameters.
+    /// - If too many registers are registered as call results.
+    pub fn adjust_for_call(
+        &mut self,
+        func_type: &FuncType,
+        provider_buffer: &mut Vec<TypedProvider>,
+        params_buffer: &mut Vec<Register>,
+    ) -> Result<RegisterSpan, TranslationError> {
+        let (params, results) = func_type.params_results();
+        self.pop_n(params.len(), provider_buffer);
+        params_buffer.clear();
+        for provider in provider_buffer.iter().copied() {
+            let param = match provider {
+                Provider::Register(param) => param,
+                Provider::Const(param) => self.alloc_const(param)?,
+            };
+            params_buffer.push(param);
+        }
+        let results = self.push_dynamic_n(results.len())?;
+        debug_assert_eq!(provider_buffer.len(), params_buffer.len());
+        Ok(results)
     }
 
     /// Returns the number of [`Provider`] on the [`ValueStack`].

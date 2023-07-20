@@ -11,6 +11,7 @@ use super::{
     LoadOffset16Instr,
     ProviderSliceRef,
     Register,
+    RegisterSpan,
     StoreAtInstr,
     StoreInstr,
     StoreOffset16Instr,
@@ -19,6 +20,7 @@ use super::{
 use crate::engine::{
     bytecode::{BranchOffset, DataSegmentIdx, ElementSegmentIdx, FuncIdx, TableIdx},
     bytecode2,
+    CompiledFunc,
 };
 
 macro_rules! constructor_for {
@@ -917,6 +919,65 @@ impl Instruction {
             dst: dst.into(),
             value,
             len: len.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::ReturnCallInternal0`] for the given `func`.
+    pub fn return_call_internal_0(func: CompiledFunc) -> Self {
+        Self::ReturnCallInternal0 { func }
+    }
+
+    /// Creates a new [`Instruction::ReturnCallInternal1`] for the given `func` and `param`.
+    pub fn return_call_internal_1(func: CompiledFunc, param: Register) -> Self {
+        Self::ReturnCallInternal1 { func, param }
+    }
+
+    /// Creates a new [`Instruction::ReturnCallInternal`] for the given `func`.
+    pub fn return_call_internal(func: CompiledFunc) -> Self {
+        Self::ReturnCallInternal { func }
+    }
+
+    /// Creates a new [`Instruction::ReturnCallImported0`] for the given `func`.
+    pub fn return_call_imported_0(func: impl Into<FuncIdx>) -> Self {
+        Self::ReturnCallImported0 { func: func.into() }
+    }
+
+    /// Creates a new [`Instruction::ReturnCallImported1`] for the given `func` and `param`.
+    pub fn return_call_imported_1(func: impl Into<FuncIdx>, param: Register) -> Self {
+        Self::ReturnCallImported1 {
+            func: func.into(),
+            param,
+        }
+    }
+
+    /// Creates a new [`Instruction::ReturnCallImported`] for the given `func`.
+    pub fn return_call_imported(func: impl Into<FuncIdx>) -> Self {
+        Self::ReturnCallImported { func: func.into() }
+    }
+
+    /// Creates a new [`Instruction::CallInternal0`] for the given `func`.
+    pub fn call_internal_0(results: RegisterSpan, func: CompiledFunc) -> Self {
+        Self::CallInternal0 { results, func }
+    }
+
+    /// Creates a new [`Instruction::CallInternal`] for the given `func`.
+    pub fn call_internal(results: RegisterSpan, func: CompiledFunc) -> Self {
+        Self::CallInternal { results, func }
+    }
+
+    /// Creates a new [`Instruction::CallImported0`] for the given `func`.
+    pub fn call_imported_0(results: RegisterSpan, func: impl Into<FuncIdx>) -> Self {
+        Self::CallImported0 {
+            results,
+            func: func.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::CallImported`] for the given `func`.
+    pub fn call_imported(results: RegisterSpan, func: impl Into<FuncIdx>) -> Self {
+        Self::CallImported {
+            results,
+            func: func.into(),
         }
     }
 

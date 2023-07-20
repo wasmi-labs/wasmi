@@ -21,7 +21,7 @@ use crate::{
         func_builder::regmach::{control_stack::AcquiredTarget, stack::ValueStack},
         TranslationError,
     },
-    module::{self, BlockType, WasmiValueType},
+    module::{self, BlockType, FuncIdx, WasmiValueType},
     ExternRef,
     FuncRef,
     Mutability,
@@ -489,8 +489,59 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_return()
     }
 
-    fn visit_call(&mut self, _function_index: u32) -> Self::Output {
-        todo!()
+    fn visit_call(&mut self, function_index: u32) -> Self::Output {
+        bail_unreachable!(self);
+        self.bump_fuel_consumption(self.fuel_costs().call)?;
+        let func_idx = FuncIdx::from(function_index);
+        let func_type = self.func_type_of(func_idx);
+        let provider_params = &mut self.alloc.buffer;
+        let register_params = &mut self.alloc.register_buffer;
+        let results =
+            self.alloc
+                .stack
+                .adjust_for_call(&func_type, provider_params, register_params)?;
+        let len_params = register_params.len();
+        let instr = match self.res.get_compiled_func_2(func_idx) {
+            Some(compiled_func) => {
+                // Case: We are calling an internal function and can optimize
+                //       this case by using the special instruction for it.
+                match len_params {
+                    0 => Instruction::call_internal_0(results, compiled_func),
+                    _ => Instruction::call_internal(results, compiled_func),
+                }
+            }
+            None => {
+                // Case: We are calling an imported function and must use the
+                //       general calling operator for it.
+                match len_params {
+                    0 => Instruction::call_imported_0(results, function_index),
+                    _ => Instruction::call_imported(results, function_index),
+                }
+            }
+        };
+        self.alloc.instr_encoder.push_instr(instr)?;
+        match register_params[..] {
+            [] => {}
+            [param] => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::Register(param))?;
+            }
+            [fst, snd] => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::Register2([fst, snd]))?;
+            }
+            [fst, snd, trd] => {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(Instruction::Register3([fst, snd, trd]))?;
+            }
+            _ => {
+                todo!() // TODO: allocate register slice
+            }
+        }
+        Ok(())
     }
 
     fn visit_call_indirect(

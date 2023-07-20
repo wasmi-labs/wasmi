@@ -65,6 +65,8 @@ pub struct FuncTranslatorAllocations {
     control_stack: ControlStack,
     /// Buffer to store providers when popped from the [`ValueStack`] in bulk.
     buffer: Vec<TypedProvider>,
+    /// Buffer to temporarily store a quantity of registers for certain translation routines.
+    register_buffer: Vec<Register>,
 }
 
 impl FuncTranslatorAllocations {
