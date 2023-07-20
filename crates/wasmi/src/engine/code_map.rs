@@ -15,6 +15,18 @@ use wasmi_arena::ArenaIndex;
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct CompiledFunc(u32);
 
+impl CompiledFunc {
+    /// Creates a new [`CompiledFunc`] from the given `u32` index.
+    ///
+    /// # Note
+    ///
+    /// This is a test-only API and not meant for code outside of tests.
+    #[cfg(test)]
+    pub fn from_u32(index: u32) -> Self {
+        Self(index)
+    }
+}
+
 impl ArenaIndex for CompiledFunc {
     fn into_usize(self) -> usize {
         self.0 as usize

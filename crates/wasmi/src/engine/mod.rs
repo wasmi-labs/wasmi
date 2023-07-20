@@ -17,6 +17,8 @@ mod traits;
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+use self::bytecode2::RegisterSpan;
 pub use self::{
     bytecode::DropKeep,
     bytecode2::Instruction as Instruction2,
