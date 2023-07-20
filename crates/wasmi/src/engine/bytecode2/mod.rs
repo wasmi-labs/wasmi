@@ -179,6 +179,24 @@ pub enum Instruction {
     ///
     /// # Note
     ///
+    /// Returns two values stored in a register.
+    ReturnReg2 {
+        /// The returned values.
+        values: [Register; 2],
+    },
+    /// A Wasm `return` instruction.
+    ///
+    /// # Note
+    ///
+    /// Returns three values stored in a register.
+    ReturnReg3 {
+        /// The returned values.
+        values: [Register; 3],
+    },
+    /// A Wasm `return` instruction.
+    ///
+    /// # Note
+    ///
     /// Returns a single 32-bit constant value.
     ReturnImm32 {
         /// The returned 32-bit constant value.
@@ -233,6 +251,18 @@ pub enum Instruction {
         condition: Register,
         /// The returned value.
         value: Register,
+    },
+    /// A conditional `return` instruction.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::ReturnNez`] returning two
+    /// [`Register`] values if the `condition` evaluates to `true`.
+    ReturnNezReg2 {
+        /// The register holding the condition to evaluate against zero.
+        condition: Register,
+        /// The returned values.
+        values: [Register; 2],
     },
     /// A conditional `return` instruction.
     ///

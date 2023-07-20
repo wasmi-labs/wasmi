@@ -231,6 +231,18 @@ impl ValueStack {
         self.reg_alloc.pop_provider(self.providers.pop())
     }
 
+    /// Pops the top-most [`Provider`] from the [`ValueStack`] as [`Register`].
+    ///
+    /// # Note
+    ///
+    /// Conversion from [`Provider`] to [`Register`] is done by allocating function local constant values.
+    pub fn pop_as_register(&mut self) -> Result<Register, TranslationError> {
+        match self.pop() {
+            Provider::Register(register) => Ok(register),
+            Provider::Const(value) => self.alloc_const(value),
+        }
+    }
+
     /// Peeks the top-most [`Provider`] from the [`ValueStack`].
     pub fn peek(&self) -> TypedProvider {
         match self.providers.peek() {
@@ -241,18 +253,42 @@ impl ValueStack {
         }
     }
 
-    /// Pops the top-most [`Provider`] from the [`ValueStack`].
+    /// Pops the two top-most [`Provider`] from the [`ValueStack`].
     pub fn pop2(&mut self) -> (TypedProvider, TypedProvider) {
         let rhs = self.pop();
         let lhs = self.pop();
         (lhs, rhs)
     }
 
-    /// Pops the top-most [`Provider`] from the [`ValueStack`].
+    /// Pops the two top-most [`Provider`] from the [`ValueStack`] as [`Register`].
+    ///
+    /// # Note
+    ///
+    /// Conversion from [`Provider`] to [`Register`] is done by allocating function local constant values.
+    pub fn pop2_as_registers(&mut self) -> Result<(Register, Register), TranslationError> {
+        let rhs = self.pop_as_register()?;
+        let lhs = self.pop_as_register()?;
+        Ok((lhs, rhs))
+    }
+
+    /// Pops the three top-most [`Provider`] from the [`ValueStack`].
     pub fn pop3(&mut self) -> (TypedProvider, TypedProvider, TypedProvider) {
         let (v1, v2) = self.pop2();
         let v0 = self.pop();
         (v0, v1, v2)
+    }
+
+    /// Pops the three top-most [`Provider`] from the [`ValueStack`] as [`Register`].
+    ///
+    /// # Note
+    ///
+    /// Conversion from [`Provider`] to [`Register`] is done by allocating function local constant values.
+    pub fn pop3_as_registers(
+        &mut self,
+    ) -> Result<(Register, Register, Register), TranslationError> {
+        let (v1, v2) = self.pop2_as_registers()?;
+        let v0 = self.pop_as_register()?;
+        Ok((v0, v1, v2))
     }
 
     /// Popn the `n` top-most [`Provider`] from the [`ValueStack`] and store them in `result`.

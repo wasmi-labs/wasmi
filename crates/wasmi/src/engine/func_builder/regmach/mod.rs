@@ -1998,6 +1998,16 @@ impl<'parser> FuncTranslator<'parser> {
                     }
                 }
             }
+            [_, _] => {
+                let (fst, snd) = self.alloc.stack.pop2_as_registers()?;
+                // Case: Returning two values which for which there exists a special `wasmi` instruction.
+                Instruction::return_reg_2(fst, snd)
+            }
+            [_, _, _] => {
+                // Case: Returning three values which for which there exists a special `wasmi` instruction.
+                let (v0, v1, v2) = self.alloc.stack.pop3_as_registers()?;
+                Instruction::return_reg_3(v0, v1, v2)
+            }
             results => {
                 let providers = &mut self.alloc.buffer;
                 let registers = &mut self.alloc.register_buffer;
@@ -2068,6 +2078,11 @@ impl<'parser> FuncTranslator<'parser> {
                         Instruction::return_nez_reg(condition, self.alloc.stack.alloc_const(value)?)
                     }
                 }
+            }
+            [_, _] => {
+                // Case: Returns two values which for which there exists a special `wasmi` instruction.
+                let (fst, snd) = self.alloc.stack.pop2_as_registers()?;
+                Instruction::return_nez_reg_2(condition, fst, snd)
             }
             results => {
                 let registers = &mut self.alloc.register_buffer;

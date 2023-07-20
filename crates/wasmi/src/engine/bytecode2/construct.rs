@@ -160,6 +160,16 @@ macro_rules! constructor_for {
 }
 
 impl Instruction {
+    /// Creates a new [`Instruction::Register2`] from the given [`Register`] indices.
+    pub fn register_2(reg0: Register, reg1: Register) -> Self {
+        Self::Register2([reg0, reg1])
+    }
+
+    /// Creates a new [`Instruction::Register3`] from the given [`Register`] indices.
+    pub fn register_3(reg0: Register, reg1: Register, reg2: Register) -> Self {
+        Self::Register3([reg0, reg1, reg2])
+    }
+
     /// Creates a new [`Instruction::Const32`] from the given `value`.
     pub fn const32(value: impl Into<AnyConst32>) -> Self {
         Self::Const32(value.into())
@@ -179,6 +189,24 @@ impl Instruction {
     pub fn return_reg(index: impl Into<Register>) -> Self {
         Self::ReturnReg {
             value: index.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::ReturnReg2`] from the given [`Register`] indices.
+    pub fn return_reg_2(fst: impl Into<Register>, snd: impl Into<Register>) -> Self {
+        Self::ReturnReg2 {
+            values: [fst.into(), snd.into()],
+        }
+    }
+
+    /// Creates a new [`Instruction::ReturnReg3`] from the given [`Register`] indices.
+    pub fn return_reg_3(
+        fst: impl Into<Register>,
+        snd: impl Into<Register>,
+        trd: impl Into<Register>,
+    ) -> Self {
+        Self::ReturnReg3 {
+            values: [fst.into(), snd.into(), trd.into()],
         }
     }
 
@@ -216,6 +244,18 @@ impl Instruction {
     /// Creates a new [`Instruction::ReturnNezReg`] for the given `condition` and `value`.
     pub fn return_nez_reg(condition: Register, value: Register) -> Self {
         Self::ReturnNezReg { condition, value }
+    }
+
+    /// Creates a new [`Instruction::ReturnNezReg2`] from the given `condition` and [`Register`] indices.
+    pub fn return_nez_reg_2(
+        condition: Register,
+        fst: impl Into<Register>,
+        snd: impl Into<Register>,
+    ) -> Self {
+        Self::ReturnNezReg2 {
+            condition,
+            values: [fst.into(), snd.into()],
+        }
     }
 
     /// Creates a new [`Instruction::ReturnNezImm32`] for the given `condition` and `value`.
