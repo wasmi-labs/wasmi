@@ -206,7 +206,7 @@ pub enum Instruction {
     ///
     /// # Note
     ///
-    /// Returns values as stored in the [`ProviderSliceRef`].
+    /// Returns values as stored in the [`RegisterSliceRef`].
     ReturnMany {
         /// Identifier for a [`Provider`] slice.
         values: RegisterSliceRef,
