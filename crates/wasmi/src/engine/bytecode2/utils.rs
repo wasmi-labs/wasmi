@@ -40,45 +40,45 @@ impl Register {
     }
 }
 
-/// A [`RegisterSlice`].
+/// A [`RegisterSpan`] of contiguous [`Register`] indices.
 ///
 /// # Note
 ///
 /// - Represents an amount of contiguous [`Register`] indices.
 /// - For the sake of space efficiency the actual number of [`Register`]
-///   of the [`RegisterSlice`] is stored externally and provided in
-///   [`RegisterSlice::iter`] when there is a need to iterate over
-///   the [`Register`] of the [`RegisterSlice`].
+///   of the [`RegisterSpan`] is stored externally and provided in
+///   [`RegisterSpan::iter`] when there is a need to iterate over
+///   the [`Register`] of the [`RegisterSpan`].
 ///
 /// The caller is responsible for providing the correct length.
 /// Due to Wasm validation guided bytecode construction we assert
 /// that the externally stored length is valid.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct RegisterSlice(Register);
+pub struct RegisterSpan(Register);
 
-impl RegisterSlice {
-    /// Creates a new [`RegisterSlice`] starting with the given `start` [`Register`].
+impl RegisterSpan {
+    /// Creates a new [`RegisterSpan`] starting with the given `start` [`Register`].
     pub fn new(start: Register) -> Self {
         Self(start)
     }
 
-    /// Returns a [`RegisterSliceIter`] yielding `len` [`Register`].
-    pub fn iter(self, len: usize) -> RegisterSliceIter {
-        RegisterSliceIter::new(self.0, len)
+    /// Returns a [`RegisterSpanIter`] yielding `len` [`Register`].
+    pub fn iter(self, len: usize) -> RegisterSpanIter {
+        RegisterSpanIter::new(self.0, len)
     }
 }
 
-/// A [`RegisterSliceIter`] iterator yielding contiguous [`Register`].
+/// A [`RegisterSpanIter`] iterator yielding contiguous [`Register`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct RegisterSliceIter {
-    /// The next [`Register`] in the [`RegisterSliceIter`].
+pub struct RegisterSpanIter {
+    /// The next [`Register`] in the [`RegisterSpanIter`].
     next: Register,
-    /// The last [`Register`] in the [`RegisterSliceIter`].
+    /// The last [`Register`] in the [`RegisterSpanIter`].
     last: Register,
 }
 
-impl RegisterSliceIter {
-    /// Creates a new [`RegisterSliceIter`] for the given `start` [`Register`] and length `len`.
+impl RegisterSpanIter {
+    /// Creates a new [`RegisterSpanIter`] for the given `start` [`Register`] and length `len`.
     ///
     /// # Panics
     ///
@@ -96,7 +96,7 @@ impl RegisterSliceIter {
     }
 }
 
-impl Iterator for RegisterSliceIter {
+impl Iterator for RegisterSpanIter {
     type Item = Register;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -109,7 +109,7 @@ impl Iterator for RegisterSliceIter {
     }
 }
 
-impl DoubleEndedIterator for RegisterSliceIter {
+impl DoubleEndedIterator for RegisterSpanIter {
     fn next_back(&mut self) -> Option<Self::Item> {
         if self.next == self.last {
             return None;
@@ -120,7 +120,7 @@ impl DoubleEndedIterator for RegisterSliceIter {
     }
 }
 
-impl ExactSizeIterator for RegisterSliceIter {
+impl ExactSizeIterator for RegisterSpanIter {
     fn len(&self) -> usize {
         usize::from(self.last.0.abs_diff(self.next.0))
     }

@@ -9,12 +9,12 @@ pub use self::{
 };
 use super::TypedValue;
 use crate::engine::{
-    bytecode2::{Register, RegisterSlice},
     func_builder::TranslationErrorInner,
     Instr,
     Provider,
     TranslationError,
     UntypedProvider,
+        bytecode2::{Register, RegisterSpan},
 };
 use alloc::vec::Vec;
 use wasmi_core::UntypedValue;
@@ -273,7 +273,7 @@ impl ValueStack {
         Ok(())
     }
 
-    /// Returns a [`RegisterSlice`] of `n` registers as if they were dynamically allocated.
+    /// Returns a [`RegisterSpan`] of `n` registers as if they were dynamically allocated.
     ///
     /// # Note
     ///
@@ -285,7 +285,7 @@ impl ValueStack {
     /// # Errors
     ///
     /// If this procedure would allocate more registers than are available.
-    pub fn push_dynamic_n(&mut self, n: usize) -> Result<RegisterSlice, TranslationError> {
+    pub fn push_dynamic_n(&mut self, n: usize) -> Result<RegisterSpan, TranslationError> {
         let registers = self.reg_alloc.push_dynamic_n(n)?;
         for register in registers.iter(n) {
             self.providers.push_dynamic(register);
@@ -293,7 +293,7 @@ impl ValueStack {
         Ok(registers)
     }
 
-    /// Returns a [`RegisterSlice`] of `n` registers as if they were dynamically allocated.
+    /// Returns a [`RegisterSpan`] of `n` registers as if they were dynamically allocated.
     ///
     /// # Note
     ///
@@ -304,7 +304,7 @@ impl ValueStack {
     /// # Errors
     ///
     /// If this procedure would allocate more registers than are available.
-    pub fn peek_dynamic_n(&mut self, n: usize) -> Result<RegisterSlice, TranslationError> {
+    pub fn peek_dynamic_n(&mut self, n: usize) -> Result<RegisterSpan, TranslationError> {
         let registers = self.reg_alloc.push_dynamic_n(n)?;
         self.reg_alloc.pop_dynamic_n(n);
         Ok(registers)

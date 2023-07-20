@@ -4,7 +4,7 @@
 use super::ValueStack;
 use crate::{
     engine::{
-        bytecode2::{RegisterSlice, RegisterSliceIter},
+        bytecode2::{RegisterSpan, RegisterSpanIter},
         func_builder::{labels::LabelRef, TranslationErrorInner},
         Instr,
         TranslationError,
@@ -64,7 +64,7 @@ pub struct BlockControlFrame {
     /// These are the registers that store the results of
     /// the [`BlockControlFrame`] upon taking a branch to it.
     /// Note that branching to a [`BlockControlFrame`] exits it.
-    branch_params: RegisterSlice,
+    branch_params: RegisterSpan,
     /// Instruction to consume fuel upon entering the basic block if fuel metering is enabled.
     ///
     /// # Note
@@ -79,7 +79,7 @@ impl BlockControlFrame {
     pub fn new(
         block_type: BlockType,
         end_label: LabelRef,
-        branch_params: RegisterSlice,
+        branch_params: RegisterSpan,
         stack_height: BlockHeight,
         consume_fuel: Option<Instr>,
     ) -> Self {
@@ -109,7 +109,7 @@ impl BlockControlFrame {
     }
 
     /// Returns an iterator over the registers holding the branching parameters of the [`BlockControlFrame`].
-    pub fn branch_params(&self, engine: &Engine) -> RegisterSliceIter {
+    pub fn branch_params(&self, engine: &Engine) -> RegisterSpanIter {
         self.branch_params
             .iter(self.block_type().len_results(engine) as usize)
     }
@@ -170,7 +170,7 @@ pub struct LoopControlFrame {
     /// These are the registers that store the inputs of
     /// the [`LoopControlFrame`] upon taking a branch to it.
     /// Note that branching to a [`LoopControlFrame`] re-enters it.
-    branch_params: RegisterSlice,
+    branch_params: RegisterSpan,
     /// Instruction to consume fuel upon entering the basic block if fuel metering is enabled.
     ///
     /// # Note
@@ -185,7 +185,7 @@ impl LoopControlFrame {
         block_type: BlockType,
         head_label: LabelRef,
         stack_height: BlockHeight,
-        branch_params: RegisterSlice,
+        branch_params: RegisterSpan,
         consume_fuel: Option<Instr>,
     ) -> Self {
         Self {
@@ -214,7 +214,7 @@ impl LoopControlFrame {
     }
 
     /// Returns an iterator over the registers holding the branching parameters of the [`LoopControlFrame`].
-    pub fn branch_params(&self, engine: &Engine) -> RegisterSliceIter {
+    pub fn branch_params(&self, engine: &Engine) -> RegisterSpanIter {
         self.branch_params
             .iter(self.block_type().len_params(engine) as usize)
     }
@@ -267,7 +267,7 @@ pub struct IfControlFrame {
     /// the [`IfControlFrame`] upon taking a branch to it.
     /// Note that branching to a [`IfControlFrame`] exits it.
     /// The behavior is the same for the `then` and `else` blocks.
-    branch_params: RegisterSlice,
+    branch_params: RegisterSpan,
     /// Instruction to consume fuel upon entering the basic block if fuel metering is enabled.
     ///
     /// This is used for both `then` and `else` branches. When entering the `else`
@@ -338,7 +338,7 @@ impl IfControlFrame {
     pub fn new(
         block_type: BlockType,
         end_label: LabelRef,
-        branch_params: RegisterSlice,
+        branch_params: RegisterSpan,
         stack_height: BlockHeight,
         consume_fuel: Option<Instr>,
         reachability: IfReachability,
@@ -381,7 +381,7 @@ impl IfControlFrame {
     }
 
     /// Returns an iterator over the registers holding the branching parameters of the [`IfControlFrame`].
-    pub fn branch_params(&self, engine: &Engine) -> RegisterSliceIter {
+    pub fn branch_params(&self, engine: &Engine) -> RegisterSpanIter {
         self.branch_params
             .iter(self.block_type().len_results(engine) as usize)
     }
@@ -594,7 +594,7 @@ impl ControlFrame {
     }
 
     /// Returns an iterator over the registers holding the branch parameters of the [`ControlFrame`].
-    pub fn branch_params(&self, engine: &Engine) -> RegisterSliceIter {
+    pub fn branch_params(&self, engine: &Engine) -> RegisterSpanIter {
         match self {
             Self::Block(frame) => frame.branch_params(engine),
             Self::Loop(frame) => frame.branch_params(engine),

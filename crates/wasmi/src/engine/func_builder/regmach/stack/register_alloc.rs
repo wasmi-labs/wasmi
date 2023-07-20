@@ -1,6 +1,6 @@
 use super::{TaggedProvider, TypedProvider};
 use crate::engine::{
-    bytecode2::{Register, RegisterSlice},
+    bytecode2::{Register, RegisterSpan},
     func_builder::{Instr, TranslationErrorInner},
     TranslationError,
 };
@@ -250,14 +250,14 @@ impl RegisterAlloc {
     /// # Panics
     ///
     /// If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
-    pub fn push_dynamic_n(&mut self, n: usize) -> Result<RegisterSlice, TranslationError> {
-        fn next_dynamic_n(this: &mut RegisterAlloc, n: usize) -> Option<RegisterSlice> {
+    pub fn push_dynamic_n(&mut self, n: usize) -> Result<RegisterSpan, TranslationError> {
+        fn next_dynamic_n(this: &mut RegisterAlloc, n: usize) -> Option<RegisterSpan> {
             let n = i16::try_from(n).ok()?;
             let next_dynamic = this.next_dynamic.checked_add(n)?;
             if next_dynamic >= this.next_storage {
                 return None;
             }
-            let register = RegisterSlice::new(Register::from_i16(this.next_dynamic));
+            let register = RegisterSpan::new(Register::from_i16(this.next_dynamic));
             this.next_dynamic += n;
             this.max_dynamic = max(this.max_dynamic, this.next_dynamic);
             Some(register)

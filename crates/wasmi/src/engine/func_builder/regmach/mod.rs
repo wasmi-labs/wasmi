@@ -37,8 +37,8 @@ use crate::{
             Const32,
             Instruction,
             Register,
-            RegisterSlice,
-            RegisterSliceIter,
+            RegisterSpan,
+            RegisterSpanIter,
             Sign,
         },
         config::FuelCosts,
@@ -155,11 +155,11 @@ impl<'parser> FuncTranslator<'parser> {
                     .push_consume_fuel_instr(self.fuel_costs().base)
             })
             .transpose()?;
-        // Note: we use a dummy `RegisterSlice` as placeholder.
+        // Note: we use a dummy `RegisterSpan` as placeholder.
         //
         // We can do this since the branch parameters of the function enclosing block
         // are never used due to optimizations to directly return to the caller instead.
-        let branch_params = RegisterSlice::new(Register::from_i16(0));
+        let branch_params = RegisterSpan::new(Register::from_i16(0));
         let block_frame = BlockControlFrame::new(
             block_type,
             end_label,
@@ -297,7 +297,7 @@ impl<'parser> FuncTranslator<'parser> {
     /// Convenience function to copy the parameters when branching to a control frame.
     fn translate_copy_branch_params(
         &mut self,
-        branch_params: RegisterSliceIter,
+        branch_params: RegisterSpanIter,
     ) -> Result<(), TranslationError> {
         if branch_params.len() == 0 {
             // If the block does not have branch parameters there is no need to copy anything.
@@ -443,7 +443,7 @@ impl<'parser> FuncTranslator<'parser> {
     ///    - Note: All dynamically allocated registers must be contiguous.
     ///    - These registers serve as the registers and to hold the branch
     ///      parameters upon branching to the control flow block and are
-    ///      going to be returned via [`RegisterSlice`].
+    ///      going to be returned via [`RegisterSpan`].
     /// 3. Drop all dynamically allocated branch parameter registers again.
     /// 4. Push the block parameters stored in the `buffer` back onto the stack.
     /// 5. Return the result registers of step 2.
@@ -463,7 +463,7 @@ impl<'parser> FuncTranslator<'parser> {
         &mut self,
         len_block_params: usize,
         len_branch_params: usize,
-    ) -> Result<RegisterSlice, TranslationError> {
+    ) -> Result<RegisterSpan, TranslationError> {
         let params = &mut self.alloc.buffer;
         // Pop the block parameters off the stack.
         self.alloc.stack.pop_n(len_block_params, params);
