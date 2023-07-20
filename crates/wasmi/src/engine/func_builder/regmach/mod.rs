@@ -1999,17 +1999,16 @@ impl<'parser> FuncTranslator<'parser> {
                 }
             }
             results => {
+                let providers = &mut self.alloc.buffer;
+                let registers = &mut self.alloc.register_buffer;
                 self.alloc
                     .stack
-                    .pop_n(results.len(), &mut self.alloc.buffer);
-                let providers = self
-                    .alloc
-                    .buffer
-                    .iter()
-                    .copied()
-                    .map(TypedProvider::into_untyped);
-                let sref = self.res.engine().alloc_providers(providers)?;
-                Instruction::return_many(sref)
+                    .pop_n_as_registers(results.len(), providers, registers)?;
+                let slice = self
+                    .res
+                    .engine()
+                    .alloc_registers(registers.iter().copied())?;
+                Instruction::return_many(slice)
             }
         };
         self.alloc.instr_encoder.push_instr(instr)?;
@@ -2071,17 +2070,15 @@ impl<'parser> FuncTranslator<'parser> {
                 }
             }
             results => {
+                let registers = &mut self.alloc.register_buffer;
                 self.alloc
                     .stack
-                    .peek_n(results.len(), &mut self.alloc.buffer);
-                let providers = self
-                    .alloc
-                    .buffer
-                    .iter()
-                    .copied()
-                    .map(TypedProvider::into_untyped);
-                let sref = self.res.engine().alloc_providers(providers)?;
-                Instruction::return_nez_many(condition, sref)
+                    .peek_n_as_registers(results.len(), registers)?;
+                let slice = self
+                    .res
+                    .engine()
+                    .alloc_registers(registers.iter().copied())?;
+                Instruction::return_nez_many(condition, slice)
             }
         };
         self.alloc.instr_encoder.push_instr(instr)?;

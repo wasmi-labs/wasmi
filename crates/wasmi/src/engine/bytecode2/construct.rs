@@ -9,8 +9,8 @@ use super::{
     LoadAtInstr,
     LoadInstr,
     LoadOffset16Instr,
-    ProviderSliceRef,
     Register,
+    RegisterSliceRef,
     RegisterSpan,
     StoreAtInstr,
     StoreInstr,
@@ -204,7 +204,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::ReturnMany`] from the given `values`.
-    pub fn return_many(values: ProviderSliceRef) -> Self {
+    pub fn return_many(values: RegisterSliceRef) -> Self {
         Self::ReturnMany { values }
     }
 
@@ -243,7 +243,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::ReturnNezMany`] for the given `condition` and `values`.
-    pub fn return_nez_many(condition: Register, values: ProviderSliceRef) -> Self {
+    pub fn return_nez_many(condition: Register, values: RegisterSliceRef) -> Self {
         Self::ReturnNezMany { condition, values }
     }
 

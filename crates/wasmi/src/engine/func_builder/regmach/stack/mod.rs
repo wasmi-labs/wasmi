@@ -89,15 +89,7 @@ impl ValueStack {
         params_buffer: &mut Vec<Register>,
     ) -> Result<RegisterSpan, TranslationError> {
         let (params, results) = func_type.params_results();
-        self.pop_n(params.len(), provider_buffer);
-        params_buffer.clear();
-        for provider in provider_buffer.iter().copied() {
-            let param = match provider {
-                Provider::Register(param) => param,
-                Provider::Const(param) => self.alloc_const(param)?,
-            };
-            params_buffer.push(param);
-        }
+        self.pop_n_as_registers(params.len(), provider_buffer, params_buffer)?;
         let results = self.push_dynamic_n(results.len())?;
         debug_assert_eq!(provider_buffer.len(), params_buffer.len());
         Ok(results)
@@ -278,6 +270,35 @@ impl ValueStack {
         result[..].reverse()
     }
 
+    /// Popn the `n` top-most [`Provider`] from the [`ValueStack`] and convert them to [`Register`].
+    ///
+    /// # Note
+    ///
+    /// - Conversion from [`Provider`] to [`Register`] is done by allocating function local constant values.
+    /// - Both `provider_buffer` and `params_buffer` will be cleared before this operation.
+    ///
+    /// # Errors
+    ///
+    /// - If there are too few providers on the [`ValueStack`].
+    /// - If too many function local constants are being registered as call parameters.
+    pub fn pop_n_as_registers(
+        &mut self,
+        n: usize,
+        provider_buffer: &mut Vec<TypedProvider>,
+        params_buffer: &mut Vec<Register>,
+    ) -> Result<(), TranslationError> {
+        self.pop_n(n, provider_buffer);
+        params_buffer.clear();
+        for provider in provider_buffer.iter().copied() {
+            let register = match provider {
+                Provider::Register(register) => register,
+                Provider::Const(value) => self.consts.alloc(value.into())?,
+            };
+            params_buffer.push(register);
+        }
+        Ok(())
+    }
+
     /// Peeks the `n` top-most [`Provider`] from the [`ValueStack`] and store them in `result`.
     ///
     /// # Note
@@ -296,6 +317,31 @@ impl ValueStack {
             };
             result.push(provider);
         }
+    }
+
+    /// Peeks the `n` top-most [`Provider`] from the [`ValueStack`] and store them in `result`.
+    ///
+    /// # Note
+    ///
+    /// - The top-most [`Provider`] will be the n-th item in `result`.
+    /// - The `result` [`Vec`] will be cleared before refilled.
+    pub fn peek_n_as_registers(
+        &mut self,
+        n: usize,
+        results: &mut Vec<Register>,
+    ) -> Result<(), TranslationError> {
+        results.clear();
+        let peeked = self.providers.peek_n(n);
+        for provider in peeked {
+            let register = match *provider {
+                TaggedProvider::Local(register)
+                | TaggedProvider::Dynamic(register)
+                | TaggedProvider::Storage(register) => register,
+                TaggedProvider::Const(value) => self.consts.alloc(value.into())?,
+            };
+            results.push(register);
+        }
+        Ok(())
     }
 
     /// Pushes the given `providers` into the [`ValueStack`].

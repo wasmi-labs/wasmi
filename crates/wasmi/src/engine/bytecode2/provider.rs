@@ -10,20 +10,20 @@ use wasmi_core::UntypedValue;
 #[cfg(doc)]
 use super::Instruction;
 
-/// A light-weight reference to a [`Provider`] slice.
+/// A light-weight reference to a [`Register`] slice.
 ///
 /// # Dev. Note
 ///
-/// We use `Const32` instead of a simple `u32` here to
+/// We use [`AnyConst32`] instead of a simple `u32` here to
 /// reduce the alignment requirement of this type so that
 /// it can be used by variants of [`Instruction`] without
 /// bloating up the [`Instruction`] type due to alignment
 /// constraints.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct ProviderSliceRef(AnyConst32);
+pub struct RegisterSliceRef(AnyConst32);
 
-impl ProviderSliceRef {
-    /// Returns a new [`ProviderSliceRef`] from the given `usize` index.
+impl RegisterSliceRef {
+    /// Returns a new [`RegisterSliceRef`] from the given `usize` index.
     fn from_index(index: usize) -> Result<Self, TranslationError> {
         u32::try_from(index)
             .map_err(|_| TranslationError::new(TranslationErrorInner::ProviderSliceOverflow))
@@ -31,7 +31,7 @@ impl ProviderSliceRef {
             .map(Self)
     }
 
-    /// Returns the [`ProviderSliceRef`] as `usize`.
+    /// Returns the [`RegisterSliceRef`] as `usize`.
     fn into_index(self) -> usize {
         self.0.to_u32() as usize
     }
@@ -73,16 +73,16 @@ impl UntypedProvider {
     }
 }
 
-/// An allocater for [`Provider`] slices.
+/// An allocater for [`Register`] slices.
 #[derive(Debug)]
-pub struct ProviderSliceAlloc<T> {
-    /// The end indices of each [`ProviderSliceRef`].
+pub struct RegisterSliceAlloc {
+    /// The end indices of each [`RegisterSliceRef`].
     ends: Vec<usize>,
     /// All [`Provider`] of all allocated [`Provider`] slices.
-    providers: Vec<Provider<T>>,
+    providers: Vec<Register>,
 }
 
-impl<T> Default for ProviderSliceAlloc<T> {
+impl Default for RegisterSliceAlloc {
     fn default() -> Self {
         Self {
             ends: vec![0],
@@ -91,26 +91,26 @@ impl<T> Default for ProviderSliceAlloc<T> {
     }
 }
 
-impl<T> ProviderSliceAlloc<T> {
-    /// Allocates a new [`Provider`] slice and returns its [`ProviderSliceRef`].
-    pub fn alloc<I>(&mut self, providers: I) -> Result<ProviderSliceRef, TranslationError>
+impl RegisterSliceAlloc {
+    /// Allocates a new [`Provider`] slice and returns its [`RegisterSliceRef`].
+    pub fn alloc<I>(&mut self, providers: I) -> Result<RegisterSliceRef, TranslationError>
     where
-        I: IntoIterator<Item = Provider<T>>,
+        I: IntoIterator<Item = Register>,
     {
         let before = self.providers.len();
         self.providers.extend(providers);
         let end = self.providers.len();
         if before == end {
             // The allocated slice was empty.
-            return ProviderSliceRef::from_index(0);
+            return RegisterSliceRef::from_index(0);
         }
         let index = self.ends.len();
         self.ends.push(end);
-        ProviderSliceRef::from_index(index)
+        RegisterSliceRef::from_index(index)
     }
 
-    /// Returns the `start..end` range of the given [`ProviderSliceRef`] if any.
-    fn ref_to_range(&self, slice: ProviderSliceRef) -> Option<Range<usize>> {
+    /// Returns the `start..end` range of the given [`RegisterSliceRef`] if any.
+    fn ref_to_range(&self, slice: RegisterSliceRef) -> Option<Range<usize>> {
         let index = slice.into_index();
         let end = self.ends.get(index).copied()?;
         let start = index
@@ -120,8 +120,8 @@ impl<T> ProviderSliceAlloc<T> {
         Some(start..end)
     }
 
-    /// Returns the [`Provider`] slice of the given [`ProviderSliceRef`] if any.
-    pub fn get(&self, slice: ProviderSliceRef) -> Option<&[Provider<T>]> {
+    /// Returns the [`Provider`] slice of the given [`RegisterSliceRef`] if any.
+    pub fn get(&self, slice: RegisterSliceRef) -> Option<&[Register]> {
         self.ref_to_range(slice).map(|range| &self.providers[range])
     }
 }
@@ -129,7 +129,7 @@ impl<T> ProviderSliceAlloc<T> {
 /// A [`Provider`] slice stack.
 #[derive(Debug)]
 pub struct ProviderSliceStack<T> {
-    /// The end indices of each [`ProviderSliceRef`].
+    /// The end indices of each [`RegisterSliceRef`].
     ends: Vec<usize>,
     /// All [`Provider`] of all allocated [`Provider`] slices.
     providers: Vec<Provider<T>>,
@@ -145,8 +145,8 @@ impl<T> Default for ProviderSliceStack<T> {
 }
 
 impl<T> ProviderSliceStack<T> {
-    /// Pushes a new [`Provider`] slice and returns its [`ProviderSliceRef`].
-    pub fn push<I>(&mut self, providers: I) -> Result<ProviderSliceRef, TranslationError>
+    /// Pushes a new [`Provider`] slice and returns its [`RegisterSliceRef`].
+    pub fn push<I>(&mut self, providers: I) -> Result<RegisterSliceRef, TranslationError>
     where
         I: IntoIterator<Item = Provider<T>>,
     {
@@ -154,10 +154,10 @@ impl<T> ProviderSliceStack<T> {
         let end = self.providers.len();
         let index = self.ends.len();
         self.ends.push(end);
-        ProviderSliceRef::from_index(index)
+        RegisterSliceRef::from_index(index)
     }
 
-    /// Pops the top-most [`Provider`] slice from the [`ProviderSliceAlloc`] and returns it.
+    /// Pops the top-most [`Register`] slice from the [`RegisterSliceAlloc`] and returns it.
     pub fn pop(&mut self) -> Option<Drain<Provider<T>>> {
         let end = self.ends.pop()?;
         let start = self.ends.last().copied().unwrap_or(0);

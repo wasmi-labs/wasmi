@@ -13,9 +13,9 @@ pub(crate) use self::{
     immediate::{AnyConst16, AnyConst32, Const16, Const32},
     provider::{
         Provider,
-        ProviderSliceAlloc,
-        ProviderSliceRef,
         ProviderSliceStack,
+        RegisterSliceAlloc,
+        RegisterSliceRef,
         UntypedProvider,
     },
     utils::{
@@ -142,7 +142,7 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    RegisterSlice(ProviderSliceRef),
+    RegisterSlice(RegisterSliceRef),
 
     /// Traps the execution with the given [`TrapCode`].
     ///
@@ -209,7 +209,7 @@ pub enum Instruction {
     /// Returns values as stored in the [`ProviderSliceRef`].
     ReturnMany {
         /// Identifier for a [`Provider`] slice.
-        values: ProviderSliceRef,
+        values: RegisterSliceRef,
     },
 
     /// A conditional `return` instruction.
@@ -279,7 +279,7 @@ pub enum Instruction {
         /// The register holding the condition to evaluate against zero.
         condition: Register,
         /// The returned values.
-        values: ProviderSliceRef,
+        values: RegisterSliceRef,
     },
 
     /// A Wasm `br` instruction.
