@@ -269,6 +269,7 @@ mod prepare;
 mod runner;
 mod table;
 mod types;
+
 /// Tracer lib for zkWasm
 pub mod tracer;
 
@@ -454,7 +455,7 @@ impl Module {
         Module::from_parity_wasm_module(module)
     }
 
-    pub(crate) fn module(&self) -> &parity_wasm::elements::Module {
+    pub fn module(&self) -> &parity_wasm::elements::Module {
         &self.module
     }
 
