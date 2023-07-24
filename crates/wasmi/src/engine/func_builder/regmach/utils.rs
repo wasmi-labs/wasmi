@@ -1,5 +1,5 @@
-use super::TypedValue;
-use crate::engine::bytecode2::{AnyConst16, Const16, Sign};
+use super::{stack::ValueStack, TranslationError, TypedProvider, TypedValue};
+use crate::engine::bytecode2::{AnyConst16, Const16, Provider, Register, RegisterSpanIter, Sign};
 
 /// A WebAssembly integer. Either `i32` or `i64`.
 ///
@@ -100,5 +100,69 @@ impl WasmFloat for f64 {
             true => Sign::Pos,
             false => Sign::Neg,
         }
+    }
+}
+
+impl Provider<u8> {
+    /// Creates a new `memory` value [`Provider`] from the general [`TypedProvider`].
+    pub fn new(provider: TypedProvider) -> Self {
+        match provider {
+            TypedProvider::Const(value) => Self::Const(u32::from(value) as u8),
+            TypedProvider::Register(register) => Self::Register(register),
+        }
+    }
+}
+
+impl Provider<Const16<u32>> {
+    /// Creates a new `table` or `memory` index [`Provider`] from the general [`TypedProvider`].
+    ///
+    /// # Note
+    ///
+    /// This is a convenience function and used by translation
+    /// procedures for certain Wasm `table` instructions.
+    pub fn new(provider: TypedProvider, stack: &mut ValueStack) -> Result<Self, TranslationError> {
+        match provider {
+            TypedProvider::Const(value) => match Const16::from_u32(u32::from(value)) {
+                Some(value) => Ok(Self::Const(value)),
+                None => {
+                    let register = stack.alloc_const(value)?;
+                    Ok(Self::Register(register))
+                }
+            },
+            TypedProvider::Register(index) => Ok(Self::Register(index)),
+        }
+    }
+}
+
+impl RegisterSpanIter {
+    /// Creates a [`RegisterSpanIter`] from the given slice of [`TypedProvider`] if possible.
+    ///
+    /// All [`TypedProvider`] must be [`Register`] and have
+    /// contiguous indices for the conversion to succeed.
+    ///
+    /// Returns `None` if the `providers` slice is empty.
+    pub fn from_providers(providers: &[TypedProvider]) -> Option<Self> {
+        /// Returns the `i16` [`Register`] index if the [`TypedProvider`] is a [`Register`].
+        fn register_index(provider: &TypedProvider) -> Option<i16> {
+            match provider {
+                TypedProvider::Register(index) => Some(index.to_i16()),
+                TypedProvider::Const(_) => None,
+            }
+        }
+        let (first, rest) = providers.split_first()?;
+        let first_index = register_index(first)?;
+        let mut prev_index = first_index;
+        for next in rest {
+            let next_index = register_index(next)?;
+            if next_index.checked_sub(prev_index)? != 1 {
+                return None;
+            }
+            prev_index = next_index;
+        }
+        let end_index = prev_index.checked_add(1)?;
+        Some(Self::from_raw_parts(
+            Register::from_i16(first_index),
+            Register::from_i16(end_index),
+        ))
     }
 }

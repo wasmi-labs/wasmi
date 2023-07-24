@@ -86,12 +86,10 @@ impl ValueStack {
         &mut self,
         func_type: &FuncType,
         provider_buffer: &mut Vec<TypedProvider>,
-        params_buffer: &mut Vec<Register>,
     ) -> Result<RegisterSpan, TranslationError> {
         let (params, results) = func_type.params_results();
-        self.pop_n_as_registers(params.len(), provider_buffer, params_buffer)?;
+        self.pop_n(params.len(), provider_buffer);
         let results = self.push_dynamic_n(results.len())?;
-        debug_assert_eq!(provider_buffer.len(), params_buffer.len());
         Ok(results)
     }
 

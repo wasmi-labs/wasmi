@@ -78,6 +78,15 @@ pub struct RegisterSpanIter {
 }
 
 impl RegisterSpanIter {
+    /// Creates a [`RegisterSpanIter`] from then given raw `start` and `end` [`Register`].
+    pub fn from_raw_parts(start: Register, end: Register) -> Self {
+        debug_assert!(start.to_i16() <= end.to_i16());
+        Self {
+            next: start,
+            last: end,
+        }
+    }
+
     /// Creates a new [`RegisterSpanIter`] for the given `start` [`Register`] and length `len`.
     ///
     /// # Panics
@@ -92,7 +101,7 @@ impl RegisterSpanIter {
             .checked_add(len)
             .expect("overflowing register index for register span");
         let last = Register(last_index);
-        Self { next, last }
+        Self::from_raw_parts(next, last)
     }
 }
 
@@ -114,9 +123,8 @@ impl DoubleEndedIterator for RegisterSpanIter {
         if self.next == self.last {
             return None;
         }
-        let reg: Register = self.last;
         self.last = self.last.prev();
-        Some(reg)
+        Some(self.last)
     }
 }
 

@@ -17,8 +17,8 @@ use super::{
 use crate::{
     engine::{
         bytecode,
-        bytecode2::{Const16, Instruction, Provider, Register},
-        func_builder::regmach::{control_stack::AcquiredTarget, stack::ValueStack},
+        bytecode2::{Const16, Instruction, Provider, Register, RegisterSpanIter},
+        func_builder::regmach::control_stack::AcquiredTarget,
         TranslationError,
     },
     module::{self, BlockType, FuncIdx, WasmiValueType},
@@ -494,18 +494,45 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.bump_fuel_consumption(self.fuel_costs().call)?;
         let func_idx = FuncIdx::from(function_index);
         let func_type = self.func_type_of(func_idx);
+        let (params, results) = func_type.params_results();
+        let len_results =
+            u16::try_from(func_type.results().len()).expect("too many function return types");
         let provider_params = &mut self.alloc.buffer;
-        let register_params = &mut self.alloc.register_buffer;
-        let results =
-            self.alloc
-                .stack
-                .adjust_for_call(&func_type, provider_params, register_params)?;
-        let len_params = register_params.len();
+        self.alloc.stack.pop_n(params.len(), provider_params);
+        let call_params = match RegisterSpanIter::from_providers(provider_params) {
+            Some(register_span) => {
+                // Case: we are on the happy path were the providers on the
+                //       stack already are registers with contiguous indices.
+                //
+                //       This allows us to avoid copying over the registers
+                //       to where the call instruction expects them on the stack.
+                Instruction::call_params(register_span, len_results)
+            }
+            None => {
+                // Case: the providers on the stack need to be copied to the
+                //       location where the call instruction expects its parameters
+                //       before executing the call.
+                let copy_results = self
+                    .alloc
+                    .stack
+                    .peek_dynamic_n(params.len())?
+                    .iter(params.len());
+                for (copy_result, copy_input) in copy_results.zip(provider_params.iter().copied()) {
+                    self.alloc.instr_encoder.encode_copy(
+                        &mut self.alloc.stack,
+                        copy_result,
+                        copy_input,
+                    )?;
+                }
+                Instruction::call_params(copy_results, len_results)
+            }
+        };
+        let results = self.alloc.stack.push_dynamic_n(results.len())?;
         let instr = match self.res.get_compiled_func_2(func_idx) {
             Some(compiled_func) => {
                 // Case: We are calling an internal function and can optimize
                 //       this case by using the special instruction for it.
-                match len_params {
+                match params.len() {
                     0 => Instruction::call_internal_0(results, compiled_func),
                     _ => Instruction::call_internal(results, compiled_func),
                 }
@@ -513,26 +540,29 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             None => {
                 // Case: We are calling an imported function and must use the
                 //       general calling operator for it.
-                match len_params {
+                match params.len() {
                     0 => Instruction::call_imported_0(results, function_index),
                     _ => Instruction::call_imported(results, function_index),
                 }
             }
         };
         self.alloc.instr_encoder.push_instr(instr)?;
-        let param_instr = match register_params[..] {
-            [] => None,
-            [param] => Some(Instruction::Register(param)),
-            [fst, snd] => Some(Instruction::Register2([fst, snd])),
-            [fst, snd, trd] => Some(Instruction::Register3([fst, snd, trd])),
-            ref slice => {
-                let slice = self.res.engine().alloc_registers(slice.iter().copied())?;
-                Some(Instruction::RegisterSlice(slice))
-            }
-        };
-        if let Some(param_instr) = param_instr {
-            self.alloc.instr_encoder.push_instr(param_instr)?;
+        if !params.is_empty() {
+            self.alloc.instr_encoder.push_instr(call_params)?;
         }
+        // let param_instr = match register_params[..] {
+        //     [] => None,
+        //     [param] => Some(Instruction::Register(param)),
+        //     [fst, snd] => Some(Instruction::Register2([fst, snd])),
+        //     [fst, snd, trd] => Some(Instruction::Register3([fst, snd, trd])),
+        //     ref slice => {
+        //         let slice = self.res.engine().alloc_registers(slice.iter().copied())?;
+        //         Some(Instruction::RegisterSlice(slice))
+        //     }
+        // };
+        // if let Some(param_instr) = param_instr {
+        //     self.alloc.instr_encoder.push_instr(param_instr)?;
+        // }
         Ok(())
     }
 
@@ -3434,36 +3464,5 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             .instr_encoder
             .push_instr(Instruction::table_size(result, table))?;
         Ok(())
-    }
-}
-
-impl Provider<u8> {
-    /// Creates a new `memory` value [`Provider`] from the general [`TypedProvider`].
-    fn new(provider: TypedProvider) -> Self {
-        match provider {
-            TypedProvider::Const(value) => Self::Const(u32::from(value) as u8),
-            TypedProvider::Register(register) => Self::Register(register),
-        }
-    }
-}
-
-impl Provider<Const16<u32>> {
-    /// Creates a new `table` or `memory` index [`Provider`] from the general [`TypedProvider`].
-    ///
-    /// # Note
-    ///
-    /// This is a convenience function and used by translation
-    /// procedures for certain Wasm `table` instructions.
-    fn new(provider: TypedProvider, stack: &mut ValueStack) -> Result<Self, TranslationError> {
-        match provider {
-            TypedProvider::Const(value) => match Const16::from_u32(u32::from(value)) {
-                Some(value) => Ok(Self::Const(value)),
-                None => {
-                    let register = stack.alloc_const(value)?;
-                    Ok(Self::Register(register))
-                }
-            },
-            TypedProvider::Register(index) => Ok(Self::Register(index)),
-        }
     }
 }

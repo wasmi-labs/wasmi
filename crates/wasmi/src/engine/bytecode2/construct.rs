@@ -12,13 +12,14 @@ use super::{
     Register,
     RegisterSliceRef,
     RegisterSpan,
+    RegisterSpanIter,
     StoreAtInstr,
     StoreInstr,
     StoreOffset16Instr,
     UnaryInstr,
 };
 use crate::engine::{
-    bytecode::{BranchOffset, DataSegmentIdx, ElementSegmentIdx, FuncIdx, TableIdx},
+    bytecode::{BranchOffset, DataSegmentIdx, ElementSegmentIdx, FuncIdx, SignatureIdx, TableIdx},
     bytecode2,
     CompiledFunc,
 };
@@ -160,16 +161,6 @@ macro_rules! constructor_for {
 }
 
 impl Instruction {
-    /// Creates a new [`Instruction::Register2`] from the given [`Register`] indices.
-    pub fn register_2(reg0: Register, reg1: Register) -> Self {
-        Self::Register2([reg0, reg1])
-    }
-
-    /// Creates a new [`Instruction::Register3`] from the given [`Register`] indices.
-    pub fn register_3(reg0: Register, reg1: Register, reg2: Register) -> Self {
-        Self::Register3([reg0, reg1, reg2])
-    }
-
     /// Creates a new [`Instruction::Const32`] from the given `value`.
     pub fn const32(value: impl Into<AnyConst32>) -> Self {
         Self::Const32(value.into())
@@ -962,6 +953,14 @@ impl Instruction {
         }
     }
 
+    /// Creates a new [`Instruction::CallParams`] for the given `params` and `len_results`.
+    pub fn call_params(params: RegisterSpanIter, len_results: u16) -> Self {
+        Self::CallParams {
+            params,
+            len_results,
+        }
+    }
+
     /// Creates a new [`Instruction::ReturnCallInternal0`] for the given `func`.
     pub fn return_call_internal_0(func: CompiledFunc) -> Self {
         Self::ReturnCallInternal0 { func }
@@ -1018,6 +1017,22 @@ impl Instruction {
         Self::CallImported {
             results,
             func: func.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::CallIndirect0`] for the given `func`.
+    pub fn call_indirect_0(results: RegisterSpan, func_type: impl Into<SignatureIdx>) -> Self {
+        Self::CallIndirect0 {
+            results,
+            func_type: func_type.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::CallIndirect`] for the given `func`.
+    pub fn call_indirect(results: RegisterSpan, func_type: impl Into<SignatureIdx>) -> Self {
+        Self::CallIndirect {
+            results,
+            func_type: func_type.into(),
         }
     }
 

@@ -42,6 +42,7 @@ use super::{
         ElementSegmentIdx,
         FuncIdx,
         GlobalIdx,
+        SignatureIdx,
         TableIdx,
     },
     CompiledFunc,
@@ -122,27 +123,6 @@ pub enum Instruction {
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
     Register(Register),
-    /// Two [`Register`] instruction parameter.
-    ///
-    /// # Note
-    ///
-    /// This [`Instruction`] only acts as a parameter to another
-    /// one and will never be executed itself directly.
-    Register2([Register; 2]),
-    /// Three [`Register`] instruction parameter.
-    ///
-    /// # Note
-    ///
-    /// This [`Instruction`] only acts as a parameter to another
-    /// one and will never be executed itself directly.
-    Register3([Register; 3]),
-    /// A [`Register`] slice instruction parameter.
-    ///
-    /// # Note
-    ///
-    /// This [`Instruction`] only acts as a parameter to another
-    /// one and will never be executed itself directly.
-    RegisterSlice(RegisterSliceRef),
 
     /// Traps the execution with the given [`TrapCode`].
     ///
@@ -467,6 +447,20 @@ pub enum Instruction {
         func: FuncIdx,
     },
 
+    /// Auxiliary [`Instruction`] to encode call parameters for call instructions.
+    CallParams {
+        /// The contiguous sequence of registers storing the call parameters.
+        params: RegisterSpanIter,
+        /// The number of call results.
+        ///
+        /// # Note
+        ///
+        /// This is an optimization so that we do not have to query the number
+        /// of results from the called function since we already know and have
+        /// enough space left in the [`Instruction::CallParams`].
+        len_results: u16,
+    },
+
     /// Wasm `call` equivalent `wasmi` instruction.
     ///
     /// # Note
@@ -486,12 +480,7 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// Must be followed by one of:
-    ///
-    /// 1. [`Instruction::Register`]: a single call parameter.
-    /// 1. [`Instruction::Register2`]: two call parameters.
-    /// 1. [`Instruction::Register3`]: three call parameters.
-    /// 1. [`Instruction::RegisterSlice`]: a slice of call parameters.
+    /// Must be followed by [`Instruction::CallParams`].
     CallInternal {
         /// The registers storing the results of the call.
         results: RegisterSpan,
@@ -503,7 +492,7 @@ pub enum Instruction {
     ///
     /// # Note
     ///
-    /// Used for calling imported functions without parameters.
+    /// Used for calling imported Wasm functions without parameters.
     CallImported0 {
         /// The registers storing the results of the call.
         results: RegisterSpan,
@@ -514,21 +503,52 @@ pub enum Instruction {
     ///
     /// # Note
     ///
-    /// Used for calling imported functions with parameters.
+    /// Used for calling imported Wasm functions with parameters.
     ///
     /// # Encoding
     ///
-    /// Must be followed by one of:
-    ///
-    /// 1. [`Instruction::Register`]: a single call parameter.
-    /// 1. [`Instruction::Register2`]: two call parameters.
-    /// 1. [`Instruction::Register3`]: three call parameters.
-    /// 1. [`Instruction::RegisterSlice`]: a slice of call parameters.
+    /// Must be followed by [`Instruction::CallParams`].
     CallImported {
         /// The registers storing the results of the call.
         results: RegisterSpan,
         /// The called imported function.
         func: FuncIdx,
+    },
+
+    /// Wasm `call` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// Used for indirectly calling Wasm functions without parameters.
+    ///
+    /// # Encoding
+    ///
+    /// Must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the `table` to operate on
+    CallIndirect0 {
+        /// The registers storing the results of the call.
+        results: RegisterSpan,
+        /// The called internal function.
+        func_type: SignatureIdx,
+    },
+    /// Wasm `call` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// Used for indirectly calling Wasm functions with parameters.
+    ///
+    /// # Encoding
+    ///
+    /// Must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the `table` to operate on
+    /// 1. [`Instruction::CallParams`]: the call parameters
+    CallIndirect {
+        /// The registers storing the results of the call.
+        results: RegisterSpan,
+        /// The called internal function.
+        func_type: SignatureIdx,
     },
 
     /// A Wasm `select` or `select <ty>` instruction.
