@@ -8,7 +8,7 @@ default:
   retry:
     max: 2
 
-.docker-env:                       &docker-env
+.docker-env:
   image:                           "paritytech/ci-linux:staging"
   interruptible:                   true
   tags:
@@ -27,13 +27,15 @@ default:
     paths:
       - target/ci/
 
-.pr-refs:                          &pr-refs
+.pr-refs:
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                   # PRs
 
 .master-refs:
   rules:
     - if: $CI_COMMIT_REF_NAME == "master"
+    # removeme
+    - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                   # PRs
 
 # benchmarks
 criterion-benchmark:
