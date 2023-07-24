@@ -82,15 +82,15 @@ impl RegisterSpanIter {
     ///
     /// # Panics
     ///
-    /// If the `start..end` [`Register`] slice indices are out of bounds.
+    /// If the `start..end` [`Register`] span indices are out of bounds.
     fn new(start: Register, len: usize) -> Self {
         let len = i16::try_from(len)
-            .unwrap_or_else(|_| panic!("out of bounds length for register slice: {len}"));
+            .unwrap_or_else(|_| panic!("out of bounds length for register span: {len}"));
         let next = start;
         let last_index = start
             .0
             .checked_add(len)
-            .expect("overflowing register index for register slice");
+            .expect("overflowing register index for register span");
         let last = Register(last_index);
         Self { next, last }
     }
