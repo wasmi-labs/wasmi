@@ -961,17 +961,12 @@ impl Instruction {
         }
     }
 
-    /// Creates a new [`Instruction::ReturnCallInternal0`] for the given `func`.
+    /// Creates a new [`Instruction::CallInternal0`] for the given `func`.
     pub fn return_call_internal_0(func: CompiledFunc) -> Self {
         Self::ReturnCallInternal0 { func }
     }
 
-    /// Creates a new [`Instruction::ReturnCallInternal1`] for the given `func` and `param`.
-    pub fn return_call_internal_1(func: CompiledFunc, param: Register) -> Self {
-        Self::ReturnCallInternal1 { func, param }
-    }
-
-    /// Creates a new [`Instruction::ReturnCallInternal`] for the given `func`.
+    /// Creates a new [`Instruction::CallInternal`] for the given `func`.
     pub fn return_call_internal(func: CompiledFunc) -> Self {
         Self::ReturnCallInternal { func }
     }
@@ -981,17 +976,23 @@ impl Instruction {
         Self::ReturnCallImported0 { func: func.into() }
     }
 
-    /// Creates a new [`Instruction::ReturnCallImported1`] for the given `func` and `param`.
-    pub fn return_call_imported_1(func: impl Into<FuncIdx>, param: Register) -> Self {
-        Self::ReturnCallImported1 {
-            func: func.into(),
-            param,
-        }
-    }
-
     /// Creates a new [`Instruction::ReturnCallImported`] for the given `func`.
     pub fn return_call_imported(func: impl Into<FuncIdx>) -> Self {
         Self::ReturnCallImported { func: func.into() }
+    }
+
+    /// Creates a new [`Instruction::ReturnCallIndirect0`] for the given `func`.
+    pub fn return_call_indirect_0(func_type: impl Into<SignatureIdx>) -> Self {
+        Self::ReturnCallIndirect0 {
+            func_type: func_type.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::ReturnCallIndirect`] for the given `func`.
+    pub fn return_call_indirect(func_type: impl Into<SignatureIdx>) -> Self {
+        Self::ReturnCallIndirect {
+            func_type: func_type.into(),
+        }
     }
 
     /// Creates a new [`Instruction::CallInternal0`] for the given `func`.

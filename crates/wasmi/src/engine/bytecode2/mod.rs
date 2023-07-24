@@ -371,82 +371,6 @@ pub enum Instruction {
         value: Const32<f64>,
     },
 
-    /// Wasm `return_call` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Used for calling internally compiled Wasm functions without parameters.
-    ReturnCallInternal0 {
-        /// The called internal function.
-        func: CompiledFunc,
-    },
-    /// Wasm `return_call` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Used for calling internally compiled Wasm functions with a single parameter.
-    ReturnCallInternal1 {
-        /// The called internal function.
-        func: CompiledFunc,
-        /// The single parameter of the call instruction.
-        param: Register,
-    },
-    /// Wasm `return_call` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Used for calling internally compiled Wasm functions with multiple parameters.
-    ///
-    /// # Encoding
-    ///
-    /// Must be followed by one of:
-    ///
-    /// 1. [`Instruction::Register2`]: the two call parameters.
-    /// 1. [`Instruction::Register3`]: the three call parameters.
-    /// 1. [`Instruction::RegisterSlice`]: a slice of call parameters.
-    ReturnCallInternal {
-        /// The called internal function.
-        func: CompiledFunc,
-    },
-
-    /// Wasm `return_call` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Used for calling imported functions without parameters.
-    ReturnCallImported0 {
-        /// The called imported function.
-        func: FuncIdx,
-    },
-    /// Wasm `return_call` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Used for calling imported functions with a single parameter.
-    ReturnCallImported1 {
-        /// The called imported function.
-        func: FuncIdx,
-        /// The single parameter of the call instruction.
-        param: Register,
-    },
-    /// Wasm `return_call` equivalent `wasmi` instruction.
-    ///
-    /// # Note
-    ///
-    /// Used for calling imported functions with multiple parameters.
-    ///
-    /// # Encoding
-    ///
-    /// Must be followed by one of:
-    ///
-    /// 1. [`Instruction::Register2`]: the two call parameters.
-    /// 1. [`Instruction::Register3`]: the three call parameters.
-    /// 1. [`Instruction::RegisterSlice`]: a slice of call parameters.
-    ReturnCallImported {
-        /// The called imported function.
-        func: FuncIdx,
-    },
-
     /// Auxiliary [`Instruction`] to encode call parameters for call instructions.
     CallParams {
         /// The contiguous sequence of registers storing the call parameters.
@@ -459,6 +383,84 @@ pub enum Instruction {
         /// of results from the called function since we already know and have
         /// enough space left in the [`Instruction::CallParams`].
         len_results: u16,
+    },
+
+    /// Wasm `return_call` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// Used for tail calling internally compiled Wasm functions without parameters.
+    ReturnCallInternal0 {
+        /// The called internal function.
+        func: CompiledFunc,
+    },
+    /// Wasm `return_call` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// Used for tail calling internally compiled Wasm functions with parameters.
+    ///
+    /// # Encoding
+    ///
+    /// Must be followed by [`Instruction::CallParams`].
+    ReturnCallInternal {
+        /// The called internal function.
+        func: CompiledFunc,
+    },
+
+    /// Wasm `return_call` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// Used for tail calling imported Wasm functions without parameters.
+    ReturnCallImported0 {
+        /// The called imported function.
+        func: FuncIdx,
+    },
+    /// Wasm `return_call` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// Used for tail calling imported Wasm functions with parameters.
+    ///
+    /// # Encoding
+    ///
+    /// Must be followed by [`Instruction::CallParams`].
+    ReturnCallImported {
+        /// The called imported function.
+        func: FuncIdx,
+    },
+
+    /// Wasm `return_call_indirect` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// Used for indirectly calling Wasm functions without parameters.
+    ///
+    /// # Encoding
+    ///
+    /// Must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the `table` to operate on
+    ReturnCallIndirect0 {
+        /// The called internal function.
+        func_type: SignatureIdx,
+    },
+    /// Wasm `return_call_indirect` equivalent `wasmi` instruction.
+    ///
+    /// # Note
+    ///
+    /// Used for indirectly calling Wasm functions with parameters.
+    ///
+    /// # Encoding
+    ///
+    /// Must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the `table` to operate on
+    /// 1. [`Instruction::CallParams`]: the call parameters
+    ReturnCallIndirect {
+        /// The called internal function.
+        func_type: SignatureIdx,
     },
 
     /// Wasm `call` equivalent `wasmi` instruction.
@@ -515,7 +517,7 @@ pub enum Instruction {
         func: FuncIdx,
     },
 
-    /// Wasm `call` equivalent `wasmi` instruction.
+    /// Wasm `call_indirect` equivalent `wasmi` instruction.
     ///
     /// # Note
     ///
@@ -532,7 +534,7 @@ pub enum Instruction {
         /// The called internal function.
         func_type: SignatureIdx,
     },
-    /// Wasm `call` equivalent `wasmi` instruction.
+    /// Wasm `call_indirect` equivalent `wasmi` instruction.
     ///
     /// # Note
     ///
