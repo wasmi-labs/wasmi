@@ -27,6 +27,14 @@ default:
     paths:
       - target/ci/
 
+.common-before:
+  before_script:
+    # Show Versions
+    - cargo --version
+    - rustc --version
+    # Create dir for artifacts
+    - mkdir -p ./target/ci
+
 .pr-refs:
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                   # PRs
@@ -41,20 +49,16 @@ default:
 criterion-benchmark:
   stage:                           benchmarks
   extends:
+    - .common-before
     - .pr-refs
     - .docker-env
     - .collect-artifacts
   script:
-    # Show Versions
-    - cargo --version
-    - rustc --version
-
     - git fetch
     # Benchmark Branch: `master`
     - git checkout master
     - git pull
     - git submodule update --init --recursive
-    - mkdir -p ./target/ci
     - pushd ./crates/wasmi/
     - cargo bench --bench benches -- --noplot --save-baseline master | tee ../../target/ci/bench-master
     - popd
@@ -73,14 +77,11 @@ criterion-benchmark:
 wasmtime-benchmark:
   stage:                           benchmarks
   extends:
+    - .common-before
     - .pr-refs
     - .docker-env
     - .collect-artifacts
   script:
-    # Show Versions
-    - cargo --version
-    - rustc --version
-
     # Install dependencies
     - cargo install cargo-wasi
     - curl https://wasmtime.dev/install.sh -sSf | bash
@@ -91,7 +92,6 @@ wasmtime-benchmark:
     - git checkout master
     - git pull
     - git submodule update --init --recursive
-    - mkdir -p ./target/ci
     - cargo wasi build --profile bench --bench benches --verbose
     - cp `ls -t target/wasm32-wasi/release/deps/*wasi.wasm` target/ci/benches-master.wasm
     - pushd ./crates/wasmi/
@@ -103,7 +103,6 @@ wasmtime-benchmark:
     # `wasmtime` Branch: `pr`
     - git checkout $CI_COMMIT_SHA
     - git submodule update --init --recursive
-    - mkdir -p ./target/ci
     - cargo wasi build --profile bench --bench benches --verbose
     - cp `ls -t target/wasm32-wasi/release/deps/*wasi.wasm` target/ci/benches-pr.wasm
     - pushd ./crates/wasmi/
@@ -114,38 +113,33 @@ wasmtime-benchmark:
 criterion-benchmark-master:
   stage:                           benchmarks
   extends:
+    - .common-before
     - .master-refs
     - .docker-env
+    - .collect-artifacts
   script:
-    # Show Versions
-    - cargo --version
-    - rustc --version
     - git submodule update --init --recursive
     - cd ./crates/wasmi/
-    - cargo bench --bench benches -- --noplot --save-baseline master --output-format bencher
+    - cargo bench --bench benches -- --noplot --save-baseline master --output-format bencher | tee ../../target/ci/output-criterion.txt
 
 wasmtime-benchmark-master:
   stage:                           benchmarks
   extends:
+    - .common-before
     - .master-refs
     - .docker-env
+    - .collect-artifacts
   script:
-    # Show Versions
-    - cargo --version
-    - rustc --version
-
     # Install dependencies
     - cargo install cargo-wasi
     - curl https://wasmtime.dev/install.sh -sSf | bash
     - source ~/.profile
-
     # `wasmtime` Branch: `master`
     - git submodule update --init --recursive
-    - mkdir -p ./target/ci
     - cargo wasi build --profile bench --bench benches --verbose
     - cp `ls -t target/wasm32-wasi/release/deps/*wasi.wasm` target/ci/benches-master.wasm
     - pushd ./crates/wasmi/
-    - wasmtime run --dir=. ../../target/ci/benches-master.wasm -- --bench --save-baseline master-wasm --output-format bencher
+    - wasmtime run --dir=. ../../target/ci/benches-master.wasm -- --bench --save-baseline master-wasm --output-format bencher | tee ../../target/ci/output-wasmtime.txt
 
 
 # report
@@ -155,8 +149,24 @@ publish-report:
     - .pr-refs
     - .kubernetes-env
   needs:
-    - criterion-benchmark
-    - wasmtime-benchmark
+    - job: criterion-benchmark
+      artifacts: true
+    - job: wasmtime-benchmark
+      artifacts: true
   script:
     - bash ./scripts/ci/benchmarks-report.sh
 
+publish-report-master:
+  stage:                           report
+  extends:
+    - .master-refs
+    - .kubernetes-env
+  needs:
+    - job: criterion-benchmark-master
+      artifacts: true
+    - job: wasmtime-benchmark-master
+      artifacts: true
+  script:
+    - ls -la ./target/ci
+    - cat ./target/ci/output-criterion.txt
+    - cat ./target/ci/output-wasmtime.txt
