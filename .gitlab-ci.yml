@@ -42,8 +42,6 @@ default:
 .master-refs:
   rules:
     - if: $CI_COMMIT_REF_NAME == "master"
-    # removeme
-    - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                   # PRs
 
 # benchmarks
 criterion-benchmark:
