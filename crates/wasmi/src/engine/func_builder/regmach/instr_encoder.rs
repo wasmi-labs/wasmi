@@ -1,7 +1,7 @@
 use super::{DefragRegister, TypedProvider};
 use crate::engine::{
     bytecode::BranchOffset,
-    bytecode2::{Const32, Instruction, Register},
+    bytecode2::{Const32, Instruction, Register, RegisterSpanIter},
     func_builder::{
         labels::{LabelRef, LabelRegistry},
         regmach::stack::ValueStack,
@@ -219,6 +219,40 @@ impl InstrEncoder {
                 };
                 self.push_instr(instruction)?;
                 Ok(())
+            }
+        }
+    }
+
+    /// Encodes the call parameters of a `wasmi` call instruction if neccessary.
+    ///
+    /// Returns the contiguous [`RegisterSpanIter`] that makes up the call parameters post encoding.
+    ///
+    /// # Errors
+    ///
+    /// If the translation runs out of register space during this operation.
+    pub fn encode_call_params(
+        &mut self,
+        stack: &mut ValueStack,
+        params: &[TypedProvider],
+    ) -> Result<RegisterSpanIter, TranslationError> {
+        match RegisterSpanIter::from_providers(params) {
+            Some(register_span) => {
+                // Case: we are on the happy path were the providers on the
+                //       stack already are registers with contiguous indices.
+                //
+                //       This allows us to avoid copying over the registers
+                //       to where the call instruction expects them on the stack.
+                Ok(register_span)
+            }
+            None => {
+                // Case: the providers on the stack need to be copied to the
+                //       location where the call instruction expects its parameters
+                //       before executing the call.
+                let copy_results = stack.peek_dynamic_n(params.len())?.iter(params.len());
+                for (copy_result, copy_input) in copy_results.zip(params.iter().copied()) {
+                    self.encode_copy(stack, copy_result, copy_input)?;
+                }
+                Ok(copy_results)
             }
         }
     }

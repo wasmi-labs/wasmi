@@ -17,7 +17,7 @@ use super::{
 use crate::{
     engine::{
         bytecode,
-        bytecode2::{Const16, Instruction, Provider, Register, RegisterSpanIter},
+        bytecode2::{Const16, Instruction, Provider, Register},
         func_builder::regmach::control_stack::AcquiredTarget,
         TranslationError,
     },
@@ -499,34 +499,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             u16::try_from(func_type.results().len()).expect("too many function return types");
         let provider_params = &mut self.alloc.buffer;
         self.alloc.stack.pop_n(params.len(), provider_params);
-        let call_params = match RegisterSpanIter::from_providers(provider_params) {
-            Some(register_span) => {
-                // Case: we are on the happy path were the providers on the
-                //       stack already are registers with contiguous indices.
-                //
-                //       This allows us to avoid copying over the registers
-                //       to where the call instruction expects them on the stack.
-                Instruction::call_params(register_span, len_results)
-            }
-            None => {
-                // Case: the providers on the stack need to be copied to the
-                //       location where the call instruction expects its parameters
-                //       before executing the call.
-                let copy_results = self
-                    .alloc
-                    .stack
-                    .peek_dynamic_n(params.len())?
-                    .iter(params.len());
-                for (copy_result, copy_input) in copy_results.zip(provider_params.iter().copied()) {
-                    self.alloc.instr_encoder.encode_copy(
-                        &mut self.alloc.stack,
-                        copy_result,
-                        copy_input,
-                    )?;
-                }
-                Instruction::call_params(copy_results, len_results)
-            }
-        };
+        let params_span = self
+            .alloc
+            .instr_encoder
+            .encode_call_params(&mut self.alloc.stack, provider_params)?;
+        let call_params = Instruction::call_params(params_span, len_results);
         let results = self.alloc.stack.push_dynamic_n(results.len())?;
         let instr = match self.res.get_compiled_func_2(func_idx) {
             Some(compiled_func) => {
