@@ -35,7 +35,7 @@ jobs:
           tool: "cargo"
           output-file-path: benchmarks/criterion/output-criterion.txt
           benchmark-data-dir-path: "benchmarks/criterion"
-          gh-pages-branch: as-bench
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Store benchmark result wasmtime
         uses: benchmark-action/github-action-benchmark@70405016b032d44f409e4b1b451c40215cbe2393 # v1.18.0
@@ -44,7 +44,7 @@ jobs:
           tool: "cargo"
           output-file-path: benchmarks/wasmtime/output-wasmtime.txt
           benchmark-data-dir-path: "benchmarks/wasmtime"
-          gh-pages-branch: as-bench
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push benchmark result
         run: |
