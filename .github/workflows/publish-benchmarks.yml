@@ -28,8 +28,8 @@ jobs:
         with:
           ref: "gh-pages"
 
-      - name: Waiting for the output files
-        run: bash scripts/ci/sync_wait.sh
+      # - name: Waiting for the output files
+      #   run: bash scripts/ci/sync_wait.sh
 
       - name: Store benchmark result criterion
         uses: benchmark-action/github-action-benchmark@70405016b032d44f409e4b1b451c40215cbe2393 # v1.18.0
@@ -53,9 +53,13 @@ jobs:
 
       - name: Push benchmark result
         run: |
-          git log -n 3
+          git config --global user.name 'github-action-benchmark'
+          git config --global user.email 'github@users.noreply.github.com'
+          echo "removing files"
           rm -f benchmarks/criterion/output-criterion.txt
           rm -f benchmarks/wasmtime/output-wasmtime.txt
+          echo "git add and commit"
           git add benchmarks/
           git commit -m "remove output files"
+          echo "git push"
           git push 'https://${{ secrets.GITHUB_TOKEN }}@github.com/paritytech/wasmi.git' gh-pages:gh-pages
