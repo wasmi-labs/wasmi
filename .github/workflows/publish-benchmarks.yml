@@ -28,8 +28,8 @@ jobs:
         with:
           ref: "gh-pages"
 
-      # - name: Waiting for the output files
-      #   run: bash scripts/ci/sync_wait.sh
+      - name: Waiting for the output files
+        run: bash scripts/ci/sync_wait.sh
 
       - name: Store benchmark result criterion
         uses: benchmark-action/github-action-benchmark@70405016b032d44f409e4b1b451c40215cbe2393 # v1.18.0
