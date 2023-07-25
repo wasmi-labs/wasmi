@@ -217,7 +217,7 @@ fn two_reg_params_reg() {
             Instruction::call_indirect(results, SignatureIdx::from(0)),
             Instruction::call_indirect_params(elem_index, TableIdx::from(0)),
             Instruction::call_params(params, 2),
-            Instruction::return_reg_2(result_reg, Register::from_i16(4)),
+            Instruction::return_many(RegisterSpan::new(Register::from_i16(3)).iter(2)),
         ])
         .run();
 }
@@ -249,7 +249,7 @@ fn two_reg_params_reg_rev() {
             Instruction::call_indirect(results, SignatureIdx::from(0)),
             Instruction::call_indirect_params(elem_index, TableIdx::from(0)),
             Instruction::call_params(params, 2),
-            Instruction::return_reg_2(result_reg, Register::from_i16(4)),
+            Instruction::return_many(RegisterSpan::new(Register::from_i16(3)).iter(2)),
         ])
         .run();
 }
@@ -281,7 +281,7 @@ fn two_imm_params_reg() {
             Instruction::call_indirect(results, SignatureIdx::from(0)),
             Instruction::call_indirect_params(elem_index, TableIdx::from(0)),
             Instruction::call_params(params, 2),
-            Instruction::return_reg_2(result_reg, Register::from_i16(2)),
+            Instruction::return_many(RegisterSpan::new(Register::from_i16(1)).iter(2)),
         ])
         .run();
 }
@@ -312,7 +312,7 @@ fn two_reg_params_imm16() {
                 Instruction::call_indirect(results, SignatureIdx::from(0)),
                 Instruction::call_indirect_params_imm16(elem_index, TableIdx::from(0)),
                 Instruction::call_params(params, 2),
-                Instruction::return_reg_2(result_reg, Register::from_i16(3)),
+                Instruction::return_many(RegisterSpan::new(Register::from_i16(2)).iter(2)),
             ])
             .run();
     }
@@ -351,7 +351,7 @@ fn two_reg_params_rev_imm16() {
                 Instruction::call_indirect(results, SignatureIdx::from(0)),
                 Instruction::call_indirect_params_imm16(elem_index, TableIdx::from(0)),
                 Instruction::call_params(params, 2),
-                Instruction::return_reg_2(result_reg, Register::from_i16(3)),
+                Instruction::return_many(RegisterSpan::new(Register::from_i16(2)).iter(2)),
             ])
             .run();
     }
@@ -390,7 +390,7 @@ fn two_imm_params_imm16() {
                 Instruction::call_indirect(results, SignatureIdx::from(0)),
                 Instruction::call_indirect_params_imm16(elem_index, TableIdx::from(0)),
                 Instruction::call_params(params, 2),
-                Instruction::return_reg_2(result_reg, Register::from_i16(1)),
+                Instruction::return_many(RegisterSpan::new(Register::from_i16(0)).iter(2)),
             ])
             .run();
     }

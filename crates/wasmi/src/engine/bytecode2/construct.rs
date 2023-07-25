@@ -183,24 +183,6 @@ impl Instruction {
         }
     }
 
-    /// Creates a new [`Instruction::ReturnReg2`] from the given [`Register`] indices.
-    pub fn return_reg_2(fst: impl Into<Register>, snd: impl Into<Register>) -> Self {
-        Self::ReturnReg2 {
-            values: [fst.into(), snd.into()],
-        }
-    }
-
-    /// Creates a new [`Instruction::ReturnReg3`] from the given [`Register`] indices.
-    pub fn return_reg_3(
-        fst: impl Into<Register>,
-        snd: impl Into<Register>,
-        trd: impl Into<Register>,
-    ) -> Self {
-        Self::ReturnReg3 {
-            values: [fst.into(), snd.into(), trd.into()],
-        }
-    }
-
     /// Creates a new [`Instruction::ReturnImm32`] from the given `value`.
     pub fn return_imm32(value: impl Into<AnyConst32>) -> Self {
         Self::ReturnImm32 {
@@ -223,7 +205,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::ReturnMany`] from the given `values`.
-    pub fn return_many(values: RegisterSliceRef) -> Self {
+    pub fn return_many(values: RegisterSpanIter) -> Self {
         Self::ReturnMany { values }
     }
 

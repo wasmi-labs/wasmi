@@ -1998,27 +1998,14 @@ impl<'parser> FuncTranslator<'parser> {
                     }
                 }
             }
-            [_, _] => {
-                let (fst, snd) = self.alloc.stack.pop2_as_registers()?;
-                // Case: Returning two values which for which there exists a special `wasmi` instruction.
-                Instruction::return_reg_2(fst, snd)
-            }
-            [_, _, _] => {
-                // Case: Returning three values which for which there exists a special `wasmi` instruction.
-                let (v0, v1, v2) = self.alloc.stack.pop3_as_registers()?;
-                Instruction::return_reg_3(v0, v1, v2)
-            }
             results => {
                 let providers = &mut self.alloc.buffer;
-                let registers = &mut self.alloc.register_buffer;
-                self.alloc
-                    .stack
-                    .pop_n_as_registers(results.len(), providers, registers)?;
-                let slice = self
-                    .res
-                    .engine()
-                    .alloc_registers(registers.iter().copied())?;
-                Instruction::return_many(slice)
+                self.alloc.stack.pop_n(results.len(), providers);
+                let values = self
+                    .alloc
+                    .instr_encoder
+                    .encode_call_params(&mut self.alloc.stack, providers)?;
+                Instruction::return_many(values)
             }
         };
         self.alloc.instr_encoder.push_instr(instr)?;
