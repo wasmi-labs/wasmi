@@ -24,9 +24,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout gh-pages branch
-        uses: actions/checkout@v2 # c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
         with:
           ref: "gh-pages"
+
+      - name: Waiting for the output files
+        run: |
+          for i in $(seq 1 600); do
+            git pull origin gh-pages
+            sleep 1
+            ls benchmarks/criterion/output-criterion.txt 2>/dev/null
+            if [ $? = 0 ]; then
+              break;
+            fi
+          done
 
       - name: Store benchmark result criterion
         uses: benchmark-action/github-action-benchmark@70405016b032d44f409e4b1b451c40215cbe2393 # v1.18.0
@@ -51,3 +62,8 @@ jobs:
       - name: Push benchmark result
         run: |
           git log -n 3
+          rm -f benchmarks/criterion/output-criterion.txt
+          rm -f benchmarks/wasmtime/output-wasmtime.txt
+          git add benchmarks/
+          git commit -m "remove output files"
+          git push 'https://${{ secrets.GITHUB_TOKEN }}@github.com/paritytech/wasmi.git' gh-pages:gh-pages
