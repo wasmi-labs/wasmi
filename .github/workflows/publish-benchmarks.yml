@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   benchmark:
-    name: Performance regression check
+    name: Publishing benchmarks graphs
     runs-on: ubuntu-latest
     steps:
       - name: checkout gh-pages branch
