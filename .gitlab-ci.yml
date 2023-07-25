@@ -167,6 +167,19 @@ publish-report-master:
     - job: wasmtime-benchmark-master
       artifacts: true
   script:
-    - ls -la ./target/ci
-    - cat ./target/ci/output-criterion.txt
-    - cat ./target/ci/output-wasmtime.txt
+    # Set git config
+    - rm -rf .git/config
+    - git config --global user.email "${GITHUB_EMAIL}"
+    - git config --global user.name "${GITHUB_USER}"
+    - git config remote.origin.url "https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/paritytech/${CI_PROJECT_NAME}.git"
+    - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+    # push results to github
+    - git fetch origin gh-pages
+    - git checkout gh-pages
+    - mkdir -p benchmarks/criterion
+    - mkdir -p benchmarks/wasmtime
+    - mv target/ci/output-criterion.txt benchmarks/criterion/
+    - mv target/ci/output-wasmtime.txt benchmarks/wasmtime/
+    - git add benchmarks/
+    - git commit -m "[benchmarks] add benchmarks results for the latest master"
+    - git push origin gh-pages
