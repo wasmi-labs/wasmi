@@ -13,6 +13,11 @@ permissions:
   # contents permission to update benchmark contents in gh-pages branch
   contents: write
 
+# disable running jobs on earlier commits
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   benchmark:
     name: Performance regression check
@@ -20,8 +25,8 @@ jobs:
     steps:
       - name: checkout gh-pages branch
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-        # with:
-        #   ref: "gh-pages"
+        with:
+          ref: "gh-pages"
 
       - name: Store benchmark result criterion
         uses: benchmark-action/github-action-benchmark@70405016b032d44f409e4b1b451c40215cbe2393 # v1.18.0
@@ -30,7 +35,7 @@ jobs:
           tool: "cargo"
           output-file-path: benchmarks/criterion/output-criterion.txt
           benchmark-data-dir-path: "benchmarks/criterion"
-          gh-pages-branch: gh-pages
+          gh-pages-branch: as-bench
 
       - name: Store benchmark result wasmtime
         uses: benchmark-action/github-action-benchmark@70405016b032d44f409e4b1b451c40215cbe2393 # v1.18.0
@@ -39,7 +44,7 @@ jobs:
           tool: "cargo"
           output-file-path: benchmarks/wasmtime/output-wasmtime.txt
           benchmark-data-dir-path: "benchmarks/wasmtime"
-          gh-pages-branch: gh-pages
+          gh-pages-branch: as-bench
 
       - name: Push benchmark result
         run: |

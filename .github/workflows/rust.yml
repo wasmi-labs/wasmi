@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [master]
 
+# disable running jobs on earlier commits
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
     name: Build
