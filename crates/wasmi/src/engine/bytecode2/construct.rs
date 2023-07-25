@@ -961,6 +961,25 @@ impl Instruction {
         }
     }
 
+    /// Creates a new [`Instruction::CallIndirectParams`] for the given `index` and `table`.
+    pub fn call_indirect_params(index: Register, table: impl Into<TableIdx>) -> Self {
+        Self::CallIndirectParams {
+            index,
+            table: table.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::CallIndirectParamsImm16`] for the given `index` and `table`.
+    pub fn call_indirect_params_imm16(
+        index: impl Into<Const16<u32>>,
+        table: impl Into<TableIdx>,
+    ) -> Self {
+        Self::CallIndirectParamsImm16 {
+            index: index.into(),
+            table: table.into(),
+        }
+    }
+
     /// Creates a new [`Instruction::CallInternal0`] for the given `func`.
     pub fn return_call_internal_0(func: CompiledFunc) -> Self {
         Self::ReturnCallInternal0 { func }
