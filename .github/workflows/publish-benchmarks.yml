@@ -1,0 +1,40 @@
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  # deployments permission to deploy GitHub pages website
+  deployments: write
+  # contents permission to update benchmark contents in gh-pages branch
+  contents: write
+
+jobs:
+  benchmark:
+    name: Performance regression check
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout gh-pages branch
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+        with:
+          ref: "gh-pages"
+
+      - name: Store benchmark result criterion
+        uses: benchmark-action/github-action-benchmark@70405016b032d44f409e4b1b451c40215cbe2393 # v1.18.0
+        with:
+          name: "Wasmi criterion benchmark"
+          tool: "cargo"
+          output-file-path: benchmarks/criterion/output-criterion.txt
+          benchmark-data-dir-path: "benchmarks/criterion"
+
+      - name: Store benchmark result wasmtime
+        uses: benchmark-action/github-action-benchmark@70405016b032d44f409e4b1b451c40215cbe2393 # v1.18.0
+        with:
+          name: "Wasmi criterion wasmtime"
+          tool: "cargo"
+          output-file-path: benchmarks/wasmtime/output-wasmtime.txt
+          benchmark-data-dir-path: "benchmarks/wasmtime"
+
+      - name: Push benchmark result
+        run: |
+          git status
