@@ -384,6 +384,20 @@ pub enum Instruction {
         /// enough space left in the [`Instruction::CallParams`].
         len_results: u16,
     },
+    /// Auxiliary [`Instruction`] to encode table access information for indirect call instructions.
+    CallIndirectParams {
+        /// The index of the called function in the table.
+        index: Register,
+        /// The table which holds the called function at the index.
+        table: TableIdx,
+    },
+    /// Variant of [`Instruction::CallIndirectParams`] for 16-bit constant `index` parameter.
+    CallIndirectParamsImm16 {
+        /// The index of the called function in the table.
+        index: Const16<u32>,
+        /// The table which holds the called function at the index.
+        table: TableIdx,
+    },
 
     /// Wasm `return_call` equivalent `wasmi` instruction.
     ///
@@ -441,7 +455,9 @@ pub enum Instruction {
     ///
     /// Must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the `table` to operate on
+    /// 1. Either
+    ///     - [`Instruction::CallIndirectParams`]: the `table` and `index`
+    ///     - [`Instruction::CallIndirectParamsImm16`]: the `table` and 16-bit constant `index`
     ReturnCallIndirect0 {
         /// The called internal function.
         func_type: SignatureIdx,
@@ -456,8 +472,10 @@ pub enum Instruction {
     ///
     /// Must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the `table` to operate on
-    /// 1. [`Instruction::CallParams`]: the call parameters
+    /// 1. Either
+    ///     - [`Instruction::CallIndirectParams`]: the `table` and `index`
+    ///     - [`Instruction::CallIndirectParamsImm16`]: the `table` and 16-bit constant `index`
+    /// 2. [`Instruction::CallParams`]: the call parameters
     ReturnCallIndirect {
         /// The called internal function.
         func_type: SignatureIdx,
@@ -527,7 +545,10 @@ pub enum Instruction {
     ///
     /// Must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the `table` to operate on
+    /// 1. Either
+    ///     - [`Instruction::CallIndirectParams`]: the `table` and `index`
+    ///     - [`Instruction::CallIndirectParamsImm16`]: the `table` and 16-bit constant `index`
+    /// 2. [`Instruction::CallParams`]: the call parameters
     CallIndirect0 {
         /// The registers storing the results of the call.
         results: RegisterSpan,
@@ -544,8 +565,10 @@ pub enum Instruction {
     ///
     /// Must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the `table` to operate on
-    /// 1. [`Instruction::CallParams`]: the call parameters
+    /// 1. Either
+    ///     - [`Instruction::CallIndirectParams`]: the `table` and `index`
+    ///     - [`Instruction::CallIndirectParamsImm16`]: the `table` and 16-bit constant `index`
+    /// 2. [`Instruction::CallParams`]: the call parameters
     CallIndirect {
         /// The registers storing the results of the call.
         results: RegisterSpan,
