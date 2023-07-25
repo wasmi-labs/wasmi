@@ -550,19 +550,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         if !params.is_empty() {
             self.alloc.instr_encoder.push_instr(call_params)?;
         }
-        // let param_instr = match register_params[..] {
-        //     [] => None,
-        //     [param] => Some(Instruction::Register(param)),
-        //     [fst, snd] => Some(Instruction::Register2([fst, snd])),
-        //     [fst, snd, trd] => Some(Instruction::Register3([fst, snd, trd])),
-        //     ref slice => {
-        //         let slice = self.res.engine().alloc_registers(slice.iter().copied())?;
-        //         Some(Instruction::RegisterSlice(slice))
-        //     }
-        // };
-        // if let Some(param_instr) = param_instr {
-        //     self.alloc.instr_encoder.push_instr(param_instr)?;
-        // }
         Ok(())
     }
 
