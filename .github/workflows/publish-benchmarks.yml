@@ -31,7 +31,7 @@ jobs:
       - name: Waiting for the output files
         run: |
           for i in $(seq 1 600); do
-            git pull origin gh-pages
+            git pull origin gh-pages || echo "No new files"
             sleep 1
             ls benchmarks/criterion/output-criterion.txt 2>/dev/null
             if [ $? = 0 ]; then
