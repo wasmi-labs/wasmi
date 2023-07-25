@@ -50,4 +50,4 @@ jobs:
 
       - name: Push benchmark result
         run: |
-          git status
+          git log -n 3
