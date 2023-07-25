@@ -178,8 +178,8 @@ publish-report-master:
     - git checkout gh-pages
     - mkdir -p benchmarks/criterion
     - mkdir -p benchmarks/wasmtime
-    - mv target/ci/output-criterion.txt benchmarks/criterion/
-    - mv target/ci/output-wasmtime.txt benchmarks/wasmtime/
+    - cp target/ci/output-criterion.txt benchmarks/criterion/
+    - cp target/ci/output-wasmtime.txt benchmarks/wasmtime/
     - git add benchmarks/
     - git commit -m "[benchmarks] add benchmarks results for the latest master"
     - git push origin gh-pages
