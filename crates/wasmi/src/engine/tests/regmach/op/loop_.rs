@@ -2,6 +2,7 @@ use super::*;
 use crate::engine::bytecode::BranchOffset;
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn empty_loop() {
     let wasm = wat2wasm(
         r"
@@ -15,6 +16,7 @@ fn empty_loop() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn nested_empty_loop() {
     let wasm = wat2wasm(
         r"
@@ -28,6 +30,7 @@ fn nested_empty_loop() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn identity_loop_1() {
     let wasm = wat2wasm(
         r"
@@ -47,6 +50,7 @@ fn identity_loop_1() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn identity_loop_1_nested() {
     let wasm = wat2wasm(
         r"
@@ -68,6 +72,7 @@ fn identity_loop_1_nested() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn identity_loop_2() {
     let wasm = wat2wasm(
         r"
@@ -95,6 +100,7 @@ fn identity_loop_2() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn identity_loop_2_nested() {
     let wasm = wat2wasm(
         r"
@@ -124,6 +130,7 @@ fn identity_loop_2_nested() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn repeat_loop() {
     let wasm = wat2wasm(
         r"
@@ -139,6 +146,7 @@ fn repeat_loop() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn repeat_loop_1() {
     let wasm = wat2wasm(
         r"
@@ -158,6 +166,7 @@ fn repeat_loop_1() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn repeat_loop_1_copy() {
     let wasm = wat2wasm(
         r"

@@ -37,21 +37,25 @@ where
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn mutable_i32() {
     test_mutable::<i32>(42);
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn mutable_i64() {
     test_mutable::<i64>(42);
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn mutable_f32() {
     test_mutable::<f32>(42.5);
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn mutable_f64() {
     test_mutable::<f64>(42.5);
 }
@@ -94,21 +98,25 @@ where
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn immutable_i32() {
     test_immutable::<i32>(42);
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn immutable_i64() {
     test_immutable::<i64>(42);
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn immutable_f32() {
     test_immutable::<f32>(42.5);
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn immutable_f64() {
     test_immutable::<f64>(42.5);
 }
@@ -144,21 +152,25 @@ where
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn imported_i32() {
     test_imported::<i32>();
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn imported_i64() {
     test_imported::<i64>();
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn imported_f32() {
     test_imported::<f32>();
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn imported_f64() {
     test_imported::<f64>();
 }

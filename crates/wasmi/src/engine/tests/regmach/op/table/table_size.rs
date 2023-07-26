@@ -26,6 +26,7 @@ fn test_reg(ty: ValueType) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn reg() {
     test_reg(ValueType::FuncRef);
     test_reg(ValueType::ExternRef);

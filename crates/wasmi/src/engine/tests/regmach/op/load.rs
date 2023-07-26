@@ -117,17 +117,20 @@ fn test_load_at_overflow(wasm_op: WasmOp, ptr: u32, offset: u32) {
 macro_rules! generate_tests {
     ( $wasm_op:ident, $make_instr:expr, $make_instr_offset16:expr, $make_instr_at:expr ) => {
         #[test]
+        #[cfg_attr(miri, ignore)]
         fn reg() {
             test_load(WASM_OP, u32::MAX, $make_instr);
         }
 
         #[test]
+        #[cfg_attr(miri, ignore)]
         fn offset16() {
             test_load_offset16(WASM_OP, 0, $make_instr_offset16);
             test_load_offset16(WASM_OP, u16::MAX, $make_instr_offset16);
         }
 
         #[test]
+        #[cfg_attr(miri, ignore)]
         fn at() {
             test_load_at(WASM_OP, 42, 5, $make_instr_at);
             test_load_at(WASM_OP, u32::MAX, 0, $make_instr_at);
@@ -135,6 +138,7 @@ macro_rules! generate_tests {
         }
 
         #[test]
+        #[cfg_attr(miri, ignore)]
         fn at_overflow() {
             test_load_at_overflow(WASM_OP, u32::MAX, 1);
             test_load_at_overflow(WASM_OP, 1, u32::MAX);

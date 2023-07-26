@@ -3,11 +3,13 @@ use super::*;
 const WASM_OP: WasmOp = WasmOp::store(WasmType::I64, "store32");
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn reg() {
     test_store(WASM_OP, Instruction::i64_store32);
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn imm() {
     test_store_imm::<i64>(WASM_OP, 0, Instruction::i64_store32);
     test_store_imm::<i64>(WASM_OP, 1, Instruction::i64_store32);
@@ -18,11 +20,13 @@ fn imm() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn offset16() {
     test_store_offset16(WASM_OP, Instruction::i64_store32_offset16);
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn offset16_imm() {
     test_store_offset16_imm::<i64>(
         WASM_OP,
@@ -41,6 +45,7 @@ fn offset16_imm() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn offset16_imm16() {
     test_store_offset16_imm16::<i16>(WASM_OP, 0, Instruction::i64_store32_offset16_imm16);
     test_store_offset16_imm16::<i16>(WASM_OP, 1, Instruction::i64_store32_offset16_imm16);
@@ -60,16 +65,19 @@ fn offset16_imm16() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn at() {
     test_store_at(WASM_OP, Instruction::i64_store32_at);
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn at_overflow() {
     test_store_at_overflow(WASM_OP);
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn at_imm() {
     test_store_at_imm::<i64>(
         WASM_OP,
@@ -81,6 +89,7 @@ fn at_imm() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn imm_at_overflow() {
     test_store_at_imm_overflow(WASM_OP, 0);
     test_store_at_imm_overflow(WASM_OP, 1);

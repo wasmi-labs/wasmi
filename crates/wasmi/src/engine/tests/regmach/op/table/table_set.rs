@@ -33,6 +33,7 @@ fn test_reg(ty: ValueType) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn reg() {
     test_reg(ValueType::FuncRef);
     test_reg(ValueType::ExternRef);
@@ -62,6 +63,7 @@ fn test_reg_at(index: u32, value_type: ValueType) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn reg_at() {
     fn test_for(index: u32) {
         test_reg_at(index, ValueType::FuncRef);
@@ -72,6 +74,7 @@ fn reg_at() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn imm_funcref() {
     let wasm = wat2wasm(
         r"
@@ -115,6 +118,7 @@ fn test_at_imm_funcref(index: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn at_imm_funcref() {
     test_at_imm_funcref(0);
     test_at_imm_funcref(u32::MAX);
@@ -149,6 +153,7 @@ fn test_imm_null(value_type: ValueType) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn imm_null() {
     test_imm_null(ValueType::FuncRef);
     test_imm_null(ValueType::ExternRef);
@@ -183,6 +188,7 @@ fn test_at_imm_null(index: u32, value_type: ValueType) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn at_imm_null() {
     fn test_for(index: u32) {
         test_at_imm_null(index, ValueType::FuncRef);

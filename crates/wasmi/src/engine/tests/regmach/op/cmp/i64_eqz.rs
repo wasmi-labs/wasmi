@@ -3,6 +3,7 @@ use super::*;
 const PARAM: WasmType = WasmType::I64;
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn reg() {
     let wasm = wat2wasm(&format!(
         r#"
@@ -45,6 +46,7 @@ fn imm_with(value: i64) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn imm() {
     imm_with(0);
     imm_with(1);

@@ -35,6 +35,7 @@ where
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn reg() {
     test_reg::<i32>();
     test_reg::<i64>();
@@ -72,6 +73,7 @@ where
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn imm() {
     test_imm::<i32>(i32::from(i16::MAX) + 1);
     test_imm::<i32>(i32::from(i16::MIN) - 1);
@@ -108,6 +110,7 @@ fn test_i32imm16(value: i32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn i32imm16() {
     test_i32imm16(0);
     test_i32imm16(1);
@@ -141,6 +144,7 @@ fn test_i64imm16(value: i64) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn i64imm16() {
     test_i64imm16(0);
     test_i64imm16(1);

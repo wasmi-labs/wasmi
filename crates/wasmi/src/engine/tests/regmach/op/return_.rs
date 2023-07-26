@@ -7,6 +7,7 @@ use crate::engine::tests::regmach::{
 use core::fmt::Display;
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn as_return() {
     let wasm = wat2wasm(
         r"
@@ -22,6 +23,7 @@ fn as_return() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn as_return_1() {
     let wasm = wat2wasm(
         r"
@@ -38,6 +40,7 @@ fn as_return_1() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn as_return_1_imm() {
     fn test_for<T>(value: T)
     where
@@ -73,6 +76,7 @@ fn as_return_1_imm() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn as_return_1_imm32() {
     fn test_for<T>(value: T)
     where
@@ -101,6 +105,7 @@ fn as_return_1_imm32() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn as_return_1_i64imm32() {
     fn test_for(value: i64) {
         let display_value = DisplayWasm::from(value);
@@ -125,6 +130,7 @@ fn as_return_1_i64imm32() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn as_return_1_f64imm32() {
     fn test_for(value: f64) {
         let display_value = DisplayWasm::from(value);

@@ -28,6 +28,7 @@ fn test_reg(ty: ValueType) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn reg() {
     test_reg(ValueType::FuncRef);
     test_reg(ValueType::ExternRef);
@@ -56,6 +57,7 @@ fn test_imm(ty: ValueType, index: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn imm() {
     fn test_for(index: u32) {
         test_imm(ValueType::FuncRef, index);

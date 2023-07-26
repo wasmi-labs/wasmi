@@ -34,6 +34,7 @@ fn test_fill(ty: ValueType) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill() {
     test_fill(ValueType::FuncRef);
     test_fill(ValueType::ExternRef);
@@ -71,6 +72,7 @@ fn test_fill_exact16(ty: ValueType, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_exact16() {
     fn test_for(len: u32) {
         test_fill_exact16(ValueType::FuncRef, len);
@@ -88,6 +90,7 @@ fn test_fill_exact_zero(ty: ValueType) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_exact_zero() {
     test_fill_exact_zero(ValueType::FuncRef);
     test_fill_exact_zero(ValueType::ExternRef);
@@ -111,6 +114,7 @@ fn test_fill_exact(ty: ValueType, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_exact() {
     fn test_for(len: u32) {
         test_fill_exact(ValueType::FuncRef, len);
@@ -148,6 +152,7 @@ fn test_fill_at16(ty: ValueType, dst: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_at16() {
     fn test_for(dst: u32) {
         test_fill_at16(ValueType::FuncRef, dst);
@@ -175,6 +180,7 @@ fn test_fill_at(ty: ValueType, dst: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_at() {
     fn test_for(dst: u32) {
         test_fill_at(ValueType::FuncRef, dst);
@@ -212,6 +218,7 @@ fn test_fill_at_exact16(ty: ValueType, dst: u32, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_at_exact16() {
     fn test_for(dst: u32, len: u32) {
         test_fill_at_exact16(ValueType::FuncRef, dst, len);
@@ -236,6 +243,7 @@ fn test_fill_at_exact_zero(ty: ValueType, dst: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_at_exact_zero() {
     fn test_for(dst: u32) {
         test_fill_at_exact_zero(ValueType::FuncRef, dst);
@@ -265,6 +273,7 @@ fn test_fill_at_exact(ty: ValueType, dst: u32, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_at_exact() {
     fn test_for(dst: u32, len: u32) {
         test_fill_at_exact(ValueType::FuncRef, dst, len);
@@ -325,6 +334,7 @@ fn test_fill_at_exact_imm(ty: ValueType, dst: u32, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_at_exact_exact() {
     fn test_for(dst: u32, len: u32) {
         test_fill_at_exact_imm(ValueType::FuncRef, dst, len);

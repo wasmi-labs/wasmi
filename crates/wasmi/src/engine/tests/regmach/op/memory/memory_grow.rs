@@ -2,6 +2,7 @@ use super::*;
 use crate::engine::tests::regmach::{display_wasm::DisplayValueType, wasm_type::WasmType};
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn reg() {
     let wasm = wat2wasm(
         r"
@@ -42,6 +43,7 @@ fn test_imm16(delta: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn imm16() {
     test_imm16(1);
     test_imm16(42);
@@ -50,6 +52,7 @@ fn imm16() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn imm_zero() {
     let wasm = wat2wasm(
         r"
@@ -92,6 +95,7 @@ fn test_imm(delta: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn imm() {
     test_imm(u32::from(u16::MAX) + 1);
     test_imm(u32::MAX - 1);

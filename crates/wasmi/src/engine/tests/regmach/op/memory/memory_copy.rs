@@ -2,6 +2,7 @@ use super::*;
 use crate::engine::tests::regmach::wasm_type::WasmType;
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy() {
     let wasm = wat2wasm(
         r"
@@ -57,6 +58,7 @@ fn test_copy_exact16(len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_exact16() {
     test_copy_exact16(1);
     test_copy_exact16(42);
@@ -64,6 +66,7 @@ fn copy_exact16() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_exact_zero() {
     testcase_copy_exact(0)
         .expect_func_instrs([Instruction::Return])
@@ -87,6 +90,7 @@ fn test_copy_exact(len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_exact() {
     test_copy_exact(u32::from(u16::MAX) + 1);
     test_copy_exact(u32::MAX);
@@ -122,6 +126,7 @@ fn test_copy_from16(src: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_from16() {
     test_copy_from16(0);
     test_copy_from16(u32::from(u16::MAX));
@@ -144,6 +149,7 @@ fn test_copy_from(src: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_from() {
     test_copy_from(u32::from(u16::MAX) + 1);
     test_copy_from(u32::MAX);
@@ -179,6 +185,7 @@ fn test_copy_to16(dst: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_to16() {
     test_copy_to16(0);
     test_copy_to16(u32::from(u16::MAX));
@@ -201,6 +208,7 @@ fn test_copy_to(dst: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_to() {
     test_copy_to(u32::from(u16::MAX) + 1);
     test_copy_to(u32::MAX);
@@ -232,6 +240,7 @@ fn test_copy_from_to16(dst: u32, src: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_from_to16() {
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
@@ -258,6 +267,7 @@ fn test_copy_from_to(dst: u32, src: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_from_to() {
     let values = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
     for dst in values {
@@ -300,6 +310,7 @@ fn test_copy_to_exact16(dst: u32, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_to_exact16() {
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
@@ -320,6 +331,7 @@ fn test_copy_to_exact_zero(dst: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_to_exact_zero() {
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
@@ -344,6 +356,7 @@ fn test_copy_to_exact(dst: u32, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_to_exact() {
     let values = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
     for dst in values {
@@ -390,6 +403,7 @@ fn test_copy_from_exact16(src: u32, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_from_exact16() {
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
@@ -410,6 +424,7 @@ fn test_copy_from_exact_zero(src: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_from_exact_zero() {
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
@@ -434,6 +449,7 @@ fn test_copy_from_exact(src: u32, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_from_exact() {
     let values = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
     for dst in values {
@@ -476,6 +492,7 @@ fn test_copy_from_to_exact16(dst: u32, src: u32, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_from_to_exact16() {
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
@@ -498,6 +515,7 @@ fn test_copy_from_to_exact_zero(dst: u32, src: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_from_to_exact_zero() {
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
@@ -524,6 +542,7 @@ fn test_copy_from_to_exact(dst: u32, src: u32, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_from_to_exact() {
     let values = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
     for dst in values {

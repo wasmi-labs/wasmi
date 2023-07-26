@@ -6,6 +6,7 @@ use crate::engine::{
 };
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn no_params_reg() {
     let wasm = wat2wasm(
         r#"
@@ -32,6 +33,7 @@ fn no_params_reg() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn no_params_imm16() {
     fn test_with(index: u32) {
         let wasm = wat2wasm(&format!(
@@ -65,6 +67,7 @@ fn no_params_imm16() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn one_reg_param_reg() {
     let wasm = wat2wasm(
         r#"
@@ -93,6 +96,7 @@ fn one_reg_param_reg() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn one_reg_param_imm16() {
     fn test_with(index: u32) {
         let wasm = wat2wasm(&format!(
@@ -128,6 +132,7 @@ fn one_reg_param_imm16() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn one_imm_param_reg() {
     let wasm = wat2wasm(
         r#"
@@ -157,6 +162,7 @@ fn one_imm_param_reg() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn one_imm_param_imm16() {
     fn test_with(index: u32) {
         let wasm = wat2wasm(&format!(
@@ -193,6 +199,7 @@ fn one_imm_param_imm16() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn two_reg_params_reg() {
     let wasm = wat2wasm(
         r#"
@@ -223,6 +230,7 @@ fn two_reg_params_reg() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn two_reg_params_reg_rev() {
     let wasm = wat2wasm(
         r#"
@@ -255,6 +263,7 @@ fn two_reg_params_reg_rev() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn two_imm_params_reg() {
     let wasm = wat2wasm(
         r#"
@@ -287,6 +296,7 @@ fn two_imm_params_reg() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn two_reg_params_imm16() {
     fn test_with(index: u32) {
         let wasm = wat2wasm(&format!(
@@ -324,6 +334,7 @@ fn two_reg_params_imm16() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn two_reg_params_rev_imm16() {
     fn test_with(index: u32) {
         let wasm = wat2wasm(&format!(
@@ -363,6 +374,7 @@ fn two_reg_params_rev_imm16() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn two_imm_params_imm16() {
     fn test_with(index: u32) {
         let wasm = wat2wasm(&format!(

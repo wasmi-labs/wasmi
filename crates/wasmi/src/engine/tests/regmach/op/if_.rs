@@ -3,6 +3,7 @@ use crate::engine::bytecode::{BranchOffset, GlobalIdx};
 use wasmi_core::TrapCode;
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn simple_if_then() {
     let wasm = wat2wasm(
         r"
@@ -23,6 +24,7 @@ fn simple_if_then() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn simple_if_then_nested() {
     let wasm = wat2wasm(
         r"
@@ -48,6 +50,7 @@ fn simple_if_then_nested() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn if_then_global_set() {
     let wasm = wat2wasm(
         r"
@@ -73,6 +76,7 @@ fn if_then_global_set() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn if_then_return() {
     let wasm = wat2wasm(
         r"
@@ -107,6 +111,7 @@ fn if_then_return() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn if_then_else_return() {
     let wasm = wat2wasm(
         r"
@@ -134,6 +139,7 @@ fn if_then_else_return() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn if_then_br_else() {
     let wasm = wat2wasm(
         r"
@@ -162,6 +168,7 @@ fn if_then_br_else() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn if_then_else_br() {
     let wasm = wat2wasm(
         r"
@@ -190,6 +197,7 @@ fn if_then_else_br() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn simple_if_then_else() {
     let wasm = wat2wasm(
         r"
@@ -214,6 +222,7 @@ fn simple_if_then_else() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn simple_if_then_else_nested() {
     let wasm = wat2wasm(
         r"
@@ -250,6 +259,7 @@ fn simple_if_then_else_nested() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn if_then_else_with_params() {
     let wasm = wat2wasm(
         r"
@@ -284,6 +294,7 @@ fn if_then_else_with_params() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn const_condition() {
     fn test_for(condition: bool) {
         let true_value = 10_i32;
@@ -314,6 +325,7 @@ fn const_condition() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn const_condition_trap_then() {
     fn test_for<I>(condition: bool, instrs: I)
     where
@@ -355,6 +367,7 @@ fn const_condition_trap_then() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn const_condition_trap_else() {
     fn test_for<I>(condition: bool, instrs: I)
     where
@@ -396,6 +409,7 @@ fn const_condition_trap_else() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn const_condition_br_if_then() {
     fn test_for<I>(condition: bool, instrs: I)
     where
@@ -435,6 +449,7 @@ fn const_condition_br_if_then() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn const_condition_br_if_else() {
     fn test_for<I>(condition: bool, instrs: I)
     where

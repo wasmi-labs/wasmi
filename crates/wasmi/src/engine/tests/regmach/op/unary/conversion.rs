@@ -5,11 +5,13 @@ mod i32_wrap_i64 {
     const OP: &str = "wrap_i64";
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn reg() {
         conversion_reg::<i64, i32>(OP, Instruction::i32_wrap_i64);
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn imm() {
         fn consteval(input: i64) -> i32 {
             input as i32
@@ -28,11 +30,13 @@ mod i64_extend_i32_s {
     const OP: &str = "extend_i32_s";
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn reg() {
         conversion_reg::<i32, i64>(OP, Instruction::i64_extend_i32_s);
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn imm() {
         fn consteval(input: i32) -> i64 {
             i64::from(input)
@@ -51,11 +55,13 @@ mod i64_extend_i32_u {
     const OP: &str = "extend_i32_u";
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn reg() {
         conversion_reg::<i32, i64>(OP, Instruction::i64_extend_i32_u);
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn imm() {
         fn consteval(input: i32) -> i64 {
             i64::from(input as u32)
@@ -81,11 +87,13 @@ macro_rules! signed_trunc_tests {
                 const OP: &str = $op_name;
 
                 #[test]
+#[cfg_attr(miri, ignore)]
                 fn reg() {
                     conversion_reg::<$input_ty, $output_ty>(OP, Instruction::$name);
                 }
 
                 #[test]
+#[cfg_attr(miri, ignore)]
                 fn imm_ok() {
                     fn consteval_ok(input: $input_ty) -> $output_ty {
                         <$output_ty>::from(UntypedValue::from(input).$name().expect("testcase expects Ok result"))
@@ -98,6 +106,7 @@ macro_rules! signed_trunc_tests {
                 }
 
                 #[test]
+#[cfg_attr(miri, ignore)]
                 fn imm_err() {
                     fn consteval_err(input: $input_ty) -> TrapCode {
                         UntypedValue::from(input).$name().expect_err("testcase expects Err result")
@@ -130,11 +139,13 @@ macro_rules! unsigned_trunc_tests {
                 const OP: &str = $op_name;
 
                 #[test]
+#[cfg_attr(miri, ignore)]
                 fn reg() {
                     conversion_reg::<$input_ty, $output_ty>(OP, Instruction::$name);
                 }
 
                 #[test]
+#[cfg_attr(miri, ignore)]
                 fn imm_ok() {
                     fn consteval_ok(input: $input_ty) -> $output_ty {
                         <$output_ty>::from(UntypedValue::from(input).$name().expect("testcase expects Ok result"))
@@ -146,6 +157,7 @@ macro_rules! unsigned_trunc_tests {
                 }
 
                 #[test]
+#[cfg_attr(miri, ignore)]
                 fn imm_err() {
                     fn consteval_err(input: $input_ty) -> TrapCode {
                         UntypedValue::from(input).$name().expect_err("testcase expects Err result")
@@ -179,11 +191,13 @@ macro_rules! trunc_sat_tests {
                 const OP: &str = $op_name;
 
                 #[test]
+#[cfg_attr(miri, ignore)]
                 fn reg() {
                     conversion_reg::<$input_ty, $output_ty>(OP, Instruction::$name);
                 }
 
                 #[test]
+#[cfg_attr(miri, ignore)]
                 fn imm() {
                     fn consteval(input: $input_ty) -> $output_ty {
                         <$output_ty>::from(UntypedValue::$name(input.into()))
@@ -223,11 +237,13 @@ macro_rules! convert_tests {
                 const OP: &str = $op_name;
 
                 #[test]
+#[cfg_attr(miri, ignore)]
                 fn reg() {
                     conversion_reg::<$input_ty, $output_ty>(OP, Instruction::$name);
                 }
 
                 #[test]
+#[cfg_attr(miri, ignore)]
                 fn imm() {
                     fn consteval(input: $input_ty) -> $output_ty {
                         <$output_ty>::from(UntypedValue::$name(input.into()))
@@ -259,11 +275,13 @@ mod f32_demote_f64 {
     const OP: &str = "demote_f64";
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn reg() {
         conversion_reg::<f64, f32>(OP, Instruction::f32_demote_f64);
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn imm() {
         fn consteval(input: f64) -> f32 {
             f32::from(UntypedValue::from(input).f32_demote_f64())
@@ -283,11 +301,13 @@ mod f64_promote_f32 {
     const OP: &str = "promote_f32";
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn reg() {
         conversion_reg::<f32, f64>(OP, Instruction::f64_promote_f32);
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn imm() {
         fn consteval(input: f32) -> f64 {
             f64::from(UntypedValue::from(input).f64_promote_f32())
@@ -310,11 +330,13 @@ macro_rules! iN_reinterpret_fN_tests {
                 const OP: &str = $op;
 
                 #[test]
+#[cfg_attr(miri, ignore)]
                 fn reg() {
                     conversion_reg_with::<$input_ty, $output_ty, _>(OP, [Instruction::return_reg(Register::from(0))]);
                 }
 
                 #[test]
+#[cfg_attr(miri, ignore)]
                 fn imm() {
                     fn consteval(input: $input_ty) -> $output_ty {
                         <$output_ty>::from(UntypedValue::from(input))
@@ -344,11 +366,13 @@ macro_rules! fN_reinterpret_iN_tests {
                 const OP: &str = $op;
 
                 #[test]
+#[cfg_attr(miri, ignore)]
                 fn reg() {
                     conversion_reg_with::<$input_ty, $output_ty, _>(OP, [Instruction::return_reg(Register::from(0))]);
                 }
 
                 #[test]
+#[cfg_attr(miri, ignore)]
                 fn imm() {
                     fn consteval(input: $input_ty) -> $output_ty {
                         <$output_ty>::from(UntypedValue::from(input))
