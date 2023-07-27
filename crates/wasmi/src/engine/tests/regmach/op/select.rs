@@ -48,6 +48,7 @@ impl Display for DisplaySelect {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn reg() {
     fn test_reg(kind: SelectKind, result_ty: ValueType) {
         let display_ty = DisplayValueType::from(result_ty);
@@ -92,6 +93,7 @@ fn reg() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn same_reg() {
     fn test_same_reg(kind: SelectKind, result_ty: ValueType) {
         let display_ty = DisplayValueType::from(result_ty);
@@ -149,6 +151,7 @@ where
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn same_imm32() {
     fn test_for_kind<T>(kind: SelectKind, value: T)
     where
@@ -190,6 +193,7 @@ fn same_imm32() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn same_i64imm32() {
     fn test_for(value: i64) {
         let expected = [return_i64imm32_instr(value)];
@@ -211,6 +215,7 @@ fn same_i64imm32() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn same_f64imm32() {
     fn test_for(value: f64) {
         let expected = [return_f64imm32_instr(value)];
@@ -234,6 +239,7 @@ fn same_f64imm32() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn same_imm() {
     fn test_for<T>(value: T)
     where
@@ -290,6 +296,7 @@ where
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn reg_imm32() {
     fn test_for_kind<T>(kind: SelectKind, value: T)
     where
@@ -340,6 +347,7 @@ fn reg_imm32() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn reg_imm() {
     fn test_for_kind<T>(kind: SelectKind, value: T)
     where
@@ -383,6 +391,7 @@ fn reg_imm() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn reg_i64imm32() {
     fn test_for_kind(kind: SelectKind, value: i64) {
         let result = Register::from_i16(2);
@@ -411,6 +420,7 @@ fn reg_i64imm32() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn reg_f64imm32() {
     fn test_for_kind(kind: SelectKind, value: f64) {
         let result = Register::from_i16(2);
@@ -465,6 +475,7 @@ where
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn imm32_reg() {
     fn test_for_kind<T>(kind: SelectKind, value: T)
     where
@@ -515,6 +526,7 @@ fn imm32_reg() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn imm_reg() {
     fn test_for_kind<T>(kind: SelectKind, value: T)
     where
@@ -558,6 +570,7 @@ fn imm_reg() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn i64imm32_reg() {
     fn test_for_kind(kind: SelectKind, value: i64) {
         let result = Register::from_i16(2);
@@ -586,6 +599,7 @@ fn i64imm32_reg() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn f64imm32_reg() {
     fn test_for_kind(kind: SelectKind, value: f64) {
         let result = Register::from_i16(2);
@@ -641,6 +655,7 @@ where
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn both_imm32() {
     fn test_for_kind<T>(kind: SelectKind, lhs: T, rhs: T)
     where
@@ -686,6 +701,7 @@ fn both_imm32() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn both_imm() {
     fn test_for_kind<T>(kind: SelectKind, lhs: T, rhs: T)
     where
@@ -725,6 +741,7 @@ fn both_imm() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn both_i64imm32() {
     fn test_for_kind(kind: SelectKind, lhs: i64, rhs: i64) {
         let result = Register::from_i16(1);
@@ -755,6 +772,7 @@ fn both_i64imm32() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn both_f64imm32() {
     fn test_for_kind(kind: SelectKind, lhs: f64, rhs: f64) {
         let result = Register::from_i16(1);

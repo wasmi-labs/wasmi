@@ -7,6 +7,7 @@ use core::fmt::Display;
 use wasmi_core::UntypedValue;
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn consteval_return() {
     fn test_for(condition: bool) {
         let condition = DisplayWasm::from(i32::from(condition));
@@ -28,6 +29,7 @@ fn consteval_return() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn consteval_return_1() {
     fn test_for(condition: bool) {
         let expected = match condition {
@@ -56,6 +58,7 @@ fn consteval_return_1() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn consteval_return_1_imm() {
     fn test_for<T>(condition: bool, if_true: T, if_false: T)
     where
@@ -105,6 +108,7 @@ fn consteval_return_1_imm() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn consteval_return_1_imm32() {
     fn test_for<T>(condition: bool, if_true: T, if_false: T)
     where
@@ -149,6 +153,7 @@ fn consteval_return_1_imm32() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn consteval_return_1_i64imm32() {
     fn test_for(condition: bool, if_true: i64, if_false: i64) {
         let expected: i64 = match condition {
@@ -185,6 +190,7 @@ fn consteval_return_1_i64imm32() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn consteval_return_1_f64imm32() {
     fn test_for(condition: bool, if_true: f64, if_false: f64) {
         let expected: f64 = match condition {
@@ -222,6 +228,7 @@ fn consteval_return_1_f64imm32() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn consteval_branch_always() {
     let wasm = wat2wasm(
         r"
@@ -247,6 +254,7 @@ fn consteval_branch_always() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn consteval_branch_never() {
     let wasm = wat2wasm(
         r"
@@ -268,6 +276,7 @@ fn consteval_branch_never() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn return_if_results_0() {
     let wasm = wat2wasm(
         r"
@@ -287,6 +296,7 @@ fn return_if_results_0() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn return_if_results_1() {
     let wasm = wat2wasm(
         r"
@@ -307,6 +317,7 @@ fn return_if_results_1() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn return_if_results_1_imm() {
     fn test_for<T>(returned_value: T)
     where
@@ -350,6 +361,7 @@ fn return_if_results_1_imm() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn return_if_results_1_imm32() {
     fn test_for<T>(returned_value: T)
     where
@@ -387,6 +399,7 @@ fn return_if_results_1_imm32() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn return_if_results_1_i64imm32() {
     fn test_for(returned_value: i64) {
         let display_value = DisplayWasm::from(returned_value);
@@ -418,6 +431,7 @@ fn return_if_results_1_i64imm32() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn return_if_results_1_f64imm32() {
     fn test_for(returned_value: f64) {
         let display_value = DisplayWasm::from(returned_value);
@@ -453,6 +467,7 @@ fn return_if_results_1_f64imm32() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn branch_if_results_0() {
     let wasm = wat2wasm(
         r"
@@ -474,6 +489,7 @@ fn branch_if_results_0() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn branch_if_results_1() {
     let wasm = wat2wasm(
         r"
@@ -506,6 +522,7 @@ fn branch_if_results_1() {
 /// are the same as the expected block results when translating the Wasm `br_if`.
 /// We achieve this by using expressions as inputs such as `(i32.clz (local.get 0))`.
 #[test]
+#[cfg_attr(miri, ignore)]
 fn branch_if_results_1_avoid_copy() {
     let wasm = wat2wasm(
         r"
@@ -530,6 +547,7 @@ fn branch_if_results_1_avoid_copy() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn branch_if_results_2() {
     let wasm = wat2wasm(
         r"
@@ -569,6 +587,7 @@ fn branch_if_results_2() {
 ///
 /// Read the docs on [`branch_if_results_1_avoid_copy`] test for more information.
 #[test]
+#[cfg_attr(miri, ignore)]
 fn branch_if_results_2_avoid_copy() {
     let wasm = wat2wasm(
         r"

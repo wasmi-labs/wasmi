@@ -6,6 +6,7 @@ use crate::engine::{
 use std::fmt::Display;
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn empty_block() {
     let wasm = wat2wasm(
         r"
@@ -19,6 +20,7 @@ fn empty_block() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn nested_empty_block() {
     let wasm = wat2wasm(
         r"
@@ -32,6 +34,7 @@ fn nested_empty_block() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn identity_block_1() {
     let wasm = wat2wasm(
         r"
@@ -48,6 +51,7 @@ fn identity_block_1() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn identity_block_2() {
     let wasm = wat2wasm(
         r"
@@ -66,6 +70,7 @@ fn identity_block_2() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn nested_identity_block_1() {
     let wasm = wat2wasm(
         r"
@@ -84,6 +89,7 @@ fn nested_identity_block_1() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn nested_identity_block_2() {
     let wasm = wat2wasm(
         r"
@@ -104,6 +110,7 @@ fn nested_identity_block_2() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn branched_block_0() {
     let wasm = wat2wasm(
         r"
@@ -124,6 +131,7 @@ fn branched_block_0() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn branched_block_1() {
     let wasm = wat2wasm(
         r"
@@ -167,6 +175,7 @@ where
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn branched_block_1_imm_i32() {
     fn test_for_i32(value: i32) {
         testcase_branched_block_1_imm::<i32>(value)
@@ -185,6 +194,7 @@ fn branched_block_1_imm_i32() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn branched_block_1_imm_i64imm32() {
     fn test_for_i64imm32(value: i64) {
         let const32 =
@@ -207,6 +217,7 @@ fn branched_block_1_imm_i64imm32() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn branched_block_1_imm_i64() {
     fn test_for_i64(value: i64) {
         testcase_branched_block_1_imm::<i64>(value)
@@ -227,6 +238,7 @@ fn branched_block_1_imm_i64() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn branched_block_1_imm_f32() {
     fn test_for_f32(value: f32) {
         testcase_branched_block_1_imm::<f32>(value)
@@ -246,6 +258,7 @@ fn branched_block_1_imm_f32() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn branched_block_1_imm_f64imm32() {
     fn test_for_f64imm32(value: f64) {
         let const32 = <Const32<f64>>::from_f64(value)
@@ -270,6 +283,7 @@ fn branched_block_1_imm_f64imm32() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn branched_block_1_imm_f64() {
     fn test_for_f64(value: f64) {
         testcase_branched_block_1_imm::<f64>(value)
@@ -289,6 +303,7 @@ fn branched_block_1_imm_f64() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn branched_block_2() {
     let wasm = wat2wasm(
         r"
@@ -314,6 +329,7 @@ fn branched_block_2() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn branch_if_block_0() {
     let wasm = wat2wasm(
         r"
@@ -335,6 +351,7 @@ fn branch_if_block_0() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn branch_if_block_1() {
     let wasm = wat2wasm(
         r"
@@ -360,6 +377,7 @@ fn branch_if_block_1() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn branch_to_func_block_0() {
     let wasm = wat2wasm(
         r"
@@ -375,6 +393,7 @@ fn branch_to_func_block_0() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn branch_to_func_block_1() {
     let wasm = wat2wasm(
         r"
@@ -391,6 +410,7 @@ fn branch_to_func_block_1() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn branch_to_func_block_nested_0() {
     let wasm = wat2wasm(
         r"
@@ -408,6 +428,7 @@ fn branch_to_func_block_nested_0() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn branch_to_func_block_nested_1() {
     let wasm = wat2wasm(
         r"

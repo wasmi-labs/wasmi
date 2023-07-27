@@ -33,6 +33,7 @@ fn test_reg(ty: ValueType) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn reg() {
     test_reg(ValueType::FuncRef);
     test_reg(ValueType::ExternRef);
@@ -65,6 +66,7 @@ fn test_imm16(ty: ValueType, delta: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn imm16() {
     fn test_for(delta: u32) {
         test_imm16(ValueType::FuncRef, delta);
@@ -98,6 +100,7 @@ fn test_imm_zero(ty: ValueType) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn imm_zero() {
     test_imm_zero(ValueType::FuncRef);
     test_imm_zero(ValueType::ExternRef);
@@ -130,6 +133,7 @@ fn test_imm_value_and_zero(ty: ValueType) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn imm_value_and_zero() {
     test_imm_value_and_zero(ValueType::FuncRef);
     test_imm_value_and_zero(ValueType::ExternRef);
@@ -165,6 +169,7 @@ fn test_imm(ty: ValueType, delta: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn imm() {
     fn test_for(delta: u32) {
         test_imm(ValueType::FuncRef, delta);

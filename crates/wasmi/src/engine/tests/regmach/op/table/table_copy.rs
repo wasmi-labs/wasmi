@@ -36,6 +36,7 @@ fn test_copy(ty: ValueType) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy() {
     test_copy(ValueType::FuncRef);
     test_copy(ValueType::ExternRef);
@@ -75,6 +76,7 @@ fn test_copy_exact16(ty: ValueType, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_exact16() {
     fn test_for(len: u32) {
         test_copy_exact16(ValueType::FuncRef, len);
@@ -92,6 +94,7 @@ fn test_copy_exact_zero(ty: ValueType) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_exact_zero() {
     test_copy_exact_zero(ValueType::FuncRef);
     test_copy_exact_zero(ValueType::ExternRef);
@@ -116,6 +119,7 @@ fn test_copy_exact(ty: ValueType, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_exact() {
     fn test_for(len: u32) {
         test_copy_exact(ValueType::FuncRef, len);
@@ -159,6 +163,7 @@ fn test_copy_from16(ty: ValueType, src: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_from16() {
     fn test_for(src: u32) {
         test_copy_from16(ValueType::FuncRef, src);
@@ -187,6 +192,7 @@ fn test_copy_from(ty: ValueType, src: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_from() {
     fn test_for(src: u32) {
         test_copy_from(ValueType::FuncRef, src);
@@ -226,6 +232,7 @@ fn test_copy_to16(ty: ValueType, dst: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_to16() {
     fn test_for(dst: u32) {
         test_copy_to16(ValueType::FuncRef, dst);
@@ -254,6 +261,7 @@ fn test_copy_to(ty: ValueType, dst: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_to() {
     fn test_for(dst: u32) {
         test_copy_to(ValueType::FuncRef, dst);
@@ -293,6 +301,7 @@ fn test_copy_from_to16(ty: ValueType, dst: u32, src: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_from_to16() {
     fn test_for(dst: u32, src: u32) {
         test_copy_from_to16(ValueType::FuncRef, dst, src);
@@ -325,6 +334,7 @@ fn test_copy_from_to(ty: ValueType, dst: u32, src: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_from_to() {
     fn test_for(dst: u32, src: u32) {
         test_copy_from_to(ValueType::FuncRef, dst, src);
@@ -375,6 +385,7 @@ fn test_copy_to_exact16(ty: ValueType, dst: u32, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_to_exact16() {
     fn test_for(dst: u32, len: u32) {
         test_copy_to_exact16(ValueType::FuncRef, dst, len);
@@ -399,6 +410,7 @@ fn test_copy_to_exact_zero(ty: ValueType, dst: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_to_exact_zero() {
     fn test_for(dst: u32) {
         test_copy_to_exact_zero(ValueType::FuncRef, dst);
@@ -429,6 +441,7 @@ fn test_copy_to_exact(ty: ValueType, dst: u32, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_to_exact() {
     fn test_for(dst: u32, len: u32) {
         test_copy_to_exact(ValueType::FuncRef, dst, len);
@@ -479,6 +492,7 @@ fn test_copy_from_exact16(ty: ValueType, src: u32, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_from_exact16() {
     fn test_for(dst: u32, len: u32) {
         test_copy_from_exact16(ValueType::FuncRef, dst, len);
@@ -503,6 +517,7 @@ fn test_copy_from_exact_zero(ty: ValueType, src: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_from_exact_zero() {
     fn test_for(dst: u32) {
         test_copy_from_exact_zero(ValueType::FuncRef, dst);
@@ -533,6 +548,7 @@ fn test_copy_from_exact(ty: ValueType, src: u32, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_from_exact() {
     fn test_for(src: u32, len: u32) {
         test_copy_from_exact(ValueType::FuncRef, src, len);
@@ -583,6 +599,7 @@ fn test_copy_from_to_exact16(ty: ValueType, dst: u32, src: u32, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_from_to_exact16() {
     fn test_for(dst: u32, src: u32, len: u32) {
         test_copy_from_to_exact16(ValueType::FuncRef, dst, src, len);
@@ -609,6 +626,7 @@ fn test_copy_from_to_exact_zero(ty: ValueType, dst: u32, src: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_from_to_exact_zero() {
     fn test_for(dst: u32, src: u32) {
         test_copy_from_to_exact_zero(ValueType::FuncRef, dst, src);
@@ -641,6 +659,7 @@ fn test_copy_from_to_exact(ty: ValueType, dst: u32, src: u32, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_from_to_exact() {
     fn test_for(dst: u32, src: u32, len: u32) {
         test_copy_from_to_exact(ValueType::FuncRef, dst, src, len);

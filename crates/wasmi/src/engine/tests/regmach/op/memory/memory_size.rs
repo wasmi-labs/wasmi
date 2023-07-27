@@ -7,6 +7,7 @@ use crate::{
 };
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn reg() {
     let wasm = wat2wasm(
         r"

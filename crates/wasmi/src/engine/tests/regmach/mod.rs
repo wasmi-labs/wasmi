@@ -1,6 +1,5 @@
 //! Tests for the register-machine `wasmi` engine translation implementation.
 
-#![cfg(not(miri))]
 #![allow(dead_code, unused_imports)] // TODO: remove
 
 mod display_wasm;

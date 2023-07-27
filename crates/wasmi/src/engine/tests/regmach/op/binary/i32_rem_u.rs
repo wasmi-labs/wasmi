@@ -4,6 +4,7 @@ use wasmi_core::TrapCode;
 const WASM_OP: WasmOp = WasmOp::binary(WasmType::I32, "rem_u");
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn same_reg() {
     let expected = [Instruction::ReturnImm32 {
         value: AnyConst32::from_i32(0),
@@ -12,37 +13,44 @@ fn same_reg() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn reg_reg() {
     test_binary_reg_reg(WASM_OP, Instruction::i32_rem_u)
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn reg_imm16() {
     test_binary_reg_imm16::<u32>(WASM_OP, 100, Instruction::i32_rem_u_imm16)
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn reg_imm16_rev() {
     test_binary_reg_imm16_rev::<u32>(WASM_OP, 100, Instruction::i32_rem_u_imm16_rev)
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn reg_imm() {
     test_binary_reg_imm32(WASM_OP, i32::MAX, Instruction::i32_rem_u)
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn reg_imm_rev() {
     test_binary_reg_imm32_rev(WASM_OP, i32::MAX, Instruction::i32_rem_u)
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn reg_zero() {
     let expected = [Instruction::Trap(TrapCode::IntegerDivisionByZero)];
     test_binary_reg_imm_with(WASM_OP, 0_i32, expected).run()
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn reg_one() {
     let expected = [Instruction::ReturnImm32 {
         value: AnyConst32::from_i32(0),
@@ -51,6 +59,7 @@ fn reg_one() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn consteval() {
     let lhs = 13;
     let rhs = 5;
@@ -65,6 +74,7 @@ fn consteval() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn consteval_div_by_zero() {
     let lhs = -4;
     let rhs = 0;

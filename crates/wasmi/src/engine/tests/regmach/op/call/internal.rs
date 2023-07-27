@@ -2,6 +2,7 @@ use super::*;
 use crate::engine::{CompiledFunc, RegisterSpan};
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn no_params() {
     let wasm = wat2wasm(
         r#"
@@ -26,6 +27,7 @@ fn no_params() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn one_param_reg() {
     let wasm = wat2wasm(
         r#"
@@ -53,6 +55,7 @@ fn one_param_reg() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn one_param_imm() {
     let wasm = wat2wasm(
         r#"
@@ -81,6 +84,7 @@ fn one_param_imm() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn two_params_reg() {
     let wasm = wat2wasm(
         r#"
@@ -111,6 +115,7 @@ fn two_params_reg() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn two_params_reg_rev() {
     let wasm = wat2wasm(
         r#"
@@ -143,6 +148,7 @@ fn two_params_reg_rev() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn two_params_imm() {
     let wasm = wat2wasm(
         r#"
@@ -175,6 +181,7 @@ fn two_params_imm() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn three_params_reg() {
     let wasm = wat2wasm(
         r#"
@@ -206,6 +213,7 @@ fn three_params_reg() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn three_params_reg_rev() {
     let wasm = wat2wasm(
         r#"
@@ -240,6 +248,7 @@ fn three_params_reg_rev() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn three_params_imm() {
     let wasm = wat2wasm(
         r#"

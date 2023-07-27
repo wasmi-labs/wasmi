@@ -2,6 +2,7 @@ use super::*;
 use crate::engine::tests::regmach::wasm_type::WasmType;
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill() {
     let wasm = wat2wasm(
         r"
@@ -57,6 +58,7 @@ fn test_fill_exact16(len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_exact16() {
     test_fill_exact16(1);
     test_fill_exact16(42);
@@ -64,6 +66,7 @@ fn fill_exact16() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_exact_zero() {
     testcase_fill_exact(0)
         .expect_func_instrs([Instruction::Return])
@@ -87,6 +90,7 @@ fn test_fill_exact(len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn copy_exact() {
     test_fill_exact(u32::from(u16::MAX) + 1);
     test_fill_exact(u32::MAX);
@@ -118,6 +122,7 @@ fn test_fill_imm(value: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_imm() {
     test_fill_imm(0);
     test_fill_imm(42);
@@ -157,6 +162,7 @@ fn test_fill_at16(dst: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_at16() {
     test_fill_at16(0);
     test_fill_at16(u32::from(u16::MAX));
@@ -179,6 +185,7 @@ fn test_fill_at(dst: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_at() {
     test_fill_at(u32::from(u16::MAX) + 1);
     test_fill_at(u32::MAX);
@@ -210,6 +217,7 @@ fn test_fill_at16_imm(dst: u32, value: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_at16_imm() {
     let dst_values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     let test_values = [
@@ -246,6 +254,7 @@ fn test_fill_at_imm(dst: u32, value: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_at_imm() {
     let values = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
     for dst in values {
@@ -288,6 +297,7 @@ fn test_fill_at_exact16(dst: u32, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_to_exact16() {
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
@@ -308,6 +318,7 @@ fn test_fill_at_exact_zero(dst: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_at_exact_zero() {
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
@@ -332,6 +343,7 @@ fn test_fill_at_exact(dst: u32, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_at_exact() {
     let values = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
     for dst in values {
@@ -374,6 +386,7 @@ fn test_fill_imm_exact16(value: u32, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_imm_exact16() {
     let len_values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     let values = [
@@ -404,6 +417,7 @@ fn test_fill_imm_exact_zero(value: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_imm_exact_zero() {
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
@@ -428,6 +442,7 @@ fn test_fill_imm_exact(value: u32, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_imm_exact() {
     let values = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
     for dst in values {
@@ -470,6 +485,7 @@ fn test_fill_at_imm_exact16(dst: u32, value: u32, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_at_imm_exact16() {
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
@@ -492,6 +508,7 @@ fn test_fill_at_imm_exact_zero(dst: u32, value: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_at_imm_exact_zero() {
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
@@ -518,6 +535,7 @@ fn test_fill_at_imm_exact(dst: u32, value: u32, len: u32) {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn fill_at_imm_exact() {
     let values = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
     for dst in values {
