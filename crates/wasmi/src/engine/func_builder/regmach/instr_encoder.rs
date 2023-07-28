@@ -235,26 +235,22 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         params: &[TypedProvider],
     ) -> Result<RegisterSpanIter, TranslationError> {
-        match RegisterSpanIter::from_providers(params) {
-            Some(register_span) => {
-                // Case: we are on the happy path were the providers on the
-                //       stack already are registers with contiguous indices.
-                //
-                //       This allows us to avoid copying over the registers
-                //       to where the call instruction expects them on the stack.
-                Ok(register_span)
-            }
-            None => {
-                // Case: the providers on the stack need to be copied to the
-                //       location where the call instruction expects its parameters
-                //       before executing the call.
-                let copy_results = stack.peek_dynamic_n(params.len())?.iter(params.len());
-                for (copy_result, copy_input) in copy_results.zip(params.iter().copied()) {
-                    self.encode_copy(stack, copy_result, copy_input)?;
-                }
-                Ok(copy_results)
-            }
+        if let Some(register_span) = RegisterSpanIter::from_providers(params) {
+            // Case: we are on the happy path were the providers on the
+            //       stack already are registers with contiguous indices.
+            //
+            //       This allows us to avoid copying over the registers
+            //       to where the call instruction expects them on the stack.
+            return Ok(register_span);
         }
+        // Case: the providers on the stack need to be copied to the
+        //       location where the call instruction expects its parameters
+        //       before executing the call.
+        let copy_results = stack.peek_dynamic_n(params.len())?.iter(params.len());
+        for (copy_result, copy_input) in copy_results.zip(params.iter().copied()) {
+            self.encode_copy(stack, copy_result, copy_input)?;
+        }
+        Ok(copy_results)
     }
 
     /// Encode conditional branch parameters for `br_if` and `return_if` instructions.
@@ -267,33 +263,29 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         params: &[TypedProvider],
     ) -> Result<RegisterSpanIter, TranslationError> {
-        match RegisterSpanIter::from_providers(params) {
-            Some(register_span) => {
-                // Case: we are on the happy path were the providers on the
-                //       stack already are registers with contiguous indices.
-                //
-                // This allows us to avoid copying over the registers
-                // to where the call instruction expects them on the stack.
-                //
-                // Since we are translating conditional branches we have to
-                // put the original providers back on the stack since no copies
-                // were needed and nothing has changed.
-                for param in params.iter().copied() {
-                    stack.push_provider(param)?;
-                }
-                Ok(register_span)
+        if let Some(register_span) = RegisterSpanIter::from_providers(params) {
+            // Case: we are on the happy path were the providers on the
+            //       stack already are registers with contiguous indices.
+            //
+            // This allows us to avoid copying over the registers
+            // to where the call instruction expects them on the stack.
+            //
+            // Since we are translating conditional branches we have to
+            // put the original providers back on the stack since no copies
+            // were needed and nothing has changed.
+            for param in params.iter().copied() {
+                stack.push_provider(param)?;
             }
-            None => {
-                // Case: the providers on the stack need to be copied to the
-                //       location where the call instruction expects its parameters
-                //       before executing the call.
-                let copy_results = stack.push_dynamic_n(params.len())?.iter(params.len());
-                for (copy_result, copy_input) in copy_results.zip(params.iter().copied()) {
-                    self.encode_copy(stack, copy_result, copy_input)?;
-                }
-                Ok(copy_results)
-            }
+            return Ok(register_span);
         }
+        // Case: the providers on the stack need to be copied to the
+        //       location where the call instruction expects its parameters
+        //       before executing the call.
+        let copy_results = stack.push_dynamic_n(params.len())?.iter(params.len());
+        for (copy_result, copy_input) in copy_results.zip(params.iter().copied()) {
+            self.encode_copy(stack, copy_result, copy_input)?;
+        }
+        Ok(copy_results)
     }
 }
 
