@@ -186,7 +186,7 @@ impl Module {
     }
     /// Returns the number of non-imported global variables of the [`Module`].
     pub(crate) fn len_globals(&self) -> usize {
-        self.memories.len()
+        self.globals.len()
     }
 
     /// Returns a slice to the function types of the [`Module`].
