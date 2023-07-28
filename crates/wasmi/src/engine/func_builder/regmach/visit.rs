@@ -656,6 +656,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         if !params.is_empty() {
             self.alloc.instr_encoder.push_instr(call_params)?;
         }
+        self.reachable = false;
         Ok(())
     }
 
