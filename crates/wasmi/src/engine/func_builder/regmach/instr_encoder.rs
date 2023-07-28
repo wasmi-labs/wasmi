@@ -183,7 +183,7 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         result: Register,
         value: TypedProvider,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<Option<Instr>, TranslationError> {
         /// Convenience to create an [`Instruction::Copy`] to copy a constant value.
         fn copy_imm(
             stack: &mut ValueStack,
@@ -197,10 +197,10 @@ impl InstrEncoder {
             TypedProvider::Register(value) => {
                 if result == value {
                     // Optimization: copying from register `x` into `x` is a no-op.
-                    return Ok(());
+                    return Ok(None);
                 }
-                self.push_instr(Instruction::copy(result, value))?;
-                Ok(())
+                let instr = self.push_instr(Instruction::copy(result, value))?;
+                Ok(Some(instr))
             }
             TypedProvider::Const(value) => {
                 let instruction = match value.ty() {
@@ -217,8 +217,8 @@ impl InstrEncoder {
                     ValueType::FuncRef => copy_imm(stack, result, value)?,
                     ValueType::ExternRef => copy_imm(stack, result, value)?,
                 };
-                self.push_instr(instruction)?;
-                Ok(())
+                let instr = self.push_instr(instruction)?;
+                Ok(Some(instr))
             }
         }
     }
@@ -249,6 +249,45 @@ impl InstrEncoder {
                 //       location where the call instruction expects its parameters
                 //       before executing the call.
                 let copy_results = stack.peek_dynamic_n(params.len())?.iter(params.len());
+                for (copy_result, copy_input) in copy_results.zip(params.iter().copied()) {
+                    self.encode_copy(stack, copy_result, copy_input)?;
+                }
+                Ok(copy_results)
+            }
+        }
+    }
+
+    /// Encode conditional branch parameters for `br_if` and `return_if` instructions.
+    ///
+    /// In contrast to [`InstrEncoder::encode_call_params`] this routine adds back original
+    /// [`TypedProvider`] on the stack in case no copies are needed for them. This way the stack
+    /// may not only contain dynamic registers after this operation.
+    pub fn encode_conditional_branch_params(
+        &mut self,
+        stack: &mut ValueStack,
+        params: &[TypedProvider],
+    ) -> Result<RegisterSpanIter, TranslationError> {
+        match RegisterSpanIter::from_providers(params) {
+            Some(register_span) => {
+                // Case: we are on the happy path were the providers on the
+                //       stack already are registers with contiguous indices.
+                //
+                // This allows us to avoid copying over the registers
+                // to where the call instruction expects them on the stack.
+                //
+                // Since we are translating conditional branches we have to
+                // put the original providers back on the stack since no copies
+                // were needed and nothing has changed.
+                for param in params.iter().copied() {
+                    stack.push_provider(param)?;
+                }
+                Ok(register_span)
+            }
+            None => {
+                // Case: the providers on the stack need to be copied to the
+                //       location where the call instruction expects its parameters
+                //       before executing the call.
+                let copy_results = stack.push_dynamic_n(params.len())?.iter(params.len());
                 for (copy_result, copy_input) in copy_results.zip(params.iter().copied()) {
                     self.encode_copy(stack, copy_result, copy_input)?;
                 }

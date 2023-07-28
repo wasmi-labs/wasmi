@@ -2066,21 +2066,14 @@ impl<'parser> FuncTranslator<'parser> {
                     }
                 }
             }
-            [_, _] => {
-                // Case: Returns two values which for which there exists a special `wasmi` instruction.
-                let (fst, snd) = self.alloc.stack.pop2_as_registers()?;
-                Instruction::return_nez_reg_2(condition, fst, snd)
-            }
             results => {
-                let registers = &mut self.alloc.register_buffer;
-                self.alloc
-                    .stack
-                    .peek_n_as_registers(results.len(), registers)?;
-                let slice = self
-                    .res
-                    .engine()
-                    .alloc_registers(registers.iter().copied())?;
-                Instruction::return_nez_many(condition, slice)
+                let providers = &mut self.alloc.buffer;
+                self.alloc.stack.pop_n(results.len(), providers);
+                let values = self
+                    .alloc
+                    .instr_encoder
+                    .encode_conditional_branch_params(&mut self.alloc.stack, providers)?;
+                Instruction::return_nez_many(condition, values)
             }
         };
         self.alloc.instr_encoder.push_instr(instr)?;

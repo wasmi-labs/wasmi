@@ -11,13 +11,7 @@ mod tests;
 use self::utils::StoreOffset16Instr;
 pub(crate) use self::{
     immediate::{AnyConst16, AnyConst32, Const16, Const32},
-    provider::{
-        Provider,
-        ProviderSliceStack,
-        RegisterSliceAlloc,
-        RegisterSliceRef,
-        UntypedProvider,
-    },
+    provider::{Provider, ProviderSliceStack, UntypedProvider},
     utils::{
         BinInstr,
         BinInstrImm16,
@@ -186,7 +180,7 @@ pub enum Instruction {
     ///
     /// # Note
     ///
-    /// Returns values as stored in the [`RegisterSliceRef`].
+    /// Returns values as stored in the [`RegisterSpanIter`].
     ReturnMany {
         /// Identifier for a [`Provider`] slice.
         values: RegisterSpanIter,
@@ -213,18 +207,6 @@ pub enum Instruction {
         condition: Register,
         /// The returned value.
         value: Register,
-    },
-    /// A conditional `return` instruction.
-    ///
-    /// # Note
-    ///
-    /// Variant of [`Instruction::ReturnNez`] returning two
-    /// [`Register`] values if the `condition` evaluates to `true`.
-    ReturnNezReg2 {
-        /// The register holding the condition to evaluate against zero.
-        condition: Register,
-        /// The returned values.
-        values: [Register; 2],
     },
     /// A conditional `return` instruction.
     ///
@@ -271,7 +253,7 @@ pub enum Instruction {
         /// The register holding the condition to evaluate against zero.
         condition: Register,
         /// The returned values.
-        values: RegisterSliceRef,
+        values: RegisterSpanIter,
     },
 
     /// A Wasm `br` instruction.

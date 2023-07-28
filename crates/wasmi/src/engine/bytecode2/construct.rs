@@ -10,7 +10,6 @@ use super::{
     LoadInstr,
     LoadOffset16Instr,
     Register,
-    RegisterSliceRef,
     RegisterSpan,
     RegisterSpanIter,
     StoreAtInstr,
@@ -219,18 +218,6 @@ impl Instruction {
         Self::ReturnNezReg { condition, value }
     }
 
-    /// Creates a new [`Instruction::ReturnNezReg2`] from the given `condition` and [`Register`] indices.
-    pub fn return_nez_reg_2(
-        condition: Register,
-        fst: impl Into<Register>,
-        snd: impl Into<Register>,
-    ) -> Self {
-        Self::ReturnNezReg2 {
-            condition,
-            values: [fst.into(), snd.into()],
-        }
-    }
-
     /// Creates a new [`Instruction::ReturnNezImm32`] for the given `condition` and `value`.
     pub fn return_nez_imm32(condition: Register, value: impl Into<AnyConst32>) -> Self {
         Self::ReturnNezImm32 {
@@ -256,7 +243,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::ReturnNezMany`] for the given `condition` and `values`.
-    pub fn return_nez_many(condition: Register, values: RegisterSliceRef) -> Self {
+    pub fn return_nez_many(condition: Register, values: RegisterSpanIter) -> Self {
         Self::ReturnNezMany { condition, values }
     }
 

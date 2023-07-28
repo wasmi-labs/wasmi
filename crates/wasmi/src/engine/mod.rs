@@ -38,7 +38,7 @@ pub use self::{
 };
 use self::{
     bytecode::Instruction,
-    bytecode2::{Provider, Register, RegisterSliceAlloc, RegisterSliceRef, UntypedProvider},
+    bytecode2::{Provider, UntypedProvider},
     cache::InstanceCache,
     code_map::CodeMap,
     const_pool::{ConstPool, ConstPoolView, ConstRef},
@@ -169,35 +169,6 @@ impl Engine {
         value: impl Into<UntypedValue>,
     ) -> Result<ConstRef, TranslationError> {
         self.inner.alloc_const(value.into())
-    }
-
-    /// Allocates a new [`Register`] slice to the [`Engine`].
-    ///
-    /// # Errors
-    ///
-    /// If too many or too large [`Register`] slices have been allcated.
-    pub(super) fn alloc_registers<I>(
-        &self,
-        registers: I,
-    ) -> Result<RegisterSliceRef, TranslationError>
-    where
-        I: IntoIterator<Item = Register>,
-    {
-        self.inner.alloc_registers(registers)
-    }
-
-    /// Stores the [`Register`] slice of the [`RegisterSliceRef`] in `buffer` if any.
-    ///
-    /// The `buffer` is cleared before refilling with the [`Register`] slice.
-    /// This will overwrite any data previously stored in `buffer`.
-    ///
-    /// # Notes
-    ///
-    /// This is a test API and only meant for testing purposes.
-    #[cfg(test)]
-    #[allow(dead_code)]
-    pub(super) fn get_registers(&self, slice: RegisterSliceRef, buffer: &mut Vec<Register>) {
-        self.inner.get_registers(slice, buffer)
     }
 
     /// Allocates a new uninitialized [`CompiledFunc`] to the [`Engine`].
@@ -516,38 +487,6 @@ impl EngineInner {
         self.res.write().const_pool.alloc(value)
     }
 
-    /// Allocates a new [`Register`] slice to the [`EngineInner`].
-    ///
-    /// # Errors
-    ///
-    /// If too many or too large [`Register`] slices have been allcated.
-    pub(super) fn alloc_registers<I>(
-        &self,
-        registers: I,
-    ) -> Result<RegisterSliceRef, TranslationError>
-    where
-        I: IntoIterator<Item = Register>,
-    {
-        self.res.write().registers.alloc(registers)
-    }
-
-    /// Stores the [`Register`] slice of the [`RegisterSliceRef`] in `buffer` if any.
-    ///
-    /// The `buffer` is cleared before refilling with the [`Register`] slice.
-    /// This will overwrite any data previously stored in `buffer`.
-    ///
-    /// # Note
-    ///
-    /// This is a test API and only meant for testing purposes.
-    #[cfg(test)]
-    pub(super) fn get_registers(&self, slice: RegisterSliceRef, buffer: &mut Vec<Register>) {
-        let res = self.res.read();
-        buffer.clear();
-        if let Some(registers) = res.registers.get(slice) {
-            buffer.extend_from_slice(registers);
-        }
-    }
-
     /// Allocates a new uninitialized [`CompiledFunc`] to the [`EngineInner`].
     ///
     /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
@@ -748,8 +687,6 @@ pub struct EngineResources {
     /// The engine deduplicates function types to make the equality
     /// comparison very fast. This helps to speed up indirect calls.
     func_types: FuncTypeRegistry,
-    /// Allocator and resolver for provider slices.
-    registers: RegisterSliceAlloc,
 }
 
 impl EngineResources {
@@ -761,7 +698,6 @@ impl EngineResources {
             code_map_2: CodeMap2::default(),
             const_pool: ConstPool::default(),
             func_types: FuncTypeRegistry::new(engine_idx),
-            registers: RegisterSliceAlloc::default(),
         }
     }
 }
