@@ -648,9 +648,12 @@ fn branch_if_results_2() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::branch_eqz(Register::from_i16(2), BranchOffset::from(4)),
-            Instruction::copy(Register::from_i16(3), Register::from_i16(0)),
-            Instruction::copy(Register::from_i16(4), Register::from_i16(1)),
+            Instruction::branch_eqz(Register::from_i16(2), BranchOffset::from(3)),
+            Instruction::copy_span(
+                RegisterSpan::new(Register::from_i16(3)),
+                RegisterSpan::new(Register::from_i16(0)),
+                2,
+            ),
             Instruction::branch(BranchOffset::from(2)),
             Instruction::copy_span(
                 RegisterSpan::new(Register::from_i16(3)),
@@ -701,6 +704,92 @@ fn branch_if_results_2_avoid_copy() {
                 Register::from_i16(4),
             ),
             Instruction::return_reg(Register::from_i16(3)),
+        ])
+        .run()
+}
+
+/// This test case was design to specifically test the `copy_span` optimizations.
+#[test]
+#[cfg_attr(miri, ignore)]
+fn branch_if_results_4_mixed_1() {
+    let wasm = wat2wasm(
+        r"
+        (module
+            (func (param i32 i32 i32) (result i32 i32 i32 i32)
+                (block (result i32 i32 i32 i32)
+                    (i32.const 10)
+                    (local.get 0)
+                    (local.get 1)
+                    (i32.const 20)
+                    (br_if 0
+                        (local.get 2) ;; br_if condition
+                    )
+                )
+            )
+        )",
+    );
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::branch_eqz(Register::from_i16(2), BranchOffset::from(5)),
+            Instruction::copy_imm32(Register::from_i16(3), 10),
+            Instruction::copy_span(
+                RegisterSpan::new(Register::from_i16(4)),
+                RegisterSpan::new(Register::from_i16(0)),
+                2,
+            ),
+            Instruction::copy_imm32(Register::from_i16(6), 20),
+            Instruction::branch(BranchOffset::from(4)),
+            Instruction::copy_imm32(Register::from_i16(3), 10),
+            Instruction::copy_span(
+                RegisterSpan::new(Register::from_i16(4)),
+                RegisterSpan::new(Register::from_i16(0)),
+                2,
+            ),
+            Instruction::copy_imm32(Register::from_i16(6), 20),
+            Instruction::return_many(RegisterSpan::new(Register::from_i16(3)).iter(4)),
+        ])
+        .run()
+}
+
+/// This test case was design to specifically test the `copy_span` optimizations.
+#[test]
+#[cfg_attr(miri, ignore)]
+fn branch_if_results_4_mixed_2() {
+    let wasm = wat2wasm(
+        r"
+        (module
+            (func (param i32 i32 i32) (result i32 i32 i32 i32)
+                (block (result i32 i32 i32 i32)
+                    (local.get 0)
+                    (local.get 0)
+                    (local.get 1)
+                    (local.get 1)
+                    (br_if 0
+                        (local.get 2) ;; br_if condition
+                    )
+                )
+            )
+        )",
+    );
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::branch_eqz(Register::from_i16(2), BranchOffset::from(5)),
+            Instruction::copy(Register::from_i16(3), Register::from_i16(0)),
+            Instruction::copy_span(
+                RegisterSpan::new(Register::from_i16(4)),
+                RegisterSpan::new(Register::from_i16(0)),
+                2,
+            ),
+            Instruction::copy(Register::from_i16(6), Register::from_i16(1)),
+            Instruction::branch(BranchOffset::from(4)),
+            Instruction::copy(Register::from_i16(3), Register::from_i16(0)),
+            Instruction::copy_span(
+                RegisterSpan::new(Register::from_i16(4)),
+                RegisterSpan::new(Register::from_i16(0)),
+                2,
+            ),
+            Instruction::copy(Register::from_i16(6), Register::from_i16(1)),
+            Instruction::return_many(RegisterSpan::new(Register::from_i16(3)).iter(4)),
         ])
         .run()
 }

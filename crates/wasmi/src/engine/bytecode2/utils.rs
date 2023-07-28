@@ -30,12 +30,12 @@ impl Register {
     }
 
     /// Returns the [`Register`] with the next contiguous index.
-    fn next(self) -> Register {
+    pub fn next(self) -> Register {
         Self(self.0.wrapping_add(1))
     }
 
     /// Returns the [`Register`] with the previous contiguous index.
-    fn prev(self) -> Register {
+    pub fn prev(self) -> Register {
         Self(self.0.wrapping_sub(1))
     }
 }

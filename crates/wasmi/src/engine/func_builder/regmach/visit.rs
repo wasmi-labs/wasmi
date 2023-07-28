@@ -158,14 +158,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             .stack
             .pop_n(len_block_params, &mut self.alloc.buffer);
         let branch_params = self.alloc.stack.push_dynamic_n(len_block_params)?;
-        for (param, value) in branch_params
-            .iter(len_block_params)
-            .zip(self.alloc.buffer.iter().copied())
-        {
-            self.alloc
-                .instr_encoder
-                .encode_copy(&mut self.alloc.stack, param, value)?;
-        }
+        self.alloc.instr_encoder.encode_copies(
+            &mut self.alloc.stack,
+            branch_params.iter(len_block_params),
+            &self.alloc.buffer[..],
+        )?;
         // Create loop header label and immediately pin it.
         let stack_height = BlockHeight::new(self.engine(), self.alloc.stack.height(), block_type)?;
         let header = self.alloc.instr_encoder.new_label();
@@ -459,14 +456,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                         self.alloc
                             .instr_encoder
                             .push_instr(Instruction::branch_eqz(condition, skip_offset))?;
-                        for (result, value) in branch_params.zip(self.alloc.buffer.iter().copied())
-                        {
-                            self.alloc.instr_encoder.encode_copy(
-                                &mut self.alloc.stack,
-                                result,
-                                value,
-                            )?;
-                        }
+                        self.alloc.instr_encoder.encode_copies(
+                            &mut self.alloc.stack,
+                            branch_params,
+                            &self.alloc.buffer[..],
+                        )?;
                         let branch_offset =
                             self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
                         self.alloc

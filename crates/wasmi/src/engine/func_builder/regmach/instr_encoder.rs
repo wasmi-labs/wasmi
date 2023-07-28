@@ -1,11 +1,14 @@
+use core::mem;
+
 use super::{DefragRegister, TypedProvider};
 use crate::engine::{
     bytecode::BranchOffset,
-    bytecode2::{Const32, Instruction, Register, RegisterSpanIter},
+    bytecode2::{Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
     func_builder::{
         labels::{LabelRef, LabelRegistry},
         regmach::stack::ValueStack,
         Instr,
+        TranslationErrorInner,
     },
     TranslationError,
 };
@@ -57,6 +60,18 @@ impl InstrSequence {
     /// If no [`Instruction`] is associated to the [`Instr`] for this [`InstrSequence`].
     fn get_mut(&mut self, instr: Instr) -> &mut Instruction {
         &mut self.instrs[instr.into_usize()]
+    }
+
+    /// Returns an exclusive reference to the last [`Instruction`] of the [`InstrSequence`].
+    ///
+    /// # Panics
+    ///
+    /// If the [`InstrSequence`] is empty.
+    #[track_caller]
+    fn last_mut(&mut self) -> &mut Instruction {
+        self.instrs
+            .last_mut()
+            .expect("expected non-empty instruction sequence")
     }
 
     /// Return an iterator over the sequence of generated [`Instruction`].
@@ -223,6 +238,91 @@ impl InstrEncoder {
         }
     }
 
+    /// Encode a set of `copy result <- value` instructions.
+    ///
+    /// # Note
+    ///
+    /// Applies optimizations for `copy x <- x` and properly selects the
+    /// most optimized `copy` instruction variants for the given `value`.
+    pub fn encode_copies(
+        &mut self,
+        stack: &mut ValueStack,
+        results: RegisterSpanIter,
+        values: &[TypedProvider],
+    ) -> Result<(), TranslationError> {
+        if values.len() >= 2 {
+            if let Some(values) = RegisterSpanIter::from_providers(values) {
+                if results == values {
+                    // Case: both spans are equal so there is no need to copy anything.
+                    return Ok(());
+                }
+                // Optimization: we can encode the entire copy as [`Instruction::CopySpan`]
+                self.push_instr(Instruction::copy_span(
+                    results.span(),
+                    values.span(),
+                    results.len_as_u16(),
+                ))?;
+                return Ok(());
+            }
+        }
+        let mut last_copy: Option<Instruction> = None;
+        for (copy_result, copy_input) in results.zip(values.iter().copied()) {
+            // Note: we should refactor this code one if-let-chains are stabilized.
+            if let Some(last) = last_copy {
+                if let TypedProvider::Register(copy_input) = copy_input {
+                    // We might be able to merge the two last copy instructions together.
+                    let merged_copy = match last {
+                        Instruction::Copy { result, value } => {
+                            let can_merge =
+                                result.next() == copy_result && value.next() == copy_input;
+                            can_merge.then(|| {
+                                Instruction::copy_span(
+                                    RegisterSpan::new(result),
+                                    RegisterSpan::new(value),
+                                    2,
+                                )
+                            })
+                        }
+                        Instruction::CopySpan {
+                            results,
+                            values,
+                            len,
+                        } => {
+                            let mut last_results = results.iter(len as usize);
+                            let mut last_values = values.iter(len as usize);
+                            let last_result = last_results
+                                .next_back()
+                                .expect("CopySpan must not be empty");
+                            let last_value =
+                                last_values.next_back().expect("CopySpan must not be empty");
+                            let can_merge = last_result.next() == copy_result
+                                && last_value.next() == copy_input;
+                            let new_len = len.checked_add(1).ok_or_else(|| {
+                                TranslationError::new(TranslationErrorInner::RegisterOutOfBounds)
+                            })?;
+                            can_merge.then(|| Instruction::copy_span(results, values, new_len))
+                        }
+                        _ => unreachable!("must have copy instruction here"),
+                    };
+                    last_copy = merged_copy;
+                    if let Some(merged_copy) = merged_copy {
+                        let last_instr = self.instrs.last_mut();
+                        _ = mem::replace(last_instr, merged_copy);
+                        continue;
+                    }
+                }
+            }
+            if self.encode_copy(stack, copy_result, copy_input)?.is_some() {
+                if let TypedProvider::Register(copy_input) = copy_input {
+                    // At this point we know that a new register-to-register copy has been
+                    // encoded and thus we can update the `last_copy` variable.
+                    last_copy = Some(Instruction::copy(copy_result, copy_input));
+                }
+            }
+        }
+        Ok(())
+    }
+
     /// Encodes the call parameters of a `wasmi` call instruction if neccessary.
     ///
     /// Returns the contiguous [`RegisterSpanIter`] that makes up the call parameters post encoding.
@@ -247,9 +347,7 @@ impl InstrEncoder {
         //       location where the call instruction expects its parameters
         //       before executing the call.
         let copy_results = stack.peek_dynamic_n(params.len())?.iter(params.len());
-        for (copy_result, copy_input) in copy_results.zip(params.iter().copied()) {
-            self.encode_copy(stack, copy_result, copy_input)?;
-        }
+        self.encode_copies(stack, copy_results, params)?;
         Ok(copy_results)
     }
 
@@ -282,9 +380,7 @@ impl InstrEncoder {
         //       location where the call instruction expects its parameters
         //       before executing the call.
         let copy_results = stack.push_dynamic_n(params.len())?.iter(params.len());
-        for (copy_result, copy_input) in copy_results.zip(params.iter().copied()) {
-            self.encode_copy(stack, copy_result, copy_input)?;
-        }
+        self.encode_copies(stack, copy_results, params)?;
         Ok(copy_results)
     }
 }

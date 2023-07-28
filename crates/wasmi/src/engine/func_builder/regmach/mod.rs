@@ -307,26 +307,11 @@ impl<'parser> FuncTranslator<'parser> {
         }
         let params = &mut self.alloc.buffer;
         self.alloc.stack.pop_n(branch_params.len(), params);
-        if branch_params.len() >= 2 {
-            if let Some(values_span) = RegisterSpanIter::from_providers(params) {
-                let len = branch_params.len_as_u16();
-                if branch_params == values_span {
-                    // Case: both spans are equal so there is no need to copy anything.
-                    return Ok(());
-                }
-                self.alloc.instr_encoder.push_instr(Instruction::copy_span(
-                    branch_params.span(),
-                    values_span.span(),
-                    len,
-                ))?;
-                return Ok(());
-            }
-        }
-        for (result, value) in branch_params.zip(self.alloc.buffer.iter().copied()) {
-            self.alloc
-                .instr_encoder
-                .encode_copy(&mut self.alloc.stack, result, value)?;
-        }
+        self.alloc.instr_encoder.encode_copies(
+            &mut self.alloc.stack,
+            branch_params,
+            &self.alloc.buffer[..],
+        )?;
         Ok(())
     }
 
