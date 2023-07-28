@@ -574,12 +574,89 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         Ok(())
     }
 
-    fn visit_return_call(&mut self, _function_index: u32) -> Self::Output {
-        todo!()
+    fn visit_return_call(&mut self, function_index: u32) -> Self::Output {
+        bail_unreachable!(self);
+        self.bump_fuel_consumption(self.fuel_costs().call)?;
+        let func_idx = FuncIdx::from(function_index);
+        let func_type = self.func_type_of(func_idx);
+        let params = func_type.params();
+        let len_results =
+            u16::try_from(func_type.results().len()).expect("too many function return types");
+        let provider_params = &mut self.alloc.buffer;
+        self.alloc.stack.pop_n(params.len(), provider_params);
+        let params_span = self
+            .alloc
+            .instr_encoder
+            .encode_call_params(&mut self.alloc.stack, provider_params)?;
+        let call_params = Instruction::call_params(params_span, len_results);
+        let instr = match self.res.get_compiled_func_2(func_idx) {
+            Some(compiled_func) => {
+                // Case: We are calling an internal function and can optimize
+                //       this case by using the special instruction for it.
+                match params.len() {
+                    0 => Instruction::return_call_internal_0(compiled_func),
+                    _ => Instruction::return_call_internal(compiled_func),
+                }
+            }
+            None => {
+                // Case: We are calling an imported function and must use the
+                //       general calling operator for it.
+                match params.len() {
+                    0 => Instruction::return_call_imported_0(function_index),
+                    _ => Instruction::return_call_imported(function_index),
+                }
+            }
+        };
+        self.alloc.instr_encoder.push_instr(instr)?;
+        if !params.is_empty() {
+            self.alloc.instr_encoder.push_instr(call_params)?;
+        }
+        self.reachable = false;
+        Ok(())
     }
 
-    fn visit_return_call_indirect(&mut self, _type_index: u32, _table_index: u32) -> Self::Output {
-        todo!()
+    fn visit_return_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
+        bail_unreachable!(self);
+        self.bump_fuel_consumption(self.fuel_costs().call)?;
+        let type_index = SignatureIdx::from(type_index);
+        let func_type = self.func_type_at(type_index);
+        let params = func_type.params();
+        let len_results =
+            u16::try_from(func_type.results().len()).expect("too many function return types");
+        let index = self.alloc.stack.pop();
+        let provider_params = &mut self.alloc.buffer;
+        self.alloc.stack.pop_n(params.len(), provider_params);
+        let params_span = self
+            .alloc
+            .instr_encoder
+            .encode_call_params(&mut self.alloc.stack, provider_params)?;
+        let call_params = Instruction::call_params(params_span, len_results);
+        let table_params = match index {
+            TypedProvider::Const(index) => match <Const16<u32>>::from_u32(u32::from(index)) {
+                Some(index) => {
+                    // Case: the index is encodable as 16-bit constant value
+                    //       which allows us to use an optimized instruction.
+                    Instruction::call_indirect_params_imm16(index, table_index)
+                }
+                None => {
+                    // Case: the index is not encodable as 16-bit constant value
+                    //       and we need to allocate it as function local constant.
+                    let index = self.alloc.stack.alloc_const(index)?;
+                    Instruction::call_indirect_params(index, table_index)
+                }
+            },
+            TypedProvider::Register(index) => Instruction::call_indirect_params(index, table_index),
+        };
+        let instr = match params.len() {
+            0 => Instruction::return_call_indirect_0(type_index),
+            _ => Instruction::return_call_indirect(type_index),
+        };
+        self.alloc.instr_encoder.push_instr(instr)?;
+        self.alloc.instr_encoder.push_instr(table_params)?;
+        if !params.is_empty() {
+            self.alloc.instr_encoder.push_instr(call_params)?;
+        }
+        Ok(())
     }
 
     fn visit_drop(&mut self) -> Self::Output {
