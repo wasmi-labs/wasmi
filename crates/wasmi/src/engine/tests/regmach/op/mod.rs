@@ -11,6 +11,7 @@ mod load;
 mod loop_;
 mod memory;
 mod return_;
+mod return_call;
 mod select;
 mod store;
 mod table;

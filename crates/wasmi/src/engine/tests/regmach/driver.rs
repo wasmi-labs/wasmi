@@ -164,6 +164,7 @@ impl TranslationTest {
     pub fn new(bytes: impl AsRef<[u8]>) -> Self {
         let config = {
             let mut cfg = Config::default();
+            cfg.wasm_tail_call(true);
             cfg.set_engine_backend(EngineBackend::RegisterMachine);
             cfg
         };
