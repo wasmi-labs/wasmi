@@ -291,6 +291,15 @@ impl Instruction {
         }
     }
 
+    /// Creates a new [`Instruction::CopySpan`] copying multiple consecutive values.
+    pub fn copy_span(results: RegisterSpan, values: RegisterSpan, len: u16) -> Self {
+        Self::CopySpan {
+            results,
+            values,
+            len,
+        }
+    }
+
     /// Creates a new [`Instruction::GlobalGet`].
     pub fn global_get(result: Register, global: bytecode2::GlobalIdx) -> Self {
         Self::GlobalGet { result, global }

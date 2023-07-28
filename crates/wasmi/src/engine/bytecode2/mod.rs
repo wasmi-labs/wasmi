@@ -334,6 +334,22 @@ pub enum Instruction {
         /// The 32-bit encoded `i64` immediate value to copy.
         value: Const32<f64>,
     },
+    /// Copes `len` contiguous `values` [`RegisterSpan`] into `results` [`RegisterSpan`]
+    ///
+    /// Copies registers: `registers[results..results+len] <- registers[values..values+len]`
+    ///
+    /// # Note
+    ///
+    /// This [`Instruction`] serves as an optimization for cases were it is possible
+    /// to copy whole spans instead of many individual register values bit by bit.
+    CopySpan {
+        /// The registers holding the result of this instruction.
+        results: RegisterSpan,
+        /// The contiguous registers holding the inputs of this instruction.
+        values: RegisterSpan,
+        /// The amount of copied registers.
+        len: u16,
+    },
 
     /// Auxiliary [`Instruction`] to encode call parameters for call instructions.
     CallParams {

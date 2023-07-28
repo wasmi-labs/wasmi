@@ -1,6 +1,7 @@
 use super::*;
 use crate::engine::{
     bytecode::BranchOffset,
+    bytecode2::RegisterSpan,
     tests::regmach::{display_wasm::DisplayValueType, wasm_type::WasmType},
 };
 use std::fmt::Display;
@@ -320,8 +321,11 @@ fn branched_block_2() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy(Register::from_i16(2), Register::from_i16(0)),
-            Instruction::copy(Register::from_i16(3), Register::from_i16(1)),
+            Instruction::copy_span(
+                RegisterSpan::new(Register::from_i16(2)),
+                RegisterSpan::new(Register::from_i16(0)),
+                2,
+            ),
             Instruction::branch(BranchOffset::from(1)),
             Instruction::return_reg(Register::from_i16(2)),
         ])

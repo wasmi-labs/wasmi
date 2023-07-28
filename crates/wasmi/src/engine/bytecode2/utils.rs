@@ -103,6 +103,16 @@ impl RegisterSpanIter {
         let last = Register(last_index);
         Self::from_raw_parts(next, last)
     }
+
+    /// Creates a [`RegisterSpan`] from this [`RegisterSpanIter`].
+    pub fn span(self) -> RegisterSpan {
+        RegisterSpan(self.next)
+    }
+
+    /// Returns the remaining length of the [`RegisterSpanIter`] as `u16`.
+    pub fn len_as_u16(self) -> u16 {
+        self.last.0.abs_diff(self.next.0)
+    }
 }
 
 impl Iterator for RegisterSpanIter {
@@ -130,7 +140,7 @@ impl DoubleEndedIterator for RegisterSpanIter {
 
 impl ExactSizeIterator for RegisterSpanIter {
     fn len(&self) -> usize {
-        usize::from(self.last.0.abs_diff(self.next.0))
+        usize::from(self.len_as_u16())
     }
 }
 

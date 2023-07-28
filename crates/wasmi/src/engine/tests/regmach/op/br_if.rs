@@ -651,9 +651,12 @@ fn branch_if_results_2() {
             Instruction::branch_eqz(Register::from_i16(2), BranchOffset::from(4)),
             Instruction::copy(Register::from_i16(3), Register::from_i16(0)),
             Instruction::copy(Register::from_i16(4), Register::from_i16(1)),
-            Instruction::branch(BranchOffset::from(3)),
-            Instruction::copy(Register::from_i16(3), Register::from_i16(0)),
-            Instruction::copy(Register::from_i16(4), Register::from_i16(1)),
+            Instruction::branch(BranchOffset::from(2)),
+            Instruction::copy_span(
+                RegisterSpan::new(Register::from_i16(3)),
+                RegisterSpan::new(Register::from_i16(0)),
+                2,
+            ),
             Instruction::i32_add(
                 Register::from_i16(3),
                 Register::from_i16(3),
