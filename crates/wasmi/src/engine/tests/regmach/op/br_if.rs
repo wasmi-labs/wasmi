@@ -593,11 +593,12 @@ fn branch_if_results_2_avoid_copy() {
         r"
         (module
             (func (param i32 i32 i32) (result i32)
-                (i32.clz (local.get 0))
-                (i32.ctz (local.get 1))
-                (local.get 2)
-                (block (param i32 i32 i32) (result i32 i32)
-                    (br_if 0)
+                (i32.clz (local.get 0)) ;; on dynamic register stack
+                (i32.ctz (local.get 1)) ;; on dynamic register stack
+                (block (param i32 i32) (result i32 i32)
+                    (br_if 0
+                        (local.get 2) ;; br_if condition
+                    )
                 )
                 (i32.add)
             )
