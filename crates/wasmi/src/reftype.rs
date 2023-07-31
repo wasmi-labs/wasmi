@@ -4,7 +4,7 @@ use crate::core::UntypedValue;
 ///
 /// # Note
 ///
-/// This is primarily used for conversions of [`FuncRef`] and [`ExternRef`].
+/// This is used for conversions of [`FuncRef`] and [`ExternRef`].
 ///
 /// [`FuncRef`]: [`crate::FuncRef`]
 /// [`ExternRef`]: [`crate::ExternRef`]
