@@ -5,6 +5,9 @@ use crate::core::UntypedValue;
 /// # Note
 ///
 /// This is primarily used for conversions of [`FuncRef`] and [`ExternRef`].
+/// 
+/// [`FuncRef`]: [`crate::FuncRef`]
+/// [`ExternRef`]: [`crate::ExternRef`]
 pub union Transposer<T: Copy> {
     /// The `reftype` based representation.
     pub reftype: T,
