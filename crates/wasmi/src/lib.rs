@@ -97,6 +97,7 @@ mod limits;
 mod linker;
 mod memory;
 mod module;
+mod reftype;
 mod store;
 mod table;
 mod value;
