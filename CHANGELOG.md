@@ -12,7 +12,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Fixes
 
-- Fixed a bug were `Module::len_globals` internal API returned length of linear memories instead.
+- Fixed a bug were `Module::len_globals` internal API returned length of linear memories instead. (https://github.com/paritytech/wasmi/pull/741)
 
 ### Changed
 
