@@ -1,5 +1,5 @@
 use super::Func;
-use crate::core::UntypedValue;
+use crate::{core::UntypedValue, reftype::Transposer};
 
 /// A nullable [`Func`] reference.
 #[derive(Debug, Default, Copy, Clone)]
@@ -14,12 +14,6 @@ impl From<Func> for FuncRef {
     }
 }
 
-/// Type used to convert between [`FuncRef`] and [`UntypedValue`].
-union Transposer {
-    funcref: FuncRef,
-    untyped: UntypedValue,
-}
-
 #[test]
 fn funcref_sizeof() {
     // These assertions are important in order to convert `FuncRef`
@@ -28,6 +22,7 @@ fn funcref_sizeof() {
     // The following equation must be true:
     //     size_of(Func) == size_of(UntypedValue) == size_of(FuncRef)
     use core::mem::size_of;
+    assert_eq!(size_of::<Func>(), size_of::<u64>());
     assert_eq!(size_of::<Func>(), size_of::<UntypedValue>());
     assert_eq!(size_of::<Func>(), size_of::<FuncRef>());
 }
@@ -40,12 +35,12 @@ fn funcref_null_to_zero() {
 
 impl From<UntypedValue> for FuncRef {
     fn from(untyped: UntypedValue) -> Self {
-        // Safety: This operation is safe since there are no invalid
+        // Safety: This union access is safe since there are no invalid
         //         bit patterns for [`FuncRef`] instances. Therefore
         //         this operation cannot produce invalid [`FuncRef`]
         //         instances even though the input [`UntypedValue`]
         //         was modified arbitrarily.
-        unsafe { Transposer { untyped }.funcref }.canonicalize()
+        unsafe { <Transposer<Self>>::from(untyped).reftype }.canonicalize()
     }
 }
 
@@ -57,7 +52,7 @@ impl From<FuncRef> for UntypedValue {
         //         this operation cannot produce invalid [`UntypedValue`]
         //         instances even if it was possible to arbitrarily modify
         //         the input [`FuncRef`] instance.
-        unsafe { Transposer { funcref }.untyped }
+        Self::from(unsafe { <Transposer<FuncRef>>::new(funcref).value })
     }
 }
 
@@ -80,12 +75,7 @@ impl FuncRef {
         if self.is_null() {
             // Safety: This is safe since `0u64` can be bit
             //         interpreted as a valid `FuncRef` value.
-            return unsafe {
-                Transposer {
-                    untyped: UntypedValue::from(0u64),
-                }
-                .funcref
-            };
+            return unsafe { <Transposer<Self>>::null().reftype };
         }
         self
     }

@@ -1,4 +1,4 @@
-use crate::{store::Stored, AsContextMut, StoreContext};
+use crate::{reftype::Transposer, store::Stored, AsContextMut, StoreContext};
 use alloc::boxed::Box;
 use core::{any::Any, num::NonZeroU32};
 use wasmi_arena::ArenaIndex;
@@ -91,12 +91,6 @@ pub struct ExternRef {
     inner: Option<ExternObject>,
 }
 
-/// Type used to convert between [`ExternRef`] and [`UntypedValue`].
-union Transposer {
-    externref: ExternRef,
-    untyped: UntypedValue,
-}
-
 #[test]
 fn externref_sizeof() {
     // These assertions are important in order to convert `FuncRef`
@@ -105,6 +99,7 @@ fn externref_sizeof() {
     // The following equation must be true:
     //     size_of(ExternRef) == size_of(ExternObject) == size_of(UntypedValue)
     use core::mem::size_of;
+    assert_eq!(size_of::<ExternRef>(), size_of::<u64>());
     assert_eq!(size_of::<ExternRef>(), size_of::<UntypedValue>());
     assert_eq!(size_of::<ExternRef>(), size_of::<ExternObject>());
 }
@@ -122,7 +117,7 @@ impl From<UntypedValue> for ExternRef {
         //         this operation cannot produce invalid [`ExternRef`]
         //         instances even though the input [`UntypedValue`]
         //         was modified arbitrarily.
-        unsafe { Transposer { untyped }.externref }.canonicalize()
+        unsafe { <Transposer<Self>>::from(untyped).reftype }.canonicalize()
     }
 }
 
@@ -134,7 +129,7 @@ impl From<ExternRef> for UntypedValue {
         //         this operation cannot produce invalid [`UntypedValue`]
         //         instances even if it was possible to arbitrarily modify
         //         the input [`ExternRef`] instance.
-        unsafe { Transposer { externref }.untyped }
+        Self::from(unsafe { <Transposer<ExternRef>>::new(externref).value })
     }
 }
 
@@ -165,12 +160,7 @@ impl ExternRef {
         if self.is_null() {
             // Safety: This is safe since `0u64` can be bit
             //         interpreted as a valid `ExternRef` value.
-            return unsafe {
-                Transposer {
-                    untyped: UntypedValue::from(0u64),
-                }
-                .externref
-            };
+            return unsafe { <Transposer<Self>>::null().reftype };
         }
         self
     }
