@@ -22,6 +22,7 @@ use crate::{
             BranchTableTargets,
             DataSegmentIdx,
             ElementSegmentIdx,
+            F64Const32,
             Instruction,
             SignatureIdx,
             TableIdx,
@@ -1790,7 +1791,21 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_f64_const(&mut self, value: wasmparser::Ieee64) -> Result<(), TranslationError> {
-        self.translate_const_ref(F64::from_bits(value.bits()))
+        match F64Const32::new(f64::from_bits(value.bits())) {
+            Some(value) => self.translate_if_reachable(|builder| {
+                // Case: The constant value can be encoded as 32-bit float so
+                //       it is possible to use a more efficient instruction
+                //       to encode the constant value instruction.
+                builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+                builder.stack_height.push();
+                builder
+                    .alloc
+                    .inst_builder
+                    .push_inst(Instruction::F64Const32(value));
+                Ok(())
+            }),
+            None => self.translate_const_ref(F64::from_bits(value.bits())),
+        }
     }
 
     fn visit_i32_eqz(&mut self) -> Result<(), TranslationError> {
