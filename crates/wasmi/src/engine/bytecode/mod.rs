@@ -14,6 +14,7 @@ pub use self::utils::{
     DropKeep,
     DropKeepError,
     ElementSegmentIdx,
+    F64Const32,
     FuncIdx,
     GlobalIdx,
     LocalDepth,
@@ -212,8 +213,17 @@ pub enum Instruction {
     /// # Note
     ///
     /// This is a space-optimized variant of [`Instruction::ConstRef`] but can
-    /// only used for small integer values that fit into a 24-bit integer value.
+    /// only used for small integer values that fit into a 32-bit integer value.
     I64Const32(i32),
+    /// A 64-bit float value losslessly encoded as 32-bit float.
+    ///
+    /// Upon execution the 32-bit float is promoted to the 64-bit float.
+    ///
+    /// # Note
+    ///
+    /// This is a space-optimized variant of [`Instruction::ConstRef`] but can
+    /// only used for certain float values that fit into a 32-bit float value.
+    F64Const32(F64Const32),
     /// Pushes a constant value onto the stack.
     ///
     /// The constant value is referred to indirectly by the [`ConstRef`].
