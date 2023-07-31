@@ -30,6 +30,9 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 - We now publish and record graphs of benchmarks over time. (https://github.com/paritytech/wasmi/pull/740)
   - This allows `wasmi` developers to better inspect performance changes over longer periods of time.
+- Updated dev. dependencies:
+  - `criterion 0.4.0` -> `0.5.0`
+  - `wast 0.52.0` -> `0.62.0`
 
 ## [`0.30.0`] - 2023-05-28
 
