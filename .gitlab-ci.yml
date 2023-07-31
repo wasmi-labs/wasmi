@@ -8,40 +8,55 @@ default:
   retry:
     max: 2
 
-.docker-env:                       &docker-env
-  image:                           "paritytech/ci-linux:staging"
+.docker-env:
+  image:                           "paritytech/ci-unified:bullseye-1.71.0"
   interruptible:                   true
   tags:
     - benchmark
 
-.kubernetes-env:                   &kubernetes-env
+.kubernetes-env:
   image:                           "paritytech/tools:latest"
   tags:
     - kubernetes-parity-build
 
-# benchmarks
-criterion-benchmark:
-  stage:                           benchmarks
-  rules:
-    - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                   # PRs
-  <<:                              *docker-env
+.collect-artifacts:
   artifacts:
     name:                          "${CI_JOB_NAME}_${CI_COMMIT_REF_NAME}"
     when:                          on_success
     expire_in:                     1 days
     paths:
       - target/ci/
-  script:
+
+.common-before:
+  before_script:
     # Show Versions
     - cargo --version
     - rustc --version
+    # Create dir for artifacts
+    - mkdir -p ./target/ci
 
+.pr-refs:
+  rules:
+    - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                   # PRs
+
+.master-refs:
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "master"
+
+# benchmarks
+criterion-benchmark:
+  stage:                           benchmarks
+  extends:
+    - .common-before
+    - .pr-refs
+    - .docker-env
+    - .collect-artifacts
+  script:
     - git fetch
     # Benchmark Branch: `master`
     - git checkout master
     - git pull
     - git submodule update --init --recursive
-    - mkdir -p ./target/ci
     - pushd ./crates/wasmi/
     - cargo bench --bench benches -- --noplot --save-baseline master | tee ../../target/ci/bench-master
     - popd
@@ -59,20 +74,12 @@ criterion-benchmark:
 
 wasmtime-benchmark:
   stage:                           benchmarks
-  rules:
-    - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                   # PRs
-  <<:                              *docker-env
-  artifacts:
-    name:                          "${CI_JOB_NAME}_${CI_COMMIT_REF_NAME}"
-    when:                          on_success
-    expire_in:                     1 days
-    paths:
-      - target/ci/
+  extends:
+    - .common-before
+    - .pr-refs
+    - .docker-env
+    - .collect-artifacts
   script:
-    # Show Versions
-    - cargo --version
-    - rustc --version
-
     # Install dependencies
     - cargo install cargo-wasi
     - curl https://wasmtime.dev/install.sh -sSf | bash
@@ -83,7 +90,6 @@ wasmtime-benchmark:
     - git checkout master
     - git pull
     - git submodule update --init --recursive
-    - mkdir -p ./target/ci
     - cargo wasi build --profile bench --bench benches --verbose
     - cp `ls -t target/wasm32-wasi/release/deps/*wasi.wasm` target/ci/benches-master.wasm
     - pushd ./crates/wasmi/
@@ -95,7 +101,6 @@ wasmtime-benchmark:
     # `wasmtime` Branch: `pr`
     - git checkout $CI_COMMIT_SHA
     - git submodule update --init --recursive
-    - mkdir -p ./target/ci
     - cargo wasi build --profile bench --bench benches --verbose
     - cp `ls -t target/wasm32-wasi/release/deps/*wasi.wasm` target/ci/benches-pr.wasm
     - pushd ./crates/wasmi/
@@ -103,14 +108,76 @@ wasmtime-benchmark:
     - popd
     - mv ./crates/wasmi/target/criterion ./target/ci/wasmtime-criterion
 
+criterion-benchmark-master:
+  stage:                           benchmarks
+  extends:
+    - .common-before
+    - .master-refs
+    - .docker-env
+    - .collect-artifacts
+  script:
+    - git submodule update --init --recursive
+    - cd ./crates/wasmi/
+    - cargo bench --bench benches -- --noplot --save-baseline master --output-format bencher | tee ../../target/ci/output-criterion.txt
+
+wasmtime-benchmark-master:
+  stage:                           benchmarks
+  extends:
+    - .common-before
+    - .master-refs
+    - .docker-env
+    - .collect-artifacts
+  script:
+    # Install dependencies
+    - cargo install cargo-wasi
+    - curl https://wasmtime.dev/install.sh -sSf | bash
+    - source ~/.profile
+    # `wasmtime` Branch: `master`
+    - git submodule update --init --recursive
+    - cargo wasi build --profile bench --bench benches --verbose
+    - cp `ls -t target/wasm32-wasi/release/deps/*wasi.wasm` target/ci/benches-master.wasm
+    - pushd ./crates/wasmi/
+    - wasmtime run --dir=. ../../target/ci/benches-master.wasm -- --bench --save-baseline master-wasm --output-format bencher | tee ../../target/ci/output-wasmtime.txt
+
+
 # report
 publish-report:
   stage:                           report
+  extends:
+    - .pr-refs
+    - .kubernetes-env
   needs:
-    - criterion-benchmark
-    - wasmtime-benchmark
-  rules:
-  - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                   # PRs
-  <<:                              *kubernetes-env
+    - job: criterion-benchmark
+      artifacts: true
+    - job: wasmtime-benchmark
+      artifacts: true
   script:
     - bash ./scripts/ci/benchmarks-report.sh
+
+publish-report-master:
+  stage:                           report
+  extends:
+    - .master-refs
+    - .kubernetes-env
+  needs:
+    - job: criterion-benchmark-master
+      artifacts: true
+    - job: wasmtime-benchmark-master
+      artifacts: true
+  script:
+    # Set git config
+    - rm -rf .git/config
+    - git config --global user.email "${GITHUB_EMAIL}"
+    - git config --global user.name "${GITHUB_USER}"
+    - git config remote.origin.url "https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/paritytech/${CI_PROJECT_NAME}.git"
+    - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+    # push results to github
+    - git fetch origin gh-pages
+    - git checkout gh-pages
+    - mkdir -p benchmarks/criterion
+    - mkdir -p benchmarks/wasmtime
+    - cp target/ci/output-criterion.txt benchmarks/criterion/
+    - cp target/ci/output-wasmtime.txt benchmarks/wasmtime/
+    - git add benchmarks/
+    - git commit -m "[benchmarks] add benchmarks results for the latest master"
+    - git push origin gh-pages

@@ -2,9 +2,14 @@ name: Rust - Continuous Integration
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
+
+# disable running jobs on earlier commits
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   check:
@@ -27,7 +32,7 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target/            
+            target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
       - name: Add extra targets
@@ -79,7 +84,7 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target/            
+            target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
       - name: Checkout Submodules
@@ -87,14 +92,14 @@ jobs:
       - name: Test (default features)
         uses: actions-rs/cargo@v1
         env:
-          RUSTFLAGS: '--cfg debug_assertions'
+          RUSTFLAGS: "--cfg debug_assertions"
         with:
           command: test
           args: --workspace --release
       - name: Test (all features)
         uses: actions-rs/cargo@v1
         env:
-          RUSTFLAGS: '--cfg debug_assertions'
+          RUSTFLAGS: "--cfg debug_assertions"
         with:
           command: test
           args: --workspace --release --all-features
@@ -135,12 +140,12 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target/            
+            target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
       - uses: actions-rs/cargo@v1
         env:
-          RUSTDOCFLAGS: '-D warnings'
+          RUSTDOCFLAGS: "-D warnings"
         with:
           command: doc
           args: --workspace --all-features --no-deps --document-private-items
@@ -158,7 +163,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: audit
-          args: ''
+          args: ""
 
   udeps:
     name: uDeps
@@ -289,7 +294,7 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target/            
+            target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
       - name: Clippy (default features)
@@ -343,7 +348,7 @@ jobs:
       - name: Run cargo-tarpaulin (default features)
         uses: actions-rs/tarpaulin@v0.1
         with:
-          version: '0.18.0'
+          version: "0.18.0"
           args: --workspace
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3.1.4

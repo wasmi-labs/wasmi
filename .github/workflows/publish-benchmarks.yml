@@ -1,0 +1,62 @@
+name: Benchmarks - publish graphs
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  # deployments permission to deploy GitHub pages website
+  deployments: write
+  # contents permission to update benchmark contents in gh-pages branch
+  contents: write
+
+# disable running jobs on earlier commits
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark:
+    name: Publishing benchmarks graphs
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout gh-pages branch
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+        with:
+          ref: "gh-pages"
+
+      - name: Waiting for the output files
+        run: bash scripts/ci/sync_wait.sh
+
+      - name: Store benchmark result criterion
+        uses: benchmark-action/github-action-benchmark@70405016b032d44f409e4b1b451c40215cbe2393 # v1.18.0
+        with:
+          name: "Wasmi criterion benchmark"
+          tool: "cargo"
+          output-file-path: benchmarks/criterion/output-criterion.txt
+          benchmark-data-dir-path: "benchmarks/criterion"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          skip-fetch-gh-pages: true
+
+      - name: Store benchmark result wasmtime
+        uses: benchmark-action/github-action-benchmark@70405016b032d44f409e4b1b451c40215cbe2393 # v1.18.0
+        with:
+          name: "Wasmi criterion wasmtime"
+          tool: "cargo"
+          output-file-path: benchmarks/wasmtime/output-wasmtime.txt
+          benchmark-data-dir-path: "benchmarks/wasmtime"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          skip-fetch-gh-pages: true
+
+      - name: Push benchmark result
+        run: |
+          git config --global user.name 'github-action-benchmark'
+          git config --global user.email 'github@users.noreply.github.com'
+          echo "removing files"
+          rm -f benchmarks/criterion/output-criterion.txt
+          rm -f benchmarks/wasmtime/output-wasmtime.txt
+          echo "git add and commit"
+          git add benchmarks/
+          git commit -m "remove output files"
+          echo "git push"
+          git push 'https://${{ secrets.GITHUB_TOKEN }}@github.com/paritytech/wasmi.git' gh-pages:gh-pages
