@@ -1,4 +1,9 @@
-use super::{bytecode::BranchOffset, const_pool::ConstRef, CompiledFunc, ConstPoolView};
+use super::{
+    bytecode::{BranchOffset, F64Const32},
+    const_pool::ConstRef,
+    CompiledFunc,
+    ConstPoolView,
+};
 use crate::{
     core::TrapCode,
     engine::{
@@ -302,6 +307,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::RefFunc(func_index) => self.visit_ref_func(func_index),
                 Instr::Const32(bytes) => self.visit_const_32(bytes),
                 Instr::I64Const32(value) => self.visit_i64_const_32(value),
+                Instr::F64Const32(value) => self.visit_f64_const_32(value),
                 Instr::ConstRef(cref) => self.visit_const(cref),
                 Instr::I32Eqz => self.visit_i32_eqz(),
                 Instr::I32Eq => self.visit_i32_eq(),
@@ -1042,6 +1048,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn visit_i64_const_32(&mut self, value: i32) {
         let sign_extended = i64::from(value);
         self.sp.push(UntypedValue::from(sign_extended));
+        self.next_instr()
+    }
+
+    #[inline(always)]
+    fn visit_f64_const_32(&mut self, value: F64Const32) {
+        let promoted = value.to_f64();
+        self.sp.push(UntypedValue::from(promoted));
         self.next_instr()
     }
 
