@@ -7,7 +7,7 @@ pub struct F64Const32(u32);
 
 impl F64Const32 {
     /// Creates an [`Instruction::F64Const32`] from the given `f64` value if possible.
-    /// 
+    ///
     /// [`Instruction::F64Const32`]: [`super::Instruction::F64Const32`]
     pub fn new(value: f64) -> Option<Self> {
         let demoted = value as f32;
