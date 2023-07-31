@@ -10,6 +10,12 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ## [`0.31.0`] - 2023-07-31
 
+### Added
+
+- Added `ResourceLimiter` API known from Wasmtime. (https://github.com/paritytech/wasmi/pull/737)
+  - This API allows to limit growable Wasm resources such as Wasm tables and linear memories.
+  - Special thanks to [Graydon Hoare](https://github.com/graydon) for contributing this feature!
+
 ### Fixes
 
 - Fixed a bug were `Module::len_globals` internal API returned length of linear memories instead. (https://github.com/paritytech/wasmi/pull/741)
@@ -19,12 +25,6 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Removed `intx` crate dependency. (https://github.com/paritytech/wasmi/pull/727)
   - The dependence on the `intx` crate was accidental and not really required at any time.
 - Optimized `f64.const` instructions for `f64` constant values that can losslessly be encoded as 32-bit `f32` value. (https://github.com/paritytech/wasmi/pull/746)
-
-### Added
-
-- Added `ResourceLimiter` API known from Wasmtime. (https://github.com/paritytech/wasmi/pull/737)
-  - This API allows to limit growable Wasm resources such as Wasm tables and linear memories.
-  - Special thanks to [Graydon Hoare](https://github.com/graydon) for contributing this feature!
 
 ### Dev. Note
 
