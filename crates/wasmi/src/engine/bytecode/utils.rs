@@ -1,6 +1,28 @@
 use crate::engine::{func_builder::TranslationErrorInner, Instr, TranslationError};
 use core::fmt::{self, Display};
 
+/// A 32-bit encoded `f64` value.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct F64Const32(u32);
+
+impl F64Const32 {
+    /// Creates an [`Instruction::F64Const32`] from the given `f64` value if possible.
+    /// 
+    /// [`Instruction::F64Const32`]: [`super::Instruction::F64Const32`]
+    pub fn new(value: f64) -> Option<Self> {
+        let demoted = value as f32;
+        if f64::from(demoted).to_bits() != value.to_bits() {
+            return None;
+        }
+        Some(Self(demoted.to_bits()))
+    }
+
+    /// Returns the 32-bit encoded `f64` value.
+    pub fn to_f64(self) -> f64 {
+        f64::from(f32::from_bits(self.0))
+    }
+}
+
 /// A function index.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
