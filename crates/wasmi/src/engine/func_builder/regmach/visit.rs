@@ -1051,7 +1051,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_ref_is_null(&mut self) -> Self::Output {
-        todo!()
+        // Note: Since `funcref` and `externref` both serialize to `UntypedValue`
+        //       as raw `u64` values we can use `i64.eqz` translation for `ref.is_null`.
+        self.visit_i64_eqz()
     }
 
     fn visit_ref_func(&mut self, function_index: u32) -> Self::Output {
