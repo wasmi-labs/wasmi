@@ -73,6 +73,7 @@ impl FuncTranslatorAllocations {
         self.stack.reset();
         self.instr_encoder.reset();
         self.control_stack.reset();
+        self.buffer.clear();
     }
 }
 
