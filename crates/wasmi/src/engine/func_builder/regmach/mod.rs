@@ -1,5 +1,3 @@
-#![allow(dead_code)] // TODO: remove
-
 //! Function translation for the register-machine bytecode based `wasmi` engine.
 
 mod control_frame;
