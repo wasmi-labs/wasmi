@@ -113,6 +113,11 @@ impl RegisterSpanIter {
     pub fn len_as_u16(self) -> u16 {
         self.last.0.abs_diff(self.next.0)
     }
+
+    /// Returns `true` if the [`RegisterSpanIter`] is empty.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 impl Iterator for RegisterSpanIter {

@@ -298,7 +298,7 @@ impl<'parser> FuncTranslator<'parser> {
         &mut self,
         branch_params: RegisterSpanIter,
     ) -> Result<(), TranslationError> {
-        if branch_params.len() == 0 {
+        if branch_params.is_empty() {
             // If the block does not have branch parameters there is no need to copy anything.
             return Ok(());
         }

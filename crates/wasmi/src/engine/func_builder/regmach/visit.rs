@@ -409,7 +409,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                         frame.bump_branches();
                         let branch_dst = frame.branch_destination();
                         let branch_params = frame.branch_params(self.res.engine());
-                        if branch_params.len() == 0 {
+                        if branch_params.is_empty() {
                             // Case: no values need to be copied so we can directly
                             //       encode the `br_if` as efficient `branch_nez`.
                             let branch_offset =
