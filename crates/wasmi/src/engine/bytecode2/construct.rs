@@ -51,44 +51,44 @@ macro_rules! constructor_for {
     };
     ( @impl fn $fn_name:ident(binary_i32imm16) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: Register, rhs: Const16<i32>) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, lhs, rhs))
+        pub fn $fn_name(result: Register, lhs: Register, rhs: impl Into<Const16<i32>>) -> Self {
+            Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
         }
     };
     ( @impl fn $fn_name:ident(binary_u32imm16) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: Register, rhs: Const16<u32>) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, lhs, rhs))
+        pub fn $fn_name(result: Register, lhs: Register, rhs: impl Into<Const16<u32>>) -> Self {
+            Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
         }
     };
     ( @impl fn $fn_name:ident(binary_i64imm16) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: Register, rhs: Const16<i64>) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, lhs, rhs))
+        pub fn $fn_name(result: Register, lhs: Register, rhs: impl Into<Const16<i64>>) -> Self {
+            Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
         }
     };
     ( @impl fn $fn_name:ident(binary_u64imm16) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: Register, rhs: Const16<u64>) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, lhs, rhs))
+        pub fn $fn_name(result: Register, lhs: Register, rhs: impl Into<Const16<u64>>) -> Self {
+            Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
         }
     };
     ( @impl fn $fn_name:ident(binary_i32imm16_rev) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: Const16<i32>, rhs: Register) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, rhs, lhs))
+        pub fn $fn_name(result: Register, lhs: impl Into<Const16<i32>>, rhs: Register) -> Self {
+            Self::$op_code(BinInstrImm16::new(result, rhs, lhs.into()))
         }
     };
     ( @impl fn $fn_name:ident(binary_u32imm16_rev) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: Const16<u32>, rhs: Register) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, rhs, lhs))
+        pub fn $fn_name(result: Register, lhs: impl Into<Const16<u32>>, rhs: Register) -> Self {
+            Self::$op_code(BinInstrImm16::new(result, rhs, lhs.into()))
         }
     };
     ( @impl fn $fn_name:ident(binary_i64imm16_rev) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: Const16<i64>, rhs: Register) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, rhs, lhs))
+        pub fn $fn_name(result: Register, lhs: impl Into<Const16<i64>>, rhs: Register) -> Self {
+            Self::$op_code(BinInstrImm16::new(result, rhs, lhs.into()))
         }
     };
     ( @impl fn $fn_name:ident(binary_u64imm16_rev) -> Self::$op_code:ident ) => {
