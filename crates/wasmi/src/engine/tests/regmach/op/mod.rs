@@ -2,6 +2,7 @@ mod binary;
 mod block;
 mod br;
 mod br_if;
+mod br_table;
 mod call;
 mod cmp;
 mod global_get;

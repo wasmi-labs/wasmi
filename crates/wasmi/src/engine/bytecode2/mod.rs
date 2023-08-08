@@ -285,6 +285,26 @@ pub enum Instruction {
         offset: BranchOffset,
     },
 
+    /// A Wasm `br_table` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// Must be followed `len_targets` times by any of
+    ///
+    /// - [`Instruction::Branch`]
+    /// - [`Instruction::Return]
+    /// - [`Instruction::ReturnReg]
+    /// - [`Instruction::ReturnImm32]
+    /// - [`Instruction::ReturnI64Imm32]
+    /// - [`Instruction::ReturnF64Imm32]
+    /// - [`Instruction::ReturnMany]
+    BranchTable {
+        /// The register holding the index of the instruction.
+        index: Register,
+        /// The number of branch table targets including the default target.
+        len_targets: Const32<u32>,
+    },
+
     /// Copies `value` to `result`.
     ///
     /// # Note

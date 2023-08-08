@@ -14,6 +14,16 @@ pub enum AcquiredTarget<'a> {
     Branch(&'a mut ControlFrame),
 }
 
+impl<'a> AcquiredTarget<'a> {
+    /// Returns an exclusive reference to the [`ControlFrame`] of the [`AcquiredTarget`].
+    pub fn control_frame(&'a mut self) -> &'a mut ControlFrame {
+        match self {
+            Self::Return(frame) => frame,
+            Self::Branch(frame) => frame,
+        }
+    }
+}
+
 /// The stack of control flow frames.
 #[derive(Debug, Default)]
 pub struct ControlStack {

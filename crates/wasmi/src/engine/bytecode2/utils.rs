@@ -66,6 +66,11 @@ impl RegisterSpan {
     pub fn iter(self, len: usize) -> RegisterSpanIter {
         RegisterSpanIter::new(self.0, len)
     }
+
+    /// Returns the head [`Register`] of the [`RegisterSpan`].
+    pub fn head(self) -> Register {
+        self.0
+    }
 }
 
 /// A [`RegisterSpanIter`] iterator yielding contiguous [`Register`].

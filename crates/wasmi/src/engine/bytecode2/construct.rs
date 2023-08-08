@@ -262,6 +262,14 @@ impl Instruction {
         Self::BranchNez { condition, offset }
     }
 
+    /// Creates a new [`Instruction::BranchTable`] for the given `index` and `len_targets`.
+    pub fn branch_table(index: Register, len_targets: impl Into<Const32<u32>>) -> Self {
+        Self::BranchTable {
+            index,
+            len_targets: len_targets.into(),
+        }
+    }
+
     /// Creates a new [`Instruction::Copy`].
     pub fn copy(result: Register, value: Register) -> Self {
         Self::Copy { result, value }

@@ -63,6 +63,8 @@ pub struct FuncTranslatorAllocations {
     control_stack: ControlStack,
     /// Buffer to store providers when popped from the [`ValueStack`] in bulk.
     buffer: Vec<TypedProvider>,
+    /// Buffer to temporarily store `br_table` target depths.
+    br_table_targets: Vec<u32>,
 }
 
 impl FuncTranslatorAllocations {
@@ -72,6 +74,7 @@ impl FuncTranslatorAllocations {
         self.instr_encoder.reset();
         self.control_stack.reset();
         self.buffer.clear();
+        self.br_table_targets.clear();
     }
 }
 
@@ -1817,63 +1820,13 @@ impl<'parser> FuncTranslator<'parser> {
 
     /// Translates an unconditional `return` instruction.
     pub fn translate_return(&mut self) -> Result<(), TranslationError> {
-        let instr = match self.func_type().results() {
-            [] => {
-                // Case: Function returns nothing therefore all return statements must return nothing.
-                Instruction::Return
-            }
-            [ValueType::I32] => match self.alloc.stack.pop() {
-                // Case: Function returns a single `i32` value which allows for special operator.
-                TypedProvider::Register(value) => Instruction::return_reg(value),
-                TypedProvider::Const(value) => Instruction::return_imm32(i32::from(value)),
-            },
-            [ValueType::I64] => match self.alloc.stack.pop() {
-                // Case: Function returns a single `i64` value which allows for special operator.
-                TypedProvider::Register(value) => Instruction::return_reg(value),
-                TypedProvider::Const(value) => {
-                    if let Some(value) = <Const32<i64>>::from_i64(i64::from(value)) {
-                        Instruction::return_i64imm32(value)
-                    } else {
-                        Instruction::return_reg(self.alloc.stack.alloc_const(value)?)
-                    }
-                }
-            },
-            [ValueType::F32] => match self.alloc.stack.pop() {
-                // Case: Function returns a single `f32` value which allows for special operator.
-                TypedProvider::Register(value) => Instruction::return_reg(value),
-                TypedProvider::Const(value) => Instruction::return_imm32(F32::from(value)),
-            },
-            [ValueType::F64] => match self.alloc.stack.pop() {
-                // Case: Function returns a single `f64` value which may allow for special operator.
-                TypedProvider::Register(value) => Instruction::return_reg(value),
-                TypedProvider::Const(value) => {
-                    if let Some(value) = <Const32<f64>>::from_f64(f64::from(value)) {
-                        Instruction::return_f64imm32(value)
-                    } else {
-                        Instruction::return_reg(self.alloc.stack.alloc_const(value)?)
-                    }
-                }
-            },
-            [ValueType::FuncRef | ValueType::ExternRef] => {
-                // Case: Function returns a single `externref` or `funcref`.
-                match self.alloc.stack.pop() {
-                    TypedProvider::Register(value) => Instruction::return_reg(value),
-                    TypedProvider::Const(value) => {
-                        Instruction::return_reg(self.alloc.stack.alloc_const(value)?)
-                    }
-                }
-            }
-            results => {
-                let providers = &mut self.alloc.buffer;
-                self.alloc.stack.pop_n(results.len(), providers);
-                let values = self
-                    .alloc
-                    .instr_encoder
-                    .encode_call_params(&mut self.alloc.stack, providers)?;
-                Instruction::return_many(values)
-            }
-        };
-        self.alloc.instr_encoder.push_instr(instr)?;
+        let func_type = self.func_type();
+        let results = func_type.results();
+        let values = &mut self.alloc.buffer;
+        self.alloc.stack.pop_n(results.len(), values);
+        self.alloc
+            .instr_encoder
+            .encode_return(&mut self.alloc.stack, results, values)?;
         self.reachable = false;
         Ok(())
     }

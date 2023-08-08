@@ -13,7 +13,7 @@ use crate::engine::{
     TranslationError,
 };
 use alloc::vec::{Drain, Vec};
-use wasmi_core::{UntypedValue, ValueType};
+use wasmi_core::{UntypedValue, ValueType, F32};
 
 /// Encodes `wasmi` bytecode instructions to an [`Instruction`] stream.
 #[derive(Debug, Default)]
@@ -320,6 +320,69 @@ impl InstrEncoder {
                 }
             }
         }
+        Ok(())
+    }
+
+    /// Encodes an unconditional `return` instruction.
+    pub fn encode_return(
+        &mut self,
+        stack: &mut ValueStack,
+        types: &[ValueType],
+        values: &[TypedProvider],
+    ) -> Result<(), TranslationError> {
+        assert_eq!(types.len(), values.len());
+        let instr = match types {
+            [] => {
+                // Case: Function returns nothing therefore all return statements must return nothing.
+                Instruction::Return
+            }
+            [ValueType::I32] => match values[0] {
+                // Case: Function returns a single `i32` value which allows for special operator.
+                TypedProvider::Register(value) => Instruction::return_reg(value),
+                TypedProvider::Const(value) => Instruction::return_imm32(i32::from(value)),
+            },
+            [ValueType::I64] => match values[0] {
+                // Case: Function returns a single `i64` value which allows for special operator.
+                TypedProvider::Register(value) => Instruction::return_reg(value),
+                TypedProvider::Const(value) => {
+                    if let Some(value) = <Const32<i64>>::from_i64(i64::from(value)) {
+                        Instruction::return_i64imm32(value)
+                    } else {
+                        Instruction::return_reg(stack.alloc_const(value)?)
+                    }
+                }
+            },
+            [ValueType::F32] => match values[0] {
+                // Case: Function returns a single `f32` value which allows for special operator.
+                TypedProvider::Register(value) => Instruction::return_reg(value),
+                TypedProvider::Const(value) => Instruction::return_imm32(F32::from(value)),
+            },
+            [ValueType::F64] => match values[0] {
+                // Case: Function returns a single `f64` value which may allow for special operator.
+                TypedProvider::Register(value) => Instruction::return_reg(value),
+                TypedProvider::Const(value) => {
+                    if let Some(value) = <Const32<f64>>::from_f64(f64::from(value)) {
+                        Instruction::return_f64imm32(value)
+                    } else {
+                        Instruction::return_reg(stack.alloc_const(value)?)
+                    }
+                }
+            },
+            [ValueType::FuncRef | ValueType::ExternRef] => {
+                // Case: Function returns a single `externref` or `funcref`.
+                match values[0] {
+                    TypedProvider::Register(value) => Instruction::return_reg(value),
+                    TypedProvider::Const(value) => {
+                        Instruction::return_reg(stack.alloc_const(value)?)
+                    }
+                }
+            }
+            _ => {
+                let values = self.encode_call_params(stack, values)?;
+                Instruction::return_many(values)
+            }
+        };
+        self.push_instr(instr)?;
         Ok(())
     }
 
