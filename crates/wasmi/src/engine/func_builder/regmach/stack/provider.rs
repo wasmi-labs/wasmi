@@ -121,3 +121,12 @@ impl ProviderStack {
         &self.providers[(len - n)..]
     }
 }
+
+impl<'a> IntoIterator for &'a mut ProviderStack {
+    type Item = &'a mut TaggedProvider;
+    type IntoIter = core::slice::IterMut<'a, TaggedProvider>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.providers.iter_mut()
+    }
+}

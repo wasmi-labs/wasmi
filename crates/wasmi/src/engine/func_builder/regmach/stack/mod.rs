@@ -14,7 +14,6 @@ use crate::{
     engine::{
         bytecode2::{Register, RegisterSpan},
         func_builder::TranslationErrorInner,
-        Instr,
         Provider,
         TranslationError,
         UntypedProvider,
@@ -93,6 +92,37 @@ impl ValueStack {
         self.pop_n(params.len(), provider_buffer);
         let results = self.push_dynamic_n(results.len())?;
         Ok(results)
+    }
+
+    /// Preserves `local.get` on the [`ProviderStack`] by shifting to storage space.
+    ///
+    /// In case there are `local.get n` with `n == preserve_index` on the [`ProviderStack`]
+    /// there is a [`Register`] on the storage space allocated for them. The [`Register`]
+    /// allocated this way is returned. Otherwise `None` is returned.
+    pub fn preserve_locals(
+        &mut self,
+        preserve_index: u32,
+    ) -> Result<Option<Register>, TranslationError> {
+        let mut preserved = None;
+        for provider in &mut self.providers {
+            match provider {
+                TaggedProvider::Local(local_index)
+                    if local_index.to_i16() as u32 == preserve_index =>
+                {
+                    let preserved_register = match preserved {
+                        Some(register) => register,
+                        None => {
+                            let register = self.reg_alloc.push_storage()?;
+                            preserved = Some(register);
+                            register
+                        }
+                    };
+                    *provider = TaggedProvider::Storage(preserved_register);
+                }
+                _ => {}
+            }
+        }
+        Ok(preserved)
     }
 
     /// Returns the number of [`Provider`] on the [`ValueStack`].
@@ -430,16 +460,6 @@ impl ValueStack {
         let registers = self.reg_alloc.push_dynamic_n(n)?;
         self.reg_alloc.pop_dynamic_n(n);
         Ok(registers)
-    }
-
-    /// Registers the [`Instr`] user for [`Register`] if `reg` is allocated in storage space.
-    ///
-    /// # Note
-    ///
-    /// This is required in order to update [`Register`] indices of storage space
-    /// allocated registers after register allocation is finished.
-    pub fn register_user(&mut self, reg: Register, user: Instr) {
-        self.reg_alloc.register_user(reg, user)
     }
 
     /// Defragments the allocated registers space.

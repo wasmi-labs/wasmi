@@ -40,7 +40,7 @@ use self::{
     bytecode::Instruction,
     bytecode2::{Provider, UntypedProvider},
     cache::InstanceCache,
-    code_map::CodeMap,
+    code_map::{CodeMap, FuncHeader2 as FuncHeader},
     const_pool::{ConstPool, ConstPoolView, ConstRef},
     executor::{execute_wasm, WasmOutcome},
     func_builder::regmach::FuncLocalConstsIter,
@@ -214,13 +214,26 @@ impl Engine {
         &self,
         func: CompiledFunc,
         len_registers: u16,
+        len_results: u16,
         func_locals: FuncLocalConstsIter,
         instrs: I,
     ) where
         I: IntoIterator<Item = Instruction2>,
     {
         self.inner
-            .init_func_2(func, len_registers, func_locals, instrs)
+            .init_func_2(func, len_registers, len_results, func_locals, instrs)
+    }
+
+    /// Resolves the [`FuncHeader`] for [`CompiledFunc`] and applies `f` to it.
+    ///
+    /// # Panics
+    ///
+    /// If [`CompiledFunc`] is invalid for [`Engine`].
+    pub(super) fn resolve_func_2<F, R>(&self, func: CompiledFunc, f: F) -> R
+    where
+        F: FnOnce(&FuncHeader) -> R,
+    {
+        self.inner.resolve_func_2(func, f)
     }
 
     /// Resolves the [`CompiledFunc`] to the underlying `wasmi` bytecode instructions.
@@ -532,6 +545,7 @@ impl EngineInner {
         &self,
         func: CompiledFunc,
         len_registers: u16,
+        len_results: u16,
         func_locals: FuncLocalConstsIter,
         instrs: I,
     ) where
@@ -540,7 +554,19 @@ impl EngineInner {
         self.res
             .write()
             .code_map_2
-            .init_func(func, len_registers, func_locals, instrs)
+            .init_func(func, len_registers, len_results, func_locals, instrs)
+    }
+
+    /// Resolves the [`FuncHeader`] for [`CompiledFunc`] and applies `f` to it.
+    ///
+    /// # Panics
+    ///
+    /// If [`CompiledFunc`] is invalid for [`Engine`].
+    pub(super) fn resolve_func_2<F, R>(&self, func: CompiledFunc, f: F) -> R
+    where
+        F: FnOnce(&FuncHeader) -> R,
+    {
+        f(self.res.read().code_map_2.header(func))
     }
 
     #[cfg(test)]

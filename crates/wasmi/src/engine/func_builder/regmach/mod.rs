@@ -3,6 +3,7 @@
 mod control_frame;
 mod control_stack;
 mod instr_encoder;
+mod result_mut;
 mod stack;
 mod typed_value;
 mod utils;
@@ -26,6 +27,7 @@ pub use self::{
     instr_encoder::InstrEncoder,
     stack::{DefragRegister, FuncLocalConstsIter, ProviderStack, RegisterAlloc, TypedProvider},
 };
+use super::TranslationErrorInner;
 use crate::{
     engine::{
         bytecode::SignatureIdx,
@@ -207,11 +209,17 @@ impl<'parser> FuncTranslator<'parser> {
         self.alloc.stack.defrag(&mut self.alloc.instr_encoder);
         self.alloc.instr_encoder.update_branch_offsets()?;
         let len_registers = self.alloc.stack.len_registers();
+        let len_results = u16::try_from(self.func_type().results().len())
+            .map_err(|_| TranslationError::new(TranslationErrorInner::TooManyFunctionResults))?;
         let func_consts = self.alloc.stack.func_local_consts();
         let instrs = self.alloc.instr_encoder.drain_instrs();
-        self.res
-            .engine()
-            .init_func_2(self.compiled_func, len_registers, func_consts, instrs);
+        self.res.engine().init_func_2(
+            self.compiled_func,
+            len_registers,
+            len_results,
+            func_consts,
+            instrs,
+        );
         Ok(())
     }
 
@@ -1220,7 +1228,7 @@ impl<'parser> FuncTranslator<'parser> {
                     .push_instr(make_instr(result, ptr))?;
                 self.alloc
                     .instr_encoder
-                    .push_instr(Instruction::const32(offset))?;
+                    .append_instr(Instruction::const32(offset))?;
                 Ok(())
             }
             TypedProvider::Const(ptr) => {
@@ -1275,7 +1283,7 @@ impl<'parser> FuncTranslator<'parser> {
                         .push_instr(make_instr(ptr, Const32::from(offset)))?;
                     self.alloc
                         .instr_encoder
-                        .push_instr(Instruction::Register(value))?;
+                        .append_instr(Instruction::Register(value))?;
                     Ok(())
                 }
             }
@@ -1300,9 +1308,11 @@ impl<'parser> FuncTranslator<'parser> {
                         self.alloc
                             .instr_encoder
                             .push_instr(make_instr(ptr, Const32::from(offset)))?;
-                        self.alloc.instr_encoder.push_instr(Instruction::Register(
-                            self.alloc.stack.alloc_const(value)?,
-                        ))?;
+                        self.alloc
+                            .instr_encoder
+                            .append_instr(Instruction::Register(
+                                self.alloc.stack.alloc_const(value)?,
+                            ))?;
                         Ok(())
                     }
                 }
@@ -1367,7 +1377,7 @@ impl<'parser> FuncTranslator<'parser> {
                         .push_instr(make_instr(ptr, Const32::from(offset)))?;
                     self.alloc
                         .instr_encoder
-                        .push_instr(Instruction::Register(value))?;
+                        .append_instr(Instruction::Register(value))?;
                     Ok(())
                 }
             }
@@ -1385,9 +1395,11 @@ impl<'parser> FuncTranslator<'parser> {
                         self.alloc
                             .instr_encoder
                             .push_instr(make_instr(ptr, Const32::from(offset)))?;
-                        self.alloc.instr_encoder.push_instr(Instruction::Register(
-                            self.alloc.stack.alloc_const(value)?,
-                        ))?;
+                        self.alloc
+                            .instr_encoder
+                            .append_instr(Instruction::Register(
+                                self.alloc.stack.alloc_const(value)?,
+                            ))?;
                         Ok(())
                     }
                 }
@@ -1444,7 +1456,7 @@ impl<'parser> FuncTranslator<'parser> {
             let rhs = this.alloc.stack.alloc_const(imm_in)?;
             this.alloc
                 .instr_encoder
-                .push_instr(Instruction::Register(rhs))?;
+                .append_instr(Instruction::Register(rhs))?;
             Ok(())
         }
 
@@ -1471,7 +1483,7 @@ impl<'parser> FuncTranslator<'parser> {
                 .push_instr(make_instr(result, condition, reg_in))?;
             this.alloc
                 .instr_encoder
-                .push_instr(Instruction::const32(imm_in))?;
+                .append_instr(Instruction::const32(imm_in))?;
             Ok(())
         }
 
@@ -1505,7 +1517,7 @@ impl<'parser> FuncTranslator<'parser> {
                         .push_instr(make_instr(result, condition, reg_in))?;
                     this.alloc
                         .instr_encoder
-                        .push_instr(make_instr_param(imm_in))?;
+                        .append_instr(make_instr_param(imm_in))?;
                 }
                 Err(_) => {
                     encode_select_imm(this, result, condition, reg_in, imm_in, make_instr)?;
@@ -1548,7 +1560,7 @@ impl<'parser> FuncTranslator<'parser> {
                         .push_instr(Instruction::select(result, condition, lhs))?;
                     self.alloc
                         .instr_encoder
-                        .push_instr(Instruction::Register(rhs))?;
+                        .append_instr(Instruction::Register(rhs))?;
                     Ok(())
                 }
                 (TypedProvider::Register(lhs), TypedProvider::Const(rhs)) => {
@@ -1700,7 +1712,7 @@ impl<'parser> FuncTranslator<'parser> {
                                     .push_instr(make_instr(result, lhs))?;
                                 this.alloc
                                     .instr_encoder
-                                    .push_instr(make_instr(condition, rhs))?;
+                                    .append_instr(make_instr(condition, rhs))?;
                                 Ok(())
                             }
                             (Some(lhs), None) => {
@@ -1708,7 +1720,7 @@ impl<'parser> FuncTranslator<'parser> {
                                 this.alloc
                                     .instr_encoder
                                     .push_instr(Instruction::select_rev(result, condition, rhs))?;
-                                this.alloc.instr_encoder.push_instr(make_param(lhs))?;
+                                this.alloc.instr_encoder.append_instr(make_param(lhs))?;
                                 Ok(())
                             }
                             (None, Some(rhs)) => {
@@ -1716,7 +1728,7 @@ impl<'parser> FuncTranslator<'parser> {
                                 this.alloc
                                     .instr_encoder
                                     .push_instr(Instruction::select(result, condition, lhs))?;
-                                this.alloc.instr_encoder.push_instr(make_param(rhs))?;
+                                this.alloc.instr_encoder.append_instr(make_param(rhs))?;
                                 Ok(())
                             }
                             (None, None) => encode_select_imm(this, result, condition, lhs, rhs),
@@ -1746,7 +1758,7 @@ impl<'parser> FuncTranslator<'parser> {
                             .push_instr(Instruction::select(result, condition, lhs))?;
                         this.alloc
                             .instr_encoder
-                            .push_instr(Instruction::Register(rhs))?;
+                            .append_instr(Instruction::Register(rhs))?;
                         Ok(())
                     }
 

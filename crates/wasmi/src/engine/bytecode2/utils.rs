@@ -1,4 +1,5 @@
 use super::{Const16, Const32};
+use crate::engine::{func_builder::TranslationErrorInner, TranslationError};
 
 #[cfg(doc)]
 use super::Instruction;
@@ -10,6 +11,16 @@ pub struct Register(i16);
 impl From<i16> for Register {
     fn from(index: i16) -> Self {
         Self::from_i16(index)
+    }
+}
+
+impl TryFrom<u32> for Register {
+    type Error = TranslationError;
+
+    fn try_from(local_index: u32) -> Result<Self, Self::Error> {
+        let index = i16::try_from(local_index)
+            .map_err(|_| TranslationError::new(TranslationErrorInner::RegisterOutOfBounds))?;
+        Ok(Self::from_i16(index))
     }
 }
 
@@ -70,6 +81,11 @@ impl RegisterSpan {
     /// Returns the head [`Register`] of the [`RegisterSpan`].
     pub fn head(self) -> Register {
         self.0
+    }
+
+    /// Returns an exclusive reference to the head [`Register`] of the [`RegisterSpan`].
+    pub fn head_mut(&mut self) -> &mut Register {
+        &mut self.0
     }
 }
 

@@ -367,7 +367,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             ControlFrame::Loop(frame) => self.translate_end_loop(frame),
             ControlFrame::If(frame) => self.translate_end_if(frame),
             ControlFrame::Unreachable(frame) => self.translate_end_unreachable(frame),
-        }
+        }?;
+        self.alloc.instr_encoder.reset_last_instr();
+        Ok(())
     }
 
     fn visit_br(&mut self, relative_depth: u32) -> Self::Output {
@@ -552,7 +554,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             for target in self.alloc.br_table_targets.iter().copied() {
                 match self.alloc.control_stack.acquire_target(target) {
                     AcquiredTarget::Return(_) => {
-                        self.alloc.instr_encoder.push_instr(return_instr)?;
+                        self.alloc.instr_encoder.append_instr(return_instr)?;
                     }
                     AcquiredTarget::Branch(frame) => {
                         frame.bump_branches();
@@ -561,7 +563,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                             self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
                         self.alloc
                             .instr_encoder
-                            .push_instr(Instruction::branch(branch_offset))?;
+                            .append_instr(Instruction::branch(branch_offset))?;
                     }
                 }
             }
@@ -586,7 +588,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let branch_offset = self.alloc.instr_encoder.try_resolve_label(shared_label)?;
             self.alloc
                 .instr_encoder
-                .push_instr(Instruction::branch(branch_offset))?;
+                .append_instr(Instruction::branch(branch_offset))?;
         }
         let values = &mut self.alloc.buffer;
         self.alloc.stack.pop_n(default_branch_params.len(), values);
@@ -826,12 +828,45 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         Ok(())
     }
 
-    fn visit_local_set(&mut self, _local_index: u32) -> Self::Output {
-        todo!()
+    fn visit_local_set(&mut self, local_index: u32) -> Self::Output {
+        bail_unreachable!(self);
+        let value = self.alloc.stack.pop();
+        let local_register = Register::try_from(local_index)?;
+        if let Some(register) = self.alloc.stack.preserve_locals(local_index)? {
+            self.alloc
+                .instr_encoder
+                .push_instr(Instruction::copy(register, local_register))?;
+        }
+        match value {
+            TypedProvider::Const(_) => {
+                // Case: we set the local variable to a constant value.
+                self.alloc.instr_encoder.encode_copy(
+                    &mut self.alloc.stack,
+                    local_register,
+                    value,
+                )?;
+                Ok(())
+            }
+            TypedProvider::Register(value) => {
+                // Case: we set the local variable to a register value.
+                //
+                // It could be that the register value is the result of a previous
+                // computation which allows us to exchange the result register of
+                // this previous instruction instead of encoding another `copy`
+                // instruction as an optimization.
+                self.alloc
+                    .instr_encoder
+                    .encode_local_set(&self.res, local_register, value)?;
+                Ok(())
+            }
+        }
     }
 
-    fn visit_local_tee(&mut self, _local_index: u32) -> Self::Output {
-        todo!()
+    fn visit_local_tee(&mut self, local_index: u32) -> Self::Output {
+        bail_unreachable!(self);
+        self.visit_local_set(local_index)?;
+        self.alloc.stack.push_local(local_index)?;
+        Ok(())
     }
 
     fn visit_global_get(&mut self, global_index: u32) -> Self::Output {

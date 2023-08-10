@@ -1,16 +1,19 @@
 use core::mem;
 
 use super::{DefragRegister, TypedProvider};
-use crate::engine::{
-    bytecode::BranchOffset,
-    bytecode2::{Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
-    func_builder::{
-        labels::{LabelRef, LabelRegistry},
-        regmach::stack::ValueStack,
-        Instr,
-        TranslationErrorInner,
+use crate::{
+    engine::{
+        bytecode::BranchOffset,
+        bytecode2::{Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
+        func_builder::{
+            labels::{LabelRef, LabelRegistry},
+            regmach::stack::ValueStack,
+            Instr,
+            TranslationErrorInner,
+        },
+        TranslationError,
     },
-    TranslationError,
+    module::ModuleResources,
 };
 use alloc::vec::{Drain, Vec};
 use wasmi_core::{UntypedValue, ValueType, F32};
@@ -22,6 +25,8 @@ pub struct InstrEncoder {
     instrs: InstrSequence,
     /// Unresolved and unpinned labels created during function translation.
     labels: LabelRegistry,
+    /// The last [`Instruction`] created via [`InstrEncoder::push_instr`].
+    last_instr: Option<Instr>,
 }
 
 /// The sequence of encoded [`Instruction`].
@@ -89,6 +94,22 @@ impl InstrEncoder {
     pub fn reset(&mut self) {
         self.instrs.reset();
         self.labels.reset();
+        self.reset_last_instr();
+    }
+
+    /// Resets the [`Instr`] last created via [`InstrEncoder::push_instr`].
+    ///
+    /// # Note
+    ///
+    /// The `last_instr` information is used for an optimization with `local.set`
+    /// and `local.tee` translation to replace the result [`Register`] of the
+    /// last created [`Instruction`] instead of creating another copy [`Instruction`].
+    ///
+    /// Whenever ending a control block during Wasm translation the `last_instr`
+    /// information needs to be reset so that a `local.set` or `local.tee` does
+    /// not invalidly optimize across control flow boundaries.
+    pub fn reset_last_instr(&mut self) {
+        self.last_instr = None;
     }
 
     /// Return an iterator over the sequence of generated [`Instruction`].
@@ -184,6 +205,19 @@ impl InstrEncoder {
 
     /// Push the [`Instruction`] to the [`InstrEncoder`].
     pub fn push_instr(&mut self, instr: Instruction) -> Result<Instr, TranslationError> {
+        let last_instr = self.instrs.push(instr)?;
+        self.last_instr = Some(last_instr);
+        Ok(last_instr)
+    }
+
+    /// Appends the [`Instruction`] to the last [`Instruction`] created via [`InstrEncoder::push_instr`].
+    ///
+    /// # Note
+    ///
+    /// This is used primarily for [`Instruction`] words that are just carrying
+    /// parameters for the [`Instruction`]. An example of this is [`Instruction::Const32`]
+    /// carrying the `offset` parameter for [`Instruction::I32Load`].
+    pub fn append_instr(&mut self, instr: Instruction) -> Result<Instr, TranslationError> {
         self.instrs.push(instr)
     }
 
@@ -445,6 +479,34 @@ impl InstrEncoder {
         let copy_results = stack.push_dynamic_n(params.len())?.iter(params.len());
         self.encode_copies(stack, copy_results, params)?;
         Ok(copy_results)
+    }
+
+    /// Encode a `local.set` or `local.tee` instruction.
+    ///
+    /// # Note
+    ///
+    /// This also applies an optimization in that the previous instruction
+    /// result is replaced with the `local` [`Register`] instead of encoding
+    /// another `copy` instruction if the `local.set` or `local.tee` belongs
+    /// to the same basic block.
+    pub fn encode_local_set(
+        &mut self,
+        res: &ModuleResources,
+        local: Register,
+        value: Register,
+    ) -> Result<(), TranslationError> {
+        if let Some(last_instr) = self.last_instr {
+            if let Some(result) = self.instrs.get_mut(last_instr).result_mut(res) {
+                // Case: we can replace the `result` register of the previous
+                //       instruction instead of emitting a copy instruction.
+                debug_assert_eq!(*result, value);
+                *result = local;
+                return Ok(());
+            }
+        }
+        // Case: we need to encode a copy instruction to encode the `local.set` or `local.tee`.
+        self.push_instr(Instruction::copy(local, value))?;
+        Ok(())
     }
 }
 

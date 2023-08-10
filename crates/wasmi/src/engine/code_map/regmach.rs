@@ -20,6 +20,8 @@ pub struct FuncHeader {
     iref: InstructionsRef,
     /// The number of registers used by the [`CompiledFunc`] in total.
     len_registers: u16,
+    /// The number of results that the [`CompiledFunc`] returns.
+    len_results: u16,
     /// The number of instructions of the [`CompiledFunc`].
     len_instrs: u32,
     /// The constant values local to the [`CompiledFunc`].
@@ -28,43 +30,51 @@ pub struct FuncHeader {
 
 impl FuncHeader {
     /// Create a new initialized [`FuncHeader`].
-    pub fn new(
+    fn new(
         iref: InstructionsRef,
         len_registers: u16,
+        len_results: u16,
         func_consts: FuncLocalConstsIter,
         len_instrs: u32,
     ) -> Self {
         Self {
             iref,
             len_registers,
+            len_results,
             len_instrs,
             func_consts: func_consts.collect(),
         }
     }
 
     /// Create a new uninitialized [`FuncHeader`].
-    pub fn uninit() -> Self {
+    fn uninit() -> Self {
         Self {
             iref: InstructionsRef::uninit(),
             len_registers: 0,
+            len_results: 0,
             len_instrs: 0,
             func_consts: [].into(),
         }
     }
 
     /// Returns `true` if the [`FuncHeader`] is uninitialized.
-    pub fn is_uninit(&self) -> bool {
+    fn is_uninit(&self) -> bool {
         self.iref.is_uninit()
     }
 
     /// Returns a reference to the instructions of the [`CompiledFunc`].
-    pub fn iref(&self) -> InstructionsRef {
+    fn iref(&self) -> InstructionsRef {
         self.iref
     }
 
     /// Returns the number of registers used by the [`CompiledFunc`].
-    pub fn len_registers(&self) -> u16 {
+    fn len_registers(&self) -> u16 {
         self.len_registers
+    }
+
+    /// Returns the number of results returned by the [`CompiledFunc`].
+    pub fn len_results(&self) -> u16 {
+        self.len_results
     }
 }
 
@@ -121,6 +131,7 @@ impl CodeMap {
         &mut self,
         func: CompiledFunc,
         len_registers: u16,
+        len_results: u16,
         func_locals: FuncLocalConstsIter,
         instrs: I,
     ) where
@@ -136,7 +147,7 @@ impl CodeMap {
             .unwrap_or_else(|_| panic!("tried to initialize function with too many instructions"));
         let iref = InstructionsRef::new(start);
         self.headers[func.into_usize()] =
-            FuncHeader::new(iref, len_registers, func_locals, len_instrs);
+            FuncHeader::new(iref, len_registers, len_results, func_locals, len_instrs);
     }
 
     /// Returns the [`FuncHeader`] of the [`CompiledFunc`].

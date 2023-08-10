@@ -283,7 +283,7 @@ impl RegisterAlloc {
     /// # Panics
     ///
     /// If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
-    pub fn push_storage(&mut self, def_site: Instr) -> Result<Register, TranslationError> {
+    pub fn push_storage(&mut self) -> Result<Register, TranslationError> {
         self.assert_alloc_phase();
         if self.next_dynamic == self.next_storage {
             return Err(TranslationError::new(
@@ -291,7 +291,6 @@ impl RegisterAlloc {
             ));
         }
         let reg = Register::from_i16(self.next_storage);
-        self.storage_users.insert(RegisterUser::new(reg, def_site));
         self.next_storage -= 1;
         self.min_storage = min(self.min_storage, self.next_storage);
         Ok(reg)
@@ -347,18 +346,6 @@ impl RegisterAlloc {
             "storage register allocation stack is empty"
         );
         self.next_storage += 1;
-    }
-
-    /// Registers the [`Instr`] user for [`Register`] if `reg` is allocated in storage space.
-    ///
-    /// # Note
-    ///
-    /// This is required in order to update [`Register`] indices of storage space
-    /// allocated registers after register allocation is finished.
-    pub fn register_user(&mut self, reg: Register, user: Instr) {
-        if self.is_storage(reg) {
-            self.storage_users.insert(RegisterUser::new(reg, user));
-        }
     }
 
     /// Returns `true` if the [`Register`] is allocated in the dynamic register space.

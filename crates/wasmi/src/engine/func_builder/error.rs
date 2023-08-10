@@ -103,6 +103,12 @@ impl Display for TranslationError {
                     "tried to allocate too many function local constant values"
                 )
             }
+            TranslationErrorInner::TooManyFunctionResults => {
+                write!(f, "encountered function with too many function results")
+            }
+            TranslationErrorInner::TooManyFunctionParams => {
+                write!(f, "encountered function with too many function parameters")
+            }
         }
     }
 }
@@ -136,4 +142,8 @@ pub enum TranslationErrorInner {
     ProviderSliceOverflow,
     /// Tried to allocate too many function local constant values.
     TooManyFuncLocalConstValues,
+    /// Tried to define a function with too many function results.
+    TooManyFunctionResults,
+    /// Tried to define a function with too many function parameters.
+    TooManyFunctionParams,
 }
