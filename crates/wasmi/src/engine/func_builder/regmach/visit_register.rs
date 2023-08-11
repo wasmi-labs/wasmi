@@ -66,7 +66,14 @@ impl VisitInputRegisters for Instruction {
             Instruction::BranchEqz { condition, .. } |
             Instruction::BranchNez { condition, .. } => f(condition),
             Instruction::BranchTable { index, .. } => f(index),
-            Instruction::Copy { value, .. } => f(value),
+            Instruction::Copy { result, value } => {
+                // Note: for copy instruction unlike all other instructions
+                //       we need to also visit the result register since
+                //       encoding of `local.set` or `local.tee` might actually
+                //       result in a `copy` instruction with a `result` register
+                //       allocated in the storage-space.
+                visit_registers!(f, result, value)
+            }
             Instruction::CopyImm32 { result: _, value: _ } |
             Instruction::CopyI64Imm32 { result: _, value: _ } |
             Instruction::CopyF64Imm32 { result: _, value: _ } => {},
