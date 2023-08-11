@@ -581,7 +581,7 @@ impl VisitInputRegisters for RegisterSpanIter {
     fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
         let len = self.len_as_u16();
         let mut span = self.span();
-        f(&mut span.head_mut());
+        f(span.head_mut());
         *self = span.iter(len as usize);
     }
 }
