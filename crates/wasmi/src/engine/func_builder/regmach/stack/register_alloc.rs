@@ -364,7 +364,7 @@ impl RegisterAlloc {
     pub fn finalize_alloc(&mut self) {
         assert!(matches!(self.phase, AllocPhase::Alloc));
         self.phase = AllocPhase::Defrag;
-        self.defrag_offset = self.next_storage - self.next_dynamic;
+        self.defrag_offset = self.next_storage - self.max_dynamic;
     }
 
     /// Returns the defragmented [`Register`].
