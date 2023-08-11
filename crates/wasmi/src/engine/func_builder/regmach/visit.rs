@@ -666,7 +666,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         };
         self.alloc.instr_encoder.push_instr(instr)?;
         if !params.is_empty() {
-            self.alloc.instr_encoder.push_instr(call_params)?;
+            self.alloc.instr_encoder.append_instr(call_params)?;
         }
         Ok(())
     }
@@ -714,9 +714,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             _ => Instruction::call_indirect(results, type_index),
         };
         self.alloc.instr_encoder.push_instr(instr)?;
-        self.alloc.instr_encoder.push_instr(table_params)?;
+        self.alloc.instr_encoder.append_instr(table_params)?;
         if !params.is_empty() {
-            self.alloc.instr_encoder.push_instr(call_params)?;
+            self.alloc.instr_encoder.append_instr(call_params)?;
         }
         Ok(())
     }
@@ -756,7 +756,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         };
         self.alloc.instr_encoder.push_instr(instr)?;
         if !params.is_empty() {
-            self.alloc.instr_encoder.push_instr(call_params)?;
+            self.alloc.instr_encoder.append_instr(call_params)?;
         }
         self.reachable = false;
         Ok(())
@@ -799,9 +799,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             _ => Instruction::return_call_indirect(type_index),
         };
         self.alloc.instr_encoder.push_instr(instr)?;
-        self.alloc.instr_encoder.push_instr(table_params)?;
+        self.alloc.instr_encoder.append_instr(table_params)?;
         if !params.is_empty() {
-            self.alloc.instr_encoder.push_instr(call_params)?;
+            self.alloc.instr_encoder.append_instr(call_params)?;
         }
         self.reachable = false;
         Ok(())
