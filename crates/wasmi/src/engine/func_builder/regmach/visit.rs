@@ -833,9 +833,21 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let value = self.alloc.stack.pop();
         let local_register = Register::try_from(local_index)?;
         if let Some(register) = self.alloc.stack.preserve_locals(local_index)? {
+            // Case: we need to preserve the `local.get` on the value stack.
+            //
+            // Unfortunately this prevents us from applying the optimization of
+            // switching out the result register of the previous instruction because
+            // we would need to encode a copy in before already encoded
+            // instructions to preserve functional equivalence.
+            //
+            // It is possible to do so, however, a bit complicated. So for now we don't.
             self.alloc
                 .instr_encoder
                 .push_instr(Instruction::copy(register, local_register))?;
+            self.alloc
+                .instr_encoder
+                .encode_copy(&mut self.alloc.stack, local_register, value)?;
+            return Ok(());
         }
         match value {
             TypedProvider::Const(_) => {
