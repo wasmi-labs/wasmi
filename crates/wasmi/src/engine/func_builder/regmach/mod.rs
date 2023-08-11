@@ -1673,14 +1673,19 @@ impl<'parser> FuncTranslator<'parser> {
                     ///
                     /// Helper for `select` instructions where both
                     /// `lhs` and `rhs` are 32-bit constant values.
-                    fn encode_select_imm32(
+                    fn encode_select_imm32<T: Into<AnyConst32>>(
                         this: &mut FuncTranslator<'_>,
-                        reg: Register,
-                        value: impl Into<AnyConst32>,
+                        result: Register,
+                        condition: Register,
+                        lhs: T,
+                        rhs: T,
                     ) -> Result<(), TranslationError> {
                         this.alloc
                             .instr_encoder
-                            .push_instr(Instruction::select_imm32(reg, value))?;
+                            .push_instr(Instruction::select_imm32(result, lhs))?;
+                        this.alloc
+                            .instr_encoder
+                            .append_instr(Instruction::select_imm32(condition, rhs))?;
                         Ok(())
                     }
 
@@ -1780,13 +1785,23 @@ impl<'parser> FuncTranslator<'parser> {
                     let result = self.alloc.stack.push_dynamic()?;
                     match lhs.ty() {
                         ValueType::I32 => {
-                            encode_select_imm32(self, result, i32::from(lhs))?;
-                            encode_select_imm32(self, condition, i32::from(rhs))?;
+                            encode_select_imm32(
+                                self,
+                                result,
+                                condition,
+                                i32::from(lhs),
+                                i32::from(rhs),
+                            )?;
                             Ok(())
                         }
                         ValueType::F32 => {
-                            encode_select_imm32(self, result, f32::from(lhs))?;
-                            encode_select_imm32(self, condition, f32::from(rhs))?;
+                            encode_select_imm32(
+                                self,
+                                result,
+                                condition,
+                                f32::from(lhs),
+                                f32::from(rhs),
+                            )?;
                             Ok(())
                         }
                         ValueType::I64 => encode_select_imm64(
