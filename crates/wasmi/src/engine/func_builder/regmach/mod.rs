@@ -8,6 +8,7 @@ mod stack;
 mod typed_value;
 mod utils;
 mod visit;
+mod visit_register;
 
 use self::{
     control_frame::{
@@ -25,7 +26,7 @@ pub use self::{
     control_frame::{ControlFrame, ControlFrameKind},
     control_stack::ControlStack,
     instr_encoder::InstrEncoder,
-    stack::{DefragRegister, FuncLocalConstsIter, ProviderStack, RegisterAlloc, TypedProvider},
+    stack::{FuncLocalConstsIter, ProviderStack, RegisterAlloc, TypedProvider},
 };
 use super::TranslationErrorInner;
 use crate::{
@@ -206,7 +207,9 @@ impl<'parser> FuncTranslator<'parser> {
 
     /// Finishes constructing the function and returns its [`CompiledFunc`].
     pub fn finish(&mut self) -> Result<(), TranslationError> {
-        self.alloc.stack.defrag(&mut self.alloc.instr_encoder);
+        self.alloc
+            .instr_encoder
+            .defrag_registers(&mut self.alloc.stack)?;
         self.alloc.instr_encoder.update_branch_offsets()?;
         let len_registers = self.alloc.stack.len_registers();
         let len_results = u16::try_from(self.func_type().results().len())

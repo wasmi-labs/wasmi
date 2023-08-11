@@ -68,6 +68,8 @@ pub struct RegisterAlloc {
     min_storage: i16,
     /// Storage register users and definition sites.
     storage_users: BTreeSet<RegisterUser>,
+    /// The offset for the defragmentation register index.
+    defrag_offset: i16,
 }
 
 /// A pair of [`Register`] and definition site or user of the [`Register`].
@@ -358,41 +360,20 @@ impl RegisterAlloc {
         self.min_storage < reg.to_i16()
     }
 
-    /// Defragments the allocated registers space.
-    ///
-    /// # Note
-    ///
-    /// This is needed because dynamically allocated registers and storage space allocated
-    /// registers do not have consecutive index spaces for technical reasons. This is why we
-    /// store the definition site and users of storage space allocated registers so that we
-    /// can defrag exactly those registers and make the allocated register space compact.
-    pub fn defrag(&mut self, state: &mut impl DefragRegister) {
+    /// Finalizes register allocation and allows to defragment the register space.
+    pub fn finalize_alloc(&mut self) {
         assert!(matches!(self.phase, AllocPhase::Alloc));
         self.phase = AllocPhase::Defrag;
-        if self.next_dynamic == self.next_storage {
-            // This is a very special edge case in which all registers are
-            // already in use and we cannot really adjust anything anymore.
-            return;
-        }
-        self.next_storage = self.max_dynamic;
-        for user in &self.storage_users {
-            let reg = user.reg();
-            let instr = user.user();
-            let new_reg = Register::from_i16(self.next_storage);
-            state.defrag_register(instr, reg, new_reg);
-            self.next_storage += 1;
-        }
+        self.defrag_offset = self.next_storage - self.next_dynamic;
     }
-}
 
-/// Allows to defragment the index of registers of instructions.
-///
-/// # Note
-///
-/// This is usually implemented by the [`InstrEncoder`]
-/// so that the [`InstrEncoder`] can be informed by the [`RegisterAlloc`] about
-/// storage space allocated registers that need to be defragmented.
-pub trait DefragRegister {
-    /// Adjusts [`Register`] `reg` of [`Instr`] `user` to [`Register`] `new_reg`.
-    fn defrag_register(&mut self, user: Instr, reg: Register, new_reg: Register);
+    /// Returns the defragmented [`Register`].
+    pub fn defrag_register(&self, register: Register) -> Register {
+        assert!(matches!(self.phase, AllocPhase::Defrag));
+        if !self.is_storage(register) {
+            // Only registers allocated to the storage-space need defragmentation.
+            return register;
+        }
+        Register::from_i16(register.to_i16() - self.defrag_offset)
+    }
 }

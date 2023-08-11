@@ -8,7 +8,6 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
-use self::utils::StoreOffset16Instr;
 pub(crate) use self::{
     immediate::{AnyConst16, AnyConst32, Const16, Const32},
     provider::{Provider, ProviderSliceStack, UntypedProvider},
@@ -25,6 +24,7 @@ pub(crate) use self::{
         Sign,
         StoreAtInstr,
         StoreInstr,
+        StoreOffset16Instr,
         UnaryInstr,
     },
 };

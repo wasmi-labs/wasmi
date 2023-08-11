@@ -1,6 +1,4 @@
-use core::mem;
-
-use super::{DefragRegister, TypedProvider};
+use super::{visit_register::VisitInputRegisters, TypedProvider};
 use crate::{
     engine::{
         bytecode::BranchOffset,
@@ -16,6 +14,7 @@ use crate::{
     module::ModuleResources,
 };
 use alloc::vec::{Drain, Vec};
+use core::mem;
 use wasmi_core::{UntypedValue, ValueType, F32};
 
 /// Encodes `wasmi` bytecode instructions to an [`Instruction`] stream.
@@ -86,6 +85,15 @@ impl InstrSequence {
     /// The [`InstrSequence`] will be in an empty state after this operation.
     pub fn drain(&mut self) -> Drain<Instruction> {
         self.instrs.drain(..)
+    }
+}
+
+impl<'a> IntoIterator for &'a mut InstrSequence {
+    type Item = &'a mut Instruction;
+    type IntoIter = core::slice::IterMut<'a, Instruction>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.instrs.iter_mut()
     }
 }
 
@@ -508,18 +516,26 @@ impl InstrEncoder {
         self.push_instr(Instruction::copy(local, value))?;
         Ok(())
     }
-}
 
-impl InstrEncoder {
     /// Pushes an [`Instruction::ConsumeFuel`] with base fuel costs to the [`InstrEncoder`].
     pub fn push_consume_fuel_instr(&mut self, block_fuel: u64) -> Result<Instr, TranslationError> {
         self.instrs.push(Instruction::consume_fuel(block_fuel)?)
     }
-}
 
-impl DefragRegister for InstrEncoder {
-    fn defrag_register(&mut self, _user: Instr, _reg: Register, _new_reg: Register) {
-        todo!() // TODO
+    /// Defragments storage-space registers of all encoded [`Instruction`].
+    pub fn defrag_registers(&mut self, stack: &mut ValueStack) -> Result<(), TranslationError> {
+        // TODO: we want to limit the amount of instructions that we query to
+        //       defragment registers because most instructions never need to
+        //       be updated but matching the respective [`Instruction`] to see
+        //       if registers in the storage space are used is very costly.
+        //
+        // Instead we want to maintain a list of [`Instr`] of which we know to
+        // use registers in the storage space and ideally also which registers.
+        stack.finalize_alloc();
+        for instr in &mut self.instrs {
+            instr.visit_input_registers(|reg| *reg = stack.defrag_register(*reg));
+        }
+        Ok(())
     }
 }
 

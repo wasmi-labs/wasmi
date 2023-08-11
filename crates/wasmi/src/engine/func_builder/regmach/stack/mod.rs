@@ -7,7 +7,7 @@ mod register_alloc;
 pub use self::{
     consts::{FuncLocalConsts, FuncLocalConstsIter},
     provider::{ProviderStack, TaggedProvider},
-    register_alloc::{DefragRegister, RegisterAlloc},
+    register_alloc::RegisterAlloc,
 };
 use super::TypedValue;
 use crate::{
@@ -370,15 +370,13 @@ impl ValueStack {
         Ok(registers)
     }
 
-    /// Defragments the allocated registers space.
-    ///
-    /// # Note
-    ///
-    /// This is needed because dynamically allocated registers and storage space allocated
-    /// registers do not have consecutive index spaces for technical reasons. This is why we
-    /// store the definition site and users of storage space allocated registers so that we
-    /// can defrag exactly those registers and make the allocated register space compact.
-    pub fn defrag(&mut self, state: &mut impl DefragRegister) {
-        self.reg_alloc.defrag(state)
+    /// Finalizes register allocation and allows to defragment the register space.
+    pub fn finalize_alloc(&mut self) {
+        self.reg_alloc.finalize_alloc()
+    }
+
+    /// Returns the defragmented [`Register`].
+    pub fn defrag_register(&mut self, register: Register) -> Register {
+        self.reg_alloc.defrag_register(register)
     }
 }
