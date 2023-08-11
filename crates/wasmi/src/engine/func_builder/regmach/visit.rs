@@ -845,7 +845,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     local_register,
                     value,
                 )?;
-                Ok(())
             }
             TypedProvider::Register(value) => {
                 // Case: we set the local variable to a register value.
@@ -857,9 +856,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 self.alloc
                     .instr_encoder
                     .encode_local_set(&self.res, local_register, value)?;
-                Ok(())
             }
         }
+        self.alloc.instr_encoder.reset_last_instr();
+        Ok(())
     }
 
     fn visit_local_tee(&mut self, local_index: u32) -> Self::Output {
