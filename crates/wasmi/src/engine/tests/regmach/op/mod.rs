@@ -9,6 +9,7 @@ mod global_get;
 mod global_set;
 mod if_;
 mod load;
+mod local_set;
 mod loop_;
 mod memory;
 mod return_;
