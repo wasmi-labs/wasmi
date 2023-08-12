@@ -44,9 +44,10 @@ pub struct Config {
 }
 
 /// The backend executor of an [`Engine`](crate::Engine).
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub enum EngineBackend {
     /// Translate and execute via a stack machine backend.
+    #[default]
     StackMachine,
     /// Translate and execute via a register machine backend.
     RegisterMachine,
@@ -217,7 +218,7 @@ impl Default for Config {
             extended_const: false,
             floats: true,
             consume_fuel: false,
-            backend: EngineBackend::StackMachine,
+            backend: EngineBackend::default(),
             fuel_costs: FuelCosts::default(),
             fuel_consumption_mode: FuelConsumptionMode::default(),
         }
