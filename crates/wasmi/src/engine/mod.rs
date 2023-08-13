@@ -224,7 +224,7 @@ impl Engine {
             .init_func_2(func, len_registers, len_results, func_locals, instrs)
     }
 
-    /// Resolves the [`FuncHeader`] for [`CompiledFunc`] and applies `f` to it.
+    /// Resolves the [`CompiledFuncEntity`] for [`CompiledFunc`] and applies `f` to it.
     ///
     /// # Panics
     ///
@@ -557,7 +557,7 @@ impl EngineInner {
             .init_func(func, len_registers, len_results, func_locals, instrs)
     }
 
-    /// Resolves the [`FuncHeader`] for [`CompiledFunc`] and applies `f` to it.
+    /// Resolves the [`CompiledFuncEntity`] for [`CompiledFunc`] and applies `f` to it.
     ///
     /// # Panics
     ///

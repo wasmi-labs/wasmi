@@ -34,7 +34,7 @@ pub struct CompiledFuncEntity {
 }
 
 impl CompiledFuncEntity {
-    /// Create a new initialized [`FuncHeader`].
+    /// Create a new initialized [`CompiledFuncEntity`].
     ///
     /// # Panics
     ///
@@ -65,7 +65,7 @@ impl CompiledFuncEntity {
         }
     }
 
-    /// Create a new uninitialized [`FuncHeader`].
+    /// Create a new uninitialized [`CompiledFuncEntity`].
     fn uninit() -> Self {
         Self {
             instrs: [].into(),
@@ -112,7 +112,7 @@ impl CompiledFuncEntity {
             "len_registers contains function local constant values and therefore must be greater or equals",
         );
         debug_assert!(
-            matches!(u16::try_from(self.consts.len()), Ok(_)),
+            u16::try_from(self.consts.len()).is_ok(),
             "there can never be more than i16::MAX function local constant values"
         );
         self.len_registers - self.consts().len() as u16
@@ -169,7 +169,7 @@ impl CodeMap {
         *func = CompiledFuncEntity::new(len_registers, len_results, instrs, func_locals);
     }
 
-    /// Returns the [`FuncHeader`] of the [`CompiledFunc`].
+    /// Returns the [`CompiledFuncEntity`] of the [`CompiledFunc`].
     #[track_caller]
     pub fn get(&self, func: CompiledFunc) -> &CompiledFuncEntity {
         self.entities
