@@ -11,6 +11,7 @@ use crate::{
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct ValueStackPtr {
+    /// The underlying pointer to a cell on the [`ValueStack`].
     ptr: *mut UntypedValue,
 }
 
