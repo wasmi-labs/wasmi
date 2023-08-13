@@ -25,7 +25,7 @@ pub struct CompiledFuncEntity {
     /// The number of instructions of the [`CompiledFunc`].
     len_instrs: u32,
     /// The constant values local to the [`CompiledFunc`].
-    func_consts: Box<[UntypedValue]>,
+    consts: Box<[UntypedValue]>,
 }
 
 impl CompiledFuncEntity {
@@ -42,7 +42,7 @@ impl CompiledFuncEntity {
             len_registers,
             len_results,
             len_instrs,
-            func_consts: func_consts.collect(),
+            consts: func_consts.collect(),
         }
     }
 
@@ -53,7 +53,7 @@ impl CompiledFuncEntity {
             len_registers: 0,
             len_results: 0,
             len_instrs: 0,
-            func_consts: [].into(),
+            consts: [].into(),
         }
     }
 
@@ -173,7 +173,7 @@ impl CodeMap {
     /// Returns the sequence of instructions of the compiled [`CompiledFunc`].
     #[cfg(test)]
     pub fn get_consts(&self, func: CompiledFunc) -> &[UntypedValue] {
-        &self.get(func).func_consts[..]
+        &self.get(func).consts[..]
     }
 }
 
