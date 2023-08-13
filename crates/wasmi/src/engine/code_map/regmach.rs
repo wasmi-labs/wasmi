@@ -19,6 +19,11 @@ pub struct CompiledFuncEntity {
     /// A reference to the sequence of [`Instruction`] of the [`CompiledFunc`].
     iref: InstructionsRef,
     /// The number of registers used by the [`CompiledFunc`] in total.
+    ///
+    /// # Note
+    ///
+    /// This includes registers to store the function local constant values,
+    /// function parameters, function locals and dynamically used registers.
     len_registers: u16,
     /// The number of results that the [`CompiledFunc`] returns.
     len_results: u16,
