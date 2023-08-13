@@ -19,7 +19,7 @@ use crate::{
             RegisterSpan,
             UnaryInstr,
         },
-        code_map::FuncHeader2 as FuncHeader,
+        code_map::CompiledFuncEntity,
         CompiledFunc,
     },
     module::ModuleResources,
@@ -448,7 +448,9 @@ fn call_internal_result_mut<'a>(
     func: CompiledFunc,
     res: &ModuleResources,
 ) -> Option<&'a mut Register> {
-    let len_results = res.engine().resolve_func_2(func, FuncHeader::len_results);
+    let len_results = res
+        .engine()
+        .resolve_func_2(func, CompiledFuncEntity::len_results);
     if len_results == 1 {
         return Some(results.head_mut());
     }

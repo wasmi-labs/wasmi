@@ -4,7 +4,7 @@ mod regmach;
 
 pub use self::regmach::{
     CodeMap as CodeMap2,
-    FuncHeader as FuncHeader2,
+    CompiledFuncEntity,
     InstructionPtr as InstructionPtr2,
 };
 use super::Instruction;

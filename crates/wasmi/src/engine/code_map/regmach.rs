@@ -15,7 +15,7 @@ use wasmi_core::{TrapCode, UntypedValue};
 
 /// Meta information about a [`CompiledFunc`].
 #[derive(Debug)]
-pub struct FuncHeader {
+pub struct CompiledFuncEntity {
     /// A reference to the sequence of [`Instruction`] of the [`CompiledFunc`].
     iref: InstructionsRef,
     /// The number of registers used by the [`CompiledFunc`] in total.
@@ -28,7 +28,7 @@ pub struct FuncHeader {
     func_consts: Box<[UntypedValue]>,
 }
 
-impl FuncHeader {
+impl CompiledFuncEntity {
     /// Create a new initialized [`FuncHeader`].
     fn new(
         iref: InstructionsRef,
@@ -82,7 +82,7 @@ impl FuncHeader {
 #[derive(Debug)]
 pub struct CodeMap {
     /// The headers of all compiled functions.
-    headers: Vec<FuncHeader>,
+    headers: Vec<CompiledFuncEntity>,
     /// The [`Instruction`] sequences of all compiled functions.
     ///
     /// By storing all `wasmi` bytecode instructions in a single
@@ -117,7 +117,7 @@ impl CodeMap {
     /// [`CodeMap::init_func`] before it is executed.
     pub fn alloc_func(&mut self) -> CompiledFunc {
         let header_index = self.headers.len();
-        self.headers.push(FuncHeader::uninit());
+        self.headers.push(CompiledFuncEntity::uninit());
         CompiledFunc::from_usize(header_index)
     }
 
@@ -138,7 +138,7 @@ impl CodeMap {
         I: IntoIterator<Item = Instruction>,
     {
         assert!(
-            self.header(func).is_uninit(),
+            self.get(func).is_uninit(),
             "func {func:?} is already initialized"
         );
         let start = self.instrs.len();
@@ -147,12 +147,12 @@ impl CodeMap {
             .unwrap_or_else(|_| panic!("tried to initialize function with too many instructions"));
         let iref = InstructionsRef::new(start);
         self.headers[func.into_usize()] =
-            FuncHeader::new(iref, len_registers, len_results, func_locals, len_instrs);
+            CompiledFuncEntity::new(iref, len_registers, len_results, func_locals, len_instrs);
     }
 
     /// Returns the [`FuncHeader`] of the [`CompiledFunc`].
-    pub fn header(&self, func_body: CompiledFunc) -> &FuncHeader {
-        &self.headers[func_body.into_usize()]
+    pub fn get(&self, func: CompiledFunc) -> &CompiledFuncEntity {
+        &self.headers[func.into_usize()]
     }
 
     /// Returns an [`InstructionPtr`] to the instruction at [`InstructionsRef`].
@@ -164,7 +164,7 @@ impl CodeMap {
     /// Returns the sequence of instructions of the compiled [`CompiledFunc`].
     #[cfg(test)]
     pub fn get_instrs(&self, func: CompiledFunc) -> &[Instruction] {
-        let header = self.header(func);
+        let header = self.get(func);
         let start = header.iref.to_usize();
         let end = start + header.len_instrs as usize;
         &self.instrs[start..end]
@@ -173,7 +173,7 @@ impl CodeMap {
     /// Returns the sequence of instructions of the compiled [`CompiledFunc`].
     #[cfg(test)]
     pub fn get_consts(&self, func: CompiledFunc) -> &[UntypedValue] {
-        &self.header(func).func_consts[..]
+        &self.get(func).func_consts[..]
     }
 }
 

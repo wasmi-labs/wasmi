@@ -40,7 +40,7 @@ use self::{
     bytecode::Instruction,
     bytecode2::{Provider, UntypedProvider},
     cache::InstanceCache,
-    code_map::{CodeMap, FuncHeader2 as FuncHeader},
+    code_map::{CodeMap, CompiledFuncEntity},
     const_pool::{ConstPool, ConstPoolView, ConstRef},
     executor::{execute_wasm, WasmOutcome},
     func_builder::regmach::FuncLocalConstsIter,
@@ -231,7 +231,7 @@ impl Engine {
     /// If [`CompiledFunc`] is invalid for [`Engine`].
     pub(super) fn resolve_func_2<F, R>(&self, func: CompiledFunc, f: F) -> R
     where
-        F: FnOnce(&FuncHeader) -> R,
+        F: FnOnce(&CompiledFuncEntity) -> R,
     {
         self.inner.resolve_func_2(func, f)
     }
@@ -564,9 +564,9 @@ impl EngineInner {
     /// If [`CompiledFunc`] is invalid for [`Engine`].
     pub(super) fn resolve_func_2<F, R>(&self, func: CompiledFunc, f: F) -> R
     where
-        F: FnOnce(&FuncHeader) -> R,
+        F: FnOnce(&CompiledFuncEntity) -> R,
     {
-        f(self.res.read().code_map_2.header(func))
+        f(self.res.read().code_map_2.get(func))
     }
 
     #[cfg(test)]
