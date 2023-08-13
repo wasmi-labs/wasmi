@@ -583,7 +583,8 @@ impl EngineInner {
         self.res
             .read()
             .code_map_2
-            .get_instrs(func)
+            .get(func)
+            .instrs()
             .get(index)
             .copied()
     }
@@ -593,7 +594,8 @@ impl EngineInner {
         self.res
             .read()
             .code_map_2
-            .get_consts(func)
+            .get(func)
+            .consts()
             .get(index)
             .copied()
     }

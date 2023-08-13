@@ -7,17 +7,17 @@
 //! This is the data structure specialized to handle compiled
 //! register machine based bytecode functions.
 
-use super::{CompiledFunc, InstructionsRef};
+use super::CompiledFunc;
 use crate::engine::{bytecode2::Instruction, func_builder::regmach::FuncLocalConstsIter};
-use alloc::{boxed::Box, vec::Vec};
-use wasmi_arena::ArenaIndex;
-use wasmi_core::{TrapCode, UntypedValue};
+use alloc::boxed::Box;
+use wasmi_arena::Arena;
+use wasmi_core::UntypedValue;
 
 /// Meta information about a [`CompiledFunc`].
 #[derive(Debug)]
 pub struct CompiledFuncEntity {
-    /// A reference to the sequence of [`Instruction`] of the [`CompiledFunc`].
-    iref: InstructionsRef,
+    /// The sequence of [`Instruction`] of the [`CompiledFuncEntity`].
+    instrs: Box<[Instruction]>,
     /// The number of registers used by the [`CompiledFunc`] in total.
     ///
     /// # Note
@@ -35,15 +35,29 @@ pub struct CompiledFuncEntity {
 
 impl CompiledFuncEntity {
     /// Create a new initialized [`FuncHeader`].
-    fn new(
-        iref: InstructionsRef,
+    ///
+    /// # Panics
+    ///
+    /// - If `instrs` is empty.
+    /// - If `instrs` contains more than `u32::MAX` instructions.
+    fn new<I>(
         len_registers: u16,
         len_results: u16,
+        instrs: I,
         func_consts: FuncLocalConstsIter,
-        len_instrs: u32,
-    ) -> Self {
+    ) -> Self
+    where
+        I: IntoIterator<Item = Instruction>,
+    {
+        let instrs: Box<[Instruction]> = instrs.into_iter().collect();
+        assert!(
+            !instrs.is_empty(),
+            "compiled functions must have at least one instruction"
+        );
+        let len_instrs = u32::try_from(instrs.len())
+            .unwrap_or_else(|_| panic!("tried to initialize function with too many instructions"));
         Self {
-            iref,
+            instrs,
             len_registers,
             len_results,
             len_instrs,
@@ -54,7 +68,7 @@ impl CompiledFuncEntity {
     /// Create a new uninitialized [`FuncHeader`].
     fn uninit() -> Self {
         Self {
-            iref: InstructionsRef::uninit(),
+            instrs: [].into(),
             len_registers: 0,
             len_results: 0,
             len_instrs: 0,
@@ -62,14 +76,19 @@ impl CompiledFuncEntity {
         }
     }
 
-    /// Returns `true` if the [`FuncHeader`] is uninitialized.
+    /// Returns `true` if the [`CompiledFuncEntity`] is uninitialized.
     fn is_uninit(&self) -> bool {
-        self.iref.is_uninit()
+        self.instrs.is_empty()
     }
 
-    /// Returns a reference to the instructions of the [`CompiledFunc`].
-    fn iref(&self) -> InstructionsRef {
-        self.iref
+    /// Returns the sequence of [`Instruction`] of the [`CompiledFunc`].
+    pub fn instrs(&self) -> &[Instruction] {
+        &self.instrs[..]
+    }
+
+    /// Returns the [`InstructionPtr`] of the [`CompiledFunc`].
+    fn instr_ptr(&self) -> InstructionPtr {
+        InstructionPtr::new(self.instrs().as_ptr())
     }
 
     /// Returns the number of registers used by the [`CompiledFunc`].
@@ -106,33 +125,10 @@ impl CompiledFuncEntity {
 }
 
 /// Datastructure to efficiently store information about compiled functions.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct CodeMap {
     /// The headers of all compiled functions.
-    headers: Vec<CompiledFuncEntity>,
-    /// The [`Instruction`] sequences of all compiled functions.
-    ///
-    /// By storing all `wasmi` bytecode instructions in a single
-    /// allocation we avoid an indirection when calling a function
-    /// compared to a solution that stores instructions of different
-    /// function bodies in different allocations.
-    ///
-    /// Also this improves efficiency of deallocating the [`CodeMap`]
-    /// and generally improves data locality.
-    instrs: Vec<Instruction>,
-}
-
-impl Default for CodeMap {
-    fn default() -> Self {
-        Self {
-            headers: Vec::new(),
-            // The first instruction always is a simple trapping instruction
-            // so that we safely can use `InstructionsRef(0)` as an uninitialized
-            // index value for compiled functions that have yet to be
-            // initialized with their actual function bodies.
-            instrs: vec![Instruction::Trap(TrapCode::UnreachableCodeReached)],
-        }
-    }
+    entities: Arena<CompiledFunc, CompiledFuncEntity>,
 }
 
 impl CodeMap {
@@ -143,9 +139,7 @@ impl CodeMap {
     /// The uninitialized [`CompiledFunc`] must be initialized using
     /// [`CodeMap::init_func`] before it is executed.
     pub fn alloc_func(&mut self) -> CompiledFunc {
-        let header_index = self.headers.len();
-        self.headers.push(CompiledFuncEntity::uninit());
-        CompiledFunc::from_usize(header_index)
+        self.entities.alloc(CompiledFuncEntity::uninit())
     }
 
     /// Initializes the [`CompiledFunc`].
@@ -168,39 +162,19 @@ impl CodeMap {
             self.get(func).is_uninit(),
             "func {func:?} is already initialized"
         );
-        let start = self.instrs.len();
-        self.instrs.extend(instrs);
-        let len_instrs = u32::try_from(self.instrs.len() - start)
-            .unwrap_or_else(|_| panic!("tried to initialize function with too many instructions"));
-        let iref = InstructionsRef::new(start);
-        self.headers[func.into_usize()] =
-            CompiledFuncEntity::new(iref, len_registers, len_results, func_locals, len_instrs);
+        let func = self
+            .entities
+            .get_mut(func)
+            .unwrap_or_else(|| panic!("tried to initialize invalid compiled func: {func:?}"));
+        *func = CompiledFuncEntity::new(len_registers, len_results, instrs, func_locals);
     }
 
     /// Returns the [`FuncHeader`] of the [`CompiledFunc`].
+    #[track_caller]
     pub fn get(&self, func: CompiledFunc) -> &CompiledFuncEntity {
-        &self.headers[func.into_usize()]
-    }
-
-    /// Returns an [`InstructionPtr`] to the instruction at [`InstructionsRef`].
-    #[inline]
-    pub fn instr_ptr(&self, iref: InstructionsRef) -> InstructionPtr {
-        InstructionPtr::new(self.instrs[iref.to_usize()..].as_ptr())
-    }
-
-    /// Returns the sequence of instructions of the compiled [`CompiledFunc`].
-    #[cfg(test)]
-    pub fn get_instrs(&self, func: CompiledFunc) -> &[Instruction] {
-        let header = self.get(func);
-        let start = header.iref.to_usize();
-        let end = start + header.len_instrs as usize;
-        &self.instrs[start..end]
-    }
-
-    /// Returns the sequence of instructions of the compiled [`CompiledFunc`].
-    #[cfg(test)]
-    pub fn get_consts(&self, func: CompiledFunc) -> &[UntypedValue] {
-        &self.get(func).consts[..]
+        self.entities
+            .get(func)
+            .unwrap_or_else(|| panic!("invalid compiled func: {func:?}"))
     }
 }
 
