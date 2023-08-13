@@ -116,7 +116,7 @@ impl ValueStack {
     }
 
     /// Returns the [`ValueStackPtr`] at the given `offset`.
-    fn stack_ptr_at(&mut self, offset: ValueStackOffset) -> ValueStackPtr {
+    unsafe fn stack_ptr_at(&mut self, offset: ValueStackOffset) -> ValueStackPtr {
         self.root_stack_ptr().apply_offset(offset)
     }
 
@@ -261,10 +261,14 @@ impl From<ValueStackOffset> for BaseValueStackOffset {
 
 impl ValueStack {
     /// Underlying implementation of [`ValueStack::split`] and [`ValueStack::split_2`].
-    fn split_impl(&mut self, offset: ValueStackOffset) -> (&mut Self, ValueStackPtr) {
+    ///
+    /// # Safety
+    ///
+    /// It is the callers responsibility to provide a [`ValueStackOffset`]
+    /// that does not access the underlying [`ValueStack`] out of bounds.
+    unsafe fn split_impl(&mut self, offset: ValueStackOffset) -> (&mut Self, ValueStackPtr) {
         let self_ptr = self as *mut _;
-        let ptr = self.stack_ptr_at(offset);
-        // SAFETY: todo
+        let ptr = unsafe { self.stack_ptr_at(offset) };
         (unsafe { &mut *self_ptr }, ptr)
     }
 
@@ -279,7 +283,15 @@ impl ValueStack {
     ///
     /// This API provides a bit more safety when dealing with the [`ValueStackPtr`] abstraction.
     /// It is not perfect nor fail safe but a bit better than having no safety belt.
-    pub fn split(&mut self, offset: ValueStackOffset) -> (LockedValueStack<1>, ValueStackPtr) {
+    ///
+    /// # Safety
+    ///
+    /// It is the callers responsibility to provide a [`ValueStackOffset`]
+    /// that does not access the underlying [`ValueStack`] out of bounds.
+    pub unsafe fn split(
+        &mut self,
+        offset: ValueStackOffset,
+    ) -> (LockedValueStack<1>, ValueStackPtr) {
         let (this, ptr) = self.split_impl(offset);
         (LockedValueStack(this), ptr)
     }
@@ -295,7 +307,12 @@ impl ValueStack {
     /// # Dev. Note
     ///
     /// See [`ValueStack::split`].
-    pub fn split_2(
+    ///
+    /// # Safety
+    ///
+    /// It is the callers responsibility to provide [`ValueStackOffset`]
+    /// that do not access the underlying [`ValueStack`] out of bounds.
+    pub unsafe fn split_2(
         &mut self,
         fst: ValueStackOffset,
         snd: ValueStackOffset,
@@ -350,27 +367,44 @@ impl<'a> ValueStackPtr<'a> {
     }
 
     /// Applies the [`ValueStackOffset`] to `self` and returns the result.
-    fn apply_offset(self, offset: ValueStackOffset) -> Self {
+    ///
+    /// # Safety
+    ///
+    /// It is the callers responsibility to provide a [`ValueStackOffset`]
+    /// that does not access the underlying [`ValueStack`] out of bounds.
+    unsafe fn apply_offset(self, offset: ValueStackOffset) -> Self {
         Self::new(unsafe { self.ptr.add(offset.0) })
     }
 
     /// Returns the [`UntypedValue`] at the given [`Register`].
-    pub fn get(&self, register: Register) -> UntypedValue {
+    ///
+    /// # Safety
+    ///
+    /// It is the callers responsibility to provide a [`Register`] that
+    /// does not access the underlying [`ValueStack`] out of bounds.
+    pub unsafe fn get(&self, register: Register) -> UntypedValue {
         let ptr = self.register_ptr(register);
-        // SAFETY: todo
         unsafe { *ptr }
     }
 
     /// Returns an exclusive reference to the [`UntypedValue`] at the given [`Register`].
-    pub fn get_mut(&mut self, register: Register) -> &mut UntypedValue {
+    ///
+    /// # Safety
+    ///
+    /// It is the callers responsibility to provide a [`Register`] that
+    /// does not access the underlying [`ValueStack`] out of bounds.
+    pub unsafe fn get_mut(&mut self, register: Register) -> &mut UntypedValue {
         let ptr = self.register_ptr(register);
-        // SAFETY: todo
         unsafe { &mut *ptr }
     }
 
     /// Returns the pointer to the [`UntypedValue`] at the [`Register`].
-    fn register_ptr(&self, register: Register) -> *mut UntypedValue {
-        // SAFETY: todo
+    ///
+    /// # Safety
+    ///
+    /// It is the callers responsibility to provide a [`Register`] that
+    /// does not access the underlying [`ValueStack`] out of bounds.
+    unsafe fn register_ptr(&self, register: Register) -> *mut UntypedValue {
         unsafe { self.ptr.offset(register.to_i16() as isize) }
     }
 }
