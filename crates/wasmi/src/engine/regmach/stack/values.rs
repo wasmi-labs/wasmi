@@ -1,11 +1,11 @@
 #![allow(dead_code)] // TODO: remove
 
-use alloc::vec::Vec;
 use super::err_stack_overflow;
 use crate::{
     core::UntypedValue,
     engine::{bytecode2::Register, code_map::CompiledFuncEntity},
 };
+use alloc::vec::Vec;
 use core::{fmt, fmt::Debug, iter, marker::PhantomData, mem};
 use wasmi_core::TrapCode;
 
