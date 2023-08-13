@@ -1,5 +1,6 @@
 #![allow(dead_code)] // TODO: remove
 
+use alloc::vec::Vec;
 use super::err_stack_overflow;
 use crate::{
     core::UntypedValue,
