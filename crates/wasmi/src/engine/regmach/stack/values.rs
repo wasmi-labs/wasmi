@@ -283,6 +283,10 @@ impl ValueStack {
     ///
     /// This API provides a bit more safety when dealing with the [`ValueStackPtr`] abstraction.
     /// It is not perfect nor fail safe but a bit better than having no safety belt.
+    /// 
+    /// For example this API provides safety against [`ValueStackPtr`] invalidation
+    /// when growing the [`ValueStack`] using [`ValueStack::reserve`] by guarding
+    /// access to [`ValueStack::reserve`].
     ///
     /// # Safety
     ///
