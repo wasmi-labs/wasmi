@@ -10,6 +10,7 @@ pub mod executor;
 mod func_args;
 mod func_builder;
 mod func_types;
+mod regmach;
 mod resumable;
 pub mod stack;
 mod traits;
