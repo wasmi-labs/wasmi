@@ -7,8 +7,11 @@
 //! This is the data structure specialized to handle compiled
 //! register machine based bytecode functions.
 
-use super::CompiledFunc;
-use crate::engine::{bytecode2::Instruction, func_builder::regmach::FuncLocalConstsIter};
+use crate::engine::{
+    bytecode2::Instruction,
+    func_builder::regmach::FuncLocalConstsIter,
+    CompiledFunc,
+};
 use alloc::boxed::Box;
 use wasmi_arena::Arena;
 use wasmi_core::UntypedValue;
