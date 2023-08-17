@@ -1,7 +1,10 @@
 #![allow(dead_code)] // TODO: remove
 
 use super::{err_stack_overflow, BaseValueStackOffset, FrameValueStackOffset};
-use crate::{engine::code_map::InstructionPtr2 as InstructionPtr, Instance};
+use crate::{
+    engine::{bytecode2::RegisterSpan, code_map::InstructionPtr2 as InstructionPtr},
+    Instance,
+};
 use alloc::vec::Vec;
 use wasmi_core::TrapCode;
 
@@ -31,6 +34,14 @@ pub struct CallStack {
 impl CallStack {
     /// Default value for the maximum recursion depth.
     pub const DEFAULT_MAX_RECURSION_DEPTH: usize = 1024;
+
+    /// Creates a new [`CallStack`] using the given recursion limit.
+    pub fn new(recursion_limit: usize) -> Self {
+        Self {
+            calls: Vec::new(),
+            recursion_limit,
+        }
+    }
 
     /// Clears the [`CallStack`] entirely.
     ///
@@ -86,6 +97,8 @@ pub struct CallFrame {
     base_ptr: BaseValueStackOffset,
     /// Pointer to the first cell of a [`CallFrame`].
     frame_ptr: FrameValueStackOffset,
+    /// Span of registers were the caller expects them in its [`CallFrame`].
+    results: RegisterSpan,
     /// The instance in which the function has been defined.
     ///
     /// # Note
@@ -101,12 +114,14 @@ impl CallFrame {
         instr_ptr: InstructionPtr,
         frame_ptr: FrameValueStackOffset,
         base_ptr: BaseValueStackOffset,
+        results: RegisterSpan,
         instance: Instance,
     ) -> Self {
         Self {
             instr_ptr,
             base_ptr,
             frame_ptr,
+            results,
             instance,
         }
     }
@@ -124,6 +139,16 @@ impl CallFrame {
     /// Returns the [`BaseValueStackOffset`] of the [`CallFrame`].
     pub fn base_offset(&self) -> BaseValueStackOffset {
         self.base_ptr
+    }
+
+    /// Returns the [`RegisterSpan`] of the [`CallFrame`].
+    ///
+    /// # Note
+    ///
+    /// The registers yielded by the returned [`RegisterSpan`]
+    /// refer to the [`CallFrame`] of the caller of this [`CallFrame`].
+    pub fn results(&self) -> RegisterSpan {
+        self.results
     }
 
     /// Returns the [`Instance`] of the [`CallFrame`].

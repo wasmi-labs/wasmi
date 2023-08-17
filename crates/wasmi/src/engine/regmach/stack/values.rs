@@ -6,7 +6,7 @@ use crate::{
     engine::{bytecode2::Register, code_map::CompiledFuncEntity},
 };
 use alloc::vec::Vec;
-use core::{fmt, fmt::Debug, iter, marker::PhantomData, mem};
+use core::{fmt, fmt::Debug, iter, mem};
 use wasmi_core::TrapCode;
 
 #[cfg(doc)]
@@ -116,13 +116,18 @@ impl ValueStack {
     }
 
     /// Returns the [`ValueStackPtr`] at the given `offset`.
-    unsafe fn stack_ptr_at(&mut self, offset: ValueStackOffset) -> ValueStackPtr {
-        self.root_stack_ptr().apply_offset(offset)
+    pub unsafe fn stack_ptr_at(&mut self, offset: impl Into<ValueStackOffset>) -> ValueStackPtr {
+        self.root_stack_ptr().apply_offset(offset.into())
     }
 
     /// Returns the capacity of the [`ValueStack`].
     fn capacity(&self) -> usize {
         self.values.len()
+    }
+
+    /// Returns `true` if the [`ValueStack`] is empty.
+    pub fn is_empty(&self) -> bool {
+        self.values.capacity() == 0
     }
 
     /// Returns the current length of the [`ValueStack`].
@@ -162,6 +167,9 @@ impl ValueStack {
     ///
     /// If the value stack cannot fit `additional` stack values.
     pub fn extend_zeros(&mut self, amount: usize) -> ValueStackOffset {
+        if amount == 0 {
+            return ValueStackOffset(self.sp);
+        }
         let old_sp = self.sp;
         let cells = self
             .values
@@ -182,6 +190,9 @@ impl ValueStack {
     ///
     /// If the value stack cannot fit `additional` stack values.
     pub fn extend_slice(&mut self, values: &[UntypedValue]) -> ValueStackOffset {
+        if values.is_empty() {
+            return ValueStackOffset(self.sp);
+        }
         let old_sp = self.sp;
         let len_values = values.len();
         let cells = self
@@ -222,11 +233,55 @@ impl ValueStack {
         let base_offset: BaseValueStackOffset = self.extend_zeros(func.len_cells() as usize).into();
         Ok((base_offset, frame_offset))
     }
+
+    /// Fills the [`ValueStack`] cells at `offset` with `values`.
+    ///
+    /// # Safety
+    ///
+    /// The caller has to ensure that `offset` is valid for the range of
+    /// `values` required to be stored on the [`ValueStack`].
+    pub unsafe fn fill_at<I>(&mut self, offset: impl Into<ValueStackOffset>, values: I)
+    where
+        I: IntoIterator<Item = UntypedValue>,
+    {
+        let offset = offset.into().0;
+        assert!(offset < self.sp);
+        let cells = &mut self.values[offset..];
+        for (cell, value) in cells.iter_mut().zip(values) {
+            *cell = value;
+        }
+    }
+
+    /// Returns a slice over the values of the [`ValueStack`].
+    #[inline]
+    pub fn as_slice(&mut self) -> &[UntypedValue] {
+        &self.values[0..self.sp]
+    }
+
+    /// Returns an exclusive slice to the top `n` entries in the [`ValueStack`].
+    #[inline]
+    pub fn peek_as_slice_mut(&mut self, n: usize) -> &mut [UntypedValue] {
+        let start = self.sp - n;
+        let end = self.sp;
+        &mut self.values[start..end]
+    }
 }
 
 /// The offset of the [`ValueStackPtr`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct ValueStackOffset(usize);
+
+impl From<FrameValueStackOffset> for ValueStackOffset {
+    fn from(offset: FrameValueStackOffset) -> Self {
+        offset.0
+    }
+}
+
+impl From<BaseValueStackOffset> for ValueStackOffset {
+    fn from(offset: BaseValueStackOffset) -> Self {
+        offset.0
+    }
+}
 
 /// Returned when allocating a new [`CallFrame`] on the [`ValueStack`].
 ///
@@ -259,92 +314,6 @@ impl From<ValueStackOffset> for BaseValueStackOffset {
     }
 }
 
-impl ValueStack {
-    /// Underlying implementation of [`ValueStack::split`] and [`ValueStack::split_2`].
-    ///
-    /// # Safety
-    ///
-    /// It is the callers responsibility to provide a [`ValueStackOffset`]
-    /// that does not access the underlying [`ValueStack`] out of bounds.
-    unsafe fn split_impl(&mut self, offset: ValueStackOffset) -> (&mut Self, ValueStackPtr) {
-        let self_ptr = self as *mut _;
-        let ptr = unsafe { self.stack_ptr_at(offset) };
-        (unsafe { &mut *self_ptr }, ptr)
-    }
-
-    /// Splits the [`ValueStack`] into [`LockedValueStack`] and [`ValueStackPtr`].
-    ///
-    /// # Note
-    ///
-    /// - This is used to efficiently access the registers of a [`CallFrame`].
-    /// - Use [`LockedValueStack::merge`] to reverse this operation.
-    ///
-    /// # Dev. Note
-    ///
-    /// This API provides a bit more safety when dealing with the [`ValueStackPtr`] abstraction.
-    /// It is not perfect nor fail safe but a bit better than having no safety belt.
-    ///
-    /// For example this API provides safety against [`ValueStackPtr`] invalidation
-    /// when growing the [`ValueStack`] using [`ValueStack::reserve`] by guarding
-    /// access to [`ValueStack::reserve`].
-    ///
-    /// # Safety
-    ///
-    /// It is the callers responsibility to provide a [`ValueStackOffset`]
-    /// that does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn split(
-        &mut self,
-        offset: ValueStackOffset,
-    ) -> (LockedValueStack<1>, ValueStackPtr) {
-        let (this, ptr) = self.split_impl(offset);
-        (LockedValueStack(this), ptr)
-    }
-
-    /// Splits the [`ValueStack`] into [`LockedValueStack`] and two distinct [`ValueStackPtr`].
-    ///
-    /// # Note
-    ///
-    /// - This is used for to efficiently access the registers of two [`CallFrame`] when
-    ///   calling a function with its parameters or returning results from a function.
-    /// - Use [`LockedValueStack::merge`] to reverse this operation.
-    ///
-    /// # Dev. Note
-    ///
-    /// See [`ValueStack::split`].
-    ///
-    /// # Safety
-    ///
-    /// It is the callers responsibility to provide [`ValueStackOffset`]
-    /// that do not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn split_2(
-        &mut self,
-        fst: ValueStackOffset,
-        snd: ValueStackOffset,
-    ) -> (LockedValueStack<2>, ValueStackPtr, ValueStackPtr) {
-        assert_ne!(fst, snd);
-        let (this, fst) = self.split_impl(fst);
-        let (this, snd) = this.split_impl(snd);
-        (LockedValueStack(this), fst, snd)
-    }
-}
-
-/// Type-enforced wrapper around [`ValueStack`] to prevent manipulations.
-pub struct LockedValueStack<'a, const N: usize>(&'a mut ValueStack);
-
-impl<'a> LockedValueStack<'a, 1> {
-    /// Merge a single [`ValueStackPtr`] and `self` back into the original [`ValueStack`].
-    pub fn merge(self, _ptr: ValueStackPtr<'a>) -> &'a mut ValueStack {
-        self.0
-    }
-}
-
-impl<'a> LockedValueStack<'a, 2> {
-    /// Merge a two [`ValueStackPtr`] and `self` back into the original [`ValueStack`].
-    pub fn merge(self, _fst: ValueStackPtr<'a>, _snd: ValueStackPtr<'a>) -> &'a mut ValueStack {
-        self.0
-    }
-}
-
 /// Type-wrapper that is excplicitly non-[`Copy`].
 #[derive(Debug, Default)]
 pub struct NonCopy<T>(T);
@@ -354,20 +323,21 @@ pub struct NonCopy<T>(T);
 /// # Dev. Note
 ///
 /// [`ValueStackPtr`] is explicitly non-[`Copy`] since it can be seen as a `&mut UntypedValue`.
-pub struct ValueStackPtr<'a> {
+pub struct ValueStackPtr {
     /// The underlying raw pointer to a [`CallFrame`] on the [`ValueStack`].
     ptr: *mut UntypedValue,
-    /// The lifetime of the associated [`ValueStack`].
-    marker: NonCopy<PhantomData<fn() -> &'a ()>>,
 }
 
-impl<'a> ValueStackPtr<'a> {
+impl Debug for ValueStackPtr {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", &self.ptr)
+    }
+}
+
+impl ValueStackPtr {
     /// Creates a new [`ValueStackPtr`].
     fn new(ptr: *mut UntypedValue) -> Self {
-        Self {
-            ptr,
-            marker: NonCopy(PhantomData),
-        }
+        Self { ptr }
     }
 
     /// Applies the [`ValueStackOffset`] to `self` and returns the result.

@@ -14,6 +14,7 @@ mod regmach;
 mod resumable;
 pub mod stack;
 mod traits;
+mod trap;
 
 #[cfg(test)]
 mod tests;
@@ -46,8 +47,10 @@ use self::{
     executor::{execute_wasm, WasmOutcome},
     func_builder::regmach::FuncLocalConstsIter,
     func_types::FuncTypeRegistry,
+    regmach::Stack as Stack2,
     resumable::ResumableCallBase,
     stack::{FuncFrame, Stack, ValueStack},
+    trap::TaggedTrap,
 };
 pub(crate) use self::{
     func_args::{FuncFinished, FuncParams, FuncResults},
@@ -67,6 +70,9 @@ use core::sync::atomic::{AtomicU32, Ordering};
 use spin::{Mutex, RwLock};
 use wasmi_arena::{ArenaIndex, GuardedEntity};
 use wasmi_core::UntypedValue;
+
+#[cfg(doc)]
+use crate::Store;
 
 /// A unique engine index.
 ///
@@ -427,6 +433,12 @@ pub struct EngineInner {
 pub struct EngineStacks {
     /// Stacks to be (re)used.
     stacks: Vec<Stack>,
+    /// Stacks to be (re)used.
+    ///
+    /// # Note
+    ///
+    /// These are the stack used by the register-machine `wasmi` implementation.
+    stacks2: Vec<Stack2>,
     /// Stack limits for newly constructed engine stacks.
     limits: StackLimits,
     /// How many stacks should be kept for reuse at most.
@@ -438,6 +450,7 @@ impl EngineStacks {
     pub fn new(config: &Config) -> Self {
         Self {
             stacks: Vec::new(),
+            stacks2: Vec::new(),
             limits: config.stack_limits(),
             keep: config.cached_stacks(),
         }
@@ -451,10 +464,25 @@ impl EngineStacks {
         }
     }
 
+    /// Reuse or create a new [`Stack`] if none was available.
+    pub fn reuse_or_new_2(&mut self) -> Stack2 {
+        match self.stacks2.pop() {
+            Some(stack) => stack,
+            None => Stack2::new(self.limits),
+        }
+    }
+
     /// Disose and recycle the `stack`.
     pub fn recycle(&mut self, stack: Stack) {
         if !stack.is_empty() && self.stacks.len() < self.keep {
             self.stacks.push(stack);
+        }
+    }
+
+    /// Disose and recycle the `stack`.
+    pub fn recycle_2(&mut self, stack: Stack2) {
+        if !stack.is_empty() && self.stacks2.len() < self.keep {
+            self.stacks2.push(stack);
         }
     }
 }
@@ -601,7 +629,38 @@ impl EngineInner {
             .copied()
     }
 
+    /// Executes the given [`Func`] with the given `params` and returns the `results`.
+    ///
+    /// Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
+    ///
+    /// # Errors
+    ///
+    /// If the Wasm execution traps or runs out of resources.
     fn execute_func<T, Results>(
+        &self,
+        ctx: StoreContextMut<T>,
+        func: &Func,
+        params: impl CallParams,
+        results: Results,
+    ) -> Result<<Results as CallResults>::Results, Trap>
+    where
+        Results: CallResults,
+    {
+        match self.config().engine_backend() {
+            EngineBackend::StackMachine => self.execute_func_stackmach(ctx, func, params, results),
+            EngineBackend::RegisterMachine => self.execute_func_regmach(ctx, func, params, results),
+        }
+    }
+
+    /// Executes the given [`Func`] with the given `params` and returns the `results`.
+    ///
+    /// - Uses the `wasmi` stack-machine based engine backend.
+    /// - Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
+    ///
+    /// # Errors
+    ///
+    /// If the Wasm execution traps or runs out of resources.
+    fn execute_func_stackmach<T, Results>(
         &self,
         ctx: StoreContextMut<T>,
         func: &Func,
@@ -731,45 +790,6 @@ impl EngineResources {
     }
 }
 
-/// Either a Wasm trap or a host trap with its originating host [`Func`].
-#[derive(Debug)]
-enum TaggedTrap {
-    /// The trap is originating from Wasm.
-    Wasm(Trap),
-    /// The trap is originating from a host function.
-    Host { host_func: Func, host_trap: Trap },
-}
-
-impl TaggedTrap {
-    /// Creates a [`TaggedTrap`] from a host error.
-    pub fn host(host_func: Func, host_trap: Trap) -> Self {
-        Self::Host {
-            host_func,
-            host_trap,
-        }
-    }
-
-    /// Returns the [`Trap`] of the [`TaggedTrap`].
-    pub fn into_trap(self) -> Trap {
-        match self {
-            TaggedTrap::Wasm(trap) => trap,
-            TaggedTrap::Host { host_trap, .. } => host_trap,
-        }
-    }
-}
-
-impl From<Trap> for TaggedTrap {
-    fn from(trap: Trap) -> Self {
-        Self::Wasm(trap)
-    }
-}
-
-impl From<TrapCode> for TaggedTrap {
-    fn from(trap_code: TrapCode) -> Self {
-        Self::Wasm(trap_code.into())
-    }
-}
-
 /// The internal state of the `wasmi` engine.
 #[derive(Debug)]
 pub struct EngineExecutor<'engine> {
@@ -814,9 +834,10 @@ impl<'engine> EngineExecutor<'engine> {
             }
             FuncEntity::Host(host_func) => {
                 let host_func = *host_func;
-                self.stack.call_host_as_root(
+                self.stack.call_host(
                     ctx.as_context_mut(),
                     host_func,
+                    None,
                     &self.res.func_types,
                 )?;
             }
@@ -900,7 +921,7 @@ impl<'engine> EngineExecutor<'engine> {
                         FuncEntity::Wasm(_) => unreachable!("`func` must be a host function"),
                         FuncEntity::Host(host_func) => *host_func,
                     };
-                    let result = self.stack.call_host_impl(
+                    let result = self.stack.call_host(
                         ctx.as_context_mut(),
                         host_func,
                         Some(&instance),

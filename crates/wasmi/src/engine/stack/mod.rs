@@ -38,11 +38,11 @@ fn err_stack_overflow() -> TrapCode {
 #[derive(Debug, Copy, Clone)]
 pub struct StackLimits {
     /// The initial value stack height that the Wasm stack prepares.
-    initial_value_stack_height: usize,
+    pub initial_value_stack_height: usize,
     /// The maximum value stack height in use that the Wasm stack allows.
-    maximum_value_stack_height: usize,
+    pub maximum_value_stack_height: usize,
     /// The maximum number of nested calls that the Wasm stack allows.
-    maximum_recursion_depth: usize,
+    pub maximum_recursion_depth: usize,
 }
 
 /// An error that may occur when configuring [`StackLimits`].
@@ -154,16 +154,6 @@ impl Stack {
         Ok(())
     }
 
-    /// Executes the given host function as root.
-    pub fn call_host_as_root<T>(
-        &mut self,
-        ctx: StoreContextMut<T>,
-        host_func: HostFuncEntity,
-        func_types: &FuncTypeRegistry,
-    ) -> Result<(), Trap> {
-        self.call_host_impl(ctx, host_func, None, func_types)
-    }
-
     /// Executes the given host function.
     ///
     /// # Errors
@@ -171,7 +161,7 @@ impl Stack {
     /// - If the host function returns a host side error or trap.
     /// - If the value stack overflowed upon pushing parameters or results.
     #[inline(always)]
-    pub fn call_host_impl<T>(
+    pub fn call_host<T>(
         &mut self,
         ctx: StoreContextMut<T>,
         host_func: HostFuncEntity,
