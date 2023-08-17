@@ -14,6 +14,7 @@ use crate::{
     Instance,
     StoreInner,
 };
+use core::cmp;
 use wasmi_core::UntypedValue;
 
 /// The outcome of a Wasm execution.
@@ -248,10 +249,16 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                         return Ok(WasmOutcome::Return);
                     }
                 }
-                Instr::Branch { offset } => todo!(),
-                Instr::BranchEqz { condition, offset } => todo!(),
-                Instr::BranchNez { condition, offset } => todo!(),
-                Instr::BranchTable { index, len_targets } => todo!(),
+                Instr::Branch { offset } => self.execute_branch(offset),
+                Instr::BranchEqz { condition, offset } => {
+                    self.execute_branch_nez(condition, offset)
+                }
+                Instr::BranchNez { condition, offset } => {
+                    self.execute_branch_eqz(condition, offset)
+                }
+                Instr::BranchTable { index, len_targets } => {
+                    self.execute_branch_table(index, len_targets)
+                }
                 Instr::Copy { result, value } => todo!(),
                 Instr::CopyImm32 { result, value } => todo!(),
                 Instr::CopyI64Imm32 { result, value } => todo!(),
@@ -918,5 +925,50 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         values: RegisterSpanIter,
     ) -> ReturnOutcome {
         self.execute_return_nez_impl(condition, values, Self::execute_return_many)
+    }
+
+    #[inline(always)]
+    fn execute_branch(&mut self, offset: BranchOffset) {
+        self.branch_to(offset)
+    }
+
+    #[inline(always)]
+    fn execute_branch_nez(&mut self, condition: Register, offset: BranchOffset) {
+        // Safety: TODO
+        let condition = unsafe { self.sp.get(condition) };
+        match bool::from(condition) {
+            true => {
+                self.branch_to(offset);
+            }
+            false => {
+                self.next_instr();
+            }
+        }
+    }
+
+    #[inline(always)]
+    fn execute_branch_eqz(&mut self, condition: Register, offset: BranchOffset) {
+        // Safety: TODO
+        let condition = unsafe { self.sp.get(condition) };
+        match bool::from(condition) {
+            true => {
+                self.next_instr();
+            }
+            false => {
+                self.branch_to(offset);
+            }
+        }
+    }
+
+    #[inline(always)]
+    fn execute_branch_table(&mut self, index: Register, len_targets: Const32<u32>) {
+        // Safety: TODO
+        let index = u32::from(unsafe { self.sp.get(index) });
+        // The index of the default target which is the last target of the slice.
+        let max_index = u32::from(len_targets) - 1;
+        // A normalized index will always yield a target without panicking.
+        let normalized_index = cmp::min(index, max_index);
+        // Update `pc`:
+        self.ip.add(normalized_index as usize + 1);
     }
 }
