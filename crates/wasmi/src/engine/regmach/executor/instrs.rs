@@ -666,6 +666,27 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         }
     }
 
+    /// Returns the [`Register`] value.
+    fn get_register(&self, register: Register) -> UntypedValue {
+        // Safety: TODO
+        unsafe { self.sp.get(register) }
+    }
+
+    /// Returns the [`Register`] value.
+    fn get_register_as<T>(&self, register: Register) -> T
+    where
+        T: From<UntypedValue>,
+    {
+        T::from(self.get_register(register))
+    }
+
+    /// Sets the [`Register`] value to `value`.
+    fn set_register(&mut self, register: Register, value: UntypedValue) {
+        // Safety: TODO
+        let cell = unsafe { self.sp.get_mut(register) };
+        *cell = value;
+    }
+
     /// Shifts the instruction pointer to the next instruction.
     #[inline(always)]
     fn next_instr(&mut self) {
@@ -811,10 +832,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Execute an [`Instruction::ReturnReg`] returning a single [`Register`] value.
     #[inline(always)]
     fn execute_return_reg(&mut self, value: Register) -> ReturnOutcome {
-        self.execute_return_value(value, |this, value| {
-            // Safety: TODO
-            unsafe { this.sp.get(value) }
-        })
+        self.execute_return_value(value, |this, value| this.get_register(value))
     }
 
     /// Execute an [`Instruction::ReturnImm32`] returning a single 32-bit value.
@@ -845,7 +863,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 let mut caller_sp = self.value_stack.stack_ptr_at(caller.base_offset());
                 let results = caller.results().iter(values.len());
                 for (result, value) in results.zip(values) {
-                    *caller_sp.get_mut(result) = self.sp.get(value);
+                    *caller_sp.get_mut(result) = self.get_register(value);
                 }
             },
             None => {
@@ -864,8 +882,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         value: T,
         f: fn(&mut Self, T) -> ReturnOutcome,
     ) -> ReturnOutcome {
-        // Safety: TODO
-        let condition = unsafe { self.sp.get(condition) };
+        let condition = self.get_register(condition);
         match bool::from(condition) {
             true => f(self, value),
             false => {
@@ -934,9 +951,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     #[inline(always)]
     fn execute_branch_nez(&mut self, condition: Register, offset: BranchOffset) {
-        // Safety: TODO
-        let condition = unsafe { self.sp.get(condition) };
-        match bool::from(condition) {
+        let condition: bool = self.get_register_as(condition);
+        match condition {
             true => {
                 self.branch_to(offset);
             }
@@ -948,9 +964,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     #[inline(always)]
     fn execute_branch_eqz(&mut self, condition: Register, offset: BranchOffset) {
-        // Safety: TODO
-        let condition = unsafe { self.sp.get(condition) };
-        match bool::from(condition) {
+        let condition: bool = self.get_register_as(condition);
+        match condition {
             true => {
                 self.next_instr();
             }
@@ -963,7 +978,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     fn execute_branch_table(&mut self, index: Register, len_targets: Const32<u32>) {
         // Safety: TODO
-        let index = u32::from(unsafe { self.sp.get(index) });
+        let index: u32 = self.get_register_as(index);
         // The index of the default target which is the last target of the slice.
         let max_index = u32::from(len_targets) - 1;
         // A normalized index will always yield a target without panicking.
