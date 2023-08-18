@@ -4,7 +4,7 @@ use crate::{
     core::TrapCode,
     engine::{
         bytecode::{BlockFuel, BranchOffset},
-        bytecode2::{AnyConst32, Const32, Instruction, Register, RegisterSpanIter},
+        bytecode2::{AnyConst32, Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
         cache::InstanceCache,
         code_map::{CodeMap2 as CodeMap, InstructionPtr2 as InstructionPtr},
         regmach::stack::{CallFrame, CallStack, ValueStack, ValueStackPtr},
@@ -259,15 +259,15 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::BranchTable { index, len_targets } => {
                     self.execute_branch_table(index, len_targets)
                 }
-                Instr::Copy { result, value } => todo!(),
-                Instr::CopyImm32 { result, value } => todo!(),
-                Instr::CopyI64Imm32 { result, value } => todo!(),
-                Instr::CopyF64Imm32 { result, value } => todo!(),
+                Instr::Copy { result, value } => self.execute_copy(result, value),
+                Instr::CopyImm32 { result, value } => self.execute_copy_imm32(result, value),
+                Instr::CopyI64Imm32 { result, value } => self.execute_copy_i64imm32(result, value),
+                Instr::CopyF64Imm32 { result, value } => self.execute_copy_f64imm32(result, value),
                 Instr::CopySpan {
                     results,
                     values,
                     len,
-                } => todo!(),
+                } => self.execute_copy_span(results, values, len),
                 Instr::CallParams {
                     params,
                     len_results,
@@ -985,5 +985,55 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let normalized_index = cmp::min(index, max_index);
         // Update `pc`:
         self.ip.add(normalized_index as usize + 1);
+    }
+
+    fn execute_copy_impl<T>(
+        &mut self,
+        result: Register,
+        value: T,
+        f: fn(&mut Self, T) -> UntypedValue,
+    ) {
+        let value = f(self, value);
+        // Safety: TODO
+        let result = unsafe { self.sp.get_mut(result) };
+        *result = value;
+    }
+
+    #[inline(always)]
+    fn execute_copy(&mut self, result: Register, value: Register) {
+        self.execute_copy_impl(result, value, |this, value| {
+            // Safety: TODO
+            unsafe { this.sp.get(value) }
+        })
+    }
+
+    #[inline(always)]
+    fn execute_copy_imm32(&mut self, result: Register, value: AnyConst32) {
+        self.execute_copy_impl(result, value, |_, value| UntypedValue::from(value.to_u32()))
+    }
+
+    #[inline(always)]
+    fn execute_copy_i64imm32(&mut self, result: Register, value: Const32<i64>) {
+        self.execute_copy_impl(result, value, |_, value| {
+            UntypedValue::from(i64::from(value))
+        })
+    }
+
+    #[inline(always)]
+    fn execute_copy_f64imm32(&mut self, result: Register, value: Const32<f64>) {
+        self.execute_copy_impl(result, value, |_, value| {
+            UntypedValue::from(f64::from(value))
+        })
+    }
+
+    #[inline(always)]
+    fn execute_copy_span(&mut self, results: RegisterSpan, values: RegisterSpan, len: u16) {
+        let len = len as usize;
+        let results = results.iter(len);
+        let values = values.iter(len);
+        for (result, value) in results.zip(values) {
+            let value = self.get_register(value);
+            self.set_register(result, value);
+        }
     }
 }
