@@ -3,6 +3,9 @@ use super::{
     AnyConst32,
     BinInstr,
     BinInstrImm16,
+    CallIndirectParams,
+    CallIndirectParamsImm16,
+    CallParams,
     Const16,
     Const32,
     Instruction,
@@ -941,18 +944,21 @@ impl Instruction {
 
     /// Creates a new [`Instruction::CallParams`] for the given `params` and `len_results`.
     pub fn call_params(params: RegisterSpanIter, len_results: u16) -> Self {
-        Self::CallParams {
+        let len_params = params.len_as_u16();
+        let params = params.span();
+        Self::CallParams(CallParams {
             params,
+            len_params,
             len_results,
-        }
+        })
     }
 
     /// Creates a new [`Instruction::CallIndirectParams`] for the given `index` and `table`.
     pub fn call_indirect_params(index: Register, table: impl Into<TableIdx>) -> Self {
-        Self::CallIndirectParams {
+        Self::CallIndirectParams(CallIndirectParams {
             index,
             table: table.into(),
-        }
+        })
     }
 
     /// Creates a new [`Instruction::CallIndirectParamsImm16`] for the given `index` and `table`.
@@ -960,10 +966,10 @@ impl Instruction {
         index: impl Into<Const16<u32>>,
         table: impl Into<TableIdx>,
     ) -> Self {
-        Self::CallIndirectParamsImm16 {
+        Self::CallIndirectParamsImm16(CallIndirectParamsImm16 {
             index: index.into(),
             table: table.into(),
-        }
+        })
     }
 
     /// Creates a new [`Instruction::CallInternal0`] for the given `func`.

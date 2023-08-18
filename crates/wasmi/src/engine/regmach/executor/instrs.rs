@@ -4,7 +4,17 @@ use crate::{
     core::TrapCode,
     engine::{
         bytecode::{BlockFuel, BranchOffset},
-        bytecode2::{AnyConst32, Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
+        bytecode2::{
+            AnyConst32,
+            CallIndirectParams,
+            CallIndirectParamsImm16,
+            CallParams,
+            Const32,
+            Instruction,
+            Register,
+            RegisterSpan,
+            RegisterSpanIter,
+        },
         cache::InstanceCache,
         code_map::{CodeMap2 as CodeMap, InstructionPtr2 as InstructionPtr},
         regmach::stack::{CallFrame, CallStack, ValueStack, ValueStackPtr},
@@ -16,6 +26,9 @@ use crate::{
 };
 use core::cmp;
 use wasmi_core::UntypedValue;
+
+#[cfg(doc)]
+use crate::engine::bytecode::TableIdx;
 
 /// The outcome of a Wasm execution.
 ///
@@ -268,12 +281,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     values,
                     len,
                 } => self.execute_copy_span(results, values, len),
-                Instr::CallParams {
-                    params,
-                    len_results,
-                } => todo!(),
-                Instr::CallIndirectParams { index, table } => todo!(),
-                Instr::CallIndirectParamsImm16 { index, table } => todo!(),
+                Instr::CallParams(_) => self.invalid_instruction_word()?,
+                Instr::CallIndirectParams(_) => self.invalid_instruction_word()?,
+                Instr::CallIndirectParamsImm16(_) => self.invalid_instruction_word()?,
                 Instr::ReturnCallInternal0 { func } => todo!(),
                 Instr::ReturnCallInternal { func } => todo!(),
                 Instr::ReturnCallImported0 { func } => todo!(),
@@ -1034,6 +1044,66 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         for (result, value) in results.zip(values) {
             let value = self.get_register(value);
             self.set_register(result, value);
+        }
+    }
+
+    /// Fetches the [`Instruction::CallParams`] parameter for a call [`Instruction`].
+    ///
+    /// # Note
+    ///
+    ///
+    /// - This is done by encoding an [`Instruction::TableGet`] instruction
+    ///   word following the actual instruction where the [`TableIdx`]
+    ///   paremeter belongs to.
+    /// - This is required for some instructions that do not fit into
+    ///   a single instruction word and store a [`TableIdx`] value in
+    ///   another instruction word.
+    fn fetch_call_params(&self, offset: usize) -> CallParams {
+        let mut addr: InstructionPtr = self.ip;
+        addr.add(offset);
+        match addr.get() {
+            Instruction::CallParams(call_params) => *call_params,
+            _ => unreachable!("expected Instruction::CallParams at this address"),
+        }
+    }
+
+    /// Fetches the [`Instruction::CallIndirectParams`] parameter for a call [`Instruction`].
+    ///
+    /// # Note
+    ///
+    ///
+    /// - This is done by encoding an [`Instruction::TableGet`] instruction
+    ///   word following the actual instruction where the [`TableIdx`]
+    ///   paremeter belongs to.
+    /// - This is required for some instructions that do not fit into
+    ///   a single instruction word and store a [`TableIdx`] value in
+    ///   another instruction word.
+    fn fetch_call_indirect_params(&self, offset: usize) -> CallIndirectParams {
+        let mut addr: InstructionPtr = self.ip;
+        addr.add(offset);
+        match addr.get() {
+            Instruction::CallIndirectParams(call_params) => *call_params,
+            _ => unreachable!("expected Instruction::CallIndirectParams at this address"),
+        }
+    }
+
+    /// Fetches the [`Instruction::CallIndirectParamsImm16`] parameter for a call [`Instruction`].
+    ///
+    /// # Note
+    ///
+    ///
+    /// - This is done by encoding an [`Instruction::TableGet`] instruction
+    ///   word following the actual instruction where the [`TableIdx`]
+    ///   paremeter belongs to.
+    /// - This is required for some instructions that do not fit into
+    ///   a single instruction word and store a [`TableIdx`] value in
+    ///   another instruction word.
+    fn fetch_call_indirect_params_imm16(&self, offset: usize) -> CallIndirectParamsImm16 {
+        let mut addr: InstructionPtr = self.ip;
+        addr.add(offset);
+        match addr.get() {
+            Instruction::CallIndirectParamsImm16(call_params) => *call_params,
+            _ => unreachable!("expected Instruction::CallIndirectParamsImm16 at this address"),
         }
     }
 }

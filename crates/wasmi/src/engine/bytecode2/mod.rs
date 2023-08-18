@@ -14,6 +14,9 @@ pub(crate) use self::{
     utils::{
         BinInstr,
         BinInstrImm16,
+        CallIndirectParams,
+        CallIndirectParamsImm16,
+        CallParams,
         CopysignImmInstr,
         LoadAtInstr,
         LoadInstr,
@@ -372,32 +375,11 @@ pub enum Instruction {
     },
 
     /// Auxiliary [`Instruction`] to encode call parameters for call instructions.
-    CallParams {
-        /// The contiguous sequence of registers storing the call parameters.
-        params: RegisterSpanIter,
-        /// The number of call results.
-        ///
-        /// # Note
-        ///
-        /// This is an optimization so that we do not have to query the number
-        /// of results from the called function since we already know and have
-        /// enough space left in the [`Instruction::CallParams`].
-        len_results: u16,
-    },
+    CallParams(CallParams),
     /// Auxiliary [`Instruction`] to encode table access information for indirect call instructions.
-    CallIndirectParams {
-        /// The index of the called function in the table.
-        index: Register,
-        /// The table which holds the called function at the index.
-        table: TableIdx,
-    },
+    CallIndirectParams(CallIndirectParams),
     /// Variant of [`Instruction::CallIndirectParams`] for 16-bit constant `index` parameter.
-    CallIndirectParamsImm16 {
-        /// The index of the called function in the table.
-        index: Const16<u32>,
-        /// The table which holds the called function at the index.
-        table: TableIdx,
-    },
+    CallIndirectParamsImm16(CallIndirectParamsImm16),
 
     /// Wasm `return_call` equivalent `wasmi` instruction.
     ///

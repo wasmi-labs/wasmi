@@ -80,11 +80,11 @@ impl VisitInputRegisters for Instruction {
             Instruction::CopySpan { results: _, values, len: _ } => {
                 values.visit_input_registers(f);
             }
-            Instruction::CallParams { params, len_results: _ } => {
-                params.visit_input_registers(f);
+            Instruction::CallParams(call_params) => {
+                call_params.params.visit_input_registers(f);
             }
-            Instruction::CallIndirectParams { index, .. } => f(index),
-            Instruction::CallIndirectParamsImm16 { .. } => {},
+            Instruction::CallIndirectParams(params) => f(&mut params.index),
+            Instruction::CallIndirectParamsImm16(_) => {},
             Instruction::ReturnCallInternal0 { .. } |
             Instruction::ReturnCallInternal { .. } |
             Instruction::ReturnCallImported0 { .. } |
