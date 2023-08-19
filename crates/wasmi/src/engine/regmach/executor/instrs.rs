@@ -1145,6 +1145,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ) -> Result<CallFrame, TrapCode> {
         let instr_ptr = InstructionPtr::new(func.instrs().as_ptr());
         let (base_ptr, frame_ptr) = self.value_stack.alloc_call_frame(func)?;
+        // We have to reinstantiate the `self.sp` [`ValueStackPtr`] since we just called
+        // [`ValueStack::alloc_call_frame`] which might invalidate all live [`ValueStackPtr`].
+        let caller = self
+            .call_stack
+            .peek()
+            .expect("need to have a caller on the call stack");
+        // Safety: We use the base offset of a live call frame on the call stack.
+        self.sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
         let instance = self.cache.instance();
         let frame = CallFrame::new(instr_ptr, frame_ptr, base_ptr, results, *instance);
         Ok(frame)
