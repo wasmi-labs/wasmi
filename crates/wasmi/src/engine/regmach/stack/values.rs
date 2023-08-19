@@ -217,8 +217,9 @@ impl ValueStack {
     ///
     /// # Note
     ///
-    /// The parameters of the allocated [`CompiledFunc`] are set to zero
-    /// and require proper initialization after this call.
+    /// - All live [`ValueStackPtr`] might be invalidated and need to be reinstantiated.
+    /// - The parameters of the allocated [`CompiledFunc`] are set to zero
+    ///   and require proper initialization after this call.
     ///
     /// # Errors
     ///
