@@ -18,6 +18,7 @@ use crate::{
         cache::InstanceCache,
         code_map::{CodeMap2 as CodeMap, InstructionPtr2 as InstructionPtr},
         regmach::stack::{CallFrame, CallStack, ValueStack, ValueStackPtr},
+        CompiledFunc,
     },
     store::ResourceLimiterRef,
     Func,
@@ -163,7 +164,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         code_map: &'engine CodeMap,
     ) -> Self {
         let frame = call_stack
-            .pop()
+            .peek()
             .expect("must have call frame on the call stack");
         // Safety: We are using the frame's own base offset as input because it is
         //         guaranteed by the Wasm validation and translation phase to be
@@ -290,8 +291,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::ReturnCallImported { func } => todo!(),
                 Instr::ReturnCallIndirect0 { func_type } => todo!(),
                 Instr::ReturnCallIndirect { func_type } => todo!(),
-                Instr::CallInternal0 { results, func } => todo!(),
-                Instr::CallInternal { results, func } => todo!(),
+                Instr::CallInternal0 { results, func } => {
+                    self.execute_call_internal_0(results, func)?
+                }
+                Instr::CallInternal { results, func } => {
+                    self.execute_call_internal(results, func)?
+                }
                 Instr::CallImported0 { results, func } => todo!(),
                 Instr::CallImported { results, func } => todo!(),
                 Instr::CallIndirect0 { results, func_type } => todo!(),
@@ -752,16 +757,21 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.ip.offset(offset.to_i32() as isize)
     }
 
+    /// Returns the [`ValueStackPtr`] of the [`CallFrame`].
+    fn frame_stack_ptr(&mut self, frame: &CallFrame) -> ValueStackPtr {
+        // Safety: We are using the frame's own base offset as input because it is
+        //         guaranteed by the Wasm validation and translation phase to be
+        //         valid for all register indices used by the associated function body.
+        unsafe { self.value_stack.stack_ptr_at(frame.base_offset()) }
+    }
+
     /// Initializes the [`Executor`] state for the [`CallFrame`].
     ///
     /// # Note
     ///
     /// The initialization of the [`Executor`] allows for efficient execution.
     fn init_call_frame(&mut self, frame: &CallFrame) {
-        // Safety: We are using the frame's own base offset as input because it is
-        //         guaranteed by the Wasm validation and translation phase to be
-        //         valid for all register indices used by the associated function body.
-        self.sp = unsafe { self.value_stack.stack_ptr_at(frame.base_offset()) };
+        self.sp = self.frame_stack_ptr(frame);
         self.ip = frame.instr_ptr();
         self.cache.update_instance(frame.instance());
     }
@@ -1105,5 +1115,68 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             Instruction::CallIndirectParamsImm16(call_params) => *call_params,
             _ => unreachable!("expected Instruction::CallIndirectParamsImm16 at this address"),
         }
+    }
+
+    /// Creates a [`CallFrame`] for calling the [`CompiledFunc`].
+    fn dispatch_call_internal(
+        &mut self,
+        results: RegisterSpan,
+        func: CompiledFunc,
+    ) -> Result<CallFrame, TrapCode> {
+        let func_entity = self.code_map.get(func);
+        let instr_ptr = InstructionPtr::new(func_entity.instrs().as_ptr());
+        let (base_ptr, frame_ptr) = self.value_stack.alloc_call_frame(func_entity)?;
+        let instance = self.cache.instance();
+        let frame = CallFrame::new(instr_ptr, frame_ptr, base_ptr, results, *instance);
+        Ok(frame)
+    }
+
+    /// Copies the parameters from `src` to `dst` for the called [`CallFrame`].
+    fn copy_call_params(
+        &mut self,
+        called: &CallFrame,
+        dst: RegisterSpan,
+        src: RegisterSpan,
+        len_params: usize,
+    ) {
+        let mut frame_sp = self.frame_stack_ptr(called);
+        let dst: RegisterSpanIter = dst.iter(len_params);
+        let src = RegisterSpan::new(Register::from_i16(0)).iter(len_params);
+        for (dst, src) in dst.zip(src) {
+            // Safety: TODO
+            let cell = unsafe { frame_sp.get_mut(dst) };
+            *cell = self.get_register(src);
+        }
+    }
+
+    /// Executes an [`Instruction::CallInternal0`].
+    #[inline(always)]
+    fn execute_call_internal_0(
+        &mut self,
+        results: RegisterSpan,
+        func: CompiledFunc,
+    ) -> Result<(), TrapCode> {
+        let frame = self.dispatch_call_internal(results, func)?;
+        self.init_call_frame(&frame);
+        self.call_stack.push(frame)?;
+        Ok(())
+    }
+
+    /// Executes an [`Instruction::CallInternal`].
+    #[inline(always)]
+    fn execute_call_internal(
+        &mut self,
+        results: RegisterSpan,
+        func: CompiledFunc,
+    ) -> Result<(), TrapCode> {
+        let call_params = self.fetch_call_params(1);
+        let frame = self.dispatch_call_internal(results, func)?;
+        let len_params = call_params.len_params as usize;
+        let dst = call_params.params;
+        let src = RegisterSpan::new(Register::from_i16(0));
+        self.copy_call_params(&frame, dst, src, len_params);
+        self.init_call_frame(&frame);
+        self.call_stack.push(frame)?;
+        Ok(())
     }
 }
