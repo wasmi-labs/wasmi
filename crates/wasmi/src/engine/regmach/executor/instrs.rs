@@ -1183,6 +1183,25 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         }
     }
 
+    /// Prepares a [`CompiledFunc`] call with optional [`CallParams`].
+    fn prepare_compiled_func_call(
+        &mut self,
+        results: RegisterSpan,
+        func: &CompiledFuncEntity,
+        call_params: Option<&CallParams>,
+    ) -> Result<(), TrapCode> {
+        let frame = self.dispatch_compiled_func(results, func)?;
+        if let Some(call_params) = call_params {
+            let len_params = call_params.len_params as usize;
+            let dst = call_params.params;
+            let src = RegisterSpan::new(Register::from_i16(0));
+            self.copy_call_params(&frame, dst, src, len_params);
+        }
+        self.init_call_frame(&frame);
+        self.call_stack.push(frame)?;
+        Ok(())
+    }
+
     /// Executes an [`Instruction::CallInternal0`].
     #[inline(always)]
     fn execute_call_internal_0(
@@ -1191,9 +1210,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func: CompiledFunc,
     ) -> Result<(), TrapCode> {
         let func_entity = self.code_map.get(func);
-        let frame = self.dispatch_compiled_func(results, func_entity)?;
-        self.init_call_frame(&frame);
-        self.call_stack.push(frame)?;
+        self.prepare_compiled_func_call(results, func_entity, None)?;
         Ok(())
     }
 
@@ -1206,13 +1223,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ) -> Result<(), TrapCode> {
         let call_params = self.fetch_call_params(1);
         let func_entity = self.code_map.get(func);
-        let frame = self.dispatch_compiled_func(results, func_entity)?;
-        let len_params = call_params.len_params as usize;
-        let dst = call_params.params;
-        let src = RegisterSpan::new(Register::from_i16(0));
-        self.copy_call_params(&frame, dst, src, len_params);
-        self.init_call_frame(&frame);
-        self.call_stack.push(frame)?;
+        self.prepare_compiled_func_call(results, func_entity, Some(&call_params))?;
         Ok(())
     }
 
