@@ -75,6 +75,13 @@ pub enum CallOutcome {
     Call { host_func: Func, instance: Instance },
 }
 
+impl CallOutcome {
+    /// Creates a new [`CallOutcome::Call`].
+    pub fn call(host_func: Func, instance: Instance) -> Self {
+        Self::Call { host_func, instance }
+    }
+}
+
 /// The kind of a function call.
 #[derive(Debug, Copy, Clone)]
 pub enum CallKind {
@@ -1225,10 +1232,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             }
             FuncEntity::Host(_host_func) => {
                 self.cache.reset();
-                Ok(CallOutcome::Call {
-                    host_func: func,
-                    instance: *self.cache.instance(),
-                })
+                Ok(CallOutcome::call(func, *self.cache.instance()))
             }
         }
     }
@@ -1250,10 +1254,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             FuncEntity::Host(_host_func) => {
                 // TODO: copy parameters for the host function call
                 self.cache.reset();
-                Ok(CallOutcome::Call {
-                    host_func: func,
-                    instance: *self.cache.instance(),
-                })
+                Ok(CallOutcome::call(func, *self.cache.instance()))
             }
         }
     }
