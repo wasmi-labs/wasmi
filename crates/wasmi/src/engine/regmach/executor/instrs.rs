@@ -15,7 +15,7 @@ use crate::{
         },
         cache::InstanceCache,
         code_map::{CodeMap2 as CodeMap, CompiledFuncEntity, InstructionPtr2 as InstructionPtr},
-        regmach::stack::{CallFrame, CallStack, ValueStack, ValueStackPtr},
+        regmach::stack::{CallFrame, CallStack, Stack, ValueStack, ValueStackPtr},
         CompiledFunc,
     },
     func::FuncEntity,
@@ -1189,14 +1189,28 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         results: RegisterSpan,
         func: CompiledFunc,
         call_params: Option<&CallParams>,
+        call_kind: CallKind,
     ) -> Result<(), TrapCode> {
         let func = self.code_map.get(func);
-        let frame = self.dispatch_compiled_func(results, func)?;
+        let mut frame = self.dispatch_compiled_func(results, func)?;
         if let Some(call_params) = call_params {
             let len_params = call_params.len_params as usize;
             let dst = call_params.params;
             let src = RegisterSpan::new(Register::from_i16(0));
             self.copy_call_params(&frame, dst, src, len_params);
+        }
+        if matches!(call_kind, CallKind::Tail) {
+            // In case of a tail call we have to remove the caller call frame after
+            // allocating the callee call frame. This moves all cells of the callee frame
+            // and may invalidate pointers to it.
+            //
+            // Safety:
+            //
+            // We provide `merge_call_frames` properly with `frame` that has just been allocated
+            // on the value stack which is what the function expects. After this operation we ensure
+            // that `self.sp` is adjusted via a call to `init_call_frame` since it may have been
+            // invalidated by this method.
+            unsafe { Stack::merge_call_frames(self.call_stack, self.value_stack, &mut frame) };
         }
         self.init_call_frame(&frame);
         self.call_stack.push(frame)?;
@@ -1210,7 +1224,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         results: RegisterSpan,
         func: CompiledFunc,
     ) -> Result<(), TrapCode> {
-        self.prepare_compiled_func_call(results, func, None)?;
+        self.prepare_compiled_func_call(results, func, None, CallKind::Nested)?;
         self.next_instr();
         Ok(())
     }
@@ -1223,7 +1237,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func: CompiledFunc,
     ) -> Result<(), TrapCode> {
         let call_params = self.fetch_call_params(1);
-        self.prepare_compiled_func_call(results, func, Some(&call_params))?;
+        self.prepare_compiled_func_call(results, func, Some(&call_params), CallKind::Nested)?;
         self.next_instr_at(1);
         Ok(())
     }
@@ -1266,7 +1280,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         match self.ctx.resolve_func(func) {
             FuncEntity::Wasm(func) => {
                 self.cache.update_instance(func.instance());
-                self.prepare_compiled_func_call(results, func.func_body(), call_params)?;
+                self.prepare_compiled_func_call(
+                    results,
+                    func.func_body(),
+                    call_params,
+                    CallKind::Nested,
+                )?;
                 Ok(CallOutcome::Continue)
             }
             FuncEntity::Host(_host_func) => {

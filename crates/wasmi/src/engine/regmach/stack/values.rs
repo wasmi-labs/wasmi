@@ -230,8 +230,8 @@ impl ValueStack {
     ) -> Result<(BaseValueStackOffset, FrameValueStackOffset), TrapCode> {
         let len_registers = func.len_registers();
         self.reserve(len_registers as usize)?;
-        let frame_offset: FrameValueStackOffset = self.extend_slice(func.consts()).into();
-        let base_offset: BaseValueStackOffset = self.extend_zeros(func.len_cells() as usize).into();
+        let frame_offset = FrameValueStackOffset(self.extend_slice(func.consts()));
+        let base_offset = BaseValueStackOffset(self.extend_zeros(func.len_cells() as usize));
         Ok((base_offset, frame_offset))
     }
 
@@ -266,10 +266,37 @@ impl ValueStack {
         let end = self.sp;
         &mut self.values[start..end]
     }
+
+    /// Removes the slice `from..to` of [`UntypedValue`] cells from the [`ValueStack`].
+    ///
+    /// Returns the number of drained [`ValueStack`] cells.
+    ///
+    /// # Safety
+    ///
+    /// - This invalidates all [`ValueStackPtr`] within the range `from..` and the caller has to
+    /// make sure to properly reinstantiate all those pointers after this operation.
+    /// - This also invalidates all [`FrameValueStackOffset`] and [`BaseValueStackOffset`] indices
+    /// within the range `from..`.
+    #[inline]
+    pub unsafe fn drain(
+        &mut self,
+        from: FrameValueStackOffset,
+        to: FrameValueStackOffset,
+    ) -> usize {
+        debug_assert!(from <= to);
+        let from = from.0 .0;
+        let to = to.0 .0;
+        debug_assert!(from <= self.sp);
+        debug_assert!(to <= self.sp);
+        let len_drained = to - from;
+        self.sp -= len_drained;
+        self.values.drain(from..to);
+        len_drained
+    }
 }
 
 /// The offset of the [`ValueStackPtr`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ValueStackOffset(usize);
 
 impl From<FrameValueStackOffset> for ValueStackOffset {
@@ -289,8 +316,21 @@ impl From<BaseValueStackOffset> for ValueStackOffset {
 /// # Note
 ///
 /// This points to the first cell of the allocated [`CallFrame`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct FrameValueStackOffset(ValueStackOffset);
+
+impl FrameValueStackOffset {
+    /// Creates a new [`FrameValueStackOffset`] at the `index`.
+    pub(super) fn new(index: usize) -> Self {
+        Self(ValueStackOffset(index))
+    }
+}
+
+impl From<FrameValueStackOffset> for usize {
+    fn from(offset: FrameValueStackOffset) -> usize {
+        offset.0 .0
+    }
+}
 
 impl From<ValueStackOffset> for FrameValueStackOffset {
     fn from(offset: ValueStackOffset) -> Self {
@@ -306,12 +346,19 @@ impl From<ValueStackOffset> for FrameValueStackOffset {
 /// The first mutable cell of a [`CallFrame`] is accessed by [`Register(0)`].
 ///
 /// [`Register(0)`]: [`Register`]
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BaseValueStackOffset(ValueStackOffset);
 
-impl From<ValueStackOffset> for BaseValueStackOffset {
-    fn from(offset: ValueStackOffset) -> Self {
-        Self(offset)
+impl BaseValueStackOffset {
+    /// Creates a new [`BaseValueStackOffset`] at the `index`.
+    pub(super) fn new(index: usize) -> Self {
+        Self(ValueStackOffset(index))
+    }
+}
+
+impl From<BaseValueStackOffset> for usize {
+    fn from(offset: BaseValueStackOffset) -> usize {
+        offset.0 .0
     }
 }
 

@@ -12,6 +12,7 @@ use wasmi_core::TrapCode;
 use crate::{
     engine::bytecode2::Instruction,
     engine::bytecode2::Register,
+    engine::regmach::stack::ValueStack,
     engine::CompiledFunc,
     Global,
     Memory,
@@ -124,6 +125,20 @@ impl CallFrame {
             results,
             instance,
         }
+    }
+
+    /// Moves the [`ValueStack`] offsets of the [`CallFrame`] down by `delta`.
+    ///
+    /// # Note
+    ///
+    /// This is used for the implementation of tail calls.
+    pub fn move_down(&mut self, delta: usize) {
+        let base_index = usize::from(self.base_offset());
+        let frame_index = usize::from(self.frame_offset());
+        debug_assert!(delta <= base_index);
+        debug_assert!(delta <= frame_index);
+        self.base_ptr = BaseValueStackOffset::new(base_index - delta);
+        self.frame_ptr = FrameValueStackOffset::new(frame_index - delta);
     }
 
     /// Returns the [`InstructionPtr`] of the [`CallFrame`].

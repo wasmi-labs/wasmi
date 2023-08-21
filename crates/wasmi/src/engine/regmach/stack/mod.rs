@@ -72,4 +72,35 @@ impl Stack {
     pub fn is_empty(&self) -> bool {
         self.values.is_empty()
     }
+
+    /// Merge the two top-most [`CallFrame`] with respect to a tail call.
+    ///
+    /// # Panics (Debug)
+    ///
+    /// - If the two top-most [`CallFrame`] do not have matching `results`.
+    /// - If there are not at least two [`CallFrame`] on the [`CallStack`].
+    ///
+    /// # Safety
+    ///
+    /// Any [`ValueStackPtr`] allocated within the range `from..to` on the [`ValueStack`]
+    /// may be invalidated by this operation. It is the caller's responsibility to reinstantiate
+    /// all [`ValueStackPtr`] affected by this.
+    pub unsafe fn merge_call_frames(
+        call_stack: &mut CallStack,
+        value_stack: &mut ValueStack,
+        callee: &mut CallFrame,
+    ) {
+        let caller = call_stack.pop().expect("caller call frame must exist");
+        debug_assert_eq!(callee.results(), caller.results());
+        debug_assert!(caller.base_offset() <= callee.base_offset());
+        // Safety:
+        //
+        // We only drain cells of the second top-most call frame on the value stack.
+        // Therefore only value stack offsets of the top-most call frame on the
+        // value stack are going to be invalidated which we ensure to adjust and
+        // reinstantiate after this operation.
+        let len_drained =
+            unsafe { value_stack.drain(callee.frame_offset(), caller.frame_offset()) };
+        callee.move_down(len_drained);
+    }
 }
