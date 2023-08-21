@@ -323,8 +323,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::ReturnCallImported { func } => {
                     forward_call!(self.execute_return_call_imported(func))
                 }
-                Instr::ReturnCallIndirect0 { func_type } => todo!(),
-                Instr::ReturnCallIndirect { func_type } => todo!(),
+                Instr::ReturnCallIndirect0 { func_type } => {
+                    forward_call!(self.execute_return_call_indirect_0(func_type))
+                }
+                Instr::ReturnCallIndirect { func_type } => {
+                    forward_call!(self.execute_return_call_indirect(func_type))
+                }
                 Instr::CallInternal0 { results, func } => {
                     self.execute_call_internal_0(results, func)?
                 }
@@ -1348,7 +1352,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         Ok(outcome)
     }
 
-    /// Executes an [`Instruction::CallImported`] or [`Instruction::CallImported0`].
+    /// Executes an imported or indirect (tail) call instruction.
     #[inline(always)]
     fn execute_call_imported_impl(
         &mut self,
@@ -1364,11 +1368,53 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Ok(CallOutcome::Continue)
             }
             FuncEntity::Host(_host_func) => {
+                // Note: host function calls cannot be implemented as tail calls.
+                //       The Wasm spec is not mandating tail behavior for host calls.
+                //
                 // TODO: copy parameters for the host function call
                 self.cache.reset();
                 Ok(CallOutcome::call(*func, *self.cache.instance()))
             }
         }
+    }
+
+    /// Executes an [`Instruction::CallIndirect0`].
+    #[inline(always)]
+    fn execute_return_call_indirect_0(
+        &mut self,
+        func_type: SignatureIdx,
+    ) -> Result<CallOutcome, TrapCode> {
+        let call_indirect_params = self.fetch_call_indirect_params(1);
+        let results = self.caller_results();
+        let outcome = self.execute_call_indirect_impl(
+            results,
+            func_type,
+            &call_indirect_params,
+            None,
+            CallKind::Tail,
+        )?;
+        self.next_instr_at(2);
+        Ok(outcome)
+    }
+
+    /// Executes an [`Instruction::CallIndirect0`].
+    #[inline(always)]
+    fn execute_return_call_indirect(
+        &mut self,
+        func_type: SignatureIdx,
+    ) -> Result<CallOutcome, TrapCode> {
+        let call_params = self.fetch_call_params(1);
+        let call_indirect_params = self.fetch_call_indirect_params(2);
+        let results = self.caller_results();
+        let outcome = self.execute_call_indirect_impl(
+            results,
+            func_type,
+            &call_indirect_params,
+            Some(&call_params),
+            CallKind::Tail,
+        )?;
+        self.next_instr_at(3);
+        Ok(outcome)
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
@@ -1379,13 +1425,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
         let call_indirect_params = self.fetch_call_indirect_params(1);
-        let index = call_indirect_params.index;
-        let table = call_indirect_params.table;
         let outcome = self.execute_call_indirect_impl(
             results,
             func_type,
-            index,
-            table,
+            &call_indirect_params,
             None,
             CallKind::Nested,
         )?;
@@ -1402,13 +1445,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ) -> Result<CallOutcome, TrapCode> {
         let call_params = self.fetch_call_params(1);
         let call_indirect_params = self.fetch_call_indirect_params(2);
-        let index = call_indirect_params.index;
-        let table = call_indirect_params.table;
         let outcome = self.execute_call_indirect_impl(
             results,
             func_type,
-            index,
-            table,
+            &call_indirect_params,
             Some(&call_params),
             CallKind::Nested,
         )?;
@@ -1422,11 +1462,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         results: RegisterSpan,
         func_type: SignatureIdx,
-        index: u32,
-        table: TableIdx,
+        call_indirect_params: &ResolvedCallIndirectParams,
         call_params: Option<&CallParams>,
         call_kind: CallKind,
     ) -> Result<CallOutcome, TrapCode> {
+        let index = call_indirect_params.index;
+        let table = call_indirect_params.table;
         let table = self.cache.get_table(self.ctx, table);
         let funcref = self
             .ctx
