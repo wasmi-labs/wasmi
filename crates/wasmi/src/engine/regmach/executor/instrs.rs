@@ -3,11 +3,9 @@
 use crate::{
     core::TrapCode,
     engine::{
-        bytecode::{BlockFuel, BranchOffset, FuncIdx},
+        bytecode::{BlockFuel, BranchOffset, FuncIdx, SignatureIdx, TableIdx},
         bytecode2::{
             AnyConst32,
-            CallIndirectParams,
-            CallIndirectParamsImm16,
             CallParams,
             Const32,
             Instruction,
@@ -23,14 +21,12 @@ use crate::{
     func::FuncEntity,
     store::ResourceLimiterRef,
     Func,
+    FuncRef,
     Instance,
     StoreInner,
 };
 use core::cmp;
 use wasmi_core::UntypedValue;
-
-#[cfg(doc)]
-use crate::engine::bytecode::TableIdx;
 
 macro_rules! forward_call {
     ($expr:expr) => {{
@@ -101,6 +97,14 @@ pub enum ReturnOutcome {
     Wasm,
     /// The call returns back to the host.
     Host,
+}
+
+/// Resolved [`Instruction::CallIndirectParams`] or [`Instruction::CallIndirectParamsImm16`].
+pub struct ResolvedCallIndirectParams {
+    /// The index of the called function in the table.
+    pub index: u32,
+    /// The table which holds the called function at the index.
+    pub table: TableIdx,
 }
 
 /// Executes compiled function instructions until either
@@ -329,8 +333,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::CallImported { results, func } => {
                     forward_call!(self.execute_call_imported(results, func))
                 }
-                Instr::CallIndirect0 { results, func_type } => todo!(),
-                Instr::CallIndirect { results, func_type } => todo!(),
+                Instr::CallIndirect0 { results, func_type } => {
+                    forward_call!(self.execute_call_indirect_0(results, func_type))
+                }
+                Instr::CallIndirect { results, func_type } => {
+                    forward_call!(self.execute_call_indirect(results, func_type))
+                }
                 Instr::Select {
                     result,
                     condition,
@@ -1118,11 +1126,20 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// - This is required for some instructions that do not fit into
     ///   a single instruction word and store a [`TableIdx`] value in
     ///   another instruction word.
-    fn fetch_call_indirect_params(&self, offset: usize) -> CallIndirectParams {
+    fn fetch_call_indirect_params(&self, offset: usize) -> ResolvedCallIndirectParams {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
         match addr.get() {
-            Instruction::CallIndirectParams(call_params) => *call_params,
+            Instruction::CallIndirectParams(call_params) => {
+                let index = u32::from(self.get_register(call_params.index));
+                let table = call_params.table;
+                ResolvedCallIndirectParams { index, table }
+            }
+            Instruction::CallIndirectParamsImm16(call_params) => {
+                let index = u32::from(call_params.index);
+                let table = call_params.table;
+                ResolvedCallIndirectParams { index, table }
+            }
             _ => unreachable!("expected Instruction::CallIndirectParams at this address"),
         }
     }
@@ -1258,5 +1275,69 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Ok(CallOutcome::call(*func, *self.cache.instance()))
             }
         }
+    }
+
+    /// Executes an [`Instruction::CallIndirect0`].
+    #[inline(always)]
+    fn execute_call_indirect_0(
+        &mut self,
+        results: RegisterSpan,
+        func_type: SignatureIdx,
+    ) -> Result<CallOutcome, TrapCode> {
+        let call_indirect_params = self.fetch_call_indirect_params(1);
+        let index = call_indirect_params.index;
+        let table = call_indirect_params.table;
+        let outcome = self.execute_call_indirect_impl(results, func_type, index, table, None)?;
+        self.next_instr_at(2);
+        Ok(outcome)
+    }
+
+    /// Executes an [`Instruction::CallIndirect`].
+    #[inline(always)]
+    fn execute_call_indirect(
+        &mut self,
+        results: RegisterSpan,
+        func_type: SignatureIdx,
+    ) -> Result<CallOutcome, TrapCode> {
+        let call_params = self.fetch_call_params(1);
+        let call_indirect_params = self.fetch_call_indirect_params(2);
+        let index = call_indirect_params.index;
+        let table = call_indirect_params.table;
+        let outcome =
+            self.execute_call_indirect_impl(results, func_type, index, table, Some(&call_params))?;
+        self.next_instr_at(3);
+        Ok(outcome)
+    }
+
+    /// Executes an [`Instruction::CallIndirect`] and [`Instruction::CallIndirect0`].
+    #[inline(always)]
+    fn execute_call_indirect_impl(
+        &mut self,
+        results: RegisterSpan,
+        func_type: SignatureIdx,
+        index: u32,
+        table: TableIdx,
+        call_params: Option<&CallParams>,
+    ) -> Result<CallOutcome, TrapCode> {
+        let table = self.cache.get_table(self.ctx, table);
+        let funcref = self
+            .ctx
+            .resolve_table(&table)
+            .get_untyped(index)
+            .map(FuncRef::from)
+            .ok_or(TrapCode::TableOutOfBounds)?;
+        let func = funcref.func().ok_or(TrapCode::IndirectCallToNull)?;
+        let actual_signature = self.ctx.resolve_func(func).ty_dedup();
+        let expected_signature = self
+            .ctx
+            .resolve_instance(self.cache.instance())
+            .get_signature(func_type.to_u32())
+            .unwrap_or_else(|| {
+                panic!("missing signature for call_indirect at index: {func_type:?}")
+            });
+        if actual_signature != expected_signature {
+            return Err(TrapCode::BadSignature).map_err(Into::into);
+        }
+        self.execute_call_imported_impl(results, func, call_params)
     }
 }
