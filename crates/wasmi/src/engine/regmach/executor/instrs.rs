@@ -315,8 +315,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::CallParams(_) => self.invalid_instruction_word()?,
                 Instr::CallIndirectParams(_) => self.invalid_instruction_word()?,
                 Instr::CallIndirectParamsImm16(_) => self.invalid_instruction_word()?,
-                Instr::ReturnCallInternal0 { func } => todo!(),
-                Instr::ReturnCallInternal { func } => todo!(),
+                Instr::ReturnCallInternal0 { func } => self.execute_return_call_internal_0(func)?,
+                Instr::ReturnCallInternal { func } => self.execute_return_call_internal(func)?,
                 Instr::ReturnCallImported0 { func } => todo!(),
                 Instr::ReturnCallImported { func } => todo!(),
                 Instr::ReturnCallIndirect0 { func_type } => todo!(),
@@ -1214,6 +1214,36 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         }
         self.init_call_frame(&frame);
         self.call_stack.push(frame)?;
+        Ok(())
+    }
+
+    /// Executes an [`Instruction::ReturnCallInternal0`].
+    #[inline(always)]
+    fn execute_return_call_internal_0(&mut self, func: CompiledFunc) -> Result<(), TrapCode> {
+        self.execute_return_call_internal_impl(func, None)
+    }
+
+    /// Executes an [`Instruction::ReturnCallInternal`].
+    #[inline(always)]
+    fn execute_return_call_internal(&mut self, func: CompiledFunc) -> Result<(), TrapCode> {
+        let call_params = self.fetch_call_params(1);
+        self.execute_return_call_internal_impl(func, Some(&call_params))
+    }
+
+    /// Executes an [`Instruction::ReturnCallInternal`] or [`Instruction::ReturnCallInternal0`].
+    #[inline(always)]
+    fn execute_return_call_internal_impl(
+        &mut self,
+        func: CompiledFunc,
+        call_params: Option<&CallParams>,
+    ) -> Result<(), TrapCode> {
+        let results = self
+            .call_stack
+            .peek()
+            .expect("must have caller on the stack")
+            .results();
+        self.prepare_compiled_func_call(results, func, call_params, CallKind::Tail)?;
+        self.next_instr_at(1);
         Ok(())
     }
 
