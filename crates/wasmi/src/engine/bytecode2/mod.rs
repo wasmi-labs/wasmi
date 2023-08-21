@@ -530,7 +530,6 @@ pub enum Instruction {
     /// 1. Either
     ///     - [`Instruction::CallIndirectParams`]: the `table` and `index`
     ///     - [`Instruction::CallIndirectParamsImm16`]: the `table` and 16-bit constant `index`
-    /// 2. [`Instruction::CallParams`]: the call parameters
     CallIndirect0 {
         /// The registers storing the results of the call.
         results: RegisterSpan,
@@ -547,10 +546,10 @@ pub enum Instruction {
     ///
     /// Must be followed by
     ///
-    /// 1. Either
+    /// 1. [`Instruction::CallParams`]: the call parameters
+    /// 2. Either
     ///     - [`Instruction::CallIndirectParams`]: the `table` and `index`
     ///     - [`Instruction::CallIndirectParamsImm16`]: the `table` and 16-bit constant `index`
-    /// 2. [`Instruction::CallParams`]: the call parameters
     CallIndirect {
         /// The registers storing the results of the call.
         results: RegisterSpan,
