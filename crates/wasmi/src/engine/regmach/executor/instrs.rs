@@ -78,7 +78,10 @@ pub enum CallOutcome {
 impl CallOutcome {
     /// Creates a new [`CallOutcome::Call`].
     pub fn call(host_func: Func, instance: Instance) -> Self {
-        Self::Call { host_func, instance }
+        Self::Call {
+            host_func,
+            instance,
+        }
     }
 }
 
@@ -1124,26 +1127,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         }
     }
 
-    /// Fetches the [`Instruction::CallIndirectParamsImm16`] parameter for a call [`Instruction`].
-    ///
-    /// # Note
-    ///
-    ///
-    /// - This is done by encoding an [`Instruction::TableGet`] instruction
-    ///   word following the actual instruction where the [`TableIdx`]
-    ///   paremeter belongs to.
-    /// - This is required for some instructions that do not fit into
-    ///   a single instruction word and store a [`TableIdx`] value in
-    ///   another instruction word.
-    fn fetch_call_indirect_params_imm16(&self, offset: usize) -> CallIndirectParamsImm16 {
-        let mut addr: InstructionPtr = self.ip;
-        addr.add(offset);
-        match addr.get() {
-            Instruction::CallIndirectParamsImm16(call_params) => *call_params,
-            _ => unreachable!("expected Instruction::CallIndirectParamsImm16 at this address"),
-        }
-    }
-
     /// Creates a [`CallFrame`] for calling the [`CompiledFunc`].
     fn dispatch_compiled_func(
         &mut self,
@@ -1187,9 +1170,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn prepare_compiled_func_call(
         &mut self,
         results: RegisterSpan,
-        func: &CompiledFuncEntity,
+        func: CompiledFunc,
         call_params: Option<&CallParams>,
     ) -> Result<(), TrapCode> {
+        let func = self.code_map.get(func);
         let frame = self.dispatch_compiled_func(results, func)?;
         if let Some(call_params) = call_params {
             let len_params = call_params.len_params as usize;
@@ -1209,8 +1193,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         results: RegisterSpan,
         func: CompiledFunc,
     ) -> Result<(), TrapCode> {
-        let func_entity = self.code_map.get(func);
-        self.prepare_compiled_func_call(results, func_entity, None)?;
+        self.prepare_compiled_func_call(results, func, None)?;
+        self.next_instr();
         Ok(())
     }
 
@@ -1222,8 +1206,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func: CompiledFunc,
     ) -> Result<(), TrapCode> {
         let call_params = self.fetch_call_params(1);
-        let func_entity = self.code_map.get(func);
-        self.prepare_compiled_func_call(results, func_entity, Some(&call_params))?;
+        self.prepare_compiled_func_call(results, func, Some(&call_params))?;
+        self.next_instr_at(1);
         Ok(())
     }
 
@@ -1235,17 +1219,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func: FuncIdx,
     ) -> Result<CallOutcome, TrapCode> {
         let func = self.cache.get_func(self.ctx, func);
-        match self.ctx.resolve_func(&func) {
-            FuncEntity::Wasm(func) => {
-                self.cache.update_instance(func.instance());
-                self.execute_call_internal_0(results, func.func_body())?;
-                Ok(CallOutcome::Continue)
-            }
-            FuncEntity::Host(_host_func) => {
-                self.cache.reset();
-                Ok(CallOutcome::call(func, *self.cache.instance()))
-            }
-        }
+        let outcome = self.execute_call_imported_impl(results, &func, None)?;
+        self.next_instr();
+        Ok(outcome)
     }
 
     /// Executes an [`Instruction::CallImported`].
@@ -1255,17 +1231,31 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         results: RegisterSpan,
         func: FuncIdx,
     ) -> Result<CallOutcome, TrapCode> {
+        let call_params = self.fetch_call_params(1);
         let func = self.cache.get_func(self.ctx, func);
-        match self.ctx.resolve_func(&func) {
+        let outcome = self.execute_call_imported_impl(results, &func, Some(&call_params))?;
+        self.next_instr_at(2);
+        Ok(outcome)
+    }
+
+    /// Executes an [`Instruction::CallImported`] or [`Instruction::CallImported0`].
+    #[inline(always)]
+    fn execute_call_imported_impl(
+        &mut self,
+        results: RegisterSpan,
+        func: &Func,
+        call_params: Option<&CallParams>,
+    ) -> Result<CallOutcome, TrapCode> {
+        match self.ctx.resolve_func(func) {
             FuncEntity::Wasm(func) => {
                 self.cache.update_instance(func.instance());
-                self.execute_call_internal(results, func.func_body())?;
+                self.prepare_compiled_func_call(results, func.func_body(), call_params)?;
                 Ok(CallOutcome::Continue)
             }
             FuncEntity::Host(_host_func) => {
                 // TODO: copy parameters for the host function call
                 self.cache.reset();
-                Ok(CallOutcome::call(func, *self.cache.instance()))
+                Ok(CallOutcome::call(*func, *self.cache.instance()))
             }
         }
     }
