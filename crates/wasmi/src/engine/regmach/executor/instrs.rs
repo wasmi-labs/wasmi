@@ -107,27 +107,6 @@ pub fn execute_instrs<'ctx, 'engine>(
     Executor::new(ctx, cache, value_stack, call_stack, code_map).execute(resource_limiter)
 }
 
-/// An error that can occur upon `memory.grow` or `table.grow`.
-#[derive(Copy, Clone)]
-pub enum EntityGrowError {
-    /// Usually a [`TrapCode::OutOfFuel`] trap.
-    TrapCode(TrapCode),
-    /// Encountered when `memory.grow` or `table.grow` fails.
-    InvalidGrow,
-}
-
-impl EntityGrowError {
-    /// The WebAssembly specification demands to return this value
-    /// if the `memory.grow` or `table.grow` operations fail.
-    const ERROR_CODE: u32 = u32::MAX;
-}
-
-impl From<TrapCode> for EntityGrowError {
-    fn from(trap_code: TrapCode) -> Self {
-        Self::TrapCode(trap_code)
-    }
-}
-
 /// An execution context for executing a `wasmi` function frame.
 #[derive(Debug)]
 struct Executor<'ctx, 'engine> {
@@ -414,12 +393,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     result,
                     delta,
                     value,
-                } => todo!(),
+                } => self.execute_table_grow(result, delta, value, &mut *resource_limiter)?,
                 Instr::TableGrowImm {
                     result,
                     delta,
                     value,
-                } => todo!(),
+                } => self.execute_table_grow_imm(result, delta, value, &mut *resource_limiter)?,
                 Instr::ElemDrop(_) => todo!(),
                 Instr::DataDrop(_) => todo!(),
                 Instr::MemorySize { result } => todo!(),

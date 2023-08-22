@@ -6,6 +6,8 @@ use crate::{
         bytecode2::{Const16, Const32, Instruction, Register},
         code_map::InstructionPtr2 as InstructionPtr,
     },
+    error::EntityGrowError,
+    store::ResourceLimiterRef,
     table::TableEntity,
 };
 
@@ -465,6 +467,64 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Ok(())
             },
         )?;
+        self.try_next_instr_at(2)
+    }
+
+    /// Executes an [`Instruction::TableGrow`].
+    #[inline(always)]
+    pub fn execute_table_grow(
+        &mut self,
+        result: Register,
+        delta: Register,
+        value: Register,
+        resource_limiter: &mut ResourceLimiterRef<'ctx>,
+    ) -> Result<(), TrapCode> {
+        let delta: u32 = self.get_register_as(delta);
+        self.execute_table_grow_impl(result, delta, value, resource_limiter)
+    }
+
+    /// Executes an [`Instruction::TableGrowImm`].
+    #[inline(always)]
+    pub fn execute_table_grow_imm(
+        &mut self,
+        result: Register,
+        delta: Const16<u32>,
+        value: Register,
+        resource_limiter: &mut ResourceLimiterRef<'ctx>,
+    ) -> Result<(), TrapCode> {
+        let delta: u32 = delta.into();
+        self.execute_table_grow_impl(result, delta, value, resource_limiter)
+    }
+
+    /// Executes a generic `table.grow` instruction.
+    fn execute_table_grow_impl(
+        &mut self,
+        result: Register,
+        delta: u32,
+        value: Register,
+        resource_limiter: &mut ResourceLimiterRef<'ctx>,
+    ) -> Result<(), TrapCode> {
+        if delta == 0 {
+            // Case: growing by 0 elements means there is nothing to do
+            return Ok(());
+        }
+        let table_index = self.fetch_table_index(1);
+        let return_value = self.consume_fuel_with(
+            |costs| costs.fuel_for_elements(u64::from(delta)),
+            |this| {
+                let table = this.cache.get_table(this.ctx, table_index);
+                let value = this.get_register(value);
+                this.ctx
+                    .resolve_table_mut(&table)
+                    .grow_untyped(delta, value, resource_limiter)
+            },
+        );
+        let return_value = match return_value {
+            Ok(return_value) => return_value,
+            Err(EntityGrowError::InvalidGrow) => EntityGrowError::ERROR_CODE,
+            Err(EntityGrowError::TrapCode(trap_code)) => return Err(trap_code),
+        };
+        self.set_register(result, return_value);
         self.try_next_instr_at(2)
     }
 }
