@@ -658,86 +658,86 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::I64Ctz(instr) => self.execute_i64_ctz(instr),
                 Instr::I32Popcnt(instr) => self.execute_i32_popcnt(instr),
                 Instr::I64Popcnt(instr) => self.execute_i64_popcnt(instr),
-                Instr::I32Add(_) => todo!(),
-                Instr::I32AddImm16(_) => todo!(),
-                Instr::I32Sub(_) => todo!(),
-                Instr::I32SubImm16(_) => todo!(),
-                Instr::I32SubImm16Rev(_) => todo!(),
-                Instr::I32Mul(_) => todo!(),
-                Instr::I32MulImm16(_) => todo!(),
-                Instr::I32DivS(_) => todo!(),
-                Instr::I32DivSImm16(_) => todo!(),
-                Instr::I32DivSImm16Rev(_) => todo!(),
-                Instr::I32DivU(_) => todo!(),
-                Instr::I32DivUImm16(_) => todo!(),
-                Instr::I32DivUImm16Rev(_) => todo!(),
-                Instr::I32RemS(_) => todo!(),
-                Instr::I32RemSImm16(_) => todo!(),
-                Instr::I32RemSImm16Rev(_) => todo!(),
-                Instr::I32RemU(_) => todo!(),
-                Instr::I32RemUImm16(_) => todo!(),
-                Instr::I32RemUImm16Rev(_) => todo!(),
-                Instr::I32And(_) => todo!(),
-                Instr::I32AndImm16(_) => todo!(),
-                Instr::I32Or(_) => todo!(),
-                Instr::I32OrImm16(_) => todo!(),
-                Instr::I32Xor(_) => todo!(),
-                Instr::I32XorImm16(_) => todo!(),
-                Instr::I32Shl(_) => todo!(),
-                Instr::I32ShlImm(_) => todo!(),
-                Instr::I32ShlImm16Rev(_) => todo!(),
-                Instr::I32ShrU(_) => todo!(),
-                Instr::I32ShrUImm(_) => todo!(),
-                Instr::I32ShrUImm16Rev(_) => todo!(),
-                Instr::I32ShrS(_) => todo!(),
-                Instr::I32ShrSImm(_) => todo!(),
-                Instr::I32ShrSImm16Rev(_) => todo!(),
-                Instr::I32Rotl(_) => todo!(),
-                Instr::I32RotlImm(_) => todo!(),
-                Instr::I32RotlImm16Rev(_) => todo!(),
-                Instr::I32Rotr(_) => todo!(),
-                Instr::I32RotrImm(_) => todo!(),
-                Instr::I32RotrImm16Rev(_) => todo!(),
-                Instr::I64Add(_) => todo!(),
-                Instr::I64AddImm16(_) => todo!(),
-                Instr::I64Sub(_) => todo!(),
-                Instr::I64SubImm16(_) => todo!(),
-                Instr::I64SubImm16Rev(_) => todo!(),
-                Instr::I64Mul(_) => todo!(),
-                Instr::I64MulImm16(_) => todo!(),
-                Instr::I64DivS(_) => todo!(),
-                Instr::I64DivSImm16(_) => todo!(),
-                Instr::I64DivSImm16Rev(_) => todo!(),
-                Instr::I64DivU(_) => todo!(),
-                Instr::I64DivUImm16(_) => todo!(),
-                Instr::I64DivUImm16Rev(_) => todo!(),
-                Instr::I64RemS(_) => todo!(),
-                Instr::I64RemSImm16(_) => todo!(),
-                Instr::I64RemSImm16Rev(_) => todo!(),
-                Instr::I64RemU(_) => todo!(),
-                Instr::I64RemUImm16(_) => todo!(),
-                Instr::I64RemUImm16Rev(_) => todo!(),
-                Instr::I64And(_) => todo!(),
-                Instr::I64AndImm16(_) => todo!(),
-                Instr::I64Or(_) => todo!(),
-                Instr::I64OrImm16(_) => todo!(),
-                Instr::I64Xor(_) => todo!(),
-                Instr::I64XorImm16(_) => todo!(),
-                Instr::I64Shl(_) => todo!(),
-                Instr::I64ShlImm(_) => todo!(),
-                Instr::I64ShlImm16Rev(_) => todo!(),
-                Instr::I64ShrU(_) => todo!(),
-                Instr::I64ShrUImm(_) => todo!(),
-                Instr::I64ShrUImm16Rev(_) => todo!(),
-                Instr::I64ShrS(_) => todo!(),
-                Instr::I64ShrSImm(_) => todo!(),
-                Instr::I64ShrSImm16Rev(_) => todo!(),
-                Instr::I64Rotl(_) => todo!(),
-                Instr::I64RotlImm(_) => todo!(),
-                Instr::I64RotlImm16Rev(_) => todo!(),
-                Instr::I64Rotr(_) => todo!(),
-                Instr::I64RotrImm(_) => todo!(),
-                Instr::I64RotrImm16Rev(_) => todo!(),
+                Instr::I32Add(instr) => self.execute_i32_add(instr),
+                Instr::I32AddImm16(instr) => self.execute_i32_add_imm16(instr),
+                Instr::I32Sub(instr) => self.execute_i32_sub(instr),
+                Instr::I32SubImm16(instr) => self.execute_i32_sub_imm16(instr),
+                Instr::I32SubImm16Rev(instr) => self.execute_i32_sub_imm16_rev(instr),
+                Instr::I32Mul(instr) => self.execute_i32_mul(instr),
+                Instr::I32MulImm16(instr) => self.execute_i32_mul_imm16(instr),
+                Instr::I32DivS(instr) => self.execute_i32_div_s(instr)?,
+                Instr::I32DivSImm16(instr) => self.execute_i32_div_s_imm16(instr)?,
+                Instr::I32DivSImm16Rev(instr) => self.execute_i32_div_s_imm16_rev(instr)?,
+                Instr::I32DivU(instr) => self.execute_i32_div_u(instr)?,
+                Instr::I32DivUImm16(instr) => self.execute_i32_div_u_imm16(instr)?,
+                Instr::I32DivUImm16Rev(instr) => self.execute_i32_div_u_imm16_rev(instr)?,
+                Instr::I32RemS(instr) => self.execute_i32_rem_s(instr)?,
+                Instr::I32RemSImm16(instr) => self.execute_i32_rem_s_imm16(instr)?,
+                Instr::I32RemSImm16Rev(instr) => self.execute_i32_rem_s_imm16_rev(instr)?,
+                Instr::I32RemU(instr) => self.execute_i32_rem_u(instr)?,
+                Instr::I32RemUImm16(instr) => self.execute_i32_rem_u_imm16(instr)?,
+                Instr::I32RemUImm16Rev(instr) => self.execute_i32_rem_u_imm16_rev(instr)?,
+                Instr::I32And(instr) => self.execute_i32_and(instr),
+                Instr::I32AndImm16(instr) => self.execute_i32_and_imm16(instr),
+                Instr::I32Or(instr) => self.execute_i32_or(instr),
+                Instr::I32OrImm16(instr) => self.execute_i32_or_imm16(instr),
+                Instr::I32Xor(instr) => self.execute_i32_xor(instr),
+                Instr::I32XorImm16(instr) => self.execute_i32_xor_imm16(instr),
+                Instr::I32Shl(instr) => todo!(),
+                Instr::I32ShlImm(instr) => todo!(),
+                Instr::I32ShlImm16Rev(instr) => todo!(),
+                Instr::I32ShrU(instr) => todo!(),
+                Instr::I32ShrUImm(instr) => todo!(),
+                Instr::I32ShrUImm16Rev(instr) => todo!(),
+                Instr::I32ShrS(instr) => todo!(),
+                Instr::I32ShrSImm(instr) => todo!(),
+                Instr::I32ShrSImm16Rev(instr) => todo!(),
+                Instr::I32Rotl(instr) => todo!(),
+                Instr::I32RotlImm(instr) => todo!(),
+                Instr::I32RotlImm16Rev(instr) => todo!(),
+                Instr::I32Rotr(instr) => todo!(),
+                Instr::I32RotrImm(instr) => todo!(),
+                Instr::I32RotrImm16Rev(instr) => todo!(),
+                Instr::I64Add(instr) => self.execute_i64_add(instr),
+                Instr::I64AddImm16(instr) => self.execute_i64_add_imm16(instr),
+                Instr::I64Sub(instr) => self.execute_i64_sub(instr),
+                Instr::I64SubImm16(instr) => self.execute_i64_sub_imm16(instr),
+                Instr::I64SubImm16Rev(instr) => self.execute_i64_sub_imm16_rev(instr),
+                Instr::I64Mul(instr) => self.execute_i64_mul(instr),
+                Instr::I64MulImm16(instr) => self.execute_i64_mul_imm16(instr),
+                Instr::I64DivS(instr) => self.execute_i64_div_s(instr)?,
+                Instr::I64DivSImm16(instr) => self.execute_i64_div_s_imm16(instr)?,
+                Instr::I64DivSImm16Rev(instr) => self.execute_i64_div_s_imm16_rev(instr)?,
+                Instr::I64DivU(instr) => self.execute_i64_div_u(instr)?,
+                Instr::I64DivUImm16(instr) => self.execute_i64_div_u_imm16(instr)?,
+                Instr::I64DivUImm16Rev(instr) => self.execute_i64_div_u_imm16_rev(instr)?,
+                Instr::I64RemS(instr) => self.execute_i64_rem_s(instr)?,
+                Instr::I64RemSImm16(instr) => self.execute_i64_rem_s_imm16(instr)?,
+                Instr::I64RemSImm16Rev(instr) => self.execute_i64_rem_s_imm16_rev(instr)?,
+                Instr::I64RemU(instr) => self.execute_i64_rem_u(instr)?,
+                Instr::I64RemUImm16(instr) => self.execute_i64_rem_u_imm16(instr)?,
+                Instr::I64RemUImm16Rev(instr) => self.execute_i64_rem_u_imm16_rev(instr)?,
+                Instr::I64And(instr) => self.execute_i64_and(instr),
+                Instr::I64AndImm16(instr) => self.execute_i64_and_imm16(instr),
+                Instr::I64Or(instr) => self.execute_i64_or(instr),
+                Instr::I64OrImm16(instr) => self.execute_i64_or_imm16(instr),
+                Instr::I64Xor(instr) => self.execute_i64_xor(instr),
+                Instr::I64XorImm16(instr) => self.execute_i64_xor_imm16(instr),
+                Instr::I64Shl(instr) => todo!(),
+                Instr::I64ShlImm(instr) => todo!(),
+                Instr::I64ShlImm16Rev(instr) => todo!(),
+                Instr::I64ShrU(instr) => todo!(),
+                Instr::I64ShrUImm(instr) => todo!(),
+                Instr::I64ShrUImm16Rev(instr) => todo!(),
+                Instr::I64ShrS(instr) => todo!(),
+                Instr::I64ShrSImm(instr) => todo!(),
+                Instr::I64ShrSImm16Rev(instr) => todo!(),
+                Instr::I64Rotl(instr) => todo!(),
+                Instr::I64RotlImm(instr) => todo!(),
+                Instr::I64RotlImm16Rev(instr) => todo!(),
+                Instr::I64Rotr(instr) => todo!(),
+                Instr::I64RotrImm(instr) => todo!(),
+                Instr::I64RotrImm16Rev(instr) => todo!(),
                 Instr::F32Abs(instr) => self.execute_f32_abs(instr),
                 Instr::F32Neg(instr) => self.execute_f32_neg(instr),
                 Instr::F32Ceil(instr) => self.execute_f32_ceil(instr),
@@ -1090,6 +1090,65 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let rhs = UntypedValue::from(<T>::from(instr.imm_in));
         self.set_register(instr.result, op(lhs, rhs));
         self.next_instr();
+    }
+
+    /// Executes a generic binary [`Instruction`] with reversed operands.
+    fn execute_binary_imm16_rev<T>(
+        &mut self,
+        instr: BinInstrImm16<T>,
+        op: fn(UntypedValue, UntypedValue) -> UntypedValue,
+    ) where
+        T: From<Const16<T>>,
+        UntypedValue: From<T>,
+    {
+        let lhs = UntypedValue::from(<T>::from(instr.imm_in));
+        let rhs = self.get_register(instr.reg_in);
+        self.set_register(instr.result, op(lhs, rhs));
+        self.next_instr();
+    }
+
+    /// Executes a fallible generic binary [`Instruction`].
+    fn try_execute_binary(
+        &mut self,
+        instr: BinInstr,
+        op: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
+    ) -> Result<(), TrapCode> {
+        let lhs = self.get_register(instr.lhs);
+        let rhs = self.get_register(instr.rhs);
+        self.set_register(instr.result, op(lhs, rhs)?);
+        self.try_next_instr()
+    }
+
+    /// Executes a fallible generic binary [`Instruction`].
+    fn try_execute_binary_imm16<T>(
+        &mut self,
+        instr: BinInstrImm16<T>,
+        op: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
+    ) -> Result<(), TrapCode>
+    where
+        T: From<Const16<T>>,
+        UntypedValue: From<T>,
+    {
+        let lhs = self.get_register(instr.reg_in);
+        let rhs = UntypedValue::from(<T>::from(instr.imm_in));
+        self.set_register(instr.result, op(lhs, rhs)?);
+        self.try_next_instr()
+    }
+
+    /// Executes a fallible generic binary [`Instruction`] with reversed operands.
+    fn try_execute_binary_imm16_rev<T>(
+        &mut self,
+        instr: BinInstrImm16<T>,
+        op: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
+    ) -> Result<(), TrapCode>
+    where
+        T: From<Const16<T>>,
+        UntypedValue: From<T>,
+    {
+        let lhs = UntypedValue::from(<T>::from(instr.imm_in));
+        let rhs = self.get_register(instr.reg_in);
+        self.set_register(instr.result, op(lhs, rhs)?);
+        self.try_next_instr()
     }
 }
 
