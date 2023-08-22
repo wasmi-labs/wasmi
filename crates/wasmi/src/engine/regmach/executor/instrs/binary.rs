@@ -34,6 +34,18 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         (Instruction::I64Or, execute_i64_or, UntypedValue::i64_or),
         (Instruction::I64Xor, execute_i64_xor, UntypedValue::i64_xor),
 
+        (Instruction::I32Shl, execute_i32_shl, UntypedValue::i32_shl),
+        (Instruction::I32ShrU, execute_i32_shr_u, UntypedValue::i32_shr_u),
+        (Instruction::I32ShrS, execute_i32_shr_s, UntypedValue::i32_shr_s),
+        (Instruction::I32Rotl, execute_i32_rotl, UntypedValue::i32_rotl),
+        (Instruction::I32Rotr, execute_i32_rotr, UntypedValue::i32_rotr),
+
+        (Instruction::I64Shl, execute_i64_shl, UntypedValue::i64_shl),
+        (Instruction::I64ShrU, execute_i64_shr_u, UntypedValue::i64_shr_u),
+        (Instruction::I64ShrS, execute_i64_shr_s, UntypedValue::i64_shr_s),
+        (Instruction::I64Rotl, execute_i64_rotl, UntypedValue::i64_rotl),
+        (Instruction::I64Rotr, execute_i64_rotr, UntypedValue::i64_rotr),
+
         (Instruction::F32Add, execute_f32_add, UntypedValue::f32_add),
         (Instruction::F32Sub, execute_f32_sub, UntypedValue::f32_sub),
         (Instruction::F32Mul, execute_f32_mul, UntypedValue::f32_mul),
@@ -78,6 +90,19 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         (i64, Instruction::I64AndImm16, execute_i64_and_imm16, UntypedValue::i64_and),
         (i64, Instruction::I64OrImm16, execute_i64_or_imm16, UntypedValue::i64_or),
         (i64, Instruction::I64XorImm16, execute_i64_xor_imm16, UntypedValue::i64_xor),
+
+        (i32, Instruction::I32ShlImm, execute_i32_shl_imm, UntypedValue::i32_shl),
+        (i32, Instruction::I32ShrUImm, execute_i32_shr_u_imm, UntypedValue::i32_shr_u),
+        (i32, Instruction::I32ShrSImm, execute_i32_shr_s_imm, UntypedValue::i32_shr_s),
+        (i32, Instruction::I32RotlImm, execute_i32_rotl_imm, UntypedValue::i32_rotl),
+        (i32, Instruction::I32RotrImm, execute_i32_rotr_imm, UntypedValue::i32_rotr),
+
+        (i64, Instruction::I64ShlImm, execute_i64_shl_imm, UntypedValue::i64_shl),
+        (i64, Instruction::I64ShrUImm, execute_i64_shr_u_imm, UntypedValue::i64_shr_u),
+        (i64, Instruction::I64ShrSImm, execute_i64_shr_s_imm, UntypedValue::i64_shr_s),
+        (i64, Instruction::I64RotlImm, execute_i64_rotl_imm, UntypedValue::i64_rotl),
+        (i64, Instruction::I64RotrImm, execute_i64_rotr_imm, UntypedValue::i64_rotr),
+
     }
 }
 
@@ -96,6 +121,18 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     impl_binary_imm16_rev! {
         (i32, Instruction::I32SubImm16Rev, execute_i32_sub_imm16_rev, UntypedValue::i32_sub),
         (i64, Instruction::I64SubImm16Rev, execute_i64_sub_imm16_rev, UntypedValue::i64_sub),
+
+        (i32, Instruction::I32ShlImm16Rev, execute_i32_shl_imm16_rev, UntypedValue::i32_shl),
+        (i32, Instruction::I32ShrUImm16Rev, execute_i32_shr_u_imm16_rev, UntypedValue::i32_shr_u),
+        (i32, Instruction::I32ShrSImm16Rev, execute_i32_shr_s_imm16_rev, UntypedValue::i32_shr_s),
+        (i32, Instruction::I32RotlImm16Rev, execute_i32_rotl_imm16_rev, UntypedValue::i32_rotl),
+        (i32, Instruction::I32RotrImm16Rev, execute_i32_rotr_imm16_rev, UntypedValue::i32_rotr),
+
+        (i64, Instruction::I64ShlImm16Rev, execute_i64_shl_imm16_rev, UntypedValue::i64_shl),
+        (i64, Instruction::I64ShrUImm16Rev, execute_i64_shr_u_imm16_rev, UntypedValue::i64_shr_u),
+        (i64, Instruction::I64ShrSImm16Rev, execute_i64_shr_s_imm16_rev, UntypedValue::i64_shr_s),
+        (i64, Instruction::I64RotlImm16Rev, execute_i64_rotl_imm16_rev, UntypedValue::i64_rotl),
+        (i64, Instruction::I64RotrImm16Rev, execute_i64_rotr_imm16_rev, UntypedValue::i64_rotr),
     }
 }
 
