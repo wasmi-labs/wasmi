@@ -399,7 +399,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     delta,
                     value,
                 } => self.execute_table_grow_imm(result, delta, value, &mut *resource_limiter)?,
-                Instr::ElemDrop(_) => todo!(),
+                Instr::ElemDrop(element_index) => self.execute_element_drop(element_index),
                 Instr::DataDrop(_) => todo!(),
                 Instr::MemorySize { result } => todo!(),
                 Instr::MemoryGrow { result, delta } => todo!(),

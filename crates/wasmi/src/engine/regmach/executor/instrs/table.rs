@@ -527,4 +527,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.set_register(result, return_value);
         self.try_next_instr_at(2)
     }
+
+    /// Executes an [`Instruction::ElemDrop`].
+    #[inline(always)]
+    pub fn execute_element_drop(&mut self, segment_index: ElementSegmentIdx) {
+        let segment = self.cache.get_element_segment(self.ctx, segment_index);
+        self.ctx.resolve_element_segment_mut(&segment).drop_items();
+        self.next_instr();
+    }
 }
