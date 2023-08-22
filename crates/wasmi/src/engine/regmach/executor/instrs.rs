@@ -352,8 +352,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     self.execute_table_get_imm(result, index)?
                 }
                 Instr::TableSize { result, table } => self.execute_table_size(result, table),
-                Instr::TableSet { index, value } => todo!(),
-                Instr::TableSetAt { index, value } => todo!(),
+                Instr::TableSet { index, value } => self.execute_table_set(index, value)?,
+                Instr::TableSetAt { index, value } => self.execute_table_set_at(index, value)?,
                 Instr::TableCopy { dst, src, len } => todo!(),
                 Instr::TableCopyTo { dst, src, len } => todo!(),
                 Instr::TableCopyFrom { dst, src, len } => todo!(),

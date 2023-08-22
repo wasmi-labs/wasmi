@@ -57,4 +57,34 @@ impl<'engine, 'ctx> Executor<'engine, 'ctx> {
         self.set_register(result, size);
         self.next_instr();
     }
+
+    /// Executes an [`Instruction::TableSet`].
+    #[inline(always)]
+    pub fn execute_table_set(&mut self, index: Register, value: Register) -> Result<(), TrapCode> {
+        let index: u32 = self.get_register_as(index);
+        self.execute_table_set_impl(index, value)
+    }
+
+    /// Executes an [`Instruction::TableSetAt`].
+    #[inline(always)]
+    pub fn execute_table_set_at(
+        &mut self,
+        index: Const32<u32>,
+        value: Register,
+    ) -> Result<(), TrapCode> {
+        let index = u32::from(index);
+        self.execute_table_set_impl(index, value)
+    }
+
+    /// Executes a generic `table.set` instruction.
+    fn execute_table_set_impl(&mut self, index: u32, value: Register) -> Result<(), TrapCode> {
+        let table_index = self.fetch_table_index(1);
+        let table = self.cache.get_table(self.ctx, table_index);
+        let value = self.get_register(value);
+        self.ctx
+            .resolve_table_mut(&table)
+            .set_untyped(index, value)
+            .map_err(|_| TrapCode::TableOutOfBounds)?;
+        self.try_next_instr_at(2)
+    }
 }
