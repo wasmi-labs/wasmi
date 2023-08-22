@@ -369,7 +369,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     result_or_condition,
                     lhs_or_rhs,
                 } => self.execute_select_f64imm32(result_or_condition, lhs_or_rhs),
-                Instr::RefFunc { result, func } => todo!(),
+                Instr::RefFunc { result, func } => self.execute_ref_func(result, func),
                 Instr::TableGet { result, index } => todo!(),
                 Instr::TableGetImm { result, index } => todo!(),
                 Instr::TableSize { result, table } => todo!(),
@@ -1577,5 +1577,14 @@ impl<'engine, 'ctx> Executor<'engine, 'ctx> {
     fn execute_select_f64imm32(&mut self, result: Register, lhs: Const32<f64>) {
         let (condition, rhs) = fetch_select_imm_param!(self, SelectF64Imm32);
         self.execute_select_impl(result, condition, |_| f64::from(lhs), |_| f64::from(rhs))
+    }
+
+    /// Executes an [`Instruction::RefFunc`].
+    #[inline(always)]
+    fn execute_ref_func(&mut self, result: Register, func_index: FuncIdx) {
+        let func = self.cache.get_func(self.ctx, func_index);
+        let funcref = FuncRef::new(func);
+        self.set_register(result, funcref.into());
+        self.next_instr();
     }
 }
