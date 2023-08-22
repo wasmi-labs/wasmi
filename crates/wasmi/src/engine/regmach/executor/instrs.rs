@@ -909,6 +909,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn ret(&mut self) -> ReturnOutcome {
         match self.call_stack.pop() {
             Some(caller) => {
+                self.value_stack.truncate(caller.frame_offset());
                 self.init_call_frame(&caller);
                 ReturnOutcome::Wasm
             }
