@@ -504,11 +504,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         value: Register,
         resource_limiter: &mut ResourceLimiterRef<'ctx>,
     ) -> Result<(), TrapCode> {
+        let table_index = self.fetch_table_index(1);
         if delta == 0 {
             // Case: growing by 0 elements means there is nothing to do
+            self.execute_table_size(result, table_index);
             return Ok(());
         }
-        let table_index = self.fetch_table_index(1);
         let return_value = self.consume_fuel_with(
             |costs| costs.fuel_for_elements(u64::from(delta)),
             |this| {
