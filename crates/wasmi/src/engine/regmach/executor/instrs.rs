@@ -4,7 +4,17 @@ use crate::{
     core::TrapCode,
     engine::{
         bytecode::{BlockFuel, BranchOffset, FuncIdx},
-        bytecode2::{AnyConst32, Const32, Instruction, Register, RegisterSpan, UnaryInstr},
+        bytecode2::{
+            AnyConst32,
+            BinInstr,
+            BinInstrImm16,
+            Const16,
+            Const32,
+            Instruction,
+            Register,
+            RegisterSpan,
+            UnaryInstr,
+        },
         cache::InstanceCache,
         code_map::{CodeMap2 as CodeMap, InstructionPtr2 as InstructionPtr},
         config::FuelCosts,
@@ -21,6 +31,7 @@ use core::cmp;
 use wasmi_core::UntypedValue;
 
 mod call;
+mod comparison;
 mod conversion;
 mod global;
 mod load;
@@ -588,58 +599,58 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::F64Store(instr) => self.execute_f64_store(instr)?,
                 Instr::F64StoreOffset16(instr) => self.execute_f64_store_offset16(instr)?,
                 Instr::F64StoreAt(instr) => self.execute_f64_store_at(instr)?,
-                Instr::I32Eq(_) => todo!(),
-                Instr::I32EqImm16(_) => todo!(),
-                Instr::I64Eq(_) => todo!(),
-                Instr::I64EqImm16(_) => todo!(),
-                Instr::I32Ne(_) => todo!(),
-                Instr::I32NeImm16(_) => todo!(),
-                Instr::I64Ne(_) => todo!(),
-                Instr::I64NeImm16(_) => todo!(),
-                Instr::I32LtS(_) => todo!(),
-                Instr::I32LtU(_) => todo!(),
-                Instr::I32LtSImm16(_) => todo!(),
-                Instr::I32LtUImm16(_) => todo!(),
-                Instr::I64LtS(_) => todo!(),
-                Instr::I64LtU(_) => todo!(),
-                Instr::I64LtSImm16(_) => todo!(),
-                Instr::I64LtUImm16(_) => todo!(),
-                Instr::I32GtS(_) => todo!(),
-                Instr::I32GtU(_) => todo!(),
-                Instr::I32GtSImm16(_) => todo!(),
-                Instr::I32GtUImm16(_) => todo!(),
-                Instr::I64GtS(_) => todo!(),
-                Instr::I64GtU(_) => todo!(),
-                Instr::I64GtSImm16(_) => todo!(),
-                Instr::I64GtUImm16(_) => todo!(),
-                Instr::I32LeS(_) => todo!(),
-                Instr::I32LeU(_) => todo!(),
-                Instr::I32LeSImm16(_) => todo!(),
-                Instr::I32LeUImm16(_) => todo!(),
-                Instr::I64LeS(_) => todo!(),
-                Instr::I64LeU(_) => todo!(),
-                Instr::I64LeSImm16(_) => todo!(),
-                Instr::I64LeUImm16(_) => todo!(),
-                Instr::I32GeS(_) => todo!(),
-                Instr::I32GeU(_) => todo!(),
-                Instr::I32GeSImm16(_) => todo!(),
-                Instr::I32GeUImm16(_) => todo!(),
-                Instr::I64GeS(_) => todo!(),
-                Instr::I64GeU(_) => todo!(),
-                Instr::I64GeSImm16(_) => todo!(),
-                Instr::I64GeUImm16(_) => todo!(),
-                Instr::F32Eq(_) => todo!(),
-                Instr::F64Eq(_) => todo!(),
-                Instr::F32Ne(_) => todo!(),
-                Instr::F64Ne(_) => todo!(),
-                Instr::F32Lt(_) => todo!(),
-                Instr::F64Lt(_) => todo!(),
-                Instr::F32Le(_) => todo!(),
-                Instr::F64Le(_) => todo!(),
-                Instr::F32Gt(_) => todo!(),
-                Instr::F64Gt(_) => todo!(),
-                Instr::F32Ge(_) => todo!(),
-                Instr::F64Ge(_) => todo!(),
+                Instr::I32Eq(instr) => self.execute_i32_eq(instr),
+                Instr::I32EqImm16(instr) => self.execute_i32_eq_imm16(instr),
+                Instr::I32Ne(instr) => self.execute_i32_ne(instr),
+                Instr::I32NeImm16(instr) => self.execute_i32_ne_imm16(instr),
+                Instr::I32LtS(instr) => self.execute_i32_lt_s(instr),
+                Instr::I32LtSImm16(instr) => self.execute_i32_lt_s_imm16(instr),
+                Instr::I32LtU(instr) => self.execute_i32_lt_u(instr),
+                Instr::I32LtUImm16(instr) => self.execute_i32_lt_u_imm16(instr),
+                Instr::I32GtS(instr) => self.execute_i32_le_s(instr),
+                Instr::I32GtSImm16(instr) => self.execute_i32_le_s_imm16(instr),
+                Instr::I32GtU(instr) => self.execute_i32_le_u(instr),
+                Instr::I32GtUImm16(instr) => self.execute_i32_le_u_imm16(instr),
+                Instr::I32LeS(instr) => self.execute_i32_gt_s(instr),
+                Instr::I32LeSImm16(instr) => self.execute_i32_gt_s_imm16(instr),
+                Instr::I32LeU(instr) => self.execute_i32_gt_u(instr),
+                Instr::I32LeUImm16(instr) => self.execute_i32_gt_u_imm16(instr),
+                Instr::I32GeS(instr) => self.execute_i32_ge_s(instr),
+                Instr::I32GeSImm16(instr) => self.execute_i32_ge_s_imm16(instr),
+                Instr::I32GeU(instr) => self.execute_i32_ge_u(instr),
+                Instr::I32GeUImm16(instr) => self.execute_i32_ge_u_imm16(instr),
+                Instr::I64Eq(instr) => self.execute_i64_eq(instr),
+                Instr::I64EqImm16(instr) => self.execute_i64_eq_imm16(instr),
+                Instr::I64Ne(instr) => self.execute_i64_ne(instr),
+                Instr::I64NeImm16(instr) => self.execute_i64_ne_imm16(instr),
+                Instr::I64LtS(instr) => self.execute_i64_lt_s(instr),
+                Instr::I64LtSImm16(instr) => self.execute_i64_lt_s_imm16(instr),
+                Instr::I64LtU(instr) => self.execute_i64_lt_u(instr),
+                Instr::I64LtUImm16(instr) => self.execute_i64_lt_u_imm16(instr),
+                Instr::I64GtS(instr) => self.execute_i64_le_s(instr),
+                Instr::I64GtSImm16(instr) => self.execute_i64_le_s_imm16(instr),
+                Instr::I64GtU(instr) => self.execute_i64_le_u(instr),
+                Instr::I64GtUImm16(instr) => self.execute_i64_le_u_imm16(instr),
+                Instr::I64LeS(instr) => self.execute_i64_gt_s(instr),
+                Instr::I64LeSImm16(instr) => self.execute_i64_gt_s_imm16(instr),
+                Instr::I64LeU(instr) => self.execute_i64_gt_u(instr),
+                Instr::I64LeUImm16(instr) => self.execute_i64_gt_u_imm16(instr),
+                Instr::I64GeS(instr) => self.execute_i64_ge_s(instr),
+                Instr::I64GeSImm16(instr) => self.execute_i64_ge_s_imm16(instr),
+                Instr::I64GeU(instr) => self.execute_i64_ge_u(instr),
+                Instr::I64GeUImm16(instr) => self.execute_i64_ge_u_imm16(instr),
+                Instr::F32Eq(instr) => self.execute_f32_eq(instr),
+                Instr::F32Ne(instr) => self.execute_f32_ne(instr),
+                Instr::F32Lt(instr) => self.execute_f32_lt(instr),
+                Instr::F32Le(instr) => self.execute_f32_le(instr),
+                Instr::F32Gt(instr) => self.execute_f32_gt(instr),
+                Instr::F32Ge(instr) => self.execute_f32_ge(instr),
+                Instr::F64Eq(instr) => self.execute_f64_eq(instr),
+                Instr::F64Ne(instr) => self.execute_f64_ne(instr),
+                Instr::F64Lt(instr) => self.execute_f64_lt(instr),
+                Instr::F64Le(instr) => self.execute_f64_le(instr),
+                Instr::F64Gt(instr) => self.execute_f64_gt(instr),
+                Instr::F64Ge(instr) => self.execute_f64_ge(instr),
                 Instr::I32Clz(instr) => self.execute_i32_clz(instr),
                 Instr::I64Clz(instr) => self.execute_i64_clz(instr),
                 Instr::I32Ctz(instr) => self.execute_i32_ctz(instr),
@@ -1051,6 +1062,33 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let value = self.get_register(instr.input);
         self.set_register(instr.result, op(value)?);
         self.try_next_instr()
+    }
+
+    /// Executes a generic binary [`Instruction`].
+    fn execute_binary(
+        &mut self,
+        instr: BinInstr,
+        op: fn(UntypedValue, UntypedValue) -> UntypedValue,
+    ) {
+        let lhs = self.get_register(instr.lhs);
+        let rhs = self.get_register(instr.rhs);
+        self.set_register(instr.result, op(lhs, rhs));
+        self.next_instr();
+    }
+
+    /// Executes a generic binary [`Instruction`].
+    fn execute_binary_imm16<T>(
+        &mut self,
+        instr: BinInstrImm16<T>,
+        op: fn(UntypedValue, UntypedValue) -> UntypedValue,
+    ) where
+        T: From<Const16<T>>,
+        UntypedValue: From<T>,
+    {
+        let lhs = self.get_register(instr.reg_in);
+        let rhs = UntypedValue::from(<T>::from(instr.imm_in));
+        self.set_register(instr.result, op(lhs, rhs));
+        self.next_instr();
     }
 }
 
