@@ -101,17 +101,11 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         Ok(frame)
     }
 
-    /// Copies the parameters from `src` to `dst` for the called [`CallFrame`].
-    fn copy_call_params(
-        &mut self,
-        called: &CallFrame,
-        dst: RegisterSpan,
-        src: RegisterSpan,
-        len_params: usize,
-    ) {
+    /// Copies the parameters from `src` for the called [`CallFrame`].
+    fn copy_call_params(&mut self, called: &CallFrame, src: RegisterSpan, len_params: usize) {
         let mut frame_sp = self.frame_stack_ptr(called);
-        let dst: RegisterSpanIter = dst.iter(len_params);
-        let src = RegisterSpan::new(Register::from_i16(0)).iter(len_params);
+        let src: RegisterSpanIter = src.iter(len_params);
+        let dst = RegisterSpan::new(Register::from_i16(0)).iter(len_params);
         for (dst, src) in dst.zip(src) {
             // Safety: TODO
             let cell = unsafe { frame_sp.get_mut(dst) };
@@ -131,9 +125,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let mut frame = self.dispatch_compiled_func(results, func)?;
         if let Some(call_params) = call_params {
             let len_params = call_params.len_params as usize;
-            let dst = call_params.params;
-            let src = RegisterSpan::new(Register::from_i16(0));
-            self.copy_call_params(&frame, dst, src, len_params);
+            let src = call_params.params;
+            self.copy_call_params(&frame, src, len_params);
         }
         if matches!(call_kind, CallKind::Tail) {
             // In case of a tail call we have to remove the caller call frame after
