@@ -30,6 +30,7 @@ use crate::{
 use core::cmp;
 use wasmi_core::UntypedValue;
 
+mod binary;
 mod call;
 mod comparison;
 mod conversion;
@@ -751,22 +752,22 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::F64Trunc(instr) => self.execute_f64_trunc(instr),
                 Instr::F64Nearest(instr) => self.execute_f64_nearest(instr),
                 Instr::F64Sqrt(instr) => self.execute_f64_sqrt(instr),
-                Instr::F32Add(_) => todo!(),
-                Instr::F32Sub(_) => todo!(),
-                Instr::F32Mul(_) => todo!(),
-                Instr::F32Div(_) => todo!(),
-                Instr::F32Min(_) => todo!(),
-                Instr::F32Max(_) => todo!(),
-                Instr::F32Copysign(_) => todo!(),
-                Instr::F32CopysignImm(_) => todo!(),
-                Instr::F64Add(_) => todo!(),
-                Instr::F64Sub(_) => todo!(),
-                Instr::F64Mul(_) => todo!(),
-                Instr::F64Div(_) => todo!(),
-                Instr::F64Min(_) => todo!(),
-                Instr::F64Max(_) => todo!(),
-                Instr::F64Copysign(_) => todo!(),
-                Instr::F64CopysignImm(_) => todo!(),
+                Instr::F32Add(instr) => self.execute_f32_add(instr),
+                Instr::F32Sub(instr) => self.execute_f32_sub(instr),
+                Instr::F32Mul(instr) => self.execute_f32_mul(instr),
+                Instr::F32Div(instr) => self.execute_f32_div(instr),
+                Instr::F32Min(instr) => self.execute_f32_min(instr),
+                Instr::F32Max(instr) => self.execute_f32_max(instr),
+                Instr::F32Copysign(instr) => self.execute_f32_copysign(instr),
+                Instr::F32CopysignImm(instr) => self.execute_f32_copysign_imm(instr),
+                Instr::F64Add(instr) => self.execute_f64_add(instr),
+                Instr::F64Sub(instr) => self.execute_f64_sub(instr),
+                Instr::F64Mul(instr) => self.execute_f64_mul(instr),
+                Instr::F64Div(instr) => self.execute_f64_div(instr),
+                Instr::F64Min(instr) => self.execute_f64_min(instr),
+                Instr::F64Max(instr) => self.execute_f64_max(instr),
+                Instr::F64Copysign(instr) => self.execute_f64_copysign(instr),
+                Instr::F64CopysignImm(instr) => self.execute_f64_copysign_imm(instr),
                 Instr::I32WrapI64(instr) => self.execute_i32_wrap_i64(instr),
                 Instr::I64ExtendI32S(instr) => self.execute_i64_extend_i32_s(instr),
                 Instr::I64ExtendI32U(instr) => self.execute_i64_extend_i32_u(instr),
