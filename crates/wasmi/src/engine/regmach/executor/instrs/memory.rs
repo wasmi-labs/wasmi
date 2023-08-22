@@ -247,6 +247,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Ok(())
             },
         )?;
-        self.try_next_instr_at(3)
+        self.try_next_instr()
     }
 }
