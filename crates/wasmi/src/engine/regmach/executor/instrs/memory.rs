@@ -105,4 +105,148 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.set_register(result, return_value);
         self.try_next_instr()
     }
+
+    /// Executes an [`Instruction::MemoryCopy`].
+    #[inline(always)]
+    pub fn execute_memory_copy(
+        &mut self,
+        dst: Register,
+        src: Register,
+        len: Register,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = self.get_register_as(dst);
+        let src: u32 = self.get_register_as(src);
+        let len: u32 = self.get_register_as(len);
+        self.execute_memory_copy_impl(dst, src, len)
+    }
+
+    /// Executes an [`Instruction::MemoryCopyTo`].
+    #[inline(always)]
+    pub fn execute_memory_copy_to(
+        &mut self,
+        dst: Const16<u32>,
+        src: Register,
+        len: Register,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = dst.into();
+        let src: u32 = self.get_register_as(src);
+        let len: u32 = self.get_register_as(len);
+        self.execute_memory_copy_impl(dst, src, len)
+    }
+
+    /// Executes an [`Instruction::MemoryCopyFrom`].
+    #[inline(always)]
+    pub fn execute_memory_copy_from(
+        &mut self,
+        dst: Register,
+        src: Const16<u32>,
+        len: Register,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = self.get_register_as(dst);
+        let src: u32 = src.into();
+        let len: u32 = self.get_register_as(len);
+        self.execute_memory_copy_impl(dst, src, len)
+    }
+
+    /// Executes an [`Instruction::MemoryCopyFromTo`].
+    #[inline(always)]
+    pub fn execute_memory_copy_from_to(
+        &mut self,
+        dst: Const16<u32>,
+        src: Const16<u32>,
+        len: Register,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = dst.into();
+        let src: u32 = src.into();
+        let len: u32 = self.get_register_as(len);
+        self.execute_memory_copy_impl(dst, src, len)
+    }
+
+    /// Executes an [`Instruction::MemoryCopyExact`].
+    #[inline(always)]
+    pub fn execute_memory_copy_exact(
+        &mut self,
+        dst: Register,
+        src: Register,
+        len: Const16<u32>,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = self.get_register_as(dst);
+        let src: u32 = self.get_register_as(src);
+        let len: u32 = len.into();
+        self.execute_memory_copy_impl(dst, src, len)
+    }
+
+    /// Executes an [`Instruction::MemoryCopyToExact`].
+    #[inline(always)]
+    pub fn execute_memory_copy_to_exact(
+        &mut self,
+        dst: Const16<u32>,
+        src: Register,
+        len: Const16<u32>,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = dst.into();
+        let src: u32 = self.get_register_as(src);
+        let len: u32 = len.into();
+        self.execute_memory_copy_impl(dst, src, len)
+    }
+
+    /// Executes an [`Instruction::MemoryCopyFromExact`].
+    #[inline(always)]
+    pub fn execute_memory_copy_from_exact(
+        &mut self,
+        dst: Register,
+        src: Const16<u32>,
+        len: Const16<u32>,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = self.get_register_as(dst);
+        let src: u32 = src.into();
+        let len: u32 = len.into();
+        self.execute_memory_copy_impl(dst, src, len)
+    }
+
+    /// Executes an [`Instruction::MemoryCopyFromToExact`].
+    #[inline(always)]
+    pub fn execute_memory_copy_from_to_exact(
+        &mut self,
+        dst: Const16<u32>,
+        src: Const16<u32>,
+        len: Const16<u32>,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = dst.into();
+        let src: u32 = src.into();
+        let len: u32 = len.into();
+        self.execute_memory_copy_impl(dst, src, len)
+    }
+
+    /// Executes a generic `memory.copy` instruction.
+    fn execute_memory_copy_impl(
+        &mut self,
+        dst_index: u32,
+        src_index: u32,
+        len: u32,
+    ) -> Result<(), TrapCode> {
+        if len == 0 {
+            // Case: copying no elements means there is nothing to do
+            return Ok(());
+        }
+        self.consume_fuel_with(
+            |costs| costs.fuel_for_elements(u64::from(len)),
+            |this| {
+                let len = len as usize;
+                let src_index = src_index as usize;
+                let dst_index = dst_index as usize;
+                let data = this.cache.default_memory_bytes(this.ctx);
+                // These accesses just perform the bounds checks required by the Wasm spec.
+                data.get(src_index..)
+                    .and_then(|memory| memory.get(..len))
+                    .ok_or(TrapCode::MemoryOutOfBounds)?;
+                data.get(dst_index..)
+                    .and_then(|memory| memory.get(..len))
+                    .ok_or(TrapCode::MemoryOutOfBounds)?;
+                data.copy_within(src_index..src_index.wrapping_add(len), dst_index);
+                Ok(())
+            },
+        )?;
+        self.try_next_instr_at(3)
+    }
 }

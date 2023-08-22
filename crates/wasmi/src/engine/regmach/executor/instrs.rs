@@ -409,14 +409,28 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::MemoryGrowBy { result, delta } => {
                     self.execute_memory_grow_by(result, delta, &mut *resource_limiter)?
                 }
-                Instr::MemoryCopy { dst, src, len } => todo!(),
-                Instr::MemoryCopyTo { dst, src, len } => todo!(),
-                Instr::MemoryCopyFrom { dst, src, len } => todo!(),
-                Instr::MemoryCopyFromTo { dst, src, len } => todo!(),
-                Instr::MemoryCopyExact { dst, src, len } => todo!(),
-                Instr::MemoryCopyToExact { dst, src, len } => todo!(),
-                Instr::MemoryCopyFromExact { dst, src, len } => todo!(),
-                Instr::MemoryCopyFromToExact { dst, src, len } => todo!(),
+                Instr::MemoryCopy { dst, src, len } => self.execute_memory_copy(dst, src, len)?,
+                Instr::MemoryCopyTo { dst, src, len } => {
+                    self.execute_memory_copy_to(dst, src, len)?
+                }
+                Instr::MemoryCopyFrom { dst, src, len } => {
+                    self.execute_memory_copy_from(dst, src, len)?
+                }
+                Instr::MemoryCopyFromTo { dst, src, len } => {
+                    self.execute_memory_copy_from_to(dst, src, len)?
+                }
+                Instr::MemoryCopyExact { dst, src, len } => {
+                    self.execute_memory_copy_exact(dst, src, len)?
+                }
+                Instr::MemoryCopyToExact { dst, src, len } => {
+                    self.execute_memory_copy_to_exact(dst, src, len)?
+                }
+                Instr::MemoryCopyFromExact { dst, src, len } => {
+                    self.execute_memory_copy_from_exact(dst, src, len)?
+                }
+                Instr::MemoryCopyFromToExact { dst, src, len } => {
+                    self.execute_memory_copy_from_to_exact(dst, src, len)?
+                }
                 Instr::MemoryFill { dst, value, len } => todo!(),
                 Instr::MemoryFillAt { dst, value, len } => todo!(),
                 Instr::MemoryFillImm { dst, value, len } => todo!(),
