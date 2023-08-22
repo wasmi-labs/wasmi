@@ -5,16 +5,24 @@ use crate::{
     core::TrapCode,
     engine::{
         bytecode::DataSegmentIdx,
-        bytecode2::{Const16, Register},
+        bytecode2::{Const16, Instruction, Register},
+        code_map::InstructionPtr2 as InstructionPtr,
     },
     error::EntityGrowError,
     store::ResourceLimiterRef,
 };
 
-#[cfg(doc)]
-use crate::engine::bytecode2::Instruction;
-
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+    /// Returns the [`Instruction::DataSegmentIdx`] parameter for an [`Instruction`].
+    fn fetch_data_segment_index(&self, offset: usize) -> DataSegmentIdx {
+        let mut addr: InstructionPtr = self.ip;
+        addr.add(offset);
+        match *addr.get() {
+            Instruction::DataSegmentIdx(segment_index) => segment_index,
+            _ => unreachable!("expected an Instruction::DataSegmentIdx instruction word"),
+        }
+    }
+
     /// Executes an [`Instruction::DataDrop`].
     #[inline(always)]
     pub fn execute_data_drop(&mut self, segment_index: DataSegmentIdx) {
@@ -380,5 +388,148 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             },
         )?;
         self.try_next_instr()
+    }
+
+    /// Executes an [`Instruction::MemoryInit`].
+    #[inline(always)]
+    pub fn execute_memory_init(
+        &mut self,
+        dst: Register,
+        src: Register,
+        len: Register,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = self.get_register_as(dst);
+        let src: u32 = self.get_register_as(src);
+        let len: u32 = self.get_register_as(len);
+        self.execute_memory_init_impl(dst, src, len)
+    }
+
+    /// Executes an [`Instruction::MemoryInitTo`].
+    #[inline(always)]
+    pub fn execute_memory_init_to(
+        &mut self,
+        dst: Const16<u32>,
+        src: Register,
+        len: Register,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = dst.into();
+        let src: u32 = self.get_register_as(src);
+        let len: u32 = self.get_register_as(len);
+        self.execute_memory_init_impl(dst, src, len)
+    }
+
+    /// Executes an [`Instruction::MemoryInitFrom`].
+    #[inline(always)]
+    pub fn execute_memory_init_from(
+        &mut self,
+        dst: Register,
+        src: Const16<u32>,
+        len: Register,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = self.get_register_as(dst);
+        let src: u32 = src.into();
+        let len: u32 = self.get_register_as(len);
+        self.execute_memory_init_impl(dst, src, len)
+    }
+
+    /// Executes an [`Instruction::MemoryInitFromTo`].
+    #[inline(always)]
+    pub fn execute_memory_init_from_to(
+        &mut self,
+        dst: Const16<u32>,
+        src: Const16<u32>,
+        len: Register,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = dst.into();
+        let src: u32 = src.into();
+        let len: u32 = self.get_register_as(len);
+        self.execute_memory_init_impl(dst, src, len)
+    }
+
+    /// Executes an [`Instruction::MemoryInitExact`].
+    #[inline(always)]
+    pub fn execute_memory_init_exact(
+        &mut self,
+        dst: Register,
+        src: Register,
+        len: Const16<u32>,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = self.get_register_as(dst);
+        let src: u32 = self.get_register_as(src);
+        let len: u32 = len.into();
+        self.execute_memory_init_impl(dst, src, len)
+    }
+
+    /// Executes an [`Instruction::MemoryInitToExact`].
+    #[inline(always)]
+    pub fn execute_memory_init_to_exact(
+        &mut self,
+        dst: Const16<u32>,
+        src: Register,
+        len: Const16<u32>,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = dst.into();
+        let src: u32 = self.get_register_as(src);
+        let len: u32 = len.into();
+        self.execute_memory_init_impl(dst, src, len)
+    }
+
+    /// Executes an [`Instruction::MemoryInitFromExact`].
+    #[inline(always)]
+    pub fn execute_memory_init_from_exact(
+        &mut self,
+        dst: Register,
+        src: Const16<u32>,
+        len: Const16<u32>,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = self.get_register_as(dst);
+        let src: u32 = src.into();
+        let len: u32 = len.into();
+        self.execute_memory_init_impl(dst, src, len)
+    }
+
+    /// Executes an [`Instruction::MemoryInitFromToExact`].
+    #[inline(always)]
+    pub fn execute_memory_init_from_to_exact(
+        &mut self,
+        dst: Const16<u32>,
+        src: Const16<u32>,
+        len: Const16<u32>,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = dst.into();
+        let src: u32 = src.into();
+        let len: u32 = len.into();
+        self.execute_memory_copy_impl(dst, src, len)
+    }
+
+    /// Executes a generic `memory.init` instruction.
+    fn execute_memory_init_impl(&mut self, dst: u32, src: u32, len: u32) -> Result<(), TrapCode> {
+        if len == 0 {
+            // Case: initializing no bytes means there is nothing to do
+            return Ok(());
+        }
+        self.consume_fuel_with(
+            |costs| costs.fuel_for_bytes(u64::from(len)),
+            |this| {
+                let dst_index = dst as usize;
+                let src_index = src as usize;
+                let len = len as usize;
+                let data_index: DataSegmentIdx = this.fetch_data_segment_index(1);
+                let (memory, data) = this
+                    .cache
+                    .get_default_memory_and_data_segment(this.ctx, data_index);
+                let memory = memory
+                    .get_mut(dst_index..)
+                    .and_then(|memory| memory.get_mut(..len))
+                    .ok_or(TrapCode::MemoryOutOfBounds)?;
+                let data = data
+                    .get(src_index..)
+                    .and_then(|data| data.get(..len))
+                    .ok_or(TrapCode::MemoryOutOfBounds)?;
+                memory.copy_from_slice(data);
+                Ok(())
+            },
+        )?;
+        self.try_next_instr_at(2)
     }
 }

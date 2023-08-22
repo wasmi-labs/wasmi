@@ -455,14 +455,28 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::MemoryFillAtImmExact { dst, value, len } => {
                     self.execute_memory_fill_at_imm_exact(dst, value, len)?
                 }
-                Instr::MemoryInit { dst, src, len } => todo!(),
-                Instr::MemoryInitTo { dst, src, len } => todo!(),
-                Instr::MemoryInitFrom { dst, src, len } => todo!(),
-                Instr::MemoryInitFromTo { dst, src, len } => todo!(),
-                Instr::MemoryInitExact { dst, src, len } => todo!(),
-                Instr::MemoryInitToExact { dst, src, len } => todo!(),
-                Instr::MemoryInitFromExact { dst, src, len } => todo!(),
-                Instr::MemoryInitFromToExact { dst, src, len } => todo!(),
+                Instr::MemoryInit { dst, src, len } => self.execute_memory_init(dst, src, len)?,
+                Instr::MemoryInitTo { dst, src, len } => {
+                    self.execute_memory_init_to(dst, src, len)?
+                }
+                Instr::MemoryInitFrom { dst, src, len } => {
+                    self.execute_memory_init_from(dst, src, len)?
+                }
+                Instr::MemoryInitFromTo { dst, src, len } => {
+                    self.execute_memory_init_from_to(dst, src, len)?
+                }
+                Instr::MemoryInitExact { dst, src, len } => {
+                    self.execute_memory_init_exact(dst, src, len)?
+                }
+                Instr::MemoryInitToExact { dst, src, len } => {
+                    self.execute_memory_init_to_exact(dst, src, len)?
+                }
+                Instr::MemoryInitFromExact { dst, src, len } => {
+                    self.execute_memory_init_from_exact(dst, src, len)?
+                }
+                Instr::MemoryInitFromToExact { dst, src, len } => {
+                    self.execute_memory_init_from_to_exact(dst, src, len)?
+                }
                 Instr::GlobalGet { result, global } => todo!(),
                 Instr::GlobalSet { global, input } => todo!(),
                 Instr::GlobalSetI32Imm16 { global, input } => todo!(),
