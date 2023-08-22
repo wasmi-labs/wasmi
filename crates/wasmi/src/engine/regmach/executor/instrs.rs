@@ -21,6 +21,7 @@ use core::cmp;
 use wasmi_core::UntypedValue;
 
 mod call;
+mod global;
 mod memory;
 mod select;
 mod table;
@@ -477,10 +478,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::MemoryInitFromToExact { dst, src, len } => {
                     self.execute_memory_init_from_to_exact(dst, src, len)?
                 }
-                Instr::GlobalGet { result, global } => todo!(),
-                Instr::GlobalSet { global, input } => todo!(),
-                Instr::GlobalSetI32Imm16 { global, input } => todo!(),
-                Instr::GlobalSetI64Imm16 { global, input } => todo!(),
+                Instr::GlobalGet { result, global } => self.execute_global_get(result, global),
+                Instr::GlobalSet { global, input } => self.execute_global_set(global, input),
+                Instr::GlobalSetI32Imm16 { global, input } => {
+                    self.execute_global_set_i32imm16(global, input)
+                }
+                Instr::GlobalSetI64Imm16 { global, input } => {
+                    self.execute_global_set_i64imm16(global, input)
+                }
                 Instr::I32Load(_) => todo!(),
                 Instr::I32LoadAt(_) => todo!(),
                 Instr::I32LoadOffset16(_) => todo!(),
