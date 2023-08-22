@@ -112,7 +112,7 @@ macro_rules! impl_binary_imm16_rev {
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             #[inline(always)]
             pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) {
-                self.execute_binary_imm16(instr, $op)
+                self.execute_binary_imm16_rev(instr, $op)
             }
         )*
     };
