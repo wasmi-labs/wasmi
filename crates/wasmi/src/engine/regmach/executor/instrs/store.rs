@@ -100,7 +100,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             UntypedValue::from(0u32),
             u32::from(instr.address),
             self.get_register(instr.value),
-            UntypedValue::i32_store,
+            store_op,
         )?;
         self.try_next_instr()
     }
@@ -117,7 +117,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             UntypedValue::from(0u32),
             u32::from(instr.address),
             T::from(instr.value).into(),
-            UntypedValue::i32_store,
+            store_op,
         )?;
         self.try_next_instr()
     }
