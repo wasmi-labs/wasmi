@@ -389,4 +389,82 @@ impl<'engine, 'ctx> Executor<'engine, 'ctx> {
         )?;
         self.try_next_instr_at(3)
     }
+
+    /// Executes an [`Instruction::TableFill`].
+    #[inline(always)]
+    pub fn execute_table_fill(
+        &mut self,
+        dst: Register,
+        len: Register,
+        value: Register,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = self.get_register_as(dst);
+        let len: u32 = self.get_register_as(len);
+        self.execute_table_fill_impl(dst, len, value)
+    }
+
+    /// Executes an [`Instruction::TableFillAt`].
+    #[inline(always)]
+    pub fn execute_table_fill_at(
+        &mut self,
+        dst: Const16<u32>,
+        len: Register,
+        value: Register,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = dst.into();
+        let len: u32 = self.get_register_as(len);
+        self.execute_table_fill_impl(dst, len, value)
+    }
+
+    /// Executes an [`Instruction::TableFillExact`].
+    #[inline(always)]
+    pub fn execute_table_fill_exact(
+        &mut self,
+        dst: Register,
+        len: Const16<u32>,
+        value: Register,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = self.get_register_as(dst);
+        let len: u32 = len.into();
+        self.execute_table_fill_impl(dst, len, value)
+    }
+
+    /// Executes an [`Instruction::TableFillAtExact`].
+    #[inline(always)]
+    pub fn execute_table_fill_at_exact(
+        &mut self,
+        dst: Const16<u32>,
+        len: Const16<u32>,
+        value: Register,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = dst.into();
+        let len: u32 = len.into();
+        self.execute_table_fill_impl(dst, len, value)
+    }
+
+    /// Executes a generic `table.fill` instruction.
+    fn execute_table_fill_impl(
+        &mut self,
+        dst: u32,
+        len: u32,
+        value: Register,
+    ) -> Result<(), TrapCode> {
+        if len == 0 {
+            // Case: copying no elements means there is nothing to do
+            return Ok(());
+        }
+        let table_index = self.fetch_table_index(1);
+        self.consume_fuel_with(
+            |costs| costs.fuel_for_elements(u64::from(len)),
+            |this| {
+                let value = this.get_register(value);
+                let table = this.cache.get_table(this.ctx, table_index);
+                this.ctx
+                    .resolve_table_mut(&table)
+                    .fill_untyped(dst, value, len)?;
+                Ok(())
+            },
+        )?;
+        self.try_next_instr_at(2)
+    }
 }

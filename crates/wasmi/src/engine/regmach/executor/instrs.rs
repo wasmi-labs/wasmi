@@ -400,10 +400,16 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::TableInitFromToExact { dst, src, len } => {
                     self.execute_table_init_from_to_exact(dst, src, len)?
                 }
-                Instr::TableFill { dst, len, value } => todo!(),
-                Instr::TableFillAt { dst, len, value } => todo!(),
-                Instr::TableFillExact { dst, len, value } => todo!(),
-                Instr::TableFillAtExact { dst, len, value } => todo!(),
+                Instr::TableFill { dst, len, value } => self.execute_table_fill(dst, len, value)?,
+                Instr::TableFillAt { dst, len, value } => {
+                    self.execute_table_fill_at(dst, len, value)?
+                }
+                Instr::TableFillExact { dst, len, value } => {
+                    self.execute_table_fill_exact(dst, len, value)?
+                }
+                Instr::TableFillAtExact { dst, len, value } => {
+                    self.execute_table_fill_at_exact(dst, len, value)?
+                }
                 Instr::TableGrow {
                     result,
                     delta,
