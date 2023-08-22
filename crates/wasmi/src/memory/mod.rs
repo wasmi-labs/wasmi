@@ -5,14 +5,13 @@ mod error;
 #[cfg(test)]
 mod tests;
 
-use crate::{engine::executor::EntityGrowError, store::ResourceLimiterRef};
-
 use self::buffer::ByteBuffer;
 pub use self::{
     data::{DataSegment, DataSegmentEntity, DataSegmentIdx},
     error::MemoryError,
 };
 use super::{AsContext, AsContextMut, StoreContext, StoreContextMut, Stored};
+use crate::{error::EntityGrowError, store::ResourceLimiterRef};
 use wasmi_arena::ArenaIndex;
 use wasmi_core::{Pages, TrapCode};
 
