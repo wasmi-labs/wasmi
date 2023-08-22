@@ -3,9 +3,10 @@ use crate::{
     core::TrapCode,
     engine::{
         bytecode::TableIdx,
-        bytecode2::{Const32, Instruction, Register},
+        bytecode2::{Const16, Const32, Instruction, Register},
         code_map::InstructionPtr2 as InstructionPtr,
     },
+    table::TableEntity,
 };
 
 impl<'engine, 'ctx> Executor<'engine, 'ctx> {
@@ -86,5 +87,154 @@ impl<'engine, 'ctx> Executor<'engine, 'ctx> {
             .set_untyped(index, value)
             .map_err(|_| TrapCode::TableOutOfBounds)?;
         self.try_next_instr_at(2)
+    }
+
+    /// Executes an [`Instruction::TableCopy`].
+    #[inline(always)]
+    pub fn execute_table_copy(
+        &mut self,
+        dst: Register,
+        src: Register,
+        len: Register,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = self.get_register_as(dst);
+        let src: u32 = self.get_register_as(src);
+        let len: u32 = self.get_register_as(len);
+        self.execute_table_copy_impl(dst, src, len)
+    }
+
+    /// Executes an [`Instruction::TableCopyTo`].
+    #[inline(always)]
+    pub fn execute_table_copy_to(
+        &mut self,
+        dst: Const16<u32>,
+        src: Register,
+        len: Register,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = dst.into();
+        let src: u32 = self.get_register_as(src);
+        let len: u32 = self.get_register_as(len);
+        self.execute_table_copy_impl(dst, src, len)
+    }
+
+    /// Executes an [`Instruction::TableCopyFrom`].
+    #[inline(always)]
+    pub fn execute_table_copy_from(
+        &mut self,
+        dst: Register,
+        src: Const16<u32>,
+        len: Register,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = self.get_register_as(dst);
+        let src: u32 = src.into();
+        let len: u32 = self.get_register_as(len);
+        self.execute_table_copy_impl(dst, src, len)
+    }
+
+    /// Executes an [`Instruction::TableCopyFromTo`].
+    #[inline(always)]
+    pub fn execute_table_copy_from_to(
+        &mut self,
+        dst: Const16<u32>,
+        src: Const16<u32>,
+        len: Register,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = dst.into();
+        let src: u32 = src.into();
+        let len: u32 = self.get_register_as(len);
+        self.execute_table_copy_impl(dst, src, len)
+    }
+
+    /// Executes an [`Instruction::TableCopyExact`].
+    #[inline(always)]
+    pub fn execute_table_copy_exact(
+        &mut self,
+        dst: Register,
+        src: Register,
+        len: Const16<u32>,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = self.get_register_as(dst);
+        let src: u32 = self.get_register_as(src);
+        let len: u32 = len.into();
+        self.execute_table_copy_impl(dst, src, len)
+    }
+
+    /// Executes an [`Instruction::TableCopyToExact`].
+    #[inline(always)]
+    pub fn execute_table_copy_to_exact(
+        &mut self,
+        dst: Const16<u32>,
+        src: Register,
+        len: Const16<u32>,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = dst.into();
+        let src: u32 = self.get_register_as(src);
+        let len: u32 = len.into();
+        self.execute_table_copy_impl(dst, src, len)
+    }
+
+    /// Executes an [`Instruction::TableCopyFromExact`].
+    #[inline(always)]
+    pub fn execute_table_copy_from_exact(
+        &mut self,
+        dst: Register,
+        src: Const16<u32>,
+        len: Const16<u32>,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = self.get_register_as(dst);
+        let src: u32 = src.into();
+        let len: u32 = len.into();
+        self.execute_table_copy_impl(dst, src, len)
+    }
+
+    /// Executes an [`Instruction::TableCopyFromToExact`].
+    #[inline(always)]
+    pub fn execute_table_copy_from_to_exact(
+        &mut self,
+        dst: Const16<u32>,
+        src: Const16<u32>,
+        len: Const16<u32>,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = dst.into();
+        let src: u32 = src.into();
+        let len: u32 = len.into();
+        self.execute_table_copy_impl(dst, src, len)
+    }
+
+    /// Executes a generic `table.copy` instruction.
+    fn execute_table_copy_impl(
+        &mut self,
+        dst_index: u32,
+        src_index: u32,
+        len: u32,
+    ) -> Result<(), TrapCode> {
+        if len == 0 {
+            // Case: copying no elements means there is nothing to do
+            return Ok(());
+        }
+        let dst_table_index = self.fetch_table_index(1);
+        let src_table_index = self.fetch_table_index(2);
+        self.consume_fuel_with(
+            |costs| costs.fuel_for_elements(u64::from(len)),
+            |this| {
+                if dst_table_index == src_table_index {
+                    // Case: copy within the same table
+                    let table = this.cache.get_table(this.ctx, dst_table_index);
+                    this.ctx
+                        .resolve_table_mut(&table)
+                        .copy_within(dst_index, src_index, len)?;
+                } else {
+                    // Case: copy between two different tables
+                    let dst_table = this.cache.get_table(this.ctx, dst_table_index);
+                    let src_table = this.cache.get_table(this.ctx, src_table_index);
+                    // Copy from one table to another table:
+                    let (dst_table, src_table) =
+                        this.ctx.resolve_table_pair_mut(&dst_table, &src_table);
+                    TableEntity::copy(dst_table, dst_index, src_table, src_index, len)?;
+                }
+                Ok(())
+            },
+        )?;
+        self.try_next_instr_at(3)
     }
 }

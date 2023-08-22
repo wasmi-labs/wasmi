@@ -7,9 +7,11 @@ use crate::{
         bytecode2::{AnyConst32, Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
         cache::InstanceCache,
         code_map::{CodeMap2 as CodeMap, InstructionPtr2 as InstructionPtr},
+        config::FuelCosts,
         regmach::stack::{CallFrame, CallStack, ValueStack, ValueStackPtr},
     },
     store::ResourceLimiterRef,
+    FuelConsumptionMode,
     Func,
     FuncRef,
     Instance,
@@ -354,14 +356,28 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::TableSize { result, table } => self.execute_table_size(result, table),
                 Instr::TableSet { index, value } => self.execute_table_set(index, value)?,
                 Instr::TableSetAt { index, value } => self.execute_table_set_at(index, value)?,
-                Instr::TableCopy { dst, src, len } => todo!(),
-                Instr::TableCopyTo { dst, src, len } => todo!(),
-                Instr::TableCopyFrom { dst, src, len } => todo!(),
-                Instr::TableCopyFromTo { dst, src, len } => todo!(),
-                Instr::TableCopyExact { dst, src, len } => todo!(),
-                Instr::TableCopyToExact { dst, src, len } => todo!(),
-                Instr::TableCopyFromExact { dst, src, len } => todo!(),
-                Instr::TableCopyFromToExact { dst, src, len } => todo!(),
+                Instr::TableCopy { dst, src, len } => self.execute_table_copy(dst, src, len)?,
+                Instr::TableCopyTo { dst, src, len } => {
+                    self.execute_table_copy_to(dst, src, len)?
+                }
+                Instr::TableCopyFrom { dst, src, len } => {
+                    self.execute_table_copy_from(dst, src, len)?
+                }
+                Instr::TableCopyFromTo { dst, src, len } => {
+                    self.execute_table_copy_from_to(dst, src, len)?
+                }
+                Instr::TableCopyExact { dst, src, len } => {
+                    self.execute_table_copy_exact(dst, src, len)?
+                }
+                Instr::TableCopyToExact { dst, src, len } => {
+                    self.execute_table_copy_to_exact(dst, src, len)?
+                }
+                Instr::TableCopyFromExact { dst, src, len } => {
+                    self.execute_table_copy_from_exact(dst, src, len)?
+                }
+                Instr::TableCopyFromToExact { dst, src, len } => {
+                    self.execute_table_copy_from_to_exact(dst, src, len)?
+                }
                 Instr::TableInit { dst, src, len } => todo!(),
                 Instr::TableInitTo { dst, src, len } => todo!(),
                 Instr::TableInitFrom { dst, src, len } => todo!(),
@@ -814,6 +830,122 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             }
             None => ReturnOutcome::Host,
         }
+    }
+
+    /// Consume an amount of fuel specified by `delta` if `exec` succeeds.
+    ///
+    /// # Note
+    ///
+    /// - `delta` is only evaluated if fuel metering is enabled.
+    /// - `exec` is only evaluated if the remaining fuel is sufficient
+    ///    for amount of required fuel determined by `delta` or if
+    ///    fuel metering is disabled.
+    ///
+    /// # Errors
+    ///
+    /// - If the [`StoreInner`] ran out of fuel.
+    /// - If the `exec` closure traps.
+    #[inline(always)]
+    fn consume_fuel_with<T, E>(
+        &mut self,
+        delta: impl FnOnce(&FuelCosts) -> u64,
+        exec: impl FnOnce(&mut Self) -> Result<T, E>,
+    ) -> Result<T, E>
+    where
+        E: From<TrapCode>,
+    {
+        match self.get_fuel_consumption_mode() {
+            None => exec(self),
+            Some(mode) => self.consume_fuel_with_mode(mode, delta, exec),
+        }
+    }
+
+    /// Consume an amount of fuel specified by `delta` and executes `exec`.
+    ///
+    /// The `mode` determines when and if the fuel determined by `delta` is charged.
+    ///
+    /// # Errors
+    ///
+    /// - If the [`StoreInner`] ran out of fuel.
+    /// - If the `exec` closure traps.
+    #[inline(always)]
+    fn consume_fuel_with_mode<T, E>(
+        &mut self,
+        mode: FuelConsumptionMode,
+        delta: impl FnOnce(&FuelCosts) -> u64,
+        exec: impl FnOnce(&mut Self) -> Result<T, E>,
+    ) -> Result<T, E>
+    where
+        E: From<TrapCode>,
+    {
+        let delta = delta(self.fuel_costs());
+        match mode {
+            FuelConsumptionMode::Lazy => self.consume_fuel_with_lazy(delta, exec),
+            FuelConsumptionMode::Eager => self.consume_fuel_with_eager(delta, exec),
+        }
+    }
+
+    /// Consume an amount of fuel specified by `delta` if `exec` succeeds.
+    ///
+    /// Prior to executing `exec` it is checked if enough fuel is remaining
+    /// determined by `delta`. The fuel is charged only after `exec` has been
+    /// finished successfully.
+    ///
+    /// # Errors
+    ///
+    /// - If the [`StoreInner`] ran out of fuel.
+    /// - If the `exec` closure traps.
+    #[inline(always)]
+    fn consume_fuel_with_lazy<T, E>(
+        &mut self,
+        delta: u64,
+        exec: impl FnOnce(&mut Self) -> Result<T, E>,
+    ) -> Result<T, E>
+    where
+        E: From<TrapCode>,
+    {
+        self.ctx.fuel().sufficient_fuel(delta)?;
+        let result = exec(self)?;
+        self.ctx
+            .fuel_mut()
+            .consume_fuel(delta)
+            .expect("remaining fuel has already been approved prior");
+        Ok(result)
+    }
+
+    /// Consume an amount of fuel specified by `delta` and executes `exec`.
+    ///
+    /// # Errors
+    ///
+    /// - If the [`StoreInner`] ran out of fuel.
+    /// - If the `exec` closure traps.
+    #[inline(always)]
+    fn consume_fuel_with_eager<T, E>(
+        &mut self,
+        delta: u64,
+        exec: impl FnOnce(&mut Self) -> Result<T, E>,
+    ) -> Result<T, E>
+    where
+        E: From<TrapCode>,
+    {
+        self.ctx.fuel_mut().consume_fuel(delta)?;
+        exec(self)
+    }
+
+    /// Returns a shared reference to the [`FuelCosts`] of the [`Engine`].
+    ///
+    /// [`Engine`]: crate::Engine
+    #[inline]
+    fn fuel_costs(&self) -> &FuelCosts {
+        self.ctx.engine().config().fuel_costs()
+    }
+
+    /// Returns the [`FuelConsumptionMode`] of the [`Engine`].
+    ///
+    /// [`Engine`]: crate::Engine
+    #[inline]
+    fn get_fuel_consumption_mode(&self) -> Option<FuelConsumptionMode> {
+        self.ctx.engine().config().get_fuel_consumption_mode()
     }
 }
 
