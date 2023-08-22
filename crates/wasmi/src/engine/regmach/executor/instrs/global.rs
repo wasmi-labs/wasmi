@@ -12,7 +12,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes an [`Instruction::GlobalGet`].
     #[inline(always)]
     pub fn execute_global_get(&mut self, result: Register, global: GlobalIdx) {
-        todo!()
+        let value = self.cache.get_global(self.ctx, global);
+        self.set_register(result, value);
+        self.next_instr()
     }
 
     /// Executes an [`Instruction::GlobalSet`].
