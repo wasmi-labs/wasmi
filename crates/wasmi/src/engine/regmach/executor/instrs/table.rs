@@ -46,7 +46,7 @@ impl<'engine, 'ctx> Executor<'engine, 'ctx> {
             .get_untyped(index)
             .ok_or(TrapCode::TableOutOfBounds)?;
         self.set_register(result, value);
-        self.try_next_instr()
+        self.try_next_instr_at(2)
     }
 
     /// Executes an [`Instruction::TableSize`].
