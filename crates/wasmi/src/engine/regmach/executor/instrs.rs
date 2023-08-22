@@ -21,6 +21,7 @@ use core::cmp;
 use wasmi_core::UntypedValue;
 
 mod call;
+mod memory;
 mod select;
 mod table;
 
@@ -400,10 +401,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     value,
                 } => self.execute_table_grow_imm(result, delta, value, &mut *resource_limiter)?,
                 Instr::ElemDrop(element_index) => self.execute_element_drop(element_index),
-                Instr::DataDrop(_) => todo!(),
-                Instr::MemorySize { result } => todo!(),
-                Instr::MemoryGrow { result, delta } => todo!(),
-                Instr::MemoryGrowBy { result, delta } => todo!(),
+                Instr::DataDrop(data_index) => self.execute_data_drop(data_index),
+                Instr::MemorySize { result } => self.execute_memory_size(result),
+                Instr::MemoryGrow { result, delta } => {
+                    self.execute_memory_grow(result, delta, &mut *resource_limiter)?
+                }
+                Instr::MemoryGrowBy { result, delta } => {
+                    self.execute_memory_grow_by(result, delta, &mut *resource_limiter)?
+                }
                 Instr::MemoryCopy { dst, src, len } => todo!(),
                 Instr::MemoryCopyTo { dst, src, len } => todo!(),
                 Instr::MemoryCopyFrom { dst, src, len } => todo!(),
