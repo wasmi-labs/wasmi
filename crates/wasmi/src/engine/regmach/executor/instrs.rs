@@ -22,6 +22,7 @@ use wasmi_core::UntypedValue;
 
 mod call;
 mod global;
+mod load;
 mod memory;
 mod select;
 mod table;
@@ -486,48 +487,48 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::GlobalSetI64Imm16 { global, input } => {
                     self.execute_global_set_i64imm16(global, input)
                 }
-                Instr::I32Load(_) => todo!(),
-                Instr::I32LoadAt(_) => todo!(),
-                Instr::I32LoadOffset16(_) => todo!(),
-                Instr::I64Load(_) => todo!(),
-                Instr::I64LoadAt(_) => todo!(),
-                Instr::I64LoadOffset16(_) => todo!(),
-                Instr::F32Load(_) => todo!(),
-                Instr::F32LoadAt(_) => todo!(),
-                Instr::F32LoadOffset16(_) => todo!(),
-                Instr::F64Load(_) => todo!(),
-                Instr::F64LoadAt(_) => todo!(),
-                Instr::F64LoadOffset16(_) => todo!(),
-                Instr::I32Load8s(_) => todo!(),
-                Instr::I32Load8sAt(_) => todo!(),
-                Instr::I32Load8sOffset16(_) => todo!(),
-                Instr::I32Load8u(_) => todo!(),
-                Instr::I32Load8uAt(_) => todo!(),
-                Instr::I32Load8uOffset16(_) => todo!(),
-                Instr::I32Load16s(_) => todo!(),
-                Instr::I32Load16sAt(_) => todo!(),
-                Instr::I32Load16sOffset16(_) => todo!(),
-                Instr::I32Load16u(_) => todo!(),
-                Instr::I32Load16uAt(_) => todo!(),
-                Instr::I32Load16uOffset16(_) => todo!(),
-                Instr::I64Load8s(_) => todo!(),
-                Instr::I64Load8sAt(_) => todo!(),
-                Instr::I64Load8sOffset16(_) => todo!(),
-                Instr::I64Load8u(_) => todo!(),
-                Instr::I64Load8uAt(_) => todo!(),
-                Instr::I64Load8uOffset16(_) => todo!(),
-                Instr::I64Load16s(_) => todo!(),
-                Instr::I64Load16sAt(_) => todo!(),
-                Instr::I64Load16sOffset16(_) => todo!(),
-                Instr::I64Load16u(_) => todo!(),
-                Instr::I64Load16uAt(_) => todo!(),
-                Instr::I64Load16uOffset16(_) => todo!(),
-                Instr::I64Load32s(_) => todo!(),
-                Instr::I64Load32sAt(_) => todo!(),
-                Instr::I64Load32sOffset16(_) => todo!(),
-                Instr::I64Load32u(_) => todo!(),
-                Instr::I64Load32uAt(_) => todo!(),
-                Instr::I64Load32uOffset16(_) => todo!(),
+                Instr::I32Load(instr) => self.execute_i32_load(instr)?,
+                Instr::I32LoadAt(instr) => self.execute_i32_load_at(instr)?,
+                Instr::I32LoadOffset16(instr) => self.execute_i32_load_offset16(instr)?,
+                Instr::I64Load(instr) => self.execute_i64_load(instr)?,
+                Instr::I64LoadAt(instr) => self.execute_i64_load_at(instr)?,
+                Instr::I64LoadOffset16(instr) => self.execute_i64_load_offset16(instr)?,
+                Instr::F32Load(instr) => self.execute_f32_load(instr)?,
+                Instr::F32LoadAt(instr) => self.execute_f32_load_at(instr)?,
+                Instr::F32LoadOffset16(instr) => self.execute_f32_load_offset16(instr)?,
+                Instr::F64Load(instr) => self.execute_f64_load(instr)?,
+                Instr::F64LoadAt(instr) => self.execute_f64_load_at(instr)?,
+                Instr::F64LoadOffset16(instr) => self.execute_f64_load_offset16(instr)?,
+                Instr::I32Load8s(instr) => self.execute_i32_load8_s(instr)?,
+                Instr::I32Load8sAt(instr) => self.execute_i32_load8_s_at(instr)?,
+                Instr::I32Load8sOffset16(instr) => self.execute_i32_load8_s_offset16(instr)?,
+                Instr::I32Load8u(instr) => self.execute_i32_load8_u(instr)?,
+                Instr::I32Load8uAt(instr) => self.execute_i32_load8_u_at(instr)?,
+                Instr::I32Load8uOffset16(instr) => self.execute_i32_load8_u_offset16(instr)?,
+                Instr::I32Load16s(instr) => self.execute_i32_load16_s(instr)?,
+                Instr::I32Load16sAt(instr) => self.execute_i32_load16_s_at(instr)?,
+                Instr::I32Load16sOffset16(instr) => self.execute_i32_load16_s_offset16(instr)?,
+                Instr::I32Load16u(instr) => self.execute_i32_load16_u(instr)?,
+                Instr::I32Load16uAt(instr) => self.execute_i32_load16_u_at(instr)?,
+                Instr::I32Load16uOffset16(instr) => self.execute_i32_load16_u_offset16(instr)?,
+                Instr::I64Load8s(instr) => self.execute_i64_load8_s(instr)?,
+                Instr::I64Load8sAt(instr) => self.execute_i64_load8_s_at(instr)?,
+                Instr::I64Load8sOffset16(instr) => self.execute_i64_load8_s_offset16(instr)?,
+                Instr::I64Load8u(instr) => self.execute_i64_load8_u(instr)?,
+                Instr::I64Load8uAt(instr) => self.execute_i64_load8_u_at(instr)?,
+                Instr::I64Load8uOffset16(instr) => self.execute_i64_load8_u_offset16(instr)?,
+                Instr::I64Load16s(instr) => self.execute_i64_load16_s(instr)?,
+                Instr::I64Load16sAt(instr) => self.execute_i64_load16_s_at(instr)?,
+                Instr::I64Load16sOffset16(instr) => self.execute_i64_load16_s_offset16(instr)?,
+                Instr::I64Load16u(instr) => self.execute_i64_load16_u(instr)?,
+                Instr::I64Load16uAt(instr) => self.execute_i64_load16_u_at(instr)?,
+                Instr::I64Load16uOffset16(instr) => self.execute_i64_load16_u_offset16(instr)?,
+                Instr::I64Load32s(instr) => self.execute_i64_load32_s(instr)?,
+                Instr::I64Load32sAt(instr) => self.execute_i64_load32_s_at(instr)?,
+                Instr::I64Load32sOffset16(instr) => self.execute_i64_load32_s_offset16(instr)?,
+                Instr::I64Load32u(instr) => self.execute_i64_load32_u(instr)?,
+                Instr::I64Load32uAt(instr) => self.execute_i64_load32_u_at(instr)?,
+                Instr::I64Load32uOffset16(instr) => self.execute_i64_load32_u_offset16(instr)?,
                 Instr::I32Store(_) => todo!(),
                 Instr::I32StoreOffset16(_) => todo!(),
                 Instr::I32StoreOffset16Imm16(_) => todo!(),
@@ -999,6 +1000,16 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline]
     fn get_fuel_consumption_mode(&self) -> Option<FuelConsumptionMode> {
         self.ctx.engine().config().get_fuel_consumption_mode()
+    }
+
+    /// Returns the [`Instruction::Const32`] parameter for an [`Instruction`].
+    fn fetch_const32(&self, offset: usize) -> AnyConst32 {
+        let mut addr: InstructionPtr = self.ip;
+        addr.add(offset);
+        match *addr.get() {
+            Instruction::Const32(value) => value,
+            _ => unreachable!("expected an Instruction::Const32 instruction word"),
+        }
     }
 }
 
