@@ -4,7 +4,15 @@ use crate::{
     core::TrapCode,
     engine::{
         bytecode::{BlockFuel, BranchOffset, FuncIdx},
-        bytecode2::{AnyConst32, Const32, Instruction, Register, RegisterSpan, RegisterSpanIter, UnaryInstr},
+        bytecode2::{
+            AnyConst32,
+            Const32,
+            Instruction,
+            Register,
+            RegisterSpan,
+            RegisterSpanIter,
+            UnaryInstr,
+        },
         cache::InstanceCache,
         code_map::{CodeMap2 as CodeMap, InstructionPtr2 as InstructionPtr},
         config::FuelCosts,
@@ -21,6 +29,7 @@ use core::cmp;
 use wasmi_core::UntypedValue;
 
 mod call;
+mod conversion;
 mod global;
 mod load;
 mod memory;
@@ -754,40 +763,40 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::F64Copysign(_) => todo!(),
                 Instr::F32CopysignImm(_) => todo!(),
                 Instr::F64CopysignImm(_) => todo!(),
-                Instr::I32WrapI64(_) => todo!(),
-                Instr::I64ExtendI32S(_) => todo!(),
-                Instr::I64ExtendI32U(_) => todo!(),
-                Instr::I32TruncF32S(_) => todo!(),
-                Instr::I32TruncF32U(_) => todo!(),
-                Instr::I32TruncF64S(_) => todo!(),
-                Instr::I32TruncF64U(_) => todo!(),
-                Instr::I64TruncF32S(_) => todo!(),
-                Instr::I64TruncF32U(_) => todo!(),
-                Instr::I64TruncF64S(_) => todo!(),
-                Instr::I64TruncF64U(_) => todo!(),
-                Instr::I32TruncSatF32S(_) => todo!(),
-                Instr::I32TruncSatF32U(_) => todo!(),
-                Instr::I32TruncSatF64S(_) => todo!(),
-                Instr::I32TruncSatF64U(_) => todo!(),
-                Instr::I64TruncSatF32S(_) => todo!(),
-                Instr::I64TruncSatF32U(_) => todo!(),
-                Instr::I64TruncSatF64S(_) => todo!(),
-                Instr::I64TruncSatF64U(_) => todo!(),
-                Instr::I32Extend8S(_) => todo!(),
-                Instr::I32Extend16S(_) => todo!(),
-                Instr::I64Extend8S(_) => todo!(),
-                Instr::I64Extend16S(_) => todo!(),
-                Instr::I64Extend32S(_) => todo!(),
-                Instr::F32DemoteF64(_) => todo!(),
-                Instr::F64PromoteF32(_) => todo!(),
-                Instr::F32ConvertI32S(_) => todo!(),
-                Instr::F32ConvertI32U(_) => todo!(),
-                Instr::F32ConvertI64S(_) => todo!(),
-                Instr::F32ConvertI64U(_) => todo!(),
-                Instr::F64ConvertI32S(_) => todo!(),
-                Instr::F64ConvertI32U(_) => todo!(),
-                Instr::F64ConvertI64S(_) => todo!(),
-                Instr::F64ConvertI64U(_) => todo!(),
+                Instr::I32WrapI64(instr) => self.execute_i32_wrap_i64(instr),
+                Instr::I64ExtendI32S(instr) => self.execute_i64_extend_i32_s(instr),
+                Instr::I64ExtendI32U(instr) => self.execute_i64_extend_i32_u(instr),
+                Instr::I32TruncF32S(instr) => self.execute_i32_trunc_f32_s(instr)?,
+                Instr::I32TruncF32U(instr) => self.execute_i32_trunc_f32_u(instr)?,
+                Instr::I32TruncF64S(instr) => self.execute_i32_trunc_f64_s(instr)?,
+                Instr::I32TruncF64U(instr) => self.execute_i32_trunc_f64_u(instr)?,
+                Instr::I64TruncF32S(instr) => self.execute_i64_trunc_f32_s(instr)?,
+                Instr::I64TruncF32U(instr) => self.execute_i64_trunc_f32_u(instr)?,
+                Instr::I64TruncF64S(instr) => self.execute_i64_trunc_f64_s(instr)?,
+                Instr::I64TruncF64U(instr) => self.execute_i64_trunc_f64_u(instr)?,
+                Instr::I32TruncSatF32S(instr) => self.execute_i32_trunc_sat_f32_s(instr),
+                Instr::I32TruncSatF32U(instr) => self.execute_i32_trunc_sat_f32_u(instr),
+                Instr::I32TruncSatF64S(instr) => self.execute_i32_trunc_sat_f64_s(instr),
+                Instr::I32TruncSatF64U(instr) => self.execute_i32_trunc_sat_f64_u(instr),
+                Instr::I64TruncSatF32S(instr) => self.execute_i64_trunc_sat_f32_s(instr),
+                Instr::I64TruncSatF32U(instr) => self.execute_i64_trunc_sat_f32_u(instr),
+                Instr::I64TruncSatF64S(instr) => self.execute_i64_trunc_sat_f64_s(instr),
+                Instr::I64TruncSatF64U(instr) => self.execute_i64_trunc_sat_f64_u(instr),
+                Instr::I32Extend8S(instr) => self.execute_i32_extend8_s(instr),
+                Instr::I32Extend16S(instr) => self.execute_i32_extend16_s(instr),
+                Instr::I64Extend8S(instr) => self.execute_i64_extend8_s(instr),
+                Instr::I64Extend16S(instr) => self.execute_i64_extend16_s(instr),
+                Instr::I64Extend32S(instr) => self.execute_i64_extend32_s(instr),
+                Instr::F32DemoteF64(instr) => self.execute_f32_demote_f64(instr),
+                Instr::F64PromoteF32(instr) => self.execute_f64_promote_f32(instr),
+                Instr::F32ConvertI32S(instr) => self.execute_f32_convert_i32_s(instr),
+                Instr::F32ConvertI32U(instr) => self.execute_f32_convert_i32_u(instr),
+                Instr::F32ConvertI64S(instr) => self.execute_f32_convert_i64_s(instr),
+                Instr::F32ConvertI64U(instr) => self.execute_f32_convert_i64_u(instr),
+                Instr::F64ConvertI32S(instr) => self.execute_f64_convert_i32_s(instr),
+                Instr::F64ConvertI32U(instr) => self.execute_f64_convert_i32_u(instr),
+                Instr::F64ConvertI64S(instr) => self.execute_f64_convert_i64_s(instr),
+                Instr::F64ConvertI64U(instr) => self.execute_f64_convert_i64_u(instr),
             }
         }
     }
@@ -1038,6 +1047,17 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let value = self.get_register(instr.input);
         self.set_register(instr.result, op(value));
         self.next_instr();
+    }
+
+    /// Executes a fallible generic unary [`Instruction`].
+    fn try_execute_unary(
+        &mut self,
+        instr: UnaryInstr,
+        op: fn(UntypedValue) -> Result<UntypedValue, TrapCode>,
+    ) -> Result<(), TrapCode> {
+        let value = self.get_register(instr.input);
+        self.set_register(instr.result, op(value)?);
+        self.try_next_instr()
     }
 }
 
