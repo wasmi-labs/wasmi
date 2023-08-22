@@ -1,5 +1,3 @@
-#![allow(dead_code)] // TODO: remove
-
 use super::err_stack_overflow;
 use crate::{
     core::UntypedValue,
@@ -257,14 +255,6 @@ impl ValueStack {
     #[inline]
     pub fn as_slice(&mut self) -> &[UntypedValue] {
         &self.values[0..self.sp]
-    }
-
-    /// Returns an exclusive slice to the top `n` entries in the [`ValueStack`].
-    #[inline]
-    pub fn peek_as_slice_mut(&mut self, n: usize) -> &mut [UntypedValue] {
-        let start = self.sp - n;
-        let end = self.sp;
-        &mut self.values[start..end]
     }
 
     /// Removes the slice `from..to` of [`UntypedValue`] cells from the [`ValueStack`].

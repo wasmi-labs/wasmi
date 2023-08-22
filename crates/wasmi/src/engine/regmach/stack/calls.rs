@@ -1,5 +1,3 @@
-#![allow(dead_code)] // TODO: remove
-
 use super::{err_stack_overflow, BaseValueStackOffset, FrameValueStackOffset};
 use crate::{
     engine::{bytecode2::RegisterSpan, code_map::InstructionPtr2 as InstructionPtr},
