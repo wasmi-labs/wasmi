@@ -17,13 +17,6 @@ macro_rules! impl_unary_impls {
 }
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
-    /// Executes a generic unary [`Instruction`].
-    fn execute_unary(&mut self, instr: UnaryInstr, op: fn(UntypedValue) -> UntypedValue) {
-        let value = self.get_register(instr.input);
-        self.set_register(instr.result, op(value));
-        self.next_instr();
-    }
-
     impl_unary_impls! {
         (Instruction::I32Clz, execute_i32_clz, UntypedValue::i32_clz),
         (Instruction::I32Ctz, execute_i32_ctz, UntypedValue::i32_ctz),

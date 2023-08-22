@@ -4,7 +4,7 @@ use crate::{
     core::TrapCode,
     engine::{
         bytecode::{BlockFuel, BranchOffset, FuncIdx},
-        bytecode2::{AnyConst32, Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
+        bytecode2::{AnyConst32, Const32, Instruction, Register, RegisterSpan, RegisterSpanIter, UnaryInstr},
         cache::InstanceCache,
         code_map::{CodeMap2 as CodeMap, InstructionPtr2 as InstructionPtr},
         config::FuelCosts,
@@ -1031,6 +1031,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Returns the [`Instruction::Const32`] parameter for an [`Instruction`].
     fn fetch_address_offset(&self, offset: usize) -> u32 {
         self.fetch_const32(offset).to_u32()
+    }
+
+    /// Executes a generic unary [`Instruction`].
+    fn execute_unary(&mut self, instr: UnaryInstr, op: fn(UntypedValue) -> UntypedValue) {
+        let value = self.get_register(instr.input);
+        self.set_register(instr.result, op(value));
+        self.next_instr();
     }
 }
 
