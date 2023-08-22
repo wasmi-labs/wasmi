@@ -721,10 +721,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Sets the [`Register`] value to `value`.
-    fn set_register(&mut self, register: Register, value: UntypedValue) {
+    fn set_register(&mut self, register: Register, value: impl Into<UntypedValue>) {
         // Safety: TODO
         let cell = unsafe { self.sp.get_mut(register) };
-        *cell = value;
+        *cell = value.into();
     }
 
     /// Shifts the instruction pointer to the next instruction.
@@ -1087,7 +1087,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn execute_ref_func(&mut self, result: Register, func_index: FuncIdx) {
         let func = self.cache.get_func(self.ctx, func_index);
         let funcref = FuncRef::new(func);
-        self.set_register(result, funcref.into());
+        self.set_register(result, funcref);
         self.next_instr();
     }
 }
