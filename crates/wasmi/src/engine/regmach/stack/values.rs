@@ -207,8 +207,8 @@ impl ValueStack {
 
     /// Shrink the [`ValueStack`] to the [`ValueStackOffset`].
     #[inline]
-    pub fn truncate(&mut self, new_sp: ValueStackOffset) {
-        self.sp = new_sp.0;
+    pub fn truncate(&mut self, new_sp: impl Into<ValueStackOffset>) {
+        self.sp = new_sp.into().0;
     }
 
     /// Allocates a new [`CompiledFunc`] on the [`ValueStack`].
