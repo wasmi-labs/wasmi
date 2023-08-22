@@ -249,4 +249,136 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         )?;
         self.try_next_instr()
     }
+
+    /// Executes an [`Instruction::MemoryFill`].
+    #[inline(always)]
+    pub fn execute_memory_fill(
+        &mut self,
+        dst: Register,
+        value: Register,
+        len: Register,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = self.get_register_as(dst);
+        let value: u8 = self.get_register_as(value);
+        let len: u32 = self.get_register_as(len);
+        self.execute_memory_fill_impl(dst, value, len)
+    }
+
+    /// Executes an [`Instruction::MemoryFillAt`].
+    #[inline(always)]
+    pub fn execute_memory_fill_at(
+        &mut self,
+        dst: Const16<u32>,
+        value: Register,
+        len: Register,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = dst.into();
+        let value: u8 = self.get_register_as(value);
+        let len: u32 = self.get_register_as(len);
+        self.execute_memory_fill_impl(dst, value, len)
+    }
+
+    /// Executes an [`Instruction::MemoryFillImm`].
+    #[inline(always)]
+    pub fn execute_memory_fill_imm(
+        &mut self,
+        dst: Register,
+        value: u8,
+        len: Register,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = self.get_register_as(dst);
+        let len: u32 = self.get_register_as(len);
+        self.execute_memory_fill_impl(dst, value, len)
+    }
+
+    /// Executes an [`Instruction::MemoryFillAtImm`].
+    #[inline(always)]
+    pub fn execute_memory_fill_at_imm(
+        &mut self,
+        dst: Const16<u32>,
+        value: u8,
+        len: Register,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = dst.into();
+        let len: u32 = self.get_register_as(len);
+        self.execute_memory_fill_impl(dst, value, len)
+    }
+
+    /// Executes an [`Instruction::MemoryFillExact`].
+    #[inline(always)]
+    pub fn execute_memory_fill_exact(
+        &mut self,
+        dst: Register,
+        value: Register,
+        len: Const16<u32>,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = self.get_register_as(dst);
+        let value: u8 = self.get_register_as(value);
+        let len: u32 = len.into();
+        self.execute_memory_fill_impl(dst, value, len)
+    }
+
+    /// Executes an [`Instruction::MemoryFillAtExact`].
+    #[inline(always)]
+    pub fn execute_memory_fill_at_exact(
+        &mut self,
+        dst: Const16<u32>,
+        value: Register,
+        len: Const16<u32>,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = dst.into();
+        let value: u8 = self.get_register_as(value);
+        let len: u32 = len.into();
+        self.execute_memory_fill_impl(dst, value, len)
+    }
+
+    /// Executes an [`Instruction::MemoryFillImmExact`].
+    #[inline(always)]
+    pub fn execute_memory_fill_imm_exact(
+        &mut self,
+        dst: Register,
+        value: u8,
+        len: Const16<u32>,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = self.get_register_as(dst);
+        let len: u32 = len.into();
+        self.execute_memory_fill_impl(dst, value, len)
+    }
+
+    /// Executes an [`Instruction::MemoryFillAtImmExact`].
+    #[inline(always)]
+    pub fn execute_memory_fill_at_imm_exact(
+        &mut self,
+        dst: Const16<u32>,
+        value: u8,
+        len: Const16<u32>,
+    ) -> Result<(), TrapCode> {
+        let dst: u32 = dst.into();
+        let len: u32 = len.into();
+        self.execute_memory_fill_impl(dst, value, len)
+    }
+
+    /// Executes a generic `memory.fill` instruction.
+    fn execute_memory_fill_impl(&mut self, dst: u32, value: u8, len: u32) -> Result<(), TrapCode> {
+        if len == 0 {
+            // Case: copying no elements means there is nothing to do
+            return Ok(());
+        }
+        self.consume_fuel_with(
+            |costs| costs.fuel_for_bytes(u64::from(len)),
+            |this| {
+                let dst = dst as usize;
+                let len = len as usize;
+                let memory = this
+                    .cache
+                    .default_memory_bytes(this.ctx)
+                    .get_mut(dst..)
+                    .and_then(|memory| memory.get_mut(..len))
+                    .ok_or(TrapCode::MemoryOutOfBounds)?;
+                memory.fill(value);
+                Ok(())
+            },
+        )?;
+        self.try_next_instr()
+    }
 }
