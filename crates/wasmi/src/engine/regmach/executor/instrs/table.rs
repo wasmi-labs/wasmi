@@ -48,4 +48,13 @@ impl<'engine, 'ctx> Executor<'engine, 'ctx> {
         self.set_register(result, value);
         self.try_next_instr()
     }
+
+    /// Executes an [`Instruction::TableSize`].
+    #[inline(always)]
+    pub fn execute_table_size(&mut self, result: Register, table_index: TableIdx) {
+        let table = self.cache.get_table(self.ctx, table_index);
+        let size = self.ctx.resolve_table(&table).size();
+        self.set_register(result, size);
+        self.next_instr();
+    }
 }
