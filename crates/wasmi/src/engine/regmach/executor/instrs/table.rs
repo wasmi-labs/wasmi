@@ -9,7 +9,7 @@ use crate::{
     table::TableEntity,
 };
 
-impl<'engine, 'ctx> Executor<'engine, 'ctx> {
+impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Returns the [`Instruction::TableIdx`] parameter for an [`Instruction`].
     fn fetch_table_index(&self, offset: usize) -> TableIdx {
         let mut addr: InstructionPtr = self.ip;
