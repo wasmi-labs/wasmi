@@ -12,11 +12,6 @@ type WasmLoadOp =
     fn(memory: &[u8], address: UntypedValue, offset: u32) -> Result<UntypedValue, TrapCode>;
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
-    /// Returns the [`Instruction::Const32`] parameter for an [`Instruction`].
-    fn fetch_address_offset(&self, offset: usize) -> u32 {
-        self.fetch_const32(offset).to_u32()
-    }
-
     /// Executes a generic Wasm `store[N_{s|u}]` operation.
     ///
     /// # Note

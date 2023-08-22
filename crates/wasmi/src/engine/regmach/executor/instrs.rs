@@ -1011,6 +1011,11 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             _ => unreachable!("expected an Instruction::Const32 instruction word"),
         }
     }
+
+    /// Returns the [`Instruction::Const32`] parameter for an [`Instruction`].
+    fn fetch_address_offset(&self, offset: usize) -> u32 {
+        self.fetch_const32(offset).to_u32()
+    }
 }
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
