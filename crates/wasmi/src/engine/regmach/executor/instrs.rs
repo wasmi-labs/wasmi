@@ -25,6 +25,7 @@ mod global;
 mod load;
 mod memory;
 mod select;
+mod store;
 mod table;
 
 macro_rules! forward_call {
@@ -529,47 +530,61 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::I64Load32u(instr) => self.execute_i64_load32_u(instr)?,
                 Instr::I64Load32uAt(instr) => self.execute_i64_load32_u_at(instr)?,
                 Instr::I64Load32uOffset16(instr) => self.execute_i64_load32_u_offset16(instr)?,
-                Instr::I32Store(_) => todo!(),
-                Instr::I32StoreOffset16(_) => todo!(),
-                Instr::I32StoreOffset16Imm16(_) => todo!(),
-                Instr::I32StoreAt(_) => todo!(),
-                Instr::I32StoreAtImm16(_) => todo!(),
-                Instr::I32Store8(_) => todo!(),
-                Instr::I32Store8Offset16(_) => todo!(),
-                Instr::I32Store8Offset16Imm(_) => todo!(),
-                Instr::I32Store8At(_) => todo!(),
-                Instr::I32Store8AtImm(_) => todo!(),
-                Instr::I32Store16(_) => todo!(),
-                Instr::I32Store16Offset16(_) => todo!(),
-                Instr::I32Store16Offset16Imm(_) => todo!(),
-                Instr::I32Store16At(_) => todo!(),
-                Instr::I32Store16AtImm(_) => todo!(),
-                Instr::I64Store(_) => todo!(),
-                Instr::I64StoreOffset16(_) => todo!(),
-                Instr::I64StoreOffset16Imm16(_) => todo!(),
-                Instr::I64StoreAt(_) => todo!(),
-                Instr::I64StoreAtImm16(_) => todo!(),
-                Instr::I64Store8(_) => todo!(),
-                Instr::I64Store8Offset16(_) => todo!(),
-                Instr::I64Store8Offset16Imm(_) => todo!(),
-                Instr::I64Store8At(_) => todo!(),
-                Instr::I64Store8AtImm(_) => todo!(),
-                Instr::I64Store16(_) => todo!(),
-                Instr::I64Store16Offset16(_) => todo!(),
-                Instr::I64Store16Offset16Imm(_) => todo!(),
-                Instr::I64Store16At(_) => todo!(),
-                Instr::I64Store16AtImm(_) => todo!(),
-                Instr::I64Store32(_) => todo!(),
-                Instr::I64Store32Offset16(_) => todo!(),
-                Instr::I64Store32Offset16Imm16(_) => todo!(),
-                Instr::I64Store32At(_) => todo!(),
-                Instr::I64Store32AtImm16(_) => todo!(),
-                Instr::F32Store(_) => todo!(),
-                Instr::F32StoreOffset16(_) => todo!(),
-                Instr::F32StoreAt(_) => todo!(),
-                Instr::F64Store(_) => todo!(),
-                Instr::F64StoreOffset16(_) => todo!(),
-                Instr::F64StoreAt(_) => todo!(),
+                Instr::I32Store(instr) => self.execute_i32_store(instr)?,
+                Instr::I32StoreOffset16(instr) => self.execute_i32_store_offset16(instr)?,
+                Instr::I32StoreOffset16Imm16(instr) => {
+                    self.execute_i32_store_offset16_imm16(instr)?
+                }
+                Instr::I32StoreAt(instr) => self.execute_i32_store_at(instr)?,
+                Instr::I32StoreAtImm16(instr) => self.execute_i32_store_at_imm16(instr)?,
+                Instr::I32Store8(instr) => self.execute_i32_store8(instr)?,
+                Instr::I32Store8Offset16(instr) => self.execute_i32_store8_offset16(instr)?,
+                Instr::I32Store8Offset16Imm(instr) => {
+                    self.execute_i32_store8_offset16_imm(instr)?
+                }
+                Instr::I32Store8At(instr) => self.execute_i32_store8_at(instr)?,
+                Instr::I32Store8AtImm(instr) => self.execute_i32_store8_at_imm(instr)?,
+                Instr::I32Store16(instr) => self.execute_i32_store16(instr)?,
+                Instr::I32Store16Offset16(instr) => self.execute_i32_store16_offset16(instr)?,
+                Instr::I32Store16Offset16Imm(instr) => {
+                    self.execute_i32_store16_offset16_imm(instr)?
+                }
+                Instr::I32Store16At(instr) => self.execute_i32_store16_at(instr)?,
+                Instr::I32Store16AtImm(instr) => self.execute_i32_store16_at_imm(instr)?,
+                Instr::I64Store(instr) => self.execute_i64_store(instr)?,
+                Instr::I64StoreOffset16(instr) => self.execute_i64_store_offset16(instr)?,
+                Instr::I64StoreOffset16Imm16(instr) => {
+                    self.execute_i64_store_offset16_imm16(instr)?
+                }
+                Instr::I64StoreAt(instr) => self.execute_i64_store_at(instr)?,
+                Instr::I64StoreAtImm16(instr) => self.execute_i64_store_at_imm16(instr)?,
+                Instr::I64Store8(instr) => self.execute_i64_store8(instr)?,
+                Instr::I64Store8Offset16(instr) => self.execute_i64_store8_offset16(instr)?,
+                Instr::I64Store8Offset16Imm(instr) => {
+                    self.execute_i64_store8_offset16_imm(instr)?
+                }
+                Instr::I64Store8At(instr) => self.execute_i64_store8_at(instr)?,
+                Instr::I64Store8AtImm(instr) => self.execute_i64_store8_at_imm(instr)?,
+                Instr::I64Store16(instr) => self.execute_i64_store16(instr)?,
+                Instr::I64Store16Offset16(instr) => self.execute_i64_store16_offset16(instr)?,
+                Instr::I64Store16Offset16Imm(instr) => {
+                    self.execute_i64_store16_offset16_imm(instr)?
+                }
+                Instr::I64Store16At(instr) => self.execute_i64_store16_at(instr)?,
+                Instr::I64Store16AtImm(instr) => self.execute_i64_store16_at_imm(instr)?,
+                Instr::I64Store32(instr) => self.execute_i64_store32(instr)?,
+                Instr::I64Store32Offset16(instr) => self.execute_i64_store32_offset16(instr)?,
+                Instr::I64Store32Offset16Imm16(instr) => {
+                    self.execute_i64_store32_offset16_imm16(instr)?
+                }
+                Instr::I64Store32At(instr) => self.execute_i64_store32_at(instr)?,
+                Instr::I64Store32AtImm16(instr) => self.execute_i64_store32_at_imm16(instr)?,
+                Instr::F32Store(instr) => self.execute_f32_store(instr)?,
+                Instr::F32StoreOffset16(instr) => self.execute_f32_store_offset16(instr)?,
+                Instr::F32StoreAt(instr) => self.execute_f32_store_at(instr)?,
+                Instr::F64Store(instr) => self.execute_f64_store(instr)?,
+                Instr::F64StoreOffset16(instr) => self.execute_f64_store_offset16(instr)?,
+                Instr::F64StoreAt(instr) => self.execute_f64_store_at(instr)?,
                 Instr::I32Eq(_) => todo!(),
                 Instr::I32EqImm16(_) => todo!(),
                 Instr::I64Eq(_) => todo!(),
