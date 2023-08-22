@@ -901,31 +901,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.cache.update_instance(frame.instance());
     }
 
-    /// Returns the execution to the caller.
-    ///
-    /// Any return values are expected to already have been transferred
-    /// from the returning callee to the caller.
-    #[inline(always)]
-    fn ret(&mut self) -> ReturnOutcome {
-        let returned = self
-            .call_stack
-            .pop()
-            .expect("the executing call frame is always on the stack");
-        self.value_stack.truncate(returned.frame_offset());
-        // Note: We pop instead of peek to avoid borrow checker errors.
-        // This might be slow and we might want to fix this in that case.
-        match self.call_stack.pop() {
-            Some(caller) => {
-                self.init_call_frame(&caller);
-                self.call_stack
-                    .push(caller)
-                    .expect("pushing a single call frame after popping 2 cannot fail");
-                ReturnOutcome::Wasm
-            }
-            None => ReturnOutcome::Host,
-        }
-    }
-
     /// Consume an amount of fuel specified by `delta` if `exec` succeeds.
     ///
     /// # Note

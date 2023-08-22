@@ -8,10 +8,35 @@ use crate::{
 use crate::engine::bytecode2::Instruction;
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+    /// Returns the execution to the caller.
+    ///
+    /// Any return values are expected to already have been transferred
+    /// from the returning callee to the caller.
+    #[inline(always)]
+    fn return_impl(&mut self) -> ReturnOutcome {
+        let returned = self
+            .call_stack
+            .pop()
+            .expect("the executing call frame is always on the stack");
+        self.value_stack.truncate(returned.frame_offset());
+        // Note: We pop instead of peek to avoid borrow checker errors.
+        // This might be slow and we might want to fix this in that case.
+        match self.call_stack.pop() {
+            Some(caller) => {
+                self.init_call_frame(&caller);
+                self.call_stack
+                    .push(caller)
+                    .expect("pushing a single call frame after popping 2 cannot fail");
+                ReturnOutcome::Wasm
+            }
+            None => ReturnOutcome::Host,
+        }
+    }
+
     /// Execute an [`Instruction::Return`].
     #[inline(always)]
     pub fn execute_return(&mut self) -> ReturnOutcome {
-        self.ret()
+        self.return_impl()
     }
 
     /// Execute a generic return [`Instruction`] returning a single value.
@@ -33,7 +58,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 todo!()
             }
         }
-        self.ret()
+        self.return_impl()
     }
 
     /// Execute an [`Instruction::ReturnReg`] returning a single [`Register`] value.
@@ -78,7 +103,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 todo!()
             }
         }
-        self.ret()
+        self.return_impl()
     }
 
     /// Execute a generic conditional return [`Instruction`].
