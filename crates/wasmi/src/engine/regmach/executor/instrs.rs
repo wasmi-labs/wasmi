@@ -378,14 +378,28 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::TableCopyFromToExact { dst, src, len } => {
                     self.execute_table_copy_from_to_exact(dst, src, len)?
                 }
-                Instr::TableInit { dst, src, len } => todo!(),
-                Instr::TableInitTo { dst, src, len } => todo!(),
-                Instr::TableInitFrom { dst, src, len } => todo!(),
-                Instr::TableInitFromTo { dst, src, len } => todo!(),
-                Instr::TableInitExact { dst, src, len } => todo!(),
-                Instr::TableInitToExact { dst, src, len } => todo!(),
-                Instr::TableInitFromExact { dst, src, len } => todo!(),
-                Instr::TableInitFromToExact { dst, src, len } => todo!(),
+                Instr::TableInit { dst, src, len } => self.execute_table_init(dst, src, len)?,
+                Instr::TableInitTo { dst, src, len } => {
+                    self.execute_table_init_to(dst, src, len)?
+                }
+                Instr::TableInitFrom { dst, src, len } => {
+                    self.execute_table_init_from(dst, src, len)?
+                }
+                Instr::TableInitFromTo { dst, src, len } => {
+                    self.execute_table_init_from_to(dst, src, len)?
+                }
+                Instr::TableInitExact { dst, src, len } => {
+                    self.execute_table_init_exact(dst, src, len)?
+                }
+                Instr::TableInitToExact { dst, src, len } => {
+                    self.execute_table_init_to_exact(dst, src, len)?
+                }
+                Instr::TableInitFromExact { dst, src, len } => {
+                    self.execute_table_init_from_exact(dst, src, len)?
+                }
+                Instr::TableInitFromToExact { dst, src, len } => {
+                    self.execute_table_init_from_to_exact(dst, src, len)?
+                }
                 Instr::TableFill { dst, len, value } => todo!(),
                 Instr::TableFillAt { dst, len, value } => todo!(),
                 Instr::TableFillExact { dst, len, value } => todo!(),
