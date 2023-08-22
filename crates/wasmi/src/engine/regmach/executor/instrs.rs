@@ -1,5 +1,3 @@
-#![allow(dead_code, unused_variables)]
-
 use crate::{
     core::TrapCode,
     engine::{
