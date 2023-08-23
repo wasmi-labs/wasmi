@@ -38,6 +38,41 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.set_register(result, loaded_value);
         Ok(())
     }
+
+    /// Executes a generic `load` [`Instruction`].
+    fn execute_load_impl(
+        &mut self,
+        instr: LoadInstr,
+        load_extend: WasmLoadOp,
+    ) -> Result<(), TrapCode> {
+        let offset = self.fetch_address_offset(1);
+        let address = self.get_register(instr.ptr);
+        self.execute_load_extend(instr.result, address, offset, load_extend)?;
+        self.try_next_instr_at(2)
+    }
+
+    /// Executes a generic `load_at` [`Instruction`].
+    fn execute_load_at_impl(
+        &mut self,
+        instr: LoadAtInstr,
+        load_extend: WasmLoadOp,
+    ) -> Result<(), TrapCode> {
+        let offset = u32::from(instr.address);
+        self.execute_load_extend(instr.result, UntypedValue::from(0u32), offset, load_extend)?;
+        self.try_next_instr()
+    }
+
+    /// Executes a generic `load_offset16` [`Instruction`].
+    fn execute_load_offset16_impl(
+        &mut self,
+        instr: LoadOffset16Instr,
+        load_extend: WasmLoadOp,
+    ) -> Result<(), TrapCode> {
+        let offset = u32::from(instr.offset);
+        let address = self.get_register(instr.ptr);
+        self.execute_load_extend(instr.result, address, offset, load_extend)?;
+        self.try_next_instr()
+    }
 }
 
 macro_rules! impl_execute_load {
@@ -53,27 +88,19 @@ macro_rules! impl_execute_load {
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load), "`].")]
             #[inline(always)]
             pub fn $fn_load(&mut self, instr: LoadInstr) -> Result<(), TrapCode> {
-                let offset = self.fetch_address_offset(1);
-                let address = self.get_register(instr.ptr);
-                self.execute_load_extend(instr.result, address, offset, $impl_fn)?;
-                self.try_next_instr_at(2)
+                self.execute_load_impl(instr, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_at), "`].")]
             #[inline(always)]
             pub fn $fn_load_at(&mut self, instr: LoadAtInstr) -> Result<(), TrapCode> {
-                let offset = u32::from(instr.address);
-                self.execute_load_extend(instr.result, UntypedValue::from(0u32), offset, $impl_fn)?;
-                self.try_next_instr()
+                self.execute_load_at_impl(instr, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_off16), "`].")]
             #[inline(always)]
             pub fn $fn_load_off16(&mut self, instr: LoadOffset16Instr) -> Result<(), TrapCode> {
-                let offset = u32::from(instr.offset);
-                let address = self.get_register(instr.ptr);
-                self.execute_load_extend(instr.result, address, offset, $impl_fn)?;
-                self.try_next_instr()
+                self.execute_load_offset16_impl(instr, $impl_fn)
             }
         )*
     }
