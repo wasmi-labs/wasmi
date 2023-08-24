@@ -21,7 +21,6 @@ use crate::{
     FuelConsumptionMode,
     Func,
     FuncRef,
-    Instance,
     StoreInner,
 };
 use core::cmp;
@@ -43,15 +42,8 @@ mod unary;
 
 macro_rules! forward_call {
     ($expr:expr) => {{
-        if let CallOutcome::Call {
-            host_func,
-            instance,
-        } = $expr?
-        {
-            return Ok(WasmOutcome::Call {
-                host_func,
-                instance,
-            });
+        if let CallOutcome::Call(host_func) = $expr? {
+            return Ok(WasmOutcome::Call(host_func));
         }
     }};
 }
@@ -67,7 +59,7 @@ pub enum WasmOutcome {
     /// The Wasm execution has ended and returns to the host side.
     Return,
     /// The Wasm execution calls a host function.
-    Call { host_func: Func, instance: Instance },
+    Call(Func),
 }
 
 /// The outcome of a Wasm execution.
@@ -81,17 +73,7 @@ pub enum CallOutcome {
     /// The Wasm execution continues in Wasm.
     Continue,
     /// The Wasm execution calls a host function.
-    Call { host_func: Func, instance: Instance },
-}
-
-impl CallOutcome {
-    /// Creates a new [`CallOutcome::Call`].
-    pub fn call(host_func: Func, instance: Instance) -> Self {
-        Self::Call {
-            host_func,
-            instance,
-        }
-    }
+    Call(Func),
 }
 
 /// The outcome of a Wasm return statement.

@@ -296,7 +296,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 //
                 // TODO: copy parameters for the host function call
                 self.cache.reset();
-                Ok(CallOutcome::call(*func, *self.cache.instance()))
+                Ok(CallOutcome::Call(*func))
             }
         }
     }

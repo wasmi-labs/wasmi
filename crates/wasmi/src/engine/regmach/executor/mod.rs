@@ -110,11 +110,14 @@ impl<'engine> EngineExecutor<'engine> {
                     // Therefore we can return from the entire execution.
                     return Ok(());
                 }
-                WasmOutcome::Call {
-                    ref host_func,
-                    ref instance,
-                } => {
-                    self.execute_host_func(&mut ctx, host_func, instance)?;
+                WasmOutcome::Call(ref host_func) => {
+                    let instance = *self
+                        .stack
+                        .calls
+                        .peek()
+                        .expect("caller must be on the stack")
+                        .instance();
+                    self.execute_host_func(&mut ctx, host_func, &instance)?;
                 }
             }
         }
