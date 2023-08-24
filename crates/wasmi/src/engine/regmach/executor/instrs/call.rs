@@ -45,6 +45,23 @@ pub enum CallKind {
 }
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+    /// Updates the [`InstructionPtr`] of the caller [`CallFrame`] before dispatching a call.
+    ///
+    /// # Note
+    ///
+    /// The `offset` denotes how many [`Instruction`] words make up the call instruction.
+    fn update_instr_ptr_at(&mut self, offset: usize) {
+        // Note: we explicitly do not mutate `self.ip` since that would make
+        // other parts of the code more fragile with respect to instruction ordering.
+        let mut ip = self.ip;
+        ip.add(offset);
+        let caller = self
+            .call_stack
+            .peek_mut()
+            .expect("caller call frame must be on the stack");
+        caller.update_instr_ptr(ip);
+    }
+
     /// Fetches the [`Instruction::CallParams`] parameter for a call [`Instruction`].
     ///
     /// # Note
@@ -61,7 +78,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         addr.add(offset);
         match addr.get() {
             Instruction::CallParams(call_params) => *call_params,
-            _ => unreachable!("expected Instruction::CallParams at this address"),
+            unexpected => unreachable!(
+                "expected Instruction::CallParams at this address but found {unexpected:?}"
+            ),
         }
     }
 
@@ -90,7 +109,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 let table = call_params.table;
                 ResolvedCallIndirectParams { index, table }
             }
-            _ => unreachable!("expected Instruction::CallIndirectParams at this address"),
+            unexpected => unreachable!(
+                "expected Instruction::CallIndirectParams at this address but found {unexpected:?}"
+            ),
         }
     }
 
@@ -100,7 +121,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         results: RegisterSpan,
         func: &CompiledFuncEntity,
     ) -> Result<CallFrame, TrapCode> {
-        let instr_ptr = InstructionPtr::new(func.instrs().as_ptr());
+        let instrs = func.instrs();
+        let instr_ptr = InstructionPtr::new(instrs.as_ptr());
         let (base_ptr, frame_ptr) = self.value_stack.alloc_call_frame(func)?;
         // We have to reinstantiate the `self.sp` [`ValueStackPtr`] since we just called
         // [`ValueStack::alloc_call_frame`] which might invalidate all live [`ValueStackPtr`].
@@ -110,7 +132,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             .expect("need to have a caller on the call stack");
         // Safety: We use the base offset of a live call frame on the call stack.
         self.sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
-        let instance = self.cache.instance();
+        let instance = caller.instance();
         let frame = CallFrame::new(instr_ptr, frame_ptr, base_ptr, results, *instance);
         Ok(frame)
     }
@@ -163,8 +185,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes an [`Instruction::ReturnCallInternal0`].
     #[inline(always)]
     pub fn execute_return_call_internal_0(&mut self, func: CompiledFunc) -> Result<(), TrapCode> {
+        self.update_instr_ptr_at(1);
         self.execute_return_call_internal_impl(func, None)?;
-        self.next_instr();
         Ok(())
     }
 
@@ -172,8 +194,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     pub fn execute_return_call_internal(&mut self, func: CompiledFunc) -> Result<(), TrapCode> {
         let call_params = self.fetch_call_params(1);
+        self.update_instr_ptr_at(2);
         self.execute_return_call_internal_impl(func, Some(&call_params))?;
-        self.next_instr_at(2);
         Ok(())
     }
 
@@ -210,8 +232,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         results: RegisterSpan,
         func: CompiledFunc,
     ) -> Result<(), TrapCode> {
+        self.update_instr_ptr_at(1);
         self.prepare_compiled_func_call(results, func, None, CallKind::Nested)?;
-        self.next_instr();
         Ok(())
     }
 
@@ -223,8 +245,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func: CompiledFunc,
     ) -> Result<(), TrapCode> {
         let call_params = self.fetch_call_params(1);
+        self.update_instr_ptr_at(2);
         self.prepare_compiled_func_call(results, func, Some(&call_params), CallKind::Nested)?;
-        self.next_instr_at(1);
         Ok(())
     }
 
@@ -235,9 +257,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func: FuncIdx,
     ) -> Result<CallOutcome, TrapCode> {
         let func = self.cache.get_func(self.ctx, func);
-        let outcome = self.execute_return_call_imported_impl(&func, None)?;
-        self.next_instr();
-        Ok(outcome)
+        self.update_instr_ptr_at(1);
+        self.execute_return_call_imported_impl(&func, None)
     }
 
     /// Executes an [`Instruction::ReturnCallImported`].
@@ -245,9 +266,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     pub fn execute_return_call_imported(&mut self, func: FuncIdx) -> Result<CallOutcome, TrapCode> {
         let call_params = self.fetch_call_params(1);
         let func = self.cache.get_func(self.ctx, func);
-        let outcome = self.execute_return_call_imported_impl(&func, Some(&call_params))?;
-        self.next_instr_at(2);
-        Ok(outcome)
+        self.update_instr_ptr_at(2);
+        self.execute_return_call_imported_impl(&func, Some(&call_params))
     }
 
     /// Executes an [`Instruction::ReturnCallImported`] or [`Instruction::ReturnCallImported0`].
@@ -257,9 +277,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         call_params: Option<&CallParams>,
     ) -> Result<CallOutcome, TrapCode> {
         let results = self.caller_results();
-        let outcome =
-            self.execute_call_imported_impl(results, func, call_params, CallKind::Tail)?;
-        Ok(outcome)
+        self.execute_call_imported_impl(results, func, call_params, CallKind::Tail)
     }
 
     /// Executes an [`Instruction::CallImported0`].
@@ -270,9 +288,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func: FuncIdx,
     ) -> Result<CallOutcome, TrapCode> {
         let func = self.cache.get_func(self.ctx, func);
-        let outcome = self.execute_call_imported_impl(results, &func, None, CallKind::Nested)?;
-        self.next_instr();
-        Ok(outcome)
+        self.update_instr_ptr_at(1);
+        self.execute_call_imported_impl(results, &func, None, CallKind::Nested)
     }
 
     /// Executes an [`Instruction::CallImported`].
@@ -284,10 +301,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ) -> Result<CallOutcome, TrapCode> {
         let call_params = self.fetch_call_params(1);
         let func = self.cache.get_func(self.ctx, func);
-        let outcome =
-            self.execute_call_imported_impl(results, &func, Some(&call_params), CallKind::Nested)?;
-        self.next_instr_at(2);
-        Ok(outcome)
+        self.update_instr_ptr_at(2);
+        self.execute_call_imported_impl(results, &func, Some(&call_params), CallKind::Nested)
     }
 
     /// Executes an imported or indirect (tail) call instruction.
@@ -322,16 +337,15 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
         let call_indirect_params = self.fetch_call_indirect_params(1);
+        self.update_instr_ptr_at(2);
         let results = self.caller_results();
-        let outcome = self.execute_call_indirect_impl(
+        self.execute_call_indirect_impl(
             results,
             func_type,
             &call_indirect_params,
             None,
             CallKind::Tail,
-        )?;
-        self.next_instr_at(2);
-        Ok(outcome)
+        )
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
@@ -342,16 +356,15 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ) -> Result<CallOutcome, TrapCode> {
         let call_params = self.fetch_call_params(1);
         let call_indirect_params = self.fetch_call_indirect_params(2);
+        self.update_instr_ptr_at(3);
         let results = self.caller_results();
-        let outcome = self.execute_call_indirect_impl(
+        self.execute_call_indirect_impl(
             results,
             func_type,
             &call_indirect_params,
             Some(&call_params),
             CallKind::Tail,
-        )?;
-        self.next_instr_at(3);
-        Ok(outcome)
+        )
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
@@ -362,15 +375,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
         let call_indirect_params = self.fetch_call_indirect_params(1);
-        let outcome = self.execute_call_indirect_impl(
+        self.update_instr_ptr_at(2);
+        self.execute_call_indirect_impl(
             results,
             func_type,
             &call_indirect_params,
             None,
             CallKind::Nested,
-        )?;
-        self.next_instr_at(2);
-        Ok(outcome)
+        )
     }
 
     /// Executes an [`Instruction::CallIndirect`].
@@ -380,17 +392,16 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         results: RegisterSpan,
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
-        let call_params = self.fetch_call_params(1);
-        let call_indirect_params = self.fetch_call_indirect_params(2);
-        let outcome = self.execute_call_indirect_impl(
+        let call_indirect_params = self.fetch_call_indirect_params(1);
+        let call_params = self.fetch_call_params(2);
+        self.update_instr_ptr_at(3);
+        self.execute_call_indirect_impl(
             results,
             func_type,
             &call_indirect_params,
             Some(&call_params),
             CallKind::Nested,
-        )?;
-        self.next_instr_at(3);
-        Ok(outcome)
+        )
     }
 
     /// Executes an [`Instruction::CallIndirect`] and [`Instruction::CallIndirect0`].
