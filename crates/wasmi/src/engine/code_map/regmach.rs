@@ -111,7 +111,7 @@ impl CompiledFuncEntity {
     /// This excludes registers required to store function local constant values.
     pub fn len_cells(&self) -> u16 {
         debug_assert!(
-            self.consts.len() < self.len_registers as usize,
+            self.consts.len() <= self.len_registers as usize,
             "len_registers contains function local constant values and therefore must be greater or equals",
         );
         debug_assert!(
