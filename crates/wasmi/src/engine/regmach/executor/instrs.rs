@@ -211,10 +211,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 }
                 Instr::Branch { offset } => self.execute_branch(offset),
                 Instr::BranchEqz { condition, offset } => {
-                    self.execute_branch_nez(condition, offset)
+                    self.execute_branch_eqz(condition, offset)
                 }
                 Instr::BranchNez { condition, offset } => {
-                    self.execute_branch_eqz(condition, offset)
+                    self.execute_branch_nez(condition, offset)
                 }
                 Instr::BranchTable { index, len_targets } => {
                     self.execute_branch_table(index, len_targets)
