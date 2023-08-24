@@ -244,7 +244,12 @@ impl ValueStack {
         I: IntoIterator<Item = UntypedValue>,
     {
         let offset = offset.into().0;
-        assert!(offset < self.sp);
+        let mut values = values.into_iter();
+        if offset >= self.sp {
+            // In this case we can assert that `values` must be empty since
+            // otherwise there is a buffer overflow on the value stack.
+            debug_assert!(values.next().is_none());
+        }
         let cells = &mut self.values[offset..];
         for (cell, value) in cells.iter_mut().zip(values) {
             *cell = value;
