@@ -86,6 +86,12 @@ impl CallStack {
         self.calls.last()
     }
 
+    /// Peeks the last [`CallFrame`] of the [`CallStack`] if any.
+    #[inline]
+    pub fn peek_mut(&mut self) -> Option<&mut CallFrame> {
+        self.calls.last_mut()
+    }
+
     /// Peeks the two top-most [`CallFrame`] on the [`CallStack`] if any.
     ///
     /// # Note
@@ -151,6 +157,15 @@ impl CallFrame {
         debug_assert!(delta <= frame_index);
         self.base_ptr = BaseValueStackOffset::new(base_index - delta);
         self.frame_ptr = FrameValueStackOffset::new(frame_index - delta);
+    }
+
+    /// Updates the [`InstructionPtr`] of the [`CallFrame`].
+    ///
+    /// This is required before dispatching a nested function call to update
+    /// the instruction pointer of the caller so that it can continue at that
+    /// position when the called function returns.
+    pub fn update_instr_ptr(&mut self, new_instr_ptr: InstructionPtr) {
+        self.instr_ptr = new_instr_ptr;
     }
 
     /// Returns the [`InstructionPtr`] of the [`CallFrame`].
