@@ -161,7 +161,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         resource_limiter: &'ctx mut ResourceLimiterRef<'ctx>,
     ) -> Result<WasmOutcome, TrapCode> {
         use Instruction as Instr;
-        _ = resource_limiter.as_resource_limiter(); // TODO: remove
         loop {
             match *self.ip.get() {
                 Instr::TableIdx(_)
