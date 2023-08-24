@@ -15,11 +15,10 @@ macro_rules! fetch_select_imm_param {
                 result_or_condition,
                 lhs_or_rhs,
             } => (result_or_condition, lhs_or_rhs),
-            _ => ::core::unreachable!(::core::concat!(
-                "expected ",
-                ::core::stringify!($variant),
-                "word"
-            )),
+            unexpected => ::core::unreachable!(
+                "expected {} but found {unexpected:?}",
+                ::core::stringify!($variant)
+            ),
         }
     }};
 }
@@ -34,7 +33,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             Instruction::Const32(value) => UntypedValue::from(value.to_u32()),
             Instruction::I64Const32(value) => UntypedValue::from(i64::from(value)),
             Instruction::F64Const32(value) => UntypedValue::from(f64::from(value)),
-            _ => unreachable!("expected a select parameter instruction word"),
+            unexpected => unreachable!(
+                "expected a select parameter instruction word but found {unexpected:?}"
+            ),
         }
     }
 
