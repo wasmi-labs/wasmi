@@ -65,10 +65,15 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes an [`Instruction::TableSize`].
     #[inline(always)]
     pub fn execute_table_size(&mut self, result: Register, table_index: TableIdx) {
+        self.execute_table_size_impl(result, table_index);
+        self.next_instr();
+    }
+
+    /// Executes a generic `table.size` instruction.
+    fn execute_table_size_impl(&mut self, result: Register, table_index: TableIdx) {
         let table = self.cache.get_table(self.ctx, table_index);
         let size = self.ctx.resolve_table(&table).size();
         self.set_register(result, size);
-        self.next_instr();
     }
 
     /// Executes an [`Instruction::TableSet`].
@@ -222,7 +227,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ) -> Result<(), TrapCode> {
         if len == 0 {
             // Case: copying no elements means there is nothing to do
-            return Ok(());
+            return self.try_next_instr_at(3);
         }
         let dst_table_index = self.fetch_table_index(1);
         let src_table_index = self.fetch_table_index(2);
@@ -371,7 +376,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ) -> Result<(), TrapCode> {
         if len == 0 {
             // Case: copying no elements means there is nothing to do
-            return Ok(());
+            return self.try_next_instr_at(3);
         }
         let table_index = self.fetch_table_index(1);
         let element_index = self.fetch_element_segment_index(2);
@@ -453,7 +458,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ) -> Result<(), TrapCode> {
         if len == 0 {
             // Case: copying no elements means there is nothing to do
-            return Ok(());
+            return self.try_next_instr_at(2);
         }
         let table_index = self.fetch_table_index(1);
         self.consume_fuel_with(
@@ -507,8 +512,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let table_index = self.fetch_table_index(1);
         if delta == 0 {
             // Case: growing by 0 elements means there is nothing to do
-            self.execute_table_size(result, table_index);
-            return Ok(());
+            self.execute_table_size_impl(result, table_index);
+            return self.try_next_instr_at(2)
         }
         let return_value = self.consume_fuel_with(
             |costs| costs.fuel_for_elements(u64::from(delta)),
