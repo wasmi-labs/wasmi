@@ -46,7 +46,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ) -> Result<(), TrapCode> {
         let memory = self.cache.default_memory_bytes(self.ctx);
         store_wrap(memory, address, offset, value)?;
-        self.try_next_instr()
+        Ok(())
     }
 
     fn execute_store(&mut self, instr: StoreInstr, store_op: WasmStoreOp) -> Result<(), TrapCode> {
