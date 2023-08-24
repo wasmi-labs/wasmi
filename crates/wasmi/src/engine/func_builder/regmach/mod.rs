@@ -440,7 +440,7 @@ impl<'parser> FuncTranslator<'parser> {
         &mut self,
         _frame: UnreachableControlFrame,
     ) -> Result<(), TranslationError> {
-        todo!()
+        Ok(())
     }
 
     /// Allocate control flow block branch parameters.
