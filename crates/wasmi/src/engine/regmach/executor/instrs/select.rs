@@ -56,7 +56,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             false => rhs(self).into(),
         };
         self.set_register(result, selected);
-        self.next_instr();
+        self.next_instr_at(2);
     }
 
     /// Executes an [`Instruction::Select`].
