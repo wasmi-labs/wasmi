@@ -183,6 +183,10 @@ where
 {
     type Results = Results;
 
+    fn len_results(&self) -> usize {
+        <Results as WasmTypeList>::LEN
+    }
+
     fn call_results(self, results: &[UntypedValue]) -> Self::Results {
         <Results as WasmTypeList>::from_values(results)
             .expect("unable to construct typed results from call results")

@@ -1,7 +1,10 @@
 use super::Executor;
 use crate::{
     core::UntypedValue,
-    engine::bytecode2::{AnyConst32, Const32, Register, RegisterSpanIter},
+    engine::{
+        bytecode2::{AnyConst32, Const32, Register, RegisterSpan, RegisterSpanIter},
+        regmach::stack::ValueStackPtr,
+    },
 };
 
 #[cfg(doc)]
@@ -28,14 +31,15 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             .pop()
             .expect("the executing call frame is always on the stack");
         self.value_stack.truncate(returned.frame_offset());
-        // Note: We pop instead of peek to avoid borrow checker errors.
-        // This might be slow and we might want to fix this in that case.
-        match self.call_stack.pop() {
+        match self.call_stack.peek() {
             Some(caller) => {
-                self.init_call_frame(&caller);
-                self.call_stack
-                    .push(caller)
-                    .expect("pushing a single call frame after popping 2 cannot fail");
+                Self::init_call_frame_impl(
+                    self.value_stack,
+                    &mut self.sp,
+                    &mut self.ip,
+                    self.cache,
+                    caller,
+                );
                 ReturnOutcome::Wasm
             }
             None => ReturnOutcome::Host,
@@ -48,32 +52,58 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.return_impl()
     }
 
+    /// Returns the [`ValueStackPtr`] of the caller and the [`RegisterSpan`] of the results.
+    ///
+    /// The returned [`ValueStackPtr`] is valid for all [`Register`] in the returned [`RegisterSpan`].
+    fn return_caller_results(&mut self) -> (ValueStackPtr, RegisterSpan) {
+        let (callee, caller) = self
+            .call_stack
+            .peek_2()
+            .expect("the callee must exist on the call stack");
+        match caller {
+            Some(caller) => {
+                // Case: we need to return the `value` back to the caller frame.
+                //
+                // In this case we transfer the single return `value` to the `results`
+                // register span of the caller's call frame.
+                //
+                // Safety: The caller call frame is still live on the value stack
+                //         and therefore it is safe to acquire its value stack pointer.
+                let caller_sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
+                let results = callee.results();
+                (caller_sp, results)
+            }
+            None => {
+                // Case: the root call frame is returning.
+                //
+                // In this case we transfer the single return `value` to the root
+                // register span of the entire value stack which is simply its zero index.
+                let dst_sp = self.value_stack.root_stack_ptr();
+                let results = RegisterSpan::new(Register::from_i16(0));
+                (dst_sp, results)
+            }
+        }
+    }
+
     /// Execute a generic return [`Instruction`] returning a single value.
     fn execute_return_value<T>(
         &mut self,
         value: T,
-        f: fn(&mut Self, T) -> UntypedValue,
+        f: fn(&Self, T) -> UntypedValue,
     ) -> ReturnOutcome {
-        match self.call_stack.peek() {
-            Some(caller) => unsafe {
-                // Case: we need to return the `value` back to the caller frame.
-                // Safety: TODO
-                let mut caller_sp = self.value_stack.stack_ptr_at(caller.base_offset());
-                let result = caller_sp.get_mut(caller.results().head());
-                *result = f(self, value);
-            },
-            None => {
-                // Case: the root call frame is returning.
-                todo!()
-            }
-        }
+        let (mut caller_sp, results) = self.return_caller_results();
+        let value = f(self, value);
+        // Safety: The `callee.results()` always refer to a span of valid
+        //         registers of the `caller` so this access is safe.
+        let result = unsafe { caller_sp.get_mut(results.head()) };
+        *result = value;
         self.return_impl()
     }
 
     /// Execute an [`Instruction::ReturnReg`] returning a single [`Register`] value.
     #[inline(always)]
     pub fn execute_return_reg(&mut self, value: Register) -> ReturnOutcome {
-        self.execute_return_value(value, |this, value| this.get_register(value))
+        self.execute_return_value(value, Self::get_register)
     }
 
     /// Execute an [`Instruction::ReturnImm32`] returning a single 32-bit value.
@@ -97,20 +127,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Execute an [`Instruction::ReturnMany`] returning many values.
     #[inline(always)]
     pub fn execute_return_many(&mut self, values: RegisterSpanIter) -> ReturnOutcome {
-        match self.call_stack.peek() {
-            Some(caller) => unsafe {
-                // Case: we need to return the `value` back to the caller frame.
-                // Safety: TODO
-                let mut caller_sp = self.value_stack.stack_ptr_at(caller.base_offset());
-                let results = caller.results().iter(values.len());
-                for (result, value) in results.zip(values) {
-                    *caller_sp.get_mut(result) = self.get_register(value);
-                }
-            },
-            None => {
-                // Case: the root call frame is returning.
-                todo!()
-            }
+        let (mut caller_sp, results) = self.return_caller_results();
+        let results = results.iter(values.len());
+        for (result, value) in results.zip(values) {
+            // Safety: The value stack pointer returned by `return_caller_results` is
+            //         guaranteed to be valid for all registers from the results span.
+            let cell = unsafe { caller_sp.get_mut(result) };
+            *cell = self.get_register(value);
         }
         self.return_impl()
     }

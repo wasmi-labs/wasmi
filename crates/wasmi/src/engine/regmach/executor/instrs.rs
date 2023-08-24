@@ -823,10 +823,15 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Returns the [`ValueStackPtr`] of the [`CallFrame`].
     fn frame_stack_ptr(&mut self, frame: &CallFrame) -> ValueStackPtr {
+        Self::frame_stack_ptr_impl(self.value_stack, frame)
+    }
+
+    /// Returns the [`ValueStackPtr`] of the [`CallFrame`].
+    fn frame_stack_ptr_impl(value_stack: &mut ValueStack, frame: &CallFrame) -> ValueStackPtr {
         // Safety: We are using the frame's own base offset as input because it is
         //         guaranteed by the Wasm validation and translation phase to be
         //         valid for all register indices used by the associated function body.
-        unsafe { self.value_stack.stack_ptr_at(frame.base_offset()) }
+        unsafe { value_stack.stack_ptr_at(frame.base_offset()) }
     }
 
     /// Initializes the [`Executor`] state for the [`CallFrame`].
@@ -835,9 +840,30 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// The initialization of the [`Executor`] allows for efficient execution.
     fn init_call_frame(&mut self, frame: &CallFrame) {
-        self.sp = self.frame_stack_ptr(frame);
-        self.ip = frame.instr_ptr();
-        self.cache.update_instance(frame.instance());
+        Self::init_call_frame_impl(
+            self.value_stack,
+            &mut self.sp,
+            &mut self.ip,
+            self.cache,
+            frame,
+        )
+    }
+
+    /// Initializes the [`Executor`] state for the [`CallFrame`].
+    ///
+    /// # Note
+    ///
+    /// The initialization of the [`Executor`] allows for efficient execution.
+    fn init_call_frame_impl(
+        value_stack: &mut ValueStack,
+        sp: &mut ValueStackPtr,
+        ip: &mut InstructionPtr,
+        cache: &mut InstanceCache,
+        frame: &CallFrame,
+    ) {
+        *sp = Self::frame_stack_ptr_impl(value_stack, frame);
+        *ip = frame.instr_ptr();
+        cache.update_instance(frame.instance());
     }
 
     /// Consume an amount of fuel specified by `delta` if `exec` succeeds.

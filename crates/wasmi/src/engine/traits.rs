@@ -66,6 +66,9 @@ pub trait CallResults {
     /// The type of the returned results value.
     type Results;
 
+    /// Returns the number of expected results.
+    fn len_results(&self) -> usize;
+
     /// Feeds the result values back to the caller.
     ///
     /// # Panics
@@ -76,6 +79,10 @@ pub trait CallResults {
 
 impl<'a> CallResults for &'a mut [Value] {
     type Results = ();
+
+    fn len_results(&self) -> usize {
+        self.len()
+    }
 
     fn call_results(self, results: &[UntypedValue]) -> Self::Results {
         assert_eq!(self.len(), results.len());

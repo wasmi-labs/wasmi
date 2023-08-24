@@ -85,6 +85,20 @@ impl CallStack {
     pub fn peek(&self) -> Option<&CallFrame> {
         self.calls.last()
     }
+
+    /// Peeks the two top-most [`CallFrame`] on the [`CallStack`] if any.
+    ///
+    /// # Note
+    ///
+    /// - The top-most [`CallFrame`] on the [`CallStack`] is referred to as the `callee`.
+    /// - The second top-most [`CallFrame`] on the [`CallStack`] is referred to as the `caller`.
+    ///
+    /// So this function returns a pair of `(callee, caller?)`.
+    pub fn peek_2(&self) -> Option<(&CallFrame, Option<&CallFrame>)> {
+        let (callee, remaining) = self.calls.split_last()?;
+        let caller = remaining.last();
+        Some((callee, caller))
+    }
 }
 
 /// A single frame of a called [`CompiledFunc`].
