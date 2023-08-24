@@ -1,3 +1,4 @@
+use self::return_::ReturnOutcome;
 use crate::{
     core::TrapCode,
     engine::{
@@ -48,6 +49,14 @@ macro_rules! forward_call {
     }};
 }
 
+macro_rules! forward_return {
+    ($expr:expr) => {{
+        if let ReturnOutcome::Host = $expr {
+            return Ok(WasmOutcome::Return);
+        }
+    }};
+}
+
 /// The outcome of a Wasm execution.
 ///
 /// # Note
@@ -74,15 +83,6 @@ pub enum CallOutcome {
     Continue,
     /// The Wasm execution calls a host function.
     Call(Func),
-}
-
-/// The outcome of a Wasm return statement.
-#[derive(Debug, Copy, Clone)]
-pub enum ReturnOutcome {
-    /// The call returns to a nested Wasm caller.
-    Wasm,
-    /// The call returns back to the host.
-    Host,
 }
 
 /// Executes compiled function instructions until either
@@ -189,66 +189,40 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::Trap(_) => self.execute_unreachable()?,
                 Instr::ConsumeFuel(block_fuel) => self.execute_consume_fuel(block_fuel)?,
                 Instr::Return => {
-                    if let ReturnOutcome::Host = self.execute_return() {
-                        return Ok(WasmOutcome::Return);
-                    }
+                    forward_return!(self.execute_return())
                 }
                 Instr::ReturnReg { value } => {
-                    if let ReturnOutcome::Host = self.execute_return_reg(value) {
-                        return Ok(WasmOutcome::Return);
-                    }
+                    forward_return!(self.execute_return_reg(value))
                 }
                 Instr::ReturnImm32 { value } => {
-                    if let ReturnOutcome::Host = self.execute_return_imm32(value) {
-                        return Ok(WasmOutcome::Return);
-                    }
+                    forward_return!(self.execute_return_imm32(value))
                 }
                 Instr::ReturnI64Imm32 { value } => {
-                    if let ReturnOutcome::Host = self.execute_return_i64imm32(value) {
-                        return Ok(WasmOutcome::Return);
-                    }
+                    forward_return!(self.execute_return_i64imm32(value))
                 }
                 Instr::ReturnF64Imm32 { value } => {
-                    if let ReturnOutcome::Host = self.execute_return_f64imm32(value) {
-                        return Ok(WasmOutcome::Return);
-                    }
+                    forward_return!(self.execute_return_f64imm32(value))
                 }
                 Instr::ReturnMany { values } => {
-                    if let ReturnOutcome::Host = self.execute_return_many(values) {
-                        return Ok(WasmOutcome::Return);
-                    }
+                    forward_return!(self.execute_return_many(values))
                 }
                 Instr::ReturnNez { condition } => {
-                    if let ReturnOutcome::Host = self.execute_return_nez(condition) {
-                        return Ok(WasmOutcome::Return);
-                    }
+                    forward_return!(self.execute_return_nez(condition))
                 }
                 Instr::ReturnNezReg { condition, value } => {
-                    if let ReturnOutcome::Host = self.execute_return_nez_reg(condition, value) {
-                        return Ok(WasmOutcome::Return);
-                    }
+                    forward_return!(self.execute_return_nez_reg(condition, value))
                 }
                 Instr::ReturnNezImm32 { condition, value } => {
-                    if let ReturnOutcome::Host = self.execute_return_nez_imm32(condition, value) {
-                        return Ok(WasmOutcome::Return);
-                    }
+                    forward_return!(self.execute_return_nez_imm32(condition, value))
                 }
                 Instr::ReturnNezI64Imm32 { condition, value } => {
-                    if let ReturnOutcome::Host = self.execute_return_nez_i64imm32(condition, value)
-                    {
-                        return Ok(WasmOutcome::Return);
-                    }
+                    forward_return!(self.execute_return_nez_i64imm32(condition, value))
                 }
                 Instr::ReturnNezF64Imm32 { condition, value } => {
-                    if let ReturnOutcome::Host = self.execute_return_nez_f64imm32(condition, value)
-                    {
-                        return Ok(WasmOutcome::Return);
-                    }
+                    forward_return!(self.execute_return_nez_f64imm32(condition, value))
                 }
                 Instr::ReturnNezMany { condition, values } => {
-                    if let ReturnOutcome::Host = self.execute_return_nez_many(condition, values) {
-                        return Ok(WasmOutcome::Return);
-                    }
+                    forward_return!(self.execute_return_nez_many(condition, values))
                 }
                 Instr::Branch { offset } => self.execute_branch(offset),
                 Instr::BranchEqz { condition, offset } => {

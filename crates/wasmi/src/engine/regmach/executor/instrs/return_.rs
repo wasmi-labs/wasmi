@@ -1,4 +1,4 @@
-use super::{Executor, ReturnOutcome};
+use super::Executor;
 use crate::{
     core::UntypedValue,
     engine::bytecode2::{AnyConst32, Const32, Register, RegisterSpanIter},
@@ -6,6 +6,15 @@ use crate::{
 
 #[cfg(doc)]
 use crate::engine::bytecode2::Instruction;
+
+/// The outcome of a Wasm return statement.
+#[derive(Debug, Copy, Clone)]
+pub enum ReturnOutcome {
+    /// The call returns to a nested Wasm caller.
+    Wasm,
+    /// The call returns back to the host.
+    Host,
+}
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Returns the execution to the caller.
