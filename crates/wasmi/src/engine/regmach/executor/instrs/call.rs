@@ -1,4 +1,4 @@
-use super::{CallOutcome, Executor};
+use super::Executor;
 use crate::{
     core::TrapCode,
     engine::{
@@ -12,6 +12,20 @@ use crate::{
     Func,
     FuncRef,
 };
+
+/// The outcome of a Wasm execution.
+///
+/// # Note
+///
+/// A Wasm execution includes everything but host calls.
+/// In other words: Everything in between host calls is a Wasm execution.
+#[derive(Debug, Copy, Clone)]
+pub enum CallOutcome {
+    /// The Wasm execution continues in Wasm.
+    Continue,
+    /// The Wasm execution calls a host function.
+    Call(Func),
+}
 
 /// Resolved [`Instruction::CallIndirectParams`] or [`Instruction::CallIndirectParamsImm16`].
 pub struct ResolvedCallIndirectParams {

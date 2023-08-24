@@ -1,6 +1,6 @@
-use self::return_::ReturnOutcome;
+use self::{call::CallOutcome, return_::ReturnOutcome};
 use crate::{
-    core::TrapCode,
+    core::{TrapCode, UntypedValue},
     engine::{
         bytecode::{BlockFuel, BranchOffset, FuncIdx},
         bytecode2::{
@@ -25,7 +25,6 @@ use crate::{
     StoreInner,
 };
 use core::cmp;
-use wasmi_core::UntypedValue;
 
 mod binary;
 mod call;
@@ -67,20 +66,6 @@ macro_rules! forward_return {
 pub enum WasmOutcome {
     /// The Wasm execution has ended and returns to the host side.
     Return,
-    /// The Wasm execution calls a host function.
-    Call(Func),
-}
-
-/// The outcome of a Wasm execution.
-///
-/// # Note
-///
-/// A Wasm execution includes everything but host calls.
-/// In other words: Everything in between host calls is a Wasm execution.
-#[derive(Debug, Copy, Clone)]
-pub enum CallOutcome {
-    /// The Wasm execution continues in Wasm.
-    Continue,
     /// The Wasm execution calls a host function.
     Call(Func),
 }
