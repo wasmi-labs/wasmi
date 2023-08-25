@@ -513,7 +513,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         if delta == 0 {
             // Case: growing by 0 elements means there is nothing to do
             self.execute_table_size_impl(result, table_index);
-            return self.try_next_instr_at(2)
+            return self.try_next_instr_at(2);
         }
         let return_value = self.consume_fuel_with(
             |costs| costs.fuel_for_elements(u64::from(delta)),
