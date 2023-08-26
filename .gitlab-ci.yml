@@ -9,7 +9,8 @@ default:
     max: 2
 
 .docker-env:
-  image:                           "paritytech/ci-unified:bullseye-1.71.0"
+  # image changed to 1.70 (from 1.71) due to bug: https://github.com/rust-lang/rust/issues/114725
+  image:                           "paritytech/ci-unified:bullseye-1.70.0"
   interruptible:                   true
   tags:
     - benchmark
