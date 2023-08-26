@@ -170,7 +170,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 | Instr::I64Const32(_)
                 | Instr::F64Const32(_)
                 | Instr::Register(_) => self.invalid_instruction_word()?,
-                Instr::Trap(_) => self.execute_unreachable()?,
+                Instr::Trap(trap_code) => self.execute_trap(trap_code)?,
                 Instr::ConsumeFuel(block_fuel) => self.execute_consume_fuel(block_fuel)?,
                 Instr::Return => {
                     forward_return!(self.execute_return())
@@ -1110,13 +1110,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// that primarily carry paramters for actually executable [`Instruction`].
     #[inline(always)]
     fn invalid_instruction_word(&mut self) -> Result<(), TrapCode> {
-        self.execute_unreachable()
+        self.execute_trap(TrapCode::UnreachableCodeReached)
     }
 
     /// Executes a Wasm `unreachable` instruction.
     #[inline(always)]
-    fn execute_unreachable(&mut self) -> Result<(), TrapCode> {
-        Err(TrapCode::UnreachableCodeReached)
+    fn execute_trap(&mut self, trap_code: TrapCode) -> Result<(), TrapCode> {
+        Err(trap_code)
     }
 
     /// Executes an [`Instruction::ConsumeFuel`].
