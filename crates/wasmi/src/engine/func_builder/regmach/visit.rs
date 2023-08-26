@@ -3380,12 +3380,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_memory_init(&mut self, data_index: u32, _mem: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, src, len) = self.alloc.stack.pop3();
-        if let Provider::Const(len) = len {
-            if u32::from(len) == 0 {
-                // Case: `memory.copy` with `len` of zero is a no-op.
-                return Ok(());
-            }
-        }
         let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
         let src = <Provider<Const16<u32>>>::new(src, &mut self.alloc.stack)?;
         let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
@@ -3433,12 +3427,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_memory_copy(&mut self, _dst_mem: u32, _src_mem: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, src, len) = self.alloc.stack.pop3();
-        if let Provider::Const(len) = len {
-            if u32::from(len) == 0 {
-                // Case: `memory.copy` with `len` of zero is a no-op.
-                return Ok(());
-            }
-        }
         let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
         let src = <Provider<Const16<u32>>>::new(src, &mut self.alloc.stack)?;
         let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
@@ -3475,12 +3463,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_memory_fill(&mut self, _mem: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, value, len) = self.alloc.stack.pop3();
-        if let Provider::Const(len) = len {
-            if u32::from(len) == 0 {
-                // Case: `memory.fill` with `len` of zero is a no-op.
-                return Ok(());
-            }
-        }
         let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
         let value = <Provider<u8>>::new(value);
         let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;

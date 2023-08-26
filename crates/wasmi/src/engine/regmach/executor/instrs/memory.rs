@@ -233,10 +233,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         src_index: u32,
         len: u32,
     ) -> Result<(), TrapCode> {
-        if len == 0 {
-            // Case: copying no bytes means there is nothing to do
-            return Ok(());
-        }
         self.consume_fuel_with(
             |costs| costs.fuel_for_elements(u64::from(len)),
             |this| {
@@ -368,10 +364,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes a generic `memory.fill` instruction.
     fn execute_memory_fill_impl(&mut self, dst: u32, value: u8, len: u32) -> Result<(), TrapCode> {
-        if len == 0 {
-            // Case: filling no bytes means there is nothing to do
-            return Ok(());
-        }
         self.consume_fuel_with(
             |costs| costs.fuel_for_bytes(u64::from(len)),
             |this| {
@@ -504,10 +496,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes a generic `memory.init` instruction.
     fn execute_memory_init_impl(&mut self, dst: u32, src: u32, len: u32) -> Result<(), TrapCode> {
-        if len == 0 {
-            // Case: initializing no bytes means there is nothing to do
-            return Ok(());
-        }
         self.consume_fuel_with(
             |costs| costs.fuel_for_bytes(u64::from(len)),
             |this| {

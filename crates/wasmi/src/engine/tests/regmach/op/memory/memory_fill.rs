@@ -60,17 +60,10 @@ fn test_fill_exact16(len: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fill_exact16() {
+    test_fill_exact16(0);
     test_fill_exact16(1);
     test_fill_exact16(42);
     test_fill_exact16(u32::from(u16::MAX));
-}
-
-#[test]
-#[cfg_attr(miri, ignore)]
-fn fill_exact_zero() {
-    testcase_fill_exact(0)
-        .expect_func_instrs([Instruction::Return])
-        .run()
 }
 
 fn test_fill_exact(len: u32) {
@@ -302,27 +295,8 @@ fn fill_to_exact16() {
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
         for len in values {
-            if len == 0 {
-                // This is tested by another test case.
-                continue;
-            }
             test_fill_at_exact16(dst, len);
         }
-    }
-}
-
-fn test_fill_at_exact_zero(dst: u32) {
-    testcase_fill_at_exact(dst, 0)
-        .expect_func_instrs([Instruction::Return])
-        .run()
-}
-
-#[test]
-#[cfg_attr(miri, ignore)]
-fn fill_at_exact_zero() {
-    let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
-    for dst in values {
-        test_fill_at_exact_zero(dst);
     }
 }
 
@@ -401,27 +375,8 @@ fn fill_imm_exact16() {
     ];
     for value in values {
         for len in len_values {
-            if len == 0 {
-                // This is tested by another test case.
-                continue;
-            }
             test_fill_imm_exact16(value, len);
         }
-    }
-}
-
-fn test_fill_imm_exact_zero(value: u32) {
-    testcase_fill_imm_exact(value, 0)
-        .expect_func_instrs([Instruction::Return])
-        .run()
-}
-
-#[test]
-#[cfg_attr(miri, ignore)]
-fn fill_imm_exact_zero() {
-    let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
-    for dst in values {
-        test_fill_imm_exact_zero(dst);
     }
 }
 
@@ -491,29 +446,8 @@ fn fill_at_imm_exact16() {
     for dst in values {
         for value in values {
             for len in values {
-                if len == 0 {
-                    // This is tested by another test case.
-                    continue;
-                }
                 test_fill_at_imm_exact16(dst, value, len);
             }
-        }
-    }
-}
-
-fn test_fill_at_imm_exact_zero(dst: u32, value: u32) {
-    testcase_fill_at_imm_exact(dst, value, 0)
-        .expect_func_instrs([Instruction::Return])
-        .run()
-}
-
-#[test]
-#[cfg_attr(miri, ignore)]
-fn fill_at_imm_exact_zero() {
-    let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
-    for dst in values {
-        for value in values {
-            test_fill_at_imm_exact_zero(dst, value);
         }
     }
 }
