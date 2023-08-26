@@ -7,7 +7,7 @@ use alloc::{
     collections::{btree_map, BTreeMap},
     vec::Vec,
 };
-use core::slice::Iter as SliceIter;
+use core::{iter::Rev, slice::Iter as SliceIter};
 
 /// A pool of deduplicated function local constant values.
 ///
@@ -95,21 +95,24 @@ impl FuncLocalConsts {
     ///
     /// The function local constant values are yielded in their allocation order.
     pub fn iter(&self) -> FuncLocalConstsIter {
-        FuncLocalConstsIter::new(&self.idx2const[..])
+        FuncLocalConstsIter::new(self)
     }
 }
 
 /// Iterator yielding all allocated function local constant values.
 pub struct FuncLocalConstsIter<'a> {
     /// The underlying iterator.
-    iter: SliceIter<'a, UntypedValue>,
+    iter: Rev<SliceIter<'a, UntypedValue>>,
 }
 
 impl<'a> FuncLocalConstsIter<'a> {
     /// Creates a new [`FuncLocalConstsIter`] from the given slice of [`UntypedValue`].
-    pub fn new(consts: &'a [UntypedValue]) -> Self {
+    pub fn new(consts: &'a FuncLocalConsts) -> Self {
+        // Note: we need to revert the iteration since we allocate new
+        //       function local constants in reverse order of their absolute
+        //       vector indices in the function call frame during execution.
         Self {
-            iter: consts.iter(),
+            iter: consts.idx2const.as_slice().iter().rev(),
         }
     }
 }
