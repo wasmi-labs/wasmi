@@ -3567,12 +3567,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_table_copy(&mut self, dst_table: u32, src_table: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, src, len) = self.alloc.stack.pop3();
-        if let Provider::Const(len) = len {
-            if u32::from(len) == 0 {
-                // Case: `table.copy` with `len` of zero is a no-op.
-                return Ok(());
-            }
-        }
         let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
         let src = <Provider<Const16<u32>>>::new(src, &mut self.alloc.stack)?;
         let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;

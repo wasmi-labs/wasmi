@@ -82,22 +82,10 @@ fn copy_exact16() {
         test_copy_exact16(ValueType::FuncRef, len);
         test_copy_exact16(ValueType::ExternRef, len);
     }
+    test_for(0);
     test_for(1);
     test_for(42);
     test_for(u32::from(u16::MAX));
-}
-
-fn test_copy_exact_zero(ty: ValueType) {
-    testcase_copy_exact(ty, 0)
-        .expect_func_instrs([Instruction::Return])
-        .run()
-}
-
-#[test]
-#[cfg_attr(miri, ignore)]
-fn copy_exact_zero() {
-    test_copy_exact_zero(ValueType::FuncRef);
-    test_copy_exact_zero(ValueType::ExternRef);
 }
 
 fn test_copy_exact(ty: ValueType, len: u32) {
@@ -394,31 +382,8 @@ fn copy_to_exact16() {
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
         for len in values {
-            if len == 0 {
-                // This is tested by another test case.
-                continue;
-            }
             test_for(dst, len);
         }
-    }
-}
-
-fn test_copy_to_exact_zero(ty: ValueType, dst: u32) {
-    testcase_copy_to_exact(ty, dst, 0)
-        .expect_func_instrs([Instruction::Return])
-        .run()
-}
-
-#[test]
-#[cfg_attr(miri, ignore)]
-fn copy_to_exact_zero() {
-    fn test_for(dst: u32) {
-        test_copy_to_exact_zero(ValueType::FuncRef, dst);
-        test_copy_to_exact_zero(ValueType::ExternRef, dst);
-    }
-    let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
-    for dst in values {
-        test_for(dst);
     }
 }
 
@@ -501,31 +466,8 @@ fn copy_from_exact16() {
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
         for len in values {
-            if len == 0 {
-                // This is tested by another test case.
-                continue;
-            }
             test_for(dst, len);
         }
-    }
-}
-
-fn test_copy_from_exact_zero(ty: ValueType, src: u32) {
-    testcase_copy_from_exact(ty, src, 0)
-        .expect_func_instrs([Instruction::Return])
-        .run()
-}
-
-#[test]
-#[cfg_attr(miri, ignore)]
-fn copy_from_exact_zero() {
-    fn test_for(dst: u32) {
-        test_copy_from_exact_zero(ValueType::FuncRef, dst);
-        test_copy_from_exact_zero(ValueType::ExternRef, dst);
-    }
-    let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
-    for dst in values {
-        test_for(dst);
     }
 }
 
@@ -609,33 +551,8 @@ fn copy_from_to_exact16() {
     for dst in values {
         for src in values {
             for len in values {
-                if len == 0 {
-                    // This is tested by another test case.
-                    continue;
-                }
                 test_for(dst, src, len);
             }
-        }
-    }
-}
-
-fn test_copy_from_to_exact_zero(ty: ValueType, dst: u32, src: u32) {
-    testcase_copy_from_to_exact(ty, dst, src, 0)
-        .expect_func_instrs([Instruction::Return])
-        .run()
-}
-
-#[test]
-#[cfg_attr(miri, ignore)]
-fn copy_from_to_exact_zero() {
-    fn test_for(dst: u32, src: u32) {
-        test_copy_from_to_exact_zero(ValueType::FuncRef, dst, src);
-        test_copy_from_to_exact_zero(ValueType::ExternRef, dst, src);
-    }
-    let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
-    for dst in values {
-        for src in values {
-            test_for(dst, src);
         }
     }
 }
