@@ -374,10 +374,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         src_index: u32,
         len: u32,
     ) -> Result<(), TrapCode> {
-        if len == 0 {
-            // Case: copying no elements means there is nothing to do
-            return self.try_next_instr_at(3);
-        }
         let table_index = self.fetch_table_index(1);
         let element_index = self.fetch_element_segment_index(2);
         self.consume_fuel_with(
