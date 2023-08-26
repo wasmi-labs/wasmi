@@ -6,7 +6,15 @@ const WASM_OP: WasmOp = WasmOp::binary(WasmType::I64, "rem_s");
 #[test]
 #[cfg_attr(miri, ignore)]
 fn same_reg() {
-    let expected = [return_i64imm32_instr(0)];
+    // Note: we cannot optimize for `x % x` since `x == 0` has to trap.
+    let expected = [
+        Instruction::i64_rem_s(
+            Register::from_i16(1),
+            Register::from_i16(0),
+            Register::from_i16(0),
+        ),
+        Instruction::return_reg(Register::from_i16(1)),
+    ];
     test_binary_same_reg(WASM_OP, expected)
 }
 

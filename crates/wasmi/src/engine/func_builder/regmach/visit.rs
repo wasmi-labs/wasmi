@@ -2330,14 +2330,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i32_div_s_imm16,
             Instruction::i32_div_s_imm16_rev,
             TypedValue::i32_div_s,
-            |this, lhs: Register, rhs: Register| {
-                if lhs == rhs {
-                    // Optimization: `x / x` is always `1`
-                    this.alloc.stack.push_const(1_i32);
-                    return Ok(true);
-                }
-                Ok(false)
-            },
+            Self::no_custom_opt,
             |this, lhs: Register, rhs: i32| {
                 if rhs == 1 {
                     // Optimization: `x / 1` is always `x`
@@ -2355,14 +2348,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i32_div_u_imm16,
             Instruction::i32_div_u_imm16_rev,
             TypedValue::i32_div_u,
-            |this, lhs: Register, rhs: Register| {
-                if lhs == rhs {
-                    // Optimization: `x / x` is always `1`
-                    this.alloc.stack.push_const(1_i32);
-                    return Ok(true);
-                }
-                Ok(false)
-            },
+            Self::no_custom_opt,
             |this, lhs: Register, rhs: u32| {
                 if rhs == 1 {
                     // Optimization: `x / 1` is always `x`
@@ -2380,14 +2366,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i32_rem_s_imm16,
             Instruction::i32_rem_s_imm16_rev,
             TypedValue::i32_rem_s,
-            |this, lhs: Register, rhs: Register| {
-                if lhs == rhs {
-                    // Optimization: `x % x` is always `0`
-                    this.alloc.stack.push_const(0_i32);
-                    return Ok(true);
-                }
-                Ok(false)
-            },
+            Self::no_custom_opt,
             |this, _lhs: Register, rhs: i32| {
                 if rhs == 1 || rhs == -1 {
                     // Optimization: `x % 1` or `x % -1` is always `0`
@@ -2405,14 +2384,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i32_rem_u_imm16,
             Instruction::i32_rem_u_imm16_rev,
             TypedValue::i32_rem_u,
-            |this, lhs: Register, rhs: Register| {
-                if lhs == rhs {
-                    // Optimization: `x % x` is always `0`
-                    this.alloc.stack.push_const(0_i32);
-                    return Ok(true);
-                }
-                Ok(false)
-            },
+            Self::no_custom_opt,
             |this, _lhs: Register, rhs: u32| {
                 if rhs == 1 {
                     // Optimization: `x % 1` is always `0`
@@ -2666,14 +2638,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i64_div_s_imm16,
             Instruction::i64_div_s_imm16_rev,
             TypedValue::i64_div_s,
-            |this, lhs: Register, rhs: Register| {
-                if lhs == rhs {
-                    // Optimization: `x / x` is always `1`
-                    this.alloc.stack.push_const(1_i64);
-                    return Ok(true);
-                }
-                Ok(false)
-            },
+            Self::no_custom_opt,
             |this, lhs: Register, rhs: i64| {
                 if rhs == 1 {
                     // Optimization: `x / 1` is always `x`
@@ -2691,14 +2656,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i64_div_u_imm16,
             Instruction::i64_div_u_imm16_rev,
             TypedValue::i64_div_u,
-            |this, lhs: Register, rhs: Register| {
-                if lhs == rhs {
-                    // Optimization: `x / x` is always `1`
-                    this.alloc.stack.push_const(1_i64);
-                    return Ok(true);
-                }
-                Ok(false)
-            },
+            Self::no_custom_opt,
             |this, lhs: Register, rhs: u64| {
                 if rhs == 1 {
                     // Optimization: `x / 1` is always `x`
@@ -2716,14 +2674,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i64_rem_s_imm16,
             Instruction::i64_rem_s_imm16_rev,
             TypedValue::i64_rem_s,
-            |this, lhs: Register, rhs: Register| {
-                if lhs == rhs {
-                    // Optimization: `x % x` is always `0`
-                    this.alloc.stack.push_const(0_i64);
-                    return Ok(true);
-                }
-                Ok(false)
-            },
+            Self::no_custom_opt,
             |this, _lhs: Register, rhs: i64| {
                 if rhs == 1 || rhs == -1 {
                     // Optimization: `x % 1` or `x % -1` is always `0`
@@ -2741,14 +2692,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::i64_rem_u_imm16,
             Instruction::i64_rem_u_imm16_rev,
             TypedValue::i64_rem_u,
-            |this, lhs: Register, rhs: Register| {
-                if lhs == rhs {
-                    // Optimization: `x % x` is always `0`
-                    this.alloc.stack.push_const(0_i64);
-                    return Ok(true);
-                }
-                Ok(false)
-            },
+            Self::no_custom_opt,
             |this, _lhs: Register, rhs: u64| {
                 if rhs == 1 {
                     // Optimization: `x % 1` is always `0`

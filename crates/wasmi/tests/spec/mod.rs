@@ -132,7 +132,7 @@ define_spec_tests! {
     #[ignore] fn wasm_if("if");
     #[ignore] fn wasm_imports("imports");
     fn wasm_inline_module("inline-module");
-    #[ignore] fn wasm_int_exprs("int_exprs");
+    fn wasm_int_exprs("int_exprs");
     fn wasm_int_literals("int_literals");
     #[ignore] fn wasm_labels("labels");
     fn wasm_left_to_right("left-to-right");
