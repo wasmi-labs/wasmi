@@ -491,7 +491,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let dst: u32 = dst.into();
         let src: u32 = src.into();
         let len: u32 = len.into();
-        self.execute_memory_copy_impl(dst, src, len)
+        self.execute_memory_init_impl(dst, src, len)
     }
 
     /// Executes a generic `memory.init` instruction.
