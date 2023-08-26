@@ -448,10 +448,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         len: u32,
         value: Register,
     ) -> Result<(), TrapCode> {
-        if len == 0 {
-            // Case: copying no elements means there is nothing to do
-            return self.try_next_instr_at(2);
-        }
         let table_index = self.fetch_table_index(1);
         self.consume_fuel_with(
             |costs| costs.fuel_for_elements(u64::from(len)),
