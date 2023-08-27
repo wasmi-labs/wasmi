@@ -620,12 +620,17 @@ impl EngineInner {
 
     #[cfg(test)]
     fn get_func_const_2(&self, func: CompiledFunc, index: usize) -> Option<UntypedValue> {
+        // Function local constants are stored in reverse order of their indices since
+        // they are allocated in reverse order to their absolute indices during function
+        // translation. That is why we need to access them in reverse order.
         self.res
             .read()
             .code_map_2
             .get(func)
             .consts()
-            .get(index)
+            .iter()
+            .rev()
+            .nth(index)
             .copied()
     }
 
