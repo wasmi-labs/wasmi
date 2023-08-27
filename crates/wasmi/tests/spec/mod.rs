@@ -92,7 +92,7 @@ define_spec_tests! {
     fn wasm_align("align");
     fn wasm_binary_leb128("binary-leb128");
     #[ignore] fn wasm_binary("binary");
-    #[ignore] fn wasm_block("block");
+    fn wasm_block("block");
     #[ignore] fn wasm_br("br");
     fn wasm_br_if("br_if");
     fn wasm_br_table("br_table");
