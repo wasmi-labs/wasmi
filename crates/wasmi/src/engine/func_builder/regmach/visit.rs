@@ -1871,14 +1871,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_fbinary_commutative::<f32>(
             Instruction::f32_eq,
             TypedValue::f32_eq,
-            |this, lhs: Register, rhs: Register| {
-                if lhs == rhs {
-                    // Optimization: `x == x` is always `true`
-                    this.alloc.stack.push_const(true);
-                    return Ok(true);
-                }
-                Ok(false)
-            },
+            Self::no_custom_opt,
             |this, _reg_in: Register, imm_in: f32| {
                 if imm_in.is_nan() {
                     // Optimization: `NaN == x` or `x == NaN` is always `false`
@@ -1894,17 +1887,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_fbinary_commutative::<f32>(
             Instruction::f32_ne,
             TypedValue::f32_ne,
-            |this, lhs: Register, rhs: Register| {
-                if lhs == rhs {
-                    // Optimization: `x != x` is always `false`
-                    this.alloc.stack.push_const(false);
-                    return Ok(true);
-                }
-                Ok(false)
-            },
+            Self::no_custom_opt,
             |this, _reg_in: Register, imm_in: f32| {
                 if imm_in.is_nan() {
-                    // Optimization: `NaN == x` or `x == NaN` is always `true`
+                    // Optimization: `NaN != x` or `x != NaN` is always `true`
                     this.alloc.stack.push_const(true);
                     return Ok(true);
                 }
@@ -2061,14 +2047,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_fbinary_commutative::<f64>(
             Instruction::f64_eq,
             TypedValue::f64_eq,
-            |this, lhs: Register, rhs: Register| {
-                if lhs == rhs {
-                    // Optimization: `x == x` is always `true`
-                    this.alloc.stack.push_const(true);
-                    return Ok(true);
-                }
-                Ok(false)
-            },
+            Self::no_custom_opt,
             |this, _reg_in: Register, imm_in: f64| {
                 if imm_in.is_nan() {
                     // Optimization: `NaN == x` or `x == NaN` is always `false`
@@ -2084,17 +2063,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_fbinary_commutative::<f64>(
             Instruction::f64_ne,
             TypedValue::f64_ne,
-            |this, lhs: Register, rhs: Register| {
-                if lhs == rhs {
-                    // Optimization: `x != x` is always `false`
-                    this.alloc.stack.push_const(false);
-                    return Ok(true);
-                }
-                Ok(false)
-            },
+            Self::no_custom_opt,
             |this, _reg_in: Register, imm_in: f64| {
                 if imm_in.is_nan() {
-                    // Optimization: `NaN == x` or `x == NaN` is always `true`
+                    // Optimization: `NaN != x` or `x != NaN` is always `true`
                     this.alloc.stack.push_const(true);
                     return Ok(true);
                 }
@@ -2896,14 +2868,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f32_add,
             TypedValue::f32_add,
             Self::no_custom_opt,
-            |this, reg: Register, value: f32| {
-                if value == 0.0 || value == -0.0 {
-                    // Optimization: `add x + 0` is same as `x`
-                    this.alloc.stack.push_register(reg)?;
-                    return Ok(true);
-                }
-                Ok(false)
-            },
+            Self::no_custom_opt::<Register, f32>,
         )
     }
 
@@ -2912,17 +2877,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f32_sub,
             TypedValue::f32_sub,
             Self::no_custom_opt,
-            |this, lhs: Register, rhs: f32| {
-                if rhs == 0.0 && rhs.is_sign_positive() {
-                    // Optimization: `x - 0` is same as `x`
-                    //
-                    // Note due to behavior dictated by the Wasm specification
-                    // we cannot apply this optimization for negative zeros.
-                    this.alloc.stack.push_register(lhs)?;
-                    return Ok(true);
-                }
-                Ok(false)
-            },
+            Self::no_custom_opt::<Register, f32>,
             // Unfortuantely we cannot optimize for the case that `lhs == 0.0`
             // since the Wasm specification mandates different behavior in
             // dependence of `rhs` which we do not know at this point.
@@ -3025,14 +2980,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f64_add,
             TypedValue::f64_add,
             Self::no_custom_opt,
-            |this, reg: Register, value: f64| {
-                if value == 0.0 || value == -0.0 {
-                    // Optimization: `add x + 0` is same as `x`
-                    this.alloc.stack.push_register(reg)?;
-                    return Ok(true);
-                }
-                Ok(false)
-            },
+            Self::no_custom_opt::<Register, f64>,
         )
     }
 
@@ -3041,17 +2989,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Instruction::f64_sub,
             TypedValue::f64_sub,
             Self::no_custom_opt,
-            |this, lhs: Register, rhs: f64| {
-                if rhs == 0.0 && rhs.is_sign_positive() {
-                    // Optimization: `x - 0` is same as `x`
-                    //
-                    // Note due to behavior dictated by the Wasm specification
-                    // we cannot apply this optimization for negative zeros.
-                    this.alloc.stack.push_register(lhs)?;
-                    return Ok(true);
-                }
-                Ok(false)
-            },
+            Self::no_custom_opt::<Register, f64>,
             // Unfortuantely we cannot optimize for the case that `lhs == 0.0`
             // since the Wasm specification mandates different behavior in
             // dependence of `rhs` which we do not know at this point.

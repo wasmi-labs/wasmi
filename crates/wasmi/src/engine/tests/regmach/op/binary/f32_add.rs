@@ -35,15 +35,35 @@ fn nan_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_zero() {
-    let expected = [Instruction::return_reg(0)];
-    test_binary_reg_imm_with(WASM_OP, 0.0_f32, expected).run()
+    // We cannot optimize `x + 0` -> `x` because `-0 + 0` -> `0` according to IEEE.
+    let expected = [
+        Instruction::f32_add(
+            Register::from_i16(1),
+            Register::from_i16(0),
+            Register::from_i16(-1),
+        ),
+        Instruction::return_reg(1),
+    ];
+    testcase_binary_reg_imm(WASM_OP, 0.0_f32)
+        .expect_func(ExpectedFunc::new(expected).consts([0.0_f32]))
+        .run()
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_zero_rev() {
-    let expected = [Instruction::return_reg(0)];
-    test_binary_reg_imm_rev_with(WASM_OP, 0.0_f32, expected).run()
+    // We cannot optimize `0 + x` -> `x` because `0 + -0` -> `0` according to IEEE.
+    let expected = [
+        Instruction::f32_add(
+            Register::from_i16(1),
+            Register::from_i16(0),
+            Register::from_i16(-1),
+        ),
+        Instruction::return_reg(1),
+    ];
+    testcase_binary_imm_reg(WASM_OP, 0.0_f32)
+        .expect_func(ExpectedFunc::new(expected).consts([0.0_f32]))
+        .run()
 }
 
 #[test]

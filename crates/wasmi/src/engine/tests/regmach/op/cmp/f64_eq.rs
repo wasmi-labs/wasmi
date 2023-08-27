@@ -5,9 +5,15 @@ const WASM_OP: WasmOp = WasmOp::cmp(WasmType::F64, "eq");
 #[test]
 #[cfg_attr(miri, ignore)]
 fn same_reg() {
-    let expected = [Instruction::ReturnImm32 {
-        value: AnyConst32::from(true),
-    }];
+    // We cannot optimize `x == x` to `true` since `x == Nan` or `Nan == x` is always `false`.
+    let expected = [
+        Instruction::f64_eq(
+            Register::from_i16(1),
+            Register::from_i16(0),
+            Register::from_i16(0),
+        ),
+        Instruction::return_reg(Register::from_i16(1)),
+    ];
     test_binary_same_reg(WASM_OP, expected)
 }
 

@@ -119,7 +119,7 @@ define_spec_tests! {
     fn wasm_f64_bitwise("f64_bitwise");
     fn wasm_f64_cmp("f64_cmp");
     fn wasm_fac("fac");
-    #[ignore] fn wasm_float_exprs("float_exprs");
+    fn wasm_float_exprs("float_exprs");
     fn wasm_float_literals("float_literals");
     fn wasm_float_memory("float_memory");
     fn wasm_float_misc("float_misc");
