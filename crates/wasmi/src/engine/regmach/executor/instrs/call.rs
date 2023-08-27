@@ -354,8 +354,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
-        let call_params = self.fetch_call_params(1);
-        let call_indirect_params = self.fetch_call_indirect_params(2);
+        let call_indirect_params = self.fetch_call_indirect_params(1);
+        let call_params = self.fetch_call_params(2);
         self.update_instr_ptr_at(3);
         let results = self.caller_results();
         self.execute_call_indirect_impl(
