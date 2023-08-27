@@ -141,7 +141,7 @@ define_spec_tests! {
     fn wasm_local_get("local_get");
     fn wasm_local_set("local_set");
     fn wasm_local_tee("local_tee");
-    #[ignore] fn wasm_loop("loop");
+    fn wasm_loop("loop");
     #[ignore] fn wasm_memory("memory");
     fn wasm_memory_copy("memory_copy");
     fn wasm_memory_fill("memory_fill");
