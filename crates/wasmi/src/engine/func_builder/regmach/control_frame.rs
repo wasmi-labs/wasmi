@@ -451,8 +451,11 @@ impl IfControlFrame {
     }
 
     /// Returns `true` if the end of the `then` branch is reachable.
-    pub fn is_end_of_then_reachable(&self) -> bool {
-        self.end_of_then_is_reachable.expect("") // TODO: add proper message
+    ///
+    /// Returns `None` if `else` was never visited.
+    #[track_caller]
+    pub fn is_end_of_then_reachable(&self) -> Option<bool> {
+        self.end_of_then_is_reachable
     }
 
     /// Returns `true` if the `else` block has been visited.

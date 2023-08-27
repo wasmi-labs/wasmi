@@ -160,7 +160,7 @@ define_spec_tests! {
     fn wasm_skip_stack_guard_page("skip-stack-guard-page");
     fn wasm_stack("stack");
     #[ignore] fn wasm_start("start");
-    #[ignore] fn wasm_store("store");
+    fn wasm_store("store");
     fn wasm_switch("switch");
     fn wasm_table_sub("table-sub");
     fn wasm_table("table");

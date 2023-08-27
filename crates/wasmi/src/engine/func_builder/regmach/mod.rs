@@ -422,7 +422,7 @@ impl<'parser> FuncTranslator<'parser> {
         // We reset reachability in case the end of the `block` was reachable.
         match (frame.is_then_reachable(), frame.is_else_reachable()) {
             (true, false) => {
-                self.reachable = frame.is_end_of_then_reachable() || frame.is_branched_to();
+                self.reachable = frame.is_end_of_then_reachable().unwrap_or(self.reachable) || frame.is_branched_to();
             }
             (false, true) => {
                 self.reachable = self.reachable || frame.is_branched_to();
