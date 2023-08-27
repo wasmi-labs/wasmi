@@ -47,9 +47,9 @@ pub struct Config {
 #[derive(Debug, Default, Copy, Clone)]
 pub enum EngineBackend {
     /// Translate and execute via a stack machine backend.
+    #[default]
     StackMachine,
     /// Translate and execute via a register machine backend.
-    #[default]
     RegisterMachine,
 }
 
