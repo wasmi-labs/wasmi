@@ -390,7 +390,7 @@ fn test_imm_params_dynamic_index() {
                 )
             )
         )
-        "#
+        "#,
     );
     let params = RegisterSpan::new(Register::from_i16(1)).iter(2);
     TranslationTest::new(wasm)

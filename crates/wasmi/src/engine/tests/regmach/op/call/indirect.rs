@@ -433,7 +433,7 @@ fn test_imm_params_dynamic_index() {
                 )
             )
         )
-        "#
+        "#,
     );
     let result = Register::from_i16(0);
     let results = RegisterSpan::new(result);
