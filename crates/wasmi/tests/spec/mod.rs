@@ -93,7 +93,7 @@ define_spec_tests! {
     fn wasm_binary_leb128("binary-leb128");
     fn wasm_binary("binary");
     fn wasm_block("block");
-    #[ignore] fn wasm_br("br"); // TODO: invalid evluation (2, 7)
+    #[ignore] fn wasm_br("br"); // TODO: invalid evaluation (2, 7)
     fn wasm_br_if("br_if");
     fn wasm_br_table("br_table");
     fn wasm_bulk("bulk");
@@ -110,7 +110,7 @@ define_spec_tests! {
     fn wasm_custom("custom");
     fn wasm_data("data");
     fn wasm_elem("elem");
-    #[ignore] fn wasm_endianness("endianness"); // TODO: invalid evluation (0, -1)
+    #[ignore] fn wasm_endianness("endianness"); // TODO: invalid evaluation (0, -1)
     fn wasm_exports("exports");
     fn wasm_f32("f32");
     fn wasm_f32_bitwise("f32_bitwise");
@@ -129,7 +129,7 @@ define_spec_tests! {
     fn wasm_global("global");
     fn wasm_i32("i32");
     fn wasm_i64("i64");
-    #[ignore] fn wasm_if("if"); // TODO: out-of-bounds table access
+    #[ignore] fn wasm_if("if"); // TODO: invalid evaluation (0, 3)
     #[ignore] fn wasm_imports("imports"); // TODO: implement host func calls
     fn wasm_inline_module("inline-module");
     fn wasm_int_exprs("int_exprs");
