@@ -100,7 +100,7 @@ impl Stack {
         // value stack are going to be invalidated which we ensure to adjust and
         // reinstantiate after this operation.
         let len_drained =
-            unsafe { value_stack.drain(callee.frame_offset(), caller.frame_offset()) };
+            unsafe { value_stack.drain(caller.frame_offset(), callee.frame_offset()) };
         callee.move_down(len_drained);
     }
 }
