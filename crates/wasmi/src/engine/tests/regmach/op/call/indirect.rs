@@ -417,7 +417,7 @@ fn two_imm_params_imm16() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn test_imm_params_dynamic_index() {
-    let wasm = wat2wasm(&format!(
+    let wasm = wat2wasm(
         r#"
         (module
             (type $sig (func (param i32 i32) (result i32)))
@@ -434,7 +434,7 @@ fn test_imm_params_dynamic_index() {
             )
         )
         "#
-    ));
+    );
     let result = Register::from_i16(0);
     let results = RegisterSpan::new(result);
     let params = RegisterSpan::new(Register::from_i16(1)).iter(2);
