@@ -688,10 +688,23 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let index = self.alloc.stack.pop();
         let provider_params = &mut self.alloc.buffer;
         self.alloc.stack.pop_n(params.len(), provider_params);
+        if let TypedProvider::Register(reg) = index {
+            // We need to push `index` back to the providers since
+            // otherwise it would be overriden by `encode_call_params`.
+            self.alloc
+                .stack
+                .push_register(reg)
+                .expect("just popped a at least one provider so this must not fail");
+        }
         let params_span = self
             .alloc
             .instr_encoder
             .encode_call_params(&mut self.alloc.stack, provider_params)?;
+        if let TypedProvider::Register(_) = index {
+            // Now we pop `index` again and assert that it is still the same.
+            let dummy_index = self.alloc.stack.pop();
+            debug_assert_eq!(index, dummy_index);
+        }
         let call_params = Instruction::call_params(params_span, len_results);
         let table_params = match index {
             TypedProvider::Const(index) => match <Const16<u32>>::from_u32(u32::from(index)) {
@@ -774,10 +787,23 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let index = self.alloc.stack.pop();
         let provider_params = &mut self.alloc.buffer;
         self.alloc.stack.pop_n(params.len(), provider_params);
+        if let TypedProvider::Register(reg) = index {
+            // We need to push `index` back to the providers since
+            // otherwise it would be overriden by `encode_call_params`.
+            self.alloc
+                .stack
+                .push_register(reg)
+                .expect("just popped a at least one provider so this must not fail");
+        }
         let params_span = self
             .alloc
             .instr_encoder
             .encode_call_params(&mut self.alloc.stack, provider_params)?;
+        if let TypedProvider::Register(_) = index {
+            // Now we pop `index` again and assert that it is still the same.
+            let dummy_index = self.alloc.stack.pop();
+            debug_assert_eq!(index, dummy_index);
+        }
         let call_params = Instruction::call_params(params_span, len_results);
         let table_params = match index {
             TypedProvider::Const(index) => match <Const16<u32>>::from_u32(u32::from(index)) {

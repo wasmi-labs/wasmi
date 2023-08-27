@@ -137,7 +137,7 @@ define_spec_tests! {
     fn wasm_labels("labels");
     fn wasm_left_to_right("left-to-right");
     #[ignore] fn wasm_linking("linking"); // TODO: indirect call type mismatch
-    #[ignore] fn wasm_load("load"); // TODO: out-of-bounds table access
+    fn wasm_load("load");
     fn wasm_local_get("local_get");
     fn wasm_local_set("local_set");
     fn wasm_local_tee("local_tee");

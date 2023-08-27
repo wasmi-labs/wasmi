@@ -1,6 +1,6 @@
 use super::*;
 use crate::engine::{
-    bytecode::{SignatureIdx, TableIdx},
+    bytecode::{GlobalIdx, SignatureIdx, TableIdx},
     CompiledFunc,
     RegisterSpan,
 };
@@ -369,4 +369,39 @@ fn two_imm_params_imm16() {
     test_with(1);
     test_with(u32::from(u16::MAX) - 1);
     test_with(u32::from(u16::MAX));
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn test_imm_params_dynamic_index() {
+    let wasm = wat2wasm(&format!(
+        r#"
+        (module
+            (type $sig (func (param i32 i32) (result i32)))
+            (table funcref (elem $f))
+            (global $g (mut i32) (i32.const 0))
+            (func $f (param i32 i32) (result i32)
+                (i32.const 0)
+            )
+            (func (result i32)
+                (return_call_indirect (type $sig)
+                    (i32.const 10) (i32.const 20) ;; call params
+                    (global.get $g) ;; index on dynamic register space
+                )
+            )
+        )
+        "#
+    ));
+    let params = RegisterSpan::new(Register::from_i16(1)).iter(2);
+    TranslationTest::new(wasm)
+        .expect_func_instrs([Instruction::return_imm32(0_i32)])
+        .expect_func_instrs([
+            Instruction::global_get(Register::from_i16(0), GlobalIdx::from(0)),
+            Instruction::copy_imm32(Register::from_i16(1), 10),
+            Instruction::copy_imm32(Register::from_i16(2), 20),
+            Instruction::return_call_indirect(SignatureIdx::from(0)),
+            Instruction::call_indirect_params(Register::from_i16(0), TableIdx::from(0)),
+            Instruction::call_params(params, 1),
+        ])
+        .run();
 }
