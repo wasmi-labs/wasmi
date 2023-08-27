@@ -125,12 +125,12 @@ define_spec_tests! {
     fn wasm_float_misc("float_misc");
     fn wasm_forward("forward");
     fn wasm_func("func");
-    #[ignore] fn wasm_func_ptrs("func_ptrs");
+    #[ignore] fn wasm_func_ptrs("func_ptrs"); // TODO: implement host func calls
     fn wasm_global("global");
     fn wasm_i32("i32");
     fn wasm_i64("i64");
     #[ignore] fn wasm_if("if");
-    #[ignore] fn wasm_imports("imports");
+    #[ignore] fn wasm_imports("imports"); // TODO: implement host func calls
     fn wasm_inline_module("inline-module");
     fn wasm_int_exprs("int_exprs");
     fn wasm_int_literals("int_literals");
