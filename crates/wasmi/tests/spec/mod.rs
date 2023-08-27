@@ -134,7 +134,7 @@ define_spec_tests! {
     fn wasm_inline_module("inline-module");
     fn wasm_int_exprs("int_exprs");
     fn wasm_int_literals("int_literals");
-    #[ignore] fn wasm_labels("labels");
+    fn wasm_labels("labels");
     fn wasm_left_to_right("left-to-right");
     #[ignore] fn wasm_linking("linking");
     #[ignore] fn wasm_load("load");
