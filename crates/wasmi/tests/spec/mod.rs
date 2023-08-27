@@ -150,7 +150,7 @@ define_spec_tests! {
     fn wasm_memory_redundancy("memory_redundancy");
     fn wasm_memory_size("memory_size");
     fn wasm_memory_trap("memory_trap");
-    #[ignore] fn wasm_names("names");
+    #[ignore] fn wasm_names("names"); // TODO: implement host func calls
     fn wasm_nop("nop");
     fn wasm_ref_func("ref_func");
     fn wasm_ref_is_null("ref_is_null");
@@ -159,7 +159,7 @@ define_spec_tests! {
     fn wasm_select("select");
     fn wasm_skip_stack_guard_page("skip-stack-guard-page");
     fn wasm_stack("stack");
-    #[ignore] fn wasm_start("start");
+    #[ignore] fn wasm_start("start"); // TODO: implement host func calls
     fn wasm_store("store");
     fn wasm_switch("switch");
     fn wasm_table_sub("table-sub");
