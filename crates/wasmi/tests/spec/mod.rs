@@ -98,7 +98,7 @@ define_spec_tests! {
     fn wasm_br_table("br_table");
     fn wasm_bulk("bulk");
     fn wasm_call("call");
-    #[ignore] fn wasm_call_indirect("call_indirect");
+    fn wasm_call_indirect("call_indirect");
     fn wasm_extended_const_data("proposals/extended-const/data");
     fn wasm_extended_const_elem("proposals/extended-const/elem");
     fn wasm_extended_const_global("proposals/extended-const/global");
