@@ -792,8 +792,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// This is a convenience function for fallible instructions.
     #[inline(always)]
     fn try_next_instr(&mut self) -> Result<(), TrapCode> {
-        self.next_instr();
-        Ok(())
+        self.try_next_instr_at(1)
     }
 
     /// Shifts the instruction pointer to the next instruction and returns `Ok(())`.
