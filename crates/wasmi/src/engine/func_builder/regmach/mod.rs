@@ -401,7 +401,7 @@ impl<'parser> FuncTranslator<'parser> {
         }
         if let Some(else_label) = frame.else_label() {
             self.alloc.instr_encoder.pin_label_if_unpinned(else_label);
-            if !frame.visited_else() {
+            if !frame.has_visited_else() {
                 // Since there was no `else` branch the `else` providers
                 // are still on the stack and need to be popped.
                 self.alloc.control_stack.pop_else_providers();
@@ -425,10 +425,10 @@ impl<'parser> FuncTranslator<'parser> {
                 self.reachable = frame.is_end_of_then_reachable().unwrap_or(self.reachable) || frame.is_branched_to();
             }
             (false, true) => {
-                self.reachable = self.reachable || frame.is_branched_to();
+                self.reachable = self.reachable || frame.is_branched_to() || !frame.has_visited_else();
             }
             (true, true) => {
-                self.reachable = self.reachable || frame.is_branched_to() || !frame.visited_else();
+                self.reachable = self.reachable || frame.is_branched_to() || !frame.has_visited_else();
             }
             _ => unreachable!("if control frame is reachable so at least one of then or else must be reachable as well"),
         }

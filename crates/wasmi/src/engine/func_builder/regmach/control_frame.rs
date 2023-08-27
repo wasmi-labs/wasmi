@@ -299,6 +299,8 @@ pub struct IfControlFrame {
     end_of_then_is_reachable: Option<bool>,
     /// The reachability of the `then` and `else` blocks of the [`IfControlFrame`].
     reachability: IfReachability,
+    /// Indicates whether the `else` block of the [`IfControlFrame`] has been seen already.
+    visited_else: bool,
 }
 
 /// The reachability of the `if` control flow frame.
@@ -362,6 +364,7 @@ impl IfControlFrame {
             consume_fuel,
             end_of_then_is_reachable,
             reachability,
+            visited_else: false,
         }
     }
 
@@ -458,9 +461,14 @@ impl IfControlFrame {
         self.end_of_then_is_reachable
     }
 
+    /// Informs the [`IfControlFrame`] that the `else` block has been visited.
+    pub fn visited_else(&mut self) {
+        self.visited_else = true;
+    }
+
     /// Returns `true` if the `else` block has been visited.
-    pub fn visited_else(&self) -> bool {
-        self.end_of_then_is_reachable.is_some()
+    pub fn has_visited_else(&self) -> bool {
+        self.visited_else
     }
 
     /// Returns the [`BlockHeight`] of the [`IfControlFrame`].

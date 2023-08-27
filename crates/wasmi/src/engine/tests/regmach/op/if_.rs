@@ -487,3 +487,48 @@ fn const_condition_br_if_else() {
     );
     test_for(false, [Instruction::Trap(TrapCode::UnreachableCodeReached)]);
 }
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn test_if_false_without_else_block_0() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func
+                (if
+                    (i32.const 0) ;; false
+                    (then
+                        (return)
+                    )
+                )
+            )
+        )
+        "#,
+    );
+    TranslationTest::new(wasm)
+        .expect_func_instrs([Instruction::Return])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn test_if_false_without_else_block_1() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (result i32)
+                (if
+                    (i32.const 0) ;; false
+                    (then
+                        (return (i32.const 0))
+                    )
+                )
+                (i32.const 1)
+            )
+        )
+        "#,
+    );
+    TranslationTest::new(wasm)
+        .expect_func_instrs([Instruction::return_imm32(1)])
+        .run()
+}

@@ -293,6 +293,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 unexpected,
             ),
         };
+        frame.visited_else();
         if let Some(else_label) = frame.else_label() {
             // Case: the `if` control frame has reachable `then` and `else` branches.
             debug_assert!(frame.is_then_reachable());
