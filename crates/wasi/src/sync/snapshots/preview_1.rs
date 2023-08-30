@@ -522,7 +522,7 @@ impl_add_to_linker_for_funcs!(
         fs_rights_base: i64,
         fdflags: i64,
         fs_rights_inheriting: i32,
-        offfset0: i32,
+        offset0: i32,
     ) -> i32;
 
     /// Read the contents of a symbolic link.
