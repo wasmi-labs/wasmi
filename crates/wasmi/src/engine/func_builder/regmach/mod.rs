@@ -385,11 +385,54 @@ impl<'parser> FuncTranslator<'parser> {
 
     /// Translates the `end` of a Wasm `if` control frame.
     fn translate_end_if(&mut self, frame: IfControlFrame) -> Result<(), TranslationError> {
-        if self.reachable && frame.is_branched_to() {
+        debug_assert!(
+            !self.alloc.control_stack.is_empty(),
+            "control stack must not be empty since its first element is always a `block`"
+        );
+        match (frame.is_then_reachable(), frame.is_else_reachable()) {
+            (true, true) => self.translate_end_if_then_else(frame),
+            (true, false) => self.translate_end_if_then_only(frame),
+            (false, true) => self.translate_end_if_else_only(frame),
+            (false, false) => unreachable!("at least one of `then` or `else` must be reachable"),
+        }
+    }
+
+    /// Translates the `end` of a Wasm `if` [`ControlFrame`] were only `then` is reachable.
+    ///
+    /// # Example
+    ///
+    /// This is used for translating
+    ///
+    /// ```wasm
+    /// (if X
+    ///     (then ..)
+    ///     (else ..)
+    /// )
+    /// ```
+    ///
+    /// or
+    ///
+    /// ```wasm
+    /// (if X
+    ///     (then ..)
+    /// )
+    /// ```
+    ///
+    /// where `X` is a constant value that evaluates to `true` such as `(i32.const 1)`.
+    fn translate_end_if_then_only(
+        &mut self,
+        frame: IfControlFrame,
+    ) -> Result<(), TranslationError> {
+        debug_assert!(frame.is_then_reachable());
+        debug_assert!(!frame.is_else_reachable());
+        debug_assert!(frame.else_label().is_none());
+        // Note: `if_end_of_then_reachable` returns `None` if `else` was never visited.
+        let end_of_then_reachable = frame.is_end_of_then_reachable().unwrap_or(self.reachable);
+        if end_of_then_reachable && frame.is_branched_to() {
             // If the end of the `if` is reachable AND
             // there are branches to the end of the `block`
             // prior, we need to copy the results to the
-            // control frame result registers.
+            // block result registers.
             //
             // # Note
             //
@@ -399,14 +442,7 @@ impl<'parser> FuncTranslator<'parser> {
             // and thus there is no need to copy the results around.
             self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
         }
-        if let Some(else_label) = frame.else_label() {
-            self.alloc.instr_encoder.pin_label_if_unpinned(else_label);
-            if !frame.has_visited_else() {
-                // Since there was no `else` branch the `else` providers
-                // are still on the stack and need to be popped.
-                self.alloc.control_stack.pop_else_providers();
-            }
-        }
+        // Since the `if` is now sealed we can pin its `end` label.
         self.alloc.instr_encoder.pin_label(frame.end_label());
         if frame.is_branched_to() {
             // Case: branches to this block exist so we cannot treat the
@@ -420,18 +456,179 @@ impl<'parser> FuncTranslator<'parser> {
             }
         }
         // We reset reachability in case the end of the `block` was reachable.
-        match (frame.is_then_reachable(), frame.is_else_reachable()) {
-            (true, false) => {
-                self.reachable = frame.is_end_of_then_reachable().unwrap_or(self.reachable) || frame.is_branched_to();
-            }
-            (false, true) => {
-                self.reachable = self.reachable || frame.is_branched_to() || !frame.has_visited_else();
-            }
-            (true, true) => {
-                self.reachable = self.reachable || frame.is_branched_to() || !frame.has_visited_else();
-            }
-            _ => unreachable!("if control frame is reachable so at least one of then or else must be reachable as well"),
+        self.reachable = end_of_then_reachable || frame.is_branched_to();
+        Ok(())
+    }
+
+    /// Translates the `end` of a Wasm `if` [`ControlFrame`] were only `else` is reachable.
+    ///
+    /// # Example
+    ///
+    /// This is used for translating
+    ///
+    /// ```wasm
+    /// (if X
+    ///     (then ..)
+    ///     (else ..)
+    /// )
+    /// ```
+    ///
+    /// or
+    ///
+    /// ```wasm
+    /// (if X
+    ///     (then ..)
+    /// )
+    /// ```
+    ///
+    /// where `X` is a constant value that evaluates to `false` such as `(i32.const 0)`.
+    fn translate_end_if_else_only(
+        &mut self,
+        frame: IfControlFrame,
+    ) -> Result<(), TranslationError> {
+        debug_assert!(!frame.is_then_reachable());
+        debug_assert!(frame.is_else_reachable());
+        debug_assert!(frame.else_label().is_none());
+        // Note: `if_end_of_then_reachable` returns `None` if `else` was never visited.
+        let end_of_else_reachable = self.reachable || !frame.has_visited_else();
+        if end_of_else_reachable && frame.is_branched_to() {
+            // If the end of the `if` is reachable AND
+            // there are branches to the end of the `block`
+            // prior, we need to copy the results to the
+            // block result registers.
+            //
+            // # Note
+            //
+            // We can skip this step if the above condition is
+            // not met since the code at this point is either
+            // unreachable OR there is only one source of results
+            // and thus there is no need to copy the results around.
+            self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
         }
+        // Since the `if` is now sealed we can pin its `end` label.
+        self.alloc.instr_encoder.pin_label(frame.end_label());
+        if frame.is_branched_to() {
+            // Case: branches to this block exist so we cannot treat the
+            //       basic block as a no-op and instead have to put its
+            //       block results on top of the stack.
+            self.alloc
+                .stack
+                .trunc(frame.block_height().into_u16() as usize);
+            for result in frame.branch_params(self.engine()) {
+                self.alloc.stack.push_register(result)?;
+            }
+        }
+        // We reset reachability in case the end of the `block` was reachable.
+        self.reachable = end_of_else_reachable || frame.is_branched_to();
+        Ok(())
+    }
+
+    /// Translates the `end` of a Wasm `if` [`ControlFrame`] were both `then` and `else` are reachable.
+    fn translate_end_if_then_else(
+        &mut self,
+        frame: IfControlFrame,
+    ) -> Result<(), TranslationError> {
+        debug_assert!(frame.is_then_reachable());
+        debug_assert!(frame.is_else_reachable());
+        match frame.has_visited_else() {
+            true => self.translate_end_if_then_with_else(frame),
+            false => self.translate_end_if_then_missing_else(frame),
+        }
+    }
+
+    /// Variant of [`Self::translate_end_if_then_else`] were the `else` block exists.
+    fn translate_end_if_then_with_else(
+        &mut self,
+        frame: IfControlFrame,
+    ) -> Result<(), TranslationError> {
+        debug_assert!(frame.has_visited_else());
+        let end_of_then_reachable = frame
+            .is_end_of_then_reachable()
+            .expect("must be set since `else` was visited");
+        let end_of_else_reachable = self.reachable;
+        let reachable = match (end_of_then_reachable, end_of_else_reachable) {
+            (false, false) => frame.is_branched_to(),
+            _ => true,
+        };
+        self.alloc.instr_encoder.pin_label_if_unpinned(
+            frame
+                .else_label()
+                .expect("must have `else` label since `else` is reachable"),
+        );
+        let if_height = frame.block_height().into_u16() as usize;
+        if end_of_else_reachable {
+            // Since the end of `else` is reachable we need to properly
+            // write the `else` block results back to were the `if` expects
+            // its results to reside upon exit.
+            self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
+        }
+        // After `else` parameters have been copied we can finally pin the `end` label.
+        self.alloc.instr_encoder.pin_label(frame.end_label());
+        if reachable {
+            // In case the code following the `if` is reachable we need
+            // to clean up and prepare the value stack.
+            self.alloc.stack.trunc(if_height);
+            for result in frame.branch_params(self.engine()) {
+                self.alloc.stack.push_register(result)?;
+            }
+        }
+        self.reachable = reachable;
+        Ok(())
+    }
+
+    /// Variant of [`Self::translate_end_if_then_else`] were the `else` block does not exist.
+    ///
+    /// # Note
+    ///
+    /// A missing `else` block forwards the [`IfControlFrame`] inputs like an identity function.
+    fn translate_end_if_then_missing_else(
+        &mut self,
+        frame: IfControlFrame,
+    ) -> Result<(), TranslationError> {
+        debug_assert!(!frame.has_visited_else());
+        let end_of_then_reachable = self.reachable;
+        let has_results = frame.block_type().len_results(self.engine()) >= 1;
+        if end_of_then_reachable && has_results {
+            // Since the `else` block is missing we need to write the results
+            // from the `then` block back to were the `if` control frame expects
+            // its results afterwards.
+            // Furthermore we need to encode the branch to the `if` end label.
+            self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
+            let end_offset = self
+                .alloc
+                .instr_encoder
+                .try_resolve_label(frame.end_label())?;
+            self.alloc
+                .instr_encoder
+                .push_instr(Instruction::branch(end_offset))?;
+        }
+        self.alloc.instr_encoder.pin_label_if_unpinned(
+            frame
+                .else_label()
+                .expect("must have `else` label since `else` is reachable"),
+        );
+        let if_height = frame.block_height().into_u16() as usize;
+        if has_results {
+            // We haven't visited the `else` block and thus the `else`
+            // providers are still on the auxiliary stack and need to
+            // be popped. We use them to restore the stack to the state
+            // when entering the `if` block so that we can properly copy
+            // the `else` results to were they are expected.
+            self.alloc.stack.trunc(if_height);
+            for provider in self.alloc.control_stack.pop_else_providers() {
+                self.alloc.stack.push_provider(provider)?;
+            }
+            self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
+        }
+        // After `else` parameters have been copied we can finally pin the `end` label.
+        self.alloc.instr_encoder.pin_label(frame.end_label());
+        // Without `else` block the code after the `if` is always reachable and
+        // thus we need to clean up and prepare the value stack for the following code.
+        self.alloc.stack.trunc(if_height);
+        for result in frame.branch_params(self.engine()) {
+            self.alloc.stack.push_register(result)?;
+        }
+        self.reachable = true;
         Ok(())
     }
 

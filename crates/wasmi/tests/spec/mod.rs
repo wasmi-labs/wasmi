@@ -129,7 +129,7 @@ define_spec_tests! {
     fn wasm_global("global");
     fn wasm_i32("i32");
     fn wasm_i64("i64");
-    #[ignore] fn wasm_if("if"); // TODO: invalid evaluation (0, 3)
+    fn wasm_if("if");
     #[ignore] fn wasm_imports("imports"); // TODO: implement host func calls
     fn wasm_inline_module("inline-module");
     fn wasm_int_exprs("int_exprs");

@@ -1,5 +1,9 @@
 use super::*;
-use crate::engine::bytecode::{BranchOffset, GlobalIdx};
+use crate::engine::{
+    bytecode::{BranchOffset, GlobalIdx},
+    bytecode2::RegisterSpan,
+    CompiledFunc,
+};
 use wasmi_core::TrapCode;
 
 #[test]
@@ -530,5 +534,46 @@ fn test_if_false_without_else_block_1() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_imm32(1)])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn test_if_without_else_has_result() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func $f (result i64 i32)
+                (i64.const 1)
+                (i32.const 0)
+            )
+            (func (result i64)
+                (call $f)
+                (if (param i64) (result i64)
+                    (then
+                        (drop)
+                        (i64.const -1)
+                    )
+                )
+            )
+        )
+        "#,
+    );
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::copy_i64imm32(Register::from_i16(0), 1),
+            Instruction::copy_imm32(Register::from_i16(1), 0),
+            Instruction::return_many(RegisterSpan::new(Register::from_i16(0)).iter(2)),
+        ])
+        .expect_func_instrs([
+            Instruction::call_internal_0(
+                RegisterSpan::new(Register::from_i16(0)),
+                CompiledFunc::from_u32(0),
+            ),
+            Instruction::branch_eqz(Register::from_i16(1), BranchOffset::from(3)),
+            Instruction::copy_i64imm32(Register::from_i16(0), -1),
+            Instruction::branch(BranchOffset::from(1)),
+            Instruction::return_reg(Register::from_i16(0)),
+        ])
         .run()
 }

@@ -294,11 +294,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             ),
         };
         frame.visited_else();
+        if frame.is_then_reachable() {
+            frame.update_end_of_then_reachability(self.reachable);
+        }
         if let Some(else_label) = frame.else_label() {
             // Case: the `if` control frame has reachable `then` and `else` branches.
             debug_assert!(frame.is_then_reachable());
             debug_assert!(frame.is_else_reachable());
-            frame.update_end_of_then_reachability(self.reachable);
             let branch_params = frame.branch_params(self.engine());
             if self.reachable {
                 self.translate_copy_branch_params(branch_params)?;
@@ -338,7 +340,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 // Not much needs to be done since an `if` control frame
                 // where only one branch is statically reachable is similar
                 // to a `block` control frame.
-                frame.update_end_of_then_reachability(self.reachable);
                 self.reachable = false;
             }
             (false, true) => {
