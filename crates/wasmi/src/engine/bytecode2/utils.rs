@@ -141,7 +141,7 @@ impl RegisterSpanIter {
     }
 
     /// Returns `true` if both `self` and `other` have overlapping [`Register`].
-    pub fn overlap(&self, other: &Self) -> bool {
+    pub fn is_overlapping(&self, other: &Self) -> bool {
         if self.is_empty() || other.is_empty() {
             return false;
         }

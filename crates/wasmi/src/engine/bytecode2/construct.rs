@@ -306,7 +306,7 @@ impl Instruction {
     pub fn copy_span(results: RegisterSpan, values: RegisterSpan, len: u16) -> Self {
         {
             let len = len as usize;
-            debug_assert!(!results.iter(len).overlap(&values.iter(len)));
+            debug_assert!(!results.iter(len).is_overlapping(&values.iter(len)));
         }
         Self::CopySpan {
             results,
