@@ -315,8 +315,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ) -> Result<CallOutcome, TrapCode> {
         match self.ctx.resolve_func(func) {
             FuncEntity::Wasm(func) => {
-                self.cache.update_instance(func.instance());
+                let instance = *func.instance();
                 self.prepare_compiled_func_call(results, func.func_body(), call_params, call_kind)?;
+                self.cache.update_instance(&instance);
                 Ok(CallOutcome::Continue)
             }
             FuncEntity::Host(_host_func) => {
