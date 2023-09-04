@@ -93,7 +93,7 @@ define_spec_tests! {
     fn wasm_binary_leb128("binary-leb128");
     fn wasm_binary("binary");
     fn wasm_block("block");
-    #[ignore] fn wasm_br("br"); // TODO: invalid evaluation (2, 7)
+    fn wasm_br("br");
     fn wasm_br_if("br_if");
     fn wasm_br_table("br_table");
     fn wasm_bulk("bulk");
@@ -110,7 +110,7 @@ define_spec_tests! {
     fn wasm_custom("custom");
     fn wasm_data("data");
     fn wasm_elem("elem");
-    #[ignore] fn wasm_endianness("endianness"); // TODO: invalid evaluation (0, -1)
+    fn wasm_endianness("endianness");
     fn wasm_exports("exports");
     fn wasm_f32("f32");
     fn wasm_f32_bitwise("f32_bitwise");

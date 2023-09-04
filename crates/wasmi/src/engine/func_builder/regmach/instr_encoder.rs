@@ -14,7 +14,7 @@ use crate::{
     module::ModuleResources,
 };
 use alloc::vec::{Drain, Vec};
-use core::mem;
+use core::{cmp, mem};
 use wasmi_core::{UntypedValue, ValueType, F32};
 
 /// Encodes `wasmi` bytecode instructions to an [`Instruction`] stream.
@@ -85,6 +85,15 @@ impl InstrSequence {
     /// The [`InstrSequence`] will be in an empty state after this operation.
     pub fn drain(&mut self) -> Drain<Instruction> {
         self.instrs.drain(..)
+    }
+
+    /// Returns a slice to the sequence of [`Instruction`] starting at `start`.
+    ///
+    /// # Panics
+    ///
+    /// If `start` is out of bounds for [`InstrSequence`].
+    pub fn get_slice_at_mut(&mut self, start: Instr) -> &mut [Instruction] {
+        &mut self.instrs[start.into_usize()..]
     }
 }
 
@@ -307,6 +316,7 @@ impl InstrEncoder {
                 return Ok(());
             }
         }
+        let start = self.instrs.next_instr();
         let mut last_copy: Option<Instruction> = None;
         for (copy_result, copy_input) in results.zip(values.iter().copied()) {
             // Note: we should refactor this code one if-let-chains are stabilized.
@@ -362,6 +372,42 @@ impl InstrEncoder {
                 }
             }
         }
+        let copy_instrs = self.instrs.get_slice_at_mut(start);
+        // We need to sort the encoded copy instructions so that they are not overwriting themselves.
+        //
+        // An example is `copy 1 <- 0, copy 2 < 1` where the first `copy 1 <- 0`
+        // overwrites the input of the second.
+        //
+        // To further circumvent this, all `copy` instructions copying immediate values always go last
+        // and `copy_span` instructions come after `copy` instructions.
+        copy_instrs.sort_by(|lhs, rhs| {
+            use Instruction as I;
+            match (lhs, rhs) {
+                (
+                    I::Copy {
+                        result: r0,
+                        value: v0,
+                    },
+                    I::Copy {
+                        result: r1,
+                        value: v1,
+                    },
+                ) => {
+                    if v0 <= v1 {
+                        r0.cmp(r1)
+                    } else {
+                        r1.cmp(r0)
+                    }
+                }
+                (I::Copy { .. }, _) => cmp::Ordering::Less,
+                (_, I::Copy { .. }) => cmp::Ordering::Greater,
+                // TODO: Maybe there is a need to also order `CopySpan` amongst
+                // themselves just as we did for the `Copy` instruction.
+                (I::CopySpan { .. }, _) => cmp::Ordering::Less,
+                (_, I::CopySpan { .. }) => cmp::Ordering::Greater,
+                _ => cmp::Ordering::Equal,
+            }
+        });
         Ok(())
     }
 

@@ -1,8 +1,8 @@
 use super::*;
-use crate::engine::tests::regmach::{
-    display_wasm::DisplayValueType,
-    driver::ExpectedFunc,
-    wasm_type::WasmType,
+use crate::engine::{
+    bytecode::{BranchOffset, GlobalIdx},
+    bytecode2::RegisterSpan,
+    tests::regmach::{display_wasm::DisplayValueType, driver::ExpectedFunc, wasm_type::WasmType},
 };
 use core::fmt::Display;
 
@@ -162,4 +162,30 @@ fn as_return_1_f64imm32() {
     test_for(f64::INFINITY);
     test_for(f64::NAN);
     test_for(f64::EPSILON);
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn test_br_as_return_values() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (result i32 i64)
+                (i32.const 2)
+                (block (result i64)
+                    (return (br 0 (i32.const 1) (i64.const 7)))
+                )
+            )
+        )
+        "#,
+    );
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::copy_i64imm32(Register::from_i16(0), 7),
+            Instruction::branch(BranchOffset::from(1)),
+            Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
+            Instruction::copy_imm32(Register::from_i16(0), 2_i32),
+            Instruction::return_many(RegisterSpan::new(Register::from_i16(0)).iter(2)),
+        ])
+        .run()
 }

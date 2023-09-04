@@ -1,6 +1,9 @@
 use super::*;
 
-use crate::engine::bytecode::GlobalIdx;
+use crate::engine::{
+    bytecode::{BranchOffset, GlobalIdx},
+    bytecode2::RegisterSpan,
+};
 use core::fmt::Display;
 use wasm_type::WasmType;
 
@@ -173,4 +176,54 @@ fn imported_f32() {
 #[cfg_attr(miri, ignore)]
 fn imported_f64() {
     test_imported::<f64>();
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn test_global_get_as_return_values_0() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (global $g (mut i64) (i64.const 0))
+            (func (result i32 i64)
+                (i32.const 2)
+                (global.get $g)
+            )
+        )
+        "#,
+    );
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::global_get(Register::from_i16(0), GlobalIdx::from(0)),
+            Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
+            Instruction::copy_imm32(Register::from_i16(0), 2_i32),
+            Instruction::return_many(RegisterSpan::new(Register::from_i16(0)).iter(2)),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn test_global_get_as_return_values_1() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (global $g (mut i64) (i64.const 0))
+            (func (result i32 i64)
+                (block (result i32 i64)
+                    (i32.const 2)
+                    (global.get $g)
+                )
+            )
+        )
+        "#,
+    );
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::global_get(Register::from_i16(0), GlobalIdx::from(0)),
+            Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
+            Instruction::copy_imm32(Register::from_i16(0), 2_i32),
+            Instruction::return_many(RegisterSpan::new(Register::from_i16(0)).iter(2)),
+        ])
+        .run()
 }
