@@ -139,6 +139,30 @@ impl RegisterSpanIter {
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
+    /// Returns `true` if both `self` and `other` have overlapping [`Register`].
+    pub fn overlap(&self, other: &Self) -> bool {
+        if self.is_empty() || other.is_empty() {
+            return false;
+        }
+        let self_min = self.span().head().to_i16();
+        let other_min = other.span().head().to_i16();
+        let self_max = self
+            .clone()
+            .next_back()
+            .expect("self is non empty")
+            .to_i16();
+        let other_max = other
+            .clone()
+            .next_back()
+            .expect("other is non empty")
+            .to_i16();
+        if self_min < other_min {
+            other_min <= self_max
+        } else {
+            self_min <= other_max
+        }
+    }
 }
 
 impl Iterator for RegisterSpanIter {
