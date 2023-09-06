@@ -7,6 +7,7 @@ use self::bench::{
     load_wasm_from_file,
     wat2wasm,
 };
+use bench::bench_config;
 use core::{slice, time::Duration};
 use criterion::{criterion_group, criterion_main, Bencher, Criterion};
 use wasmi::{core::TrapCode, Engine, Extern, Func, Linker, Memory, Module, Store, Value};
@@ -46,7 +47,7 @@ criterion_group! {
     targets =
         bench_execute_tiny_keccak,
         bench_execute_rev_comp,
-        bench_execute_regex_redux,
+        // bench_execute_regex_redux,
         bench_execute_count_until,
         bench_execute_br_table,
         bench_execute_trunc_f2i,
@@ -64,7 +65,7 @@ criterion_group! {
         bench_execute_recursive_ok,
         bench_execute_recursive_scan,
         bench_execute_recursive_trap,
-        bench_execute_host_calls,
+        // bench_execute_host_calls,
         bench_execute_fibonacci,
         bench_execute_recursive_is_even,
         bench_execute_memory_sum,
@@ -84,7 +85,7 @@ fn bench_translate_for(c: &mut Criterion, name: &str, path: &str) {
     c.bench_function(&bench_id, |b| {
         let wasm_bytes = load_wasm_from_file(path);
         b.iter(|| {
-            let engine = Engine::default();
+            let engine = Engine::new(&bench_config());
             let _module = Module::new(&engine, &wasm_bytes[..]).unwrap();
         })
     });
@@ -360,6 +361,7 @@ fn bench_execute_rev_comp(c: &mut Criterion) {
     });
 }
 
+#[allow(dead_code)]
 fn bench_execute_regex_redux(c: &mut Criterion) {
     c.bench_function("execute/regex_redux", |b| {
         let (mut store, instance) = load_instance_from_file(WASM_KERNEL);
@@ -852,6 +854,7 @@ fn bench_execute_recursive_is_even(c: &mut Criterion) {
 /// How often the `host_call` should be called per Wasm invocation.
 const HOST_CALLS_REPETITIONS: i64 = 1000;
 
+#[allow(dead_code)]
 fn bench_execute_host_calls(c: &mut Criterion) {
     c.bench_function("execute/host_calls", |b| {
         let wasm = wat2wasm(include_bytes!("wat/host_calls.wat"));
