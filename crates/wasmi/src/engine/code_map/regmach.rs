@@ -30,8 +30,6 @@ pub struct CompiledFuncEntity {
     len_registers: u16,
     /// The number of results that the [`CompiledFunc`] returns.
     len_results: u16,
-    /// The number of instructions of the [`CompiledFunc`].
-    len_instrs: u32,
     /// The constant values local to the [`CompiledFunc`].
     consts: Box<[UntypedValue]>,
 }
@@ -57,13 +55,10 @@ impl CompiledFuncEntity {
             !instrs.is_empty(),
             "compiled functions must have at least one instruction"
         );
-        let len_instrs = u32::try_from(instrs.len())
-            .unwrap_or_else(|_| panic!("tried to initialize function with too many instructions"));
         Self {
             instrs,
             len_registers,
             len_results,
-            len_instrs,
             consts: func_consts.collect(),
         }
     }
@@ -74,7 +69,6 @@ impl CompiledFuncEntity {
             instrs: [].into(),
             len_registers: 0,
             len_results: 0,
-            len_instrs: 0,
             consts: [].into(),
         }
     }
