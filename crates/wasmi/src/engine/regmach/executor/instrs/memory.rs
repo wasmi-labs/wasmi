@@ -6,7 +6,7 @@ use crate::{
     engine::{
         bytecode::DataSegmentIdx,
         bytecode2::{Const16, Instruction, Register},
-        code_map::InstructionPtr2 as InstructionPtr,
+        regmach::code_map::InstructionPtr,
     },
     error::EntityGrowError,
     store::ResourceLimiterRef,

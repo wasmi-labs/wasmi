@@ -19,7 +19,7 @@ use crate::{
             RegisterSpan,
             UnaryInstr,
         },
-        code_map::CompiledFuncEntity,
+        regmach::code_map::CompiledFuncEntity,
         CompiledFunc,
     },
     module::ModuleResources,

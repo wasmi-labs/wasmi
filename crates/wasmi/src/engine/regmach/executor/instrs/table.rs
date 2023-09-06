@@ -4,7 +4,7 @@ use crate::{
     engine::{
         bytecode::{ElementSegmentIdx, TableIdx},
         bytecode2::{Const16, Const32, Instruction, Register},
-        code_map::InstructionPtr2 as InstructionPtr,
+        regmach::code_map::InstructionPtr,
     },
     error::EntityGrowError,
     store::ResourceLimiterRef,

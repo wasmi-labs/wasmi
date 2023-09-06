@@ -4,8 +4,10 @@ use crate::{
     engine::{
         bytecode::{FuncIdx, SignatureIdx, TableIdx},
         bytecode2::{CallParams, Instruction, Register, RegisterSpan, RegisterSpanIter},
-        code_map::{CompiledFuncEntity, InstructionPtr2 as InstructionPtr},
-        regmach::stack::{CallFrame, Stack},
+        regmach::{
+            code_map::{CompiledFuncEntity, InstructionPtr},
+            stack::{CallFrame, Stack},
+        },
         CompiledFunc,
     },
     func::FuncEntity,

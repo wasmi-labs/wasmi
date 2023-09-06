@@ -14,9 +14,11 @@ use crate::{
             UnaryInstr,
         },
         cache::InstanceCache,
-        code_map::{CodeMap2 as CodeMap, InstructionPtr2 as InstructionPtr},
         config::FuelCosts,
-        regmach::stack::{CallFrame, CallStack, ValueStack, ValueStackPtr},
+        regmach::{
+            code_map::{CodeMap, InstructionPtr},
+            stack::{CallFrame, CallStack, ValueStack, ValueStackPtr},
+        },
     },
     store::ResourceLimiterRef,
     FuelConsumptionMode,

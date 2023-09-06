@@ -1,12 +1,5 @@
 //! Datastructure to efficiently store function bodies and their instructions.
 
-mod regmach;
-
-pub use self::regmach::{
-    CodeMap as CodeMap2,
-    CompiledFuncEntity,
-    InstructionPtr as InstructionPtr2,
-};
 use super::Instruction;
 use alloc::vec::Vec;
 use wasmi_arena::ArenaIndex;

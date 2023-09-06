@@ -1,6 +1,6 @@
 use super::{err_stack_overflow, BaseValueStackOffset, FrameValueStackOffset};
 use crate::{
-    engine::{bytecode2::RegisterSpan, code_map::InstructionPtr2 as InstructionPtr},
+    engine::{bytecode2::RegisterSpan, regmach::code_map::InstructionPtr},
     Instance,
 };
 use alloc::vec::Vec;

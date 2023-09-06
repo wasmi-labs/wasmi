@@ -1,8 +1,12 @@
+pub mod code_map;
 mod executor;
 mod stack;
 
 use self::executor::EngineExecutor;
-pub use self::stack::Stack;
+pub use self::{
+    code_map::{CodeMap, CompiledFuncEntity, InstructionPtr},
+    stack::Stack,
+};
 use crate::{
     core::Trap,
     engine::{CallParams, CallResults, EngineInner, TaggedTrap},
