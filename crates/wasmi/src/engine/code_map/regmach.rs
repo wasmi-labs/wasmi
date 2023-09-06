@@ -83,11 +83,6 @@ impl CompiledFuncEntity {
         &self.instrs[..]
     }
 
-    /// Returns the [`InstructionPtr`] of the [`CompiledFunc`].
-    fn instr_ptr(&self) -> InstructionPtr {
-        InstructionPtr::new(self.instrs().as_ptr())
-    }
-
     /// Returns the number of registers used by the [`CompiledFunc`].
     pub fn len_registers(&self) -> u16 {
         self.len_registers
