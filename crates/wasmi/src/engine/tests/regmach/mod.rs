@@ -13,8 +13,8 @@ use self::{
 };
 use super::{create_module, wat2wasm};
 use crate::engine::{
-    bytecode2::{AnyConst16, AnyConst32, Const16, Const32, Instruction, Register},
     const_pool::ConstRef,
+    regmach::bytecode::{AnyConst16, AnyConst32, Const16, Const32, Instruction, Register},
 };
 use std::fmt::Display;
 
