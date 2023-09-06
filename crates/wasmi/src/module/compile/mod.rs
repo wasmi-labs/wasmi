@@ -1,7 +1,7 @@
 pub use self::block_type::BlockType;
 use super::{parser::ReusableAllocations, FuncIdx, ModuleResources};
 use crate::{
-    engine::{CompiledFunc, FuncBuilder, FuncTranslatorAllocations, FuncTranslatorAllocations2},
+    engine::{ChosenFuncTranslatorAllocations, CompiledFunc, FuncBuilder},
     errors::ModuleError,
 };
 use wasmparser::{FuncValidator, FunctionBody, ValidatorResources};
@@ -27,7 +27,7 @@ pub fn translate<'parser>(
     func_body: FunctionBody<'parser>,
     validator: FuncValidator<ValidatorResources>,
     res: ModuleResources<'parser>,
-    (allocations, allocations2): (FuncTranslatorAllocations, FuncTranslatorAllocations2),
+    allocations: ChosenFuncTranslatorAllocations,
 ) -> Result<ReusableAllocations, ModuleError> {
     FunctionTranslator::new(
         func,
@@ -35,7 +35,7 @@ pub fn translate<'parser>(
         func_body,
         validator,
         res,
-        (allocations, allocations2),
+        allocations,
     )?
     .translate()
 }
@@ -56,7 +56,7 @@ impl<'parser> FunctionTranslator<'parser> {
         func_body: FunctionBody<'parser>,
         validator: FuncValidator<ValidatorResources>,
         res: ModuleResources<'parser>,
-        (allocations, allocations_2): (FuncTranslatorAllocations, FuncTranslatorAllocations2),
+        allocations: ChosenFuncTranslatorAllocations,
     ) -> Result<Self, ModuleError> {
         let func_builder = FuncBuilder::new(
             func,
@@ -65,7 +65,6 @@ impl<'parser> FunctionTranslator<'parser> {
             res,
             validator,
             allocations,
-            allocations_2,
         )?;
         Ok(Self {
             func_body,

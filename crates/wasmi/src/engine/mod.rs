@@ -56,6 +56,7 @@ use self::{
 };
 pub(crate) use self::{
     func_args::{FuncFinished, FuncParams, FuncResults},
+    func_builder::ChosenFuncTranslatorAllocations,
     func_types::DedupFuncType,
 };
 use crate::{

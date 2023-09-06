@@ -13,17 +13,20 @@ use super::{
     Read,
 };
 use crate::{
-    engine::{CompiledFunc, FuncTranslatorAllocations, FuncTranslatorAllocations2},
+    engine::{
+        ChosenFuncTranslatorAllocations,
+        CompiledFunc,
+        FuncTranslatorAllocations,
+        FuncTranslatorAllocations2,
+    },
     Engine,
+    EngineBackend,
     FuncType,
     MemoryType,
     TableType,
 };
 use alloc::{boxed::Box, vec::Vec};
-use core::{
-    mem::{replace, take},
-    ops::Range,
-};
+use core::{mem::replace, ops::Range};
 use wasmparser::{
     Chunk,
     DataSectionReader,
@@ -71,11 +74,28 @@ pub struct ModuleParser<'engine> {
 }
 
 /// Reusable heap allocations for function validation and translation.
-#[derive(Default)]
 pub struct ReusableAllocations {
-    pub translation: FuncTranslatorAllocations,
-    pub translation2: FuncTranslatorAllocations2,
+    pub translation: ChosenFuncTranslatorAllocations,
     pub validation: FuncValidatorAllocations,
+}
+
+impl ReusableAllocations {
+    /// Creates new [`ReusableAllocations`] for the given [`EngineBackend`].
+    pub fn new(backend: EngineBackend) -> Self {
+        let translation = match backend {
+            EngineBackend::StackMachine => {
+                ChosenFuncTranslatorAllocations::StackMachine(FuncTranslatorAllocations::default())
+            }
+            EngineBackend::RegisterMachine => ChosenFuncTranslatorAllocations::RegisterMachine(
+                FuncTranslatorAllocations2::default(),
+            ),
+        };
+        let validation = FuncValidatorAllocations::default();
+        Self {
+            translation,
+            validation,
+        }
+    }
 }
 
 impl<'engine> ModuleParser<'engine> {
@@ -89,7 +109,7 @@ impl<'engine> ModuleParser<'engine> {
             validator,
             parser,
             compiled_funcs: 0,
-            allocations: ReusableAllocations::default(),
+            allocations: ReusableAllocations::new(engine.config().engine_backend()),
         }
     }
 
@@ -506,14 +526,15 @@ impl<'engine> ModuleParser<'engine> {
         let (func, compiled_func, compiled_func_2) = self.next_func();
         let validator = self.validator.code_section_entry(&func_body)?;
         let module_resources = ModuleResources::new(&self.builder);
-        let allocations = take(&mut self.allocations);
+        let dummy_allocations = ReusableAllocations::new(EngineBackend::StackMachine);
+        let allocations = replace(&mut self.allocations, dummy_allocations);
         let allocations = translate(
             func,
             (compiled_func, compiled_func_2),
             func_body,
             validator.into_validator(allocations.validation),
             module_resources,
-            (allocations.translation, allocations.translation2),
+            allocations.translation,
         )?;
         let _ = replace(&mut self.allocations, allocations);
         Ok(())
