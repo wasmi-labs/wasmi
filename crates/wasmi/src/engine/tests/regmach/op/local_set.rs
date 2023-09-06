@@ -1,6 +1,6 @@
 use crate::engine::{
     bytecode::{FuncIdx, SignatureIdx, TableIdx},
-    bytecode2::RegisterSpan,
+    regmach::bytecode::RegisterSpan,
     CompiledFunc,
 };
 

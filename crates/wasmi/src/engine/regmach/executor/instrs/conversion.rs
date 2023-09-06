@@ -1,11 +1,11 @@
 use super::Executor;
 use crate::{
     core::{TrapCode, UntypedValue},
-    engine::bytecode2::UnaryInstr,
+    engine::regmach::bytecode::UnaryInstr,
 };
 
 #[cfg(doc)]
-use crate::engine::bytecode2::Instruction;
+use crate::engine::regmach::bytecode::Instruction;
 
 macro_rules! impl_conversion_impls {
     ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {

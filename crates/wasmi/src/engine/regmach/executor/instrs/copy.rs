@@ -1,11 +1,11 @@
 use super::Executor;
 use crate::{
     core::UntypedValue,
-    engine::bytecode2::{AnyConst32, Const32, Register, RegisterSpan},
+    engine::regmach::bytecode::{AnyConst32, Const32, Register, RegisterSpan},
 };
 
 #[cfg(doc)]
-use crate::engine::bytecode2::Instruction;
+use crate::engine::regmach::bytecode::Instruction;
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes a generic `copy` [`Instruction`].

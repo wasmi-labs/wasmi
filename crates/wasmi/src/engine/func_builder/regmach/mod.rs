@@ -32,7 +32,8 @@ use super::TranslationErrorInner;
 use crate::{
     engine::{
         bytecode::SignatureIdx,
-        bytecode2::{
+        config::FuelCosts,
+        regmach::bytecode::{
             AnyConst32,
             Const16,
             Const32,
@@ -42,7 +43,6 @@ use crate::{
             RegisterSpanIter,
             Sign,
         },
-        config::FuelCosts,
         CompiledFunc,
         Instr,
         TranslationError,

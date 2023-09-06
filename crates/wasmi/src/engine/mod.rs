@@ -1,7 +1,6 @@
 //! The `wasmi` interpreter.
 
 pub mod bytecode;
-mod bytecode2;
 mod cache;
 pub mod code_map;
 mod config;
@@ -20,10 +19,9 @@ mod trap;
 mod tests;
 
 #[cfg(test)]
-use self::bytecode2::RegisterSpan;
+use self::regmach::bytecode::RegisterSpan;
 pub use self::{
     bytecode::DropKeep,
-    bytecode2::Instruction as Instruction2,
     code_map::CompiledFunc,
     config::{Config, EngineBackend, FuelConsumptionMode},
     func_builder::{
@@ -34,21 +32,24 @@ pub use self::{
         RelativeDepth,
         TranslationError,
     },
-    regmach::CodeMap as CodeMap2,
+    regmach::{bytecode::Instruction as Instruction2, CodeMap as CodeMap2},
     resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
     stack::StackLimits,
     traits::{CallParams, CallResults},
 };
 use self::{
     bytecode::Instruction,
-    bytecode2::{Provider, UntypedProvider},
     cache::InstanceCache,
     code_map::CodeMap,
     const_pool::{ConstPool, ConstPoolView, ConstRef},
     executor::{execute_wasm, WasmOutcome},
     func_builder::regmach::FuncLocalConstsIter,
     func_types::FuncTypeRegistry,
-    regmach::{code_map::CompiledFuncEntity, Stack as Stack2},
+    regmach::{
+        bytecode::{Provider, UntypedProvider},
+        code_map::CompiledFuncEntity,
+        Stack as Stack2,
+    },
     resumable::ResumableCallBase,
     stack::{FuncFrame, Stack, ValueStack},
     trap::TaggedTrap,

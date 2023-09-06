@@ -1,7 +1,7 @@
 use super::*;
 use crate::engine::{
     bytecode::BranchOffset,
-    bytecode2::RegisterSpan,
+    regmach::bytecode::RegisterSpan,
     tests::regmach::{display_wasm::DisplayValueType, driver::ExpectedFunc, wasm_type::WasmType},
 };
 use core::fmt::Display;

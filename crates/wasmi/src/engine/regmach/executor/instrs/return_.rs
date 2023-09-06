@@ -1,14 +1,14 @@
 use super::Executor;
 use crate::{
     core::UntypedValue,
-    engine::{
-        bytecode2::{AnyConst32, Const32, Register, RegisterSpan, RegisterSpanIter},
-        regmach::stack::ValueStackPtr,
+    engine::regmach::{
+        bytecode::{AnyConst32, Const32, Register, RegisterSpan, RegisterSpanIter},
+        stack::ValueStackPtr,
     },
 };
 
 #[cfg(doc)]
-use crate::engine::bytecode2::Instruction;
+use crate::engine::regmach::bytecode::Instruction;
 
 /// The outcome of a Wasm return statement.
 #[derive(Debug, Copy, Clone)]

@@ -3,8 +3,8 @@ use crate::{
     core::TrapCode,
     engine::{
         bytecode::{FuncIdx, SignatureIdx, TableIdx},
-        bytecode2::{CallParams, Instruction, Register, RegisterSpan, RegisterSpanIter},
         regmach::{
+            bytecode::{CallParams, Instruction, Register, RegisterSpan, RegisterSpanIter},
             code_map::{CompiledFuncEntity, InstructionPtr},
             stack::{CallFrame, Stack},
         },

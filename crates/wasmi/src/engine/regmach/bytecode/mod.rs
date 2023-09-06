@@ -31,7 +31,7 @@ pub(crate) use self::{
         UnaryInstr,
     },
 };
-use super::{
+use crate::engine::{
     bytecode::{
         BlockFuel,
         BranchOffset,

@@ -1,7 +1,7 @@
 use super::{TaggedProvider, TypedProvider};
 use crate::engine::{
-    bytecode2::{Register, RegisterSpan},
     func_builder::{Instr, TranslationErrorInner},
+    regmach::bytecode::{Register, RegisterSpan},
     TranslationError,
 };
 use alloc::collections::btree_set::BTreeSet;

@@ -1,3 +1,4 @@
+pub mod bytecode;
 pub mod code_map;
 mod executor;
 mod stack;

@@ -12,8 +12,8 @@ pub use self::{
 use super::TypedValue;
 use crate::{
     engine::{
-        bytecode2::{Register, RegisterSpan},
         func_builder::TranslationErrorInner,
+        regmach::bytecode::{Register, RegisterSpan},
         Provider,
         TranslationError,
         UntypedProvider,

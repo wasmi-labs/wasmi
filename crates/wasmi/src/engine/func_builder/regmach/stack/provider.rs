@@ -1,5 +1,5 @@
 use super::TypedValue;
-use crate::engine::bytecode2::Register;
+use crate::engine::regmach::bytecode::Register;
 use alloc::vec::{Drain, Vec};
 
 #[cfg(doc)]

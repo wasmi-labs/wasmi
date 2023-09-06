@@ -2,7 +2,7 @@ use super::*;
 
 use crate::engine::{
     bytecode::{BranchOffset, GlobalIdx},
-    bytecode2::RegisterSpan,
+    regmach::bytecode::RegisterSpan,
 };
 use core::fmt::Display;
 use wasm_type::WasmType;

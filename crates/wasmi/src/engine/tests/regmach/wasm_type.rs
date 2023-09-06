@@ -3,7 +3,7 @@ use wasmi_core::ValueType;
 use crate::{
     core::{UntypedValue, F32},
     engine::{
-        bytecode2::{AnyConst32, Const32, Instruction, Register},
+        regmach::bytecode::{AnyConst32, Const32, Instruction, Register},
         ConstRef,
     },
 };

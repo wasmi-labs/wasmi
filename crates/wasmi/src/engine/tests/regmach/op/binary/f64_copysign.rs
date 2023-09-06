@@ -1,5 +1,5 @@
 use super::*;
-use crate::engine::bytecode2::Sign;
+use crate::engine::regmach::bytecode::Sign;
 
 const WASM_OP: WasmOp = WasmOp::binary(WasmType::F64, "copysign");
 

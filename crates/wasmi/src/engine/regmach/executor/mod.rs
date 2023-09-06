@@ -3,9 +3,11 @@ use super::stack::CallFrame;
 pub use super::Stack;
 use crate::{
     engine::{
-        bytecode2::{Register, RegisterSpan},
         cache::InstanceCache,
-        regmach::code_map::InstructionPtr,
+        regmach::{
+            bytecode::{Register, RegisterSpan},
+            code_map::InstructionPtr,
+        },
         CallParams,
         CallResults,
         EngineResources,

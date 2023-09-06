@@ -4,8 +4,8 @@
 use super::ValueStack;
 use crate::{
     engine::{
-        bytecode2::{RegisterSpan, RegisterSpanIter},
         func_builder::{labels::LabelRef, TranslationErrorInner},
+        regmach::bytecode::{RegisterSpan, RegisterSpanIter},
         Instr,
         TranslationError,
     },

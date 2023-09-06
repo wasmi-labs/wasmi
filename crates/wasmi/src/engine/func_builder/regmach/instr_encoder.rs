@@ -2,13 +2,13 @@ use super::{visit_register::VisitInputRegisters, TypedProvider};
 use crate::{
     engine::{
         bytecode::BranchOffset,
-        bytecode2::{Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
         func_builder::{
             labels::{LabelRef, LabelRegistry},
             regmach::stack::ValueStack,
             Instr,
             TranslationErrorInner,
         },
+        regmach::bytecode::{Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
         TranslationError,
     },
     module::ModuleResources,

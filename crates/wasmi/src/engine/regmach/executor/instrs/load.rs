@@ -1,11 +1,11 @@
 use super::Executor;
 use crate::{
     core::{TrapCode, UntypedValue},
-    engine::bytecode2::{LoadAtInstr, LoadInstr, LoadOffset16Instr, Register},
+    engine::regmach::bytecode::{LoadAtInstr, LoadInstr, LoadOffset16Instr, Register},
 };
 
 #[cfg(doc)]
-use crate::engine::bytecode2::Instruction;
+use crate::engine::regmach::bytecode::Instruction;
 
 /// The function signature of Wasm load operations.
 type WasmLoadOp =

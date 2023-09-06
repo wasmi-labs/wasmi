@@ -1,12 +1,12 @@
 use super::Executor;
 use crate::engine::{
     bytecode::GlobalIdx,
-    bytecode2::{Const16, Register},
+    regmach::bytecode::{Const16, Register},
 };
 use wasmi_core::UntypedValue;
 
 #[cfg(doc)]
-use crate::engine::bytecode2::Instruction;
+use crate::engine::regmach::bytecode::Instruction;
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes an [`Instruction::GlobalGet`].

@@ -22,7 +22,7 @@ use super::{
 };
 use crate::engine::{
     bytecode::{BranchOffset, DataSegmentIdx, ElementSegmentIdx, FuncIdx, SignatureIdx, TableIdx},
-    bytecode2,
+    regmach::bytecode,
     CompiledFunc,
 };
 
@@ -316,18 +316,18 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::GlobalGet`].
-    pub fn global_get(result: Register, global: bytecode2::GlobalIdx) -> Self {
+    pub fn global_get(result: Register, global: bytecode::GlobalIdx) -> Self {
         Self::GlobalGet { result, global }
     }
 
     /// Creates a new [`Instruction::GlobalSet`].
-    pub fn global_set(global: bytecode2::GlobalIdx, input: Register) -> Self {
+    pub fn global_set(global: bytecode::GlobalIdx, input: Register) -> Self {
         Self::GlobalSet { global, input }
     }
 
     /// Creates a new [`Instruction::GlobalSetI32Imm16`].
     pub fn global_set_i32imm16(
-        global: bytecode2::GlobalIdx,
+        global: bytecode::GlobalIdx,
         input: impl Into<Const16<i32>>,
     ) -> Self {
         Self::GlobalSetI32Imm16 {
@@ -338,7 +338,7 @@ impl Instruction {
 
     /// Creates a new [`Instruction::GlobalSetI64Imm16`].
     pub fn global_set_i64imm16(
-        global: bytecode2::GlobalIdx,
+        global: bytecode::GlobalIdx,
         input: impl Into<Const16<i64>>,
     ) -> Self {
         Self::GlobalSetI64Imm16 {

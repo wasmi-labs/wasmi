@@ -1,11 +1,11 @@
 use super::Executor;
 use crate::{
     core::{TrapCode, UntypedValue},
-    engine::bytecode2::{BinInstr, BinInstrImm16, CopysignImmInstr, Sign},
+    engine::regmach::bytecode::{BinInstr, BinInstrImm16, CopysignImmInstr, Sign},
 };
 
 #[cfg(doc)]
-use crate::engine::bytecode2::Instruction;
+use crate::engine::regmach::bytecode::Instruction;
 
 macro_rules! impl_binary {
     ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {

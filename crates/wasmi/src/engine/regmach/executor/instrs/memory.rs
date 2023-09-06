@@ -5,8 +5,10 @@ use crate::{
     core::TrapCode,
     engine::{
         bytecode::DataSegmentIdx,
-        bytecode2::{Const16, Instruction, Register},
-        regmach::code_map::InstructionPtr,
+        regmach::{
+            bytecode::{Const16, Instruction, Register},
+            code_map::InstructionPtr,
+        },
     },
     error::EntityGrowError,
     store::ResourceLimiterRef,

@@ -7,19 +7,21 @@
 use crate::{
     engine::{
         bytecode::{FuncIdx, SignatureIdx},
-        bytecode2::{
-            BinInstr,
-            BinInstrImm16,
-            CopysignImmInstr,
-            Instruction,
-            LoadAtInstr,
-            LoadInstr,
-            LoadOffset16Instr,
-            Register,
-            RegisterSpan,
-            UnaryInstr,
+        regmach::{
+            bytecode::{
+                BinInstr,
+                BinInstrImm16,
+                CopysignImmInstr,
+                Instruction,
+                LoadAtInstr,
+                LoadInstr,
+                LoadOffset16Instr,
+                Register,
+                RegisterSpan,
+                UnaryInstr,
+            },
+            code_map::CompiledFuncEntity,
         },
-        regmach::code_map::CompiledFuncEntity,
         CompiledFunc,
     },
     module::ModuleResources,

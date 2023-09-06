@@ -1,5 +1,6 @@
 use crate::engine::{
-    bytecode2::{
+    func_builder::regmach::Register,
+    regmach::bytecode::{
         BinInstr,
         BinInstrImm16,
         Const16,
@@ -14,7 +15,6 @@ use crate::engine::{
         StoreOffset16Instr,
         UnaryInstr,
     },
-    func_builder::regmach::Register,
     Instruction2 as Instruction,
 };
 
