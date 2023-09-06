@@ -815,6 +815,21 @@ impl Interpreter {
                 value: <_>::from_value_internal(*self.value_stack.pick(1)),
                 sign: true,
             }),
+            isa::Instruction::I32Extend8S => Some(RunInstructionTracePre::I32SignExtendI8 {
+                value: <_>::from_value_internal(*self.value_stack.pick(1)),
+            }),
+            isa::Instruction::I32Extend16S => Some(RunInstructionTracePre::I32SignExtendI16 {
+                value: <_>::from_value_internal(*self.value_stack.pick(1)),
+            }),
+            isa::Instruction::I64Extend8S => Some(RunInstructionTracePre::I64SignExtendI8 {
+                value: <_>::from_value_internal(*self.value_stack.pick(1)),
+            }),
+            isa::Instruction::I64Extend16S => Some(RunInstructionTracePre::I64SignExtendI16 {
+                value: <_>::from_value_internal(*self.value_stack.pick(1)),
+            }),
+            isa::Instruction::I64Extend32S => Some(RunInstructionTracePre::I64SignExtendI32 {
+                value: <_>::from_value_internal(*self.value_stack.pick(1)),
+            }),
 
             _ => {
                 println!("{:?}", *instructions);
@@ -1911,6 +1926,56 @@ impl Interpreter {
                     unreachable!()
                 }
             }
+            isa::Instruction::I32Extend8S => {
+                if let RunInstructionTracePre::I32SignExtendI8 { value } = pre_status.unwrap() {
+                    StepInfo::I32SignExtendI8 {
+                        value,
+                        result: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I32Extend16S => {
+                if let RunInstructionTracePre::I32SignExtendI16 { value } = pre_status.unwrap() {
+                    StepInfo::I32SignExtendI16 {
+                        value,
+                        result: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64Extend8S => {
+                if let RunInstructionTracePre::I64SignExtendI8 { value } = pre_status.unwrap() {
+                    StepInfo::I64SignExtendI8 {
+                        value,
+                        result: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64Extend16S => {
+                if let RunInstructionTracePre::I64SignExtendI16 { value } = pre_status.unwrap() {
+                    StepInfo::I64SignExtendI16 {
+                        value,
+                        result: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64Extend32S => {
+                if let RunInstructionTracePre::I64SignExtendI32 { value } = pre_status.unwrap() {
+                    StepInfo::I64SignExtendI32 {
+                        value,
+                        result: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
 
             _ => {
                 println!("{:?}", instructions);
@@ -2260,6 +2325,12 @@ impl Interpreter {
             isa::Instruction::I64ReinterpretF64 => self.run_reinterpret::<F64, i64>(),
             isa::Instruction::F32ReinterpretI32 => self.run_reinterpret::<i32, F32>(),
             isa::Instruction::F64ReinterpretI64 => self.run_reinterpret::<i64, F64>(),
+
+            isa::Instruction::I32Extend8S => self.run_extend::<i8, i32, i32>(),
+            isa::Instruction::I32Extend16S => self.run_extend::<i16, i32, i32>(),
+            isa::Instruction::I64Extend8S => self.run_extend::<i8, i64, i64>(),
+            isa::Instruction::I64Extend16S => self.run_extend::<i16, i64, i64>(),
+            isa::Instruction::I64Extend32S => self.run_extend::<i32, i64, i64>(),
         }
     }
 

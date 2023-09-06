@@ -9,7 +9,15 @@ use crate::{
 };
 
 use core::u32;
-use parity_wasm::elements::{BlockType, Func, FuncBody, Instruction, TableElementType, ValueType};
+use parity_wasm::elements::{
+    BlockType,
+    Func,
+    FuncBody,
+    Instruction,
+    SignExtInstruction,
+    TableElementType,
+    ValueType,
+};
 
 /// Maximum number of entries in value stack per function.
 const DEFAULT_VALUE_STACK_LIMIT: usize = 16384;
@@ -784,6 +792,23 @@ impl<'a> FunctionValidationContext<'a> {
             F64ReinterpretI64 => {
                 self.validate_cvtop(ValueType::I64, ValueType::F64)?;
             }
+            SignExt(ref ext) => match ext {
+                SignExtInstruction::I32Extend8S => {
+                    self.validate_cvtop(ValueType::I32, ValueType::I32)?
+                }
+                SignExtInstruction::I32Extend16S => {
+                    self.validate_cvtop(ValueType::I32, ValueType::I32)?
+                }
+                SignExtInstruction::I64Extend8S => {
+                    self.validate_cvtop(ValueType::I64, ValueType::I64)?
+                }
+                SignExtInstruction::I64Extend16S => {
+                    self.validate_cvtop(ValueType::I64, ValueType::I64)?
+                }
+                SignExtInstruction::I64Extend32S => {
+                    self.validate_cvtop(ValueType::I64, ValueType::I64)?
+                }
+            },
         }
 
         Ok(())
