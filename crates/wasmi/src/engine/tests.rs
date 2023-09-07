@@ -1,5 +1,3 @@
-mod regmach;
-
 use super::{
     bytecode::{AddressOffset, BranchTableTargets, GlobalIdx},
     *,

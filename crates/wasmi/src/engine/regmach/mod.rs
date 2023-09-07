@@ -4,6 +4,9 @@ mod executor;
 mod stack;
 mod translator;
 
+#[cfg(test)]
+mod tests;
+
 use self::executor::EngineExecutor;
 pub use self::{
     code_map::{CodeMap, CompiledFuncEntity, InstructionPtr},

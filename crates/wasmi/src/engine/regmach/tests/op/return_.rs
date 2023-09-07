@@ -1,5 +1,5 @@
 use super::*;
-use crate::engine::tests::regmach::{
+use crate::engine::regmach::tests::{
     display_wasm::DisplayValueType,
     driver::ExpectedFunc,
     wasm_type::WasmType,

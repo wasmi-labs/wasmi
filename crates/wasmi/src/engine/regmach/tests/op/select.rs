@@ -1,7 +1,7 @@
 use super::*;
 use crate::{
     core::ValueType,
-    engine::tests::regmach::{
+    engine::regmach::tests::{
         display_wasm::DisplayValueType,
         driver::ExpectedFunc,
         wasm_type::WasmType,

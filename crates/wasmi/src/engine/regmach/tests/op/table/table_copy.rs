@@ -1,5 +1,5 @@
 use super::*;
-use crate::{core::ValueType, engine::tests::regmach::display_wasm::DisplayValueType};
+use crate::{core::ValueType, engine::regmach::tests::display_wasm::DisplayValueType};
 
 fn test_copy(ty: ValueType) {
     let display_ty = DisplayValueType::from(ty);
