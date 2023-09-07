@@ -1,5 +1,3 @@
-#![allow(dead_code)] // TODO: remove
-
 mod consts;
 mod provider;
 mod register_alloc;
