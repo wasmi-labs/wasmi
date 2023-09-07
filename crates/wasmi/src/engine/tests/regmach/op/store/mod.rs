@@ -362,41 +362,6 @@ fn test_store_at_imm<T>(
     test_store_at_imm_for(wasm_op, u32::MAX, 0, value, make_instr);
 }
 
-fn test_store_at_imm_n<T>(
-    wasm_op: WasmOp,
-    ptr: u32,
-    offset: u32,
-    value: T,
-    make_instr: fn(address: Const32<u32>, value: T) -> Instruction,
-) where
-    T: Copy,
-    DisplayWasm<T>: Display,
-{
-    let address = ptr
-        .checked_add(offset)
-        .expect("testcase requires valid ptr+offset address");
-    let display_value = DisplayWasm::from(value);
-    let param_ty = wasm_op.param_ty();
-    let wasm = wat2wasm(&format!(
-        r#"
-        (module
-            (memory 1)
-            (func
-                i32.const {ptr}
-                {param_ty}.const {display_value}
-                {wasm_op} offset={offset}
-            )
-        )
-    "#,
-    ));
-    TranslationTest::new(wasm)
-        .expect_func_instrs([
-            make_instr(Const32::from(address), value),
-            Instruction::Return,
-        ])
-        .run();
-}
-
 fn test_store_at_imm_overflow_for<T>(wasm_op: WasmOp, ptr: u32, offset: u32, value: T)
 where
     T: Copy,
