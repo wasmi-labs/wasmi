@@ -1,5 +1,5 @@
 use super::*;
-use crate::engine::{bytecode::FuncIdx, CompiledFunc, RegisterSpan};
+use crate::engine::{bytecode::FuncIdx, RegisterSpan};
 
 #[test]
 #[cfg_attr(miri, ignore)]

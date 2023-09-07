@@ -1,5 +1,4 @@
 use super::*;
-use crate::engine::tests::regmach::wasm_type::WasmType;
 
 #[test]
 #[cfg_attr(miri, ignore)]

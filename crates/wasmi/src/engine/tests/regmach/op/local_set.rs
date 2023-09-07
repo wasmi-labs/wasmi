@@ -1,11 +1,9 @@
+use super::*;
 use crate::engine::{
     bytecode::{FuncIdx, SignatureIdx, TableIdx},
     regmach::bytecode::RegisterSpan,
     CompiledFunc,
 };
-
-use super::*;
-use std::fmt::Display;
 
 #[test]
 #[cfg_attr(miri, ignore)]

@@ -1,6 +1,6 @@
 use super::*;
 use crate::engine::{
-    bytecode::{BranchOffset, GlobalIdx},
+    bytecode::BranchOffset,
     regmach::bytecode::RegisterSpan,
     tests::regmach::{display_wasm::DisplayValueType, driver::ExpectedFunc, wasm_type::WasmType},
 };

@@ -2,14 +2,12 @@ use super::*;
 use crate::{
     core::ValueType,
     engine::tests::regmach::{
-        display_wasm::{DisplayValue, DisplayValueType},
+        display_wasm::DisplayValueType,
         driver::ExpectedFunc,
         wasm_type::WasmType,
     },
-    Value,
 };
 use core::{fmt, fmt::Display};
-use wasmi_core::{UntypedValue, F32, F64};
 
 /// Tells which kind of `select` instruction to test.
 #[derive(Debug, Copy, Clone)]

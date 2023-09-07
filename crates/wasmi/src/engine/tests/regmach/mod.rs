@@ -12,10 +12,7 @@ use self::{
     driver::{ExpectedFunc, TranslationTest},
 };
 use super::{create_module, wat2wasm};
-use crate::engine::{
-    const_pool::ConstRef,
-    regmach::bytecode::{AnyConst16, AnyConst32, Const16, Const32, Instruction, Register},
-};
+use crate::engine::regmach::bytecode::{AnyConst32, Const16, Const32, Instruction, Register};
 use std::fmt::Display;
 
 /// Used to swap operands of a `rev` variant [`Instruction`] constructor.

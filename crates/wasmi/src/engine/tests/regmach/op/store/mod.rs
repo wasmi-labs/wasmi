@@ -1,7 +1,7 @@
 //! Translation tests for all Wasm `store` instructions.
 
 use super::*;
-use crate::{core::UntypedValue, engine::tests::regmach::display_wasm::DisplayValue};
+use crate::core::UntypedValue;
 
 mod f32_store;
 mod f64_store;

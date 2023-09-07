@@ -1,10 +1,4 @@
 use super::*;
-use crate::{
-    core::ValueType,
-    engine::tests::regmach::{display_wasm::DisplayValueType, wasm_type::WasmType},
-    ExternRef,
-    FuncRef,
-};
 
 #[test]
 #[cfg_attr(miri, ignore)]

@@ -1,6 +1,6 @@
 use super::create_module;
 use crate::{
-    engine::{const_pool::ConstRef, regmach::bytecode::Instruction, CompiledFunc, DedupFuncType},
+    engine::{regmach::bytecode::Instruction, CompiledFunc, DedupFuncType},
     Config,
     Engine,
     EngineBackend,

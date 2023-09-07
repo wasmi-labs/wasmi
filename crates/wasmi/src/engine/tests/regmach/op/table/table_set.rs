@@ -1,14 +1,5 @@
 use super::*;
-use crate::{
-    core::ValueType,
-    engine::tests::regmach::{
-        display_wasm::{DisplayValue, DisplayValueType},
-        wasm_type::WasmType,
-    },
-    ExternRef,
-    FuncRef,
-    Value,
-};
+use crate::{core::ValueType, engine::tests::regmach::display_wasm::DisplayValueType};
 
 fn test_reg(ty: ValueType) {
     let display_ty = DisplayValueType::from(ty);
