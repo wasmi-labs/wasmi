@@ -1,10 +1,9 @@
 use super::{TaggedProvider, TypedProvider};
 use crate::engine::{
-    func_builder::{Instr, TranslationErrorInner},
+    func_builder::TranslationErrorInner,
     regmach::bytecode::{Register, RegisterSpan},
     TranslationError,
 };
-use alloc::collections::btree_set::BTreeSet;
 use core::cmp::{max, min};
 
 #[cfg(doc)]
@@ -66,40 +65,8 @@ pub struct RegisterAlloc {
     next_storage: i16,
     /// The minimum index registered for a storage allocated register.
     min_storage: i16,
-    /// Storage register users and definition sites.
-    storage_users: BTreeSet<RegisterUser>,
     /// The offset for the defragmentation register index.
     defrag_offset: i16,
-}
-
-/// A pair of [`Register`] and definition site or user of the [`Register`].
-///
-/// # Note
-///
-/// This is only required for storage space allocated registers.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct RegisterUser {
-    /// The storage space allocated register that will need index adjustment.
-    register: Register,
-    /// The user or definition site of the storage space allocated [`Register`].
-    user: Instr,
-}
-
-impl RegisterUser {
-    /// Creates a new [`RegisterUser`] pair.
-    pub fn new(register: Register, user: Instr) -> Self {
-        Self { register, user }
-    }
-
-    /// Returns the [`Register`].
-    pub fn reg(&self) -> Register {
-        self.register
-    }
-
-    /// Returns the user or definition site of the [`Register`].
-    pub fn user(&self) -> Instr {
-        self.user
-    }
 }
 
 /// The phase of the [`RegisterAlloc`].
@@ -273,10 +240,8 @@ impl RegisterAlloc {
     ///
     /// # Note
     ///
-    /// - Registers allocated to the storage allocation space generally need
-    ///   to be readjusted later on in order to have a consecutive register space.
-    /// - Requires a definition site (`def_site`) to register the [`Instr`] where
-    ///   the register is defined in order to adjust the register index easily later.
+    /// Registers allocated to the storage allocation space generally need
+    /// to be readjusted later on in order to have a consecutive register space.
     ///
     /// # Errors
     ///
