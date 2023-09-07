@@ -218,7 +218,6 @@ impl ValueStack {
         }
         if self.reg_alloc.is_storage(reg) {
             self.providers.push_storage(reg);
-            todo!() // see above lines
         }
         self.providers.push_local(reg);
         Ok(())
