@@ -237,12 +237,10 @@ macro_rules! impl_visit_operator {
         // the other impls make use of.
         fn $visit(&mut self, $arg: $argty) -> Self::Output {
             let offset = self.current_pos();
-            let targets_cloned = $arg.clone();
-            let targets_cloned2 = $arg.clone();
             self.validate_then_translate(
-                |validator| validator.visitor(offset).$visit(targets_cloned),
-                |translator| translator.$visit(targets_cloned2),
-                |translator2| translator2.$visit($arg).map_err(Into::into),
+                |validator| validator.visitor(offset).$visit($arg.clone()),
+                |translator| translator.$visit($arg.clone()),
+                |translator| translator.$visit($arg.clone()).map_err(Into::into),
             )
         }
         impl_visit_operator!($($rest)*);
@@ -269,9 +267,9 @@ macro_rules! impl_visit_operator {
         fn $visit(&mut self $($(,$arg: $argty)*)?) -> Self::Output {
             let offset = self.current_pos();
             self.validate_then_translate(
-                |v| v.visitor(offset).$visit($($($arg),*)?),
-                |t| t.$visit($($($arg),*)?),
-                |t2| t2.$visit($($($arg),*)?).map_err(Into::into),
+                move |validator| validator.visitor(offset).$visit($($($arg),*)?),
+                move |translator| translator.$visit($($($arg),*)?),
+                move |translator| translator.$visit($($($arg),*)?).map_err(Into::into),
             )
         }
         impl_visit_operator!($($rest)*);
