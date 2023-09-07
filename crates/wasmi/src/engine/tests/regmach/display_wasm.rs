@@ -91,13 +91,13 @@ impl Display for DisplayValue {
                 if value.is_null() {
                     return write!(f, "null");
                 }
-                todo!()
+                unimplemented!("wasm funcref types other than null cannot be displayed")
             }
             Value::ExternRef(value) => {
                 if value.is_null() {
                     return write!(f, "null");
                 }
-                todo!()
+                unimplemented!("wasm externref types other than null cannot be displayed")
             }
         }
     }
