@@ -16,10 +16,10 @@ use super::Instruction;
 /// bloating up the [`Instruction`] type due to alignment
 /// constraints.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct RegisterSliceRef(AnyConst32);
+pub struct ProviderSliceRef(AnyConst32);
 
-impl RegisterSliceRef {
-    /// Returns a new [`RegisterSliceRef`] from the given `usize` index.
+impl ProviderSliceRef {
+    /// Returns a new [`ProviderSliceRef`] from the given `usize` index.
     fn from_index(index: usize) -> Result<Self, TranslationError> {
         u32::try_from(index)
             .map_err(|_| TranslationError::new(TranslationErrorInner::ProviderSliceOverflow))
@@ -67,7 +67,7 @@ impl UntypedProvider {
 /// A [`Provider`] slice stack.
 #[derive(Debug)]
 pub struct ProviderSliceStack<T> {
-    /// The end indices of each [`RegisterSliceRef`].
+    /// The end indices of each [`ProviderSliceRef`].
     ends: Vec<usize>,
     /// All [`Provider`] of all allocated [`Provider`] slices.
     providers: Vec<Provider<T>>,
@@ -83,8 +83,8 @@ impl<T> Default for ProviderSliceStack<T> {
 }
 
 impl<T> ProviderSliceStack<T> {
-    /// Pushes a new [`Provider`] slice and returns its [`RegisterSliceRef`].
-    pub fn push<I>(&mut self, providers: I) -> Result<RegisterSliceRef, TranslationError>
+    /// Pushes a new [`Provider`] slice and returns its [`ProviderSliceRef`].
+    pub fn push<I>(&mut self, providers: I) -> Result<ProviderSliceRef, TranslationError>
     where
         I: IntoIterator<Item = Provider<T>>,
     {
@@ -92,7 +92,7 @@ impl<T> ProviderSliceStack<T> {
         let end = self.providers.len();
         let index = self.ends.len();
         self.ends.push(end);
-        RegisterSliceRef::from_index(index)
+        ProviderSliceRef::from_index(index)
     }
 
     /// Pops the top-most [`Register`] slice from the [`ProviderSliceStack`] and returns it.
