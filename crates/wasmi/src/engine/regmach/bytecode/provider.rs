@@ -1,10 +1,6 @@
 use super::{AnyConst32, Register};
 use crate::engine::{func_builder::TranslationErrorInner, TranslationError};
-use alloc::{
-    vec,
-    vec::{Drain, Vec},
-};
-use core::ops::Range;
+use alloc::vec::{Drain, Vec};
 use wasmi_core::UntypedValue;
 
 #[cfg(doc)]
@@ -29,11 +25,6 @@ impl RegisterSliceRef {
             .map_err(|_| TranslationError::new(TranslationErrorInner::ProviderSliceOverflow))
             .map(AnyConst32::from)
             .map(Self)
-    }
-
-    /// Returns the [`RegisterSliceRef`] as `usize`.
-    fn into_index(self) -> usize {
-        self.0.to_u32() as usize
     }
 }
 
@@ -73,59 +64,6 @@ impl UntypedProvider {
     }
 }
 
-/// An allocater for [`Register`] slices.
-#[derive(Debug)]
-pub struct RegisterSliceAlloc {
-    /// The end indices of each [`RegisterSliceRef`].
-    ends: Vec<usize>,
-    /// All [`Provider`] of all allocated [`Provider`] slices.
-    providers: Vec<Register>,
-}
-
-impl Default for RegisterSliceAlloc {
-    fn default() -> Self {
-        Self {
-            ends: vec![0],
-            providers: Vec::new(),
-        }
-    }
-}
-
-impl RegisterSliceAlloc {
-    /// Allocates a new [`Provider`] slice and returns its [`RegisterSliceRef`].
-    pub fn alloc<I>(&mut self, providers: I) -> Result<RegisterSliceRef, TranslationError>
-    where
-        I: IntoIterator<Item = Register>,
-    {
-        let before = self.providers.len();
-        self.providers.extend(providers);
-        let end = self.providers.len();
-        if before == end {
-            // The allocated slice was empty.
-            return RegisterSliceRef::from_index(0);
-        }
-        let index = self.ends.len();
-        self.ends.push(end);
-        RegisterSliceRef::from_index(index)
-    }
-
-    /// Returns the `start..end` range of the given [`RegisterSliceRef`] if any.
-    fn ref_to_range(&self, slice: RegisterSliceRef) -> Option<Range<usize>> {
-        let index = slice.into_index();
-        let end = self.ends.get(index).copied()?;
-        let start = index
-            .checked_sub(1)
-            .map(|index| self.ends[index])
-            .unwrap_or(0);
-        Some(start..end)
-    }
-
-    /// Returns the [`Provider`] slice of the given [`RegisterSliceRef`] if any.
-    pub fn get(&self, slice: RegisterSliceRef) -> Option<&[Register]> {
-        self.ref_to_range(slice).map(|range| &self.providers[range])
-    }
-}
-
 /// A [`Provider`] slice stack.
 #[derive(Debug)]
 pub struct ProviderSliceStack<T> {
@@ -157,7 +95,7 @@ impl<T> ProviderSliceStack<T> {
         RegisterSliceRef::from_index(index)
     }
 
-    /// Pops the top-most [`Register`] slice from the [`RegisterSliceAlloc`] and returns it.
+    /// Pops the top-most [`Register`] slice from the [`ProviderSliceStack`] and returns it.
     pub fn pop(&mut self) -> Option<Drain<Provider<T>>> {
         let end = self.ends.pop()?;
         let start = self.ends.last().copied().unwrap_or(0);
