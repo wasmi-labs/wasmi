@@ -1,6 +1,6 @@
 //! Tests for the register-machine `wasmi` engine translation implementation.
 
-#![allow(dead_code, unused_imports)] // TODO: remove
+#![allow(dead_code)] // TODO: remove
 
 mod display_wasm;
 pub mod driver;
