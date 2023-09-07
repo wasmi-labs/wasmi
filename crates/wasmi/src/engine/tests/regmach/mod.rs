@@ -9,9 +9,29 @@ use self::{
     display_wasm::DisplayWasm,
     driver::{ExpectedFunc, TranslationTest},
 };
-use super::{create_module, wat2wasm};
-use crate::engine::regmach::bytecode::{AnyConst32, Const16, Const32, Instruction, Register};
+use crate::{
+    core::UntypedValue,
+    engine::regmach::bytecode::{AnyConst32, Const16, Const32, Instruction, Register},
+    Config,
+    Engine,
+    Module,
+};
 use std::fmt::Display;
+
+/// Converts the `wat` string source into `wasm` encoded byte.
+fn wat2wasm(wat: &str) -> Vec<u8> {
+    wat::parse_str(wat).unwrap()
+}
+
+/// Compiles the `wasm` encoded bytes into a [`Module`].
+///
+/// # Panics
+///
+/// If an error occurred upon module compilation, validation or translation.
+fn create_module(config: &Config, bytes: &[u8]) -> Module {
+    let engine = Engine::new(config);
+    Module::new(&engine, bytes).unwrap()
+}
 
 /// Used to swap operands of a `rev` variant [`Instruction`] constructor.
 macro_rules! swap_ops {
@@ -21,9 +41,7 @@ macro_rules! swap_ops {
         }
     };
 }
-
 use swap_ops;
-use wasmi_core::UntypedValue;
 
 /// Asserts that the given `wasm` bytes yield functions with expected instructions.
 ///
