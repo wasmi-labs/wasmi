@@ -40,7 +40,7 @@ use self::{
     executor::{execute_wasm, WasmOutcome},
     func_types::FuncTypeRegistry,
     regmach::{
-        bytecode::{Instruction as Instruction2, Provider, UntypedProvider},
+        bytecode::Instruction as Instruction2,
         code_map::CompiledFuncEntity,
         CodeMap as CodeMap2,
         FuncLocalConstsIter,

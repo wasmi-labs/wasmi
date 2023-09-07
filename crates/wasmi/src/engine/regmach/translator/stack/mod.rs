@@ -13,10 +13,8 @@ use super::TypedValue;
 use crate::{
     engine::{
         func_builder::TranslationErrorInner,
-        regmach::bytecode::{Register, RegisterSpan},
-        Provider,
+        regmach::bytecode::{Provider, Register, RegisterSpan, UntypedProvider},
         TranslationError,
-        UntypedProvider,
     },
     FuncType,
 };
