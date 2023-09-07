@@ -13,14 +13,8 @@ use super::{
     Read,
 };
 use crate::{
-    engine::{
-        ChosenFuncTranslatorAllocations,
-        CompiledFunc,
-        FuncTranslatorAllocations,
-        FuncTranslatorAllocations2,
-    },
+    engine::{ChosenFuncTranslatorAllocations, CompiledFunc},
     Engine,
-    EngineBackend,
     FuncType,
     MemoryType,
     TableType,
@@ -80,16 +74,9 @@ pub struct ReusableAllocations {
 }
 
 impl ReusableAllocations {
-    /// Creates new [`ReusableAllocations`] for the given [`EngineBackend`].
-    pub fn new(backend: EngineBackend) -> Self {
-        let translation = match backend {
-            EngineBackend::StackMachine => {
-                ChosenFuncTranslatorAllocations::StackMachine(FuncTranslatorAllocations::default())
-            }
-            EngineBackend::RegisterMachine => ChosenFuncTranslatorAllocations::RegisterMachine(
-                FuncTranslatorAllocations2::default(),
-            ),
-        };
+    /// Creates new [`ReusableAllocations`] for the given [`Engine`].
+    pub fn new(engine: &Engine) -> Self {
+        let translation = ChosenFuncTranslatorAllocations::default(engine);
         let validation = FuncValidatorAllocations::default();
         Self {
             translation,
@@ -109,7 +96,7 @@ impl<'engine> ModuleParser<'engine> {
             validator,
             parser,
             compiled_funcs: 0,
-            allocations: ReusableAllocations::new(engine.config().engine_backend()),
+            allocations: ReusableAllocations::new(engine),
         }
     }
 
@@ -526,7 +513,7 @@ impl<'engine> ModuleParser<'engine> {
         let (func, compiled_func, compiled_func_2) = self.next_func();
         let validator = self.validator.code_section_entry(&func_body)?;
         let module_resources = ModuleResources::new(&self.builder);
-        let dummy_allocations = ReusableAllocations::new(EngineBackend::StackMachine);
+        let dummy_allocations = ReusableAllocations::new(self.builder.engine());
         let allocations = replace(&mut self.allocations, dummy_allocations);
         let allocations = translate(
             func,

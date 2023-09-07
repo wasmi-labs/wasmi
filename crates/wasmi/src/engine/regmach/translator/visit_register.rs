@@ -1,21 +1,19 @@
-use crate::engine::{
-    regmach::bytecode::{
-        BinInstr,
-        BinInstrImm16,
-        Const16,
-        CopysignImmInstr,
-        LoadAtInstr,
-        LoadInstr,
-        LoadOffset16Instr,
-        Register,
-        RegisterSpan,
-        RegisterSpanIter,
-        StoreAtInstr,
-        StoreInstr,
-        StoreOffset16Instr,
-        UnaryInstr,
-    },
-    Instruction2 as Instruction,
+use crate::engine::regmach::bytecode::{
+    BinInstr,
+    BinInstrImm16,
+    Const16,
+    CopysignImmInstr,
+    Instruction,
+    LoadAtInstr,
+    LoadInstr,
+    LoadOffset16Instr,
+    Register,
+    RegisterSpan,
+    RegisterSpanIter,
+    StoreAtInstr,
+    StoreInstr,
+    StoreOffset16Instr,
+    UnaryInstr,
 };
 
 macro_rules! visit_registers {

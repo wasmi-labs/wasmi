@@ -21,16 +21,12 @@ mod tests;
 
 #[cfg(test)]
 use self::regmach::bytecode::RegisterSpan;
+
 pub use self::{
     bytecode::DropKeep,
     code_map::CompiledFunc,
     config::{Config, EngineBackend, FuelConsumptionMode},
     func_builder::{FuncTranslatorAllocations, Instr, RelativeDepth, TranslationError},
-    regmach::{
-        bytecode::Instruction as Instruction2,
-        CodeMap as CodeMap2,
-        FuncTranslatorAllocations as FuncTranslatorAllocations2,
-    },
     resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
     stack::StackLimits,
     traits::{CallParams, CallResults},
@@ -44,8 +40,9 @@ use self::{
     executor::{execute_wasm, WasmOutcome},
     func_types::FuncTypeRegistry,
     regmach::{
-        bytecode::{Provider, UntypedProvider},
+        bytecode::{Instruction as Instruction2, Provider, UntypedProvider},
         code_map::CompiledFuncEntity,
+        CodeMap as CodeMap2,
         FuncLocalConstsIter,
         Stack as Stack2,
     },
@@ -219,7 +216,7 @@ impl Engine {
     ///
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
-    pub(super) fn init_func_2<I>(
+    fn init_func_2<I>(
         &self,
         func: CompiledFunc,
         len_registers: u16,

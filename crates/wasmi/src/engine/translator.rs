@@ -2,13 +2,17 @@ use super::CompiledFunc;
 pub use crate::engine::func_builder::{TranslationError, TranslationErrorInner};
 use crate::{
     engine::{
-        func_builder::{FuncTranslator, FuncTranslatorAllocations},
+        func_builder::{
+            FuncTranslator as StackMachineFuncTranslator,
+            FuncTranslatorAllocations as StackMachineFuncTranslatorAllocations,
+        },
         regmach::{
-            FuncTranslator as FuncTranslator2,
-            FuncTranslatorAllocations as FuncTranslatorAllocations2,
+            FuncTranslator as RegisterMachineFuncTranslator,
+            FuncTranslatorAllocations as RegisterMachineFuncTranslatorAllocations,
         },
     },
     module::{FuncIdx, ModuleResources, ReusableAllocations},
+    Engine,
     EngineBackend,
 };
 use wasmparser::{BinaryReaderError, VisitOperator};
@@ -23,9 +27,9 @@ type FuncValidator = wasmparser::FuncValidator<wasmparser::ValidatorResources>;
 /// This is chosen via [`Config`](crate::Config) at [`Engine`](crate::Engine) creation.
 enum ChosenFuncTranslator<'parser> {
     /// The function translator of `wasmi`'s [`EngineBackend::StackMachine`].
-    StackMachine(FuncTranslator<'parser>),
+    StackMachine(StackMachineFuncTranslator<'parser>),
     /// The function translator of `wasmi`'s [`EngineBackend::RegisterMachine`].
-    RegisterMachine(FuncTranslator2<'parser>),
+    RegisterMachine(RegisterMachineFuncTranslator<'parser>),
 }
 
 /// The chosen function translation allocations [`EngineBackend`].
@@ -33,11 +37,57 @@ enum ChosenFuncTranslator<'parser> {
 /// # Note
 ///
 /// This is chosen via [`Config`](crate::Config) at [`Engine`](crate::Engine) creation.
-pub enum ChosenFuncTranslatorAllocations {
+pub struct ChosenFuncTranslatorAllocations {
+    /// The actual chosen function translation allocations.
+    inner: ChosenFuncTranslatorAllocationsInner,
+}
+
+impl ChosenFuncTranslatorAllocations {
+    /// Creates default [`ChosenFuncTranslatorAllocations`] for the [`Engine`].
+    pub fn default(engine: &Engine) -> Self {
+        match engine.config().engine_backend() {
+            EngineBackend::StackMachine => StackMachineFuncTranslatorAllocations::default().into(),
+            EngineBackend::RegisterMachine => {
+                RegisterMachineFuncTranslatorAllocations::default().into()
+            }
+        }
+    }
+}
+
+impl From<ChosenFuncTranslatorAllocationsInner> for ChosenFuncTranslatorAllocations {
+    fn from(inner: ChosenFuncTranslatorAllocationsInner) -> Self {
+        Self { inner }
+    }
+}
+
+impl From<StackMachineFuncTranslatorAllocations> for ChosenFuncTranslatorAllocations {
+    fn from(allocations: StackMachineFuncTranslatorAllocations) -> Self {
+        Self::from(ChosenFuncTranslatorAllocationsInner::StackMachine(
+            allocations,
+        ))
+    }
+}
+
+impl From<RegisterMachineFuncTranslatorAllocations> for ChosenFuncTranslatorAllocations {
+    fn from(allocations: RegisterMachineFuncTranslatorAllocations) -> Self {
+        Self::from(ChosenFuncTranslatorAllocationsInner::RegisterMachine(
+            allocations,
+        ))
+    }
+}
+
+/// The inner type of the [`ChosenFuncTranslatorAllocations`].
+///
+/// # Note
+///
+/// This exists so that we can keep [`StackMachineFuncTranslatorAllocations`] and
+/// [`RegisterMachineFuncTranslatorAllocations`] hidden outside of this module and
+/// only export [`ChosenFuncTranslatorAllocations`] instead.
+pub enum ChosenFuncTranslatorAllocationsInner {
     /// The function translator of `wasmi`'s [`EngineBackend::StackMachine`].
-    StackMachine(FuncTranslatorAllocations),
+    StackMachine(StackMachineFuncTranslatorAllocations),
     /// The function translator of `wasmi`'s [`EngineBackend::RegisterMachine`].
-    RegisterMachine(FuncTranslatorAllocations2),
+    RegisterMachine(RegisterMachineFuncTranslatorAllocations),
 }
 
 /// The interface to build a `wasmi` bytecode function using Wasm bytecode.
@@ -65,19 +115,19 @@ impl<'parser> FuncBuilder<'parser> {
         allocations: ChosenFuncTranslatorAllocations,
     ) -> Result<Self, TranslationError> {
         let engine_backend = res.engine().config().engine_backend();
-        let translator = match allocations {
-            ChosenFuncTranslatorAllocations::StackMachine(allocations) => {
+        let translator = match allocations.inner {
+            ChosenFuncTranslatorAllocationsInner::StackMachine(allocations) => {
                 debug_assert!(matches!(engine_backend, EngineBackend::StackMachine));
-                ChosenFuncTranslator::StackMachine(FuncTranslator::new(
+                ChosenFuncTranslator::StackMachine(StackMachineFuncTranslator::new(
                     func,
                     compiled_func,
                     res,
                     allocations,
                 ))
             }
-            ChosenFuncTranslatorAllocations::RegisterMachine(allocations) => {
+            ChosenFuncTranslatorAllocationsInner::RegisterMachine(allocations) => {
                 debug_assert!(matches!(engine_backend, EngineBackend::RegisterMachine));
-                ChosenFuncTranslator::RegisterMachine(FuncTranslator2::new(
+                ChosenFuncTranslator::RegisterMachine(RegisterMachineFuncTranslator::new(
                     func,
                     compiled_func_2,
                     res,
@@ -146,11 +196,9 @@ impl<'parser> FuncBuilder<'parser> {
             ChosenFuncTranslator::RegisterMachine(translator) => translator.finish()?,
         }
         let translation = match self.translator {
-            ChosenFuncTranslator::StackMachine(translator) => {
-                ChosenFuncTranslatorAllocations::StackMachine(translator.into_allocations())
-            }
+            ChosenFuncTranslator::StackMachine(translator) => translator.into_allocations().into(),
             ChosenFuncTranslator::RegisterMachine(translator) => {
-                ChosenFuncTranslatorAllocations::RegisterMachine(translator.into_allocations())
+                translator.into_allocations().into()
             }
         };
         let validation = self.validator.into_allocations();
@@ -170,8 +218,8 @@ impl<'parser> FuncBuilder<'parser> {
     ) -> Result<(), TranslationError>
     where
         V: FnOnce(&mut FuncValidator) -> Result<(), BinaryReaderError>,
-        T: FnOnce(&mut FuncTranslator<'parser>) -> Result<(), TranslationError>,
-        T2: FnOnce(&mut FuncTranslator2<'parser>) -> Result<(), TranslationError>,
+        T: FnOnce(&mut StackMachineFuncTranslator<'parser>) -> Result<(), TranslationError>,
+        T2: FnOnce(&mut RegisterMachineFuncTranslator<'parser>) -> Result<(), TranslationError>,
     {
         validate(&mut self.validator)?;
         match &mut self.translator {
