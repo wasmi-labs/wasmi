@@ -28,11 +28,11 @@ pub use self::{
     instr_encoder::InstrEncoder,
     stack::{FuncLocalConstsIter, ProviderStack, RegisterAlloc, TypedProvider},
 };
-use super::TranslationErrorInner;
 use crate::{
     engine::{
         bytecode::SignatureIdx,
         config::FuelCosts,
+        func_builder::TranslationErrorInner,
         regmach::bytecode::{
             AnyConst32,
             Const16,
