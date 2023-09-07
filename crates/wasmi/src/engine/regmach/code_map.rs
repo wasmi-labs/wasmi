@@ -6,8 +6,7 @@
 //! register machine based bytecode functions.
 
 use crate::engine::{
-    func_builder::regmach::FuncLocalConstsIter,
-    regmach::bytecode::Instruction,
+    regmach::{bytecode::Instruction, translator::FuncLocalConstsIter},
     CompiledFunc,
 };
 use alloc::boxed::Box;

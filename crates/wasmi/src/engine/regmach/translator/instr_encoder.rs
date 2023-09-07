@@ -4,11 +4,13 @@ use crate::{
         bytecode::BranchOffset,
         func_builder::{
             labels::{LabelRef, LabelRegistry},
-            regmach::stack::ValueStack,
             Instr,
             TranslationErrorInner,
         },
-        regmach::bytecode::{Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
+        regmach::{
+            bytecode::{Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
+            translator::ValueStack,
+        },
         TranslationError,
     },
     module::ModuleResources,

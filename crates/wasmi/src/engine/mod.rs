@@ -13,6 +13,7 @@ mod regmach;
 mod resumable;
 pub mod stack;
 mod traits;
+mod translator;
 mod trap;
 
 #[cfg(test)]
@@ -24,18 +25,16 @@ pub use self::{
     bytecode::DropKeep,
     code_map::CompiledFunc,
     config::{Config, EngineBackend, FuelConsumptionMode},
-    func_builder::{
-        FuncBuilder,
-        FuncTranslatorAllocations,
-        FuncTranslatorAllocations2,
-        Instr,
-        RelativeDepth,
-        TranslationError,
+    func_builder::{FuncTranslatorAllocations, Instr, RelativeDepth, TranslationError},
+    regmach::{
+        bytecode::Instruction as Instruction2,
+        CodeMap as CodeMap2,
+        FuncTranslatorAllocations as FuncTranslatorAllocations2,
     },
-    regmach::{bytecode::Instruction as Instruction2, CodeMap as CodeMap2},
     resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
     stack::StackLimits,
     traits::{CallParams, CallResults},
+    translator::FuncBuilder,
 };
 use self::{
     bytecode::Instruction,
@@ -43,11 +42,11 @@ use self::{
     code_map::CodeMap,
     const_pool::{ConstPool, ConstPoolView, ConstRef},
     executor::{execute_wasm, WasmOutcome},
-    func_builder::regmach::FuncLocalConstsIter,
     func_types::FuncTypeRegistry,
     regmach::{
         bytecode::{Provider, UntypedProvider},
         code_map::CompiledFuncEntity,
+        FuncLocalConstsIter,
         Stack as Stack2,
     },
     resumable::ResumableCallBase,
@@ -56,8 +55,8 @@ use self::{
 };
 pub(crate) use self::{
     func_args::{FuncFinished, FuncParams, FuncResults},
-    func_builder::ChosenFuncTranslatorAllocations,
     func_types::DedupFuncType,
+    translator::ChosenFuncTranslatorAllocations,
 };
 use crate::{
     core::{Trap, TrapCode},

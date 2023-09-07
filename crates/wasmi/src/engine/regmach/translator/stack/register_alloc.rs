@@ -8,7 +8,7 @@ use alloc::collections::btree_set::BTreeSet;
 use core::cmp::{max, min};
 
 #[cfg(doc)]
-use crate::engine::func_builder::regmach::InstrEncoder;
+use crate::engine::regmach::translator::InstrEncoder;
 
 /// The register allocator using during translation.
 ///

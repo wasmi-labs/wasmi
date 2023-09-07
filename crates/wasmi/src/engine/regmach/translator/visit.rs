@@ -17,8 +17,11 @@ use super::{
 use crate::{
     engine::{
         bytecode::{self, SignatureIdx},
-        func_builder::{labels::LabelRef, regmach::control_stack::AcquiredTarget},
-        regmach::bytecode::{Const16, Instruction, Provider, Register},
+        func_builder::labels::LabelRef,
+        regmach::{
+            bytecode::{Const16, Instruction, Provider, Register},
+            translator::AcquiredTarget,
+        },
         TranslationError,
     },
     module::{self, BlockType, FuncIdx, WasmiValueType},

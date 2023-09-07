@@ -18,6 +18,7 @@ use self::{
         LoopControlFrame,
         UnreachableControlFrame,
     },
+    control_stack::AcquiredTarget,
     stack::ValueStack,
     typed_value::TypedValue,
     utils::{WasmFloat, WasmInteger},

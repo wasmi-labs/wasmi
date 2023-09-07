@@ -2,11 +2,13 @@ pub mod bytecode;
 pub mod code_map;
 mod executor;
 mod stack;
+mod translator;
 
 use self::executor::EngineExecutor;
 pub use self::{
     code_map::{CodeMap, CompiledFuncEntity, InstructionPtr},
     stack::Stack,
+    translator::{FuncLocalConstsIter, FuncTranslator, FuncTranslatorAllocations},
 };
 use crate::{
     core::Trap,

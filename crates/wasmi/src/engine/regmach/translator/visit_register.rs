@@ -1,5 +1,4 @@
 use crate::engine::{
-    func_builder::regmach::Register,
     regmach::bytecode::{
         BinInstr,
         BinInstrImm16,
@@ -8,6 +7,7 @@ use crate::engine::{
         LoadAtInstr,
         LoadInstr,
         LoadOffset16Instr,
+        Register,
         RegisterSpan,
         RegisterSpanIter,
         StoreAtInstr,
