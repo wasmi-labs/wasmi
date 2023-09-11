@@ -17,6 +17,10 @@
 
 # `wasmi`- WebAssembly (Wasm) Interpreter
 
+<p align="center">
+  <img src="./resources/wasmi-logo.png" width="100" height="100">
+</p>
+
 `wasmi` is an efficient WebAssembly interpreter with low-overhead and support
 for embedded environment such as WebAssembly itself.
 
