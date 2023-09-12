@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1694436468913,
+  "lastUpdate": 1694511200017,
   "repoUrl": "https://github.com/paritytech/wasmi",
   "entries": {
     "Wasmi criterion benchmark": [
@@ -1625,6 +1625,240 @@ window.BENCHMARK_DATA = {
             "name": "execute/memory_vec_add",
             "value": 2304837,
             "range": "± 6011",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yjh465402634@gmail.com",
+            "name": "yjh",
+            "username": "yjhmelody"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5f4a853ee4eff365ab290d9835d2a16cdb1b8153",
+          "message": "chore: fix typos (#761)",
+          "timestamp": "2023-09-12T11:28:11+02:00",
+          "tree_id": "0190988a55350e2386d9c537a96f630328e82a0a",
+          "url": "https://github.com/paritytech/wasmi/commit/5f4a853ee4eff365ab290d9835d2a16cdb1b8153"
+        },
+        "date": 1694511200002,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "translate/wasm_kernel",
+            "value": 3819806,
+            "range": "± 11181",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey",
+            "value": 57294169,
+            "range": "± 93768",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20",
+            "value": 93927,
+            "range": "± 137",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721",
+            "value": 133146,
+            "range": "± 602",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155",
+            "value": 190372,
+            "range": "± 615",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "instantiate/wasm_kernel",
+            "value": 53233,
+            "range": "± 102",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/tiny_keccak",
+            "value": 316175,
+            "range": "± 772",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/rev_complement",
+            "value": 421601,
+            "range": "± 751",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/regex_redux",
+            "value": 455460,
+            "range": "± 1128",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/count_until",
+            "value": 621068,
+            "range": "± 1309",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/br_table",
+            "value": 1349100,
+            "range": "± 1719",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/trunc_f2i",
+            "value": 750676,
+            "range": "± 5050",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_0/typed",
+            "value": 1118015,
+            "range": "± 26875",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_1/typed",
+            "value": 1249136,
+            "range": "± 16511",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_4/typed",
+            "value": 1232454,
+            "range": "± 15164",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_16/typed",
+            "value": 1698732,
+            "range": "± 28256",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_0",
+            "value": 1528537,
+            "range": "± 28180",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_1",
+            "value": 1603435,
+            "range": "± 24259",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_4",
+            "value": 1768670,
+            "range": "± 26872",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_16",
+            "value": 2601325,
+            "range": "± 54643",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global_bump",
+            "value": 715048,
+            "range": "± 1367",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global_const",
+            "value": 658169,
+            "range": "± 566",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial_recursive",
+            "value": 520781,
+            "range": "± 616",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial_iterative",
+            "value": 318313,
+            "range": "± 399",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_ok",
+            "value": 102803,
+            "range": "± 219",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_scan",
+            "value": 137315,
+            "range": "± 139",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_trap",
+            "value": 10136,
+            "range": "± 19",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/host_calls",
+            "value": 36944,
+            "range": "± 165",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci_rec",
+            "value": 4230469,
+            "range": "± 4180",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci_tail",
+            "value": 1043208,
+            "range": "± 691",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci_iter",
+            "value": 1395735,
+            "range": "± 1345",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_is_even",
+            "value": 710548,
+            "range": "± 1089",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory_sum",
+            "value": 1133692,
+            "range": "± 164507",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory_fill",
+            "value": 1157600,
+            "range": "± 134421",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory_vec_add",
+            "value": 2296148,
+            "range": "± 7131",
             "unit": "ns/iter"
           }
         ]
