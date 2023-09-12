@@ -262,6 +262,12 @@ impl ValueStack {
         &self.values[0..self.sp]
     }
 
+    /// Returns an exclusive slice over the values of the [`ValueStack`].
+    #[inline]
+    pub fn as_slice_mut(&mut self) -> &mut [UntypedValue] {
+        &mut self.values[0..self.sp]
+    }
+
     /// Removes the slice `from..to` of [`UntypedValue`] cells from the [`ValueStack`].
     ///
     /// Returns the number of drained [`ValueStack`] cells.
