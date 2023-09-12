@@ -245,12 +245,12 @@ mod regmach {
         fn wasm_float_misc("float_misc");
         fn wasm_forward("forward");
         fn wasm_func("func");
-        #[ignore] fn wasm_func_ptrs("func_ptrs"); // TODO: implement host func calls
+        fn wasm_func_ptrs("func_ptrs");
         fn wasm_global("global");
         fn wasm_i32("i32");
         fn wasm_i64("i64");
         fn wasm_if("if");
-        #[ignore] fn wasm_imports("imports"); // TODO: implement host func calls
+        fn wasm_imports("imports");
         fn wasm_inline_module("inline-module");
         fn wasm_int_exprs("int_exprs");
         fn wasm_int_literals("int_literals");
@@ -270,7 +270,7 @@ mod regmach {
         fn wasm_memory_redundancy("memory_redundancy");
         fn wasm_memory_size("memory_size");
         fn wasm_memory_trap("memory_trap");
-        #[ignore] fn wasm_names("names"); // TODO: implement host func calls
+        fn wasm_names("names");
         fn wasm_nop("nop");
         fn wasm_ref_func("ref_func");
         fn wasm_ref_is_null("ref_is_null");

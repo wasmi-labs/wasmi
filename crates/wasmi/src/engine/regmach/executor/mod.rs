@@ -11,6 +11,7 @@ use crate::{
         CallParams,
         CallResults,
         EngineResources,
+        FuncParams,
         TaggedTrap,
     },
     func::HostFuncEntity,
@@ -133,7 +134,7 @@ impl<'engine> EngineExecutor<'engine> {
     fn execute_host_func<T>(
         &mut self,
         ctx: &mut StoreContextMut<'_, T>,
-        _results: RegisterSpan,
+        results: RegisterSpan,
         func: &Func,
         instance: &Instance,
     ) -> Result<(), TaggedTrap> {
@@ -143,7 +144,8 @@ impl<'engine> EngineExecutor<'engine> {
             }
             FuncEntity::Host(host_func) => *host_func,
         };
-        let result = self.dispatch_host_func(ctx.as_context_mut(), func_entity, Some(instance));
+        let result =
+            self.dispatch_host_func(ctx.as_context_mut(), results, func_entity, Some(instance));
         if self.stack.calls.peek().is_some() {
             // Case: There is a frame on the call stack.
             //
@@ -164,11 +166,71 @@ impl<'engine> EngineExecutor<'engine> {
     /// Dispatches a host function call and returns its result.
     fn dispatch_host_func<T>(
         &mut self,
-        _ctx: StoreContextMut<T>,
-        _host_func: HostFuncEntity,
-        _instance: Option<&Instance>,
+        ctx: StoreContextMut<T>,
+        results: RegisterSpan,
+        host_func: HostFuncEntity,
+        instance: Option<&Instance>,
     ) -> Result<(), Trap> {
-        todo!()
+        // The host function signature is required for properly
+        // adjusting, inspecting and manipulating the value stack.
+        let (input_types, output_types) = self
+            .res
+            .func_types
+            .resolve_func_type(host_func.ty_dedup())
+            .params_results();
+        // In case the host function returns more values than it takes
+        // we are required to extend the value stack.
+        let len_inputs = input_types.len();
+        let len_outputs = output_types.len();
+        let max_inout = len_inputs.max(len_outputs);
+        self.stack.values.reserve(max_inout)?;
+        let delta = len_outputs.saturating_sub(len_inputs);
+        let offset = self.stack.values.extend_zeros(delta);
+        let values = self.stack.values.as_slice_mut();
+        let params_results = FuncParams::new(
+            values.split_at_mut(values.len() - max_inout).1,
+            len_inputs,
+            len_outputs,
+        );
+        // Now we are ready to perform the host function call.
+        // Note: We need to clone the host function due to some borrowing issues.
+        //       This should not be a big deal since host functions usually are cheap to clone.
+        let trampoline = ctx
+            .as_context()
+            .store
+            .resolve_trampoline(host_func.trampoline())
+            .clone();
+        trampoline
+            .call(ctx, instance, params_results)
+            .map_err(|error| {
+                // Note: We drop the values that have been temporarily added to
+                //       the stack to act as parameter and result buffer for the
+                //       called host function. Since the host function failed we
+                //       need to clean up the temporary buffer values here.
+                //       This is required for resumable calls to work properly.
+                // self.stack.values.drop(delta);
+                self.stack.values.truncate(offset);
+                error
+            })?;
+        // Now the results need to be written back to where the caller expects them.
+        let caller_offset = self
+            .stack
+            .calls
+            .peek()
+            .expect("caller must be on the stack")
+            .base_offset();
+        let mut caller_sp = unsafe { self.stack.values.stack_ptr_at(caller_offset) };
+        let callee_sp = unsafe { self.stack.values.stack_ptr_at(offset) };
+        let results = results.iter(len_outputs);
+        let values = RegisterSpan::new(Register::from_i16(0)).iter(len_outputs);
+        for (result, value) in results.zip(values) {
+            let result_cell = unsafe { caller_sp.get_mut(result) };
+            let value_cell = unsafe { callee_sp.get(value) };
+            *result_cell = value_cell;
+        }
+        // Finally, the value stack needs to be truncated to its original size.
+        self.stack.values.truncate(offset);
+        Ok(())
     }
 
     /// Executes the given function `frame`.
