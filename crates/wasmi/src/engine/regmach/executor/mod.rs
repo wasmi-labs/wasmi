@@ -219,12 +219,23 @@ impl<'engine> EngineExecutor<'engine> {
             .peek()
             .expect("caller must be on the stack")
             .base_offset();
+        // # Safety (1)
+        //
+        // We can safely acquire the stack pointer to the caller's and callee's (host)
+        // call frames because we just allocated the host call frame and can be sure that
+        // they are different.
+        // In the following we make sure to not access registers out of bounds of each
+        // call frame since we rely on Wasm validation and proper Wasm translation to
+        // provide us with valid result registers.
         let mut caller_sp = unsafe { self.stack.values.stack_ptr_at(caller_offset) };
+        // # Safety: See Safety (1) above.
         let callee_sp = unsafe { self.stack.values.stack_ptr_at(offset) };
         let results = results.iter(len_outputs);
         let values = RegisterSpan::new(Register::from_i16(0)).iter(len_outputs);
         for (result, value) in results.zip(values) {
+            // # Safety: See Safety (1) above.
             let result_cell = unsafe { caller_sp.get_mut(result) };
+            // # Safety: See Safety (1) above.
             let value_cell = unsafe { callee_sp.get(value) };
             *result_cell = value_cell;
         }
