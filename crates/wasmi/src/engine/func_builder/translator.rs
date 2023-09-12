@@ -422,7 +422,7 @@ impl<'parser> FuncTranslator<'parser> {
         self.stack_height.push_n(results.len() as u32);
     }
 
-    /// Returns `Some` equivalent instruction if the `global.get` can be optimzied.
+    /// Returns `Some` equivalent instruction if the `global.get` can be optimized.
     ///
     /// # Note
     ///

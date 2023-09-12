@@ -60,7 +60,7 @@ pub enum FuelConsumptionMode {
     ///
     /// Lazy fuel consumption means that fuel for bulk-operations
     /// is checked before executing the instruction but only consumed
-    /// if the executed instruction suceeded. The reason for this is
+    /// if the executed instruction succeeded. The reason for this is
     /// that bulk-operations fail fast and therefore do not cost
     /// a lot of compute power in case of failure.
     ///
@@ -77,7 +77,7 @@ pub enum FuelConsumptionMode {
     ///
     /// Eager fuel consumption means that fuel for bulk-operations
     /// is always consumed before executing the instruction independent
-    /// of it suceeding or failing.
+    /// of it succeeding or failing.
     ///
     /// # Note
     ///
@@ -98,9 +98,9 @@ pub struct FuelCosts {
     ///
     /// # Note
     ///
-    /// A Wasm entitiy is one of `func`, `global`, `memory` or `table`.
+    /// A Wasm entity is one of `func`, `global`, `memory` or `table`.
     /// Those instructions are usually a bit more costly since they need
-    /// multiplie indirect accesses through the Wasm instance and store.
+    /// multiple indirect accesses through the Wasm instance and store.
     pub entity: u64,
     /// The fuel cost offset for `memory.load` instructions.
     pub load: u64,

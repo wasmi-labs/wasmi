@@ -73,7 +73,7 @@ impl Extend<UntypedValue> for ValueStack {
 }
 
 impl ValueStack {
-    /// Creates an empty [`ValueStack`] that does not allocate heap memor.
+    /// Creates an empty [`ValueStack`] that does not allocate heap memory.
     ///
     /// # Note
     ///

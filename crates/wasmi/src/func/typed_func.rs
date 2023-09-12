@@ -106,8 +106,8 @@ where
     /// Calls this Wasm or host function with the specified parameters.
     ///
     /// Returns a resumable handle to the function invocation upon
-    /// enountering host errors with which it is possible to handle
-    /// the error and continue the execution as if no error occured.
+    /// encountering host errors with which it is possible to handle
+    /// the error and continue the execution as if no error occurred.
     ///
     /// # Note
     ///
