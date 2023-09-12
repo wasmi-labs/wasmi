@@ -256,9 +256,9 @@ impl ValueStack {
         }
     }
 
-    /// Returns a slice over the values of the [`ValueStack`].
+    /// Returns a shared slice over the values of the [`ValueStack`].
     #[inline]
-    pub fn as_slice(&mut self) -> &[UntypedValue] {
+    pub fn as_slice(&self) -> &[UntypedValue] {
         &self.values[0..self.sp]
     }
 
