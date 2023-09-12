@@ -50,7 +50,7 @@ impl ResumableCall {
 /// State required to resume a [`Func`] invocation.
 #[derive(Debug)]
 pub struct ResumableInvocation {
-    /// The engine in use for the function invokation.
+    /// The engine in use for the function invocation.
     ///
     /// # Note
     ///
@@ -160,14 +160,14 @@ impl ResumableInvocation {
     /// The result is written back into the `outputs` buffer upon success.
     ///
     /// Returns a resumable handle to the function invocation upon
-    /// enountering host errors with which it is possible to handle
-    /// the error and continue the execution as if no error occured.
+    /// encountering host errors with which it is possible to handle
+    /// the error and continue the execution as if no error occurred.
     ///
     /// # Errors
     ///
     /// - If the function resumption returned a Wasm [`Trap`].
     /// - If the types or the number of values in `inputs` does not match
-    ///   the types and number of result values of the errorneous host function.
+    ///   the types and number of result values of the erroneous host function.
     /// - If the number of output values does not match the expected number of
     ///   outputs required by the called function.
     pub fn resume<T>(
@@ -238,14 +238,14 @@ impl<Results> TypedResumableInvocation<Results> {
     /// Resumes the call to the [`TypedFunc`] with the given inputs.
     ///
     /// Returns a resumable handle to the function invocation upon
-    /// enountering host errors with which it is possible to handle
-    /// the error and continue the execution as if no error occured.
+    /// encountering host errors with which it is possible to handle
+    /// the error and continue the execution as if no error occurred.
     ///
     /// # Errors
     ///
     /// - If the function resumption returned a Wasm [`Trap`].
     /// - If the types or the number of values in `inputs` does not match
-    ///   the types and number of result values of the errorneous host function.
+    ///   the types and number of result values of the erroneous host function.
     ///
     /// [`TypedFunc`]: [`crate::TypedFunc`]
     pub fn resume<T>(

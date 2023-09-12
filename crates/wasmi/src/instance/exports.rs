@@ -12,7 +12,7 @@ pub enum Extern {
     ///
     /// [`Cell<T>`]: https://doc.rust-lang.org/core/cell/struct.Cell.html
     Global(Global),
-    /// A WebAssembly table which is an array of funtion references.
+    /// A WebAssembly table which is an array of function references.
     Table(Table),
     /// A WebAssembly linear memory.
     Memory(Memory),
@@ -253,12 +253,12 @@ impl<'instance> ExportsIter<'instance> {
 impl<'instance> Iterator for ExportsIter<'instance> {
     type Item = Export<'instance>;
 
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
-
     fn next(&mut self) -> Option<Self::Item> {
         self.iter.next().map(Self::convert_item)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
     }
 }
 
