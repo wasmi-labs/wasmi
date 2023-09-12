@@ -114,14 +114,17 @@ impl<'engine> EngineExecutor<'engine> {
                     // Therefore we can return from the entire execution.
                     return Ok(());
                 }
-                WasmOutcome::Call(ref host_func) => {
+                WasmOutcome::Call {
+                    results,
+                    ref host_func,
+                } => {
                     let instance = *self
                         .stack
                         .calls
                         .peek()
                         .expect("caller must be on the stack")
                         .instance();
-                    self.execute_host_func(&mut ctx, host_func, &instance)?;
+                    self.execute_host_func(&mut ctx, results, host_func, &instance)?;
                 }
             }
         }
@@ -130,6 +133,7 @@ impl<'engine> EngineExecutor<'engine> {
     fn execute_host_func<T>(
         &mut self,
         ctx: &mut StoreContextMut<'_, T>,
+        _results: RegisterSpan,
         func: &Func,
         instance: &Instance,
     ) -> Result<(), TaggedTrap> {

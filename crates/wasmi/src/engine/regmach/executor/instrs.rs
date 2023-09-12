@@ -14,6 +14,7 @@ use crate::{
                 Const32,
                 Instruction,
                 Register,
+                RegisterSpan,
                 UnaryInstr,
             },
             code_map::{CodeMap, InstructionPtr},
@@ -44,8 +45,8 @@ mod unary;
 
 macro_rules! forward_call {
     ($expr:expr) => {{
-        if let CallOutcome::Call(host_func) = $expr? {
-            return Ok(WasmOutcome::Call(host_func));
+        if let CallOutcome::Call { results, host_func } = $expr? {
+            return Ok(WasmOutcome::Call { results, host_func });
         }
     }};
 }
@@ -69,7 +70,10 @@ pub enum WasmOutcome {
     /// The Wasm execution has ended and returns to the host side.
     Return,
     /// The Wasm execution calls a host function.
-    Call(Func),
+    Call {
+        results: RegisterSpan,
+        host_func: Func,
+    },
 }
 
 /// Executes compiled function instructions until either

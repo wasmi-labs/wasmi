@@ -26,7 +26,10 @@ pub enum CallOutcome {
     /// The Wasm execution continues in Wasm.
     Continue,
     /// The Wasm execution calls a host function.
-    Call(Func),
+    Call {
+        results: RegisterSpan,
+        host_func: Func,
+    },
 }
 
 /// Resolved [`Instruction::CallIndirectParams`] or [`Instruction::CallIndirectParamsImm16`].
@@ -328,7 +331,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 //
                 // TODO: copy parameters for the host function call
                 self.cache.reset();
-                Ok(CallOutcome::Call(*func))
+                Ok(CallOutcome::Call {
+                    results,
+                    host_func: *func,
+                })
             }
         }
     }
