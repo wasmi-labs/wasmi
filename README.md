@@ -158,6 +158,8 @@ You can filter which set of benchmarks to run:
 - `cargo bench execute`
   - Only runs benchmarks concerned with executing WebAssembly functions.
 
+We maintain a timeline for benchmarks of every commit to `master` that [can be viewed here](https://paritytech.github.io/wasmi/benchmarks/).
+
 ## Supported Platforms
 
 Supported platforms are primarily Linux, MacOS, Windows and WebAssembly.  
