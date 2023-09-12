@@ -30,43 +30,6 @@ use crate::engine::stack::StackLimits;
 
 mod instrs;
 
-/// The caller of a host function call.
-#[derive(Debug, Copy, Clone)]
-enum HostFuncCaller<'a> {
-    /// The host-side is itself the caller of the host function.
-    Root,
-    /// A compiled Wasm function is the caller of the host function.
-    Wasm {
-        /// The registers were the caller expects the results of the call.
-        results: RegisterSpan,
-        /// The instance to be used throughout the host function call.
-        instance: &'a Instance,
-    },
-}
-
-impl<'a> HostFuncCaller<'a> {
-    /// Creates a [`HostFuncCaller::Wasm`].
-    pub fn wasm(results: RegisterSpan, instance: &'a Instance) -> Self {
-        Self::Wasm { results, instance }
-    }
-
-    /// Returns the [`RegisterSpan`] if `self` is a Wasm caller, otherwise returns `None`.
-    pub fn results(&self) -> Option<RegisterSpan> {
-        match *self {
-            HostFuncCaller::Root => None,
-            HostFuncCaller::Wasm { results, .. } => Some(results),
-        }
-    }
-
-    /// Returns the [`Instance`] if `self` is a Wasm caller, otherwise returns `None`.
-    pub fn instance(&self) -> Option<&Instance> {
-        match self {
-            HostFuncCaller::Root => None,
-            HostFuncCaller::Wasm { instance, .. } => Some(instance),
-        }
-    }
-}
-
 /// The internal state of the `wasmi` engine.
 #[derive(Debug)]
 pub struct EngineExecutor<'engine> {
@@ -209,7 +172,46 @@ impl<'engine> EngineExecutor<'engine> {
         }
         Ok(())
     }
+}
 
+/// The caller of a host function call.
+#[derive(Debug, Copy, Clone)]
+enum HostFuncCaller<'a> {
+    /// The host-side is itself the caller of the host function.
+    Root,
+    /// A compiled Wasm function is the caller of the host function.
+    Wasm {
+        /// The registers were the caller expects the results of the call.
+        results: RegisterSpan,
+        /// The instance to be used throughout the host function call.
+        instance: &'a Instance,
+    },
+}
+
+impl<'a> HostFuncCaller<'a> {
+    /// Creates a [`HostFuncCaller::Wasm`].
+    pub fn wasm(results: RegisterSpan, instance: &'a Instance) -> Self {
+        Self::Wasm { results, instance }
+    }
+
+    /// Returns the [`RegisterSpan`] if `self` is a Wasm caller, otherwise returns `None`.
+    pub fn results(&self) -> Option<RegisterSpan> {
+        match *self {
+            HostFuncCaller::Root => None,
+            HostFuncCaller::Wasm { results, .. } => Some(results),
+        }
+    }
+
+    /// Returns the [`Instance`] if `self` is a Wasm caller, otherwise returns `None`.
+    pub fn instance(&self) -> Option<&Instance> {
+        match self {
+            HostFuncCaller::Root => None,
+            HostFuncCaller::Wasm { instance, .. } => Some(instance),
+        }
+    }
+}
+
+impl<'engine> EngineExecutor<'engine> {
     /// Dispatches a host function call and returns its result.
     fn dispatch_host_func<T>(
         &mut self,
