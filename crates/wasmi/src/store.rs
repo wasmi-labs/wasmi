@@ -75,7 +75,7 @@ pub type Stored<Idx> = GuardedEntity<StoreIdx, Idx>;
 /// both to make types a little easier to read and to provide a `Debug` impl so
 /// that `#[derive(Debug)]` works on structs that contain it.
 pub struct ResourceLimiterRef<'a>(Option<&'a mut (dyn ResourceLimiter)>);
-impl<'a> core::fmt::Debug for ResourceLimiterRef<'a> {
+impl<'a> Debug for ResourceLimiterRef<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "ResourceLimiterRef(...)")
     }
@@ -95,7 +95,7 @@ impl<'a> ResourceLimiterRef<'a> {
 /// provide a `Debug` impl so that `#[derive(Debug)]` works on structs that
 /// contain it.
 struct ResourceLimiterQuery<T>(Box<dyn FnMut(&mut T) -> &mut (dyn ResourceLimiter) + Send + Sync>);
-impl<T> core::fmt::Debug for ResourceLimiterQuery<T> {
+impl<T> Debug for ResourceLimiterQuery<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "ResourceLimiterQuery(...)")
     }
@@ -291,7 +291,7 @@ impl StoreInner {
         &mut self.fuel
     }
 
-    /// Wraps an entitiy `Idx` (index type) as a [`Stored<Idx>`] type.
+    /// Wraps an entity `Idx` (index type) as a [`Stored<Idx>`] type.
     ///
     /// # Note
     ///
@@ -941,7 +941,7 @@ impl<'a, T> StoreContext<'a, T> {
 
     /// Access the underlying data owned by this store.
     ///
-    /// Same as [`Store::data`].    
+    /// Same as [`Store::data`].
     pub fn data(&self) -> &T {
         self.store.data()
     }
@@ -986,14 +986,14 @@ impl<'a, T> StoreContextMut<'a, T> {
 
     /// Access the underlying data owned by this store.
     ///
-    /// Same as [`Store::data`].    
+    /// Same as [`Store::data`].
     pub fn data(&self) -> &T {
         self.store.data()
     }
 
     /// Access the underlying data owned by this store.
     ///
-    /// Same as [`Store::data_mut`].    
+    /// Same as [`Store::data_mut`].
     pub fn data_mut(&mut self) -> &mut T {
         self.store.data_mut()
     }

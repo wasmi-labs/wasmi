@@ -314,7 +314,7 @@ impl Func {
     /// - `func`: the native code invoked whenever this Func will be called.
     ///           The closure is provided a [`Caller`] as its first argument
     ///           which allows it to query information about the [`Instance`]
-    ///           that is assocaited to the call.
+    ///           that is associated to the call.
     ///
     /// # Note
     ///
@@ -326,7 +326,7 @@ impl Func {
     ///   is written into the buffer then the remaining computation may fail in unexpected
     ///   ways. This footgun can be avoided by using the typed [`Func::wrap`] method instead.
     /// - Prefer using [`Func::wrap`] over this method if possible since [`Func`] instances
-    ///   created using this constructor have runtime overhead for every invokation that
+    ///   created using this constructor have runtime overhead for every invocation that
     ///   can be avoided by using [`Func::wrap`].
     pub fn new<T>(
         mut ctx: impl AsContextMut<UserState = T>,
@@ -411,8 +411,8 @@ impl Func {
     /// The result is written back into the `outputs` buffer.
     ///
     /// Returns a resumable handle to the function invocation upon
-    /// enountering host errors with which it is possible to handle
-    /// the error and continue the execution as if no error occured.
+    /// encountering host errors with which it is possible to handle
+    /// the error and continue the execution as if no error occurred.
     ///
     /// # Note
     ///

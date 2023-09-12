@@ -40,13 +40,13 @@ impl<'a> Iterator for CallParamsValueIter<'a> {
     type Item = UntypedValue;
 
     #[inline]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next().map(UntypedValue::from)
     }
 
     #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(UntypedValue::from)
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
     }
 }
 

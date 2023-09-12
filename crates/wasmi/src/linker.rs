@@ -525,7 +525,7 @@ impl<T> Linker<T> {
     /// For information how to use this API see [`Func::wrap`].
     ///
     /// This method creates a host function for this [`Linker`] under the given name.
-    /// It is distint in its ability to create a [`Store`] independent
+    /// It is distinct in its ability to create a [`Store`] independent
     /// host function. Host functions defined this way can be used to instantiate
     /// instances in multiple different [`Store`] entities.
     ///
