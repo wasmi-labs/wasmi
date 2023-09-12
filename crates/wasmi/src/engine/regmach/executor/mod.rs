@@ -10,6 +10,7 @@ use crate::{
         },
         CallParams,
         CallResults,
+        DedupFuncType,
         EngineResources,
         FuncParams,
         TaggedTrap,
@@ -28,6 +29,43 @@ use wasmi_core::{Trap, TrapCode};
 use crate::engine::stack::StackLimits;
 
 mod instrs;
+
+/// The caller of a host function call.
+#[derive(Debug, Copy, Clone)]
+enum HostFuncCaller<'a> {
+    /// The host-side is itself the caller of the host function.
+    Root,
+    /// A compiled Wasm function is the caller of the host function.
+    Wasm {
+        /// The registers were the caller expects the results of the call.
+        results: RegisterSpan,
+        /// The instance to be used throughout the host function call.
+        instance: &'a Instance,
+    },
+}
+
+impl<'a> HostFuncCaller<'a> {
+    /// Creates a [`HostFuncCaller::Wasm`].
+    pub fn wasm(results: RegisterSpan, instance: &'a Instance) -> Self {
+        Self::Wasm { results, instance }
+    }
+
+    /// Returns the [`RegisterSpan`] if `self` is a Wasm caller, otherwise returns `None`.
+    pub fn results(&self) -> Option<RegisterSpan> {
+        match *self {
+            HostFuncCaller::Root => None,
+            HostFuncCaller::Wasm { results, .. } => Some(results),
+        }
+    }
+
+    /// Returns the [`Instance`] if `self` is a Wasm caller, otherwise returns `None`.
+    pub fn instance(&self) -> Option<&Instance> {
+        match self {
+            HostFuncCaller::Root => None,
+            HostFuncCaller::Wasm { instance, .. } => Some(instance),
+        }
+    }
+}
 
 /// The internal state of the `wasmi` engine.
 #[derive(Debug)]
@@ -66,8 +104,10 @@ impl<'engine> EngineExecutor<'engine> {
         Results: CallResults,
     {
         self.stack.reset();
+        let func_type;
         match ctx.as_context().store.inner.resolve_func(func) {
             FuncEntity::Wasm(wasm_func) => {
+                func_type = *wasm_func.ty_dedup();
                 // We reserve space on the stack to write the results of the root function execution.
                 self.stack.values.extend_zeros(results.len_results());
                 let instance = wasm_func.instance();
@@ -88,9 +128,13 @@ impl<'engine> EngineExecutor<'engine> {
                 ))?;
                 self.execute_func(ctx.as_context_mut())?;
             }
-            FuncEntity::Host(_host_func) => todo!(), // TODO: implement host root calls
+            FuncEntity::Host(host_func) => {
+                func_type = *host_func.ty_dedup();
+                let host_func = *host_func;
+                self.dispatch_host_func(ctx.as_context_mut(), host_func, HostFuncCaller::Root)?;
+            }
         };
-        let results = self.write_results_back(results);
+        let results = self.write_results_back(results, func_type);
         Ok(results)
     }
 
@@ -144,8 +188,11 @@ impl<'engine> EngineExecutor<'engine> {
             }
             FuncEntity::Host(host_func) => *host_func,
         };
-        let result =
-            self.dispatch_host_func(ctx.as_context_mut(), results, func_entity, Some(instance));
+        let result = self.dispatch_host_func(
+            ctx.as_context_mut(),
+            func_entity,
+            HostFuncCaller::wasm(results, instance),
+        );
         if self.stack.calls.peek().is_some() {
             // Case: There is a frame on the call stack.
             //
@@ -167,9 +214,8 @@ impl<'engine> EngineExecutor<'engine> {
     fn dispatch_host_func<T>(
         &mut self,
         ctx: StoreContextMut<T>,
-        results: RegisterSpan,
         host_func: HostFuncEntity,
-        instance: Option<&Instance>,
+        caller: HostFuncCaller,
     ) -> Result<(), Trap> {
         // The host function signature is required for properly
         // adjusting, inspecting and manipulating the value stack.
@@ -201,7 +247,7 @@ impl<'engine> EngineExecutor<'engine> {
             .resolve_trampoline(host_func.trampoline())
             .clone();
         trampoline
-            .call(ctx, instance, params_results)
+            .call(ctx, caller.instance(), params_results)
             .map_err(|error| {
                 // Note: We drop the values that have been temporarily added to
                 //       the stack to act as parameter and result buffer for the
@@ -212,35 +258,37 @@ impl<'engine> EngineExecutor<'engine> {
                 self.stack.values.truncate(offset);
                 error
             })?;
-        // Now the results need to be written back to where the caller expects them.
-        let caller_offset = self
-            .stack
-            .calls
-            .peek()
-            .expect("caller must be on the stack")
-            .base_offset();
-        // # Safety (1)
-        //
-        // We can safely acquire the stack pointer to the caller's and callee's (host)
-        // call frames because we just allocated the host call frame and can be sure that
-        // they are different.
-        // In the following we make sure to not access registers out of bounds of each
-        // call frame since we rely on Wasm validation and proper Wasm translation to
-        // provide us with valid result registers.
-        let mut caller_sp = unsafe { self.stack.values.stack_ptr_at(caller_offset) };
-        // # Safety: See Safety (1) above.
-        let callee_sp = unsafe { self.stack.values.stack_ptr_at(offset) };
-        let results = results.iter(len_outputs);
-        let values = RegisterSpan::new(Register::from_i16(0)).iter(len_outputs);
-        for (result, value) in results.zip(values) {
+        if let Some(results) = caller.results() {
+            // Now the results need to be written back to where the caller expects them.
+            let caller_offset = self
+                .stack
+                .calls
+                .peek()
+                .expect("caller must be on the stack")
+                .base_offset();
+            // # Safety (1)
+            //
+            // We can safely acquire the stack pointer to the caller's and callee's (host)
+            // call frames because we just allocated the host call frame and can be sure that
+            // they are different.
+            // In the following we make sure to not access registers out of bounds of each
+            // call frame since we rely on Wasm validation and proper Wasm translation to
+            // provide us with valid result registers.
+            let mut caller_sp = unsafe { self.stack.values.stack_ptr_at(caller_offset) };
             // # Safety: See Safety (1) above.
-            let result_cell = unsafe { caller_sp.get_mut(result) };
-            // # Safety: See Safety (1) above.
-            let value_cell = unsafe { callee_sp.get(value) };
-            *result_cell = value_cell;
+            let callee_sp = unsafe { self.stack.values.stack_ptr_at(offset) };
+            let results = results.iter(len_outputs);
+            let values = RegisterSpan::new(Register::from_i16(0)).iter(len_outputs);
+            for (result, value) in results.zip(values) {
+                // # Safety: See Safety (1) above.
+                let result_cell = unsafe { caller_sp.get_mut(result) };
+                // # Safety: See Safety (1) above.
+                let value_cell = unsafe { callee_sp.get(value) };
+                *result_cell = value_cell;
+            }
+            // Finally, the value stack needs to be truncated to its original size.
+            self.stack.values.truncate(offset);
         }
-        // Finally, the value stack needs to be truncated to its original size.
-        self.stack.values.truncate(offset);
         Ok(())
     }
 
@@ -296,10 +344,15 @@ impl<'engine> EngineExecutor<'engine> {
     ///
     /// - If the `results` buffer length does not match the remaining amount of stack values.
     #[inline]
-    fn write_results_back<Results>(&mut self, results: Results) -> <Results as CallResults>::Results
+    fn write_results_back<Results>(
+        &mut self,
+        results: Results,
+        ty: DedupFuncType,
+    ) -> <Results as CallResults>::Results
     where
         Results: CallResults,
     {
-        results.call_results(self.stack.values.as_slice())
+        let len_results = self.res.func_types.resolve_func_type(&ty).results().len();
+        results.call_results(&self.stack.values.as_slice()[..len_results])
     }
 }

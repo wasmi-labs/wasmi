@@ -279,7 +279,7 @@ mod regmach {
         fn wasm_select("select");
         fn wasm_skip_stack_guard_page("skip-stack-guard-page");
         fn wasm_stack("stack");
-        #[ignore] fn wasm_start("start"); // TODO: implement host func calls
+        fn wasm_start("start");
         fn wasm_store("store");
         fn wasm_switch("switch");
         fn wasm_table_sub("table-sub");
