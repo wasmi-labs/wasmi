@@ -47,7 +47,7 @@ criterion_group! {
     targets =
         bench_execute_tiny_keccak,
         bench_execute_rev_comp,
-        // bench_execute_regex_redux,
+        bench_execute_regex_redux,
         bench_execute_count_until,
         bench_execute_br_table,
         bench_execute_trunc_f2i,
@@ -65,7 +65,7 @@ criterion_group! {
         bench_execute_recursive_ok,
         bench_execute_recursive_scan,
         bench_execute_recursive_trap,
-        // bench_execute_host_calls,
+        bench_execute_host_calls,
         bench_execute_fibonacci,
         bench_execute_recursive_is_even,
         bench_execute_memory_sum,
