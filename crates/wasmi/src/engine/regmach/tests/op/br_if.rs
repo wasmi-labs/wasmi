@@ -733,20 +733,20 @@ fn branch_if_results_4_mixed_1() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::branch_eqz(Register::from_i16(2), BranchOffset::from(5)),
+            Instruction::copy_imm32(Register::from_i16(3), 10),
             Instruction::copy_span(
                 RegisterSpan::new(Register::from_i16(4)),
                 RegisterSpan::new(Register::from_i16(0)),
                 2,
             ),
-            Instruction::copy_imm32(Register::from_i16(3), 10),
             Instruction::copy_imm32(Register::from_i16(6), 20),
             Instruction::branch(BranchOffset::from(4)),
+            Instruction::copy_imm32(Register::from_i16(3), 10),
             Instruction::copy_span(
                 RegisterSpan::new(Register::from_i16(4)),
                 RegisterSpan::new(Register::from_i16(0)),
                 2,
             ),
-            Instruction::copy_imm32(Register::from_i16(3), 10),
             Instruction::copy_imm32(Register::from_i16(6), 20),
             Instruction::return_many(RegisterSpan::new(Register::from_i16(3)).iter(4)),
         ])
@@ -776,21 +776,21 @@ fn branch_if_results_4_mixed_2() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::branch_eqz(Register::from_i16(2), BranchOffset::from(5)),
-            Instruction::copy(Register::from_i16(6), Register::from_i16(1)),
             Instruction::copy(Register::from_i16(3), Register::from_i16(0)),
             Instruction::copy_span(
                 RegisterSpan::new(Register::from_i16(4)),
                 RegisterSpan::new(Register::from_i16(0)),
                 2,
             ),
+            Instruction::copy(Register::from_i16(6), Register::from_i16(1)),
             Instruction::branch(BranchOffset::from(4)),
-            Instruction::copy(Register::from_i16(6), Register::from_i16(1)),
             Instruction::copy(Register::from_i16(3), Register::from_i16(0)),
             Instruction::copy_span(
                 RegisterSpan::new(Register::from_i16(4)),
                 RegisterSpan::new(Register::from_i16(0)),
                 2,
             ),
+            Instruction::copy(Register::from_i16(6), Register::from_i16(1)),
             Instruction::return_many(RegisterSpan::new(Register::from_i16(3)).iter(4)),
         ])
         .run()

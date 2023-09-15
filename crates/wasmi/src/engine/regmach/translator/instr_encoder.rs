@@ -16,7 +16,7 @@ use crate::{
     module::ModuleResources,
 };
 use alloc::vec::{Drain, Vec};
-use core::{cmp, mem};
+use core::{cmp, mem, ops::Range};
 use wasmi_core::{UntypedValue, ValueType, F32};
 
 /// Encodes `wasmi` bytecode instructions to an [`Instruction`] stream.
@@ -375,42 +375,109 @@ impl InstrEncoder {
             }
         }
         let copy_instrs = self.instrs.get_slice_at_mut(start);
-        // We need to sort the encoded copy instructions so that they are not overwriting themselves.
-        //
-        // An example is `copy 1 <- 0, copy 2 < 1` where the first `copy 1 <- 0`
-        // overwrites the input of the second.
-        //
-        // To further circumvent this, all `copy` instructions copying immediate values always go last
-        // and `copy_span` instructions come after `copy` instructions.
-        copy_instrs.sort_by(|lhs, rhs| {
-            use Instruction as I;
-            match (lhs, rhs) {
-                (
-                    I::Copy {
-                        result: r0,
-                        value: v0,
-                    },
-                    I::Copy {
-                        result: r1,
-                        value: v1,
-                    },
-                ) => {
-                    if v0 <= v1 {
-                        r0.cmp(r1)
-                    } else {
-                        r1.cmp(r0)
+        if Self::is_copy_overwriting(copy_instrs) {
+            // We need to sort the encoded copy instructions so that they are not overwriting themselves.
+            //
+            // An example is `copy 1 <- 0, copy 2 < 1` where the first `copy 1 <- 0`
+            // overwrites the input of the second.
+            //
+            // To further circumvent this, all `copy` instructions copying immediate values always go last
+            // and `copy_span` instructions come after `copy` instructions.
+            copy_instrs.sort_by(|lhs, rhs| {
+                use Instruction as I;
+                match (lhs, rhs) {
+                    (
+                        I::Copy {
+                            result: r0,
+                            value: v0,
+                        },
+                        I::Copy {
+                            result: r1,
+                            value: v1,
+                        },
+                    ) => {
+                        if v0 <= v1 {
+                            r0.cmp(r1)
+                        } else {
+                            r1.cmp(r0)
+                        }
+                    }
+                    (I::Copy { .. }, _) => cmp::Ordering::Less,
+                    (_, I::Copy { .. }) => cmp::Ordering::Greater,
+                    // TODO: Maybe there is a need to also order `CopySpan` amongst
+                    // themselves just as we did for the `Copy` instruction.
+                    (I::CopySpan { .. }, _) => cmp::Ordering::Less,
+                    (_, I::CopySpan { .. }) => cmp::Ordering::Greater,
+                    _ => cmp::Ordering::Equal,
+                }
+            });
+        }
+        Ok(())
+    }
+
+    /// Returns `true` if any of the `copies` overwrite the inputs of following copies.
+    fn is_copy_overwriting(copies: &[Instruction]) -> bool {
+        impl Register {
+            /// Returns `true` if `self` is contained within the [`Register`] `range`.
+            fn within_range(&self, range: Range<Register>) -> bool {
+                range.contains(self)
+            }
+        }
+        impl Instruction {
+            /// Returns the first result [`Register`] of the copy [`Instruction`].
+            ///
+            /// # Panics
+            ///
+            /// If `self` is not a copy [`Instruction`].
+            fn copy_result(&self) -> Register {
+                match self {
+                    I::Copy { result, value: _ }
+                    | I::CopyImm32 { result, value: _ }
+                    | I::CopyI64Imm32 { result, value: _ }
+                    | I::CopyF64Imm32 { result, value: _ } => *result,
+                    I::CopySpan {
+                        results,
+                        values: _,
+                        len: _,
+                    } => results.head(),
+                    unexpected => panic!("encountered non-copy instruction: {unexpected:?}"),
+                }
+            }
+        }
+
+        use Instruction as I;
+        let (head, rest) = match copies.split_first() {
+            Some((head, rest)) => (head, rest),
+            None => return false,
+        };
+        let start = head.copy_result();
+        for instr in rest {
+            let end = instr.copy_result();
+            match instr {
+                I::Copy { result: _, value } => {
+                    if value.within_range(start..end) {
+                        return true;
                     }
                 }
-                (I::Copy { .. }, _) => cmp::Ordering::Less,
-                (_, I::Copy { .. }) => cmp::Ordering::Greater,
-                // TODO: Maybe there is a need to also order `CopySpan` amongst
-                // themselves just as we did for the `Copy` instruction.
-                (I::CopySpan { .. }, _) => cmp::Ordering::Less,
-                (_, I::CopySpan { .. }) => cmp::Ordering::Greater,
-                _ => cmp::Ordering::Equal,
+                I::CopyImm32 { .. } | I::CopyI64Imm32 { .. } | I::CopyF64Imm32 { .. } => {
+                    // Since the input `value` is not a register it cannot be overwritten.
+                }
+                I::CopySpan {
+                    results: _,
+                    values,
+                    len,
+                } => {
+                    for value in values.iter(*len as usize) {
+                        if value.within_range(start..end) {
+                            return true;
+                        }
+                    }
+                }
+                unexpected => panic!("encountered non-copy instruction: {unexpected:?}"),
             }
-        });
-        Ok(())
+        }
+        // No overwrites detected so far thus we return `false`.
+        false
     }
 
     /// Encodes an unconditional `return` instruction.
