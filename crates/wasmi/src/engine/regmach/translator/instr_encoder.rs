@@ -72,6 +72,15 @@ impl InstrSequence {
     /// # Panics
     ///
     /// If no [`Instruction`] is associated to the [`Instr`] for this [`InstrSequence`].
+    fn get(&mut self, instr: Instr) -> &Instruction {
+        &self.instrs[instr.into_usize()]
+    }
+
+    /// Returns the [`Instruction`] associated to the [`Instr`] for this [`InstrSequence`].
+    ///
+    /// # Panics
+    ///
+    /// If no [`Instruction`] is associated to the [`Instr`] for this [`InstrSequence`].
     fn get_mut(&mut self, instr: Instr) -> &mut Instruction {
         &mut self.instrs[instr.into_usize()]
     }
@@ -658,12 +667,13 @@ impl InstrEncoder {
     /// Only instructions that are encoded after the preservation could have been affected.
     ///
     /// This will ignore any preservation notifications after the first one.
-    pub fn notify_preserved_register(&mut self) {
+    pub fn notify_preserved_register(&mut self, preserve_instr: Instr) {
+        debug_assert!(
+            matches!(self.instrs.get(preserve_instr), Instruction::Copy { .. }),
+            "a preserve instruction is always a register copy instruction"
+        );
         if self.notified_preservation.is_none() {
-            self.notified_preservation = Some(
-                self.last_instr
-                    .expect("this must be called after encoding the respective copy instruction"),
-            );
+            self.notified_preservation = Some(preserve_instr);
         }
     }
 

@@ -872,10 +872,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             // instructions to preserve functional equivalence.
             //
             // It is possible to do so, however, a bit complicated. So for now we don't.
-            self.alloc
+            let preserve_instr = self
+                .alloc
                 .instr_encoder
                 .push_instr(Instruction::copy(register, local_register))?;
-            self.alloc.instr_encoder.notify_preserved_register();
+            self.alloc
+                .instr_encoder
+                .notify_preserved_register(preserve_instr);
             self.alloc
                 .instr_encoder
                 .encode_copy(&mut self.alloc.stack, local_register, value)?;
