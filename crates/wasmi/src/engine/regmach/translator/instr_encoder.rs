@@ -28,6 +28,14 @@ pub struct InstrEncoder {
     labels: LabelRegistry,
     /// The last [`Instruction`] created via [`InstrEncoder::push_instr`].
     last_instr: Option<Instr>,
+    /// The first encoded [`Instr`] that is affected by a `local.set` preservation.
+    ///
+    /// # Note
+    ///
+    /// This is an optimization to reduce the amount of work performed during
+    /// defragmentation of the register space due to `local.set` register
+    /// preservations.
+    notified_preservation: Option<Instr>,
 }
 
 /// The sequence of encoded [`Instruction`].
@@ -637,18 +645,34 @@ impl InstrEncoder {
         self.instrs.push(Instruction::consume_fuel(block_fuel)?)
     }
 
+    /// Notifies the [`InstrEncoder`] that a local variable has been preserved.
+    ///
+    /// # Note
+    ///
+    /// This is an optimization that we perform to avoid or minimize the work
+    /// done in [`InstrEncoder::defrag_registers`] by either avoiding defragmentation
+    /// entirely if no local preservations took place or by at least only defragmenting
+    /// the slice of instructions that could have been affected by it but not all
+    /// encoded instructions.
+    /// Only instructions that are encoded after the preservation could have been affected.
+    ///
+    /// This will ignore any preservation notifications after the first one.
+    pub fn notify_preserved_register(&mut self) {
+        if self.notified_preservation.is_none() {
+            self.notified_preservation = Some(
+                self.last_instr
+                    .expect("this must be called after encoding the respective copy instruction"),
+            );
+        }
+    }
+
     /// Defragments storage-space registers of all encoded [`Instruction`].
     pub fn defrag_registers(&mut self, stack: &mut ValueStack) -> Result<(), TranslationError> {
-        // TODO: we want to limit the amount of instructions that we query to
-        //       defragment registers because most instructions never need to
-        //       be updated but matching the respective [`Instruction`] to see
-        //       if registers in the storage space are used is very costly.
-        //
-        // Instead we want to maintain a list of [`Instr`] of which we know to
-        // use registers in the storage space and ideally also which registers.
         stack.finalize_alloc();
-        for instr in &mut self.instrs {
-            instr.visit_input_registers(|reg| *reg = stack.defrag_register(*reg));
+        if let Some(notified_preserved) = self.notified_preservation {
+            for instr in self.instrs.get_slice_at_mut(notified_preserved) {
+                instr.visit_input_registers(|reg| *reg = stack.defrag_register(*reg));
+            }
         }
         Ok(())
     }

@@ -875,6 +875,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             self.alloc
                 .instr_encoder
                 .push_instr(Instruction::copy(register, local_register))?;
+            self.alloc.instr_encoder.notify_preserved_register();
             self.alloc
                 .instr_encoder
                 .encode_copy(&mut self.alloc.stack, local_register, value)?;
