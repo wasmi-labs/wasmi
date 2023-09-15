@@ -122,6 +122,7 @@ impl InstrEncoder {
         self.instrs.reset();
         self.labels.reset();
         self.reset_last_instr();
+        self.notified_preservation = None;
     }
 
     /// Resets the [`Instr`] last created via [`InstrEncoder::push_instr`].
