@@ -184,14 +184,6 @@ impl ValueStack {
         self.consts.iter()
     }
 
-    /// Pushes a constant value to the [`ProviderStack`].
-    pub fn push_const<T>(&mut self, value: T)
-    where
-        T: Into<TypedValue>,
-    {
-        self.providers.push_const(value)
-    }
-
     /// Pushes the given [`TypedProvider`] to the [`ValueStack`].
     ///
     /// # Note
@@ -203,6 +195,14 @@ impl ValueStack {
             Provider::Const(value) => self.push_const(value),
         }
         Ok(())
+    }
+
+    /// Pushes a constant value to the [`ProviderStack`].
+    pub fn push_const<T>(&mut self, value: T)
+    where
+        T: Into<TypedValue>,
+    {
+        self.providers.push_const(value)
     }
 
     /// Pushes the given [`Register`] to the [`ValueStack`].
