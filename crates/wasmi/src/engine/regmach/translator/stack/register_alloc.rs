@@ -96,6 +96,19 @@ enum AllocPhase {
     Defrag,
 }
 
+/// The [`RegisterSpace`] of a [`Register`].
+#[derive(Debug, Copy, Clone)]
+pub enum RegisterSpace {
+    /// Function local constant values are assigned to this [`RegisterSpace`].
+    Const,
+    /// Function parameters and local variables are assigned to this [`RegisterSpace`].
+    Local,
+    /// Dynamically allocated parameters are assigned to this [`RegisterSpace`].
+    Dynamic,
+    /// Preserved local variables are assigned to this [`RegisterSpace`].
+    Storage,
+}
+
 impl RegisterAlloc {
     /// The maximum amount of local variables (and function parameters) a function may define.
     const MAX_LEN_LOCALS: u16 = i16::MAX as u16;
@@ -124,6 +137,20 @@ impl RegisterAlloc {
             }
             TaggedProvider::Const(value) => TypedProvider::Const(value),
         }
+    }
+
+    /// Returns the [`RegisterSpace`] for the given [`Register`].
+    pub fn register_space(&self, register: Register) -> RegisterSpace {
+        if register.is_const() {
+            return RegisterSpace::Const;
+        }
+        if self.is_local(register) {
+            return RegisterSpace::Local;
+        }
+        if self.is_storage(register) {
+            return RegisterSpace::Storage;
+        }
+        RegisterSpace::Dynamic
     }
 
     /// Returns thenumber of registers allocated as function parameters or locals.
@@ -315,12 +342,12 @@ impl RegisterAlloc {
         self.next_storage += 1;
     }
 
-    /// Returns `true` if the [`Register`] is allocated in the dynamic register space.
-    pub fn is_dynamic(&self, reg: Register) -> bool {
-        self.min_dynamic() <= reg.to_i16() && reg.to_i16() < self.max_dynamic
+    /// Returns `true` if the [`Register`] is allocated in the [`RegisterSpace::Local`].
+    pub fn is_local(&self, reg: Register) -> bool {
+        !reg.is_const() && reg.to_i16() < self.min_dynamic()
     }
 
-    /// Returns `true` if the [`Register`] is allocated in the storage register space.
+    /// Returns `true` if the [`Register`] is allocated in the [`RegisterSpace::Storage`].
     pub fn is_storage(&self, reg: Register) -> bool {
         self.min_storage < reg.to_i16()
     }

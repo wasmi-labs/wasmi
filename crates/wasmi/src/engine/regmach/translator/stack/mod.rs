@@ -2,6 +2,7 @@ mod consts;
 mod provider;
 mod register_alloc;
 
+use self::register_alloc::RegisterSpace;
 pub use self::{
     consts::{FuncLocalConsts, FuncLocalConstsIter},
     provider::{ProviderStack, TaggedProvider},
@@ -211,15 +212,24 @@ impl ValueStack {
     ///
     /// If too many registers have been registered.
     pub fn push_register(&mut self, reg: Register) -> Result<(), TranslationError> {
-        if self.reg_alloc.is_dynamic(reg) {
-            self.reg_alloc.push_dynamic()?;
-            self.providers.push_dynamic(reg);
-            return Ok(());
+        match self.reg_alloc.register_space(reg) {
+            RegisterSpace::Dynamic => {
+                self.reg_alloc.push_dynamic()?;
+                self.providers.push_dynamic(reg);
+                return Ok(());
+            }
+            RegisterSpace::Storage => {
+                self.providers.push_storage(reg);
+            }
+            RegisterSpace::Local | RegisterSpace::Const => {
+                // Note: So far it was okay not to differentiate between
+                //       function parameters or local variables and function
+                //       local constant values.
+                //       If this becomes necessary in the future we need to
+                //       update this particular code location.
+                self.providers.push_local(reg);
+            }
         }
-        if self.reg_alloc.is_storage(reg) {
-            self.providers.push_storage(reg);
-        }
-        self.providers.push_local(reg);
         Ok(())
     }
 

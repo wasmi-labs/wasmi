@@ -89,6 +89,15 @@ impl FuncLocalConsts {
         }
     }
 
+    /// Returns the function local constant [`UntypedValue`] of the [`Register`] if any.
+    pub fn get(&self, register: Register) -> Option<UntypedValue> {
+        if !register.is_const() {
+            return None;
+        }
+        let index = register.to_i16().wrapping_add(1).unsigned_abs() as usize;
+        self.idx2const.get(index).copied()
+    }
+
     /// Returns an iterator yielding all function local constant values of the [`FuncLocalConsts`].
     ///
     /// # Note
