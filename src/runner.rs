@@ -42,11 +42,13 @@ use std::rc::Rc;
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 
 /// Maximum number of bytes on the value stack.
-/// wasmi's default value is 1024 * 1024, we set 4096 to adapt zkWasm
+/// wasmi's default value is 1024 * 1024,
+/// ZKWASM: Maximum number of entries on the value stack.
+/// we set 4096 to adapt zkWasm
 pub const DEFAULT_VALUE_STACK_LIMIT: usize = 4096;
 
 /// Maximum number of levels on the call stack.
-pub const DEFAULT_CALL_STACK_LIMIT: usize = 64 * 1024;
+pub const DEFAULT_CALL_STACK_LIMIT: usize = 128 * 1024;
 
 /// This is a wrapper around u64 to allow us to treat runtime values as a tag-free `u64`
 /// (where if the runtime value is <64 bits the upper bits are 0). This is safe, since
@@ -3251,7 +3253,7 @@ pub struct StackRecycler {
 
 impl StackRecycler {
     /// Limit stacks created by this recycler to
-    /// - `value_stack_limit` bytes for values and
+    /// - `value_stack_limit` entries for values and
     /// - `call_stack_limit` levels for calls.
     pub fn with_limits(value_stack_limit: usize, call_stack_limit: usize) -> Self {
         Self {
@@ -3281,8 +3283,7 @@ impl StackRecycler {
     fn recreate_value_stack(this: &mut Option<&mut Self>) -> ValueStack {
         let limit = this
             .as_ref()
-            .map_or(DEFAULT_VALUE_STACK_LIMIT, |this| this.value_stack_limit)
-            / ::core::mem::size_of::<ValueInternal>();
+            .map_or(DEFAULT_VALUE_STACK_LIMIT, |this| this.value_stack_limit);
 
         let buf = this
             .as_mut()
