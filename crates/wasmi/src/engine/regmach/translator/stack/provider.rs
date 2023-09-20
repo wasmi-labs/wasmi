@@ -4,6 +4,7 @@ use super::{RegisterAlloc, TypedValue};
 use crate::engine::{regmach::bytecode::Register, TranslationError};
 use alloc::vec::Vec;
 use smallvec::SmallVec;
+
 #[cfg(doc)]
 use wasmi_core::UntypedValue;
 
