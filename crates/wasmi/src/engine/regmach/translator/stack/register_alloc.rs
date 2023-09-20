@@ -135,7 +135,8 @@ impl RegisterAlloc {
                 self.pop_storage();
                 TypedProvider::Register(reg)
             }
-            TaggedProvider::Const(value) => TypedProvider::Const(value),
+            TaggedProvider::ConstLocal(reg) => TypedProvider::Register(reg),
+            TaggedProvider::ConstValue(value) => TypedProvider::Const(value),
         }
     }
 

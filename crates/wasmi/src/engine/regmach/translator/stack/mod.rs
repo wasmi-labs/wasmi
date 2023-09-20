@@ -40,6 +40,18 @@ impl TypedProvider {
     }
 }
 
+impl From<TaggedProvider> for TypedProvider {
+    fn from(provider: TaggedProvider) -> Self {
+        match provider {
+            TaggedProvider::Local(register)
+            | TaggedProvider::Dynamic(register)
+            | TaggedProvider::Storage(register)
+            | TaggedProvider::ConstLocal(register) => Self::Register(register),
+            TaggedProvider::ConstValue(value) => Self::Const(value),
+        }
+    }
+}
+
 /// The value stack.
 #[derive(Debug, Default)]
 pub struct ValueStack {
@@ -100,26 +112,8 @@ impl ValueStack {
         &mut self,
         preserve_index: u32,
     ) -> Result<Option<Register>, TranslationError> {
-        let mut preserved = None;
-        for provider in &mut self.providers {
-            match provider {
-                TaggedProvider::Local(local_index)
-                    if local_index.to_i16() as u32 == preserve_index =>
-                {
-                    let preserved_register = match preserved {
-                        Some(register) => register,
-                        None => {
-                            let register = self.reg_alloc.push_storage()?;
-                            preserved = Some(register);
-                            register
-                        }
-                    };
-                    *provider = TaggedProvider::Storage(preserved_register);
-                }
-                _ => {}
-            }
-        }
-        Ok(preserved)
+        self.providers
+            .preserve_locals(preserve_index, &mut self.reg_alloc)
     }
 
     /// Returns the number of [`Provider`] on the [`ValueStack`].
@@ -147,7 +141,9 @@ impl ValueStack {
     ///
     /// If the [`RegisterAlloc`] is not in its initialization phase.
     pub fn register_locals(&mut self, amount: u32) -> Result<(), TranslationError> {
-        self.reg_alloc.register_locals(amount)
+        self.providers.register_locals(amount);
+        self.reg_alloc.register_locals(amount)?;
+        Ok(())
     }
 
     /// Finishes the local variable registration phase.
@@ -203,7 +199,7 @@ impl ValueStack {
     where
         T: Into<TypedValue>,
     {
-        self.providers.push_const(value)
+        self.providers.push_const_value(value)
     }
 
     /// Pushes the given [`Register`] to the [`ValueStack`].
@@ -221,13 +217,11 @@ impl ValueStack {
             RegisterSpace::Storage => {
                 self.providers.push_storage(reg);
             }
-            RegisterSpace::Local | RegisterSpace::Const => {
-                // Note: So far it was okay not to differentiate between
-                //       function parameters or local variables and function
-                //       local constant values.
-                //       If this becomes necessary in the future we need to
-                //       update this particular code location.
+            RegisterSpace::Local => {
                 self.providers.push_local(reg);
+            }
+            RegisterSpace::Const => {
+                self.providers.push_const_local(reg);
             }
         }
         Ok(())
@@ -266,12 +260,7 @@ impl ValueStack {
 
     /// Peeks the top-most [`Provider`] from the [`ValueStack`].
     pub fn peek(&self) -> TypedProvider {
-        match self.providers.peek() {
-            TaggedProvider::Local(register)
-            | TaggedProvider::Dynamic(register)
-            | TaggedProvider::Storage(register) => TypedProvider::Register(register),
-            TaggedProvider::Const(value) => TypedProvider::Const(value),
-        }
+        TypedProvider::from(self.providers.peek())
     }
 
     /// Pops the two top-most [`Provider`] from the [`ValueStack`].
@@ -311,16 +300,13 @@ impl ValueStack {
     /// - The `result` [`Vec`] will be cleared before refilled.
     pub fn peek_n(&mut self, n: usize, result: &mut Vec<TypedProvider>) {
         result.clear();
-        let peeked = self.providers.peek_n(n);
-        for provider in peeked {
-            let provider = match *provider {
-                TaggedProvider::Local(register)
-                | TaggedProvider::Dynamic(register)
-                | TaggedProvider::Storage(register) => TypedProvider::Register(register),
-                TaggedProvider::Const(value) => TypedProvider::Const(value),
-            };
-            result.push(provider);
-        }
+        result.extend(
+            self.providers
+                .peek_n(n)
+                .iter()
+                .copied()
+                .map(TypedProvider::from),
+        );
     }
 
     /// Pushes the given `providers` into the [`ValueStack`].
