@@ -8,7 +8,7 @@ repository = "https://github.com/paritytech/wasmi"
 description = "Wasm code validator"
 
 [dependencies]
-parity-wasm = { version = "0.42.0", default-features = false }
+parity-wasm = { version = "0.42.0", features = ["sign_ext"] }
 
 [dev-dependencies]
 assert_matches = "1.1"

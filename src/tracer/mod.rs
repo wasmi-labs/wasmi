@@ -21,10 +21,11 @@ use crate::{
     Signature,
 };
 
-use self::{etable::ETable, imtable::IMTable};
+use self::{etable::ETable, imtable::IMTable, phantom::PhantomFunction};
 
 pub mod etable;
 pub mod imtable;
+pub mod phantom;
 
 #[derive(Debug)]
 pub struct FuncDesc {
@@ -48,11 +49,19 @@ pub struct Tracer {
     pub(crate) function_index_translation: HashMap<u32, FuncDesc>,
     pub host_function_index_lookup: HashMap<usize, HostFunctionDesc>,
     pub static_jtable_entries: Vec<StaticFrameEntry>,
+    pub phantom_functions: Vec<String>,
+    pub phantom_functions_ref: Vec<FuncRef>,
+    // Wasm Image Function Idx
+    pub wasm_input_func_idx: Option<u32>,
+    pub wasm_input_func_ref: Option<FuncRef>,
 }
 
 impl Tracer {
     /// Create an empty tracer
-    pub fn new(host_plugin_lookup: HashMap<usize, HostFunctionDesc>) -> Self {
+    pub fn new(
+        host_plugin_lookup: HashMap<usize, HostFunctionDesc>,
+        phantom_functions: &Vec<String>,
+    ) -> Self {
         Tracer {
             itable: InstructionTable::default(),
             imtable: IMTable::default(),
@@ -67,6 +76,10 @@ impl Tracer {
             function_index_translation: Default::default(),
             host_function_index_lookup: host_plugin_lookup,
             static_jtable_entries: vec![],
+            phantom_functions: phantom_functions.clone(),
+            phantom_functions_ref: vec![],
+            wasm_input_func_ref: None,
+            wasm_input_func_idx: None,
         }
     }
 
@@ -199,6 +212,10 @@ impl Tracer {
 
             loop {
                 if let Some(func) = module_instance.func_by_index(func_index) {
+                    if Some(&func) == self.wasm_input_func_ref.as_ref() {
+                        self.wasm_input_func_idx = Some(func_index)
+                    }
+
                     let func_index_in_itable = if Some(func_index) == start_fn_idx {
                         0
                     } else {
@@ -254,25 +271,50 @@ impl Tracer {
         }
 
         {
+            let phantom_functions_ref = self.phantom_functions.clone();
+
+            for func_name in phantom_functions_ref {
+                let func = module_instance.func_by_name(&func_name).unwrap();
+
+                self.push_phantom_function(func);
+            }
+        }
+
+        {
             let mut func_index = 0;
 
             loop {
                 if let Some(func) = module_instance.func_by_index(func_index) {
                     let funcdesc = self.function_index_translation.get(&func_index).unwrap();
 
-                    if let Some(body) = func.body() {
-                        let code = &body.code;
-                        let mut iter = code.iterate_from(0);
-                        loop {
-                            let pc = iter.position();
-                            if let Some(instruction) = iter.next() {
-                                let _ = self.itable.push(
-                                    funcdesc.index_within_jtable,
-                                    pc,
-                                    instruction.into(&self.function_index_translation),
-                                );
-                            } else {
-                                break;
+                    if self.is_phantom_function(&func) {
+                        let instructions = PhantomFunction::build_phantom_function_instructions(
+                            &funcdesc.signature,
+                            self.wasm_input_func_idx.unwrap(),
+                        );
+
+                        for (iid, inst) in instructions.into_iter().enumerate() {
+                            self.itable.push(
+                                funcdesc.index_within_jtable,
+                                iid as u32,
+                                inst.into(&self.function_index_translation),
+                            )
+                        }
+                    } else {
+                        if let Some(body) = func.body() {
+                            let code = &body.code;
+                            let mut iter = code.iterate_from(0);
+                            loop {
+                                let pc = iter.position();
+                                if let Some(instruction) = iter.next() {
+                                    let _ = self.itable.push(
+                                        funcdesc.index_within_jtable,
+                                        pc,
+                                        instruction.into(&self.function_index_translation),
+                                    );
+                                } else {
+                                    break;
+                                }
                             }
                         }
                     }
@@ -316,5 +358,13 @@ impl Tracer {
         }
 
         unreachable!();
+    }
+
+    pub fn push_phantom_function(&mut self, function: FuncRef) {
+        self.phantom_functions_ref.push(function)
+    }
+
+    pub fn is_phantom_function(&self, func: &FuncRef) -> bool {
+        self.phantom_functions_ref.contains(func)
     }
 }

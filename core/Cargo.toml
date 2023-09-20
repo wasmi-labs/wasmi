@@ -11,7 +11,7 @@ description = "WebAssembly interpreter"
 keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
 
 [dependencies]
-parity-wasm = { version = "0.42.0", default-features = false }
+parity-wasm = { version = "0.42.0", features = ["sign_ext"] }
 memory_units = "0.4.0"
 libm = "0.2.1"
 num-rational = { version = "0.4", default-features = false, features = ["num-bigint"] }

@@ -348,6 +348,12 @@ pub enum Instruction<'a> {
     I64ReinterpretF64,
     F32ReinterpretI32,
     F64ReinterpretI64,
+
+    I32Extend8S,
+    I32Extend16S,
+    I64Extend8S,
+    I64Extend16S,
+    I64Extend32S,
 }
 
 impl<'a> From<Instruction<'a>> for UnaryOp {
@@ -879,6 +885,21 @@ impl<'a> Instruction<'a> {
             Instruction::I64ReinterpretF64 => todo!(),
             Instruction::F32ReinterpretI32 => todo!(),
             Instruction::F64ReinterpretI64 => todo!(),
+            Instruction::I32Extend8S => Opcode::Conversion {
+                class: ConversionOp::I32Extend8S,
+            },
+            Instruction::I32Extend16S => Opcode::Conversion {
+                class: ConversionOp::I32Extend16S,
+            },
+            Instruction::I64Extend8S => Opcode::Conversion {
+                class: ConversionOp::I64Extend8S,
+            },
+            Instruction::I64Extend16S => Opcode::Conversion {
+                class: ConversionOp::I64Extend16S,
+            },
+            Instruction::I64Extend32S => Opcode::Conversion {
+                class: ConversionOp::I64Extend32S,
+            },
         }
     }
 }
@@ -1054,6 +1075,11 @@ impl<'a> Into<u32> for Instruction<'a> {
             Instruction::I64ReinterpretF64 => 164,
             Instruction::F32ReinterpretI32 => 165,
             Instruction::F64ReinterpretI64 => 166,
+            Instruction::I32Extend8S => 167,
+            Instruction::I32Extend16S => 168,
+            Instruction::I64Extend8S => 169,
+            Instruction::I64Extend16S => 170,
+            Instruction::I64Extend32S => 171,
         }
     }
 }
@@ -1252,6 +1278,12 @@ pub(crate) enum InstructionInternal {
     I64ReinterpretF64,
     F32ReinterpretI32,
     F64ReinterpretI64,
+
+    I32Extend8S,
+    I32Extend16S,
+    I64Extend8S,
+    I64Extend16S,
+    I64Extend32S,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -1508,6 +1540,12 @@ impl<'a> Iterator for InstructionIter<'a> {
             InstructionInternal::I64ReinterpretF64 => Instruction::I64ReinterpretF64,
             InstructionInternal::F32ReinterpretI32 => Instruction::F32ReinterpretI32,
             InstructionInternal::F64ReinterpretI64 => Instruction::F64ReinterpretI64,
+
+            InstructionInternal::I32Extend8S => Instruction::I32Extend8S,
+            InstructionInternal::I32Extend16S => Instruction::I32Extend16S,
+            InstructionInternal::I64Extend8S => Instruction::I64Extend8S,
+            InstructionInternal::I64Extend16S => Instruction::I64Extend16S,
+            InstructionInternal::I64Extend32S => Instruction::I64Extend32S,
         };
 
         self.position += 1;

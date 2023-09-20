@@ -90,6 +90,21 @@ pub enum RunInstructionTracePre {
         value: i32,
         sign: bool,
     },
+    I32SignExtendI8 {
+        value: i32,
+    },
+    I32SignExtendI16 {
+        value: i32,
+    },
+    I64SignExtendI8 {
+        value: i64,
+    },
+    I64SignExtendI16 {
+        value: i64,
+    },
+    I64SignExtendI32 {
+        value: i64,
+    },
 
     UnaryOp {
         operand: u64,

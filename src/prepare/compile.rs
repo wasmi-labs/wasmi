@@ -1,6 +1,6 @@
 use alloc::{string::String, vec::Vec};
 
-use parity_wasm::elements::{BlockType, FuncBody, Instruction, ValueType};
+use parity_wasm::elements::{BlockType, FuncBody, Instruction, SignExtInstruction, ValueType};
 
 use crate::isa::{self, InstructionInternal};
 use validation::{
@@ -998,6 +998,23 @@ impl Compiler {
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::F64ReinterpretI64);
             }
+            SignExt(ref ext) => match ext {
+                SignExtInstruction::I32Extend8S => {
+                    self.sink.emit(isa::InstructionInternal::I32Extend8S);
+                }
+                SignExtInstruction::I32Extend16S => {
+                    self.sink.emit(isa::InstructionInternal::I32Extend16S);
+                }
+                SignExtInstruction::I64Extend8S => {
+                    self.sink.emit(isa::InstructionInternal::I64Extend8S);
+                }
+                SignExtInstruction::I64Extend16S => {
+                    self.sink.emit(isa::InstructionInternal::I64Extend16S);
+                }
+                SignExtInstruction::I64Extend32S => {
+                    self.sink.emit(isa::InstructionInternal::I64Extend32S);
+                }
+            },
             _ => {
                 context.step(instruction)?;
             }

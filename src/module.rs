@@ -285,6 +285,12 @@ impl ModuleInstance {
 								import.field(),
 							)));
                         }
+
+                        if import.field() == "wasm_input" {
+                            if let Some(tracer) = tracer.clone() {
+                                tracer.borrow_mut().wasm_input_func_ref = Some(func.clone());
+                            }
+                        }
                         instance.push_func(func.clone())
                     }
                     (&External::Table(ref tt), &ExternVal::Table(ref table)) => {
@@ -739,7 +745,7 @@ impl ModuleInstance {
             .map_err(Error::Trap)
     }
 
-    fn func_by_name(&self, func_name: &str) -> Result<FuncRef, Error> {
+    pub fn func_by_name(&self, func_name: &str) -> Result<FuncRef, Error> {
         let extern_val = self
             .export_by_name(func_name)
             .ok_or_else(|| Error::Function(format!("Module doesn't have export {}", func_name)))?;
@@ -825,8 +831,7 @@ impl<'a> NotStartedModuleRef<'a> {
         tracer: Rc<RefCell<Tracer>>,
     ) -> Result<ModuleRef, Trap> {
         {
-            let mut tracer = tracer.borrow_mut();
-            tracer.last_jump_eid.push(0);
+            tracer.borrow_mut().last_jump_eid.push(0);
         }
 
         if let Some(start_fn_idx) = self.loaded_module.module().start_section() {

@@ -199,6 +199,7 @@ pub struct Interpreter {
     state: InterpreterState,
     scratch: Vec<RuntimeValue>,
     pub(crate) tracer: Option<Rc<RefCell<Tracer>>>,
+    mask_tracer: Vec<u32>,
 }
 
 impl Interpreter {
@@ -230,7 +231,16 @@ impl Interpreter {
             state: InterpreterState::Initialized,
             scratch: Vec::new(),
             tracer: None,
+            mask_tracer: vec![],
         })
+    }
+
+    fn get_tracer_if_active(&self) -> Option<Rc<RefCell<Tracer>>> {
+        if self.tracer.is_some() && self.mask_tracer.is_empty() {
+            self.tracer.clone()
+        } else {
+            None
+        }
     }
 
     pub fn state(&self) -> &InterpreterState {
@@ -329,11 +339,10 @@ impl Interpreter {
                         FuncInstanceInternal::Internal { .. } => {
                             let nested_context = FunctionContext::new(nested_func.clone());
 
-                            if let Some(tracer) = self.tracer.clone() {
-                                let callee_fid =
-                                    tracer.clone().borrow().lookup_function(&nested_func);
+                            if let Some(tracer) = self.get_tracer_if_active() {
+                                let mut tracer = tracer.borrow_mut();
+                                let callee_fid = tracer.lookup_function(&nested_func);
 
-                                let mut tracer = (*tracer).borrow_mut();
                                 let eid = tracer.eid();
                                 let last_jump_eid = tracer.last_jump_eid();
 
@@ -350,6 +359,15 @@ impl Interpreter {
                                 });
 
                                 tracer.push_frame();
+                            }
+
+                            if let Some(tracer) = self.tracer.clone() {
+                                if tracer
+                                    .borrow()
+                                    .is_phantom_function(&nested_context.function)
+                                {
+                                    self.mask_tracer.push(self.value_stack.sp as u32);
+                                }
                             }
 
                             self.call_stack.push(function_context);
@@ -394,7 +412,7 @@ impl Interpreter {
                             }
 
                             if let Some(return_val) = return_val {
-                                if let Some(tracer) = self.tracer.clone() {
+                                if let Some(tracer) = self.get_tracer_if_active() {
                                     let mut tracer = (*tracer).borrow_mut();
 
                                     let entry = tracer.etable.get_last_entry_mut().unwrap();
@@ -797,6 +815,21 @@ impl Interpreter {
                 value: <_>::from_value_internal(*self.value_stack.pick(1)),
                 sign: true,
             }),
+            isa::Instruction::I32Extend8S => Some(RunInstructionTracePre::I32SignExtendI8 {
+                value: <_>::from_value_internal(*self.value_stack.pick(1)),
+            }),
+            isa::Instruction::I32Extend16S => Some(RunInstructionTracePre::I32SignExtendI16 {
+                value: <_>::from_value_internal(*self.value_stack.pick(1)),
+            }),
+            isa::Instruction::I64Extend8S => Some(RunInstructionTracePre::I64SignExtendI8 {
+                value: <_>::from_value_internal(*self.value_stack.pick(1)),
+            }),
+            isa::Instruction::I64Extend16S => Some(RunInstructionTracePre::I64SignExtendI16 {
+                value: <_>::from_value_internal(*self.value_stack.pick(1)),
+            }),
+            isa::Instruction::I64Extend32S => Some(RunInstructionTracePre::I64SignExtendI32 {
+                value: <_>::from_value_internal(*self.value_stack.pick(1)),
+            }),
 
             _ => {
                 println!("{:?}", *instructions);
@@ -971,7 +1004,6 @@ impl Interpreter {
                     } else {
                         vec![]
                     },
-                    drop_values: drop_values.iter().map(|v| v.0).collect::<Vec<_>>(),
                     keep_values: match keep {
                         Keep::Single(t) => vec![from_value_internal_to_u64_with_typ(
                             t.into(),
@@ -1894,6 +1926,56 @@ impl Interpreter {
                     unreachable!()
                 }
             }
+            isa::Instruction::I32Extend8S => {
+                if let RunInstructionTracePre::I32SignExtendI8 { value } = pre_status.unwrap() {
+                    StepInfo::I32SignExtendI8 {
+                        value,
+                        result: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I32Extend16S => {
+                if let RunInstructionTracePre::I32SignExtendI16 { value } = pre_status.unwrap() {
+                    StepInfo::I32SignExtendI16 {
+                        value,
+                        result: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64Extend8S => {
+                if let RunInstructionTracePre::I64SignExtendI8 { value } = pre_status.unwrap() {
+                    StepInfo::I64SignExtendI8 {
+                        value,
+                        result: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64Extend16S => {
+                if let RunInstructionTracePre::I64SignExtendI16 { value } = pre_status.unwrap() {
+                    StepInfo::I64SignExtendI16 {
+                        value,
+                        result: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
+            isa::Instruction::I64Extend32S => {
+                if let RunInstructionTracePre::I64SignExtendI32 { value } = pre_status.unwrap() {
+                    StepInfo::I64SignExtendI32 {
+                        value,
+                        result: <_>::from_value_internal(*self.value_stack.top()),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
 
             _ => {
                 println!("{:?}", instructions);
@@ -1908,7 +1990,6 @@ impl Interpreter {
         instructions: &isa::Instructions,
     ) -> Result<RunResult, TrapCode> {
         let mut iter = instructions.iterate_from(function_context.position);
-
         loop {
             let pc = iter.position();
             let sp = self.value_stack.sp;
@@ -1919,11 +2000,9 @@ impl Interpreter {
                  return or an implicit block `end`.",
             );
 
-            let pre_status = if self.tracer.is_some() {
+            let pre_status = self.get_tracer_if_active().map_or(None, |_| {
                 self.run_instruction_pre(function_context, &instruction)
-            } else {
-                None
-            };
+            });
 
             let current_memory = {
                 function_context
@@ -1932,12 +2011,12 @@ impl Interpreter {
             };
 
             macro_rules! trace_post {
-                () => {
-                    if let Some(tracer) = self.tracer.clone() {
+                () => {{
+                    if let Some(tracer) = self.get_tracer_if_active() {
                         let post_status =
                             self.run_instruction_post(pre_status, function_context, &instruction);
 
-                        let mut tracer = (*tracer).borrow_mut();
+                        let mut tracer = tracer.borrow_mut();
 
                         let instruction = { instruction.into(&tracer.function_index_translation) };
 
@@ -1959,7 +2038,7 @@ impl Interpreter {
                             post_status,
                         );
                     }
-                };
+                }};
             }
 
             match self.run_instruction(function_context, &instruction)? {
@@ -1980,8 +2059,43 @@ impl Interpreter {
                 }
                 InstructionOutcome::Return(drop_keep) => {
                     trace_post!();
+
                     if let Some(tracer) = self.tracer.clone() {
-                        (*tracer).borrow_mut().pop_frame();
+                        if tracer
+                            .borrow()
+                            .is_phantom_function(&function_context.function)
+                        {
+                            let sp_before = self.mask_tracer.pop().unwrap();
+
+                            if self.mask_tracer.is_empty() {
+                                let last_jump_eid = tracer.borrow().last_jump_eid();
+                                let callee_fid =
+                                    tracer.borrow().lookup_function(&function_context.function);
+                                let wasm_input_function_idx =
+                                    tracer.borrow().wasm_input_func_idx.unwrap();
+
+                                tracer.borrow_mut().fill_trace(
+                                    sp_before,
+                                    current_memory as u32,
+                                    last_jump_eid,
+                                    callee_fid,
+                                    function_context.function.signature(),
+                                    wasm_input_function_idx,
+                                    if let isa::Keep::Single(t) = drop_keep.keep {
+                                        Some(from_value_internal_to_u64_with_typ(
+                                            t.into(),
+                                            *self.value_stack.top(),
+                                        ))
+                                    } else {
+                                        None
+                                    },
+                                );
+                            }
+                        }
+                    }
+
+                    if let Some(tracer) = self.get_tracer_if_active() {
+                        tracer.borrow_mut().pop_frame();
                     }
 
                     self.value_stack.drop_keep(drop_keep);
@@ -2211,6 +2325,12 @@ impl Interpreter {
             isa::Instruction::I64ReinterpretF64 => self.run_reinterpret::<F64, i64>(),
             isa::Instruction::F32ReinterpretI32 => self.run_reinterpret::<i32, F32>(),
             isa::Instruction::F64ReinterpretI64 => self.run_reinterpret::<i64, F64>(),
+
+            isa::Instruction::I32Extend8S => self.run_extend::<i8, i32, i32>(),
+            isa::Instruction::I32Extend16S => self.run_extend::<i16, i32, i32>(),
+            isa::Instruction::I64Extend8S => self.run_extend::<i8, i64, i64>(),
+            isa::Instruction::I64Extend16S => self.run_extend::<i16, i64, i64>(),
+            isa::Instruction::I64Extend32S => self.run_extend::<i32, i64, i64>(),
         }
     }
 
