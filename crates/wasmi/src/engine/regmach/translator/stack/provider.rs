@@ -2,7 +2,7 @@ use ::core::iter;
 
 use super::{RegisterAlloc, TypedValue};
 use crate::engine::{regmach::bytecode::Register, TranslationError};
-use alloc::vec::{Drain, Vec};
+use alloc::vec::Vec;
 use smallvec::SmallVec;
 #[cfg(doc)]
 use wasmi_core::UntypedValue;
@@ -155,20 +155,6 @@ impl ProviderStack {
             debug_assert_eq!(self.providers.len(), stack_index);
         }
         popped
-    }
-
-    /// Pops the `n` top-most [`TaggedProvider`] items from the [`ProviderStack`].
-    ///
-    /// # Panics
-    ///
-    /// If the [`ProviderStack`] does not contain at least `n` [`TaggedProvider`] items.
-    pub fn pop_n(&mut self, n: usize) -> Drain<TaggedProvider> {
-        let len = self.providers.len();
-        assert!(
-            n <= len,
-            "tried to pop {n} items from provider stack with only {len} items"
-        );
-        self.providers.drain((len - n)..)
     }
 
     /// Peeks the `n` top-most [`TaggedProvider`] items of the [`ProviderStack`].
