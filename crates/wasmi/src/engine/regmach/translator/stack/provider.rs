@@ -152,6 +152,8 @@ impl ProviderStack {
             .pop()
             .unwrap_or_else(|| panic!("tried to pop provider from empty provider stack"));
         if let TaggedProvider::Local(register) = popped {
+            // If a `local.get` was popped from the provider stack we
+            // also need to pop it from the `local.get` indices stack.
             let stack_index = self.locals.pop_at(register);
             debug_assert_eq!(self.providers.len(), stack_index);
         }
