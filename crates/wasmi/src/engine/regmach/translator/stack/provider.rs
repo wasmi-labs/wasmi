@@ -118,7 +118,7 @@ impl ProviderStack {
     /// Pushes a [`Register`] to the [`ProviderStack`] referring to a function parameter or local variable.
     pub fn push_const_local(&mut self, reg: Register) {
         debug_assert!(reg.is_const());
-        self.push(TaggedProvider::Local(reg));
+        self.push(TaggedProvider::ConstLocal(reg));
     }
 
     /// Pushes a constant value to the [`ProviderStack`].
