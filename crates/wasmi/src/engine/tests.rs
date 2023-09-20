@@ -751,7 +751,7 @@ fn wabt_example() {
         (module
             (func (export "call") (param i32) (result i32)
                 block $exit
-                    get_local 0
+                    local.get 0
                     br_if $exit
                     i32.const 1
                     return
