@@ -80,20 +80,42 @@ impl BlockType {
     }
 
     /// Calls `f` for each block parameter type.
+    pub fn params_with<F, R>(&self, engine: &Engine, mut f: F) -> R
+    where
+        F: FnMut(&[ValueType]) -> R,
+    {
+        match &self.inner {
+            BlockTypeInner::Empty | BlockTypeInner::Returns(_) => f(&[]),
+            BlockTypeInner::FuncType(func_type) => {
+                engine.resolve_func_type(func_type, |func_type| f(func_type.params()))
+            }
+        }
+    }
+
+    /// Calls `f` for each block result type.
+    pub fn results_with<F, R>(&self, engine: &Engine, mut f: F) -> R
+    where
+        F: FnMut(&[ValueType]) -> R,
+    {
+        match &self.inner {
+            BlockTypeInner::Empty => f(&[]),
+            BlockTypeInner::Returns(result) => f(core::slice::from_ref(result)),
+            BlockTypeInner::FuncType(func_type) => {
+                engine.resolve_func_type(func_type, |func_type| f(func_type.results()))
+            }
+        }
+    }
+
+    /// Calls `f` for each block parameter type.
     pub fn foreach_param<F>(&self, engine: &Engine, mut f: F)
     where
         F: FnMut(ValueType),
     {
-        match &self.inner {
-            BlockTypeInner::Empty | BlockTypeInner::Returns(_) => (),
-            BlockTypeInner::FuncType(func_type) => {
-                engine.resolve_func_type(func_type, |func_type| {
-                    for param in func_type.params() {
-                        f(*param);
-                    }
-                })
+        self.params_with(engine, |params| {
+            for param in params {
+                f(*param);
             }
-        }
+        })
     }
 
     /// Calls `f` for each block result type.
@@ -101,18 +123,10 @@ impl BlockType {
     where
         F: FnMut(ValueType),
     {
-        match &self.inner {
-            BlockTypeInner::Empty => (),
-            BlockTypeInner::Returns(result) => {
+        self.results_with(engine, |results| {
+            for result in results {
                 f(*result);
             }
-            BlockTypeInner::FuncType(func_type) => {
-                engine.resolve_func_type(func_type, |func_type| {
-                    for result in func_type.results() {
-                        f(*result);
-                    }
-                })
-            }
-        }
+        })
     }
 }

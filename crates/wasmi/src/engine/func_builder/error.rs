@@ -82,6 +82,33 @@ impl Display for TranslationError {
                     "fuel required to execute a block is out of bounds for wasmi bytecode"
                 )
             }
+            TranslationErrorInner::AllocatedTooManyRegisters => {
+                write!(
+                    f,
+                    "translation requires more registers for a function than available"
+                )
+            }
+            TranslationErrorInner::RegisterOutOfBounds => {
+                write!(f, "tried to access out of bounds register index")
+            }
+            TranslationErrorInner::EmulatedValueStackOverflow => {
+                write!(f, "function requires value stack with out of bounds depth")
+            }
+            TranslationErrorInner::ProviderSliceOverflow => {
+                write!(f, "tried to allocate too many or too large provider slices")
+            }
+            TranslationErrorInner::TooManyFuncLocalConstValues => {
+                write!(
+                    f,
+                    "tried to allocate too many function local constant values"
+                )
+            }
+            TranslationErrorInner::TooManyFunctionResults => {
+                write!(f, "encountered function with too many function results")
+            }
+            TranslationErrorInner::TooManyFunctionParams => {
+                write!(f, "encountered function with too many function parameters")
+            }
         }
     }
 }
@@ -105,4 +132,18 @@ pub enum TranslationErrorInner {
     BlockFuelOutOfBounds,
     /// The constant reference index is out of bounds.
     ConstRefOutOfBounds,
+    /// Tried to allocate more registers than possible.
+    AllocatedTooManyRegisters,
+    /// Tried to use an out of bounds register index.
+    RegisterOutOfBounds,
+    /// Pushed too many values on the emulated value stack during translation.
+    EmulatedValueStackOverflow,
+    /// Tried to allocate too many or large provider slices.
+    ProviderSliceOverflow,
+    /// Tried to allocate too many function local constant values.
+    TooManyFuncLocalConstValues,
+    /// Tried to define a function with too many function results.
+    TooManyFunctionResults,
+    /// Tried to define a function with too many function parameters.
+    TooManyFunctionParams,
 }

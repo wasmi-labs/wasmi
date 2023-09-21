@@ -60,6 +60,9 @@ pub struct TestSpan<'a> {
 impl Display for TestSpan<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (line, col) = self.span.linecol_in(self.contents);
+        // Change from 0-indexing to 1-indexing for better UX:
+        let line = line + 1;
+        let col = col + 1;
         write!(f, "{}:{line}:{col}", self.path)
     }
 }

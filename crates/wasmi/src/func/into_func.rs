@@ -95,6 +95,7 @@ pub trait WasmRet {
     type Ok: WasmTypeList;
 
     #[doc(hidden)]
+    #[allow(clippy::missing_errors_doc)] // TODO: remove when clippy bug is fixed (https://github.com/rust-lang/rust-clippy/issues/11501)
     fn into_fallible(self) -> Result<<Self as WasmRet>::Ok, Trap>;
 }
 

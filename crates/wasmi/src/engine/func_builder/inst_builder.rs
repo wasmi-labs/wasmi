@@ -14,7 +14,7 @@ use alloc::vec::Vec;
 
 /// A reference to an instruction of the partially
 /// constructed function body of the [`InstructionsBuilder`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Instr(u32);
 
 impl Instr {

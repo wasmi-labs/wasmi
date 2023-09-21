@@ -1,4 +1,4 @@
-use anyhow::{Context, Error, Result};
+use anyhow::{bail, Context, Error, Result};
 use clap::Parser;
 use std::{
     ffi::OsStr,
@@ -6,6 +6,7 @@ use std::{
     path::{Path, PathBuf},
     str::FromStr,
 };
+use wasmi::EngineBackend;
 use wasmi_wasi::{ambient_authority, Dir, TcpListener, WasiCtx, WasiCtxBuilder};
 
 /// A CLI flag value key-value argument.
@@ -36,7 +37,24 @@ impl FromStr for KeyValue {
     }
 }
 
-/// Simple program to greet a person
+/// A `wasmi` [`EngineBackend`].
+#[derive(Debug, Clone)]
+pub struct ExecutionEngine(EngineBackend);
+
+impl FromStr for ExecutionEngine {
+    type Err = Error;
+
+    fn from_str(argument: &str) -> Result<Self, Self::Err> {
+        let engine = match argument {
+            "stack-machine" => ExecutionEngine(EngineBackend::StackMachine),
+            "register-machine" => ExecutionEngine(EngineBackend::RegisterMachine),
+            _ => bail!("invalid execution engine: {argument}"),
+        };
+        Ok(engine)
+    }
+}
+
+/// The `wasmi` CLI application arguments.
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None, trailing_var_arg = true)]
 pub struct Args {
@@ -88,6 +106,20 @@ pub struct Args {
     #[clap(long = "fuel", value_name = "N")]
     fuel: Option<u64>,
 
+    /// Tells `wasmi` which execution engine to use. (EXPERIMENTAL / UNSTABLE)
+    ///
+    /// Valid Arguments:
+    ///
+    /// - stack-machine (default)
+    ///
+    /// - register-machine
+    #[clap(
+        long = "engine",
+        value_name = "ENGINE",
+        value_parser(ExecutionEngine::from_str)
+    )]
+    engine: Option<ExecutionEngine>,
+
     /// Arguments given to the Wasm module or the invoked function.
     #[clap(value_name = "ARGS")]
     func_args: Vec<String>,
@@ -112,6 +144,11 @@ impl Args {
     /// Returns the amount of fuel given to the CLI app if any.
     pub fn fuel(&self) -> Option<u64> {
         self.fuel
+    }
+
+    /// Returns the execution engine given to the CLI app if any.
+    pub fn engine(&self) -> Option<EngineBackend> {
+        self.engine.as_ref().map(|engine| engine.0)
     }
 
     /// Pre-opens all directories given in `--dir` and returns them for use by the [`WasiCtx`].

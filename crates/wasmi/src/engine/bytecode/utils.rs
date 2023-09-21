@@ -44,18 +44,18 @@ impl FuncIdx {
 /// A table index.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct TableIdx(u32);
+pub struct TableIdx([u8; 4]);
 
 impl From<u32> for TableIdx {
     fn from(index: u32) -> Self {
-        Self(index)
+        Self(index.to_ne_bytes())
     }
 }
 
 impl TableIdx {
     /// Returns the index value as `u32`.
     pub fn to_u32(self) -> u32 {
-        self.0
+        u32::from_ne_bytes(self.0)
     }
 }
 

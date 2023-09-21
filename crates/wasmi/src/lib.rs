@@ -123,6 +123,7 @@ pub use self::{
     engine::{
         Config,
         Engine,
+        EngineBackend,
         FuelConsumptionMode,
         ResumableCall,
         ResumableInvocation,

@@ -1,7 +1,7 @@
 use crate::utils;
 use anyhow::{anyhow, Error};
 use std::path::Path;
-use wasmi::{Config, ExternType, Func, FuncType, Instance, Module, Store};
+use wasmi::{Config, EngineBackend, ExternType, Func, FuncType, Instance, Module, Store};
 use wasmi_wasi::WasiCtx;
 
 /// The [`Context`] for the `wasmi` CLI application.
@@ -23,8 +23,14 @@ impl Context {
     ///
     /// - If parsing, validating, compiling or instantiating the Wasm module failed.
     /// - If adding WASI defintions to the linker failed.
-    pub fn new(wasm_file: &Path, wasi_ctx: WasiCtx, fuel: Option<u64>) -> Result<Self, Error> {
+    pub fn new(
+        wasm_file: &Path,
+        wasi_ctx: WasiCtx,
+        fuel: Option<u64>,
+        engine: EngineBackend,
+    ) -> Result<Self, Error> {
         let mut config = Config::default();
+        config.set_engine_backend(engine);
         if fuel.is_some() {
             config.consume_fuel(true);
         }

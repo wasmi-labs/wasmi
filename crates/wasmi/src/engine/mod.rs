@@ -9,27 +9,28 @@ pub mod executor;
 mod func_args;
 mod func_builder;
 mod func_types;
+mod regmach;
 mod resumable;
 pub mod stack;
 mod traits;
+mod translator;
+mod trap;
 
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+use self::regmach::bytecode::RegisterSpan;
+
 pub use self::{
     bytecode::DropKeep,
     code_map::CompiledFunc,
-    config::{Config, FuelConsumptionMode},
-    func_builder::{
-        FuncBuilder,
-        FuncTranslatorAllocations,
-        Instr,
-        RelativeDepth,
-        TranslationError,
-    },
+    config::{Config, EngineBackend, FuelConsumptionMode},
+    func_builder::{FuncTranslatorAllocations, Instr, RelativeDepth, TranslationError},
     resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
     stack::StackLimits,
     traits::{CallParams, CallResults},
+    translator::FuncBuilder,
 };
 use self::{
     bytecode::Instruction,
@@ -38,12 +39,21 @@ use self::{
     const_pool::{ConstPool, ConstPoolView, ConstRef},
     executor::{execute_wasm, WasmOutcome},
     func_types::FuncTypeRegistry,
+    regmach::{
+        bytecode::Instruction as Instruction2,
+        code_map::CompiledFuncEntity,
+        CodeMap as CodeMap2,
+        FuncLocalConstsIter,
+        Stack as Stack2,
+    },
     resumable::ResumableCallBase,
     stack::{FuncFrame, Stack, ValueStack},
+    trap::TaggedTrap,
 };
 pub(crate) use self::{
     func_args::{FuncFinished, FuncParams, FuncResults},
     func_types::DedupFuncType,
+    translator::ChosenFuncTranslatorAllocations,
 };
 use crate::{
     core::{Trap, TrapCode},
@@ -59,6 +69,9 @@ use core::sync::atomic::{AtomicU32, Ordering};
 use spin::{Mutex, RwLock};
 use wasmi_arena::{ArenaIndex, GuardedEntity};
 use wasmi_core::UntypedValue;
+
+#[cfg(doc)]
+use crate::Store;
 
 /// A unique engine index.
 ///
@@ -139,15 +152,6 @@ impl Engine {
         self.inner.alloc_func_type(func_type)
     }
 
-    /// Allocates a new constant value to the [`Engine`].
-    ///
-    /// # Errors
-    ///
-    /// If too many constant values have been allocated for the [`Engine`] this way.
-    pub(super) fn alloc_const(&self, value: UntypedValue) -> Result<ConstRef, TranslationError> {
-        self.inner.alloc_const(value)
-    }
-
     /// Resolves a deduplicated function type into a [`FuncType`] entity.
     ///
     /// # Panics
@@ -161,11 +165,30 @@ impl Engine {
         self.inner.resolve_func_type(func_type, f)
     }
 
+    /// Allocates a new constant value to the [`Engine`].
+    ///
+    /// # Errors
+    ///
+    /// If too many constant values have been allocated for the [`Engine`] this way.
+    pub(super) fn alloc_const(
+        &self,
+        value: impl Into<UntypedValue>,
+    ) -> Result<ConstRef, TranslationError> {
+        self.inner.alloc_const(value.into())
+    }
+
     /// Allocates a new uninitialized [`CompiledFunc`] to the [`Engine`].
     ///
     /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
     pub(super) fn alloc_func(&self) -> CompiledFunc {
         self.inner.alloc_func()
+    }
+
+    /// Allocates a new uninitialized [`CompiledFunc`] to the [`Engine`].
+    ///
+    /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
+    pub(super) fn alloc_func_2(&self) -> CompiledFunc {
+        self.inner.alloc_func_2()
     }
 
     /// Initializes the uninitialized [`CompiledFunc`] for the [`Engine`].
@@ -187,6 +210,38 @@ impl Engine {
             .init_func(func, len_locals, local_stack_height, instrs)
     }
 
+    /// Initializes the uninitialized [`CompiledFunc`] for the [`Engine`].
+    ///
+    /// # Panics
+    ///
+    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
+    /// - If `func` refers to an already initialized [`CompiledFunc`].
+    fn init_func_2<I>(
+        &self,
+        func: CompiledFunc,
+        len_registers: u16,
+        len_results: u16,
+        func_locals: FuncLocalConstsIter,
+        instrs: I,
+    ) where
+        I: IntoIterator<Item = Instruction2>,
+    {
+        self.inner
+            .init_func_2(func, len_registers, len_results, func_locals, instrs)
+    }
+
+    /// Resolves the [`CompiledFuncEntity`] for [`CompiledFunc`] and applies `f` to it.
+    ///
+    /// # Panics
+    ///
+    /// If [`CompiledFunc`] is invalid for [`Engine`].
+    pub(super) fn resolve_func_2<F, R>(&self, func: CompiledFunc, f: F) -> R
+    where
+        F: FnOnce(&CompiledFuncEntity) -> R,
+    {
+        self.inner.resolve_func_2(func, f)
+    }
+
     /// Resolves the [`CompiledFunc`] to the underlying `wasmi` bytecode instructions.
     ///
     /// # Note
@@ -205,6 +260,42 @@ impl Engine {
         index: usize,
     ) -> Option<Instruction> {
         self.inner.resolve_instr(func_body, index)
+    }
+
+    /// Resolves the [`CompiledFunc`] to the underlying `wasmi` bytecode instructions.
+    ///
+    /// # Note
+    ///
+    /// - This is a variant of [`Engine::resolve_instr`] that returns register
+    ///   machine based bytecode instructions.
+    /// - This API is mainly intended for unit testing purposes and shall not be used
+    ///   outside of this context. The function bodies are intended to be data private
+    ///   to the `wasmi` interpreter.
+    ///
+    /// # Panics
+    ///
+    /// - If the [`CompiledFunc`] is invalid for the [`Engine`].
+    /// - If register machine bytecode translation is disabled.
+    #[cfg(test)]
+    pub(crate) fn resolve_instr_2(&self, func: CompiledFunc, index: usize) -> Option<Instruction2> {
+        self.inner.resolve_instr_2(func, index)
+    }
+
+    /// Resolves the function local constant of [`CompiledFunc`] at `index` if any.
+    ///
+    /// # Note
+    ///
+    /// This API is intended for unit testing purposes and shall not be used
+    /// outside of this context. The function bodies are intended to be data
+    /// private to the `wasmi` interpreter.
+    ///
+    /// # Panics
+    ///
+    /// - If the [`CompiledFunc`] is invalid for the [`Engine`].
+    /// - If register machine bytecode translation is disabled.
+    #[cfg(test)]
+    fn get_func_const_2(&self, func: CompiledFunc, index: usize) -> Option<UntypedValue> {
+        self.inner.get_func_const_2(func, index)
     }
 
     /// Executes the given [`Func`] with parameters `params`.
@@ -341,6 +432,12 @@ pub struct EngineInner {
 pub struct EngineStacks {
     /// Stacks to be (re)used.
     stacks: Vec<Stack>,
+    /// Stacks to be (re)used.
+    ///
+    /// # Note
+    ///
+    /// These are the stack used by the register-machine `wasmi` implementation.
+    stacks2: Vec<Stack2>,
     /// Stack limits for newly constructed engine stacks.
     limits: StackLimits,
     /// How many stacks should be kept for reuse at most.
@@ -352,6 +449,7 @@ impl EngineStacks {
     pub fn new(config: &Config) -> Self {
         Self {
             stacks: Vec::new(),
+            stacks2: Vec::new(),
             limits: config.stack_limits(),
             keep: config.cached_stacks(),
         }
@@ -365,10 +463,25 @@ impl EngineStacks {
         }
     }
 
+    /// Reuse or create a new [`Stack`] if none was available.
+    pub fn reuse_or_new_2(&mut self) -> Stack2 {
+        match self.stacks2.pop() {
+            Some(stack) => stack,
+            None => Stack2::new(self.limits),
+        }
+    }
+
     /// Disose and recycle the `stack`.
     pub fn recycle(&mut self, stack: Stack) {
         if !stack.is_empty() && self.stacks.len() < self.keep {
             self.stacks.push(stack);
+        }
+    }
+
+    /// Disose and recycle the `stack`.
+    pub fn recycle_2(&mut self, stack: Stack2) {
+        if !stack.is_empty() && self.stacks2.len() < self.keep {
+            self.stacks2.push(stack);
         }
     }
 }
@@ -393,6 +506,19 @@ impl EngineInner {
         self.res.write().func_types.alloc_func_type(func_type)
     }
 
+    /// Resolves a deduplicated function type into a [`FuncType`] entity.
+    ///
+    /// # Panics
+    ///
+    /// - If the deduplicated function type is not owned by the engine.
+    /// - If the deduplicated function type cannot be resolved to its entity.
+    fn resolve_func_type<F, R>(&self, func_type: &DedupFuncType, f: F) -> R
+    where
+        F: FnOnce(&FuncType) -> R,
+    {
+        f(self.res.read().func_types.resolve_func_type(func_type))
+    }
+
     /// Allocates a new constant value to the [`EngineInner`].
     ///
     /// # Errors
@@ -407,6 +533,13 @@ impl EngineInner {
     /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
     fn alloc_func(&self) -> CompiledFunc {
         self.res.write().code_map.alloc_func()
+    }
+
+    /// Allocates a new uninitialized [`CompiledFunc`] to the [`EngineInner`].
+    ///
+    /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
+    fn alloc_func_2(&self) -> CompiledFunc {
+        self.res.write().code_map_2.alloc_func()
     }
 
     /// Initializes the uninitialized [`CompiledFunc`] for the [`EngineInner`].
@@ -430,11 +563,38 @@ impl EngineInner {
             .init_func(func, len_locals, local_stack_height, instrs)
     }
 
-    fn resolve_func_type<F, R>(&self, func_type: &DedupFuncType, f: F) -> R
-    where
-        F: FnOnce(&FuncType) -> R,
+    /// Initializes the uninitialized [`CompiledFunc`] for the [`EngineInner`].
+    ///
+    /// # Panics
+    ///
+    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
+    /// - If `func` refers to an already initialized [`CompiledFunc`].
+    fn init_func_2<I>(
+        &self,
+        func: CompiledFunc,
+        len_registers: u16,
+        len_results: u16,
+        func_locals: FuncLocalConstsIter,
+        instrs: I,
+    ) where
+        I: IntoIterator<Item = Instruction2>,
     {
-        f(self.res.read().func_types.resolve_func_type(func_type))
+        self.res
+            .write()
+            .code_map_2
+            .init_func(func, len_registers, len_results, func_locals, instrs)
+    }
+
+    /// Resolves the [`CompiledFuncEntity`] for [`CompiledFunc`] and applies `f` to it.
+    ///
+    /// # Panics
+    ///
+    /// If [`CompiledFunc`] is invalid for [`Engine`].
+    pub(super) fn resolve_func_2<F, R>(&self, func: CompiledFunc, f: F) -> R
+    where
+        F: FnOnce(&CompiledFuncEntity) -> R,
+    {
+        f(self.res.read().code_map_2.get(func))
     }
 
     #[cfg(test)]
@@ -446,7 +606,65 @@ impl EngineInner {
             .copied()
     }
 
+    #[cfg(test)]
+    pub(crate) fn resolve_instr_2(&self, func: CompiledFunc, index: usize) -> Option<Instruction2> {
+        self.res
+            .read()
+            .code_map_2
+            .get(func)
+            .instrs()
+            .get(index)
+            .copied()
+    }
+
+    #[cfg(test)]
+    fn get_func_const_2(&self, func: CompiledFunc, index: usize) -> Option<UntypedValue> {
+        // Function local constants are stored in reverse order of their indices since
+        // they are allocated in reverse order to their absolute indices during function
+        // translation. That is why we need to access them in reverse order.
+        self.res
+            .read()
+            .code_map_2
+            .get(func)
+            .consts()
+            .iter()
+            .rev()
+            .nth(index)
+            .copied()
+    }
+
+    /// Executes the given [`Func`] with the given `params` and returns the `results`.
+    ///
+    /// Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
+    ///
+    /// # Errors
+    ///
+    /// If the Wasm execution traps or runs out of resources.
     fn execute_func<T, Results>(
+        &self,
+        ctx: StoreContextMut<T>,
+        func: &Func,
+        params: impl CallParams,
+        results: Results,
+    ) -> Result<<Results as CallResults>::Results, Trap>
+    where
+        Results: CallResults,
+    {
+        match self.config().engine_backend() {
+            EngineBackend::StackMachine => self.execute_func_stackmach(ctx, func, params, results),
+            EngineBackend::RegisterMachine => self.execute_func_regmach(ctx, func, params, results),
+        }
+    }
+
+    /// Executes the given [`Func`] with the given `params` and returns the `results`.
+    ///
+    /// - Uses the `wasmi` stack-machine based engine backend.
+    /// - Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
+    ///
+    /// # Errors
+    ///
+    /// If the Wasm execution traps or runs out of resources.
+    fn execute_func_stackmach<T, Results>(
         &self,
         ctx: StoreContextMut<T>,
         func: &Func,
@@ -550,6 +768,8 @@ impl EngineInner {
 pub struct EngineResources {
     /// Stores all Wasm function bodies that the interpreter is aware of.
     code_map: CodeMap,
+    /// Stores information about all compiled functions.
+    code_map_2: CodeMap2,
     /// A pool of reusable, deduplicated constant values.
     const_pool: ConstPool,
     /// Deduplicated function types.
@@ -567,48 +787,10 @@ impl EngineResources {
         let engine_idx = EngineIdx::new();
         Self {
             code_map: CodeMap::default(),
+            code_map_2: CodeMap2::default(),
             const_pool: ConstPool::default(),
             func_types: FuncTypeRegistry::new(engine_idx),
         }
-    }
-}
-
-/// Either a Wasm trap or a host trap with its originating host [`Func`].
-#[derive(Debug)]
-enum TaggedTrap {
-    /// The trap is originating from Wasm.
-    Wasm(Trap),
-    /// The trap is originating from a host function.
-    Host { host_func: Func, host_trap: Trap },
-}
-
-impl TaggedTrap {
-    /// Creates a [`TaggedTrap`] from a host error.
-    pub fn host(host_func: Func, host_trap: Trap) -> Self {
-        Self::Host {
-            host_func,
-            host_trap,
-        }
-    }
-
-    /// Returns the [`Trap`] of the [`TaggedTrap`].
-    pub fn into_trap(self) -> Trap {
-        match self {
-            TaggedTrap::Wasm(trap) => trap,
-            TaggedTrap::Host { host_trap, .. } => host_trap,
-        }
-    }
-}
-
-impl From<Trap> for TaggedTrap {
-    fn from(trap: Trap) -> Self {
-        Self::Wasm(trap)
-    }
-}
-
-impl From<TrapCode> for TaggedTrap {
-    fn from(trap_code: TrapCode) -> Self {
-        Self::Wasm(trap_code.into())
     }
 }
 
@@ -656,9 +838,10 @@ impl<'engine> EngineExecutor<'engine> {
             }
             FuncEntity::Host(host_func) => {
                 let host_func = *host_func;
-                self.stack.call_host_as_root(
+                self.stack.call_host(
                     ctx.as_context_mut(),
                     host_func,
+                    None,
                     &self.res.func_types,
                 )?;
             }
@@ -742,7 +925,7 @@ impl<'engine> EngineExecutor<'engine> {
                         FuncEntity::Wasm(_) => unreachable!("`func` must be a host function"),
                         FuncEntity::Host(host_func) => *host_func,
                     };
-                    let result = self.stack.call_host_impl(
+                    let result = self.stack.call_host(
                         ctx.as_context_mut(),
                         host_func,
                         Some(&instance),

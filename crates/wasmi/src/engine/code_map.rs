@@ -8,6 +8,18 @@ use wasmi_arena::ArenaIndex;
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct CompiledFunc(u32);
 
+impl CompiledFunc {
+    /// Creates a new [`CompiledFunc`] from the given `u32` index.
+    ///
+    /// # Note
+    ///
+    /// This is a test-only API and not meant for code outside of tests.
+    #[cfg(test)]
+    pub fn from_u32(index: u32) -> Self {
+        Self(index)
+    }
+}
+
 impl ArenaIndex for CompiledFunc {
     fn into_usize(self) -> usize {
         self.0 as usize
@@ -197,7 +209,7 @@ impl CodeMap {
         &self.headers[func_body.into_usize()]
     }
 
-    /// Resolves the instruction at `index` of the compiled [`CompiledFunc`].
+    /// Resolves the instruction at `index` of the [`CompiledFunc`].
     #[cfg(test)]
     pub fn get_instr(&self, func_body: CompiledFunc, index: usize) -> Option<&Instruction> {
         let header = self.header(func_body);
@@ -212,7 +224,7 @@ impl CodeMap {
     /// This is important to synthesize how many instructions there are in
     /// the function referred to by [`CompiledFunc`].
     #[cfg(test)]
-    pub fn instr_end(&self, func_body: CompiledFunc) -> usize {
+    fn instr_end(&self, func_body: CompiledFunc) -> usize {
         self.headers
             .get(func_body.into_usize() + 1)
             .map(|header| header.iref.to_usize())

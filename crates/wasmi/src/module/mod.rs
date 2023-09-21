@@ -35,6 +35,7 @@ pub(crate) use self::{
     data::{DataSegment, DataSegmentKind},
     element::{ElementSegment, ElementSegmentItems, ElementSegmentKind},
     init_expr::ConstExpr,
+    utils::WasmiValueType,
 };
 use crate::{
     engine::{CompiledFunc, DedupFuncType},

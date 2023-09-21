@@ -161,6 +161,13 @@ where
     }
 }
 
+/// The [`Config`] to use for these tests.
+fn test_config() -> Config {
+    let mut config = Config::default();
+    config.set_engine_backend(EngineBackend::StackMachine);
+    config
+}
+
 /// Asserts that the given `wasm` bytes yield functions with expected instructions.
 ///
 /// Uses a default [`Config`] for the tests.
@@ -175,7 +182,7 @@ where
     T: IntoIterator<Item = Instruction>,
     <T as IntoIterator>::IntoIter: ExactSizeIterator,
 {
-    assert_func_bodies_with_config(&Config::default(), wasm_bytes, expected)
+    assert_func_bodies_with_config(&test_config(), wasm_bytes, expected)
 }
 
 /// Asserts that the given `wasm` bytes yield functions with expected instructions.
@@ -194,6 +201,7 @@ where
 {
     let mut config = Config::default();
     config.consume_fuel(true);
+    config.set_engine_backend(EngineBackend::StackMachine);
     assert_func_bodies_with_config(&config, wasm_bytes, expected)
 }
 
@@ -743,7 +751,7 @@ fn wabt_example() {
         (module
             (func (export "call") (param i32) (result i32)
                 block $exit
-                    get_local 0
+                    local.get 0
                     br_if $exit
                     i32.const 1
                     return

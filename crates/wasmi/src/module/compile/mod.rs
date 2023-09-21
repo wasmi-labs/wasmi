@@ -1,7 +1,7 @@
 pub use self::block_type::BlockType;
 use super::{parser::ReusableAllocations, FuncIdx, ModuleResources};
 use crate::{
-    engine::{CompiledFunc, FuncBuilder, FuncTranslatorAllocations},
+    engine::{ChosenFuncTranslatorAllocations, CompiledFunc, FuncBuilder},
     errors::ModuleError,
 };
 use wasmparser::{FuncValidator, FunctionBody, ValidatorResources};
@@ -23,13 +23,21 @@ mod block_type;
 /// If the function body fails to validate.
 pub fn translate<'parser>(
     func: FuncIdx,
-    compiled_func: CompiledFunc,
+    (compiled_func, compiled_func_2): (CompiledFunc, CompiledFunc),
     func_body: FunctionBody<'parser>,
     validator: FuncValidator<ValidatorResources>,
     res: ModuleResources<'parser>,
-    allocations: FuncTranslatorAllocations,
+    allocations: ChosenFuncTranslatorAllocations,
 ) -> Result<ReusableAllocations, ModuleError> {
-    FunctionTranslator::new(func, compiled_func, func_body, validator, res, allocations).translate()
+    FunctionTranslator::new(
+        func,
+        (compiled_func, compiled_func_2),
+        func_body,
+        validator,
+        res,
+        allocations,
+    )?
+    .translate()
 }
 
 /// Translates Wasm bytecode into `wasmi` bytecode for a single Wasm function.
@@ -44,17 +52,24 @@ impl<'parser> FunctionTranslator<'parser> {
     /// Creates a new Wasm to `wasmi` bytecode function translator.
     fn new(
         func: FuncIdx,
-        compiled_func: CompiledFunc,
+        (compiled_func, compiled_func_2): (CompiledFunc, CompiledFunc),
         func_body: FunctionBody<'parser>,
         validator: FuncValidator<ValidatorResources>,
         res: ModuleResources<'parser>,
-        allocations: FuncTranslatorAllocations,
-    ) -> Self {
-        let func_builder = FuncBuilder::new(func, compiled_func, res, validator, allocations);
-        Self {
+        allocations: ChosenFuncTranslatorAllocations,
+    ) -> Result<Self, ModuleError> {
+        let func_builder = FuncBuilder::new(
+            func,
+            compiled_func,
+            compiled_func_2,
+            res,
+            validator,
+            allocations,
+        )?;
+        Ok(Self {
             func_body,
             func_builder,
-        }
+        })
     }
 
     /// Starts translation of the Wasm stream into `wasmi` bytecode.

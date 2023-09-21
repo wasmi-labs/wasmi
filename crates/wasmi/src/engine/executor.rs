@@ -28,6 +28,7 @@ use crate::{
         FuncFrame,
         ValueStack,
     },
+    error::EntityGrowError,
     func::FuncEntity,
     store::ResourceLimiterRef,
     table::TableEntity,
@@ -122,21 +123,6 @@ type WasmStoreOp = fn(
     offset: u32,
     value: UntypedValue,
 ) -> Result<(), TrapCode>;
-
-/// An error that can occur upon `memory.grow` or `table.grow`.
-#[derive(Copy, Clone)]
-pub enum EntityGrowError {
-    /// Usually a [`TrapCode::OutOfFuel`] trap.
-    TrapCode(TrapCode),
-    /// Encountered when `memory.grow` or `table.grow` fails.
-    InvalidGrow,
-}
-
-impl From<TrapCode> for EntityGrowError {
-    fn from(trap_code: TrapCode) -> Self {
-        Self::TrapCode(trap_code)
-    }
-}
 
 /// The WebAssembly specification demands to return this value
 /// if the `memory.grow` or `table.grow` operations fail.

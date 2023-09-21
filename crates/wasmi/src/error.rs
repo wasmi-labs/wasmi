@@ -8,7 +8,7 @@ use super::errors::{
     ModuleError,
     TableError,
 };
-use crate::core::Trap;
+use crate::core::{Trap, TrapCode};
 use core::{fmt, fmt::Display};
 
 /// An error that may occur upon operating on Wasm modules or module instances.
@@ -105,5 +105,26 @@ impl From<FuelError> for Error {
 impl From<FuncError> for Error {
     fn from(error: FuncError) -> Self {
         Self::Func(error)
+    }
+}
+
+/// An error that can occur upon `memory.grow` or `table.grow`.
+#[derive(Copy, Clone)]
+pub enum EntityGrowError {
+    /// Usually a [`TrapCode::OutOfFuel`] trap.
+    TrapCode(TrapCode),
+    /// Encountered when `memory.grow` or `table.grow` fails.
+    InvalidGrow,
+}
+
+impl EntityGrowError {
+    /// The WebAssembly specification demands to return this value
+    /// if the `memory.grow` or `table.grow` operations fail.
+    pub const ERROR_CODE: u32 = u32::MAX;
+}
+
+impl From<TrapCode> for EntityGrowError {
+    fn from(trap_code: TrapCode) -> Self {
+        Self::TrapCode(trap_code)
     }
 }
