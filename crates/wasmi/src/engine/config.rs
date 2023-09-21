@@ -49,7 +49,7 @@ pub enum EngineBackend {
     /// Translate and execute via a stack machine backend.
     #[default]
     StackMachine,
-    /// Translate and execute via a register machine backend.
+    /// Translate and execute via a register machine backend. (⚠️ EXPERIMENTAL & UNSTABLE ⚠️)
     RegisterMachine,
 }
 
