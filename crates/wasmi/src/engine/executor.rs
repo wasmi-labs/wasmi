@@ -451,7 +451,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         load_extend: WasmLoadOp,
     ) -> Result<(), TrapCode> {
         self.sp.try_eval_top(|address| {
-            let memory = self.cache.default_memory_bytes(self.ctx);
+            let memory = self.cache.default_memory_bytes();
             let value = load_extend(memory, address, offset.into_inner())?;
             Ok(value)
         })?;
@@ -475,7 +475,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         store_wrap: WasmStoreOp,
     ) -> Result<(), TrapCode> {
         let (address, value) = self.sp.pop2();
-        let memory = self.cache.default_memory_bytes(self.ctx);
+        let memory = self.cache.default_memory_bytes();
         store_wrap(memory, address, offset.into_inner(), value)?;
         self.try_next_instr()
     }
@@ -617,12 +617,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 let header = self.code_map.header(wasm_func.func_body());
                 self.value_stack.prepare_wasm_call(header)?;
                 self.sp = self.value_stack.stack_ptr();
-                self.cache.update_instance(wasm_func.instance());
+                let instance = *wasm_func.instance();
+                self.cache.update_instance(self.ctx, &instance);
                 self.ip = self.code_map.instr_ptr(header.iref());
                 Ok(CallOutcome::Continue)
             }
             FuncEntity::Host(_host_func) => {
-                self.cache.reset();
+                self.cache.reset(self.ctx);
                 Ok(CallOutcome::Call {
                     host_func: *func,
                     instance: *self.cache.instance(),
@@ -665,7 +666,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         match self.call_stack.pop() {
             Some(caller) => {
                 self.ip = caller.ip();
-                self.cache.update_instance(caller.instance());
+                self.cache.update_instance(self.ctx, caller.instance());
                 ReturnOutcome::Wasm
             }
             None => ReturnOutcome::Host,
@@ -1110,7 +1111,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 // The `memory.grow` operation might have invalidated the cached
                 // linear memory so we need to reset it in order for the cache to
                 // reload in case it is used again.
-                this.cache.reset_default_memory_bytes();
+                this.cache.reset_default_memory_bytes(this.ctx);
                 Ok(new_pages)
             },
         );
@@ -1135,7 +1136,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             |this| {
                 let memory = this
                     .cache
-                    .default_memory_bytes(this.ctx)
+                    .default_memory_bytes()
                     .get_mut(offset..)
                     .and_then(|memory| memory.get_mut(..n))
                     .ok_or(TrapCode::MemoryOutOfBounds)?;
@@ -1156,7 +1157,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.consume_fuel_with(
             |costs| costs.fuel_for_bytes(n as u64),
             |this| {
-                let data = this.cache.default_memory_bytes(this.ctx);
+                let data = this.cache.default_memory_bytes();
                 // These accesses just perform the bounds checks required by the Wasm spec.
                 data.get(src_offset..)
                     .and_then(|memory| memory.get(..n))

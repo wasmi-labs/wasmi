@@ -44,7 +44,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         value: UntypedValue,
         store_wrap: WasmStoreOp,
     ) -> Result<(), TrapCode> {
-        let memory = self.cache.default_memory_bytes(self.ctx);
+        let memory = self.cache.default_memory_bytes();
         store_wrap(memory, address, offset, value)?;
         Ok(())
     }

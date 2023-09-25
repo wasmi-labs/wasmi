@@ -322,7 +322,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             FuncEntity::Wasm(func) => {
                 let instance = *func.instance();
                 self.prepare_compiled_func_call(results, func.func_body(), call_params, call_kind)?;
-                self.cache.update_instance(&instance);
+                self.cache.update_instance(self.ctx, &instance);
                 Ok(CallOutcome::Continue)
             }
             FuncEntity::Host(_host_func) => {
@@ -330,7 +330,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 //       The Wasm spec is not mandating tail behavior for host calls.
                 //
                 // TODO: copy parameters for the host function call
-                self.cache.reset();
+                self.cache.reset(self.ctx);
                 Ok(CallOutcome::Call {
                     results,
                     host_func: *func,

@@ -34,6 +34,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         match self.call_stack.peek() {
             Some(caller) => {
                 Self::init_call_frame_impl(
+                    self.ctx,
                     self.value_stack,
                     &mut self.sp,
                     &mut self.ip,

@@ -845,6 +845,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// The initialization of the [`Executor`] allows for efficient execution.
     fn init_call_frame(&mut self, frame: &CallFrame) {
         Self::init_call_frame_impl(
+            self.ctx,
             self.value_stack,
             &mut self.sp,
             &mut self.ip,
@@ -859,6 +860,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// The initialization of the [`Executor`] allows for efficient execution.
     fn init_call_frame_impl(
+        ctx: &mut StoreInner,
         value_stack: &mut ValueStack,
         sp: &mut ValueStackPtr,
         ip: &mut InstructionPtr,
@@ -867,7 +869,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ) {
         *sp = Self::frame_stack_ptr_impl(value_stack, frame);
         *ip = frame.instr_ptr();
-        cache.update_instance(frame.instance());
+        cache.update_instance(ctx, frame.instance());
     }
 
     /// Consume an amount of fuel specified by `delta` if `exec` succeeds.

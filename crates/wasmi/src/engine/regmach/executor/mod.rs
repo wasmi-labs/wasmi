@@ -113,7 +113,7 @@ impl<'engine> EngineExecutor<'engine> {
             .calls
             .peek()
             .map(CallFrame::instance)
-            .map(InstanceCache::from)
+            .map(|instance| InstanceCache::new(&mut ctx.as_context_mut().store.inner, instance))
             .expect("must have frame on the call stack");
         loop {
             match self.execute_compiled_func(ctx.as_context_mut(), &mut cache)? {

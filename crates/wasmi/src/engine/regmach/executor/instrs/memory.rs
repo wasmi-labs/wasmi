@@ -103,7 +103,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 // The `memory.grow` operation might have invalidated the cached
                 // linear memory so we need to reset it in order for the cache to
                 // reload in case it is used again.
-                this.cache.reset_default_memory_bytes();
+                this.cache.reset_default_memory_bytes(this.ctx);
                 Ok(new_pages)
             },
         );
@@ -241,7 +241,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 let len = len as usize;
                 let src_index = src_index as usize;
                 let dst_index = dst_index as usize;
-                let data = this.cache.default_memory_bytes(this.ctx);
+                let data = this.cache.default_memory_bytes();
                 // These accesses just perform the bounds checks required by the Wasm spec.
                 data.get(src_index..)
                     .and_then(|memory| memory.get(..len))
@@ -373,7 +373,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 let len = len as usize;
                 let memory = this
                     .cache
-                    .default_memory_bytes(this.ctx)
+                    .default_memory_bytes()
                     .get_mut(dst..)
                     .and_then(|memory| memory.get_mut(..len))
                     .ok_or(TrapCode::MemoryOutOfBounds)?;

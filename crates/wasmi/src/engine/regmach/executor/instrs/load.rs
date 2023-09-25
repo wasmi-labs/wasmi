@@ -33,7 +33,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         offset: u32,
         load_extend: WasmLoadOp,
     ) -> Result<(), TrapCode> {
-        let memory = self.cache.default_memory_bytes(self.ctx);
+        let memory = self.cache.default_memory_bytes();
         let loaded_value = load_extend(memory, address, offset)?;
         self.set_register(result, loaded_value);
         Ok(())

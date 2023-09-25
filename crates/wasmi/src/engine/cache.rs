@@ -20,7 +20,7 @@ use wasmi_core::UntypedValue;
 #[repr(C)]
 pub struct InstanceCache {
     /// The bytes of a default linear memory of the currently used [`Instance`].
-    default_memory_bytes: Option<NonNull<[u8]>>,
+    default_memory_bytes: NonNull<[u8]>,
     /// The last accessed global variable value of the currently used [`Instance`].
     last_global: Option<(GlobalIdx, NonNull<UntypedValue>)>,
     /// The current instance in use.
@@ -33,15 +33,18 @@ pub struct InstanceCache {
     last_func: Option<(FuncIdx, Func)>,
 }
 
-impl From<&'_ Instance> for InstanceCache {
-    fn from(instance: &Instance) -> Self {
+impl InstanceCache {
+    /// Create a new [`InstanceCache`].
+    pub fn new(ctx: &mut StoreInner, instance: &Instance) -> Self {
+        let (default_memory, default_memory_bytes) =
+            Self::load_default_memory_and_bytes(ctx, instance);
         Self {
             instance: *instance,
-            default_memory: None,
+            default_memory,
             last_table: None,
             last_func: None,
             last_global: None,
-            default_memory_bytes: None,
+            default_memory_bytes,
         }
     }
 }
@@ -53,25 +56,42 @@ impl InstanceCache {
         &self.instance
     }
 
+    fn load_default_memory_and_bytes(
+        ctx: &mut StoreInner,
+        instance: &Instance,
+    ) -> (Option<Memory>, NonNull<[u8]>) {
+        let default_memory = ctx
+            .resolve_instance(instance)
+            .get_memory(DEFAULT_MEMORY_INDEX);
+        let default_memory_bytes = default_memory
+            .as_ref()
+            .map(|memory| ctx.resolve_memory_mut(memory).data_mut())
+            .unwrap_or_default()
+            .into();
+        (default_memory, default_memory_bytes)
+    }
+
     /// Updates the cached [`Instance`].
     #[cold]
     #[inline]
-    fn set_instance(&mut self, instance: &Instance) {
+    fn set_instance(&mut self, ctx: &mut StoreInner, instance: &Instance) {
+        let (default_memory, default_memory_bytes) =
+            Self::load_default_memory_and_bytes(ctx, instance);
         self.instance = *instance;
-        self.default_memory = None;
+        self.default_memory = default_memory;
         self.last_table = None;
         self.last_func = None;
         self.last_global = None;
-        self.default_memory_bytes = None;
+        self.default_memory_bytes = default_memory_bytes;
     }
 
     /// Updates the currently used instance resetting all cached entities.
     #[inline]
-    pub fn update_instance(&mut self, instance: &Instance) {
+    pub fn update_instance(&mut self, ctx: &mut StoreInner, instance: &Instance) {
         if instance == self.instance() {
             return;
         }
-        self.set_instance(instance);
+        self.set_instance(ctx, instance);
     }
 
     /// Loads the [`DataSegment`] at `index` of the currently used [`Instance`].
@@ -184,23 +204,8 @@ impl InstanceCache {
     ///
     /// This avoids one indirection compared to using the `default_memory`.
     #[inline]
-    pub fn default_memory_bytes<'ctx>(&mut self, ctx: &'ctx mut StoreInner) -> &'ctx mut [u8] {
-        let bytes = match self.default_memory_bytes {
-            Some(ref mut cached) => cached,
-            None => self.load_default_memory_bytes(ctx),
-        };
-        unsafe { bytes.as_mut() }
-    }
-
-    /// Loads and populates the cached default memory instance.
-    ///
-    /// Returns an exclusive reference to the cached default memory.
-    #[cold]
-    #[inline]
-    fn load_default_memory_bytes(&mut self, ctx: &mut StoreInner) -> &mut NonNull<[u8]> {
-        let memory = *self.default_memory(ctx);
-        self.default_memory_bytes
-            .insert(ctx.resolve_memory_mut(&memory).data().into())
+    pub fn default_memory_bytes<'ctx>(&mut self) -> &'ctx mut [u8] {
+        unsafe { self.default_memory_bytes.as_mut() }
     }
 
     /// Clears the cached default memory instance.
@@ -212,8 +217,11 @@ impl InstanceCache {
     /// - It is equally important to reset cached default memory bytes
     ///   when calling a host function since it might call `memory.grow`.
     #[inline]
-    pub fn reset_default_memory_bytes(&mut self) {
-        self.default_memory_bytes = None;
+    pub fn reset_default_memory_bytes(&mut self, ctx: &mut StoreInner) {
+        let (default_memory, default_memory_bytes) =
+            Self::load_default_memory_and_bytes(ctx, &self.instance);
+        self.default_memory = default_memory;
+        self.default_memory_bytes = default_memory_bytes;
         self.last_global = None;
     }
 
@@ -229,8 +237,8 @@ impl InstanceCache {
     ///
     /// [`Store`]: crate::Store
     #[inline]
-    pub fn reset(&mut self) {
-        self.reset_default_memory_bytes();
+    pub fn reset(&mut self, ctx: &mut StoreInner) {
+        self.reset_default_memory_bytes(ctx);
         self.last_global = None;
     }
 
