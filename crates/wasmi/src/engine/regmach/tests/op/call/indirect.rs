@@ -435,15 +435,59 @@ fn test_imm_params_dynamic_index() {
     );
     let result = Register::from_i16(0);
     let results = RegisterSpan::new(result);
-    let params = RegisterSpan::new(Register::from_i16(1)).iter(2);
+    let params = RegisterSpan::new(Register::from_i16(0)).iter(2);
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_imm32(0_i32)])
         .expect_func_instrs([
             Instruction::global_get(Register::from_i16(0), GlobalIdx::from(0)),
-            Instruction::copy_imm32(Register::from_i16(1), 10),
-            Instruction::copy_imm32(Register::from_i16(2), 20),
+            Instruction::copy(Register::from_i16(2), Register::from_i16(0)),
+            Instruction::copy_imm32(Register::from_i16(0), 10),
+            Instruction::copy_imm32(Register::from_i16(1), 20),
             Instruction::call_indirect(results, SignatureIdx::from(0)),
-            Instruction::call_indirect_params(Register::from_i16(0), TableIdx::from(0)),
+            Instruction::call_indirect_params(Register::from_i16(2), TableIdx::from(0)),
+            Instruction::call_params(params, 1),
+            Instruction::return_reg(result),
+        ])
+        .run();
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn regression_issue768() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (type $sig (func (param i32 i32) (result i32)))
+            (table funcref (elem $f))
+            (global $g0 (mut i32) (i32.const 0))
+            (global $g1 (mut i32) (i32.const 1))
+            (func $f (param i32 i32) (result i32)
+                (i32.const 0)
+            )
+            (func (result i32)
+                (call_indirect (type $sig)
+                    (global.get $g0) (i32.const 20) ;; call params
+                    (global.get $g1) ;; index on dynamic register space
+                )
+            )
+        )
+        "#,
+    );
+    let result = Register::from_i16(0);
+    let results = RegisterSpan::new(result);
+    let params = RegisterSpan::new(Register::from_i16(0)).iter(2);
+    TranslationTest::new(wasm)
+        .expect_func_instrs([Instruction::return_imm32(0_i32)])
+        .expect_func_instrs([
+            Instruction::global_get(Register::from_i16(0), GlobalIdx::from(0)),
+            Instruction::global_get(Register::from_i16(1), GlobalIdx::from(1)),
+            // copy parameters and index
+            Instruction::copy(Register::from_i16(2), Register::from_i16(1)),
+            // Instruction::copy(Register::from_i16(0), Register::from_i16(0)), // elided
+            Instruction::copy_imm32(Register::from_i16(1), 20_i32),
+            // indirect call
+            Instruction::call_indirect(results, SignatureIdx::from(0)),
+            Instruction::call_indirect_params(Register::from_i16(2), TableIdx::from(0)),
             Instruction::call_params(params, 1),
             Instruction::return_reg(result),
         ])

@@ -140,23 +140,41 @@ impl RegisterSpanIter {
         self.len() == 0
     }
 
+    /// Returns the [`Register`] with the minimum index of the [`RegisterSpanIter`].
+    fn min_register(&self) -> Register {
+        self.span().head()
+    }
+
+    /// Returns the [`Register`] with the maximum index of the [`RegisterSpanIter`].
+    ///
+    /// # Note
+    ///
+    /// - Returns [`Self::min_register`] in case the [`RegisterSpanIter`] is empty.
+    fn max_register(&self) -> Register {
+        self.clone()
+            .next_back()
+            .unwrap_or_else(|| self.min_register())
+    }
+
+    /// Returns `true` if the [`Register`] is contains in the [`RegisterSpanIter`].
+    pub fn contains(&self, register: Register) -> bool {
+        if self.is_empty() {
+            return false;
+        }
+        let min = self.min_register();
+        let max = self.max_register();
+        min <= register && register <= max
+    }
+
     /// Returns `true` if both `self` and `other` have overlapping [`Register`].
     pub fn is_overlapping(&self, other: &Self) -> bool {
         if self.is_empty() || other.is_empty() {
             return false;
         }
-        let self_min = self.span().head().to_i16();
-        let other_min = other.span().head().to_i16();
-        let self_max = self
-            .clone()
-            .next_back()
-            .expect("self is non empty")
-            .to_i16();
-        let other_max = other
-            .clone()
-            .next_back()
-            .expect("other is non empty")
-            .to_i16();
+        let self_min = self.min_register();
+        let other_min = other.min_register();
+        let self_max = self.max_register();
+        let other_max = other.max_register();
         if self_min < other_min {
             other_min <= self_max
         } else {
