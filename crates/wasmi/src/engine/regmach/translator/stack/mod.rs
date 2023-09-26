@@ -292,6 +292,13 @@ impl ValueStack {
         result[..].reverse()
     }
 
+    /// Removes the `n` top-most [`Provider`] from the [`ValueStack`].
+    pub fn remove_n(&mut self, n: usize) {
+        for _ in 0..n {
+            self.pop();
+        }
+    }
+
     /// Peeks the `n` top-most [`Provider`] from the [`ValueStack`] and store them in `result`.
     ///
     /// # Note
