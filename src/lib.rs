@@ -321,7 +321,7 @@ pub mod nan_preserving_float {
 /// Deserialized module prepared for instantiation.
 pub struct Module {
     code_map: Vec<isa::Instructions>,
-    module: parity_wasm::elements::Module,
+    pub module: parity_wasm::elements::Module,
 }
 
 impl Module {

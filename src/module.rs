@@ -247,6 +247,7 @@ impl ModuleInstance {
         tracer: Option<Rc<RefCell<Tracer>>>,
     ) -> Result<ModuleRef, Error> {
         let module = loaded_module.module();
+
         let instance = ModuleRef(Rc::new(ModuleInstance::default()));
 
         for &Type::Function(ref ty) in module.type_section().map(|ts| ts.types()).unwrap_or(&[]) {
@@ -436,6 +437,20 @@ impl ModuleInstance {
                 }
             };
             instance.insert_export(field, extern_val);
+        }
+
+        if let Some(tracer) = tracer {
+            if let Some(name_section) = module.names_section() {
+                let mut tracer = tracer.borrow_mut();
+
+                name_section.functions().map(|function_names| {
+                    for (function_index, name) in function_names.names().iter() {
+                        tracer
+                            .function_lookup_name
+                            .insert(function_index, name.to_string());
+                    }
+                });
+            }
         }
 
         Ok(instance)

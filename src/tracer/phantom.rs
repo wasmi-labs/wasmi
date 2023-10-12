@@ -68,6 +68,7 @@ impl Tracer {
             self.inc_counter();
             return;
         }
+        let function_name = self.lookup_function_name(fid);
 
         let last_jump_eid = self.last_jump_eid();
         let fid = self.lookup_function(callee_func_ref);
@@ -92,6 +93,7 @@ impl Tracer {
             self.etable.push(
                 InstructionTableEntry {
                     fid,
+                    function_name: function_name.clone(),
                     iid,
                     opcode: inst.next().unwrap().into(&self.function_desc),
                 },
@@ -106,6 +108,7 @@ impl Tracer {
             self.etable.push(
                 InstructionTableEntry {
                     fid,
+                    function_name: function_name.clone(),
                     iid,
                     opcode: inst.next().unwrap().into(&self.function_desc),
                 },
@@ -132,6 +135,7 @@ impl Tracer {
                 self.etable.push(
                     InstructionTableEntry {
                         fid,
+                        function_name: function_name.clone(),
                         iid,
                         opcode: inst.next().unwrap().into(&self.function_desc),
                     },
@@ -151,6 +155,7 @@ impl Tracer {
         self.etable.push(
             InstructionTableEntry {
                 fid,
+                function_name,
                 iid,
                 opcode: inst.next().unwrap().into(&self.function_desc),
             },

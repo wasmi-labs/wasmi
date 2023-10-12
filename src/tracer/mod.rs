@@ -43,6 +43,7 @@ pub struct Tracer {
     pub configure_table: ConfigureTable,
     type_of_func_ref: Vec<(FuncRef, u32)>,
     function_lookup: Vec<(FuncRef, u32)>,
+    pub(crate) function_lookup_name: HashMap<u32, String>,
     pub(crate) last_jump_eid: Vec<u32>,
     pub(crate) function_desc: HashMap<u32, FuncDesc>,
     pub host_function_index_lookup: HashMap<usize, HostFunctionDesc>,
@@ -74,6 +75,7 @@ impl Tracer {
             type_of_func_ref: vec![],
             function_lookup: vec![],
             function_desc: Default::default(),
+            function_lookup_name: Default::default(),
             host_function_index_lookup: host_plugin_lookup,
             static_jtable_entries: vec![],
             phantom_functions: phantom_functions.clone(),
@@ -284,6 +286,7 @@ impl Tracer {
             loop {
                 if let Some(func) = module_instance.func_by_index(func_index) {
                     let funcdesc = self.function_desc.get(&func_index).unwrap();
+                    let function_name = self.lookup_function_name(func_index);
 
                     if self.is_phantom_function(&func) {
                         let instructions = PhantomFunction::build_phantom_function_instructions(
@@ -292,8 +295,12 @@ impl Tracer {
                         );
 
                         for (iid, inst) in instructions.into_iter().enumerate() {
-                            self.itable
-                                .push(func_index, iid as u32, inst.into(&self.function_desc))
+                            self.itable.push(
+                                func_index,
+                                function_name.clone(),
+                                iid as u32,
+                                inst.into(&self.function_desc),
+                            )
                         }
                     } else {
                         if let Some(body) = func.body() {
@@ -304,6 +311,7 @@ impl Tracer {
                                 if let Some(instruction) = iter.next() {
                                     let _ = self.itable.push(
                                         func_index,
+                                        function_name.clone(),
                                         pc,
                                         instruction.into(&self.function_desc),
                                     );
@@ -319,6 +327,14 @@ impl Tracer {
                     break;
                 }
             }
+        }
+    }
+
+    pub fn lookup_function_name(&self, function: u32) -> String {
+        if let Some(name) = self.function_lookup_name.get(&function) {
+            name.to_owned()
+        } else {
+            function.to_string()
         }
     }
 
