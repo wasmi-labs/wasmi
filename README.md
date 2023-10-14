@@ -64,7 +64,7 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 | [`tail-calls`] | ✅ | Since version `0.28.0`. [(#683)] |
 | [`extended-const`] | ✅ | Since version `0.29.0`. [(#707)] |
 | | |
-| [WASI] | 🟡 | Experimental support via the [`wasmi_wasi` crate] or the `wasmi` CLI application. |
+| [WASI] | 👨‍🔬 | Experimental support via the [`wasmi_wasi` crate] or the `wasmi` CLI application. |
 
 [`mutable-global`]: https://github.com/WebAssembly/mutable-global
 [`saturating-float-to-int`]: https://github.com/WebAssembly/nontrapping-float-to-int-conversions
