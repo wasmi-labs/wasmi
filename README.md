@@ -63,6 +63,11 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 | [`simd`] | ❌ | Unlikely to be supported. |
 | [`tail-calls`] | ✅ | Since version `0.28.0`. [(#683)] |
 | [`extended-const`] | ✅ | Since version `0.29.0`. [(#707)] |
+| [`function-references`] | 📅 | Planned but not yet implemented. [(#774)] |
+| [`gc`] | 📅 | Planned but not yet implemented. [(#775)] |
+| [`multi-memory`] | 📅 | Planned but not yet implemented. [(#776)] |
+| [`threads`] | 📅 | Planned but not yet implemented. [(#777)] |
+| [`relaxed-simd`] | ❌ | Unlikely to be supported since `simd` is unlikely to be supported. |
 | | |
 | [WASI] | 👨‍🔬 | Experimental support via the [`wasmi_wasi` crate] or the `wasmi` CLI application. |
 
@@ -75,6 +80,11 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 [`simd` ]: https://github.com/webassembly/simd
 [`tail-calls`]: https://github.com/WebAssembly/tail-call
 [`extended-const`]: https://github.com/WebAssembly/extended-const
+[`function-references`]: https://github.com/WebAssembly/function-references
+[`gc`]: https://github.com/WebAssembly/gc
+[`multi-memory`]: https://github.com/WebAssembly/multi-memory
+[`threads`]: https://github.com/WebAssembly/threads
+[`relaxed-simd`]: https://github.com/WebAssembly/relaxed-simd
 
 [WASI]: https://github.com/WebAssembly/WASI
 [`wasmi_wasi` crate]: ./crates/wasi
