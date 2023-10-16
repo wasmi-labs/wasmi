@@ -42,7 +42,7 @@ impl From<TypedValue> for UntypedValue {
 ///
 /// # Note
 ///
-/// We explicitely do not make use of the existing [`Value`]
+/// We explicitly do not make use of the existing [`Value`]
 /// abstraction since [`Value`] is optimized towards being a
 /// user facing type whereas [`TypedValue`] is focusing on
 /// performance and efficiency in computations.

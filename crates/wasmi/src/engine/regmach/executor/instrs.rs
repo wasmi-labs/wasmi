@@ -1112,7 +1112,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// # Note
     ///
     /// This includes [`Instruction`] variants such as [`Instruction::TableIdx`]
-    /// that primarily carry paramters for actually executable [`Instruction`].
+    /// that primarily carry parameters for actually executable [`Instruction`].
     #[inline(always)]
     fn invalid_instruction_word(&mut self) -> Result<(), TrapCode> {
         self.execute_trap(TrapCode::UnreachableCodeReached)

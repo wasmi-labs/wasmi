@@ -208,7 +208,7 @@ impl InstanceCache {
     /// # Note
     ///
     /// - This is important when operations such as `memory.grow` have
-    ///   occured that might have invalidated the cached memory.
+    ///   occurred that might have invalidated the cached memory.
     /// - It is equally important to reset cached default memory bytes
     ///   when calling a host function since it might call `memory.grow`.
     #[inline]

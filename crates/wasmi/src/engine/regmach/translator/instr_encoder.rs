@@ -561,7 +561,7 @@ impl InstrEncoder {
         Ok(())
     }
 
-    /// Encodes the call parameters of a `wasmi` `call` instruction if neccessary.
+    /// Encodes the call parameters of a `wasmi` `call` instruction if necessary.
     ///
     /// Returns the contiguous [`RegisterSpanIter`] that makes up the call parameters post encoding.
     ///
@@ -589,7 +589,7 @@ impl InstrEncoder {
         Ok(copy_results)
     }
 
-    /// Encodes the call parameters of a `wasmi` `call_indirect` instruction if neccessary.
+    /// Encodes the call parameters of a `wasmi` `call_indirect` instruction if necessary.
     ///
     /// Returns the contiguous [`RegisterSpanIter`] that makes up the call parameters post encoding.
     ///
