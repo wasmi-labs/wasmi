@@ -23,7 +23,7 @@ use crate::engine::regmach::translator::InstrEncoder;
 /// 2. `alloc`:
 ///     The allocation phase drives the allocation of dynamically
 ///     used registers. These are registers that are not function
-///     inputs or registered local variables that are implicitely
+///     inputs or registered local variables that are implicitly
 ///     used during instruction execution, for example to hold
 ///     and accumulate computation results temporarily.
 /// 3. `defrag`:

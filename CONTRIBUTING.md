@@ -3,7 +3,7 @@
 First of all, thank you for taking your time to contribute to `wasmi`!
 
 Reading these contribution guidelines is your best initial step towards
-sucessfully driving the development of `wasmi` forward with your own ideas
+successfully driving the development of `wasmi` forward with your own ideas
 and use cases.
 
 ## Code of Conduct

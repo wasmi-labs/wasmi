@@ -310,7 +310,7 @@ fn module_compilation_succeeds(
     match context.compile_and_instantiate(module) {
         Ok(instance) => instance,
         Err(error) => panic!(
-            "{}: failed to instantiate module but should have suceeded: {}",
+            "{}: failed to instantiate module but should have succeeded: {}",
             context.spanned(span),
             error
         ),

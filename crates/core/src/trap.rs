@@ -36,7 +36,7 @@ enum TrapReason {
     ///
     /// This is useful for some WASI functions.
     I32Exit(i32),
-    /// An error decribed by a display message.
+    /// An error described by a display message.
     Message(Box<str>),
     /// Traps and errors during host execution.
     Host(Box<dyn HostError>),

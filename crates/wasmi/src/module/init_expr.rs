@@ -291,7 +291,7 @@ impl ConstExpr {
         }
         reader
             .ensure_end()
-            .expect("due to Wasm validation this is guaranteed to suceed");
+            .expect("due to Wasm validation this is guaranteed to succeed");
         let op = stack
             .pop()
             .expect("due to Wasm validation must have one operator on the stack");
