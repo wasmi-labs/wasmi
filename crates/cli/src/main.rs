@@ -79,7 +79,7 @@ fn print_remaining_fuel(args: &Args, ctx: &Context) {
 ///
 /// # Errors
 ///
-/// If too many or too few function arguemnts were given to the invoked function.
+/// If too many or too few function arguments were given to the invoked function.
 fn typecheck_args(func_name: &str, func_ty: &FuncType, args: &[Value]) -> Result<(), Error> {
     if func_ty.params().len() != args.len() {
         bail!(
