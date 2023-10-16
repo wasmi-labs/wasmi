@@ -441,7 +441,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 panic!("missing signature for call_indirect at index: {func_type:?}")
             });
         if actual_signature != expected_signature {
-            return Err(TrapCode::BadSignature).map_err(Into::into);
+            return Err(TrapCode::BadSignature);
         }
         self.execute_call_imported_impl(results, func, call_params, call_kind)
     }

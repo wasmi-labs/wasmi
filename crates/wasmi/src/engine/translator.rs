@@ -24,7 +24,7 @@ type FuncValidator = wasmparser::FuncValidator<wasmparser::ValidatorResources>;
 ///
 /// # Note
 ///
-/// This is chosen via [`Config`](crate::Config) at [`Engine`](crate::Engine) creation.
+/// This is chosen via [`Config`](crate::Config) at [`Engine`] creation.
 enum ChosenFuncTranslator<'parser> {
     /// The function translator of `wasmi`'s [`EngineBackend::StackMachine`].
     StackMachine(StackMachineFuncTranslator<'parser>),
@@ -36,7 +36,7 @@ enum ChosenFuncTranslator<'parser> {
 ///
 /// # Note
 ///
-/// This is chosen via [`Config`](crate::Config) at [`Engine`](crate::Engine) creation.
+/// This is chosen via [`Config`](crate::Config) at [`Engine`] creation.
 pub struct ChosenFuncTranslatorAllocations {
     /// The actual chosen function translation allocations.
     inner: ChosenFuncTranslatorAllocationsInner,

@@ -115,8 +115,7 @@ pub struct Store<T> {
     trampolines: Arena<TrampolineIdx, TrampolineEntity<T>>,
     /// User provided host data owned by the [`Store`].
     data: T,
-    /// User provided hook to retrieve a
-    /// [`ResourceLimiter`](crate::ResourceLimiter).
+    /// User provided hook to retrieve a [`ResourceLimiter`].
     limiter: Option<ResourceLimiterQuery<T>>,
 }
 

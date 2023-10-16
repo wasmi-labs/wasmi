@@ -7,7 +7,7 @@
                     (local.get $n)
                     (i32.const 0)
                 )
-                (unreachable) ;; trap if $n <= 0
+                (then (unreachable)) ;; trap if $n <= 0
             )
             (local.set $i (local.get $n)) ;; i = n
             (loop $continue
