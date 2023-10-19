@@ -30,7 +30,7 @@ impl IMTable {
         })
     }
 
-    pub fn finalized(&self) -> InitMemoryTable {
-        InitMemoryTable::new(self.0.clone())
+    pub fn finalized(&self, k: u32) -> InitMemoryTable {
+        InitMemoryTable::new(self.0.clone(), k)
     }
 }
