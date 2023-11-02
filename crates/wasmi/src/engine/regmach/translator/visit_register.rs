@@ -78,6 +78,9 @@ impl VisitInputRegisters for Instruction {
             Instruction::CopySpan { results: _, values, len: _ } => {
                 values.visit_input_registers(f);
             }
+            Instruction::CopySpanRev { results: _, values, len: _ } => {
+                values.visit_input_registers(f);
+            }
             Instruction::CallParams(call_params) => {
                 call_params.params.visit_input_registers(f);
             }
