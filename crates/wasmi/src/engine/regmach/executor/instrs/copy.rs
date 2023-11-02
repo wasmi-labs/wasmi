@@ -51,10 +51,18 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes an [`Instruction::CopySpan`].
     #[inline(always)]
     pub fn execute_copy_span(&mut self, results: RegisterSpan, values: RegisterSpan, len: u16) {
-        let len = len as usize;
-        let results = results.iter(len);
-        let values = values.iter(len);
-        for (result, value) in results.zip(values) {
+        let results = results.iter_u16(len);
+        let values = values.iter_u16(len);
+        self.execute_copy_span_impl(results, values)
+    }
+
+    /// Executes either [`Instruction::CopySpan`] or [`Instruction::CopySpanRev`].
+    fn execute_copy_span_impl(
+        &mut self,
+        results: impl IntoIterator<Item = Register>,
+        values: impl IntoIterator<Item = Register>,
+    ) {
+        for (result, value) in results.into_iter().zip(values.into_iter()) {
             let value = self.get_register(value);
             self.set_register(result, value);
         }

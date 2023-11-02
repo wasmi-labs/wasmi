@@ -360,8 +360,8 @@ impl InstrEncoder {
                             values,
                             len,
                         } => {
-                            let mut last_results = results.iter(len as usize);
-                            let mut last_values = values.iter(len as usize);
+                            let mut last_results = results.iter_u16(len);
+                            let mut last_values = values.iter_u16(len);
                             let last_result = last_results
                                 .next_back()
                                 .expect("CopySpan must not be empty");
@@ -485,7 +485,7 @@ impl InstrEncoder {
                     values,
                     len,
                 } => {
-                    for value in values.iter(*len as usize) {
+                    for value in values.iter_u16(*len) {
                         if value.within_range(start..end) {
                             return true;
                         }
