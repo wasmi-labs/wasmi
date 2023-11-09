@@ -233,11 +233,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     values,
                     len,
                 } => self.execute_copy_span(results, values, len),
-                Instr::CopySpanRev {
-                    results,
-                    values,
-                    len,
-                } => self.execute_copy_span_rev(results, values, len),
                 Instr::CallParams(_) => self.invalid_instruction_word()?,
                 Instr::CallIndirectParams(_) => self.invalid_instruction_word()?,
                 Instr::CallIndirectParamsImm16(_) => self.invalid_instruction_word()?,

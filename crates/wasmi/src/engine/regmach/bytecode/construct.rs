@@ -312,16 +312,6 @@ impl Instruction {
         }
     }
 
-    /// Creates a new [`Instruction::CopySpanRev`] copying multiple consecutive values in reverse order.
-    pub fn copy_span_rev(results: RegisterSpan, values: RegisterSpan, len: u16) -> Self {
-        debug_assert!(!results.iter_u16(len).is_overlapping(&values.iter_u16(len)));
-        Self::CopySpanRev {
-            results,
-            values,
-            len,
-        }
-    }
-
     /// Creates a new [`Instruction::GlobalGet`].
     pub fn global_get(result: Register, global: bytecode::GlobalIdx) -> Self {
         Self::GlobalGet { result, global }

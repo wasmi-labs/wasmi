@@ -371,26 +371,6 @@ pub enum Instruction {
         /// The amount of copied registers.
         len: u16,
     },
-    /// Variant of [`Instruction::CopySpan`] that copies the registers in reverse order.
-    ///
-    /// Copies registers: `registers[results..results+len] <- registers[values..values+len]`
-    ///
-    /// # Note
-    ///
-    /// This variant of [`Instruction::CopySpan`] helps to mitigate self-overwriting issues.
-    /// For example, `copy_span results: 1..3 inputs: 0..2` would self overwrite its own
-    /// registers, since `1 <- 0` would overwrite register `1` which is then read by `2 <- 1`
-    /// in the next step.
-    /// These `copy_span` instructions can be replaced by `copy_span_rev` in order to fix
-    /// this overwrite.
-    CopySpanRev {
-        /// The registers holding the result of this instruction.
-        results: RegisterSpan,
-        /// The contiguous registers holding the inputs of this instruction.
-        values: RegisterSpan,
-        /// The amount of copied registers.
-        len: u16,
-    },
 
     /// Auxiliary [`Instruction`] to encode call parameters for call instructions.
     CallParams(CallParams),

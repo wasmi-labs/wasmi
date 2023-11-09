@@ -56,14 +56,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.execute_copy_span_impl(results, values)
     }
 
-    /// Executes an [`Instruction::CopySpanRev`].
-    #[inline(always)]
-    pub fn execute_copy_span_rev(&mut self, results: RegisterSpan, values: RegisterSpan, len: u16) {
-        let results = results.iter_u16(len).rev();
-        let values = values.iter_u16(len).rev();
-        self.execute_copy_span_impl(results, values)
-    }
-
     /// Executes either [`Instruction::CopySpan`] or [`Instruction::CopySpanRev`].
     fn execute_copy_span_impl(
         &mut self,

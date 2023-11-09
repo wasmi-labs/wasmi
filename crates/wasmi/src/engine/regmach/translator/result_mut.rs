@@ -67,7 +67,6 @@ impl Instruction {
             Instruction::CopyI64Imm32 { result, .. } |
             Instruction::CopyF64Imm32 { result, .. } => Some(result),
             Instruction::CopySpan { .. } => None,
-            Instruction::CopySpanRev { .. } => None,
             Instruction::CallParams(_) |
             Instruction::CallIndirectParams(_) |
             Instruction::CallIndirectParamsImm16(_) |
