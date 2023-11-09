@@ -84,18 +84,6 @@ impl InstrSequence {
         &mut self.instrs[instr.into_usize()]
     }
 
-    /// Returns an exclusive reference to the last [`Instruction`] of the [`InstrSequence`].
-    ///
-    /// # Panics
-    ///
-    /// If the [`InstrSequence`] is empty.
-    #[track_caller]
-    fn last_mut(&mut self) -> &mut Instruction {
-        self.instrs
-            .last_mut()
-            .expect("expected non-empty instruction sequence")
-    }
-
     /// Return an iterator over the sequence of generated [`Instruction`].
     ///
     /// # Note
