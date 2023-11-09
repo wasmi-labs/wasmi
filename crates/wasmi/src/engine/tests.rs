@@ -84,7 +84,7 @@ fn compiled_func(index: u32) -> CompiledFunc {
 ///
 /// If the `u32` index value is out of bounds for the [`GlobalIdx`].
 fn global_idx(index: u32) -> GlobalIdx {
-    GlobalIdx::try_from(index).unwrap()
+    GlobalIdx::from(index)
 }
 
 /// Returns the [`BranchTableTargets`] for the given amount.
