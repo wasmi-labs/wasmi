@@ -5,10 +5,9 @@ use crate::{
         func_builder::{
             labels::{LabelRef, LabelRegistry},
             Instr,
-            TranslationErrorInner,
         },
         regmach::{
-            bytecode::{Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
+            bytecode::{Const32, Instruction, Register, RegisterSpanIter},
             translator::ValueStack,
         },
         TranslationError,
@@ -16,7 +15,7 @@ use crate::{
     module::ModuleResources,
 };
 use alloc::vec::{Drain, Vec};
-use core::{cmp, mem, ops::Range};
+use core::{cmp, ops::Range};
 use wasmi_core::{UntypedValue, ValueType, F32};
 
 /// Encodes `wasmi` bytecode instructions to an [`Instruction`] stream.
@@ -337,60 +336,8 @@ impl InstrEncoder {
             }
         }
         let start = self.instrs.next_instr();
-        let mut last_copy: Option<Instruction> = None;
         for (copy_result, copy_input) in results.zip(values.iter().copied()) {
-            // Note: we should refactor this code one if-let-chains are stabilized.
-            if let Some(last) = last_copy {
-                if let TypedProvider::Register(copy_input) = copy_input {
-                    // We might be able to merge the two last copy instructions together.
-                    let merged_copy = match last {
-                        Instruction::Copy { result, value } => {
-                            let can_merge =
-                                result.next() == copy_result && value.next() == copy_input;
-                            can_merge.then(|| {
-                                Instruction::copy_span(
-                                    RegisterSpan::new(result),
-                                    RegisterSpan::new(value),
-                                    2,
-                                )
-                            })
-                        }
-                        Instruction::CopySpan {
-                            results,
-                            values,
-                            len,
-                        } => {
-                            let mut last_results = results.iter_u16(len);
-                            let mut last_values = values.iter_u16(len);
-                            let last_result = last_results
-                                .next_back()
-                                .expect("CopySpan must not be empty");
-                            let last_value =
-                                last_values.next_back().expect("CopySpan must not be empty");
-                            let can_merge = last_result.next() == copy_result
-                                && last_value.next() == copy_input;
-                            let new_len = len.checked_add(1).ok_or_else(|| {
-                                TranslationError::new(TranslationErrorInner::RegisterOutOfBounds)
-                            })?;
-                            can_merge.then(|| Instruction::copy_span(results, values, new_len))
-                        }
-                        _ => unreachable!("must have copy instruction here"),
-                    };
-                    last_copy = merged_copy;
-                    if let Some(merged_copy) = merged_copy {
-                        let last_instr = self.instrs.last_mut();
-                        _ = mem::replace(last_instr, merged_copy);
-                        continue;
-                    }
-                }
-            }
-            if self.encode_copy(stack, copy_result, copy_input)?.is_some() {
-                if let TypedProvider::Register(copy_input) = copy_input {
-                    // At this point we know that a new register-to-register copy has been
-                    // encoded and thus we can update the `last_copy` variable.
-                    last_copy = Some(Instruction::copy(copy_result, copy_input));
-                }
-            }
+            self.encode_copy(stack, copy_result, copy_input)?;
         }
         let copy_instrs = self.instrs.get_slice_at_mut(start);
         if Self::is_copy_overwriting(copy_instrs) {
