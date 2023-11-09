@@ -56,7 +56,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.execute_copy_span_impl(results, values)
     }
 
-    /// Executes either [`Instruction::CopySpan`] or [`Instruction::CopySpanRev`].
+    /// Executes a [`Instruction::CopySpan`] generically.
     fn execute_copy_span_impl(
         &mut self,
         results: impl IntoIterator<Item = Register>,
