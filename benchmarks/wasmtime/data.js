@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1699524211411,
+  "lastUpdate": 1699526913752,
   "repoUrl": "https://github.com/paritytech/wasmi",
   "entries": {
     "Wasmi criterion wasmtime": [
@@ -3497,6 +3497,240 @@ window.BENCHMARK_DATA = {
             "name": "execute/memory_vec_add",
             "value": 5342141,
             "range": "± 36929",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "0@mcornholio.ru",
+            "name": "Yuri Volkov",
+            "username": "mutantcornholio"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b7a3ef4742225e02b04f749cdb62eca1ffe87b31",
+          "message": "Adding gitspiegel-trigger workflow (#781)\n\n* Adding gitspiegel-trigger workflow\r\n\r\nUsing a workflow to trigger mirroring instead of a webhook allows us to reuse \"Approving workflow runs from public forks\" GitHub feature to somewhat protect us from malicious PRs\r\n\r\n* Update gitspiegel-trigger.yml\r\n\r\n---------\r\n\r\nCo-authored-by: Robin Freyler <robin.freyler@gmail.com>",
+          "timestamp": "2023-11-09T11:41:59+01:00",
+          "tree_id": "c71a078b777064ed479d3db624a5712b9bd03120",
+          "url": "https://github.com/paritytech/wasmi/commit/b7a3ef4742225e02b04f749cdb62eca1ffe87b31"
+        },
+        "date": 1699526913736,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "translate/wasm_kernel",
+            "value": 6540747,
+            "range": "± 11135",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey",
+            "value": 115271619,
+            "range": "± 212328",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20",
+            "value": 175993,
+            "range": "± 313",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721",
+            "value": 252873,
+            "range": "± 332",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155",
+            "value": 361435,
+            "range": "± 729",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "instantiate/wasm_kernel",
+            "value": 55641,
+            "range": "± 14",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/tiny_keccak",
+            "value": 671841,
+            "range": "± 8350",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/rev_complement",
+            "value": 859175,
+            "range": "± 736",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/regex_redux",
+            "value": 889151,
+            "range": "± 611",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/count_until",
+            "value": 1287109,
+            "range": "± 3404",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/br_table",
+            "value": 1214135,
+            "range": "± 1823",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/trunc_f2i",
+            "value": 1716184,
+            "range": "± 843",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_0/typed",
+            "value": 794504,
+            "range": "± 14983",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_1/typed",
+            "value": 1118349,
+            "range": "± 3792",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_4/typed",
+            "value": 1027672,
+            "range": "± 1677",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_16/typed",
+            "value": 1893162,
+            "range": "± 8149",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_0",
+            "value": 1103809,
+            "range": "± 2094",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_1",
+            "value": 1302472,
+            "range": "± 21254",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_4",
+            "value": 1621927,
+            "range": "± 4356",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_16",
+            "value": 3289087,
+            "range": "± 11410",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global_bump",
+            "value": 1686009,
+            "range": "± 4190",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global_const",
+            "value": 1330294,
+            "range": "± 1910",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial_recursive",
+            "value": 760312,
+            "range": "± 2995",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial_iterative",
+            "value": 607626,
+            "range": "± 707",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_ok",
+            "value": 169854,
+            "range": "± 142",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_scan",
+            "value": 228388,
+            "range": "± 175",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_trap",
+            "value": 17175,
+            "range": "± 320",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/host_calls",
+            "value": 45360,
+            "range": "± 188",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci_rec",
+            "value": 6939611,
+            "range": "± 6236",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci_tail",
+            "value": 1634444,
+            "range": "± 28794",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci_iter",
+            "value": 2796791,
+            "range": "± 3877",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_is_even",
+            "value": 1135545,
+            "range": "± 3344",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory_sum",
+            "value": 2458504,
+            "range": "± 2679",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory_fill",
+            "value": 2445746,
+            "range": "± 2573",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory_vec_add",
+            "value": 5246307,
+            "range": "± 10438",
             "unit": "ns/iter"
           }
         ]
