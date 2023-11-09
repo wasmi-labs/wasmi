@@ -9,7 +9,7 @@ mod tests;
 
 use self::executor::EngineExecutor;
 pub use self::{
-    code_map::{CodeMap, CompiledFuncEntity, InstructionPtr},
+    code_map::CodeMap,
     stack::Stack,
     translator::{FuncLocalConstsIter, FuncTranslator, FuncTranslatorAllocations},
 };

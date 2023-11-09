@@ -1,5 +1,5 @@
 use super::CompiledFunc;
-pub use crate::engine::func_builder::{TranslationError, TranslationErrorInner};
+pub use crate::engine::func_builder::TranslationError;
 use crate::{
     engine::{
         func_builder::{
