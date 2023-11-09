@@ -214,11 +214,8 @@ fn identity_loop_4_mixed_1() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_imm32(Register::from_i16(2), 10),
-            Instruction::copy_span(
-                RegisterSpan::new(Register::from_i16(3)),
-                RegisterSpan::new(Register::from_i16(0)),
-                2,
-            ),
+            Instruction::copy(Register::from_i16(3), Register::from_i16(0)),
+            Instruction::copy(Register::from_i16(4), Register::from_i16(1)),
             Instruction::copy_imm32(Register::from_i16(5), 20),
             Instruction::return_many(RegisterSpan::new(Register::from_i16(2)).iter(4)),
         ])
@@ -243,11 +240,8 @@ fn identity_loop_4_mixed_2() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(Register::from_i16(2), Register::from_i16(0)),
-            Instruction::copy_span(
-                RegisterSpan::new(Register::from_i16(3)),
-                RegisterSpan::new(Register::from_i16(0)),
-                2,
-            ),
+            Instruction::copy(Register::from_i16(3), Register::from_i16(0)),
+            Instruction::copy(Register::from_i16(4), Register::from_i16(1)),
             Instruction::copy(Register::from_i16(5), Register::from_i16(1)),
             Instruction::return_many(RegisterSpan::new(Register::from_i16(2)).iter(4)),
         ])

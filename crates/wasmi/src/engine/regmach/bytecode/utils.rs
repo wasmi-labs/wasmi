@@ -78,6 +78,11 @@ impl RegisterSpan {
         RegisterSpanIter::new(self.0, len)
     }
 
+    /// Returns a [`RegisterSpanIter`] yielding `len` [`Register`].
+    pub fn iter_u16(self, len: u16) -> RegisterSpanIter {
+        RegisterSpanIter::new_u16(self.0, len)
+    }
+
     /// Returns the head [`Register`] of the [`RegisterSpan`].
     pub fn head(self) -> Register {
         self.0
@@ -114,14 +119,23 @@ impl RegisterSpanIter {
     ///
     /// If the `start..end` [`Register`] span indices are out of bounds.
     fn new(start: Register, len: usize) -> Self {
-        let len = i16::try_from(len)
+        let len = u16::try_from(len)
             .unwrap_or_else(|_| panic!("out of bounds length for register span: {len}"));
+        Self::new_u16(start, len)
+    }
+
+    /// Creates a new [`RegisterSpanIter`] for the given `start` [`Register`] and length `len`.
+    ///
+    /// # Panics
+    ///
+    /// If the `start..end` [`Register`] span indices are out of bounds.
+    fn new_u16(start: Register, len: u16) -> Self {
         let next = start;
-        let last_index = start
+        let last = start
             .0
-            .checked_add(len)
+            .checked_add_unsigned(len)
+            .map(Register)
             .expect("overflowing register index for register span");
-        let last = Register(last_index);
         Self::from_raw_parts(next, last)
     }
 

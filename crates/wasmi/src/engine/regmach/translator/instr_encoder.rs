@@ -5,10 +5,9 @@ use crate::{
         func_builder::{
             labels::{LabelRef, LabelRegistry},
             Instr,
-            TranslationErrorInner,
         },
         regmach::{
-            bytecode::{Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
+            bytecode::{Const32, Instruction, Register, RegisterSpanIter},
             translator::ValueStack,
         },
         TranslationError,
@@ -16,7 +15,7 @@ use crate::{
     module::ModuleResources,
 };
 use alloc::vec::{Drain, Vec};
-use core::{cmp, mem, ops::Range};
+use core::{cmp, ops::Range};
 use wasmi_core::{UntypedValue, ValueType, F32};
 
 /// Encodes `wasmi` bytecode instructions to an [`Instruction`] stream.
@@ -83,18 +82,6 @@ impl InstrSequence {
     /// If no [`Instruction`] is associated to the [`Instr`] for this [`InstrSequence`].
     fn get_mut(&mut self, instr: Instr) -> &mut Instruction {
         &mut self.instrs[instr.into_usize()]
-    }
-
-    /// Returns an exclusive reference to the last [`Instruction`] of the [`InstrSequence`].
-    ///
-    /// # Panics
-    ///
-    /// If the [`InstrSequence`] is empty.
-    #[track_caller]
-    fn last_mut(&mut self) -> &mut Instruction {
-        self.instrs
-            .last_mut()
-            .expect("expected non-empty instruction sequence")
     }
 
     /// Return an iterator over the sequence of generated [`Instruction`].
@@ -337,60 +324,8 @@ impl InstrEncoder {
             }
         }
         let start = self.instrs.next_instr();
-        let mut last_copy: Option<Instruction> = None;
         for (copy_result, copy_input) in results.zip(values.iter().copied()) {
-            // Note: we should refactor this code one if-let-chains are stabilized.
-            if let Some(last) = last_copy {
-                if let TypedProvider::Register(copy_input) = copy_input {
-                    // We might be able to merge the two last copy instructions together.
-                    let merged_copy = match last {
-                        Instruction::Copy { result, value } => {
-                            let can_merge =
-                                result.next() == copy_result && value.next() == copy_input;
-                            can_merge.then(|| {
-                                Instruction::copy_span(
-                                    RegisterSpan::new(result),
-                                    RegisterSpan::new(value),
-                                    2,
-                                )
-                            })
-                        }
-                        Instruction::CopySpan {
-                            results,
-                            values,
-                            len,
-                        } => {
-                            let mut last_results = results.iter(len as usize);
-                            let mut last_values = values.iter(len as usize);
-                            let last_result = last_results
-                                .next_back()
-                                .expect("CopySpan must not be empty");
-                            let last_value =
-                                last_values.next_back().expect("CopySpan must not be empty");
-                            let can_merge = last_result.next() == copy_result
-                                && last_value.next() == copy_input;
-                            let new_len = len.checked_add(1).ok_or_else(|| {
-                                TranslationError::new(TranslationErrorInner::RegisterOutOfBounds)
-                            })?;
-                            can_merge.then(|| Instruction::copy_span(results, values, new_len))
-                        }
-                        _ => unreachable!("must have copy instruction here"),
-                    };
-                    last_copy = merged_copy;
-                    if let Some(merged_copy) = merged_copy {
-                        let last_instr = self.instrs.last_mut();
-                        _ = mem::replace(last_instr, merged_copy);
-                        continue;
-                    }
-                }
-            }
-            if self.encode_copy(stack, copy_result, copy_input)?.is_some() {
-                if let TypedProvider::Register(copy_input) = copy_input {
-                    // At this point we know that a new register-to-register copy has been
-                    // encoded and thus we can update the `last_copy` variable.
-                    last_copy = Some(Instruction::copy(copy_result, copy_input));
-                }
-            }
+            self.encode_copy(stack, copy_result, copy_input)?;
         }
         let copy_instrs = self.instrs.get_slice_at_mut(start);
         if Self::is_copy_overwriting(copy_instrs) {
@@ -430,6 +365,10 @@ impl InstrEncoder {
                 }
             });
         }
+        debug_assert!(
+            !Self::is_copy_overwriting(copy_instrs),
+            "sorting should have removed the overwrites"
+        );
         Ok(())
     }
 
@@ -485,7 +424,7 @@ impl InstrEncoder {
                     values,
                     len,
                 } => {
-                    for value in values.iter(*len as usize) {
+                    for value in values.iter_u16(*len) {
                         if value.within_range(start..end) {
                             return true;
                         }
@@ -681,9 +620,15 @@ impl InstrEncoder {
             if let Some(result) = self.instrs.get_mut(last_instr).result_mut(res) {
                 // Case: we can replace the `result` register of the previous
                 //       instruction instead of emitting a copy instruction.
-                debug_assert_eq!(*result, value);
-                *result = local;
-                return Ok(());
+                if *result == value {
+                    // TODO: Find out in what cases `result != value`. Is this a bug or an edge case?
+                    //       Generally `result` should be equal to `value` since `value` refers to the
+                    //       `result` of the previous instruction.
+                    //       Therefore, instead of an `if` we originally had a `debug_assert`.
+                    //       (Note: the spidermonkey bench test failed without this change.)
+                    *result = local;
+                    return Ok(());
+                }
             }
         }
         // Case: we need to encode a copy instruction to encode the `local.set` or `local.tee`.

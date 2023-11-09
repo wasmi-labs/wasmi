@@ -27,7 +27,7 @@ pub use self::{
     control_frame::{ControlFrame, ControlFrameKind},
     control_stack::ControlStack,
     instr_encoder::InstrEncoder,
-    stack::{FuncLocalConstsIter, ProviderStack, RegisterAlloc, TypedProvider},
+    stack::{FuncLocalConstsIter, TypedProvider},
 };
 use crate::{
     engine::{

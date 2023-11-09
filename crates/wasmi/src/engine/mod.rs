@@ -26,7 +26,7 @@ pub use self::{
     bytecode::DropKeep,
     code_map::CompiledFunc,
     config::{Config, EngineBackend, FuelConsumptionMode},
-    func_builder::{FuncTranslatorAllocations, Instr, RelativeDepth, TranslationError},
+    func_builder::{Instr, RelativeDepth, TranslationError},
     resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
     stack::StackLimits,
     traits::{CallParams, CallResults},

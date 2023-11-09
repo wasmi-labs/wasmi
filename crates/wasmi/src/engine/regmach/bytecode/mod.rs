@@ -355,7 +355,7 @@ pub enum Instruction {
         /// The 32-bit encoded `i64` immediate value to copy.
         value: Const32<f64>,
     },
-    /// Copes `len` contiguous `values` [`RegisterSpan`] into `results` [`RegisterSpan`]
+    /// Copes `len` contiguous `values` [`RegisterSpan`] into `results` [`RegisterSpan`].
     ///
     /// Copies registers: `registers[results..results+len] <- registers[values..values+len]`
     ///
