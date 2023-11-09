@@ -366,7 +366,7 @@ impl InstrEncoder {
             });
         }
         debug_assert!(
-            !Self::is_copy_overwriting(copy_instrs, true),
+            !Self::is_copy_overwriting(copy_instrs),
             "sorting should have removed the overwrites"
         );
         Ok(())
