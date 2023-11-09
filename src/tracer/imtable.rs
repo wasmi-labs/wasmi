@@ -27,10 +27,11 @@ impl IMTable {
             end_offset,
             vtype,
             value,
+            eid: 0,
         })
     }
 
-    pub fn finalized(&self, k: u32) -> InitMemoryTable {
-        InitMemoryTable::new(self.0.clone(), k)
+    pub fn finalized(&self) -> InitMemoryTable {
+        InitMemoryTable::new(self.0.clone())
     }
 }
