@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1697651606612,
+  "lastUpdate": 1699524211247,
   "repoUrl": "https://github.com/paritytech/wasmi",
   "entries": {
     "Wasmi criterion benchmark": [
@@ -3263,6 +3263,240 @@ window.BENCHMARK_DATA = {
             "name": "execute/memory_vec_add",
             "value": 2350257,
             "range": "± 5610",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "robin.freyler@gmail.com",
+            "name": "Robin Freyler",
+            "username": "Robbepop"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "65688808fad51385657c3978950817b07aa78534",
+          "message": "Fix copy instruction for many cases (#783)\n\n* add RegisterSpan::iter_u16 method\r\n\r\nThis is a more efficient variant of RegisterSpan::iter.\r\n\r\n* use RegisterSpan::iter_u16 were possible\r\n\r\n* minor fix of docs of CopySpan instruction\r\n\r\n* add Instruction::CopySpanRev\r\n\r\nThis commit does not include translation to actually emit CopySpanRev.\r\n\r\n* fix bug in encode_local_set\r\n\r\nReplaced debug_assert with if-conditional and added explanatory comment.\r\n\r\n* disable merging of copies\r\n\r\nWe disable merging of copies since it is a hard problem to dissect and resolve overlapping copy instructions and in some cases it is even impossible. Having merged copies makes this even harder. We need a new way to encode copies to circumvent this scenario in its entirety.\r\n\r\n* assert no overlapping copies after sort\r\n\r\nThe problem with this debug assert is that the sorting does not guarantee that there are no overlapping copies but just makes it less likely in most common cases. We need a new approach to handle copies to properly fix this case.\r\n\r\n* remove unneeded API\r\n\r\n* adjust tests for recent changes (no more copy merge)\r\n\r\n* fix bug\r\n\r\n* remove CopySpanRev\r\n\r\nNo longer needed.\r\n\r\n* fix import warnings\r\n\r\n* apply clippy suggestion\r\n\r\n* fix cargo doc issue",
+          "timestamp": "2023-11-09T10:55:24+01:00",
+          "tree_id": "09fa4588e9f6a4eebaf1268b7d0d985fb9f12d6a",
+          "url": "https://github.com/paritytech/wasmi/commit/65688808fad51385657c3978950817b07aa78534"
+        },
+        "date": 1699524211232,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "translate/wasm_kernel",
+            "value": 4270551,
+            "range": "± 23691",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey",
+            "value": 65280909,
+            "range": "± 104589",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20",
+            "value": 103861,
+            "range": "± 412",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721",
+            "value": 148123,
+            "range": "± 411",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155",
+            "value": 213398,
+            "range": "± 313",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "instantiate/wasm_kernel",
+            "value": 55077,
+            "range": "± 883",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/tiny_keccak",
+            "value": 327569,
+            "range": "± 5578",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/rev_complement",
+            "value": 425293,
+            "range": "± 539",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/regex_redux",
+            "value": 457751,
+            "range": "± 361",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/count_until",
+            "value": 650737,
+            "range": "± 409",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/br_table",
+            "value": 1355276,
+            "range": "± 19243",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/trunc_f2i",
+            "value": 732210,
+            "range": "± 488",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_0/typed",
+            "value": 1315658,
+            "range": "± 4870",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_1/typed",
+            "value": 1430805,
+            "range": "± 13834",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_4/typed",
+            "value": 1387615,
+            "range": "± 4904",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_16/typed",
+            "value": 1724713,
+            "range": "± 5314",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_0",
+            "value": 1705611,
+            "range": "± 9113",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_1",
+            "value": 1752999,
+            "range": "± 11861",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_4",
+            "value": 2009884,
+            "range": "± 14238",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_16",
+            "value": 2662134,
+            "range": "± 16650",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global_bump",
+            "value": 739911,
+            "range": "± 36407",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global_const",
+            "value": 661112,
+            "range": "± 1350",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial_recursive",
+            "value": 494510,
+            "range": "± 1024",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial_iterative",
+            "value": 328524,
+            "range": "± 482",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_ok",
+            "value": 94514,
+            "range": "± 155",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_scan",
+            "value": 129953,
+            "range": "± 192",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_trap",
+            "value": 8847,
+            "range": "± 13",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/host_calls",
+            "value": 37091,
+            "range": "± 135",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci_rec",
+            "value": 4172542,
+            "range": "± 4147",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci_tail",
+            "value": 855819,
+            "range": "± 1155",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci_iter",
+            "value": 1400581,
+            "range": "± 2255",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_is_even",
+            "value": 661540,
+            "range": "± 568",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory_sum",
+            "value": 1182249,
+            "range": "± 861",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory_fill",
+            "value": 1213200,
+            "range": "± 11707",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory_vec_add",
+            "value": 2474279,
+            "range": "± 135935",
             "unit": "ns/iter"
           }
         ]
