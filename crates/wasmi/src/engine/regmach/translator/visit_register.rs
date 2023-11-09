@@ -587,6 +587,6 @@ impl VisitInputRegisters for RegisterSpanIter {
         let len = self.len_as_u16();
         let mut span = self.span();
         f(span.head_mut());
-        *self = span.iter(len as usize);
+        *self = span.iter_u16(len);
     }
 }
