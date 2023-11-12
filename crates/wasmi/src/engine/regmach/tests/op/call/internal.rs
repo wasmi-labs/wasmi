@@ -100,7 +100,7 @@ fn two_params_reg() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_many(
+        .expect_func_instrs([Instruction::return_span(
             RegisterSpan::new(Register::from_i16(0)).iter(2),
         )])
         .expect_func_instrs([
@@ -109,7 +109,7 @@ fn two_params_reg() {
                 CompiledFunc::from_u32(0),
             ),
             Instruction::call_params(RegisterSpan::new(Register::from_i16(0)).iter(2), 2),
-            Instruction::return_many(RegisterSpan::new(Register::from_i16(2)).iter(2)),
+            Instruction::return_span(RegisterSpan::new(Register::from_i16(2)).iter(2)),
         ])
         .run();
 }
@@ -131,7 +131,7 @@ fn two_params_reg_rev() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_many(
+        .expect_func_instrs([Instruction::return_span(
             RegisterSpan::new(Register::from_i16(0)).iter(2),
         )])
         .expect_func_instrs([
@@ -142,7 +142,7 @@ fn two_params_reg_rev() {
                 CompiledFunc::from_u32(0),
             ),
             Instruction::call_params(RegisterSpan::new(Register::from_i16(2)).iter(2), 2),
-            Instruction::return_many(RegisterSpan::new(Register::from_i16(2)).iter(2)),
+            Instruction::return_span(RegisterSpan::new(Register::from_i16(2)).iter(2)),
         ])
         .run();
 }
@@ -164,7 +164,7 @@ fn two_params_imm() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_many(
+        .expect_func_instrs([Instruction::return_span(
             RegisterSpan::new(Register::from_i16(0)).iter(2),
         )])
         .expect_func_instrs([
@@ -175,7 +175,7 @@ fn two_params_imm() {
                 CompiledFunc::from_u32(0),
             ),
             Instruction::call_params(RegisterSpan::new(Register::from_i16(0)).iter(2), 2),
-            Instruction::return_many(RegisterSpan::new(Register::from_i16(0)).iter(2)),
+            Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter(2)),
         ])
         .run();
 }
@@ -198,7 +198,7 @@ fn three_params_reg() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_many(
+        .expect_func_instrs([Instruction::return_span(
             RegisterSpan::new(Register::from_i16(0)).iter(3),
         )])
         .expect_func_instrs([
@@ -207,7 +207,7 @@ fn three_params_reg() {
                 CompiledFunc::from_u32(0),
             ),
             Instruction::call_params(RegisterSpan::new(Register::from_i16(0)).iter(3), 3),
-            Instruction::return_many(RegisterSpan::new(Register::from_i16(3)).iter(3)),
+            Instruction::return_span(RegisterSpan::new(Register::from_i16(3)).iter(3)),
         ])
         .run();
 }
@@ -230,7 +230,7 @@ fn three_params_reg_rev() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_many(
+        .expect_func_instrs([Instruction::return_span(
             RegisterSpan::new(Register::from_i16(0)).iter(3),
         )])
         .expect_func_instrs([
@@ -242,7 +242,7 @@ fn three_params_reg_rev() {
                 CompiledFunc::from_u32(0),
             ),
             Instruction::call_params(RegisterSpan::new(Register::from_i16(3)).iter(3), 3),
-            Instruction::return_many(RegisterSpan::new(Register::from_i16(3)).iter(3)),
+            Instruction::return_span(RegisterSpan::new(Register::from_i16(3)).iter(3)),
         ])
         .run();
 }
@@ -265,7 +265,7 @@ fn three_params_imm() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_many(
+        .expect_func_instrs([Instruction::return_span(
             RegisterSpan::new(Register::from_i16(0)).iter(3),
         )])
         .expect_func_instrs([
@@ -277,7 +277,7 @@ fn three_params_imm() {
                 CompiledFunc::from_u32(0),
             ),
             Instruction::call_params(RegisterSpan::new(Register::from_i16(0)).iter(3), 3),
-            Instruction::return_many(RegisterSpan::new(Register::from_i16(0)).iter(3)),
+            Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter(3)),
         ])
         .run();
 }

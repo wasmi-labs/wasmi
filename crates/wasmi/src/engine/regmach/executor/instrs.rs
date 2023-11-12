@@ -193,8 +193,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::ReturnF64Imm32 { value } => {
                     forward_return!(self.execute_return_f64imm32(value))
                 }
-                Instr::ReturnMany { values } => {
-                    forward_return!(self.execute_return_many(values))
+                Instr::ReturnSpan { values } => {
+                    forward_return!(self.execute_return_span(values))
                 }
                 Instr::ReturnNez { condition } => {
                     forward_return!(self.execute_return_nez(condition))
@@ -211,8 +211,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::ReturnNezF64Imm32 { condition, value } => {
                     forward_return!(self.execute_return_nez_f64imm32(condition, value))
                 }
-                Instr::ReturnNezMany { condition, values } => {
-                    forward_return!(self.execute_return_nez_many(condition, values))
+                Instr::ReturnNezSpan { condition, values } => {
+                    forward_return!(self.execute_return_nez_span(condition, values))
                 }
                 Instr::Branch { offset } => self.execute_branch(offset),
                 Instr::BranchEqz { condition, offset } => {

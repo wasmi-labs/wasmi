@@ -217,7 +217,7 @@ fn identity_loop_4_mixed_1() {
             Instruction::copy(Register::from_i16(3), Register::from_i16(0)),
             Instruction::copy(Register::from_i16(4), Register::from_i16(1)),
             Instruction::copy_imm32(Register::from_i16(5), 20),
-            Instruction::return_many(RegisterSpan::new(Register::from_i16(2)).iter(4)),
+            Instruction::return_span(RegisterSpan::new(Register::from_i16(2)).iter(4)),
         ])
         .run()
 }
@@ -243,7 +243,7 @@ fn identity_loop_4_mixed_2() {
             Instruction::copy(Register::from_i16(3), Register::from_i16(0)),
             Instruction::copy(Register::from_i16(4), Register::from_i16(1)),
             Instruction::copy(Register::from_i16(5), Register::from_i16(1)),
-            Instruction::return_many(RegisterSpan::new(Register::from_i16(2)).iter(4)),
+            Instruction::return_span(RegisterSpan::new(Register::from_i16(2)).iter(4)),
         ])
         .run()
 }

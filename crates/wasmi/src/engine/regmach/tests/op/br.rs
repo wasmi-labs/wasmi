@@ -187,7 +187,7 @@ fn test_br_as_return_values() {
             Instruction::branch(BranchOffset::from(1)),
             Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
             Instruction::copy_imm32(Register::from_i16(0), 2_i32),
-            Instruction::return_many(RegisterSpan::new(Register::from_i16(0)).iter(2)),
+            Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter(2)),
         ])
         .run()
 }

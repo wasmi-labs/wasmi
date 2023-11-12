@@ -48,7 +48,7 @@ impl VisitInputRegisters for Instruction {
             Instruction::ReturnImm32 { .. } |
             Instruction::ReturnI64Imm32 { .. } |
             Instruction::ReturnF64Imm32 { .. } => {},
-            Instruction::ReturnMany { values } => {
+            Instruction::ReturnSpan { values } => {
                 values.visit_input_registers(f);
             }
             Instruction::ReturnNez { condition } => f(condition),
@@ -56,7 +56,7 @@ impl VisitInputRegisters for Instruction {
             Instruction::ReturnNezImm32 { condition, .. } => f(condition),
             Instruction::ReturnNezI64Imm32 { condition, .. } => f(condition),
             Instruction::ReturnNezF64Imm32 { condition, .. } => f(condition),
-            Instruction::ReturnNezMany { condition, values } => {
+            Instruction::ReturnNezSpan { condition, values } => {
                 f(condition);
                 values.visit_input_registers(f);
             }

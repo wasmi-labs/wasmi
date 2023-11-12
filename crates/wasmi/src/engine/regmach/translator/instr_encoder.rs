@@ -493,7 +493,7 @@ impl InstrEncoder {
             }
             _ => {
                 let values = self.encode_call_params(stack, values)?;
-                Instruction::return_many(values)
+                Instruction::return_span(values)
             }
         };
         self.push_instr(instr)?;

@@ -124,9 +124,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.execute_return_value(value, |_, value| f64::from(value).into())
     }
 
-    /// Execute an [`Instruction::ReturnMany`] returning many values.
+    /// Execute an [`Instruction::ReturnSpan`] returning many values.
     #[inline(always)]
-    pub fn execute_return_many(&mut self, values: RegisterSpanIter) -> ReturnOutcome {
+    pub fn execute_return_span(&mut self, values: RegisterSpanIter) -> ReturnOutcome {
         let (mut caller_sp, results) = self.return_caller_results();
         let results = results.iter(values.len());
         for (result, value) in results.zip(values) {
@@ -201,13 +201,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.execute_return_nez_impl(condition, value, Self::execute_return_f64imm32)
     }
 
-    /// Execute an [`Instruction::ReturnNezMany`] returning many values.
+    /// Execute an [`Instruction::ReturnNezSpan`] returning many values.
     #[inline(always)]
-    pub fn execute_return_nez_many(
+    pub fn execute_return_nez_span(
         &mut self,
         condition: Register,
         values: RegisterSpanIter,
     ) -> ReturnOutcome {
-        self.execute_return_nez_impl(condition, values, Self::execute_return_many)
+        self.execute_return_nez_impl(condition, values, Self::execute_return_span)
     }
 }

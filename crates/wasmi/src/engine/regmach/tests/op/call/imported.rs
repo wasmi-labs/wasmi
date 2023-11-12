@@ -87,7 +87,7 @@ fn two_params_reg() {
         .expect_func_instrs([
             Instruction::call_imported(RegisterSpan::new(Register::from_i16(2)), FuncIdx::from(0)),
             Instruction::call_params(RegisterSpan::new(Register::from_i16(0)).iter(2), 2),
-            Instruction::return_many(RegisterSpan::new(Register::from_i16(2)).iter(2)),
+            Instruction::return_span(RegisterSpan::new(Register::from_i16(2)).iter(2)),
         ])
         .run();
 }
@@ -111,7 +111,7 @@ fn two_params_reg_rev() {
             Instruction::copy(Register::from_i16(3), Register::from(0)),
             Instruction::call_imported(RegisterSpan::new(Register::from_i16(2)), FuncIdx::from(0)),
             Instruction::call_params(RegisterSpan::new(Register::from_i16(2)).iter(2), 2),
-            Instruction::return_many(RegisterSpan::new(Register::from_i16(2)).iter(2)),
+            Instruction::return_span(RegisterSpan::new(Register::from_i16(2)).iter(2)),
         ])
         .run();
 }
@@ -135,7 +135,7 @@ fn two_params_imm() {
             Instruction::copy_imm32(Register::from_i16(1), 20_i32),
             Instruction::call_imported(RegisterSpan::new(Register::from_i16(0)), FuncIdx::from(0)),
             Instruction::call_params(RegisterSpan::new(Register::from_i16(0)).iter(2), 2),
-            Instruction::return_many(RegisterSpan::new(Register::from_i16(0)).iter(2)),
+            Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter(2)),
         ])
         .run();
 }
@@ -157,7 +157,7 @@ fn three_params_reg() {
         .expect_func_instrs([
             Instruction::call_imported(RegisterSpan::new(Register::from_i16(3)), FuncIdx::from(0)),
             Instruction::call_params(RegisterSpan::new(Register::from_i16(0)).iter(3), 3),
-            Instruction::return_many(RegisterSpan::new(Register::from_i16(3)).iter(3)),
+            Instruction::return_span(RegisterSpan::new(Register::from_i16(3)).iter(3)),
         ])
         .run();
 }
@@ -182,7 +182,7 @@ fn three_params_reg_rev() {
             Instruction::copy(Register::from_i16(5), Register::from(0)),
             Instruction::call_imported(RegisterSpan::new(Register::from_i16(3)), FuncIdx::from(0)),
             Instruction::call_params(RegisterSpan::new(Register::from_i16(3)).iter(3), 3),
-            Instruction::return_many(RegisterSpan::new(Register::from_i16(3)).iter(3)),
+            Instruction::return_span(RegisterSpan::new(Register::from_i16(3)).iter(3)),
         ])
         .run();
 }
@@ -207,7 +207,7 @@ fn three_params_imm() {
             Instruction::copy_imm32(Register::from_i16(2), 30_i32),
             Instruction::call_imported(RegisterSpan::new(Register::from_i16(0)), FuncIdx::from(0)),
             Instruction::call_params(RegisterSpan::new(Register::from_i16(0)).iter(3), 3),
-            Instruction::return_many(RegisterSpan::new(Register::from_i16(0)).iter(3)),
+            Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter(3)),
         ])
         .run();
 }

@@ -554,7 +554,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let return_instr = match default_branch_params.len() {
                 0 => Instruction::Return,
                 1 => Instruction::return_reg(default_branch_params.span().head()),
-                _ => Instruction::return_many(default_branch_params),
+                _ => Instruction::return_span(default_branch_params),
             };
             for target in self.alloc.br_table_targets.iter().copied() {
                 match self.alloc.control_stack.acquire_target(target) {

@@ -206,9 +206,9 @@ impl Instruction {
         }
     }
 
-    /// Creates a new [`Instruction::ReturnMany`] from the given `values`.
-    pub fn return_many(values: RegisterSpanIter) -> Self {
-        Self::ReturnMany { values }
+    /// Creates a new [`Instruction::ReturnSpan`] from the given `values`.
+    pub fn return_span(values: RegisterSpanIter) -> Self {
+        Self::ReturnSpan { values }
     }
 
     /// Creates a new [`Instruction::ReturnNez`] for the given `condition`.
@@ -246,8 +246,8 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::ReturnNezMany`] for the given `condition` and `values`.
-    pub fn return_nez_many(condition: Register, values: RegisterSpanIter) -> Self {
-        Self::ReturnNezMany { condition, values }
+    pub fn return_nez_span(condition: Register, values: RegisterSpanIter) -> Self {
+        Self::ReturnNezSpan { condition, values }
     }
 
     /// Creates a new [`Instruction::Branch`] for the given `offset`.

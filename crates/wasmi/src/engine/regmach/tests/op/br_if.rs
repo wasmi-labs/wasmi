@@ -486,11 +486,11 @@ fn return_if_results_2() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::return_nez_many(
+            Instruction::return_nez_span(
                 Register::from_i16(2),
                 RegisterSpan::new(Register::from_i16(0)).iter(2),
             ),
-            Instruction::return_many(RegisterSpan::new(Register::from_i16(0)).iter(2)),
+            Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter(2)),
         ])
         .run()
 }
@@ -514,11 +514,11 @@ fn return_if_results_2_rev() {
         .expect_func_instrs([
             Instruction::copy(Register::from_i16(3), Register::from_i16(1)),
             Instruction::copy(Register::from_i16(4), Register::from_i16(0)),
-            Instruction::return_nez_many(
+            Instruction::return_nez_span(
                 Register::from_i16(2),
                 RegisterSpan::new(Register::from_i16(3)).iter(2),
             ),
-            Instruction::return_many(RegisterSpan::new(Register::from_i16(3)).iter(2)),
+            Instruction::return_span(RegisterSpan::new(Register::from_i16(3)).iter(2)),
         ])
         .run()
 }
@@ -542,11 +542,11 @@ fn return_if_results_2_imm() {
         .expect_func_instrs([
             Instruction::copy_imm32(Register::from_i16(1), 10),
             Instruction::copy_imm32(Register::from_i16(2), 20),
-            Instruction::return_nez_many(
+            Instruction::return_nez_span(
                 Register::from_i16(0),
                 RegisterSpan::new(Register::from_i16(1)).iter(2),
             ),
-            Instruction::return_many(RegisterSpan::new(Register::from_i16(1)).iter(2)),
+            Instruction::return_span(RegisterSpan::new(Register::from_i16(1)).iter(2)),
         ])
         .run()
 }
@@ -742,7 +742,7 @@ fn branch_if_results_4_mixed_1() {
             Instruction::copy(Register::from_i16(4), Register::from_i16(0)),
             Instruction::copy(Register::from_i16(5), Register::from_i16(1)),
             Instruction::copy_imm32(Register::from_i16(6), 20),
-            Instruction::return_many(RegisterSpan::new(Register::from_i16(3)).iter(4)),
+            Instruction::return_span(RegisterSpan::new(Register::from_i16(3)).iter(4)),
         ])
         .run()
 }
@@ -779,7 +779,7 @@ fn branch_if_results_4_mixed_2() {
             Instruction::copy(Register::from_i16(4), Register::from_i16(0)),
             Instruction::copy(Register::from_i16(5), Register::from_i16(1)),
             Instruction::copy(Register::from_i16(6), Register::from_i16(1)),
-            Instruction::return_many(RegisterSpan::new(Register::from_i16(3)).iter(4)),
+            Instruction::return_span(RegisterSpan::new(Register::from_i16(3)).iter(4)),
         ])
         .run()
 }

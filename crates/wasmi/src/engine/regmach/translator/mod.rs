@@ -2119,7 +2119,7 @@ impl<'parser> FuncTranslator<'parser> {
                     .alloc
                     .instr_encoder
                     .encode_conditional_branch_params(&mut self.alloc.stack, providers)?;
-                Instruction::return_nez_many(condition, values)
+                Instruction::return_nez_span(condition, values)
             }
         };
         self.alloc.instr_encoder.push_instr(instr)?;

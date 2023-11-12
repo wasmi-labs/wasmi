@@ -563,7 +563,7 @@ fn test_if_without_else_has_result() {
         .expect_func_instrs([
             Instruction::copy_i64imm32(Register::from_i16(0), 1),
             Instruction::copy_imm32(Register::from_i16(1), 0),
-            Instruction::return_many(RegisterSpan::new(Register::from_i16(0)).iter(2)),
+            Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter(2)),
         ])
         .expect_func_instrs([
             Instruction::call_internal_0(

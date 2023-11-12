@@ -278,19 +278,19 @@ fn reg_params_2_return() {
         .expect_func_instrs([
             Instruction::copy_span(RegisterSpan::new(result), RegisterSpan::new(lhs), 2),
             Instruction::branch_table(index, 4),
-            Instruction::return_many(results),
+            Instruction::return_span(results),
             Instruction::branch(BranchOffset::from(9)),
             Instruction::branch(BranchOffset::from(5)),
             Instruction::branch(BranchOffset::from(1)),
             Instruction::i32_add(result, result, result2),
             Instruction::copy_imm32(result.next(), 0),
-            Instruction::return_many(results),
+            Instruction::return_span(results),
             Instruction::i32_sub(result, result, result2),
             Instruction::copy_imm32(result.next(), 1),
-            Instruction::return_many(results),
+            Instruction::return_span(results),
             Instruction::i32_mul(result, result, result2),
             Instruction::copy_imm32(result.next(), 2),
-            Instruction::return_many(results),
+            Instruction::return_span(results),
         ])
         .run()
 }

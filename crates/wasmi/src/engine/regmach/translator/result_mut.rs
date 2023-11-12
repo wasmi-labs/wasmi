@@ -51,13 +51,13 @@ impl Instruction {
             Instruction::ReturnImm32 { .. } |
             Instruction::ReturnI64Imm32 { .. } |
             Instruction::ReturnF64Imm32 { .. } |
-            Instruction::ReturnMany { .. } |
+            Instruction::ReturnSpan { .. } |
             Instruction::ReturnNez { .. } |
             Instruction::ReturnNezReg { .. } |
             Instruction::ReturnNezImm32 { .. } |
             Instruction::ReturnNezI64Imm32 { .. } |
             Instruction::ReturnNezF64Imm32 { .. } |
-            Instruction::ReturnNezMany { .. } |
+            Instruction::ReturnNezSpan { .. } |
             Instruction::Branch { .. } |
             Instruction::BranchEqz { .. } |
             Instruction::BranchNez { .. } |

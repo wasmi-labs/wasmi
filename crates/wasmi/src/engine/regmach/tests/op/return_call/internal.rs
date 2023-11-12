@@ -88,7 +88,7 @@ fn two_params_reg() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_many(
+        .expect_func_instrs([Instruction::return_span(
             RegisterSpan::new(Register::from_i16(0)).iter(2),
         )])
         .expect_func_instrs([
@@ -115,7 +115,7 @@ fn two_params_reg_rev() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_many(
+        .expect_func_instrs([Instruction::return_span(
             RegisterSpan::new(Register::from_i16(0)).iter(2),
         )])
         .expect_func_instrs([
@@ -144,7 +144,7 @@ fn two_params_imm() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_many(
+        .expect_func_instrs([Instruction::return_span(
             RegisterSpan::new(Register::from_i16(0)).iter(2),
         )])
         .expect_func_instrs([
@@ -174,7 +174,7 @@ fn three_params_reg() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_many(
+        .expect_func_instrs([Instruction::return_span(
             RegisterSpan::new(Register::from_i16(0)).iter(3),
         )])
         .expect_func_instrs([
@@ -202,7 +202,7 @@ fn three_params_reg_rev() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_many(
+        .expect_func_instrs([Instruction::return_span(
             RegisterSpan::new(Register::from_i16(0)).iter(3),
         )])
         .expect_func_instrs([
@@ -233,7 +233,7 @@ fn three_params_imm() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_many(
+        .expect_func_instrs([Instruction::return_span(
             RegisterSpan::new(Register::from_i16(0)).iter(3),
         )])
         .expect_func_instrs([

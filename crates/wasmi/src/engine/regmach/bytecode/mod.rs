@@ -182,7 +182,7 @@ pub enum Instruction {
     /// # Note
     ///
     /// Returns values as stored in the [`RegisterSpanIter`].
-    ReturnMany {
+    ReturnSpan {
         /// Identifier for a [`Provider`] slice.
         values: RegisterSpanIter,
     },
@@ -250,7 +250,7 @@ pub enum Instruction {
     /// # Note
     ///
     /// Variant of [`Instruction::ReturnNez`] returning two or more values.
-    ReturnNezMany {
+    ReturnNezSpan {
         /// The register holding the condition to evaluate against zero.
         condition: Register,
         /// The returned values.
@@ -293,12 +293,12 @@ pub enum Instruction {
     /// Must be followed `len_targets` times by any of
     ///
     /// - [`Instruction::Branch`]
-    /// - [`Instruction::Return]
-    /// - [`Instruction::ReturnReg]
-    /// - [`Instruction::ReturnImm32]
-    /// - [`Instruction::ReturnI64Imm32]
-    /// - [`Instruction::ReturnF64Imm32]
-    /// - [`Instruction::ReturnMany]
+    /// - [`Instruction::Return`]
+    /// - [`Instruction::ReturnReg`]
+    /// - [`Instruction::ReturnImm32`]
+    /// - [`Instruction::ReturnI64Imm32`]
+    /// - [`Instruction::ReturnF64Imm32`]
+    /// - [`Instruction::ReturnSpan`]
     BranchTable {
         /// The register holding the index of the instruction.
         index: Register,
