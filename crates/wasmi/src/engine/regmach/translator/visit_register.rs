@@ -41,22 +41,38 @@ impl VisitInputRegisters for Instruction {
             Instruction::I64Const32(_) |
             Instruction::F64Const32(_) => {},
             Instruction::Register(register) => f(register),
+            Instruction::Register2(registers) => registers.visit_input_registers(f),
+            Instruction::Register3(registers) |
+            Instruction::RegisterList(registers) => registers.visit_input_registers(f),
             Instruction::Trap(_) |
             Instruction::ConsumeFuel(_) |
             Instruction::Return => {},
             Instruction::ReturnReg { value } => f(value),
+            Instruction::ReturnReg2 { values } => values.visit_input_registers(f),
+            Instruction::ReturnReg3 { values } => values.visit_input_registers(f),
             Instruction::ReturnImm32 { .. } |
             Instruction::ReturnI64Imm32 { .. } |
             Instruction::ReturnF64Imm32 { .. } => {},
             Instruction::ReturnSpan { values } => {
                 values.visit_input_registers(f);
             }
+            Instruction::ReturnMany { values } => {
+                values.visit_input_registers(f);
+            }
             Instruction::ReturnNez { condition } => f(condition),
             Instruction::ReturnNezReg { condition, value } => visit_registers!(f, condition, value),
+            Instruction::ReturnNezReg2 { condition, values } => {
+                f(condition);
+                values.visit_input_registers(f);
+            }
             Instruction::ReturnNezImm32 { condition, .. } => f(condition),
             Instruction::ReturnNezI64Imm32 { condition, .. } => f(condition),
             Instruction::ReturnNezF64Imm32 { condition, .. } => f(condition),
             Instruction::ReturnNezSpan { condition, values } => {
+                f(condition);
+                values.visit_input_registers(f);
+            }
+            Instruction::ReturnNezMany { condition, values } => {
                 f(condition);
                 values.visit_input_registers(f);
             }
@@ -72,10 +88,19 @@ impl VisitInputRegisters for Instruction {
                 //       allocated in the storage-space.
                 visit_registers!(f, result, value)
             }
+            Instruction::Copy2 { results: _, values } => {
+                // Note: no need to visit `result` as in `Instruction::Copy` since
+                //       this is mainly about updating registers in the reserve space
+                //       due to optimizations of `local.set`.
+                values.visit_input_registers(f);
+            }
             Instruction::CopyImm32 { result: _, value: _ } |
             Instruction::CopyI64Imm32 { result: _, value: _ } |
             Instruction::CopyF64Imm32 { result: _, value: _ } => {},
             Instruction::CopySpan { results: _, values, len: _ } => {
+                values.visit_input_registers(f);
+            }
+            Instruction::CopyMany { results: _, values } => {
                 values.visit_input_registers(f);
             }
             Instruction::CallParams(call_params) => {
@@ -446,6 +471,14 @@ impl VisitInputRegisters for Instruction {
             Instruction::F64ConvertI32U(instr) => instr.visit_input_registers(f),
             Instruction::F64ConvertI64S(instr) => instr.visit_input_registers(f),
             Instruction::F64ConvertI64U(instr) => instr.visit_input_registers(f),
+        }
+    }
+}
+
+impl<const N: usize> VisitInputRegisters for [Register; N] {
+    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
+        for register in self {
+            f(register);
         }
     }
 }

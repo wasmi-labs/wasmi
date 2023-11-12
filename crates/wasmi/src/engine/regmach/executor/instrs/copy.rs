@@ -26,6 +26,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.execute_copy_impl(result, value, |this, value| this.get_register(value))
     }
 
+    /// Executes an [`Instruction::Copy2`].
+    #[inline(always)]
+    pub fn execute_copy_2(&mut self, _results: RegisterSpan, _values: [Register; 2]) {
+        todo!()
+    }
+
     /// Executes an [`Instruction::CopyImm32`].
     #[inline(always)]
     pub fn execute_copy_imm32(&mut self, result: Register, value: AnyConst32) {
@@ -67,5 +73,11 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             self.set_register(result, value);
         }
         self.next_instr();
+    }
+
+    /// Executes an [`Instruction::CopyMany`].
+    #[inline(always)]
+    pub fn execute_copy_many(&mut self, _results: RegisterSpan, _values: [Register; 2]) {
+        todo!()
     }
 }

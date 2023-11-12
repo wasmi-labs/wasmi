@@ -106,6 +106,18 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.execute_return_value(value, Self::get_register)
     }
 
+    /// Execute an [`Instruction::ReturnReg2`] returning two [`Register`] values.
+    #[inline(always)]
+    pub fn execute_return_reg2(&mut self, _values: [Register; 2]) -> ReturnOutcome {
+        todo!()
+    }
+
+    /// Execute an [`Instruction::ReturnReg3`] returning three [`Register`] values.
+    #[inline(always)]
+    pub fn execute_return_reg3(&mut self, _values: [Register; 3]) -> ReturnOutcome {
+        todo!()
+    }
+
     /// Execute an [`Instruction::ReturnImm32`] returning a single 32-bit value.
     #[inline(always)]
     pub fn execute_return_imm32(&mut self, value: AnyConst32) -> ReturnOutcome {
@@ -136,6 +148,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             *cell = self.get_register(value);
         }
         self.return_impl()
+    }
+
+    /// Execute an [`Instruction::ReturnMany`] returning many values.
+    #[inline(always)]
+    pub fn execute_return_many(&mut self, _values: [Register; 3]) -> ReturnOutcome {
+        todo!()
     }
 
     /// Execute a generic conditional return [`Instruction`].
@@ -169,6 +187,16 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         value: Register,
     ) -> ReturnOutcome {
         self.execute_return_nez_impl(condition, value, Self::execute_return_reg)
+    }
+
+    /// Execute an [`Instruction::ReturnNezReg`] returning a single [`Register`] value.
+    #[inline(always)]
+    pub fn execute_return_nez_reg2(
+        &mut self,
+        _condition: Register,
+        _value: [Register; 2],
+    ) -> ReturnOutcome {
+        todo!()
     }
 
     /// Execute an [`Instruction::ReturnNezImm32`] returning a single 32-bit constant value.
@@ -209,5 +237,15 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         values: RegisterSpanIter,
     ) -> ReturnOutcome {
         self.execute_return_nez_impl(condition, values, Self::execute_return_span)
+    }
+
+    /// Execute an [`Instruction::ReturnNezMany`] returning many values.
+    #[inline(always)]
+    pub fn execute_return_nez_many(
+        &mut self,
+        _condition: Register,
+        _values: [Register; 2],
+    ) -> ReturnOutcome {
+        todo!()
     }
 }

@@ -44,20 +44,28 @@ impl Instruction {
             Instruction::I64Const32(_) |
             Instruction::F64Const32(_) |
             Instruction::Register(_) |
+            Instruction::Register2(_) |
+            Instruction::Register3(_) |
+            Instruction::RegisterList(_) |
             Instruction::Trap(_) |
             Instruction::ConsumeFuel(_) |
             Instruction::Return |
             Instruction::ReturnReg { .. } |
+            Instruction::ReturnReg2 { .. } |
+            Instruction::ReturnReg3 { .. } |
             Instruction::ReturnImm32 { .. } |
             Instruction::ReturnI64Imm32 { .. } |
             Instruction::ReturnF64Imm32 { .. } |
             Instruction::ReturnSpan { .. } |
+            Instruction::ReturnMany { .. } |
             Instruction::ReturnNez { .. } |
             Instruction::ReturnNezReg { .. } |
+            Instruction::ReturnNezReg2 { .. } |
             Instruction::ReturnNezImm32 { .. } |
             Instruction::ReturnNezI64Imm32 { .. } |
             Instruction::ReturnNezF64Imm32 { .. } |
             Instruction::ReturnNezSpan { .. } |
+            Instruction::ReturnNezMany { .. } |
             Instruction::Branch { .. } |
             Instruction::BranchEqz { .. } |
             Instruction::BranchNez { .. } |
@@ -66,7 +74,9 @@ impl Instruction {
             Instruction::CopyImm32 { result, .. } |
             Instruction::CopyI64Imm32 { result, .. } |
             Instruction::CopyF64Imm32 { result, .. } => Some(result),
-            Instruction::CopySpan { .. } => None,
+            Instruction::CopySpan { .. } |
+            Instruction::Copy2 { .. } |
+            Instruction::CopyMany { .. } => None,
             Instruction::CallParams(_) |
             Instruction::CallIndirectParams(_) |
             Instruction::CallIndirectParamsImm16(_) |
