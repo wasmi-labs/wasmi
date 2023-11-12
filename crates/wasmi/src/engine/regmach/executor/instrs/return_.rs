@@ -212,10 +212,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     pub fn execute_return_nez_reg2(
         &mut self,
-        _condition: Register,
-        _value: [Register; 2],
+        condition: Register,
+        value: [Register; 2],
     ) -> ReturnOutcome {
-        todo!()
+        self.execute_return_nez_impl(condition, value, Self::execute_return_reg2)
     }
 
     /// Execute an [`Instruction::ReturnNezImm32`] returning a single 32-bit constant value.
