@@ -28,8 +28,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::Copy2`].
     #[inline(always)]
-    pub fn execute_copy_2(&mut self, _results: RegisterSpan, _values: [Register; 2]) {
-        todo!()
+    pub fn execute_copy_2(&mut self, results: RegisterSpan, values: [Register; 2]) {
+        let result0 = results.head();
+        let result1 = result0.next();
+        // We need `tmp` in case `results[0] == values[1]` to avoid overwriting `values[1]` before reading it.
+        let tmp = self.get_register(values[1]);
+        self.set_register(result0, self.get_register(values[0]));
+        self.set_register(result1, tmp);
+        self.next_instr()
     }
 
     /// Executes an [`Instruction::CopyImm32`].
