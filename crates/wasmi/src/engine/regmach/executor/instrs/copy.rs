@@ -1,11 +1,9 @@
 use super::Executor;
 use crate::{
     core::UntypedValue,
-    engine::regmach::bytecode::{AnyConst32, Const32, Register, RegisterSpan},
+    engine::regmach::bytecode::{AnyConst32, Const32, Instruction, Register, RegisterSpan},
 };
-
-#[cfg(doc)]
-use crate::engine::regmach::bytecode::Instruction;
+use smallvec::SmallVec;
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes a generic `copy` [`Instruction`].
@@ -83,7 +81,32 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::CopyMany`].
     #[inline(always)]
-    pub fn execute_copy_many(&mut self, _results: RegisterSpan, _values: [Register; 2]) {
-        todo!()
+    pub fn execute_copy_many(&mut self, results: RegisterSpan, values: [Register; 2]) {
+        // We need `tmp` since `values[n]` might be overwritten by previous copies.
+        let mut tmp = <SmallVec<[UntypedValue; 8]>>::default();
+        let mut ip = self.ip;
+        ip.add(1);
+        tmp.push(self.get_register(values[0]));
+        tmp.push(self.get_register(values[1]));
+        while let Instruction::RegisterList(values) = ip.get() {
+            for value in values {
+                tmp.push(self.get_register(*value));
+            }
+            ip.add(1);
+        }
+        let values = match ip.get() {
+            Instruction::Register(value) => core::slice::from_ref(value),
+            Instruction::Register2(values) => values,
+            Instruction::Register3(values) => values,
+            unexpected => unreachable!("unexpected Instruction found while executing Instruction::CopyMany: {unexpected:?}"),
+        };
+        for value in values {
+            tmp.push(self.get_register(*value));
+        }
+        for (result, value) in results.iter(tmp.len()).zip(tmp) {
+            self.set_register(result, value);
+        }
+        ip.add(1);
+        self.ip = ip;
     }
 }
