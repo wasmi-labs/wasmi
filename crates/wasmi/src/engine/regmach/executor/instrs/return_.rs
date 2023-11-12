@@ -108,14 +108,33 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Execute an [`Instruction::ReturnReg2`] returning two [`Register`] values.
     #[inline(always)]
-    pub fn execute_return_reg2(&mut self, _values: [Register; 2]) -> ReturnOutcome {
-        todo!()
+    pub fn execute_return_reg2(&mut self, values: [Register; 2]) -> ReturnOutcome {
+        self.execute_return_reg_n_impl::<2>(values)
     }
 
     /// Execute an [`Instruction::ReturnReg3`] returning three [`Register`] values.
     #[inline(always)]
-    pub fn execute_return_reg3(&mut self, _values: [Register; 3]) -> ReturnOutcome {
-        todo!()
+    pub fn execute_return_reg3(&mut self, values: [Register; 3]) -> ReturnOutcome {
+        self.execute_return_reg_n_impl::<3>(values)
+    }
+
+    /// Executes an [`Instruction::ReturnReg2`] or [`Instruction::ReturnReg3`] generically.
+    fn execute_return_reg_n_impl<const N: usize>(
+        &mut self,
+        values: [Register; N],
+    ) -> ReturnOutcome {
+        let (mut caller_sp, results) = self.return_caller_results();
+        debug_assert!(u16::try_from(N).is_ok());
+        for (result, value) in results.iter_u16(N as u16).zip(values) {
+            let value = self.get_register(value);
+            // Safety: The `callee.results()` always refer to a span of valid
+            //         registers of the `caller` that does not overlap with the
+            //         registers of the callee since they reside in different
+            //         call frames. Therefore this access is safe.
+            let cell = unsafe { caller_sp.get_mut(result) };
+            *cell = value;
+        }
+        self.return_impl()
     }
 
     /// Execute an [`Instruction::ReturnImm32`] returning a single 32-bit value.
