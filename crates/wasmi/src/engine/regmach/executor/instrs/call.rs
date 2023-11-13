@@ -124,7 +124,11 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Copies the parameters from `src` for the called [`CallFrame`].
-    fn copy_call_params(&mut self, called: &CallFrame) {
+    ///
+    /// This will also adjust the instruction pointer to point to the
+    /// last call parameter [`Instruction`] if any.
+    #[must_use]
+    fn copy_call_params(&mut self, called: &CallFrame) -> InstructionPtr {
         let mut frame_sp = self.frame_stack_ptr(called);
         let mut dst = Register::from_i16(0);
         let mut ip = self.ip;
@@ -140,6 +144,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 dst = dst.next();
             }
         };
+        ip.add(1);
         while let Instruction::RegisterList(values) = ip.get() {
             copy_params(values);
             ip.add(1);
@@ -151,6 +156,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             unexpected => unreachable!("unexpected Instruction found while executing Instruction::ReturnMany: {unexpected:?}"),
         };
         copy_params(values);
+        // Finally return the instruction pointer to the last call parameter [`Instruction`] if any.
+        ip
     }
 
     /// Prepares a [`CompiledFunc`] call with optional [`CallParams`].
@@ -164,20 +171,26 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let func = self.code_map.get(func);
         let mut frame = self.dispatch_compiled_func(results, func)?;
         if let CallParams::Some = params {
-            self.copy_call_params(&frame);
+            self.ip = self.copy_call_params(&frame);
         }
-        if matches!(call_kind, CallKind::Tail) {
-            // In case of a tail call we have to remove the caller call frame after
-            // allocating the callee call frame. This moves all cells of the callee frame
-            // and may invalidate pointers to it.
-            //
-            // Safety:
-            //
-            // We provide `merge_call_frames` properly with `frame` that has just been allocated
-            // on the value stack which is what the function expects. After this operation we ensure
-            // that `self.sp` is adjusted via a call to `init_call_frame` since it may have been
-            // invalidated by this method.
-            unsafe { Stack::merge_call_frames(self.call_stack, self.value_stack, &mut frame) };
+        match call_kind {
+            CallKind::Nested => {
+                // We need to update the instruction pointer of the caller call frame.
+                self.update_instr_ptr_at(1);
+            }
+            CallKind::Tail => {
+                // In case of a tail call we have to remove the caller call frame after
+                // allocating the callee call frame. This moves all cells of the callee frame
+                // and may invalidate pointers to it.
+                //
+                // Safety:
+                //
+                // We provide `merge_call_frames` properly with `frame` that has just been allocated
+                // on the value stack which is what the function expects. After this operation we ensure
+                // that `self.sp` is adjusted via a call to `init_call_frame` since it may have been
+                // invalidated by this method.
+                unsafe { Stack::merge_call_frames(self.call_stack, self.value_stack, &mut frame) };
+            }
         }
         self.init_call_frame(&frame);
         self.call_stack.push(frame)?;
