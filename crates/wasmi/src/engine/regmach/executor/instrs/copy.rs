@@ -86,13 +86,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         // We need `tmp` since `values[n]` might be overwritten by previous copies.
         let mut tmp = <SmallVec<[UntypedValue; 8]>>::default();
         let mut ip = self.ip;
+        tmp.extend(values.into_iter().map(|value| self.get_register(value)));
         ip.add(1);
-        tmp.push(self.get_register(values[0]));
-        tmp.push(self.get_register(values[1]));
         while let Instruction::RegisterList(values) = ip.get() {
-            for value in values {
-                tmp.push(self.get_register(*value));
-            }
+            tmp.extend(values.iter().map(|value| self.get_register(*value)));
             ip.add(1);
         }
         let values = match ip.get() {
@@ -101,9 +98,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             Instruction::Register3(values) => values,
             unexpected => unreachable!("unexpected Instruction found while executing Instruction::CopyMany: {unexpected:?}"),
         };
-        for value in values {
-            tmp.push(self.get_register(*value));
-        }
+        tmp.extend(values.iter().map(|value| self.get_register(*value)));
         for (result, value) in results.iter(tmp.len()).zip(tmp) {
             self.set_register(result, value);
         }
