@@ -190,7 +190,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes an [`Instruction::ReturnCallInternal0`].
     #[inline(always)]
     pub fn execute_return_call_internal_0(&mut self, func: CompiledFunc) -> Result<(), TrapCode> {
-        self.update_instr_ptr_at(1);
         self.execute_return_call_internal_impl(func, None)?;
         Ok(())
     }
@@ -199,7 +198,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     pub fn execute_return_call_internal(&mut self, func: CompiledFunc) -> Result<(), TrapCode> {
         let call_params = self.fetch_call_params(1);
-        self.update_instr_ptr_at(2);
         self.execute_return_call_internal_impl(func, Some(&call_params))?;
         Ok(())
     }
@@ -262,7 +260,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func: FuncIdx,
     ) -> Result<CallOutcome, TrapCode> {
         let func = self.cache.get_func(self.ctx, func);
-        self.update_instr_ptr_at(1);
         self.execute_return_call_imported_impl(&func, None)
     }
 
@@ -271,7 +268,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     pub fn execute_return_call_imported(&mut self, func: FuncIdx) -> Result<CallOutcome, TrapCode> {
         let call_params = self.fetch_call_params(1);
         let func = self.cache.get_func(self.ctx, func);
-        self.update_instr_ptr_at(2);
         self.execute_return_call_imported_impl(&func, Some(&call_params))
     }
 
@@ -346,7 +342,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
         let call_indirect_params = self.fetch_call_indirect_params(1);
-        self.update_instr_ptr_at(2);
         let results = self.caller_results();
         self.execute_call_indirect_impl(
             results,
@@ -365,7 +360,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ) -> Result<CallOutcome, TrapCode> {
         let call_indirect_params = self.fetch_call_indirect_params(1);
         let call_params = self.fetch_call_params(2);
-        self.update_instr_ptr_at(3);
         let results = self.caller_results();
         self.execute_call_indirect_impl(
             results,
