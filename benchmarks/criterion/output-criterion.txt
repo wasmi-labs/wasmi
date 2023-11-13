@@ -1,0 +1,70 @@
+test translate/wasm_kernel ... bench:     4242804 ns/iter (+/- 33504)
+
+test translate/spidermonkey ... bench:    65721936 ns/iter (+/- 508400)
+
+test translate/erc20 ... bench:      105567 ns/iter (+/- 703)
+
+test translate/erc721 ... bench:      147289 ns/iter (+/- 529)
+
+test translate/erc1155 ... bench:      210731 ns/iter (+/- 844)
+
+test instantiate/wasm_kernel ... bench:       55105 ns/iter (+/- 362)
+
+test execute/tiny_keccak ... bench:      322861 ns/iter (+/- 1121)
+
+test execute/rev_complement ... bench:      424521 ns/iter (+/- 701)
+
+test execute/regex_redux ... bench:      457588 ns/iter (+/- 1461)
+
+test execute/count_until ... bench:      650610 ns/iter (+/- 665)
+
+test execute/br_table ... bench:     1362049 ns/iter (+/- 28159)
+
+test execute/trunc_f2i ... bench:      731670 ns/iter (+/- 871)
+
+test execute/bare_call_0/typed ... bench:     1162941 ns/iter (+/- 6031)
+
+test execute/bare_call_1/typed ... bench:     1265272 ns/iter (+/- 5865)
+
+test execute/bare_call_4/typed ... bench:     1219749 ns/iter (+/- 4372)
+
+test execute/bare_call_16/typed ... bench:     1548782 ns/iter (+/- 2862)
+
+test execute/bare_call_0 ... bench:     1570138 ns/iter (+/- 12582)
+
+test execute/bare_call_1 ... bench:     1617685 ns/iter (+/- 12754)
+
+test execute/bare_call_4 ... bench:     1790127 ns/iter (+/- 14725)
+
+test execute/bare_call_16 ... bench:     2564302 ns/iter (+/- 5995)
+
+test execute/global_bump ... bench:      740896 ns/iter (+/- 37403)
+
+test execute/global_const ... bench:      660889 ns/iter (+/- 767)
+
+test execute/factorial_recursive ... bench:      485556 ns/iter (+/- 946)
+
+test execute/factorial_iterative ... bench:      319700 ns/iter (+/- 738)
+
+test execute/recursive_ok ... bench:       94487 ns/iter (+/- 45)
+
+test execute/recursive_scan ... bench:      129763 ns/iter (+/- 100)
+
+test execute/recursive_trap ... bench:        8860 ns/iter (+/- 310)
+
+test execute/host_calls ... bench:       37142 ns/iter (+/- 683)
+
+test execute/fibonacci_rec ... bench:     3971382 ns/iter (+/- 3689)
+
+test execute/fibonacci_tail ... bench:      856321 ns/iter (+/- 1164)
+
+test execute/fibonacci_iter ... bench:     1400676 ns/iter (+/- 2029)
+
+test execute/recursive_is_even ... bench:      663046 ns/iter (+/- 1211)
+
+test execute/memory_sum ... bench:     1182247 ns/iter (+/- 1284)
+
+test execute/memory_fill ... bench:     1213057 ns/iter (+/- 1533)
+
+test execute/memory_vec_add ... bench:     2347559 ns/iter (+/- 4769)
+
