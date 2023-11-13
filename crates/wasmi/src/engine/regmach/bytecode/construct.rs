@@ -942,6 +942,34 @@ impl Instruction {
         }
     }
 
+    /// Creates a new [`Instruction::Register`] instruction parameter.
+    pub fn register(reg: impl Into<Register>) -> Self {
+        Self::Register(reg.into())
+    }
+
+    /// Creates a new [`Instruction::Register2`] instruction parameter.
+    pub fn register2(reg0: impl Into<Register>, reg1: impl Into<Register>) -> Self {
+        Self::Register2([reg0.into(), reg1.into()])
+    }
+
+    /// Creates a new [`Instruction::Register3`] instruction parameter.
+    pub fn register3(
+        reg0: impl Into<Register>,
+        reg1: impl Into<Register>,
+        reg2: impl Into<Register>,
+    ) -> Self {
+        Self::Register3([reg0.into(), reg1.into(), reg2.into()])
+    }
+
+    /// Creates a new [`Instruction::RegisterList`] instruction parameter.
+    pub fn register_list(
+        reg0: impl Into<Register>,
+        reg1: impl Into<Register>,
+        reg2: impl Into<Register>,
+    ) -> Self {
+        Self::RegisterList([reg0.into(), reg1.into(), reg2.into()])
+    }
+
     /// Creates a new [`Instruction::CallParams`] for the given `params` and `len_results`.
     pub fn call_params(params: RegisterSpanIter, len_results: u16) -> Self {
         let len_params = params.len_as_u16();
