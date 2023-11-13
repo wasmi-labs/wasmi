@@ -1,5 +1,3 @@
-use core::slice;
-
 use super::Executor;
 use crate::{
     core::TrapCode,
@@ -16,6 +14,7 @@ use crate::{
     Func,
     FuncRef,
 };
+use core::slice;
 
 /// Describes whether a `call` instruction has at least one parameter or none.
 #[derive(Debug, Copy, Clone)]
