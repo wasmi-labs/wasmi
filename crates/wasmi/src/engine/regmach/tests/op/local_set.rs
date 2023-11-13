@@ -95,7 +95,7 @@ fn overwrite_call_internal_result_1() {
                 RegisterSpan::new(Register::from_i16(0)),
                 CompiledFunc::from_u32(0),
             ),
-            Instruction::call_params(RegisterSpan::new(Register::from_i16(0)).iter(1), 1),
+            Instruction::register(0),
             Instruction::return_reg(Register::from_i16(0)),
         ])
         .run()
@@ -118,7 +118,7 @@ fn overwrite_call_imported_result_1() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::call_imported(RegisterSpan::new(Register::from_i16(0)), FuncIdx::from(0)),
-            Instruction::call_params(RegisterSpan::new(Register::from_i16(0)).iter(1), 1),
+            Instruction::register(0),
             Instruction::return_reg(Register::from_i16(0)),
         ])
         .run()

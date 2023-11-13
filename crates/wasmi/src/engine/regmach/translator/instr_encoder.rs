@@ -7,7 +7,7 @@ use crate::{
             Instr,
         },
         regmach::{
-            bytecode::{Const32, Instruction, Register, RegisterSpanIter},
+            bytecode::{Const32, Instruction, Provider, Register, RegisterSpanIter},
             translator::ValueStack,
         },
         TranslationError,
@@ -526,6 +526,72 @@ impl InstrEncoder {
         let copy_results = stack.peek_dynamic_n(params.len())?.iter(params.len());
         self.encode_copies(stack, copy_results, params)?;
         Ok(copy_results)
+    }
+
+    /// Encode the given slice of [`TypedProvider`] as a list of [`Register`].
+    ///
+    /// # Note
+    ///
+    /// This is used for the following n-ary instructions:
+    ///
+    /// - [`Instruction::ReturnMany`]
+    /// - [`Instruction::ReturnNezMany`]
+    /// - [`Instruction::CopyMany`]
+    /// - [`Instruction::CallInternal`]
+    /// - [`Instruction::CallImported`]
+    /// - [`Instruction::CallIndirect`]
+    /// - [`Instruction::ReturnCallInternal`]
+    /// - [`Instruction::ReturnCallImported`]
+    /// - [`Instruction::ReturnCallIndirect`]
+    pub fn encode_register_list(
+        &mut self,
+        stack: &mut ValueStack,
+        inputs: &[TypedProvider],
+    ) -> Result<(), TranslationError> {
+        /// Converts a [`TypedProvider`] into a [`Register`].
+        ///
+        /// This allocates constant values for [`TypedProvider::Const`].
+        fn provider2reg(
+            stack: &mut ValueStack,
+            provider: &TypedProvider,
+        ) -> Result<Register, TranslationError> {
+            match provider {
+                Provider::Register(register) => Ok(*register),
+                Provider::Const(value) => stack.alloc_const(*value),
+            }
+        }
+
+        let mut remaining = inputs;
+        loop {
+            match remaining {
+                [] => return Ok(()),
+                [v0] => {
+                    let v0 = provider2reg(stack, v0)?;
+                    self.instrs.push(Instruction::register(v0))?;
+                    return Ok(());
+                }
+                [v0, v1] => {
+                    let v0 = provider2reg(stack, v0)?;
+                    let v1 = provider2reg(stack, v1)?;
+                    self.instrs.push(Instruction::register2(v0, v1))?;
+                    return Ok(());
+                }
+                [v0, v1, v2] => {
+                    let v0 = provider2reg(stack, v0)?;
+                    let v1 = provider2reg(stack, v1)?;
+                    let v2 = provider2reg(stack, v2)?;
+                    self.instrs.push(Instruction::register3(v0, v1, v2))?;
+                    return Ok(());
+                }
+                [v0, v1, v2, rest @ ..] => {
+                    let v0 = provider2reg(stack, v0)?;
+                    let v1 = provider2reg(stack, v1)?;
+                    let v2 = provider2reg(stack, v2)?;
+                    self.instrs.push(Instruction::register_list(v0, v1, v2))?;
+                    remaining = rest;
+                }
+            }
+        }
     }
 
     /// Encodes the call parameters of a `wasmi` `call_indirect` instruction if necessary.
