@@ -3,6 +3,7 @@ use crate::{
     core::UntypedValue,
     engine::regmach::bytecode::{AnyConst32, Const32, Instruction, Register, RegisterSpan},
 };
+use core::slice;
 use smallvec::SmallVec;
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
@@ -95,7 +96,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             ip.add(1);
         }
         let values = match ip.get() {
-            Instruction::Register(value) => core::slice::from_ref(value),
+            Instruction::Register(value) => slice::from_ref(value),
             Instruction::Register2(values) => values,
             Instruction::Register3(values) => values,
             unexpected => unreachable!("unexpected Instruction found while executing Instruction::CopyMany: {unexpected:?}"),
