@@ -2,13 +2,11 @@ use super::Executor;
 use crate::{
     core::UntypedValue,
     engine::regmach::{
-        bytecode::{AnyConst32, Const32, Register, RegisterSpan, RegisterSpanIter},
+        bytecode::{AnyConst32, Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
         stack::ValueStackPtr,
     },
 };
-
-#[cfg(doc)]
-use crate::engine::regmach::bytecode::Instruction;
+use core::slice;
 
 /// The outcome of a Wasm return statement.
 #[derive(Debug, Copy, Clone)]
@@ -94,7 +92,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let (mut caller_sp, results) = self.return_caller_results();
         let value = f(self, value);
         // Safety: The `callee.results()` always refer to a span of valid
-        //         registers of the `caller` so this access is safe.
+        //         registers of the `caller` that does not overlap with the
+        //         registers of the callee since they reside in different
+        //         call frames. Therefore this access is safe.
         let result = unsafe { caller_sp.get_mut(results.head()) };
         *result = value;
         self.return_impl()
@@ -161,8 +161,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let (mut caller_sp, results) = self.return_caller_results();
         let results = results.iter(values.len());
         for (result, value) in results.zip(values) {
-            // Safety: The value stack pointer returned by `return_caller_results` is
-            //         guaranteed to be valid for all registers from the results span.
+            // Safety: The `callee.results()` always refer to a span of valid
+            //         registers of the `caller` that does not overlap with the
+            //         registers of the callee since they reside in different
+            //         call frames. Therefore this access is safe.
             let cell = unsafe { caller_sp.get_mut(result) };
             *cell = self.get_register(value);
         }
@@ -171,8 +173,40 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Execute an [`Instruction::ReturnMany`] returning many values.
     #[inline(always)]
-    pub fn execute_return_many(&mut self, _values: [Register; 3]) -> ReturnOutcome {
-        todo!()
+    pub fn execute_return_many(&mut self, values: [Register; 3]) -> ReturnOutcome {
+        self.execute_return_many_impl(&values)
+    }
+
+    /// Executes [`Instruction::ReturnMany`] or parts of [`Instruction::ReturnNezMany`] generically.
+    fn execute_return_many_impl(&mut self, values: &[Register]) -> ReturnOutcome {
+        let (mut caller_sp, results) = self.return_caller_results();
+        let mut result = results.head();
+        let mut copy_results = |values: &[Register]| {
+            for value in values {
+                let value = self.get_register(*value);
+                // Safety: The `callee.results()` always refer to a span of valid
+                //         registers of the `caller` that does not overlap with the
+                //         registers of the callee since they reside in different
+                //         call frames. Therefore this access is safe.
+                let cell = unsafe { caller_sp.get_mut(result) };
+                *cell = value;
+                result = result.next();
+            }
+        };
+        copy_results(values);
+        let mut ip = self.ip;
+        while let Instruction::RegisterList(values) = ip.get() {
+            copy_results(values);
+            ip.add(1);
+        }
+        let values = match ip.get() {
+            Instruction::Register(value) => slice::from_ref(value),
+            Instruction::Register2(values) => values,
+            Instruction::Register3(values) => values,
+            unexpected => unreachable!("unexpected Instruction found while executing Instruction::ReturnMany: {unexpected:?}"),
+        };
+        copy_results(values);
+        self.return_impl()
     }
 
     /// Execute a generic conditional return [`Instruction`].
@@ -262,9 +296,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     pub fn execute_return_nez_many(
         &mut self,
-        _condition: Register,
-        _values: [Register; 2],
+        condition: Register,
+        values: [Register; 2],
     ) -> ReturnOutcome {
-        todo!()
+        self.execute_return_nez_impl(condition, &values[..], Self::execute_return_many_impl)
     }
 }
