@@ -96,7 +96,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 (index, table)
             }
             unexpected => unreachable!(
-                "expected Instruction::CallIndirectParams at this address but found {unexpected:?}"
+                "expected `Instruction::CallIndirectParams[Imm16]` but found {unexpected:?}"
             ),
         }
     }
