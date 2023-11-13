@@ -184,6 +184,24 @@ impl Instruction {
         }
     }
 
+    /// Creates a new [`Instruction::ReturnReg2`] for the given [`Register`] indices.
+    pub fn return_reg2(reg0: impl Into<Register>, reg1: impl Into<Register>) -> Self {
+        Self::ReturnReg2 {
+            values: [reg0.into(), reg1.into()],
+        }
+    }
+
+    /// Creates a new [`Instruction::ReturnReg3`] for the given [`Register`] indices.
+    pub fn return_reg3(
+        reg0: impl Into<Register>,
+        reg1: impl Into<Register>,
+        reg2: impl Into<Register>,
+    ) -> Self {
+        Self::ReturnReg3 {
+            values: [reg0.into(), reg1.into(), reg2.into()],
+        }
+    }
+
     /// Creates a new [`Instruction::ReturnImm32`] from the given `value`.
     pub fn return_imm32(value: impl Into<AnyConst32>) -> Self {
         Self::ReturnImm32 {
@@ -210,14 +228,42 @@ impl Instruction {
         Self::ReturnSpan { values }
     }
 
+    /// Creates a new [`Instruction::ReturnMany`] for the given [`Register`] indices.
+    pub fn return_many(
+        reg0: impl Into<Register>,
+        reg1: impl Into<Register>,
+        reg2: impl Into<Register>,
+    ) -> Self {
+        Self::ReturnMany {
+            values: [reg0.into(), reg1.into(), reg2.into()],
+        }
+    }
+
     /// Creates a new [`Instruction::ReturnNez`] for the given `condition`.
-    pub fn return_nez(condition: Register) -> Self {
-        Self::ReturnNez { condition }
+    pub fn return_nez(condition: impl Into<Register>) -> Self {
+        Self::ReturnNez {
+            condition: condition.into(),
+        }
     }
 
     /// Creates a new [`Instruction::ReturnNezReg`] for the given `condition` and `value`.
-    pub fn return_nez_reg(condition: Register, value: Register) -> Self {
-        Self::ReturnNezReg { condition, value }
+    pub fn return_nez_reg(condition: impl Into<Register>, value: impl Into<Register>) -> Self {
+        Self::ReturnNezReg {
+            condition: condition.into(),
+            value: value.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::ReturnNezReg2`] for the given `condition` and `value`.
+    pub fn return_nez_reg2(
+        condition: impl Into<Register>,
+        value0: impl Into<Register>,
+        value1: impl Into<Register>,
+    ) -> Self {
+        Self::ReturnNezReg2 {
+            condition: condition.into(),
+            values: [value0.into(), value1.into()],
+        }
     }
 
     /// Creates a new [`Instruction::ReturnNezImm32`] for the given `condition` and `value`.
@@ -249,6 +295,18 @@ impl Instruction {
         Self::ReturnNezSpan { condition, values }
     }
 
+    /// Creates a new [`Instruction::ReturnNezMany`] for the given `condition` and `value`.
+    pub fn return_nez_many(
+        condition: impl Into<Register>,
+        head0: impl Into<Register>,
+        head1: impl Into<Register>,
+    ) -> Self {
+        Self::ReturnNezMany {
+            condition: condition.into(),
+            values: [head0.into(), head1.into()],
+        }
+    }
+
     /// Creates a new [`Instruction::Branch`] for the given `offset`.
     pub fn branch(offset: BranchOffset) -> Self {
         Self::Branch { offset }
@@ -273,8 +331,23 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::Copy`].
-    pub fn copy(result: Register, value: Register) -> Self {
-        Self::Copy { result, value }
+    pub fn copy(result: impl Into<Register>, value: impl Into<Register>) -> Self {
+        Self::Copy {
+            result: result.into(),
+            value: value.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::Copy2`].
+    pub fn copy2(
+        results: RegisterSpan,
+        value0: impl Into<Register>,
+        value1: impl Into<Register>,
+    ) -> Self {
+        Self::Copy2 {
+            results,
+            values: [value0.into(), value1.into()],
+        }
     }
 
     /// Creates a new [`Instruction::CopyImm32`].
@@ -308,6 +381,18 @@ impl Instruction {
             results,
             values,
             len,
+        }
+    }
+
+    /// Creates a new [`Instruction::CopyMany`].
+    pub fn copy_many(
+        results: RegisterSpan,
+        head0: impl Into<Register>,
+        head1: impl Into<Register>,
+    ) -> Self {
+        Self::CopyMany {
+            results,
+            values: [head0.into(), head1.into()],
         }
     }
 
