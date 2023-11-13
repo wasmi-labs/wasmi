@@ -73,17 +73,16 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// # Note
     ///
-    ///
+    /// - This advances the [`InstructionPtr`] to the next [`Instruction`].
     /// - This is done by encoding an [`Instruction::TableGet`] instruction
     ///   word following the actual instruction where the [`TableIdx`]
     ///   paremeter belongs to.
     /// - This is required for some instructions that do not fit into
     ///   a single instruction word and store a [`TableIdx`] value in
     ///   another instruction word.
-    fn fetch_call_indirect_params(&self, offset: usize) -> (u32, TableIdx) {
-        let mut addr: InstructionPtr = self.ip;
-        addr.add(offset);
-        match addr.get() {
+    fn pull_call_indirect_params(&mut self) -> (u32, TableIdx) {
+        self.ip.add(1);
+        match self.ip.get() {
             Instruction::CallIndirectParams(call_params) => {
                 let index = u32::from(self.get_register(call_params.index));
                 let table = call_params.table;
@@ -345,7 +344,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
-        let (index, table) = self.fetch_call_indirect_params(1);
+        let (index, table) = self.pull_call_indirect_params();
         let results = self.caller_results();
         self.execute_call_indirect_impl(
             results,
@@ -363,7 +362,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
-        let (index, table) = self.fetch_call_indirect_params(1);
+        let (index, table) = self.pull_call_indirect_params();
         let results = self.caller_results();
         self.execute_call_indirect_impl(
             results,
@@ -382,8 +381,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         results: RegisterSpan,
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
-        let (index, table) = self.fetch_call_indirect_params(1);
-        self.update_instr_ptr_at(2);
+        let (index, table) = self.pull_call_indirect_params();
         self.execute_call_indirect_impl(
             results,
             func_type,
@@ -401,8 +399,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         results: RegisterSpan,
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
-        let (index, table) = self.fetch_call_indirect_params(1);
-        self.update_instr_ptr_at(3);
+        let (index, table) = self.pull_call_indirect_params();
         self.execute_call_indirect_impl(
             results,
             func_type,
