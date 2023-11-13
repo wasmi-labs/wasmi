@@ -4,7 +4,6 @@ use super::{
     BinInstr,
     BinInstrImm16,
     CallIndirectParams,
-    CallIndirectParamsImm16,
     CallParams,
     Const16,
     Const32,
@@ -967,7 +966,7 @@ impl Instruction {
         index: impl Into<Const16<u32>>,
         table: impl Into<TableIdx>,
     ) -> Self {
-        Self::CallIndirectParamsImm16(CallIndirectParamsImm16 {
+        Self::CallIndirectParamsImm16(CallIndirectParams {
             index: index.into(),
             table: table.into(),
         })

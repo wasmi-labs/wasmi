@@ -474,22 +474,9 @@ pub struct CallParams {
 
 /// Auxiliary [`Instruction`] parameter to encode call parameters for indirect call instructions.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct CallIndirectParams {
-    /// The index of the called function in the table.
-    pub index: Register,
+pub struct CallIndirectParams<T> {
     /// The table which holds the called function at the index.
     pub table: TableIdx,
-}
-
-/// Auxiliary [`Instruction`] parameter to encode call parameters for indirect call instructions.
-///
-/// # Note
-///
-/// Variant of [`CallIndirectParams`] with a 16-bit encoded constant `index` parameter.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct CallIndirectParamsImm16 {
     /// The index of the called function in the table.
-    pub index: Const16<u32>,
-    /// The table which holds the called function at the index.
-    pub table: TableIdx,
+    pub index: T,
 }

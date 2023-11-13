@@ -13,7 +13,6 @@ pub(crate) use self::{
         BinInstr,
         BinInstrImm16,
         CallIndirectParams,
-        CallIndirectParamsImm16,
         CallParams,
         CopysignImmInstr,
         LoadAtInstr,
@@ -147,6 +146,14 @@ pub enum Instruction {
     /// - [`Instruction::Register2`]
     /// - [`Instruction::Register3`]
     RegisterList([Register; 3]),
+    /// Auxiliary [`Instruction`] to encode call parameters for call instructions.
+    ///
+    /// TODO: remove this variant since no longer needed
+    CallParams(CallParams),
+    /// Auxiliary [`Instruction`] to encode table access information for indirect call instructions.
+    CallIndirectParams(CallIndirectParams<Register>),
+    /// Variant of [`Instruction::CallIndirectParams`] for 16-bit constant `index` parameter.
+    CallIndirectParamsImm16(CallIndirectParams<Const16<u32>>),
 
     /// Traps the execution with the given [`TrapCode`].
     ///
@@ -498,13 +505,6 @@ pub enum Instruction {
         /// The first two input registers to copy.
         values: [Register; 2],
     },
-
-    /// Auxiliary [`Instruction`] to encode call parameters for call instructions.
-    CallParams(CallParams), // TODO: remove this variant since no longer needed
-    /// Auxiliary [`Instruction`] to encode table access information for indirect call instructions.
-    CallIndirectParams(CallIndirectParams),
-    /// Variant of [`Instruction::CallIndirectParams`] for 16-bit constant `index` parameter.
-    CallIndirectParamsImm16(CallIndirectParamsImm16),
 
     /// Wasm `return_call` equivalent `wasmi` instruction.
     ///
