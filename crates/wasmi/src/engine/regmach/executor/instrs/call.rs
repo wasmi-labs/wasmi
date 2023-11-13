@@ -43,14 +43,6 @@ pub enum CallOutcome {
     },
 }
 
-/// Resolved [`Instruction::CallIndirectParams`] or [`Instruction::CallIndirectParamsImm16`].
-pub struct ResolvedCallIndirectParams {
-    /// The index of the called function in the table.
-    pub index: u32,
-    /// The table which holds the called function at the index.
-    pub table: TableIdx,
-}
-
 /// The kind of a function call.
 #[derive(Debug, Copy, Clone)]
 pub enum CallKind {
@@ -89,19 +81,19 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// - This is required for some instructions that do not fit into
     ///   a single instruction word and store a [`TableIdx`] value in
     ///   another instruction word.
-    fn fetch_call_indirect_params(&self, offset: usize) -> ResolvedCallIndirectParams {
+    fn fetch_call_indirect_params(&self, offset: usize) -> (u32, TableIdx) {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
         match addr.get() {
             Instruction::CallIndirectParams(call_params) => {
                 let index = u32::from(self.get_register(call_params.index));
                 let table = call_params.table;
-                ResolvedCallIndirectParams { index, table }
+                (index, table)
             }
             Instruction::CallIndirectParamsImm16(call_params) => {
                 let index = u32::from(call_params.index);
                 let table = call_params.table;
-                ResolvedCallIndirectParams { index, table }
+                (index, table)
             }
             unexpected => unreachable!(
                 "expected Instruction::CallIndirectParams at this address but found {unexpected:?}"
@@ -342,12 +334,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
-        let call_indirect_params = self.fetch_call_indirect_params(1);
+        let (index, table) = self.fetch_call_indirect_params(1);
         let results = self.caller_results();
         self.execute_call_indirect_impl(
             results,
             func_type,
-            &call_indirect_params,
+            index,
+            table,
             CallParams::None,
             CallKind::Tail,
         )
@@ -359,12 +352,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
-        let call_indirect_params = self.fetch_call_indirect_params(1);
+        let (index, table) = self.fetch_call_indirect_params(1);
         let results = self.caller_results();
         self.execute_call_indirect_impl(
             results,
             func_type,
-            &call_indirect_params,
+            index,
+            table,
             CallParams::Some,
             CallKind::Tail,
         )
@@ -377,12 +371,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         results: RegisterSpan,
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
-        let call_indirect_params = self.fetch_call_indirect_params(1);
+        let (index, table) = self.fetch_call_indirect_params(1);
         self.update_instr_ptr_at(2);
         self.execute_call_indirect_impl(
             results,
             func_type,
-            &call_indirect_params,
+            index,
+            table,
             CallParams::None,
             CallKind::Nested,
         )
@@ -395,12 +390,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         results: RegisterSpan,
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, TrapCode> {
-        let call_indirect_params = self.fetch_call_indirect_params(1);
+        let (index, table) = self.fetch_call_indirect_params(1);
         self.update_instr_ptr_at(3);
         self.execute_call_indirect_impl(
             results,
             func_type,
-            &call_indirect_params,
+            index,
+            table,
             CallParams::Some,
             CallKind::Nested,
         )
@@ -411,12 +407,11 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         results: RegisterSpan,
         func_type: SignatureIdx,
-        call_indirect_params: &ResolvedCallIndirectParams,
+        index: u32,
+        table: TableIdx,
         params: CallParams,
         call_kind: CallKind,
     ) -> Result<CallOutcome, TrapCode> {
-        let index = call_indirect_params.index;
-        let table = call_indirect_params.table;
         let table = self.cache.get_table(self.ctx, table);
         let funcref = self
             .ctx
