@@ -228,4 +228,18 @@ impl InstructionPtr {
         //         of valid bounds using this method.
         unsafe { &*self.ptr }
     }
+
+    /// Returns the [`Instruction`] at the [`InstructionPtr`] and advance to the next [`Instruction`].
+    #[inline(always)]
+    #[must_use]
+    pub fn pull(&mut self) -> &Instruction {
+        // SAFETY: Within Wasm bytecode execution we are guaranteed by
+        //         Wasm validation and `wasmi` codegen to never run out
+        //         of valid bounds using this method.
+        unsafe {
+            let instr = &*self.ptr;
+            self.ptr = self.ptr.add(1);
+            instr
+        }
+    }
 }

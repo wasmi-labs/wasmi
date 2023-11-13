@@ -195,9 +195,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         };
         copy_results(values);
         let mut ip = self.ip;
-        while let Instruction::RegisterList(values) = ip.get() {
+        ip.add(1);
+        while let Instruction::RegisterList(values) = ip.pull() {
             copy_results(values);
-            ip.add(1);
         }
         let values = match ip.get() {
             Instruction::Register(value) => slice::from_ref(value),
