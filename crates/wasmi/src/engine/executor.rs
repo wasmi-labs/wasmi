@@ -606,9 +606,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func: &Func,
         kind: CallKind,
     ) -> Result<CallOutcome, TrapCode> {
-        self.next_instr_at(skip);
         self.sync_stack_ptr();
         if matches!(kind, CallKind::Nested) {
+            self.next_instr_at(skip);
             self.call_stack
                 .push(FuncFrame::new(self.ip, self.cache.instance()))?;
         }
@@ -638,12 +638,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// with the outer structures.
     #[inline(always)]
     fn call_func_internal(&mut self, func: CompiledFunc, kind: CallKind) -> Result<(), TrapCode> {
-        self.next_instr_at(match kind {
-            CallKind::Nested => 1,
-            CallKind::Tail => 2,
-        });
         self.sync_stack_ptr();
         if matches!(kind, CallKind::Nested) {
+            self.next_instr_at(1);
             self.call_stack
                 .push(FuncFrame::new(self.ip, self.cache.instance()))?;
         }
