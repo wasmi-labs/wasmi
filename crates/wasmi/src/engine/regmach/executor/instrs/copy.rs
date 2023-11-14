@@ -88,10 +88,11 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let mut ip = self.ip;
         tmp.extend(values.into_iter().map(|value| self.get_register(value)));
         ip.add(1);
-        while let Instruction::RegisterList(values) = ip.pull() {
+        while let Instruction::RegisterList(values) = ip.get() {
             tmp.extend(values.iter().map(|value| self.get_register(*value)));
+            ip.add(1);
         }
-        let values = match ip.pull() {
+        let values = match ip.get() {
             Instruction::Register(value) => slice::from_ref(value),
             Instruction::Register2(values) => values,
             Instruction::Register3(values) => values,
@@ -102,5 +103,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             self.set_register(result, value);
         }
         self.ip = ip;
+        self.next_instr()
     }
 }

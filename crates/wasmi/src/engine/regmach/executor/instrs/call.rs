@@ -143,8 +143,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             }
         };
         ip.add(1);
-        while let Instruction::RegisterList(values) = ip.pull() {
+        while let Instruction::RegisterList(values) = ip.get() {
             copy_params(values);
+            ip.add(1);
         }
         let values = match ip.get() {
             Instruction::Register(value) => slice::from_ref(value),
