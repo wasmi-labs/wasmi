@@ -146,7 +146,7 @@ fn overwrite_call_indirect_result_1() {
                 SignatureIdx::from(0),
             ),
             Instruction::call_indirect_params(Register::from_i16(0), TableIdx::from(0)),
-            Instruction::call_params(RegisterSpan::new(Register::from_i16(1)).iter(1), 1),
+            Instruction::register(1),
             Instruction::return_reg(Register::from_i16(0)),
         ])
         .run()

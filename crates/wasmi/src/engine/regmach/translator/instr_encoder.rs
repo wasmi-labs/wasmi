@@ -594,47 +594,6 @@ impl InstrEncoder {
         }
     }
 
-    /// Encodes the call parameters of a `wasmi` `call_indirect` instruction if necessary.
-    ///
-    /// Returns the contiguous [`RegisterSpanIter`] that makes up the call parameters post encoding.
-    ///
-    /// # Errors
-    ///
-    /// If the translation runs out of register space during this operation.
-    pub fn encode_call_indirect_params(
-        &mut self,
-        stack: &mut ValueStack,
-        mut index: TypedProvider,
-        params: &[TypedProvider],
-    ) -> Result<(TypedProvider, RegisterSpanIter), TranslationError> {
-        if let Some(register_span) = RegisterSpanIter::from_providers(params) {
-            // Case: we are on the happy path were the providers on the
-            //       stack already are registers with contiguous indices.
-            //
-            //       This allows us to avoid copying over the registers
-            //       to where the call instruction expects them on the stack.
-            return Ok((index, register_span));
-        }
-        // Case: the providers on the stack need to be copied to the
-        //       location where the call instruction expects its parameters
-        //       before executing the call.
-        let copy_results = stack.push_dynamic_n(params.len())?.iter(params.len());
-        if let TypedProvider::Register(index_reg) = index {
-            if copy_results.contains(index_reg) {
-                // Case: the parameters are copied over to a contiguous span of registers
-                //       that overwrites the `index` register. Thus we are required to copy
-                //       the `index` register to a protected register.
-                let copy_index = stack.push_dynamic()?;
-                self.encode_copy(stack, copy_index, index)?;
-                stack.pop();
-                index = TypedProvider::Register(copy_index);
-            }
-        }
-        self.encode_copies(stack, copy_results, params)?;
-        stack.remove_n(params.len());
-        Ok((index, copy_results))
-    }
-
     /// Encode conditional branch parameters for `br_if` and `return_if` instructions.
     ///
     /// In contrast to [`InstrEncoder::encode_call_params`] this routine adds back original

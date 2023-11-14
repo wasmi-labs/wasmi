@@ -680,17 +680,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let type_index = SignatureIdx::from(type_index);
         let func_type = self.func_type_at(type_index);
         let (params, results) = func_type.params_results();
-        let len_results =
-            u16::try_from(func_type.results().len()).expect("too many function return types");
         let index = self.alloc.stack.pop();
         let provider_params = &mut self.alloc.buffer;
         self.alloc.stack.pop_n(params.len(), provider_params);
-        let (index, params_span) = self.alloc.instr_encoder.encode_call_indirect_params(
-            &mut self.alloc.stack,
-            index,
-            provider_params,
-        )?;
-        let call_params = Instruction::call_params(params_span, len_results);
         let table_params = match index {
             TypedProvider::Const(index) => match <Const16<u32>>::from_u32(u32::from(index)) {
                 Some(index) => {
@@ -714,9 +706,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         };
         self.alloc.instr_encoder.push_instr(instr)?;
         self.alloc.instr_encoder.append_instr(table_params)?;
-        if !params.is_empty() {
-            self.alloc.instr_encoder.append_instr(call_params)?;
-        }
+        self.alloc
+            .instr_encoder
+            .encode_register_list(&mut self.alloc.stack, provider_params)?;
         Ok(())
     }
 
@@ -767,17 +759,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let type_index = SignatureIdx::from(type_index);
         let func_type = self.func_type_at(type_index);
         let params = func_type.params();
-        let len_results =
-            u16::try_from(func_type.results().len()).expect("too many function return types");
         let index = self.alloc.stack.pop();
         let provider_params = &mut self.alloc.buffer;
         self.alloc.stack.pop_n(params.len(), provider_params);
-        let (index, params_span) = self.alloc.instr_encoder.encode_call_indirect_params(
-            &mut self.alloc.stack,
-            index,
-            provider_params,
-        )?;
-        let call_params = Instruction::call_params(params_span, len_results);
         let table_params = match index {
             TypedProvider::Const(index) => match <Const16<u32>>::from_u32(u32::from(index)) {
                 Some(index) => {
@@ -800,9 +784,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         };
         self.alloc.instr_encoder.push_instr(instr)?;
         self.alloc.instr_encoder.append_instr(table_params)?;
-        if !params.is_empty() {
-            self.alloc.instr_encoder.append_instr(call_params)?;
-        }
+        self.alloc
+            .instr_encoder
+            .encode_register_list(&mut self.alloc.stack, provider_params)?;
         self.reachable = false;
         Ok(())
     }
