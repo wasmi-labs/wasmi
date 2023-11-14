@@ -241,7 +241,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         results: RegisterSpan,
         func: CompiledFunc,
     ) -> Result<(), TrapCode> {
-        self.update_instr_ptr_at(1);
         self.prepare_compiled_func_call(results, func, CallParams::None, CallKind::Nested)?;
         Ok(())
     }
@@ -253,7 +252,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         results: RegisterSpan,
         func: CompiledFunc,
     ) -> Result<(), TrapCode> {
-        self.update_instr_ptr_at(2);
         self.prepare_compiled_func_call(results, func, CallParams::Some, CallKind::Nested)?;
         Ok(())
     }
@@ -293,7 +291,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func: FuncIdx,
     ) -> Result<CallOutcome, TrapCode> {
         let func = self.cache.get_func(self.ctx, func);
-        self.update_instr_ptr_at(1);
         self.execute_call_imported_impl(results, &func, CallParams::None, CallKind::Nested)
     }
 
@@ -305,7 +302,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func: FuncIdx,
     ) -> Result<CallOutcome, TrapCode> {
         let func = self.cache.get_func(self.ctx, func);
-        self.update_instr_ptr_at(2);
         self.execute_call_imported_impl(results, &func, CallParams::Some, CallKind::Nested)
     }
 
