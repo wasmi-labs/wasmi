@@ -4,7 +4,6 @@ use super::{
     BinInstr,
     BinInstrImm16,
     CallIndirectParams,
-    CallParams,
     Const16,
     Const32,
     Instruction,
@@ -1053,17 +1052,6 @@ impl Instruction {
         reg2: impl Into<Register>,
     ) -> Self {
         Self::RegisterList([reg0.into(), reg1.into(), reg2.into()])
-    }
-
-    /// Creates a new [`Instruction::CallParams`] for the given `params` and `len_results`.
-    pub fn call_params(params: RegisterSpanIter, len_results: u16) -> Self {
-        let len_params = params.len_as_u16();
-        let params = params.span();
-        Self::CallParams(CallParams {
-            params,
-            len_params,
-            len_results,
-        })
     }
 
     /// Creates a new [`Instruction::CallIndirectParams`] for the given `index` and `table`.

@@ -13,7 +13,6 @@ pub(crate) use self::{
         BinInstr,
         BinInstrImm16,
         CallIndirectParams,
-        CallParams,
         CopysignImmInstr,
         LoadAtInstr,
         LoadInstr,
@@ -146,10 +145,6 @@ pub enum Instruction {
     /// - [`Instruction::Register2`]
     /// - [`Instruction::Register3`]
     RegisterList([Register; 3]),
-    /// Auxiliary [`Instruction`] to encode call parameters for call instructions.
-    ///
-    /// TODO: remove this variant since no longer needed
-    CallParams(CallParams),
     /// Auxiliary [`Instruction`] to encode table access information for indirect call instructions.
     CallIndirectParams(CallIndirectParams<Register>),
     /// Variant of [`Instruction::CallIndirectParams`] for 16-bit constant `index` parameter.

@@ -103,9 +103,6 @@ impl VisitInputRegisters for Instruction {
             Instruction::CopyMany { results: _, values } => {
                 values.visit_input_registers(f);
             }
-            Instruction::CallParams(call_params) => {
-                call_params.params.visit_input_registers(f);
-            }
             Instruction::CallIndirectParams(params) => f(&mut params.index),
             Instruction::CallIndirectParamsImm16(_) => {},
             Instruction::ReturnCallInternal0 { .. } |

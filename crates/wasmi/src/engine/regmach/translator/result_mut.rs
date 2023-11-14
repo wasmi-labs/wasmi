@@ -77,7 +77,6 @@ impl Instruction {
             Instruction::CopySpan { .. } |
             Instruction::Copy2 { .. } |
             Instruction::CopyMany { .. } => None,
-            Instruction::CallParams(_) |
             Instruction::CallIndirectParams(_) |
             Instruction::CallIndirectParamsImm16(_) |
             Instruction::ReturnCallInternal0 { .. } |

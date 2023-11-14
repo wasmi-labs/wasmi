@@ -178,7 +178,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 | Instr::Register(_)
                 | Instr::Register2(_)
                 | Instr::Register3(_)
-                | Instr::RegisterList(_) => self.invalid_instruction_word()?,
+                | Instr::RegisterList(_)
+                | Instr::CallIndirectParams(_)
+                | Instr::CallIndirectParamsImm16(_) => self.invalid_instruction_word()?,
                 Instr::Trap(trap_code) => self.execute_trap(trap_code)?,
                 Instr::ConsumeFuel(block_fuel) => self.execute_consume_fuel(block_fuel)?,
                 Instr::Return => {
@@ -253,9 +255,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     len,
                 } => self.execute_copy_span(results, values, len),
                 Instr::CopyMany { results, values } => self.execute_copy_many(results, values),
-                Instr::CallParams(_) => self.invalid_instruction_word()?,
-                Instr::CallIndirectParams(_) => self.invalid_instruction_word()?,
-                Instr::CallIndirectParamsImm16(_) => self.invalid_instruction_word()?,
                 Instr::ReturnCallInternal0 { func } => self.execute_return_call_internal_0(func)?,
                 Instr::ReturnCallInternal { func } => self.execute_return_call_internal(func)?,
                 Instr::ReturnCallImported0 { func } => {
