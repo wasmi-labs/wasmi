@@ -718,15 +718,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let func_idx = FuncIdx::from(function_index);
         let func_type = self.func_type_of(func_idx);
         let params = func_type.params();
-        let len_results =
-            u16::try_from(func_type.results().len()).expect("too many function return types");
         let provider_params = &mut self.alloc.buffer;
         self.alloc.stack.pop_n(params.len(), provider_params);
-        let params_span = self
-            .alloc
-            .instr_encoder
-            .encode_call_params(&mut self.alloc.stack, provider_params)?;
-        let call_params = Instruction::call_params(params_span, len_results);
         let instr = match self.res.get_compiled_func_2(func_idx) {
             Some(compiled_func) => {
                 // Case: We are calling an internal function and can optimize
@@ -746,9 +739,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             }
         };
         self.alloc.instr_encoder.push_instr(instr)?;
-        if !params.is_empty() {
-            self.alloc.instr_encoder.append_instr(call_params)?;
-        }
+        self.alloc
+            .instr_encoder
+            .encode_register_list(&mut self.alloc.stack, provider_params)?;
         self.reachable = false;
         Ok(())
     }
