@@ -473,6 +473,7 @@ impl InstrEncoder {
                 Instruction::return_reg3(reg0, reg1, reg2)
             }
             [v0, v1, v2, rest @ ..] => {
+                debug_assert!(!rest.is_empty());
                 if let Some(span) = RegisterSpanIter::from_providers(values) {
                     self.push_instr(Instruction::return_span(span))?;
                     return Ok(());
@@ -481,6 +482,53 @@ impl InstrEncoder {
                 let reg1 = Self::provider2reg(stack, v1)?;
                 let reg2 = Self::provider2reg(stack, v2)?;
                 self.push_instr(Instruction::return_many(reg0, reg1, reg2))?;
+                self.encode_register_list(stack, rest)?;
+                return Ok(());
+            }
+        };
+        self.push_instr(instr)?;
+        Ok(())
+    }
+
+    /// Encodes an conditional `return` instruction.
+    pub fn encode_return_nez(
+        &mut self,
+        stack: &mut ValueStack,
+        condition: Register,
+        values: &[TypedProvider],
+    ) -> Result<(), TranslationError> {
+        let instr = match values {
+            [] => Instruction::return_nez(condition),
+            [TypedProvider::Register(reg)] => Instruction::return_nez_reg(condition, *reg),
+            [TypedProvider::Const(value)] => match value.ty() {
+                ValueType::I32 => Instruction::return_nez_imm32(condition, i32::from(*value)),
+                ValueType::I64 => match <Const32<i64>>::from_i64(i64::from(*value)) {
+                    Some(value) => Instruction::return_nez_i64imm32(condition, value),
+                    None => Instruction::return_nez_reg(condition, stack.alloc_const(*value)?),
+                },
+                ValueType::F32 => Instruction::return_nez_imm32(condition, F32::from(*value)),
+                ValueType::F64 => match <Const32<f64>>::from_f64(f64::from(*value)) {
+                    Some(value) => Instruction::return_nez_f64imm32(condition, value),
+                    None => Instruction::return_nez_reg(condition, stack.alloc_const(*value)?),
+                },
+                ValueType::FuncRef | ValueType::ExternRef => {
+                    Instruction::return_nez_reg(condition, stack.alloc_const(*value)?)
+                }
+            },
+            [v0, v1] => {
+                let reg0 = Self::provider2reg(stack, v0)?;
+                let reg1 = Self::provider2reg(stack, v1)?;
+                Instruction::return_nez_reg2(condition, reg0, reg1)
+            }
+            [v0, v1, rest @ ..] => {
+                debug_assert!(!rest.is_empty());
+                if let Some(span) = RegisterSpanIter::from_providers(values) {
+                    self.push_instr(Instruction::return_nez_span(condition, span))?;
+                    return Ok(());
+                }
+                let reg0 = Self::provider2reg(stack, v0)?;
+                let reg1 = Self::provider2reg(stack, v1)?;
+                self.push_instr(Instruction::return_nez_many(condition, reg0, reg1))?;
                 self.encode_register_list(stack, rest)?;
                 return Ok(());
             }
@@ -553,39 +601,6 @@ impl InstrEncoder {
                 }
             }
         }
-    }
-
-    /// Encode conditional branch parameters for `br_if` and `return_if` instructions.
-    ///
-    /// In contrast to [`InstrEncoder::encode_call_params`] this routine adds back original
-    /// [`TypedProvider`] on the stack in case no copies are needed for them. This way the stack
-    /// may not only contain dynamic registers after this operation.
-    pub fn encode_conditional_branch_params(
-        &mut self,
-        stack: &mut ValueStack,
-        params: &[TypedProvider],
-    ) -> Result<RegisterSpanIter, TranslationError> {
-        if let Some(register_span) = RegisterSpanIter::from_providers(params) {
-            // Case: we are on the happy path were the providers on the
-            //       stack already are registers with contiguous indices.
-            //
-            // This allows us to avoid copying over the registers
-            // to where the call instruction expects them on the stack.
-            //
-            // Since we are translating conditional branches we have to
-            // put the original providers back on the stack since no copies
-            // were needed and nothing has changed.
-            for param in params.iter().copied() {
-                stack.push_provider(param)?;
-            }
-            return Ok(register_span);
-        }
-        // Case: the providers on the stack need to be copied to the
-        //       location where the call instruction expects its parameters
-        //       before executing the call.
-        let copy_results = stack.push_dynamic_n(params.len())?.iter(params.len());
-        self.encode_copies(stack, copy_results, params)?;
-        Ok(copy_results)
     }
 
     /// Encode a `local.set` or `local.tee` instruction.
