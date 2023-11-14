@@ -1,6 +1,6 @@
 use super::*;
 
-use crate::engine::{bytecode::GlobalIdx, regmach::bytecode::RegisterSpan};
+use crate::engine::bytecode::GlobalIdx;
 use core::fmt::Display;
 use wasm_type::WasmType;
 
@@ -190,12 +190,13 @@ fn test_global_get_as_return_values_0() {
         "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([
-            Instruction::global_get(Register::from_i16(0), GlobalIdx::from(0)),
-            Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
-            Instruction::copy_imm32(Register::from_i16(0), 2_i32),
-            Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter(2)),
-        ])
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::global_get(Register::from_i16(0), GlobalIdx::from(0)),
+                Instruction::return_reg2(-1, 0),
+            ])
+            .consts([2_i32]),
+        )
         .run()
 }
 
@@ -216,11 +217,12 @@ fn test_global_get_as_return_values_1() {
         "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([
-            Instruction::global_get(Register::from_i16(0), GlobalIdx::from(0)),
-            Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
-            Instruction::copy_imm32(Register::from_i16(0), 2_i32),
-            Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter(2)),
-        ])
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::global_get(Register::from_i16(0), GlobalIdx::from(0)),
+                Instruction::return_reg2(-1, 0),
+            ])
+            .consts([2_i32]),
+        )
         .run()
 }

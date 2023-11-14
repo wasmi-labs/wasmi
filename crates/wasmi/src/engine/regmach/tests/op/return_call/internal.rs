@@ -90,9 +90,7 @@ fn two_params_reg() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegisterSpan::new(Register::from_i16(0)).iter(2),
-        )])
+        .expect_func_instrs([Instruction::return_reg2(0, 1)])
         .expect_func_instrs([
             Instruction::return_call_internal(CompiledFunc::from_u32(0)),
             Instruction::register2(0, 1),
@@ -117,9 +115,7 @@ fn two_params_reg_rev() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegisterSpan::new(Register::from_i16(0)).iter(2),
-        )])
+        .expect_func_instrs([Instruction::return_reg2(0, 1)])
         .expect_func_instrs([
             Instruction::return_call_internal(CompiledFunc::from_u32(0)),
             Instruction::register2(1, 0),
@@ -144,9 +140,7 @@ fn two_params_imm() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegisterSpan::new(Register::from_i16(0)).iter(2),
-        )])
+        .expect_func_instrs([Instruction::return_reg2(0, 1)])
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_internal(CompiledFunc::from_u32(0)),
@@ -175,9 +169,7 @@ fn three_params_reg() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegisterSpan::new(Register::from_i16(0)).iter(3),
-        )])
+        .expect_func_instrs([Instruction::return_reg3(0, 1, 2)])
         .expect_func_instrs([
             Instruction::return_call_internal(CompiledFunc::from_u32(0)),
             Instruction::register3(0, 1, 2),
@@ -203,9 +195,7 @@ fn three_params_reg_rev() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegisterSpan::new(Register::from_i16(0)).iter(3),
-        )])
+        .expect_func_instrs([Instruction::return_reg3(0, 1, 2)])
         .expect_func_instrs([
             Instruction::return_call_internal(CompiledFunc::from_u32(0)),
             Instruction::register3(2, 1, 0),
@@ -231,9 +221,7 @@ fn three_params_imm() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegisterSpan::new(Register::from_i16(0)).iter(3),
-        )])
+        .expect_func_instrs([Instruction::return_reg3(0, 1, 2)])
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_internal(CompiledFunc::from_u32(0)),

@@ -2054,7 +2054,7 @@ impl<'parser> FuncTranslator<'parser> {
         self.alloc.stack.pop_n(results.len(), values);
         self.alloc
             .instr_encoder
-            .encode_return(&mut self.alloc.stack, results, values)?;
+            .encode_return(&mut self.alloc.stack, values)?;
         self.reachable = false;
         Ok(())
     }

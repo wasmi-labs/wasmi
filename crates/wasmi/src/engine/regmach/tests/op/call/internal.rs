@@ -102,16 +102,14 @@ fn two_params_reg() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegisterSpan::new(Register::from_i16(0)).iter(2),
-        )])
+        .expect_func_instrs([Instruction::return_reg2(0, 1)])
         .expect_func_instrs([
             Instruction::call_internal(
                 RegisterSpan::new(Register::from_i16(2)),
                 CompiledFunc::from_u32(0),
             ),
             Instruction::register2(0, 1),
-            Instruction::return_span(RegisterSpan::new(Register::from_i16(2)).iter(2)),
+            Instruction::return_reg2(2, 3),
         ])
         .run();
 }
@@ -133,16 +131,14 @@ fn two_params_reg_rev() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegisterSpan::new(Register::from_i16(0)).iter(2),
-        )])
+        .expect_func_instrs([Instruction::return_reg2(0, 1)])
         .expect_func_instrs([
             Instruction::call_internal(
                 RegisterSpan::new(Register::from_i16(2)),
                 CompiledFunc::from_u32(0),
             ),
             Instruction::register2(1, 0),
-            Instruction::return_span(RegisterSpan::new(Register::from_i16(2)).iter(2)),
+            Instruction::return_reg2(2, 3),
         ])
         .run();
 }
@@ -164,9 +160,7 @@ fn two_params_imm() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegisterSpan::new(Register::from_i16(0)).iter(2),
-        )])
+        .expect_func_instrs([Instruction::return_reg2(0, 1)])
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_internal(
@@ -174,7 +168,7 @@ fn two_params_imm() {
                     CompiledFunc::from_u32(0),
                 ),
                 Instruction::register2(-1, -2),
-                Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter(2)),
+                Instruction::return_reg2(0, 1),
             ])
             .consts([10_i32, 20]),
         )
@@ -199,16 +193,14 @@ fn three_params_reg() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegisterSpan::new(Register::from_i16(0)).iter(3),
-        )])
+        .expect_func_instrs([Instruction::return_reg3(0, 1, 2)])
         .expect_func_instrs([
             Instruction::call_internal(
                 RegisterSpan::new(Register::from_i16(3)),
                 CompiledFunc::from_u32(0),
             ),
             Instruction::register3(0, 1, 2),
-            Instruction::return_span(RegisterSpan::new(Register::from_i16(3)).iter(3)),
+            Instruction::return_reg3(3, 4, 5),
         ])
         .run();
 }
@@ -231,16 +223,14 @@ fn three_params_reg_rev() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegisterSpan::new(Register::from_i16(0)).iter(3),
-        )])
+        .expect_func_instrs([Instruction::return_reg3(0, 1, 2)])
         .expect_func_instrs([
             Instruction::call_internal(
                 RegisterSpan::new(Register::from_i16(3)),
                 CompiledFunc::from_u32(0),
             ),
             Instruction::register3(2, 1, 0),
-            Instruction::return_span(RegisterSpan::new(Register::from_i16(3)).iter(3)),
+            Instruction::return_reg3(3, 4, 5),
         ])
         .run();
 }
@@ -263,9 +253,7 @@ fn three_params_imm() {
     "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegisterSpan::new(Register::from_i16(0)).iter(3),
-        )])
+        .expect_func_instrs([Instruction::return_reg3(0, 1, 2)])
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_internal(
@@ -273,7 +261,7 @@ fn three_params_imm() {
                     CompiledFunc::from_u32(0),
                 ),
                 Instruction::register3(-1, -2, -3),
-                Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter(3)),
+                Instruction::return_reg3(0, 1, 2),
             ])
             .consts([10_i32, 20, 30]),
         )

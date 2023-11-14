@@ -4,7 +4,7 @@ use crate::engine::{
     regmach::bytecode::RegisterSpan,
     CompiledFunc,
 };
-use wasmi_core::TrapCode;
+use wasmi_core::{TrapCode, UntypedValue};
 
 #[test]
 #[cfg_attr(miri, ignore)]
@@ -560,11 +560,10 @@ fn test_if_without_else_has_result() {
         "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([
-            Instruction::copy_i64imm32(Register::from_i16(0), 1),
-            Instruction::copy_imm32(Register::from_i16(1), 0),
-            Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter(2)),
-        ])
+        .expect_func(
+            ExpectedFunc::new([Instruction::return_reg2(-1, -2)])
+                .consts([UntypedValue::from(1_i64), UntypedValue::from(0_i32)]),
+        )
         .expect_func_instrs([
             Instruction::call_internal_0(
                 RegisterSpan::new(Register::from_i16(0)),

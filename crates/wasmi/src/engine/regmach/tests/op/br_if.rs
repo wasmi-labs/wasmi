@@ -490,7 +490,7 @@ fn return_if_results_2() {
                 Register::from_i16(2),
                 RegisterSpan::new(Register::from_i16(0)).iter(2),
             ),
-            Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter(2)),
+            Instruction::return_reg2(0, 1),
         ])
         .run()
 }
@@ -518,7 +518,7 @@ fn return_if_results_2_rev() {
                 Register::from_i16(2),
                 RegisterSpan::new(Register::from_i16(3)).iter(2),
             ),
-            Instruction::return_span(RegisterSpan::new(Register::from_i16(3)).iter(2)),
+            Instruction::return_reg2(3, 4),
         ])
         .run()
 }
@@ -546,7 +546,7 @@ fn return_if_results_2_imm() {
                 Register::from_i16(0),
                 RegisterSpan::new(Register::from_i16(1)).iter(2),
             ),
-            Instruction::return_span(RegisterSpan::new(Register::from_i16(1)).iter(2)),
+            Instruction::return_reg2(1, 2),
         ])
         .run()
 }

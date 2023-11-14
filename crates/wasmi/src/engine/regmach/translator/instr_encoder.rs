@@ -441,91 +441,65 @@ impl InstrEncoder {
     pub fn encode_return(
         &mut self,
         stack: &mut ValueStack,
-        types: &[ValueType],
         values: &[TypedProvider],
     ) -> Result<(), TranslationError> {
-        assert_eq!(types.len(), values.len());
-        let instr = match types {
-            [] => {
-                // Case: Function returns nothing therefore all return statements must return nothing.
-                Instruction::Return
+        let instr = match values {
+            [] => Instruction::Return,
+            [TypedProvider::Register(reg)] => Instruction::return_reg(*reg),
+            [TypedProvider::Const(value)] => match value.ty() {
+                ValueType::I32 => Instruction::return_imm32(i32::from(*value)),
+                ValueType::I64 => match <Const32<i64>>::from_i64(i64::from(*value)) {
+                    Some(value) => Instruction::return_i64imm32(value),
+                    None => Instruction::return_reg(stack.alloc_const(*value)?),
+                },
+                ValueType::F32 => Instruction::return_imm32(F32::from(*value)),
+                ValueType::F64 => match <Const32<f64>>::from_f64(f64::from(*value)) {
+                    Some(value) => Instruction::return_f64imm32(value),
+                    None => Instruction::return_reg(stack.alloc_const(*value)?),
+                },
+                ValueType::FuncRef | ValueType::ExternRef => {
+                    Instruction::return_reg(stack.alloc_const(*value)?)
+                }
+            },
+            [v0, v1] => {
+                let reg0 = Self::provider2reg(stack, v0)?;
+                let reg1 = Self::provider2reg(stack, v1)?;
+                Instruction::return_reg2(reg0, reg1)
             }
-            [ValueType::I32] => match values[0] {
-                // Case: Function returns a single `i32` value which allows for special operator.
-                TypedProvider::Register(value) => Instruction::return_reg(value),
-                TypedProvider::Const(value) => Instruction::return_imm32(i32::from(value)),
-            },
-            [ValueType::I64] => match values[0] {
-                // Case: Function returns a single `i64` value which allows for special operator.
-                TypedProvider::Register(value) => Instruction::return_reg(value),
-                TypedProvider::Const(value) => {
-                    if let Some(value) = <Const32<i64>>::from_i64(i64::from(value)) {
-                        Instruction::return_i64imm32(value)
-                    } else {
-                        Instruction::return_reg(stack.alloc_const(value)?)
-                    }
-                }
-            },
-            [ValueType::F32] => match values[0] {
-                // Case: Function returns a single `f32` value which allows for special operator.
-                TypedProvider::Register(value) => Instruction::return_reg(value),
-                TypedProvider::Const(value) => Instruction::return_imm32(F32::from(value)),
-            },
-            [ValueType::F64] => match values[0] {
-                // Case: Function returns a single `f64` value which may allow for special operator.
-                TypedProvider::Register(value) => Instruction::return_reg(value),
-                TypedProvider::Const(value) => {
-                    if let Some(value) = <Const32<f64>>::from_f64(f64::from(value)) {
-                        Instruction::return_f64imm32(value)
-                    } else {
-                        Instruction::return_reg(stack.alloc_const(value)?)
-                    }
-                }
-            },
-            [ValueType::FuncRef | ValueType::ExternRef] => {
-                // Case: Function returns a single `externref` or `funcref`.
-                match values[0] {
-                    TypedProvider::Register(value) => Instruction::return_reg(value),
-                    TypedProvider::Const(value) => {
-                        Instruction::return_reg(stack.alloc_const(value)?)
-                    }
-                }
+            [v0, v1, v2] => {
+                let reg0 = Self::provider2reg(stack, v0)?;
+                let reg1 = Self::provider2reg(stack, v1)?;
+                let reg2 = Self::provider2reg(stack, v2)?;
+                Instruction::return_reg3(reg0, reg1, reg2)
             }
-            _ => {
-                let values = self.encode_call_params(stack, values)?;
-                Instruction::return_span(values)
+            [v0, v1, v2, rest @ ..] => {
+                if let Some(span) = RegisterSpanIter::from_providers(values) {
+                    self.push_instr(Instruction::return_span(span))?;
+                    return Ok(());
+                }
+                let reg0 = Self::provider2reg(stack, v0)?;
+                let reg1 = Self::provider2reg(stack, v1)?;
+                let reg2 = Self::provider2reg(stack, v2)?;
+                self.push_instr(Instruction::return_many(reg0, reg1, reg2))?;
+                self.encode_register_list(stack, rest)?;
+                return Ok(());
             }
         };
         self.push_instr(instr)?;
         Ok(())
     }
 
-    /// Encodes the call parameters of a `wasmi` `call` instruction if necessary.
+    /// Converts a [`TypedProvider`] into a [`Register`].
     ///
-    /// Returns the contiguous [`RegisterSpanIter`] that makes up the call parameters post encoding.
-    ///
-    /// # Errors
-    ///
-    /// If the translation runs out of register space during this operation.
-    pub fn encode_call_params(
-        &mut self,
+    /// This allocates constant values for [`TypedProvider::Const`].
+    fn provider2reg(
         stack: &mut ValueStack,
-        params: &[TypedProvider],
-    ) -> Result<RegisterSpanIter, TranslationError> {
-        if let Some(register_span) = RegisterSpanIter::from_providers(params) {
-            // Case: we are on the happy path were the providers on the
-            //       stack already are registers with contiguous indices.
-            //
-            //       This allows us to avoid copying over the registers
-            //       to where the call instruction expects them on the stack.
-            return Ok(register_span);
+        provider: &TypedProvider,
+    ) -> Result<Register, TranslationError> {
+        match provider {
+            Provider::Register(register) => Ok(*register),
+            Provider::Const(value) => stack.alloc_const(*value),
         }
-        // Case: the providers on the stack need to be copied to the
-        //       location where the call instruction expects its parameters
-        //       before executing the call.
-        let copy_results = stack.peek_dynamic_n(params.len())?.iter(params.len());
-        self.encode_copies(stack, copy_results, params)?;
-        Ok(copy_results)
     }
 
     /// Encode the given slice of [`TypedProvider`] as a list of [`Register`].
@@ -548,45 +522,32 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         inputs: &[TypedProvider],
     ) -> Result<(), TranslationError> {
-        /// Converts a [`TypedProvider`] into a [`Register`].
-        ///
-        /// This allocates constant values for [`TypedProvider::Const`].
-        fn provider2reg(
-            stack: &mut ValueStack,
-            provider: &TypedProvider,
-        ) -> Result<Register, TranslationError> {
-            match provider {
-                Provider::Register(register) => Ok(*register),
-                Provider::Const(value) => stack.alloc_const(*value),
-            }
-        }
-
         let mut remaining = inputs;
         loop {
             match remaining {
                 [] => return Ok(()),
                 [v0] => {
-                    let v0 = provider2reg(stack, v0)?;
+                    let v0 = Self::provider2reg(stack, v0)?;
                     self.instrs.push(Instruction::register(v0))?;
                     return Ok(());
                 }
                 [v0, v1] => {
-                    let v0 = provider2reg(stack, v0)?;
-                    let v1 = provider2reg(stack, v1)?;
+                    let v0 = Self::provider2reg(stack, v0)?;
+                    let v1 = Self::provider2reg(stack, v1)?;
                     self.instrs.push(Instruction::register2(v0, v1))?;
                     return Ok(());
                 }
                 [v0, v1, v2] => {
-                    let v0 = provider2reg(stack, v0)?;
-                    let v1 = provider2reg(stack, v1)?;
-                    let v2 = provider2reg(stack, v2)?;
+                    let v0 = Self::provider2reg(stack, v0)?;
+                    let v1 = Self::provider2reg(stack, v1)?;
+                    let v2 = Self::provider2reg(stack, v2)?;
                     self.instrs.push(Instruction::register3(v0, v1, v2))?;
                     return Ok(());
                 }
                 [v0, v1, v2, rest @ ..] => {
-                    let v0 = provider2reg(stack, v0)?;
-                    let v1 = provider2reg(stack, v1)?;
-                    let v2 = provider2reg(stack, v2)?;
+                    let v0 = Self::provider2reg(stack, v0)?;
+                    let v1 = Self::provider2reg(stack, v1)?;
+                    let v2 = Self::provider2reg(stack, v2)?;
                     self.instrs.push(Instruction::register_list(v0, v1, v2))?;
                     remaining = rest;
                 }

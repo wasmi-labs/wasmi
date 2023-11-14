@@ -600,16 +600,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         for (depth, label) in shared_targets {
             self.alloc.instr_encoder.pin_label(label);
             match self.alloc.control_stack.acquire_target(depth) {
-                AcquiredTarget::Return(frame) => {
-                    frame
-                        .block_type()
-                        .results_with(self.res.engine(), |types| {
-                            self.alloc.instr_encoder.encode_return(
-                                &mut self.alloc.stack,
-                                types,
-                                values,
-                            )
-                        })?;
+                AcquiredTarget::Return(_frame) => {
+                    self.alloc
+                        .instr_encoder
+                        .encode_return(&mut self.alloc.stack, values)?;
                 }
                 AcquiredTarget::Branch(frame) => {
                     frame.bump_branches();

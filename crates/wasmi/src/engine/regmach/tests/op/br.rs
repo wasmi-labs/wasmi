@@ -1,9 +1,13 @@
 use super::*;
-use crate::engine::{
-    bytecode::BranchOffset,
-    regmach::{
-        bytecode::RegisterSpan,
-        tests::{display_wasm::DisplayValueType, driver::ExpectedFunc, wasm_type::WasmType},
+use crate::{
+    core::UntypedValue,
+    engine::{
+        bytecode::BranchOffset,
+        regmach::tests::{
+            display_wasm::DisplayValueType,
+            driver::ExpectedFunc,
+            wasm_type::WasmType,
+        },
     },
 };
 use core::fmt::Display;
@@ -182,12 +186,13 @@ fn test_br_as_return_values() {
         "#,
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([
-            Instruction::copy_i64imm32(Register::from_i16(0), 7),
-            Instruction::branch(BranchOffset::from(1)),
-            Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
-            Instruction::copy_imm32(Register::from_i16(0), 2_i32),
-            Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter(2)),
-        ])
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::copy_i64imm32(Register::from_i16(0), 7),
+                Instruction::branch(BranchOffset::from(1)),
+                Instruction::return_reg2(-1, 0),
+            ])
+            .consts([UntypedValue::from(2_i32)]),
+        )
         .run()
 }
