@@ -15,7 +15,6 @@ use crate::{
     module::ModuleResources,
 };
 use alloc::vec::{Drain, Vec};
-use core::{cmp, ops::Range};
 use wasmi_core::{UntypedValue, ValueType, F32};
 
 /// Encodes `wasmi` bytecode instructions to an [`Instruction`] stream.
@@ -296,145 +295,81 @@ impl InstrEncoder {
         }
     }
 
-    /// Encode a set of `copy result <- value` instructions.
+    /// Encode a generic `copy` instruction.
     ///
     /// # Note
     ///
-    /// Applies optimizations for `copy x <- x` and properly selects the
-    /// most optimized `copy` instruction variants for the given `value`.
+    /// Avoids no-op copies such as `copy x <- x` and properly selects the
+    /// most optimized `copy` instruction variant for the given `value`.
     pub fn encode_copies(
         &mut self,
         stack: &mut ValueStack,
-        results: RegisterSpanIter,
+        mut results: RegisterSpanIter,
         values: &[TypedProvider],
     ) -> Result<(), TranslationError> {
-        if values.len() >= 2 {
-            if let Some(values) = RegisterSpanIter::from_providers(values) {
-                if results == values {
-                    // Case: both spans are equal so there is no need to copy anything.
-                    return Ok(());
-                }
-                // Optimization: we can encode the entire copy as [`Instruction::CopySpan`]
-                self.push_instr(Instruction::copy_span(
-                    results.span(),
-                    values.span(),
-                    results.len_as_u16(),
-                ))?;
+        assert_eq!(results.len(), values.len());
+        if let Some((TypedProvider::Register(value), rest)) = values.split_first() {
+            if results.span().head() == *value {
+                // Case: `result` and `value` are equal thus this is a no-op copy which we can avoid.
+                //       Applied recursively we thereby remove all no-op copies at the start of the
+                //       copy sequence until the first actual copy.
+                results.next();
+                return self.encode_copies(stack, results, rest);
+            }
+        }
+        let results = results.span();
+        let result = results.head();
+        let instr = match values {
+            [] => {
+                // The copy sequence is empty, nothing to encode in this case.
                 return Ok(());
             }
-        }
-        let start = self.instrs.next_instr();
-        for (copy_result, copy_input) in results.zip(values.iter().copied()) {
-            self.encode_copy(stack, copy_result, copy_input)?;
-        }
-        let copy_instrs = self.instrs.get_slice_at_mut(start);
-        if Self::is_copy_overwriting(copy_instrs) {
-            // We need to sort the encoded copy instructions so that they are not overwriting themselves.
-            //
-            // An example is `copy 1 <- 0, copy 2 < 1` where the first `copy 1 <- 0`
-            // overwrites the input of the second.
-            //
-            // To further circumvent this, all `copy` instructions copying immediate values always go last
-            // and `copy_span` instructions come after `copy` instructions.
-            copy_instrs.sort_by(|lhs, rhs| {
-                use Instruction as I;
-                match (lhs, rhs) {
-                    (
-                        I::Copy {
-                            result: r0,
-                            value: v0,
-                        },
-                        I::Copy {
-                            result: r1,
-                            value: v1,
-                        },
-                    ) => {
-                        if v0 <= v1 {
-                            r0.cmp(r1)
-                        } else {
-                            r1.cmp(r0)
-                        }
-                    }
-                    (I::Copy { .. }, _) => cmp::Ordering::Less,
-                    (_, I::Copy { .. }) => cmp::Ordering::Greater,
-                    // TODO: Maybe there is a need to also order `CopySpan` amongst
-                    // themselves just as we did for the `Copy` instruction.
-                    (I::CopySpan { .. }, _) => cmp::Ordering::Less,
-                    (_, I::CopySpan { .. }) => cmp::Ordering::Greater,
-                    _ => cmp::Ordering::Equal,
+            [TypedProvider::Register(reg)] => Instruction::copy(result, *reg),
+            [TypedProvider::Const(value)] => match value.ty() {
+                ValueType::I32 => Instruction::copy_imm32(result, i32::from(*value)),
+                ValueType::I64 => match <Const32<i64>>::from_i64(i64::from(*value)) {
+                    Some(value) => Instruction::copy_i64imm32(result, value),
+                    None => Instruction::copy(result, stack.alloc_const(*value)?),
+                },
+                ValueType::F32 => Instruction::copy_imm32(result, F32::from(*value)),
+                ValueType::F64 => match <Const32<f64>>::from_f64(f64::from(*value)) {
+                    Some(value) => Instruction::copy_f64imm32(result, value),
+                    None => Instruction::copy(result, stack.alloc_const(*value)?),
+                },
+                ValueType::FuncRef | ValueType::ExternRef => {
+                    Instruction::copy(result, stack.alloc_const(*value)?)
                 }
-            });
-        }
-        debug_assert!(
-            !Self::is_copy_overwriting(copy_instrs),
-            "sorting should have removed the overwrites"
-        );
-        Ok(())
-    }
-
-    /// Returns `true` if any of the `copies` overwrite the inputs of following copies.
-    fn is_copy_overwriting(copies: &[Instruction]) -> bool {
-        impl Register {
-            /// Returns `true` if `self` is contained within the [`Register`] `range`.
-            fn within_range(&self, range: Range<Register>) -> bool {
-                range.contains(self)
+            },
+            [v0, v1] => {
+                let reg0 = Self::provider2reg(stack, v0)?;
+                let reg1 = Self::provider2reg(stack, v1)?;
+                if result.next() == reg1 {
+                    // Case: the second of the 2 copies is a no-op which we can avoid
+                    // Note: we already asserted that the first copy is not a no-op
+                    Instruction::copy(result, reg0)
+                } else {
+                    Instruction::copy2(results, reg0, reg1)
+                }
             }
-        }
-        impl Instruction {
-            /// Returns the first result [`Register`] of the copy [`Instruction`].
-            ///
-            /// # Panics
-            ///
-            /// If `self` is not a copy [`Instruction`].
-            fn copy_result(&self) -> Register {
-                match self {
-                    I::Copy { result, value: _ }
-                    | I::CopyImm32 { result, value: _ }
-                    | I::CopyI64Imm32 { result, value: _ }
-                    | I::CopyF64Imm32 { result, value: _ } => *result,
-                    I::CopySpan {
+            [v0, v1, rest @ ..] => {
+                debug_assert!(!rest.is_empty());
+                if let Some(span) = RegisterSpanIter::from_providers(values) {
+                    self.push_instr(Instruction::copy_span(
                         results,
-                        values: _,
-                        len: _,
-                    } => results.head(),
-                    unexpected => panic!("encountered non-copy instruction: {unexpected:?}"),
+                        span.span(),
+                        span.len_as_u16(),
+                    ))?;
+                    return Ok(());
                 }
+                let reg0 = Self::provider2reg(stack, v0)?;
+                let reg1 = Self::provider2reg(stack, v1)?;
+                self.push_instr(Instruction::copy_many(results, reg0, reg1))?;
+                self.encode_register_list(stack, rest)?;
+                return Ok(());
             }
-        }
-
-        use Instruction as I;
-        let (head, rest) = match copies.split_first() {
-            Some((head, rest)) => (head, rest),
-            None => return false,
         };
-        let start = head.copy_result();
-        for instr in rest {
-            let end = instr.copy_result();
-            match instr {
-                I::Copy { result: _, value } => {
-                    if value.within_range(start..end) {
-                        return true;
-                    }
-                }
-                I::CopyImm32 { .. } | I::CopyI64Imm32 { .. } | I::CopyF64Imm32 { .. } => {
-                    // Since the input `value` is not a register it cannot be overwritten.
-                }
-                I::CopySpan {
-                    results: _,
-                    values,
-                    len,
-                } => {
-                    for value in values.iter_u16(*len) {
-                        if value.within_range(start..end) {
-                            return true;
-                        }
-                    }
-                }
-                unexpected => panic!("encountered non-copy instruction: {unexpected:?}"),
-            }
-        }
-        // No overwrites detected so far thus we return `false`.
-        false
+        self.push_instr(instr)?;
+        Ok(())
     }
 
     /// Encodes an unconditional `return` instruction.

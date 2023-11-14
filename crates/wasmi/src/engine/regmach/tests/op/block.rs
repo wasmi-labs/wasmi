@@ -323,11 +323,7 @@ fn branched_block_2() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy_span(
-                RegisterSpan::new(Register::from_i16(2)),
-                RegisterSpan::new(Register::from_i16(0)),
-                2,
-            ),
+            Instruction::copy2(RegisterSpan::new(Register::from_i16(2)), 0, 1),
             Instruction::branch(BranchOffset::from(1)),
             Instruction::return_reg(Register::from_i16(2)),
         ])
