@@ -150,7 +150,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             Instruction::Register(value) => slice::from_ref(value),
             Instruction::Register2(values) => values,
             Instruction::Register3(values) => values,
-            unexpected => unreachable!("unexpected Instruction found while executing Instruction::ReturnMany: {unexpected:?}"),
+            unexpected => {
+                unreachable!("unexpected Instruction found while call parameters: {unexpected:?}")
+            }
         };
         copy_params(values);
         // Finally return the instruction pointer to the last call parameter [`Instruction`] if any.
