@@ -73,7 +73,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 for (result, value) in results.into_iter().zip(tmp) {
                     self.set_register(result, value);
                 }
-                self.next_instr();
             }
             false => {
                 // Case: `results` and `values` do _not_ overlap and thus we can
@@ -82,9 +81,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     let value = self.get_register(value);
                     self.set_register(result, value);
                 }
-                self.next_instr();
             }
         }
+        self.next_instr();
     }
 
     /// Executes an [`Instruction::CopyMany`].
