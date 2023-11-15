@@ -670,7 +670,7 @@ mod tests {
     use crate::engine::regmach::{bytecode::RegisterSpan, translator::typed_value::TypedValue};
 
     #[test]
-    fn is_overlapping_works() {
+    fn has_overlapping_copies_works() {
         assert!(!InstrEncoder::has_overlapping_copies(
             RegisterSpan::new(Register::from_i16(0)).iter(0),
             &[],
