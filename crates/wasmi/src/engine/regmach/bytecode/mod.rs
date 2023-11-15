@@ -509,6 +509,21 @@ pub enum Instruction {
         /// The first two input registers to copy.
         values: [Register; 2],
     },
+    /// Variant of [`Instruction::CopyMany`] that assumes that `results` and `values` do not overlap.
+    ///
+    /// Must be followed by
+    ///
+    /// 1. Zero or more [`Instruction::RegisterList`]
+    /// 2. Followed by one of
+    ///     - [`Instruction::Register`]
+    ///     - [`Instruction::Register2`]
+    ///     - [`Instruction::Register3`]
+    CopyManyNonOverlapping {
+        /// The registers holding the result of this instruction.
+        results: RegisterSpan,
+        /// The first two input registers to copy.
+        values: [Register; 2],
+    },
 
     /// Wasm `return_call` equivalent `wasmi` instruction.
     ///

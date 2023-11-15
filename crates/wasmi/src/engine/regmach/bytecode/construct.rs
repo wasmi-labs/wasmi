@@ -409,6 +409,18 @@ impl Instruction {
         }
     }
 
+    /// Creates a new [`Instruction::CopyManyNonOverlapping`].
+    pub fn copy_many_non_overlapping(
+        results: RegisterSpan,
+        head0: impl Into<Register>,
+        head1: impl Into<Register>,
+    ) -> Self {
+        Self::CopyManyNonOverlapping {
+            results,
+            values: [head0.into(), head1.into()],
+        }
+    }
+
     /// Creates a new [`Instruction::GlobalGet`].
     pub fn global_get(result: Register, global: bytecode::GlobalIdx) -> Self {
         Self::GlobalGet { result, global }

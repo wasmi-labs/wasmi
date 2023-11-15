@@ -127,4 +127,37 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.ip = ip;
         self.next_instr()
     }
+
+    /// Executes an [`Instruction::CopyManyNonOverlapping`].
+    #[inline(always)]
+    pub fn execute_copy_many_non_overlapping(
+        &mut self,
+        results: RegisterSpan,
+        values: [Register; 2],
+    ) {
+        let mut ip = self.ip;
+        let mut result = results.head();
+        let mut copy_values = |values: &[Register]| {
+            for &value in values {
+                let value = self.get_register(value);
+                self.set_register(result, value);
+                result = result.next();
+            }
+        };
+        copy_values(&values);
+        ip.add(1);
+        while let Instruction::RegisterList(values) = ip.get() {
+            copy_values(values);
+            ip.add(1);
+        }
+        let values = match ip.get() {
+            Instruction::Register(value) => slice::from_ref(value),
+            Instruction::Register2(values) => values,
+            Instruction::Register3(values) => values,
+            unexpected => unreachable!("unexpected Instruction found while executing Instruction::CopyManyNonOverlapping: {unexpected:?}"),
+        };
+        copy_values(values);
+        self.ip = ip;
+        self.next_instr()
+    }
 }

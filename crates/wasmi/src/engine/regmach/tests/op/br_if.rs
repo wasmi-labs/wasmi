@@ -1003,10 +1003,18 @@ fn branch_if_results_4_mixed_1() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::branch_eqz(Register::from_i16(2), BranchOffset::from(4)),
-                Instruction::copy_many(RegisterSpan::new(Register::from_i16(3)), -1, 0),
+                Instruction::copy_many_non_overlapping(
+                    RegisterSpan::new(Register::from_i16(3)),
+                    -1,
+                    0,
+                ),
                 Instruction::register2(1, -2),
                 Instruction::branch(BranchOffset::from(3)),
-                Instruction::copy_many(RegisterSpan::new(Register::from_i16(3)), -1, 0),
+                Instruction::copy_many_non_overlapping(
+                    RegisterSpan::new(Register::from_i16(3)),
+                    -1,
+                    0,
+                ),
                 Instruction::register2(1, -2),
                 Instruction::return_span(RegisterSpan::new(Register::from_i16(3)).iter(4)),
             ])
@@ -1038,10 +1046,10 @@ fn branch_if_results_4_mixed_2() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::branch_eqz(Register::from_i16(2), BranchOffset::from(4)),
-            Instruction::copy_many(RegisterSpan::new(Register::from_i16(3)), 0, 0),
+            Instruction::copy_many_non_overlapping(RegisterSpan::new(Register::from_i16(3)), 0, 0),
             Instruction::register2(1, 1),
             Instruction::branch(BranchOffset::from(3)),
-            Instruction::copy_many(RegisterSpan::new(Register::from_i16(3)), 0, 0),
+            Instruction::copy_many_non_overlapping(RegisterSpan::new(Register::from_i16(3)), 0, 0),
             Instruction::register2(1, 1),
             Instruction::return_span(RegisterSpan::new(Register::from_i16(3)).iter(4)),
         ])

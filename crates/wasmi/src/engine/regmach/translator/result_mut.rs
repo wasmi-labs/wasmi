@@ -78,6 +78,7 @@ impl Instruction {
             Instruction::CopySpanNonOverlapping { .. } |
             Instruction::Copy2 { .. } |
             Instruction::CopyMany { .. } => None,
+            Instruction::CopyManyNonOverlapping { .. } => None,
             Instruction::CallIndirectParams(_) |
             Instruction::CallIndirectParamsImm16(_) |
             Instruction::ReturnCallInternal0 { .. } |

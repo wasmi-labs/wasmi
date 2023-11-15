@@ -206,7 +206,11 @@ fn identity_loop_4_mixed_1() {
     TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::copy_many(RegisterSpan::new(Register::from_i16(2)), -1, 0),
+                Instruction::copy_many_non_overlapping(
+                    RegisterSpan::new(Register::from_i16(2)),
+                    -1,
+                    0,
+                ),
                 Instruction::register2(1, -2),
                 Instruction::return_span(RegisterSpan::new(Register::from_i16(2)).iter(4)),
             ])
@@ -232,7 +236,7 @@ fn identity_loop_4_mixed_2() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy_many(RegisterSpan::new(Register::from_i16(2)), 0, 0),
+            Instruction::copy_many_non_overlapping(RegisterSpan::new(Register::from_i16(2)), 0, 0),
             Instruction::register2(1, 1),
             Instruction::return_span(RegisterSpan::new(Register::from_i16(2)).iter(4)),
         ])

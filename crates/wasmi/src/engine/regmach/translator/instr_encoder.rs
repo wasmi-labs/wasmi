@@ -364,15 +364,49 @@ impl InstrEncoder {
                     ))?;
                     return Ok(());
                 }
+                let make_instr = match Self::has_overlapping_copies(results, values) {
+                    true => Instruction::copy_many,
+                    false => Instruction::copy_many_non_overlapping,
+                };
                 let reg0 = Self::provider2reg(stack, v0)?;
                 let reg1 = Self::provider2reg(stack, v1)?;
-                self.push_instr(Instruction::copy_many(results.span(), reg0, reg1))?;
+                self.push_instr(make_instr(results.span(), reg0, reg1))?;
                 self.encode_register_list(stack, rest)?;
                 return Ok(());
             }
         };
         self.push_instr(instr)?;
         Ok(())
+    }
+
+    /// Returns `true` if the `copy results <- values` instruction has overlaps.
+    ///
+    /// # Examples
+    ///
+    /// - The sequence `[ 0 <- 1, 1 <- 1, 2 <- 4 ]` has no overlapping copies.
+    /// - The sequence `[ 0 <- 1, 1 <- 0 ]` has overlapping copies since register `0`
+    ///   is written to in the first copy but read from in the next.
+    /// - The sequence `[ 3 <- 1, 4 <- 2, 5 <- 3 ]` has overlapping copies since register `3`
+    ///   is written to in the first copy but read from in the third.
+    fn has_overlapping_copies(results: RegisterSpanIter, values: &[TypedProvider]) -> bool {
+        debug_assert_eq!(results.len(), values.len());
+        if results.is_empty() {
+            // Note: An empty set of copies can never have overlapping copies.
+            return false;
+        }
+        let result0 = results.span().head();
+        for (result, value) in results.zip(values) {
+            // Note: We only have to check the register case since constant value
+            //       copies can never overlap.
+            if let TypedProvider::Register(value) = *value {
+                // If the register `value` index is within range of `result0..result`
+                // then its value has been overwritten by previous copies.
+                if result0 <= value && value < result {
+                    return true;
+                }
+            }
+        }
+        false
     }
 
     /// Encodes an unconditional `return` instruction.
@@ -627,5 +661,58 @@ impl Instruction {
             | Instruction::BranchNez { offset, .. } => offset.init(new_offset),
             _ => panic!("tried to update branch offset of a non-branch instruction: {self:?}"),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::engine::regmach::{bytecode::RegisterSpan, translator::typed_value::TypedValue};
+
+    #[test]
+    fn is_overlapping_works() {
+        assert!(!InstrEncoder::has_overlapping_copies(
+            RegisterSpan::new(Register::from_i16(0)).iter(0),
+            &[],
+        ));
+        assert!(!InstrEncoder::has_overlapping_copies(
+            RegisterSpan::new(Register::from_i16(0)).iter(2),
+            &[TypedProvider::register(0), TypedProvider::register(1),],
+        ));
+        assert!(!InstrEncoder::has_overlapping_copies(
+            RegisterSpan::new(Register::from_i16(0)).iter(2),
+            &[
+                TypedProvider::Const(TypedValue::from(10_i32)),
+                TypedProvider::Const(TypedValue::from(20_i32)),
+            ],
+        ));
+        assert!(InstrEncoder::has_overlapping_copies(
+            RegisterSpan::new(Register::from_i16(0)).iter(2),
+            &[
+                TypedProvider::Const(TypedValue::from(10_i32)),
+                TypedProvider::register(0),
+            ],
+        ));
+        assert!(InstrEncoder::has_overlapping_copies(
+            RegisterSpan::new(Register::from_i16(0)).iter(2),
+            &[TypedProvider::register(0), TypedProvider::register(0),],
+        ));
+        assert!(InstrEncoder::has_overlapping_copies(
+            RegisterSpan::new(Register::from_i16(3)).iter(3),
+            &[
+                TypedProvider::register(2),
+                TypedProvider::register(3),
+                TypedProvider::register(2),
+            ],
+        ));
+        assert!(InstrEncoder::has_overlapping_copies(
+            RegisterSpan::new(Register::from_i16(3)).iter(4),
+            &[
+                TypedProvider::register(-1),
+                TypedProvider::register(10),
+                TypedProvider::register(2),
+                TypedProvider::register(4),
+            ],
+        ));
     }
 }
