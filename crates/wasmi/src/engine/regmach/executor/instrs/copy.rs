@@ -64,20 +64,27 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     pub fn execute_copy_span(&mut self, results: RegisterSpan, values: RegisterSpan, len: u16) {
         let results = results.iter_u16(len);
         let values = values.iter_u16(len);
-        self.execute_copy_span_impl(results, values)
-    }
-
-    /// Executes a [`Instruction::CopySpan`] generically.
-    fn execute_copy_span_impl(
-        &mut self,
-        results: impl IntoIterator<Item = Register>,
-        values: impl IntoIterator<Item = Register>,
-    ) {
-        for (result, value) in results.into_iter().zip(values.into_iter()) {
-            let value = self.get_register(value);
-            self.set_register(result, value);
+        match results.is_overlapping(&values) {
+            true => {
+                // Case: `results` and `values` overlap and thus we need to take special care
+                //       that intermediate values are not invalidated by consecutive overwrites.
+                let mut tmp = <SmallVec<[UntypedValue; 8]>>::default();
+                tmp.extend(values.into_iter().map(|value| self.get_register(value)));
+                for (result, value) in results.into_iter().zip(tmp) {
+                    self.set_register(result, value);
+                }
+                self.next_instr();
+            }
+            false => {
+                // Case: `results` and `values` do _not_ overlap and thus we can
+                //       copy all the elements without special care.
+                for (result, value) in results.into_iter().zip(values.into_iter()) {
+                    let value = self.get_register(value);
+                    self.set_register(result, value);
+                }
+                self.next_instr();
+            }
         }
-        self.next_instr();
     }
 
     /// Executes an [`Instruction::CopyMany`].
