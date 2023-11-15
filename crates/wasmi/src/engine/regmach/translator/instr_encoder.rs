@@ -7,7 +7,7 @@ use crate::{
             Instr,
         },
         regmach::{
-            bytecode::{Const32, Instruction, Provider, Register, RegisterSpanIter},
+            bytecode::{Const32, Instruction, Provider, Register, RegisterSpan, RegisterSpanIter},
             translator::ValueStack,
         },
         TranslationError,
@@ -353,7 +353,11 @@ impl InstrEncoder {
             [v0, v1, rest @ ..] => {
                 debug_assert!(!rest.is_empty());
                 if let Some(values) = RegisterSpanIter::from_providers(values) {
-                    let make_instr = match results.is_overlapping(&values) {
+                    let make_instr = match Self::has_overlapping_copy_spans(
+                        results.span(),
+                        values.span(),
+                        values.len(),
+                    ) {
                         true => Instruction::copy_span,
                         false => Instruction::copy_span_non_overlapping,
                     };
@@ -377,6 +381,32 @@ impl InstrEncoder {
         };
         self.push_instr(instr)?;
         Ok(())
+    }
+
+    /// Returns `true` if `copy_span results <- values` has overlapping copies.
+    ///
+    /// # Examples
+    ///
+    /// - `[ ]`: empty never overlaps
+    /// - `[ 1 <- 0 ]`: single element never overlaps
+    /// - `[ 0 <- 1, 1 <- 2, 2 <- 3 ]``: no overlap
+    /// - `[ 1 <- 0, 2 <- 1 ]`: overlaps!
+    fn has_overlapping_copy_spans(results: RegisterSpan, values: RegisterSpan, len: usize) -> bool {
+        if len <= 1 {
+            // Empty spans or single-element spans can never overlap.
+            return false;
+        }
+        let first_value = values.head();
+        let first_result = results.head();
+        if first_value >= first_result {
+            // This case can never result in overlapping copies.
+            return false;
+        }
+        let last_value = values
+            .iter(len)
+            .next_back()
+            .expect("span is non empty and thus must return");
+        last_value >= first_result
     }
 
     /// Returns `true` if the `copy results <- values` instruction has overlaps.
@@ -713,6 +743,129 @@ mod tests {
                 TypedProvider::register(2),
                 TypedProvider::register(4),
             ],
+        ));
+    }
+
+    fn span(register: impl Into<Register>) -> RegisterSpan {
+        RegisterSpan::new(register.into())
+    }
+
+    #[test]
+    fn has_overlapping_copies_2_works() {
+        // len == 0
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(0),
+            span(0),
+            0
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(0),
+            span(1),
+            0
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(1),
+            span(0),
+            0
+        ));
+        // len == 1
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(0),
+            span(0),
+            1
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(0),
+            span(1),
+            1
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(1),
+            span(0),
+            1
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(1),
+            span(1),
+            1
+        ));
+        // len == 2
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(0),
+            span(0),
+            2
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(0),
+            span(1),
+            2
+        ));
+        assert!(InstrEncoder::has_overlapping_copy_spans(
+            span(1),
+            span(0),
+            2
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(1),
+            span(1),
+            2
+        ));
+        // len == 3
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(0),
+            span(0),
+            3
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(0),
+            span(1),
+            3
+        ));
+        assert!(InstrEncoder::has_overlapping_copy_spans(
+            span(1),
+            span(0),
+            3
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(1),
+            span(1),
+            3
+        ));
+        // special cases
+        assert!(InstrEncoder::has_overlapping_copy_spans(
+            span(1),
+            span(0),
+            3
+        ));
+        assert!(InstrEncoder::has_overlapping_copy_spans(
+            span(2),
+            span(0),
+            3
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(3),
+            span(0),
+            3
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(4),
+            span(0),
+            3
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(4),
+            span(0),
+            4
+        ));
+        assert!(InstrEncoder::has_overlapping_copy_spans(
+            span(4),
+            span(1),
+            4
+        ));
+        assert!(InstrEncoder::has_overlapping_copy_spans(
+            span(4),
+            span(0),
+            5
         ));
     }
 }
