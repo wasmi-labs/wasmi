@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use regex::Regex;
 use specs::{
     brtable::{ElemEntry, ElemTable},
     configure_table::ConfigureTable,
@@ -271,12 +272,16 @@ impl Tracer {
         }
 
         {
-            let phantom_functions_ref = self.phantom_functions.clone();
+            let phantom_functions = self.phantom_functions.clone();
 
-            for func_name in phantom_functions_ref {
-                let func = module_instance.func_by_name(&func_name).unwrap();
+            for func_name_regex in phantom_functions {
+                let re = Regex::new(&func_name_regex).unwrap();
 
-                self.push_phantom_function(func);
+                for (export_name, export) in module_instance.exports.borrow().iter() {
+                    if re.is_match(export_name) && export.as_func().is_some() {
+                        self.push_phantom_function(export.as_func().unwrap().clone());
+                    }
+                }
             }
         }
 
