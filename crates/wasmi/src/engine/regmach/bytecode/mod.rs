@@ -483,6 +483,15 @@ pub enum Instruction {
         /// The amount of copied registers.
         len: u16,
     },
+    /// Variant of [`Instruction::CopySpan`] that assumes that `results` and `values` span do not overlap.
+    CopySpanNonOverlapping {
+        /// The registers holding the result of this instruction.
+        results: RegisterSpan,
+        /// The contiguous registers holding the inputs of this instruction.
+        values: RegisterSpan,
+        /// The amount of copied registers.
+        len: u16,
+    },
     /// Copies some [`Register`] values into `results` [`RegisterSpan`].
     ///
     /// # Encoding

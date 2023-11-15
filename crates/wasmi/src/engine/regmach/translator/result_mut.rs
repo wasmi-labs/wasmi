@@ -75,6 +75,7 @@ impl Instruction {
             Instruction::CopyI64Imm32 { result, .. } |
             Instruction::CopyF64Imm32 { result, .. } => Some(result),
             Instruction::CopySpan { .. } |
+            Instruction::CopySpanNonOverlapping { .. } |
             Instruction::Copy2 { .. } |
             Instruction::CopyMany { .. } => None,
             Instruction::CallIndirectParams(_) |

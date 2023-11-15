@@ -383,6 +383,20 @@ impl Instruction {
         }
     }
 
+    /// Creates a new [`Instruction::CopySpanNonOverlapping`] copying multiple consecutive values.
+    pub fn copy_span_non_overlapping(
+        results: RegisterSpan,
+        values: RegisterSpan,
+        len: u16,
+    ) -> Self {
+        debug_assert!(!results.iter_u16(len).is_overlapping(&values.iter_u16(len)));
+        Self::CopySpanNonOverlapping {
+            results,
+            values,
+            len,
+        }
+    }
+
     /// Creates a new [`Instruction::CopyMany`].
     pub fn copy_many(
         results: RegisterSpan,

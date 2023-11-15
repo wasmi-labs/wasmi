@@ -254,6 +254,11 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     values,
                     len,
                 } => self.execute_copy_span(results, values, len),
+                Instr::CopySpanNonOverlapping {
+                    results,
+                    values,
+                    len,
+                } => self.execute_copy_span_non_overlapping(results, values, len),
                 Instr::CopyMany { results, values } => self.execute_copy_many(results, values),
                 Instr::ReturnCallInternal0 { func } => self.execute_return_call_internal_0(func)?,
                 Instr::ReturnCallInternal { func } => self.execute_return_call_internal(func)?,

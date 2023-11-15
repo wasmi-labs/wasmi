@@ -100,6 +100,9 @@ impl VisitInputRegisters for Instruction {
             Instruction::CopySpan { results: _, values, len: _ } => {
                 values.visit_input_registers(f);
             }
+            Instruction::CopySpanNonOverlapping { results: _, values, len: _ } => {
+                values.visit_input_registers(f);
+            }
             Instruction::CopyMany { results: _, values } => {
                 values.visit_input_registers(f);
             }

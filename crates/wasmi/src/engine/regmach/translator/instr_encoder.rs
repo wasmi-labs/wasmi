@@ -317,8 +317,7 @@ impl InstrEncoder {
                 return self.encode_copies(stack, results, rest);
             }
         }
-        let results = results.span();
-        let result = results.head();
+        let result = results.span().head();
         let instr = match values {
             [] => {
                 // The copy sequence is empty, nothing to encode in this case.
@@ -348,22 +347,26 @@ impl InstrEncoder {
                     // Note: we already asserted that the first copy is not a no-op
                     Instruction::copy(result, reg0)
                 } else {
-                    Instruction::copy2(results, reg0, reg1)
+                    Instruction::copy2(results.span(), reg0, reg1)
                 }
             }
             [v0, v1, rest @ ..] => {
                 debug_assert!(!rest.is_empty());
-                if let Some(span) = RegisterSpanIter::from_providers(values) {
-                    self.push_instr(Instruction::copy_span(
-                        results,
-                        span.span(),
-                        span.len_as_u16(),
+                if let Some(values) = RegisterSpanIter::from_providers(values) {
+                    let make_instr = match results.is_overlapping(&values) {
+                        true => Instruction::copy_span,
+                        false => Instruction::copy_span_non_overlapping,
+                    };
+                    self.push_instr(make_instr(
+                        results.span(),
+                        values.span(),
+                        values.len_as_u16(),
                     ))?;
                     return Ok(());
                 }
                 let reg0 = Self::provider2reg(stack, v0)?;
                 let reg1 = Self::provider2reg(stack, v1)?;
-                self.push_instr(Instruction::copy_many(results, reg0, reg1))?;
+                self.push_instr(Instruction::copy_many(results.span(), reg0, reg1))?;
                 self.encode_register_list(stack, rest)?;
                 return Ok(());
             }

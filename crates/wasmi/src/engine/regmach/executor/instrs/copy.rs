@@ -60,28 +60,44 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::CopySpan`].
+    ///
+    /// # Note
+    ///
+    /// - This instruction assumes that `results` and `values` _do_ overlap
+    ///   and thus requires a costly temporary buffer to avoid overwriting
+    ///   intermediate copy results.
+    /// - If `results` and `values` do _not_ overlap [`Instruction::CopySpanNonOverlapping`] is used.
     #[inline(always)]
     pub fn execute_copy_span(&mut self, results: RegisterSpan, values: RegisterSpan, len: u16) {
         let results = results.iter_u16(len);
         let values = values.iter_u16(len);
-        match results.is_overlapping(&values) {
-            true => {
-                // Case: `results` and `values` overlap and thus we need to take special care
-                //       that intermediate values are not invalidated by consecutive overwrites.
-                let mut tmp = <SmallVec<[UntypedValue; 8]>>::default();
-                tmp.extend(values.into_iter().map(|value| self.get_register(value)));
-                for (result, value) in results.into_iter().zip(tmp) {
-                    self.set_register(result, value);
-                }
-            }
-            false => {
-                // Case: `results` and `values` do _not_ overlap and thus we can
-                //       copy all the elements without special care.
-                for (result, value) in results.into_iter().zip(values.into_iter()) {
-                    let value = self.get_register(value);
-                    self.set_register(result, value);
-                }
-            }
+        let mut tmp = <SmallVec<[UntypedValue; 8]>>::default();
+        tmp.extend(values.into_iter().map(|value| self.get_register(value)));
+        for (result, value) in results.into_iter().zip(tmp) {
+            self.set_register(result, value);
+        }
+        self.next_instr();
+    }
+
+    /// Executes an [`Instruction::CopySpanNonOverlapping`].
+    ///
+    /// # Note
+    ///
+    /// - This instruction assumes that `results` and `values` do _not_ overlap
+    ///   and thus can copy all the elements without a costly temporary buffer.
+    /// - If `results` and `values` _do_ overlap [`Instruction::CopySpan`] is used.
+    #[inline(always)]
+    pub fn execute_copy_span_non_overlapping(
+        &mut self,
+        results: RegisterSpan,
+        values: RegisterSpan,
+        len: u16,
+    ) {
+        let results = results.iter_u16(len);
+        let values = values.iter_u16(len);
+        for (result, value) in results.into_iter().zip(values.into_iter()) {
+            let value = self.get_register(value);
+            self.set_register(result, value);
         }
         self.next_instr();
     }
