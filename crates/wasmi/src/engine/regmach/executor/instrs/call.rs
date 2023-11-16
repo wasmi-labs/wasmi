@@ -6,7 +6,7 @@ use crate::{
         regmach::{
             bytecode::{Instruction, Register, RegisterSpan},
             code_map::{CompiledFuncEntity, InstructionPtr},
-            stack::{CallFrame, Stack},
+            stack::{CallFrame, Stack, ValueStackPtr},
         },
         CompiledFunc,
     },
@@ -126,8 +126,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// This will also adjust the instruction pointer to point to the
     /// last call parameter [`Instruction`] if any.
     #[must_use]
-    fn copy_call_params(&mut self, called: &CallFrame) -> InstructionPtr {
-        let mut frame_sp = self.frame_stack_ptr(called);
+    fn copy_call_params(&mut self, mut called_regs: ValueStackPtr) -> InstructionPtr {
         let mut dst = Register::from_i16(0);
         let mut ip = self.ip;
         let mut copy_params = |values: &[Register]| {
@@ -137,7 +136,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 //         registers of the `caller` that does not overlap with the
                 //         registers of the callee since they reside in different
                 //         call frames. Therefore this access is safe.
-                let cell = unsafe { frame_sp.get_mut(dst) };
+                let cell = unsafe { called_regs.get_mut(dst) };
                 *cell = value;
                 dst = dst.next();
             }
@@ -152,7 +151,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             Instruction::Register2(values) => values,
             Instruction::Register3(values) => values,
             unexpected => {
-                unreachable!("unexpected Instruction found while call parameters: {unexpected:?}")
+                unreachable!(
+                    "unexpected Instruction found while copying call parameters: {unexpected:?}"
+                )
             }
         };
         copy_params(values);
@@ -169,9 +170,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         call_kind: CallKind,
     ) -> Result<(), TrapCode> {
         let func = self.code_map.get(func);
-        let mut frame = self.dispatch_compiled_func(results, func)?;
+        let mut called = self.dispatch_compiled_func(results, func)?;
         if let CallParams::Some = params {
-            self.ip = self.copy_call_params(&frame);
+            let called_sp = self.frame_stack_ptr(&called);
+            self.ip = self.copy_call_params(called_sp);
         }
         match call_kind {
             CallKind::Nested => {
@@ -189,11 +191,11 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 // on the value stack which is what the function expects. After this operation we ensure
                 // that `self.sp` is adjusted via a call to `init_call_frame` since it may have been
                 // invalidated by this method.
-                unsafe { Stack::merge_call_frames(self.call_stack, self.value_stack, &mut frame) };
+                unsafe { Stack::merge_call_frames(self.call_stack, self.value_stack, &mut called) };
             }
         }
-        self.init_call_frame(&frame);
-        self.call_stack.push(frame)?;
+        self.init_call_frame(&called);
+        self.call_stack.push(called)?;
         Ok(())
     }
 
@@ -317,11 +319,31 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 self.cache.update_instance(&instance);
                 Ok(CallOutcome::Continue)
             }
-            FuncEntity::Host(_host_func) => {
+            FuncEntity::Host(host_func) => {
                 // Note: host function calls cannot be implemented as tail calls.
                 //       The Wasm spec is not mandating tail behavior for host calls.
-                //
-                // TODO: copy parameters for the host function call
+                let (input_types, output_types) = self
+                    .func_types
+                    .resolve_func_type(host_func.ty_dedup())
+                    .params_results();
+                let len_params = input_types.len();
+                let len_results = output_types.len();
+                let max_inout = len_params.max(len_results);
+                self.value_stack.reserve(max_inout)?;
+                // We have to reinstantiate the `self.sp` [`ValueStackPtr`] since we just called
+                // [`ValueStack::reserve`] which might invalidate all live [`ValueStackPtr`].
+                let caller = self
+                    .call_stack
+                    .peek()
+                    .expect("need to have a caller on the call stack");
+                // Safety: We use the base offset of a live call frame on the call stack.
+                self.sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
+                let offset = self.value_stack.extend_zeros(max_inout);
+                let offset_sp = unsafe { self.value_stack.stack_ptr_at(offset) };
+                if matches!(params, CallParams::Some) {
+                    self.ip = self.copy_call_params(offset_sp);
+                }
+                self.update_instr_ptr_at(1);
                 self.cache.reset();
                 Ok(CallOutcome::Call {
                     results,

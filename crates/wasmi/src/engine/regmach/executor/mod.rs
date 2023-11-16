@@ -94,6 +94,7 @@ impl<'engine> EngineExecutor<'engine> {
             FuncEntity::Host(host_func) => {
                 func_type = *host_func.ty_dedup();
                 let host_func = *host_func;
+                // TODO: allocate more space for results values on the value stack
                 self.dispatch_host_func(ctx.as_context_mut(), host_func, HostFuncCaller::Root)?;
             }
         };
@@ -231,9 +232,6 @@ impl<'engine> EngineExecutor<'engine> {
         let len_inputs = input_types.len();
         let len_outputs = output_types.len();
         let max_inout = len_inputs.max(len_outputs);
-        self.stack.values.reserve(max_inout)?;
-        let delta = len_outputs.saturating_sub(len_inputs);
-        let offset = self.stack.values.extend_zeros(delta);
         let values = self.stack.values.as_slice_mut();
         let params_results = FuncParams::new(
             values.split_at_mut(values.len() - max_inout).1,
@@ -256,8 +254,7 @@ impl<'engine> EngineExecutor<'engine> {
                 //       called host function. Since the host function failed we
                 //       need to clean up the temporary buffer values here.
                 //       This is required for resumable calls to work properly.
-                // self.stack.values.drop(delta);
-                self.stack.values.truncate(offset);
+                self.stack.values.drop(max_inout);
                 error
             })?;
         if let Some(results) = caller.results() {
@@ -278,7 +275,7 @@ impl<'engine> EngineExecutor<'engine> {
             // provide us with valid result registers.
             let mut caller_sp = unsafe { self.stack.values.stack_ptr_at(caller_offset) };
             // # Safety: See Safety (1) above.
-            let callee_sp = unsafe { self.stack.values.stack_ptr_at(offset) };
+            let callee_sp = unsafe { self.stack.values.stack_ptr_last_n(max_inout) };
             let results = results.iter(len_outputs);
             let values = RegisterSpan::new(Register::from_i16(0)).iter(len_outputs);
             for (result, value) in results.zip(values) {
@@ -289,7 +286,7 @@ impl<'engine> EngineExecutor<'engine> {
                 *result_cell = value_cell;
             }
             // Finally, the value stack needs to be truncated to its original size.
-            self.stack.values.truncate(offset);
+            self.stack.values.drop(max_inout);
         }
         Ok(())
     }
@@ -324,6 +321,7 @@ impl<'engine> EngineExecutor<'engine> {
         let value_stack = &mut self.stack.values;
         let call_stack = &mut self.stack.calls;
         let code_map = &self.res.code_map_2;
+        let func_types = &self.res.func_types;
 
         execute_instrs(
             store_inner,
@@ -331,6 +329,7 @@ impl<'engine> EngineExecutor<'engine> {
             value_stack,
             call_stack,
             code_map,
+            func_types,
             &mut resource_limiter,
         )
         .map_err(make_trap)

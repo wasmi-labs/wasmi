@@ -5,6 +5,7 @@ use crate::{
         bytecode::{BlockFuel, BranchOffset, FuncIdx},
         cache::InstanceCache,
         config::FuelCosts,
+        func_types::FuncTypeRegistry,
         regmach::{
             bytecode::{
                 AnyConst32,
@@ -92,9 +93,11 @@ pub fn execute_instrs<'ctx, 'engine>(
     value_stack: &'engine mut ValueStack,
     call_stack: &'engine mut CallStack,
     code_map: &'engine CodeMap,
+    func_types: &'engine FuncTypeRegistry,
     resource_limiter: &'ctx mut ResourceLimiterRef<'ctx>,
 ) -> Result<WasmOutcome, TrapCode> {
-    Executor::new(ctx, cache, value_stack, call_stack, code_map).execute(resource_limiter)
+    Executor::new(ctx, cache, value_stack, call_stack, code_map, func_types)
+        .execute(resource_limiter)
 }
 
 /// An execution context for executing a `wasmi` function frame.
@@ -129,6 +132,12 @@ struct Executor<'ctx, 'engine> {
     ///
     /// This is used to lookup Wasm function information.
     code_map: &'engine CodeMap,
+    /// The Wasm function type registry.
+    ///
+    /// # Note
+    ///
+    /// This is used to lookup Wasm function information.
+    func_types: &'engine FuncTypeRegistry,
 }
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
@@ -140,6 +149,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         value_stack: &'engine mut ValueStack,
         call_stack: &'engine mut CallStack,
         code_map: &'engine CodeMap,
+        func_types: &'engine FuncTypeRegistry,
     ) -> Self {
         let frame = call_stack
             .peek()
@@ -157,6 +167,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             value_stack,
             call_stack,
             code_map,
+            func_types,
         }
     }
 
