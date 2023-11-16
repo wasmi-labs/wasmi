@@ -93,8 +93,25 @@ impl<'engine> EngineExecutor<'engine> {
             }
             FuncEntity::Host(host_func) => {
                 func_type = *host_func.ty_dedup();
+                // The host function signature is required for properly
+                // adjusting, inspecting and manipulating the value stack.
+                let (input_types, output_types) = self
+                    .res
+                    .func_types
+                    .resolve_func_type(host_func.ty_dedup())
+                    .params_results();
+                // In case the host function returns more values than it takes
+                // we are required to extend the value stack.
+                let len_params = input_types.len();
+                let len_results = output_types.len();
+                let max_inout = len_params.max(len_results);
+                self.stack.values.reserve(max_inout)?;
+                self.stack.values.extend_zeros(max_inout);
+                let values = &mut self.stack.values.as_slice_mut()[..len_params];
+                for (value, param) in values.iter_mut().zip(params.call_params()) {
+                    *value = param;
+                }
                 let host_func = *host_func;
-                // TODO: allocate more space for results values on the value stack
                 self.dispatch_host_func(ctx.as_context_mut(), host_func, HostFuncCaller::Root)?;
             }
         };
