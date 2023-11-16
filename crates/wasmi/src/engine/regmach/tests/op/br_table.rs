@@ -232,7 +232,7 @@ fn reg_params_2_ops() {
     let result = Register::from_i16(3);
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy_span(RegisterSpan::new(result), RegisterSpan::new(lhs), 2),
+            Instruction::copy2(RegisterSpan::new(result), lhs, lhs.next()),
             Instruction::branch_table(index, 3),
             Instruction::branch(BranchOffset::from(7)),
             Instruction::branch(BranchOffset::from(4)),
@@ -275,23 +275,23 @@ fn reg_params_2_return() {
     let result2 = result.next();
     let results = RegisterSpan::new(result).iter(2);
     TranslationTest::new(wasm)
-        .expect_func_instrs([
-            Instruction::copy_span(RegisterSpan::new(result), RegisterSpan::new(lhs), 2),
-            Instruction::branch_table(index, 4),
-            Instruction::return_many(results),
-            Instruction::branch(BranchOffset::from(9)),
-            Instruction::branch(BranchOffset::from(5)),
-            Instruction::branch(BranchOffset::from(1)),
-            Instruction::i32_add(result, result, result2),
-            Instruction::copy_imm32(result.next(), 0),
-            Instruction::return_many(results),
-            Instruction::i32_sub(result, result, result2),
-            Instruction::copy_imm32(result.next(), 1),
-            Instruction::return_many(results),
-            Instruction::i32_mul(result, result, result2),
-            Instruction::copy_imm32(result.next(), 2),
-            Instruction::return_many(results),
-        ])
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::copy2(RegisterSpan::new(result), lhs, lhs.next()),
+                Instruction::branch_table(index, 4),
+                Instruction::return_span(results),
+                Instruction::branch(BranchOffset::from(7)),
+                Instruction::branch(BranchOffset::from(4)),
+                Instruction::branch(BranchOffset::from(1)),
+                Instruction::i32_add(result, result, result2),
+                Instruction::return_reg2(3, -1),
+                Instruction::i32_sub(result, result, result2),
+                Instruction::return_reg2(3, -2),
+                Instruction::i32_mul(result, result, result2),
+                Instruction::return_reg2(3, -3),
+            ])
+            .consts([0_i32, 1, 2]),
+        )
         .run()
 }
 
@@ -401,15 +401,11 @@ fn reg_params_2_diff() {
             Instruction::branch(BranchOffset::from(5)),
             Instruction::branch(BranchOffset::from(6)),
             Instruction::branch(BranchOffset::from(1)),
-            Instruction::copy_span(
-                RegisterSpan::new(Register::from_i16(4)),
-                RegisterSpan::new(lhs),
-                2,
-            ),
+            Instruction::copy2(RegisterSpan::new(Register::from_i16(4)), lhs, lhs.next()),
             Instruction::branch(BranchOffset::from(5)),
-            Instruction::copy_span(RegisterSpan::new(result), RegisterSpan::new(lhs), 2),
+            Instruction::copy2(RegisterSpan::new(result), lhs, lhs.next()),
             Instruction::branch(BranchOffset::from(5)),
-            Instruction::copy_span(RegisterSpan::new(result), RegisterSpan::new(lhs), 2),
+            Instruction::copy2(RegisterSpan::new(result), lhs, lhs.next()),
             Instruction::branch(BranchOffset::from(5)),
             Instruction::i32_add(
                 Register::from_i16(4),

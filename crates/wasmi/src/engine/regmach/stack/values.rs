@@ -118,6 +118,18 @@ impl ValueStack {
         self.root_stack_ptr().apply_offset(offset.into())
     }
 
+    /// Returns the [`ValueStackPtr`] at the given `offset` from the back.
+    ///
+    /// # Panics (Debug)
+    ///
+    /// If `n` is greater than the height of the [`ValueStack`].
+    pub unsafe fn stack_ptr_last_n(&mut self, n: usize) -> ValueStackPtr {
+        let len_values = self.len();
+        debug_assert!(n <= len_values);
+        let offset = len_values - n;
+        self.root_stack_ptr().apply_offset(ValueStackOffset(offset))
+    }
+
     /// Returns the capacity of the [`ValueStack`].
     fn capacity(&self) -> usize {
         self.values.len()
@@ -203,10 +215,27 @@ impl ValueStack {
         ValueStackOffset(old_sp)
     }
 
+    /// Drop the last `amount` cells of the [`ValueStack`].
+    ///
+    /// # Panics (Debug)
+    ///
+    /// If `amount` is greater than the [`ValueStack`] height.
+    #[inline]
+    pub fn drop(&mut self, amount: usize) {
+        debug_assert!(self.sp >= amount);
+        self.sp -= amount;
+    }
+
     /// Shrink the [`ValueStack`] to the [`ValueStackOffset`].
+    ///
+    /// # Panics (Debug)
+    ///
+    /// If `new_sp` is greater than the current [`ValueStack`] pointer.
     #[inline]
     pub fn truncate(&mut self, new_sp: impl Into<ValueStackOffset>) {
-        self.sp = new_sp.into().0;
+        let new_sp = new_sp.into().0;
+        debug_assert!(new_sp <= self.sp);
+        self.sp = new_sp;
     }
 
     /// Allocates a new [`CompiledFunc`] on the [`ValueStack`].

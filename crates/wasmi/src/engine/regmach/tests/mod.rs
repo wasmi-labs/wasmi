@@ -2,6 +2,7 @@
 
 mod display_wasm;
 pub mod driver;
+mod host_calls;
 mod op;
 pub mod wasm_type;
 

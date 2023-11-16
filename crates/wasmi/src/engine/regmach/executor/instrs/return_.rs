@@ -2,13 +2,11 @@ use super::Executor;
 use crate::{
     core::UntypedValue,
     engine::regmach::{
-        bytecode::{AnyConst32, Const32, Register, RegisterSpan, RegisterSpanIter},
+        bytecode::{AnyConst32, Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
         stack::ValueStackPtr,
     },
 };
-
-#[cfg(doc)]
-use crate::engine::regmach::bytecode::Instruction;
+use core::slice;
 
 /// The outcome of a Wasm return statement.
 #[derive(Debug, Copy, Clone)]
@@ -94,7 +92,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let (mut caller_sp, results) = self.return_caller_results();
         let value = f(self, value);
         // Safety: The `callee.results()` always refer to a span of valid
-        //         registers of the `caller` so this access is safe.
+        //         registers of the `caller` that does not overlap with the
+        //         registers of the callee since they reside in different
+        //         call frames. Therefore this access is safe.
         let result = unsafe { caller_sp.get_mut(results.head()) };
         *result = value;
         self.return_impl()
@@ -104,6 +104,37 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     pub fn execute_return_reg(&mut self, value: Register) -> ReturnOutcome {
         self.execute_return_value(value, Self::get_register)
+    }
+
+    /// Execute an [`Instruction::ReturnReg2`] returning two [`Register`] values.
+    #[inline(always)]
+    pub fn execute_return_reg2(&mut self, values: [Register; 2]) -> ReturnOutcome {
+        self.execute_return_reg_n_impl::<2>(values)
+    }
+
+    /// Execute an [`Instruction::ReturnReg3`] returning three [`Register`] values.
+    #[inline(always)]
+    pub fn execute_return_reg3(&mut self, values: [Register; 3]) -> ReturnOutcome {
+        self.execute_return_reg_n_impl::<3>(values)
+    }
+
+    /// Executes an [`Instruction::ReturnReg2`] or [`Instruction::ReturnReg3`] generically.
+    fn execute_return_reg_n_impl<const N: usize>(
+        &mut self,
+        values: [Register; N],
+    ) -> ReturnOutcome {
+        let (mut caller_sp, results) = self.return_caller_results();
+        debug_assert!(u16::try_from(N).is_ok());
+        for (result, value) in results.iter_u16(N as u16).zip(values) {
+            let value = self.get_register(value);
+            // Safety: The `callee.results()` always refer to a span of valid
+            //         registers of the `caller` that does not overlap with the
+            //         registers of the callee since they reside in different
+            //         call frames. Therefore this access is safe.
+            let cell = unsafe { caller_sp.get_mut(result) };
+            *cell = value;
+        }
+        self.return_impl()
     }
 
     /// Execute an [`Instruction::ReturnImm32`] returning a single 32-bit value.
@@ -124,17 +155,58 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.execute_return_value(value, |_, value| f64::from(value).into())
     }
 
-    /// Execute an [`Instruction::ReturnMany`] returning many values.
+    /// Execute an [`Instruction::ReturnSpan`] returning many values.
     #[inline(always)]
-    pub fn execute_return_many(&mut self, values: RegisterSpanIter) -> ReturnOutcome {
+    pub fn execute_return_span(&mut self, values: RegisterSpanIter) -> ReturnOutcome {
         let (mut caller_sp, results) = self.return_caller_results();
         let results = results.iter(values.len());
         for (result, value) in results.zip(values) {
-            // Safety: The value stack pointer returned by `return_caller_results` is
-            //         guaranteed to be valid for all registers from the results span.
+            // Safety: The `callee.results()` always refer to a span of valid
+            //         registers of the `caller` that does not overlap with the
+            //         registers of the callee since they reside in different
+            //         call frames. Therefore this access is safe.
             let cell = unsafe { caller_sp.get_mut(result) };
             *cell = self.get_register(value);
         }
+        self.return_impl()
+    }
+
+    /// Execute an [`Instruction::ReturnMany`] returning many values.
+    #[inline(always)]
+    pub fn execute_return_many(&mut self, values: [Register; 3]) -> ReturnOutcome {
+        self.execute_return_many_impl(&values)
+    }
+
+    /// Executes [`Instruction::ReturnMany`] or parts of [`Instruction::ReturnNezMany`] generically.
+    fn execute_return_many_impl(&mut self, values: &[Register]) -> ReturnOutcome {
+        let (mut caller_sp, results) = self.return_caller_results();
+        let mut result = results.head();
+        let mut copy_results = |values: &[Register]| {
+            for value in values {
+                let value = self.get_register(*value);
+                // Safety: The `callee.results()` always refer to a span of valid
+                //         registers of the `caller` that does not overlap with the
+                //         registers of the callee since they reside in different
+                //         call frames. Therefore this access is safe.
+                let cell = unsafe { caller_sp.get_mut(result) };
+                *cell = value;
+                result = result.next();
+            }
+        };
+        copy_results(values);
+        let mut ip = self.ip;
+        ip.add(1);
+        while let Instruction::RegisterList(values) = ip.get() {
+            copy_results(values);
+            ip.add(1);
+        }
+        let values = match ip.get() {
+            Instruction::Register(value) => slice::from_ref(value),
+            Instruction::Register2(values) => values,
+            Instruction::Register3(values) => values,
+            unexpected => unreachable!("unexpected Instruction found while executing Instruction::ReturnMany: {unexpected:?}"),
+        };
+        copy_results(values);
         self.return_impl()
     }
 
@@ -171,6 +243,16 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.execute_return_nez_impl(condition, value, Self::execute_return_reg)
     }
 
+    /// Execute an [`Instruction::ReturnNezReg`] returning a single [`Register`] value.
+    #[inline(always)]
+    pub fn execute_return_nez_reg2(
+        &mut self,
+        condition: Register,
+        value: [Register; 2],
+    ) -> ReturnOutcome {
+        self.execute_return_nez_impl(condition, value, Self::execute_return_reg2)
+    }
+
     /// Execute an [`Instruction::ReturnNezImm32`] returning a single 32-bit constant value.
     #[inline(always)]
     pub fn execute_return_nez_imm32(
@@ -201,13 +283,23 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.execute_return_nez_impl(condition, value, Self::execute_return_f64imm32)
     }
 
+    /// Execute an [`Instruction::ReturnNezSpan`] returning many values.
+    #[inline(always)]
+    pub fn execute_return_nez_span(
+        &mut self,
+        condition: Register,
+        values: RegisterSpanIter,
+    ) -> ReturnOutcome {
+        self.execute_return_nez_impl(condition, values, Self::execute_return_span)
+    }
+
     /// Execute an [`Instruction::ReturnNezMany`] returning many values.
     #[inline(always)]
     pub fn execute_return_nez_many(
         &mut self,
         condition: Register,
-        values: RegisterSpanIter,
+        values: [Register; 2],
     ) -> ReturnOutcome {
-        self.execute_return_nez_impl(condition, values, Self::execute_return_many)
+        self.execute_return_nez_impl(condition, &values[..], Self::execute_return_many_impl)
     }
 }

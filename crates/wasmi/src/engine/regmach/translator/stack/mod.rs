@@ -38,6 +38,11 @@ impl TypedProvider {
             Self::Const(value) => UntypedProvider::Const(UntypedValue::from(value)),
         }
     }
+
+    /// Creates a new [`TypedProvider::Register`].
+    pub fn register(register: impl Into<Register>) -> Self {
+        Self::Register(register.into())
+    }
 }
 
 impl From<TaggedProvider> for TypedProvider {

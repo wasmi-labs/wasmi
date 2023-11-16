@@ -13,8 +13,6 @@ pub(crate) use self::{
         BinInstr,
         BinInstrImm16,
         CallIndirectParams,
-        CallIndirectParamsImm16,
-        CallParams,
         CopysignImmInstr,
         LoadAtInstr,
         LoadInstr,
@@ -118,6 +116,39 @@ pub enum Instruction {
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
     Register(Register),
+    /// Two [`Register`] instruction parameters.
+    ///
+    /// # Note
+    ///
+    /// This [`Instruction`] only acts as a parameter to another
+    /// one and will never be executed itself directly.
+    Register2([Register; 2]),
+    /// Three [`Register`] instruction parameters.
+    ///
+    /// # Note
+    ///
+    /// This [`Instruction`] only acts as a parameter to another
+    /// one and will never be executed itself directly.
+    Register3([Register; 3]),
+    /// [`Register`] slice parameters.
+    ///
+    /// # Note
+    ///
+    /// This [`Instruction`] only acts as a parameter to another
+    /// one and will never be executed itself directly.
+    ///
+    /// # Encoding
+    ///
+    /// This must always be followed by one of
+    ///
+    /// - [`Instruction::Register`]
+    /// - [`Instruction::Register2`]
+    /// - [`Instruction::Register3`]
+    RegisterList([Register; 3]),
+    /// Auxiliary [`Instruction`] to encode table access information for indirect call instructions.
+    CallIndirectParams(CallIndirectParams<Register>),
+    /// Variant of [`Instruction::CallIndirectParams`] for 16-bit constant `index` parameter.
+    CallIndirectParamsImm16(CallIndirectParams<Const16<u32>>),
 
     /// Traps the execution with the given [`TrapCode`].
     ///
@@ -154,6 +185,24 @@ pub enum Instruction {
     ///
     /// # Note
     ///
+    /// Returns two values stored in registers.
+    ReturnReg2 {
+        /// The returned values.
+        values: [Register; 2],
+    },
+    /// A Wasm `return` instruction.
+    ///
+    /// # Note
+    ///
+    /// Returns three values stored in registers.
+    ReturnReg3 {
+        /// The returned values.
+        values: [Register; 3],
+    },
+    /// A Wasm `return` instruction.
+    ///
+    /// # Note
+    ///
     /// Returns a single 32-bit constant value.
     ReturnImm32 {
         /// The returned 32-bit constant value.
@@ -182,9 +231,28 @@ pub enum Instruction {
     /// # Note
     ///
     /// Returns values as stored in the [`RegisterSpanIter`].
-    ReturnMany {
+    ReturnSpan {
         /// Identifier for a [`Provider`] slice.
         values: RegisterSpanIter,
+    },
+    /// A Wasm `return` instruction.
+    ///
+    /// # Note
+    ///
+    /// Returns many values accessed by registers.
+    ///
+    /// # Encoding
+    ///
+    /// Must be followed by
+    ///
+    /// 1. Zero or more [`Instruction::RegisterList`]
+    /// 2. Followed by one of
+    ///     - [`Instruction::Register`]
+    ///     - [`Instruction::Register2`]
+    ///     - [`Instruction::Register3`]
+    ReturnMany {
+        /// The first three returned values.
+        values: [Register; 3],
     },
 
     /// A conditional `return` instruction.
@@ -208,6 +276,18 @@ pub enum Instruction {
         condition: Register,
         /// The returned value.
         value: Register,
+    },
+    /// A conditional `return` instruction.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::ReturnNez`] returning two
+    /// [`Register`] value if the `condition` evaluates to `true`.
+    ReturnNezReg2 {
+        /// The register holding the condition to evaluate against zero.
+        condition: Register,
+        /// The returned value.
+        values: [Register; 2],
     },
     /// A conditional `return` instruction.
     ///
@@ -250,11 +330,32 @@ pub enum Instruction {
     /// # Note
     ///
     /// Variant of [`Instruction::ReturnNez`] returning two or more values.
-    ReturnNezMany {
+    ReturnNezSpan {
         /// The register holding the condition to evaluate against zero.
         condition: Register,
         /// The returned values.
         values: RegisterSpanIter,
+    },
+    /// A conditional `return` instruction.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::ReturnNez`] returning multiple register values.
+    ///
+    /// # Encoding
+    ///
+    /// Must be followed by
+    ///
+    /// 1. Zero or more [`Instruction::RegisterList`]
+    /// 2. Followed by one of
+    ///     - [`Instruction::Register`]
+    ///     - [`Instruction::Register2`]
+    ///     - [`Instruction::Register3`]
+    ReturnNezMany {
+        /// The register holding the condition to evaluate against zero.
+        condition: Register,
+        /// The first returned value.
+        values: [Register; 2],
     },
 
     /// A Wasm `br` instruction.
@@ -293,12 +394,12 @@ pub enum Instruction {
     /// Must be followed `len_targets` times by any of
     ///
     /// - [`Instruction::Branch`]
-    /// - [`Instruction::Return]
-    /// - [`Instruction::ReturnReg]
-    /// - [`Instruction::ReturnImm32]
-    /// - [`Instruction::ReturnI64Imm32]
-    /// - [`Instruction::ReturnF64Imm32]
-    /// - [`Instruction::ReturnMany]
+    /// - [`Instruction::Return`]
+    /// - [`Instruction::ReturnReg`]
+    /// - [`Instruction::ReturnImm32`]
+    /// - [`Instruction::ReturnI64Imm32`]
+    /// - [`Instruction::ReturnF64Imm32`]
+    /// - [`Instruction::ReturnSpan`]
     BranchTable {
         /// The register holding the index of the instruction.
         index: Register,
@@ -316,6 +417,17 @@ pub enum Instruction {
         result: Register,
         /// The register holding the value to copy.
         value: Register,
+    },
+    /// Copies two [`Register`] values to `results`.
+    ///
+    /// # Note
+    ///
+    /// This is a `wasmi` utility instruction used to translate Wasm control flow.
+    Copy2 {
+        /// The registers holding the result of the instruction.
+        results: RegisterSpan,
+        /// The registers holding the values to copy.
+        values: [Register; 2],
     },
     /// Copies the 32-bit immediate `value` to `result`.
     ///
@@ -355,7 +467,7 @@ pub enum Instruction {
         /// The 32-bit encoded `i64` immediate value to copy.
         value: Const32<f64>,
     },
-    /// Copes `len` contiguous `values` [`RegisterSpan`] into `results` [`RegisterSpan`].
+    /// Copies `len` contiguous `values` [`RegisterSpan`] into `results` [`RegisterSpan`].
     ///
     /// Copies registers: `registers[results..results+len] <- registers[values..values+len]`
     ///
@@ -371,13 +483,47 @@ pub enum Instruction {
         /// The amount of copied registers.
         len: u16,
     },
-
-    /// Auxiliary [`Instruction`] to encode call parameters for call instructions.
-    CallParams(CallParams),
-    /// Auxiliary [`Instruction`] to encode table access information for indirect call instructions.
-    CallIndirectParams(CallIndirectParams),
-    /// Variant of [`Instruction::CallIndirectParams`] for 16-bit constant `index` parameter.
-    CallIndirectParamsImm16(CallIndirectParamsImm16),
+    /// Variant of [`Instruction::CopySpan`] that assumes that `results` and `values` span do not overlap.
+    CopySpanNonOverlapping {
+        /// The registers holding the result of this instruction.
+        results: RegisterSpan,
+        /// The contiguous registers holding the inputs of this instruction.
+        values: RegisterSpan,
+        /// The amount of copied registers.
+        len: u16,
+    },
+    /// Copies some [`Register`] values into `results` [`RegisterSpan`].
+    ///
+    /// # Encoding
+    ///
+    /// Must be followed by
+    ///
+    /// 1. Zero or more [`Instruction::RegisterList`]
+    /// 2. Followed by one of
+    ///     - [`Instruction::Register`]
+    ///     - [`Instruction::Register2`]
+    ///     - [`Instruction::Register3`]
+    CopyMany {
+        /// The registers holding the result of this instruction.
+        results: RegisterSpan,
+        /// The first two input registers to copy.
+        values: [Register; 2],
+    },
+    /// Variant of [`Instruction::CopyMany`] that assumes that `results` and `values` do not overlap.
+    ///
+    /// Must be followed by
+    ///
+    /// 1. Zero or more [`Instruction::RegisterList`]
+    /// 2. Followed by one of
+    ///     - [`Instruction::Register`]
+    ///     - [`Instruction::Register2`]
+    ///     - [`Instruction::Register3`]
+    CopyManyNonOverlapping {
+        /// The registers holding the result of this instruction.
+        results: RegisterSpan,
+        /// The first two input registers to copy.
+        values: [Register; 2],
+    },
 
     /// Wasm `return_call` equivalent `wasmi` instruction.
     ///
@@ -394,9 +540,15 @@ pub enum Instruction {
     ///
     /// Used for tail calling internally compiled Wasm functions with parameters.
     ///
-    /// # Encoding
+    /// # Encoding (Parameters)
     ///
-    /// Must be followed by [`Instruction::CallParams`].
+    /// Must be followed by
+    ///
+    /// 1. Zero or more [`Instruction::RegisterList`]
+    /// 2. Followed by one of
+    ///     - [`Instruction::Register`]
+    ///     - [`Instruction::Register2`]
+    ///     - [`Instruction::Register3`]
     ReturnCallInternal {
         /// The called internal function.
         func: CompiledFunc,
@@ -417,9 +569,15 @@ pub enum Instruction {
     ///
     /// Used for tail calling imported Wasm functions with parameters.
     ///
-    /// # Encoding
+    /// # Encoding (Parameters)
     ///
-    /// Must be followed by [`Instruction::CallParams`].
+    /// Must be followed by
+    ///
+    /// 1. Zero or more [`Instruction::RegisterList`]
+    /// 2. Followed by one of
+    ///     - [`Instruction::Register`]
+    ///     - [`Instruction::Register2`]
+    ///     - [`Instruction::Register3`]
     ReturnCallImported {
         /// The called imported function.
         func: FuncIdx,
@@ -455,7 +613,11 @@ pub enum Instruction {
     /// 1. Either
     ///     - [`Instruction::CallIndirectParams`]: the `table` and `index`
     ///     - [`Instruction::CallIndirectParamsImm16`]: the `table` and 16-bit constant `index`
-    /// 2. [`Instruction::CallParams`]: the call parameters
+    /// 2. Zero or more [`Instruction::RegisterList`]
+    /// 3. Followed by one of
+    ///     - [`Instruction::Register`]
+    ///     - [`Instruction::Register2`]
+    ///     - [`Instruction::Register3`]
     ReturnCallIndirect {
         /// The called internal function.
         func_type: SignatureIdx,
@@ -478,9 +640,15 @@ pub enum Instruction {
     ///
     /// Used for calling internally compiled Wasm functions with parameters.
     ///
-    /// # Encoding
+    /// # Encoding (Parameters)
     ///
-    /// Must be followed by [`Instruction::CallParams`].
+    /// Must be followed by
+    ///
+    /// 1. Zero or more [`Instruction::RegisterList`]
+    /// 2. Followed by one of
+    ///     - [`Instruction::Register`]
+    ///     - [`Instruction::Register2`]
+    ///     - [`Instruction::Register3`]
     CallInternal {
         /// The registers storing the results of the call.
         results: RegisterSpan,
@@ -505,9 +673,15 @@ pub enum Instruction {
     ///
     /// Used for calling imported Wasm functions with parameters.
     ///
-    /// # Encoding
+    /// # Encoding (Parameters)
     ///
-    /// Must be followed by [`Instruction::CallParams`].
+    /// Must be followed by
+    ///
+    /// 1. Zero or more [`Instruction::RegisterList`]
+    /// 2. Followed by one of
+    ///     - [`Instruction::Register`]
+    ///     - [`Instruction::Register2`]
+    ///     - [`Instruction::Register3`]
     CallImported {
         /// The registers storing the results of the call.
         results: RegisterSpan,
@@ -544,10 +718,14 @@ pub enum Instruction {
     ///
     /// Must be followed by
     ///
-    /// 1. [`Instruction::CallParams`]: the call parameters
-    /// 2. Either
+    /// 1. Either
     ///     - [`Instruction::CallIndirectParams`]: the `table` and `index`
     ///     - [`Instruction::CallIndirectParamsImm16`]: the `table` and 16-bit constant `index`
+    /// 2. Zero or more [`Instruction::RegisterList`]
+    /// 3. Followed by one of
+    ///     - [`Instruction::Register`]
+    ///     - [`Instruction::Register2`]
+    ///     - [`Instruction::Register3`]
     CallIndirect {
         /// The registers storing the results of the call.
         results: RegisterSpan,

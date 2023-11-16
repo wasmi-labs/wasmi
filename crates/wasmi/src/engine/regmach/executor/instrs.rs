@@ -5,6 +5,7 @@ use crate::{
         bytecode::{BlockFuel, BranchOffset, FuncIdx},
         cache::InstanceCache,
         config::FuelCosts,
+        func_types::FuncTypeRegistry,
         regmach::{
             bytecode::{
                 AnyConst32,
@@ -92,9 +93,11 @@ pub fn execute_instrs<'ctx, 'engine>(
     value_stack: &'engine mut ValueStack,
     call_stack: &'engine mut CallStack,
     code_map: &'engine CodeMap,
+    func_types: &'engine FuncTypeRegistry,
     resource_limiter: &'ctx mut ResourceLimiterRef<'ctx>,
 ) -> Result<WasmOutcome, TrapCode> {
-    Executor::new(ctx, cache, value_stack, call_stack, code_map).execute(resource_limiter)
+    Executor::new(ctx, cache, value_stack, call_stack, code_map, func_types)
+        .execute(resource_limiter)
 }
 
 /// An execution context for executing a `wasmi` function frame.
@@ -129,6 +132,12 @@ struct Executor<'ctx, 'engine> {
     ///
     /// This is used to lookup Wasm function information.
     code_map: &'engine CodeMap,
+    /// The Wasm function type registry.
+    ///
+    /// # Note
+    ///
+    /// This is used to lookup Wasm function information.
+    func_types: &'engine FuncTypeRegistry,
 }
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
@@ -140,6 +149,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         value_stack: &'engine mut ValueStack,
         call_stack: &'engine mut CallStack,
         code_map: &'engine CodeMap,
+        func_types: &'engine FuncTypeRegistry,
     ) -> Self {
         let frame = call_stack
             .peek()
@@ -157,6 +167,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             value_stack,
             call_stack,
             code_map,
+            func_types,
         }
     }
 
@@ -175,7 +186,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 | Instr::Const32(_)
                 | Instr::I64Const32(_)
                 | Instr::F64Const32(_)
-                | Instr::Register(_) => self.invalid_instruction_word()?,
+                | Instr::Register(_)
+                | Instr::Register2(_)
+                | Instr::Register3(_)
+                | Instr::RegisterList(_)
+                | Instr::CallIndirectParams(_)
+                | Instr::CallIndirectParamsImm16(_) => self.invalid_instruction_word()?,
                 Instr::Trap(trap_code) => self.execute_trap(trap_code)?,
                 Instr::ConsumeFuel(block_fuel) => self.execute_consume_fuel(block_fuel)?,
                 Instr::Return => {
@@ -183,6 +199,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 }
                 Instr::ReturnReg { value } => {
                     forward_return!(self.execute_return_reg(value))
+                }
+                Instr::ReturnReg2 { values } => {
+                    forward_return!(self.execute_return_reg2(values))
+                }
+                Instr::ReturnReg3 { values } => {
+                    forward_return!(self.execute_return_reg3(values))
                 }
                 Instr::ReturnImm32 { value } => {
                     forward_return!(self.execute_return_imm32(value))
@@ -193,6 +215,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::ReturnF64Imm32 { value } => {
                     forward_return!(self.execute_return_f64imm32(value))
                 }
+                Instr::ReturnSpan { values } => {
+                    forward_return!(self.execute_return_span(values))
+                }
                 Instr::ReturnMany { values } => {
                     forward_return!(self.execute_return_many(values))
                 }
@@ -202,6 +227,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::ReturnNezReg { condition, value } => {
                     forward_return!(self.execute_return_nez_reg(condition, value))
                 }
+                Instr::ReturnNezReg2 { condition, values } => {
+                    forward_return!(self.execute_return_nez_reg2(condition, values))
+                }
                 Instr::ReturnNezImm32 { condition, value } => {
                     forward_return!(self.execute_return_nez_imm32(condition, value))
                 }
@@ -210,6 +238,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 }
                 Instr::ReturnNezF64Imm32 { condition, value } => {
                     forward_return!(self.execute_return_nez_f64imm32(condition, value))
+                }
+                Instr::ReturnNezSpan { condition, values } => {
+                    forward_return!(self.execute_return_nez_span(condition, values))
                 }
                 Instr::ReturnNezMany { condition, values } => {
                     forward_return!(self.execute_return_nez_many(condition, values))
@@ -225,6 +256,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     self.execute_branch_table(index, len_targets)
                 }
                 Instr::Copy { result, value } => self.execute_copy(result, value),
+                Instr::Copy2 { results, values } => self.execute_copy_2(results, values),
                 Instr::CopyImm32 { result, value } => self.execute_copy_imm32(result, value),
                 Instr::CopyI64Imm32 { result, value } => self.execute_copy_i64imm32(result, value),
                 Instr::CopyF64Imm32 { result, value } => self.execute_copy_f64imm32(result, value),
@@ -233,9 +265,15 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     values,
                     len,
                 } => self.execute_copy_span(results, values, len),
-                Instr::CallParams(_) => self.invalid_instruction_word()?,
-                Instr::CallIndirectParams(_) => self.invalid_instruction_word()?,
-                Instr::CallIndirectParamsImm16(_) => self.invalid_instruction_word()?,
+                Instr::CopySpanNonOverlapping {
+                    results,
+                    values,
+                    len,
+                } => self.execute_copy_span_non_overlapping(results, values, len),
+                Instr::CopyMany { results, values } => self.execute_copy_many(results, values),
+                Instr::CopyManyNonOverlapping { results, values } => {
+                    self.execute_copy_many_non_overlapping(results, values)
+                }
                 Instr::ReturnCallInternal0 { func } => self.execute_return_call_internal_0(func)?,
                 Instr::ReturnCallInternal { func } => self.execute_return_call_internal(func)?,
                 Instr::ReturnCallImported0 { func } => {

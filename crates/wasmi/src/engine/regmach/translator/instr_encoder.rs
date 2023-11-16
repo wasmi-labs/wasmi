@@ -7,7 +7,7 @@ use crate::{
             Instr,
         },
         regmach::{
-            bytecode::{Const32, Instruction, Register, RegisterSpanIter},
+            bytecode::{Const32, Instruction, Provider, Register, RegisterSpan, RegisterSpanIter},
             translator::ValueStack,
         },
         TranslationError,
@@ -15,7 +15,6 @@ use crate::{
     module::ModuleResources,
 };
 use alloc::vec::{Drain, Vec};
-use core::{cmp, ops::Range};
 use wasmi_core::{UntypedValue, ValueType, F32};
 
 /// Encodes `wasmi` bytecode instructions to an [`Instruction`] stream.
@@ -296,144 +295,147 @@ impl InstrEncoder {
         }
     }
 
-    /// Encode a set of `copy result <- value` instructions.
+    /// Encode a generic `copy` instruction.
     ///
     /// # Note
     ///
-    /// Applies optimizations for `copy x <- x` and properly selects the
-    /// most optimized `copy` instruction variants for the given `value`.
+    /// Avoids no-op copies such as `copy x <- x` and properly selects the
+    /// most optimized `copy` instruction variant for the given `value`.
     pub fn encode_copies(
         &mut self,
         stack: &mut ValueStack,
-        results: RegisterSpanIter,
+        mut results: RegisterSpanIter,
         values: &[TypedProvider],
     ) -> Result<(), TranslationError> {
-        if values.len() >= 2 {
-            if let Some(values) = RegisterSpanIter::from_providers(values) {
-                if results == values {
-                    // Case: both spans are equal so there is no need to copy anything.
-                    return Ok(());
-                }
-                // Optimization: we can encode the entire copy as [`Instruction::CopySpan`]
-                self.push_instr(Instruction::copy_span(
-                    results.span(),
-                    values.span(),
-                    results.len_as_u16(),
-                ))?;
-                return Ok(());
+        assert_eq!(results.len(), values.len());
+        if let Some((TypedProvider::Register(value), rest)) = values.split_first() {
+            if results.span().head() == *value {
+                // Case: `result` and `value` are equal thus this is a no-op copy which we can avoid.
+                //       Applied recursively we thereby remove all no-op copies at the start of the
+                //       copy sequence until the first actual copy.
+                results.next();
+                return self.encode_copies(stack, results, rest);
             }
         }
-        let start = self.instrs.next_instr();
-        for (copy_result, copy_input) in results.zip(values.iter().copied()) {
-            self.encode_copy(stack, copy_result, copy_input)?;
-        }
-        let copy_instrs = self.instrs.get_slice_at_mut(start);
-        if Self::is_copy_overwriting(copy_instrs) {
-            // We need to sort the encoded copy instructions so that they are not overwriting themselves.
-            //
-            // An example is `copy 1 <- 0, copy 2 < 1` where the first `copy 1 <- 0`
-            // overwrites the input of the second.
-            //
-            // To further circumvent this, all `copy` instructions copying immediate values always go last
-            // and `copy_span` instructions come after `copy` instructions.
-            copy_instrs.sort_by(|lhs, rhs| {
-                use Instruction as I;
-                match (lhs, rhs) {
-                    (
-                        I::Copy {
-                            result: r0,
-                            value: v0,
-                        },
-                        I::Copy {
-                            result: r1,
-                            value: v1,
-                        },
-                    ) => {
-                        if v0 <= v1 {
-                            r0.cmp(r1)
-                        } else {
-                            r1.cmp(r0)
-                        }
-                    }
-                    (I::Copy { .. }, _) => cmp::Ordering::Less,
-                    (_, I::Copy { .. }) => cmp::Ordering::Greater,
-                    // TODO: Maybe there is a need to also order `CopySpan` amongst
-                    // themselves just as we did for the `Copy` instruction.
-                    (I::CopySpan { .. }, _) => cmp::Ordering::Less,
-                    (_, I::CopySpan { .. }) => cmp::Ordering::Greater,
-                    _ => cmp::Ordering::Equal,
+        let result = results.span().head();
+        let instr = match values {
+            [] => {
+                // The copy sequence is empty, nothing to encode in this case.
+                return Ok(());
+            }
+            [TypedProvider::Register(reg)] => Instruction::copy(result, *reg),
+            [TypedProvider::Const(value)] => match value.ty() {
+                ValueType::I32 => Instruction::copy_imm32(result, i32::from(*value)),
+                ValueType::I64 => match <Const32<i64>>::from_i64(i64::from(*value)) {
+                    Some(value) => Instruction::copy_i64imm32(result, value),
+                    None => Instruction::copy(result, stack.alloc_const(*value)?),
+                },
+                ValueType::F32 => Instruction::copy_imm32(result, F32::from(*value)),
+                ValueType::F64 => match <Const32<f64>>::from_f64(f64::from(*value)) {
+                    Some(value) => Instruction::copy_f64imm32(result, value),
+                    None => Instruction::copy(result, stack.alloc_const(*value)?),
+                },
+                ValueType::FuncRef | ValueType::ExternRef => {
+                    Instruction::copy(result, stack.alloc_const(*value)?)
                 }
-            });
-        }
-        debug_assert!(
-            !Self::is_copy_overwriting(copy_instrs),
-            "sorting should have removed the overwrites"
-        );
+            },
+            [v0, v1] => {
+                let reg0 = Self::provider2reg(stack, v0)?;
+                let reg1 = Self::provider2reg(stack, v1)?;
+                if result.next() == reg1 {
+                    // Case: the second of the 2 copies is a no-op which we can avoid
+                    // Note: we already asserted that the first copy is not a no-op
+                    Instruction::copy(result, reg0)
+                } else {
+                    Instruction::copy2(results.span(), reg0, reg1)
+                }
+            }
+            [v0, v1, rest @ ..] => {
+                debug_assert!(!rest.is_empty());
+                if let Some(values) = RegisterSpanIter::from_providers(values) {
+                    let make_instr = match Self::has_overlapping_copy_spans(
+                        results.span(),
+                        values.span(),
+                        values.len(),
+                    ) {
+                        true => Instruction::copy_span,
+                        false => Instruction::copy_span_non_overlapping,
+                    };
+                    self.push_instr(make_instr(
+                        results.span(),
+                        values.span(),
+                        values.len_as_u16(),
+                    ))?;
+                    return Ok(());
+                }
+                let make_instr = match Self::has_overlapping_copies(results, values) {
+                    true => Instruction::copy_many,
+                    false => Instruction::copy_many_non_overlapping,
+                };
+                let reg0 = Self::provider2reg(stack, v0)?;
+                let reg1 = Self::provider2reg(stack, v1)?;
+                self.push_instr(make_instr(results.span(), reg0, reg1))?;
+                self.encode_register_list(stack, rest)?;
+                return Ok(());
+            }
+        };
+        self.push_instr(instr)?;
         Ok(())
     }
 
-    /// Returns `true` if any of the `copies` overwrite the inputs of following copies.
-    fn is_copy_overwriting(copies: &[Instruction]) -> bool {
-        impl Register {
-            /// Returns `true` if `self` is contained within the [`Register`] `range`.
-            fn within_range(&self, range: Range<Register>) -> bool {
-                range.contains(self)
-            }
+    /// Returns `true` if `copy_span results <- values` has overlapping copies.
+    ///
+    /// # Examples
+    ///
+    /// - `[ ]`: empty never overlaps
+    /// - `[ 1 <- 0 ]`: single element never overlaps
+    /// - `[ 0 <- 1, 1 <- 2, 2 <- 3 ]``: no overlap
+    /// - `[ 1 <- 0, 2 <- 1 ]`: overlaps!
+    fn has_overlapping_copy_spans(results: RegisterSpan, values: RegisterSpan, len: usize) -> bool {
+        if len <= 1 {
+            // Empty spans or single-element spans can never overlap.
+            return false;
         }
-        impl Instruction {
-            /// Returns the first result [`Register`] of the copy [`Instruction`].
-            ///
-            /// # Panics
-            ///
-            /// If `self` is not a copy [`Instruction`].
-            fn copy_result(&self) -> Register {
-                match self {
-                    I::Copy { result, value: _ }
-                    | I::CopyImm32 { result, value: _ }
-                    | I::CopyI64Imm32 { result, value: _ }
-                    | I::CopyF64Imm32 { result, value: _ } => *result,
-                    I::CopySpan {
-                        results,
-                        values: _,
-                        len: _,
-                    } => results.head(),
-                    unexpected => panic!("encountered non-copy instruction: {unexpected:?}"),
-                }
-            }
+        let first_value = values.head();
+        let first_result = results.head();
+        if first_value >= first_result {
+            // This case can never result in overlapping copies.
+            return false;
         }
+        let last_value = values
+            .iter(len)
+            .next_back()
+            .expect("span is non empty and thus must return");
+        last_value >= first_result
+    }
 
-        use Instruction as I;
-        let (head, rest) = match copies.split_first() {
-            Some((head, rest)) => (head, rest),
-            None => return false,
-        };
-        let start = head.copy_result();
-        for instr in rest {
-            let end = instr.copy_result();
-            match instr {
-                I::Copy { result: _, value } => {
-                    if value.within_range(start..end) {
-                        return true;
-                    }
+    /// Returns `true` if the `copy results <- values` instruction has overlaps.
+    ///
+    /// # Examples
+    ///
+    /// - The sequence `[ 0 <- 1, 1 <- 1, 2 <- 4 ]` has no overlapping copies.
+    /// - The sequence `[ 0 <- 1, 1 <- 0 ]` has overlapping copies since register `0`
+    ///   is written to in the first copy but read from in the next.
+    /// - The sequence `[ 3 <- 1, 4 <- 2, 5 <- 3 ]` has overlapping copies since register `3`
+    ///   is written to in the first copy but read from in the third.
+    fn has_overlapping_copies(results: RegisterSpanIter, values: &[TypedProvider]) -> bool {
+        debug_assert_eq!(results.len(), values.len());
+        if results.is_empty() {
+            // Note: An empty set of copies can never have overlapping copies.
+            return false;
+        }
+        let result0 = results.span().head();
+        for (result, value) in results.zip(values) {
+            // Note: We only have to check the register case since constant value
+            //       copies can never overlap.
+            if let TypedProvider::Register(value) = *value {
+                // If the register `value` index is within range of `result0..result`
+                // then its value has been overwritten by previous copies.
+                if result0 <= value && value < result {
+                    return true;
                 }
-                I::CopyImm32 { .. } | I::CopyI64Imm32 { .. } | I::CopyF64Imm32 { .. } => {
-                    // Since the input `value` is not a register it cannot be overwritten.
-                }
-                I::CopySpan {
-                    results: _,
-                    values,
-                    len,
-                } => {
-                    for value in values.iter_u16(*len) {
-                        if value.within_range(start..end) {
-                            return true;
-                        }
-                    }
-                }
-                unexpected => panic!("encountered non-copy instruction: {unexpected:?}"),
             }
         }
-        // No overwrites detected so far thus we return `false`.
         false
     }
 
@@ -441,165 +443,166 @@ impl InstrEncoder {
     pub fn encode_return(
         &mut self,
         stack: &mut ValueStack,
-        types: &[ValueType],
         values: &[TypedProvider],
     ) -> Result<(), TranslationError> {
-        assert_eq!(types.len(), values.len());
-        let instr = match types {
-            [] => {
-                // Case: Function returns nothing therefore all return statements must return nothing.
-                Instruction::Return
+        let instr = match values {
+            [] => Instruction::Return,
+            [TypedProvider::Register(reg)] => Instruction::return_reg(*reg),
+            [TypedProvider::Const(value)] => match value.ty() {
+                ValueType::I32 => Instruction::return_imm32(i32::from(*value)),
+                ValueType::I64 => match <Const32<i64>>::from_i64(i64::from(*value)) {
+                    Some(value) => Instruction::return_i64imm32(value),
+                    None => Instruction::return_reg(stack.alloc_const(*value)?),
+                },
+                ValueType::F32 => Instruction::return_imm32(F32::from(*value)),
+                ValueType::F64 => match <Const32<f64>>::from_f64(f64::from(*value)) {
+                    Some(value) => Instruction::return_f64imm32(value),
+                    None => Instruction::return_reg(stack.alloc_const(*value)?),
+                },
+                ValueType::FuncRef | ValueType::ExternRef => {
+                    Instruction::return_reg(stack.alloc_const(*value)?)
+                }
+            },
+            [v0, v1] => {
+                let reg0 = Self::provider2reg(stack, v0)?;
+                let reg1 = Self::provider2reg(stack, v1)?;
+                Instruction::return_reg2(reg0, reg1)
             }
-            [ValueType::I32] => match values[0] {
-                // Case: Function returns a single `i32` value which allows for special operator.
-                TypedProvider::Register(value) => Instruction::return_reg(value),
-                TypedProvider::Const(value) => Instruction::return_imm32(i32::from(value)),
-            },
-            [ValueType::I64] => match values[0] {
-                // Case: Function returns a single `i64` value which allows for special operator.
-                TypedProvider::Register(value) => Instruction::return_reg(value),
-                TypedProvider::Const(value) => {
-                    if let Some(value) = <Const32<i64>>::from_i64(i64::from(value)) {
-                        Instruction::return_i64imm32(value)
-                    } else {
-                        Instruction::return_reg(stack.alloc_const(value)?)
-                    }
-                }
-            },
-            [ValueType::F32] => match values[0] {
-                // Case: Function returns a single `f32` value which allows for special operator.
-                TypedProvider::Register(value) => Instruction::return_reg(value),
-                TypedProvider::Const(value) => Instruction::return_imm32(F32::from(value)),
-            },
-            [ValueType::F64] => match values[0] {
-                // Case: Function returns a single `f64` value which may allow for special operator.
-                TypedProvider::Register(value) => Instruction::return_reg(value),
-                TypedProvider::Const(value) => {
-                    if let Some(value) = <Const32<f64>>::from_f64(f64::from(value)) {
-                        Instruction::return_f64imm32(value)
-                    } else {
-                        Instruction::return_reg(stack.alloc_const(value)?)
-                    }
-                }
-            },
-            [ValueType::FuncRef | ValueType::ExternRef] => {
-                // Case: Function returns a single `externref` or `funcref`.
-                match values[0] {
-                    TypedProvider::Register(value) => Instruction::return_reg(value),
-                    TypedProvider::Const(value) => {
-                        Instruction::return_reg(stack.alloc_const(value)?)
-                    }
-                }
+            [v0, v1, v2] => {
+                let reg0 = Self::provider2reg(stack, v0)?;
+                let reg1 = Self::provider2reg(stack, v1)?;
+                let reg2 = Self::provider2reg(stack, v2)?;
+                Instruction::return_reg3(reg0, reg1, reg2)
             }
-            _ => {
-                let values = self.encode_call_params(stack, values)?;
-                Instruction::return_many(values)
+            [v0, v1, v2, rest @ ..] => {
+                debug_assert!(!rest.is_empty());
+                if let Some(span) = RegisterSpanIter::from_providers(values) {
+                    self.push_instr(Instruction::return_span(span))?;
+                    return Ok(());
+                }
+                let reg0 = Self::provider2reg(stack, v0)?;
+                let reg1 = Self::provider2reg(stack, v1)?;
+                let reg2 = Self::provider2reg(stack, v2)?;
+                self.push_instr(Instruction::return_many(reg0, reg1, reg2))?;
+                self.encode_register_list(stack, rest)?;
+                return Ok(());
             }
         };
         self.push_instr(instr)?;
         Ok(())
     }
 
-    /// Encodes the call parameters of a `wasmi` `call` instruction if necessary.
-    ///
-    /// Returns the contiguous [`RegisterSpanIter`] that makes up the call parameters post encoding.
-    ///
-    /// # Errors
-    ///
-    /// If the translation runs out of register space during this operation.
-    pub fn encode_call_params(
+    /// Encodes an conditional `return` instruction.
+    pub fn encode_return_nez(
         &mut self,
         stack: &mut ValueStack,
-        params: &[TypedProvider],
-    ) -> Result<RegisterSpanIter, TranslationError> {
-        if let Some(register_span) = RegisterSpanIter::from_providers(params) {
-            // Case: we are on the happy path were the providers on the
-            //       stack already are registers with contiguous indices.
-            //
-            //       This allows us to avoid copying over the registers
-            //       to where the call instruction expects them on the stack.
-            return Ok(register_span);
-        }
-        // Case: the providers on the stack need to be copied to the
-        //       location where the call instruction expects its parameters
-        //       before executing the call.
-        let copy_results = stack.peek_dynamic_n(params.len())?.iter(params.len());
-        self.encode_copies(stack, copy_results, params)?;
-        Ok(copy_results)
+        condition: Register,
+        values: &[TypedProvider],
+    ) -> Result<(), TranslationError> {
+        let instr = match values {
+            [] => Instruction::return_nez(condition),
+            [TypedProvider::Register(reg)] => Instruction::return_nez_reg(condition, *reg),
+            [TypedProvider::Const(value)] => match value.ty() {
+                ValueType::I32 => Instruction::return_nez_imm32(condition, i32::from(*value)),
+                ValueType::I64 => match <Const32<i64>>::from_i64(i64::from(*value)) {
+                    Some(value) => Instruction::return_nez_i64imm32(condition, value),
+                    None => Instruction::return_nez_reg(condition, stack.alloc_const(*value)?),
+                },
+                ValueType::F32 => Instruction::return_nez_imm32(condition, F32::from(*value)),
+                ValueType::F64 => match <Const32<f64>>::from_f64(f64::from(*value)) {
+                    Some(value) => Instruction::return_nez_f64imm32(condition, value),
+                    None => Instruction::return_nez_reg(condition, stack.alloc_const(*value)?),
+                },
+                ValueType::FuncRef | ValueType::ExternRef => {
+                    Instruction::return_nez_reg(condition, stack.alloc_const(*value)?)
+                }
+            },
+            [v0, v1] => {
+                let reg0 = Self::provider2reg(stack, v0)?;
+                let reg1 = Self::provider2reg(stack, v1)?;
+                Instruction::return_nez_reg2(condition, reg0, reg1)
+            }
+            [v0, v1, rest @ ..] => {
+                debug_assert!(!rest.is_empty());
+                if let Some(span) = RegisterSpanIter::from_providers(values) {
+                    self.push_instr(Instruction::return_nez_span(condition, span))?;
+                    return Ok(());
+                }
+                let reg0 = Self::provider2reg(stack, v0)?;
+                let reg1 = Self::provider2reg(stack, v1)?;
+                self.push_instr(Instruction::return_nez_many(condition, reg0, reg1))?;
+                self.encode_register_list(stack, rest)?;
+                return Ok(());
+            }
+        };
+        self.push_instr(instr)?;
+        Ok(())
     }
 
-    /// Encodes the call parameters of a `wasmi` `call_indirect` instruction if necessary.
+    /// Converts a [`TypedProvider`] into a [`Register`].
     ///
-    /// Returns the contiguous [`RegisterSpanIter`] that makes up the call parameters post encoding.
-    ///
-    /// # Errors
-    ///
-    /// If the translation runs out of register space during this operation.
-    pub fn encode_call_indirect_params(
-        &mut self,
+    /// This allocates constant values for [`TypedProvider::Const`].
+    fn provider2reg(
         stack: &mut ValueStack,
-        mut index: TypedProvider,
-        params: &[TypedProvider],
-    ) -> Result<(TypedProvider, RegisterSpanIter), TranslationError> {
-        if let Some(register_span) = RegisterSpanIter::from_providers(params) {
-            // Case: we are on the happy path were the providers on the
-            //       stack already are registers with contiguous indices.
-            //
-            //       This allows us to avoid copying over the registers
-            //       to where the call instruction expects them on the stack.
-            return Ok((index, register_span));
+        provider: &TypedProvider,
+    ) -> Result<Register, TranslationError> {
+        match provider {
+            Provider::Register(register) => Ok(*register),
+            Provider::Const(value) => stack.alloc_const(*value),
         }
-        // Case: the providers on the stack need to be copied to the
-        //       location where the call instruction expects its parameters
-        //       before executing the call.
-        let copy_results = stack.push_dynamic_n(params.len())?.iter(params.len());
-        if let TypedProvider::Register(index_reg) = index {
-            if copy_results.contains(index_reg) {
-                // Case: the parameters are copied over to a contiguous span of registers
-                //       that overwrites the `index` register. Thus we are required to copy
-                //       the `index` register to a protected register.
-                let copy_index = stack.push_dynamic()?;
-                self.encode_copy(stack, copy_index, index)?;
-                stack.pop();
-                index = TypedProvider::Register(copy_index);
-            }
-        }
-        self.encode_copies(stack, copy_results, params)?;
-        stack.remove_n(params.len());
-        Ok((index, copy_results))
     }
 
-    /// Encode conditional branch parameters for `br_if` and `return_if` instructions.
+    /// Encode the given slice of [`TypedProvider`] as a list of [`Register`].
     ///
-    /// In contrast to [`InstrEncoder::encode_call_params`] this routine adds back original
-    /// [`TypedProvider`] on the stack in case no copies are needed for them. This way the stack
-    /// may not only contain dynamic registers after this operation.
-    pub fn encode_conditional_branch_params(
+    /// # Note
+    ///
+    /// This is used for the following n-ary instructions:
+    ///
+    /// - [`Instruction::ReturnMany`]
+    /// - [`Instruction::ReturnNezMany`]
+    /// - [`Instruction::CopyMany`]
+    /// - [`Instruction::CallInternal`]
+    /// - [`Instruction::CallImported`]
+    /// - [`Instruction::CallIndirect`]
+    /// - [`Instruction::ReturnCallInternal`]
+    /// - [`Instruction::ReturnCallImported`]
+    /// - [`Instruction::ReturnCallIndirect`]
+    pub fn encode_register_list(
         &mut self,
         stack: &mut ValueStack,
-        params: &[TypedProvider],
-    ) -> Result<RegisterSpanIter, TranslationError> {
-        if let Some(register_span) = RegisterSpanIter::from_providers(params) {
-            // Case: we are on the happy path were the providers on the
-            //       stack already are registers with contiguous indices.
-            //
-            // This allows us to avoid copying over the registers
-            // to where the call instruction expects them on the stack.
-            //
-            // Since we are translating conditional branches we have to
-            // put the original providers back on the stack since no copies
-            // were needed and nothing has changed.
-            for param in params.iter().copied() {
-                stack.push_provider(param)?;
+        inputs: &[TypedProvider],
+    ) -> Result<(), TranslationError> {
+        let mut remaining = inputs;
+        loop {
+            match remaining {
+                [] => return Ok(()),
+                [v0] => {
+                    let v0 = Self::provider2reg(stack, v0)?;
+                    self.instrs.push(Instruction::register(v0))?;
+                    return Ok(());
+                }
+                [v0, v1] => {
+                    let v0 = Self::provider2reg(stack, v0)?;
+                    let v1 = Self::provider2reg(stack, v1)?;
+                    self.instrs.push(Instruction::register2(v0, v1))?;
+                    return Ok(());
+                }
+                [v0, v1, v2] => {
+                    let v0 = Self::provider2reg(stack, v0)?;
+                    let v1 = Self::provider2reg(stack, v1)?;
+                    let v2 = Self::provider2reg(stack, v2)?;
+                    self.instrs.push(Instruction::register3(v0, v1, v2))?;
+                    return Ok(());
+                }
+                [v0, v1, v2, rest @ ..] => {
+                    let v0 = Self::provider2reg(stack, v0)?;
+                    let v1 = Self::provider2reg(stack, v1)?;
+                    let v2 = Self::provider2reg(stack, v2)?;
+                    self.instrs.push(Instruction::register_list(v0, v1, v2))?;
+                    remaining = rest;
+                }
             }
-            return Ok(register_span);
         }
-        // Case: the providers on the stack need to be copied to the
-        //       location where the call instruction expects its parameters
-        //       before executing the call.
-        let copy_results = stack.push_dynamic_n(params.len())?.iter(params.len());
-        self.encode_copies(stack, copy_results, params)?;
-        Ok(copy_results)
     }
 
     /// Encode a `local.set` or `local.tee` instruction.
@@ -688,5 +691,181 @@ impl Instruction {
             | Instruction::BranchNez { offset, .. } => offset.init(new_offset),
             _ => panic!("tried to update branch offset of a non-branch instruction: {self:?}"),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::engine::regmach::{bytecode::RegisterSpan, translator::typed_value::TypedValue};
+
+    #[test]
+    fn has_overlapping_copies_works() {
+        assert!(!InstrEncoder::has_overlapping_copies(
+            RegisterSpan::new(Register::from_i16(0)).iter(0),
+            &[],
+        ));
+        assert!(!InstrEncoder::has_overlapping_copies(
+            RegisterSpan::new(Register::from_i16(0)).iter(2),
+            &[TypedProvider::register(0), TypedProvider::register(1),],
+        ));
+        assert!(!InstrEncoder::has_overlapping_copies(
+            RegisterSpan::new(Register::from_i16(0)).iter(2),
+            &[
+                TypedProvider::Const(TypedValue::from(10_i32)),
+                TypedProvider::Const(TypedValue::from(20_i32)),
+            ],
+        ));
+        assert!(InstrEncoder::has_overlapping_copies(
+            RegisterSpan::new(Register::from_i16(0)).iter(2),
+            &[
+                TypedProvider::Const(TypedValue::from(10_i32)),
+                TypedProvider::register(0),
+            ],
+        ));
+        assert!(InstrEncoder::has_overlapping_copies(
+            RegisterSpan::new(Register::from_i16(0)).iter(2),
+            &[TypedProvider::register(0), TypedProvider::register(0),],
+        ));
+        assert!(InstrEncoder::has_overlapping_copies(
+            RegisterSpan::new(Register::from_i16(3)).iter(3),
+            &[
+                TypedProvider::register(2),
+                TypedProvider::register(3),
+                TypedProvider::register(2),
+            ],
+        ));
+        assert!(InstrEncoder::has_overlapping_copies(
+            RegisterSpan::new(Register::from_i16(3)).iter(4),
+            &[
+                TypedProvider::register(-1),
+                TypedProvider::register(10),
+                TypedProvider::register(2),
+                TypedProvider::register(4),
+            ],
+        ));
+    }
+
+    fn span(register: impl Into<Register>) -> RegisterSpan {
+        RegisterSpan::new(register.into())
+    }
+
+    #[test]
+    fn has_overlapping_copies_2_works() {
+        // len == 0
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(0),
+            span(0),
+            0
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(0),
+            span(1),
+            0
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(1),
+            span(0),
+            0
+        ));
+        // len == 1
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(0),
+            span(0),
+            1
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(0),
+            span(1),
+            1
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(1),
+            span(0),
+            1
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(1),
+            span(1),
+            1
+        ));
+        // len == 2
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(0),
+            span(0),
+            2
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(0),
+            span(1),
+            2
+        ));
+        assert!(InstrEncoder::has_overlapping_copy_spans(
+            span(1),
+            span(0),
+            2
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(1),
+            span(1),
+            2
+        ));
+        // len == 3
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(0),
+            span(0),
+            3
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(0),
+            span(1),
+            3
+        ));
+        assert!(InstrEncoder::has_overlapping_copy_spans(
+            span(1),
+            span(0),
+            3
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(1),
+            span(1),
+            3
+        ));
+        // special cases
+        assert!(InstrEncoder::has_overlapping_copy_spans(
+            span(1),
+            span(0),
+            3
+        ));
+        assert!(InstrEncoder::has_overlapping_copy_spans(
+            span(2),
+            span(0),
+            3
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(3),
+            span(0),
+            3
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(4),
+            span(0),
+            3
+        ));
+        assert!(!InstrEncoder::has_overlapping_copy_spans(
+            span(4),
+            span(0),
+            4
+        ));
+        assert!(InstrEncoder::has_overlapping_copy_spans(
+            span(4),
+            span(1),
+            4
+        ));
+        assert!(InstrEncoder::has_overlapping_copy_spans(
+            span(4),
+            span(0),
+            5
+        ));
     }
 }

@@ -4,8 +4,6 @@ use super::{
     BinInstr,
     BinInstrImm16,
     CallIndirectParams,
-    CallIndirectParamsImm16,
-    CallParams,
     Const16,
     Const32,
     Instruction,
@@ -185,6 +183,24 @@ impl Instruction {
         }
     }
 
+    /// Creates a new [`Instruction::ReturnReg2`] for the given [`Register`] indices.
+    pub fn return_reg2(reg0: impl Into<Register>, reg1: impl Into<Register>) -> Self {
+        Self::ReturnReg2 {
+            values: [reg0.into(), reg1.into()],
+        }
+    }
+
+    /// Creates a new [`Instruction::ReturnReg3`] for the given [`Register`] indices.
+    pub fn return_reg3(
+        reg0: impl Into<Register>,
+        reg1: impl Into<Register>,
+        reg2: impl Into<Register>,
+    ) -> Self {
+        Self::ReturnReg3 {
+            values: [reg0.into(), reg1.into(), reg2.into()],
+        }
+    }
+
     /// Creates a new [`Instruction::ReturnImm32`] from the given `value`.
     pub fn return_imm32(value: impl Into<AnyConst32>) -> Self {
         Self::ReturnImm32 {
@@ -206,19 +222,47 @@ impl Instruction {
         }
     }
 
-    /// Creates a new [`Instruction::ReturnMany`] from the given `values`.
-    pub fn return_many(values: RegisterSpanIter) -> Self {
-        Self::ReturnMany { values }
+    /// Creates a new [`Instruction::ReturnSpan`] from the given `values`.
+    pub fn return_span(values: RegisterSpanIter) -> Self {
+        Self::ReturnSpan { values }
+    }
+
+    /// Creates a new [`Instruction::ReturnMany`] for the given [`Register`] indices.
+    pub fn return_many(
+        reg0: impl Into<Register>,
+        reg1: impl Into<Register>,
+        reg2: impl Into<Register>,
+    ) -> Self {
+        Self::ReturnMany {
+            values: [reg0.into(), reg1.into(), reg2.into()],
+        }
     }
 
     /// Creates a new [`Instruction::ReturnNez`] for the given `condition`.
-    pub fn return_nez(condition: Register) -> Self {
-        Self::ReturnNez { condition }
+    pub fn return_nez(condition: impl Into<Register>) -> Self {
+        Self::ReturnNez {
+            condition: condition.into(),
+        }
     }
 
     /// Creates a new [`Instruction::ReturnNezReg`] for the given `condition` and `value`.
-    pub fn return_nez_reg(condition: Register, value: Register) -> Self {
-        Self::ReturnNezReg { condition, value }
+    pub fn return_nez_reg(condition: impl Into<Register>, value: impl Into<Register>) -> Self {
+        Self::ReturnNezReg {
+            condition: condition.into(),
+            value: value.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::ReturnNezReg2`] for the given `condition` and `value`.
+    pub fn return_nez_reg2(
+        condition: impl Into<Register>,
+        value0: impl Into<Register>,
+        value1: impl Into<Register>,
+    ) -> Self {
+        Self::ReturnNezReg2 {
+            condition: condition.into(),
+            values: [value0.into(), value1.into()],
+        }
     }
 
     /// Creates a new [`Instruction::ReturnNezImm32`] for the given `condition` and `value`.
@@ -246,8 +290,20 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::ReturnNezMany`] for the given `condition` and `values`.
-    pub fn return_nez_many(condition: Register, values: RegisterSpanIter) -> Self {
-        Self::ReturnNezMany { condition, values }
+    pub fn return_nez_span(condition: Register, values: RegisterSpanIter) -> Self {
+        Self::ReturnNezSpan { condition, values }
+    }
+
+    /// Creates a new [`Instruction::ReturnNezMany`] for the given `condition` and `value`.
+    pub fn return_nez_many(
+        condition: impl Into<Register>,
+        head0: impl Into<Register>,
+        head1: impl Into<Register>,
+    ) -> Self {
+        Self::ReturnNezMany {
+            condition: condition.into(),
+            values: [head0.into(), head1.into()],
+        }
     }
 
     /// Creates a new [`Instruction::Branch`] for the given `offset`.
@@ -274,8 +330,23 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::Copy`].
-    pub fn copy(result: Register, value: Register) -> Self {
-        Self::Copy { result, value }
+    pub fn copy(result: impl Into<Register>, value: impl Into<Register>) -> Self {
+        Self::Copy {
+            result: result.into(),
+            value: value.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::Copy2`].
+    pub fn copy2(
+        results: RegisterSpan,
+        value0: impl Into<Register>,
+        value1: impl Into<Register>,
+    ) -> Self {
+        Self::Copy2 {
+            results,
+            values: [value0.into(), value1.into()],
+        }
     }
 
     /// Creates a new [`Instruction::CopyImm32`].
@@ -309,6 +380,44 @@ impl Instruction {
             results,
             values,
             len,
+        }
+    }
+
+    /// Creates a new [`Instruction::CopySpanNonOverlapping`] copying multiple consecutive values.
+    pub fn copy_span_non_overlapping(
+        results: RegisterSpan,
+        values: RegisterSpan,
+        len: u16,
+    ) -> Self {
+        debug_assert!(!results.iter_u16(len).is_overlapping(&values.iter_u16(len)));
+        Self::CopySpanNonOverlapping {
+            results,
+            values,
+            len,
+        }
+    }
+
+    /// Creates a new [`Instruction::CopyMany`].
+    pub fn copy_many(
+        results: RegisterSpan,
+        head0: impl Into<Register>,
+        head1: impl Into<Register>,
+    ) -> Self {
+        Self::CopyMany {
+            results,
+            values: [head0.into(), head1.into()],
+        }
+    }
+
+    /// Creates a new [`Instruction::CopyManyNonOverlapping`].
+    pub fn copy_many_non_overlapping(
+        results: RegisterSpan,
+        head0: impl Into<Register>,
+        head1: impl Into<Register>,
+    ) -> Self {
+        Self::CopyManyNonOverlapping {
+            results,
+            values: [head0.into(), head1.into()],
         }
     }
 
@@ -943,15 +1052,32 @@ impl Instruction {
         }
     }
 
-    /// Creates a new [`Instruction::CallParams`] for the given `params` and `len_results`.
-    pub fn call_params(params: RegisterSpanIter, len_results: u16) -> Self {
-        let len_params = params.len_as_u16();
-        let params = params.span();
-        Self::CallParams(CallParams {
-            params,
-            len_params,
-            len_results,
-        })
+    /// Creates a new [`Instruction::Register`] instruction parameter.
+    pub fn register(reg: impl Into<Register>) -> Self {
+        Self::Register(reg.into())
+    }
+
+    /// Creates a new [`Instruction::Register2`] instruction parameter.
+    pub fn register2(reg0: impl Into<Register>, reg1: impl Into<Register>) -> Self {
+        Self::Register2([reg0.into(), reg1.into()])
+    }
+
+    /// Creates a new [`Instruction::Register3`] instruction parameter.
+    pub fn register3(
+        reg0: impl Into<Register>,
+        reg1: impl Into<Register>,
+        reg2: impl Into<Register>,
+    ) -> Self {
+        Self::Register3([reg0.into(), reg1.into(), reg2.into()])
+    }
+
+    /// Creates a new [`Instruction::RegisterList`] instruction parameter.
+    pub fn register_list(
+        reg0: impl Into<Register>,
+        reg1: impl Into<Register>,
+        reg2: impl Into<Register>,
+    ) -> Self {
+        Self::RegisterList([reg0.into(), reg1.into(), reg2.into()])
     }
 
     /// Creates a new [`Instruction::CallIndirectParams`] for the given `index` and `table`.
@@ -967,7 +1093,7 @@ impl Instruction {
         index: impl Into<Const16<u32>>,
         table: impl Into<TableIdx>,
     ) -> Self {
-        Self::CallIndirectParamsImm16(CallIndirectParamsImm16 {
+        Self::CallIndirectParamsImm16(CallIndirectParams {
             index: index.into(),
             table: table.into(),
         })

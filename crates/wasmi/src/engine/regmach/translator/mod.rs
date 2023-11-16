@@ -53,7 +53,7 @@ use crate::{
     FuncType,
 };
 use alloc::vec::Vec;
-use wasmi_core::{TrapCode, UntypedValue, ValueType, F32};
+use wasmi_core::{TrapCode, UntypedValue, ValueType};
 use wasmparser::MemArg;
 
 /// Reusable allocations of a [`FuncTranslator`].
@@ -2054,7 +2054,7 @@ impl<'parser> FuncTranslator<'parser> {
         self.alloc.stack.pop_n(results.len(), values);
         self.alloc
             .instr_encoder
-            .encode_return(&mut self.alloc.stack, results, values)?;
+            .encode_return(&mut self.alloc.stack, values)?;
         self.reachable = false;
         Ok(())
     }
@@ -2062,67 +2062,11 @@ impl<'parser> FuncTranslator<'parser> {
     /// Translates a conditional `br_if` that targets the function enclosing `block`.
     pub fn translate_return_if(&mut self, condition: Register) -> Result<(), TranslationError> {
         bail_unreachable!(self);
-        let instr = match self.func_type().results() {
-            [] => {
-                // Case: Function returns nothing therefore all return statements must return nothing.
-                Instruction::return_nez(condition)
-            }
-            [ValueType::I32] => match self.alloc.stack.peek() {
-                // Case: Function returns a single `i32` value which allows for special operator.
-                TypedProvider::Register(value) => Instruction::return_nez_reg(condition, value),
-                TypedProvider::Const(value) => {
-                    Instruction::return_nez_imm32(condition, i32::from(value))
-                }
-            },
-            [ValueType::I64] => match self.alloc.stack.peek() {
-                // Case: Function returns a single `i64` value which allows for special operator.
-                TypedProvider::Register(value) => Instruction::return_nez_reg(condition, value),
-                TypedProvider::Const(value) => {
-                    if let Some(value) = <Const32<i64>>::from_i64(i64::from(value)) {
-                        Instruction::return_nez_i64imm32(condition, value)
-                    } else {
-                        Instruction::return_nez_reg(condition, self.alloc.stack.alloc_const(value)?)
-                    }
-                }
-            },
-            [ValueType::F32] => match self.alloc.stack.peek() {
-                // Case: Function returns a single `f32` value which allows for special operator.
-                TypedProvider::Register(value) => Instruction::return_nez_reg(condition, value),
-                TypedProvider::Const(value) => {
-                    Instruction::return_nez_imm32(condition, F32::from(value))
-                }
-            },
-            [ValueType::F64] => match self.alloc.stack.peek() {
-                // Case: Function returns a single `f64` value which allows for special operator.
-                TypedProvider::Register(value) => Instruction::return_nez_reg(condition, value),
-                TypedProvider::Const(value) => {
-                    if let Some(value) = <Const32<f64>>::from_f64(f64::from(value)) {
-                        Instruction::return_nez_f64imm32(condition, value)
-                    } else {
-                        Instruction::return_nez_reg(condition, self.alloc.stack.alloc_const(value)?)
-                    }
-                }
-            },
-            [ValueType::FuncRef | ValueType::ExternRef] => {
-                // Case: Function returns a single `externref` or `funcref` value which allows for special operator.
-                match self.alloc.stack.peek() {
-                    TypedProvider::Register(value) => Instruction::return_nez_reg(condition, value),
-                    TypedProvider::Const(value) => {
-                        Instruction::return_nez_reg(condition, self.alloc.stack.alloc_const(value)?)
-                    }
-                }
-            }
-            results => {
-                let providers = &mut self.alloc.buffer;
-                self.alloc.stack.pop_n(results.len(), providers);
-                let values = self
-                    .alloc
-                    .instr_encoder
-                    .encode_conditional_branch_params(&mut self.alloc.stack, providers)?;
-                Instruction::return_nez_many(condition, values)
-            }
-        };
-        self.alloc.instr_encoder.push_instr(instr)?;
-        Ok(())
+        let len_results = self.func_type().results().len();
+        let values = &mut self.alloc.buffer;
+        self.alloc.stack.peek_n(len_results, values);
+        self.alloc
+            .instr_encoder
+            .encode_return_nez(&mut self.alloc.stack, condition, values)
     }
 }
