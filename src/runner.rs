@@ -238,10 +238,20 @@ impl Interpreter {
     }
 
     fn get_tracer_if_active(&self) -> Option<Rc<RefCell<Tracer>>> {
-        if self.tracer.is_some() && self.mask_tracer.is_empty() {
-            self.tracer.clone()
+        if let Some(tracer) = &self.tracer {
+            if !tracer.borrow().only_count() && self.mask_tracer.is_empty() {
+                self.tracer.clone()
+            } else {
+                None
+            }
         } else {
             None
+        }
+    }
+
+    fn tracer_count(&self) {
+        if let Some(tracer) = &self.tracer {
+            tracer.borrow_mut().count();
         }
     }
 
@@ -2014,6 +2024,7 @@ impl Interpreter {
 
             macro_rules! trace_post {
                 () => {{
+                    self.tracer_count();
                     if let Some(tracer) = self.get_tracer_if_active() {
                         let post_status =
                             self.run_instruction_post(pre_status, function_context, &instruction);

@@ -56,6 +56,20 @@ impl Tracer {
         wasm_input_function_idx: u32,
         keep_value: Option<u64>,
     ) {
+        let has_return_value = callee_sig.return_type().is_some();
+
+        if self.only_count() {
+            if has_return_value {
+                self.count();
+                self.count();
+                if callee_sig.return_type() != Some(wasmi_core::ValueType::I64) {
+                    self.count();
+                }
+            }
+            self.count();
+            return;
+        }
+
         let mut inst = PhantomFunction::build_phantom_function_instructions(
             &callee_sig,
             wasm_input_function_idx,
@@ -63,7 +77,6 @@ impl Tracer {
         .into_iter();
         let mut iid = 0;
 
-        let has_return_value = callee_sig.return_type().is_some();
         let wasm_input_host_function_ref = self.wasm_input_func_ref.clone().unwrap();
         let wasm_input_host_func_index = match wasm_input_host_function_ref.as_internal() {
             crate::func::FuncInstanceInternal::Internal { .. } => unreachable!(),
