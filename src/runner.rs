@@ -250,6 +250,9 @@ impl Interpreter {
     }
 
     fn tracer_count(&self) {
+        if self.mask_tracer.is_empty() {
+            return;
+        }
         if let Some(tracer) = &self.tracer {
             tracer.borrow_mut().count();
         }
