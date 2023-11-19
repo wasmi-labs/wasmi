@@ -1,5 +1,5 @@
 use super::{Const16, Const32};
-use crate::engine::{bytecode::TableIdx, func_builder::TranslationErrorInner, TranslationError};
+use crate::engine::{bytecode::{TableIdx, BranchOffset}, func_builder::TranslationErrorInner, TranslationError};
 
 #[cfg(doc)]
 use super::Instruction;
@@ -461,4 +461,24 @@ pub struct CallIndirectParams<T> {
     pub table: TableIdx,
     /// The index of the called function in the table.
     pub index: T,
+}
+
+/// A 16-bit signed offset for branch instructions.
+///
+/// This defines how much the instruction pointer is offset
+/// upon taking the respective branch.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct BranchOffset16(i16);
+
+impl BranchOffset16 {
+    /// Creates a 16-bit [`BranchOffset16`] from a 32-bit [`BranchOffset`] if possible.
+    pub fn new(offset: BranchOffset) -> Option<Self> {
+        let offset16 = i16::try_from(offset.to_i32()).ok()?;
+        Some(Self(offset16))
+    }
+
+    /// Returns the `i16` representation of the [`BranchOffset`].
+    pub fn to_i16(self) -> i16 {
+        self.0
+    }
 }

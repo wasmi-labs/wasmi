@@ -329,26 +329,6 @@ impl BranchOffset {
     }
 }
 
-/// A 16-bit signed offset for branch instructions.
-///
-/// This defines how much the instruction pointer is offset
-/// upon taking the respective branch.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct BranchOffset16(i16);
-
-impl BranchOffset16 {
-    /// Creates a 16-bit [`BranchOffset16`] from a 32-bit [`BranchOffset`] if possible.
-    pub fn new(offset: BranchOffset) -> Option<Self> {
-        let offset16 = i16::try_from(offset.to_i32()).ok()?;
-        Some(Self(offset16))
-    }
-
-    /// Returns the `i16` representation of the [`BranchOffset`].
-    pub fn to_i16(self) -> i16 {
-        self.0
-    }
-}
-
 /// Defines how many stack values are going to be dropped and kept after branching.
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub struct DropKeep {
