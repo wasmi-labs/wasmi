@@ -70,6 +70,58 @@ impl Instruction {
             Instruction::BranchEqz { .. } |
             Instruction::BranchNez { .. } |
             Instruction::BranchTable { .. } => None,
+            Instruction::BranchI32Eq(_) |
+            Instruction::BranchI32EqImm(_) |
+            Instruction::BranchI32Ne(_) |
+            Instruction::BranchI32NeImm(_) |
+            Instruction::BranchI32LtS(_) |
+            Instruction::BranchI32LtSImm(_) |
+            Instruction::BranchI32LtU(_) |
+            Instruction::BranchI32LtUImm(_) |
+            Instruction::BranchI32LeS(_) |
+            Instruction::BranchI32LeSImm(_) |
+            Instruction::BranchI32LeU(_) |
+            Instruction::BranchI32LeUImm(_) |
+            Instruction::BranchI32GtS(_) |
+            Instruction::BranchI32GtSImm(_) |
+            Instruction::BranchI32GtU(_) |
+            Instruction::BranchI32GtUImm(_) |
+            Instruction::BranchI32GeS(_) |
+            Instruction::BranchI32GeSImm(_) |
+            Instruction::BranchI32GeU(_) |
+            Instruction::BranchI32GeUImm(_) |
+            Instruction::BranchI64Eq(_) |
+            Instruction::BranchI64EqImm(_) |
+            Instruction::BranchI64Ne(_) |
+            Instruction::BranchI64NeImm(_) |
+            Instruction::BranchI64LtS(_) |
+            Instruction::BranchI64LtSImm(_) |
+            Instruction::BranchI64LtU(_) |
+            Instruction::BranchI64LtUImm(_) |
+            Instruction::BranchI64LeS(_) |
+            Instruction::BranchI64LeSImm(_) |
+            Instruction::BranchI64LeU(_) |
+            Instruction::BranchI64LeUImm(_) |
+            Instruction::BranchI64GtS(_) |
+            Instruction::BranchI64GtSImm(_) |
+            Instruction::BranchI64GtU(_) |
+            Instruction::BranchI64GtUImm(_) |
+            Instruction::BranchI64GeS(_) |
+            Instruction::BranchI64GeSImm(_) |
+            Instruction::BranchI64GeU(_) |
+            Instruction::BranchI64GeUImm(_) |
+            Instruction::BranchF32Eq(_) |
+            Instruction::BranchF32Ne(_) |
+            Instruction::BranchF32Lt(_) |
+            Instruction::BranchF32Le(_) |
+            Instruction::BranchF32Gt(_) |
+            Instruction::BranchF32Ge(_) |
+            Instruction::BranchF64Eq(_) |
+            Instruction::BranchF64Ne(_) |
+            Instruction::BranchF64Lt(_) |
+            Instruction::BranchF64Le(_) |
+            Instruction::BranchF64Gt(_) |
+            Instruction::BranchF64Ge(_) => None,
             Instruction::Copy { result, .. } |
             Instruction::CopyImm32 { result, .. } |
             Instruction::CopyI64Imm32 { result, .. } |

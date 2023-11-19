@@ -12,7 +12,6 @@ use crate::{
                 BinInstr,
                 BinInstrImm16,
                 Const16,
-                Const32,
                 Instruction,
                 Register,
                 RegisterSpan,
@@ -28,9 +27,9 @@ use crate::{
     FuncRef,
     StoreInner,
 };
-use core::cmp;
 
 mod binary;
+mod branch;
 mod call;
 mod comparison;
 mod conversion;
@@ -255,6 +254,58 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::BranchTable { index, len_targets } => {
                     self.execute_branch_table(index, len_targets)
                 }
+                Instr::BranchI32Eq(instr) => self.execute_branch_i32_eq(instr),
+                Instr::BranchI32EqImm(instr) => self.execute_branch_i32_eq_imm(instr),
+                Instr::BranchI32Ne(instr) => self.execute_branch_i32_ne(instr),
+                Instr::BranchI32NeImm(instr) => self.execute_branch_i32_ne_imm(instr),
+                Instr::BranchI32LtS(instr) => self.execute_branch_i32_lt_s(instr),
+                Instr::BranchI32LtSImm(instr) => self.execute_branch_i32_lt_s_imm(instr),
+                Instr::BranchI32LtU(instr) => self.execute_branch_i32_lt_u(instr),
+                Instr::BranchI32LtUImm(instr) => self.execute_branch_i32_lt_u_imm(instr),
+                Instr::BranchI32LeS(instr) => self.execute_branch_i32_le_s(instr),
+                Instr::BranchI32LeSImm(instr) => self.execute_branch_i32_le_s_imm(instr),
+                Instr::BranchI32LeU(instr) => self.execute_branch_i32_le_u(instr),
+                Instr::BranchI32LeUImm(instr) => self.execute_branch_i32_le_u_imm(instr),
+                Instr::BranchI32GtS(instr) => self.execute_branch_i32_gt_s(instr),
+                Instr::BranchI32GtSImm(instr) => self.execute_branch_i32_gt_s_imm(instr),
+                Instr::BranchI32GtU(instr) => self.execute_branch_i32_gt_u(instr),
+                Instr::BranchI32GtUImm(instr) => self.execute_branch_i32_gt_u_imm(instr),
+                Instr::BranchI32GeS(instr) => self.execute_branch_i32_ge_s(instr),
+                Instr::BranchI32GeSImm(instr) => self.execute_branch_i32_ge_s_imm(instr),
+                Instr::BranchI32GeU(instr) => self.execute_branch_i32_ge_u(instr),
+                Instr::BranchI32GeUImm(instr) => self.execute_branch_i32_ge_u_imm(instr),
+                Instr::BranchI64Eq(instr) => self.execute_branch_i64_eq(instr),
+                Instr::BranchI64EqImm(instr) => self.execute_branch_i64_eq_imm(instr),
+                Instr::BranchI64Ne(instr) => self.execute_branch_i64_ne(instr),
+                Instr::BranchI64NeImm(instr) => self.execute_branch_i64_ne_imm(instr),
+                Instr::BranchI64LtS(instr) => self.execute_branch_i64_lt_s(instr),
+                Instr::BranchI64LtSImm(instr) => self.execute_branch_i64_lt_s_imm(instr),
+                Instr::BranchI64LtU(instr) => self.execute_branch_i64_lt_u(instr),
+                Instr::BranchI64LtUImm(instr) => self.execute_branch_i64_lt_u_imm(instr),
+                Instr::BranchI64LeS(instr) => self.execute_branch_i64_le_s(instr),
+                Instr::BranchI64LeSImm(instr) => self.execute_branch_i64_le_s_imm(instr),
+                Instr::BranchI64LeU(instr) => self.execute_branch_i64_le_u(instr),
+                Instr::BranchI64LeUImm(instr) => self.execute_branch_i64_le_u_imm(instr),
+                Instr::BranchI64GtS(instr) => self.execute_branch_i64_gt_s(instr),
+                Instr::BranchI64GtSImm(instr) => self.execute_branch_i64_gt_s_imm(instr),
+                Instr::BranchI64GtU(instr) => self.execute_branch_i64_gt_u(instr),
+                Instr::BranchI64GtUImm(instr) => self.execute_branch_i64_gt_u_imm(instr),
+                Instr::BranchI64GeS(instr) => self.execute_branch_i64_ge_s(instr),
+                Instr::BranchI64GeSImm(instr) => self.execute_branch_i64_ge_s_imm(instr),
+                Instr::BranchI64GeU(instr) => self.execute_branch_i64_ge_u(instr),
+                Instr::BranchI64GeUImm(instr) => self.execute_branch_i64_ge_u_imm(instr),
+                Instr::BranchF32Eq(instr) => self.execute_branch_f32_eq(instr),
+                Instr::BranchF32Ne(instr) => self.execute_branch_f32_ne(instr),
+                Instr::BranchF32Lt(instr) => self.execute_branch_f32_lt(instr),
+                Instr::BranchF32Le(instr) => self.execute_branch_f32_le(instr),
+                Instr::BranchF32Gt(instr) => self.execute_branch_f32_gt(instr),
+                Instr::BranchF32Ge(instr) => self.execute_branch_f32_ge(instr),
+                Instr::BranchF64Eq(instr) => self.execute_branch_f64_eq(instr),
+                Instr::BranchF64Ne(instr) => self.execute_branch_f64_ne(instr),
+                Instr::BranchF64Lt(instr) => self.execute_branch_f64_lt(instr),
+                Instr::BranchF64Le(instr) => self.execute_branch_f64_le(instr),
+                Instr::BranchF64Gt(instr) => self.execute_branch_f64_gt(instr),
+                Instr::BranchF64Ge(instr) => self.execute_branch_f64_ge(instr),
                 Instr::Copy { result, value } => self.execute_copy(result, value),
                 Instr::Copy2 { results, values } => self.execute_copy_2(results, values),
                 Instr::CopyImm32 { result, value } => self.execute_copy_imm32(result, value),
@@ -1170,49 +1221,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         // is enabled to begin with.
         self.ctx.fuel_mut().consume_fuel(block_fuel.to_u64())?;
         self.try_next_instr()
-    }
-
-    #[inline(always)]
-    fn execute_branch(&mut self, offset: BranchOffset) {
-        self.branch_to(offset)
-    }
-
-    #[inline(always)]
-    fn execute_branch_nez(&mut self, condition: Register, offset: BranchOffset) {
-        let condition: bool = self.get_register_as(condition);
-        match condition {
-            true => {
-                self.branch_to(offset);
-            }
-            false => {
-                self.next_instr();
-            }
-        }
-    }
-
-    #[inline(always)]
-    fn execute_branch_eqz(&mut self, condition: Register, offset: BranchOffset) {
-        let condition: bool = self.get_register_as(condition);
-        match condition {
-            true => {
-                self.next_instr();
-            }
-            false => {
-                self.branch_to(offset);
-            }
-        }
-    }
-
-    #[inline(always)]
-    fn execute_branch_table(&mut self, index: Register, len_targets: Const32<u32>) {
-        // Safety: TODO
-        let index: u32 = self.get_register_as(index);
-        // The index of the default target which is the last target of the slice.
-        let max_index = u32::from(len_targets) - 1;
-        // A normalized index will always yield a target without panicking.
-        let normalized_index = cmp::min(index, max_index);
-        // Update `pc`:
-        self.ip.add(normalized_index as usize + 1);
     }
 
     /// Executes an [`Instruction::RefFunc`].

@@ -1,6 +1,8 @@
 use crate::engine::regmach::bytecode::{
     BinInstr,
     BinInstrImm16,
+    BranchBinOpInstr,
+    BranchBinOpInstrImm,
     Const16,
     CopysignImmInstr,
     Instruction,
@@ -80,6 +82,60 @@ impl VisitInputRegisters for Instruction {
             Instruction::BranchEqz { condition, .. } |
             Instruction::BranchNez { condition, .. } => f(condition),
             Instruction::BranchTable { index, .. } => f(index),
+
+            Instruction::BranchI32Eq(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32EqImm(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32Ne(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32NeImm(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32LtS(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32LtSImm(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32LtU(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32LtUImm(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32LeS(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32LeSImm(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32LeU(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32LeUImm(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32GtS(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32GtSImm(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32GtU(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32GtUImm(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32GeS(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32GeSImm(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32GeU(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32GeUImm(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI64Eq(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI64EqImm(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI64Ne(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI64NeImm(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI64LtS(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI64LtSImm(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI64LtU(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI64LtUImm(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI64LeS(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI64LeSImm(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI64LeU(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI64LeUImm(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI64GtS(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI64GtSImm(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI64GtU(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI64GtUImm(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI64GeS(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI64GeSImm(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI64GeU(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI64GeUImm(instr) => instr.visit_input_registers(f),
+            Instruction::BranchF32Eq(instr) => instr.visit_input_registers(f),
+            Instruction::BranchF32Ne(instr) => instr.visit_input_registers(f),
+            Instruction::BranchF32Lt(instr) => instr.visit_input_registers(f),
+            Instruction::BranchF32Le(instr) => instr.visit_input_registers(f),
+            Instruction::BranchF32Gt(instr) => instr.visit_input_registers(f),
+            Instruction::BranchF32Ge(instr) => instr.visit_input_registers(f),
+            Instruction::BranchF64Eq(instr) => instr.visit_input_registers(f),
+            Instruction::BranchF64Ne(instr) => instr.visit_input_registers(f),
+            Instruction::BranchF64Lt(instr) => instr.visit_input_registers(f),
+            Instruction::BranchF64Le(instr) => instr.visit_input_registers(f),
+            Instruction::BranchF64Gt(instr) => instr.visit_input_registers(f),
+            Instruction::BranchF64Ge(instr) => instr.visit_input_registers(f),
+
             Instruction::Copy { result, value } => {
                 // Note: for copy instruction unlike all other instructions
                 //       we need to also visit the result register since
@@ -501,6 +557,18 @@ impl LoadAtInstr {
 impl LoadOffset16Instr {
     fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
         f(&mut self.ptr)
+    }
+}
+
+impl BranchBinOpInstr {
+    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
+        visit_registers!(f, &mut self.lhs, &mut self.rhs);
+    }
+}
+
+impl<T> BranchBinOpInstrImm<T> {
+    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
+        f(&mut self.lhs)
     }
 }
 

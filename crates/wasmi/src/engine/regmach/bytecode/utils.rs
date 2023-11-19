@@ -487,15 +487,21 @@ impl BranchOffset16 {
     }
 }
 
+impl From<BranchOffset16> for BranchOffset {
+    fn from(offset: BranchOffset16) -> Self {
+        Self::from(i32::from(offset.to_i16()))
+    }
+}
+
 /// A generic fused comparison and conditional branch [`Instruction`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct BranchBinOpInstr {
     /// The left-hand side operand to the conditional operator.
-    lhs: Register,
+    pub lhs: Register,
     /// The right-hand side operand to the conditional operator.
-    rhs: Register,
+    pub rhs: Register,
     /// The 16-bit encoded branch offset.
-    offset: BranchOffset16,
+    pub offset: BranchOffset16,
 }
 
 impl BranchBinOpInstr {
@@ -509,11 +515,11 @@ impl BranchBinOpInstr {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct BranchBinOpInstrImm<T> {
     /// The left-hand side operand to the conditional operator.
-    lhs: Register,
+    pub lhs: Register,
     /// The right-hand side operand to the conditional operator.
-    rhs: Const16<T>,
+    pub rhs: Const16<T>,
     /// The 16-bit encoded branch offset.
-    offset: BranchOffset16,
+    pub offset: BranchOffset16,
 }
 
 impl<T> BranchBinOpInstrImm<T> {
