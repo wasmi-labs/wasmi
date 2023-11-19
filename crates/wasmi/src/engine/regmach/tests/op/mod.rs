@@ -49,11 +49,22 @@ use super::{
     WasmType,
 };
 
-/// Creates an [`Const32<i64>`] from the given `i64` value.
+/// Creates an [`Const32<i32>`] from the given `i32` value.
 ///
 /// # Panics
 ///
 /// If the `value` cannot be converted into `i32` losslessly.
+#[track_caller]
+fn i32imm16(value: i32) -> Const16<i32> {
+    <Const16<i32>>::from_i32(value)
+        .unwrap_or_else(|| panic!("value must be 16-bit encodable: {}", value))
+}
+
+/// Creates an [`Const32<u32>`] from the given `u32` value.
+///
+/// # Panics
+///
+/// If the `value` cannot be converted into `u32` losslessly.
 #[track_caller]
 fn u32imm16(value: u32) -> Const16<u32> {
     <Const16<u32>>::from_u32(value)
