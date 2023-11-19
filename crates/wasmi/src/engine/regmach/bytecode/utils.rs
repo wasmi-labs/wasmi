@@ -1,5 +1,9 @@
 use super::{Const16, Const32};
-use crate::engine::{bytecode::{TableIdx, BranchOffset}, func_builder::TranslationErrorInner, TranslationError};
+use crate::engine::{
+    bytecode::{BranchOffset, TableIdx},
+    func_builder::TranslationErrorInner,
+    TranslationError,
+};
 
 #[cfg(doc)]
 use super::Instruction;
@@ -480,5 +484,41 @@ impl BranchOffset16 {
     /// Returns the `i16` representation of the [`BranchOffset`].
     pub fn to_i16(self) -> i16 {
         self.0
+    }
+}
+
+/// A generic fused comparison and conditional branch [`Instruction`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct BranchBinOpInstr {
+    /// The left-hand side operand to the conditional operator.
+    lhs: Register,
+    /// The right-hand side operand to the conditional operator.
+    rhs: Register,
+    /// The 16-bit encoded branch offset.
+    offset: BranchOffset16,
+}
+
+impl BranchBinOpInstr {
+    /// Creates a new [`BranchBinOpInstr`].
+    pub fn new(lhs: Register, rhs: Register, offset: BranchOffset16) -> Self {
+        Self { lhs, rhs, offset }
+    }
+}
+
+/// A generic fused comparison and conditional branch [`Instruction`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct BranchBinOpInstrImm<T> {
+    /// The left-hand side operand to the conditional operator.
+    lhs: Register,
+    /// The right-hand side operand to the conditional operator.
+    rhs: Const16<T>,
+    /// The 16-bit encoded branch offset.
+    offset: BranchOffset16,
+}
+
+impl<T> BranchBinOpInstrImm<T> {
+    /// Creates a new [`BranchBinOpInstr`].
+    pub fn new(lhs: Register, rhs: Const16<T>, offset: BranchOffset16) -> Self {
+        Self { lhs, rhs, offset }
     }
 }
