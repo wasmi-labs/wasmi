@@ -474,6 +474,13 @@ pub struct CallIndirectParams<T> {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct BranchOffset16(i16);
 
+#[cfg(test)]
+impl From<i16> for BranchOffset16 {
+    fn from(offset: i16) -> Self {
+        Self(offset)
+    }
+}
+
 impl BranchOffset16 {
     /// Creates a 16-bit [`BranchOffset16`] from a 32-bit [`BranchOffset`] if possible.
     pub fn new(offset: BranchOffset) -> Option<Self> {

@@ -5,6 +5,7 @@ mod br_if;
 mod br_table;
 mod call;
 mod cmp;
+mod cmp_br;
 mod global_get;
 mod global_set;
 mod if_;
