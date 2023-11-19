@@ -731,7 +731,8 @@ impl InstrEncoder {
         // instead of `next_instr` for the given `offset` if we want to encode
         // a fused cmp+branch instruction.
         let offset = self.try_resolve_label_for(label, last_instr)?;
-        debug_assert!(offset.is_init());
+        // Note: the new `offset` might be uninit if its offset is 0 which
+        //       can happen for loop that start with a comparison instruction.
         let Some(offset16) = BranchOffset16::new(offset) else {
             return encode_branch_nez(self, condition, offset);
         };
