@@ -278,3 +278,189 @@ fn preserve_result_1() {
         ])
         .run()
 }
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn preserve_multiple_0() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param i32) (result i32)
+                (local.get 0)
+                (local.set 0 (i32.const 10))
+            )
+        )"#,
+    );
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
+            Instruction::copy_imm32(Register::from_i16(0), 10_i32),
+            Instruction::return_reg(Register::from_i16(1)),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn preserve_multiple_1() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param i32) (result i32 i32)
+                (local.get 0)
+                (local.get 0)
+                (local.set 0 (i32.const 10))
+            )
+        )"#,
+    );
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
+            Instruction::copy_imm32(Register::from_i16(0), 10_i32),
+            Instruction::return_reg2(1, 1),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn preserve_multiple_2() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param i32 i32) (result i32 i32)
+                (local.get 0)
+                (local.set 0 (i32.const 10))
+                (local.get 0)
+                (local.set 0 (i32.const 20))
+            )
+        )"#,
+    );
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::copy(Register::from_i16(3), Register::from_i16(0)),
+            Instruction::copy_imm32(Register::from_i16(0), 10_i32),
+            Instruction::copy(Register::from_i16(2), Register::from_i16(0)),
+            Instruction::copy_imm32(Register::from_i16(0), 20_i32),
+            Instruction::return_reg2(3, 2),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn preserve_multiple_3() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param i32) (result i32)
+                (local.get 0)
+                (local.set 0 (i32.const 10))
+                (drop)
+                (local.get 0)
+                (local.set 0 (i32.const 20))
+            )
+        )"#,
+    );
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
+            Instruction::copy_imm32(Register::from_i16(0), 10_i32),
+            Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
+            Instruction::copy_imm32(Register::from_i16(0), 20_i32),
+            Instruction::return_reg(1),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn preserve_multiple_4() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param i32) (result i32 i32)
+                (local.get 0)
+                (local.get 0)
+                (local.set 0 (i32.const 10))
+                (drop)
+                (drop)
+                (local.get 0)
+                (local.get 0)
+                (local.set 0 (i32.const 20))
+            )
+        )"#,
+    );
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
+            Instruction::copy_imm32(Register::from_i16(0), 10_i32),
+            Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
+            Instruction::copy_imm32(Register::from_i16(0), 20_i32),
+            Instruction::return_reg2(1, 1),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn preserve_multiple_5() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param i32 i32 i32) (result i32 i32 i32)
+                (local.get 0)
+                (local.get 1)
+                (local.get 2)
+                (local.set 2 (i32.const 11))
+                (local.set 1 (i32.const 22))
+                (local.set 0 (i32.const 33))
+            )
+        )"#,
+    );
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::copy(Register::from_i16(5), Register::from_i16(2)),
+            Instruction::copy_imm32(Register::from_i16(2), 11_i32),
+            Instruction::copy(Register::from_i16(4), Register::from_i16(1)),
+            Instruction::copy_imm32(Register::from_i16(1), 22_i32),
+            Instruction::copy(Register::from_i16(3), Register::from_i16(0)),
+            Instruction::copy_imm32(Register::from_i16(0), 33_i32),
+            Instruction::return_reg3(3, 4, 5),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn preserve_multiple_6() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param i32 i32 i32) (result i32 i32 i32)
+                (local.get 0)
+                (local.get 1)
+                (local.get 2)
+                (local.set 2 (i32.const 11))
+                (local.set 0 (i32.const 22))
+                (local.set 1 (i32.const 33))
+                (drop)        ;; drops above (local.get 2)
+                (local.get 1) ;; reuse dropped preservation slot
+                (local.set 1 (i32.const 44))
+            )
+        )"#,
+    );
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::copy(Register::from_i16(5), Register::from_i16(2)),
+            Instruction::copy_imm32(Register::from_i16(2), 11_i32),
+            Instruction::copy(Register::from_i16(4), Register::from_i16(0)),
+            Instruction::copy_imm32(Register::from_i16(0), 22_i32),
+            Instruction::copy(Register::from_i16(3), Register::from_i16(1)),
+            Instruction::copy_imm32(Register::from_i16(1), 33_i32),
+            Instruction::copy(Register::from_i16(5), Register::from_i16(1)),
+            Instruction::copy_imm32(Register::from_i16(1), 44_i32),
+            Instruction::return_reg3(4, 3, 5),
+        ])
+        .run()
+}

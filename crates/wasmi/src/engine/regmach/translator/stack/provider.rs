@@ -63,7 +63,10 @@ impl ProviderStack {
             let provider = &mut self.providers[provider_index];
             debug_assert!(matches!(provider, TaggedProvider::Local(_)));
             let preserved_register = match preserved {
-                Some(register) => register,
+                Some(register) => {
+                    reg_alloc.bump_storage(register);
+                    register
+                }
                 None => {
                     let register = reg_alloc.push_storage()?;
                     preserved = Some(register);
