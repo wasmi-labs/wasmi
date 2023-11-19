@@ -14,6 +14,7 @@ pub(crate) use self::{
         BinInstrImm16,
         BranchBinOpInstr,
         BranchBinOpInstrImm,
+        BranchOffset16,
         CallIndirectParams,
         CopysignImmInstr,
         LoadAtInstr,

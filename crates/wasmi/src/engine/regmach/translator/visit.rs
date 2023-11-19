@@ -422,9 +422,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                             //       encode the `br_if` as efficient `branch_nez`.
                             let branch_offset =
                                 self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
-                            self.alloc
-                                .instr_encoder
-                                .push_instr(Instruction::branch_nez(condition, branch_offset))?;
+                            self.alloc.instr_encoder.encode_branch_nez(
+                                condition,
+                                branch_offset,
+                                branch_dst,
+                            )?;
                             return Ok(());
                         }
                         self.alloc
@@ -444,9 +446,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                             // This means we can encode the `br_if` as efficient `branch_nez`.
                             let branch_offset =
                                 self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
-                            self.alloc
-                                .instr_encoder
-                                .push_instr(Instruction::branch_nez(condition, branch_offset))?;
+                            self.alloc.instr_encoder.encode_branch_nez(
+                                condition,
+                                branch_offset,
+                                branch_dst,
+                            )?;
                             return Ok(());
                         }
                         // Case: We need to copy the branch inputs to where the
