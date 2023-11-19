@@ -421,7 +421,7 @@ pub enum Instruction {
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32LtU`] with 16-bit encoded constant `rhs`.
-    BranchI32LtUImm(BranchBinOpInstrImm<i32>),
+    BranchI32LtUImm(BranchBinOpInstrImm<u32>),
     /// A fused [`Instruction::I32LeS`] and [`Instruction::BranchNez`] instruction.
     BranchI32LeS(BranchBinOpInstr),
     /// A fused [`Instruction::I32LeS`] and [`Instruction::BranchNez`] instruction.
@@ -437,7 +437,7 @@ pub enum Instruction {
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32LeU`] with 16-bit encoded constant `rhs`.
-    BranchI32LeUImm(BranchBinOpInstrImm<i32>),
+    BranchI32LeUImm(BranchBinOpInstrImm<u32>),
     /// A fused [`Instruction::I32GtS`] and [`Instruction::BranchNez`] instruction.
     BranchI32GtS(BranchBinOpInstr),
     /// A fused [`Instruction::I32GtS`] and [`Instruction::BranchNez`] instruction.
@@ -453,7 +453,7 @@ pub enum Instruction {
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32GtU`] with 16-bit encoded constant `rhs`.
-    BranchI32GtUImm(BranchBinOpInstrImm<i32>),
+    BranchI32GtUImm(BranchBinOpInstrImm<u32>),
     /// A fused [`Instruction::I32GeS`] and [`Instruction::BranchNez`] instruction.
     BranchI32GeS(BranchBinOpInstr),
     /// A fused [`Instruction::I32GeS`] and [`Instruction::BranchNez`] instruction.
@@ -469,7 +469,7 @@ pub enum Instruction {
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32GeU`] with 16-bit encoded constant `rhs`.
-    BranchI32GeUImm(BranchBinOpInstrImm<i32>),
+    BranchI32GeUImm(BranchBinOpInstrImm<u32>),
 
     /// A fused [`Instruction::I64Eq`] and [`Instruction::BranchNez`] instruction.
     BranchI64Eq(BranchBinOpInstr),
@@ -503,7 +503,7 @@ pub enum Instruction {
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64LtU`] with 16-bit encoded constant `rhs`.
-    BranchI64LtUImm(BranchBinOpInstrImm<i64>),
+    BranchI64LtUImm(BranchBinOpInstrImm<u64>),
     /// A fused [`Instruction::I64LeS`] and [`Instruction::BranchNez`] instruction.
     BranchI64LeS(BranchBinOpInstr),
     /// A fused [`Instruction::I64LeS`] and [`Instruction::BranchNez`] instruction.
@@ -519,7 +519,7 @@ pub enum Instruction {
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64LeU`] with 16-bit encoded constant `rhs`.
-    BranchI64LeUImm(BranchBinOpInstrImm<i64>),
+    BranchI64LeUImm(BranchBinOpInstrImm<u64>),
     /// A fused [`Instruction::I64GtS`] and [`Instruction::BranchNez`] instruction.
     BranchI64GtS(BranchBinOpInstr),
     /// A fused [`Instruction::I64GtS`] and [`Instruction::BranchNez`] instruction.
@@ -535,7 +535,7 @@ pub enum Instruction {
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64GtU`] with 16-bit encoded constant `rhs`.
-    BranchI64GtUImm(BranchBinOpInstrImm<i64>),
+    BranchI64GtUImm(BranchBinOpInstrImm<u64>),
     /// A fused [`Instruction::I64GeS`] and [`Instruction::BranchNez`] instruction.
     BranchI64GeS(BranchBinOpInstr),
     /// A fused [`Instruction::I64GeS`] and [`Instruction::BranchNez`] instruction.
@@ -551,7 +551,7 @@ pub enum Instruction {
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64GeU`] with 16-bit encoded constant `rhs`.
-    BranchI64GeUImm(BranchBinOpInstrImm<i64>),
+    BranchI64GeUImm(BranchBinOpInstrImm<u64>),
 
     /// A fused [`Instruction::F32Eq`] and [`Instruction::BranchNez`] instruction.
     BranchF32Eq(BranchBinOpInstr),

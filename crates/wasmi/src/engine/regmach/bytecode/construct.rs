@@ -228,24 +228,24 @@ constructor_for_branch_binop_imm! {
     fn branch_i32_eq_imm(i32) -> Self::BranchI32EqImm;
     fn branch_i32_ne_imm(i32) -> Self::BranchI32NeImm;
     fn branch_i32_lt_s_imm(i32) -> Self::BranchI32LtSImm;
-    fn branch_i32_lt_u_imm(i32) -> Self::BranchI32LtUImm;
+    fn branch_i32_lt_u_imm(u32) -> Self::BranchI32LtUImm;
     fn branch_i32_le_s_imm(i32) -> Self::BranchI32LeSImm;
-    fn branch_i32_le_u_imm(i32) -> Self::BranchI32LeUImm;
+    fn branch_i32_le_u_imm(u32) -> Self::BranchI32LeUImm;
     fn branch_i32_gt_s_imm(i32) -> Self::BranchI32GtSImm;
-    fn branch_i32_gt_u_imm(i32) -> Self::BranchI32GtUImm;
+    fn branch_i32_gt_u_imm(u32) -> Self::BranchI32GtUImm;
     fn branch_i32_ge_s_imm(i32) -> Self::BranchI32GeSImm;
-    fn branch_i32_ge_u_imm(i32) -> Self::BranchI32GeUImm;
+    fn branch_i32_ge_u_imm(u32) -> Self::BranchI32GeUImm;
 
     fn branch_i64_eq_imm(i64) -> Self::BranchI64EqImm;
     fn branch_i64_ne_imm(i64) -> Self::BranchI64NeImm;
     fn branch_i64_lt_s_imm(i64) -> Self::BranchI64LtSImm;
-    fn branch_i64_lt_u_imm(i64) -> Self::BranchI64LtUImm;
+    fn branch_i64_lt_u_imm(u64) -> Self::BranchI64LtUImm;
     fn branch_i64_le_s_imm(i64) -> Self::BranchI64LeSImm;
-    fn branch_i64_le_u_imm(i64) -> Self::BranchI64LeUImm;
+    fn branch_i64_le_u_imm(u64) -> Self::BranchI64LeUImm;
     fn branch_i64_gt_s_imm(i64) -> Self::BranchI64GtSImm;
-    fn branch_i64_gt_u_imm(i64) -> Self::BranchI64GtUImm;
+    fn branch_i64_gt_u_imm(u64) -> Self::BranchI64GtUImm;
     fn branch_i64_ge_s_imm(i64) -> Self::BranchI64GeSImm;
-    fn branch_i64_ge_u_imm(i64) -> Self::BranchI64GeUImm;
+    fn branch_i64_ge_u_imm(u64) -> Self::BranchI64GeUImm;
 }
 
 impl Instruction {
