@@ -119,6 +119,7 @@ impl RegisterAlloc {
 
     /// Resets the [`RegisterAlloc`] to start compiling a new function.
     pub fn reset(&mut self) {
+        self.preservations.clear();
         self.phase = AllocPhase::Init;
         self.len_locals = 0;
         self.next_dynamic = 0;
