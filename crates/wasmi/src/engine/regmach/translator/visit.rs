@@ -247,10 +247,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     .push_else_providers(self.alloc.buffer.iter().copied())?;
                 // Create the `else` label and the conditional branch to `else`.
                 let else_label = self.alloc.instr_encoder.new_label();
-                let else_offset = self.alloc.instr_encoder.try_resolve_label(else_label)?;
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::branch_eqz(condition, else_offset))?;
+                self.alloc.instr_encoder.encode_branch_eqz(
+                    &mut self.alloc.stack,
+                    condition,
+                    else_label,
+                )?;
                 let reachability = IfReachability::both(else_label);
                 // Optionally create the [`Instruction::ConsumeFuel`] for the `then` branch.
                 //
@@ -459,11 +460,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                         //       and finally perform the actual branch to the target
                         //       control frame.
                         let skip_label = self.alloc.instr_encoder.new_label();
-                        let skip_offset = self.alloc.instr_encoder.try_resolve_label(skip_label)?;
-                        debug_assert!(!skip_offset.is_init());
-                        self.alloc
-                            .instr_encoder
-                            .push_instr(Instruction::branch_eqz(condition, skip_offset))?;
+                        self.alloc.instr_encoder.encode_branch_eqz(
+                            &mut self.alloc.stack,
+                            condition,
+                            skip_label,
+                        )?;
                         self.alloc.instr_encoder.encode_copies(
                             &mut self.alloc.stack,
                             branch_params,
