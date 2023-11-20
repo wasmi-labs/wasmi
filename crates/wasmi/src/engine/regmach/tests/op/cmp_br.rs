@@ -1,4 +1,4 @@
-use super::*;
+use super::{wasm_type::WasmType, *};
 use crate::{
     core::ValueType,
     engine::{
@@ -6,6 +6,7 @@ use crate::{
         regmach::{bytecode::BranchOffset16, tests::display_wasm::DisplayValueType},
     },
 };
+use std::fmt::{Debug, Display};
 
 #[test]
 #[cfg_attr(miri, ignore)]
@@ -81,29 +82,62 @@ fn loop_backward() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn loop_backward_imm() {
-    let wasm = wat2wasm(
-        r"
-        (module
-            (func (param i32 i32)
-                (loop
-                    (local.get 0)
-                    (i32.const 1)
-                    (i32.eq)
-                    (br_if 0)
+    fn test_for<T>(
+        op: &str,
+        value: T,
+        expect_instr: fn(Register, Const16<T>, BranchOffset16) -> Instruction,
+    ) where
+        T: WasmType,
+        Const16<T>: TryFrom<T> + Debug,
+        DisplayWasm<T>: Display,
+    {
+        let ty = T::NAME;
+        let display_value = DisplayWasm::from(value);
+        let wasm = wat2wasm(&format!(
+            r"
+            (module
+                (func (param {ty} {ty})
+                    (loop
+                        (local.get 0)
+                        ({ty}.const {display_value})
+                        ({ty}.{op})
+                        (br_if 0)
+                    )
                 )
-            )
-        )",
-    );
-    TranslationTest::new(wasm)
-        .expect_func_instrs([
-            Instruction::branch_i32_eq_imm(
-                Register::from_i16(0),
-                i32imm16(1_i32),
-                BranchOffset16::from(0),
-            ),
-            Instruction::Return,
-        ])
-        .run()
+            )",
+        ));
+        TranslationTest::new(wasm)
+            .expect_func_instrs([
+                expect_instr(
+                    Register::from_i16(0),
+                    <Const16<T>>::try_from(value).ok().unwrap(),
+                    BranchOffset16::from(0),
+                ),
+                Instruction::Return,
+            ])
+            .run()
+    }
+    test_for::<i32>("eq", 1, Instruction::branch_i32_eq_imm);
+    test_for::<i32>("ne", 1, Instruction::branch_i32_ne_imm);
+    test_for::<i32>("lt_s", 1, Instruction::branch_i32_lt_s_imm);
+    test_for::<u32>("lt_u", 1, Instruction::branch_i32_lt_u_imm);
+    test_for::<i32>("le_s", 1, Instruction::branch_i32_le_s_imm);
+    test_for::<u32>("le_u", 1, Instruction::branch_i32_le_u_imm);
+    test_for::<i32>("gt_s", 1, Instruction::branch_i32_gt_s_imm);
+    test_for::<u32>("gt_u", 1, Instruction::branch_i32_gt_u_imm);
+    test_for::<i32>("ge_s", 1, Instruction::branch_i32_ge_s_imm);
+    test_for::<u32>("ge_u", 1, Instruction::branch_i32_ge_u_imm);
+
+    test_for::<i64>("eq", 1, Instruction::branch_i64_eq_imm);
+    test_for::<i64>("ne", 1, Instruction::branch_i64_ne_imm);
+    test_for::<i64>("lt_s", 1, Instruction::branch_i64_lt_s_imm);
+    test_for::<u64>("lt_u", 1, Instruction::branch_i64_lt_u_imm);
+    test_for::<i64>("le_s", 1, Instruction::branch_i64_le_s_imm);
+    test_for::<u64>("le_u", 1, Instruction::branch_i64_le_u_imm);
+    test_for::<i64>("gt_s", 1, Instruction::branch_i64_gt_s_imm);
+    test_for::<u64>("gt_u", 1, Instruction::branch_i64_gt_u_imm);
+    test_for::<i64>("ge_s", 1, Instruction::branch_i64_ge_s_imm);
+    test_for::<u64>("ge_u", 1, Instruction::branch_i64_ge_u_imm);
 }
 
 #[test]
