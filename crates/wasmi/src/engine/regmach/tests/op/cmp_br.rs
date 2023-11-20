@@ -1,15 +1,20 @@
 use super::*;
-use crate::engine::regmach::tests::display_wasm::DisplayValueType;
-use crate::engine::{
-    bytecode::{BranchOffset, GlobalIdx},
-    regmach::bytecode::BranchOffset16,
+use crate::{
+    core::ValueType,
+    engine::{
+        bytecode::{BranchOffset, GlobalIdx},
+        regmach::{bytecode::BranchOffset16, tests::display_wasm::DisplayValueType},
+    },
 };
-use crate::core::ValueType;
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn loop_backward() {
-    fn test_for(ty: ValueType, op: &str, expect_instr: fn(Register, Register, BranchOffset16) -> Instruction) {
+    fn test_for(
+        ty: ValueType,
+        op: &str,
+        expect_instr: fn(Register, Register, BranchOffset16) -> Instruction,
+    ) {
         let ty = DisplayValueType::from(ty);
         let wasm = wat2wasm(&format!(
             r"
