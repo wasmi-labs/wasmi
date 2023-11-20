@@ -741,6 +741,16 @@ impl InstrEncoder {
                 Some(make_instr(instr.lhs, instr.rhs, offset16))
             };
         let fused_instr = match self.instrs.get(last_instr) {
+            I::I32EqImm16(instr) if instr.imm_in.is_zero() => {
+                // Note: unfortunately we cannot apply this optimization for `i64` variants
+                //       since the standard `branch_eqz` assumes its operands to be of type `i32`.
+                Some(Instruction::branch_eqz(instr.reg_in, offset32))
+            },
+            I::I32NeImm16(instr) if instr.imm_in.is_zero() => {
+                // Note: unfortunately we cannot apply this optimization for `i64` variants
+                //       since the standard `branch_nez` assumes its operands to be of type `i32`.
+                Some(Instruction::branch_nez(instr.reg_in, offset32))
+            },
             I::I32Eq(instr) => make_fused(instr, I::branch_i32_eq as _),
             I::I32EqImm16(instr) => make_fused_imm(instr, offset16, I::branch_i32_eq_imm as _),
             I::I32Ne(instr) => make_fused(instr, I::branch_i32_ne as _),
