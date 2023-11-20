@@ -219,7 +219,7 @@ impl InstrEncoder {
     /// If this is used before all branching labels have been pinned.
     pub fn update_branch_offsets(&mut self) -> Result<(), TranslationError> {
         for (user, offset) in self.labels.resolved_users() {
-            self.instrs.get_mut(user).update_branch_offset(offset?);
+            self.instrs.get_mut(user).update_branch_offset(offset?)?;
         }
         Ok(())
     }
@@ -693,123 +693,172 @@ impl InstrEncoder {
     pub fn encode_branch_nez(
         &mut self,
         condition: Register,
-        offset: BranchOffset,
         label: LabelRef,
     ) -> Result<(), TranslationError> {
         type BranchCmpConstructor = fn(Register, Register, BranchOffset16) -> Instruction;
         type BranchCmpImmConstructor<T> = fn(Register, Const16<T>, BranchOffset16) -> Instruction;
+
         /// Encode an unoptimized `branch_nez` instruction.
         ///
         /// This is used as fallback whenever fusing compare and branch instructions is not possible.
         fn encode_branch_nez_fallback(
             this: &mut InstrEncoder,
             condition: Register,
-            offset: BranchOffset,
+            label: LabelRef,
         ) -> Result<(), TranslationError> {
+            let offset = this.try_resolve_label(label)?;
             this.push_instr(Instruction::branch_nez(condition, offset))?;
             Ok(())
         }
+
+        /// Create a fused cmp+branch instruction and wrap it in a `Some`.
+        ///
+        /// We wrap the returned value in `Some` to unify handling of a bunch of cases.
+        fn fuse(
+            this: &mut InstrEncoder,
+            last_instr: Instr,
+            instr: BinInstr,
+            label: LabelRef,
+            make_instr: BranchCmpConstructor,
+        ) -> Result<Option<Instruction>, TranslationError> {
+            let offset = this.try_resolve_label_for(label, last_instr)?;
+            let instr = BranchOffset16::new(offset)
+                .map(|offset16| make_instr(instr.lhs, instr.rhs, offset16));
+            Ok(instr)
+        }
+
         /// Create a fused cmp+branch instruction with a 16-bit immediate and wrap it in a `Some`.
         ///
         /// We wrap the returned value in `Some` to unify handling of a bunch of cases.
-        fn make_fused_imm<T>(
-            instr: &BinInstrImm16<T>,
-            offset16: BranchOffset16,
+        fn fuse_imm<T>(
+            this: &mut InstrEncoder,
+            last_instr: Instr,
+            instr: BinInstrImm16<T>,
+            label: LabelRef,
             make_instr: BranchCmpImmConstructor<T>,
-        ) -> Option<Instruction> {
-            Some(make_instr(instr.reg_in, instr.imm_in, offset16))
+        ) -> Result<Option<Instruction>, TranslationError> {
+            let offset = this.try_resolve_label_for(label, last_instr)?;
+            let instr = BranchOffset16::new(offset)
+                .map(|offset16| make_instr(instr.reg_in, instr.imm_in, offset16));
+            Ok(instr)
         }
         use Instruction as I;
 
         let Some(last_instr) = self.last_instr else {
-            return encode_branch_nez_fallback(self, condition, offset);
+            return encode_branch_nez_fallback(self, condition, label);
         };
-        if !offset.is_init() {
-            return encode_branch_nez_fallback(self, condition, offset);
-        }
-        // We need to re-resolve the branch-label orginating from `last_instr`
-        // instead of `next_instr` for the given `offset` if we want to encode
-        // a fused cmp+branch instruction.
-        let offset32 = self.try_resolve_label_for(label, last_instr)?;
-        // Note: the new `offset` might be uninit if its offset is 0 which
-        //       can happen for loop that start with a comparison instruction.
-        let Some(offset16) = BranchOffset16::new(offset32) else {
-            return encode_branch_nez_fallback(self, condition, offset);
-        };
-        let make_fused =
-            |instr: &BinInstr, make_instr: BranchCmpConstructor| -> Option<Instruction> {
-                Some(make_instr(instr.lhs, instr.rhs, offset16))
-            };
-        let fused_instr = match self.instrs.get(last_instr) {
+        let fused_instr = match *self.instrs.get(last_instr) {
             I::I32EqImm16(instr) if instr.imm_in.is_zero() => {
                 // Note: unfortunately we cannot apply this optimization for `i64` variants
                 //       since the standard `branch_eqz` assumes its operands to be of type `i32`.
+                let offset32 = self.try_resolve_label_for(label, last_instr)?;
                 Some(Instruction::branch_eqz(instr.reg_in, offset32))
-            },
+            }
             I::I32NeImm16(instr) if instr.imm_in.is_zero() => {
                 // Note: unfortunately we cannot apply this optimization for `i64` variants
                 //       since the standard `branch_nez` assumes its operands to be of type `i32`.
+                let offset32 = self.try_resolve_label_for(label, last_instr)?;
                 Some(Instruction::branch_nez(instr.reg_in, offset32))
-            },
-            I::I32Eq(instr) => make_fused(instr, I::branch_i32_eq as _),
-            I::I32EqImm16(instr) => make_fused_imm(instr, offset16, I::branch_i32_eq_imm as _),
-            I::I32Ne(instr) => make_fused(instr, I::branch_i32_ne as _),
-            I::I32NeImm16(instr) => make_fused_imm(instr, offset16, I::branch_i32_ne_imm as _),
-            I::I32LtS(instr) => make_fused(instr, I::branch_i32_lt_s as _),
-            I::I32LtSImm16(instr) => make_fused_imm(instr, offset16, I::branch_i32_lt_s_imm as _),
-            I::I32LtU(instr) => make_fused(instr, I::branch_i32_lt_u as _),
-            I::I32LtUImm16(instr) => make_fused_imm(instr, offset16, I::branch_i32_lt_u_imm as _),
-            I::I32LeS(instr) => make_fused(instr, I::branch_i32_le_s as _),
-            I::I32LeSImm16(instr) => make_fused_imm(instr, offset16, I::branch_i32_le_s_imm as _),
-            I::I32LeU(instr) => make_fused(instr, I::branch_i32_le_u as _),
-            I::I32LeUImm16(instr) => make_fused_imm(instr, offset16, I::branch_i32_le_u_imm as _),
-            I::I32GtS(instr) => make_fused(instr, I::branch_i32_gt_s as _),
-            I::I32GtSImm16(instr) => make_fused_imm(instr, offset16, I::branch_i32_gt_s_imm as _),
-            I::I32GtU(instr) => make_fused(instr, I::branch_i32_gt_u as _),
-            I::I32GtUImm16(instr) => make_fused_imm(instr, offset16, I::branch_i32_gt_u_imm as _),
-            I::I32GeS(instr) => make_fused(instr, I::branch_i32_ge_s as _),
-            I::I32GeSImm16(instr) => make_fused_imm(instr, offset16, I::branch_i32_ge_s_imm as _),
-            I::I32GeU(instr) => make_fused(instr, I::branch_i32_ge_u as _),
-            I::I32GeUImm16(instr) => make_fused_imm(instr, offset16, I::branch_i32_ge_u_imm as _),
-            I::I64Eq(instr) => make_fused(instr, I::branch_i64_eq as _),
-            I::I64EqImm16(instr) => make_fused_imm(instr, offset16, I::branch_i64_eq_imm as _),
-            I::I64Ne(instr) => make_fused(instr, I::branch_i64_ne as _),
-            I::I64NeImm16(instr) => make_fused_imm(instr, offset16, I::branch_i64_ne_imm as _),
-            I::I64LtS(instr) => make_fused(instr, I::branch_i64_lt_s as _),
-            I::I64LtSImm16(instr) => make_fused_imm(instr, offset16, I::branch_i64_lt_s_imm as _),
-            I::I64LtU(instr) => make_fused(instr, I::branch_i64_lt_u as _),
-            I::I64LtUImm16(instr) => make_fused_imm(instr, offset16, I::branch_i64_lt_u_imm as _),
-            I::I64LeS(instr) => make_fused(instr, I::branch_i64_le_s as _),
-            I::I64LeSImm16(instr) => make_fused_imm(instr, offset16, I::branch_i64_le_s_imm as _),
-            I::I64LeU(instr) => make_fused(instr, I::branch_i64_le_u as _),
-            I::I64LeUImm16(instr) => make_fused_imm(instr, offset16, I::branch_i64_le_u_imm as _),
-            I::I64GtS(instr) => make_fused(instr, I::branch_i64_gt_s as _),
-            I::I64GtSImm16(instr) => make_fused_imm(instr, offset16, I::branch_i64_gt_s_imm as _),
-            I::I64GtU(instr) => make_fused(instr, I::branch_i64_gt_u as _),
-            I::I64GtUImm16(instr) => make_fused_imm(instr, offset16, I::branch_i64_gt_u_imm as _),
-            I::I64GeS(instr) => make_fused(instr, I::branch_i64_ge_s as _),
-            I::I64GeSImm16(instr) => make_fused_imm(instr, offset16, I::branch_i64_ge_s_imm as _),
-            I::I64GeU(instr) => make_fused(instr, I::branch_i64_ge_u as _),
-            I::I64GeUImm16(instr) => make_fused_imm(instr, offset16, I::branch_i64_ge_u_imm as _),
-            I::F32Eq(instr) => make_fused(instr, I::branch_f32_eq as _),
-            I::F32Ne(instr) => make_fused(instr, I::branch_f32_ne as _),
-            I::F32Lt(instr) => make_fused(instr, I::branch_f32_lt as _),
-            I::F32Le(instr) => make_fused(instr, I::branch_f32_le as _),
-            I::F32Gt(instr) => make_fused(instr, I::branch_f32_gt as _),
-            I::F32Ge(instr) => make_fused(instr, I::branch_f32_ge as _),
-            I::F64Eq(instr) => make_fused(instr, I::branch_f64_eq as _),
-            I::F64Ne(instr) => make_fused(instr, I::branch_f64_ne as _),
-            I::F64Lt(instr) => make_fused(instr, I::branch_f64_lt as _),
-            I::F64Le(instr) => make_fused(instr, I::branch_f64_le as _),
-            I::F64Gt(instr) => make_fused(instr, I::branch_f64_gt as _),
-            I::F64Ge(instr) => make_fused(instr, I::branch_f64_ge as _),
+            }
+            I::I32Eq(instr) => fuse(self, last_instr, instr, label, I::branch_i32_eq as _)?,
+            I::I32EqImm16(instr) => {
+                fuse_imm(self, last_instr, instr, label, I::branch_i32_eq_imm as _)?
+            }
+            I::I32Ne(instr) => fuse(self, last_instr, instr, label, I::branch_i32_ne as _)?,
+            I::I32NeImm16(instr) => {
+                fuse_imm(self, last_instr, instr, label, I::branch_i32_ne_imm as _)?
+            }
+            I::I32LtS(instr) => fuse(self, last_instr, instr, label, I::branch_i32_lt_s as _)?,
+            I::I32LtSImm16(instr) => {
+                fuse_imm(self, last_instr, instr, label, I::branch_i32_lt_s_imm as _)?
+            }
+            I::I32LtU(instr) => fuse(self, last_instr, instr, label, I::branch_i32_lt_u as _)?,
+            I::I32LtUImm16(instr) => {
+                fuse_imm(self, last_instr, instr, label, I::branch_i32_lt_u_imm as _)?
+            }
+            I::I32LeS(instr) => fuse(self, last_instr, instr, label, I::branch_i32_le_s as _)?,
+            I::I32LeSImm16(instr) => {
+                fuse_imm(self, last_instr, instr, label, I::branch_i32_le_s_imm as _)?
+            }
+            I::I32LeU(instr) => fuse(self, last_instr, instr, label, I::branch_i32_le_u as _)?,
+            I::I32LeUImm16(instr) => {
+                fuse_imm(self, last_instr, instr, label, I::branch_i32_le_u_imm as _)?
+            }
+            I::I32GtS(instr) => fuse(self, last_instr, instr, label, I::branch_i32_gt_s as _)?,
+            I::I32GtSImm16(instr) => {
+                fuse_imm(self, last_instr, instr, label, I::branch_i32_gt_s_imm as _)?
+            }
+            I::I32GtU(instr) => fuse(self, last_instr, instr, label, I::branch_i32_gt_u as _)?,
+            I::I32GtUImm16(instr) => {
+                fuse_imm(self, last_instr, instr, label, I::branch_i32_gt_u_imm as _)?
+            }
+            I::I32GeS(instr) => fuse(self, last_instr, instr, label, I::branch_i32_ge_s as _)?,
+            I::I32GeSImm16(instr) => {
+                fuse_imm(self, last_instr, instr, label, I::branch_i32_ge_s_imm as _)?
+            }
+            I::I32GeU(instr) => fuse(self, last_instr, instr, label, I::branch_i32_ge_u as _)?,
+            I::I32GeUImm16(instr) => {
+                fuse_imm(self, last_instr, instr, label, I::branch_i32_ge_u_imm as _)?
+            }
+            I::I64Eq(instr) => fuse(self, last_instr, instr, label, I::branch_i64_eq as _)?,
+            I::I64EqImm16(instr) => {
+                fuse_imm(self, last_instr, instr, label, I::branch_i64_eq_imm as _)?
+            }
+            I::I64Ne(instr) => fuse(self, last_instr, instr, label, I::branch_i64_ne as _)?,
+            I::I64NeImm16(instr) => {
+                fuse_imm(self, last_instr, instr, label, I::branch_i64_ne_imm as _)?
+            }
+            I::I64LtS(instr) => fuse(self, last_instr, instr, label, I::branch_i64_lt_s as _)?,
+            I::I64LtSImm16(instr) => {
+                fuse_imm(self, last_instr, instr, label, I::branch_i64_lt_s_imm as _)?
+            }
+            I::I64LtU(instr) => fuse(self, last_instr, instr, label, I::branch_i64_lt_u as _)?,
+            I::I64LtUImm16(instr) => {
+                fuse_imm(self, last_instr, instr, label, I::branch_i64_lt_u_imm as _)?
+            }
+            I::I64LeS(instr) => fuse(self, last_instr, instr, label, I::branch_i64_le_s as _)?,
+            I::I64LeSImm16(instr) => {
+                fuse_imm(self, last_instr, instr, label, I::branch_i64_le_s_imm as _)?
+            }
+            I::I64LeU(instr) => fuse(self, last_instr, instr, label, I::branch_i64_le_u as _)?,
+            I::I64LeUImm16(instr) => {
+                fuse_imm(self, last_instr, instr, label, I::branch_i64_le_u_imm as _)?
+            }
+            I::I64GtS(instr) => fuse(self, last_instr, instr, label, I::branch_i64_gt_s as _)?,
+            I::I64GtSImm16(instr) => {
+                fuse_imm(self, last_instr, instr, label, I::branch_i64_gt_s_imm as _)?
+            }
+            I::I64GtU(instr) => fuse(self, last_instr, instr, label, I::branch_i64_gt_u as _)?,
+            I::I64GtUImm16(instr) => {
+                fuse_imm(self, last_instr, instr, label, I::branch_i64_gt_u_imm as _)?
+            }
+            I::I64GeS(instr) => fuse(self, last_instr, instr, label, I::branch_i64_ge_s as _)?,
+            I::I64GeSImm16(instr) => {
+                fuse_imm(self, last_instr, instr, label, I::branch_i64_ge_s_imm as _)?
+            }
+            I::I64GeU(instr) => fuse(self, last_instr, instr, label, I::branch_i64_ge_u as _)?,
+            I::I64GeUImm16(instr) => {
+                fuse_imm(self, last_instr, instr, label, I::branch_i64_ge_u_imm as _)?
+            }
+            I::F32Eq(instr) => fuse(self, last_instr, instr, label, I::branch_f32_eq as _)?,
+            I::F32Ne(instr) => fuse(self, last_instr, instr, label, I::branch_f32_ne as _)?,
+            I::F32Lt(instr) => fuse(self, last_instr, instr, label, I::branch_f32_lt as _)?,
+            I::F32Le(instr) => fuse(self, last_instr, instr, label, I::branch_f32_le as _)?,
+            I::F32Gt(instr) => fuse(self, last_instr, instr, label, I::branch_f32_gt as _)?,
+            I::F32Ge(instr) => fuse(self, last_instr, instr, label, I::branch_f32_ge as _)?,
+            I::F64Eq(instr) => fuse(self, last_instr, instr, label, I::branch_f64_eq as _)?,
+            I::F64Ne(instr) => fuse(self, last_instr, instr, label, I::branch_f64_ne as _)?,
+            I::F64Lt(instr) => fuse(self, last_instr, instr, label, I::branch_f64_lt as _)?,
+            I::F64Le(instr) => fuse(self, last_instr, instr, label, I::branch_f64_le as _)?,
+            I::F64Gt(instr) => fuse(self, last_instr, instr, label, I::branch_f64_gt as _)?,
+            I::F64Ge(instr) => fuse(self, last_instr, instr, label, I::branch_f64_ge as _)?,
             _ => None,
         };
         if let Some(fused_instr) = fused_instr {
             _ = mem::replace(self.instrs.get_mut(last_instr), fused_instr);
             return Ok(());
         }
-        encode_branch_nez_fallback(self, condition, offset)
+        encode_branch_nez_fallback(self, condition, label)
     }
 }
 
@@ -819,11 +868,69 @@ impl Instruction {
     /// # Panics
     ///
     /// If `self` is not a branch [`Instruction`].
-    pub fn update_branch_offset(&mut self, new_offset: BranchOffset) {
+    pub fn update_branch_offset(
+        &mut self,
+        new_offset: BranchOffset,
+    ) -> Result<(), TranslationError> {
         match self {
             Instruction::Branch { offset }
             | Instruction::BranchEqz { offset, .. }
-            | Instruction::BranchNez { offset, .. } => offset.init(new_offset),
+            | Instruction::BranchNez { offset, .. } => {
+                offset.init(new_offset);
+                Ok(())
+            }
+            Instruction::BranchI32Eq(instr)
+            | Instruction::BranchI32Ne(instr)
+            | Instruction::BranchI32LtS(instr)
+            | Instruction::BranchI32LtU(instr)
+            | Instruction::BranchI32LeS(instr)
+            | Instruction::BranchI32LeU(instr)
+            | Instruction::BranchI32GtS(instr)
+            | Instruction::BranchI32GtU(instr)
+            | Instruction::BranchI32GeS(instr)
+            | Instruction::BranchI32GeU(instr)
+            | Instruction::BranchI64Eq(instr)
+            | Instruction::BranchI64Ne(instr)
+            | Instruction::BranchI64LtS(instr)
+            | Instruction::BranchI64LtU(instr)
+            | Instruction::BranchI64LeS(instr)
+            | Instruction::BranchI64LeU(instr)
+            | Instruction::BranchI64GtS(instr)
+            | Instruction::BranchI64GtU(instr)
+            | Instruction::BranchI64GeS(instr)
+            | Instruction::BranchI64GeU(instr)
+            | Instruction::BranchF32Eq(instr)
+            | Instruction::BranchF32Ne(instr)
+            | Instruction::BranchF32Lt(instr)
+            | Instruction::BranchF32Le(instr)
+            | Instruction::BranchF32Gt(instr)
+            | Instruction::BranchF32Ge(instr)
+            | Instruction::BranchF64Eq(instr)
+            | Instruction::BranchF64Ne(instr)
+            | Instruction::BranchF64Lt(instr)
+            | Instruction::BranchF64Le(instr)
+            | Instruction::BranchF64Gt(instr)
+            | Instruction::BranchF64Ge(instr) => instr.offset.init(new_offset),
+            Instruction::BranchI32EqImm(instr)
+            | Instruction::BranchI32NeImm(instr)
+            | Instruction::BranchI32LtSImm(instr)
+            | Instruction::BranchI32LeSImm(instr)
+            | Instruction::BranchI32GtSImm(instr)
+            | Instruction::BranchI32GeSImm(instr) => instr.offset.init(new_offset),
+            Instruction::BranchI32LtUImm(instr)
+            | Instruction::BranchI32LeUImm(instr)
+            | Instruction::BranchI32GtUImm(instr)
+            | Instruction::BranchI32GeUImm(instr) => instr.offset.init(new_offset),
+            Instruction::BranchI64EqImm(instr)
+            | Instruction::BranchI64NeImm(instr)
+            | Instruction::BranchI64LtSImm(instr)
+            | Instruction::BranchI64LeSImm(instr)
+            | Instruction::BranchI64GtSImm(instr)
+            | Instruction::BranchI64GeSImm(instr) => instr.offset.init(new_offset),
+            Instruction::BranchI64LtUImm(instr)
+            | Instruction::BranchI64LeUImm(instr)
+            | Instruction::BranchI64GtUImm(instr)
+            | Instruction::BranchI64GeUImm(instr) => instr.offset.init(new_offset),
             _ => panic!("tried to update branch offset of a non-branch instruction: {self:?}"),
         }
     }

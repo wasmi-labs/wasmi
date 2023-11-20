@@ -488,6 +488,29 @@ impl BranchOffset16 {
         Some(Self(offset16))
     }
 
+    /// Returns `true` if the [`BranchOffset16`] has been initialized.
+    pub fn is_init(self) -> bool {
+        self.to_i16() != 0
+    }
+
+    /// Initializes the [`BranchOffset`] with a proper value.
+    ///
+    /// # Panics
+    ///
+    /// - If the [`BranchOffset`] have already been initialized.
+    /// - If the given [`BranchOffset`] is not properly initialized.
+    pub fn init(&mut self, valid_offset: BranchOffset) -> Result<(), TranslationError> {
+        assert!(valid_offset.is_init());
+        assert!(!self.is_init());
+        let Some(valid_offset16) = Self::new(valid_offset) else {
+            return Err(TranslationError::new(
+                TranslationErrorInner::BranchOffsetOutOfBounds,
+            ));
+        };
+        *self = valid_offset16;
+        Ok(())
+    }
+
     /// Returns the `i16` representation of the [`BranchOffset`].
     pub fn to_i16(self) -> i16 {
         self.0

@@ -420,13 +420,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                         if branch_params.is_empty() {
                             // Case: no values need to be copied so we can directly
                             //       encode the `br_if` as efficient `branch_nez`.
-                            let branch_offset =
-                                self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
-                            self.alloc.instr_encoder.encode_branch_nez(
-                                condition,
-                                branch_offset,
-                                branch_dst,
-                            )?;
+                            self.alloc
+                                .instr_encoder
+                                .encode_branch_nez(condition, branch_dst)?;
                             return Ok(());
                         }
                         self.alloc
@@ -444,13 +440,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                             //       no copies are required.
                             //
                             // This means we can encode the `br_if` as efficient `branch_nez`.
-                            let branch_offset =
-                                self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
-                            self.alloc.instr_encoder.encode_branch_nez(
-                                condition,
-                                branch_offset,
-                                branch_dst,
-                            )?;
+                            self.alloc
+                                .instr_encoder
+                                .encode_branch_nez(condition, branch_dst)?;
                             return Ok(());
                         }
                         // Case: We need to copy the branch inputs to where the
