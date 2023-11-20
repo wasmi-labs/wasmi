@@ -721,6 +721,9 @@ impl InstrEncoder {
             label: LabelRef,
             make_instr: BranchCmpConstructor,
         ) -> Result<Option<Instruction>, TranslationError> {
+            // TODO: we might need to filter out instructions that store their result
+            //       into a local register slot because they introduce observable behavior
+            //       which a fused cmp+branch instruction would remove.
             let offset = this.try_resolve_label_for(label, last_instr)?;
             let instr = BranchOffset16::new(offset)
                 .map(|offset16| make_instr(instr.lhs, instr.rhs, offset16));
@@ -737,6 +740,9 @@ impl InstrEncoder {
             label: LabelRef,
             make_instr: BranchCmpImmConstructor<T>,
         ) -> Result<Option<Instruction>, TranslationError> {
+            // TODO: we might need to filter out instructions that store their result
+            //       into a local register slot because they introduce observable behavior
+            //       which a fused cmp+branch instruction would remove.
             let offset = this.try_resolve_label_for(label, last_instr)?;
             let instr = BranchOffset16::new(offset)
                 .map(|offset16| make_instr(instr.reg_in, instr.imm_in, offset16));
