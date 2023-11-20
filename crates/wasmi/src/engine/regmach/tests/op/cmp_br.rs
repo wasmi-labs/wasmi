@@ -143,25 +143,29 @@ fn loop_backward_imm() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn loop_backward_imm_eqz() {
-    let wasm = wat2wasm(
-        r"
-        (module
-            (func (param i32 i32)
-                (loop
-                    (local.get 0)
-                    (i32.const 0)
-                    (i32.eq)
-                    (br_if 0)
+    fn test_for(op: &str, expect_instr: fn(Register, BranchOffset) -> Instruction) {
+        let wasm = wat2wasm(&format!(
+            r"
+            (module
+                (func (param i32 i32)
+                    (loop
+                        (local.get 0)
+                        (i32.const 0)
+                        (i32.{op})
+                        (br_if 0)
+                    )
                 )
-            )
-        )",
-    );
-    TranslationTest::new(wasm)
-        .expect_func_instrs([
-            Instruction::branch_eqz(Register::from_i16(0), BranchOffset::from(0_i32)),
-            Instruction::Return,
-        ])
-        .run()
+            )",
+        ));
+        TranslationTest::new(wasm)
+            .expect_func_instrs([
+                expect_instr(Register::from_i16(0), BranchOffset::from(0_i32)),
+                Instruction::Return,
+            ])
+            .run()
+    }
+    test_for("eq", Instruction::branch_eqz);
+    test_for("ne", Instruction::branch_nez);
 }
 
 #[test]
