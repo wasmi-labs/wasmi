@@ -627,27 +627,38 @@ impl InstrEncoder {
     /// to the same basic block.
     pub fn encode_local_set(
         &mut self,
+        stack: &mut ValueStack,
         res: &ModuleResources,
         local: Register,
         value: Register,
     ) -> Result<(), TranslationError> {
-        if let Some(last_instr) = self.last_instr {
-            if let Some(result) = self.instrs.get_mut(last_instr).result_mut(res) {
-                // Case: we can replace the `result` register of the previous
-                //       instruction instead of emitting a copy instruction.
-                if *result == value {
-                    // TODO: Find out in what cases `result != value`. Is this a bug or an edge case?
-                    //       Generally `result` should be equal to `value` since `value` refers to the
-                    //       `result` of the previous instruction.
-                    //       Therefore, instead of an `if` we originally had a `debug_assert`.
-                    //       (Note: the spidermonkey bench test failed without this change.)
-                    *result = local;
-                    return Ok(());
-                }
-            }
+        /// Fallback for when we need to encode a `copy` instruction to encode the `local.set` or `local.tee`.
+        fn fallback_copy(
+            this: &mut InstrEncoder,
+            local: Register,
+            value: Register,
+        ) -> Result<(), TranslationError> {
+            this.push_instr(Instruction::copy(local, value))?;
+            Ok(())
         }
-        // Case: we need to encode a copy instruction to encode the `local.set` or `local.tee`.
-        self.push_instr(Instruction::copy(local, value))?;
+        let Some(last_instr) = self.last_instr else {
+            return fallback_copy(self, local, value);
+        };
+        let Some(result) = self.instrs.get_mut(last_instr).result_mut(res) else {
+            return fallback_copy(self, local, value);
+        };
+        if matches!(stack.get_register_space(*result), RegisterSpace::Local) {
+            return fallback_copy(self, local, value);
+        }
+        if *result != value {
+            // TODO: Find out in what cases `result != value`. Is this a bug or an edge case?
+            //       Generally `result` should be equal to `value` since `value` refers to the
+            //       `result` of the previous instruction.
+            //       Therefore, instead of an `if` we originally had a `debug_assert`.
+            //       (Note: the spidermonkey bench test failed without this change.)
+            return fallback_copy(self, local, value);
+        }
+        *result = local;
         Ok(())
     }
 

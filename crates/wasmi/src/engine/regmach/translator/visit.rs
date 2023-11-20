@@ -840,9 +840,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 // computation which allows us to exchange the result register of
                 // this previous instruction instead of encoding another `copy`
                 // instruction as an optimization.
-                self.alloc
-                    .instr_encoder
-                    .encode_local_set(&self.res, local_register, value)?;
+                self.alloc.instr_encoder.encode_local_set(
+                    &mut self.alloc.stack,
+                    &self.res,
+                    local_register,
+                    value,
+                )?;
             }
         }
         self.alloc.instr_encoder.reset_last_instr();
