@@ -1,8 +1,10 @@
 use super::{
-    utils::{CopysignImmInstr, Sign},
+    utils::{BranchOffset16, CopysignImmInstr, Sign},
     AnyConst32,
     BinInstr,
     BinInstrImm16,
+    BranchBinOpInstr,
+    BranchBinOpInstrImm,
     CallIndirectParams,
     Const16,
     Const32,
@@ -158,6 +160,92 @@ macro_rules! constructor_for {
             Self::$op_code(StoreAtInstr::new(address, value.into()))
         }
     };
+}
+
+macro_rules! constructor_for_branch_binop {
+    ( $( fn $name:ident() -> Self::$op_code:ident; )* ) => {
+        impl Instruction {
+            $(
+                #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+                pub fn $name(lhs: Register, rhs: Register, offset: BranchOffset16) -> Self {
+                    Self::$op_code(BranchBinOpInstr::new(lhs, rhs, offset))
+                }
+            )*
+        }
+    }
+}
+constructor_for_branch_binop! {
+    fn branch_i32_eq() -> Self::BranchI32Eq;
+    fn branch_i32_ne() -> Self::BranchI32Ne;
+    fn branch_i32_lt_s() -> Self::BranchI32LtS;
+    fn branch_i32_lt_u() -> Self::BranchI32LtU;
+    fn branch_i32_le_s() -> Self::BranchI32LeS;
+    fn branch_i32_le_u() -> Self::BranchI32LeU;
+    fn branch_i32_gt_s() -> Self::BranchI32GtS;
+    fn branch_i32_gt_u() -> Self::BranchI32GtU;
+    fn branch_i32_ge_s() -> Self::BranchI32GeS;
+    fn branch_i32_ge_u() -> Self::BranchI32GeU;
+
+    fn branch_i64_eq() -> Self::BranchI64Eq;
+    fn branch_i64_ne() -> Self::BranchI64Ne;
+    fn branch_i64_lt_s() -> Self::BranchI64LtS;
+    fn branch_i64_lt_u() -> Self::BranchI64LtU;
+    fn branch_i64_le_s() -> Self::BranchI64LeS;
+    fn branch_i64_le_u() -> Self::BranchI64LeU;
+    fn branch_i64_gt_s() -> Self::BranchI64GtS;
+    fn branch_i64_gt_u() -> Self::BranchI64GtU;
+    fn branch_i64_ge_s() -> Self::BranchI64GeS;
+    fn branch_i64_ge_u() -> Self::BranchI64GeU;
+
+    fn branch_f32_eq() -> Self::BranchF32Eq;
+    fn branch_f32_ne() -> Self::BranchF32Ne;
+    fn branch_f32_lt() -> Self::BranchF32Lt;
+    fn branch_f32_le() -> Self::BranchF32Le;
+    fn branch_f32_gt() -> Self::BranchF32Gt;
+    fn branch_f32_ge() -> Self::BranchF32Ge;
+
+    fn branch_f64_eq() -> Self::BranchF64Eq;
+    fn branch_f64_ne() -> Self::BranchF64Ne;
+    fn branch_f64_lt() -> Self::BranchF64Lt;
+    fn branch_f64_le() -> Self::BranchF64Le;
+    fn branch_f64_gt() -> Self::BranchF64Gt;
+    fn branch_f64_ge() -> Self::BranchF64Ge;
+}
+
+macro_rules! constructor_for_branch_binop_imm {
+    ( $( fn $name:ident($ty:ty) -> Self::$op_code:ident; )* ) => {
+        impl Instruction {
+            $(
+                #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+                pub fn $name(lhs: Register, rhs: Const16<$ty>, offset: BranchOffset16) -> Self {
+                    Self::$op_code(BranchBinOpInstrImm::new(lhs, rhs, offset))
+                }
+            )*
+        }
+    }
+}
+constructor_for_branch_binop_imm! {
+    fn branch_i32_eq_imm(i32) -> Self::BranchI32EqImm;
+    fn branch_i32_ne_imm(i32) -> Self::BranchI32NeImm;
+    fn branch_i32_lt_s_imm(i32) -> Self::BranchI32LtSImm;
+    fn branch_i32_lt_u_imm(u32) -> Self::BranchI32LtUImm;
+    fn branch_i32_le_s_imm(i32) -> Self::BranchI32LeSImm;
+    fn branch_i32_le_u_imm(u32) -> Self::BranchI32LeUImm;
+    fn branch_i32_gt_s_imm(i32) -> Self::BranchI32GtSImm;
+    fn branch_i32_gt_u_imm(u32) -> Self::BranchI32GtUImm;
+    fn branch_i32_ge_s_imm(i32) -> Self::BranchI32GeSImm;
+    fn branch_i32_ge_u_imm(u32) -> Self::BranchI32GeUImm;
+
+    fn branch_i64_eq_imm(i64) -> Self::BranchI64EqImm;
+    fn branch_i64_ne_imm(i64) -> Self::BranchI64NeImm;
+    fn branch_i64_lt_s_imm(i64) -> Self::BranchI64LtSImm;
+    fn branch_i64_lt_u_imm(u64) -> Self::BranchI64LtUImm;
+    fn branch_i64_le_s_imm(i64) -> Self::BranchI64LeSImm;
+    fn branch_i64_le_u_imm(u64) -> Self::BranchI64LeUImm;
+    fn branch_i64_gt_s_imm(i64) -> Self::BranchI64GtSImm;
+    fn branch_i64_gt_u_imm(u64) -> Self::BranchI64GtUImm;
+    fn branch_i64_ge_s_imm(i64) -> Self::BranchI64GeSImm;
+    fn branch_i64_ge_u_imm(u64) -> Self::BranchI64GeUImm;
 }
 
 impl Instruction {

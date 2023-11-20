@@ -13,12 +13,33 @@ pub trait WasmType: Copy + Display + Into<UntypedValue> + From<UntypedValue> {
     fn return_imm_instr(&self) -> Instruction;
 }
 
+impl WasmType for u32 {
+    const NAME: &'static str = "i32";
+    const VALUE_TYPE: ValueType = ValueType::I32;
+
+    fn return_imm_instr(&self) -> Instruction {
+        Instruction::return_imm32(*self)
+    }
+}
+
 impl WasmType for i32 {
     const NAME: &'static str = "i32";
     const VALUE_TYPE: ValueType = ValueType::I32;
 
     fn return_imm_instr(&self) -> Instruction {
         Instruction::return_imm32(*self)
+    }
+}
+
+impl WasmType for u64 {
+    const NAME: &'static str = "i64";
+    const VALUE_TYPE: ValueType = ValueType::I64;
+
+    fn return_imm_instr(&self) -> Instruction {
+        match <Const32<i64>>::from_i64(*self as i64) {
+            Some(value) => Instruction::return_i64imm32(value),
+            None => Instruction::return_reg(Register::from_i16(-1)),
+        }
     }
 }
 

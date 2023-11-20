@@ -247,10 +247,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     .push_else_providers(self.alloc.buffer.iter().copied())?;
                 // Create the `else` label and the conditional branch to `else`.
                 let else_label = self.alloc.instr_encoder.new_label();
-                let else_offset = self.alloc.instr_encoder.try_resolve_label(else_label)?;
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::branch_eqz(condition, else_offset))?;
+                self.alloc.instr_encoder.encode_branch_eqz(
+                    &mut self.alloc.stack,
+                    condition,
+                    else_label,
+                )?;
                 let reachability = IfReachability::both(else_label);
                 // Optionally create the [`Instruction::ConsumeFuel`] for the `then` branch.
                 //
@@ -420,11 +421,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                         if branch_params.is_empty() {
                             // Case: no values need to be copied so we can directly
                             //       encode the `br_if` as efficient `branch_nez`.
-                            let branch_offset =
-                                self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
-                            self.alloc
-                                .instr_encoder
-                                .push_instr(Instruction::branch_nez(condition, branch_offset))?;
+                            self.alloc.instr_encoder.encode_branch_nez(
+                                &mut self.alloc.stack,
+                                condition,
+                                branch_dst,
+                            )?;
                             return Ok(());
                         }
                         self.alloc
@@ -442,11 +443,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                             //       no copies are required.
                             //
                             // This means we can encode the `br_if` as efficient `branch_nez`.
-                            let branch_offset =
-                                self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
-                            self.alloc
-                                .instr_encoder
-                                .push_instr(Instruction::branch_nez(condition, branch_offset))?;
+                            self.alloc.instr_encoder.encode_branch_nez(
+                                &mut self.alloc.stack,
+                                condition,
+                                branch_dst,
+                            )?;
                             return Ok(());
                         }
                         // Case: We need to copy the branch inputs to where the
@@ -459,11 +460,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                         //       and finally perform the actual branch to the target
                         //       control frame.
                         let skip_label = self.alloc.instr_encoder.new_label();
-                        let skip_offset = self.alloc.instr_encoder.try_resolve_label(skip_label)?;
-                        debug_assert!(!skip_offset.is_init());
-                        self.alloc
-                            .instr_encoder
-                            .push_instr(Instruction::branch_eqz(condition, skip_offset))?;
+                        self.alloc.instr_encoder.encode_branch_eqz(
+                            &mut self.alloc.stack,
+                            condition,
+                            skip_label,
+                        )?;
                         self.alloc.instr_encoder.encode_copies(
                             &mut self.alloc.stack,
                             branch_params,
@@ -840,9 +841,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 // computation which allows us to exchange the result register of
                 // this previous instruction instead of encoding another `copy`
                 // instruction as an optimization.
-                self.alloc
-                    .instr_encoder
-                    .encode_local_set(&self.res, local_register, value)?;
+                self.alloc.instr_encoder.encode_local_set(
+                    &mut self.alloc.stack,
+                    &self.res,
+                    local_register,
+                    value,
+                )?;
             }
         }
         self.alloc.instr_encoder.reset_last_instr();

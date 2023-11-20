@@ -1,5 +1,9 @@
 use super::{Const16, Const32};
-use crate::engine::{bytecode::TableIdx, func_builder::TranslationErrorInner, TranslationError};
+use crate::engine::{
+    bytecode::{BranchOffset, TableIdx},
+    func_builder::TranslationErrorInner,
+    TranslationError,
+};
 
 #[cfg(doc)]
 use super::Instruction;
@@ -461,4 +465,96 @@ pub struct CallIndirectParams<T> {
     pub table: TableIdx,
     /// The index of the called function in the table.
     pub index: T,
+}
+
+/// A 16-bit signed offset for branch instructions.
+///
+/// This defines how much the instruction pointer is offset
+/// upon taking the respective branch.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct BranchOffset16(i16);
+
+#[cfg(test)]
+impl From<i16> for BranchOffset16 {
+    fn from(offset: i16) -> Self {
+        Self(offset)
+    }
+}
+
+impl BranchOffset16 {
+    /// Creates a 16-bit [`BranchOffset16`] from a 32-bit [`BranchOffset`] if possible.
+    pub fn new(offset: BranchOffset) -> Option<Self> {
+        let offset16 = i16::try_from(offset.to_i32()).ok()?;
+        Some(Self(offset16))
+    }
+
+    /// Returns `true` if the [`BranchOffset16`] has been initialized.
+    pub fn is_init(self) -> bool {
+        self.to_i16() != 0
+    }
+
+    /// Initializes the [`BranchOffset`] with a proper value.
+    ///
+    /// # Panics
+    ///
+    /// - If the [`BranchOffset`] have already been initialized.
+    /// - If the given [`BranchOffset`] is not properly initialized.
+    pub fn init(&mut self, valid_offset: BranchOffset) -> Result<(), TranslationError> {
+        assert!(valid_offset.is_init());
+        assert!(!self.is_init());
+        let Some(valid_offset16) = Self::new(valid_offset) else {
+            return Err(TranslationError::new(
+                TranslationErrorInner::BranchOffsetOutOfBounds,
+            ));
+        };
+        *self = valid_offset16;
+        Ok(())
+    }
+
+    /// Returns the `i16` representation of the [`BranchOffset`].
+    pub fn to_i16(self) -> i16 {
+        self.0
+    }
+}
+
+impl From<BranchOffset16> for BranchOffset {
+    fn from(offset: BranchOffset16) -> Self {
+        Self::from(i32::from(offset.to_i16()))
+    }
+}
+
+/// A generic fused comparison and conditional branch [`Instruction`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct BranchBinOpInstr {
+    /// The left-hand side operand to the conditional operator.
+    pub lhs: Register,
+    /// The right-hand side operand to the conditional operator.
+    pub rhs: Register,
+    /// The 16-bit encoded branch offset.
+    pub offset: BranchOffset16,
+}
+
+impl BranchBinOpInstr {
+    /// Creates a new [`BranchBinOpInstr`].
+    pub fn new(lhs: Register, rhs: Register, offset: BranchOffset16) -> Self {
+        Self { lhs, rhs, offset }
+    }
+}
+
+/// A generic fused comparison and conditional branch [`Instruction`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct BranchBinOpInstrImm<T> {
+    /// The left-hand side operand to the conditional operator.
+    pub lhs: Register,
+    /// The right-hand side operand to the conditional operator.
+    pub rhs: Const16<T>,
+    /// The 16-bit encoded branch offset.
+    pub offset: BranchOffset16,
+}
+
+impl<T> BranchBinOpInstrImm<T> {
+    /// Creates a new [`BranchBinOpInstr`].
+    pub fn new(lhs: Register, rhs: Const16<T>, offset: BranchOffset16) -> Self {
+        Self { lhs, rhs, offset }
+    }
 }

@@ -273,7 +273,6 @@ impl AddressOffset {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct BranchOffset(i32);
 
-#[cfg(test)]
 impl From<i32> for BranchOffset {
     fn from(index: i32) -> Self {
         Self(index)
