@@ -701,7 +701,7 @@ impl InstrEncoder {
         /// Encode an unoptimized `branch_nez` instruction.
         ///
         /// This is used as fallback whenever fusing compare and branch instructions is not possible.
-        fn encode_branch_nez(
+        fn encode_branch_nez_fallback(
             this: &mut InstrEncoder,
             condition: Register,
             offset: BranchOffset,
@@ -722,10 +722,10 @@ impl InstrEncoder {
         use Instruction as I;
 
         let Some(last_instr) = self.last_instr else {
-            return encode_branch_nez(self, condition, offset);
+            return encode_branch_nez_fallback(self, condition, offset);
         };
         if !offset.is_init() {
-            return encode_branch_nez(self, condition, offset);
+            return encode_branch_nez_fallback(self, condition, offset);
         }
         // We need to re-resolve the branch-label orginating from `last_instr`
         // instead of `next_instr` for the given `offset` if we want to encode
@@ -734,7 +734,7 @@ impl InstrEncoder {
         // Note: the new `offset` might be uninit if its offset is 0 which
         //       can happen for loop that start with a comparison instruction.
         let Some(offset16) = BranchOffset16::new(offset32) else {
-            return encode_branch_nez(self, condition, offset);
+            return encode_branch_nez_fallback(self, condition, offset);
         };
         let make_fused =
             |instr: &BinInstr, make_instr: BranchCmpConstructor| -> Option<Instruction> {
@@ -809,7 +809,7 @@ impl InstrEncoder {
             _ = mem::replace(self.instrs.get_mut(last_instr), fused_instr);
             return Ok(());
         }
-        encode_branch_nez(self, condition, offset)
+        encode_branch_nez_fallback(self, condition, offset)
     }
 }
 
