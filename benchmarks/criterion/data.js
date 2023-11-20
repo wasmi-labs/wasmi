@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1700399743071,
+  "lastUpdate": 1700519323619,
   "repoUrl": "https://github.com/paritytech/wasmi",
   "entries": {
     "Wasmi criterion benchmark": [
@@ -4667,6 +4667,240 @@ window.BENCHMARK_DATA = {
             "name": "execute/memory_vec_add",
             "value": 2348269,
             "range": "± 3528",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "robin.freyler@gmail.com",
+            "name": "Robin Freyler",
+            "username": "Robbepop"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "eb0f1aa1c24dae37b8c468617a8e391abd885223",
+          "message": "Implement cmp+branch instruction fusion (#789)\n\n* add 16-bit BranchOffset16 utility type\r\n\r\n* move new BranchOffset16 to regmach module\r\n\r\n* create new utility BranchBinOpInstr[Imm] types\r\n\r\n* add fused cmp+branch instructions\r\n\r\nTranslation and tests has not yet been implemented in this commit.\r\n\r\n* fixed signedness of some branch_cmp_imm instructions\r\n\r\n* implement fused cmp+branch_nez instruction translation\r\n\r\n* remove invalid debug_assert\r\n\r\n* add minimal test for fused cmp+branch instruction translation\r\n\r\n* change count_until.wat benchmark to allow for fused cmp+branch\r\n\r\n* fix bug in InstrEncoder::encode_branch_nez\r\n\r\n* more fixes for the same bug\r\n\r\n* add another test\r\n\r\n* fix bug with default encoding\r\n\r\n* special fusing cmp+br with cmp={eq,ne} and rhs=0\r\n\r\n* rename internal function\r\n\r\n* make cmp+branch fusion possible for uninit offsets\r\n\r\n* add TODO comment for future\r\n\r\n* do not fuse cmp+branch if cmp stores into a local\r\n\r\n* apply rustfmt\r\n\r\n* no longer optimize local.set when result is a local\r\n\r\nAlso reformat the code using the new more readable let-else syntax.\r\n\r\n* apply manual less verbose formatting\r\n\r\n* separate reg and imm variants in cmp+branch fusion\r\n\r\n* implement branch_eqz cmp+branch fusion\r\n\r\n* add some more cmp+branch fusion translation tests\r\n\r\n* extend new loop_backward test\r\n\r\n* apply rustfmt\r\n\r\n* extend another test case to be more generic\r\n\r\n* extend another test\r\n\r\n* extend block_forward test\r\n\r\n* extend block_forward_no_copy test\r\n\r\n* extend if_forward_multi_value test\r\n\r\n* extend if_forward test",
+          "timestamp": "2023-11-20T23:21:17+01:00",
+          "tree_id": "668b68aa0d29657cc735319d70a2bd6e8aaa0243",
+          "url": "https://github.com/paritytech/wasmi/commit/eb0f1aa1c24dae37b8c468617a8e391abd885223"
+        },
+        "date": 1700519323605,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "translate/wasm_kernel",
+            "value": 4204875,
+            "range": "± 20688",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey",
+            "value": 64632218,
+            "range": "± 267350",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20",
+            "value": 104068,
+            "range": "± 150",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721",
+            "value": 147427,
+            "range": "± 624",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155",
+            "value": 213055,
+            "range": "± 593",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "instantiate/wasm_kernel",
+            "value": 55607,
+            "range": "± 1060",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/tiny_keccak",
+            "value": 316605,
+            "range": "± 517",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/rev_complement",
+            "value": 421323,
+            "range": "± 655",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/regex_redux",
+            "value": 455490,
+            "range": "± 496",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/count_until",
+            "value": 546117,
+            "range": "± 157",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/br_table",
+            "value": 1398829,
+            "range": "± 6804",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/trunc_f2i",
+            "value": 737047,
+            "range": "± 368",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_0/typed",
+            "value": 1182418,
+            "range": "± 6676",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_1/typed",
+            "value": 1256536,
+            "range": "± 19733",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_4/typed",
+            "value": 1465774,
+            "range": "± 5281",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_16/typed",
+            "value": 1554164,
+            "range": "± 9738",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_0",
+            "value": 1548992,
+            "range": "± 10736",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_1",
+            "value": 1605540,
+            "range": "± 42091",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_4",
+            "value": 1780447,
+            "range": "± 13615",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/bare_call_16",
+            "value": 2581655,
+            "range": "± 2603",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global_bump",
+            "value": 747694,
+            "range": "± 1305",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global_const",
+            "value": 658643,
+            "range": "± 1250",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial_recursive",
+            "value": 491447,
+            "range": "± 1246",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial_iterative",
+            "value": 320037,
+            "range": "± 360",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_ok",
+            "value": 94842,
+            "range": "± 194",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_scan",
+            "value": 129705,
+            "range": "± 71",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_trap",
+            "value": 8792,
+            "range": "± 14",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/host_calls",
+            "value": 36085,
+            "range": "± 163",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci_rec",
+            "value": 4041409,
+            "range": "± 2107",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci_tail",
+            "value": 856723,
+            "range": "± 358",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci_iter",
+            "value": 1395996,
+            "range": "± 992",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_is_even",
+            "value": 664477,
+            "range": "± 607",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory_sum",
+            "value": 1134769,
+            "range": "± 1023",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory_fill",
+            "value": 1149342,
+            "range": "± 659",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory_vec_add",
+            "value": 2342792,
+            "range": "± 1867",
             "unit": "ns/iter"
           }
         ]
