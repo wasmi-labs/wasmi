@@ -2,11 +2,10 @@ mod consts;
 mod provider;
 mod register_alloc;
 
-use self::register_alloc::RegisterSpace;
 pub use self::{
     consts::{FuncLocalConsts, FuncLocalConstsIter},
     provider::{ProviderStack, TaggedProvider},
-    register_alloc::RegisterAlloc,
+    register_alloc::{RegisterAlloc, RegisterSpace},
 };
 use super::TypedValue;
 use crate::{
@@ -381,5 +380,10 @@ impl ValueStack {
     /// Returns the defragmented [`Register`].
     pub fn defrag_register(&mut self, register: Register) -> Register {
         self.reg_alloc.defrag_register(register)
+    }
+
+    /// Returns the [`RegisterSpace`] for the given [`Register`].
+    pub fn get_register_space(&self, register: Register) -> RegisterSpace {
+        self.reg_alloc.register_space(register)
     }
 }
