@@ -101,6 +101,9 @@ macro_rules! impl_execute_branch_binop {
     }
 }
 impl_execute_branch_binop! {
+    (Instruction::BranchI32And, execute_branch_i32_and, UntypedValue::i32_and),
+    (Instruction::BranchI32Or, execute_branch_i32_or, UntypedValue::i32_or),
+    (Instruction::BranchI32Xor, execute_branch_i32_xor, UntypedValue::i32_xor),
     (Instruction::BranchI32Eq, execute_branch_i32_eq, UntypedValue::i32_eq),
     (Instruction::BranchI32Ne, execute_branch_i32_ne, UntypedValue::i32_ne),
     (Instruction::BranchI32LtS, execute_branch_i32_lt_s, UntypedValue::i32_lt_s),
@@ -152,6 +155,9 @@ macro_rules! impl_execute_branch_binop_imm {
     }
 }
 impl_execute_branch_binop_imm! {
+    (Instruction::BranchI32AndImm, execute_branch_i32_and_imm, UntypedValue::i32_and, i32),
+    (Instruction::BranchI32OrImm, execute_branch_i32_or_imm, UntypedValue::i32_or, i32),
+    (Instruction::BranchI32XorImm, execute_branch_i32_xor_imm, UntypedValue::i32_xor, i32),
     (Instruction::BranchI32EqImm, execute_branch_i32_eq_imm, UntypedValue::i32_eq, i32),
     (Instruction::BranchI32NeImm, execute_branch_i32_ne_imm, UntypedValue::i32_ne, i32),
     (Instruction::BranchI32LtSImm, execute_branch_i32_lt_s_imm, UntypedValue::i32_lt_s, i32),

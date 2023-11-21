@@ -70,6 +70,12 @@ impl Instruction {
             Instruction::BranchEqz { .. } |
             Instruction::BranchNez { .. } |
             Instruction::BranchTable { .. } => None,
+            Instruction::BranchI32And(_) |
+            Instruction::BranchI32AndImm(_) |
+            Instruction::BranchI32Or(_) |
+            Instruction::BranchI32OrImm(_) |
+            Instruction::BranchI32Xor(_) |
+            Instruction::BranchI32XorImm(_) |
             Instruction::BranchI32Eq(_) |
             Instruction::BranchI32EqImm(_) |
             Instruction::BranchI32Ne(_) |

@@ -948,6 +948,9 @@ impl InstrEncoder {
                     }
                 }
             }
+            I::I32And(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_and as _)?,
+            I::I32Or(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_or as _)?,
+            I::I32Xor(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_xor as _)?,
             I::I32Eq(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_eq as _)?,
             I::I32Ne(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_ne as _)?,
             I::I32LtS(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_lt_s as _)?,
@@ -980,6 +983,9 @@ impl InstrEncoder {
             I::F64Le(instr) => fuse(self, stack, last_instr, instr, label, I::branch_f64_le as _)?,
             I::F64Gt(instr) => fuse(self, stack, last_instr, instr, label, I::branch_f64_gt as _)?,
             I::F64Ge(instr) => fuse(self, stack, last_instr, instr, label, I::branch_f64_ge as _)?,
+            I::I32AndImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_and_imm as _)?,
+            I::I32OrImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_or_imm as _)?,
+            I::I32XorImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_xor_imm as _)?,
             I::I32EqImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_eq_imm as _)?,
             I::I32NeImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_ne_imm as _)?,
             I::I32LtSImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_lt_s_imm as _)?,
@@ -1027,7 +1033,10 @@ impl Instruction {
                 offset.init(new_offset);
                 Ok(())
             }
-            Instruction::BranchI32Eq(instr)
+            Instruction::BranchI32And(instr)
+            | Instruction::BranchI32Or(instr)
+            | Instruction::BranchI32Xor(instr)
+            | Instruction::BranchI32Eq(instr)
             | Instruction::BranchI32Ne(instr)
             | Instruction::BranchI32LtS(instr)
             | Instruction::BranchI32LtU(instr)
@@ -1059,7 +1068,10 @@ impl Instruction {
             | Instruction::BranchF64Le(instr)
             | Instruction::BranchF64Gt(instr)
             | Instruction::BranchF64Ge(instr) => instr.offset.init(new_offset),
-            Instruction::BranchI32EqImm(instr)
+            Instruction::BranchI32AndImm(instr)
+            | Instruction::BranchI32OrImm(instr)
+            | Instruction::BranchI32XorImm(instr)
+            | Instruction::BranchI32EqImm(instr)
             | Instruction::BranchI32NeImm(instr)
             | Instruction::BranchI32LtSImm(instr)
             | Instruction::BranchI32LeSImm(instr)

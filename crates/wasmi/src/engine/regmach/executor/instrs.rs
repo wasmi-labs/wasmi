@@ -254,6 +254,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::BranchTable { index, len_targets } => {
                     self.execute_branch_table(index, len_targets)
                 }
+                Instr::BranchI32And(instr) => self.execute_branch_i32_and(instr),
+                Instr::BranchI32AndImm(instr) => self.execute_branch_i32_and_imm(instr),
+                Instr::BranchI32Or(instr) => self.execute_branch_i32_or(instr),
+                Instr::BranchI32OrImm(instr) => self.execute_branch_i32_or_imm(instr),
+                Instr::BranchI32Xor(instr) => self.execute_branch_i32_xor(instr),
+                Instr::BranchI32XorImm(instr) => self.execute_branch_i32_xor_imm(instr),
                 Instr::BranchI32Eq(instr) => self.execute_branch_i32_eq(instr),
                 Instr::BranchI32EqImm(instr) => self.execute_branch_i32_eq_imm(instr),
                 Instr::BranchI32Ne(instr) => self.execute_branch_i32_ne(instr),

@@ -83,6 +83,12 @@ impl VisitInputRegisters for Instruction {
             Instruction::BranchNez { condition, .. } => f(condition),
             Instruction::BranchTable { index, .. } => f(index),
 
+            Instruction::BranchI32And(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32AndImm(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32Or(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32OrImm(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32Xor(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32XorImm(instr) => instr.visit_input_registers(f),
             Instruction::BranchI32Eq(instr) => instr.visit_input_registers(f),
             Instruction::BranchI32EqImm(instr) => instr.visit_input_registers(f),
             Instruction::BranchI32Ne(instr) => instr.visit_input_registers(f),

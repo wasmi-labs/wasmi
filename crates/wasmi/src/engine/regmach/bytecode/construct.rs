@@ -175,6 +175,9 @@ macro_rules! constructor_for_branch_binop {
     }
 }
 constructor_for_branch_binop! {
+    fn branch_i32_and() -> Self::BranchI32And;
+    fn branch_i32_or() -> Self::BranchI32Or;
+    fn branch_i32_xor() -> Self::BranchI32Xor;
     fn branch_i32_eq() -> Self::BranchI32Eq;
     fn branch_i32_ne() -> Self::BranchI32Ne;
     fn branch_i32_lt_s() -> Self::BranchI32LtS;
@@ -225,6 +228,9 @@ macro_rules! constructor_for_branch_binop_imm {
     }
 }
 constructor_for_branch_binop_imm! {
+    fn branch_i32_and_imm(i32) -> Self::BranchI32AndImm;
+    fn branch_i32_or_imm(i32) -> Self::BranchI32OrImm;
+    fn branch_i32_xor_imm(i32) -> Self::BranchI32XorImm;
     fn branch_i32_eq_imm(i32) -> Self::BranchI32EqImm;
     fn branch_i32_ne_imm(i32) -> Self::BranchI32NeImm;
     fn branch_i32_lt_s_imm(i32) -> Self::BranchI32LtSImm;
