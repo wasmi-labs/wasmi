@@ -267,14 +267,44 @@ fn preserve_result_1() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
+            Instruction::copy(Register::from_i16(3), Register::from_i16(0)),
             Instruction::i32_add(
-                Register::from_i16(2),
+                Register::from_i16(0),
                 Register::from_i16(0),
                 Register::from_i16(1),
             ),
-            Instruction::copy(Register::from_i16(3), Register::from_i16(0)),
-            Instruction::copy(Register::from_i16(0), Register::from_i16(2)),
             Instruction::return_reg(Register::from_i16(3)),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn preserve_result_2() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param $lhs i32) (param $rhs i32) (result i32 i32)
+                (local.get 0)
+                (local.get 0)
+                (local.set 0
+                    (i32.add
+                        (local.get $lhs)
+                        (local.get $rhs)
+                    )
+                )
+            )
+        )"#,
+    );
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::copy(Register::from_i16(3), Register::from_i16(0)),
+            Instruction::i32_add(
+                Register::from_i16(0),
+                Register::from_i16(0),
+                Register::from_i16(1),
+            ),
+            Instruction::return_reg2(3, 3),
         ])
         .run()
 }

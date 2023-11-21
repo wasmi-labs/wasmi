@@ -803,53 +803,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_local_set(&mut self, local_index: u32) -> Self::Output {
         bail_unreachable!(self);
         let value = self.alloc.stack.pop();
-        let local_register = Register::try_from(local_index)?;
-        if let Some(register) = self.alloc.stack.preserve_locals(local_index)? {
-            // Case: we need to preserve the `local.get` on the value stack.
-            //
-            // Unfortunately this prevents us from applying the optimization of
-            // switching out the result register of the previous instruction because
-            // we would need to encode a copy in before already encoded
-            // instructions to preserve functional equivalence.
-            //
-            // It is possible to do so, however, a bit complicated. So for now we don't.
-            let preserve_instr = self
-                .alloc
-                .instr_encoder
-                .push_instr(Instruction::copy(register, local_register))?;
-            self.alloc
-                .instr_encoder
-                .notify_preserved_register(preserve_instr);
-            self.alloc
-                .instr_encoder
-                .encode_copy(&mut self.alloc.stack, local_register, value)?;
-            return Ok(());
-        }
-        match value {
-            TypedProvider::Const(_) => {
-                // Case: we set the local variable to a constant value.
-                self.alloc.instr_encoder.encode_copy(
-                    &mut self.alloc.stack,
-                    local_register,
-                    value,
-                )?;
-            }
-            TypedProvider::Register(value) => {
-                // Case: we set the local variable to a register value.
-                //
-                // It could be that the register value is the result of a previous
-                // computation which allows us to exchange the result register of
-                // this previous instruction instead of encoding another `copy`
-                // instruction as an optimization.
-                self.alloc.instr_encoder.encode_local_set(
-                    &mut self.alloc.stack,
-                    &self.res,
-                    local_register,
-                    value,
-                )?;
-            }
-        }
-        self.alloc.instr_encoder.reset_last_instr();
+        let local = Register::try_from(local_index)?;
+        let preserved = self.alloc.stack.preserve_locals(local_index)?;
+        self.alloc.instr_encoder.encode_local_set_v2(
+            &mut self.alloc.stack,
+            &self.res,
+            local,
+            value,
+            preserved,
+        )?;
         Ok(())
     }
 

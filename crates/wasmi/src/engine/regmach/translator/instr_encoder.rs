@@ -77,6 +77,35 @@ impl InstrSequence {
         Ok(instr)
     }
 
+    /// Pushes an [`Instruction`] before the [`Instruction`] at [`Instr`].
+    ///
+    /// Returns the [`Instr`] of the [`Instruction`] that was at [`Instr`] before this operation.
+    ///
+    /// # Note
+    ///
+    /// - This operation might be costly. Callers are advised to only insert
+    ///   instructions near the end of the sequence in order to avoid massive
+    ///   copy overhead since all following instructions are required to be
+    ///   shifted in memory.
+    /// - The `instr` will refer to the inserted [`Instruction`] after this operation.
+    ///
+    /// # Errors
+    ///
+    /// If there are too many instructions in the instruction sequence.
+    fn push_before(
+        &mut self,
+        instr: Instr,
+        instruction: Instruction,
+    ) -> Result<Instr, TranslationError> {
+        self.instrs.insert(instr.into_usize(), instruction);
+        let shifted_instr = instr
+            .into_u32()
+            .checked_add(1)
+            .map(Instr::from_u32)
+            .unwrap_or_else(|| panic!("pushed to many instructions to a single function"));
+        Ok(shifted_instr)
+    }
+
     /// Returns the [`Instruction`] associated to the [`Instr`] for this [`InstrSequence`].
     ///
     /// # Panics
@@ -619,46 +648,94 @@ impl InstrEncoder {
 
     /// Encode a `local.set` or `local.tee` instruction.
     ///
-    /// # Note
-    ///
     /// This also applies an optimization in that the previous instruction
     /// result is replaced with the `local` [`Register`] instead of encoding
     /// another `copy` instruction if the `local.set` or `local.tee` belongs
     /// to the same basic block.
-    pub fn encode_local_set(
+    ///
+    /// # Note
+    ///
+    /// - If `value` is a [`Register`] it usually is equal to the
+    ///   result [`Register`] of the previous instruction.
+    pub fn encode_local_set_v2(
         &mut self,
         stack: &mut ValueStack,
         res: &ModuleResources,
         local: Register,
-        value: Register,
+        value: TypedProvider,
+        preserved: Option<Register>,
     ) -> Result<(), TranslationError> {
-        /// Fallback for when we need to encode a `copy` instruction to encode the `local.set` or `local.tee`.
-        fn fallback_copy(
+        fn fallback_case(
             this: &mut InstrEncoder,
+            stack: &mut ValueStack,
             local: Register,
-            value: Register,
+            value: TypedProvider,
+            preserved: Option<Register>,
         ) -> Result<(), TranslationError> {
-            this.push_instr(Instruction::copy(local, value))?;
+            if let Some(preserved) = preserved {
+                let preserve_instr = this.push_instr(Instruction::copy(preserved, local))?;
+                this.notify_preserved_register(preserve_instr);
+            }
+            this.encode_copy(stack, local, value)?;
             Ok(())
         }
-        let Some(last_instr) = self.last_instr else {
-            return fallback_copy(self, local, value);
+
+        debug_assert!(matches!(
+            stack.get_register_space(local),
+            RegisterSpace::Local
+        ));
+        let TypedProvider::Register(returned_value) = value else {
+            // Cannot apply the optimization for `local.set C` where `C` is a constant value.
+            return fallback_case(self, stack, local, value, preserved);
         };
-        let Some(result) = self.instrs.get_mut(last_instr).result_mut(res) else {
-            return fallback_copy(self, local, value);
-        };
-        if matches!(stack.get_register_space(*result), RegisterSpace::Local) {
-            return fallback_copy(self, local, value);
+        if matches!(
+            stack.get_register_space(returned_value),
+            RegisterSpace::Local
+        ) {
+            // Can only apply the optimization if the returned value of `last_instr`
+            // is _NOT_ itself a local register due to observable behavior.
+            return fallback_case(self, stack, local, value, preserved);
         }
-        if *result != value {
+        let Some(last_instr) = self.last_instr else {
+            // Can only apply the optimization if there is a previous instruction
+            // to replace its result register instead of emitting a copy.
+            return fallback_case(self, stack, local, value, preserved);
+        };
+        if preserved.is_some() && last_instr.distance(self.instrs.next_instr()) >= 4 {
+            // We avoid applying the optimization if the last instruction
+            // has a very large encoding, e.g. for function calls with lots
+            // of parameters. This is because the optimization while also
+            // preserving a local register requires costly shifting all
+            // instruction words of the last instruction.
+            // Thankfully most instructions are small enough.
+            return fallback_case(self, stack, local, value, preserved);
+        }
+        let Some(result) = self.instrs.get_mut(last_instr).result_mut(res) else {
+            // Can only apply the optimization if the last instruction has exactly one result.
+            return fallback_case(self, stack, local, value, preserved);
+        };
+        if *result != returned_value {
+            // We only want to apply the optimization if indeed `x` in `local.set n x`
+            // is the same register as the result register of the last instruction.
+            //
             // TODO: Find out in what cases `result != value`. Is this a bug or an edge case?
             //       Generally `result` should be equal to `value` since `value` refers to the
             //       `result` of the previous instruction.
             //       Therefore, instead of an `if` we originally had a `debug_assert`.
             //       (Note: the spidermonkey bench test failed without this change.)
-            return fallback_copy(self, local, value);
+            return fallback_case(self, stack, local, value, preserved);
         }
         *result = local;
+        if let Some(preserved) = preserved {
+            // We were able to apply the optimization.
+            // Preservation requires the copy to be before the optimized last instruction.
+            // Therefore we need to push the preservation `copy` instruction before it.
+            let shifted_last_instr = self
+                .instrs
+                .push_before(last_instr, Instruction::copy(preserved, local))?;
+            self.notify_preserved_register(last_instr);
+            self.last_instr = Some(shifted_last_instr);
+        }
         Ok(())
     }
 
