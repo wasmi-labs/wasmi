@@ -705,7 +705,7 @@ impl InstrEncoder {
             // We avoid applying the optimization if the last instruction
             // has a very large encoding, e.g. for function calls with lots
             // of parameters. This is because the optimization while also
-            // preserving a local register requires costly shifting all 
+            // preserving a local register requires costly shifting all
             // instruction words of the last instruction.
             // Thankfully most instructions are small enough.
             return fallback_case(self, stack, local, value, preserved);
