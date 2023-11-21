@@ -369,9 +369,9 @@ fn if_forward_multi_value() {
             .run()
     }
 
-    // test_for(ValueType::I32, "and", Instruction::branch_i32_nand);
-    // test_for(ValueType::I32, "or", Instruction::branch_i32_nor);
-    // test_for(ValueType::I32, "xor", Instruction::branch_i32_nxor);
+    test_for(ValueType::I32, "and", Instruction::branch_i32_nand);
+    test_for(ValueType::I32, "or", Instruction::branch_i32_nor);
+    test_for(ValueType::I32, "xor", Instruction::branch_i32_xnor);
     test_for(ValueType::I32, "eq", Instruction::branch_i32_ne);
     test_for(ValueType::I32, "ne", Instruction::branch_i32_eq);
     test_for(ValueType::I32, "lt_s", Instruction::branch_i32_ge_s);
@@ -430,9 +430,9 @@ fn if_forward() {
             .run()
     }
 
-    // test_for(ValueType::I32, "and", Instruction::branch_i32_nand);
-    // test_for(ValueType::I32, "or", Instruction::branch_i32_nor);
-    // test_for(ValueType::I32, "xor", Instruction::branch_i32_xnor);
+    test_for(ValueType::I32, "and", Instruction::branch_i32_nand);
+    test_for(ValueType::I32, "or", Instruction::branch_i32_nor);
+    test_for(ValueType::I32, "xor", Instruction::branch_i32_xnor);
     test_for(ValueType::I32, "eq", Instruction::branch_i32_ne);
     test_for(ValueType::I32, "ne", Instruction::branch_i32_eq);
     test_for(ValueType::I32, "lt_s", Instruction::branch_i32_ge_s);

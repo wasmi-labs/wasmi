@@ -87,6 +87,21 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 }
 
+/// Executes a logical not-and (nand) instruction.
+fn execute_nand(x: UntypedValue, y: UntypedValue) -> UntypedValue {
+    UntypedValue::from(bool::from(x) && bool::from(y))
+}
+
+/// Executes a logical not-or (nor) instruction.
+fn execute_nor(x: UntypedValue, y: UntypedValue) -> UntypedValue {
+    UntypedValue::from(bool::from(x) || bool::from(y))
+}
+
+/// Executes a logical not-xor (xnor) instruction.
+fn execute_xnor(x: UntypedValue, y: UntypedValue) -> UntypedValue {
+    UntypedValue::from(bool::from(x) ^ bool::from(y))
+}
+
 macro_rules! impl_execute_branch_binop {
     ( $( (Instruction::$op_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         impl<'ctx, 'engine> Executor<'ctx, 'engine> {
@@ -104,6 +119,9 @@ impl_execute_branch_binop! {
     (Instruction::BranchI32And, execute_branch_i32_and, UntypedValue::i32_and),
     (Instruction::BranchI32Or, execute_branch_i32_or, UntypedValue::i32_or),
     (Instruction::BranchI32Xor, execute_branch_i32_xor, UntypedValue::i32_xor),
+    (Instruction::BranchI32Nand, execute_branch_i32_nand, execute_nand),
+    (Instruction::BranchI32Nor, execute_branch_i32_nor, execute_nor),
+    (Instruction::BranchI32Xnor, execute_branch_i32_xnor, execute_xnor),
     (Instruction::BranchI32Eq, execute_branch_i32_eq, UntypedValue::i32_eq),
     (Instruction::BranchI32Ne, execute_branch_i32_ne, UntypedValue::i32_ne),
     (Instruction::BranchI32LtS, execute_branch_i32_lt_s, UntypedValue::i32_lt_s),
@@ -158,6 +176,9 @@ impl_execute_branch_binop_imm! {
     (Instruction::BranchI32AndImm, execute_branch_i32_and_imm, UntypedValue::i32_and, i32),
     (Instruction::BranchI32OrImm, execute_branch_i32_or_imm, UntypedValue::i32_or, i32),
     (Instruction::BranchI32XorImm, execute_branch_i32_xor_imm, UntypedValue::i32_xor, i32),
+    (Instruction::BranchI32NandImm, execute_branch_i32_nand_imm, execute_nand, i32),
+    (Instruction::BranchI32NorImm, execute_branch_i32_nor_imm, execute_nor, i32),
+    (Instruction::BranchI32XnorImm, execute_branch_i32_xnor_imm, execute_xnor, i32),
     (Instruction::BranchI32EqImm, execute_branch_i32_eq_imm, UntypedValue::i32_eq, i32),
     (Instruction::BranchI32NeImm, execute_branch_i32_ne_imm, UntypedValue::i32_ne, i32),
     (Instruction::BranchI32LtSImm, execute_branch_i32_lt_s_imm, UntypedValue::i32_lt_s, i32),
