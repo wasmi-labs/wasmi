@@ -9,9 +9,12 @@ use crate::{
         regmach::{
             bytecode::{
                 AnyConst32,
+                BinAssignInstr,
+                BinAssignInstrImm32,
                 BinInstr,
                 BinInstrImm16,
                 Const16,
+                Const32,
                 Instruction,
                 Register,
                 RegisterSpan,
@@ -835,7 +838,160 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::F64ConvertI32U(instr) => self.execute_f64_convert_i32_u(instr),
                 Instr::F64ConvertI64S(instr) => self.execute_f64_convert_i64_s(instr),
                 Instr::F64ConvertI64U(instr) => self.execute_f64_convert_i64_u(instr),
-                _ => todo!(),
+                Instr::I32EqAssign(instr) => self.execute_i32_eq_assign(instr),
+                Instr::I32NeAssign(instr) => self.execute_i32_ne_assign(instr),
+                Instr::I32LtSAssign(instr) => self.execute_i32_lt_s_assign(instr),
+                Instr::I32LtUAssign(instr) => self.execute_i32_lt_u_assign(instr),
+                Instr::I32LeSAssign(instr) => self.execute_i32_le_s_assign(instr),
+                Instr::I32LeUAssign(instr) => self.execute_i32_le_u_assign(instr),
+                Instr::I32GtSAssign(instr) => self.execute_i32_gt_s_assign(instr),
+                Instr::I32GtUAssign(instr) => self.execute_i32_gt_u_assign(instr),
+                Instr::I32GeSAssign(instr) => self.execute_i32_ge_s_assign(instr),
+                Instr::I32GeUAssign(instr) => self.execute_i32_ge_u_assign(instr),
+                Instr::I64EqAssign(instr) => self.execute_i64_eq_assign(instr),
+                Instr::I64NeAssign(instr) => self.execute_i64_ne_assign(instr),
+                Instr::I64LtSAssign(instr) => self.execute_i64_lt_s_assign(instr),
+                Instr::I64LtUAssign(instr) => self.execute_i64_lt_u_assign(instr),
+                Instr::I64LeSAssign(instr) => self.execute_i64_le_s_assign(instr),
+                Instr::I64LeUAssign(instr) => self.execute_i64_le_u_assign(instr),
+                Instr::I64GtSAssign(instr) => self.execute_i64_gt_s_assign(instr),
+                Instr::I64GtUAssign(instr) => self.execute_i64_gt_u_assign(instr),
+                Instr::I64GeSAssign(instr) => self.execute_i64_ge_s_assign(instr),
+                Instr::I64GeUAssign(instr) => self.execute_i64_ge_u_assign(instr),
+                Instr::F32EqAssign(instr) => self.execute_f32_eq_assign(instr),
+                Instr::F32NeAssign(instr) => self.execute_f32_ne_assign(instr),
+                Instr::F32LtAssign(instr) => self.execute_f32_lt_assign(instr),
+                Instr::F32LeAssign(instr) => self.execute_f32_le_assign(instr),
+                Instr::F32GtAssign(instr) => self.execute_f32_gt_assign(instr),
+                Instr::F32GeAssign(instr) => self.execute_f32_ge_assign(instr),
+                Instr::F64EqAssign(instr) => self.execute_f64_eq_assign(instr),
+                Instr::F64NeAssign(instr) => self.execute_f64_ne_assign(instr),
+                Instr::F64LtAssign(instr) => self.execute_f64_lt_assign(instr),
+                Instr::F64LeAssign(instr) => self.execute_f64_le_assign(instr),
+                Instr::F64GtAssign(instr) => self.execute_f64_gt_assign(instr),
+                Instr::F64GeAssign(instr) => self.execute_f64_ge_assign(instr),
+                Instr::I32AddAssign(instr) => self.execute_i32_add_assign(instr),
+                Instr::I32SubAssign(instr) => self.execute_i32_sub_assign(instr),
+                Instr::I32MulAssign(instr) => self.execute_i32_mul_assign(instr),
+                Instr::I32DivSAssign(instr) => self.execute_i32_div_s_assign(instr)?,
+                Instr::I32DivUAssign(instr) => self.execute_i32_div_u_assign(instr)?,
+                Instr::I32RemSAssign(instr) => self.execute_i32_rem_s_assign(instr)?,
+                Instr::I32RemUAssign(instr) => self.execute_i32_rem_u_assign(instr)?,
+                Instr::I32AndAssign(instr) => self.execute_i32_and_assign(instr),
+                Instr::I32OrAssign(instr) => self.execute_i32_or_assign(instr),
+                Instr::I32XorAssign(instr) => self.execute_i32_xor_assign(instr),
+                Instr::I32ShlAssign(instr) => self.execute_i32_shl_assign(instr),
+                Instr::I32ShrSAssign(instr) => self.execute_i32_shr_s_assign(instr),
+                Instr::I32ShrUAssign(instr) => self.execute_i32_shr_u_assign(instr),
+                Instr::I32RotlAssign(instr) => self.execute_i32_rotl_assign(instr),
+                Instr::I32RotrAssign(instr) => self.execute_i32_rotr_assign(instr),
+                Instr::I64AddAssign(instr) => self.execute_i64_add_assign(instr),
+                Instr::I64SubAssign(instr) => self.execute_i64_sub_assign(instr),
+                Instr::I64MulAssign(instr) => self.execute_i64_mul_assign(instr),
+                Instr::I64DivSAssign(instr) => self.execute_i64_div_s_assign(instr)?,
+                Instr::I64DivUAssign(instr) => self.execute_i64_div_u_assign(instr)?,
+                Instr::I64RemSAssign(instr) => self.execute_i64_rem_s_assign(instr)?,
+                Instr::I64RemUAssign(instr) => self.execute_i64_rem_u_assign(instr)?,
+                Instr::I64AndAssign(instr) => self.execute_i64_and_assign(instr),
+                Instr::I64OrAssign(instr) => self.execute_i64_or_assign(instr),
+                Instr::I64XorAssign(instr) => self.execute_i64_xor_assign(instr),
+                Instr::I64ShlAssign(instr) => self.execute_i64_shl_assign(instr),
+                Instr::I64ShrSAssign(instr) => self.execute_i64_shr_s_assign(instr),
+                Instr::I64ShrUAssign(instr) => self.execute_i64_shr_u_assign(instr),
+                Instr::I64RotlAssign(instr) => self.execute_i64_rotl_assign(instr),
+                Instr::I64RotrAssign(instr) => self.execute_i64_rotr_assign(instr),
+                Instr::F32AddAssign(instr) => self.execute_f32_add_assign(instr),
+                Instr::F32SubAssign(instr) => self.execute_f32_sub_assign(instr),
+                Instr::F32MulAssign(instr) => self.execute_f32_mul_assign(instr),
+                Instr::F32DivAssign(instr) => self.execute_f32_div_assign(instr),
+                Instr::F32MinAssign(instr) => self.execute_f32_min_assign(instr),
+                Instr::F32MaxAssign(instr) => self.execute_f32_max_assign(instr),
+                Instr::F32CopysignAssign(instr) => self.execute_f32_copysign_assign(instr),
+                Instr::F64AddAssign(instr) => self.execute_f64_add_assign(instr),
+                Instr::F64SubAssign(instr) => self.execute_f64_sub_assign(instr),
+                Instr::F64MulAssign(instr) => self.execute_f64_mul_assign(instr),
+                Instr::F64DivAssign(instr) => self.execute_f64_div_assign(instr),
+                Instr::F64MinAssign(instr) => self.execute_f64_min_assign(instr),
+                Instr::F64MaxAssign(instr) => self.execute_f64_max_assign(instr),
+                Instr::F64CopysignAssign(instr) => self.execute_f64_copysign_assign(instr),
+                Instr::I32EqAssignImm(instr) => self.execute_i32_eq_assign_imm(instr),
+                Instr::I32NeAssignImm(instr) => self.execute_i32_ne_assign_imm(instr),
+                Instr::I32LtSAssignImm(instr) => self.execute_i32_lt_s_assign_imm(instr),
+                Instr::I32LtUAssignImm(instr) => self.execute_i32_lt_u_assign_imm(instr),
+                Instr::I32LeSAssignImm(instr) => self.execute_i32_le_s_assign_imm(instr),
+                Instr::I32LeUAssignImm(instr) => self.execute_i32_le_u_assign_imm(instr),
+                Instr::I32GtSAssignImm(instr) => self.execute_i32_gt_s_assign_imm(instr),
+                Instr::I32GtUAssignImm(instr) => self.execute_i32_gt_u_assign_imm(instr),
+                Instr::I32GeSAssignImm(instr) => self.execute_i32_ge_s_assign_imm(instr),
+                Instr::I32GeUAssignImm(instr) => self.execute_i32_ge_u_assign_imm(instr),
+                Instr::I64EqAssignImm32(instr) => self.execute_i64_eq_assign_imm32(instr),
+                Instr::I64NeAssignImm32(instr) => self.execute_i64_ne_assign_imm32(instr),
+                Instr::I64LtSAssignImm32(instr) => self.execute_i64_lt_s_assign_imm32(instr),
+                Instr::I64LtUAssignImm32(instr) => self.execute_i64_lt_u_assign_imm32(instr),
+                Instr::I64LeSAssignImm32(instr) => self.execute_i64_le_s_assign_imm32(instr),
+                Instr::I64LeUAssignImm32(instr) => self.execute_i64_le_u_assign_imm32(instr),
+                Instr::I64GtSAssignImm32(instr) => self.execute_i64_gt_s_assign_imm32(instr),
+                Instr::I64GtUAssignImm32(instr) => self.execute_i64_gt_u_assign_imm32(instr),
+                Instr::I64GeSAssignImm32(instr) => self.execute_i64_ge_s_assign_imm32(instr),
+                Instr::I64GeUAssignImm32(instr) => self.execute_i64_ge_u_assign_imm32(instr),
+                Instr::F32EqAssignImm(instr) => self.execute_f32_eq_assign_imm(instr),
+                Instr::F32NeAssignImm(instr) => self.execute_f32_ne_assign_imm(instr),
+                Instr::F32LtAssignImm(instr) => self.execute_f32_lt_assign_imm(instr),
+                Instr::F32LeAssignImm(instr) => self.execute_f32_le_assign_imm(instr),
+                Instr::F32GtAssignImm(instr) => self.execute_f32_gt_assign_imm(instr),
+                Instr::F32GeAssignImm(instr) => self.execute_f32_ge_assign_imm(instr),
+                Instr::F64EqAssignImm32(instr) => self.execute_f64_eq_assign_imm32(instr),
+                Instr::F64NeAssignImm32(instr) => self.execute_f64_ne_assign_imm32(instr),
+                Instr::F64LtAssignImm32(instr) => self.execute_f64_lt_assign_imm32(instr),
+                Instr::F64LeAssignImm32(instr) => self.execute_f64_le_assign_imm32(instr),
+                Instr::F64GtAssignImm32(instr) => self.execute_f64_gt_assign_imm32(instr),
+                Instr::F64GeAssignImm32(instr) => self.execute_f64_ge_assign_imm32(instr),
+                Instr::I32AddAssignImm(instr) => self.execute_i32_add_assign_imm(instr),
+                Instr::I32SubAssignImm(instr) => self.execute_i32_sub_assign_imm(instr),
+                Instr::I32MulAssignImm(instr) => self.execute_i32_mul_assign_imm(instr),
+                Instr::I32DivSAssignImm(instr) => self.execute_i32_div_s_assign_imm(instr)?,
+                Instr::I32DivUAssignImm(instr) => self.execute_i32_div_u_assign_imm(instr)?,
+                Instr::I32RemSAssignImm(instr) => self.execute_i32_rem_s_assign_imm(instr)?,
+                Instr::I32RemUAssignImm(instr) => self.execute_i32_rem_u_assign_imm(instr)?,
+                Instr::I32AndAssignImm(instr) => self.execute_i32_and_assign_imm(instr),
+                Instr::I32OrAssignImm(instr) => self.execute_i32_or_assign_imm(instr),
+                Instr::I32XorAssignImm(instr) => self.execute_i32_xor_assign_imm(instr),
+                Instr::I32ShlAssignImm(instr) => self.execute_i32_shl_assign_imm(instr),
+                Instr::I32ShrSAssignImm(instr) => self.execute_i32_shr_s_assign_imm(instr),
+                Instr::I32ShrUAssignImm(instr) => self.execute_i32_shr_u_assign_imm(instr),
+                Instr::I32RotlAssignImm(instr) => self.execute_i32_rotl_assign_imm(instr),
+                Instr::I32RotrAssignImm(instr) => self.execute_i32_rotr_assign_imm(instr),
+                Instr::I64AddAssignImm32(instr) => self.execute_i64_add_assign_imm32(instr),
+                Instr::I64SubAssignImm32(instr) => self.execute_i64_sub_assign_imm32(instr),
+                Instr::I64MulAssignImm32(instr) => self.execute_i64_mul_assign_imm32(instr),
+                Instr::I64DivSAssignImm32(instr) => self.execute_i64_div_s_assign_imm32(instr)?,
+                Instr::I64DivUAssignImm32(instr) => self.execute_i64_div_u_assign_imm32(instr)?,
+                Instr::I64RemSAssignImm32(instr) => self.execute_i64_rem_s_assign_imm32(instr)?,
+                Instr::I64RemUAssignImm32(instr) => self.execute_i64_rem_u_assign_imm32(instr)?,
+                Instr::I64AndAssignImm32(instr) => self.execute_i64_and_assign_imm32(instr),
+                Instr::I64OrAssignImm32(instr) => self.execute_i64_or_assign_imm32(instr),
+                Instr::I64XorAssignImm32(instr) => self.execute_i64_xor_assign_imm32(instr),
+                Instr::I64ShlAssignImm32(instr) => self.execute_i64_shl_assign_imm32(instr),
+                Instr::I64ShrSAssignImm32(instr) => self.execute_i64_shr_s_assign_imm32(instr),
+                Instr::I64ShrUAssignImm32(instr) => self.execute_i64_shr_u_assign_imm32(instr),
+                Instr::I64RotlAssignImm32(instr) => self.execute_i64_rotl_assign_imm32(instr),
+                Instr::I64RotrAssignImm32(instr) => self.execute_i64_rotr_assign_imm32(instr),
+                Instr::F32AddAssignImm(instr) => self.execute_f32_add_assign_imm(instr),
+                Instr::F32SubAssignImm(instr) => self.execute_f32_sub_assign_imm(instr),
+                Instr::F32MulAssignImm(instr) => self.execute_f32_mul_assign_imm(instr),
+                Instr::F32DivAssignImm(instr) => self.execute_f32_div_assign_imm(instr),
+                Instr::F32MinAssignImm(instr) => self.execute_f32_min_assign_imm(instr),
+                Instr::F32MaxAssignImm(instr) => self.execute_f32_max_assign_imm(instr),
+                Instr::F32CopysignAssignImm(instr) => self.execute_f32_copysign_assign_imm(instr),
+                Instr::F64AddAssignImm32(instr) => self.execute_f64_add_assign_imm32(instr),
+                Instr::F64SubAssignImm32(instr) => self.execute_f64_sub_assign_imm32(instr),
+                Instr::F64MulAssignImm32(instr) => self.execute_f64_mul_assign_imm32(instr),
+                Instr::F64DivAssignImm32(instr) => self.execute_f64_div_assign_imm32(instr),
+                Instr::F64MinAssignImm32(instr) => self.execute_f64_min_assign_imm32(instr),
+                Instr::F64MaxAssignImm32(instr) => self.execute_f64_max_assign_imm32(instr),
+                Instr::F64CopysignAssignImm32(instr) => {
+                    self.execute_f64_copysign_assign_imm32(instr)
+                }
             }
         }
     }
@@ -1192,6 +1348,61 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let lhs = UntypedValue::from(<T>::from(instr.imm_in));
         let rhs = self.get_register(instr.reg_in);
         self.set_register(instr.result, op(lhs, rhs)?);
+        self.try_next_instr()
+    }
+
+    /// Executes a generic binary op-assign [`Instruction`].
+    fn execute_binary_assign(
+        &mut self,
+        instr: BinAssignInstr,
+        op: fn(UntypedValue, UntypedValue) -> UntypedValue,
+    ) {
+        let lhs = self.get_register(instr.inout);
+        let rhs = self.get_register(instr.rhs);
+        self.set_register(instr.inout, op(lhs, rhs));
+        self.next_instr();
+    }
+
+    /// Executes a fallible generic binary op-assign [`Instruction`].
+    fn try_execute_binary_assign(
+        &mut self,
+        instr: BinAssignInstr,
+        op: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
+    ) -> Result<(), TrapCode> {
+        let lhs = self.get_register(instr.inout);
+        let rhs = self.get_register(instr.rhs);
+        self.set_register(instr.inout, op(lhs, rhs)?);
+        self.try_next_instr()
+    }
+
+    /// Executes a generic binary op-assign [`Instruction`] with 32-bit encoded immediate value.
+    fn execute_binary_assign_imm32<T>(
+        &mut self,
+        instr: BinAssignInstrImm32<T>,
+        op: fn(UntypedValue, UntypedValue) -> UntypedValue,
+    ) where
+        T: From<Const32<T>>,
+        UntypedValue: From<T>,
+    {
+        let lhs = self.get_register(instr.inout);
+        let rhs = UntypedValue::from(<T>::from(instr.rhs));
+        self.set_register(instr.inout, op(lhs, rhs));
+        self.next_instr();
+    }
+
+    /// Executes a fallible generic binary op-assign [`Instruction`] with 32-bit encoded immediate value.
+    fn try_execute_binary_assign_imm32<T>(
+        &mut self,
+        instr: BinAssignInstrImm32<T>,
+        op: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
+    ) -> Result<(), TrapCode>
+    where
+        T: From<Const32<T>>,
+        UntypedValue: From<T>,
+    {
+        let lhs = self.get_register(instr.inout);
+        let rhs = UntypedValue::from(<T>::from(instr.rhs));
+        self.set_register(instr.inout, op(lhs, rhs)?);
         self.try_next_instr()
     }
 }
