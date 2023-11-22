@@ -4,6 +4,7 @@ use crate::engine::{
     func_builder::TranslationErrorInner,
     TranslationError,
 };
+use core::fmt;
 
 #[cfg(doc)]
 use super::Instruction;
@@ -253,7 +254,7 @@ impl BinInstr {
 /// # Note
 ///
 /// Optimized for small constant values that fit into 16-bit.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub struct BinInstrImm16<T> {
     /// The register storing the result of the computation.
     pub result: Register,
@@ -271,6 +272,19 @@ pub struct BinInstrImm16<T> {
     /// The instruction decides if this operand is the left-hand or
     /// right-hand operand for the computation.
     pub imm_in: Const16<T>,
+}
+
+impl<T> fmt::Debug for BinInstrImm16<T>
+where
+    T: fmt::Debug + From<Const16<T>>,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("BinInstrImm16")
+            .field("result", &self.result)
+            .field("reg_in", &self.reg_in)
+            .field("imm_in", &self.imm_in)
+            .finish()
+    }
 }
 
 impl<T> BinInstrImm16<T> {
@@ -542,7 +556,7 @@ impl BranchBinOpInstr {
 }
 
 /// A generic fused comparison and conditional branch [`Instruction`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub struct BranchBinOpInstrImm<T> {
     /// The left-hand side operand to the conditional operator.
     pub lhs: Register,
@@ -550,6 +564,19 @@ pub struct BranchBinOpInstrImm<T> {
     pub rhs: Const16<T>,
     /// The 16-bit encoded branch offset.
     pub offset: BranchOffset16,
+}
+
+impl<T> fmt::Debug for BranchBinOpInstrImm<T>
+where
+    T: fmt::Debug + From<Const16<T>>,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("BranchBinOpInstrImm")
+            .field("lhs", &self.lhs)
+            .field("rhs", &self.rhs)
+            .field("offset", &self.offset)
+            .finish()
+    }
 }
 
 impl<T> BranchBinOpInstrImm<T> {

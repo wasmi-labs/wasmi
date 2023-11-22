@@ -6,12 +6,22 @@ use wasmi_core::{F32, F64};
 pub struct OutOfBoundsConst;
 
 /// A typed 16-bit encoded constant value.
-#[derive(Debug)]
 pub struct Const16<T> {
     /// The underlying untyped value.
     inner: AnyConst16,
     /// The type marker to satisfy the Rust type system.
     marker: PhantomData<fn() -> T>,
+}
+
+impl<T> Debug for Const16<T>
+where
+    Self: Into<T>,
+    T: Debug,
+{
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let inner: T = (*self).into();
+        inner.fmt(f)
+    }
 }
 
 impl Const16<i32> {
