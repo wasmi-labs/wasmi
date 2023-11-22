@@ -276,7 +276,7 @@ pub struct BinInstrImm16<T> {
 
 impl<T> fmt::Debug for BinInstrImm16<T>
 where
-    T: fmt::Debug + From<Const16<T>>,
+    Const16<T>: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("BinInstrImm16")
@@ -333,7 +333,7 @@ impl<T> Eq for BinAssignInstrImm32<T> {}
 
 impl<T> fmt::Debug for BinAssignInstrImm32<T>
 where
-    T: fmt::Debug + From<Const32<T>>,
+    Const32<T>: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("BinAssignInstrImm32")
