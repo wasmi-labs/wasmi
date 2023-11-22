@@ -1,6 +1,8 @@
 use super::{
     utils::{BranchOffset16, CopysignImmInstr, Sign},
     AnyConst32,
+    BinAssignInstr,
+    BinAssignInstrImm32,
     BinInstr,
     BinInstrImm16,
     BranchBinOpInstr,
@@ -246,6 +248,202 @@ constructor_for_branch_binop_imm! {
     fn branch_i64_gt_u_imm(u64) -> Self::BranchI64GtUImm;
     fn branch_i64_ge_s_imm(i64) -> Self::BranchI64GeSImm;
     fn branch_i64_ge_u_imm(u64) -> Self::BranchI64GeUImm;
+}
+
+macro_rules! constructor_for_op_assign {
+    ( $( fn $name:ident() -> Self::$op_code:ident; )* ) => {
+        impl Instruction {
+            $(
+                #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+                pub fn $name(inout: Register, rhs: Register) -> Self {
+                    Self::$op_code(BinAssignInstr::new(inout, rhs))
+                }
+            )*
+        }
+    }
+}
+constructor_for_op_assign! {
+    fn i32_eq_assign() -> Self::I32EqAssign;
+    fn i32_ne_assign() -> Self::I32NeAssign;
+    fn i32_lt_s_assign() -> Self::I32LtSAssign;
+    fn i32_lt_u_assign() -> Self::I32LtUAssign;
+    fn i32_le_s_assign() -> Self::I32LtSAssign;
+    fn i32_le_u_assign() -> Self::I32LtUAssign;
+    fn i32_gt_s_assign() -> Self::I32LtSAssign;
+    fn i32_gt_u_assign() -> Self::I32LtUAssign;
+    fn i32_ge_s_assign() -> Self::I32LtSAssign;
+    fn i32_ge_u_assign() -> Self::I32LtUAssign;
+
+    fn i64_eq_assign() -> Self::I64EqAssign;
+    fn i64_ne_assign() -> Self::I64NeAssign;
+    fn i64_lt_s_assign() -> Self::I64LtSAssign;
+    fn i64_lt_u_assign() -> Self::I64LtUAssign;
+    fn i64_le_s_assign() -> Self::I64LtSAssign;
+    fn i64_le_u_assign() -> Self::I64LtUAssign;
+    fn i64_gt_s_assign() -> Self::I64LtSAssign;
+    fn i64_gt_u_assign() -> Self::I64LtUAssign;
+    fn i64_ge_s_assign() -> Self::I64LtSAssign;
+    fn i64_ge_u_assign() -> Self::I64LtUAssign;
+
+    fn f32_eq_assign() -> Self::F32EqAssign;
+    fn f32_ne_assign() -> Self::F32NeAssign;
+    fn f32_lt_assign() -> Self::F32LtAssign;
+    fn f32_le_assign() -> Self::F32LeAssign;
+    fn f32_gt_assign() -> Self::F32GtAssign;
+    fn f32_ge_assign() -> Self::F32GeAssign;
+
+    fn f64_eq_assign() -> Self::F64EqAssign;
+    fn f64_ne_assign() -> Self::F64NeAssign;
+    fn f64_lt_assign() -> Self::F64LtAssign;
+    fn f64_le_assign() -> Self::F64LeAssign;
+    fn f64_gt_assign() -> Self::F64GtAssign;
+    fn f64_ge_assign() -> Self::F64GeAssign;
+
+    fn i32_add_assign() -> Self::I32AddAssign;
+    fn i32_sub_assign() -> Self::I32SubAssign;
+    fn i32_mul_assign() -> Self::I32MulAssign;
+    fn i32_div_s_assign() -> Self::I32DivSAssign;
+    fn i32_div_u_assign() -> Self::I32DivUAssign;
+    fn i32_rem_s_assign() -> Self::I32RemSAssign;
+    fn i32_rem_u_assign() -> Self::I32RemUAssign;
+    fn i32_and_assign() -> Self::I32AndAssign;
+    fn i32_or_assign() -> Self::I32OrAssign;
+    fn i32_xor_assign() -> Self::I32XorAssign;
+    fn i32_shl_assign() -> Self::I32ShlAssign;
+    fn i32_shr_s_assign() -> Self::I32ShrSAssign;
+    fn i32_shr_u_assign() -> Self::I32ShrUAssign;
+    fn i32_rotl_assign() -> Self::I32RotlAssign;
+    fn i32_rotr_assign() -> Self::I32RotrAssign;
+
+    fn i64_add_assign() -> Self::I64AddAssign;
+    fn i64_sub_assign() -> Self::I64SubAssign;
+    fn i64_mul_assign() -> Self::I64MulAssign;
+    fn i64_div_s_assign() -> Self::I64DivSAssign;
+    fn i64_div_u_assign() -> Self::I64DivUAssign;
+    fn i64_rem_s_assign() -> Self::I64RemSAssign;
+    fn i64_rem_u_assign() -> Self::I64RemUAssign;
+    fn i64_and_assign() -> Self::I64AndAssign;
+    fn i64_or_assign() -> Self::I64OrAssign;
+    fn i64_xor_assign() -> Self::I64XorAssign;
+    fn i64_shl_assign() -> Self::I64ShlAssign;
+    fn i64_shr_s_assign() -> Self::I64ShrSAssign;
+    fn i64_shr_u_assign() -> Self::I64ShrUAssign;
+    fn i64_rotl_assign() -> Self::I64RotlAssign;
+    fn i64_rotr_assign() -> Self::I64RotrAssign;
+
+    fn f32_add_assign() -> Self::F32AddAssign;
+    fn f32_sub_assign() -> Self::F32SubAssign;
+    fn f32_mul_assign() -> Self::F32MulAssign;
+    fn f32_div_assign() -> Self::F32DivAssign;
+    fn f32_min_assign() -> Self::F32MinAssign;
+    fn f32_max_assign() -> Self::F32MaxAssign;
+    fn f32_copysign_assign() -> Self::F32CopysignAssign;
+
+    fn f64_add_assign() -> Self::F64AddAssign;
+    fn f64_sub_assign() -> Self::F64SubAssign;
+    fn f64_mul_assign() -> Self::F64MulAssign;
+    fn f64_div_assign() -> Self::F64DivAssign;
+    fn f64_min_assign() -> Self::F64MinAssign;
+    fn f64_max_assign() -> Self::F64MaxAssign;
+    fn f64_copysign_assign() -> Self::F64CopysignAssign;
+}
+
+macro_rules! constructor_for_op_assign_imm32 {
+    ( $( fn $name:ident($ty:ty) -> Self::$op_code:ident; )* ) => {
+        impl Instruction {
+            $(
+                #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+                pub fn $name(inout: Register, rhs: impl Into<Const32<$ty>>) -> Self {
+                    Self::$op_code(BinAssignInstrImm32::new(inout, rhs.into()))
+                }
+            )*
+        }
+    }
+}
+constructor_for_op_assign_imm32! {
+    fn i32_eq_assign_imm(i32) -> Self::I32EqAssignImm;
+    fn i32_ne_assign_imm(i32) -> Self::I32NeAssignImm;
+    fn i32_lt_s_assign_imm(i32) -> Self::I32LtSAssignImm;
+    fn i32_lt_u_assign_imm(u32) -> Self::I32LtUAssignImm;
+    fn i32_le_s_assign_imm(i32) -> Self::I32LtSAssignImm;
+    fn i32_le_u_assign_imm(u32) -> Self::I32LtUAssignImm;
+    fn i32_gt_s_assign_imm(i32) -> Self::I32LtSAssignImm;
+    fn i32_gt_u_assign_imm(u32) -> Self::I32LtUAssignImm;
+    fn i32_ge_s_assign_imm(i32) -> Self::I32LtSAssignImm;
+    fn i32_ge_u_assign_imm(u32) -> Self::I32LtUAssignImm;
+
+    fn i64_eq_assign_imm32(i64) -> Self::I64EqAssignImm32;
+    fn i64_ne_assign_imm32(i64) -> Self::I64NeAssignImm32;
+    fn i64_lt_s_assign_imm32(i64) -> Self::I64LtSAssignImm32;
+    fn i64_lt_u_assign_imm32(u64) -> Self::I64LtUAssignImm32;
+    fn i64_le_s_assign_imm32(i64) -> Self::I64LtSAssignImm32;
+    fn i64_le_u_assign_imm32(u64) -> Self::I64LtUAssignImm32;
+    fn i64_gt_s_assign_imm32(i64) -> Self::I64LtSAssignImm32;
+    fn i64_gt_u_assign_imm32(u64) -> Self::I64LtUAssignImm32;
+    fn i64_ge_s_assign_imm32(i64) -> Self::I64LtSAssignImm32;
+    fn i64_ge_u_assign_imm32(u64) -> Self::I64LtUAssignImm32;
+
+    fn f32_eq_assign_imm(f32) -> Self::F32EqAssignImm;
+    fn f32_ne_assign_imm(f32) -> Self::F32NeAssignImm;
+    fn f32_lt_assign_imm(f32) -> Self::F32LtAssignImm;
+    fn f32_le_assign_imm(f32) -> Self::F32LeAssignImm;
+    fn f32_gt_assign_imm(f32) -> Self::F32GtAssignImm;
+    fn f32_ge_assign_imm(f32) -> Self::F32GeAssignImm;
+
+    fn f64_eq_assign_imm32(f64) -> Self::F64EqAssignImm32;
+    fn f64_ne_assign_imm32(f64) -> Self::F64NeAssignImm32;
+    fn f64_lt_assign_imm32(f64) -> Self::F64LtAssignImm32;
+    fn f64_le_assign_imm32(f64) -> Self::F64LeAssignImm32;
+    fn f64_gt_assign_imm32(f64) -> Self::F64GtAssignImm32;
+    fn f64_ge_assign_imm32(f64) -> Self::F64GeAssignImm32;
+
+    fn i32_add_assign_imm(i32) -> Self::I32AddAssignImm;
+    fn i32_sub_assign_imm(i32) -> Self::I32SubAssignImm;
+    fn i32_mul_assign_imm(i32) -> Self::I32MulAssignImm;
+    fn i32_div_s_assign_imm(i32) -> Self::I32DivSAssignImm;
+    fn i32_div_u_assign_imm(u32) -> Self::I32DivUAssignImm;
+    fn i32_rem_s_assign_imm(i32) -> Self::I32RemSAssignImm;
+    fn i32_rem_u_assign_imm(u32) -> Self::I32RemUAssignImm;
+    fn i32_and_assign_imm(i32) -> Self::I32AndAssignImm;
+    fn i32_or_assign_imm(i32) -> Self::I32OrAssignImm;
+    fn i32_xor_assign_imm(i32) -> Self::I32XorAssignImm;
+    fn i32_shl_assign_imm(i32) -> Self::I32ShlAssignImm;
+    fn i32_shr_s_assign_imm(i32) -> Self::I32ShrSAssignImm;
+    fn i32_shr_u_assign_imm(u32) -> Self::I32ShrUAssignImm;
+    fn i32_rotl_assign_imm(i32) -> Self::I32RotlAssignImm;
+    fn i32_rotr_assign_imm(i32) -> Self::I32RotrAssignImm;
+
+    fn i64_add_assign_imm32(i64) -> Self::I64AddAssignImm32;
+    fn i64_sub_assign_imm32(i64) -> Self::I64SubAssignImm32;
+    fn i64_mul_assign_imm32(i64) -> Self::I64MulAssignImm32;
+    fn i64_div_s_assign_imm32(i64) -> Self::I64DivSAssignImm32;
+    fn i64_div_u_assign_imm32(u64) -> Self::I64DivUAssignImm32;
+    fn i64_rem_s_assign_imm32(i64) -> Self::I64RemSAssignImm32;
+    fn i64_rem_u_assign_imm32(u64) -> Self::I64RemUAssignImm32;
+    fn i64_and_assign_imm32(i64) -> Self::I64AndAssignImm32;
+    fn i64_or_assign_imm32(i64) -> Self::I64OrAssignImm32;
+    fn i64_xor_assign_imm32(i64) -> Self::I64XorAssignImm32;
+    fn i64_shl_assign_imm32(i64) -> Self::I64ShlAssignImm32;
+    fn i64_shr_s_assign_imm32(i64) -> Self::I64ShrSAssignImm32;
+    fn i64_shr_u_assign_imm32(u64) -> Self::I64ShrUAssignImm32;
+    fn i64_rotl_assign_imm32(i64) -> Self::I64RotlAssignImm32;
+    fn i64_rotr_assign_imm32(i64) -> Self::I64RotrAssignImm32;
+
+    fn f32_add_assign_imm(f32) -> Self::F32AddAssignImm;
+    fn f32_sub_assign_imm(f32) -> Self::F32SubAssignImm;
+    fn f32_mul_assign_imm(f32) -> Self::F32MulAssignImm;
+    fn f32_div_assign_imm(f32) -> Self::F32DivAssignImm;
+    fn f32_min_assign_imm(f32) -> Self::F32MinAssignImm;
+    fn f32_max_assign_imm(f32) -> Self::F32MaxAssignImm;
+    fn f32_copysign_assign_imm(f32) -> Self::F32CopysignAssignImm;
+
+    fn f64_add_assign_imm32(f64) -> Self::F64AddAssignImm32;
+    fn f64_sub_assign_imm32(f64) -> Self::F64SubAssignImm32;
+    fn f64_mul_assign_imm32(f64) -> Self::F64MulAssignImm32;
+    fn f64_div_assign_imm32(f64) -> Self::F64DivAssignImm32;
+    fn f64_min_assign_imm32(f64) -> Self::F64MinAssignImm32;
+    fn f64_max_assign_imm32(f64) -> Self::F64MaxAssignImm32;
+    fn f64_copysign_assign_imm32(f64) -> Self::F64CopysignAssignImm32;
 }
 
 impl Instruction {

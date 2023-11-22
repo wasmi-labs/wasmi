@@ -315,13 +315,21 @@ impl BinAssignInstr {
 }
 
 /// A binary-assign [`Register`] based instruction.
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone)]
 pub struct BinAssignInstrImm32<T> {
     /// The register storing both the result and left-hand side value.
     pub inout: Register,
     /// The constant right-hand side value.
     pub rhs: Const32<T>,
 }
+
+impl<T> PartialEq for BinAssignInstrImm32<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.inout == other.inout && self.rhs == other.rhs
+    }
+}
+
+impl<T> Eq for BinAssignInstrImm32<T> {}
 
 impl<T> fmt::Debug for BinAssignInstrImm32<T>
 where

@@ -9,6 +9,8 @@ use crate::{
         bytecode::{FuncIdx, SignatureIdx},
         regmach::{
             bytecode::{
+                BinAssignInstr,
+                BinAssignInstrImm32,
                 BinInstr,
                 BinInstrImm16,
                 CopysignImmInstr,
@@ -501,6 +503,158 @@ impl Instruction {
             Instruction::F64ConvertI32U(instr) |
             Instruction::F64ConvertI64S(instr) |
             Instruction::F64ConvertI64U(instr) => instr.result_mut(),
+            Instruction::I32EqAssign(instr) |
+            Instruction::I32NeAssign(instr) |
+            Instruction::I32LtSAssign(instr) |
+            Instruction::I32LtUAssign(instr) |
+            Instruction::I32GtSAssign(instr) |
+            Instruction::I32GtUAssign(instr) |
+            Instruction::I32LeSAssign(instr) |
+            Instruction::I32LeUAssign(instr) |
+            Instruction::I32GeSAssign(instr) |
+            Instruction::I32GeUAssign(instr) |
+            Instruction::I64EqAssign(instr) |
+            Instruction::I64NeAssign(instr) |
+            Instruction::I64LtSAssign(instr) |
+            Instruction::I64LtUAssign(instr) |
+            Instruction::I64GtSAssign(instr) |
+            Instruction::I64GtUAssign(instr) |
+            Instruction::I64LeSAssign(instr) |
+            Instruction::I64LeUAssign(instr) |
+            Instruction::I64GeSAssign(instr) |
+            Instruction::I64GeUAssign(instr) |
+            Instruction::F32EqAssign(instr) |
+            Instruction::F32NeAssign(instr) |
+            Instruction::F32LtAssign(instr) |
+            Instruction::F32LeAssign(instr) |
+            Instruction::F32GtAssign(instr) |
+            Instruction::F32GeAssign(instr) |
+            Instruction::F64EqAssign(instr) |
+            Instruction::F64NeAssign(instr) |
+            Instruction::F64LtAssign(instr) |
+            Instruction::F64LeAssign(instr) |
+            Instruction::F64GtAssign(instr) |
+            Instruction::F64GeAssign(instr) |
+            Instruction::I32AddAssign(instr) |
+            Instruction::I32SubAssign(instr) |
+            Instruction::I32MulAssign(instr) |
+            Instruction::I32DivSAssign(instr) |
+            Instruction::I32DivUAssign(instr) |
+            Instruction::I32RemSAssign(instr) |
+            Instruction::I32RemUAssign(instr) |
+            Instruction::I32AndAssign(instr) |
+            Instruction::I32OrAssign(instr) |
+            Instruction::I32XorAssign(instr) |
+            Instruction::I32ShlAssign(instr) |
+            Instruction::I32ShrUAssign(instr) |
+            Instruction::I32ShrSAssign(instr) |
+            Instruction::I32RotlAssign(instr) |
+            Instruction::I32RotrAssign(instr) |
+            Instruction::I64AddAssign(instr) |
+            Instruction::I64SubAssign(instr) |
+            Instruction::I64MulAssign(instr) |
+            Instruction::I64DivSAssign(instr) |
+            Instruction::I64DivUAssign(instr) |
+            Instruction::I64RemSAssign(instr) |
+            Instruction::I64RemUAssign(instr) |
+            Instruction::I64AndAssign(instr) |
+            Instruction::I64OrAssign(instr) |
+            Instruction::I64XorAssign(instr) |
+            Instruction::I64ShlAssign(instr) |
+            Instruction::I64ShrUAssign(instr) |
+            Instruction::I64ShrSAssign(instr) |
+            Instruction::I64RotlAssign(instr) |
+            Instruction::I64RotrAssign(instr) |
+            Instruction::F32AddAssign(instr) |
+            Instruction::F32SubAssign(instr) |
+            Instruction::F32MulAssign(instr) |
+            Instruction::F32DivAssign(instr) |
+            Instruction::F32MinAssign(instr) |
+            Instruction::F32MaxAssign(instr) |
+            Instruction::F32CopysignAssign(instr) |
+            Instruction::F64AddAssign(instr) |
+            Instruction::F64SubAssign(instr) |
+            Instruction::F64MulAssign(instr) |
+            Instruction::F64DivAssign(instr) |
+            Instruction::F64MinAssign(instr) |
+            Instruction::F64MaxAssign(instr) |
+            Instruction::F64CopysignAssign(instr) => instr.result_mut(),
+            Instruction::I32EqAssignImm(instr) |
+            Instruction::I32NeAssignImm(instr) |
+            Instruction::I32LtSAssignImm(instr) |
+            Instruction::I32GtSAssignImm(instr) |
+            Instruction::I32LeSAssignImm(instr) |
+            Instruction::I32GeSAssignImm(instr) => instr.result_mut(),
+            Instruction::I32LtUAssignImm(instr) |
+            Instruction::I32GtUAssignImm(instr) |
+            Instruction::I32LeUAssignImm(instr) |
+            Instruction::I32GeUAssignImm(instr) => instr.result_mut(),
+            Instruction::I64EqAssignImm32(instr) |
+            Instruction::I64NeAssignImm32(instr) |
+            Instruction::I64LtSAssignImm32(instr) |
+            Instruction::I64LeSAssignImm32(instr) |
+            Instruction::I64GtSAssignImm32(instr) |
+            Instruction::I64GeSAssignImm32(instr) => instr.result_mut(),
+            Instruction::I64LtUAssignImm32(instr) |
+            Instruction::I64GtUAssignImm32(instr) |
+            Instruction::I64LeUAssignImm32(instr) |
+            Instruction::I64GeUAssignImm32(instr) => instr.result_mut(),
+            Instruction::F32EqAssignImm(instr) |
+            Instruction::F32NeAssignImm(instr) |
+            Instruction::F32LtAssignImm(instr) |
+            Instruction::F32LeAssignImm(instr) |
+            Instruction::F32GtAssignImm(instr) |
+            Instruction::F32GeAssignImm(instr) => instr.result_mut(),
+            Instruction::F64EqAssignImm32(instr) |
+            Instruction::F64NeAssignImm32(instr) |
+            Instruction::F64LtAssignImm32(instr) |
+            Instruction::F64LeAssignImm32(instr) |
+            Instruction::F64GtAssignImm32(instr) |
+            Instruction::F64GeAssignImm32(instr) => instr.result_mut(),
+            Instruction::I32AddAssignImm(instr) |
+            Instruction::I32SubAssignImm(instr) |
+            Instruction::I32MulAssignImm(instr) |
+            Instruction::I32DivSAssignImm(instr) |
+            Instruction::I32RemSAssignImm(instr) |
+            Instruction::I32AndAssignImm(instr) |
+            Instruction::I32OrAssignImm(instr) |
+            Instruction::I32XorAssignImm(instr) |
+            Instruction::I32ShlAssignImm(instr) |
+            Instruction::I32ShrSAssignImm(instr) |
+            Instruction::I32RotlAssignImm(instr) |
+            Instruction::I32RotrAssignImm(instr) => instr.result_mut(),
+            Instruction::I32DivUAssignImm(instr) |
+            Instruction::I32RemUAssignImm(instr) |
+            Instruction::I32ShrUAssignImm(instr) => instr.result_mut(),
+            Instruction::I64AddAssignImm32(instr) |
+            Instruction::I64SubAssignImm32(instr) |
+            Instruction::I64MulAssignImm32(instr) |
+            Instruction::I64DivSAssignImm32(instr) |
+            Instruction::I64RemSAssignImm32(instr) |
+            Instruction::I64AndAssignImm32(instr) |
+            Instruction::I64OrAssignImm32(instr) |
+            Instruction::I64XorAssignImm32(instr) |
+            Instruction::I64ShlAssignImm32(instr) |
+            Instruction::I64ShrSAssignImm32(instr) |
+            Instruction::I64RotlAssignImm32(instr) |
+            Instruction::I64RotrAssignImm32(instr) => instr.result_mut(),
+            Instruction::I64DivUAssignImm32(instr) |
+            Instruction::I64RemUAssignImm32(instr) |
+            Instruction::I64ShrUAssignImm32(instr) => instr.result_mut(),
+            Instruction::F32AddAssignImm(instr) |
+            Instruction::F32SubAssignImm(instr) |
+            Instruction::F32MulAssignImm(instr) |
+            Instruction::F32DivAssignImm(instr) |
+            Instruction::F32MinAssignImm(instr) |
+            Instruction::F32MaxAssignImm(instr) |
+            Instruction::F32CopysignAssignImm(instr) => instr.result_mut(),
+            Instruction::F64AddAssignImm32(instr) |
+            Instruction::F64SubAssignImm32(instr) |
+            Instruction::F64MulAssignImm32(instr) |
+            Instruction::F64DivAssignImm32(instr) |
+            Instruction::F64MinAssignImm32(instr) |
+            Instruction::F64MaxAssignImm32(instr) |
+            Instruction::F64CopysignAssignImm32(instr) => instr.result_mut(),
         }
     }
 }
@@ -558,6 +712,20 @@ fn call_indirect_result_mut<'a>(
         return Some(results.head_mut());
     }
     None
+}
+
+impl BinAssignInstr {
+    /// Returns the single `result` [`Register`] of the [`BinAssignInstr`] if any.
+    pub fn result_mut(&mut self) -> Option<&mut Register> {
+        Some(&mut self.inout)
+    }
+}
+
+impl<T> BinAssignInstrImm32<T> {
+    /// Returns the single `result` [`Register`] of the [`BinAssignInstrImm32`] if any.
+    pub fn result_mut(&mut self) -> Option<&mut Register> {
+        Some(&mut self.inout)
+    }
 }
 
 impl LoadInstr {

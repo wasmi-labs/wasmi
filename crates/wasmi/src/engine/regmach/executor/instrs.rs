@@ -835,6 +835,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::F64ConvertI32U(instr) => self.execute_f64_convert_i32_u(instr),
                 Instr::F64ConvertI64S(instr) => self.execute_f64_convert_i64_s(instr),
                 Instr::F64ConvertI64U(instr) => self.execute_f64_convert_i64_u(instr),
+                _ => todo!(),
             }
         }
     }
