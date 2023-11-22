@@ -298,6 +298,50 @@ impl<T> BinInstrImm16<T> {
     }
 }
 
+/// A binary-assign [`Register`] based instruction.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct BinAssignInstr {
+    /// The register storing both the result and left-hand side value.
+    pub inout: Register,
+    /// The register holding the right-hand side value.
+    pub rhs: Register,
+}
+
+impl BinAssignInstr {
+    /// Creates a new [`BinAssignInstr`].
+    pub fn new(inout: Register, rhs: Register) -> Self {
+        Self { inout, rhs }
+    }
+}
+
+/// A binary-assign [`Register`] based instruction.
+#[derive(Copy, Clone, PartialEq, Eq)]
+pub struct BinAssignInstrImm32<T> {
+    /// The register storing both the result and left-hand side value.
+    pub inout: Register,
+    /// The constant right-hand side value.
+    pub rhs: Const32<T>,
+}
+
+impl<T> fmt::Debug for BinAssignInstrImm32<T>
+where
+    T: fmt::Debug + From<Const32<T>>,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("BinAssignInstrImm32")
+            .field("inout", &self.inout)
+            .field("rhs", &self.rhs)
+            .finish()
+    }
+}
+
+impl<T> BinAssignInstrImm32<T> {
+    /// Creates a new [`BinAssignInstr`].
+    pub fn new(inout: Register, rhs: Const32<T>) -> Self {
+        Self { inout, rhs }
+    }
+}
+
 /// A unary instruction.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct UnaryInstr {
