@@ -70,7 +70,7 @@ impl Instruction {
             Instruction::Branch { .. } |
             Instruction::BranchEqz { .. } |
             Instruction::BranchNez { .. } |
-            Instruction::BranchTable { .. } => None,
+            Instruction::BranchTable { .. } |
             Instruction::BranchI32Eq(_) |
             Instruction::BranchI32EqImm(_) |
             Instruction::BranchI32Ne(_) |
@@ -161,7 +161,7 @@ impl Instruction {
             Instruction::TableGetImm { result, .. } |
             Instruction::TableSize { result, .. } => Some(result),
             Instruction::TableSet { .. } |
-            Instruction::TableSetAt { .. } => None,
+            Instruction::TableSetAt { .. } |
             Instruction::TableCopy { .. } |
             Instruction::TableCopyTo { .. } |
             Instruction::TableCopyFrom { .. } |
