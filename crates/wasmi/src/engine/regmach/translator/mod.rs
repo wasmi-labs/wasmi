@@ -776,11 +776,20 @@ impl<'parser> FuncTranslator<'parser> {
         lhs: Register,
         rhs: T,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+        make_instr_assign_imm32: fn(result: Register, rhs: Const32<T>) -> Instruction,
     ) -> Result<(), TranslationError>
     where
-        T: Into<UntypedValue>,
+        T: Copy + Into<UntypedValue> + TryInto<Const32<T>>,
     {
         let result = self.alloc.stack.push_dynamic()?;
+        if result == lhs {
+            if let Ok(rhs) = rhs.try_into() {
+                self.alloc
+                    .instr_encoder
+                    .push_instr(make_instr_assign_imm32(result, rhs))?;
+                return Ok(());
+            }
+        }
         let rhs = self.alloc.stack.alloc_const(rhs)?;
         self.alloc
             .instr_encoder
@@ -847,6 +856,7 @@ impl<'parser> FuncTranslator<'parser> {
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
         make_instr_assign: fn(result: Register, rhs: Register) -> Instruction,
+        make_instr_assign_imm32: fn(result: Register, rhs: Const32<T>) -> Instruction,
         make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
         make_instr_imm16_rev: fn(result: Register, lhs: Const16<T>, rhs: Register) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
@@ -867,7 +877,12 @@ impl<'parser> FuncTranslator<'parser> {
         ) -> Result<bool, TranslationError>,
     ) -> Result<(), TranslationError>
     where
-        T: Copy + From<TypedValue> + Into<TypedValue> + TryInto<Const16<T>>,
+        T: Copy
+            + From<TypedValue>
+            + Into<UntypedValue>
+            + Into<TypedValue>
+            + TryInto<Const16<T>>
+            + TryInto<Const32<T>>,
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
@@ -887,7 +902,7 @@ impl<'parser> FuncTranslator<'parser> {
                     // Optimization was applied: return early.
                     return Ok(());
                 }
-                self.push_binary_instr_imm(lhs, rhs, make_instr)
+                self.push_binary_instr_imm(lhs, T::from(rhs), make_instr, make_instr_assign_imm32)
             }
             (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
                 if make_instr_imm_reg_opt(self, T::from(lhs), rhs)? {
@@ -932,6 +947,7 @@ impl<'parser> FuncTranslator<'parser> {
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
         make_instr_assign: fn(result: Register, rhs: Register) -> Instruction,
+        make_instr_assign_imm32: fn(result: Register, rhs: Const32<T>) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
         make_instr_opt: fn(
             &mut Self,
@@ -950,7 +966,7 @@ impl<'parser> FuncTranslator<'parser> {
         ) -> Result<bool, TranslationError>,
     ) -> Result<(), TranslationError>
     where
-        T: WasmFloat,
+        T: WasmFloat + Into<UntypedValue> + TryInto<Const32<T>>,
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
@@ -971,7 +987,7 @@ impl<'parser> FuncTranslator<'parser> {
                     self.alloc.stack.push_const(rhs);
                     return Ok(());
                 }
-                self.push_binary_instr_imm(lhs, rhs, make_instr)
+                self.push_binary_instr_imm(lhs, T::from(rhs), make_instr, make_instr_assign_imm32)
             }
             (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
                 if make_instr_imm_reg_opt(self, T::from(lhs), rhs)? {
@@ -1058,6 +1074,7 @@ impl<'parser> FuncTranslator<'parser> {
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
         make_instr_assign: fn(result: Register, rhs: Register) -> Instruction,
+        make_instr_assign_imm32: fn(result: Register, rhs: Const32<T>) -> Instruction,
         make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
         make_instr_opt: fn(
@@ -1068,7 +1085,7 @@ impl<'parser> FuncTranslator<'parser> {
         make_instr_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, TranslationError>,
     ) -> Result<(), TranslationError>
     where
-        T: Copy + From<TypedValue> + TryInto<Const16<T>>,
+        T: Copy + From<TypedValue> + TryInto<Const16<T>> + TryInto<Const32<T>> + Into<UntypedValue>,
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
@@ -1089,7 +1106,12 @@ impl<'parser> FuncTranslator<'parser> {
                     // Optimization was applied: return early.
                     return Ok(());
                 }
-                self.push_binary_instr_imm(reg_in, imm_in, make_instr)
+                self.push_binary_instr_imm(
+                    reg_in,
+                    T::from(imm_in),
+                    make_instr,
+                    make_instr_assign_imm32,
+                )
             }
             (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
                 self.push_binary_consteval(lhs, rhs, consteval)
@@ -1121,6 +1143,7 @@ impl<'parser> FuncTranslator<'parser> {
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
         make_instr_assign: fn(result: Register, rhs: Register) -> Instruction,
+        make_instr_assign_imm32: fn(result: Register, rhs: Const32<T>) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
         make_instr_opt: fn(
             &mut Self,
@@ -1130,7 +1153,7 @@ impl<'parser> FuncTranslator<'parser> {
         make_instr_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, TranslationError>,
     ) -> Result<(), TranslationError>
     where
-        T: WasmFloat,
+        T: WasmFloat + Into<UntypedValue> + TryInto<Const32<T>>,
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
@@ -1152,7 +1175,12 @@ impl<'parser> FuncTranslator<'parser> {
                     self.alloc.stack.push_const(T::from(imm_in));
                     return Ok(());
                 }
-                self.push_binary_instr_imm(reg_in, imm_in, make_instr)
+                self.push_binary_instr_imm(
+                    reg_in,
+                    T::from(imm_in),
+                    make_instr,
+                    make_instr_assign_imm32,
+                )
             }
             (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
                 self.push_binary_consteval(lhs, rhs, consteval)
@@ -1181,6 +1209,7 @@ impl<'parser> FuncTranslator<'parser> {
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
         make_instr_assign: fn(result: Register, rhs: Register) -> Instruction,
+        make_instr_assign_imm32: fn(result: Register, rhs: Const32<T>) -> Instruction,
         make_instr_imm: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
         make_instr_imm16_rev: fn(result: Register, lhs: Const16<T>, rhs: Register) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
@@ -1193,6 +1222,7 @@ impl<'parser> FuncTranslator<'parser> {
     where
         T: WasmInteger,
         Const16<T>: From<i16>,
+        Const32<T>: From<i32>,
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
@@ -1207,6 +1237,15 @@ impl<'parser> FuncTranslator<'parser> {
                     return Ok(());
                 }
                 let result = self.alloc.stack.push_dynamic()?;
+                if result == lhs {
+                    self.alloc
+                        .instr_encoder
+                        .push_instr(make_instr_assign_imm32(
+                            result,
+                            <Const32<T>>::from(i32::from(rhs)),
+                        ))?;
+                    return Ok(());
+                }
                 self.alloc.instr_encoder.push_instr(make_instr_imm(
                     result,
                     lhs,
@@ -1257,6 +1296,7 @@ impl<'parser> FuncTranslator<'parser> {
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
         make_instr_assign: fn(result: Register, rhs: Register) -> Instruction,
+        make_instr_assign_imm32: fn(result: Register, rhs: Const32<T>) -> Instruction,
         make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
         make_instr_imm16_rev: fn(result: Register, lhs: Const16<T>, rhs: Register) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> Result<TypedValue, TrapCode>,
@@ -1272,7 +1312,7 @@ impl<'parser> FuncTranslator<'parser> {
         ) -> Result<bool, TranslationError>,
     ) -> Result<(), TranslationError>
     where
-        T: WasmInteger,
+        T: WasmInteger + Into<UntypedValue> + TryInto<Const32<T>>,
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
@@ -1297,7 +1337,7 @@ impl<'parser> FuncTranslator<'parser> {
                     // Optimization was applied: return early.
                     return Ok(());
                 }
-                self.push_binary_instr_imm(lhs, rhs, make_instr)
+                self.push_binary_instr_imm(lhs, T::from(rhs), make_instr, make_instr_assign_imm32)
             }
             (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
                 if self.try_push_binary_instr_imm16_rev(T::from(lhs), rhs, make_instr_imm16_rev)? {

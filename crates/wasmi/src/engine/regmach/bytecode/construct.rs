@@ -2,6 +2,7 @@ use super::{
     utils::{BranchOffset16, CopysignImmInstr, Sign},
     AnyConst32,
     BinAssignInstr,
+    BinAssignInstrImm,
     BinAssignInstrImm32,
     BinInstr,
     BinInstrImm16,
@@ -409,7 +410,7 @@ constructor_for_op_assign_imm32! {
     fn i32_xor_assign_imm(i32) -> Self::I32XorAssignImm;
     fn i32_shl_assign_imm(i32) -> Self::I32ShlAssignImm;
     fn i32_shr_s_assign_imm(i32) -> Self::I32ShrSAssignImm;
-    fn i32_shr_u_assign_imm(u32) -> Self::I32ShrUAssignImm;
+    fn i32_shr_u_assign_imm(i32) -> Self::I32ShrUAssignImm;
     fn i32_rotl_assign_imm(i32) -> Self::I32RotlAssignImm;
     fn i32_rotr_assign_imm(i32) -> Self::I32RotrAssignImm;
 
@@ -425,7 +426,7 @@ constructor_for_op_assign_imm32! {
     fn i64_xor_assign_imm32(i64) -> Self::I64XorAssignImm32;
     fn i64_shl_assign_imm32(i64) -> Self::I64ShlAssignImm32;
     fn i64_shr_s_assign_imm32(i64) -> Self::I64ShrSAssignImm32;
-    fn i64_shr_u_assign_imm32(u64) -> Self::I64ShrUAssignImm32;
+    fn i64_shr_u_assign_imm32(i64) -> Self::I64ShrUAssignImm32;
     fn i64_rotl_assign_imm32(i64) -> Self::I64RotlAssignImm32;
     fn i64_rotr_assign_imm32(i64) -> Self::I64RotrAssignImm32;
 
@@ -435,7 +436,6 @@ constructor_for_op_assign_imm32! {
     fn f32_div_assign_imm(f32) -> Self::F32DivAssignImm;
     fn f32_min_assign_imm(f32) -> Self::F32MinAssignImm;
     fn f32_max_assign_imm(f32) -> Self::F32MaxAssignImm;
-    fn f32_copysign_assign_imm(f32) -> Self::F32CopysignAssignImm;
 
     fn f64_add_assign_imm32(f64) -> Self::F64AddAssignImm32;
     fn f64_sub_assign_imm32(f64) -> Self::F64SubAssignImm32;
@@ -443,7 +443,6 @@ constructor_for_op_assign_imm32! {
     fn f64_div_assign_imm32(f64) -> Self::F64DivAssignImm32;
     fn f64_min_assign_imm32(f64) -> Self::F64MinAssignImm32;
     fn f64_max_assign_imm32(f64) -> Self::F64MaxAssignImm32;
-    fn f64_copysign_assign_imm32(f64) -> Self::F64CopysignAssignImm32;
 }
 
 impl Instruction {
@@ -744,9 +743,19 @@ impl Instruction {
         Self::F32CopysignImm(CopysignImmInstr { result, lhs, rhs })
     }
 
+    /// Creates a new [`Instruction::F32CopysignAssignImm`] instruction.
+    pub fn f32_copysign_assign_imm(result: Register, rhs: Sign) -> Self {
+        Self::F32CopysignAssignImm(BinAssignInstrImm::new(result, rhs))
+    }
+
     /// Creates a new [`Instruction::F64CopysignImm`] instruction.
     pub fn f64_copysign_imm(result: Register, lhs: Register, rhs: Sign) -> Self {
         Self::F64CopysignImm(CopysignImmInstr { result, lhs, rhs })
+    }
+
+    /// Creates a new [`Instruction::F64CopysignAssignImm`] instruction.
+    pub fn f64_copysign_assign_imm(result: Register, rhs: Sign) -> Self {
+        Self::F64CopysignAssignImm(BinAssignInstrImm::new(result, rhs))
     }
 
     /// Creates a new [`Instruction::Select`].

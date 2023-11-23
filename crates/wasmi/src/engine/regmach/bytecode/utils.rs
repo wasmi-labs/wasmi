@@ -314,38 +314,21 @@ impl BinAssignInstr {
     }
 }
 
-/// A binary-assign [`Register`] based instruction.
-#[derive(Copy, Clone)]
-pub struct BinAssignInstrImm32<T> {
+/// A binary-assign instruction with 32-bit encoded immediate value.
+pub type BinAssignInstrImm32<T> = BinAssignInstrImm<Const32<T>>;
+
+/// A binary-assign instruction with generic immediate value.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct BinAssignInstrImm<T> {
     /// The register storing both the result and left-hand side value.
     pub inout: Register,
     /// The constant right-hand side value.
-    pub rhs: Const32<T>,
+    pub rhs: T,
 }
 
-impl<T> PartialEq for BinAssignInstrImm32<T> {
-    fn eq(&self, other: &Self) -> bool {
-        self.inout == other.inout && self.rhs == other.rhs
-    }
-}
-
-impl<T> Eq for BinAssignInstrImm32<T> {}
-
-impl<T> fmt::Debug for BinAssignInstrImm32<T>
-where
-    Const32<T>: fmt::Debug,
-{
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("BinAssignInstrImm32")
-            .field("inout", &self.inout)
-            .field("rhs", &self.rhs)
-            .finish()
-    }
-}
-
-impl<T> BinAssignInstrImm32<T> {
+impl<T> BinAssignInstrImm<T> {
     /// Creates a new [`BinAssignInstr`].
-    pub fn new(inout: Register, rhs: Const32<T>) -> Self {
+    pub fn new(inout: Register, rhs: T) -> Self {
         Self { inout, rhs }
     }
 }
@@ -511,6 +494,24 @@ pub enum Sign {
     Pos,
     /// Negative sign.
     Neg,
+}
+
+impl Sign {
+    /// Converts the [`Sign`] into an `f32` value.
+    pub fn to_f32(self) -> f32 {
+        match self {
+            Self::Pos => 1.0_f32,
+            Self::Neg => -1.0_f32,
+        }
+    }
+
+    /// Converts the [`Sign`] into an `f64` value.
+    pub fn to_f64(self) -> f64 {
+        match self {
+            Self::Pos => 1.0_f64,
+            Self::Neg => -1.0_f64,
+        }
+    }
 }
 
 /// The `f32.copysign` or `f64.copysign` instruction with an immediate value.

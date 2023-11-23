@@ -3,6 +3,7 @@ use crate::{
     core::{TrapCode, UntypedValue},
     engine::regmach::bytecode::{
         BinAssignInstr,
+        BinAssignInstrImm,
         BinAssignInstrImm32,
         BinInstr,
         BinInstrImm16,
@@ -223,11 +224,17 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     pub fn execute_f32_copysign_imm(&mut self, instr: CopysignImmInstr) {
         let lhs = self.get_register(instr.lhs);
-        let rhs = match instr.rhs {
-            Sign::Pos => 1.0_f32,
-            Sign::Neg => -1.0_f32,
-        };
+        let rhs = instr.rhs.to_f32();
         self.set_register(instr.result, UntypedValue::f32_copysign(lhs, rhs.into()));
+        self.next_instr()
+    }
+
+    /// Executes an [`Instruction::F32CopysignAssignImm`].
+    #[inline(always)]
+    pub fn execute_f32_copysign_assign_imm(&mut self, instr: BinAssignInstrImm<Sign>) {
+        let lhs = self.get_register(instr.inout);
+        let rhs = instr.rhs.to_f32();
+        self.set_register(instr.inout, UntypedValue::f32_copysign(lhs, rhs.into()));
         self.next_instr()
     }
 
@@ -235,11 +242,17 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     pub fn execute_f64_copysign_imm(&mut self, instr: CopysignImmInstr) {
         let lhs = self.get_register(instr.lhs);
-        let rhs = match instr.rhs {
-            Sign::Pos => 1.0_f64,
-            Sign::Neg => -1.0_f64,
-        };
+        let rhs = instr.rhs.to_f64();
         self.set_register(instr.result, UntypedValue::f64_copysign(lhs, rhs.into()));
+        self.next_instr()
+    }
+
+    /// Executes an [`Instruction::F64CopysignAssignImm`].
+    #[inline(always)]
+    pub fn execute_f64_copysign_assign_imm(&mut self, instr: BinAssignInstrImm<Sign>) {
+        let lhs = self.get_register(instr.inout);
+        let rhs = instr.rhs.to_f64();
+        self.set_register(instr.inout, UntypedValue::f64_copysign(lhs, rhs.into()));
         self.next_instr()
     }
 }
@@ -417,7 +430,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         (i32, Instruction::I32XorAssignImm, execute_i32_xor_assign_imm, UntypedValue::i32_xor),
         (i32, Instruction::I32ShlAssignImm, execute_i32_shl_assign_imm, UntypedValue::i32_shl),
         (i32, Instruction::I32ShrSAssignImm, execute_i32_shr_s_assign_imm, UntypedValue::i32_shr_s),
-        (u32, Instruction::I32ShrUAssignImm, execute_i32_shr_u_assign_imm, UntypedValue::i32_shr_u),
+        (i32, Instruction::I32ShrUAssignImm, execute_i32_shr_u_assign_imm, UntypedValue::i32_shr_u),
         (i32, Instruction::I32RotlAssignImm, execute_i32_rotl_assign_imm, UntypedValue::i32_rotl),
         (i32, Instruction::I32RotrAssignImm, execute_i32_rotr_assign_imm, UntypedValue::i32_rotr),
 
@@ -429,7 +442,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         (i64, Instruction::I64XorAssignImm32, execute_i64_xor_assign_imm32, UntypedValue::i64_xor),
         (i64, Instruction::I64ShlAssignImm32, execute_i64_shl_assign_imm32, UntypedValue::i64_shl),
         (i64, Instruction::I64ShrSAssignImm32, execute_i64_shr_s_assign_imm32, UntypedValue::i64_shr_s),
-        (u64, Instruction::I64ShrUAssignImm32, execute_i64_shr_u_assign_imm32, UntypedValue::i64_shr_u),
+        (i64, Instruction::I64ShrUAssignImm32, execute_i64_shr_u_assign_imm32, UntypedValue::i64_shr_u),
         (i64, Instruction::I64RotlAssignImm32, execute_i64_rotl_assign_imm32, UntypedValue::i64_rotl),
         (i64, Instruction::I64RotrAssignImm32, execute_i64_rotr_assign_imm32, UntypedValue::i64_rotr),
 
@@ -439,7 +452,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         (f32, Instruction::F32DivAssignImm, execute_f32_div_assign_imm, UntypedValue::f32_div),
         (f32, Instruction::F32MinAssignImm, execute_f32_min_assign_imm, UntypedValue::f32_min),
         (f32, Instruction::F32MaxAssignImm, execute_f32_max_assign_imm, UntypedValue::f32_max),
-        (f32, Instruction::F32CopysignAssignImm, execute_f32_copysign_assign_imm, UntypedValue::f32_copysign),
 
         (f64, Instruction::F64AddAssignImm32, execute_f64_add_assign_imm32, UntypedValue::f64_add),
         (f64, Instruction::F64SubAssignImm32, execute_f64_sub_assign_imm32, UntypedValue::f64_sub),
@@ -447,7 +459,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         (f64, Instruction::F64DivAssignImm32, execute_f64_div_assign_imm32, UntypedValue::f64_div),
         (f64, Instruction::F64MinAssignImm32, execute_f64_min_assign_imm32, UntypedValue::f64_min),
         (f64, Instruction::F64MaxAssignImm32, execute_f64_max_assign_imm32, UntypedValue::f64_max),
-        (f64, Instruction::F64CopysignAssignImm32, execute_f64_copysign_assign_imm32, UntypedValue::f64_copysign),
     }
 }
 

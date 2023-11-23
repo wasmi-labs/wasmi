@@ -11,6 +11,7 @@ pub(crate) use self::{
     provider::{Provider, ProviderSliceStack, UntypedProvider},
     utils::{
         BinAssignInstr,
+        BinAssignInstrImm,
         BinAssignInstrImm32,
         BinInstr,
         BinInstrImm16,
@@ -3178,7 +3179,7 @@ pub enum Instruction {
     I32ShlAssign(BinAssignInstr),
     I32ShlAssignImm(BinAssignInstrImm32<i32>),
     I32ShrUAssign(BinAssignInstr),
-    I32ShrUAssignImm(BinAssignInstrImm32<u32>),
+    I32ShrUAssignImm(BinAssignInstrImm32<i32>),
     I32ShrSAssign(BinAssignInstr),
     I32ShrSAssignImm(BinAssignInstrImm32<i32>),
     I32RotlAssign(BinAssignInstr),
@@ -3209,7 +3210,7 @@ pub enum Instruction {
     I64ShlAssign(BinAssignInstr),
     I64ShlAssignImm32(BinAssignInstrImm32<i64>),
     I64ShrUAssign(BinAssignInstr),
-    I64ShrUAssignImm32(BinAssignInstrImm32<u64>),
+    I64ShrUAssignImm32(BinAssignInstrImm32<i64>),
     I64ShrSAssign(BinAssignInstr),
     I64ShrSAssignImm32(BinAssignInstrImm32<i64>),
     I64RotlAssign(BinAssignInstr),
@@ -3230,7 +3231,7 @@ pub enum Instruction {
     F32MaxAssign(BinAssignInstr),
     F32MaxAssignImm(BinAssignInstrImm32<f32>),
     F32CopysignAssign(BinAssignInstr),
-    F32CopysignAssignImm(BinAssignInstrImm32<f32>),
+    F32CopysignAssignImm(BinAssignInstrImm<Sign>),
 
     F64AddAssign(BinAssignInstr),
     F64AddAssignImm32(BinAssignInstrImm32<f64>),
@@ -3245,7 +3246,7 @@ pub enum Instruction {
     F64MaxAssign(BinAssignInstr),
     F64MaxAssignImm32(BinAssignInstrImm32<f64>),
     F64CopysignAssign(BinAssignInstr),
-    F64CopysignAssignImm32(BinAssignInstrImm32<f64>),
+    F64CopysignAssignImm(BinAssignInstrImm<Sign>),
 }
 
 impl Instruction {

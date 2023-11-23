@@ -989,9 +989,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::F64DivAssignImm32(instr) => self.execute_f64_div_assign_imm32(instr),
                 Instr::F64MinAssignImm32(instr) => self.execute_f64_min_assign_imm32(instr),
                 Instr::F64MaxAssignImm32(instr) => self.execute_f64_max_assign_imm32(instr),
-                Instr::F64CopysignAssignImm32(instr) => {
-                    self.execute_f64_copysign_assign_imm32(instr)
-                }
+                Instr::F64CopysignAssignImm(instr) => self.execute_f64_copysign_assign_imm(instr),
             }
         }
     }

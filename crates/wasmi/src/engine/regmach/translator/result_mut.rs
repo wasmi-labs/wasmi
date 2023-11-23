@@ -10,7 +10,7 @@ use crate::{
         regmach::{
             bytecode::{
                 BinAssignInstr,
-                BinAssignInstrImm32,
+                BinAssignInstrImm,
                 BinInstr,
                 BinInstrImm16,
                 CopysignImmInstr,
@@ -621,11 +621,11 @@ impl Instruction {
             Instruction::I32XorAssignImm(instr) |
             Instruction::I32ShlAssignImm(instr) |
             Instruction::I32ShrSAssignImm(instr) |
+            Instruction::I32ShrUAssignImm(instr) |
             Instruction::I32RotlAssignImm(instr) |
             Instruction::I32RotrAssignImm(instr) => instr.result_mut(),
             Instruction::I32DivUAssignImm(instr) |
-            Instruction::I32RemUAssignImm(instr) |
-            Instruction::I32ShrUAssignImm(instr) => instr.result_mut(),
+            Instruction::I32RemUAssignImm(instr) => instr.result_mut(),
             Instruction::I64AddAssignImm32(instr) |
             Instruction::I64SubAssignImm32(instr) |
             Instruction::I64MulAssignImm32(instr) |
@@ -636,25 +636,25 @@ impl Instruction {
             Instruction::I64XorAssignImm32(instr) |
             Instruction::I64ShlAssignImm32(instr) |
             Instruction::I64ShrSAssignImm32(instr) |
+            Instruction::I64ShrUAssignImm32(instr) |
             Instruction::I64RotlAssignImm32(instr) |
             Instruction::I64RotrAssignImm32(instr) => instr.result_mut(),
             Instruction::I64DivUAssignImm32(instr) |
-            Instruction::I64RemUAssignImm32(instr) |
-            Instruction::I64ShrUAssignImm32(instr) => instr.result_mut(),
+            Instruction::I64RemUAssignImm32(instr) => instr.result_mut(),
             Instruction::F32AddAssignImm(instr) |
             Instruction::F32SubAssignImm(instr) |
             Instruction::F32MulAssignImm(instr) |
             Instruction::F32DivAssignImm(instr) |
             Instruction::F32MinAssignImm(instr) |
-            Instruction::F32MaxAssignImm(instr) |
+            Instruction::F32MaxAssignImm(instr) => instr.result_mut(),
             Instruction::F32CopysignAssignImm(instr) => instr.result_mut(),
             Instruction::F64AddAssignImm32(instr) |
             Instruction::F64SubAssignImm32(instr) |
             Instruction::F64MulAssignImm32(instr) |
             Instruction::F64DivAssignImm32(instr) |
             Instruction::F64MinAssignImm32(instr) |
-            Instruction::F64MaxAssignImm32(instr) |
-            Instruction::F64CopysignAssignImm32(instr) => instr.result_mut(),
+            Instruction::F64MaxAssignImm32(instr) => instr.result_mut(),
+            Instruction::F64CopysignAssignImm(instr) => instr.result_mut(),
         }
     }
 }
@@ -721,7 +721,7 @@ impl BinAssignInstr {
     }
 }
 
-impl<T> BinAssignInstrImm32<T> {
+impl<T> BinAssignInstrImm<T> {
     /// Returns the single `result` [`Register`] of the [`BinAssignInstrImm32`] if any.
     pub fn result_mut(&mut self) -> Option<&mut Register> {
         Some(&mut self.inout)

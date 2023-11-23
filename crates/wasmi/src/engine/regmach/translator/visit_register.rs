@@ -1,6 +1,6 @@
 use crate::engine::regmach::bytecode::{
     BinAssignInstr,
-    BinAssignInstrImm32,
+    BinAssignInstrImm,
     BinInstr,
     BinInstrImm16,
     BranchBinOpInstr,
@@ -681,9 +681,7 @@ impl VisitInputRegisters for Instruction {
             Instruction::F64MaxAssign(instr) => instr.visit_input_registers(f),
             Instruction::F64MaxAssignImm32(instr) => instr.visit_input_registers(f),
             Instruction::F64CopysignAssign(instr) => instr.visit_input_registers(f),
-            Instruction::F64CopysignAssignImm32(instr) => instr.visit_input_registers(f),
-
-
+            Instruction::F64CopysignAssignImm(instr) => instr.visit_input_registers(f),
         }
     }
 }
@@ -702,7 +700,7 @@ impl BinAssignInstr {
     }
 }
 
-impl<T> BinAssignInstrImm32<T> {
+impl<T> BinAssignInstrImm<T> {
     fn visit_input_registers(&mut self, _f: impl FnMut(&mut Register)) {
         // Nothing to do.
     }
