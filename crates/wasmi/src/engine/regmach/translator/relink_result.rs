@@ -704,6 +704,41 @@ impl Instruction {
             I::F64MaxAssignImm32(instr) => relink_binop_assign_fimm!(f64, self, instr, stack, new_result, old_result, I::f64_max),
             // I::F64CopysignAssignImm(instr) => relink_binop_assign_fimm!(f64, self, instr, stack, new_result, old_result, I::f64_copysign),
 
+            I::I32WrapI64(instr) |
+            I::I64ExtendI32S(instr) |
+            I::I64ExtendI32U(instr) |
+            I::I32TruncF32S(instr) |
+            I::I32TruncF32U(instr) |
+            I::I32TruncF64S(instr) |
+            I::I32TruncF64U(instr) |
+            I::I64TruncF32S(instr) |
+            I::I64TruncF32U(instr) |
+            I::I64TruncF64S(instr) |
+            I::I64TruncF64U(instr) |
+            I::I32TruncSatF32S(instr) |
+            I::I32TruncSatF32U(instr) |
+            I::I32TruncSatF64S(instr) |
+            I::I32TruncSatF64U(instr) |
+            I::I64TruncSatF32S(instr) |
+            I::I64TruncSatF32U(instr) |
+            I::I64TruncSatF64S(instr) |
+            I::I64TruncSatF64U(instr) |
+            I::I32Extend8S(instr) |
+            I::I32Extend16S(instr) |
+            I::I64Extend8S(instr) |
+            I::I64Extend16S(instr) |
+            I::I64Extend32S(instr) |
+            I::F32DemoteF64(instr) |
+            I::F64PromoteF32(instr) |
+            I::F32ConvertI32S(instr) |
+            I::F32ConvertI32U(instr) |
+            I::F32ConvertI64S(instr) |
+            I::F32ConvertI64U(instr) |
+            I::F64ConvertI32S(instr) |
+            I::F64ConvertI32U(instr) |
+            I::F64ConvertI64S(instr) |
+            I::F64ConvertI64U(instr) => relink_simple(instr, new_result, old_result),
+
             _ => todo!(),
         }
     }
