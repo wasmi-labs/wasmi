@@ -282,7 +282,7 @@ fn if_without_else() {
             }),
             isa::Instruction::I32Const(2),
             isa::Instruction::Return(isa::DropKeep {
-                drop: 1,                 // 1 param
+                drop: 1,                                 // 1 param
                 keep: isa::Keep::Single(ValueType::I32), // 1 result
             }),
             isa::Instruction::I32Const(3),
