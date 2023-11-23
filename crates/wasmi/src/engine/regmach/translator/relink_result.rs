@@ -19,6 +19,7 @@ use crate::{
                 LoadOffset16Instr,
                 Register,
                 RegisterSpan,
+                Sign,
                 UnaryInstr,
             },
             code_map::CompiledFuncEntity,
@@ -43,6 +44,16 @@ macro_rules! relink_binop {
 macro_rules! relink_binop_imm16 {
     ($ty:ty, $this:expr, $instr:ident, $new_result:ident, $old_result:ident, $make_instr:expr) => {
         match relink_binop_imm16::<$ty>($instr, $new_result, $old_result, $make_instr)? {
+            RelinkResult::Unchanged => Ok(false),
+            RelinkResult::Relinked => Ok(true),
+            RelinkResult::Exchanged(new_instr) => relink_exchange($this, new_instr),
+        }
+    };
+}
+
+macro_rules! relink_copysign_imm {
+    ($this:expr, $instr:ident, $new_result:ident, $old_result:ident, $make_instr:expr) => {
+        match relink_copysign_imm($instr, $new_result, $old_result, $make_instr)? {
             RelinkResult::Unchanged => Ok(false),
             RelinkResult::Relinked => Ok(true),
             RelinkResult::Exchanged(new_instr) => relink_exchange($this, new_instr),
@@ -84,6 +95,15 @@ macro_rules! relink_binop_assign_fimm {
             $old_result,
             $make_instr,
         )? {
+            None => Ok(false),
+            Some(new_instr) => relink_exchange($this, new_instr),
+        }
+    };
+}
+
+macro_rules! relink_copysign_assign {
+    ($this:expr, $instr:ident, $new_result:ident, $old_result:ident, $make_instr:expr) => {
+        match relink_copysign_assign($instr, $new_result, $old_result, $make_instr)? {
             None => Ok(false),
             Some(new_instr) => relink_exchange($this, new_instr),
         }
@@ -552,6 +572,7 @@ impl Instruction {
             I::F32Min(instr) => relink_binop!(self, instr, new_result, old_result, I::f32_min_assign),
             I::F32Max(instr) => relink_binop!(self, instr, new_result, old_result, I::f32_max_assign),
             I::F32Copysign(instr) => relink_binop!(self, instr, new_result, old_result, I::f32_copysign_assign),
+            I::F32CopysignImm(instr) => relink_copysign_imm!(self, instr, new_result, old_result, I::f32_copysign_assign_imm),
             I::F64Add(instr) => relink_binop!(self, instr, new_result, old_result, I::f64_add_assign),
             I::F64Sub(instr) => relink_binop!(self, instr, new_result, old_result, I::f64_sub_assign),
             I::F64Mul(instr) => relink_binop!(self, instr, new_result, old_result, I::f64_mul_assign),
@@ -559,6 +580,7 @@ impl Instruction {
             I::F64Min(instr) => relink_binop!(self, instr, new_result, old_result, I::f64_min_assign),
             I::F64Max(instr) => relink_binop!(self, instr, new_result, old_result, I::f64_max_assign),
             I::F64Copysign(instr) => relink_binop!(self, instr, new_result, old_result, I::f64_copysign_assign),
+            I::F64CopysignImm(instr) => relink_copysign_imm!(self, instr, new_result, old_result, I::f64_copysign_assign_imm),
 
             I::I32AddImm16(instr) => relink_binop_imm16!(i32, self, instr, new_result, old_result, I::i32_add_assign_imm),
             I::I32SubImm16(instr) => relink_binop_imm16!(i32, self, instr, new_result, old_result, I::i32_sub_assign_imm),
@@ -695,14 +717,14 @@ impl Instruction {
             I::F32DivAssignImm(instr) => relink_binop_assign_fimm!(f32, self, instr, stack, new_result, old_result, I::f32_div),
             I::F32MinAssignImm(instr) => relink_binop_assign_fimm!(f32, self, instr, stack, new_result, old_result, I::f32_min),
             I::F32MaxAssignImm(instr) => relink_binop_assign_fimm!(f32, self, instr, stack, new_result, old_result, I::f32_max),
-            // I::F32CopysignAssignImm(instr) => relink_binop_assign_fimm!(f32, self, instr, stack, new_result, old_result, I::f32_copysign),
+            I::F32CopysignAssignImm(instr) => relink_copysign_assign!(self, instr, new_result, old_result, I::f32_copysign_imm),
             I::F64AddAssignImm32(instr) => relink_binop_assign_fimm!(f64, self, instr, stack, new_result, old_result, I::f64_add),
             I::F64SubAssignImm32(instr) => relink_binop_assign_fimm!(f64, self, instr, stack, new_result, old_result, I::f64_sub),
             I::F64MulAssignImm32(instr) => relink_binop_assign_fimm!(f64, self, instr, stack, new_result, old_result, I::f64_mul),
             I::F64DivAssignImm32(instr) => relink_binop_assign_fimm!(f64, self, instr, stack, new_result, old_result, I::f64_div),
             I::F64MinAssignImm32(instr) => relink_binop_assign_fimm!(f64, self, instr, stack, new_result, old_result, I::f64_min),
             I::F64MaxAssignImm32(instr) => relink_binop_assign_fimm!(f64, self, instr, stack, new_result, old_result, I::f64_max),
-            // I::F64CopysignAssignImm(instr) => relink_binop_assign_fimm!(f64, self, instr, stack, new_result, old_result, I::f64_copysign),
+            I::F64CopysignAssignImm(instr) => relink_copysign_assign!(self, instr, new_result, old_result, I::f64_copysign_imm),
 
             I::I32WrapI64(instr) |
             I::I64ExtendI32S(instr) |
@@ -738,8 +760,6 @@ impl Instruction {
             I::F64ConvertI32U(instr) |
             I::F64ConvertI64S(instr) |
             I::F64ConvertI64U(instr) => relink_simple(instr, new_result, old_result),
-
-            _ => todo!(),
         }
     }
 }
@@ -864,6 +884,22 @@ where
     Ok(RelinkResult::Relinked)
 }
 
+fn relink_copysign_imm(
+    instr: &mut BinInstrImm<Sign>,
+    new_result: Register,
+    old_result: Register,
+    make_bin: fn(result: Register, rhs: Sign) -> Instruction,
+) -> Result<RelinkResult, TranslationError> {
+    if !relink_simple(instr, new_result, old_result)? {
+        return Ok(RelinkResult::Unchanged);
+    }
+    if instr.result == instr.reg_in {
+        let new_instr = make_bin(new_result, instr.imm_in);
+        return Ok(RelinkResult::Exchanged(new_instr));
+    }
+    Ok(RelinkResult::Relinked)
+}
+
 fn relink_binop_assign(
     instr: &BinAssignInstr,
     new_result: Register,
@@ -923,6 +959,21 @@ where
     debug_assert_ne!(instr.inout, new_result);
     let rhs = stack.alloc_const(T::from(instr.rhs))?;
     let new_instr = make_bin(new_result, instr.inout, rhs);
+    Ok(Some(new_instr))
+}
+
+fn relink_copysign_assign(
+    instr: &BinAssignInstrImm<Sign>,
+    new_result: Register,
+    old_result: Register,
+    make_binop: fn(result: Register, lhs: Register, rhs: Sign) -> Instruction,
+) -> Result<Option<Instruction>, TranslationError> {
+    if instr.inout != old_result {
+        // Note: This is a safeguard to prevent bugs.
+        return Ok(None);
+    }
+    debug_assert_ne!(instr.inout, new_result);
+    let new_instr = make_binop(new_result, instr.inout, instr.rhs);
     Ok(Some(new_instr))
 }
 
