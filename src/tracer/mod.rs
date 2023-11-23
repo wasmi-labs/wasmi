@@ -63,6 +63,13 @@ impl Tracer {
     pub fn new(
         host_plugin_lookup: HashMap<usize, HostFunctionDesc>,
         phantom_functions: &Vec<String>,
+    ) -> Self {
+        Self::new_with_counter(host_plugin_lookup, phantom_functions, false)
+    }
+
+    pub fn new_with_counter(
+        host_plugin_lookup: HashMap<usize, HostFunctionDesc>,
+        phantom_functions: &Vec<String>,
         only_counter: bool,
     ) -> Self {
         Tracer {
