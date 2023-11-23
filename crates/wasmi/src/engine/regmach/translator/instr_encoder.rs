@@ -710,22 +710,14 @@ impl InstrEncoder {
             // Thankfully most instructions are small enough.
             return fallback_case(self, stack, local, value, preserved);
         }
-        let Some(result) = self.instrs.get_mut(last_instr).result_mut(res) else {
-            // Can only apply the optimization if the last instruction has exactly one result.
-            return fallback_case(self, stack, local, value, preserved);
-        };
-        if *result != returned_value {
-            // We only want to apply the optimization if indeed `x` in `local.set n x`
-            // is the same register as the result register of the last instruction.
-            //
-            // TODO: Find out in what cases `result != value`. Is this a bug or an edge case?
-            //       Generally `result` should be equal to `value` since `value` refers to the
-            //       `result` of the previous instruction.
-            //       Therefore, instead of an `if` we originally had a `debug_assert`.
-            //       (Note: the spidermonkey bench test failed without this change.)
+        if !self
+            .instrs
+            .get_mut(last_instr)
+            .relink_result(stack, res, local, returned_value)?
+        {
+            // It was not possible to relink the result of `last_instr` therefore we fallback.
             return fallback_case(self, stack, local, value, preserved);
         }
-        *result = local;
         if let Some(preserved) = preserved {
             // We were able to apply the optimization.
             // Preservation requires the copy to be before the optimized last instruction.
