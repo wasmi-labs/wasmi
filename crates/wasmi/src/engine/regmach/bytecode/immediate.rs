@@ -213,6 +213,30 @@ impl<T> PartialEq for Const32<T> {
 
 impl<T> Eq for Const32<T> {}
 
+impl<T> From<Const16<T>> for Const32<T>
+where
+    T: From<Const16<T>>,
+    Const32<T>: From<T>,
+{
+    fn from(value: Const16<T>) -> Self {
+        Self::from(T::from(value))
+    }
+}
+
+impl From<Const16<i64>> for Const32<i64> {
+    fn from(value: Const16<i64>) -> Self {
+        // Note: The `as` cast is lossless as guaranteed by `Const16<i64>`.
+        Self::from(i64::from(value) as i32)
+    }
+}
+
+impl From<Const16<u64>> for Const32<u64> {
+    fn from(value: Const16<u64>) -> Self {
+        // Note: The `as` cast is lossless as guaranteed by `Const16<i64>`.
+        Self::from(u64::from(value) as u32)
+    }
+}
+
 impl From<i32> for Const32<i32> {
     fn from(value: i32) -> Self {
         Self::new(AnyConst32::from_i32(value))
