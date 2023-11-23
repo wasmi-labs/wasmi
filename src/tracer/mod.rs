@@ -117,9 +117,8 @@ impl Tracer {
             .clone()
     }
 
-    pub fn count(&mut self) -> bool {
+    pub fn count(&mut self) {
         self.counter += 1;
-        self.only_counter
     }
 
     pub fn only_count(&self) -> bool {
