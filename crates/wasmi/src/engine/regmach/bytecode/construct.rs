@@ -1,10 +1,11 @@
 use super::{
-    utils::{BranchOffset16, CopysignImmInstr, Sign},
+    utils::{BranchOffset16, Sign},
     AnyConst32,
     BinAssignInstr,
     BinAssignInstrImm,
     BinAssignInstrImm32,
     BinInstr,
+    BinInstrImm,
     BinInstrImm16,
     BranchBinOpInstr,
     BranchBinOpInstrImm,
@@ -740,7 +741,7 @@ impl Instruction {
 
     /// Creates a new [`Instruction::F32CopysignImm`] instruction.
     pub fn f32_copysign_imm(result: Register, lhs: Register, rhs: Sign) -> Self {
-        Self::F32CopysignImm(CopysignImmInstr { result, lhs, rhs })
+        Self::F32CopysignImm(BinInstrImm::new(result, lhs, rhs))
     }
 
     /// Creates a new [`Instruction::F32CopysignAssignImm`] instruction.
@@ -750,7 +751,7 @@ impl Instruction {
 
     /// Creates a new [`Instruction::F64CopysignImm`] instruction.
     pub fn f64_copysign_imm(result: Register, lhs: Register, rhs: Sign) -> Self {
-        Self::F64CopysignImm(CopysignImmInstr { result, lhs, rhs })
+        Self::F64CopysignImm(BinInstrImm::new(result, lhs, rhs))
     }
 
     /// Creates a new [`Instruction::F64CopysignAssignImm`] instruction.

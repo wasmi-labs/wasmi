@@ -249,13 +249,16 @@ impl BinInstr {
     }
 }
 
-/// A binary instruction with an immediate right-hand side value.
+/// A binary instruction with a 16-bit encoded immediate value.
+pub type BinInstrImm16<T> = BinInstrImm<Const16<T>>;
+
+/// A binary instruction with an immediate value.
 ///
 /// # Note
 ///
 /// Optimized for small constant values that fit into 16-bit.
-#[derive(Copy, Clone, PartialEq, Eq)]
-pub struct BinInstrImm16<T> {
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct BinInstrImm<T> {
     /// The register storing the result of the computation.
     pub result: Register,
     /// The register holding one of the operands.
@@ -271,25 +274,12 @@ pub struct BinInstrImm16<T> {
     ///
     /// The instruction decides if this operand is the left-hand or
     /// right-hand operand for the computation.
-    pub imm_in: Const16<T>,
+    pub imm_in: T,
 }
 
-impl<T> fmt::Debug for BinInstrImm16<T>
-where
-    Const16<T>: fmt::Debug,
-{
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("BinInstrImm16")
-            .field("result", &self.result)
-            .field("reg_in", &self.reg_in)
-            .field("imm_in", &self.imm_in)
-            .finish()
-    }
-}
-
-impl<T> BinInstrImm16<T> {
+impl<T> BinInstrImm<T> {
     /// Creates a new [`BinInstrImm16`].
-    pub fn new(result: Register, reg_in: Register, imm_in: Const16<T>) -> Self {
+    pub fn new(result: Register, reg_in: Register, imm_in: T) -> Self {
         Self {
             result,
             reg_in,
@@ -512,17 +502,6 @@ impl Sign {
             Self::Neg => -1.0_f64,
         }
     }
-}
-
-/// The `f32.copysign` or `f64.copysign` instruction with an immediate value.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct CopysignImmInstr {
-    /// The result register.
-    pub result: Register,
-    /// The input register.
-    pub lhs: Register,
-    /// The sign to copy.
-    pub rhs: Sign,
 }
 
 /// Auxiliary [`Instruction`] parameter to encode call parameters for indirect call instructions.

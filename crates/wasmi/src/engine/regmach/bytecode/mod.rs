@@ -14,12 +14,12 @@ pub(crate) use self::{
         BinAssignInstrImm,
         BinAssignInstrImm32,
         BinInstr,
+        BinInstrImm,
         BinInstrImm16,
         BranchBinOpInstr,
         BranchBinOpInstrImm,
         BranchOffset16,
         CallIndirectParams,
-        CopysignImmInstr,
         LoadAtInstr,
         LoadInstr,
         LoadOffset16Instr,
@@ -2958,9 +2958,9 @@ pub enum Instruction {
     /// Wasm `f64.copysign` instruction: `r0 = copysign(r1, r2)`
     F64Copysign(BinInstr),
     /// Wasm `f32.copysign` instruction with immediate: `r0 = copysign(r1, c0)`
-    F32CopysignImm(CopysignImmInstr),
+    F32CopysignImm(BinInstrImm<Sign>),
     /// Wasm `f64.copysign` instruction with immediate: `r0 = copysign(r1, c0)`
-    F64CopysignImm(CopysignImmInstr),
+    F64CopysignImm(BinInstrImm<Sign>),
 
     /// Wasm `i32.wrap_i64` instruction.
     I32WrapI64(UnaryInstr),

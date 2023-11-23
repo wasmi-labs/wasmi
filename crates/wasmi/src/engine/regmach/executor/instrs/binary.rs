@@ -6,8 +6,8 @@ use crate::{
         BinAssignInstrImm,
         BinAssignInstrImm32,
         BinInstr,
+        BinInstrImm,
         BinInstrImm16,
-        CopysignImmInstr,
         Sign,
     },
 };
@@ -222,9 +222,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes an [`Instruction::F32CopysignImm`].
     #[inline(always)]
-    pub fn execute_f32_copysign_imm(&mut self, instr: CopysignImmInstr) {
-        let lhs = self.get_register(instr.lhs);
-        let rhs = instr.rhs.to_f32();
+    pub fn execute_f32_copysign_imm(&mut self, instr: BinInstrImm<Sign>) {
+        let lhs = self.get_register(instr.reg_in);
+        let rhs = instr.imm_in.to_f32();
         self.set_register(instr.result, UntypedValue::f32_copysign(lhs, rhs.into()));
         self.next_instr()
     }
@@ -240,9 +240,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::F64CopysignImm`].
     #[inline(always)]
-    pub fn execute_f64_copysign_imm(&mut self, instr: CopysignImmInstr) {
-        let lhs = self.get_register(instr.lhs);
-        let rhs = instr.rhs.to_f64();
+    pub fn execute_f64_copysign_imm(&mut self, instr: BinInstrImm<Sign>) {
+        let lhs = self.get_register(instr.reg_in);
+        let rhs = instr.imm_in.to_f64();
         self.set_register(instr.result, UntypedValue::f64_copysign(lhs, rhs.into()));
         self.next_instr()
     }
