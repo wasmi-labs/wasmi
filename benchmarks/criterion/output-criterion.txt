@@ -1,0 +1,68 @@
+test translate/wasm_kernel ... bench:     4973358 ns/iter (+/- 10837)
+
+test translate/spidermonkey ... bench:    86351040 ns/iter (+/- 112909)
+
+test translate/pulldown_cmark ... bench:     3765254 ns/iter (+/- 9938)
+
+test translate/bz2 ... bench:     1326291 ns/iter (+/- 5671)
+
+test translate/erc20 ... bench:      134949 ns/iter (+/- 249)
+
+test translate/erc721 ... bench:      191169 ns/iter (+/- 609)
+
+test translate/erc1155 ... bench:      278175 ns/iter (+/- 1492)
+
+test instantiate/wasm_kernel ... bench:       58671 ns/iter (+/- 1716)
+
+test execute/tiny_keccak ... bench:      349367 ns/iter (+/- 1268)
+
+test execute/rev_complement ... bench:      441983 ns/iter (+/- 993)
+
+test execute/regex_redux ... bench:      590274 ns/iter (+/- 11347)
+
+test execute/count_until ... bench:     7381327 ns/iter (+/- 20903)
+
+test execute/br_table ... bench:     1489347 ns/iter (+/- 19984)
+
+test execute/trunc_f2i ... bench:      599745 ns/iter (+/- 975)
+
+test execute/global/bump ... bench:     1317299 ns/iter (+/- 1690)
+
+test execute/global/get_const ... bench:      730853 ns/iter (+/- 1372)
+
+test execute/factorial/rec ... bench:      687745 ns/iter (+/- 1433)
+
+test execute/factorial/iter ... bench:      327310 ns/iter (+/- 1379)
+
+test execute/call/rec ... bench:      169855 ns/iter (+/- 226)
+
+test execute/recursive_scan ... bench:      184890 ns/iter (+/- 1427)
+
+test execute/recursive_trap ... bench:       15814 ns/iter (+/- 22)
+
+test execute/call/host/1 ... bench:       36998 ns/iter (+/- 1725)
+
+test execute/fuse ... bench:     7317389 ns/iter (+/- 11217)
+
+test execute/fibonacci/rec ... bench:     6699847 ns/iter (+/- 14937)
+
+test execute/fibonacci/tail ... bench:     1476382 ns/iter (+/- 2430)
+
+test execute/fibonacci/iter ... bench:     1352687 ns/iter (+/- 682)
+
+test execute/is_even/rec ... bench:     1078406 ns/iter (+/- 11468)
+
+test execute/memory/sum_bytes ... bench:     1003375 ns/iter (+/- 12536)
+
+test execute/memory/fill_bytes ... bench:     1118735 ns/iter (+/- 3094)
+
+test execute/memory/vec_add ... bench:     2937682 ns/iter (+/- 1492)
+
+test overhead/call/typed/0 ... bench:     1232865 ns/iter (+/- 18381)
+
+test overhead/call/typed/16 ... bench:     1618677 ns/iter (+/- 10294)
+
+test overhead/call/untyped/0 ... bench:     1667684 ns/iter (+/- 11374)
+
+test overhead/call/untyped/16 ... bench:     2480428 ns/iter (+/- 8532)
+
