@@ -67,8 +67,10 @@ impl Instruction {
             Instruction::ReturnNezSpan { .. } |
             Instruction::ReturnNezMany { .. } |
             Instruction::Branch { .. } |
-            Instruction::BranchEqz { .. } |
-            Instruction::BranchNez { .. } |
+            Instruction::BranchI32Eqz { .. } |
+            Instruction::BranchI32Nez { .. } |
+            Instruction::BranchI64Eqz { .. } |
+            Instruction::BranchI64Nez { .. } |
             Instruction::BranchTable { .. } => None,
             Instruction::BranchI32And(_) |
             Instruction::BranchI32AndImm(_) |

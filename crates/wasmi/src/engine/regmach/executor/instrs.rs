@@ -245,11 +245,17 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     forward_return!(self.execute_return_nez_many(condition, values))
                 }
                 Instr::Branch { offset } => self.execute_branch(offset),
-                Instr::BranchEqz { condition, offset } => {
-                    self.execute_branch_eqz(condition, offset)
+                Instr::BranchI32Eqz { condition, offset } => {
+                    self.execute_branch_i32_eqz(condition, offset)
                 }
-                Instr::BranchNez { condition, offset } => {
-                    self.execute_branch_nez(condition, offset)
+                Instr::BranchI32Nez { condition, offset } => {
+                    self.execute_branch_i32_nez(condition, offset)
+                }
+                Instr::BranchI64Eqz { condition, offset } => {
+                    self.execute_branch_i64_eqz(condition, offset)
+                }
+                Instr::BranchI64Nez { condition, offset } => {
+                    self.execute_branch_i64_nez(condition, offset)
                 }
                 Instr::BranchTable { index, len_targets } => {
                     self.execute_branch_table(index, len_targets)

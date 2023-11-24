@@ -411,14 +411,24 @@ impl Instruction {
         Self::Branch { offset }
     }
 
-    /// Creates a new [`Instruction::BranchEqz`] for the given `condition` and `offset`.
-    pub fn branch_eqz(condition: Register, offset: BranchOffset) -> Self {
-        Self::BranchEqz { condition, offset }
+    /// Creates a new [`Instruction::BranchI32Eqz`] for the given `condition` and `offset`.
+    pub fn branch_i32_eqz(condition: Register, offset: BranchOffset) -> Self {
+        Self::BranchI32Eqz { condition, offset }
     }
 
-    /// Creates a new [`Instruction::BranchNez`] for the given `condition` and `offset`.
-    pub fn branch_nez(condition: Register, offset: BranchOffset) -> Self {
-        Self::BranchNez { condition, offset }
+    /// Creates a new [`Instruction::BranchI32Nez`] for the given `condition` and `offset`.
+    pub fn branch_i32_nez(condition: Register, offset: BranchOffset) -> Self {
+        Self::BranchI32Nez { condition, offset }
+    }
+
+    /// Creates a new [`Instruction::BranchI64Eqz`] for the given `condition` and `offset`.
+    pub fn branch_i64_eqz(condition: Register, offset: BranchOffset) -> Self {
+        Self::BranchI64Eqz { condition, offset }
+    }
+
+    /// Creates a new [`Instruction::BranchI64Nez`] for the given `condition` and `offset`.
+    pub fn branch_i64_nez(condition: Register, offset: BranchOffset) -> Self {
+        Self::BranchI64Nez { condition, offset }
     }
 
     /// Creates a new [`Instruction::BranchTable`] for the given `index` and `len_targets`.
