@@ -522,3 +522,53 @@ fn if_i32_eqz_fuse() {
     test_for("or", Instruction::branch_i32_or);
     test_for("xor", Instruction::branch_i32_xor);
 }
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn block_i64_eqz_fuse() {
+    let wasm = wat2wasm(&format!(
+        r"
+        (module
+            (func (param i64)
+                (block
+                    (i64.eqz (local.get 0))
+                    (br_if 0)
+                )
+            )
+        )",
+    ));
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::branch_i64_eqz(
+                Register::from_i16(0),
+                BranchOffset::from(1),
+            ),
+            Instruction::Return,
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn if_i64_eqz_fuse() {
+    let wasm = wat2wasm(&format!(
+        r"
+        (module
+            (func (param i64)
+                (if
+                    (i64.eqz (local.get 0))
+                    (then)
+                )
+            )
+        )",
+    ));
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::branch_i64_nez(
+                Register::from_i16(0),
+                BranchOffset::from(1),
+            ),
+            Instruction::Return,
+        ])
+        .run()
+}
