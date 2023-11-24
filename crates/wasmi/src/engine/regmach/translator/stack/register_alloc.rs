@@ -193,9 +193,9 @@ impl RegisterAlloc {
             Some(new_len)
         }
         assert!(matches!(self.phase, AllocPhase::Init));
-        self.len_locals = bump_locals(self.len_locals, amount).ok_or_else(|| {
-            TranslationError::new(TranslationErrorInner::AllocatedTooManyRegisters)
-        })?;
+        self.len_locals = bump_locals(self.len_locals, amount).ok_or_else(
+            || TranslationError::new(TranslationErrorInner::AllocatedTooManyRegisters)
+        )?;
         // We can convert `len_locals` to `i16` because it is always without bounds of `0..i16::MAX`.
         self.next_dynamic = self.len_locals as i16;
         self.max_dynamic = self.len_locals as i16;
@@ -232,9 +232,7 @@ impl RegisterAlloc {
     pub fn push_dynamic(&mut self) -> Result<Register, TranslationError> {
         self.assert_alloc_phase();
         if self.next_dynamic == self.min_storage {
-            return Err(TranslationError::new(
-                TranslationErrorInner::AllocatedTooManyRegisters,
-            ));
+            return Err(TranslationError::new(TranslationErrorInner::AllocatedTooManyRegisters));
         }
         let reg = Register::from_i16(self.next_dynamic);
         self.next_dynamic += 1;
@@ -354,9 +352,7 @@ impl RegisterAlloc {
     fn update_min_storage(&mut self, register: Register) -> Result<(), TranslationError> {
         self.min_storage = min(self.min_storage, register.to_i16());
         if self.next_dynamic == self.min_storage {
-            return Err(TranslationError::new(
-                TranslationErrorInner::AllocatedTooManyRegisters,
-            ));
+            return Err(TranslationError::new(TranslationErrorInner::AllocatedTooManyRegisters));
         }
         Ok(())
     }
@@ -364,9 +360,9 @@ impl RegisterAlloc {
     /// Converts a preservation [`Register`] into a [`StashKey`].
     fn reg2key(register: Register) -> StashKey {
         let reg_index = i16::MAX - register.to_i16();
-        let key_index = usize::try_from(reg_index).unwrap_or_else(|error| {
-            panic!("reg_index ({reg_index}) must be convertible to usize: {error}")
-        });
+        let key_index = usize::try_from(reg_index).unwrap_or_else(
+            |error| panic!("reg_index ({reg_index}) must be convertible to usize: {error}")
+        );
         StashKey::from(key_index)
     }
 

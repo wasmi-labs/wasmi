@@ -680,10 +680,7 @@ impl InstrEncoder {
             Ok(())
         }
 
-        debug_assert!(matches!(
-            stack.get_register_space(local),
-            RegisterSpace::Local
-        ));
+        debug_assert!(matches!(stack.get_register_space(local), RegisterSpace::Local));
         let TypedProvider::Register(returned_value) = value else {
             // Cannot apply the optimization for `local.set C` where `C` is a constant value.
             return fallback_case(self, stack, local, value, preserved);

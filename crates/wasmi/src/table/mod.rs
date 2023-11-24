@@ -33,9 +33,9 @@ impl ArenaIndex for TableIdx {
     }
 
     fn from_usize(value: usize) -> Self {
-        let value = value.try_into().unwrap_or_else(|error| {
-            panic!("index {value} is out of bounds as table index: {error}")
-        });
+        let value = value.try_into().unwrap_or_else(
+            |error| panic!("index {value} is out of bounds as table index: {error}")
+        );
         Self(value)
     }
 }

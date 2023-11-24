@@ -179,16 +179,17 @@ impl Stack {
         let len_outputs = output_types.len();
         let max_inout = len_inputs.max(len_outputs);
         self.values.reserve(max_inout)?;
-        let delta = if len_outputs > len_inputs {
-            // Note: We have to save the delta of values pushed
-            //       so that we can drop them in case the host
-            //       function fails to execute properly.
-            let delta = len_outputs - len_inputs;
-            self.values.extend_zeros(delta);
-            delta
-        } else {
-            0
-        };
+        let delta =
+            if len_outputs > len_inputs {
+                // Note: We have to save the delta of values pushed
+                //       so that we can drop them in case the host
+                //       function fails to execute properly.
+                let delta = len_outputs - len_inputs;
+                self.values.extend_zeros(delta);
+                delta
+            } else {
+                0
+            };
         let params_results = FuncParams::new(
             self.values.peek_as_slice_mut(max_inout),
             len_inputs,

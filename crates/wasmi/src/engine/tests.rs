@@ -120,9 +120,9 @@ fn assert_func_body<E>(
             .map(|(index, expected)| {
                 (
                     index,
-                    engine.resolve_instr(func_body, index).unwrap_or_else(|| {
-                        panic!("encountered missing instruction at position {index}")
-                    }),
+                    engine.resolve_instr(func_body, index).unwrap_or_else(
+                        || panic!("encountered missing instruction at position {index}")
+                    ),
                     expected,
                 )
             })
@@ -240,14 +240,15 @@ fn implicit_return_with_value() {
 
 #[test]
 fn implicit_return_param() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm =
+        wat2wasm(
+            r#"
         (module
             (func (export "call") (param i32)
             )
         )
     "#,
-    );
+        );
     let expected = [Instruction::Return(drop_keep(1, 0))];
     assert_func_bodies(wasm, [expected]);
 }
@@ -315,8 +316,9 @@ fn get_local_3() {
 
 #[test]
 fn explicit_return() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm =
+        wat2wasm(
+            r#"
         (module
             (func (export "call") (param i32) (result i32)
                 local.get 0
@@ -324,7 +326,7 @@ fn explicit_return() {
             )
         )
     "#,
-    );
+        );
     let expected = [instr::local_get(1), Instruction::Return(drop_keep(1, 1))];
     assert_func_bodies(wasm, [expected]);
 }
@@ -812,8 +814,9 @@ fn br_if_return() {
 
 #[test]
 fn br_table_return() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm =
+        wat2wasm(
+            r#"
         (module
             (func (export "call") (param i32)
                 block $1
@@ -826,7 +829,7 @@ fn br_table_return() {
             )
         )
     "#,
-    );
+        );
     let expected = [
         /* 0 */ instr::local_get(1),
         /* 1 */ Instruction::BrTable(br_targets(3)),
@@ -898,8 +901,9 @@ fn metered_simple_02() {
 
 #[test]
 fn metered_simple_03() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm =
+        wat2wasm(
+            r#"
         (module
             (func (param $a i32) (param $b i32) (result i32)
                 (local.set $a ;; c = a + b
@@ -912,7 +916,7 @@ fn metered_simple_03() {
             )
         )
     "#,
-    );
+        );
     let costs = fuel_costs();
     let expected_fuel =
         9 * costs.base + costs.fuel_for_locals(2) + costs.fuel_for_drop_keep(drop_keep(2, 1));
@@ -1265,8 +1269,9 @@ fn metered_calls_01() {
 
 #[test]
 fn metered_calls_02() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm =
+        wat2wasm(
+            r#"
         (module
             (func $f0 (param $a i32) (param $b i32) (result i32)
                 (i32.add
@@ -1282,7 +1287,7 @@ fn metered_calls_02() {
             )
         )
     "#,
-    );
+        );
     let costs = fuel_costs();
     let expected_fuel_f0 =
         5 * costs.base + costs.fuel_for_locals(2) + costs.fuel_for_drop_keep(drop_keep(2, 1));
@@ -1358,8 +1363,9 @@ fn metered_calls_03() {
 
 #[test]
 fn metered_load_01() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm =
+        wat2wasm(
+            r#"
         (module
             (memory 1)
             (func (param $src i32) (result i32)
@@ -1367,25 +1373,27 @@ fn metered_load_01() {
             )
         )
     "#,
-    );
+        );
     let costs = fuel_costs();
     let expected_fuel = 3 * costs.base
         + costs.load
         + costs.fuel_for_locals(1)
         + costs.fuel_for_drop_keep(drop_keep(1, 1));
-    let expected = [
-        instr::consume_fuel(expected_fuel),
-        instr::local_get(1),
-        Instruction::I32Load(AddressOffset::from(0)),
-        Instruction::Return(drop_keep(1, 1)),
-    ];
+    let expected =
+        [
+            instr::consume_fuel(expected_fuel),
+            instr::local_get(1),
+            Instruction::I32Load(AddressOffset::from(0)),
+            Instruction::Return(drop_keep(1, 1)),
+        ];
     assert_func_bodies_metered(wasm, [expected]);
 }
 
 #[test]
 fn metered_store_01() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm =
+        wat2wasm(
+            r#"
         (module
             (memory 1)
             (func (param $dst i32) (param $value i32)
@@ -1395,7 +1403,7 @@ fn metered_store_01() {
             )
         )
     "#,
-    );
+        );
     let costs = fuel_costs();
     let expected_fuel = 4 * costs.base + costs.store + costs.fuel_for_locals(2);
     let expected = [

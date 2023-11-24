@@ -73,9 +73,7 @@ impl FuncLocalConsts {
     /// If too many constant values have been allocated for this [`FuncLocalConsts`].
     pub fn alloc(&mut self, value: UntypedValue) -> Result<Register, TranslationError> {
         if self.next_idx == Self::last_index() {
-            return Err(TranslationError::new(
-                TranslationErrorInner::TooManyFuncLocalConstValues,
-            ));
+            return Err(TranslationError::new(TranslationErrorInner::TooManyFuncLocalConstValues));
         }
         match self.const2idx.entry(value) {
             btree_map::Entry::Occupied(entry) => Ok(*entry.get()),

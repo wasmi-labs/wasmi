@@ -142,9 +142,10 @@ impl ExpectedFunc {
     fn assert_consts(&self, engine: &Engine, func: CompiledFunc) {
         let expected_consts = self.expected_consts();
         for (index, expected_value) in expected_consts.iter().copied().enumerate() {
-            let actual_value = engine.get_func_const_2(func, index).unwrap_or_else(|| {
-                panic!("missing function local constant value of for {func:?} at index {index}")
-            });
+            let actual_value =
+                engine.get_func_const_2(func, index).unwrap_or_else(|| {
+                    panic!("missing function local constant value of for {func:?} at index {index}")
+                });
             assert_eq!(
                 actual_value, expected_value,
                 "function local constant value mismatch for {func:?} at index {index}"
@@ -162,12 +163,13 @@ impl TranslationTest {
     /// Creates a new [`TranslationTest`] for the given Webassembly `bytes`.
     #[must_use]
     pub fn new(bytes: impl AsRef<[u8]>) -> Self {
-        let config = {
-            let mut cfg = Config::default();
-            cfg.wasm_tail_call(true);
-            cfg.set_engine_backend(EngineBackend::RegisterMachine);
-            cfg
-        };
+        let config =
+            {
+                let mut cfg = Config::default();
+                cfg.wasm_tail_call(true);
+                cfg.set_engine_backend(EngineBackend::RegisterMachine);
+                cfg
+            };
         Self {
             wasm: bytes.as_ref().into(),
             config,

@@ -160,9 +160,9 @@ impl Args {
         self.dirs
             .iter()
             .map(|path| {
-                let dir = Dir::open_ambient_dir(path, ambient_authority()).with_context(|| {
-                    format!("failed to open directory '{path:?}' with ambient authority")
-                })?;
+                let dir = Dir::open_ambient_dir(path, ambient_authority()).with_context(
+                    || format!("failed to open directory '{path:?}' with ambient authority")
+                )?;
                 Ok((path.as_ref(), dir))
             })
             .collect::<Result<Vec<_>>>()

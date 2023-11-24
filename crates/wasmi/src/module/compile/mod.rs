@@ -58,14 +58,15 @@ impl<'parser> FunctionTranslator<'parser> {
         res: ModuleResources<'parser>,
         allocations: ChosenFuncTranslatorAllocations,
     ) -> Result<Self, ModuleError> {
-        let func_builder = FuncBuilder::new(
-            func,
-            compiled_func,
-            compiled_func_2,
-            res,
-            validator,
-            allocations,
-        )?;
+        let func_builder =
+            FuncBuilder::new(
+                func,
+                compiled_func,
+                compiled_func_2,
+                res,
+                validator,
+                allocations,
+            )?;
         Ok(Self {
             func_body,
             func_builder,

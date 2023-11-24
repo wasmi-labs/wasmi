@@ -503,9 +503,7 @@ impl BranchOffset16 {
         assert!(valid_offset.is_init());
         assert!(!self.is_init());
         let Some(valid_offset16) = Self::new(valid_offset) else {
-            return Err(TranslationError::new(
-                TranslationErrorInner::BranchOffsetOutOfBounds,
-            ));
+            return Err(TranslationError::new(TranslationErrorInner::BranchOffsetOutOfBounds));
         };
         *self = valid_offset16;
         Ok(())

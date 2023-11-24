@@ -228,8 +228,9 @@ fn simple_if_then_else() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn simple_if_then_else_nested() {
-    let wasm = wat2wasm(
-        r"
+    let wasm =
+        wat2wasm(
+            r"
         (module
             (func (param i32 i32)
                 (if (local.get 0)
@@ -248,7 +249,7 @@ fn simple_if_then_else_nested() {
                 )
             )
         )",
-    );
+        );
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::branch_i32_eqz(Register::from_i16(0), BranchOffset::from(4)),
@@ -517,8 +518,9 @@ fn test_if_false_without_else_block_0() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn test_if_false_without_else_block_1() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm =
+        wat2wasm(
+            r#"
         (module
             (func (result i32)
                 (if
@@ -531,7 +533,7 @@ fn test_if_false_without_else_block_1() {
             )
         )
         "#,
-    );
+        );
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_imm32(1)])
         .run()

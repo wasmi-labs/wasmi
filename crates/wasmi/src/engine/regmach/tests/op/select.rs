@@ -51,8 +51,9 @@ fn reg() {
     fn test_reg(kind: SelectKind, result_ty: ValueType) {
         let display_ty = DisplayValueType::from(result_ty);
         let display_select = DisplaySelect::new(kind, result_ty);
-        let wasm = wat2wasm(&format!(
-            r#"
+        let wasm =
+            wat2wasm(&format!(
+                r#"
             (module
                 (func (param $condition i32)
                       (param $lhs {display_ty})
@@ -65,7 +66,7 @@ fn reg() {
                 )
             )
         "#,
-        ));
+            ));
         let condition = Register::from_i16(0);
         let lhs = Register::from_i16(1);
         let rhs = Register::from_i16(2);
@@ -637,8 +638,9 @@ where
     let display_lhs = DisplayWasm::from(lhs);
     let display_rhs = DisplayWasm::from(rhs);
     let display_select = DisplaySelect::new(kind, ty);
-    let wasm = wat2wasm(&format!(
-        r#"
+    let wasm =
+        wat2wasm(&format!(
+            r#"
         (module
             (func (param $condition i32) (result {display_ty})
                 {display_ty}.const {display_lhs}
@@ -648,7 +650,7 @@ where
             )
         )
     "#,
-    ));
+        ));
     TranslationTest::new(wasm)
 }
 

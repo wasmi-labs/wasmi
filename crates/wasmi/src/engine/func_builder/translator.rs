@@ -854,12 +854,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let consume_fuel = self.alloc.control_frames.last().consume_fuel_instr();
             let stack_height = self.frame_stack_height(block_type);
             let end_label = self.alloc.inst_builder.new_label();
-            self.alloc.control_frames.push_frame(BlockControlFrame::new(
-                block_type,
-                end_label,
-                stack_height,
-                consume_fuel,
-            ));
+            self.alloc.control_frames.push_frame(
+                BlockControlFrame::new(block_type, end_label, stack_height, consume_fuel)
+            );
         } else {
             self.alloc
                 .control_frames
@@ -882,12 +879,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     .inst_builder
                     .push_inst(self.make_consume_fuel_base())
             });
-            self.alloc.control_frames.push_frame(LoopControlFrame::new(
-                block_type,
-                header,
-                stack_height,
-                consume_fuel,
-            ));
+            self.alloc
+                .control_frames
+                .push_frame(LoopControlFrame::new(block_type, header, stack_height, consume_fuel));
         } else {
             self.alloc
                 .control_frames
@@ -1741,9 +1735,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             builder
                 .alloc
                 .inst_builder
-                .push_inst(Instruction::ElemDrop(ElementSegmentIdx::from(
-                    segment_index,
-                )));
+                .push_inst(Instruction::ElemDrop(ElementSegmentIdx::from(segment_index)));
             Ok(())
         })
     }

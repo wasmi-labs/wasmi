@@ -186,9 +186,9 @@ impl TryFrom<usize> for BranchTableTargets {
     fn try_from(index: usize) -> Result<Self, Self::Error> {
         match u32::try_from(index) {
             Ok(index) => Ok(Self(index)),
-            Err(_) => Err(TranslationError::new(
-                TranslationErrorInner::BranchTableTargetsOutOfBounds,
-            )),
+            Err(_) => {
+                Err(TranslationError::new(TranslationErrorInner::BranchTableTargetsOutOfBounds))
+            }
         }
     }
 }
@@ -213,9 +213,7 @@ impl TryFrom<u64> for BlockFuel {
     fn try_from(index: u64) -> Result<Self, Self::Error> {
         match u32::try_from(index) {
             Ok(index) => Ok(Self(index)),
-            Err(_) => Err(TranslationError::new(
-                TranslationErrorInner::BlockFuelOutOfBounds,
-            )),
+            Err(_) => Err(TranslationError::new(TranslationErrorInner::BlockFuelOutOfBounds)),
         }
     }
 }

@@ -63,9 +63,10 @@ fn main() -> Result<()> {
 /// Prints the remaining fuel so far if fuel metering was enabled.
 fn print_remaining_fuel(args: &Args, ctx: &Context) {
     if let Some(total_fuel) = args.fuel() {
-        let consumed = ctx.store().fuel_consumed().unwrap_or_else(|| {
-            panic!("fuel metering is enabled but could not query consumed fuel")
-        });
+        let consumed =
+            ctx.store().fuel_consumed().unwrap_or_else(
+                || panic!("fuel metering is enabled but could not query consumed fuel")
+            );
         let remaining = total_fuel - consumed;
         println!("fuel consumed: {consumed}, fuel remaining: {remaining}");
     }

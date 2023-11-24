@@ -84,9 +84,9 @@ impl InstanceCache {
         let instance = self.instance();
         ctx.resolve_instance(self.instance())
             .get_data_segment(index)
-            .unwrap_or_else(|| {
-                unreachable!("missing data segment ({index:?}) for instance: {instance:?}",)
-            })
+            .unwrap_or_else(
+                || unreachable!("missing data segment ({index:?}) for instance: {instance:?}",)
+            )
     }
 
     /// Loads the [`ElementSegment`] at `index` of the currently used [`Instance`].
@@ -103,9 +103,9 @@ impl InstanceCache {
         let instance = self.instance();
         ctx.resolve_instance(self.instance())
             .get_element_segment(index.to_u32())
-            .unwrap_or_else(|| {
-                unreachable!("missing element segment ({index:?}) for instance: {instance:?}",)
-            })
+            .unwrap_or_else(
+                || unreachable!("missing element segment ({index:?}) for instance: {instance:?}",)
+            )
     }
 
     /// Loads the [`DataSegment`] at `index` of the currently used [`Instance`].
@@ -159,9 +159,9 @@ impl InstanceCache {
         let default_memory = ctx
             .resolve_instance(instance)
             .get_memory(DEFAULT_MEMORY_INDEX)
-            .unwrap_or_else(|| {
-                unreachable!("missing default linear memory for instance: {instance:?}")
-            });
+            .unwrap_or_else(
+                || unreachable!("missing default linear memory for instance: {instance:?}")
+            );
         self.default_memory.insert(default_memory)
     }
 

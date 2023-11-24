@@ -117,12 +117,13 @@ type WasmLoadOp =
     fn(memory: &[u8], address: UntypedValue, offset: u32) -> Result<UntypedValue, TrapCode>;
 
 /// The function signature of Wasm store operations.
-type WasmStoreOp = fn(
-    memory: &mut [u8],
-    address: UntypedValue,
-    offset: u32,
-    value: UntypedValue,
-) -> Result<(), TrapCode>;
+type WasmStoreOp =
+    fn(
+        memory: &mut [u8],
+        address: UntypedValue,
+        offset: u32,
+        value: UntypedValue,
+    ) -> Result<(), TrapCode>;
 
 /// The WebAssembly specification demands to return this value
 /// if the `memory.grow` or `table.grow` operations fail.
@@ -808,9 +809,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             .ctx
             .resolve_instance(self.cache.instance())
             .get_signature(func_type.to_u32())
-            .unwrap_or_else(|| {
-                panic!("missing signature for call_indirect at index: {func_type:?}")
-            });
+            .unwrap_or_else(
+                || panic!("missing signature for call_indirect at index: {func_type:?}")
+            );
         if actual_signature != expected_signature {
             return Err(TrapCode::BadSignature);
         }

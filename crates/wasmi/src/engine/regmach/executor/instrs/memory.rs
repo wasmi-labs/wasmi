@@ -80,14 +80,15 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             self.execute_memory_size(result);
             return Ok(());
         }
-        let delta = match Pages::new(delta) {
-            Some(pages) => pages,
-            None => {
-                // Cannot grow memory so we push the expected error value.
-                self.set_register(result, EntityGrowError::ERROR_CODE);
-                return self.try_next_instr();
-            }
-        };
+        let delta =
+            match Pages::new(delta) {
+                Some(pages) => pages,
+                None => {
+                    // Cannot grow memory so we push the expected error value.
+                    self.set_register(result, EntityGrowError::ERROR_CODE);
+                    return self.try_next_instr();
+                }
+            };
         let return_value = self.consume_fuel_with(
             |costs| {
                 let delta_in_bytes = delta.to_bytes().unwrap_or(0) as u64;

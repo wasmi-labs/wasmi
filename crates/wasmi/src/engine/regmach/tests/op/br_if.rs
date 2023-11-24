@@ -76,8 +76,9 @@ fn consteval_return_1_imm() {
         let display_ty = DisplayValueType::from(<T as WasmType>::VALUE_TYPE);
         let display_if_true = DisplayWasm::from(if_true);
         let display_if_false = DisplayWasm::from(if_false);
-        let wasm = wat2wasm(&format!(
-            r"
+        let wasm =
+            wat2wasm(&format!(
+                r"
             (module
                 (func (result {display_ty})
                     ({display_ty}.const {display_if_true})
@@ -87,7 +88,7 @@ fn consteval_return_1_imm() {
                     ({display_ty}.const {display_if_false})
                 )
             )",
-        ));
+            ));
         TranslationTest::new(wasm)
             .expect_func(
                 ExpectedFunc::new([Instruction::return_reg(Register::from_i16(-1))])
@@ -126,8 +127,9 @@ fn consteval_return_1_imm32() {
         let display_ty = DisplayValueType::from(<T as WasmType>::VALUE_TYPE);
         let display_if_true = DisplayWasm::from(if_true);
         let display_if_false = DisplayWasm::from(if_false);
-        let wasm = wat2wasm(&format!(
-            r"
+        let wasm =
+            wat2wasm(&format!(
+                r"
             (module
                 (func (result {display_ty})
                     ({display_ty}.const {display_if_true})
@@ -137,7 +139,7 @@ fn consteval_return_1_imm32() {
                     ({display_ty}.const {display_if_false})
                 )
             )",
-        ));
+            ));
         TranslationTest::new(wasm)
             .expect_func_instrs([Instruction::return_imm32(expected)])
             .run()
@@ -544,8 +546,9 @@ fn return_if_results_2_imm() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn return_if_results_3_span() {
-    let wasm = wat2wasm(
-        r"
+    let wasm =
+        wat2wasm(
+            r"
         (module
             (func (param i32 i32 i32 i32) (result i32 i32 i32)
                 (local.get 0)
@@ -556,7 +559,7 @@ fn return_if_results_3_span() {
                 )
             )
         )",
-    );
+        );
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_nez_span(
@@ -571,8 +574,9 @@ fn return_if_results_3_span() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn return_if_results_3() {
-    let wasm = wat2wasm(
-        r"
+    let wasm =
+        wat2wasm(
+            r"
         (module
             (func (param i32 i32 i32) (result i32 i32 i32)
                 (local.get 0)
@@ -583,7 +587,7 @@ fn return_if_results_3() {
                 )
             )
         )",
-    );
+        );
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_nez_many(Register::from_i16(2), 0, 1),
@@ -709,8 +713,9 @@ fn return_if_results_4_imm() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn return_if_results_5() {
-    let wasm = wat2wasm(
-        r"
+    let wasm =
+        wat2wasm(
+            r"
         (module
             (func (param i32 i32 i32) (result i32 i32 i32 i32 i32)
                 (local.get 0)
@@ -723,7 +728,7 @@ fn return_if_results_5() {
                 )
             )
         )",
-    );
+        );
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_nez_many(Register::from_i16(2), 0, 1),
@@ -737,8 +742,9 @@ fn return_if_results_5() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn return_if_results_5_imm() {
-    let wasm = wat2wasm(
-        r"
+    let wasm =
+        wat2wasm(
+            r"
         (module
             (func (param i32) (result i32 i32 i32 i32 i32)
                 (i32.const 10)
@@ -751,7 +757,7 @@ fn return_if_results_5_imm() {
                 )
             )
         )",
-    );
+        );
     TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
@@ -983,8 +989,9 @@ fn branch_if_results_2_avoid_copy() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn branch_if_results_4_mixed_1() {
-    let wasm = wat2wasm(
-        r"
+    let wasm =
+        wat2wasm(
+            r"
         (module
             (func (param i32 i32 i32) (result i32 i32 i32 i32)
                 (block (result i32 i32 i32 i32)
@@ -998,7 +1005,7 @@ fn branch_if_results_4_mixed_1() {
                 )
             )
         )",
-    );
+        );
     TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
@@ -1027,8 +1034,9 @@ fn branch_if_results_4_mixed_1() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn branch_if_results_4_mixed_2() {
-    let wasm = wat2wasm(
-        r"
+    let wasm =
+        wat2wasm(
+            r"
         (module
             (func (param i32 i32 i32) (result i32 i32 i32 i32)
                 (block (result i32 i32 i32 i32)
@@ -1042,7 +1050,7 @@ fn branch_if_results_4_mixed_2() {
                 )
             )
         )",
-    );
+        );
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::branch_i32_eqz(Register::from_i16(2), BranchOffset::from(4)),

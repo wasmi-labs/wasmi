@@ -14,9 +14,7 @@ impl TryFrom<usize> for ConstRef {
     fn try_from(index: usize) -> Result<Self, Self::Error> {
         match u32::try_from(index) {
             Ok(index) => Ok(Self(index)),
-            Err(_) => Err(TranslationError::new(
-                TranslationErrorInner::ConstRefOutOfBounds,
-            )),
+            Err(_) => Err(TranslationError::new(TranslationErrorInner::ConstRefOutOfBounds)),
         }
     }
 }

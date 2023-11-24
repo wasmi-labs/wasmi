@@ -37,8 +37,9 @@ fn fill() {
 
 fn testcase_fill_exact(ty: ValueType, len: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
-    let wasm = wat2wasm(&format!(
-        r"
+    let wasm =
+        wat2wasm(&format!(
+            r"
         (module
             (table $t 10 {display_ty})
             (func (param $dst i32) (param $value {display_ty})
@@ -48,7 +49,7 @@ fn testcase_fill_exact(ty: ValueType, len: u32) -> TranslationTest {
                 (table.fill $t)
             )
         )",
-    ));
+        ));
     TranslationTest::new(wasm)
 }
 
@@ -109,8 +110,9 @@ fn fill_exact() {
 
 fn testcase_fill_at(ty: ValueType, dst: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
-    let wasm = wat2wasm(&format!(
-        r"
+    let wasm =
+        wat2wasm(&format!(
+            r"
         (module
             (table $t 10 {display_ty})
             (func (param $value {display_ty}) (param $len i32)
@@ -120,7 +122,7 @@ fn testcase_fill_at(ty: ValueType, dst: u32) -> TranslationTest {
                 (table.fill $t)
             )
         )",
-    ));
+        ));
     TranslationTest::new(wasm)
 }
 

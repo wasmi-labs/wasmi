@@ -53,12 +53,13 @@ impl<'a> TestContext<'a> {
         let mut linker = Linker::new(&engine);
         let mut store = Store::new(&engine, ());
         let default_memory = Memory::new(&mut store, MemoryType::new(1, Some(2)).unwrap()).unwrap();
-        let default_table = Table::new(
-            &mut store,
-            TableType::new(ValueType::FuncRef, 10, Some(20)),
-            Value::default(ValueType::FuncRef),
-        )
-        .unwrap();
+        let default_table =
+            Table::new(
+                &mut store,
+                TableType::new(ValueType::FuncRef, 10, Some(20)),
+                Value::default(ValueType::FuncRef),
+            )
+            .unwrap();
         let global_i32 = Global::new(&mut store, Value::I32(666), Mutability::Const);
         let global_i64 = Global::new(&mut store, Value::I64(666), Mutability::Const);
         let global_f32 = Global::new(&mut store, Value::F32(666.0.into()), Mutability::Const);
@@ -156,13 +157,14 @@ impl TestContext<'_> {
         mut module: wast::core::Module,
     ) -> Result<Instance, TestError> {
         let module_name = module.id.map(|id| id.name());
-        let wasm = module.encode().unwrap_or_else(|error| {
-            panic!(
-                "encountered unexpected failure to encode `.wast` module into `.wasm`:{}: {}",
-                self.test_path(),
-                error
-            )
-        });
+        let wasm =
+            module.encode().unwrap_or_else(|error| {
+                panic!(
+                    "encountered unexpected failure to encode `.wast` module into `.wasm`:{}: {}",
+                    self.test_path(),
+                    error
+                )
+            });
         let module = Module::new(self.engine(), &wasm[..])?;
         let instance_pre = self.linker.instantiate(&mut self.store, &module)?;
         let instance = instance_pre.start(&mut self.store)?;

@@ -62,17 +62,13 @@ impl From<ChosenFuncTranslatorAllocationsInner> for ChosenFuncTranslatorAllocati
 
 impl From<StackMachineFuncTranslatorAllocations> for ChosenFuncTranslatorAllocations {
     fn from(allocations: StackMachineFuncTranslatorAllocations) -> Self {
-        Self::from(ChosenFuncTranslatorAllocationsInner::StackMachine(
-            allocations,
-        ))
+        Self::from(ChosenFuncTranslatorAllocationsInner::StackMachine(allocations))
     }
 }
 
 impl From<RegisterMachineFuncTranslatorAllocations> for ChosenFuncTranslatorAllocations {
     fn from(allocations: RegisterMachineFuncTranslatorAllocations) -> Self {
-        Self::from(ChosenFuncTranslatorAllocationsInner::RegisterMachine(
-            allocations,
-        ))
+        Self::from(ChosenFuncTranslatorAllocationsInner::RegisterMachine(allocations))
     }
 }
 
@@ -118,21 +114,15 @@ impl<'parser> FuncBuilder<'parser> {
         let translator = match allocations.inner {
             ChosenFuncTranslatorAllocationsInner::StackMachine(allocations) => {
                 debug_assert!(matches!(engine_backend, EngineBackend::StackMachine));
-                ChosenFuncTranslator::StackMachine(StackMachineFuncTranslator::new(
-                    func,
-                    compiled_func,
-                    res,
-                    allocations,
-                ))
+                ChosenFuncTranslator::StackMachine(
+                    StackMachineFuncTranslator::new(func, compiled_func, res, allocations)
+                )
             }
             ChosenFuncTranslatorAllocationsInner::RegisterMachine(allocations) => {
                 debug_assert!(matches!(engine_backend, EngineBackend::RegisterMachine));
-                ChosenFuncTranslator::RegisterMachine(RegisterMachineFuncTranslator::new(
-                    func,
-                    compiled_func_2,
-                    res,
-                    allocations,
-                )?)
+                ChosenFuncTranslator::RegisterMachine(
+                    RegisterMachineFuncTranslator::new(func, compiled_func_2, res, allocations)?
+                )
             }
         };
         Ok(Self {
