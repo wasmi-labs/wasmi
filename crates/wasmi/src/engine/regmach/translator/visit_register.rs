@@ -1,10 +1,9 @@
 use crate::engine::regmach::bytecode::{
     BinInstr,
-    BinInstrImm16,
+    BinInstrImm,
     BranchBinOpInstr,
     BranchBinOpInstrImm,
     Const16,
-    CopysignImmInstr,
     Instruction,
     LoadAtInstr,
     LoadInstr,
@@ -670,33 +669,9 @@ impl VisitInputRegisters for BinInstr {
     }
 }
 
-impl VisitInputRegisters for BinInstrImm16<i32> {
+impl<T> VisitInputRegisters for BinInstrImm<T> {
     fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
         f(&mut self.reg_in)
-    }
-}
-
-impl VisitInputRegisters for BinInstrImm16<u32> {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
-        f(&mut self.reg_in)
-    }
-}
-
-impl VisitInputRegisters for BinInstrImm16<i64> {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
-        f(&mut self.reg_in)
-    }
-}
-
-impl VisitInputRegisters for BinInstrImm16<u64> {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
-        f(&mut self.reg_in)
-    }
-}
-
-impl VisitInputRegisters for CopysignImmInstr {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
-        f(&mut self.lhs)
     }
 }
 

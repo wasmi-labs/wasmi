@@ -1,7 +1,7 @@
 use super::{Executor, UntypedValueExt};
 use crate::engine::{
     bytecode::BranchOffset,
-    regmach::bytecode::{BranchBinOpInstr, BranchBinOpInstrImm, Const16, Const32, Register},
+    regmach::bytecode::{BranchBinOpInstr, BranchBinOpInstrImm16, Const16, Const32, Register},
 };
 use core::cmp;
 use wasmi_core::UntypedValue;
@@ -80,7 +80,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes a generic fused compare and branch instruction with immediate `rhs` operand.
     fn execute_branch_binop_imm<T>(
         &mut self,
-        instr: BranchBinOpInstrImm<T>,
+        instr: BranchBinOpInstrImm16<T>,
         f: fn(UntypedValue, UntypedValue) -> UntypedValue,
     ) where
         T: From<Const16<T>>,
@@ -159,7 +159,7 @@ macro_rules! impl_execute_branch_binop_imm {
             $(
                 #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
                 #[inline(always)]
-                pub fn $fn_name(&mut self, instr: BranchBinOpInstrImm<$ty>) {
+                pub fn $fn_name(&mut self, instr: BranchBinOpInstrImm16<$ty>) {
                     self.execute_branch_binop_imm(instr, $op)
                 }
             )*

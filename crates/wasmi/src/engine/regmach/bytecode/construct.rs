@@ -1,10 +1,11 @@
 use super::{
-    utils::{BranchOffset16, CopysignImmInstr, Sign},
+    utils::{BranchOffset16, Sign},
     AnyConst32,
     BinInstr,
+    BinInstrImm,
     BinInstrImm16,
     BranchBinOpInstr,
-    BranchBinOpInstrImm,
+    BranchBinOpInstrImm16,
     CallIndirectParams,
     Const16,
     Const32,
@@ -224,7 +225,7 @@ macro_rules! constructor_for_branch_binop_imm {
             $(
                 #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
                 pub fn $name(lhs: Register, rhs: Const16<$ty>, offset: BranchOffset16) -> Self {
-                    Self::$op_code(BranchBinOpInstrImm::new(lhs, rhs, offset))
+                    Self::$op_code(BranchBinOpInstrImm16::new(lhs, rhs, offset))
                 }
             )*
         }
@@ -565,12 +566,12 @@ impl Instruction {
 
     /// Creates a new [`Instruction::F32CopysignImm`] instruction.
     pub fn f32_copysign_imm(result: Register, lhs: Register, rhs: Sign) -> Self {
-        Self::F32CopysignImm(CopysignImmInstr { result, lhs, rhs })
+        Self::F32CopysignImm(BinInstrImm::new(result, lhs, rhs))
     }
 
     /// Creates a new [`Instruction::F64CopysignImm`] instruction.
     pub fn f64_copysign_imm(result: Register, lhs: Register, rhs: Sign) -> Self {
-        Self::F64CopysignImm(CopysignImmInstr { result, lhs, rhs })
+        Self::F64CopysignImm(BinInstrImm::new(result, lhs, rhs))
     }
 
     /// Creates a new [`Instruction::Select`].

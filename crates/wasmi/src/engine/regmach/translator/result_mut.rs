@@ -10,8 +10,7 @@ use crate::{
         regmach::{
             bytecode::{
                 BinInstr,
-                BinInstrImm16,
-                CopysignImmInstr,
+                BinInstrImm,
                 Instruction,
                 LoadAtInstr,
                 LoadInstr,
@@ -608,7 +607,7 @@ impl BinInstr {
     }
 }
 
-impl<T> BinInstrImm16<T> {
+impl<T> BinInstrImm<T> {
     /// Returns the single `result` [`Register`] of the [`BinInstrImm16`] if any.
     pub fn result_mut(&mut self) -> Option<&mut Register> {
         Some(&mut self.result)
@@ -617,13 +616,6 @@ impl<T> BinInstrImm16<T> {
 
 impl UnaryInstr {
     /// Returns the single `result` [`Register`] of the [`UnaryInstr`] if any.
-    pub fn result_mut(&mut self) -> Option<&mut Register> {
-        Some(&mut self.result)
-    }
-}
-
-impl CopysignImmInstr {
-    /// Returns the single `result` [`Register`] of the [`CopysignImmInstr`] if any.
     pub fn result_mut(&mut self) -> Option<&mut Register> {
         Some(&mut self.result)
     }
