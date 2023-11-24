@@ -248,13 +248,16 @@ impl BinInstr {
     }
 }
 
-/// A binary instruction with an immediate right-hand side value.
+/// A binary instruction with a 16-bit encoded immediate value.
+pub type BinInstrImm16<T> = BinInstrImm<Const16<T>>;
+
+/// A binary instruction with an immediate value.
 ///
 /// # Note
 ///
 /// Optimized for small constant values that fit into 16-bit.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct BinInstrImm16<T> {
+pub struct BinInstrImm<T> {
     /// The register storing the result of the computation.
     pub result: Register,
     /// The register holding one of the operands.
@@ -270,12 +273,12 @@ pub struct BinInstrImm16<T> {
     ///
     /// The instruction decides if this operand is the left-hand or
     /// right-hand operand for the computation.
-    pub imm_in: Const16<T>,
+    pub imm_in: T,
 }
 
-impl<T> BinInstrImm16<T> {
+impl<T> BinInstrImm<T> {
     /// Creates a new [`BinInstrImm16`].
-    pub fn new(result: Register, reg_in: Register, imm_in: Const16<T>) -> Self {
+    pub fn new(result: Register, reg_in: Register, imm_in: T) -> Self {
         Self {
             result,
             reg_in,
@@ -447,15 +450,22 @@ pub enum Sign {
     Neg,
 }
 
-/// The `f32.copysign` or `f64.copysign` instruction with an immediate value.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct CopysignImmInstr {
-    /// The result register.
-    pub result: Register,
-    /// The input register.
-    pub lhs: Register,
-    /// The sign to copy.
-    pub rhs: Sign,
+impl Sign {
+    /// Converts the [`Sign`] into an `f32` value.
+    pub fn to_f32(self) -> f32 {
+        match self {
+            Self::Pos => 1.0_f32,
+            Self::Neg => -1.0_f32,
+        }
+    }
+
+    /// Converts the [`Sign`] into an `f64` value.
+    pub fn to_f64(self) -> f64 {
+        match self {
+            Self::Pos => 1.0_f64,
+            Self::Neg => -1.0_f64,
+        }
+    }
 }
 
 /// Auxiliary [`Instruction`] parameter to encode call parameters for indirect call instructions.
@@ -541,20 +551,23 @@ impl BranchBinOpInstr {
     }
 }
 
-/// A generic fused comparison and conditional branch [`Instruction`].
+/// A generic fused comparison and conditional branch [`Instruction`] with 16-bit immediate value.
+pub type BranchBinOpInstrImm16<T> = BranchBinOpInstrImm<Const16<T>>;
+
+/// A generic fused comparison and conditional branch [`Instruction`] with generic immediate value.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct BranchBinOpInstrImm<T> {
     /// The left-hand side operand to the conditional operator.
     pub lhs: Register,
     /// The right-hand side operand to the conditional operator.
-    pub rhs: Const16<T>,
+    pub rhs: T,
     /// The 16-bit encoded branch offset.
     pub offset: BranchOffset16,
 }
 
 impl<T> BranchBinOpInstrImm<T> {
     /// Creates a new [`BranchBinOpInstr`].
-    pub fn new(lhs: Register, rhs: Const16<T>, offset: BranchOffset16) -> Self {
+    pub fn new(lhs: Register, rhs: T, offset: BranchOffset16) -> Self {
         Self { lhs, rhs, offset }
     }
 }

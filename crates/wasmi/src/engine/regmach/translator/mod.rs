@@ -3,7 +3,7 @@
 mod control_frame;
 mod control_stack;
 mod instr_encoder;
-mod result_mut;
+mod relink_result;
 mod stack;
 mod typed_value;
 mod utils;
