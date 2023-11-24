@@ -422,7 +422,7 @@ fn bench_execute_regex_redux(c: &mut Criterion) {
 }
 
 fn bench_execute_count_until(c: &mut Criterion) {
-    const COUNT_UNTIL: i32 = 100_000;
+    const COUNT_UNTIL: i32 = 1_000_000;
     c.bench_function("execute/count_until", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/count_until.wat"));
         let count_until = instance
