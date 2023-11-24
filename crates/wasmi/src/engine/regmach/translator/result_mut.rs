@@ -76,12 +76,12 @@ impl Instruction {
             Instruction::BranchI32OrImm(_) |
             Instruction::BranchI32Xor(_) |
             Instruction::BranchI32XorImm(_) |
-            Instruction::BranchI32Nand(_) |
-            Instruction::BranchI32NandImm(_) |
-            Instruction::BranchI32Nor(_) |
-            Instruction::BranchI32NorImm(_) |
-            Instruction::BranchI32Xnor(_) |
-            Instruction::BranchI32XnorImm(_) |
+            Instruction::BranchI32AndEqz(_) |
+            Instruction::BranchI32AndEqzImm(_) |
+            Instruction::BranchI32OrEqz(_) |
+            Instruction::BranchI32OrEqzImm(_) |
+            Instruction::BranchI32XorEqz(_) |
+            Instruction::BranchI32XorEqzImm(_) |
             Instruction::BranchI32Eq(_) |
             Instruction::BranchI32EqImm(_) |
             Instruction::BranchI32Ne(_) |

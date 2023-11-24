@@ -875,9 +875,9 @@ impl InstrEncoder {
                     }
                 }
             }
-            I::I32And(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_nand as _)?,
-            I::I32Or(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_nor as _)?,
-            I::I32Xor(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_xnor as _)?,
+            I::I32And(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_and_eqz as _)?,
+            I::I32Or(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_or_eqz as _)?,
+            I::I32Xor(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_xor_eqz as _)?,
             I::I32Eq(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_ne as _)?,
             I::I32Ne(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_eq as _)?,
             I::I32LtS(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_ge_s as _)?,
@@ -1116,9 +1116,9 @@ impl Instruction {
             Instruction::BranchI32And(instr)
             | Instruction::BranchI32Or(instr)
             | Instruction::BranchI32Xor(instr)
-            | Instruction::BranchI32Nand(instr)
-            | Instruction::BranchI32Nor(instr)
-            | Instruction::BranchI32Xnor(instr)
+            | Instruction::BranchI32AndEqz(instr)
+            | Instruction::BranchI32OrEqz(instr)
+            | Instruction::BranchI32XorEqz(instr)
             | Instruction::BranchI32Eq(instr)
             | Instruction::BranchI32Ne(instr)
             | Instruction::BranchI32LtS(instr)
@@ -1154,9 +1154,9 @@ impl Instruction {
             Instruction::BranchI32AndImm(instr)
             | Instruction::BranchI32OrImm(instr)
             | Instruction::BranchI32XorImm(instr)
-            | Instruction::BranchI32NandImm(instr)
-            | Instruction::BranchI32NorImm(instr)
-            | Instruction::BranchI32XnorImm(instr)
+            | Instruction::BranchI32AndEqzImm(instr)
+            | Instruction::BranchI32OrEqzImm(instr)
+            | Instruction::BranchI32XorEqzImm(instr)
             | Instruction::BranchI32EqImm(instr)
             | Instruction::BranchI32NeImm(instr)
             | Instruction::BranchI32LtSImm(instr)

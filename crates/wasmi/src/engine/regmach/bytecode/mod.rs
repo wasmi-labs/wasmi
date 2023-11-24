@@ -416,29 +416,29 @@ pub enum Instruction {
     BranchI32XorImm(BranchBinOpInstrImm<i32>),
 
     /// A fused not-[`Instruction::I32And`] and [`Instruction::BranchNez`] instruction.
-    BranchI32Nand(BranchBinOpInstr),
+    BranchI32AndEqz(BranchBinOpInstr),
     /// A fused not-[`Instruction::I32And`] and [`Instruction::BranchNez`] instruction.
     ///
     /// # Note
     ///
-    /// Variant of [`Instruction::BranchI32Nand`] with 16-bit encoded constant `rhs`.
-    BranchI32NandImm(BranchBinOpInstrImm<i32>),
+    /// Variant of [`Instruction::BranchI32AndEqz`] with 16-bit encoded constant `rhs`.
+    BranchI32AndEqzImm(BranchBinOpInstrImm<i32>),
     /// A fused not-[`Instruction::I32Or`] and [`Instruction::BranchNez`] instruction.
-    BranchI32Nor(BranchBinOpInstr),
+    BranchI32OrEqz(BranchBinOpInstr),
     /// A fused not-[`Instruction::I32Or`] and [`Instruction::BranchNez`] instruction.
     ///
     /// # Note
     ///
-    /// Variant of [`Instruction::BranchI32Nor`] with 16-bit encoded constant `rhs`.
-    BranchI32NorImm(BranchBinOpInstrImm<i32>),
+    /// Variant of [`Instruction::BranchI32OrEqz`] with 16-bit encoded constant `rhs`.
+    BranchI32OrEqzImm(BranchBinOpInstrImm<i32>),
     /// A fused not-[`Instruction::I32Xor`] and [`Instruction::BranchNez`] instruction.
-    BranchI32Xnor(BranchBinOpInstr),
+    BranchI32XorEqz(BranchBinOpInstr),
     /// A fused not-[`Instruction::I32Xor`] and [`Instruction::BranchNez`] instruction.
     ///
     /// # Note
     ///
-    /// Variant of [`Instruction::BranchI32Xnor`] with 16-bit encoded constant `rhs`.
-    BranchI32XnorImm(BranchBinOpInstrImm<i32>),
+    /// Variant of [`Instruction::BranchI32XorEqz`] with 16-bit encoded constant `rhs`.
+    BranchI32XorEqzImm(BranchBinOpInstrImm<i32>),
 
     /// A fused [`Instruction::I32Eq`] and [`Instruction::BranchNez`] instruction.
     BranchI32Eq(BranchBinOpInstr),
