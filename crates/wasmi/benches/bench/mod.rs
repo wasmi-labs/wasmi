@@ -25,7 +25,7 @@ pub fn bench_config() -> Config {
     let mut config = Config::default();
     config.wasm_tail_call(true);
     config.set_stack_limits(StackLimits::new(1024, 1024 * 1024, 64 * 1024).unwrap());
-    config.set_engine_backend(EngineBackend::StackMachine);
+    config.set_engine_backend(EngineBackend::RegisterMachine);
     config
 }
 
