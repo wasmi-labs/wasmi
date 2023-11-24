@@ -539,10 +539,7 @@ fn block_i64_eqz_fuse() {
     ));
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::branch_i64_eqz(
-                Register::from_i16(0),
-                BranchOffset::from(1),
-            ),
+            Instruction::branch_i64_eqz(Register::from_i16(0), BranchOffset::from(1)),
             Instruction::Return,
         ])
         .run()
@@ -564,10 +561,7 @@ fn if_i64_eqz_fuse() {
     ));
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::branch_i64_nez(
-                Register::from_i16(0),
-                BranchOffset::from(1),
-            ),
+            Instruction::branch_i64_nez(Register::from_i16(0), BranchOffset::from(1)),
             Instruction::Return,
         ])
         .run()
