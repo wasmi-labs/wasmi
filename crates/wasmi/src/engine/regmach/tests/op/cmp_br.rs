@@ -455,3 +455,70 @@ fn if_forward() {
     test_for(ValueType::I64, "ge_s", Instruction::branch_i64_lt_s);
     test_for(ValueType::I64, "ge_u", Instruction::branch_i64_lt_u);
 }
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn block_i32_eqz_fuse() {
+    fn test_for(op: &str, expect_instr: fn(Register, Register, BranchOffset16) -> Instruction) {
+        let wasm = wat2wasm(&format!(
+            r"
+            (module
+                (func (param i32 i32)
+                    (block
+                        (local.get 0)
+                        (local.get 1)
+                        (i32.{op})
+                        (i32.eqz)
+                        (br_if 0)
+                    )
+                )
+            )",
+        ));
+        TranslationTest::new(wasm)
+            .expect_func_instrs([
+                expect_instr(
+                    Register::from_i16(0),
+                    Register::from_i16(1),
+                    BranchOffset16::from(1),
+                ),
+                Instruction::Return,
+            ])
+            .run()
+    }
+
+    test_for("and", Instruction::branch_i32_and_eqz);
+    test_for("or", Instruction::branch_i32_or_eqz);
+    test_for("xor", Instruction::branch_i32_xor_eqz);
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn if_i32_eqz_fuse() {
+    fn test_for(op: &str, expect_instr: fn(Register, Register, BranchOffset16) -> Instruction) {
+        let wasm = wat2wasm(&format!(
+            r"
+            (module
+                (func (param i32 i32)
+                    (if
+                        (i32.eqz (i32.{op} (local.get 0) (local.get 1)))
+                        (then)
+                    )
+                )
+            )",
+        ));
+        TranslationTest::new(wasm)
+            .expect_func_instrs([
+                expect_instr(
+                    Register::from_i16(0),
+                    Register::from_i16(1),
+                    BranchOffset16::from(1),
+                ),
+                Instruction::Return,
+            ])
+            .run()
+    }
+
+    test_for("and", Instruction::branch_i32_and);
+    test_for("or", Instruction::branch_i32_or);
+    test_for("xor", Instruction::branch_i32_xor);
+}
