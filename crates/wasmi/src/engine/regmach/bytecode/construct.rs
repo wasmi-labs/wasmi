@@ -1567,18 +1567,24 @@ impl Instruction {
         // Integer Bitwise Logic
 
         fn i32_and(binary) -> Self::I32And;
+        fn i32_and_eqz(binary) -> Self::I32AndEqz;
+        fn i32_and_eqz_imm16(binary_i32imm16) -> Self::I32AndEqzImm16;
         fn i32_and_imm16(binary_i32imm16) -> Self::I32AndImm16;
 
         fn i64_and(binary) -> Self::I64And;
         fn i64_and_imm16(binary_i64imm16) -> Self::I64AndImm16;
 
         fn i32_or(binary) -> Self::I32Or;
+        fn i32_or_eqz(binary) -> Self::I32OrEqz;
+        fn i32_or_eqz_imm16(binary_i32imm16) -> Self::I32OrEqzImm16;
         fn i32_or_imm16(binary_i32imm16) -> Self::I32OrImm16;
 
         fn i64_or(binary) -> Self::I64Or;
         fn i64_or_imm16(binary_i64imm16) -> Self::I64OrImm16;
 
         fn i32_xor(binary) -> Self::I32Xor;
+        fn i32_xor_eqz(binary) -> Self::I32XorEqz;
+        fn i32_xor_eqz_imm16(binary_i32imm16) -> Self::I32XorEqzImm16;
         fn i32_xor_imm16(binary_i32imm16) -> Self::I32XorImm16;
 
         fn i64_xor(binary) -> Self::I64Xor;

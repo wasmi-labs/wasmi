@@ -777,6 +777,61 @@ impl InstrEncoder {
         Ok(())
     }
 
+    /// Translates a Wasm `i32.eqz` instruction.
+    ///
+    /// Tries to fuse `i32.eqz` with a previous `i32.{and,or,xor}` instruction if possible.
+    /// Returns `true` if it was possible to fuse the `i32.eqz` instruction.
+    pub fn fuse_i32_eqz(&mut self, stack: &mut ValueStack) -> bool {
+        /// Fuse a `i32.{and,or,xor}` instruction with `i32.eqz`.
+        macro_rules! fuse {
+            ($instr:ident, $stack:ident, $make_fuse:expr) => {{
+                if matches!(
+                    $stack.get_register_space($instr.result),
+                    RegisterSpace::Local
+                ) {
+                    return false;
+                }
+                $make_fuse($instr.result, $instr.lhs, $instr.rhs)
+            }};
+        }
+
+        /// Fuse a `i32.{and,or,xor}` instruction with 16-bit encoded immediate parameter with `i32.eqz`.
+        macro_rules! fuse_imm16 {
+            ($instr:ident, $stack:ident, $make_fuse:expr) => {{
+                if matches!(
+                    $stack.get_register_space($instr.result),
+                    RegisterSpace::Local
+                ) {
+                    // Must not fuse instruction that store to local registers since
+                    // this behavior is observable and would not be semantics preserving.
+                    return false;
+                }
+                $make_fuse($instr.result, $instr.reg_in, $instr.imm_in)
+            }};
+        }
+
+        let Some(last_instr) = self.last_instr else {
+            return false;
+        };
+        let fused_instr = match self.instrs.get(last_instr) {
+            Instruction::I32And(instr) => fuse!(instr, stack, Instruction::i32_and_eqz),
+            Instruction::I32AndImm16(instr) => {
+                fuse_imm16!(instr, stack, Instruction::i32_and_eqz_imm16)
+            }
+            Instruction::I32Or(instr) => fuse!(instr, stack, Instruction::i32_or_eqz),
+            Instruction::I32OrImm16(instr) => {
+                fuse_imm16!(instr, stack, Instruction::i32_or_eqz_imm16)
+            }
+            Instruction::I32Xor(instr) => fuse!(instr, stack, Instruction::i32_xor_eqz),
+            Instruction::I32XorImm16(instr) => {
+                fuse_imm16!(instr, stack, Instruction::i32_xor_eqz_imm16)
+            }
+            _ => return false,
+        };
+        _ = mem::replace(self.instrs.get_mut(last_instr), fused_instr);
+        true
+    }
+
     /// Encodes a `branch_eqz` instruction and tries to fuse it with a previous comparison instruction.
     pub fn encode_branch_eqz(
         &mut self,

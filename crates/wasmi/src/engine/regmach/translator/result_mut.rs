@@ -408,15 +408,21 @@ impl Instruction {
             Instruction::I32RemUImm16Rev(instr) => instr.result_mut(),
             Instruction::I64RemUImm16Rev(instr) => instr.result_mut(),
             Instruction::I32And(instr) |
+            Instruction::I32AndEqz(instr) |
             Instruction::I64And(instr) => instr.result_mut(),
+            Instruction::I32AndEqzImm16(instr) |
             Instruction::I32AndImm16(instr) => instr.result_mut(),
             Instruction::I64AndImm16(instr) => instr.result_mut(),
             Instruction::I32Or(instr) |
+            Instruction::I32OrEqz(instr) |
             Instruction::I64Or(instr) => instr.result_mut(),
+            Instruction::I32OrEqzImm16(instr) |
             Instruction::I32OrImm16(instr) => instr.result_mut(),
             Instruction::I64OrImm16(instr) => instr.result_mut(),
             Instruction::I32Xor(instr) |
+            Instruction::I32XorEqz(instr) |
             Instruction::I64Xor(instr) => instr.result_mut(),
+            Instruction::I32XorEqzImm16(instr) |
             Instruction::I32XorImm16(instr) => instr.result_mut(),
             Instruction::I64XorImm16(instr) => instr.result_mut(),
             Instruction::I32Shl(instr) |
