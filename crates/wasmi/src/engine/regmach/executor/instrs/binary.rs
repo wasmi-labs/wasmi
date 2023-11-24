@@ -26,9 +26,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         (Instruction::I32And, execute_i32_and, UntypedValue::i32_and),
         (Instruction::I32AndEqz, execute_i32_and_eqz, UntypedValue::i32_and_eqz),
         (Instruction::I32Or, execute_i32_or, UntypedValue::i32_or),
-        (Instruction::I32AndEqz, execute_i32_or_eqz, UntypedValue::i32_or_eqz),
+        (Instruction::I32OrEqz, execute_i32_or_eqz, UntypedValue::i32_or_eqz),
         (Instruction::I32Xor, execute_i32_xor, UntypedValue::i32_xor),
-        (Instruction::I32AndEqz, execute_i32_xor_eqz, UntypedValue::i32_xor_eqz),
+        (Instruction::I32XorEqz, execute_i32_xor_eqz, UntypedValue::i32_xor_eqz),
 
         (Instruction::I64Add, execute_i64_add, UntypedValue::i64_add),
         (Instruction::I64Sub, execute_i64_sub, UntypedValue::i64_sub),
@@ -86,9 +86,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         (i32, Instruction::I32AndImm16, execute_i32_and_imm16, UntypedValue::i32_and),
         (i32, Instruction::I32AndEqzImm16, execute_i32_and_eqz_imm16, UntypedValue::i32_and_eqz),
         (i32, Instruction::I32OrImm16, execute_i32_or_imm16, UntypedValue::i32_or),
-        (i32, Instruction::I32AndEqzImm16, execute_i32_or_eqz_imm16, UntypedValue::i32_or_eqz),
+        (i32, Instruction::I32OrEqzImm16, execute_i32_or_eqz_imm16, UntypedValue::i32_or_eqz),
         (i32, Instruction::I32XorImm16, execute_i32_xor_imm16, UntypedValue::i32_xor),
-        (i32, Instruction::I32AndEqzImm16, execute_i32_xor_eqz_imm16, UntypedValue::i32_xor_eqz),
+        (i32, Instruction::I32XorEqzImm16, execute_i32_xor_eqz_imm16, UntypedValue::i32_xor_eqz),
 
         (i64, Instruction::I64AddImm16, execute_i64_add_imm16, UntypedValue::i64_add),
         (i64, Instruction::I64SubImm16, execute_i64_sub_imm16, UntypedValue::i64_sub),
