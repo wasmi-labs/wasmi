@@ -16,29 +16,39 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     #[inline(always)]
-    pub fn execute_branch_nez(&mut self, condition: Register, offset: BranchOffset) {
-        let condition: bool = self.get_register_as(condition);
-        match condition {
-            true => {
-                self.branch_to(offset);
-            }
-            false => {
-                self.next_instr();
-            }
+    pub fn execute_branch_i32_nez(&mut self, condition: Register, offset: BranchOffset) {
+        let value: i32 = self.get_register_as(condition);
+        if value != 0 {
+            return self.branch_to(offset);
         }
+        self.next_instr();
     }
 
     #[inline(always)]
-    pub fn execute_branch_eqz(&mut self, condition: Register, offset: BranchOffset) {
-        let condition: bool = self.get_register_as(condition);
-        match condition {
-            true => {
-                self.next_instr();
-            }
-            false => {
-                self.branch_to(offset);
-            }
+    pub fn execute_branch_i32_eqz(&mut self, condition: Register, offset: BranchOffset) {
+        let value: i32 = self.get_register_as(condition);
+        if value == 0 {
+            return self.branch_to(offset);
         }
+        self.next_instr();
+    }
+
+    #[inline(always)]
+    pub fn execute_branch_i64_nez(&mut self, condition: Register, offset: BranchOffset) {
+        let value: i64 = self.get_register_as(condition);
+        if value != 0 {
+            return self.branch_to(offset);
+        }
+        self.next_instr();
+    }
+
+    #[inline(always)]
+    pub fn execute_branch_i64_eqz(&mut self, condition: Register, offset: BranchOffset) {
+        let value: i64 = self.get_register_as(condition);
+        if value == 0 {
+            return self.branch_to(offset);
+        }
+        self.next_instr();
     }
 
     #[inline(always)]

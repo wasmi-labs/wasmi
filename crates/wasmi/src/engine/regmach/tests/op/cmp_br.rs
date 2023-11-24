@@ -171,8 +171,8 @@ fn loop_backward_imm_eqz() {
             ])
             .run()
     }
-    test_for("eq", Instruction::branch_eqz);
-    test_for("ne", Instruction::branch_nez);
+    test_for("eq", Instruction::branch_i32_eqz);
+    test_for("ne", Instruction::branch_i32_nez);
 }
 
 #[test]

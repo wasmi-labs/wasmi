@@ -372,7 +372,7 @@ pub enum Instruction {
     ///
     /// - The branch is taken if `condition` evaluates to zero.
     /// - Partially translated from negated Wasm `br_if` instructions.
-    BranchEqz {
+    BranchI32Eqz {
         /// The register holding the condition to evaluate against zero.
         condition: Register,
         /// The branching offset for the instruction pointer.
@@ -383,253 +383,275 @@ pub enum Instruction {
     /// # Note
     ///
     /// The branch is taken if `condition` evaluates to zero.
-    BranchNez {
+    BranchI32Nez {
+        /// The register holding the condition to evaluate against zero.
+        condition: Register,
+        /// The branching offset for the instruction pointer.
+        offset: BranchOffset,
+    },
+    /// A fused Wasm `i64.eqz` + `if` instruction.
+    ///
+    /// # Note
+    ///
+    /// - The branch is taken if `condition` evaluates to zero.
+    BranchI64Eqz {
+        /// The register holding the condition to evaluate against zero.
+        condition: Register,
+        /// The branching offset for the instruction pointer.
+        offset: BranchOffset,
+    },
+    /// A fused Wasm `i64.eqz` + `br_if` instruction.
+    ///
+    /// # Note
+    ///
+    /// The branch is taken if `condition` evaluates to zero.
+    BranchI64Nez {
         /// The register holding the condition to evaluate against zero.
         condition: Register,
         /// The branching offset for the instruction pointer.
         offset: BranchOffset,
     },
 
-    /// A fused [`Instruction::I32And`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32And`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI32And(BranchBinOpInstr),
-    /// A fused [`Instruction::I32And`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32And`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32And`] with 16-bit encoded constant `rhs`.
     BranchI32AndImm(BranchBinOpInstrImm<i32>),
-    /// A fused [`Instruction::I32Or`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32Or`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI32Or(BranchBinOpInstr),
-    /// A fused [`Instruction::I32Or`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32Or`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32Or`] with 16-bit encoded constant `rhs`.
     BranchI32OrImm(BranchBinOpInstrImm<i32>),
-    /// A fused [`Instruction::I32Xor`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32Xor`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI32Xor(BranchBinOpInstr),
-    /// A fused [`Instruction::I32Xor`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32Xor`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32Xor`] with 16-bit encoded constant `rhs`.
     BranchI32XorImm(BranchBinOpInstrImm<i32>),
 
-    /// A fused not-[`Instruction::I32And`] and [`Instruction::BranchNez`] instruction.
+    /// A fused not-[`Instruction::I32And`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI32AndEqz(BranchBinOpInstr),
-    /// A fused not-[`Instruction::I32And`] and [`Instruction::BranchNez`] instruction.
+    /// A fused not-[`Instruction::I32And`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32AndEqz`] with 16-bit encoded constant `rhs`.
     BranchI32AndEqzImm(BranchBinOpInstrImm<i32>),
-    /// A fused not-[`Instruction::I32Or`] and [`Instruction::BranchNez`] instruction.
+    /// A fused not-[`Instruction::I32Or`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI32OrEqz(BranchBinOpInstr),
-    /// A fused not-[`Instruction::I32Or`] and [`Instruction::BranchNez`] instruction.
+    /// A fused not-[`Instruction::I32Or`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32OrEqz`] with 16-bit encoded constant `rhs`.
     BranchI32OrEqzImm(BranchBinOpInstrImm<i32>),
-    /// A fused not-[`Instruction::I32Xor`] and [`Instruction::BranchNez`] instruction.
+    /// A fused not-[`Instruction::I32Xor`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI32XorEqz(BranchBinOpInstr),
-    /// A fused not-[`Instruction::I32Xor`] and [`Instruction::BranchNez`] instruction.
+    /// A fused not-[`Instruction::I32Xor`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32XorEqz`] with 16-bit encoded constant `rhs`.
     BranchI32XorEqzImm(BranchBinOpInstrImm<i32>),
 
-    /// A fused [`Instruction::I32Eq`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32Eq`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI32Eq(BranchBinOpInstr),
-    /// A fused [`Instruction::I32Eq`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32Eq`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32Eq`] with 16-bit encoded constant `rhs`.
     BranchI32EqImm(BranchBinOpInstrImm<i32>),
-    /// A fused [`Instruction::I32Ne`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32Ne`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI32Ne(BranchBinOpInstr),
-    /// A fused [`Instruction::I32Ne`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32Ne`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32Ne`] with 16-bit encoded constant `rhs`.
     BranchI32NeImm(BranchBinOpInstrImm<i32>),
 
-    /// A fused [`Instruction::I32LtS`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32LtS`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI32LtS(BranchBinOpInstr),
-    /// A fused [`Instruction::I32LtS`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32LtS`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32LtS`] with 16-bit encoded constant `rhs`.
     BranchI32LtSImm(BranchBinOpInstrImm<i32>),
-    /// A fused [`Instruction::I32LtU`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32LtU`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI32LtU(BranchBinOpInstr),
-    /// A fused [`Instruction::I32LtU`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32LtU`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32LtU`] with 16-bit encoded constant `rhs`.
     BranchI32LtUImm(BranchBinOpInstrImm<u32>),
-    /// A fused [`Instruction::I32LeS`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32LeS`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI32LeS(BranchBinOpInstr),
-    /// A fused [`Instruction::I32LeS`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32LeS`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32LeS`] with 16-bit encoded constant `rhs`.
     BranchI32LeSImm(BranchBinOpInstrImm<i32>),
-    /// A fused [`Instruction::I32LeU`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32LeU`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI32LeU(BranchBinOpInstr),
-    /// A fused [`Instruction::I32LeU`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32LeU`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32LeU`] with 16-bit encoded constant `rhs`.
     BranchI32LeUImm(BranchBinOpInstrImm<u32>),
-    /// A fused [`Instruction::I32GtS`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32GtS`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI32GtS(BranchBinOpInstr),
-    /// A fused [`Instruction::I32GtS`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32GtS`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32GtS`] with 16-bit encoded constant `rhs`.
     BranchI32GtSImm(BranchBinOpInstrImm<i32>),
-    /// A fused [`Instruction::I32GtU`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32GtU`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI32GtU(BranchBinOpInstr),
-    /// A fused [`Instruction::I32GtU`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32GtU`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32GtU`] with 16-bit encoded constant `rhs`.
     BranchI32GtUImm(BranchBinOpInstrImm<u32>),
-    /// A fused [`Instruction::I32GeS`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32GeS`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI32GeS(BranchBinOpInstr),
-    /// A fused [`Instruction::I32GeS`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32GeS`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32GeS`] with 16-bit encoded constant `rhs`.
     BranchI32GeSImm(BranchBinOpInstrImm<i32>),
-    /// A fused [`Instruction::I32GeU`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32GeU`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI32GeU(BranchBinOpInstr),
-    /// A fused [`Instruction::I32GeU`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I32GeU`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32GeU`] with 16-bit encoded constant `rhs`.
     BranchI32GeUImm(BranchBinOpInstrImm<u32>),
 
-    /// A fused [`Instruction::I64Eq`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I64Eq`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI64Eq(BranchBinOpInstr),
-    /// A fused [`Instruction::I64Eq`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I64Eq`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64Eq`] with 16-bit encoded constant `rhs`.
     BranchI64EqImm(BranchBinOpInstrImm<i64>),
-    /// A fused [`Instruction::I64Ne`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I64Ne`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI64Ne(BranchBinOpInstr),
-    /// A fused [`Instruction::I64Ne`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I64Ne`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64Ne`] with 16-bit encoded constant `rhs`.
     BranchI64NeImm(BranchBinOpInstrImm<i64>),
 
-    /// A fused [`Instruction::I64LtS`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I64LtS`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI64LtS(BranchBinOpInstr),
-    /// A fused [`Instruction::I64LtS`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I64LtS`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64LtS`] with 16-bit encoded constant `rhs`.
     BranchI64LtSImm(BranchBinOpInstrImm<i64>),
-    /// A fused [`Instruction::I64LtU`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I64LtU`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI64LtU(BranchBinOpInstr),
-    /// A fused [`Instruction::I64LtU`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I64LtU`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64LtU`] with 16-bit encoded constant `rhs`.
     BranchI64LtUImm(BranchBinOpInstrImm<u64>),
-    /// A fused [`Instruction::I64LeS`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I64LeS`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI64LeS(BranchBinOpInstr),
-    /// A fused [`Instruction::I64LeS`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I64LeS`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64LeS`] with 16-bit encoded constant `rhs`.
     BranchI64LeSImm(BranchBinOpInstrImm<i64>),
-    /// A fused [`Instruction::I64LeU`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I64LeU`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI64LeU(BranchBinOpInstr),
-    /// A fused [`Instruction::I64LeU`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I64LeU`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64LeU`] with 16-bit encoded constant `rhs`.
     BranchI64LeUImm(BranchBinOpInstrImm<u64>),
-    /// A fused [`Instruction::I64GtS`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I64GtS`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI64GtS(BranchBinOpInstr),
-    /// A fused [`Instruction::I64GtS`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I64GtS`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64GtS`] with 16-bit encoded constant `rhs`.
     BranchI64GtSImm(BranchBinOpInstrImm<i64>),
-    /// A fused [`Instruction::I64GtU`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I64GtU`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI64GtU(BranchBinOpInstr),
-    /// A fused [`Instruction::I64GtU`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I64GtU`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64GtU`] with 16-bit encoded constant `rhs`.
     BranchI64GtUImm(BranchBinOpInstrImm<u64>),
-    /// A fused [`Instruction::I64GeS`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I64GeS`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI64GeS(BranchBinOpInstr),
-    /// A fused [`Instruction::I64GeS`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I64GeS`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64GeS`] with 16-bit encoded constant `rhs`.
     BranchI64GeSImm(BranchBinOpInstrImm<i64>),
-    /// A fused [`Instruction::I64GeU`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I64GeU`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI64GeU(BranchBinOpInstr),
-    /// A fused [`Instruction::I64GeU`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::I64GeU`] and [`Instruction::BranchI32Nez`] instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64GeU`] with 16-bit encoded constant `rhs`.
     BranchI64GeUImm(BranchBinOpInstrImm<u64>),
 
-    /// A fused [`Instruction::F32Eq`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::F32Eq`] and [`Instruction::BranchI32Nez`] instruction.
     BranchF32Eq(BranchBinOpInstr),
-    /// A fused [`Instruction::F32Ne`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::F32Ne`] and [`Instruction::BranchI32Nez`] instruction.
     BranchF32Ne(BranchBinOpInstr),
 
-    /// A fused [`Instruction::F32Lt`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::F32Lt`] and [`Instruction::BranchI32Nez`] instruction.
     BranchF32Lt(BranchBinOpInstr),
-    /// A fused [`Instruction::F32Le`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::F32Le`] and [`Instruction::BranchI32Nez`] instruction.
     BranchF32Le(BranchBinOpInstr),
-    /// A fused [`Instruction::F32Gt`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::F32Gt`] and [`Instruction::BranchI32Nez`] instruction.
     BranchF32Gt(BranchBinOpInstr),
-    /// A fused [`Instruction::F32Ge`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::F32Ge`] and [`Instruction::BranchI32Nez`] instruction.
     BranchF32Ge(BranchBinOpInstr),
 
-    /// A fused [`Instruction::F64Eq`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::F64Eq`] and [`Instruction::BranchI32Nez`] instruction.
     BranchF64Eq(BranchBinOpInstr),
-    /// A fused [`Instruction::F64Ne`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::F64Ne`] and [`Instruction::BranchI32Nez`] instruction.
     BranchF64Ne(BranchBinOpInstr),
 
-    /// A fused [`Instruction::F64Lt`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::F64Lt`] and [`Instruction::BranchI32Nez`] instruction.
     BranchF64Lt(BranchBinOpInstr),
-    /// A fused [`Instruction::F64Le`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::F64Le`] and [`Instruction::BranchI32Nez`] instruction.
     BranchF64Le(BranchBinOpInstr),
-    /// A fused [`Instruction::F64Gt`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::F64Gt`] and [`Instruction::BranchI32Nez`] instruction.
     BranchF64Gt(BranchBinOpInstr),
-    /// A fused [`Instruction::F64Ge`] and [`Instruction::BranchNez`] instruction.
+    /// A fused [`Instruction::F64Ge`] and [`Instruction::BranchI32Nez`] instruction.
     BranchF64Ge(BranchBinOpInstr),
 
     /// A Wasm `br_table` instruction.

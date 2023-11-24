@@ -851,7 +851,7 @@ impl InstrEncoder {
             label: LabelRef,
         ) -> Result<(), TranslationError> {
             let offset = this.try_resolve_label(label)?;
-            this.push_instr(Instruction::branch_eqz(condition, offset))?;
+            this.push_instr(Instruction::branch_i32_eqz(condition, offset))?;
             Ok(())
         }
 
@@ -912,10 +912,17 @@ impl InstrEncoder {
                 match stack.get_register_space(instr.result) {
                     RegisterSpace::Local => None,
                     _ => {
-                        // Note: unfortunately we cannot apply this optimization for `i64` variants
-                        //       since the standard `branch_eqz` assumes its operands to be of type `i32`.
                         let offset32 = self.try_resolve_label_for(label, last_instr)?;
-                        Some(Instruction::branch_nez(instr.reg_in, offset32))
+                        Some(Instruction::branch_i32_nez(instr.reg_in, offset32))
+                    }
+                }
+            }
+            I::I64EqImm16(instr) if instr.imm_in.is_zero() => {
+                match stack.get_register_space(instr.result) {
+                    RegisterSpace::Local => None,
+                    _ => {
+                        let offset32 = self.try_resolve_label_for(label, last_instr)?;
+                        Some(Instruction::branch_i64_nez(instr.reg_in, offset32))
                     }
                 }
             }
@@ -923,10 +930,17 @@ impl InstrEncoder {
                 match stack.get_register_space(instr.result) {
                     RegisterSpace::Local => None,
                     _ => {
-                        // Note: unfortunately we cannot apply this optimization for `i64` variants
-                        //       since the standard `branch_nez` assumes its operands to be of type `i32`.
                         let offset32 = self.try_resolve_label_for(label, last_instr)?;
-                        Some(Instruction::branch_eqz(instr.reg_in, offset32))
+                        Some(Instruction::branch_i32_eqz(instr.reg_in, offset32))
+                    }
+                }
+            }
+            I::I64NeImm16(instr) if instr.imm_in.is_zero() => {
+                match stack.get_register_space(instr.result) {
+                    RegisterSpace::Local => None,
+                    _ => {
+                        let offset32 = self.try_resolve_label_for(label, last_instr)?;
+                        Some(Instruction::branch_i64_eqz(instr.reg_in, offset32))
                     }
                 }
             }
@@ -1013,7 +1027,7 @@ impl InstrEncoder {
             label: LabelRef,
         ) -> Result<(), TranslationError> {
             let offset = this.try_resolve_label(label)?;
-            this.push_instr(Instruction::branch_nez(condition, offset))?;
+            this.push_instr(Instruction::branch_i32_nez(condition, offset))?;
             Ok(())
         }
 
@@ -1074,10 +1088,17 @@ impl InstrEncoder {
                 match stack.get_register_space(instr.result) {
                     RegisterSpace::Local => None,
                     _ => {
-                        // Note: unfortunately we cannot apply this optimization for `i64` variants
-                        //       since the standard `branch_eqz` assumes its operands to be of type `i32`.
                         let offset32 = self.try_resolve_label_for(label, last_instr)?;
-                        Some(Instruction::branch_eqz(instr.reg_in, offset32))
+                        Some(Instruction::branch_i32_eqz(instr.reg_in, offset32))
+                    }
+                }
+            }
+            I::I64EqImm16(instr) if instr.imm_in.is_zero() => {
+                match stack.get_register_space(instr.result) {
+                    RegisterSpace::Local => None,
+                    _ => {
+                        let offset32 = self.try_resolve_label_for(label, last_instr)?;
+                        Some(Instruction::branch_i64_eqz(instr.reg_in, offset32))
                     }
                 }
             }
@@ -1085,10 +1106,17 @@ impl InstrEncoder {
                 match stack.get_register_space(instr.result) {
                     RegisterSpace::Local => None,
                     _ => {
-                        // Note: unfortunately we cannot apply this optimization for `i64` variants
-                        //       since the standard `branch_nez` assumes its operands to be of type `i32`.
                         let offset32 = self.try_resolve_label_for(label, last_instr)?;
-                        Some(Instruction::branch_nez(instr.reg_in, offset32))
+                        Some(Instruction::branch_i32_nez(instr.reg_in, offset32))
+                    }
+                }
+            }
+            I::I64NeImm16(instr) if instr.imm_in.is_zero() => {
+                match stack.get_register_space(instr.result) {
+                    RegisterSpace::Local => None,
+                    _ => {
+                        let offset32 = self.try_resolve_label_for(label, last_instr)?;
+                        Some(Instruction::branch_i64_nez(instr.reg_in, offset32))
                     }
                 }
             }
@@ -1178,8 +1206,10 @@ impl Instruction {
     ) -> Result<(), TranslationError> {
         match self {
             Instruction::Branch { offset }
-            | Instruction::BranchEqz { offset, .. }
-            | Instruction::BranchNez { offset, .. } => {
+            | Instruction::BranchI32Eqz { offset, .. }
+            | Instruction::BranchI32Nez { offset, .. }
+            | Instruction::BranchI64Eqz { offset, .. }
+            | Instruction::BranchI64Nez { offset, .. } => {
                 offset.init(new_offset);
                 Ok(())
             }

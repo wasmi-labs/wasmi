@@ -346,7 +346,7 @@ fn branch_if_block_0() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::branch_nez(Register::from_i16(0), BranchOffset::from(1)),
+            Instruction::branch_i32_nez(Register::from_i16(0), BranchOffset::from(1)),
             Instruction::Return,
         ])
         .run()
@@ -369,7 +369,7 @@ fn branch_if_block_1() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::branch_eqz(Register::from_i16(1), BranchOffset::from(3)),
+            Instruction::branch_i32_eqz(Register::from_i16(1), BranchOffset::from(3)),
             Instruction::copy(Register::from_i16(2), Register::from_i16(0)),
             Instruction::branch(BranchOffset::from(2)),
             Instruction::copy(Register::from_i16(2), Register::from_i16(0)),
