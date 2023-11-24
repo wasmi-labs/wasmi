@@ -40,6 +40,18 @@ criterion_group!(
         // bench_instantiate_erc721,
         // bench_instantiate_erc1155,
 );
+criterion_group!(
+    name = bench_overhead;
+    config = Criterion::default()
+        .sample_size(10)
+        .measurement_time(Duration::from_millis(1000))
+        .warm_up_time(Duration::from_millis(1000));
+    targets =
+        bench_overhead_call_typed_0,
+        bench_overhead_call_typed_16,
+        bench_overhead_call_untyped_0,
+        bench_overhead_call_untyped_16,
+);
 criterion_group! {
     name = bench_execute;
     config = Criterion::default()
@@ -53,14 +65,6 @@ criterion_group! {
         bench_execute_count_until,
         bench_execute_br_table,
         bench_execute_trunc_f2i,
-        bench_execute_typed_bare_call_0,
-        bench_execute_typed_bare_call_1,
-        bench_execute_typed_bare_call_4,
-        bench_execute_typed_bare_call_16,
-        bench_execute_bare_call_0,
-        bench_execute_bare_call_1,
-        bench_execute_bare_call_4,
-        bench_execute_bare_call_16,
         bench_execute_global_bump,
         bench_execute_global_const,
         bench_execute_factorial,
@@ -76,7 +80,12 @@ criterion_group! {
         bench_execute_vec_add,
 }
 
-criterion_main!(bench_translate, bench_instantiate, bench_execute);
+criterion_main!(
+    bench_translate,
+    bench_instantiate,
+    bench_execute,
+    bench_overhead
+);
 
 const WASM_KERNEL: &str =
     "benches/wasm/wasm_kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm";
@@ -491,9 +500,9 @@ fn bench_execute_trunc_f2i(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_typed_bare_call_0(c: &mut Criterion) {
+fn bench_overhead_call_typed_0(c: &mut Criterion) {
     const REPETITIONS: usize = 20_000;
-    c.bench_function("execute/bare_call_0/typed", |b| {
+    c.bench_function("overhead/call/typed/0", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
         let bare_call = instance
             .get_export(&store, "bare_call_0")
@@ -508,44 +517,7 @@ fn bench_execute_typed_bare_call_0(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_typed_bare_call_1(c: &mut Criterion) {
-    const REPETITIONS: usize = 20_000;
-    c.bench_function("execute/bare_call_1/typed", |b| {
-        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
-        let bare_call = instance
-            .get_export(&store, "bare_call_1")
-            .and_then(Extern::into_func)
-            .unwrap();
-        let bare_call = bare_call.typed::<i32, i32>(&store).unwrap();
-        b.iter(|| {
-            for _ in 0..REPETITIONS {
-                let _ = bare_call.call(&mut store, 0).unwrap();
-            }
-        })
-    });
-}
-
-fn bench_execute_typed_bare_call_4(c: &mut Criterion) {
-    const REPETITIONS: usize = 20_000;
-    type InOut = (i32, i64, F32, F64);
-    c.bench_function("execute/bare_call_4/typed", |b| {
-        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
-        let bare_call = instance
-            .get_export(&store, "bare_call_4")
-            .and_then(Extern::into_func)
-            .unwrap();
-        let bare_call = bare_call.typed::<InOut, InOut>(&store).unwrap();
-        b.iter(|| {
-            for _ in 0..REPETITIONS {
-                let _ = bare_call
-                    .call(&mut store, (0, 0, F32::from(0.0), F64::from(0.0)))
-                    .unwrap();
-            }
-        })
-    });
-}
-
-fn bench_execute_typed_bare_call_16(c: &mut Criterion) {
+fn bench_overhead_call_typed_16(c: &mut Criterion) {
     const REPETITIONS: usize = 20_000;
     type InOut = (
         i32,
@@ -565,7 +537,7 @@ fn bench_execute_typed_bare_call_16(c: &mut Criterion) {
         F32,
         F64,
     );
-    c.bench_function("execute/bare_call_16/typed", |b| {
+    c.bench_function("overhead/call/typed/16", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
         let bare_call = instance
             .get_export(&store, "bare_call_16")
@@ -602,9 +574,9 @@ fn bench_execute_typed_bare_call_16(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_bare_call_0(c: &mut Criterion) {
+fn bench_overhead_call_untyped_0(c: &mut Criterion) {
     const REPETITIONS: usize = 20_000;
-    c.bench_function("execute/bare_call_0", |b| {
+    c.bench_function("overhead/call/untyped/0", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
         let bare_call = instance
             .get_export(&store, "bare_call_0")
@@ -620,50 +592,9 @@ fn bench_execute_bare_call_0(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_bare_call_1(c: &mut Criterion) {
+fn bench_overhead_call_untyped_16(c: &mut Criterion) {
     const REPETITIONS: usize = 20_000;
-    c.bench_function("execute/bare_call_1", |b| {
-        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
-        let bare_call = instance
-            .get_export(&store, "bare_call_1")
-            .and_then(Extern::into_func)
-            .unwrap();
-        let params = &[Value::I32(0)];
-        let results = &mut [Value::I32(0)];
-        b.iter(|| {
-            for _ in 0..REPETITIONS {
-                bare_call.call(&mut store, params, results).unwrap();
-            }
-        })
-    });
-}
-
-fn bench_execute_bare_call_4(c: &mut Criterion) {
-    const REPETITIONS: usize = 20_000;
-    c.bench_function("execute/bare_call_4", |b| {
-        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
-        let bare_call = instance
-            .get_export(&store, "bare_call_4")
-            .and_then(Extern::into_func)
-            .unwrap();
-        let params = &[
-            Value::default(ValueType::I32),
-            Value::default(ValueType::I64),
-            Value::default(ValueType::F32),
-            Value::default(ValueType::F64),
-        ];
-        let results = &mut [0; 4].map(Value::I32);
-        b.iter(|| {
-            for _ in 0..REPETITIONS {
-                bare_call.call(&mut store, params, results).unwrap();
-            }
-        })
-    });
-}
-
-fn bench_execute_bare_call_16(c: &mut Criterion) {
-    const REPETITIONS: usize = 20_000;
-    c.bench_function("execute/bare_call_16", |b| {
+    c.bench_function("overhead/call/untyped/16", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
         let bare_call = instance
             .get_export(&store, "bare_call_16")
@@ -698,7 +629,7 @@ fn bench_execute_bare_call_16(c: &mut Criterion) {
 
 fn bench_execute_global_bump(c: &mut Criterion) {
     const BUMP_AMOUNT: i32 = 100_000;
-    c.bench_function("execute/global_bump", |b| {
+    c.bench_function("execute/global/bump", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/global_bump.wat"));
         let count_until = instance
             .get_export(&store, "bump")
@@ -721,7 +652,7 @@ fn bench_execute_global_bump(c: &mut Criterion) {
 
 fn bench_execute_global_const(c: &mut Criterion) {
     const LIMIT: i32 = 100_000;
-    c.bench_function("execute/global_const", |b| {
+    c.bench_function("execute/global/get_const", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/global_const.wat"));
         let count_until = instance
             .get_export(&store, "call")
@@ -762,13 +693,13 @@ fn bench_execute_factorial(c: &mut Criterion) {
             })
         });
     };
-    bench_fac("execute/factorial_recursive", "recursive_factorial");
-    bench_fac("execute/factorial_iterative", "iterative_factorial");
+    bench_fac("execute/factorial/rec", "recursive_factorial");
+    bench_fac("execute/factorial/iter", "iterative_factorial");
 }
 
 fn bench_execute_recursive_ok(c: &mut Criterion) {
     const RECURSIVE_DEPTH: i32 = 8000;
-    c.bench_function("execute/recursive_ok", |b| {
+    c.bench_function("execute/call/rec", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/recursive_ok.wat"));
         let bench_call = instance
             .get_export(&store, "call")
@@ -841,7 +772,7 @@ fn bench_execute_recursive_trap(c: &mut Criterion) {
 }
 
 fn bench_execute_recursive_is_even(c: &mut Criterion) {
-    c.bench_function("execute/recursive_is_even", |b| {
+    c.bench_function("execute/is_even/rec", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/is_even.wat"));
         let bench_call = instance
             .get_export(&store, "is_even")
@@ -867,7 +798,7 @@ const HOST_CALLS_REPETITIONS: i64 = 1000;
 
 #[allow(dead_code)]
 fn bench_execute_host_calls(c: &mut Criterion) {
-    c.bench_function("execute/host_calls", |b| {
+    c.bench_function("execute/call/host/1", |b| {
         let wasm = wat2wasm(include_bytes!("wat/host_calls.wat"));
         let engine = Engine::default();
         let module = Module::new(&engine, &wasm[..]).unwrap();
@@ -951,13 +882,13 @@ fn bench_execute_fibonacci(c: &mut Criterion) {
             });
         });
     };
-    bench_fib("execute/fibonacci_rec", "fibonacci_rec", FIBONACCI_REC_N);
-    bench_fib("execute/fibonacci_tail", "fibonacci_tail", FIBONACCI_TAIL_N);
-    bench_fib("execute/fibonacci_iter", "fibonacci_iter", FIBONACCI_INC_N);
+    bench_fib("execute/fibonacci/rec", "fibonacci_rec", FIBONACCI_REC_N);
+    bench_fib("execute/fibonacci/tail", "fibonacci_tail", FIBONACCI_TAIL_N);
+    bench_fib("execute/fibonacci/iter", "fibonacci_iter", FIBONACCI_INC_N);
 }
 
 fn bench_execute_memory_sum(c: &mut Criterion) {
-    c.bench_function("execute/memory_sum", |b| {
+    c.bench_function("execute/memory/sum_bytes", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/memory-sum.wat"));
         let sum = instance
             .get_export(&store, "sum_bytes")
@@ -989,7 +920,7 @@ fn bench_execute_memory_sum(c: &mut Criterion) {
 }
 
 fn bench_execute_memory_fill(c: &mut Criterion) {
-    c.bench_function("execute/memory_fill", |b| {
+    c.bench_function("execute/memory/fill_bytes", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/memory-fill.wat"));
         let fill = instance
             .get_export(&store, "fill_bytes")
@@ -1090,7 +1021,7 @@ fn bench_execute_vec_add(c: &mut Criterion) {
         }
     }
 
-    c.bench_function("execute/memory_vec_add", |b| {
+    c.bench_function("execute/memory/vec_add", |b| {
         let (mut store, instance) =
             load_instance_from_wat(include_bytes!("wat/memory-vec-add.wat"));
         let vec_add = instance
