@@ -236,47 +236,47 @@ impl Instruction {
             I::GlobalSet { .. } | I::GlobalSetI32Imm16 { .. } | I::GlobalSetI64Imm16 { .. } => {
                 Ok(false)
             }
-            I::I32Load(instr) => relink_simple(instr, new_result, old_result),
-            I::I32LoadAt(instr) => relink_simple(instr, new_result, old_result),
-            I::I32LoadOffset16(instr) => relink_simple(instr, new_result, old_result),
-            I::I64Load(instr) => relink_simple(instr, new_result, old_result),
-            I::I64LoadAt(instr) => relink_simple(instr, new_result, old_result),
-            I::I64LoadOffset16(instr) => relink_simple(instr, new_result, old_result),
-            I::F32Load(instr) => relink_simple(instr, new_result, old_result),
-            I::F32LoadAt(instr) => relink_simple(instr, new_result, old_result),
-            I::F32LoadOffset16(instr) => relink_simple(instr, new_result, old_result),
-            I::F64Load(instr) => relink_simple(instr, new_result, old_result),
-            I::F64LoadAt(instr) => relink_simple(instr, new_result, old_result),
-            I::F64LoadOffset16(instr) => relink_simple(instr, new_result, old_result),
-            I::I32Load8s(instr) => relink_simple(instr, new_result, old_result),
-            I::I32Load8sAt(instr) => relink_simple(instr, new_result, old_result),
-            I::I32Load8sOffset16(instr) => relink_simple(instr, new_result, old_result),
-            I::I32Load8u(instr) => relink_simple(instr, new_result, old_result),
-            I::I32Load8uAt(instr) => relink_simple(instr, new_result, old_result),
-            I::I32Load8uOffset16(instr) => relink_simple(instr, new_result, old_result),
-            I::I32Load16s(instr) => relink_simple(instr, new_result, old_result),
-            I::I32Load16sAt(instr) => relink_simple(instr, new_result, old_result),
-            I::I32Load16sOffset16(instr) => relink_simple(instr, new_result, old_result),
-            I::I32Load16u(instr) => relink_simple(instr, new_result, old_result),
-            I::I32Load16uAt(instr) => relink_simple(instr, new_result, old_result),
-            I::I32Load16uOffset16(instr) => relink_simple(instr, new_result, old_result),
-            I::I64Load8s(instr) => relink_simple(instr, new_result, old_result),
-            I::I64Load8sAt(instr) => relink_simple(instr, new_result, old_result),
-            I::I64Load8sOffset16(instr) => relink_simple(instr, new_result, old_result),
-            I::I64Load8u(instr) => relink_simple(instr, new_result, old_result),
-            I::I64Load8uAt(instr) => relink_simple(instr, new_result, old_result),
-            I::I64Load8uOffset16(instr) => relink_simple(instr, new_result, old_result),
-            I::I64Load16s(instr) => relink_simple(instr, new_result, old_result),
-            I::I64Load16sAt(instr) => relink_simple(instr, new_result, old_result),
-            I::I64Load16sOffset16(instr) => relink_simple(instr, new_result, old_result),
-            I::I64Load16u(instr) => relink_simple(instr, new_result, old_result),
-            I::I64Load16uAt(instr) => relink_simple(instr, new_result, old_result),
-            I::I64Load16uOffset16(instr) => relink_simple(instr, new_result, old_result),
-            I::I64Load32s(instr) => relink_simple(instr, new_result, old_result),
-            I::I64Load32sAt(instr) => relink_simple(instr, new_result, old_result),
-            I::I64Load32sOffset16(instr) => relink_simple(instr, new_result, old_result),
+            I::I32Load(instr) |
+            I::I64Load(instr) |
+            I::F32Load(instr) |
+            I::F64Load(instr) |
+            I::I32Load8s(instr) |
+            I::I32Load8u(instr) |
+            I::I32Load16s(instr) |
+            I::I32Load16u(instr) |
+            I::I64Load8s(instr) |
+            I::I64Load8u(instr) |
+            I::I64Load16s(instr) |
+            I::I64Load16u(instr) |
+            I::I64Load32s(instr) |
             I::I64Load32u(instr) => relink_simple(instr, new_result, old_result),
+            I::I32LoadAt(instr) |
+            I::I64LoadAt(instr) |
+            I::F32LoadAt(instr) |
+            I::F64LoadAt(instr) |
+            I::I32Load8sAt(instr) |
+            I::I32Load8uAt(instr) |
+            I::I32Load16sAt(instr) |
+            I::I32Load16uAt(instr) |
+            I::I64Load8sAt(instr) |
+            I::I64Load8uAt(instr) |
+            I::I64Load16sAt(instr) |
+            I::I64Load16uAt(instr) |
+            I::I64Load32sAt(instr) |
             I::I64Load32uAt(instr) => relink_simple(instr, new_result, old_result),
+            I::I32LoadOffset16(instr) |
+            I::I64LoadOffset16(instr) |
+            I::F32LoadOffset16(instr) |
+            I::F64LoadOffset16(instr) |
+            I::I32Load8sOffset16(instr) |
+            I::I32Load8uOffset16(instr) |
+            I::I32Load16sOffset16(instr) |
+            I::I32Load16uOffset16(instr) |
+            I::I64Load8sOffset16(instr) |
+            I::I64Load8uOffset16(instr) |
+            I::I64Load16sOffset16(instr) |
+            I::I64Load16uOffset16(instr) |
+            I::I64Load32sOffset16(instr) |
             I::I64Load32uOffset16(instr) => relink_simple(instr, new_result, old_result),
             I::I32Store(_)
             | I::I32StoreOffset16(_)
