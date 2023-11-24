@@ -48,6 +48,15 @@ impl Instr {
     pub fn into_u32(self) -> u32 {
         self.0
     }
+
+    /// Returns the absolute distance between `self` and `other`.
+    ///
+    /// - Returns `0` if `self == other`.
+    /// - Returns `1` if `self` is adjacent to `other` in the sequence of instructions.
+    /// - etc..
+    pub fn distance(self, other: Self) -> u32 {
+        self.0.abs_diff(other.0)
+    }
 }
 
 /// The relative depth of a Wasm branching target.
