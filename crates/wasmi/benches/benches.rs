@@ -66,6 +66,7 @@ criterion_group! {
         bench_execute_recursive_scan,
         bench_execute_recursive_trap,
         bench_execute_host_calls,
+        bench_execute_fuse,
         bench_execute_fibonacci,
         bench_execute_recursive_is_even,
         bench_execute_memory_sum,
@@ -421,7 +422,7 @@ fn bench_execute_regex_redux(c: &mut Criterion) {
 }
 
 fn bench_execute_count_until(c: &mut Criterion) {
-    const COUNT_UNTIL: i32 = 100_000;
+    const COUNT_UNTIL: i32 = 1_000_000;
     c.bench_function("execute/count_until", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/count_until.wat"));
         let count_until = instance
@@ -885,6 +886,24 @@ fn bench_execute_host_calls(c: &mut Criterion) {
             assert_eq!(result.i64(), Some(0));
         })
     });
+}
+
+fn bench_execute_fuse(c: &mut Criterion) {
+    let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/fuse.wat"));
+    let mut bench_fuse = |bench_id: &str, func_name: &str, input: i32| {
+        c.bench_function(bench_id, |b| {
+            let fib = instance
+                .get_export(&store, func_name)
+                .and_then(Extern::into_func)
+                .unwrap()
+                .typed::<i32, i32>(&store)
+                .unwrap();
+            b.iter(|| {
+                assert_eq!(fib.call(&mut store, input).unwrap(), input);
+            });
+        });
+    };
+    bench_fuse("execute/fuse", "test", 1_000_000);
 }
 
 fn bench_execute_fibonacci(c: &mut Criterion) {

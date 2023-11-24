@@ -1,11 +1,10 @@
-use wasmi_core::UntypedValue;
-
-use super::Executor;
+use super::{Executor, UntypedValueExt};
 use crate::engine::{
     bytecode::BranchOffset,
     regmach::bytecode::{BranchBinOpInstr, BranchBinOpInstrImm, Const16, Const32, Register},
 };
 use core::cmp;
+use wasmi_core::UntypedValue;
 
 #[cfg(doc)]
 use crate::engine::regmach::bytecode::Instruction;
@@ -101,6 +100,12 @@ macro_rules! impl_execute_branch_binop {
     }
 }
 impl_execute_branch_binop! {
+    (Instruction::BranchI32And, execute_branch_i32_and, UntypedValue::i32_and),
+    (Instruction::BranchI32Or, execute_branch_i32_or, UntypedValue::i32_or),
+    (Instruction::BranchI32Xor, execute_branch_i32_xor, UntypedValue::i32_xor),
+    (Instruction::BranchI32AndEqz, execute_branch_i32_and_eqz, UntypedValue::i32_and_eqz),
+    (Instruction::BranchI32OrEqz, execute_branch_i32_or_eqz, UntypedValue::i32_or_eqz),
+    (Instruction::BranchI32XorEqz, execute_branch_i32_xor_eqz, UntypedValue::i32_xor_eqz),
     (Instruction::BranchI32Eq, execute_branch_i32_eq, UntypedValue::i32_eq),
     (Instruction::BranchI32Ne, execute_branch_i32_ne, UntypedValue::i32_ne),
     (Instruction::BranchI32LtS, execute_branch_i32_lt_s, UntypedValue::i32_lt_s),
@@ -152,6 +157,12 @@ macro_rules! impl_execute_branch_binop_imm {
     }
 }
 impl_execute_branch_binop_imm! {
+    (Instruction::BranchI32AndImm, execute_branch_i32_and_imm, UntypedValue::i32_and, i32),
+    (Instruction::BranchI32OrImm, execute_branch_i32_or_imm, UntypedValue::i32_or, i32),
+    (Instruction::BranchI32XorImm, execute_branch_i32_xor_imm, UntypedValue::i32_xor, i32),
+    (Instruction::BranchI32AndEqzImm, execute_branch_i32_and_eqz_imm, UntypedValue::i32_and_eqz, i32),
+    (Instruction::BranchI32OrEqzImm, execute_branch_i32_or_eqz_imm, UntypedValue::i32_or_eqz, i32),
+    (Instruction::BranchI32XorEqzImm, execute_branch_i32_xor_eqz_imm, UntypedValue::i32_xor_eqz, i32),
     (Instruction::BranchI32EqImm, execute_branch_i32_eq_imm, UntypedValue::i32_eq, i32),
     (Instruction::BranchI32NeImm, execute_branch_i32_ne_imm, UntypedValue::i32_ne, i32),
     (Instruction::BranchI32LtSImm, execute_branch_i32_lt_s_imm, UntypedValue::i32_lt_s, i32),

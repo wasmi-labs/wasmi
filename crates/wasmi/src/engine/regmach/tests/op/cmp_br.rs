@@ -42,6 +42,9 @@ fn loop_backward() {
             .run()
     }
 
+    test_for(ValueType::I32, "and", Instruction::branch_i32_and);
+    test_for(ValueType::I32, "or", Instruction::branch_i32_or);
+    test_for(ValueType::I32, "xor", Instruction::branch_i32_xor);
     test_for(ValueType::I32, "eq", Instruction::branch_i32_eq);
     test_for(ValueType::I32, "ne", Instruction::branch_i32_ne);
     test_for(ValueType::I32, "lt_s", Instruction::branch_i32_lt_s);
@@ -117,6 +120,10 @@ fn loop_backward_imm() {
             ])
             .run()
     }
+
+    test_for::<i32>("and", 1, Instruction::branch_i32_and_imm);
+    test_for::<i32>("or", 1, Instruction::branch_i32_or_imm);
+    test_for::<i32>("xor", 1, Instruction::branch_i32_xor_imm);
     test_for::<i32>("eq", 1, Instruction::branch_i32_eq_imm);
     test_for::<i32>("ne", 1, Instruction::branch_i32_ne_imm);
     test_for::<i32>("lt_s", 1, Instruction::branch_i32_lt_s_imm);
@@ -202,6 +209,9 @@ fn block_forward() {
             .run()
     }
 
+    test_for(ValueType::I32, "and", Instruction::branch_i32_and);
+    test_for(ValueType::I32, "or", Instruction::branch_i32_or);
+    test_for(ValueType::I32, "xor", Instruction::branch_i32_xor);
     test_for(ValueType::I32, "eq", Instruction::branch_i32_eq);
     test_for(ValueType::I32, "ne", Instruction::branch_i32_ne);
     test_for(ValueType::I32, "lt_s", Instruction::branch_i32_lt_s);
@@ -279,6 +289,9 @@ fn block_forward_nop_copy() {
             .run()
     }
 
+    test_for(ValueType::I32, "and", Instruction::branch_i32_and);
+    test_for(ValueType::I32, "or", Instruction::branch_i32_or);
+    test_for(ValueType::I32, "xor", Instruction::branch_i32_xor);
     test_for(ValueType::I32, "eq", Instruction::branch_i32_eq);
     test_for(ValueType::I32, "ne", Instruction::branch_i32_ne);
     test_for(ValueType::I32, "lt_s", Instruction::branch_i32_lt_s);
@@ -356,6 +369,9 @@ fn if_forward_multi_value() {
             .run()
     }
 
+    test_for(ValueType::I32, "and", Instruction::branch_i32_and_eqz);
+    test_for(ValueType::I32, "or", Instruction::branch_i32_or_eqz);
+    test_for(ValueType::I32, "xor", Instruction::branch_i32_xor_eqz);
     test_for(ValueType::I32, "eq", Instruction::branch_i32_ne);
     test_for(ValueType::I32, "ne", Instruction::branch_i32_eq);
     test_for(ValueType::I32, "lt_s", Instruction::branch_i32_ge_s);
@@ -414,6 +430,9 @@ fn if_forward() {
             .run()
     }
 
+    test_for(ValueType::I32, "and", Instruction::branch_i32_and_eqz);
+    test_for(ValueType::I32, "or", Instruction::branch_i32_or_eqz);
+    test_for(ValueType::I32, "xor", Instruction::branch_i32_xor_eqz);
     test_for(ValueType::I32, "eq", Instruction::branch_i32_ne);
     test_for(ValueType::I32, "ne", Instruction::branch_i32_eq);
     test_for(ValueType::I32, "lt_s", Instruction::branch_i32_ge_s);
@@ -435,4 +454,71 @@ fn if_forward() {
     test_for(ValueType::I64, "gt_u", Instruction::branch_i64_le_u);
     test_for(ValueType::I64, "ge_s", Instruction::branch_i64_lt_s);
     test_for(ValueType::I64, "ge_u", Instruction::branch_i64_lt_u);
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn block_i32_eqz_fuse() {
+    fn test_for(op: &str, expect_instr: fn(Register, Register, BranchOffset16) -> Instruction) {
+        let wasm = wat2wasm(&format!(
+            r"
+            (module
+                (func (param i32 i32)
+                    (block
+                        (local.get 0)
+                        (local.get 1)
+                        (i32.{op})
+                        (i32.eqz)
+                        (br_if 0)
+                    )
+                )
+            )",
+        ));
+        TranslationTest::new(wasm)
+            .expect_func_instrs([
+                expect_instr(
+                    Register::from_i16(0),
+                    Register::from_i16(1),
+                    BranchOffset16::from(1),
+                ),
+                Instruction::Return,
+            ])
+            .run()
+    }
+
+    test_for("and", Instruction::branch_i32_and_eqz);
+    test_for("or", Instruction::branch_i32_or_eqz);
+    test_for("xor", Instruction::branch_i32_xor_eqz);
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn if_i32_eqz_fuse() {
+    fn test_for(op: &str, expect_instr: fn(Register, Register, BranchOffset16) -> Instruction) {
+        let wasm = wat2wasm(&format!(
+            r"
+            (module
+                (func (param i32 i32)
+                    (if
+                        (i32.eqz (i32.{op} (local.get 0) (local.get 1)))
+                        (then)
+                    )
+                )
+            )",
+        ));
+        TranslationTest::new(wasm)
+            .expect_func_instrs([
+                expect_instr(
+                    Register::from_i16(0),
+                    Register::from_i16(1),
+                    BranchOffset16::from(1),
+                ),
+                Instruction::Return,
+            ])
+            .run()
+    }
+
+    test_for("and", Instruction::branch_i32_and);
+    test_for("or", Instruction::branch_i32_or);
+    test_for("xor", Instruction::branch_i32_xor);
 }

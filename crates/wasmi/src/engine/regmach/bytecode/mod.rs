@@ -390,6 +390,56 @@ pub enum Instruction {
         offset: BranchOffset,
     },
 
+    /// A fused [`Instruction::I32And`] and [`Instruction::BranchNez`] instruction.
+    BranchI32And(BranchBinOpInstr),
+    /// A fused [`Instruction::I32And`] and [`Instruction::BranchNez`] instruction.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::BranchI32And`] with 16-bit encoded constant `rhs`.
+    BranchI32AndImm(BranchBinOpInstrImm<i32>),
+    /// A fused [`Instruction::I32Or`] and [`Instruction::BranchNez`] instruction.
+    BranchI32Or(BranchBinOpInstr),
+    /// A fused [`Instruction::I32Or`] and [`Instruction::BranchNez`] instruction.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::BranchI32Or`] with 16-bit encoded constant `rhs`.
+    BranchI32OrImm(BranchBinOpInstrImm<i32>),
+    /// A fused [`Instruction::I32Xor`] and [`Instruction::BranchNez`] instruction.
+    BranchI32Xor(BranchBinOpInstr),
+    /// A fused [`Instruction::I32Xor`] and [`Instruction::BranchNez`] instruction.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::BranchI32Xor`] with 16-bit encoded constant `rhs`.
+    BranchI32XorImm(BranchBinOpInstrImm<i32>),
+
+    /// A fused not-[`Instruction::I32And`] and [`Instruction::BranchNez`] instruction.
+    BranchI32AndEqz(BranchBinOpInstr),
+    /// A fused not-[`Instruction::I32And`] and [`Instruction::BranchNez`] instruction.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::BranchI32AndEqz`] with 16-bit encoded constant `rhs`.
+    BranchI32AndEqzImm(BranchBinOpInstrImm<i32>),
+    /// A fused not-[`Instruction::I32Or`] and [`Instruction::BranchNez`] instruction.
+    BranchI32OrEqz(BranchBinOpInstr),
+    /// A fused not-[`Instruction::I32Or`] and [`Instruction::BranchNez`] instruction.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::BranchI32OrEqz`] with 16-bit encoded constant `rhs`.
+    BranchI32OrEqzImm(BranchBinOpInstrImm<i32>),
+    /// A fused not-[`Instruction::I32Xor`] and [`Instruction::BranchNez`] instruction.
+    BranchI32XorEqz(BranchBinOpInstr),
+    /// A fused not-[`Instruction::I32Xor`] and [`Instruction::BranchNez`] instruction.
+    ///
+    /// # Note
+    ///
+    /// Variant of [`Instruction::BranchI32XorEqz`] with 16-bit encoded constant `rhs`.
+    BranchI32XorEqzImm(BranchBinOpInstrImm<i32>),
+
     /// A fused [`Instruction::I32Eq`] and [`Instruction::BranchNez`] instruction.
     BranchI32Eq(BranchBinOpInstr),
     /// A fused [`Instruction::I32Eq`] and [`Instruction::BranchNez`] instruction.
@@ -2677,14 +2727,19 @@ pub enum Instruction {
 
     /// `i32` bitwise-and instruction: `r0 = r1 & r2`
     I32And(BinInstr),
-    /// `i64` bitwise-and instruction: `r0 = r1 & r2`
-    I64And(BinInstr),
+    /// Fused Wasm `i32.and` + `i32.eqz` [`Instruction`].
+    I32AndEqz(BinInstr),
+    /// Fused Wasm `i32.and` + `i32.eqz` [`Instruction`] with 16-bit encoded immediate.
+    I32AndEqzImm16(BinInstrImm16<i32>),
     /// `i32` bitwise-and (small) immediate instruction: `r0 = r1 & c0`
     ///
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I32And`] for 16-bit constant values.
     I32AndImm16(BinInstrImm16<i32>),
+
+    /// `i64` bitwise-and instruction: `r0 = r1 & r2`
+    I64And(BinInstr),
     /// `i64` bitwise-and (small) immediate instruction: `r0 = r1 & c0`
     ///
     /// # Note
@@ -2694,14 +2749,19 @@ pub enum Instruction {
 
     /// `i32` bitwise-or instruction: `r0 = r1 & r2`
     I32Or(BinInstr),
-    /// `i64` bitwise-or instruction: `r0 = r1 & r2`
-    I64Or(BinInstr),
+    /// Fused Wasm `i32.or` + `i32.eqz` [`Instruction`].
+    I32OrEqz(BinInstr),
+    /// Fused Wasm `i32.or` + `i32.eqz` [`Instruction`] with 16-bit encoded immediate.
+    I32OrEqzImm16(BinInstrImm16<i32>),
     /// `i32` bitwise-or (small) immediate instruction: `r0 = r1 & c0`
     ///
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I32Or`] for 16-bit constant values.
     I32OrImm16(BinInstrImm16<i32>),
+
+    /// `i64` bitwise-or instruction: `r0 = r1 & r2`
+    I64Or(BinInstr),
     /// `i64` bitwise-or (small) immediate instruction: `r0 = r1 & c0`
     ///
     /// # Note
@@ -2711,14 +2771,19 @@ pub enum Instruction {
 
     /// `i32` bitwise-or instruction: `r0 = r1 ^ r2`
     I32Xor(BinInstr),
-    /// `i64` bitwise-or instruction: `r0 = r1 ^ r2`
-    I64Xor(BinInstr),
+    /// Fused Wasm `i32.xor` + `i32.eqz` [`Instruction`].
+    I32XorEqz(BinInstr),
+    /// Fused Wasm `i32.xor` + `i32.eqz` [`Instruction`] with 16-bit encoded immediate.
+    I32XorEqzImm16(BinInstrImm16<i32>),
     /// `i32` bitwise-or (small) immediate instruction: `r0 = r1 ^ c0`
     ///
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I32Xor`] for 16-bit constant values.
     I32XorImm16(BinInstrImm16<i32>),
+
+    /// `i64` bitwise-or instruction: `r0 = r1 ^ r2`
+    I64Xor(BinInstr),
     /// `i64` bitwise-or (small) immediate instruction: `r0 = r1 ^ c0`
     ///
     /// # Note

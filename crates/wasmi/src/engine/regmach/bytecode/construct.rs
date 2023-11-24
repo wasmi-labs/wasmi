@@ -175,6 +175,12 @@ macro_rules! constructor_for_branch_binop {
     }
 }
 constructor_for_branch_binop! {
+    fn branch_i32_and() -> Self::BranchI32And;
+    fn branch_i32_or() -> Self::BranchI32Or;
+    fn branch_i32_xor() -> Self::BranchI32Xor;
+    fn branch_i32_and_eqz() -> Self::BranchI32AndEqz;
+    fn branch_i32_or_eqz() -> Self::BranchI32OrEqz;
+    fn branch_i32_xor_eqz() -> Self::BranchI32XorEqz;
     fn branch_i32_eq() -> Self::BranchI32Eq;
     fn branch_i32_ne() -> Self::BranchI32Ne;
     fn branch_i32_lt_s() -> Self::BranchI32LtS;
@@ -225,6 +231,12 @@ macro_rules! constructor_for_branch_binop_imm {
     }
 }
 constructor_for_branch_binop_imm! {
+    fn branch_i32_and_imm(i32) -> Self::BranchI32AndImm;
+    fn branch_i32_or_imm(i32) -> Self::BranchI32OrImm;
+    fn branch_i32_xor_imm(i32) -> Self::BranchI32XorImm;
+    fn branch_i32_and_eqz_imm(i32) -> Self::BranchI32AndEqzImm;
+    fn branch_i32_or_eqz_imm(i32) -> Self::BranchI32OrEqzImm;
+    fn branch_i32_xor_eqz_imm(i32) -> Self::BranchI32XorEqzImm;
     fn branch_i32_eq_imm(i32) -> Self::BranchI32EqImm;
     fn branch_i32_ne_imm(i32) -> Self::BranchI32NeImm;
     fn branch_i32_lt_s_imm(i32) -> Self::BranchI32LtSImm;
@@ -1555,18 +1567,24 @@ impl Instruction {
         // Integer Bitwise Logic
 
         fn i32_and(binary) -> Self::I32And;
+        fn i32_and_eqz(binary) -> Self::I32AndEqz;
+        fn i32_and_eqz_imm16(binary_i32imm16) -> Self::I32AndEqzImm16;
         fn i32_and_imm16(binary_i32imm16) -> Self::I32AndImm16;
 
         fn i64_and(binary) -> Self::I64And;
         fn i64_and_imm16(binary_i64imm16) -> Self::I64AndImm16;
 
         fn i32_or(binary) -> Self::I32Or;
+        fn i32_or_eqz(binary) -> Self::I32OrEqz;
+        fn i32_or_eqz_imm16(binary_i32imm16) -> Self::I32OrEqzImm16;
         fn i32_or_imm16(binary_i32imm16) -> Self::I32OrImm16;
 
         fn i64_or(binary) -> Self::I64Or;
         fn i64_or_imm16(binary_i64imm16) -> Self::I64OrImm16;
 
         fn i32_xor(binary) -> Self::I32Xor;
+        fn i32_xor_eqz(binary) -> Self::I32XorEqz;
+        fn i32_xor_eqz_imm16(binary_i32imm16) -> Self::I32XorEqzImm16;
         fn i32_xor_imm16(binary_i32imm16) -> Self::I32XorImm16;
 
         fn i64_xor(binary) -> Self::I64Xor;

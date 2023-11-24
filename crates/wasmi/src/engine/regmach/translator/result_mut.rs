@@ -70,6 +70,18 @@ impl Instruction {
             Instruction::BranchEqz { .. } |
             Instruction::BranchNez { .. } |
             Instruction::BranchTable { .. } => None,
+            Instruction::BranchI32And(_) |
+            Instruction::BranchI32AndImm(_) |
+            Instruction::BranchI32Or(_) |
+            Instruction::BranchI32OrImm(_) |
+            Instruction::BranchI32Xor(_) |
+            Instruction::BranchI32XorImm(_) |
+            Instruction::BranchI32AndEqz(_) |
+            Instruction::BranchI32AndEqzImm(_) |
+            Instruction::BranchI32OrEqz(_) |
+            Instruction::BranchI32OrEqzImm(_) |
+            Instruction::BranchI32XorEqz(_) |
+            Instruction::BranchI32XorEqzImm(_) |
             Instruction::BranchI32Eq(_) |
             Instruction::BranchI32EqImm(_) |
             Instruction::BranchI32Ne(_) |
@@ -396,15 +408,21 @@ impl Instruction {
             Instruction::I32RemUImm16Rev(instr) => instr.result_mut(),
             Instruction::I64RemUImm16Rev(instr) => instr.result_mut(),
             Instruction::I32And(instr) |
+            Instruction::I32AndEqz(instr) |
             Instruction::I64And(instr) => instr.result_mut(),
+            Instruction::I32AndEqzImm16(instr) |
             Instruction::I32AndImm16(instr) => instr.result_mut(),
             Instruction::I64AndImm16(instr) => instr.result_mut(),
             Instruction::I32Or(instr) |
+            Instruction::I32OrEqz(instr) |
             Instruction::I64Or(instr) => instr.result_mut(),
+            Instruction::I32OrEqzImm16(instr) |
             Instruction::I32OrImm16(instr) => instr.result_mut(),
             Instruction::I64OrImm16(instr) => instr.result_mut(),
             Instruction::I32Xor(instr) |
+            Instruction::I32XorEqz(instr) |
             Instruction::I64Xor(instr) => instr.result_mut(),
+            Instruction::I32XorEqzImm16(instr) |
             Instruction::I32XorImm16(instr) => instr.result_mut(),
             Instruction::I64XorImm16(instr) => instr.result_mut(),
             Instruction::I32Shl(instr) |

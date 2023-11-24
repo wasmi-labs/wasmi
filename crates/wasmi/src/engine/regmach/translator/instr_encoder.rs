@@ -777,6 +777,61 @@ impl InstrEncoder {
         Ok(())
     }
 
+    /// Translates a Wasm `i32.eqz` instruction.
+    ///
+    /// Tries to fuse `i32.eqz` with a previous `i32.{and,or,xor}` instruction if possible.
+    /// Returns `true` if it was possible to fuse the `i32.eqz` instruction.
+    pub fn fuse_i32_eqz(&mut self, stack: &mut ValueStack) -> bool {
+        /// Fuse a `i32.{and,or,xor}` instruction with `i32.eqz`.
+        macro_rules! fuse {
+            ($instr:ident, $stack:ident, $make_fuse:expr) => {{
+                if matches!(
+                    $stack.get_register_space($instr.result),
+                    RegisterSpace::Local
+                ) {
+                    return false;
+                }
+                $make_fuse($instr.result, $instr.lhs, $instr.rhs)
+            }};
+        }
+
+        /// Fuse a `i32.{and,or,xor}` instruction with 16-bit encoded immediate parameter with `i32.eqz`.
+        macro_rules! fuse_imm16 {
+            ($instr:ident, $stack:ident, $make_fuse:expr) => {{
+                if matches!(
+                    $stack.get_register_space($instr.result),
+                    RegisterSpace::Local
+                ) {
+                    // Must not fuse instruction that store to local registers since
+                    // this behavior is observable and would not be semantics preserving.
+                    return false;
+                }
+                $make_fuse($instr.result, $instr.reg_in, $instr.imm_in)
+            }};
+        }
+
+        let Some(last_instr) = self.last_instr else {
+            return false;
+        };
+        let fused_instr = match self.instrs.get(last_instr) {
+            Instruction::I32And(instr) => fuse!(instr, stack, Instruction::i32_and_eqz),
+            Instruction::I32AndImm16(instr) => {
+                fuse_imm16!(instr, stack, Instruction::i32_and_eqz_imm16)
+            }
+            Instruction::I32Or(instr) => fuse!(instr, stack, Instruction::i32_or_eqz),
+            Instruction::I32OrImm16(instr) => {
+                fuse_imm16!(instr, stack, Instruction::i32_or_eqz_imm16)
+            }
+            Instruction::I32Xor(instr) => fuse!(instr, stack, Instruction::i32_xor_eqz),
+            Instruction::I32XorImm16(instr) => {
+                fuse_imm16!(instr, stack, Instruction::i32_xor_eqz_imm16)
+            }
+            _ => return false,
+        };
+        _ = mem::replace(self.instrs.get_mut(last_instr), fused_instr);
+        true
+    }
+
     /// Encodes a `branch_eqz` instruction and tries to fuse it with a previous comparison instruction.
     pub fn encode_branch_eqz(
         &mut self,
@@ -875,6 +930,12 @@ impl InstrEncoder {
                     }
                 }
             }
+            I::I32And(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_and_eqz as _)?,
+            I::I32Or(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_or_eqz as _)?,
+            I::I32Xor(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_xor_eqz as _)?,
+            I::I32AndEqz(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_and as _)?,
+            I::I32OrEqz(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_or as _)?,
+            I::I32XorEqz(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_xor as _)?,
             I::I32Eq(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_ne as _)?,
             I::I32Ne(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_eq as _)?,
             I::I32LtS(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_ge_s as _)?,
@@ -898,6 +959,12 @@ impl InstrEncoder {
             I::F32Eq(instr) => fuse(self, stack, last_instr, instr, label, I::branch_f32_ne as _)?,
             I::F32Ne(instr) => fuse(self, stack, last_instr, instr, label, I::branch_f32_eq as _)?,
             // Note: We cannot fuse cmp+branch for float comparison operators due to how NaN values are treated.
+            I::I32AndImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_and_eqz_imm as _)?,
+            I::I32OrImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_or_eqz_imm as _)?,
+            I::I32XorImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_xor_eqz_imm as _)?,
+            I::I32AndEqzImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_and_imm as _)?,
+            I::I32OrEqzImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_or_imm as _)?,
+            I::I32XorEqzImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_xor_imm as _)?,
             I::I32EqImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_ne_imm as _)?,
             I::I32NeImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_eq_imm as _)?,
             I::I32LtSImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_ge_s_imm as _)?,
@@ -1025,6 +1092,12 @@ impl InstrEncoder {
                     }
                 }
             }
+            I::I32And(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_and as _)?,
+            I::I32Or(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_or as _)?,
+            I::I32Xor(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_xor as _)?,
+            I::I32AndEqz(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_and_eqz as _)?,
+            I::I32OrEqz(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_or_eqz as _)?,
+            I::I32XorEqz(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_xor_eqz as _)?,
             I::I32Eq(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_eq as _)?,
             I::I32Ne(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_ne as _)?,
             I::I32LtS(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_lt_s as _)?,
@@ -1057,6 +1130,12 @@ impl InstrEncoder {
             I::F64Le(instr) => fuse(self, stack, last_instr, instr, label, I::branch_f64_le as _)?,
             I::F64Gt(instr) => fuse(self, stack, last_instr, instr, label, I::branch_f64_gt as _)?,
             I::F64Ge(instr) => fuse(self, stack, last_instr, instr, label, I::branch_f64_ge as _)?,
+            I::I32AndImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_and_imm as _)?,
+            I::I32OrImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_or_imm as _)?,
+            I::I32XorImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_xor_imm as _)?,
+            I::I32AndEqzImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_and_eqz_imm as _)?,
+            I::I32OrEqzImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_or_eqz_imm as _)?,
+            I::I32XorEqzImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_xor_eqz_imm as _)?,
             I::I32EqImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_eq_imm as _)?,
             I::I32NeImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_ne_imm as _)?,
             I::I32LtSImm16(instr) => fuse_imm(self, stack, last_instr, instr, label, I::branch_i32_lt_s_imm as _)?,
@@ -1104,7 +1183,13 @@ impl Instruction {
                 offset.init(new_offset);
                 Ok(())
             }
-            Instruction::BranchI32Eq(instr)
+            Instruction::BranchI32And(instr)
+            | Instruction::BranchI32Or(instr)
+            | Instruction::BranchI32Xor(instr)
+            | Instruction::BranchI32AndEqz(instr)
+            | Instruction::BranchI32OrEqz(instr)
+            | Instruction::BranchI32XorEqz(instr)
+            | Instruction::BranchI32Eq(instr)
             | Instruction::BranchI32Ne(instr)
             | Instruction::BranchI32LtS(instr)
             | Instruction::BranchI32LtU(instr)
@@ -1136,7 +1221,13 @@ impl Instruction {
             | Instruction::BranchF64Le(instr)
             | Instruction::BranchF64Gt(instr)
             | Instruction::BranchF64Ge(instr) => instr.offset.init(new_offset),
-            Instruction::BranchI32EqImm(instr)
+            Instruction::BranchI32AndImm(instr)
+            | Instruction::BranchI32OrImm(instr)
+            | Instruction::BranchI32XorImm(instr)
+            | Instruction::BranchI32AndEqzImm(instr)
+            | Instruction::BranchI32OrEqzImm(instr)
+            | Instruction::BranchI32XorEqzImm(instr)
+            | Instruction::BranchI32EqImm(instr)
             | Instruction::BranchI32NeImm(instr)
             | Instruction::BranchI32LtSImm(instr)
             | Instruction::BranchI32LeSImm(instr)

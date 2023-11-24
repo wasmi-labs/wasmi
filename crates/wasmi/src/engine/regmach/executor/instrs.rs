@@ -254,6 +254,18 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::BranchTable { index, len_targets } => {
                     self.execute_branch_table(index, len_targets)
                 }
+                Instr::BranchI32And(instr) => self.execute_branch_i32_and(instr),
+                Instr::BranchI32AndImm(instr) => self.execute_branch_i32_and_imm(instr),
+                Instr::BranchI32Or(instr) => self.execute_branch_i32_or(instr),
+                Instr::BranchI32OrImm(instr) => self.execute_branch_i32_or_imm(instr),
+                Instr::BranchI32Xor(instr) => self.execute_branch_i32_xor(instr),
+                Instr::BranchI32XorImm(instr) => self.execute_branch_i32_xor_imm(instr),
+                Instr::BranchI32AndEqz(instr) => self.execute_branch_i32_and_eqz(instr),
+                Instr::BranchI32AndEqzImm(instr) => self.execute_branch_i32_and_eqz_imm(instr),
+                Instr::BranchI32OrEqz(instr) => self.execute_branch_i32_or_eqz(instr),
+                Instr::BranchI32OrEqzImm(instr) => self.execute_branch_i32_or_eqz_imm(instr),
+                Instr::BranchI32XorEqz(instr) => self.execute_branch_i32_xor_eqz(instr),
+                Instr::BranchI32XorEqzImm(instr) => self.execute_branch_i32_xor_eqz_imm(instr),
                 Instr::BranchI32Eq(instr) => self.execute_branch_i32_eq(instr),
                 Instr::BranchI32EqImm(instr) => self.execute_branch_i32_eq_imm(instr),
                 Instr::BranchI32Ne(instr) => self.execute_branch_i32_ne(instr),
@@ -711,10 +723,16 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::I32RemUImm16(instr) => self.execute_i32_rem_u_imm16(instr)?,
                 Instr::I32RemUImm16Rev(instr) => self.execute_i32_rem_u_imm16_rev(instr)?,
                 Instr::I32And(instr) => self.execute_i32_and(instr),
+                Instr::I32AndEqz(instr) => self.execute_i32_and_eqz(instr),
+                Instr::I32AndEqzImm16(instr) => self.execute_i32_and_eqz_imm16(instr),
                 Instr::I32AndImm16(instr) => self.execute_i32_and_imm16(instr),
                 Instr::I32Or(instr) => self.execute_i32_or(instr),
+                Instr::I32OrEqz(instr) => self.execute_i32_or_eqz(instr),
+                Instr::I32OrEqzImm16(instr) => self.execute_i32_or_eqz_imm16(instr),
                 Instr::I32OrImm16(instr) => self.execute_i32_or_imm16(instr),
                 Instr::I32Xor(instr) => self.execute_i32_xor(instr),
+                Instr::I32XorEqz(instr) => self.execute_i32_xor_eqz(instr),
+                Instr::I32XorEqzImm16(instr) => self.execute_i32_xor_eqz_imm16(instr),
                 Instr::I32XorImm16(instr) => self.execute_i32_xor_imm16(instr),
                 Instr::I32Shl(instr) => self.execute_i32_shl(instr),
                 Instr::I32ShlImm(instr) => self.execute_i32_shl_imm(instr),
@@ -1230,5 +1248,31 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let funcref = FuncRef::new(func);
         self.set_register(result, funcref);
         self.next_instr();
+    }
+}
+
+/// Extension method for [`UntypedValue`] required by the [`Executor`].
+trait UntypedValueExt {
+    /// Executes a fused `i32.and` + `i32.eqz` instruction.
+    fn i32_and_eqz(x: UntypedValue, y: UntypedValue) -> UntypedValue;
+
+    /// Executes a fused `i32.or` + `i32.eqz` instruction.
+    fn i32_or_eqz(x: UntypedValue, y: UntypedValue) -> UntypedValue;
+
+    /// Executes a fused `i32.xor` + `i32.eqz` instruction.
+    fn i32_xor_eqz(x: UntypedValue, y: UntypedValue) -> UntypedValue;
+}
+
+impl UntypedValueExt for UntypedValue {
+    fn i32_and_eqz(x: UntypedValue, y: UntypedValue) -> UntypedValue {
+        (i32::from(UntypedValue::i32_and(x, y)) == 0).into()
+    }
+
+    fn i32_or_eqz(x: UntypedValue, y: UntypedValue) -> UntypedValue {
+        (i32::from(UntypedValue::i32_or(x, y)) == 0).into()
+    }
+
+    fn i32_xor_eqz(x: UntypedValue, y: UntypedValue) -> UntypedValue {
+        (i32::from(UntypedValue::i32_xor(x, y)) == 0).into()
     }
 }

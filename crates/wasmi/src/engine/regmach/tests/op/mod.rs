@@ -8,6 +8,7 @@ mod cmp;
 mod cmp_br;
 mod global_get;
 mod global_set;
+mod i32_eqz;
 mod if_;
 mod load;
 mod local_set;
