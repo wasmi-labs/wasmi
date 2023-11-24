@@ -526,7 +526,7 @@ fn if_i32_eqz_fuse() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn block_i64_eqz_fuse() {
-    let wasm = wat2wasm(&format!(
+    let wasm = wat2wasm(
         r"
         (module
             (func (param i64)
@@ -536,7 +536,7 @@ fn block_i64_eqz_fuse() {
                 )
             )
         )",
-    ));
+    );
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::branch_i64_eqz(Register::from_i16(0), BranchOffset::from(1)),
@@ -548,7 +548,7 @@ fn block_i64_eqz_fuse() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn if_i64_eqz_fuse() {
-    let wasm = wat2wasm(&format!(
+    let wasm = wat2wasm(
         r"
         (module
             (func (param i64)
@@ -558,7 +558,7 @@ fn if_i64_eqz_fuse() {
                 )
             )
         )",
-    ));
+    );
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::branch_i64_nez(Register::from_i16(0), BranchOffset::from(1)),
