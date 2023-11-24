@@ -22,6 +22,8 @@ criterion_group!(
     targets =
         bench_translate_wasm_kernel,
         bench_translate_spidermonkey,
+        bench_translate_pulldown_cmark,
+        bench_translate_bz2,
         bench_translate_erc20,
         bench_translate_erc721,
         bench_translate_erc1155,
@@ -98,6 +100,14 @@ fn bench_translate_wasm_kernel(c: &mut Criterion) {
 
 fn bench_translate_spidermonkey(c: &mut Criterion) {
     bench_translate_for(c, "spidermonkey", "benches/wasm/spidermonkey.wasm")
+}
+
+fn bench_translate_bz2(c: &mut Criterion) {
+    bench_translate_for(c, "bz2", "benches/wasm/bz2.wasm")
+}
+
+fn bench_translate_pulldown_cmark(c: &mut Criterion) {
+    bench_translate_for(c, "pulldown_cmark", "benches/wasm/pulldown-cmark.wasm")
 }
 
 fn bench_translate_erc20(c: &mut Criterion) {
