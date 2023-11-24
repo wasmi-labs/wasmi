@@ -805,7 +805,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let value = self.alloc.stack.pop();
         let local = Register::try_from(local_index)?;
         let preserved = self.alloc.stack.preserve_locals(local_index)?;
-        self.alloc.instr_encoder.encode_local_set_v2(
+        self.alloc.instr_encoder.encode_local_set(
             &mut self.alloc.stack,
             &self.res,
             local,

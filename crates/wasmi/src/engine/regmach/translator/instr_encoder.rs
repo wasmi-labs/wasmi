@@ -657,7 +657,7 @@ impl InstrEncoder {
     ///
     /// - If `value` is a [`Register`] it usually is equal to the
     ///   result [`Register`] of the previous instruction.
-    pub fn encode_local_set_v2(
+    pub fn encode_local_set(
         &mut self,
         stack: &mut ValueStack,
         res: &ModuleResources,
