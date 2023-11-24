@@ -4,7 +4,6 @@ mod control_frame;
 mod control_stack;
 mod instr_encoder;
 mod relink_result;
-mod result_mut;
 mod stack;
 mod typed_value;
 mod utils;
