@@ -11,8 +11,7 @@ impl IMTable {
         &mut self,
         is_global: bool,
         is_mutable: bool,
-        start_offset: u32,
-        end_offset: u32,
+        offset: u32,
         vtype: VarType,
         value: u64,
     ) {
@@ -23,8 +22,7 @@ impl IMTable {
             } else {
                 LocationType::Heap
             },
-            start_offset,
-            end_offset,
+            offset,
             vtype,
             value,
             eid: 0,
