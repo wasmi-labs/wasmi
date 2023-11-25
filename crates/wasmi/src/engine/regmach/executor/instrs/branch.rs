@@ -1,4 +1,4 @@
-use super::{Executor, UntypedValueExt};
+use super::Executor;
 use crate::engine::{
     bytecode::BranchOffset,
     regmach::bytecode::{BranchBinOpInstr, BranchBinOpInstrImm16, Const16, Const32, Register},
@@ -16,42 +16,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     #[inline(always)]
-    pub fn execute_branch_i32_nez(&mut self, condition: Register, offset: BranchOffset) {
-        let value: i32 = self.get_register_as(condition);
-        if value != 0 {
-            return self.branch_to(offset);
-        }
-        self.next_instr();
-    }
-
-    #[inline(always)]
-    pub fn execute_branch_i32_eqz(&mut self, condition: Register, offset: BranchOffset) {
-        let value: i32 = self.get_register_as(condition);
-        if value == 0 {
-            return self.branch_to(offset);
-        }
-        self.next_instr();
-    }
-
-    #[inline(always)]
-    pub fn execute_branch_i64_nez(&mut self, condition: Register, offset: BranchOffset) {
-        let value: i64 = self.get_register_as(condition);
-        if value != 0 {
-            return self.branch_to(offset);
-        }
-        self.next_instr();
-    }
-
-    #[inline(always)]
-    pub fn execute_branch_i64_eqz(&mut self, condition: Register, offset: BranchOffset) {
-        let value: i64 = self.get_register_as(condition);
-        if value == 0 {
-            return self.branch_to(offset);
-        }
-        self.next_instr();
-    }
-
-    #[inline(always)]
     pub fn execute_branch_table(&mut self, index: Register, len_targets: Const32<u32>) {
         let index: u32 = self.get_register_as(index);
         // The index of the default target which is the last target of the slice.
@@ -63,135 +27,128 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic fused compare and branch instruction.
-    fn execute_branch_binop(
-        &mut self,
-        instr: BranchBinOpInstr,
-        f: fn(UntypedValue, UntypedValue) -> UntypedValue,
-    ) {
-        let lhs = self.get_register(instr.lhs);
-        let rhs = self.get_register(instr.rhs);
-        if bool::from(f(lhs, rhs)) {
-            self.branch_to(instr.offset.into());
-        } else {
-            self.next_instr()
+    fn execute_branch_binop<T>(&mut self, instr: BranchBinOpInstr, f: fn(T, T) -> bool)
+    where
+        T: From<UntypedValue>,
+    {
+        let lhs: T = self.get_register_as(instr.lhs);
+        let rhs: T = self.get_register_as(instr.rhs);
+        if f(lhs, rhs) {
+            return self.branch_to(instr.offset.into());
         }
+        self.next_instr()
     }
 
     /// Executes a generic fused compare and branch instruction with immediate `rhs` operand.
-    fn execute_branch_binop_imm<T>(
-        &mut self,
-        instr: BranchBinOpInstrImm16<T>,
-        f: fn(UntypedValue, UntypedValue) -> UntypedValue,
-    ) where
-        T: From<Const16<T>>,
-        UntypedValue: From<T>,
+    fn execute_branch_binop_imm<T>(&mut self, instr: BranchBinOpInstrImm16<T>, f: fn(T, T) -> bool)
+    where
+        T: From<UntypedValue> + From<Const16<T>>,
     {
-        let lhs = self.get_register(instr.lhs);
-        let rhs = UntypedValue::from(T::from(instr.rhs));
-        if bool::from(f(lhs, rhs)) {
-            self.branch_to(instr.offset.into());
-        } else {
-            self.next_instr()
+        let lhs: T = self.get_register_as(instr.lhs);
+        let rhs = T::from(instr.rhs);
+        if f(lhs, rhs) {
+            return self.branch_to(instr.offset.into());
         }
+        self.next_instr()
     }
 }
 
 macro_rules! impl_execute_branch_binop {
-    ( $( (Instruction::$op_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
+    ( $( ($ty:ty, Instruction::$op_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             $(
                 #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
                 #[inline(always)]
                 pub fn $fn_name(&mut self, instr: BranchBinOpInstr) {
-                    self.execute_branch_binop(instr, $op)
+                    self.execute_branch_binop::<$ty>(instr, $op)
                 }
             )*
         }
     }
 }
 impl_execute_branch_binop! {
-    (Instruction::BranchI32And, execute_branch_i32_and, UntypedValue::i32_and),
-    (Instruction::BranchI32Or, execute_branch_i32_or, UntypedValue::i32_or),
-    (Instruction::BranchI32Xor, execute_branch_i32_xor, UntypedValue::i32_xor),
-    (Instruction::BranchI32AndEqz, execute_branch_i32_and_eqz, UntypedValue::i32_and_eqz),
-    (Instruction::BranchI32OrEqz, execute_branch_i32_or_eqz, UntypedValue::i32_or_eqz),
-    (Instruction::BranchI32XorEqz, execute_branch_i32_xor_eqz, UntypedValue::i32_xor_eqz),
-    (Instruction::BranchI32Eq, execute_branch_i32_eq, UntypedValue::i32_eq),
-    (Instruction::BranchI32Ne, execute_branch_i32_ne, UntypedValue::i32_ne),
-    (Instruction::BranchI32LtS, execute_branch_i32_lt_s, UntypedValue::i32_lt_s),
-    (Instruction::BranchI32LtU, execute_branch_i32_lt_u, UntypedValue::i32_lt_u),
-    (Instruction::BranchI32LeS, execute_branch_i32_le_s, UntypedValue::i32_le_s),
-    (Instruction::BranchI32LeU, execute_branch_i32_le_u, UntypedValue::i32_le_u),
-    (Instruction::BranchI32GtS, execute_branch_i32_gt_s, UntypedValue::i32_gt_s),
-    (Instruction::BranchI32GtU, execute_branch_i32_gt_u, UntypedValue::i32_gt_u),
-    (Instruction::BranchI32GeS, execute_branch_i32_ge_s, UntypedValue::i32_ge_s),
-    (Instruction::BranchI32GeU, execute_branch_i32_ge_u, UntypedValue::i32_ge_u),
+    (i32, Instruction::BranchI32And, execute_branch_i32_and, |a, b| (a & b) != 0),
+    (i32, Instruction::BranchI32Or, execute_branch_i32_or, |a, b| (a | b) != 0),
+    (i32, Instruction::BranchI32Xor, execute_branch_i32_xor, |a, b| (a ^ b) != 0),
+    (i32, Instruction::BranchI32AndEqz, execute_branch_i32_and_eqz, |a, b| (a & b) == 0),
+    (i32, Instruction::BranchI32OrEqz, execute_branch_i32_or_eqz, |a, b| (a | b) == 0),
+    (i32, Instruction::BranchI32XorEqz, execute_branch_i32_xor_eqz, |a, b| (a ^ b) == 0),
+    (i32, Instruction::BranchI32Eq, execute_branch_i32_eq, |a, b| a == b),
+    (i32, Instruction::BranchI32Ne, execute_branch_i32_ne, |a, b| a != b),
+    (i32, Instruction::BranchI32LtS, execute_branch_i32_lt_s, |a, b| a < b),
+    (u32, Instruction::BranchI32LtU, execute_branch_i32_lt_u, |a, b| a < b),
+    (i32, Instruction::BranchI32LeS, execute_branch_i32_le_s, |a, b| a <= b),
+    (u32, Instruction::BranchI32LeU, execute_branch_i32_le_u, |a, b| a <= b),
+    (i32, Instruction::BranchI32GtS, execute_branch_i32_gt_s, |a, b| a > b),
+    (u32, Instruction::BranchI32GtU, execute_branch_i32_gt_u, |a, b| a > b),
+    (i32, Instruction::BranchI32GeS, execute_branch_i32_ge_s, |a, b| a >= b),
+    (u32, Instruction::BranchI32GeU, execute_branch_i32_ge_u, |a, b| a >= b),
 
-    (Instruction::BranchI64Eq, execute_branch_i64_eq, UntypedValue::i64_eq),
-    (Instruction::BranchI64Ne, execute_branch_i64_ne, UntypedValue::i64_ne),
-    (Instruction::BranchI64LtS, execute_branch_i64_lt_s, UntypedValue::i64_lt_s),
-    (Instruction::BranchI64LtU, execute_branch_i64_lt_u, UntypedValue::i64_lt_u),
-    (Instruction::BranchI64LeS, execute_branch_i64_le_s, UntypedValue::i64_le_s),
-    (Instruction::BranchI64LeU, execute_branch_i64_le_u, UntypedValue::i64_le_u),
-    (Instruction::BranchI64GtS, execute_branch_i64_gt_s, UntypedValue::i64_gt_s),
-    (Instruction::BranchI64GtU, execute_branch_i64_gt_u, UntypedValue::i64_gt_u),
-    (Instruction::BranchI64GeS, execute_branch_i64_ge_s, UntypedValue::i64_ge_s),
-    (Instruction::BranchI64GeU, execute_branch_i64_ge_u, UntypedValue::i64_ge_u),
+    (i64, Instruction::BranchI64Eq, execute_branch_i64_eq, |a, b| a == b),
+    (i64, Instruction::BranchI64Ne, execute_branch_i64_ne, |a, b| a != b),
+    (i64, Instruction::BranchI64LtS, execute_branch_i64_lt_s, |a, b| a < b),
+    (u64, Instruction::BranchI64LtU, execute_branch_i64_lt_u, |a, b| a < b),
+    (i64, Instruction::BranchI64LeS, execute_branch_i64_le_s, |a, b| a <= b),
+    (u64, Instruction::BranchI64LeU, execute_branch_i64_le_u, |a, b| a <= b),
+    (i64, Instruction::BranchI64GtS, execute_branch_i64_gt_s, |a, b| a > b),
+    (u64, Instruction::BranchI64GtU, execute_branch_i64_gt_u, |a, b| a > b),
+    (i64, Instruction::BranchI64GeS, execute_branch_i64_ge_s, |a, b| a >= b),
+    (u64, Instruction::BranchI64GeU, execute_branch_i64_ge_u, |a, b| a >= b),
 
-    (Instruction::BranchF32Eq, execute_branch_f32_eq, UntypedValue::f32_eq),
-    (Instruction::BranchF32Ne, execute_branch_f32_ne, UntypedValue::f32_ne),
-    (Instruction::BranchF32Lt, execute_branch_f32_lt, UntypedValue::f32_lt),
-    (Instruction::BranchF32Le, execute_branch_f32_le, UntypedValue::f32_le),
-    (Instruction::BranchF32Gt, execute_branch_f32_gt, UntypedValue::f32_gt),
-    (Instruction::BranchF32Ge, execute_branch_f32_ge, UntypedValue::f32_ge),
+    (f32, Instruction::BranchF32Eq, execute_branch_f32_eq, |a, b| a == b),
+    (f32, Instruction::BranchF32Ne, execute_branch_f32_ne, |a, b| a != b),
+    (f32, Instruction::BranchF32Lt, execute_branch_f32_lt, |a, b| a < b),
+    (f32, Instruction::BranchF32Le, execute_branch_f32_le, |a, b| a <= b),
+    (f32, Instruction::BranchF32Gt, execute_branch_f32_gt, |a, b| a > b),
+    (f32, Instruction::BranchF32Ge, execute_branch_f32_ge, |a, b| a >= b),
 
-    (Instruction::BranchF64Eq, execute_branch_f64_eq, UntypedValue::f64_eq),
-    (Instruction::BranchF64Ne, execute_branch_f64_ne, UntypedValue::f64_ne),
-    (Instruction::BranchF64Lt, execute_branch_f64_lt, UntypedValue::f64_lt),
-    (Instruction::BranchF64Le, execute_branch_f64_le, UntypedValue::f64_le),
-    (Instruction::BranchF64Gt, execute_branch_f64_gt, UntypedValue::f64_gt),
-    (Instruction::BranchF64Ge, execute_branch_f64_ge, UntypedValue::f64_ge),
+    (f64, Instruction::BranchF64Eq, execute_branch_f64_eq, |a, b| a == b),
+    (f64, Instruction::BranchF64Ne, execute_branch_f64_ne, |a, b| a != b),
+    (f64, Instruction::BranchF64Lt, execute_branch_f64_lt, |a, b| a < b),
+    (f64, Instruction::BranchF64Le, execute_branch_f64_le, |a, b| a <= b),
+    (f64, Instruction::BranchF64Gt, execute_branch_f64_gt, |a, b| a > b),
+    (f64, Instruction::BranchF64Ge, execute_branch_f64_ge, |a, b| a >= b),
 }
 
 macro_rules! impl_execute_branch_binop_imm {
-    ( $( (Instruction::$op_name:ident, $fn_name:ident, $op:expr, $ty:ty) ),* $(,)? ) => {
+    ( $( ($ty:ty, Instruction::$op_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             $(
                 #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
                 #[inline(always)]
                 pub fn $fn_name(&mut self, instr: BranchBinOpInstrImm16<$ty>) {
-                    self.execute_branch_binop_imm(instr, $op)
+                    self.execute_branch_binop_imm::<$ty>(instr, $op)
                 }
             )*
         }
     }
 }
 impl_execute_branch_binop_imm! {
-    (Instruction::BranchI32AndImm, execute_branch_i32_and_imm, UntypedValue::i32_and, i32),
-    (Instruction::BranchI32OrImm, execute_branch_i32_or_imm, UntypedValue::i32_or, i32),
-    (Instruction::BranchI32XorImm, execute_branch_i32_xor_imm, UntypedValue::i32_xor, i32),
-    (Instruction::BranchI32AndEqzImm, execute_branch_i32_and_eqz_imm, UntypedValue::i32_and_eqz, i32),
-    (Instruction::BranchI32OrEqzImm, execute_branch_i32_or_eqz_imm, UntypedValue::i32_or_eqz, i32),
-    (Instruction::BranchI32XorEqzImm, execute_branch_i32_xor_eqz_imm, UntypedValue::i32_xor_eqz, i32),
-    (Instruction::BranchI32EqImm, execute_branch_i32_eq_imm, UntypedValue::i32_eq, i32),
-    (Instruction::BranchI32NeImm, execute_branch_i32_ne_imm, UntypedValue::i32_ne, i32),
-    (Instruction::BranchI32LtSImm, execute_branch_i32_lt_s_imm, UntypedValue::i32_lt_s, i32),
-    (Instruction::BranchI32LtUImm, execute_branch_i32_lt_u_imm, UntypedValue::i32_lt_u, u32),
-    (Instruction::BranchI32LeSImm, execute_branch_i32_le_s_imm, UntypedValue::i32_le_s, i32),
-    (Instruction::BranchI32LeUImm, execute_branch_i32_le_u_imm, UntypedValue::i32_le_u, u32),
-    (Instruction::BranchI32GtSImm, execute_branch_i32_gt_s_imm, UntypedValue::i32_gt_s, i32),
-    (Instruction::BranchI32GtUImm, execute_branch_i32_gt_u_imm, UntypedValue::i32_gt_u, u32),
-    (Instruction::BranchI32GeSImm, execute_branch_i32_ge_s_imm, UntypedValue::i32_ge_s, i32),
-    (Instruction::BranchI32GeUImm, execute_branch_i32_ge_u_imm, UntypedValue::i32_ge_u, u32),
+    (i32, Instruction::BranchI32AndImm, execute_branch_i32_and_imm, |a, b| (a & b) != 0),
+    (i32, Instruction::BranchI32OrImm, execute_branch_i32_or_imm, |a, b| (a | b) != 0),
+    (i32, Instruction::BranchI32XorImm, execute_branch_i32_xor_imm, |a, b| (a ^ b) != 0),
+    (i32, Instruction::BranchI32AndEqzImm, execute_branch_i32_and_eqz_imm, |a, b| (a & b) == 0),
+    (i32, Instruction::BranchI32OrEqzImm, execute_branch_i32_or_eqz_imm, |a, b| (a | b) == 0),
+    (i32, Instruction::BranchI32XorEqzImm, execute_branch_i32_xor_eqz_imm, |a, b| (a ^ b) == 0),
+    (i32, Instruction::BranchI32EqImm, execute_branch_i32_eq_imm, |a, b| a == b),
+    (i32, Instruction::BranchI32NeImm, execute_branch_i32_ne_imm, |a, b| a != b),
+    (i32, Instruction::BranchI32LtSImm, execute_branch_i32_lt_s_imm, |a, b| a < b),
+    (u32, Instruction::BranchI32LtUImm, execute_branch_i32_lt_u_imm, |a, b| a < b),
+    (i32, Instruction::BranchI32LeSImm, execute_branch_i32_le_s_imm, |a, b| a <= b),
+    (u32, Instruction::BranchI32LeUImm, execute_branch_i32_le_u_imm, |a, b| a <= b),
+    (i32, Instruction::BranchI32GtSImm, execute_branch_i32_gt_s_imm, |a, b| a > b),
+    (u32, Instruction::BranchI32GtUImm, execute_branch_i32_gt_u_imm, |a, b| a > b),
+    (i32, Instruction::BranchI32GeSImm, execute_branch_i32_ge_s_imm, |a, b| a >= b),
+    (u32, Instruction::BranchI32GeUImm, execute_branch_i32_ge_u_imm, |a, b| a >= b),
 
-    (Instruction::BranchI64EqImm, execute_branch_i64_eq_imm, UntypedValue::i64_eq, i64),
-    (Instruction::BranchI64NeImm, execute_branch_i64_ne_imm, UntypedValue::i64_ne, i64),
-    (Instruction::BranchI64LtSImm, execute_branch_i64_lt_s_imm, UntypedValue::i64_lt_s, i64),
-    (Instruction::BranchI64LtUImm, execute_branch_i64_lt_u_imm, UntypedValue::i64_lt_u, u64),
-    (Instruction::BranchI64LeSImm, execute_branch_i64_le_s_imm, UntypedValue::i64_le_s, i64),
-    (Instruction::BranchI64LeUImm, execute_branch_i64_le_u_imm, UntypedValue::i64_le_u, u64),
-    (Instruction::BranchI64GtSImm, execute_branch_i64_gt_s_imm, UntypedValue::i64_gt_s, i64),
-    (Instruction::BranchI64GtUImm, execute_branch_i64_gt_u_imm, UntypedValue::i64_gt_u, u64),
-    (Instruction::BranchI64GeSImm, execute_branch_i64_ge_s_imm, UntypedValue::i64_ge_s, i64),
-    (Instruction::BranchI64GeUImm, execute_branch_i64_ge_u_imm, UntypedValue::i64_ge_u, u64),
+    (i64, Instruction::BranchI64EqImm, execute_branch_i64_eq_imm, |a, b| a == b),
+    (i64, Instruction::BranchI64NeImm, execute_branch_i64_ne_imm, |a, b| a != b),
+    (i64, Instruction::BranchI64LtSImm, execute_branch_i64_lt_s_imm, |a, b| a < b),
+    (u64, Instruction::BranchI64LtUImm, execute_branch_i64_lt_u_imm, |a, b| a < b),
+    (i64, Instruction::BranchI64LeSImm, execute_branch_i64_le_s_imm, |a, b| a <= b),
+    (u64, Instruction::BranchI64LeUImm, execute_branch_i64_le_u_imm, |a, b| a <= b),
+    (i64, Instruction::BranchI64GtSImm, execute_branch_i64_gt_s_imm, |a, b| a > b),
+    (u64, Instruction::BranchI64GtUImm, execute_branch_i64_gt_u_imm, |a, b| a > b),
+    (i64, Instruction::BranchI64GeSImm, execute_branch_i64_ge_s_imm, |a, b| a >= b),
+    (u64, Instruction::BranchI64GeUImm, execute_branch_i64_ge_u_imm, |a, b| a >= b),
 }

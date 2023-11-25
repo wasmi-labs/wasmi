@@ -224,8 +224,8 @@ macro_rules! constructor_for_branch_binop_imm {
         impl Instruction {
             $(
                 #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-                pub fn $name(lhs: Register, rhs: Const16<$ty>, offset: BranchOffset16) -> Self {
-                    Self::$op_code(BranchBinOpInstrImm16::new(lhs, rhs, offset))
+                pub fn $name(lhs: Register, rhs: impl Into<Const16<$ty>>, offset: BranchOffset16) -> Self {
+                    Self::$op_code(BranchBinOpInstrImm16::new(lhs, rhs.into(), offset))
                 }
             )*
         }
@@ -412,24 +412,24 @@ impl Instruction {
         Self::Branch { offset }
     }
 
-    /// Creates a new [`Instruction::BranchI32Eqz`] for the given `condition` and `offset`.
-    pub fn branch_i32_eqz(condition: Register, offset: BranchOffset) -> Self {
-        Self::BranchI32Eqz { condition, offset }
+    /// Convenience constructor to create a new [`Instruction::BranchI32EqImm`] with a zero immediate value.
+    pub fn branch_i32_eqz(condition: Register, offset: BranchOffset16) -> Self {
+        Self::branch_i32_eq_imm(condition, 0_i16, offset)
     }
 
-    /// Creates a new [`Instruction::BranchI32Nez`] for the given `condition` and `offset`.
-    pub fn branch_i32_nez(condition: Register, offset: BranchOffset) -> Self {
-        Self::BranchI32Nez { condition, offset }
+    /// Convenience constructor to create a new [`Instruction::BranchI32NeImm`] with a zero immediate value.
+    pub fn branch_i32_nez(condition: Register, offset: BranchOffset16) -> Self {
+        Self::branch_i32_ne_imm(condition, 0_i16, offset)
     }
 
-    /// Creates a new [`Instruction::BranchI64Eqz`] for the given `condition` and `offset`.
-    pub fn branch_i64_eqz(condition: Register, offset: BranchOffset) -> Self {
-        Self::BranchI64Eqz { condition, offset }
+    /// Convenience constructor to create a new [`Instruction::BranchI64EqImm`] with a zero immediate value.
+    pub fn branch_i64_eqz(condition: Register, offset: BranchOffset16) -> Self {
+        Self::branch_i64_eq_imm(condition, 0_i16, offset)
     }
 
-    /// Creates a new [`Instruction::BranchI64Nez`] for the given `condition` and `offset`.
-    pub fn branch_i64_nez(condition: Register, offset: BranchOffset) -> Self {
-        Self::BranchI64Nez { condition, offset }
+    /// Convenience constructor to create a new [`Instruction::BranchI64NeImm`] with a zero immediate value.
+    pub fn branch_i64_nez(condition: Register, offset: BranchOffset16) -> Self {
+        Self::branch_i64_ne_imm(condition, 0_i16, offset)
     }
 
     /// Creates a new [`Instruction::BranchTable`] for the given `index` and `len_targets`.
