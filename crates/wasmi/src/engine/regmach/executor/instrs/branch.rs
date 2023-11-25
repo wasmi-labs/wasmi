@@ -47,7 +47,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let lhs: T = self.get_register_as(instr.lhs);
         let rhs = T::from(instr.rhs);
         if f(lhs, rhs) {
-            return self.branch_to(instr.offset.into());
+            return self.branch_to16(instr.offset);
         }
         self.next_instr()
     }

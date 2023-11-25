@@ -15,7 +15,7 @@ use crate::{
                 Instruction,
                 Register,
                 RegisterSpan,
-                UnaryInstr,
+                UnaryInstr, BranchOffset16,
             },
             code_map::{CodeMap, InstructionPtr},
             stack::{CallFrame, CallStack, ValueStack, ValueStackPtr},
@@ -924,6 +924,16 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     fn branch_to(&mut self, offset: BranchOffset) {
         self.ip.offset(offset.to_i32() as isize)
+    }
+
+    /// Branches and adjusts the value stack.
+    ///
+    /// # Note
+    ///
+    /// Offsets the instruction pointer using the given [`BranchOffset`].
+    #[inline(always)]
+    fn branch_to16(&mut self, offset: BranchOffset16) {
+        self.ip.offset(offset.to_i16() as isize)
     }
 
     /// Returns the [`ValueStackPtr`] of the [`CallFrame`].
