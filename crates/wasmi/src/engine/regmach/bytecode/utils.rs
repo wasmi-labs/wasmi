@@ -491,6 +491,17 @@ impl From<i16> for BranchOffset16 {
     }
 }
 
+impl TryFrom<BranchOffset> for BranchOffset16 {
+    type Error = TranslationError;
+
+    fn try_from(offset: BranchOffset) -> Result<Self, Self::Error> {
+        let Ok(offset16) = i16::try_from(offset.to_i32()) else {
+            return Err(TranslationError::new(TranslationErrorInner::BranchOffsetOutOfBounds))
+        };
+        Ok(Self(offset16))
+    }
+}
+
 impl BranchOffset16 {
     /// Creates a 16-bit [`BranchOffset16`] from a 32-bit [`BranchOffset`] if possible.
     pub fn new(offset: BranchOffset) -> Option<Self> {
