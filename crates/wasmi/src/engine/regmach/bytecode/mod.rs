@@ -367,51 +367,6 @@ pub enum Instruction {
         /// The branching offset for the instruction pointer.
         offset: BranchOffset,
     },
-    /// A conditional branch instruction.
-    ///
-    /// # Note
-    ///
-    /// - The branch is taken if `condition` evaluates to zero.
-    /// - Partially translated from negated Wasm `br_if` instructions.
-    BranchI32Eqz {
-        /// The register holding the condition to evaluate against zero.
-        condition: Register,
-        /// The branching offset for the instruction pointer.
-        offset: BranchOffset,
-    },
-    /// A Wasm `br_if` instruction.
-    ///
-    /// # Note
-    ///
-    /// The branch is taken if `condition` evaluates to zero.
-    BranchI32Nez {
-        /// The register holding the condition to evaluate against zero.
-        condition: Register,
-        /// The branching offset for the instruction pointer.
-        offset: BranchOffset,
-    },
-    /// A fused Wasm `i64.eqz` + `if` instruction.
-    ///
-    /// # Note
-    ///
-    /// - The branch is taken if `condition` evaluates to zero.
-    BranchI64Eqz {
-        /// The register holding the condition to evaluate against zero.
-        condition: Register,
-        /// The branching offset for the instruction pointer.
-        offset: BranchOffset,
-    },
-    /// A fused Wasm `i64.eqz` + `br_if` instruction.
-    ///
-    /// # Note
-    ///
-    /// The branch is taken if `condition` evaluates to zero.
-    BranchI64Nez {
-        /// The register holding the condition to evaluate against zero.
-        condition: Register,
-        /// The branching offset for the instruction pointer.
-        offset: BranchOffset,
-    },
 
     /// A fused [`Instruction::I32And`] and [`Instruction::BranchI32Nez`] instruction.
     BranchI32And(BranchBinOpInstr),

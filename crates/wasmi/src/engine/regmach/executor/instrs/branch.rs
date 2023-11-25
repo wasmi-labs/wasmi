@@ -16,42 +16,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     #[inline(always)]
-    pub fn execute_branch_i32_nez(&mut self, condition: Register, offset: BranchOffset) {
-        let value: i32 = self.get_register_as(condition);
-        if value != 0 {
-            return self.branch_to(offset);
-        }
-        self.next_instr();
-    }
-
-    #[inline(always)]
-    pub fn execute_branch_i32_eqz(&mut self, condition: Register, offset: BranchOffset) {
-        let value: i32 = self.get_register_as(condition);
-        if value == 0 {
-            return self.branch_to(offset);
-        }
-        self.next_instr();
-    }
-
-    #[inline(always)]
-    pub fn execute_branch_i64_nez(&mut self, condition: Register, offset: BranchOffset) {
-        let value: i64 = self.get_register_as(condition);
-        if value != 0 {
-            return self.branch_to(offset);
-        }
-        self.next_instr();
-    }
-
-    #[inline(always)]
-    pub fn execute_branch_i64_eqz(&mut self, condition: Register, offset: BranchOffset) {
-        let value: i64 = self.get_register_as(condition);
-        if value == 0 {
-            return self.branch_to(offset);
-        }
-        self.next_instr();
-    }
-
-    #[inline(always)]
     pub fn execute_branch_table(&mut self, index: Register, len_targets: Const32<u32>) {
         let index: u32 = self.get_register_as(index);
         // The index of the default target which is the last target of the slice.

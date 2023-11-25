@@ -75,10 +75,6 @@ impl Instruction {
             | I::BranchI32OrEqzImm(_)
             | I::BranchI32XorEqz(_)
             | I::BranchI32XorEqzImm(_)
-            | I::BranchI32Eqz { .. }
-            | I::BranchI32Nez { .. }
-            | I::BranchI64Eqz { .. }
-            | I::BranchI64Nez { .. }
             | I::BranchTable { .. }
             | I::BranchI32Eq(_)
             | I::BranchI32EqImm(_)

@@ -150,7 +150,7 @@ fn loop_backward_imm() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn loop_backward_imm_eqz() {
-    fn test_for(op: &str, expect_instr: fn(Register, BranchOffset) -> Instruction) {
+    fn test_for(op: &str, expect_instr: fn(Register, BranchOffset16) -> Instruction) {
         let wasm = wat2wasm(&format!(
             r"
             (module
@@ -166,7 +166,7 @@ fn loop_backward_imm_eqz() {
         ));
         TranslationTest::new(wasm)
             .expect_func_instrs([
-                expect_instr(Register::from_i16(0), BranchOffset::from(0_i32)),
+                expect_instr(Register::from_i16(0), BranchOffset16::from(0_i16)),
                 Instruction::Return,
             ])
             .run()
@@ -539,7 +539,7 @@ fn block_i64_eqz_fuse() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::branch_i64_eqz(Register::from_i16(0), BranchOffset::from(1)),
+            Instruction::branch_i64_eqz(Register::from_i16(0), BranchOffset16::from(1)),
             Instruction::Return,
         ])
         .run()
@@ -561,7 +561,7 @@ fn if_i64_eqz_fuse() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::branch_i64_nez(Register::from_i16(0), BranchOffset::from(1)),
+            Instruction::branch_i64_nez(Register::from_i16(0), BranchOffset16::from(1)),
             Instruction::Return,
         ])
         .run()

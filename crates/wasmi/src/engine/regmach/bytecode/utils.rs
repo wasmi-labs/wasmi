@@ -496,7 +496,9 @@ impl TryFrom<BranchOffset> for BranchOffset16 {
 
     fn try_from(offset: BranchOffset) -> Result<Self, Self::Error> {
         let Ok(offset16) = i16::try_from(offset.to_i32()) else {
-            return Err(TranslationError::new(TranslationErrorInner::BranchOffsetOutOfBounds))
+            return Err(TranslationError::new(
+                TranslationErrorInner::BranchOffsetOutOfBounds,
+            ));
         };
         Ok(Self(offset16))
     }

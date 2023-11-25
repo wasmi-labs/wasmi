@@ -78,10 +78,6 @@ impl VisitInputRegisters for Instruction {
                 values.visit_input_registers(f);
             }
             Instruction::Branch { .. } => {},
-            Instruction::BranchI32Eqz { condition, .. } |
-            Instruction::BranchI32Nez { condition, .. } |
-            Instruction::BranchI64Eqz { condition, .. } |
-            Instruction::BranchI64Nez { condition, .. } => f(condition),
             Instruction::BranchTable { index, .. } => f(index),
 
             Instruction::BranchI32And(instr) => instr.visit_input_registers(f),
