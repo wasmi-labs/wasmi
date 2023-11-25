@@ -502,6 +502,12 @@ impl TryFrom<BranchOffset> for BranchOffset16 {
     }
 }
 
+impl From<BranchOffset16> for BranchOffset {
+    fn from(offset: BranchOffset16) -> Self {
+        Self::from(i32::from(offset.to_i16()))
+    }
+}
+
 impl BranchOffset16 {
     /// Creates a 16-bit [`BranchOffset16`] from a 32-bit [`BranchOffset`] if possible.
     pub fn new(offset: BranchOffset) -> Option<Self> {
@@ -535,12 +541,6 @@ impl BranchOffset16 {
     /// Returns the `i16` representation of the [`BranchOffset`].
     pub fn to_i16(self) -> i16 {
         self.0
-    }
-}
-
-impl From<BranchOffset16> for BranchOffset {
-    fn from(offset: BranchOffset16) -> Self {
-        Self::from(i32::from(offset.to_i16()))
     }
 }
 
