@@ -906,7 +906,8 @@ impl InstrEncoder {
                 match stack.get_register_space(instr.result) {
                     RegisterSpace::Local => None,
                     _ => {
-                        let offset16 = self.try_resolve_label_for(label, last_instr).and_then(BranchOffset16::try_from)?;
+                        let offset16 = self.try_resolve_label_for(label, last_instr)
+                            .and_then(BranchOffset16::try_from)?;
                         Some(Instruction::branch_i32_nez(instr.reg_in, offset16))
                     }
                 }
@@ -915,7 +916,8 @@ impl InstrEncoder {
                 match stack.get_register_space(instr.result) {
                     RegisterSpace::Local => None,
                     _ => {
-                        let offset16 = self.try_resolve_label_for(label, last_instr).and_then(BranchOffset16::try_from)?;
+                        let offset16 = self.try_resolve_label_for(label, last_instr)
+                            .and_then(BranchOffset16::try_from)?;
                         Some(Instruction::branch_i64_nez(instr.reg_in, offset16))
                     }
                 }
@@ -924,7 +926,8 @@ impl InstrEncoder {
                 match stack.get_register_space(instr.result) {
                     RegisterSpace::Local => None,
                     _ => {
-                        let offset16 = self.try_resolve_label_for(label, last_instr).and_then(BranchOffset16::try_from)?;
+                        let offset16 = self.try_resolve_label_for(label, last_instr)
+                            .and_then(BranchOffset16::try_from)?;
                         Some(Instruction::branch_i32_eqz(instr.reg_in, offset16))
                     }
                 }
@@ -933,7 +936,8 @@ impl InstrEncoder {
                 match stack.get_register_space(instr.result) {
                     RegisterSpace::Local => None,
                     _ => {
-                        let offset16 = self.try_resolve_label_for(label, last_instr).and_then(BranchOffset16::try_from)?;
+                        let offset16 = self.try_resolve_label_for(label, last_instr)
+                            .and_then(BranchOffset16::try_from)?;
                         Some(Instruction::branch_i64_eqz(instr.reg_in, offset16))
                     }
                 }
@@ -1084,7 +1088,8 @@ impl InstrEncoder {
                 match stack.get_register_space(instr.result) {
                     RegisterSpace::Local => None,
                     _ => {
-                        let offset16 = self.try_resolve_label_for(label, last_instr).and_then(BranchOffset16::try_from)?;
+                        let offset16 = self.try_resolve_label_for(label, last_instr)
+                            .and_then(BranchOffset16::try_from)?;
                         Some(Instruction::branch_i32_eqz(instr.reg_in, offset16))
                     }
                 }
@@ -1093,7 +1098,8 @@ impl InstrEncoder {
                 match stack.get_register_space(instr.result) {
                     RegisterSpace::Local => None,
                     _ => {
-                        let offset16 = self.try_resolve_label_for(label, last_instr).and_then(BranchOffset16::try_from)?;
+                        let offset16 = self.try_resolve_label_for(label, last_instr)
+                            .and_then(BranchOffset16::try_from)?;
                         Some(Instruction::branch_i64_eqz(instr.reg_in, offset16))
                     }
                 }
@@ -1102,7 +1108,8 @@ impl InstrEncoder {
                 match stack.get_register_space(instr.result) {
                     RegisterSpace::Local => None,
                     _ => {
-                        let offset16 = self.try_resolve_label_for(label, last_instr).and_then(BranchOffset16::try_from)?;
+                        let offset16 = self.try_resolve_label_for(label, last_instr)
+                            .and_then(BranchOffset16::try_from)?;
                         Some(Instruction::branch_i32_nez(instr.reg_in, offset16))
                     }
                 }
@@ -1111,7 +1118,8 @@ impl InstrEncoder {
                 match stack.get_register_space(instr.result) {
                     RegisterSpace::Local => None,
                     _ => {
-                        let offset16 = self.try_resolve_label_for(label, last_instr).and_then(BranchOffset16::try_from)?;
+                        let offset16 = self.try_resolve_label_for(label, last_instr)
+                            .and_then(BranchOffset16::try_from)?;
                         Some(Instruction::branch_i64_nez(instr.reg_in, offset16))
                     }
                 }
