@@ -1,7 +1,14 @@
 use super::Executor;
 use crate::engine::{
     bytecode::BranchOffset,
-    regmach::bytecode::{BranchBinOpInstr, BranchBinOpInstrImm16, Const16, Const32, Register},
+    regmach::bytecode::{
+        BranchBinOpInstr,
+        BranchBinOpInstrImm16,
+        BranchOffset16,
+        Const16,
+        Const32,
+        Register,
+    },
 };
 use core::cmp;
 use wasmi_core::UntypedValue;
@@ -10,6 +17,26 @@ use wasmi_core::UntypedValue;
 use crate::engine::regmach::bytecode::Instruction;
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+    /// Branches and adjusts the value stack.
+    ///
+    /// # Note
+    ///
+    /// Offsets the instruction pointer using the given [`BranchOffset`].
+    #[inline(always)]
+    fn branch_to(&mut self, offset: BranchOffset) {
+        self.ip.offset(offset.to_i32() as isize)
+    }
+
+    /// Branches and adjusts the value stack.
+    ///
+    /// # Note
+    ///
+    /// Offsets the instruction pointer using the given [`BranchOffset`].
+    #[inline(always)]
+    fn branch_to16(&mut self, offset: BranchOffset16) {
+        self.ip.offset(offset.to_i16() as isize)
+    }
+
     #[inline(always)]
     pub fn execute_branch(&mut self, offset: BranchOffset) {
         self.branch_to(offset)

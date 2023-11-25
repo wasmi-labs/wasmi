@@ -2,7 +2,7 @@ use self::{call::CallOutcome, return_::ReturnOutcome};
 use crate::{
     core::{TrapCode, UntypedValue},
     engine::{
-        bytecode::{BlockFuel, BranchOffset, FuncIdx},
+        bytecode::{BlockFuel, FuncIdx},
         cache::InstanceCache,
         config::FuelCosts,
         func_types::FuncTypeRegistry,
@@ -11,7 +11,6 @@ use crate::{
                 AnyConst32,
                 BinInstr,
                 BinInstrImm16,
-                BranchOffset16,
                 Const16,
                 Instruction,
                 Register,
@@ -915,26 +914,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn try_next_instr_at(&mut self, skip: usize) -> Result<(), TrapCode> {
         self.next_instr_at(skip);
         Ok(())
-    }
-
-    /// Branches and adjusts the value stack.
-    ///
-    /// # Note
-    ///
-    /// Offsets the instruction pointer using the given [`BranchOffset`].
-    #[inline(always)]
-    fn branch_to(&mut self, offset: BranchOffset) {
-        self.ip.offset(offset.to_i32() as isize)
-    }
-
-    /// Branches and adjusts the value stack.
-    ///
-    /// # Note
-    ///
-    /// Offsets the instruction pointer using the given [`BranchOffset`].
-    #[inline(always)]
-    fn branch_to16(&mut self, offset: BranchOffset16) {
-        self.ip.offset(offset.to_i16() as isize)
     }
 
     /// Returns the [`ValueStackPtr`] of the [`CallFrame`].
