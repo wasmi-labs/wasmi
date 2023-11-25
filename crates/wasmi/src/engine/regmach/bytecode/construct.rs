@@ -412,22 +412,22 @@ impl Instruction {
         Self::Branch { offset }
     }
 
-    /// Convenience constructor to create a new [`Instruction::BranchI32Eqz`] with a zero immediate value.
+    /// Convenience constructor to create a new [`Instruction::BranchI32EqImm`] with a zero immediate value.
     pub fn branch_i32_eqz(condition: Register, offset: BranchOffset16) -> Self {
         Self::branch_i32_eq_imm(condition, 0_i16, offset)
     }
 
-    /// Convenience constructor to create a new [`Instruction::BranchI32Nez`] with a zero immediate value.
+    /// Convenience constructor to create a new [`Instruction::BranchI32NeImm`] with a zero immediate value.
     pub fn branch_i32_nez(condition: Register, offset: BranchOffset16) -> Self {
         Self::branch_i32_ne_imm(condition, 0_i16, offset)
     }
 
-    /// Convenience constructor to create a new [`Instruction::BranchI64Eqz`] with a zero immediate value.
+    /// Convenience constructor to create a new [`Instruction::BranchI64EqImm`] with a zero immediate value.
     pub fn branch_i64_eqz(condition: Register, offset: BranchOffset16) -> Self {
         Self::branch_i64_eq_imm(condition, 0_i16, offset)
     }
 
-    /// Convenience constructor to create a new [`Instruction::BranchI64Nez`] with a zero immediate value.
+    /// Convenience constructor to create a new [`Instruction::BranchI64NeImm`] with a zero immediate value.
     pub fn branch_i64_nez(condition: Register, offset: BranchOffset16) -> Self {
         Self::branch_i64_ne_imm(condition, 0_i16, offset)
     }
