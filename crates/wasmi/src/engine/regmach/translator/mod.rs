@@ -295,7 +295,7 @@ impl<'parser> FuncTranslator<'parser> {
         self.alloc.control_stack.last().consume_fuel_instr()
     }
 
-    /// Returns the [`FuelCosts`] and the most recent [`Intruction::ConsumeFuel`] in the translation process.
+    /// Returns the [`FuelCosts`] and the most recent [`Instruction::ConsumeFuel`] in the translation process.
     ///
     /// Returns `None` if fuel metering is disabled.
     fn fuel_costs_and_instr(&self) -> Option<(&FuelCosts, Instr)> {
