@@ -309,7 +309,7 @@ impl<'parser> FuncTranslator<'parser> {
         Ok(Some(instr))
     }
 
-    /// Adds fuel to the most recent [`Instruction::ConsumeFuel`] in the translation process.
+    /// Bumps fuel consumption of the most recent [`Instruction::ConsumeFuel`] in the translation process.
     ///
     /// Does nothing if gas metering is disabled.
     fn bump_fuel_consumption<F>(&mut self, f: F) -> Result<(), TranslationError>
