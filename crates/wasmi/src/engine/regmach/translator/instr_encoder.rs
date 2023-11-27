@@ -731,11 +731,6 @@ impl InstrEncoder {
         Ok(())
     }
 
-    /// Pushes an [`Instruction::ConsumeFuel`] with base fuel costs to the [`InstrEncoder`].
-    pub fn push_consume_fuel_instr(&mut self, block_fuel: u64) -> Result<Instr, TranslationError> {
-        self.instrs.push(Instruction::consume_fuel(block_fuel)?)
-    }
-
     /// Notifies the [`InstrEncoder`] that a local variable has been preserved.
     ///
     /// # Note

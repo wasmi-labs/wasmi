@@ -22,6 +22,7 @@ use crate::{
             bytecode::{Const16, Instruction, Provider, Register},
             translator::AcquiredTarget,
         },
+        FuelCosts,
         TranslationError,
     },
     module::{self, BlockType, FuncIdx, WasmiValueType},
@@ -174,14 +175,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         // Optionally create the loop's [`Instruction::ConsumeFuel`].
         //
         // This is handling the fuel required for a single iteration of the loop.
-        let consume_fuel = self
-            .is_fuel_metering_enabled()
-            .then(|| {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(self.make_consume_fuel_base())
-            })
-            .transpose()?;
+        let consume_fuel = self.make_consume_fuel_instr()?;
         // Finally create the loop control frame.
         self.alloc.control_stack.push_frame(LoopControlFrame::new(
             block_type,
@@ -259,14 +253,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 //
                 // The [`Instruction::ConsumeFuel`] for the `else` branch is
                 // created on the fly when visiting the `else` block.
-                let consume_fuel = self
-                    .is_fuel_metering_enabled()
-                    .then(|| {
-                        self.alloc
-                            .instr_encoder
-                            .push_instr(self.make_consume_fuel_base())
-                    })
-                    .transpose()?;
+                let consume_fuel = self.make_consume_fuel_instr()?;
                 (reachability, consume_fuel)
             }
         };
@@ -320,12 +307,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             }
             self.reachable = true;
             self.alloc.instr_encoder.pin_label(else_label);
-            if self.is_fuel_metering_enabled() {
-                let instr = self
-                    .alloc
-                    .instr_encoder
-                    .push_instr(self.make_consume_fuel_base())?;
-                frame.update_consume_fuel_instr(instr);
+            if let Some(fuel_instr) = self.make_consume_fuel_instr()? {
+                frame.update_consume_fuel_instr(fuel_instr);
             }
             // At this point we can restore the `else` branch parameters
             // so that the `else` branch translation has the same set of
@@ -632,7 +615,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_call(&mut self, function_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.bump_fuel_consumption(self.fuel_costs().call)?;
+        self.bump_fuel_consumption(FuelCosts::call)?;
         let func_idx = FuncIdx::from(function_index);
         let func_type = self.func_type_of(func_idx);
         let (params, results) = func_type.params_results();
@@ -671,7 +654,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         _table_byte: u8,
     ) -> Self::Output {
         bail_unreachable!(self);
-        self.bump_fuel_consumption(self.fuel_costs().call)?;
+        self.bump_fuel_consumption(FuelCosts::call)?;
         let type_index = SignatureIdx::from(type_index);
         let func_type = self.func_type_at(type_index);
         let (params, results) = func_type.params_results();
@@ -709,7 +692,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_return_call(&mut self, function_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.bump_fuel_consumption(self.fuel_costs().call)?;
+        self.bump_fuel_consumption(FuelCosts::call)?;
         let func_idx = FuncIdx::from(function_index);
         let func_type = self.func_type_of(func_idx);
         let params = func_type.params();
@@ -743,7 +726,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_return_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.bump_fuel_consumption(self.fuel_costs().call)?;
+        self.bump_fuel_consumption(FuelCosts::call)?;
         let type_index = SignatureIdx::from(type_index);
         let func_type = self.func_type_at(type_index);
         let params = func_type.params();
