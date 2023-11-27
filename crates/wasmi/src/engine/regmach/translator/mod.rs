@@ -274,20 +274,6 @@ impl<'parser> FuncTranslator<'parser> {
         self.fuel_costs.as_ref()
     }
 
-    /// Pushes a [`Instruction::ConsumeFuel`] with base costs if fuel metering is enabled.
-    ///
-    /// Returns `None` if fuel metering is disabled.
-    fn make_fuel_instr(&mut self) -> Result<Option<Instr>, TranslationError> {
-        let Some(fuel_costs) = self.fuel_costs() else {
-            // Fuel metering is disabled so there is no need to create an `Instruction::ConsumeFuel`.
-            return Ok(None);
-        };
-        let fuel_instr = Instruction::consume_fuel(fuel_costs.base())
-            .expect("base fuel must be valid for creating `Instruction::ConsumeFuel`");
-        let instr = self.alloc.instr_encoder.push_instr(fuel_instr)?;
-        Ok(Some(instr))
-    }
-
     /// Returns the most recent [`Instruction::ConsumeFuel`] in the translation process.
     ///
     /// Returns `None` if fuel metering is disabled.
@@ -307,6 +293,20 @@ impl<'parser> FuncTranslator<'parser> {
             .fuel_instr()
             .expect("fuel metering is enabled but there is no Instruction::ConsumeFuel");
         Some((fuel_costs, fuel_instr))
+    }
+
+    /// Pushes a [`Instruction::ConsumeFuel`] with base costs if fuel metering is enabled.
+    ///
+    /// Returns `None` if fuel metering is disabled.
+    fn make_fuel_instr(&mut self) -> Result<Option<Instr>, TranslationError> {
+        let Some(fuel_costs) = self.fuel_costs() else {
+            // Fuel metering is disabled so there is no need to create an `Instruction::ConsumeFuel`.
+            return Ok(None);
+        };
+        let fuel_instr = Instruction::consume_fuel(fuel_costs.base())
+            .expect("base fuel must be valid for creating `Instruction::ConsumeFuel`");
+        let instr = self.alloc.instr_encoder.push_instr(fuel_instr)?;
+        Ok(Some(instr))
     }
 
     /// Adds fuel to the most recent [`Instruction::ConsumeFuel`] in the translation process.
