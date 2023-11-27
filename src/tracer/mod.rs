@@ -54,7 +54,7 @@ pub struct Tracer {
     // Wasm Image Function Idx
     pub wasm_input_func_idx: Option<u32>,
     pub wasm_input_func_ref: Option<FuncRef>,
-    only_counter: bool,
+    dry_run: bool,
     counter: usize,
 }
 
@@ -63,14 +63,7 @@ impl Tracer {
     pub fn new(
         host_plugin_lookup: HashMap<usize, HostFunctionDesc>,
         phantom_functions: &Vec<String>,
-    ) -> Self {
-        Self::new_with_counter(host_plugin_lookup, phantom_functions, false)
-    }
-
-    pub fn new_with_counter(
-        host_plugin_lookup: HashMap<usize, HostFunctionDesc>,
-        phantom_functions: &Vec<String>,
-        only_counter: bool,
+        dry_run: bool,
     ) -> Self {
         Tracer {
             itable: InstructionTable::default(),
@@ -90,7 +83,7 @@ impl Tracer {
             phantom_functions_ref: vec![],
             wasm_input_func_ref: None,
             wasm_input_func_idx: None,
-            only_counter,
+            dry_run,
             counter: 0,
         }
     }
@@ -124,12 +117,12 @@ impl Tracer {
             .clone()
     }
 
-    pub fn count(&mut self) {
+    pub fn inc_counter(&mut self) {
         self.counter += 1;
     }
 
-    pub fn only_count(&self) -> bool {
-        self.only_counter
+    pub fn dry_run(&self) -> bool {
+        self.dry_run
     }
 
     pub fn get_trace_count(&self) -> usize {

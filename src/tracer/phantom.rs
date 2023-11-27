@@ -58,15 +58,15 @@ impl Tracer {
     ) {
         let has_return_value = callee_sig.return_type().is_some();
 
-        if self.only_count() {
+        if self.dry_run() {
             if has_return_value {
-                self.count();
-                self.count();
+                self.inc_counter();
+                self.inc_counter();
                 if callee_sig.return_type() != Some(wasmi_core::ValueType::I64) {
-                    self.count();
+                    self.inc_counter();
                 }
             }
-            self.count();
+            self.inc_counter();
             return;
         }
 
