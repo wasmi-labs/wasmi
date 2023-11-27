@@ -175,7 +175,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         // Optionally create the loop's [`Instruction::ConsumeFuel`].
         //
         // This is handling the fuel required for a single iteration of the loop.
-        let consume_fuel = self.make_consume_fuel_instr()?;
+        let consume_fuel = self.make_fuel_instr()?;
         // Finally create the loop control frame.
         self.alloc.control_stack.push_frame(LoopControlFrame::new(
             block_type,
@@ -253,7 +253,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 //
                 // The [`Instruction::ConsumeFuel`] for the `else` branch is
                 // created on the fly when visiting the `else` block.
-                let consume_fuel = self.make_consume_fuel_instr()?;
+                let consume_fuel = self.make_fuel_instr()?;
                 (reachability, consume_fuel)
             }
         };
@@ -307,7 +307,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             }
             self.reachable = true;
             self.alloc.instr_encoder.pin_label(else_label);
-            if let Some(fuel_instr) = self.make_consume_fuel_instr()? {
+            if let Some(fuel_instr) = self.make_fuel_instr()? {
                 frame.update_consume_fuel_instr(fuel_instr);
             }
             // At this point we can restore the `else` branch parameters

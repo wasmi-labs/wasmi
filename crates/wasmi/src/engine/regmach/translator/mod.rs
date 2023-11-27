@@ -161,7 +161,7 @@ impl<'parser> FuncTranslator<'parser> {
         let func_type = self.res.get_type_of_func(self.func);
         let block_type = BlockType::func_type(func_type);
         let end_label = self.alloc.instr_encoder.new_label();
-        let consume_fuel = self.make_consume_fuel_instr()?;
+        let consume_fuel = self.make_fuel_instr()?;
         // Note: we use a dummy `RegisterSpan` as placeholder.
         //
         // We can do this since the branch parameters of the function enclosing block
@@ -277,7 +277,7 @@ impl<'parser> FuncTranslator<'parser> {
     /// Pushes a [`Instruction::ConsumeFuel`] with base costs if fuel metering is enabled.
     ///
     /// Returns `None` if fuel metering is disabled.
-    fn make_consume_fuel_instr(&mut self) -> Result<Option<Instr>, TranslationError> {
+    fn make_fuel_instr(&mut self) -> Result<Option<Instr>, TranslationError> {
         let Some(fuel_costs) = self.fuel_costs() else {
             // Fuel metering is disabled so there is no need to create an `Instruction::ConsumeFuel`.
             return Ok(None);
@@ -291,8 +291,22 @@ impl<'parser> FuncTranslator<'parser> {
     /// Returns the most recent [`Instruction::ConsumeFuel`] in the translation process.
     ///
     /// Returns `None` if fuel metering is disabled.
-    fn consume_fuel_instr(&self) -> Option<Instr> {
+    fn fuel_instr(&self) -> Option<Instr> {
         self.alloc.control_stack.last().consume_fuel_instr()
+    }
+
+    /// Returns the [`FuelCosts`] and the most recent [`Intruction::ConsumeFuel`] in the translation process.
+    ///
+    /// Returns `None` if fuel metering is disabled.
+    fn fuel_costs_and_instr(&self) -> Option<(&FuelCosts, Instr)> {
+        let Some(fuel_costs) = self.fuel_costs() else {
+            // Fuel metering is disabled so we can bail out.
+            return None;
+        };
+        let fuel_instr = self
+            .fuel_instr()
+            .expect("fuel metering is enabled but there is no Instruction::ConsumeFuel");
+        Some((fuel_costs, fuel_instr))
     }
 
     /// Adds fuel to the most recent [`Instruction::ConsumeFuel`] in the translation process.
@@ -302,13 +316,10 @@ impl<'parser> FuncTranslator<'parser> {
     where
         F: FnOnce(&FuelCosts) -> u64,
     {
-        let Some(fuel_costs) = self.fuel_costs() else {
+        let Some((fuel_costs, fuel_instr)) = self.fuel_costs_and_instr() else {
             // Fuel metering is disabled so we can bail out.
             return Ok(());
         };
-        let fuel_instr = self
-            .consume_fuel_instr()
-            .expect("fuel metering is enabled but there is no Instruction::ConsumeFuel");
         let fuel_consumed = f(fuel_costs);
         self.alloc
             .instr_encoder
