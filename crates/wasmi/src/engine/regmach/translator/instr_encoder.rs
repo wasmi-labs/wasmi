@@ -690,6 +690,7 @@ impl InstrEncoder {
         local: Register,
         value: TypedProvider,
         preserved: Option<Register>,
+        fuel_info: Option<(FuelCosts, Instr)>,
     ) -> Result<(), TranslationError> {
         fn fallback_case(
             this: &mut InstrEncoder,
@@ -697,8 +698,10 @@ impl InstrEncoder {
             local: Register,
             value: TypedProvider,
             preserved: Option<Register>,
+            fuel_info: Option<(FuelCosts, Instr)>,
         ) -> Result<(), TranslationError> {
             if let Some(preserved) = preserved {
+                this.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
                 let preserve_instr = this.push_instr(Instruction::copy(preserved, local))?;
                 this.notify_preserved_register(preserve_instr);
             }
@@ -712,7 +715,7 @@ impl InstrEncoder {
         ));
         let TypedProvider::Register(returned_value) = value else {
             // Cannot apply the optimization for `local.set C` where `C` is a constant value.
-            return fallback_case(self, stack, local, value, preserved);
+            return fallback_case(self, stack, local, value, preserved, fuel_info);
         };
         if matches!(
             stack.get_register_space(returned_value),
@@ -720,12 +723,12 @@ impl InstrEncoder {
         ) {
             // Can only apply the optimization if the returned value of `last_instr`
             // is _NOT_ itself a local register due to observable behavior.
-            return fallback_case(self, stack, local, value, preserved);
+            return fallback_case(self, stack, local, value, preserved, fuel_info);
         }
         let Some(last_instr) = self.last_instr else {
             // Can only apply the optimization if there is a previous instruction
             // to replace its result register instead of emitting a copy.
-            return fallback_case(self, stack, local, value, preserved);
+            return fallback_case(self, stack, local, value, preserved, fuel_info);
         };
         if preserved.is_some() && last_instr.distance(self.instrs.next_instr()) >= 4 {
             // We avoid applying the optimization if the last instruction
@@ -734,7 +737,7 @@ impl InstrEncoder {
             // preserving a local register requires costly shifting all
             // instruction words of the last instruction.
             // Thankfully most instructions are small enough.
-            return fallback_case(self, stack, local, value, preserved);
+            return fallback_case(self, stack, local, value, preserved, fuel_info);
         }
         if !self
             .instrs
@@ -742,12 +745,13 @@ impl InstrEncoder {
             .relink_result(res, local, returned_value)?
         {
             // It was not possible to relink the result of `last_instr` therefore we fallback.
-            return fallback_case(self, stack, local, value, preserved);
+            return fallback_case(self, stack, local, value, preserved, fuel_info);
         }
         if let Some(preserved) = preserved {
             // We were able to apply the optimization.
             // Preservation requires the copy to be before the optimized last instruction.
             // Therefore we need to push the preservation `copy` instruction before it.
+            self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
             let shifted_last_instr = self
                 .instrs
                 .push_before(last_instr, Instruction::copy(preserved, local))?;

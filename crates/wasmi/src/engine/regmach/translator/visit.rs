@@ -781,12 +781,14 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let value = self.alloc.stack.pop();
         let local = Register::try_from(local_index)?;
         let preserved = self.alloc.stack.preserve_locals(local_index)?;
+        let fuel_info = self.fuel_costs_and_instr();
         self.alloc.instr_encoder.encode_local_set(
             &mut self.alloc.stack,
             &self.res,
             local,
             value,
             preserved,
+            fuel_info,
         )?;
         Ok(())
     }
