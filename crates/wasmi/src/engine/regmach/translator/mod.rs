@@ -1694,9 +1694,7 @@ impl<'parser> FuncTranslator<'parser> {
                 lhs_or_rhs: Register,
             ) -> Instruction,
         ) -> Result<(), TranslationError> {
-            this.alloc
-                .instr_encoder
-                .push_instr(make_instr(result, condition, reg_in))?;
+            this.push_fueled_instr(make_instr(result, condition, reg_in), FuelCosts::base)?;
             let rhs = this.alloc.stack.alloc_const(imm_in)?;
             this.alloc
                 .instr_encoder
@@ -1722,9 +1720,7 @@ impl<'parser> FuncTranslator<'parser> {
                 lhs_or_rhs: Register,
             ) -> Instruction,
         ) -> Result<(), TranslationError> {
-            this.alloc
-                .instr_encoder
-                .push_instr(make_instr(result, condition, reg_in))?;
+            this.push_fueled_instr(make_instr(result, condition, reg_in), FuelCosts::base)?;
             this.alloc
                 .instr_encoder
                 .append_instr(Instruction::const32(imm_in))?;
@@ -1756,9 +1752,7 @@ impl<'parser> FuncTranslator<'parser> {
         {
             match <Const32<T>>::try_from(imm_in) {
                 Ok(imm_in) => {
-                    this.alloc
-                        .instr_encoder
-                        .push_instr(make_instr(result, condition, reg_in))?;
+                    this.push_fueled_instr(make_instr(result, condition, reg_in), FuelCosts::base)?;
                     this.alloc
                         .instr_encoder
                         .append_instr(make_instr_param(imm_in))?;
@@ -1800,9 +1794,10 @@ impl<'parser> FuncTranslator<'parser> {
                             return Ok(());
                         }
                         let result = self.alloc.stack.push_dynamic()?;
-                        self.alloc
-                            .instr_encoder
-                            .push_instr(Instruction::select(result, condition, lhs))?;
+                        self.push_fueled_instr(
+                            Instruction::select(result, condition, lhs),
+                            FuelCosts::base,
+                        )?;
                         self.alloc
                             .instr_encoder
                             .append_instr(Instruction::Register(rhs))?;
@@ -1922,9 +1917,10 @@ impl<'parser> FuncTranslator<'parser> {
                             lhs: T,
                             rhs: T,
                         ) -> Result<(), TranslationError> {
-                            this.alloc
-                                .instr_encoder
-                                .push_instr(Instruction::select_imm32(result, lhs))?;
+                            this.push_fueled_instr(
+                                Instruction::select_imm32(result, lhs),
+                                FuelCosts::base,
+                            )?;
                             this.alloc
                                 .instr_encoder
                                 .append_instr(Instruction::select_imm32(condition, rhs))?;
@@ -1957,9 +1953,10 @@ impl<'parser> FuncTranslator<'parser> {
                             let rhs32 = <Const32<T>>::try_from(rhs).ok();
                             match (lhs32, rhs32) {
                                 (Some(lhs), Some(rhs)) => {
-                                    this.alloc
-                                        .instr_encoder
-                                        .push_instr(make_instr(result, lhs))?;
+                                    this.push_fueled_instr(
+                                        make_instr(result, lhs),
+                                        FuelCosts::base,
+                                    )?;
                                     this.alloc
                                         .instr_encoder
                                         .append_instr(make_instr(condition, rhs))?;
@@ -1967,17 +1964,19 @@ impl<'parser> FuncTranslator<'parser> {
                                 }
                                 (Some(lhs), None) => {
                                     let rhs = this.alloc.stack.alloc_const(rhs)?;
-                                    this.alloc.instr_encoder.push_instr(
+                                    this.push_fueled_instr(
                                         Instruction::select_rev(result, condition, rhs),
+                                        FuelCosts::base,
                                     )?;
                                     this.alloc.instr_encoder.append_instr(make_param(lhs))?;
                                     Ok(())
                                 }
                                 (None, Some(rhs)) => {
                                     let lhs = this.alloc.stack.alloc_const(lhs)?;
-                                    this.alloc
-                                        .instr_encoder
-                                        .push_instr(Instruction::select(result, condition, lhs))?;
+                                    this.push_fueled_instr(
+                                        Instruction::select(result, condition, lhs),
+                                        FuelCosts::base,
+                                    )?;
                                     this.alloc.instr_encoder.append_instr(make_param(rhs))?;
                                     Ok(())
                                 }
@@ -2005,9 +2004,10 @@ impl<'parser> FuncTranslator<'parser> {
                         {
                             let lhs = this.alloc.stack.alloc_const(lhs)?;
                             let rhs = this.alloc.stack.alloc_const(rhs)?;
-                            this.alloc
-                                .instr_encoder
-                                .push_instr(Instruction::select(result, condition, lhs))?;
+                            this.push_fueled_instr(
+                                Instruction::select(result, condition, lhs),
+                                FuelCosts::base,
+                            )?;
                             this.alloc
                                 .instr_encoder
                                 .append_instr(Instruction::Register(rhs))?;
