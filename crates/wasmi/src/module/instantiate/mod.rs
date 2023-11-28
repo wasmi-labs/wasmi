@@ -61,7 +61,7 @@ impl Module {
         let handle = context.as_context_mut().store.inner.alloc_instance();
         let mut builder = InstanceEntity::build(self);
 
-        self.extract_imports(&context, &mut builder, externals)?;
+        Self::extract_imports(&mut builder, externals);
         self.extract_functions(&mut context, &mut builder, handle);
         self.extract_tables(&mut context, &mut builder)?;
         self.extract_memories(&mut context, &mut builder)?;
@@ -92,70 +92,28 @@ impl Module {
     ///
     /// [`Func`]: [`crate::Func`]
     fn extract_imports<I>(
-        &self,
-        context: &impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
         externals: I,
-    ) -> Result<(), InstantiationError>
+    )
     where
         I: IntoIterator<Item = Extern>,
     {
-        let mut imports = self.imports();
-        let mut externals = externals.into_iter();
-        loop {
-            // Iterate on module imports and the given external values in lock-step fashion.
-            //
-            // Note: We cannot use [`zip`](`core::iter::zip`) here since we require that both
-            //       iterators yield the same amount of elements.
-            let (import, external) = match (imports.next(), externals.next()) {
-                (Some(import), Some(external)) => (import, external),
-                (None, None) => break,
-                (Some(_), None) | (None, Some(_)) => {
-                    return Err(InstantiationError::ImportsExternalsLenMismatch)
-                }
-            };
-            match (import.ty(), external) {
-                (ExternType::Func(expected_signature), Extern::Func(func)) => {
-                    let actual_signature = func.ty_dedup(context.as_context());
-                    let actual_signature = self
-                        .engine
-                        .resolve_func_type(actual_signature, FuncType::clone);
-                    // Note: We can compare function signatures without resolving them because
-                    //       we deduplicate them before registering. Therefore two equal instances of
-                    //       [`SignatureEntity`] will be associated to the same [`Signature`].
-                    if &actual_signature != expected_signature {
-                        // Note: In case of error we could resolve the signatures for better error readability.
-                        return Err(InstantiationError::SignatureMismatch {
-                            actual: actual_signature,
-                            expected: expected_signature.clone(),
-                        });
-                    }
+        for external in externals {
+            match external {
+                Extern::Func(func)=> {
                     builder.push_func(func);
                 }
-                (ExternType::Table(required), Extern::Table(table)) => {
-                    let imported = table.dynamic_ty(context.as_context());
-                    imported.is_subtype_or_err(required)?;
+                Extern::Table(table)=> {
                     builder.push_table(table);
                 }
-                (ExternType::Memory(required), Extern::Memory(memory)) => {
-                    let imported = memory.dynamic_ty(context.as_context());
-                    imported.is_subtype_or_err(required)?;
+                Extern::Memory(memory) => {
                     builder.push_memory(memory);
                 }
-                (ExternType::Global(required), Extern::Global(global)) => {
-                    let imported = global.ty(context.as_context());
-                    required.satisfies(&imported)?;
+                Extern::Global(global) => {
                     builder.push_global(global);
-                }
-                (expected_import, actual_extern_val) => {
-                    return Err(InstantiationError::ImportsExternalsMismatch {
-                        expected: expected_import.clone(),
-                        actual: actual_extern_val,
-                    });
                 }
             }
         }
-        Ok(())
     }
 
     /// Extracts the Wasm functions from the module and stores them into the [`Store`].
