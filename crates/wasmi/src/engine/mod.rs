@@ -51,6 +51,7 @@ use self::{
     trap::TaggedTrap,
 };
 pub(crate) use self::{
+    config::FuelCosts,
     func_args::{FuncFinished, FuncParams, FuncResults},
     func_types::DedupFuncType,
     translator::ChosenFuncTranslatorAllocations,

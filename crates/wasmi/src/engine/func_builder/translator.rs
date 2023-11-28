@@ -216,7 +216,7 @@ impl<'parser> FuncTranslator<'parser> {
 
     /// Creates an [`Instruction::ConsumeFuel`] with base costs.
     fn make_consume_fuel_base(&self) -> Instruction {
-        Instruction::consume_fuel(self.fuel_costs().base).expect("base fuel costs must be valid")
+        Instruction::consume_fuel(self.fuel_costs().base()).expect("base fuel costs must be valid")
     }
 
     /// Returns the configured [`FuelCosts`] of the [`Engine`].
@@ -497,7 +497,7 @@ impl<'parser> FuncTranslator<'parser> {
         self.translate_if_reachable(|builder| {
             let (memory_idx, offset) = Self::decompose_memarg(memarg);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
-            builder.bump_fuel_consumption(builder.fuel_costs().load)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().load())?;
             builder.stack_height.pop1();
             builder.stack_height.push();
             let offset = AddressOffset::from(offset);
@@ -530,7 +530,7 @@ impl<'parser> FuncTranslator<'parser> {
         self.translate_if_reachable(|builder| {
             let (memory_idx, offset) = Self::decompose_memarg(memarg);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
-            builder.bump_fuel_consumption(builder.fuel_costs().store)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().store())?;
             builder.stack_height.pop2();
             let offset = AddressOffset::from(offset);
             builder.alloc.inst_builder.push_inst(make_inst(offset));
@@ -552,7 +552,7 @@ impl<'parser> FuncTranslator<'parser> {
         T: Into<UntypedValue>,
     {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().base())?;
             let value = value.into();
             builder.stack_height.push();
             let cref = builder.engine().alloc_const(value)?;
@@ -578,7 +578,7 @@ impl<'parser> FuncTranslator<'parser> {
         inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().base())?;
             builder.alloc.inst_builder.push_inst(inst);
             Ok(())
         })
@@ -602,7 +602,7 @@ impl<'parser> FuncTranslator<'parser> {
         inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().base())?;
             builder.stack_height.pop2();
             builder.stack_height.push();
             builder.alloc.inst_builder.push_inst(inst);
@@ -632,7 +632,7 @@ impl<'parser> FuncTranslator<'parser> {
         inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().base())?;
             builder.alloc.inst_builder.push_inst(inst);
             Ok(())
         })
@@ -665,7 +665,7 @@ impl<'parser> FuncTranslator<'parser> {
         inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().base())?;
             builder.stack_height.pop2();
             builder.stack_height.push();
             builder.alloc.inst_builder.push_inst(inst);
@@ -696,7 +696,7 @@ impl<'parser> FuncTranslator<'parser> {
         inst: Instruction,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().base())?;
             builder.alloc.inst_builder.push_inst(inst);
             Ok(())
         })
@@ -835,7 +835,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_unreachable(&mut self) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().base())?;
             builder
                 .alloc
                 .inst_builder
@@ -906,7 +906,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let stack_height = self.frame_stack_height(block_type);
             let else_label = self.alloc.inst_builder.new_label();
             let end_label = self.alloc.inst_builder.new_label();
-            self.bump_fuel_consumption(self.fuel_costs().base)?;
+            self.bump_fuel_consumption(self.fuel_costs().base())?;
             let branch_offset = self.branch_offset(else_label)?;
             self.alloc
                 .inst_builder
@@ -960,7 +960,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         // Create the jump from the end of the `then` block to the `if`
         // block's end label in case the end of `then` is reachable.
         if reachable {
-            self.bump_fuel_consumption(self.fuel_costs().base)?;
+            self.bump_fuel_consumption(self.fuel_costs().base())?;
             let offset = self.branch_offset(if_frame.end_label())?;
             self.alloc.inst_builder.push_inst(Instruction::Br(offset));
         }
@@ -1035,7 +1035,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_if_reachable(|builder| {
             match builder.acquire_target(relative_depth)? {
                 AcquiredTarget::Branch(end_label, drop_keep) => {
-                    builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+                    builder.bump_fuel_consumption(builder.fuel_costs().base())?;
                     let offset = builder.branch_offset(end_label)?;
                     if drop_keep.is_noop() {
                         builder
@@ -1067,7 +1067,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             builder.stack_height.pop1();
             match builder.acquire_target(relative_depth)? {
                 AcquiredTarget::Branch(end_label, drop_keep) => {
-                    builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+                    builder.bump_fuel_consumption(builder.fuel_costs().base())?;
                     let offset = builder.branch_offset(end_label)?;
                     if drop_keep.is_noop() {
                         builder
@@ -1163,7 +1163,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 })
                 .map(RelativeDepth::from_u32);
 
-            builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().base())?;
             // The maximum fuel costs among all `br_table` arms.
             // We use this to charge fuel once at the entry of a `br_table`
             // for the most expensive arm of all of its arms.
@@ -1198,7 +1198,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_return(&mut self) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             let drop_keep = builder.drop_keep_return()?;
-            builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().base())?;
             builder.bump_fuel_consumption(builder.fuel_costs().fuel_for_drop_keep(drop_keep))?;
             builder
                 .alloc
@@ -1213,7 +1213,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_if_reachable(|builder| {
             let func_type = builder.func_type_of(func_idx.into());
             let drop_keep = builder.drop_keep_return_call(&func_type)?;
-            builder.bump_fuel_consumption(builder.fuel_costs().call)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().call())?;
             builder.bump_fuel_consumption(builder.fuel_costs().fuel_for_drop_keep(drop_keep))?;
             match builder.res.get_compiled_func(func_idx.into()) {
                 Some(compiled_func) => {
@@ -1254,7 +1254,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             let table = TableIdx::from(table_index);
             builder.stack_height.pop1();
             let drop_keep = builder.drop_keep_return_call(&func_type)?;
-            builder.bump_fuel_consumption(builder.fuel_costs().call)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().call())?;
             builder.bump_fuel_consumption(builder.fuel_costs().fuel_for_drop_keep(drop_keep))?;
             builder
                 .alloc
@@ -1275,7 +1275,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_call(&mut self, func_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().call)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().call())?;
             let func_idx = FuncIdx::from(func_idx);
             let func_type = builder.func_type_of(func_idx);
             builder.adjust_value_stack_for_call(&func_type);
@@ -1309,7 +1309,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         _table_byte: u8,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().call)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().call())?;
             let func_type = SignatureIdx::from(func_type_index);
             let table = TableIdx::from(table_index);
             builder.stack_height.pop1();
@@ -1328,7 +1328,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_drop(&mut self) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().base())?;
             builder.stack_height.pop1();
             builder.alloc.inst_builder.push_inst(Instruction::Drop);
             Ok(())
@@ -1337,7 +1337,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_select(&mut self) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().base())?;
             builder.stack_height.pop3();
             builder.stack_height.push();
             builder.alloc.inst_builder.push_inst(Instruction::Select);
@@ -1367,7 +1367,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_ref_func(&mut self, func_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().base())?;
             let func_index = bytecode::FuncIdx::from(func_index);
             builder
                 .alloc
@@ -1380,7 +1380,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_local_get(&mut self, local_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().base())?;
             let local_depth = builder.relative_local_depth(local_idx);
             builder
                 .alloc
@@ -1393,7 +1393,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_local_set(&mut self, local_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().base())?;
             builder.stack_height.pop1();
             let local_depth = builder.relative_local_depth(local_idx);
             builder
@@ -1406,7 +1406,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_local_tee(&mut self, local_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().base())?;
             let local_depth = builder.relative_local_depth(local_idx);
             builder
                 .alloc
@@ -1418,7 +1418,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_global_get(&mut self, global_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().entity)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().entity())?;
             let global_idx = GlobalIdx::from(global_idx);
             builder.stack_height.push();
             let (global_type, init_value) = builder.res.get_global(global_idx);
@@ -1435,7 +1435,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_global_set(&mut self, global_idx: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().entity)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().entity())?;
             let global_idx = GlobalIdx::from(global_idx);
             let global_type = builder.res.get_type_of_global(global_idx);
             debug_assert_eq!(global_type.mutability(), Mutability::Var);
@@ -1547,7 +1547,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         _mem_byte: u8,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().entity)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().entity())?;
             let memory_idx = MemoryIdx::from(memory_idx);
             debug_assert_eq!(memory_idx.into_u32(), DEFAULT_MEMORY_INDEX);
             builder.stack_height.push();
@@ -1566,7 +1566,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             debug_assert_eq!(memory_index, DEFAULT_MEMORY_INDEX);
-            builder.bump_fuel_consumption(builder.fuel_costs().entity)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().entity())?;
             builder
                 .alloc
                 .inst_builder
@@ -1582,7 +1582,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             debug_assert_eq!(memory_index, DEFAULT_MEMORY_INDEX);
-            builder.bump_fuel_consumption(builder.fuel_costs().entity)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().entity())?;
             builder.stack_height.pop3();
             builder
                 .alloc
@@ -1595,7 +1595,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_memory_fill(&mut self, memory_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
             debug_assert_eq!(memory_index, DEFAULT_MEMORY_INDEX);
-            builder.bump_fuel_consumption(builder.fuel_costs().entity)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().entity())?;
             builder.stack_height.pop3();
             builder
                 .alloc
@@ -1609,7 +1609,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.translate_if_reachable(|builder| {
             debug_assert_eq!(dst_mem, DEFAULT_MEMORY_INDEX);
             debug_assert_eq!(src_mem, DEFAULT_MEMORY_INDEX);
-            builder.bump_fuel_consumption(builder.fuel_costs().entity)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().entity())?;
             builder.stack_height.pop3();
             builder
                 .alloc
@@ -1621,7 +1621,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_data_drop(&mut self, segment_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().entity)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().entity())?;
             let segment_index = DataSegmentIdx::from(segment_index);
             builder
                 .alloc
@@ -1633,7 +1633,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_table_size(&mut self, table_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().entity)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().entity())?;
             let table = TableIdx::from(table_index);
             builder.stack_height.push();
             builder
@@ -1646,7 +1646,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_table_grow(&mut self, table_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().entity)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().entity())?;
             let table = TableIdx::from(table_index);
             builder.stack_height.pop1();
             builder
@@ -1659,7 +1659,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_table_copy(&mut self, dst_table: u32, src_table: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().entity)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().entity())?;
             let dst = TableIdx::from(dst_table);
             let src = TableIdx::from(src_table);
             builder.stack_height.pop3();
@@ -1677,7 +1677,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_table_fill(&mut self, table_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().entity)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().entity())?;
             let table = TableIdx::from(table_index);
             builder.stack_height.pop3();
             builder
@@ -1690,7 +1690,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_table_get(&mut self, table_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().entity)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().entity())?;
             let table = TableIdx::from(table_index);
             builder
                 .alloc
@@ -1702,7 +1702,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_table_set(&mut self, table_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().entity)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().entity())?;
             let table = TableIdx::from(table_index);
             builder.stack_height.pop2();
             builder
@@ -1719,7 +1719,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         table_index: u32,
     ) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().entity)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().entity())?;
             builder.stack_height.pop3();
             let table = TableIdx::from(table_index);
             let elem = ElementSegmentIdx::from(segment_index);
@@ -1737,7 +1737,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_elem_drop(&mut self, segment_index: u32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().entity)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().entity())?;
             builder
                 .alloc
                 .inst_builder
@@ -1750,7 +1750,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_i32_const(&mut self, value: i32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().base())?;
             builder.stack_height.push();
             builder
                 .alloc
@@ -1766,7 +1766,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 // Case: The constant value is small enough that we can apply
                 //       a small value optimization and use a more efficient
                 //       instruction to encode the constant value instruction.
-                builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+                builder.bump_fuel_consumption(builder.fuel_costs().base())?;
                 builder.stack_height.push();
                 builder
                     .alloc
@@ -1780,7 +1780,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_f32_const(&mut self, value: wasmparser::Ieee32) -> Result<(), TranslationError> {
         self.translate_if_reachable(|builder| {
-            builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+            builder.bump_fuel_consumption(builder.fuel_costs().base())?;
             builder.stack_height.push();
             builder
                 .alloc
@@ -1796,7 +1796,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 // Case: The constant value can be encoded as 32-bit float so
                 //       it is possible to use a more efficient instruction
                 //       to encode the constant value instruction.
-                builder.bump_fuel_consumption(builder.fuel_costs().base)?;
+                builder.bump_fuel_consumption(builder.fuel_costs().base())?;
                 builder.stack_height.push();
                 builder
                     .alloc
