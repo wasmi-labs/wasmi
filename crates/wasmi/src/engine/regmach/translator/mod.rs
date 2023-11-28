@@ -1461,15 +1461,14 @@ impl<'parser> FuncTranslator<'parser> {
             TypedProvider::Register(ptr) => {
                 if let Some(offset) = <Const16<u32>>::from_u32(offset) {
                     let result = self.alloc.stack.push_dynamic()?;
-                    self.alloc
-                        .instr_encoder
-                        .push_instr(make_instr_offset16(result, ptr, offset))?;
+                    self.push_fueled_instr(
+                        make_instr_offset16(result, ptr, offset),
+                        FuelCosts::load,
+                    )?;
                     return Ok(());
                 }
                 let result = self.alloc.stack.push_dynamic()?;
-                self.alloc
-                    .instr_encoder
-                    .push_instr(make_instr(result, ptr))?;
+                self.push_fueled_instr(make_instr(result, ptr), FuelCosts::load)?;
                 self.alloc
                     .instr_encoder
                     .append_instr(Instruction::const32(offset))?;
@@ -1478,9 +1477,10 @@ impl<'parser> FuncTranslator<'parser> {
             TypedProvider::Const(ptr) => {
                 self.effective_address_and(ptr, offset, |this, address| {
                     let result = this.alloc.stack.push_dynamic()?;
-                    this.alloc
-                        .instr_encoder
-                        .push_instr(make_instr_at(result, Const32::from(address)))?;
+                    this.push_fueled_instr(
+                        make_instr_at(result, Const32::from(address)),
+                        FuelCosts::load,
+                    )?;
                     Ok(())
                 })
             }
@@ -1517,14 +1517,16 @@ impl<'parser> FuncTranslator<'parser> {
         match self.alloc.stack.pop2() {
             (TypedProvider::Register(ptr), TypedProvider::Register(value)) => {
                 if let Ok(offset) = u16::try_from(offset) {
-                    self.alloc
-                        .instr_encoder
-                        .push_instr(make_instr_offset16(ptr, offset, value))?;
+                    self.push_fueled_instr(
+                        make_instr_offset16(ptr, offset, value),
+                        FuelCosts::store,
+                    )?;
                     Ok(())
                 } else {
-                    self.alloc
-                        .instr_encoder
-                        .push_instr(make_instr(ptr, Const32::from(offset)))?;
+                    self.push_fueled_instr(
+                        make_instr(ptr, Const32::from(offset)),
+                        FuelCosts::store,
+                    )?;
                     self.alloc
                         .instr_encoder
                         .append_instr(Instruction::Register(value))?;
@@ -1536,22 +1538,25 @@ impl<'parser> FuncTranslator<'parser> {
                 let value16 = U::try_from(T::from(value));
                 match (offset16, value16) {
                     (Ok(offset), Ok(value)) => {
-                        self.alloc
-                            .instr_encoder
-                            .push_instr(make_instr_offset16_imm(ptr, offset, value))?;
+                        self.push_fueled_instr(
+                            make_instr_offset16_imm(ptr, offset, value),
+                            FuelCosts::store,
+                        )?;
                         Ok(())
                     }
                     (Ok(offset), Err(_)) => {
                         let value = self.alloc.stack.alloc_const(value)?;
-                        self.alloc
-                            .instr_encoder
-                            .push_instr(make_instr_offset16(ptr, offset, value))?;
+                        self.push_fueled_instr(
+                            make_instr_offset16(ptr, offset, value),
+                            FuelCosts::store,
+                        )?;
                         Ok(())
                     }
                     (Err(_), _) => {
-                        self.alloc
-                            .instr_encoder
-                            .push_instr(make_instr(ptr, Const32::from(offset)))?;
+                        self.push_fueled_instr(
+                            make_instr(ptr, Const32::from(offset)),
+                            FuelCosts::store,
+                        )?;
                         self.alloc
                             .instr_encoder
                             .append_instr(Instruction::Register(
@@ -1563,23 +1568,26 @@ impl<'parser> FuncTranslator<'parser> {
             }
             (TypedProvider::Const(ptr), TypedProvider::Register(value)) => self
                 .effective_address_and(ptr, offset, |this, address| {
-                    this.alloc
-                        .instr_encoder
-                        .push_instr(make_instr_at(Const32::from(address), value))?;
+                    this.push_fueled_instr(
+                        make_instr_at(Const32::from(address), value),
+                        FuelCosts::store,
+                    )?;
                     Ok(())
                 }),
             (TypedProvider::Const(ptr), TypedProvider::Const(value)) => {
                 self.effective_address_and(ptr, offset, |this, address| {
                     if let Ok(value) = U::try_from(T::from(value)) {
-                        this.alloc
-                            .instr_encoder
-                            .push_instr(make_instr_at_imm(Const32::from(address), value))?;
+                        this.push_fueled_instr(
+                            make_instr_at_imm(Const32::from(address), value),
+                            FuelCosts::store,
+                        )?;
                         Ok(())
                     } else {
                         let value = this.alloc.stack.alloc_const(value)?;
-                        this.alloc
-                            .instr_encoder
-                            .push_instr(make_instr_at(Const32::from(address), value))?;
+                        this.push_fueled_instr(
+                            make_instr_at(Const32::from(address), value),
+                            FuelCosts::store,
+                        )?;
                         Ok(())
                     }
                 })
@@ -1611,14 +1619,16 @@ impl<'parser> FuncTranslator<'parser> {
         match self.alloc.stack.pop2() {
             (TypedProvider::Register(ptr), TypedProvider::Register(value)) => {
                 if let Ok(offset) = u16::try_from(offset) {
-                    self.alloc
-                        .instr_encoder
-                        .push_instr(make_instr_offset16(ptr, offset, value))?;
+                    self.push_fueled_instr(
+                        make_instr_offset16(ptr, offset, value),
+                        FuelCosts::store,
+                    )?;
                     Ok(())
                 } else {
-                    self.alloc
-                        .instr_encoder
-                        .push_instr(make_instr(ptr, Const32::from(offset)))?;
+                    self.push_fueled_instr(
+                        make_instr(ptr, Const32::from(offset)),
+                        FuelCosts::store,
+                    )?;
                     self.alloc
                         .instr_encoder
                         .append_instr(Instruction::Register(value))?;
@@ -1630,15 +1640,17 @@ impl<'parser> FuncTranslator<'parser> {
                 match offset16 {
                     Ok(offset) => {
                         let value = self.alloc.stack.alloc_const(value)?;
-                        self.alloc
-                            .instr_encoder
-                            .push_instr(make_instr_offset16(ptr, offset, value))?;
+                        self.push_fueled_instr(
+                            make_instr_offset16(ptr, offset, value),
+                            FuelCosts::store,
+                        )?;
                         Ok(())
                     }
                     Err(_) => {
-                        self.alloc
-                            .instr_encoder
-                            .push_instr(make_instr(ptr, Const32::from(offset)))?;
+                        self.push_fueled_instr(
+                            make_instr(ptr, Const32::from(offset)),
+                            FuelCosts::store,
+                        )?;
                         self.alloc
                             .instr_encoder
                             .append_instr(Instruction::Register(
@@ -1650,17 +1662,19 @@ impl<'parser> FuncTranslator<'parser> {
             }
             (TypedProvider::Const(ptr), TypedProvider::Register(value)) => self
                 .effective_address_and(ptr, offset, |this, address| {
-                    this.alloc
-                        .instr_encoder
-                        .push_instr(make_instr_at(Const32::from(address), value))?;
+                    this.push_fueled_instr(
+                        make_instr_at(Const32::from(address), value),
+                        FuelCosts::store,
+                    )?;
                     Ok(())
                 }),
             (TypedProvider::Const(ptr), TypedProvider::Const(value)) => {
                 self.effective_address_and(ptr, offset, |this, address| {
                     let value = this.alloc.stack.alloc_const(value)?;
-                    this.alloc
-                        .instr_encoder
-                        .push_instr(make_instr_at(Const32::from(address), value))?;
+                    this.push_fueled_instr(
+                        make_instr_at(Const32::from(address), value),
+                        FuelCosts::store,
+                    )?;
                     Ok(())
                 })
             }
