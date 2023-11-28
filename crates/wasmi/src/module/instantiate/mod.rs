@@ -78,17 +78,6 @@ impl Module {
     /// Extract the Wasm imports from the module and zips them with the given external values.
     ///
     /// This also stores imported references into the [`Instance`] under construction.
-    ///
-    /// # Errors
-    ///
-    /// - If too few or too many external values are given for the required module imports.
-    /// - If the zipped import and given external have mismatching types, e.g. on index `i`
-    ///   the module requires a function import but on index `i` the externals provide a global
-    ///   variable external value.
-    /// - If the externally provided [`Table`], [`Memory`], [`Func`] or [`Global`] has a type
-    ///   mismatch with the expected module import type.
-    ///
-    /// [`Func`]: [`crate::Func`]
     fn extract_imports<I>(builder: &mut InstanceEntityBuilder, externals: I)
     where
         I: IntoIterator<Item = Extern>,
