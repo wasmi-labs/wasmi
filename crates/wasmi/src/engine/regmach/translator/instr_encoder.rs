@@ -283,6 +283,7 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         result: Register,
         value: TypedProvider,
+        fuel_info: Option<(FuelCosts, Instr)>,
     ) -> Result<Option<Instr>, TranslationError> {
         /// Convenience to create an [`Instruction::Copy`] to copy a constant value.
         fn copy_imm(
@@ -293,34 +294,32 @@ impl InstrEncoder {
             let cref = stack.alloc_const(value.into())?;
             Ok(Instruction::copy(result, cref))
         }
-        match value {
+        let instr = match value {
             TypedProvider::Register(value) => {
                 if result == value {
                     // Optimization: copying from register `x` into `x` is a no-op.
                     return Ok(None);
                 }
-                let instr = self.push_instr(Instruction::copy(result, value))?;
-                Ok(Some(instr))
+                Instruction::copy(result, value)
             }
-            TypedProvider::Const(value) => {
-                let instruction = match value.ty() {
-                    ValueType::I32 => Instruction::copy_imm32(result, i32::from(value)),
-                    ValueType::F32 => Instruction::copy_imm32(result, f32::from(value)),
-                    ValueType::I64 => match <Const32<i64>>::from_i64(i64::from(value)) {
-                        Some(value) => Instruction::copy_i64imm32(result, value),
-                        None => copy_imm(stack, result, value)?,
-                    },
-                    ValueType::F64 => match <Const32<f64>>::from_f64(f64::from(value)) {
-                        Some(value) => Instruction::copy_f64imm32(result, value),
-                        None => copy_imm(stack, result, value)?,
-                    },
-                    ValueType::FuncRef => copy_imm(stack, result, value)?,
-                    ValueType::ExternRef => copy_imm(stack, result, value)?,
-                };
-                let instr = self.push_instr(instruction)?;
-                Ok(Some(instr))
-            }
-        }
+            TypedProvider::Const(value) => match value.ty() {
+                ValueType::I32 => Instruction::copy_imm32(result, i32::from(value)),
+                ValueType::F32 => Instruction::copy_imm32(result, f32::from(value)),
+                ValueType::I64 => match <Const32<i64>>::from_i64(i64::from(value)) {
+                    Some(value) => Instruction::copy_i64imm32(result, value),
+                    None => copy_imm(stack, result, value)?,
+                },
+                ValueType::F64 => match <Const32<f64>>::from_f64(f64::from(value)) {
+                    Some(value) => Instruction::copy_f64imm32(result, value),
+                    None => copy_imm(stack, result, value)?,
+                },
+                ValueType::FuncRef => copy_imm(stack, result, value)?,
+                ValueType::ExternRef => copy_imm(stack, result, value)?,
+            },
+        };
+        self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
+        let instr = self.push_instr(instr)?;
+        Ok(Some(instr))
     }
 
     /// Encode a generic `copy` instruction.
@@ -334,6 +333,7 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         mut results: RegisterSpanIter,
         values: &[TypedProvider],
+        fuel_info: Option<(FuelCosts, Instr)>,
     ) -> Result<(), TranslationError> {
         assert_eq!(results.len(), values.len());
         if let Some((TypedProvider::Register(value), rest)) = values.split_first() {
@@ -342,44 +342,37 @@ impl InstrEncoder {
                 //       Applied recursively we thereby remove all no-op copies at the start of the
                 //       copy sequence until the first actual copy.
                 results.next();
-                return self.encode_copies(stack, results, rest);
+                return self.encode_copies(stack, results, rest, fuel_info);
             }
         }
         let result = results.span().head();
-        let instr = match values {
+        match values {
             [] => {
                 // The copy sequence is empty, nothing to encode in this case.
-                return Ok(());
+                Ok(())
             }
-            [TypedProvider::Register(reg)] => Instruction::copy(result, *reg),
-            [TypedProvider::Const(value)] => match value.ty() {
-                ValueType::I32 => Instruction::copy_imm32(result, i32::from(*value)),
-                ValueType::I64 => match <Const32<i64>>::from_i64(i64::from(*value)) {
-                    Some(value) => Instruction::copy_i64imm32(result, value),
-                    None => Instruction::copy(result, stack.alloc_const(*value)?),
-                },
-                ValueType::F32 => Instruction::copy_imm32(result, F32::from(*value)),
-                ValueType::F64 => match <Const32<f64>>::from_f64(f64::from(*value)) {
-                    Some(value) => Instruction::copy_f64imm32(result, value),
-                    None => Instruction::copy(result, stack.alloc_const(*value)?),
-                },
-                ValueType::FuncRef | ValueType::ExternRef => {
-                    Instruction::copy(result, stack.alloc_const(*value)?)
-                }
-            },
+            [v0] => {
+                self.encode_copy(stack, result, *v0, fuel_info)?;
+                Ok(())
+            }
             [v0, v1] => {
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
-                if result.next() == reg1 {
+                if TypedProvider::Register(result.next()) == *v1 {
                     // Case: the second of the 2 copies is a no-op which we can avoid
                     // Note: we already asserted that the first copy is not a no-op
-                    Instruction::copy(result, reg0)
-                } else {
-                    Instruction::copy2(results.span(), reg0, reg1)
+                    self.encode_copy(stack, result, *v0, fuel_info)?;
+                    return Ok(());
                 }
+                let reg0 = Self::provider2reg(stack, v0)?;
+                let reg1 = Self::provider2reg(stack, v1)?;
+                self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
+                self.push_instr(Instruction::copy2(results.span(), reg0, reg1))?;
+                Ok(())
             }
             [v0, v1, rest @ ..] => {
                 debug_assert!(!rest.is_empty());
+                self.bump_fuel_consumption(fuel_info, |costs| {
+                    costs.fuel_for_copies(rest.len() as u64 + 3)
+                })?;
                 if let Some(values) = RegisterSpanIter::from_providers(values) {
                     let make_instr = match Self::has_overlapping_copy_spans(
                         results.span(),
@@ -404,11 +397,9 @@ impl InstrEncoder {
                 let reg1 = Self::provider2reg(stack, v1)?;
                 self.push_instr(make_instr(results.span(), reg0, reg1))?;
                 self.encode_register_list(stack, rest)?;
-                return Ok(());
+                Ok(())
             }
-        };
-        self.push_instr(instr)?;
-        Ok(())
+        }
     }
 
     /// Returns `true` if `copy_span results <- values` has overlapping copies.
@@ -705,7 +696,7 @@ impl InstrEncoder {
                 let preserve_instr = this.push_instr(Instruction::copy(preserved, local))?;
                 this.notify_preserved_register(preserve_instr);
             }
-            this.encode_copy(stack, local, value)?;
+            this.encode_copy(stack, local, value, fuel_info)?;
             Ok(())
         }
 

@@ -356,12 +356,14 @@ impl<'parser> FuncTranslator<'parser> {
             // If the block does not have branch parameters there is no need to copy anything.
             return Ok(());
         }
+        let fuel_info = self.fuel_costs_and_instr();
         let params = &mut self.alloc.buffer;
         self.alloc.stack.pop_n(branch_params.len(), params);
         self.alloc.instr_encoder.encode_copies(
             &mut self.alloc.stack,
             branch_params,
             &self.alloc.buffer[..],
+            fuel_info,
         )?;
         Ok(())
     }

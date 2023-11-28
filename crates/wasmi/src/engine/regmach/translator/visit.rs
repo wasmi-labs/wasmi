@@ -161,10 +161,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             .stack
             .pop_n(len_block_params, &mut self.alloc.buffer);
         let branch_params = self.alloc.stack.push_dynamic_n(len_block_params)?;
+        let fuel_info = self.fuel_costs_and_instr();
         self.alloc.instr_encoder.encode_copies(
             &mut self.alloc.stack,
             branch_params.iter(len_block_params),
             &self.alloc.buffer[..],
+            fuel_info,
         )?;
         // Create loop header label and immediately pin it.
         let stack_height = BlockHeight::new(self.engine(), self.alloc.stack.height(), block_type)?;
@@ -389,6 +391,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 }
             }
             TypedProvider::Register(condition) => {
+                let fuel_info = self.fuel_costs_and_instr();
                 match self.alloc.control_stack.acquire_target(relative_depth) {
                     AcquiredTarget::Return(_frame) => self.translate_return_if(condition),
                     AcquiredTarget::Branch(frame) => {
@@ -446,6 +449,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                             &mut self.alloc.stack,
                             branch_params,
                             &self.alloc.buffer[..],
+                            fuel_info,
                         )?;
                         let branch_offset =
                             self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
@@ -460,6 +464,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_br_table(&mut self, targets: wasmparser::BrTable<'a>) -> Self::Output {
         bail_unreachable!(self);
+        let fuel_info = self.fuel_costs_and_instr();
         let index = self.alloc.stack.pop();
         if targets.is_empty() {
             // Case: the `br_table` only has a default target.
@@ -586,6 +591,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                         &mut self.alloc.stack,
                         frame.branch_params(self.res.engine()),
                         values,
+                        fuel_info,
                     )?;
                     let branch_dst = frame.branch_destination();
                     let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
