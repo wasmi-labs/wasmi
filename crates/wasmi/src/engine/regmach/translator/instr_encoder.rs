@@ -21,6 +21,7 @@ use crate::{
             },
             translator::{stack::RegisterSpace, ValueStack},
         },
+        FuelCosts,
         TranslationError,
     },
     module::ModuleResources,
@@ -253,20 +254,6 @@ impl InstrEncoder {
         Ok(())
     }
 
-    /// Bumps consumed fuel for [`Instruction::ConsumeFuel`] of `instr` by `delta`.
-    ///
-    /// # Errors
-    ///
-    /// If consumed fuel is out of bounds after this operation.
-    #[allow(dead_code)] // TODO: remove
-    pub fn bump_fuel_consumption(
-        &mut self,
-        instr: Instr,
-        delta: u64,
-    ) -> Result<(), TranslationError> {
-        self.instrs.get_mut(instr).bump_fuel_consumption(delta)
-    }
-
     /// Push the [`Instruction`] to the [`InstrEncoder`].
     pub fn push_instr(&mut self, instr: Instruction) -> Result<Instr, TranslationError> {
         let last_instr = self.instrs.push(instr)?;
@@ -480,11 +467,36 @@ impl InstrEncoder {
         false
     }
 
+    /// Bumps consumed fuel for [`Instruction::ConsumeFuel`] of `instr` by `delta`.
+    ///
+    /// # Errors
+    ///
+    /// If consumed fuel is out of bounds after this operation.
+    pub fn bump_fuel_consumption<F>(
+        &mut self,
+        fuel_info: Option<(FuelCosts, Instr)>,
+        f: F,
+    ) -> Result<(), TranslationError>
+    where
+        F: FnOnce(&FuelCosts) -> u64,
+    {
+        let Some((fuel_costs, fuel_instr)) = fuel_info else {
+            // Fuel metering is disabled so we can bail out.
+            return Ok(());
+        };
+        let fuel_consumed = f(&fuel_costs);
+        self.instrs
+            .get_mut(fuel_instr)
+            .bump_fuel_consumption(fuel_consumed)?;
+        Ok(())
+    }
+
     /// Encodes an unconditional `return` instruction.
     pub fn encode_return(
         &mut self,
         stack: &mut ValueStack,
         values: &[TypedProvider],
+        fuel_info: Option<(FuelCosts, Instr)>,
     ) -> Result<(), TranslationError> {
         let instr = match values {
             [] => Instruction::Return,
@@ -517,6 +529,9 @@ impl InstrEncoder {
             }
             [v0, v1, v2, rest @ ..] => {
                 debug_assert!(!rest.is_empty());
+                self.bump_fuel_consumption(fuel_info, |costs| {
+                    costs.fuel_for_copies(rest.len() as u64 + 3)
+                })?;
                 if let Some(span) = RegisterSpanIter::from_providers(values) {
                     self.push_instr(Instruction::return_span(span))?;
                     return Ok(());
@@ -529,6 +544,7 @@ impl InstrEncoder {
                 return Ok(());
             }
         };
+        self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
         self.push_instr(instr)?;
         Ok(())
     }
@@ -539,7 +555,13 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         condition: Register,
         values: &[TypedProvider],
+        fuel_info: Option<(FuelCosts, Instr)>,
     ) -> Result<(), TranslationError> {
+        // Note: We bump fuel unconditionally even if the conditional return is not taken.
+        //       This is very conservative and may lead to more fuel costs than
+        //       actually needed for the computation. We might revisit this decision
+        //       later. An alternative solution would consume fuel during execution
+        //       time only when the return is taken.
         let instr = match values {
             [] => Instruction::return_nez(condition),
             [TypedProvider::Register(reg)] => Instruction::return_nez_reg(condition, *reg),
@@ -565,6 +587,9 @@ impl InstrEncoder {
             }
             [v0, v1, rest @ ..] => {
                 debug_assert!(!rest.is_empty());
+                self.bump_fuel_consumption(fuel_info, |costs| {
+                    costs.fuel_for_copies(rest.len() as u64 + 3)
+                })?;
                 if let Some(span) = RegisterSpanIter::from_providers(values) {
                     self.push_instr(Instruction::return_nez_span(condition, span))?;
                     return Ok(());
@@ -576,6 +601,7 @@ impl InstrEncoder {
                 return Ok(());
             }
         };
+        self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
         self.push_instr(instr)?;
         Ok(())
     }

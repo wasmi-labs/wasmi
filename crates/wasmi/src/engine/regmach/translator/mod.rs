@@ -286,8 +286,8 @@ impl<'parser> FuncTranslator<'parser> {
     /// Returns the [`FuelCosts`] and the most recent [`Instruction::ConsumeFuel`] in the translation process.
     ///
     /// Returns `None` if fuel metering is disabled.
-    fn fuel_costs_and_instr(&self) -> Option<(&FuelCosts, Instr)> {
-        let Some(fuel_costs) = self.fuel_costs() else {
+    fn fuel_costs_and_instr(&self) -> Option<(FuelCosts, Instr)> {
+        let Some(&fuel_costs) = self.fuel_costs() else {
             // Fuel metering is disabled so we can bail out.
             return None;
         };
@@ -318,14 +318,10 @@ impl<'parser> FuncTranslator<'parser> {
     where
         F: FnOnce(&FuelCosts) -> u64,
     {
-        let Some((fuel_costs, fuel_instr)) = self.fuel_costs_and_instr() else {
-            // Fuel metering is disabled so we can bail out.
-            return Ok(());
-        };
-        let fuel_consumed = f(fuel_costs);
+        let fuel_info = self.fuel_costs_and_instr();
         self.alloc
             .instr_encoder
-            .bump_fuel_consumption(fuel_instr, fuel_consumed)?;
+            .bump_fuel_consumption(fuel_info, f)?;
         Ok(())
     }
 
@@ -2094,11 +2090,12 @@ impl<'parser> FuncTranslator<'parser> {
     pub fn translate_return(&mut self) -> Result<(), TranslationError> {
         let func_type = self.func_type();
         let results = func_type.results();
+        let fuel_info = self.fuel_costs_and_instr();
         let values = &mut self.alloc.buffer;
         self.alloc.stack.pop_n(results.len(), values);
         self.alloc
             .instr_encoder
-            .encode_return(&mut self.alloc.stack, values)?;
+            .encode_return(&mut self.alloc.stack, values, fuel_info)?;
         self.reachable = false;
         Ok(())
     }
@@ -2107,10 +2104,14 @@ impl<'parser> FuncTranslator<'parser> {
     pub fn translate_return_if(&mut self, condition: Register) -> Result<(), TranslationError> {
         bail_unreachable!(self);
         let len_results = self.func_type().results().len();
+        let fuel_info = self.fuel_costs_and_instr();
         let values = &mut self.alloc.buffer;
         self.alloc.stack.peek_n(len_results, values);
-        self.alloc
-            .instr_encoder
-            .encode_return_nez(&mut self.alloc.stack, condition, values)
+        self.alloc.instr_encoder.encode_return_nez(
+            &mut self.alloc.stack,
+            condition,
+            values,
+            fuel_info,
+        )
     }
 }

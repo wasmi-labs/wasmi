@@ -573,9 +573,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             self.alloc.instr_encoder.pin_label(label);
             match self.alloc.control_stack.acquire_target(depth) {
                 AcquiredTarget::Return(_frame) => {
+                    // Note: We do not use fuel metering for the below
+                    //       `encode_return` instruction since it is part
+                    //       of the `br_table` instruction above.
                     self.alloc
                         .instr_encoder
-                        .encode_return(&mut self.alloc.stack, values)?;
+                        .encode_return(&mut self.alloc.stack, values, None)?;
                 }
                 AcquiredTarget::Branch(frame) => {
                     frame.bump_branches();
