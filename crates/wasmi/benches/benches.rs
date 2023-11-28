@@ -92,43 +92,61 @@ const WASM_KERNEL: &str =
 const REVCOMP_INPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-input.txt");
 const REVCOMP_OUTPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-output.txt");
 
-fn bench_translate_for(c: &mut Criterion, name: &str, path: &str) {
-    let bench_id = format!("translate/{name}");
+enum FuelMetering {
+    Enabled,
+    Disabled,
+}
+
+fn bench_translate_for(c: &mut Criterion, name: &str, path: &str, fuel_metering: FuelMetering) {
+    let fuel_id = match fuel_metering {
+        FuelMetering::Enabled => "fuel",
+        FuelMetering::Disabled => "default",
+    };
+    let bench_id = format!("translate/{name}/{fuel_id}");
+    let mut config = bench_config();
+    if matches!(fuel_metering, FuelMetering::Enabled) {
+        config.consume_fuel(true);
+    }
     c.bench_function(&bench_id, |b| {
         let wasm_bytes = load_wasm_from_file(path);
         b.iter(|| {
-            let engine = Engine::new(&bench_config());
+            let engine = Engine::new(&config);
             let _module = Module::new(&engine, &wasm_bytes[..]).unwrap();
         })
     });
 }
 
+fn bench_translate_for_both(c: &mut Criterion, name: &str, path: &str) {
+    bench_translate_for(c, name, path, FuelMetering::Disabled);
+    bench_translate_for(c, name, path, FuelMetering::Enabled);
+}
+
 fn bench_translate_wasm_kernel(c: &mut Criterion) {
-    bench_translate_for(c, "wasm_kernel", WASM_KERNEL)
+    bench_translate_for_both(c, "wasm_kernel", WASM_KERNEL);
 }
 
 fn bench_translate_spidermonkey(c: &mut Criterion) {
-    bench_translate_for(c, "spidermonkey", "benches/wasm/spidermonkey.wasm")
+    bench_translate_for_both(c, "spidermonkey", "benches/wasm/spidermonkey.wasm");
 }
 
 fn bench_translate_bz2(c: &mut Criterion) {
-    bench_translate_for(c, "bz2", "benches/wasm/bz2.wasm")
+    bench_translate_for_both(c, "bz2", "benches/wasm/bz2.wasm");
 }
 
 fn bench_translate_pulldown_cmark(c: &mut Criterion) {
-    bench_translate_for(c, "pulldown_cmark", "benches/wasm/pulldown-cmark.wasm")
+    bench_translate_for_both(c, "pulldown_cmark", "benches/wasm/pulldown-cmark.wasm");
 }
 
 fn bench_translate_erc20(c: &mut Criterion) {
-    bench_translate_for(c, "erc20", "benches/wasm/erc20.wasm")
+    bench_translate_for_both(c, "erc20", "benches/wasm/erc20.wasm");
 }
 
 fn bench_translate_erc721(c: &mut Criterion) {
-    bench_translate_for(c, "erc721", "benches/wasm/erc721.wasm")
+    bench_translate_for_both(c, "erc721", "benches/wasm/erc721.wasm");
 }
 
 fn bench_translate_erc1155(c: &mut Criterion) {
-    bench_translate_for(c, "erc1155", "benches/wasm/erc1155.wasm")
+    bench_translate_for_both(c, "erc1155", "benches/wasm/erc1155.wasm");
 }
 
 fn bench_instantiate_wasm_kernel(c: &mut Criterion) {
