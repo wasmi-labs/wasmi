@@ -3222,7 +3222,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.alloc.instr_encoder.push_instr(instr)?;
         self.alloc
             .instr_encoder
-            .push_instr(Instruction::data_idx(data_index))?;
+            .append_instr(Instruction::data_idx(data_index))?;
         Ok(())
     }
 
@@ -3341,10 +3341,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.alloc.instr_encoder.push_instr(instr)?;
         self.alloc
             .instr_encoder
-            .push_instr(Instruction::table_idx(table))?;
+            .append_instr(Instruction::table_idx(table))?;
         self.alloc
             .instr_encoder
-            .push_instr(Instruction::elem_idx(elem_index))?;
+            .append_instr(Instruction::elem_idx(elem_index))?;
         Ok(())
     }
 
@@ -3391,10 +3391,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.alloc.instr_encoder.push_instr(instr)?;
         self.alloc
             .instr_encoder
-            .push_instr(Instruction::table_idx(dst_table))?;
+            .append_instr(Instruction::table_idx(dst_table))?;
         self.alloc
             .instr_encoder
-            .push_instr(Instruction::table_idx(src_table))?;
+            .append_instr(Instruction::table_idx(src_table))?;
         Ok(())
     }
 
@@ -3424,7 +3424,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.alloc.instr_encoder.push_instr(instr)?;
         self.alloc
             .instr_encoder
-            .push_instr(Instruction::table_idx(table))?;
+            .append_instr(Instruction::table_idx(table))?;
         Ok(())
     }
 
@@ -3446,7 +3446,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         }
         self.alloc
             .instr_encoder
-            .push_instr(Instruction::table_idx(table))?;
+            .append_instr(Instruction::table_idx(table))?;
         Ok(())
     }
 
@@ -3464,7 +3464,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.alloc.instr_encoder.push_instr(instr)?;
         self.alloc
             .instr_encoder
-            .push_instr(Instruction::table_idx(table))?;
+            .append_instr(Instruction::table_idx(table))?;
         Ok(())
     }
 
@@ -3498,7 +3498,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         self.alloc.instr_encoder.push_instr(instr)?;
         self.alloc
             .instr_encoder
-            .push_instr(Instruction::table_idx(table))?;
+            .append_instr(Instruction::table_idx(table))?;
         Ok(())
     }
 
