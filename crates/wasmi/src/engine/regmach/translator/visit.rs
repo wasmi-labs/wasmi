@@ -127,7 +127,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         //
         // This is an optimization to reduce the number of [`Instruction::ConsumeFuel`]
         // and is applicable since Wasm `block` are entered unconditionally.
-        let consume_fuel = self.alloc.control_stack.last().consume_fuel_instr();
+        let fuel_instr = self.fuel_instr();
         let stack_height = BlockHeight::new(self.engine(), self.alloc.stack.height(), block_type)?;
         let end_label = self.alloc.instr_encoder.new_label();
         let len_block_params = block_type.len_params(self.engine()) as usize;
@@ -138,7 +138,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             end_label,
             branch_params,
             stack_height,
-            consume_fuel,
+            fuel_instr,
         ));
         Ok(())
     }
@@ -207,7 +207,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let len_block_params = block_type.len_params(self.engine()) as usize;
         let len_branch_params = block_type.len_results(self.engine()) as usize;
         let branch_params = self.alloc_branch_params(len_block_params, len_branch_params)?;
-        let (reachability, consume_fuel) = match condition {
+        let (reachability, fuel_instr) = match condition {
             TypedProvider::Const(condition) => {
                 // Case: the `if` condition is a constant value and
                 //       therefore it is known upfront which branch
@@ -227,8 +227,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 // similarly to a Wasm `block`. Therefore we can apply the same
                 // optimization and inherit the [`Instruction::ConsumeFuel`] of
                 // the parent control frame.
-                let consume_fuel = self.alloc.control_stack.last().consume_fuel_instr();
-                (reachability, consume_fuel)
+                let fuel_instr = self.fuel_instr();
+                (reachability, fuel_instr)
             }
             TypedProvider::Register(condition) => {
                 // Push the `if` parameters on the `else` provider stack for
@@ -253,8 +253,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 //
                 // The [`Instruction::ConsumeFuel`] for the `else` branch is
                 // created on the fly when visiting the `else` block.
-                let consume_fuel = self.make_fuel_instr()?;
-                (reachability, consume_fuel)
+                let fuel_instr = self.make_fuel_instr()?;
+                (reachability, fuel_instr)
             }
         };
         self.alloc.control_stack.push_frame(IfControlFrame::new(
@@ -262,7 +262,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             end_label,
             branch_params,
             stack_height,
-            consume_fuel,
+            fuel_instr,
             reachability,
         ));
         Ok(())
