@@ -736,9 +736,7 @@ impl<'parser> FuncTranslator<'parser> {
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
     ) -> Result<(), TranslationError> {
         let result = self.alloc.stack.push_dynamic()?;
-        self.alloc
-            .instr_encoder
-            .push_instr(make_instr(result, lhs, rhs))?;
+        self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCosts::base)?;
         Ok(())
     }
 
@@ -761,9 +759,7 @@ impl<'parser> FuncTranslator<'parser> {
         if let Ok(rhs) = rhs.try_into() {
             // Optimization: We can use a compact instruction for small constants.
             let result = self.alloc.stack.push_dynamic()?;
-            self.alloc
-                .instr_encoder
-                .push_instr(make_instr_imm16(result, lhs, rhs))?;
+            self.push_fueled_instr(make_instr_imm16(result, lhs, rhs), FuelCosts::base)?;
             return Ok(true);
         }
         Ok(false)
@@ -782,9 +778,7 @@ impl<'parser> FuncTranslator<'parser> {
         if let Ok(lhs) = lhs.try_into() {
             // Optimization: We can use a compact instruction for small constants.
             let result = self.alloc.stack.push_dynamic()?;
-            self.alloc
-                .instr_encoder
-                .push_instr(make_instr_imm16(result, lhs, rhs))?;
+            self.push_fueled_instr(make_instr_imm16(result, lhs, rhs), FuelCosts::base)?;
             return Ok(true);
         }
         Ok(false)
@@ -818,9 +812,7 @@ impl<'parser> FuncTranslator<'parser> {
     {
         let result = self.alloc.stack.push_dynamic()?;
         let rhs = self.alloc.stack.alloc_const(rhs)?;
-        self.alloc
-            .instr_encoder
-            .push_instr(make_instr(result, lhs, rhs))?;
+        self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCosts::base)?;
         Ok(())
     }
 
@@ -841,18 +833,14 @@ impl<'parser> FuncTranslator<'parser> {
     {
         let result = self.alloc.stack.push_dynamic()?;
         let lhs = self.alloc.stack.alloc_const(lhs)?;
-        self.alloc
-            .instr_encoder
-            .push_instr(make_instr(result, lhs, rhs))?;
+        self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCosts::base)?;
         Ok(())
     }
 
     /// Translates a [`TrapCode`] as [`Instruction`].
     fn translate_trap(&mut self, trap_code: TrapCode) -> Result<(), TranslationError> {
         bail_unreachable!(self);
-        self.alloc
-            .instr_encoder
-            .push_instr(Instruction::Trap(trap_code))?;
+        self.push_fueled_instr(Instruction::Trap(trap_code), FuelCosts::base)?;
         self.reachable = false;
         Ok(())
     }
@@ -1237,11 +1225,10 @@ impl<'parser> FuncTranslator<'parser> {
                     return Ok(());
                 }
                 let result = self.alloc.stack.push_dynamic()?;
-                self.alloc.instr_encoder.push_instr(make_instr_imm(
-                    result,
-                    lhs,
-                    <Const16<T>>::from(rhs),
-                ))?;
+                self.push_fueled_instr(
+                    make_instr_imm(result, lhs, <Const16<T>>::from(rhs)),
+                    FuelCosts::base,
+                )?;
                 Ok(())
             }
             (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
