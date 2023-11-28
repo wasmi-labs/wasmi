@@ -175,6 +175,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         // Optionally create the loop's [`Instruction::ConsumeFuel`].
         //
         // This is handling the fuel required for a single iteration of the loop.
+        //
+        // Note: The fuel instruction for the loop must be encoded after the loop header is
+        //       pinned so that loop iterations will properly consume fuel per iteration.
         let consume_fuel = self.make_fuel_instr()?;
         // Finally create the loop control frame.
         self.alloc.control_stack.push_frame(LoopControlFrame::new(
