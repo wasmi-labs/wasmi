@@ -101,7 +101,7 @@ pub struct FuncTranslator<'parser> {
     /// reachability to `true` again.
     reachable: bool,
     /// Fuel costs for fuel metering.
-    /// 
+    ///
     /// `None` if fuel metering is disabled.
     fuel_costs: Option<FuelCosts>,
     /// The reusable data structures of the [`FuncTranslator`].
