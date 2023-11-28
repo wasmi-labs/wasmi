@@ -75,9 +75,7 @@ impl Module {
         Ok(InstancePre::new(handle, builder))
     }
 
-    /// Extract the Wasm imports from the module and zips them with the given external values.
-    ///
-    /// This also stores imported references into the [`Instance`] under construction.
+    /// Extract the Wasm imports from the module.
     fn extract_imports<I>(builder: &mut InstanceEntityBuilder, externals: I)
     where
         I: IntoIterator<Item = Extern>,
