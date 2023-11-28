@@ -126,6 +126,27 @@ macro_rules! bail_unreachable {
 }
 use bail_unreachable;
 
+/// Fuel metering information for a certain translation state.
+#[derive(Debug, Copy, Clone)]
+pub enum FuelInfo {
+    /// Fuel metering is disabled.
+    None,
+    /// Fuel metering is enabled with the following information.
+    Some {
+        /// The [`FuelCosts`] for the function translation.
+        costs: FuelCosts,
+        /// Index to the current [`Instruction::ConsumeFuel`] of a parent [`ControlFrame`].
+        instr: Instr,
+    },
+}
+
+impl FuelInfo {
+    /// Create a new [`FuelInfo`] for enabled fuel metering.
+    pub fn some(costs: FuelCosts, instr: Instr) -> Self {
+        Self::Some { costs, instr }
+    }
+}
+
 impl<'parser> FuncTranslator<'parser> {
     /// Creates a new [`FuncTranslator`].
     pub fn new(
@@ -224,7 +245,7 @@ impl<'parser> FuncTranslator<'parser> {
             // Note: The function enclosing block fuel instruction is always
             //       the instruction at the 0th index if fuel metering is enabled.
             let fuel_instr = Instr::from_u32(0);
-            let fuel_info = Some((*fuel_costs, fuel_instr));
+            let fuel_info = FuelInfo::some(*fuel_costs, fuel_instr);
             self.alloc
                 .instr_encoder
                 .bump_fuel_consumption(fuel_info, |costs| {
@@ -298,18 +319,18 @@ impl<'parser> FuncTranslator<'parser> {
         self.alloc.control_stack.last().consume_fuel_instr()
     }
 
-    /// Returns the [`FuelCosts`] and the most recent [`Instruction::ConsumeFuel`] in the translation process.
+    /// Returns the [`FuelInfo`] for the current translation state.
     ///
-    /// Returns `None` if fuel metering is disabled.
-    fn fuel_costs_and_instr(&self) -> Option<(FuelCosts, Instr)> {
+    /// Returns [`FuelInfo::None`] if fuel metering is disabled.
+    fn fuel_info(&self) -> FuelInfo {
         let Some(&fuel_costs) = self.fuel_costs() else {
             // Fuel metering is disabled so we can bail out.
-            return None;
+            return FuelInfo::None;
         };
         let fuel_instr = self
             .fuel_instr()
             .expect("fuel metering is enabled but there is no Instruction::ConsumeFuel");
-        Some((fuel_costs, fuel_instr))
+        FuelInfo::some(fuel_costs, fuel_instr)
     }
 
     /// Pushes a [`Instruction::ConsumeFuel`] with base costs if fuel metering is enabled.
@@ -333,7 +354,7 @@ impl<'parser> FuncTranslator<'parser> {
     where
         F: FnOnce(&FuelCosts) -> u64,
     {
-        let fuel_info = self.fuel_costs_and_instr();
+        let fuel_info = self.fuel_info();
         self.alloc
             .instr_encoder
             .bump_fuel_consumption(fuel_info, f)?;
@@ -371,7 +392,7 @@ impl<'parser> FuncTranslator<'parser> {
             // If the block does not have branch parameters there is no need to copy anything.
             return Ok(());
         }
-        let fuel_info = self.fuel_costs_and_instr();
+        let fuel_info = self.fuel_info();
         let params = &mut self.alloc.buffer;
         self.alloc.stack.pop_n(branch_params.len(), params);
         self.alloc.instr_encoder.encode_copies(
@@ -387,12 +408,15 @@ impl<'parser> FuncTranslator<'parser> {
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), TranslationError> {
         if self.alloc.control_stack.is_empty() {
             bail_unreachable!(self);
-            let fuel_info = self.fuel_costs().copied().map(|costs| {
-                let fuel_instr = frame
-                    .consume_fuel_instr()
-                    .expect("must have fuel instruction if fuel metering is enabled");
-                (costs, fuel_instr)
-            });
+            let fuel_info = match self.fuel_costs().copied() {
+                None => FuelInfo::None,
+                Some(fuel_costs) => {
+                    let fuel_instr = frame
+                        .consume_fuel_instr()
+                        .expect("must have fuel instruction if fuel metering is enabled");
+                    FuelInfo::some(fuel_costs, fuel_instr)
+                }
+            };
             // We dropped the Wasm `block` that encloses the function itself so we can return.
             return self.translate_return_with(fuel_info);
         }
@@ -2111,15 +2135,12 @@ impl<'parser> FuncTranslator<'parser> {
 
     /// Translates an unconditional `return` instruction.
     pub fn translate_return(&mut self) -> Result<(), TranslationError> {
-        let fuel_info = self.fuel_costs_and_instr();
+        let fuel_info = self.fuel_info();
         self.translate_return_with(fuel_info)
     }
 
     /// Translates an unconditional `return` instruction given fuel information.
-    pub fn translate_return_with(
-        &mut self,
-        fuel_info: Option<(FuelCosts, Instr)>,
-    ) -> Result<(), TranslationError> {
+    pub fn translate_return_with(&mut self, fuel_info: FuelInfo) -> Result<(), TranslationError> {
         let func_type = self.func_type();
         let results = func_type.results();
         let values = &mut self.alloc.buffer;
@@ -2135,7 +2156,7 @@ impl<'parser> FuncTranslator<'parser> {
     pub fn translate_return_if(&mut self, condition: Register) -> Result<(), TranslationError> {
         bail_unreachable!(self);
         let len_results = self.func_type().results().len();
-        let fuel_info = self.fuel_costs_and_instr();
+        let fuel_info = self.fuel_info();
         let values = &mut self.alloc.buffer;
         self.alloc.stack.peek_n(len_results, values);
         self.alloc.instr_encoder.encode_return_nez(

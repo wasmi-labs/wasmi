@@ -1,4 +1,4 @@
-use super::{visit_register::VisitInputRegisters, TypedProvider};
+use super::{visit_register::VisitInputRegisters, FuelInfo, TypedProvider};
 use crate::{
     engine::{
         bytecode::BranchOffset,
@@ -283,7 +283,7 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         result: Register,
         value: TypedProvider,
-        fuel_info: Option<(FuelCosts, Instr)>,
+        fuel_info: FuelInfo,
     ) -> Result<Option<Instr>, TranslationError> {
         /// Convenience to create an [`Instruction::Copy`] to copy a constant value.
         fn copy_imm(
@@ -333,7 +333,7 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         mut results: RegisterSpanIter,
         values: &[TypedProvider],
-        fuel_info: Option<(FuelCosts, Instr)>,
+        fuel_info: FuelInfo,
     ) -> Result<(), TranslationError> {
         assert_eq!(results.len(), values.len());
         if let Some((TypedProvider::Register(value), rest)) = values.split_first() {
@@ -465,19 +465,19 @@ impl InstrEncoder {
     /// If consumed fuel is out of bounds after this operation.
     pub fn bump_fuel_consumption<F>(
         &mut self,
-        fuel_info: Option<(FuelCosts, Instr)>,
+        fuel_info: FuelInfo,
         f: F,
     ) -> Result<(), TranslationError>
     where
         F: FnOnce(&FuelCosts) -> u64,
     {
-        let Some((fuel_costs, fuel_instr)) = fuel_info else {
+        let FuelInfo::Some { costs, instr } = fuel_info else {
             // Fuel metering is disabled so we can bail out.
             return Ok(());
         };
-        let fuel_consumed = f(&fuel_costs);
+        let fuel_consumed = f(&costs);
         self.instrs
-            .get_mut(fuel_instr)
+            .get_mut(instr)
             .bump_fuel_consumption(fuel_consumed)?;
         Ok(())
     }
@@ -487,7 +487,7 @@ impl InstrEncoder {
         &mut self,
         stack: &mut ValueStack,
         values: &[TypedProvider],
-        fuel_info: Option<(FuelCosts, Instr)>,
+        fuel_info: FuelInfo,
     ) -> Result<(), TranslationError> {
         let instr = match values {
             [] => Instruction::Return,
@@ -546,7 +546,7 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         condition: Register,
         values: &[TypedProvider],
-        fuel_info: Option<(FuelCosts, Instr)>,
+        fuel_info: FuelInfo,
     ) -> Result<(), TranslationError> {
         // Note: We bump fuel unconditionally even if the conditional return is not taken.
         //       This is very conservative and may lead to more fuel costs than
@@ -681,7 +681,7 @@ impl InstrEncoder {
         local: Register,
         value: TypedProvider,
         preserved: Option<Register>,
-        fuel_info: Option<(FuelCosts, Instr)>,
+        fuel_info: FuelInfo,
     ) -> Result<(), TranslationError> {
         fn fallback_case(
             this: &mut InstrEncoder,
@@ -689,7 +689,7 @@ impl InstrEncoder {
             local: Register,
             value: TypedProvider,
             preserved: Option<Register>,
-            fuel_info: Option<(FuelCosts, Instr)>,
+            fuel_info: FuelInfo,
         ) -> Result<(), TranslationError> {
             if let Some(preserved) = preserved {
                 this.bump_fuel_consumption(fuel_info, FuelCosts::base)?;

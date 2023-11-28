@@ -11,6 +11,7 @@ use super::{
     },
     stack::TypedProvider,
     ControlFrameKind,
+    FuelInfo,
     FuncTranslator,
     TypedValue,
 };
@@ -161,7 +162,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             .stack
             .pop_n(len_block_params, &mut self.alloc.buffer);
         let branch_params = self.alloc.stack.push_dynamic_n(len_block_params)?;
-        let fuel_info = self.fuel_costs_and_instr();
+        let fuel_info = self.fuel_info();
         self.alloc.instr_encoder.encode_copies(
             &mut self.alloc.stack,
             branch_params.iter(len_block_params),
@@ -394,7 +395,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 }
             }
             TypedProvider::Register(condition) => {
-                let fuel_info = self.fuel_costs_and_instr();
+                let fuel_info = self.fuel_info();
                 match self.alloc.control_stack.acquire_target(relative_depth) {
                     AcquiredTarget::Return(_frame) => self.translate_return_if(condition),
                     AcquiredTarget::Branch(frame) => {
@@ -467,7 +468,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_br_table(&mut self, targets: wasmparser::BrTable<'a>) -> Self::Output {
         bail_unreachable!(self);
-        let fuel_info = self.fuel_costs_and_instr();
+        let fuel_info = self.fuel_info();
         let index = self.alloc.stack.pop();
         if targets.is_empty() {
             // Case: the `br_table` only has a default target.
@@ -584,9 +585,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     // Note: We do not use fuel metering for the below
                     //       `encode_return` instruction since it is part
                     //       of the `br_table` instruction above.
-                    self.alloc
-                        .instr_encoder
-                        .encode_return(&mut self.alloc.stack, values, None)?;
+                    self.alloc.instr_encoder.encode_return(
+                        &mut self.alloc.stack,
+                        values,
+                        FuelInfo::None,
+                    )?;
                 }
                 AcquiredTarget::Branch(frame) => {
                     frame.bump_branches();
@@ -790,7 +793,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let value = self.alloc.stack.pop();
         let local = Register::try_from(local_index)?;
         let preserved = self.alloc.stack.preserve_locals(local_index)?;
-        let fuel_info = self.fuel_costs_and_instr();
+        let fuel_info = self.fuel_info();
         self.alloc.instr_encoder.encode_local_set(
             &mut self.alloc.stack,
             &self.res,
