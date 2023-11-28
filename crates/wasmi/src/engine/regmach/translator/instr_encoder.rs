@@ -1,4 +1,4 @@
-use super::{visit_register::VisitInputRegisters, TypedProvider};
+use super::{visit_register::VisitInputRegisters, FuelInfo, TypedProvider};
 use crate::{
     engine::{
         bytecode::BranchOffset,
@@ -21,6 +21,7 @@ use crate::{
             },
             translator::{stack::RegisterSpace, ValueStack},
         },
+        FuelCosts,
         TranslationError,
     },
     module::ModuleResources,
@@ -253,20 +254,6 @@ impl InstrEncoder {
         Ok(())
     }
 
-    /// Bumps consumed fuel for [`Instruction::ConsumeFuel`] of `instr` by `delta`.
-    ///
-    /// # Errors
-    ///
-    /// If consumed fuel is out of bounds after this operation.
-    #[allow(dead_code)] // TODO: remove
-    pub fn bump_fuel_consumption(
-        &mut self,
-        instr: Instr,
-        delta: u64,
-    ) -> Result<(), TranslationError> {
-        self.instrs.get_mut(instr).bump_fuel_consumption(delta)
-    }
-
     /// Push the [`Instruction`] to the [`InstrEncoder`].
     pub fn push_instr(&mut self, instr: Instruction) -> Result<Instr, TranslationError> {
         let last_instr = self.instrs.push(instr)?;
@@ -296,6 +283,7 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         result: Register,
         value: TypedProvider,
+        fuel_info: FuelInfo,
     ) -> Result<Option<Instr>, TranslationError> {
         /// Convenience to create an [`Instruction::Copy`] to copy a constant value.
         fn copy_imm(
@@ -306,34 +294,32 @@ impl InstrEncoder {
             let cref = stack.alloc_const(value.into())?;
             Ok(Instruction::copy(result, cref))
         }
-        match value {
+        let instr = match value {
             TypedProvider::Register(value) => {
                 if result == value {
                     // Optimization: copying from register `x` into `x` is a no-op.
                     return Ok(None);
                 }
-                let instr = self.push_instr(Instruction::copy(result, value))?;
-                Ok(Some(instr))
+                Instruction::copy(result, value)
             }
-            TypedProvider::Const(value) => {
-                let instruction = match value.ty() {
-                    ValueType::I32 => Instruction::copy_imm32(result, i32::from(value)),
-                    ValueType::F32 => Instruction::copy_imm32(result, f32::from(value)),
-                    ValueType::I64 => match <Const32<i64>>::from_i64(i64::from(value)) {
-                        Some(value) => Instruction::copy_i64imm32(result, value),
-                        None => copy_imm(stack, result, value)?,
-                    },
-                    ValueType::F64 => match <Const32<f64>>::from_f64(f64::from(value)) {
-                        Some(value) => Instruction::copy_f64imm32(result, value),
-                        None => copy_imm(stack, result, value)?,
-                    },
-                    ValueType::FuncRef => copy_imm(stack, result, value)?,
-                    ValueType::ExternRef => copy_imm(stack, result, value)?,
-                };
-                let instr = self.push_instr(instruction)?;
-                Ok(Some(instr))
-            }
-        }
+            TypedProvider::Const(value) => match value.ty() {
+                ValueType::I32 => Instruction::copy_imm32(result, i32::from(value)),
+                ValueType::F32 => Instruction::copy_imm32(result, f32::from(value)),
+                ValueType::I64 => match <Const32<i64>>::from_i64(i64::from(value)) {
+                    Some(value) => Instruction::copy_i64imm32(result, value),
+                    None => copy_imm(stack, result, value)?,
+                },
+                ValueType::F64 => match <Const32<f64>>::from_f64(f64::from(value)) {
+                    Some(value) => Instruction::copy_f64imm32(result, value),
+                    None => copy_imm(stack, result, value)?,
+                },
+                ValueType::FuncRef => copy_imm(stack, result, value)?,
+                ValueType::ExternRef => copy_imm(stack, result, value)?,
+            },
+        };
+        self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
+        let instr = self.push_instr(instr)?;
+        Ok(Some(instr))
     }
 
     /// Encode a generic `copy` instruction.
@@ -347,6 +333,7 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         mut results: RegisterSpanIter,
         values: &[TypedProvider],
+        fuel_info: FuelInfo,
     ) -> Result<(), TranslationError> {
         assert_eq!(results.len(), values.len());
         if let Some((TypedProvider::Register(value), rest)) = values.split_first() {
@@ -355,44 +342,37 @@ impl InstrEncoder {
                 //       Applied recursively we thereby remove all no-op copies at the start of the
                 //       copy sequence until the first actual copy.
                 results.next();
-                return self.encode_copies(stack, results, rest);
+                return self.encode_copies(stack, results, rest, fuel_info);
             }
         }
         let result = results.span().head();
-        let instr = match values {
+        match values {
             [] => {
                 // The copy sequence is empty, nothing to encode in this case.
-                return Ok(());
+                Ok(())
             }
-            [TypedProvider::Register(reg)] => Instruction::copy(result, *reg),
-            [TypedProvider::Const(value)] => match value.ty() {
-                ValueType::I32 => Instruction::copy_imm32(result, i32::from(*value)),
-                ValueType::I64 => match <Const32<i64>>::from_i64(i64::from(*value)) {
-                    Some(value) => Instruction::copy_i64imm32(result, value),
-                    None => Instruction::copy(result, stack.alloc_const(*value)?),
-                },
-                ValueType::F32 => Instruction::copy_imm32(result, F32::from(*value)),
-                ValueType::F64 => match <Const32<f64>>::from_f64(f64::from(*value)) {
-                    Some(value) => Instruction::copy_f64imm32(result, value),
-                    None => Instruction::copy(result, stack.alloc_const(*value)?),
-                },
-                ValueType::FuncRef | ValueType::ExternRef => {
-                    Instruction::copy(result, stack.alloc_const(*value)?)
-                }
-            },
+            [v0] => {
+                self.encode_copy(stack, result, *v0, fuel_info)?;
+                Ok(())
+            }
             [v0, v1] => {
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
-                if result.next() == reg1 {
+                if TypedProvider::Register(result.next()) == *v1 {
                     // Case: the second of the 2 copies is a no-op which we can avoid
                     // Note: we already asserted that the first copy is not a no-op
-                    Instruction::copy(result, reg0)
-                } else {
-                    Instruction::copy2(results.span(), reg0, reg1)
+                    self.encode_copy(stack, result, *v0, fuel_info)?;
+                    return Ok(());
                 }
+                let reg0 = Self::provider2reg(stack, v0)?;
+                let reg1 = Self::provider2reg(stack, v1)?;
+                self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
+                self.push_instr(Instruction::copy2(results.span(), reg0, reg1))?;
+                Ok(())
             }
             [v0, v1, rest @ ..] => {
                 debug_assert!(!rest.is_empty());
+                self.bump_fuel_consumption(fuel_info, |costs| {
+                    costs.fuel_for_copies(rest.len() as u64 + 3)
+                })?;
                 if let Some(values) = RegisterSpanIter::from_providers(values) {
                     let make_instr = match Self::has_overlapping_copy_spans(
                         results.span(),
@@ -417,11 +397,9 @@ impl InstrEncoder {
                 let reg1 = Self::provider2reg(stack, v1)?;
                 self.push_instr(make_instr(results.span(), reg0, reg1))?;
                 self.encode_register_list(stack, rest)?;
-                return Ok(());
+                Ok(())
             }
-        };
-        self.push_instr(instr)?;
-        Ok(())
+        }
     }
 
     /// Returns `true` if `copy_span results <- values` has overlapping copies.
@@ -480,11 +458,36 @@ impl InstrEncoder {
         false
     }
 
+    /// Bumps consumed fuel for [`Instruction::ConsumeFuel`] of `instr` by `delta`.
+    ///
+    /// # Errors
+    ///
+    /// If consumed fuel is out of bounds after this operation.
+    pub fn bump_fuel_consumption<F>(
+        &mut self,
+        fuel_info: FuelInfo,
+        f: F,
+    ) -> Result<(), TranslationError>
+    where
+        F: FnOnce(&FuelCosts) -> u64,
+    {
+        let FuelInfo::Some { costs, instr } = fuel_info else {
+            // Fuel metering is disabled so we can bail out.
+            return Ok(());
+        };
+        let fuel_consumed = f(&costs);
+        self.instrs
+            .get_mut(instr)
+            .bump_fuel_consumption(fuel_consumed)?;
+        Ok(())
+    }
+
     /// Encodes an unconditional `return` instruction.
     pub fn encode_return(
         &mut self,
         stack: &mut ValueStack,
         values: &[TypedProvider],
+        fuel_info: FuelInfo,
     ) -> Result<(), TranslationError> {
         let instr = match values {
             [] => Instruction::Return,
@@ -517,6 +520,9 @@ impl InstrEncoder {
             }
             [v0, v1, v2, rest @ ..] => {
                 debug_assert!(!rest.is_empty());
+                self.bump_fuel_consumption(fuel_info, |costs| {
+                    costs.fuel_for_copies(rest.len() as u64 + 3)
+                })?;
                 if let Some(span) = RegisterSpanIter::from_providers(values) {
                     self.push_instr(Instruction::return_span(span))?;
                     return Ok(());
@@ -529,6 +535,7 @@ impl InstrEncoder {
                 return Ok(());
             }
         };
+        self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
         self.push_instr(instr)?;
         Ok(())
     }
@@ -539,7 +546,13 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         condition: Register,
         values: &[TypedProvider],
+        fuel_info: FuelInfo,
     ) -> Result<(), TranslationError> {
+        // Note: We bump fuel unconditionally even if the conditional return is not taken.
+        //       This is very conservative and may lead to more fuel costs than
+        //       actually needed for the computation. We might revisit this decision
+        //       later. An alternative solution would consume fuel during execution
+        //       time only when the return is taken.
         let instr = match values {
             [] => Instruction::return_nez(condition),
             [TypedProvider::Register(reg)] => Instruction::return_nez_reg(condition, *reg),
@@ -565,6 +578,9 @@ impl InstrEncoder {
             }
             [v0, v1, rest @ ..] => {
                 debug_assert!(!rest.is_empty());
+                self.bump_fuel_consumption(fuel_info, |costs| {
+                    costs.fuel_for_copies(rest.len() as u64 + 3)
+                })?;
                 if let Some(span) = RegisterSpanIter::from_providers(values) {
                     self.push_instr(Instruction::return_nez_span(condition, span))?;
                     return Ok(());
@@ -576,6 +592,7 @@ impl InstrEncoder {
                 return Ok(());
             }
         };
+        self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
         self.push_instr(instr)?;
         Ok(())
     }
@@ -664,6 +681,7 @@ impl InstrEncoder {
         local: Register,
         value: TypedProvider,
         preserved: Option<Register>,
+        fuel_info: FuelInfo,
     ) -> Result<(), TranslationError> {
         fn fallback_case(
             this: &mut InstrEncoder,
@@ -671,12 +689,14 @@ impl InstrEncoder {
             local: Register,
             value: TypedProvider,
             preserved: Option<Register>,
+            fuel_info: FuelInfo,
         ) -> Result<(), TranslationError> {
             if let Some(preserved) = preserved {
+                this.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
                 let preserve_instr = this.push_instr(Instruction::copy(preserved, local))?;
                 this.notify_preserved_register(preserve_instr);
             }
-            this.encode_copy(stack, local, value)?;
+            this.encode_copy(stack, local, value, fuel_info)?;
             Ok(())
         }
 
@@ -686,7 +706,7 @@ impl InstrEncoder {
         ));
         let TypedProvider::Register(returned_value) = value else {
             // Cannot apply the optimization for `local.set C` where `C` is a constant value.
-            return fallback_case(self, stack, local, value, preserved);
+            return fallback_case(self, stack, local, value, preserved, fuel_info);
         };
         if matches!(
             stack.get_register_space(returned_value),
@@ -694,12 +714,12 @@ impl InstrEncoder {
         ) {
             // Can only apply the optimization if the returned value of `last_instr`
             // is _NOT_ itself a local register due to observable behavior.
-            return fallback_case(self, stack, local, value, preserved);
+            return fallback_case(self, stack, local, value, preserved, fuel_info);
         }
         let Some(last_instr) = self.last_instr else {
             // Can only apply the optimization if there is a previous instruction
             // to replace its result register instead of emitting a copy.
-            return fallback_case(self, stack, local, value, preserved);
+            return fallback_case(self, stack, local, value, preserved, fuel_info);
         };
         if preserved.is_some() && last_instr.distance(self.instrs.next_instr()) >= 4 {
             // We avoid applying the optimization if the last instruction
@@ -708,7 +728,7 @@ impl InstrEncoder {
             // preserving a local register requires costly shifting all
             // instruction words of the last instruction.
             // Thankfully most instructions are small enough.
-            return fallback_case(self, stack, local, value, preserved);
+            return fallback_case(self, stack, local, value, preserved, fuel_info);
         }
         if !self
             .instrs
@@ -716,12 +736,13 @@ impl InstrEncoder {
             .relink_result(res, local, returned_value)?
         {
             // It was not possible to relink the result of `last_instr` therefore we fallback.
-            return fallback_case(self, stack, local, value, preserved);
+            return fallback_case(self, stack, local, value, preserved, fuel_info);
         }
         if let Some(preserved) = preserved {
             // We were able to apply the optimization.
             // Preservation requires the copy to be before the optimized last instruction.
             // Therefore we need to push the preservation `copy` instruction before it.
+            self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
             let shifted_last_instr = self
                 .instrs
                 .push_before(last_instr, Instruction::copy(preserved, local))?;
@@ -729,11 +750,6 @@ impl InstrEncoder {
             self.last_instr = Some(shifted_last_instr);
         }
         Ok(())
-    }
-
-    /// Pushes an [`Instruction::ConsumeFuel`] with base fuel costs to the [`InstrEncoder`].
-    pub fn push_consume_fuel_instr(&mut self, block_fuel: u64) -> Result<Instr, TranslationError> {
-        self.instrs.push(Instruction::consume_fuel(block_fuel)?)
     }
 
     /// Notifies the [`InstrEncoder`] that a local variable has been preserved.
