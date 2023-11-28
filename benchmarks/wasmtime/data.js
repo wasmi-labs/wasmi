@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1701205265953,
+  "lastUpdate": 1701206884887,
   "repoUrl": "https://github.com/paritytech/wasmi",
   "entries": {
     "Wasmi criterion wasmtime": [
@@ -7265,6 +7265,276 @@ window.BENCHMARK_DATA = {
             "name": "overhead/call/untyped/16",
             "value": 3873117,
             "range": "± 4768",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "robin.freyler@gmail.com",
+            "name": "Robin Freyler",
+            "username": "Robbepop"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "52f180c240fc2f4640ab99b54e3798767b797d80",
+          "message": "Implement fuel metering for the register-machine `wasmi` engine backend (#810)\n\n* refactor FuelCosts\r\n\r\n- Remove fields and fields accesses by methods.\r\n- Add new methods that make more sense for the new register-machine wasmi engine backend.\r\n- Adjusted both stack-machine and register-machine to the new model.\r\n- Reinvent register-machine translation API for fuel metering.\r\n\r\n* refactor and cleanup of new fuel metering API\r\n\r\n* fix intra doc link\r\n\r\n* move fuel methods around\r\n\r\n* change docs a bit\r\n\r\n* improve docs for field\r\n\r\n* fix formatting in docs\r\n\r\n* use InstrEncoder::append_instr in more places where it makes sense\r\n\r\n* add fuel metering to call, table, memory and global instructions\r\n\r\n* add fuel metering for select instructions\r\n\r\n* add fuel metering for load and store instructions\r\n\r\n* add fuel metering for binary instructions\r\n\r\n* add fuel metering for unary and conversion instructions\r\n\r\n* add fuel metering for return instructions\r\n\r\n* add fuel metering for local.set\r\n\r\nlocal.set also depends on fuel metering for copy instructions which is not yet implemented.\r\n\r\n* add fuel metering to copy instructions\r\n\r\nAdditionally refactored encode_copies to reuse encode_copy for single value copies.\r\nAlso refactor implementation of encode_copy a bit.\r\n\r\n* fuel metering impl cleanups\r\n\r\n- Rename consume_fuel to fuel_instr.\r\n- Use fuel_instr helper method where possible.\r\n\r\n* account total registers used per function for fuel metering\r\n\r\n* add comment for loop consume fuel instructions\r\n\r\n* add FuelInfo type to clean up the fuel metering implementation",
+          "timestamp": "2023-11-28T22:20:22+01:00",
+          "tree_id": "3f010c247881e247097c9583e8fbd92f3716c699",
+          "url": "https://github.com/paritytech/wasmi/commit/52f180c240fc2f4640ab99b54e3798767b797d80"
+        },
+        "date": 1701206884867,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "translate/wasm_kernel/default",
+            "value": 8822927,
+            "range": "± 31419",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/fuel",
+            "value": 9229360,
+            "range": "± 11878",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/default",
+            "value": 158609266,
+            "range": "± 318545",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/fuel",
+            "value": 166977500,
+            "range": "± 687798",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/default",
+            "value": 6596567,
+            "range": "± 15129",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/fuel",
+            "value": 6917612,
+            "range": "± 17716",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/default",
+            "value": 2522957,
+            "range": "± 10826",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/fuel",
+            "value": 2679487,
+            "range": "± 7350",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/default",
+            "value": 235397,
+            "range": "± 879",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/fuel",
+            "value": 246203,
+            "range": "± 679",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/default",
+            "value": 336191,
+            "range": "± 1621",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/fuel",
+            "value": 353278,
+            "range": "± 1221",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/default",
+            "value": 488904,
+            "range": "± 1731",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/fuel",
+            "value": 520922,
+            "range": "± 1959",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "instantiate/wasm_kernel",
+            "value": 54913,
+            "range": "± 759",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/tiny_keccak",
+            "value": 382316,
+            "range": "± 672",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/rev_complement",
+            "value": 644865,
+            "range": "± 2122",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/regex_redux",
+            "value": 1042061,
+            "range": "± 882",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/count_until",
+            "value": 7521579,
+            "range": "± 12733",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/br_table",
+            "value": 1343491,
+            "range": "± 3668",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/trunc_f2i",
+            "value": 942844,
+            "range": "± 1794",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global/bump",
+            "value": 1601318,
+            "range": "± 1030",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global/get_const",
+            "value": 750020,
+            "range": "± 1851",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial/rec",
+            "value": 1363798,
+            "range": "± 4314",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial/iter",
+            "value": 298373,
+            "range": "± 306",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/call/rec",
+            "value": 364989,
+            "range": "± 4063",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_scan",
+            "value": 383881,
+            "range": "± 443",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_trap",
+            "value": 34745,
+            "range": "± 74",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/call/host/1",
+            "value": 38849,
+            "range": "± 48",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fuse",
+            "value": 12668227,
+            "range": "± 9963",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/rec",
+            "value": 13597333,
+            "range": "± 6452",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/tail",
+            "value": 3827688,
+            "range": "± 4127",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/iter",
+            "value": 1269082,
+            "range": "± 808",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/is_even/rec",
+            "value": 2285882,
+            "range": "± 6341",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/sum_bytes",
+            "value": 1253499,
+            "range": "± 846",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/fill_bytes",
+            "value": 1237438,
+            "range": "± 679",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/vec_add",
+            "value": 3594562,
+            "range": "± 3591",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/typed/0",
+            "value": 916887,
+            "range": "± 1069",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/typed/16",
+            "value": 1960171,
+            "range": "± 4264",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/untyped/0",
+            "value": 1457971,
+            "range": "± 7769",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/untyped/16",
+            "value": 3878525,
+            "range": "± 4161",
             "unit": "ns/iter"
           }
         ]
