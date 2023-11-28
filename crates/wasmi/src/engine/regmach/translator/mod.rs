@@ -216,6 +216,21 @@ impl<'parser> FuncTranslator<'parser> {
             .defrag_registers(&mut self.alloc.stack)?;
         self.alloc.instr_encoder.update_branch_offsets()?;
         let len_registers = self.alloc.stack.len_registers();
+        if let Some(fuel_costs) = self.fuel_costs() {
+            // Note: Fuel metering is enabled so we need to bump the fuel
+            //       of the function enclosing Wasm `block` by an amount
+            //       that depends on the total number of registers used by
+            //       the compiled function.
+            // Note: The function enclosing block fuel instruction is always
+            //       the instruction at the 0th index if fuel metering is enabled.
+            let fuel_instr = Instr::from_u32(0);
+            let fuel_info = Some((*fuel_costs, fuel_instr));
+            self.alloc
+                .instr_encoder
+                .bump_fuel_consumption(fuel_info, |costs| {
+                    costs.fuel_for_copies(u64::from(len_registers))
+                })?;
+        }
         let len_results = u16::try_from(self.func_type().results().len())
             .map_err(|_| TranslationError::new(TranslationErrorInner::TooManyFunctionResults))?;
         let func_consts = self.alloc.stack.func_local_consts();
@@ -372,8 +387,14 @@ impl<'parser> FuncTranslator<'parser> {
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), TranslationError> {
         if self.alloc.control_stack.is_empty() {
             bail_unreachable!(self);
+            let fuel_info = self.fuel_costs().copied().map(|costs| {
+                let fuel_instr = frame
+                    .consume_fuel_instr()
+                    .expect("must have fuel instruction if fuel metering is enabled");
+                (costs, fuel_instr)
+            });
             // We dropped the Wasm `block` that encloses the function itself so we can return.
-            return self.translate_return();
+            return self.translate_return_with(fuel_info);
         }
         if self.reachable && frame.is_branched_to() {
             // If the end of the `block` is reachable AND
@@ -2090,9 +2111,17 @@ impl<'parser> FuncTranslator<'parser> {
 
     /// Translates an unconditional `return` instruction.
     pub fn translate_return(&mut self) -> Result<(), TranslationError> {
+        let fuel_info = self.fuel_costs_and_instr();
+        self.translate_return_with(fuel_info)
+    }
+
+    /// Translates an unconditional `return` instruction given fuel information.
+    pub fn translate_return_with(
+        &mut self,
+        fuel_info: Option<(FuelCosts, Instr)>,
+    ) -> Result<(), TranslationError> {
         let func_type = self.func_type();
         let results = func_type.results();
-        let fuel_info = self.fuel_costs_and_instr();
         let values = &mut self.alloc.buffer;
         self.alloc.stack.pop_n(results.len(), values);
         self.alloc
