@@ -91,19 +91,16 @@ impl Module {
     ///   mismatch with the expected module import type.
     ///
     /// [`Func`]: [`crate::Func`]
-    fn extract_imports<I>(
-        builder: &mut InstanceEntityBuilder,
-        externals: I,
-    )
+    fn extract_imports<I>(builder: &mut InstanceEntityBuilder, externals: I)
     where
         I: IntoIterator<Item = Extern>,
     {
         for external in externals {
             match external {
-                Extern::Func(func)=> {
+                Extern::Func(func) => {
                     builder.push_func(func);
                 }
-                Extern::Table(table)=> {
+                Extern::Table(table) => {
                     builder.push_table(table);
                 }
                 Extern::Memory(memory) => {
