@@ -100,7 +100,9 @@ pub struct FuncTranslator<'parser> {
     /// Visiting the Wasm `Else` or `End` control flow operator resets
     /// reachability to `true` again.
     reachable: bool,
-    /// Fuel costs if fuel metering is enabled.
+    /// Fuel costs for fuel metering.
+    /// 
+    /// `None` if fuel metering is disabled.
     fuel_costs: Option<FuelCosts>,
     /// The reusable data structures of the [`FuncTranslator`].
     alloc: FuncTranslatorAllocations,
