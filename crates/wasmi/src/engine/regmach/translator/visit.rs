@@ -97,9 +97,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_unreachable(&mut self) -> Self::Output {
         bail_unreachable!(self);
-        self.alloc
-            .instr_encoder
-            .push_instr(Instruction::Trap(TrapCode::UnreachableCodeReached))?;
+        self.push_base_instr(Instruction::Trap(TrapCode::UnreachableCodeReached))?;
         self.reachable = false;
         Ok(())
     }
@@ -301,9 +299,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     .try_resolve_label(frame.end_label())?;
                 // We are jumping to the end of the `if` so technically we need to bump branches.
                 frame.bump_branches();
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::branch(end_offset))?;
+                self.push_base_instr(Instruction::branch(end_offset))?;
             }
             self.reachable = true;
             self.alloc.instr_encoder.pin_label(else_label);
@@ -371,9 +367,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 let branch_params = frame.branch_params(self.res.engine());
                 self.translate_copy_branch_params(branch_params)?;
                 let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::branch(branch_offset))?;
+                self.push_base_instr(Instruction::branch(branch_offset))?;
                 self.reachable = false;
                 Ok(())
             }
@@ -455,9 +449,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                         )?;
                         let branch_offset =
                             self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
-                        self.alloc
-                            .instr_encoder
-                            .push_instr(Instruction::branch(branch_offset))?;
+                        self.push_base_instr(Instruction::branch(branch_offset))?;
                         self.alloc.instr_encoder.pin_label(skip_label);
                         Ok(())
                     }
@@ -532,9 +524,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             // the default branch target and encode the `br_table` with a series of
             // simple direct branches without any further copy instructions.
             self.translate_copy_branch_params(default_branch_params)?;
-            self.alloc
-                .instr_encoder
-                .push_instr(Instruction::branch_table(index, targets.len() + 1))?;
+            self.push_base_instr(Instruction::branch_table(index, targets.len() + 1))?;
             let return_instr = match default_branch_params.len() {
                 0 => Instruction::Return,
                 1 => Instruction::return_reg(default_branch_params.span().head()),
@@ -566,9 +556,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         //
         // Since `br_table` target depths are often shared we use a btree-set to
         // share codegen for `br_table` arms that have the same branch target.
-        self.alloc
-            .instr_encoder
-            .push_instr(Instruction::branch_table(index, targets.len() + 1))?;
+        self.push_base_instr(Instruction::branch_table(index, targets.len() + 1))?;
         let mut shared_targets = <BTreeMap<u32, LabelRef>>::new();
         for target in self.alloc.br_table_targets.iter().copied() {
             let shared_label = *shared_targets
@@ -598,6 +586,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     )?;
                     let branch_dst = frame.branch_destination();
                     let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
+                    // Note: No need to bump fuel consumption for each branch table target
+                    //       since only one of the branch targets is going to be executed.
                     self.alloc
                         .instr_encoder
                         .push_instr(Instruction::branch(branch_offset))?;
@@ -827,9 +817,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         //       global variable and thus cannot be optimized away.
         let global_idx = bytecode::GlobalIdx::from(global_index);
         let result = self.alloc.stack.push_dynamic()?;
-        self.alloc
-            .instr_encoder
-            .push_instr(Instruction::global_get(result, global_idx))?;
+        self.push_fueled_instr(
+            Instruction::global_get(result, global_idx),
+            FuelCosts::entity,
+        )?;
         Ok(())
     }
 
@@ -838,9 +829,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let global = bytecode::GlobalIdx::from(global_index);
         match self.alloc.stack.pop() {
             TypedProvider::Register(input) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::global_set(global, input))?;
+                self.push_fueled_instr(Instruction::global_set(global, input), FuelCosts::entity)?;
                 Ok(())
             }
             TypedProvider::Const(input) => {
@@ -850,26 +839,26 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 match global_type.content() {
                     ValueType::I32 => {
                         if let Some(value) = Const16::from_i32(i32::from(input)) {
-                            self.alloc
-                                .instr_encoder
-                                .push_instr(Instruction::global_set_i32imm16(global, value))?;
+                            self.push_fueled_instr(
+                                Instruction::global_set_i32imm16(global, value),
+                                FuelCosts::entity,
+                            )?;
                             return Ok(());
                         }
                     }
                     ValueType::I64 => {
                         if let Some(value) = Const16::from_i64(i64::from(input)) {
-                            self.alloc
-                                .instr_encoder
-                                .push_instr(Instruction::global_set_i64imm16(global, value))?;
+                            self.push_fueled_instr(
+                                Instruction::global_set_i64imm16(global, value),
+                                FuelCosts::entity,
+                            )?;
                             return Ok(());
                         }
                     }
-                    _ => (),
+                    _ => {}
                 };
                 let cref = self.alloc.stack.alloc_const(input)?;
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::global_set(global, cref))?;
+                self.push_fueled_instr(Instruction::global_set(global, cref), FuelCosts::entity)?;
                 Ok(())
             }
         }
@@ -1103,9 +1092,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         );
         bail_unreachable!(self);
         let result = self.alloc.stack.push_dynamic()?;
-        self.alloc
-            .instr_encoder
-            .push_instr(Instruction::memory_size(result))?;
+        self.push_fueled_instr(Instruction::memory_size(result), FuelCosts::entity)?;
         Ok(())
     }
 
@@ -1126,7 +1113,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             }
             Provider::Const(delta) => Instruction::memory_grow_by(result, delta),
         };
-        self.alloc.instr_encoder.push_instr(instr)?;
+        self.push_fueled_instr(instr, FuelCosts::entity)?;
         Ok(())
     }
 
@@ -1175,9 +1162,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_ref_func(&mut self, function_index: u32) -> Self::Output {
         bail_unreachable!(self);
         let result = self.alloc.stack.push_dynamic()?;
-        self.alloc
-            .instr_encoder
-            .push_instr(Instruction::ref_func(result, function_index))?;
+        self.push_fueled_instr(
+            Instruction::ref_func(result, function_index),
+            FuelCosts::entity,
+        )?;
         Ok(())
     }
 
@@ -3219,7 +3207,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 Instruction::memory_init_from_to_exact(dst, src, len)
             }
         };
-        self.alloc.instr_encoder.push_instr(instr)?;
+        self.push_fueled_instr(instr, FuelCosts::entity)?;
         self.alloc
             .instr_encoder
             .append_instr(Instruction::data_idx(data_index))?;
@@ -3228,9 +3216,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_data_drop(&mut self, data_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.alloc
-            .instr_encoder
-            .push_instr(Instruction::DataDrop(data_index.into()))?;
+        self.push_fueled_instr(Instruction::DataDrop(data_index.into()), FuelCosts::entity)?;
         Ok(())
     }
 
@@ -3266,7 +3252,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 Instruction::memory_copy_from_to_exact(dst, src, len)
             }
         };
-        self.alloc.instr_encoder.push_instr(instr)?;
+        self.push_fueled_instr(instr, FuelCosts::entity)?;
         Ok(())
     }
 
@@ -3302,7 +3288,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 Instruction::memory_fill_at_imm_exact(dst, value, len)
             }
         };
-        self.alloc.instr_encoder.push_instr(instr)?;
+        self.push_fueled_instr(instr, FuelCosts::entity)?;
         Ok(())
     }
 
@@ -3338,7 +3324,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 Instruction::table_init_from_to_exact(dst, src, len)
             }
         };
-        self.alloc.instr_encoder.push_instr(instr)?;
+        self.push_fueled_instr(instr, FuelCosts::entity)?;
         self.alloc
             .instr_encoder
             .append_instr(Instruction::table_idx(table))?;
@@ -3350,9 +3336,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_elem_drop(&mut self, elem_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.alloc
-            .instr_encoder
-            .push_instr(Instruction::ElemDrop(elem_index.into()))?;
+        self.push_fueled_instr(Instruction::ElemDrop(elem_index.into()), FuelCosts::entity)?;
         Ok(())
     }
 
@@ -3388,7 +3372,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 Instruction::table_copy_from_to_exact(dst, src, len)
             }
         };
-        self.alloc.instr_encoder.push_instr(instr)?;
+        self.push_fueled_instr(instr, FuelCosts::entity)?;
         self.alloc
             .instr_encoder
             .append_instr(Instruction::table_idx(dst_table))?;
@@ -3421,7 +3405,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 Instruction::table_fill_at_exact(dst, len, value)
             }
         };
-        self.alloc.instr_encoder.push_instr(instr)?;
+        self.push_fueled_instr(instr, FuelCosts::entity)?;
         self.alloc
             .instr_encoder
             .append_instr(Instruction::table_idx(table))?;
@@ -3434,14 +3418,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let result = self.alloc.stack.push_dynamic()?;
         match index {
             TypedProvider::Register(index) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_get(result, index))?;
+                self.push_fueled_instr(Instruction::table_get(result, index), FuelCosts::entity)?;
             }
             TypedProvider::Const(index) => {
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_get_imm(result, u32::from(index)))?;
+                self.push_fueled_instr(
+                    Instruction::table_get_imm(result, u32::from(index)),
+                    FuelCosts::entity,
+                )?;
             }
         }
         self.alloc
@@ -3461,7 +3444,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             TypedProvider::Register(index) => Instruction::table_set(index, value),
             TypedProvider::Const(index) => Instruction::table_set_at(u32::from(index), value),
         };
-        self.alloc.instr_encoder.push_instr(instr)?;
+        self.push_fueled_instr(instr, FuelCosts::entity)?;
         self.alloc
             .instr_encoder
             .append_instr(Instruction::table_idx(table))?;
@@ -3479,9 +3462,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 // operation a `table.grow` with `delta` of 0 can be translated
                 // as `table.size` instruction instead.
                 let result = self.alloc.stack.push_dynamic()?;
-                self.alloc
-                    .instr_encoder
-                    .push_instr(Instruction::table_size(result, table))?;
+                self.push_fueled_instr(Instruction::table_size(result, table), FuelCosts::entity)?;
                 return Ok(());
             }
         }
@@ -3495,7 +3476,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             Provider::Register(delta) => Instruction::table_grow(result, delta, value),
             Provider::Const(delta) => Instruction::table_grow_imm(result, delta, value),
         };
-        self.alloc.instr_encoder.push_instr(instr)?;
+        self.push_fueled_instr(instr, FuelCosts::entity)?;
         self.alloc
             .instr_encoder
             .append_instr(Instruction::table_idx(table))?;
@@ -3505,9 +3486,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_table_size(&mut self, table: u32) -> Self::Output {
         bail_unreachable!(self);
         let result = self.alloc.stack.push_dynamic()?;
-        self.alloc
-            .instr_encoder
-            .push_instr(Instruction::table_size(result, table))?;
+        self.push_fueled_instr(Instruction::table_size(result, table), FuelCosts::entity)?;
         Ok(())
     }
 }

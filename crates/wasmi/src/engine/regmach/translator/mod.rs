@@ -329,6 +329,28 @@ impl<'parser> FuncTranslator<'parser> {
         Ok(())
     }
 
+    /// Utility function for pushing a new [`Instruction`] with fuel costs.
+    ///
+    /// # Note
+    ///
+    /// Fuel metering is only encoded or adjusted if it is enabled.
+    fn push_fueled_instr<F>(&mut self, instr: Instruction, f: F) -> Result<Instr, TranslationError>
+    where
+        F: FnOnce(&FuelCosts) -> u64,
+    {
+        self.bump_fuel_consumption(f)?;
+        self.alloc.instr_encoder.push_instr(instr)
+    }
+
+    /// Utility function for pushing a new [`Instruction`] with basic fuel costs.
+    ///
+    /// # Note
+    ///
+    /// Fuel metering is only encoded or adjusted if it is enabled.
+    fn push_base_instr(&mut self, instr: Instruction) -> Result<Instr, TranslationError> {
+        self.push_fueled_instr(instr, FuelCosts::base)
+    }
+
     /// Convenience function to copy the parameters when branching to a control frame.
     fn translate_copy_branch_params(
         &mut self,
