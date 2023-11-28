@@ -1351,9 +1351,7 @@ impl<'parser> FuncTranslator<'parser> {
         match self.alloc.stack.pop() {
             TypedProvider::Register(input) => {
                 let result = self.alloc.stack.push_dynamic()?;
-                self.alloc
-                    .instr_encoder
-                    .push_instr(make_instr(result, input))?;
+                self.push_fueled_instr(make_instr(result, input), FuelCosts::base)?;
                 Ok(())
             }
             TypedProvider::Const(input) => {
@@ -1373,9 +1371,7 @@ impl<'parser> FuncTranslator<'parser> {
         match self.alloc.stack.pop() {
             TypedProvider::Register(input) => {
                 let result = self.alloc.stack.push_dynamic()?;
-                self.alloc
-                    .instr_encoder
-                    .push_instr(make_instr(result, input))?;
+                self.push_fueled_instr(make_instr(result, input), FuelCosts::base)?;
                 Ok(())
             }
             TypedProvider::Const(input) => match consteval(input) {
