@@ -64,7 +64,7 @@ impl EngineInner {
     /// # Errors
     ///
     /// If the Wasm execution traps or runs out of resources.
-    pub fn execute_func_resumable_regmach<T, Results>(
+    pub(crate) fn execute_func_resumable_regmach<T, Results>(
         &self,
         mut ctx: StoreContextMut<T>,
         func: &Func,
@@ -114,7 +114,7 @@ impl EngineInner {
     /// # Errors
     ///
     /// If the Wasm execution traps or runs out of resources.
-    pub fn resume_func_regmach<T, Results>(
+    pub(crate) fn resume_func_regmach<T, Results>(
         &self,
         ctx: StoreContextMut<T>,
         mut invocation: ResumableInvocation,
