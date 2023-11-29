@@ -207,7 +207,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly-2023-06-15 # we must tag pinned nightly version: https://substrate.stackexchange.com/a/9069
+          toolchain: nightly
           override: true
       - name: Set up Cargo cache
         uses: actions/cache@v3
