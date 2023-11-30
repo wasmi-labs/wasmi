@@ -7,6 +7,7 @@ use specs::{
 
 use super::{etable::ETable, Tracer};
 use crate::{
+    func::FuncRef,
     isa::{DropKeep, Instruction, Keep},
     Signature,
 };
@@ -49,11 +50,9 @@ impl Tracer {
         &mut self,
         current_sp: u32,
         allocated_memory_pages: u32,
-        last_jump_eid: u32,
-        fid: u32,
+        callee_func_ref: &FuncRef,
         callee_sig: &Signature,
         // Wasm Image Function Id
-        wasm_input_function_idx: u32,
         keep_value: Option<u64>,
     ) {
         let has_return_value = callee_sig.return_type().is_some();
@@ -69,6 +68,10 @@ impl Tracer {
             self.inc_counter();
             return;
         }
+
+        let last_jump_eid = self.last_jump_eid();
+        let fid = self.lookup_function(callee_func_ref);
+        let wasm_input_function_idx = self.wasm_input_func_idx.unwrap();
 
         let mut inst = PhantomFunction::build_phantom_function_instructions(
             &callee_sig,

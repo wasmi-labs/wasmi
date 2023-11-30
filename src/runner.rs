@@ -2084,19 +2084,11 @@ impl Interpreter {
                             let sp_before = self.mask_tracer.pop().unwrap();
 
                             if self.mask_tracer.is_empty() {
-                                let last_jump_eid = tracer.borrow().last_jump_eid();
-                                let callee_fid =
-                                    tracer.borrow().lookup_function(&function_context.function);
-                                let wasm_input_function_idx =
-                                    tracer.borrow().wasm_input_func_idx.unwrap();
-
                                 tracer.borrow_mut().fill_trace(
                                     sp_before,
                                     current_memory as u32,
-                                    last_jump_eid,
-                                    callee_fid,
+                                    &function_context.function,
                                     function_context.function.signature(),
-                                    wasm_input_function_idx,
                                     if let isa::Keep::Single(t) = drop_keep.keep {
                                         Some(from_value_internal_to_u64_with_typ(
                                             t.into(),
