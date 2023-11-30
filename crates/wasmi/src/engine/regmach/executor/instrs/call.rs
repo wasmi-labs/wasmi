@@ -39,6 +39,7 @@ pub enum CallOutcome {
     Call {
         results: RegisterSpan,
         host_func: Func,
+        call_kind: CallKind,
     },
 }
 
@@ -341,13 +342,19 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 let offset = self.value_stack.extend_zeros(max_inout);
                 let offset_sp = unsafe { self.value_stack.stack_ptr_at(offset) };
                 if matches!(params, CallParams::Some) {
-                    self.ip = self.copy_call_params(offset_sp);
+                    let new_ip = self.copy_call_params(offset_sp);
+                    if matches!(call_kind, CallKind::Nested) {
+                        self.ip = new_ip;
+                    }
                 }
-                self.update_instr_ptr_at(1);
+                if matches!(call_kind, CallKind::Nested) {
+                    self.update_instr_ptr_at(1);
+                }
                 self.cache.reset();
                 Ok(CallOutcome::Call {
                     results,
                     host_func: *func,
+                    call_kind,
                 })
             }
         }

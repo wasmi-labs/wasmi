@@ -1,4 +1,4 @@
-use self::instrs::{execute_instrs, WasmOutcome};
+use self::instrs::{execute_instrs, WasmOutcome, CallKind};
 pub use super::Stack;
 use super::{stack::CallFrame, TaggedTrap};
 use crate::{
@@ -175,6 +175,7 @@ impl<'engine> EngineExecutor<'engine> {
                 WasmOutcome::Call {
                     results,
                     ref host_func,
+                    call_kind,
                 } => {
                     let instance = *self
                         .stack
@@ -182,7 +183,7 @@ impl<'engine> EngineExecutor<'engine> {
                         .peek()
                         .expect("caller must be on the stack")
                         .instance();
-                    self.execute_host_func(&mut ctx, results, host_func, &instance)?;
+                    self.execute_host_func(&mut ctx, results, host_func, &instance, call_kind)?;
                 }
             }
         }
@@ -194,6 +195,7 @@ impl<'engine> EngineExecutor<'engine> {
         results: RegisterSpan,
         func: &Func,
         instance: &Instance,
+        call_kind: CallKind,
     ) -> Result<(), TaggedTrap> {
         let func_entity = match ctx.as_context().store.inner.resolve_func(func) {
             FuncEntity::Wasm(wasm_func) => {
@@ -206,6 +208,9 @@ impl<'engine> EngineExecutor<'engine> {
             func_entity,
             HostFuncCaller::wasm(results, instance),
         );
+        if matches!(call_kind, CallKind::Tail) {
+            self.stack.calls.pop();
+        }
         if self.stack.calls.peek().is_some() {
             // Case: There is a frame on the call stack.
             //
