@@ -321,8 +321,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Ok(CallOutcome::Continue)
             }
             FuncEntity::Host(host_func) => {
-                // Note: host function calls cannot be implemented as tail calls.
-                //       The Wasm spec is not mandating tail behavior for host calls.
                 let (input_types, output_types) = self
                     .func_types
                     .resolve_func_type(host_func.ty_dedup())
