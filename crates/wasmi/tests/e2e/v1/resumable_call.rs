@@ -3,12 +3,12 @@
 use core::slice;
 
 use wasmi::{
+    Caller,
     Config,
     Engine,
     Error,
     Extern,
     Func,
-    FuncType,
     Linker,
     Module,
     ResumableCall,
@@ -21,25 +21,37 @@ use wasmi::{
 };
 use wasmi_core::{Trap, TrapCode, ValueType};
 
-fn test_setup() -> (Store<()>, Linker<()>) {
+fn test_setup(remaining: u32) -> (Store<TestData>, Linker<TestData>) {
     let mut config = Config::default();
     config.wasm_tail_call(true);
     let engine = Engine::new(&config);
-    let store = Store::new(&engine, ());
-    let linker = <Linker<()>>::new(&engine);
+    let store = Store::new(
+        &engine,
+        TestData {
+            _remaining: remaining,
+        },
+    );
+    let linker = <Linker<TestData>>::new(&engine);
     (store, linker)
 }
 
-fn resumable_call_smoldot_common(wasm: &str) -> (Store<()>, TypedFunc<(), i32>) {
-    let (mut store, mut linker) = test_setup();
+#[derive(Debug)]
+pub struct TestData {
+    /// How many host calls must be made before returning a non error value.
+    _remaining: u32,
+}
+
+fn resumable_call_smoldot_common(wasm: &str) -> (Store<TestData>, TypedFunc<(), i32>) {
+    let (mut store, mut linker) = test_setup(0);
     // The important part about this test is that this
     // host function has more results than parameters.
-    let host_fn = Func::new(
-        &mut store,
-        FuncType::new([], [ValueType::I32]),
-        |_caller, _inputs, _output| Err(Trap::i32_exit(100)),
-    );
-    linker.define("env", "host_fn", host_fn).unwrap();
+    linker
+        .func_wrap(
+            "env",
+            "host_fn",
+            |mut _caller: Caller<'_, TestData>| -> Result<i32, Trap> { Err(Trap::i32_exit(100)) },
+        )
+        .unwrap();
     // The Wasm defines a single function that calls the
     // host function, returns 10 if the output is 0 and
     // returns 20 otherwise.
@@ -161,7 +173,7 @@ fn resumable_call_smoldot_02() {
 
 #[test]
 fn resumable_call_host() {
-    let (mut store, _linker) = test_setup();
+    let (mut store, _linker) = test_setup(0);
     let host_fn = Func::wrap(&mut store, || -> Result<(), Trap> {
         Err(Trap::i32_exit(100))
     });
@@ -188,7 +200,7 @@ fn resumable_call_host() {
 
 #[test]
 fn resumable_call() {
-    let (mut store, mut linker) = test_setup();
+    let (mut store, mut linker) = test_setup(0);
     let host_fn = Func::wrap(&mut store, |input: i32| -> Result<i32, Trap> {
         match input {
             1 => Err(Trap::i32_exit(10)),
@@ -241,7 +253,7 @@ trait AssertResumable {
 
     fn assert_resumable(
         self,
-        store: &Store<()>,
+        store: &Store<TestData>,
         exit_status: i32,
         host_results: &[ValueType],
     ) -> Self::Invocation;
@@ -254,7 +266,7 @@ impl AssertResumable for ResumableCall {
 
     fn assert_resumable(
         self,
-        store: &Store<()>,
+        store: &Store<TestData>,
         exit_status: i32,
         host_results: &[ValueType],
     ) -> Self::Invocation {
@@ -276,7 +288,7 @@ impl AssertResumable for ResumableCall {
     }
 }
 
-fn run_test(wasm_fn: Func, mut store: &mut Store<()>, wasm_trap: bool) {
+fn run_test(wasm_fn: Func, mut store: &mut Store<TestData>, wasm_trap: bool) {
     let mut results = Value::I32(0);
     let invocation = wasm_fn
         .call_resumable(
@@ -313,7 +325,7 @@ impl<Results> AssertResumable for TypedResumableCall<Results> {
 
     fn assert_resumable(
         self,
-        store: &Store<()>,
+        store: &Store<TestData>,
         exit_status: i32,
         host_results: &[ValueType],
     ) -> Self::Invocation {
@@ -335,7 +347,7 @@ impl<Results> AssertResumable for TypedResumableCall<Results> {
     }
 }
 
-fn run_test_typed(wasm_fn: Func, mut store: &mut Store<()>, wasm_trap: bool) {
+fn run_test_typed(wasm_fn: Func, mut store: &mut Store<TestData>, wasm_trap: bool) {
     let invocation = wasm_fn
         .typed::<i32, i32>(&store)
         .unwrap()
