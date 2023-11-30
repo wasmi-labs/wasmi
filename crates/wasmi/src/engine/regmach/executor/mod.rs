@@ -1,4 +1,4 @@
-use self::instrs::{execute_instrs, WasmOutcome, CallKind};
+use self::instrs::{execute_instrs, CallKind, WasmOutcome};
 pub use super::Stack;
 use super::{stack::CallFrame, TaggedTrap};
 use crate::{
