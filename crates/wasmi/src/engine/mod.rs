@@ -409,6 +409,11 @@ impl Engine {
     pub(crate) fn recycle_stack(&self, stack: Stack) {
         self.inner.recycle_stack(stack)
     }
+
+    /// Recycles the given [`Stack`] for reuse in the [`Engine`].
+    pub(crate) fn recycle_stack_2(&self, stack: Stack2) {
+        self.inner.recycle_stack_2(stack)
+    }
 }
 
 /// The internal state of the `wasmi` [`Engine`].
@@ -684,7 +689,42 @@ impl EngineInner {
         results
     }
 
+    /// Executes the given [`Func`] resumably with the given `params` and returns the `results`.
+    ///
+    /// Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
+    ///
+    /// # Errors
+    ///
+    /// If the Wasm execution traps or runs out of resources.
     fn execute_func_resumable<T, Results>(
+        &self,
+        ctx: StoreContextMut<T>,
+        func: &Func,
+        params: impl CallParams,
+        results: Results,
+    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
+    where
+        Results: CallResults,
+    {
+        match self.config().engine_backend() {
+            EngineBackend::StackMachine => {
+                self.execute_func_resumable_stackmach(ctx, func, params, results)
+            }
+            EngineBackend::RegisterMachine => {
+                self.execute_func_resumable_regmach(ctx, func, params, results)
+            }
+        }
+    }
+
+    /// Executes the given [`Func`] resumably with the given `params` and returns the `results`.
+    ///
+    /// - Uses the `wasmi` stack-machine based engine backend.
+    /// - Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
+    ///
+    /// # Errors
+    ///
+    /// If the Wasm execution traps or runs out of resources.
+    fn execute_func_resumable_stackmach<T, Results>(
         &self,
         mut ctx: StoreContextMut<T>,
         func: &Func,
@@ -719,12 +759,48 @@ impl EngineInner {
                 *func,
                 host_func,
                 host_trap,
+                None,
                 stack,
             ))),
         }
     }
 
+    /// Resumes the given [`Func`] with the given `params` and returns the `results`.
+    ///
+    /// - Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
+    ///
+    /// # Errors
+    ///
+    /// If the Wasm execution traps or runs out of resources.
     fn resume_func<T, Results>(
+        &self,
+        ctx: StoreContextMut<T>,
+        invocation: ResumableInvocation,
+        params: impl CallParams,
+        results: Results,
+    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
+    where
+        Results: CallResults,
+    {
+        match self.config().engine_backend() {
+            EngineBackend::StackMachine => {
+                self.resume_func_stackmach(ctx, invocation, params, results)
+            }
+            EngineBackend::RegisterMachine => {
+                self.resume_func_regmach(ctx, invocation, params, results)
+            }
+        }
+    }
+
+    /// Resumes the given [`Func`] with the given `params` and returns the `results`.
+    ///
+    /// - Uses the `wasmi` stack-machine based engine backend.
+    /// - Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
+    ///
+    /// # Errors
+    ///
+    /// If the Wasm execution traps or runs out of resources.
+    fn resume_func_stackmach<T, Results>(
         &self,
         ctx: StoreContextMut<T>,
         mut invocation: ResumableInvocation,
@@ -736,29 +812,36 @@ impl EngineInner {
     {
         let res = self.res.read();
         let host_func = invocation.host_func();
-        let results = EngineExecutor::new(&res, &mut invocation.stack)
-            .resume_func(ctx, host_func, params, results);
+        let mut stack = invocation.take_stack().into_stackmach();
+        let results =
+            EngineExecutor::new(&res, &mut stack).resume_func(ctx, host_func, params, results);
         match results {
             Ok(results) => {
-                self.stacks.lock().recycle(invocation.take_stack());
+                self.stacks.lock().recycle(stack);
                 Ok(ResumableCallBase::Finished(results))
             }
             Err(TaggedTrap::Wasm(trap)) => {
-                self.stacks.lock().recycle(invocation.take_stack());
+                self.stacks.lock().recycle(stack);
                 Err(trap)
             }
             Err(TaggedTrap::Host {
                 host_func,
                 host_trap,
             }) => {
-                invocation.update(host_func, host_trap);
+                invocation.update(stack, host_func, host_trap);
                 Ok(ResumableCallBase::Resumable(invocation))
             }
         }
     }
 
+    /// Recycles the given [`Stack`] for the stack-machine `wasmi` engine backend.
     fn recycle_stack(&self, stack: Stack) {
         self.stacks.lock().recycle(stack);
+    }
+
+    /// Recycles the given [`Stack`] for the register-machine `wasmi` engine backend.
+    fn recycle_stack_2(&self, stack: Stack2) {
+        self.stacks.lock().recycle_2(stack)
     }
 }
 

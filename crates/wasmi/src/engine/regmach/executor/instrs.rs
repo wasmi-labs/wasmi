@@ -1,3 +1,4 @@
+pub use self::call::CallKind;
 use self::{call::CallOutcome, return_::ReturnOutcome};
 use crate::{
     core::{TrapCode, UntypedValue},
@@ -45,8 +46,17 @@ mod unary;
 
 macro_rules! forward_call {
     ($expr:expr) => {{
-        if let CallOutcome::Call { results, host_func } = $expr? {
-            return Ok(WasmOutcome::Call { results, host_func });
+        if let CallOutcome::Call {
+            results,
+            host_func,
+            call_kind,
+        } = $expr?
+        {
+            return Ok(WasmOutcome::Call {
+                results,
+                host_func,
+                call_kind,
+            });
         }
     }};
 }
@@ -73,6 +83,7 @@ pub enum WasmOutcome {
     Call {
         results: RegisterSpan,
         host_func: Func,
+        call_kind: CallKind,
     },
 }
 
