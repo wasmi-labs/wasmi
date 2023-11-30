@@ -17,15 +17,12 @@ mod translator;
 mod trap;
 
 #[cfg(test)]
-mod tests;
-
-#[cfg(test)]
 use self::regmach::bytecode::RegisterSpan;
 
 pub use self::{
     bytecode::DropKeep,
     code_map::CompiledFunc,
-    config::{Config, EngineBackend, FuelConsumptionMode},
+    config::{Config, FuelConsumptionMode},
     func_builder::{Instr, RelativeDepth, TranslationError},
     resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
     stack::StackLimits,
@@ -54,7 +51,10 @@ pub(crate) use self::{
     config::FuelCosts,
     func_args::{FuncFinished, FuncParams, FuncResults},
     func_types::DedupFuncType,
-    translator::ChosenFuncTranslatorAllocations,
+    regmach::{
+        FuncTranslator as FuncTranslator2,
+        FuncTranslatorAllocations as FuncTranslatorAllocations2,
+    },
 };
 use crate::{
     core::{Trap, TrapCode},
@@ -656,10 +656,7 @@ impl EngineInner {
     where
         Results: CallResults,
     {
-        match self.config().engine_backend() {
-            EngineBackend::StackMachine => self.execute_func_stackmach(ctx, func, params, results),
-            EngineBackend::RegisterMachine => self.execute_func_regmach(ctx, func, params, results),
-        }
+        self.execute_func_regmach(ctx, func, params, results)
     }
 
     /// Executes the given [`Func`] with the given `params` and returns the `results`.
@@ -706,14 +703,7 @@ impl EngineInner {
     where
         Results: CallResults,
     {
-        match self.config().engine_backend() {
-            EngineBackend::StackMachine => {
-                self.execute_func_resumable_stackmach(ctx, func, params, results)
-            }
-            EngineBackend::RegisterMachine => {
-                self.execute_func_resumable_regmach(ctx, func, params, results)
-            }
-        }
+        self.execute_func_resumable_regmach(ctx, func, params, results)
     }
 
     /// Executes the given [`Func`] resumably with the given `params` and returns the `results`.
@@ -782,14 +772,7 @@ impl EngineInner {
     where
         Results: CallResults,
     {
-        match self.config().engine_backend() {
-            EngineBackend::StackMachine => {
-                self.resume_func_stackmach(ctx, invocation, params, results)
-            }
-            EngineBackend::RegisterMachine => {
-                self.resume_func_regmach(ctx, invocation, params, results)
-            }
-        }
+        self.resume_func_regmach(ctx, invocation, params, results)
     }
 
     /// Resumes the given [`Func`] with the given `params` and returns the `results`.

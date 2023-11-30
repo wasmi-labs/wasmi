@@ -1,11 +1,10 @@
 //! This submodule tests the unusual use case of calling host functions through the engine from the host side.
 
-use crate::{core::Trap, Caller, Config, Engine, EngineBackend, Func, Store};
+use crate::{core::Trap, Caller, Config, Engine, Func, Store};
 
 /// Setup a new `Store` for testing with initial value of 5.
 fn setup_store() -> Store<i32> {
-    let mut config = Config::default();
-    config.set_engine_backend(EngineBackend::RegisterMachine);
+    let config = Config::default();
     let engine = Engine::new(&config);
     Store::new(&engine, 5_i32)
 }

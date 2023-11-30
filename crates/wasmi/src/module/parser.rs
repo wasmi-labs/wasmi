@@ -13,7 +13,7 @@ use super::{
     Read,
 };
 use crate::{
-    engine::{ChosenFuncTranslatorAllocations, CompiledFunc},
+    engine::{CompiledFunc, FuncTranslatorAllocations2 as FuncTranslatorAllocations},
     Engine,
     FuncType,
     MemoryType,
@@ -69,14 +69,14 @@ pub struct ModuleParser<'engine> {
 
 /// Reusable heap allocations for function validation and translation.
 pub struct ReusableAllocations {
-    pub translation: ChosenFuncTranslatorAllocations,
+    pub translation: FuncTranslatorAllocations,
     pub validation: FuncValidatorAllocations,
 }
 
 impl ReusableAllocations {
     /// Creates new [`ReusableAllocations`] for the given [`Engine`].
-    pub fn new(engine: &Engine) -> Self {
-        let translation = ChosenFuncTranslatorAllocations::default(engine);
+    pub fn new() -> Self {
+        let translation = FuncTranslatorAllocations::default();
         let validation = FuncValidatorAllocations::default();
         Self {
             translation,
@@ -96,7 +96,7 @@ impl<'engine> ModuleParser<'engine> {
             validator,
             parser,
             compiled_funcs: 0,
-            allocations: ReusableAllocations::new(engine),
+            allocations: ReusableAllocations::new(),
         }
     }
 
@@ -513,7 +513,7 @@ impl<'engine> ModuleParser<'engine> {
         let (func, compiled_func, compiled_func_2) = self.next_func();
         let validator = self.validator.code_section_entry(&func_body)?;
         let module_resources = ModuleResources::new(&self.builder);
-        let dummy_allocations = ReusableAllocations::new(self.builder.engine());
+        let dummy_allocations = ReusableAllocations::new();
         let allocations = replace(&mut self.allocations, dummy_allocations);
         let allocations = translate(
             func,

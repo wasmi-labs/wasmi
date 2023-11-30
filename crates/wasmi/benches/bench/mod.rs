@@ -1,5 +1,5 @@
 use std::{fs::File, io::Read as _};
-use wasmi::{Config, EngineBackend, StackLimits};
+use wasmi::{Config, StackLimits};
 
 /// Returns the Wasm binary at the given `file_name` as `Vec<u8>`.
 ///
@@ -25,7 +25,6 @@ pub fn bench_config() -> Config {
     let mut config = Config::default();
     config.wasm_tail_call(true);
     config.set_stack_limits(StackLimits::new(1024, 1024 * 1024, 64 * 1024).unwrap());
-    config.set_engine_backend(EngineBackend::RegisterMachine);
     config
 }
 
