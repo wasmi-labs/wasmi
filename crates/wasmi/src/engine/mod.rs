@@ -33,9 +33,9 @@ use self::{
     regmach::{
         bytecode::Instruction as Instruction2,
         code_map::CompiledFuncEntity,
-        CodeMap as CodeMap2,
+        CodeMap,
         FuncLocalConstsIter,
-        Stack as Stack2,
+        Stack,
     },
     resumable::ResumableCallBase,
 };
@@ -325,8 +325,8 @@ impl Engine {
     }
 
     /// Recycles the given [`Stack`] for reuse in the [`Engine`].
-    pub(crate) fn recycle_stack_2(&self, stack: Stack2) {
-        self.inner.recycle_stack_2(stack)
+    pub(crate) fn recycle_stack(&self, stack: Stack) {
+        self.inner.recycle_stack(stack)
     }
 }
 
@@ -355,7 +355,7 @@ pub struct EngineStacks {
     /// # Note
     ///
     /// These are the stack used by the register-machine `wasmi` implementation.
-    stacks2: Vec<Stack2>,
+    stacks2: Vec<Stack>,
     /// Stack limits for newly constructed engine stacks.
     limits: StackLimits,
     /// How many stacks should be kept for reuse at most.
@@ -373,15 +373,15 @@ impl EngineStacks {
     }
 
     /// Reuse or create a new [`Stack`] if none was available.
-    pub fn reuse_or_new_2(&mut self) -> Stack2 {
+    pub fn reuse_or_new_2(&mut self) -> Stack {
         match self.stacks2.pop() {
             Some(stack) => stack,
-            None => Stack2::new(self.limits),
+            None => Stack::new(self.limits),
         }
     }
 
     /// Disose and recycle the `stack`.
-    pub fn recycle_2(&mut self, stack: Stack2) {
+    pub fn recycle(&mut self, stack: Stack) {
         if !stack.is_empty() && self.stacks2.len() < self.keep {
             self.stacks2.push(stack);
         }
@@ -550,8 +550,8 @@ impl EngineInner {
     }
 
     /// Recycles the given [`Stack`] for the register-machine `wasmi` engine backend.
-    fn recycle_stack_2(&self, stack: Stack2) {
-        self.stacks.lock().recycle_2(stack)
+    fn recycle_stack(&self, stack: Stack) {
+        self.stacks.lock().recycle(stack)
     }
 }
 
@@ -561,7 +561,7 @@ impl EngineInner {
 #[derive(Debug)]
 pub struct EngineResources {
     /// Stores information about all compiled functions.
-    code_map_2: CodeMap2,
+    code_map_2: CodeMap,
     /// Deduplicated function types.
     ///
     /// # Note
@@ -576,7 +576,7 @@ impl EngineResources {
     fn new() -> Self {
         let engine_idx = EngineIdx::new();
         Self {
-            code_map_2: CodeMap2::default(),
+            code_map_2: CodeMap::default(),
             func_types: FuncTypeRegistry::new(engine_idx),
         }
     }

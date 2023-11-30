@@ -33,7 +33,7 @@ use core::mem;
 use wasmi_core::{UntypedValue, ValueType, F32};
 
 /// A reference to an instruction of the partially
-/// constructed function body of the [`InstructionsBuilder`].
+/// constructed function body of the [`InstrEncoder`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Instr(u32);
 

@@ -58,7 +58,7 @@ impl EngineInner {
         let results = EngineExecutor::new(&res, &mut stack)
             .execute_root_func(ctx, func, params, results)
             .map_err(TaggedTrap::into_trap);
-        self.stacks.lock().recycle_2(stack);
+        self.stacks.lock().recycle(stack);
         results
     }
 
@@ -90,11 +90,11 @@ impl EngineInner {
         );
         match results {
             Ok(results) => {
-                self.stacks.lock().recycle_2(stack);
+                self.stacks.lock().recycle(stack);
                 Ok(ResumableCallBase::Finished(results))
             }
             Err(TaggedTrap::Wasm(trap)) => {
-                self.stacks.lock().recycle_2(stack);
+                self.stacks.lock().recycle(stack);
                 Err(trap)
             }
             Err(TaggedTrap::Host {
@@ -145,11 +145,11 @@ impl EngineInner {
         );
         match results {
             Ok(results) => {
-                self.stacks.lock().recycle_2(stack);
+                self.stacks.lock().recycle(stack);
                 Ok(ResumableCallBase::Finished(results))
             }
             Err(TaggedTrap::Wasm(trap)) => {
-                self.stacks.lock().recycle_2(stack);
+                self.stacks.lock().recycle(stack);
                 Err(trap)
             }
             Err(TaggedTrap::Host {
