@@ -89,7 +89,7 @@ pub struct ResumableInvocation {
     /// # Note
     ///
     /// This is only needed for the register-machine `wasmi` engine backend.
-    caller_results: Option<RegisterSpan>,
+    caller_results: RegisterSpan,
     /// The value and call stack in use by the [`ResumableInvocation`].
     ///
     /// # Note
@@ -109,7 +109,7 @@ impl ResumableInvocation {
         func: Func,
         host_func: Func,
         host_error: Trap,
-        caller_results: Option<RegisterSpan>,
+        caller_results: RegisterSpan,
         stack: Stack,
     ) -> Self {
         Self {
@@ -142,7 +142,7 @@ impl ResumableInvocation {
         self.stack = stack;
         self.host_func = host_func;
         self.host_error = host_error;
-        self.caller_results = Some(caller_results);
+        self.caller_results = caller_results;
     }
 }
 
@@ -180,7 +180,7 @@ impl ResumableInvocation {
     /// # Note
     ///
     /// This is `Some` only for [`ResumableInvocation`] originating from the register-machine `wasmi` engine.
-    pub(crate) fn caller_results(&self) -> Option<RegisterSpan> {
+    pub(crate) fn caller_results(&self) -> RegisterSpan {
         self.caller_results
     }
 

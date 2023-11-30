@@ -106,7 +106,7 @@ impl EngineInner {
                 *func,
                 host_func,
                 host_trap,
-                Some(caller_results),
+                caller_results,
                 stack,
             ))),
         }
@@ -132,9 +132,7 @@ impl EngineInner {
     {
         let res = self.res.read();
         let host_func = invocation.host_func();
-        let caller_results = invocation
-            .caller_results()
-            .expect("register-machine engine required caller results for call resumption");
+        let caller_results = invocation.caller_results();
         let mut stack = invocation.take_stack();
         let results = EngineExecutor::new(&res, &mut stack).resume_func(
             ctx,
