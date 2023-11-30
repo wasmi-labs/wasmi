@@ -1,4 +1,3 @@
-use crate::engine::bytecode::DropKeepError;
 use alloc::boxed::Box;
 use core::fmt::{self, Display};
 
@@ -42,14 +41,6 @@ impl From<wasmparser::BinaryReaderError> for TranslationError {
     }
 }
 
-impl From<DropKeepError> for TranslationError {
-    fn from(error: DropKeepError) -> Self {
-        Self {
-            inner: Box::new(TranslationErrorInner::DropKeep(error)),
-        }
-    }
-}
-
 impl Display for TranslationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &*self.inner {
@@ -60,7 +51,6 @@ impl Display for TranslationError {
             TranslationErrorInner::UnsupportedValueType(error) => {
                 write!(f, "encountered unsupported Wasm value type: {error:?}")
             }
-            TranslationErrorInner::DropKeep(error) => error.fmt(f),
             TranslationErrorInner::BranchTableTargetsOutOfBounds => {
                 write!(
                     f,
@@ -122,8 +112,6 @@ pub enum TranslationErrorInner {
     UnsupportedBlockType(wasmparser::BlockType),
     /// Encountered an unsupported Wasm value type.
     UnsupportedValueType(wasmparser::ValType),
-    /// An error with limitations of `DropKeep`.
-    DropKeep(DropKeepError),
     /// When using too many branch table targets.
     BranchTableTargetsOutOfBounds,
     /// Branching offset out of bounds.

@@ -1,4 +1,4 @@
-use super::{stack::StackLimits, DropKeep};
+use super::StackLimits;
 use core::{mem::size_of, num::NonZeroU64};
 use wasmi_core::UntypedValue;
 use wasmparser::WasmFeatures;
@@ -176,28 +176,6 @@ impl FuelCosts {
     /// Returns the fuel consumption of the amount of items with costs per items.
     fn costs_per(len_items: u64, items_per_fuel: NonZeroU64) -> u64 {
         len_items / items_per_fuel
-    }
-
-    /// Returns the fuel consumption for branches and returns using the given [`DropKeep`].
-    pub fn fuel_for_drop_keep(&self, drop_keep: DropKeep) -> u64 {
-        if drop_keep.drop() == 0 {
-            return 0;
-        }
-        Self::costs_per(u64::from(drop_keep.keep()), self.copies_per_fuel())
-    }
-
-    /// Returns the fuel consumption for calling a function with the amount of local variables.
-    ///
-    /// # Note
-    ///
-    /// Function parameters are also treated as local variables.
-    pub fn fuel_for_locals(&self, locals: u64) -> u64 {
-        self.fuel_for_copies(locals)
-    }
-
-    /// Returns the fuel consumption for processing the amount of table elements.
-    pub fn fuel_for_elements(&self, elements: u64) -> u64 {
-        self.fuel_for_copies(elements)
     }
 }
 

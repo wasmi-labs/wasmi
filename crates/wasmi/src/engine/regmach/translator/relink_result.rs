@@ -1,21 +1,22 @@
 use crate::{
     engine::{
-        bytecode::{FuncIdx, SignatureIdx},
         regmach::{
             bytecode::{
                 BinInstr,
                 BinInstrImm,
+                FuncIdx,
                 Instruction,
                 LoadAtInstr,
                 LoadInstr,
                 LoadOffset16Instr,
                 Register,
                 RegisterSpan,
+                SignatureIdx,
                 UnaryInstr,
             },
             code_map::CompiledFuncEntity,
+            CompiledFunc,
         },
-        CompiledFunc,
         TranslationError,
     },
     module::ModuleResources,

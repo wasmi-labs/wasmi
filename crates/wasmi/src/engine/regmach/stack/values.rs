@@ -10,7 +10,7 @@ use wasmi_core::TrapCode;
 #[cfg(doc)]
 use super::calls::CallFrame;
 #[cfg(doc)]
-use crate::engine::code_map::CompiledFunc;
+use crate::engine::CompiledFunc;
 
 pub struct ValueStack {
     /// The values on the [`ValueStack`].

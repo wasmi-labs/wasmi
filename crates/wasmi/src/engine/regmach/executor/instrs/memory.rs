@@ -3,12 +3,9 @@ use wasmi_core::Pages;
 use super::Executor;
 use crate::{
     core::TrapCode,
-    engine::{
-        bytecode::DataSegmentIdx,
-        regmach::{
-            bytecode::{Const16, Instruction, Register},
-            code_map::InstructionPtr,
-        },
+    engine::regmach::{
+        bytecode::{Const16, DataSegmentIdx, Instruction, Register},
+        code_map::InstructionPtr,
     },
     error::EntityGrowError,
     store::ResourceLimiterRef,
@@ -236,7 +233,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         len: u32,
     ) -> Result<(), TrapCode> {
         self.consume_fuel_with(
-            |costs| costs.fuel_for_elements(u64::from(len)),
+            |costs| costs.fuel_for_bytes(u64::from(len)),
             |this| {
                 let len = len as usize;
                 let src_index = src_index as usize;

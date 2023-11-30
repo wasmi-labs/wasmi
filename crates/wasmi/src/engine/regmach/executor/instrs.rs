@@ -3,7 +3,6 @@ use self::{call::CallOutcome, return_::ReturnOutcome};
 use crate::{
     core::{TrapCode, UntypedValue},
     engine::{
-        bytecode::{BlockFuel, FuncIdx},
         cache::InstanceCache,
         config::FuelCosts,
         func_types::FuncTypeRegistry,
@@ -12,7 +11,9 @@ use crate::{
                 AnyConst32,
                 BinInstr,
                 BinInstrImm16,
+                BlockFuel,
                 Const16,
+                FuncIdx,
                 Instruction,
                 Register,
                 RegisterSpan,

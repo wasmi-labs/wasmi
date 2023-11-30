@@ -24,7 +24,7 @@ use crate::{
 use wasmi_core::{Trap, TrapCode};
 
 #[cfg(doc)]
-use crate::engine::stack::StackLimits;
+use crate::engine::StackLimits;
 
 mod instrs;
 

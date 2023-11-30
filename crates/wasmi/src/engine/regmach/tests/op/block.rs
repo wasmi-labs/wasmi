@@ -1,10 +1,7 @@
 use super::*;
-use crate::engine::{
-    bytecode::BranchOffset,
-    regmach::{
-        bytecode::{BranchOffset16, RegisterSpan},
-        tests::{display_wasm::DisplayValueType, wasm_type::WasmType},
-    },
+use crate::engine::regmach::{
+    bytecode::{BranchOffset, BranchOffset16, RegisterSpan},
+    tests::{display_wasm::DisplayValueType, wasm_type::WasmType},
 };
 use std::fmt::Display;
 

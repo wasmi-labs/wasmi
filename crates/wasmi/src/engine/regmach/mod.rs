@@ -9,11 +9,17 @@ mod trap;
 mod tests;
 
 pub use self::{
-    code_map::CodeMap,
+    code_map::{CodeMap, CompiledFunc},
     stack::Stack,
-    translator::{FuncLocalConstsIter, FuncTranslator, FuncTranslatorAllocations},
+    translator::{
+        FuncLocalConstsIter,
+        FuncTranslator,
+        FuncTranslatorAllocations,
+        Instr,
+        TranslationError,
+    },
 };
-use self::{executor::EngineExecutor, trap::TaggedTrap};
+use self::{executor::EngineExecutor, translator::TranslationErrorInner, trap::TaggedTrap};
 use super::resumable::ResumableCallBase;
 use crate::{
     core::Trap,
@@ -129,7 +135,7 @@ impl EngineInner {
         let caller_results = invocation
             .caller_results()
             .expect("register-machine engine required caller results for call resumption");
-        let mut stack = invocation.take_stack().into_regmach();
+        let mut stack = invocation.take_stack();
         let results = EngineExecutor::new(&res, &mut stack).resume_func(
             ctx,
             host_func,

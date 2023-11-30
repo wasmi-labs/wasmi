@@ -1,5 +1,5 @@
 use super::CompiledFunc;
-pub use crate::engine::func_builder::TranslationError;
+pub use crate::engine::TranslationError;
 use crate::{
     engine::regmach::{FuncTranslator, FuncTranslatorAllocations},
     module::{FuncIdx, ModuleResources, ReusableAllocations},
@@ -27,7 +27,6 @@ impl<'parser> FuncBuilder<'parser> {
     /// Creates a new [`FuncBuilder`].
     pub fn new(
         func: FuncIdx,
-        compiled_func: CompiledFunc,
         compiled_func_2: CompiledFunc,
         res: ModuleResources<'parser>,
         validator: FuncValidator,

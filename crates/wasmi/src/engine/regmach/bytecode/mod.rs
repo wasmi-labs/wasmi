@@ -13,11 +13,17 @@ pub(crate) use self::{
         BinInstr,
         BinInstrImm,
         BinInstrImm16,
+        BlockFuel,
         BranchBinOpInstr,
         BranchBinOpInstrImm,
         BranchBinOpInstrImm16,
+        BranchOffset,
         BranchOffset16,
         CallIndirectParams,
+        DataSegmentIdx,
+        ElementSegmentIdx,
+        FuncIdx,
+        GlobalIdx,
         LoadAtInstr,
         LoadInstr,
         LoadOffset16Instr,
@@ -25,26 +31,15 @@ pub(crate) use self::{
         RegisterSpan,
         RegisterSpanIter,
         Sign,
+        SignatureIdx,
         StoreAtInstr,
         StoreInstr,
         StoreOffset16Instr,
+        TableIdx,
         UnaryInstr,
     },
 };
-use crate::engine::{
-    bytecode::{
-        BlockFuel,
-        BranchOffset,
-        DataSegmentIdx,
-        ElementSegmentIdx,
-        FuncIdx,
-        GlobalIdx,
-        SignatureIdx,
-        TableIdx,
-    },
-    CompiledFunc,
-    TranslationError,
-};
+use crate::engine::{regmach::CompiledFunc, TranslationError};
 use wasmi_core::TrapCode;
 
 /// A `wasmi` instruction.

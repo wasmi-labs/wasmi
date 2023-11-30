@@ -1,7 +1,7 @@
 use super::Register;
 use crate::{
     core::UntypedValue,
-    engine::{func_builder::TranslationErrorInner, TranslationError},
+    engine::{regmach::TranslationErrorInner, TranslationError},
 };
 use alloc::{
     collections::{btree_map, BTreeMap},

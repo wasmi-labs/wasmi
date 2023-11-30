@@ -1,6 +1,6 @@
 use super::{regmach::bytecode::RegisterSpan, Func};
 use crate::{
-    engine::{Stack, Stack2},
+    engine::Stack2,
     func::CallResultsTuple,
     AsContextMut,
     Engine,
@@ -99,58 +99,7 @@ pub struct ResumableInvocation {
     /// - This stack is borrowed from the engine and needs to be given
     ///   back to the engine when the [`ResumableInvocation`] goes out
     ///   of scope.
-    pub(super) stack: ResumeStack,
-}
-
-/// The stack of a [`ResumableInvocation`].
-#[derive(Debug)]
-pub enum ResumeStack {
-    /// The stack of the stack-machine `wasmi` engine backend.
-    StackMach(Stack),
-    /// The stack of the register-machine `wasmi` engine backend.
-    RegMach(Stack2),
-}
-
-impl From<Stack> for ResumeStack {
-    fn from(stack: Stack) -> Self {
-        Self::StackMach(stack)
-    }
-}
-
-impl From<Stack2> for ResumeStack {
-    fn from(stack: Stack2) -> Self {
-        Self::RegMach(stack)
-    }
-}
-
-impl ResumeStack {
-    /// Returns the stack-machine [`Stack`] if possible.
-    ///
-    /// # Panics
-    ///
-    /// If this hold a register-machine stack.
-    pub fn into_stackmach(self) -> Stack {
-        match self {
-            Self::StackMach(stack) => stack,
-            Self::RegMach(_) => {
-                panic!("found register-machine stack but expected stack-machine stack")
-            }
-        }
-    }
-
-    /// Returns the register-machine [`Stack`] if possible.
-    ///
-    /// # Panics
-    ///
-    /// If this hold a stack-machine stack.
-    pub fn into_regmach(self) -> Stack2 {
-        match self {
-            Self::RegMach(stack) => stack,
-            Self::StackMach(_) => {
-                panic!("found stack-machine stack but expected register-machine stack")
-            }
-        }
-    }
+    pub(super) stack: Stack2,
 }
 
 impl ResumableInvocation {
@@ -161,7 +110,7 @@ impl ResumableInvocation {
         host_func: Func,
         host_error: Trap,
         caller_results: Option<RegisterSpan>,
-        stack: impl Into<ResumeStack>,
+        stack: Stack2,
     ) -> Self {
         Self {
             engine,
@@ -169,28 +118,13 @@ impl ResumableInvocation {
             host_func,
             host_error,
             caller_results,
-            stack: stack.into(),
+            stack,
         }
     }
 
     /// Replaces the internal stack with an empty one that has no heap allocations.
-    pub(super) fn take_stack(&mut self) -> ResumeStack {
-        let empty_stack = match &self.stack {
-            ResumeStack::StackMach(_) => Stack::empty().into(),
-            ResumeStack::RegMach(_) => Stack2::empty().into(),
-        };
-        replace(&mut self.stack, empty_stack)
-    }
-
-    /// Updates the [`ResumableInvocation`] with the new `host_func` and a `host_error`.
-    ///
-    /// # Note
-    ///
-    /// This should only be called from the stack-machine `wasmi` engine backend.
-    pub(super) fn update(&mut self, stack: Stack, host_func: Func, host_error: Trap) {
-        self.stack = stack.into();
-        self.host_func = host_func;
-        self.host_error = host_error;
+    pub(super) fn take_stack(&mut self) -> Stack2 {
+        replace(&mut self.stack, Stack2::empty())
     }
 
     /// Updates the [`ResumableInvocation`] with the new `host_func`, `host_error` and `caller_results`.
@@ -205,7 +139,7 @@ impl ResumableInvocation {
         host_error: Trap,
         caller_results: RegisterSpan,
     ) {
-        self.stack = stack.into();
+        self.stack = stack;
         self.host_func = host_func;
         self.host_error = host_error;
         self.caller_results = Some(caller_results);
@@ -214,10 +148,8 @@ impl ResumableInvocation {
 
 impl Drop for ResumableInvocation {
     fn drop(&mut self) {
-        match self.take_stack() {
-            ResumeStack::StackMach(stack) => self.engine.recycle_stack(stack),
-            ResumeStack::RegMach(stack) => self.engine.recycle_stack_2(stack),
-        }
+        let stack = self.take_stack();
+        self.engine.recycle_stack_2(stack);
     }
 }
 

@@ -23,7 +23,7 @@ mod block_type;
 /// If the function body fails to validate.
 pub fn translate<'parser>(
     func: FuncIdx,
-    (compiled_func, compiled_func_2): (CompiledFunc, CompiledFunc),
+    compiled_func_2: CompiledFunc,
     func_body: FunctionBody<'parser>,
     validator: FuncValidator<ValidatorResources>,
     res: ModuleResources<'parser>,
@@ -31,7 +31,7 @@ pub fn translate<'parser>(
 ) -> Result<ReusableAllocations, ModuleError> {
     FunctionTranslator::new(
         func,
-        (compiled_func, compiled_func_2),
+        compiled_func_2,
         func_body,
         validator,
         res,
@@ -52,20 +52,13 @@ impl<'parser> FunctionTranslator<'parser> {
     /// Creates a new Wasm to `wasmi` bytecode function translator.
     fn new(
         func: FuncIdx,
-        (compiled_func, compiled_func_2): (CompiledFunc, CompiledFunc),
+        compiled_func_2: CompiledFunc,
         func_body: FunctionBody<'parser>,
         validator: FuncValidator<ValidatorResources>,
         res: ModuleResources<'parser>,
         allocations: FuncTranslatorAllocations,
     ) -> Result<Self, ModuleError> {
-        let func_builder = FuncBuilder::new(
-            func,
-            compiled_func,
-            compiled_func_2,
-            res,
-            validator,
-            allocations,
-        )?;
+        let func_builder = FuncBuilder::new(func, compiled_func_2, res, validator, allocations)?;
         Ok(Self {
             func_body,
             func_builder,

@@ -21,9 +21,9 @@ use super::{
     StoreOffset16Instr,
     UnaryInstr,
 };
-use crate::engine::{
+use crate::engine::regmach::{
+    bytecode,
     bytecode::{BranchOffset, DataSegmentIdx, ElementSegmentIdx, FuncIdx, SignatureIdx, TableIdx},
-    regmach::bytecode,
     CompiledFunc,
 };
 

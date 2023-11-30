@@ -1,17 +1,12 @@
 //! The `wasmi` interpreter.
 
-pub mod bytecode;
 mod cache;
-pub mod code_map;
 mod config;
-mod const_pool;
-pub mod executor;
 mod func_args;
-mod func_builder;
 mod func_types;
+mod limits;
 mod regmach;
 mod resumable;
-pub mod stack;
 mod traits;
 mod translator;
 mod trap;
@@ -19,22 +14,21 @@ mod trap;
 #[cfg(test)]
 use self::regmach::bytecode::RegisterSpan;
 
+pub(crate) use self::{
+    config::FuelCosts,
+    func_args::{FuncFinished, FuncParams, FuncResults},
+    func_types::DedupFuncType,
+    regmach::FuncTranslatorAllocations as FuncTranslatorAllocations2,
+};
 pub use self::{
-    bytecode::DropKeep,
-    code_map::CompiledFunc,
     config::{Config, FuelConsumptionMode},
-    func_builder::{Instr, RelativeDepth, TranslationError},
+    limits::StackLimits,
+    regmach::{CompiledFunc, Instr, TranslationError},
     resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
-    stack::StackLimits,
     traits::{CallParams, CallResults},
     translator::FuncBuilder,
 };
 use self::{
-    bytecode::Instruction,
-    cache::InstanceCache,
-    code_map::CodeMap,
-    const_pool::{ConstPool, ConstPoolView, ConstRef},
-    executor::{execute_wasm, WasmOutcome},
     func_types::FuncTypeRegistry,
     regmach::{
         bytecode::Instruction as Instruction2,
@@ -44,31 +38,14 @@ use self::{
         Stack as Stack2,
     },
     resumable::ResumableCallBase,
-    stack::{FuncFrame, Stack, ValueStack},
-    trap::TaggedTrap,
 };
-pub(crate) use self::{
-    config::FuelCosts,
-    func_args::{FuncFinished, FuncParams, FuncResults},
-    func_types::DedupFuncType,
-    regmach::{
-        FuncTranslator as FuncTranslator2,
-        FuncTranslatorAllocations as FuncTranslatorAllocations2,
-    },
-};
-use crate::{
-    core::{Trap, TrapCode},
-    func::FuncEntity,
-    AsContext,
-    AsContextMut,
-    Func,
-    FuncType,
-    StoreContextMut,
-};
+use crate::{core::Trap, Func, FuncType, StoreContextMut};
 use alloc::{sync::Arc, vec::Vec};
 use core::sync::atomic::{AtomicU32, Ordering};
 use spin::{Mutex, RwLock};
 use wasmi_arena::{ArenaIndex, GuardedEntity};
+
+#[cfg(test)]
 use wasmi_core::UntypedValue;
 
 #[cfg(doc)]
@@ -166,49 +143,11 @@ impl Engine {
         self.inner.resolve_func_type(func_type, f)
     }
 
-    /// Allocates a new constant value to the [`Engine`].
-    ///
-    /// # Errors
-    ///
-    /// If too many constant values have been allocated for the [`Engine`] this way.
-    pub(super) fn alloc_const(
-        &self,
-        value: impl Into<UntypedValue>,
-    ) -> Result<ConstRef, TranslationError> {
-        self.inner.alloc_const(value.into())
-    }
-
-    /// Allocates a new uninitialized [`CompiledFunc`] to the [`Engine`].
-    ///
-    /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
-    pub(super) fn alloc_func(&self) -> CompiledFunc {
-        self.inner.alloc_func()
-    }
-
     /// Allocates a new uninitialized [`CompiledFunc`] to the [`Engine`].
     ///
     /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
     pub(super) fn alloc_func_2(&self) -> CompiledFunc {
         self.inner.alloc_func_2()
-    }
-
-    /// Initializes the uninitialized [`CompiledFunc`] for the [`Engine`].
-    ///
-    /// # Panics
-    ///
-    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
-    /// - If `func` refers to an already initialized [`CompiledFunc`].
-    pub(super) fn init_func<I>(
-        &self,
-        func: CompiledFunc,
-        len_locals: usize,
-        local_stack_height: usize,
-        instrs: I,
-    ) where
-        I: IntoIterator<Item = Instruction>,
-    {
-        self.inner
-            .init_func(func, len_locals, local_stack_height, instrs)
     }
 
     /// Initializes the uninitialized [`CompiledFunc`] for the [`Engine`].
@@ -241,26 +180,6 @@ impl Engine {
         F: FnOnce(&CompiledFuncEntity) -> R,
     {
         self.inner.resolve_func_2(func, f)
-    }
-
-    /// Resolves the [`CompiledFunc`] to the underlying `wasmi` bytecode instructions.
-    ///
-    /// # Note
-    ///
-    /// - This API is mainly intended for unit testing purposes and shall not be used
-    ///   outside of this context. The function bodies are intended to be data private
-    ///   to the `wasmi` interpreter.
-    ///
-    /// # Panics
-    ///
-    /// If the [`CompiledFunc`] is invalid for the [`Engine`].
-    #[cfg(test)]
-    pub(crate) fn resolve_instr(
-        &self,
-        func_body: CompiledFunc,
-        index: usize,
-    ) -> Option<Instruction> {
-        self.inner.resolve_instr(func_body, index)
     }
 
     /// Resolves the [`CompiledFunc`] to the underlying `wasmi` bytecode instructions.
@@ -406,11 +325,6 @@ impl Engine {
     }
 
     /// Recycles the given [`Stack`] for reuse in the [`Engine`].
-    pub(crate) fn recycle_stack(&self, stack: Stack) {
-        self.inner.recycle_stack(stack)
-    }
-
-    /// Recycles the given [`Stack`] for reuse in the [`Engine`].
     pub(crate) fn recycle_stack_2(&self, stack: Stack2) {
         self.inner.recycle_stack_2(stack)
     }
@@ -437,8 +351,6 @@ pub struct EngineInner {
 #[derive(Debug)]
 pub struct EngineStacks {
     /// Stacks to be (re)used.
-    stacks: Vec<Stack>,
-    /// Stacks to be (re)used.
     ///
     /// # Note
     ///
@@ -454,18 +366,9 @@ impl EngineStacks {
     /// Creates new [`EngineStacks`] with the given [`StackLimits`].
     pub fn new(config: &Config) -> Self {
         Self {
-            stacks: Vec::new(),
             stacks2: Vec::new(),
             limits: config.stack_limits(),
             keep: config.cached_stacks(),
-        }
-    }
-
-    /// Reuse or create a new [`Stack`] if none was available.
-    pub fn reuse_or_new(&mut self) -> Stack {
-        match self.stacks.pop() {
-            Some(stack) => stack,
-            None => Stack::new(self.limits),
         }
     }
 
@@ -474,13 +377,6 @@ impl EngineStacks {
         match self.stacks2.pop() {
             Some(stack) => stack,
             None => Stack2::new(self.limits),
-        }
-    }
-
-    /// Disose and recycle the `stack`.
-    pub fn recycle(&mut self, stack: Stack) {
-        if !stack.is_empty() && self.stacks.len() < self.keep {
-            self.stacks.push(stack);
         }
     }
 
@@ -525,48 +421,11 @@ impl EngineInner {
         f(self.res.read().func_types.resolve_func_type(func_type))
     }
 
-    /// Allocates a new constant value to the [`EngineInner`].
-    ///
-    /// # Errors
-    ///
-    /// If too many constant values have been allocated for the [`EngineInner`] this way.
-    fn alloc_const(&self, value: UntypedValue) -> Result<ConstRef, TranslationError> {
-        self.res.write().const_pool.alloc(value)
-    }
-
-    /// Allocates a new uninitialized [`CompiledFunc`] to the [`EngineInner`].
-    ///
-    /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
-    fn alloc_func(&self) -> CompiledFunc {
-        self.res.write().code_map.alloc_func()
-    }
-
     /// Allocates a new uninitialized [`CompiledFunc`] to the [`EngineInner`].
     ///
     /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
     fn alloc_func_2(&self) -> CompiledFunc {
         self.res.write().code_map_2.alloc_func()
-    }
-
-    /// Initializes the uninitialized [`CompiledFunc`] for the [`EngineInner`].
-    ///
-    /// # Panics
-    ///
-    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
-    /// - If `func` refers to an already initialized [`CompiledFunc`].
-    fn init_func<I>(
-        &self,
-        func: CompiledFunc,
-        len_locals: usize,
-        local_stack_height: usize,
-        instrs: I,
-    ) where
-        I: IntoIterator<Item = Instruction>,
-    {
-        self.res
-            .write()
-            .code_map
-            .init_func(func, len_locals, local_stack_height, instrs)
     }
 
     /// Initializes the uninitialized [`CompiledFunc`] for the [`EngineInner`].
@@ -601,15 +460,6 @@ impl EngineInner {
         F: FnOnce(&CompiledFuncEntity) -> R,
     {
         f(self.res.read().code_map_2.get(func))
-    }
-
-    #[cfg(test)]
-    fn resolve_instr(&self, func_body: CompiledFunc, index: usize) -> Option<Instruction> {
-        self.res
-            .read()
-            .code_map
-            .get_instr(func_body, index)
-            .copied()
     }
 
     #[cfg(test)]
@@ -659,33 +509,6 @@ impl EngineInner {
         self.execute_func_regmach(ctx, func, params, results)
     }
 
-    /// Executes the given [`Func`] with the given `params` and returns the `results`.
-    ///
-    /// - Uses the `wasmi` stack-machine based engine backend.
-    /// - Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
-    ///
-    /// # Errors
-    ///
-    /// If the Wasm execution traps or runs out of resources.
-    fn execute_func_stackmach<T, Results>(
-        &self,
-        ctx: StoreContextMut<T>,
-        func: &Func,
-        params: impl CallParams,
-        results: Results,
-    ) -> Result<<Results as CallResults>::Results, Trap>
-    where
-        Results: CallResults,
-    {
-        let res = self.res.read();
-        let mut stack = self.stacks.lock().reuse_or_new();
-        let results = EngineExecutor::new(&res, &mut stack)
-            .execute_func(ctx, func, params, results)
-            .map_err(TaggedTrap::into_trap);
-        self.stacks.lock().recycle(stack);
-        results
-    }
-
     /// Executes the given [`Func`] resumably with the given `params` and returns the `results`.
     ///
     /// Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
@@ -704,55 +527,6 @@ impl EngineInner {
         Results: CallResults,
     {
         self.execute_func_resumable_regmach(ctx, func, params, results)
-    }
-
-    /// Executes the given [`Func`] resumably with the given `params` and returns the `results`.
-    ///
-    /// - Uses the `wasmi` stack-machine based engine backend.
-    /// - Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
-    ///
-    /// # Errors
-    ///
-    /// If the Wasm execution traps or runs out of resources.
-    fn execute_func_resumable_stackmach<T, Results>(
-        &self,
-        mut ctx: StoreContextMut<T>,
-        func: &Func,
-        params: impl CallParams,
-        results: Results,
-    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
-    where
-        Results: CallResults,
-    {
-        let res = self.res.read();
-        let mut stack = self.stacks.lock().reuse_or_new();
-        let results = EngineExecutor::new(&res, &mut stack).execute_func(
-            ctx.as_context_mut(),
-            func,
-            params,
-            results,
-        );
-        match results {
-            Ok(results) => {
-                self.stacks.lock().recycle(stack);
-                Ok(ResumableCallBase::Finished(results))
-            }
-            Err(TaggedTrap::Wasm(trap)) => {
-                self.stacks.lock().recycle(stack);
-                Err(trap)
-            }
-            Err(TaggedTrap::Host {
-                host_func,
-                host_trap,
-            }) => Ok(ResumableCallBase::Resumable(ResumableInvocation::new(
-                ctx.as_context().store.engine().clone(),
-                *func,
-                host_func,
-                host_trap,
-                None,
-                stack,
-            ))),
-        }
     }
 
     /// Resumes the given [`Func`] with the given `params` and returns the `results`.
@@ -775,53 +549,6 @@ impl EngineInner {
         self.resume_func_regmach(ctx, invocation, params, results)
     }
 
-    /// Resumes the given [`Func`] with the given `params` and returns the `results`.
-    ///
-    /// - Uses the `wasmi` stack-machine based engine backend.
-    /// - Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
-    ///
-    /// # Errors
-    ///
-    /// If the Wasm execution traps or runs out of resources.
-    fn resume_func_stackmach<T, Results>(
-        &self,
-        ctx: StoreContextMut<T>,
-        mut invocation: ResumableInvocation,
-        params: impl CallParams,
-        results: Results,
-    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
-    where
-        Results: CallResults,
-    {
-        let res = self.res.read();
-        let host_func = invocation.host_func();
-        let mut stack = invocation.take_stack().into_stackmach();
-        let results =
-            EngineExecutor::new(&res, &mut stack).resume_func(ctx, host_func, params, results);
-        match results {
-            Ok(results) => {
-                self.stacks.lock().recycle(stack);
-                Ok(ResumableCallBase::Finished(results))
-            }
-            Err(TaggedTrap::Wasm(trap)) => {
-                self.stacks.lock().recycle(stack);
-                Err(trap)
-            }
-            Err(TaggedTrap::Host {
-                host_func,
-                host_trap,
-            }) => {
-                invocation.update(stack, host_func, host_trap);
-                Ok(ResumableCallBase::Resumable(invocation))
-            }
-        }
-    }
-
-    /// Recycles the given [`Stack`] for the stack-machine `wasmi` engine backend.
-    fn recycle_stack(&self, stack: Stack) {
-        self.stacks.lock().recycle(stack);
-    }
-
     /// Recycles the given [`Stack`] for the register-machine `wasmi` engine backend.
     fn recycle_stack_2(&self, stack: Stack2) {
         self.stacks.lock().recycle_2(stack)
@@ -833,12 +560,8 @@ impl EngineInner {
 /// Can be shared by multiple engine executors.
 #[derive(Debug)]
 pub struct EngineResources {
-    /// Stores all Wasm function bodies that the interpreter is aware of.
-    code_map: CodeMap,
     /// Stores information about all compiled functions.
     code_map_2: CodeMap2,
-    /// A pool of reusable, deduplicated constant values.
-    const_pool: ConstPool,
     /// Deduplicated function types.
     ///
     /// # Note
@@ -853,211 +576,8 @@ impl EngineResources {
     fn new() -> Self {
         let engine_idx = EngineIdx::new();
         Self {
-            code_map: CodeMap::default(),
             code_map_2: CodeMap2::default(),
-            const_pool: ConstPool::default(),
             func_types: FuncTypeRegistry::new(engine_idx),
         }
-    }
-}
-
-/// The internal state of the `wasmi` engine.
-#[derive(Debug)]
-pub struct EngineExecutor<'engine> {
-    /// Shared and reusable generic engine resources.
-    res: &'engine EngineResources,
-    /// The value and call stacks.
-    stack: &'engine mut Stack,
-}
-
-impl<'engine> EngineExecutor<'engine> {
-    /// Creates a new [`EngineExecutor`] with the given [`StackLimits`].
-    fn new(res: &'engine EngineResources, stack: &'engine mut Stack) -> Self {
-        Self { res, stack }
-    }
-
-    /// Executes the given [`Func`] using the given `params`.
-    ///
-    /// Stores the execution result into `results` upon a successful execution.
-    ///
-    /// # Errors
-    ///
-    /// - If the given `params` do not match the expected parameters of `func`.
-    /// - If the given `results` do not match the the length of the expected results of `func`.
-    /// - When encountering a Wasm or host trap during the execution of `func`.
-    fn execute_func<T, Results>(
-        &mut self,
-        mut ctx: StoreContextMut<T>,
-        func: &Func,
-        params: impl CallParams,
-        results: Results,
-    ) -> Result<<Results as CallResults>::Results, TaggedTrap>
-    where
-        Results: CallResults,
-    {
-        self.stack.reset();
-        self.stack.values.extend(params.call_params());
-        match ctx.as_context().store.inner.resolve_func(func) {
-            FuncEntity::Wasm(wasm_func) => {
-                self.stack
-                    .prepare_wasm_call(wasm_func, &self.res.code_map)?;
-                self.execute_wasm_func(ctx.as_context_mut())?;
-            }
-            FuncEntity::Host(host_func) => {
-                let host_func = *host_func;
-                self.stack.call_host(
-                    ctx.as_context_mut(),
-                    host_func,
-                    None,
-                    &self.res.func_types,
-                )?;
-            }
-        };
-        let results = self.write_results_back(results);
-        Ok(results)
-    }
-
-    /// Resumes the execution of the given [`Func`] using `params`.
-    ///
-    /// Stores the execution result into `results` upon a successful execution.
-    ///
-    /// # Errors
-    ///
-    /// - If the given `params` do not match the expected parameters of `func`.
-    /// - If the given `results` do not match the the length of the expected results of `func`.
-    /// - When encountering a Wasm or host trap during the execution of `func`.
-    fn resume_func<T, Results>(
-        &mut self,
-        mut ctx: StoreContextMut<T>,
-        host_func: Func,
-        params: impl CallParams,
-        results: Results,
-    ) -> Result<<Results as CallResults>::Results, TaggedTrap>
-    where
-        Results: CallResults,
-    {
-        self.stack
-            .values
-            .drop(host_func.ty(ctx.as_context()).params().len());
-        self.stack.values.extend(params.call_params());
-        assert!(
-            self.stack.frames.peek().is_some(),
-            "a frame must be on the call stack upon resumption"
-        );
-        self.execute_wasm_func(ctx.as_context_mut())?;
-        let results = self.write_results_back(results);
-        Ok(results)
-    }
-
-    /// Writes the results of the function execution back into the `results` buffer.
-    ///
-    /// # Note
-    ///
-    /// The value stack is empty after this operation.
-    ///
-    /// # Panics
-    ///
-    /// - If the `results` buffer length does not match the remaining amount of stack values.
-    #[inline]
-    fn write_results_back<Results>(&mut self, results: Results) -> <Results as CallResults>::Results
-    where
-        Results: CallResults,
-    {
-        results.call_results(self.stack.values.drain())
-    }
-
-    /// Executes the top most Wasm function on the [`Stack`] until the [`Stack`] is empty.
-    ///
-    /// # Errors
-    ///
-    /// When encountering a Wasm or host trap during the execution of `func`.
-    #[inline(never)]
-    fn execute_wasm_func<T>(&mut self, mut ctx: StoreContextMut<T>) -> Result<(), TaggedTrap> {
-        let mut cache = self
-            .stack
-            .frames
-            .peek()
-            .map(FuncFrame::instance)
-            .map(InstanceCache::from)
-            .expect("must have frame on the call stack");
-        loop {
-            match self.execute_wasm(ctx.as_context_mut(), &mut cache)? {
-                WasmOutcome::Return => return Ok(()),
-                WasmOutcome::Call {
-                    ref host_func,
-                    instance,
-                } => {
-                    let func = host_func;
-                    let host_func = match ctx.as_context().store.inner.resolve_func(func) {
-                        FuncEntity::Wasm(_) => unreachable!("`func` must be a host function"),
-                        FuncEntity::Host(host_func) => *host_func,
-                    };
-                    let result = self.stack.call_host(
-                        ctx.as_context_mut(),
-                        host_func,
-                        Some(&instance),
-                        &self.res.func_types,
-                    );
-                    if self.stack.frames.peek().is_some() {
-                        // Case: There is a frame on the call stack.
-                        //
-                        // This is the default case and we can easily make host function
-                        // errors return a resumable call handle.
-                        result.map_err(|trap| TaggedTrap::host(*func, trap))?;
-                    } else {
-                        // Case: No frame is on the call stack. (edge case)
-                        //
-                        // This can happen if the host function was called by a tail call.
-                        // In this case we treat host function errors the same as if we called
-                        // the host function as root and do not allow to resume the call.
-                        result.map_err(TaggedTrap::Wasm)?;
-                    }
-                }
-            }
-        }
-    }
-
-    /// Executes the given function `frame`.
-    ///
-    /// # Note
-    ///
-    /// This executes Wasm instructions until either the execution calls
-    /// into a host function or the Wasm execution has come to an end.
-    ///
-    /// # Errors
-    ///
-    /// If the Wasm execution traps.
-    #[inline(always)]
-    fn execute_wasm<T>(
-        &mut self,
-        ctx: StoreContextMut<T>,
-        cache: &mut InstanceCache,
-    ) -> Result<WasmOutcome, Trap> {
-        /// Converts a [`TrapCode`] into a [`Trap`].
-        ///
-        /// This function exists for performance reasons since its `#[cold]`
-        /// annotation has severe effects on performance.
-        #[inline]
-        #[cold]
-        fn make_trap(code: TrapCode) -> Trap {
-            code.into()
-        }
-
-        let (store_inner, mut resource_limiter) = ctx.store.store_inner_and_resource_limiter_ref();
-        let value_stack = &mut self.stack.values;
-        let call_stack = &mut self.stack.frames;
-        let code_map = &self.res.code_map;
-        let const_pool = self.res.const_pool.view();
-
-        execute_wasm(
-            store_inner,
-            cache,
-            value_stack,
-            call_stack,
-            code_map,
-            const_pool,
-            &mut resource_limiter,
-        )
-        .map_err(make_trap)
     }
 }

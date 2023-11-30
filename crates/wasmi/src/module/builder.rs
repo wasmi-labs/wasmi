@@ -36,7 +36,6 @@ pub struct ModuleBuilder<'engine> {
     pub globals_init: Vec<ConstExpr>,
     pub exports: BTreeMap<Box<str>, ExternIdx>,
     pub start: Option<FuncIdx>,
-    pub compiled_funcs: Vec<CompiledFunc>,
     pub compiled_funcs_2: Vec<CompiledFunc>,
     pub element_segments: Vec<ElementSegment>,
     pub data_segments: Vec<DataSegment>,
@@ -104,7 +103,7 @@ impl<'a> ModuleResources<'a> {
         let index = index.checked_sub(len_imported)?;
         // Note: It is a bug if this index access is out of bounds
         //       therefore we panic here instead of using `get`.
-        Some(self.res.compiled_funcs[index])
+        Some(self.res.compiled_funcs_2[index])
     }
 
     /// Returns the [`CompiledFunc`] for the given [`FuncIdx`].
@@ -149,7 +148,6 @@ impl<'engine> ModuleBuilder<'engine> {
             globals_init: Vec::new(),
             exports: BTreeMap::new(),
             start: None,
-            compiled_funcs: Vec::new(),
             compiled_funcs_2: Vec::new(),
             element_segments: Vec::new(),
             data_segments: Vec::new(),
@@ -247,7 +245,6 @@ impl<'engine> ModuleBuilder<'engine> {
             let func_type_idx = func?;
             let func_type = self.func_types[func_type_idx.into_u32() as usize];
             self.funcs.push(func_type);
-            self.compiled_funcs.push(self.engine.alloc_func());
             self.compiled_funcs_2.push(self.engine.alloc_func_2());
         }
         Ok(())
