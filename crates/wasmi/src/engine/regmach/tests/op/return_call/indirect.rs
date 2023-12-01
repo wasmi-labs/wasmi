@@ -1,5 +1,5 @@
 use super::*;
-use crate::engine::bytecode::{GlobalIdx, SignatureIdx, TableIdx};
+use crate::engine::regmach::bytecode::{GlobalIdx, SignatureIdx, TableIdx};
 
 #[test]
 #[cfg_attr(miri, ignore)]

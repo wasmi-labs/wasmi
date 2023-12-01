@@ -1,9 +1,5 @@
 use super::{Const16, Const32};
-use crate::engine::{
-    bytecode::{BranchOffset, TableIdx},
-    func_builder::TranslationErrorInner,
-    TranslationError,
-};
+use crate::engine::{regmach::TranslationErrorInner, Instr, TranslationError};
 
 #[cfg(doc)]
 use super::Instruction;
@@ -582,5 +578,237 @@ impl<T> BranchBinOpInstrImm<T> {
     /// Creates a new [`BranchBinOpInstr`].
     pub fn new(lhs: Register, rhs: T, offset: BranchOffset16) -> Self {
         Self { lhs, rhs, offset }
+    }
+}
+
+/// A function index.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct FuncIdx(u32);
+
+impl From<u32> for FuncIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
+    }
+}
+
+impl FuncIdx {
+    /// Returns the index value as `u32`.
+    pub fn to_u32(self) -> u32 {
+        self.0
+    }
+}
+
+/// A table index.
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct TableIdx([u8; 4]);
+
+impl From<u32> for TableIdx {
+    fn from(index: u32) -> Self {
+        Self(index.to_ne_bytes())
+    }
+}
+
+impl TableIdx {
+    /// Returns the index value as `u32`.
+    pub fn to_u32(self) -> u32 {
+        u32::from_ne_bytes(self.0)
+    }
+}
+
+/// An index of a unique function signature.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct SignatureIdx(u32);
+
+impl From<u32> for SignatureIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
+    }
+}
+
+impl SignatureIdx {
+    /// Returns the index value as `u32`.
+    pub fn to_u32(self) -> u32 {
+        self.0
+    }
+}
+
+/// A global variable index.
+///
+/// # Note
+///
+/// Refers to a global variable of a [`Store`].
+///
+/// [`Store`]: [`crate::Store`]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct GlobalIdx(u32);
+
+impl From<u32> for GlobalIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
+    }
+}
+
+impl GlobalIdx {
+    /// Returns the index value as `u32`.
+    pub fn to_u32(self) -> u32 {
+        self.0
+    }
+}
+
+/// A data segment index.
+///
+/// # Note
+///
+/// Refers to a data segment of a [`Store`].
+///
+/// [`Store`]: [`crate::Store`]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct DataSegmentIdx(u32);
+
+impl From<u32> for DataSegmentIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
+    }
+}
+
+impl DataSegmentIdx {
+    /// Returns the index value as `u32`.
+    pub fn to_u32(self) -> u32 {
+        self.0
+    }
+}
+
+/// An element segment index.
+///
+/// # Note
+///
+/// Refers to a data segment of a [`Store`].
+///
+/// [`Store`]: [`crate::Store`]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct ElementSegmentIdx(u32);
+
+impl From<u32> for ElementSegmentIdx {
+    fn from(index: u32) -> Self {
+        Self(index)
+    }
+}
+
+impl ElementSegmentIdx {
+    /// Returns the index value as `u32`.
+    pub fn to_u32(self) -> u32 {
+        self.0
+    }
+}
+
+/// A signed offset for branch instructions.
+///
+/// This defines how much the instruction pointer is offset
+/// upon taking the respective branch.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct BranchOffset(i32);
+
+impl From<i32> for BranchOffset {
+    fn from(index: i32) -> Self {
+        Self(index)
+    }
+}
+
+impl BranchOffset {
+    /// Creates an uninitialized [`BranchOffset`].
+    pub fn uninit() -> Self {
+        Self(0)
+    }
+
+    /// Creates an initialized [`BranchOffset`] from `src` to `dst`.
+    ///
+    /// # Errors
+    ///
+    /// If the resulting [`BranchOffset`] is out of bounds.
+    ///
+    /// # Panics
+    ///
+    /// If the resulting [`BranchOffset`] is uninitialized, aka equal to 0.
+    pub fn from_src_to_dst(src: Instr, dst: Instr) -> Result<Self, TranslationError> {
+        fn make_err() -> TranslationError {
+            TranslationError::new(TranslationErrorInner::BranchOffsetOutOfBounds)
+        }
+        let src = i64::from(src.into_u32());
+        let dst = i64::from(dst.into_u32());
+        let offset = dst.checked_sub(src).ok_or_else(make_err)?;
+        let offset = i32::try_from(offset).map_err(|_| make_err())?;
+        Ok(Self(offset))
+    }
+
+    /// Returns `true` if the [`BranchOffset`] has been initialized.
+    pub fn is_init(self) -> bool {
+        self.to_i32() != 0
+    }
+
+    /// Initializes the [`BranchOffset`] with a proper value.
+    ///
+    /// # Panics
+    ///
+    /// - If the [`BranchOffset`] have already been initialized.
+    /// - If the given [`BranchOffset`] is not properly initialized.
+    pub fn init(&mut self, valid_offset: BranchOffset) {
+        assert!(valid_offset.is_init());
+        assert!(!self.is_init());
+        *self = valid_offset;
+    }
+
+    /// Returns the `i32` representation of the [`BranchOffset`].
+    pub fn to_i32(self) -> i32 {
+        self.0
+    }
+}
+
+/// The accumulated fuel to execute a block via [`Instruction::ConsumeFuel`].
+///
+/// [`Instruction::ConsumeFuel`]: [`super::Instruction::ConsumeFuel`]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct BlockFuel(u32);
+
+impl TryFrom<u64> for BlockFuel {
+    type Error = TranslationError;
+
+    fn try_from(index: u64) -> Result<Self, Self::Error> {
+        match u32::try_from(index) {
+            Ok(index) => Ok(Self(index)),
+            Err(_) => Err(TranslationError::new(
+                TranslationErrorInner::BlockFuelOutOfBounds,
+            )),
+        }
+    }
+}
+
+impl BlockFuel {
+    /// Bump the fuel by `amount` if possible.
+    ///
+    /// # Errors
+    ///
+    /// If the new fuel amount after this operation is out of bounds.
+    pub fn bump_by(&mut self, amount: u64) -> Result<(), TranslationError> {
+        let new_amount = self
+            .to_u64()
+            .checked_add(amount)
+            .ok_or(TranslationErrorInner::BlockFuelOutOfBounds)
+            .map_err(TranslationError::new)?;
+        self.0 = u32::try_from(new_amount)
+            .map_err(|_| TranslationErrorInner::BlockFuelOutOfBounds)
+            .map_err(TranslationError::new)?;
+        Ok(())
+    }
+
+    /// Returns the index value as `u64`.
+    pub fn to_u64(self) -> u64 {
+        u64::from(self.0)
     }
 }

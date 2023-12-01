@@ -83,10 +83,10 @@ fn check_consumption_mode(mode: FuelConsumptionMode, given_fuel: u64, consumed_f
 
 #[test]
 fn lazy_consumption_mode() {
-    check_consumption_mode(FuelConsumptionMode::Lazy, 1030, 4);
+    check_consumption_mode(FuelConsumptionMode::Lazy, 1030, 3);
 }
 
 #[test]
 fn eager_consumption_mode() {
-    check_consumption_mode(FuelConsumptionMode::Eager, 1030, 1028);
+    check_consumption_mode(FuelConsumptionMode::Eager, 1030, 1027);
 }

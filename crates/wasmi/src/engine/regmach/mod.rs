@@ -9,11 +9,17 @@ mod trap;
 mod tests;
 
 pub use self::{
-    code_map::CodeMap,
+    code_map::{CodeMap, CompiledFunc},
     stack::Stack,
-    translator::{FuncLocalConstsIter, FuncTranslator, FuncTranslatorAllocations},
+    translator::{
+        FuncLocalConstsIter,
+        FuncTranslator,
+        FuncTranslatorAllocations,
+        Instr,
+        TranslationError,
+    },
 };
-use self::{executor::EngineExecutor, trap::TaggedTrap};
+use self::{executor::EngineExecutor, translator::TranslationErrorInner, trap::TaggedTrap};
 use super::resumable::ResumableCallBase;
 use crate::{
     core::Trap,
@@ -52,7 +58,7 @@ impl EngineInner {
         let results = EngineExecutor::new(&res, &mut stack)
             .execute_root_func(ctx, func, params, results)
             .map_err(TaggedTrap::into_trap);
-        self.stacks.lock().recycle_2(stack);
+        self.stacks.lock().recycle(stack);
         results
     }
 
@@ -84,11 +90,11 @@ impl EngineInner {
         );
         match results {
             Ok(results) => {
-                self.stacks.lock().recycle_2(stack);
+                self.stacks.lock().recycle(stack);
                 Ok(ResumableCallBase::Finished(results))
             }
             Err(TaggedTrap::Wasm(trap)) => {
-                self.stacks.lock().recycle_2(stack);
+                self.stacks.lock().recycle(stack);
                 Err(trap)
             }
             Err(TaggedTrap::Host {
@@ -100,7 +106,7 @@ impl EngineInner {
                 *func,
                 host_func,
                 host_trap,
-                Some(caller_results),
+                caller_results,
                 stack,
             ))),
         }
@@ -126,10 +132,8 @@ impl EngineInner {
     {
         let res = self.res.read();
         let host_func = invocation.host_func();
-        let caller_results = invocation
-            .caller_results()
-            .expect("register-machine engine required caller results for call resumption");
-        let mut stack = invocation.take_stack().into_regmach();
+        let caller_results = invocation.caller_results();
+        let mut stack = invocation.take_stack();
         let results = EngineExecutor::new(&res, &mut stack).resume_func(
             ctx,
             host_func,
@@ -139,11 +143,11 @@ impl EngineInner {
         );
         match results {
             Ok(results) => {
-                self.stacks.lock().recycle_2(stack);
+                self.stacks.lock().recycle(stack);
                 Ok(ResumableCallBase::Finished(results))
             }
             Err(TaggedTrap::Wasm(trap)) => {
-                self.stacks.lock().recycle_2(stack);
+                self.stacks.lock().recycle(stack);
                 Err(trap)
             }
             Err(TaggedTrap::Host {

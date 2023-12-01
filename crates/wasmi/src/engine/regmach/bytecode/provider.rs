@@ -1,5 +1,5 @@
 use super::{AnyConst32, Register};
-use crate::engine::{func_builder::TranslationErrorInner, TranslationError};
+use crate::engine::regmach::{TranslationError, TranslationErrorInner};
 use alloc::vec::{Drain, Vec};
 use wasmi_core::UntypedValue;
 

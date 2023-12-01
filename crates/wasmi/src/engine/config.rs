@@ -1,4 +1,4 @@
-use super::{stack::StackLimits, DropKeep};
+use super::StackLimits;
 use core::{mem::size_of, num::NonZeroU64};
 use wasmi_core::UntypedValue;
 use wasmparser::WasmFeatures;
@@ -35,22 +35,10 @@ pub struct Config {
     floats: bool,
     /// Is `true` if `wasmi` executions shall consume fuel.
     consume_fuel: bool,
-    /// Tells the [`Engine`](crate::Engine) which executor backend to use.
-    backend: EngineBackend,
     /// The fuel consumption mode of the `wasmi` [`Engine`](crate::Engine).
     fuel_consumption_mode: FuelConsumptionMode,
     /// The configured fuel costs of all `wasmi` bytecode instructions.
     fuel_costs: FuelCosts,
-}
-
-/// The backend executor of an [`Engine`](crate::Engine).
-#[derive(Debug, Default, Copy, Clone)]
-pub enum EngineBackend {
-    /// Translate and execute via a stack machine backend.
-    #[default]
-    StackMachine,
-    /// Translate and execute via a register machine backend. (⚠️ EXPERIMENTAL & UNSTABLE ⚠️)
-    RegisterMachine,
 }
 
 /// The fuel consumption mode of the `wasmi` [`Engine`].
@@ -189,28 +177,6 @@ impl FuelCosts {
     fn costs_per(len_items: u64, items_per_fuel: NonZeroU64) -> u64 {
         len_items / items_per_fuel
     }
-
-    /// Returns the fuel consumption for branches and returns using the given [`DropKeep`].
-    pub fn fuel_for_drop_keep(&self, drop_keep: DropKeep) -> u64 {
-        if drop_keep.drop() == 0 {
-            return 0;
-        }
-        Self::costs_per(u64::from(drop_keep.keep()), self.copies_per_fuel())
-    }
-
-    /// Returns the fuel consumption for calling a function with the amount of local variables.
-    ///
-    /// # Note
-    ///
-    /// Function parameters are also treated as local variables.
-    pub fn fuel_for_locals(&self, locals: u64) -> u64 {
-        self.fuel_for_copies(locals)
-    }
-
-    /// Returns the fuel consumption for processing the amount of table elements.
-    pub fn fuel_for_elements(&self, elements: u64) -> u64 {
-        self.fuel_for_copies(elements)
-    }
 }
 
 impl Default for FuelCosts {
@@ -243,7 +209,6 @@ impl Default for Config {
             extended_const: false,
             floats: true,
             consume_fuel: false,
-            backend: EngineBackend::default(),
             fuel_costs: FuelCosts::default(),
             fuel_consumption_mode: FuelConsumptionMode::default(),
         }
@@ -380,17 +345,6 @@ impl Config {
     pub fn floats(&mut self, enable: bool) -> &mut Self {
         self.floats = enable;
         self
-    }
-
-    /// Sets the [`Engine`](crate::Engine) backend that is used for execution.
-    pub fn set_engine_backend(&mut self, backend: EngineBackend) -> &mut Self {
-        self.backend = backend;
-        self
-    }
-
-    /// Returns the used [`EngineBackend`] of the [`Engine`](crate::Engine).
-    pub fn engine_backend(&self) -> EngineBackend {
-        self.backend
     }
 
     /// Configures whether `wasmi` will consume fuel during execution to either halt execution as desired.

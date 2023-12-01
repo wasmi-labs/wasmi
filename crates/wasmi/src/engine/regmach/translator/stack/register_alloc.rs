@@ -1,7 +1,9 @@
 use super::{TaggedProvider, TypedProvider};
 use crate::engine::{
-    func_builder::TranslationErrorInner,
-    regmach::bytecode::{Register, RegisterSpan},
+    regmach::{
+        bytecode::{Register, RegisterSpan},
+        TranslationErrorInner,
+    },
     TranslationError,
 };
 use core::{

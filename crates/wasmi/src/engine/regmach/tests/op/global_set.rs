@@ -1,8 +1,8 @@
 use super::*;
 
-use crate::engine::{
+use crate::engine::regmach::{
     bytecode::GlobalIdx,
-    regmach::tests::{display_wasm::DisplayValueType, driver::ExpectedFunc},
+    tests::{display_wasm::DisplayValueType, driver::ExpectedFunc},
 };
 use core::fmt::Display;
 use wasm_type::WasmType;
