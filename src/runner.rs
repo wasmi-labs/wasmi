@@ -33,7 +33,7 @@ use core::{cell::RefCell, fmt, ops, u32, usize};
 use parity_wasm::elements::Local;
 use specs::{
     external_host_call_table::ExternalHostCallSignature,
-    itable::{BinOp, BitOp, InstructionTableEntry, RelOp, ShiftOp, UnaryOp},
+    itable::{BinOp, BitOp, RelOp, ShiftOp, UnaryOp},
     jtable::JumpTableEntry,
     mtable::{MemoryReadSize, MemoryStoreSize, VarType},
     step::StepInfo,
@@ -360,17 +360,15 @@ impl Interpreter {
 
                                 let eid = tracer.eid();
                                 let last_jump_eid = tracer.last_jump_eid();
-
-                                let inst = tracer.lookup_ientry(
-                                    &function_context.function,
-                                    function_context.position,
-                                );
+                                let fid = tracer.lookup_function(&function_context.function);
+                                let iid = function_context.position;
 
                                 tracer.jtable.push(JumpTableEntry {
                                     eid,
                                     last_jump_eid,
                                     callee_fid,
-                                    inst: Box::new(inst.into()),
+                                    fid,
+                                    iid,
                                 });
 
                                 tracer.push_frame();
@@ -1061,10 +1059,7 @@ impl Interpreter {
                     let desc = tracer.function_desc.get(&index).unwrap();
 
                     match &desc.ftype {
-                        specs::types::FunctionType::WasmFunction => StepInfo::Call {
-                            index,
-                            function_name: tracer.lookup_function_name(index),
-                        },
+                        specs::types::FunctionType::WasmFunction => StepInfo::Call { index },
                         specs::types::FunctionType::HostFunction {
                             plugin,
                             function_index: host_function_idx,
@@ -1136,7 +1131,6 @@ impl Interpreter {
                         type_index: type_idx,
                         offset,
                         func_index: func_idx,
-                        function_name: tracer.lookup_function_name(func_idx),
                     }
                 } else {
                     unreachable!()
@@ -2037,21 +2031,13 @@ impl Interpreter {
 
                         let mut tracer = tracer.borrow_mut();
 
-                        let instruction = { instruction.into(&tracer.function_desc) };
-
                         let function = tracer.lookup_function(&function_context.function);
 
                         let last_jump_eid = tracer.last_jump_eid();
 
-                        let inst_entry = InstructionTableEntry {
-                            fid: function,
-                            function_name: tracer.lookup_function_name(function),
-                            iid: pc,
-                            opcode: instruction,
-                        };
-
                         tracer.etable.push(
-                            inst_entry,
+                            function,
+                            pc,
                             sp.try_into().unwrap(),
                             current_memory.try_into().unwrap(),
                             last_jump_eid,

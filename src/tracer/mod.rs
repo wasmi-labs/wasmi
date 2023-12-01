@@ -6,7 +6,7 @@ use specs::{
     configure_table::ConfigureTable,
     etable::EventTable,
     host_function::HostFunctionDesc,
-    itable::{InstructionTable, InstructionTableEntry},
+    itable::InstructionTableInternal,
     jtable::{JumpTable, StaticFrameEntry},
     mtable::VarType,
     types::FunctionType,
@@ -35,7 +35,7 @@ pub struct FuncDesc {
 
 #[derive(Debug)]
 pub struct Tracer {
-    pub itable: InstructionTable,
+    pub itable: InstructionTableInternal,
     pub imtable: IMTable,
     pub etable: EventTable,
     pub jtable: JumpTable,
@@ -65,7 +65,7 @@ impl Tracer {
         dry_run: bool,
     ) -> Self {
         Tracer {
-            itable: InstructionTable::default(),
+            itable: InstructionTableInternal::default(),
             imtable: IMTable::default(),
             etable: EventTable::default(),
             last_jump_eid: vec![],
@@ -340,30 +340,6 @@ impl Tracer {
 
     pub fn lookup_function(&self, function: &FuncRef) -> u32 {
         *self.function_lookup.get(function).unwrap()
-    }
-
-    pub fn lookup_ientry(&self, function: &FuncRef, pos: u32) -> InstructionTableEntry {
-        let function_idx = self.lookup_function(function);
-
-        for ientry in self.itable.entries() {
-            if ientry.fid == function_idx && ientry.iid as u32 == pos {
-                return ientry.clone();
-            }
-        }
-
-        unreachable!()
-    }
-
-    pub fn lookup_first_inst(&self, function: &FuncRef) -> InstructionTableEntry {
-        let function_idx = self.lookup_function(function);
-
-        for ientry in self.itable.entries() {
-            if ientry.fid == function_idx {
-                return ientry.clone();
-            }
-        }
-
-        unreachable!();
     }
 
     pub fn push_phantom_function(&mut self, function: FuncRef) {
