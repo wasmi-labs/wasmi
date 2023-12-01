@@ -8,6 +8,12 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.31.1`] - 2023-12-01
+
+### Fixes
+
+- Fixed a bug, in the `wasmi` engine executor, that causes an out of bounds buffer write when calling or resuming a Wasm function with a high number of parameters from the host side.
+
 ## [`0.31.0`] - 2023-07-31
 
 ### Added
