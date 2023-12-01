@@ -2,7 +2,9 @@
 
 mod control_frame;
 mod control_stack;
+mod error;
 mod instr_encoder;
+mod labels;
 mod relink_result;
 mod stack;
 mod typed_value;
@@ -19,6 +21,7 @@ use self::{
         UnreachableControlFrame,
     },
     control_stack::AcquiredTarget,
+    labels::{LabelRef, LabelRegistry},
     stack::ValueStack,
     typed_value::TypedValue,
     utils::{WasmFloat, WasmInteger},
@@ -26,27 +29,27 @@ use self::{
 pub use self::{
     control_frame::{ControlFrame, ControlFrameKind},
     control_stack::ControlStack,
-    instr_encoder::InstrEncoder,
+    error::{TranslationError, TranslationErrorInner},
+    instr_encoder::{Instr, InstrEncoder},
     stack::{FuncLocalConstsIter, TypedProvider},
 };
 use crate::{
     engine::{
-        bytecode::SignatureIdx,
         config::FuelCosts,
-        func_builder::TranslationErrorInner,
-        regmach::bytecode::{
-            AnyConst32,
-            Const16,
-            Const32,
-            Instruction,
-            Register,
-            RegisterSpan,
-            RegisterSpanIter,
-            Sign,
+        regmach::{
+            bytecode::{
+                AnyConst32,
+                Const16,
+                Const32,
+                Instruction,
+                Register,
+                RegisterSpan,
+                RegisterSpanIter,
+                Sign,
+                SignatureIdx,
+            },
+            CompiledFunc,
         },
-        CompiledFunc,
-        Instr,
-        TranslationError,
     },
     module::{BlockType, FuncIdx, FuncTypeIdx, ModuleResources},
     Engine,

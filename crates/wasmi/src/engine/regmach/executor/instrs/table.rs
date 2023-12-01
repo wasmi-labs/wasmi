@@ -1,12 +1,9 @@
 use super::Executor;
 use crate::{
     core::TrapCode,
-    engine::{
-        bytecode::{ElementSegmentIdx, TableIdx},
-        regmach::{
-            bytecode::{Const16, Const32, Instruction, Register},
-            code_map::InstructionPtr,
-        },
+    engine::regmach::{
+        bytecode::{Const16, Const32, ElementSegmentIdx, Instruction, Register, TableIdx},
+        code_map::InstructionPtr,
     },
     error::EntityGrowError,
     store::ResourceLimiterRef,
@@ -230,7 +227,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let dst_table_index = self.fetch_table_index(1);
         let src_table_index = self.fetch_table_index(2);
         self.consume_fuel_with(
-            |costs| costs.fuel_for_elements(u64::from(len)),
+            |costs| costs.fuel_for_copies(u64::from(len)),
             |this| {
                 if dst_table_index == src_table_index {
                     // Case: copy within the same table
@@ -375,7 +372,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let table_index = self.fetch_table_index(1);
         let element_index = self.fetch_element_segment_index(2);
         self.consume_fuel_with(
-            |costs| costs.fuel_for_elements(u64::from(len)),
+            |costs| costs.fuel_for_copies(u64::from(len)),
             |this| {
                 let (instance, table, element) =
                     this.cache
@@ -452,7 +449,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ) -> Result<(), TrapCode> {
         let table_index = self.fetch_table_index(1);
         self.consume_fuel_with(
-            |costs| costs.fuel_for_elements(u64::from(len)),
+            |costs| costs.fuel_for_copies(u64::from(len)),
             |this| {
                 let value = this.get_register(value);
                 let table = this.cache.get_table(this.ctx, table_index);
@@ -506,7 +503,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             return self.try_next_instr_at(2);
         }
         let return_value = self.consume_fuel_with(
-            |costs| costs.fuel_for_elements(u64::from(delta)),
+            |costs| costs.fuel_for_copies(u64::from(delta)),
             |this| {
                 let table = this.cache.get_table(this.ctx, table_index);
                 let value = this.get_register(value);

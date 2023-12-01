@@ -1,5 +1,5 @@
 use super::{Instr, TranslationError};
-use crate::engine::bytecode::BranchOffset;
+use crate::engine::regmach::bytecode::BranchOffset;
 use alloc::vec::Vec;
 use core::{
     fmt::{self, Display},

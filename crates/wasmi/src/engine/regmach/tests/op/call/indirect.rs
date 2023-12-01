@@ -1,6 +1,6 @@
 use super::*;
 use crate::engine::{
-    bytecode::{GlobalIdx, SignatureIdx, TableIdx},
+    regmach::bytecode::{GlobalIdx, SignatureIdx, TableIdx},
     RegisterSpan,
 };
 

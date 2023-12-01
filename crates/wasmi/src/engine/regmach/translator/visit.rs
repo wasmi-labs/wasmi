@@ -13,14 +13,13 @@ use super::{
     ControlFrameKind,
     FuelInfo,
     FuncTranslator,
+    LabelRef,
     TypedValue,
 };
 use crate::{
     engine::{
-        bytecode::{self, SignatureIdx},
-        func_builder::labels::LabelRef,
         regmach::{
-            bytecode::{Const16, Instruction, Provider, Register},
+            bytecode::{self, Const16, Instruction, Provider, Register, SignatureIdx},
             translator::AcquiredTarget,
         },
         FuelCosts,

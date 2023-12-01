@@ -91,5 +91,5 @@ fn metered_i32_add() {
     // Now add enough fuel, so execution should succeed.
     store.add_fuel(10).unwrap();
     assert_success(func.call(&mut store, (1, 2)));
-    assert_eq!(store.fuel_consumed(), Some(5));
+    assert_eq!(store.fuel_consumed(), Some(3));
 }

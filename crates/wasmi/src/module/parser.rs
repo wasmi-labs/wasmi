@@ -13,7 +13,7 @@ use super::{
     Read,
 };
 use crate::{
-    engine::{ChosenFuncTranslatorAllocations, CompiledFunc},
+    engine::{CompiledFunc, FuncTranslatorAllocations2 as FuncTranslatorAllocations},
     Engine,
     FuncType,
     MemoryType,
@@ -69,14 +69,14 @@ pub struct ModuleParser<'engine> {
 
 /// Reusable heap allocations for function validation and translation.
 pub struct ReusableAllocations {
-    pub translation: ChosenFuncTranslatorAllocations,
+    pub translation: FuncTranslatorAllocations,
     pub validation: FuncValidatorAllocations,
 }
 
 impl ReusableAllocations {
     /// Creates new [`ReusableAllocations`] for the given [`Engine`].
-    pub fn new(engine: &Engine) -> Self {
-        let translation = ChosenFuncTranslatorAllocations::default(engine);
+    pub fn new() -> Self {
+        let translation = FuncTranslatorAllocations::default();
         let validation = FuncValidatorAllocations::default();
         Self {
             translation,
@@ -96,7 +96,7 @@ impl<'engine> ModuleParser<'engine> {
             validator,
             parser,
             compiled_funcs: 0,
-            allocations: ReusableAllocations::new(engine),
+            allocations: ReusableAllocations::new(),
         }
     }
 
@@ -485,9 +485,8 @@ impl<'engine> ModuleParser<'engine> {
     }
 
     /// Returns the next `FuncIdx` for processing of its function body.
-    fn next_func(&mut self) -> (FuncIdx, CompiledFunc, CompiledFunc) {
+    fn next_func(&mut self) -> (FuncIdx, CompiledFunc) {
         let index = self.compiled_funcs;
-        let compiled_func = self.builder.compiled_funcs[index as usize];
         let compiled_func_2 = self.builder.compiled_funcs_2[index as usize];
         self.compiled_funcs += 1;
         // We have to adjust the initial func reference to the first
@@ -495,7 +494,7 @@ impl<'engine> ModuleParser<'engine> {
         let len_func_imports = u32::try_from(self.builder.imports.funcs.len())
             .unwrap_or_else(|_| panic!("too many imported functions"));
         let func_idx = FuncIdx::from(index + len_func_imports);
-        (func_idx, compiled_func, compiled_func_2)
+        (func_idx, compiled_func_2)
     }
 
     /// Process a single module code section entry.
@@ -510,14 +509,14 @@ impl<'engine> ModuleParser<'engine> {
     ///
     /// If the function body fails to validate.
     fn process_code_entry(&mut self, func_body: FunctionBody) -> Result<(), ModuleError> {
-        let (func, compiled_func, compiled_func_2) = self.next_func();
+        let (func, compiled_func_2) = self.next_func();
         let validator = self.validator.code_section_entry(&func_body)?;
         let module_resources = ModuleResources::new(&self.builder);
-        let dummy_allocations = ReusableAllocations::new(self.builder.engine());
+        let dummy_allocations = ReusableAllocations::new();
         let allocations = replace(&mut self.allocations, dummy_allocations);
         let allocations = translate(
             func,
-            (compiled_func, compiled_func_2),
+            compiled_func_2,
             func_body,
             validator.into_validator(allocations.validation),
             module_resources,

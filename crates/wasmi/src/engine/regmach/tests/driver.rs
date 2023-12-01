@@ -1,9 +1,11 @@
 use super::create_module;
 use crate::{
-    engine::{regmach::bytecode::Instruction, CompiledFunc, DedupFuncType},
+    engine::{
+        regmach::{bytecode::Instruction, CompiledFunc},
+        DedupFuncType,
+    },
     Config,
     Engine,
-    EngineBackend,
     Module,
 };
 use core::sync::atomic::Ordering;
@@ -165,7 +167,6 @@ impl TranslationTest {
         let config = {
             let mut cfg = Config::default();
             cfg.wasm_tail_call(true);
-            cfg.set_engine_backend(EngineBackend::RegisterMachine);
             cfg
         };
         Self {

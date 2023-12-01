@@ -84,7 +84,7 @@ mod i64_popcnt {
     use super::*;
 
     #[test]
-    #[cfg_attr(miri, ignore)]
+    // #[cfg_attr(miri, ignore)]
     fn reg() {
         unary_reg::<i64>("popcnt", Instruction::i64_popcnt);
     }

@@ -20,8 +20,7 @@ fn main() -> Result<()> {
     let args = Args::parse();
     let wasm_file = args.wasm_file();
     let wasi_ctx = args.wasi_context()?;
-    let engine = args.engine().unwrap_or_default();
-    let mut ctx = Context::new(wasm_file, wasi_ctx, args.fuel(), engine)?;
+    let mut ctx = Context::new(wasm_file, wasi_ctx, args.fuel())?;
     let (func_name, func) = get_invoked_func(&args, &ctx)?;
     let ty = func.ty(ctx.store());
     let func_args = utils::decode_func_args(&ty, args.func_args())?;

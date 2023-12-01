@@ -1,11 +1,14 @@
 #![allow(dead_code)] // TODO: remove
 
+use super::LabelRef;
 #[cfg(doc)]
 use super::ValueStack;
 use crate::{
     engine::{
-        func_builder::{labels::LabelRef, TranslationErrorInner},
-        regmach::bytecode::{RegisterSpan, RegisterSpanIter},
+        regmach::{
+            bytecode::{RegisterSpan, RegisterSpanIter},
+            TranslationErrorInner,
+        },
         Instr,
         TranslationError,
     },

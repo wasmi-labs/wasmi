@@ -1,14 +1,12 @@
 use super::Executor;
-use crate::engine::{
-    bytecode::BranchOffset,
-    regmach::bytecode::{
-        BranchBinOpInstr,
-        BranchBinOpInstrImm16,
-        BranchOffset16,
-        Const16,
-        Const32,
-        Register,
-    },
+use crate::engine::regmach::bytecode::{
+    BranchBinOpInstr,
+    BranchBinOpInstrImm16,
+    BranchOffset,
+    BranchOffset16,
+    Const16,
+    Const32,
+    Register,
 };
 use core::cmp;
 use wasmi_core::UntypedValue;
