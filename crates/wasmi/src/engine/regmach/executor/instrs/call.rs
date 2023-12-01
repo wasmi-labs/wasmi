@@ -39,6 +39,7 @@ pub enum CallOutcome {
     Call {
         results: RegisterSpan,
         host_func: Func,
+        call_kind: CallKind,
     },
 }
 
@@ -320,8 +321,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Ok(CallOutcome::Continue)
             }
             FuncEntity::Host(host_func) => {
-                // Note: host function calls cannot be implemented as tail calls.
-                //       The Wasm spec is not mandating tail behavior for host calls.
                 let (input_types, output_types) = self
                     .func_types
                     .resolve_func_type(host_func.ty_dedup())
@@ -341,13 +340,19 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 let offset = self.value_stack.extend_zeros(max_inout);
                 let offset_sp = unsafe { self.value_stack.stack_ptr_at(offset) };
                 if matches!(params, CallParams::Some) {
-                    self.ip = self.copy_call_params(offset_sp);
+                    let new_ip = self.copy_call_params(offset_sp);
+                    if matches!(call_kind, CallKind::Nested) {
+                        self.ip = new_ip;
+                    }
                 }
-                self.update_instr_ptr_at(1);
+                if matches!(call_kind, CallKind::Nested) {
+                    self.update_instr_ptr_at(1);
+                }
                 self.cache.reset();
                 Ok(CallOutcome::Call {
                     results,
                     host_func: *func,
+                    call_kind,
                 })
             }
         }

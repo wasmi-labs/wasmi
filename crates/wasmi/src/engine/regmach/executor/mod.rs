@@ -1,6 +1,6 @@
-use self::instrs::{execute_instrs, WasmOutcome};
-use super::stack::CallFrame;
+use self::instrs::{execute_instrs, CallKind, WasmOutcome};
 pub use super::Stack;
+use super::{stack::CallFrame, TaggedTrap};
 use crate::{
     engine::{
         cache::InstanceCache,
@@ -10,10 +10,8 @@ use crate::{
         },
         CallParams,
         CallResults,
-        DedupFuncType,
         EngineResources,
         FuncParams,
-        TaggedTrap,
     },
     func::HostFuncEntity,
     AsContext,
@@ -67,10 +65,8 @@ impl<'engine> EngineExecutor<'engine> {
         Results: CallResults,
     {
         self.stack.reset();
-        let func_type;
         match ctx.as_context().store.inner.resolve_func(func) {
             FuncEntity::Wasm(wasm_func) => {
-                func_type = *wasm_func.ty_dedup();
                 // We reserve space on the stack to write the results of the root function execution.
                 self.stack.values.extend_zeros(results.len_results());
                 let instance = wasm_func.instance();
@@ -92,7 +88,6 @@ impl<'engine> EngineExecutor<'engine> {
                 self.execute_func(ctx.as_context_mut())?;
             }
             FuncEntity::Host(host_func) => {
-                func_type = *host_func.ty_dedup();
                 // The host function signature is required for properly
                 // adjusting, inspecting and manipulating the value stack.
                 let (input_types, output_types) = self
@@ -115,7 +110,44 @@ impl<'engine> EngineExecutor<'engine> {
                 self.dispatch_host_func(ctx.as_context_mut(), host_func, HostFuncCaller::Root)?;
             }
         };
-        let results = self.write_results_back(results, func_type);
+        let results = self.write_results_back(results);
+        Ok(results)
+    }
+
+    /// Resumes the execution of the given [`Func`] using `params`.
+    ///
+    /// Stores the execution result into `results` upon a successful execution.
+    ///
+    /// # Errors
+    ///
+    /// - If the given `params` do not match the expected parameters of `func`.
+    /// - If the given `results` do not match the the length of the expected results of `func`.
+    /// - When encountering a Wasm or host trap during the execution of `func`.
+    pub fn resume_func<T, Results>(
+        &mut self,
+        mut ctx: StoreContextMut<T>,
+        _host_func: Func,
+        params: impl CallParams,
+        caller_results: RegisterSpan,
+        results: Results,
+    ) -> Result<<Results as CallResults>::Results, TaggedTrap>
+    where
+        Results: CallResults,
+    {
+        let caller = self
+            .stack
+            .calls
+            .peek()
+            .expect("must have caller call frame on stack upon function resumption");
+        let mut caller_sp = unsafe { self.stack.values.stack_ptr_at(caller.base_offset()) };
+        let call_params = params.call_params();
+        let len_params = call_params.len();
+        for (result, param) in caller_results.iter(len_params).zip(call_params) {
+            let cell = unsafe { caller_sp.get_mut(result) };
+            *cell = param;
+        }
+        self.execute_func(ctx.as_context_mut())?;
+        let results = self.write_results_back(results);
         Ok(results)
     }
 
@@ -143,6 +175,7 @@ impl<'engine> EngineExecutor<'engine> {
                 WasmOutcome::Call {
                     results,
                     ref host_func,
+                    call_kind,
                 } => {
                     let instance = *self
                         .stack
@@ -150,7 +183,7 @@ impl<'engine> EngineExecutor<'engine> {
                         .peek()
                         .expect("caller must be on the stack")
                         .instance();
-                    self.execute_host_func(&mut ctx, results, host_func, &instance)?;
+                    self.execute_host_func(&mut ctx, results, host_func, &instance, call_kind)?;
                 }
             }
         }
@@ -162,6 +195,7 @@ impl<'engine> EngineExecutor<'engine> {
         results: RegisterSpan,
         func: &Func,
         instance: &Instance,
+        call_kind: CallKind,
     ) -> Result<(), TaggedTrap> {
         let func_entity = match ctx.as_context().store.inner.resolve_func(func) {
             FuncEntity::Wasm(wasm_func) => {
@@ -174,12 +208,15 @@ impl<'engine> EngineExecutor<'engine> {
             func_entity,
             HostFuncCaller::wasm(results, instance),
         );
+        if matches!(call_kind, CallKind::Tail) {
+            self.stack.calls.pop();
+        }
         if self.stack.calls.peek().is_some() {
             // Case: There is a frame on the call stack.
             //
             // This is the default case and we can easily make host function
             // errors return a resumable call handle.
-            result.map_err(|trap| TaggedTrap::host(*func, trap))?;
+            result.map_err(|trap| TaggedTrap::host(*func, trap, results))?;
         } else {
             // Case: No frame is on the call stack. (edge case)
             //
@@ -362,15 +399,11 @@ impl<'engine> EngineExecutor<'engine> {
     ///
     /// - If the `results` buffer length does not match the remaining amount of stack values.
     #[inline]
-    fn write_results_back<Results>(
-        &mut self,
-        results: Results,
-        ty: DedupFuncType,
-    ) -> <Results as CallResults>::Results
+    fn write_results_back<Results>(&mut self, results: Results) -> <Results as CallResults>::Results
     where
         Results: CallResults,
     {
-        let len_results = self.res.func_types.resolve_func_type(&ty).results().len();
+        let len_results = results.len_results();
         results.call_results(&self.stack.values.as_slice()[..len_results])
     }
 }
