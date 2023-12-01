@@ -42,7 +42,7 @@ pub struct Tracer {
     pub elem_table: ElemTable,
     pub configure_table: ConfigureTable,
     type_of_func_ref: Vec<(FuncRef, u32)>,
-    function_lookup: Vec<(FuncRef, u32)>,
+    function_lookup: HashMap<FuncRef, u32>,
     pub(crate) function_lookup_name: HashMap<u32, String>,
     pub(crate) last_jump_eid: Vec<u32>,
     pub(crate) function_desc: HashMap<u32, FuncDesc>,
@@ -73,7 +73,7 @@ impl Tracer {
             elem_table: ElemTable::default(),
             configure_table: ConfigureTable::default(),
             type_of_func_ref: vec![],
-            function_lookup: vec![],
+            function_lookup: HashMap::default(),
             function_desc: Default::default(),
             function_lookup_name: Default::default(),
             host_function_index_lookup: host_plugin_lookup,
@@ -251,7 +251,7 @@ impl Tracer {
                         }
                     };
 
-                    self.function_lookup.push((func.clone(), func_index));
+                    self.function_lookup.insert(func.clone(), func_index);
                     self.function_desc.insert(
                         func_index,
                         FuncDesc {
@@ -339,12 +339,7 @@ impl Tracer {
     }
 
     pub fn lookup_function(&self, function: &FuncRef) -> u32 {
-        let pos = self
-            .function_lookup
-            .iter()
-            .position(|m| m.0 == *function)
-            .unwrap();
-        self.function_lookup.get(pos).unwrap().1
+        *self.function_lookup.get(function).unwrap()
     }
 
     pub fn lookup_ientry(&self, function: &FuncRef, pos: u32) -> InstructionTableEntry {

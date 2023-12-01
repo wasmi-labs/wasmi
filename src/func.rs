@@ -14,7 +14,7 @@ use alloc::{
     rc::{Rc, Weak},
     vec::Vec,
 };
-use core::{cell::RefCell, fmt};
+use core::{cell::RefCell, fmt, hash::Hash};
 use parity_wasm::elements::Local;
 
 /// Reference to a function (See [`FuncInstance`] for details).
@@ -22,7 +22,7 @@ use parity_wasm::elements::Local;
 /// This reference has a reference-counting semantics.
 ///
 /// [`FuncInstance`]: struct.FuncInstance.html
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct FuncRef(Rc<FuncInstance>);
 
 impl ::core::ops::Deref for FuncRef {
@@ -46,7 +46,7 @@ impl ::core::ops::Deref for FuncRef {
 ///   See more in [`Externals`].
 ///
 /// [`Externals`]: trait.Externals.html
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq, Hash)]
 pub struct FuncInstance(FuncInstanceInternal);
 
 #[derive(Clone)]
@@ -61,6 +61,23 @@ pub(crate) enum FuncInstanceInternal {
         signature: Signature,
         host_func_index: usize,
     },
+}
+
+impl Hash for FuncInstanceInternal {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        match self {
+            FuncInstanceInternal::Internal { index, .. } => {
+                0.hash(state);
+                index.hash(state);
+            }
+            FuncInstanceInternal::Host {
+                host_func_index, ..
+            } => {
+                1.hash(state);
+                host_func_index.hash(state);
+            }
+        }
+    }
 }
 
 impl PartialEq for FuncInstanceInternal {
@@ -83,6 +100,8 @@ impl PartialEq for FuncInstanceInternal {
         }
     }
 }
+
+impl Eq for FuncInstanceInternal {}
 
 impl fmt::Debug for FuncInstance {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
