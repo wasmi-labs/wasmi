@@ -1058,12 +1058,10 @@ impl Interpreter {
                     let tracer = self.tracer.clone().unwrap();
                     let tracer = tracer.borrow();
 
-                    let desc = tracer.function_index_translation.get(&index).unwrap();
+                    let desc = tracer.function_desc.get(&index).unwrap();
 
                     match &desc.ftype {
-                        specs::types::FunctionType::WasmFunction => StepInfo::Call {
-                            index: desc.index_within_jtable,
-                        },
+                        specs::types::FunctionType::WasmFunction => StepInfo::Call { index },
                         specs::types::FunctionType::HostFunction {
                             plugin,
                             function_index: host_function_idx,
@@ -2034,7 +2032,7 @@ impl Interpreter {
 
                         let mut tracer = tracer.borrow_mut();
 
-                        let instruction = { instruction.into(&tracer.function_index_translation) };
+                        let instruction = { instruction.into(&tracer.function_desc) };
 
                         let function = tracer.lookup_function(&function_context.function);
 

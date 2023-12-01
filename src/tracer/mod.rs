@@ -17,7 +17,6 @@ use crate::{
     FuncRef,
     GlobalRef,
     MemoryRef,
-    Module,
     ModuleRef,
     Signature,
 };
@@ -30,7 +29,6 @@ pub mod phantom;
 
 #[derive(Debug)]
 pub struct FuncDesc {
-    pub index_within_jtable: u32,
     pub ftype: FunctionType,
     pub signature: Signature,
 }
@@ -46,8 +44,7 @@ pub struct Tracer {
     type_of_func_ref: Vec<(FuncRef, u32)>,
     function_lookup: Vec<(FuncRef, u32)>,
     pub(crate) last_jump_eid: Vec<u32>,
-    function_index_allocator: u32,
-    pub(crate) function_index_translation: HashMap<u32, FuncDesc>,
+    pub(crate) function_desc: HashMap<u32, FuncDesc>,
     pub host_function_index_lookup: HashMap<usize, HostFunctionDesc>,
     pub static_jtable_entries: Vec<StaticFrameEntry>,
     pub phantom_functions: Vec<String>,
@@ -76,8 +73,7 @@ impl Tracer {
             configure_table: ConfigureTable::default(),
             type_of_func_ref: vec![],
             function_lookup: vec![],
-            function_index_allocator: 1,
-            function_index_translation: Default::default(),
+            function_desc: Default::default(),
             host_function_index_lookup: host_plugin_lookup,
             static_jtable_entries: vec![],
             phantom_functions: phantom_functions.clone(),
@@ -103,12 +99,6 @@ impl Tracer {
 
     pub fn eid(&self) -> u32 {
         self.etable.get_latest_eid()
-    }
-
-    fn allocate_func_index(&mut self) -> u32 {
-        let r = self.function_index_allocator;
-        self.function_index_allocator = r + 1;
-        r
     }
 
     fn lookup_host_plugin(&self, function_index: usize) -> HostFunctionDesc {
@@ -218,13 +208,7 @@ impl Tracer {
             .1
     }
 
-    pub(crate) fn register_module_instance(
-        &mut self,
-        module: &Module,
-        module_instance: &ModuleRef,
-    ) {
-        let start_fn_idx = module.module().start_section();
-
+    pub(crate) fn register_module_instance(&mut self, module_instance: &ModuleRef) {
         {
             let mut func_index = 0;
 
@@ -233,12 +217,6 @@ impl Tracer {
                     if Some(&func) == self.wasm_input_func_ref.as_ref() {
                         self.wasm_input_func_idx = Some(func_index)
                     }
-
-                    let func_index_in_itable = if Some(func_index) == start_fn_idx {
-                        0
-                    } else {
-                        self.allocate_func_index()
-                    };
 
                     let ftype = match *func.as_internal() {
                         crate::func::FuncInstanceInternal::Internal { .. } => {
@@ -271,12 +249,10 @@ impl Tracer {
                         }
                     };
 
-                    self.function_lookup
-                        .push((func.clone(), func_index_in_itable));
-                    self.function_index_translation.insert(
+                    self.function_lookup.push((func.clone(), func_index));
+                    self.function_desc.insert(
                         func_index,
                         FuncDesc {
-                            index_within_jtable: func_index_in_itable,
                             ftype,
                             signature: func.signature().clone(),
                         },
@@ -307,7 +283,7 @@ impl Tracer {
 
             loop {
                 if let Some(func) = module_instance.func_by_index(func_index) {
-                    let funcdesc = self.function_index_translation.get(&func_index).unwrap();
+                    let funcdesc = self.function_desc.get(&func_index).unwrap();
 
                     if self.is_phantom_function(&func) {
                         let instructions = PhantomFunction::build_phantom_function_instructions(
@@ -316,11 +292,8 @@ impl Tracer {
                         );
 
                         for (iid, inst) in instructions.into_iter().enumerate() {
-                            self.itable.push(
-                                funcdesc.index_within_jtable,
-                                iid as u32,
-                                inst.into(&self.function_index_translation),
-                            )
+                            self.itable
+                                .push(func_index, iid as u32, inst.into(&self.function_desc))
                         }
                     } else {
                         if let Some(body) = func.body() {
@@ -330,9 +303,9 @@ impl Tracer {
                                 let pc = iter.position();
                                 if let Some(instruction) = iter.next() {
                                     let _ = self.itable.push(
-                                        funcdesc.index_within_jtable,
+                                        func_index,
                                         pc,
-                                        instruction.into(&self.function_index_translation),
+                                        instruction.into(&self.function_desc),
                                     );
                                 } else {
                                     break;

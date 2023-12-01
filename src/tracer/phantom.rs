@@ -93,7 +93,7 @@ impl Tracer {
                 InstructionTableEntry {
                     fid,
                     iid,
-                    opcode: inst.next().unwrap().into(&self.function_index_translation),
+                    opcode: inst.next().unwrap().into(&self.function_desc),
                 },
                 current_sp,
                 allocated_memory_pages,
@@ -107,7 +107,7 @@ impl Tracer {
                 InstructionTableEntry {
                     fid,
                     iid,
-                    opcode: inst.next().unwrap().into(&self.function_index_translation),
+                    opcode: inst.next().unwrap().into(&self.function_desc),
                 },
                 current_sp + 1,
                 allocated_memory_pages,
@@ -133,7 +133,7 @@ impl Tracer {
                     InstructionTableEntry {
                         fid,
                         iid,
-                        opcode: inst.next().unwrap().into(&self.function_index_translation),
+                        opcode: inst.next().unwrap().into(&self.function_desc),
                     },
                     current_sp + 1,
                     allocated_memory_pages,
@@ -152,7 +152,7 @@ impl Tracer {
             InstructionTableEntry {
                 fid,
                 iid,
-                opcode: inst.next().unwrap().into(&self.function_index_translation),
+                opcode: inst.next().unwrap().into(&self.function_desc),
             },
             current_sp + has_return_value as u32,
             allocated_memory_pages,

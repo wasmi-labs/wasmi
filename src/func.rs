@@ -55,7 +55,7 @@ pub(crate) enum FuncInstanceInternal {
         signature: Rc<Signature>,
         module: Weak<ModuleInstance>,
         body: Rc<FuncBody>,
-        image_func_index: usize,
+        index: usize,
     },
     Host {
         signature: Signature,
@@ -66,16 +66,9 @@ pub(crate) enum FuncInstanceInternal {
 impl PartialEq for FuncInstanceInternal {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (
-                Self::Internal {
-                    image_func_index: l_image_func_index,
-                    ..
-                },
-                Self::Internal {
-                    image_func_index: r_image_func_index,
-                    ..
-                },
-            ) => l_image_func_index == r_image_func_index,
+            (Self::Internal { index: l_index, .. }, Self::Internal { index: r_index, .. }) => {
+                l_index == r_index
+            }
             (
                 Self::Host {
                     signature: l_signature,
@@ -94,10 +87,18 @@ impl PartialEq for FuncInstanceInternal {
 impl fmt::Debug for FuncInstance {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.as_internal() {
-            FuncInstanceInternal::Internal { ref signature, .. } => {
+            FuncInstanceInternal::Internal {
+                ref signature,
+                index,
+                ..
+            } => {
                 // We can't write description of self.module here, because it generate
                 // debug string for function instances and this will lead to infinite loop.
-                write!(f, "Internal {{ signature={:?} }}", signature,)
+                write!(
+                    f,
+                    "Internal {{ signature={:?}, index={} }}",
+                    signature, index
+                )
             }
             FuncInstanceInternal::Host { ref signature, .. } => {
                 write!(f, "Host {{ signature={:?} }}", signature)
@@ -143,13 +144,13 @@ impl FuncInstance {
         module: Weak<ModuleInstance>,
         signature: Rc<Signature>,
         body: FuncBody,
-        image_func_index: usize,
+        index: usize,
     ) -> FuncRef {
         let func = FuncInstanceInternal::Internal {
             signature,
             module,
             body: Rc::new(body),
-            image_func_index,
+            index,
         };
         FuncRef(Rc::new(FuncInstance(func)))
     }

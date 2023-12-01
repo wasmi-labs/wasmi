@@ -444,12 +444,7 @@ impl<'a> Instruction<'a> {
                 let func_desc = function_mapping.get(&func_index).unwrap();
 
                 match &func_desc.ftype {
-                    specs::types::FunctionType::WasmFunction => Opcode::Call {
-                        index: function_mapping
-                            .get(&func_index)
-                            .unwrap()
-                            .index_within_jtable,
-                    },
+                    specs::types::FunctionType::WasmFunction => Opcode::Call { index: func_index },
                     specs::types::FunctionType::HostFunction {
                         plugin,
                         function_index,

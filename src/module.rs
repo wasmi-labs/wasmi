@@ -207,6 +207,10 @@ impl ModuleInstance {
         self.signatures.borrow().get(idx as usize).cloned()
     }
 
+    fn funcs(&self) -> RefCell<Vec<FuncRef>> {
+        self.funcs.clone()
+    }
+
     fn push_func(&self, func: FuncRef) {
         self.funcs.borrow_mut().push(func);
     }
@@ -287,7 +291,7 @@ impl ModuleInstance {
                         }
 
                         if import.field() == "wasm_input" {
-                            if let Some(tracer) = tracer.clone() {
+                            if let Some(tracer) = tracer.as_ref() {
                                 tracer.borrow_mut().wasm_input_func_ref = Some(func.clone());
                             }
                         }
@@ -348,10 +352,10 @@ impl ModuleInstance {
                     Rc::downgrade(&instance.0),
                     signature,
                     func_body,
-                    index,
+                    instance.funcs().borrow().len(),
                 );
 
-                if let Some(tracer) = tracer.clone() {
+                if let Some(tracer) = tracer.as_ref() {
                     tracer
                         .borrow_mut()
                         .push_type_of_func_ref(func_instance.clone(), ty.type_ref())
@@ -453,9 +457,7 @@ impl ModuleInstance {
         let module_ref = ModuleInstance::alloc_module(loaded_module, extern_vals, tracer.clone())?;
 
         if let Some(tracer) = tracer.clone() {
-            tracer
-                .borrow_mut()
-                .register_module_instance(loaded_module, &module_ref);
+            tracer.borrow_mut().register_module_instance(&module_ref);
         }
 
         for element_segment in module
