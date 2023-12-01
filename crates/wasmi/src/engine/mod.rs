@@ -647,7 +647,9 @@ impl<'engine> EngineExecutor<'engine> {
         Results: CallResults,
     {
         self.stack.reset();
-        self.stack.values.extend(params.call_params());
+        let call_params = params.call_params();
+        self.stack.values.reserve(call_params.len())?;
+        self.stack.values.extend(call_params);
         match ctx.as_context().store.inner.resolve_func(func) {
             FuncEntity::Wasm(wasm_func) => {
                 self.stack
@@ -689,7 +691,9 @@ impl<'engine> EngineExecutor<'engine> {
         self.stack
             .values
             .drop(host_func.ty(ctx.as_context()).params().len());
-        self.stack.values.extend(params.call_params());
+        let call_params = params.call_params();
+        self.stack.values.reserve(call_params.len())?;
+        self.stack.values.extend(call_params);
         assert!(
             self.stack.frames.peek().is_some(),
             "a frame must be on the call stack upon resumption"
