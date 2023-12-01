@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1701344220984,
+  "lastUpdate": 1701419374151,
   "repoUrl": "https://github.com/paritytech/wasmi",
   "entries": {
     "Wasmi criterion wasmtime": [
@@ -7805,6 +7805,276 @@ window.BENCHMARK_DATA = {
             "name": "overhead/call/untyped/16",
             "value": 4048976,
             "range": "± 4664",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "robin.freyler@gmail.com",
+            "name": "Robin Freyler",
+            "username": "Robbepop"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e2323b2d38f7d83bc182250695cae192cbe6dd01",
+          "message": "Remove the stack-machine `wasmi` engine backend (#818)\n\n* remove EngineBackend and conditionals of users\r\n\r\nAlso remove tests testing the stack-machine wasmi engine backend which is about to be removed since those tests can no longer be run.\r\n\r\n* remove code directly related to the stack-machine backend\r\n\r\nNo post-removal clean ups performed in this commit.\r\n\r\n* fix doclinks and minor renamings\r\n\r\n* make caller_results non optional\r\n\r\nThe None variant was only needed for the removed stack-machine engine backend.",
+          "timestamp": "2023-12-01T09:22:00+01:00",
+          "tree_id": "312a9201791565e618352c0d52bc848be3ae6e1d",
+          "url": "https://github.com/paritytech/wasmi/commit/e2323b2d38f7d83bc182250695cae192cbe6dd01"
+        },
+        "date": 1701419374135,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "translate/wasm_kernel/default",
+            "value": 8676131,
+            "range": "± 22325",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/fuel",
+            "value": 9124131,
+            "range": "± 35415",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/default",
+            "value": 157095588,
+            "range": "± 225091",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/fuel",
+            "value": 164782620,
+            "range": "± 490225",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/default",
+            "value": 6556664,
+            "range": "± 24387",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/fuel",
+            "value": 6891080,
+            "range": "± 20118",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/default",
+            "value": 2512688,
+            "range": "± 8478",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/fuel",
+            "value": 2663089,
+            "range": "± 9662",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/default",
+            "value": 229691,
+            "range": "± 519",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/fuel",
+            "value": 240475,
+            "range": "± 263",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/default",
+            "value": 331801,
+            "range": "± 954",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/fuel",
+            "value": 347285,
+            "range": "± 973",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/default",
+            "value": 489491,
+            "range": "± 1069",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/fuel",
+            "value": 524607,
+            "range": "± 1949",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "instantiate/wasm_kernel",
+            "value": 54724,
+            "range": "± 321",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/tiny_keccak",
+            "value": 392533,
+            "range": "± 313",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/rev_complement",
+            "value": 641499,
+            "range": "± 609",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/regex_redux",
+            "value": 1027770,
+            "range": "± 9110",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/count_until",
+            "value": 7483633,
+            "range": "± 4838",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/br_table",
+            "value": 1312149,
+            "range": "± 1014",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/trunc_f2i",
+            "value": 977031,
+            "range": "± 1119",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global/bump",
+            "value": 1623070,
+            "range": "± 903",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global/get_const",
+            "value": 749916,
+            "range": "± 717",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial/rec",
+            "value": 1288257,
+            "range": "± 455",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial/iter",
+            "value": 325389,
+            "range": "± 432",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/call/rec",
+            "value": 346365,
+            "range": "± 4044",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_scan",
+            "value": 366456,
+            "range": "± 500",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_trap",
+            "value": 34156,
+            "range": "± 126",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/call/host/1",
+            "value": 66853,
+            "range": "± 115",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fuse",
+            "value": 11536687,
+            "range": "± 5534",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/rec",
+            "value": 12572323,
+            "range": "± 14894",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/tail",
+            "value": 3680475,
+            "range": "± 5414",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/iter",
+            "value": 1173430,
+            "range": "± 3244",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/is_even/rec",
+            "value": 2157415,
+            "range": "± 4950",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/sum_bytes",
+            "value": 1227527,
+            "range": "± 1468",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/fill_bytes",
+            "value": 1217415,
+            "range": "± 1498",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/vec_add",
+            "value": 3401879,
+            "range": "± 10620",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/typed/0",
+            "value": 819122,
+            "range": "± 915",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/typed/16",
+            "value": 1859871,
+            "range": "± 3710",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/untyped/0",
+            "value": 1274756,
+            "range": "± 2382",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/untyped/16",
+            "value": 3889465,
+            "range": "± 7779",
             "unit": "ns/iter"
           }
         ]
