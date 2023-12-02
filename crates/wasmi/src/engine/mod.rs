@@ -486,66 +486,6 @@ impl EngineInner {
             .copied()
     }
 
-    /// Executes the given [`Func`] with the given `params` and returns the `results`.
-    ///
-    /// Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
-    ///
-    /// # Errors
-    ///
-    /// If the Wasm execution traps or runs out of resources.
-    fn execute_func<T, Results>(
-        &self,
-        ctx: StoreContextMut<T>,
-        func: &Func,
-        params: impl CallParams,
-        results: Results,
-    ) -> Result<<Results as CallResults>::Results, Trap>
-    where
-        Results: CallResults,
-    {
-        self.execute_func_regmach(ctx, func, params, results)
-    }
-
-    /// Executes the given [`Func`] resumably with the given `params` and returns the `results`.
-    ///
-    /// Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
-    ///
-    /// # Errors
-    ///
-    /// If the Wasm execution traps or runs out of resources.
-    fn execute_func_resumable<T, Results>(
-        &self,
-        ctx: StoreContextMut<T>,
-        func: &Func,
-        params: impl CallParams,
-        results: Results,
-    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
-    where
-        Results: CallResults,
-    {
-        self.execute_func_resumable_regmach(ctx, func, params, results)
-    }
-
-    /// Resumes the given [`Func`] with the given `params` and returns the `results`.
-    ///
-    /// - Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
-    ///
-    /// # Errors
-    ///
-    /// If the Wasm execution traps or runs out of resources.
-    fn resume_func<T, Results>(
-        &self,
-        ctx: StoreContextMut<T>,
-        invocation: ResumableInvocation,
-        params: impl CallParams,
-        results: Results,
-    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
-    where
-        Results: CallResults,
-    {
-        self.resume_func_regmach(ctx, invocation, params, results)
-    }
-
     /// Recycles the given [`Stack`].
     fn recycle_stack(&self, stack: Stack) {
         self.stacks.lock().recycle(stack)

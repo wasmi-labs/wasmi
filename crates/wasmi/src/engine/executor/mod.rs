@@ -37,13 +37,12 @@ mod trap;
 impl EngineInner {
     /// Executes the given [`Func`] with the given `params` and returns the `results`.
     ///
-    /// - Uses the `wasmi` register-machine based engine backend.
-    /// - Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
+    /// Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
     ///
     /// # Errors
     ///
     /// If the Wasm execution traps or runs out of resources.
-    pub fn execute_func_regmach<T, Results>(
+    pub fn execute_func<T, Results>(
         &self,
         ctx: StoreContextMut<T>,
         func: &Func,
@@ -64,13 +63,12 @@ impl EngineInner {
 
     /// Executes the given [`Func`] resumably with the given `params` and returns the `results`.
     ///
-    /// - Uses the `wasmi` register-machine based engine backend.
-    /// - Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
+    /// Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
     ///
     /// # Errors
     ///
     /// If the Wasm execution traps or runs out of resources.
-    pub(crate) fn execute_func_resumable_regmach<T, Results>(
+    pub(crate) fn execute_func_resumable<T, Results>(
         &self,
         mut ctx: StoreContextMut<T>,
         func: &Func,
@@ -114,13 +112,12 @@ impl EngineInner {
 
     /// Resumes the given [`Func`] with the given `params` and returns the `results`.
     ///
-    /// - Uses the `wasmi` register-machine based engine backend.
-    /// - Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
+    /// Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
     ///
     /// # Errors
     ///
     /// If the Wasm execution traps or runs out of resources.
-    pub(crate) fn resume_func_regmach<T, Results>(
+    pub(crate) fn resume_func<T, Results>(
         &self,
         ctx: StoreContextMut<T>,
         mut invocation: ResumableInvocation,
