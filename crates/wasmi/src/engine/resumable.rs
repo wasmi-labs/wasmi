@@ -1,4 +1,4 @@
-use super::{regmach::bytecode::RegisterSpan, Func};
+use super::{bytecode::RegisterSpan, Func};
 use crate::{
     engine::Stack,
     func::CallResultsTuple,
@@ -132,14 +132,12 @@ impl ResumableInvocation {
     /// # Note
     ///
     /// This should only be called from the register-machine `wasmi` engine backend.
-    pub(super) fn update_2(
+    pub(super) fn update(
         &mut self,
-        stack: Stack,
         host_func: Func,
         host_error: Trap,
         caller_results: RegisterSpan,
     ) {
-        self.stack = stack;
         self.host_func = host_func;
         self.host_error = host_error;
         self.caller_results = caller_results;

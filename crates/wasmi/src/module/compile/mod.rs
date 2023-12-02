@@ -1,7 +1,7 @@
 pub use self::block_type::BlockType;
 use super::{parser::ReusableAllocations, FuncIdx, ModuleResources};
 use crate::{
-    engine::{CompiledFunc, FuncBuilder, FuncTranslatorAllocations2 as FuncTranslatorAllocations},
+    engine::{CompiledFunc, FuncTranslatorAllocations, ValidatingFuncTranslator},
     errors::ModuleError,
 };
 use wasmparser::{FuncValidator, FunctionBody, ValidatorResources};
@@ -45,7 +45,7 @@ struct FunctionTranslator<'parser> {
     /// The function body that shall be translated.
     func_body: FunctionBody<'parser>,
     /// The interface to incrementally build up the `wasmi` bytecode function.
-    func_builder: FuncBuilder<'parser>,
+    func_builder: ValidatingFuncTranslator<'parser>,
 }
 
 impl<'parser> FunctionTranslator<'parser> {
@@ -58,7 +58,8 @@ impl<'parser> FunctionTranslator<'parser> {
         res: ModuleResources<'parser>,
         allocations: FuncTranslatorAllocations,
     ) -> Result<Self, ModuleError> {
-        let func_builder = FuncBuilder::new(func, compiled_func_2, res, validator, allocations)?;
+        let func_builder =
+            ValidatingFuncTranslator::new(func, compiled_func_2, res, validator, allocations)?;
         Ok(Self {
             func_body,
             func_builder,
