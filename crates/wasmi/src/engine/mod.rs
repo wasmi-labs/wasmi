@@ -9,7 +9,6 @@ mod regmach;
 mod resumable;
 mod traits;
 mod translator;
-mod trap;
 
 #[cfg(test)]
 use self::regmach::bytecode::RegisterSpan;
