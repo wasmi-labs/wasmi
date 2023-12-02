@@ -166,7 +166,7 @@ impl Module {
             globals_init: builder.globals_init.into(),
             exports: builder.exports,
             start: builder.start,
-            compiled_funcs: builder.compiled_funcs_2.into(),
+            compiled_funcs: builder.compiled_funcs.into(),
             element_segments: builder.element_segments.into(),
             data_segments: builder.data_segments.into(),
         }

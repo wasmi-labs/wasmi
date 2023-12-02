@@ -487,7 +487,7 @@ impl<'engine> ModuleParser<'engine> {
     /// Returns the next `FuncIdx` for processing of its function body.
     fn next_func(&mut self) -> (FuncIdx, CompiledFunc) {
         let index = self.compiled_funcs;
-        let compiled_func_2 = self.builder.compiled_funcs_2[index as usize];
+        let compiled_func_2 = self.builder.compiled_funcs[index as usize];
         self.compiled_funcs += 1;
         // We have to adjust the initial func reference to the first
         // internal function before we process any of the internal functions.

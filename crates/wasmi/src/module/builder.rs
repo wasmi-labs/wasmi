@@ -36,7 +36,7 @@ pub struct ModuleBuilder<'engine> {
     pub globals_init: Vec<ConstExpr>,
     pub exports: BTreeMap<Box<str>, ExternIdx>,
     pub start: Option<FuncIdx>,
-    pub compiled_funcs_2: Vec<CompiledFunc>,
+    pub compiled_funcs: Vec<CompiledFunc>,
     pub element_segments: Vec<ElementSegment>,
     pub data_segments: Vec<DataSegment>,
 }
@@ -148,7 +148,7 @@ impl<'engine> ModuleBuilder<'engine> {
             globals_init: Vec::new(),
             exports: BTreeMap::new(),
             start: None,
-            compiled_funcs_2: Vec::new(),
+            compiled_funcs: Vec::new(),
             element_segments: Vec::new(),
             data_segments: Vec::new(),
         }
@@ -245,7 +245,7 @@ impl<'engine> ModuleBuilder<'engine> {
             let func_type_idx = func?;
             let func_type = self.func_types[func_type_idx.into_u32() as usize];
             self.funcs.push(func_type);
-            self.compiled_funcs_2.push(self.engine.alloc_func());
+            self.compiled_funcs.push(self.engine.alloc_func());
         }
         Ok(())
     }
