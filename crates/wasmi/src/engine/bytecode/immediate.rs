@@ -1,4 +1,8 @@
-use core::{fmt::Debug, marker::PhantomData};
+use core::{
+    fmt::Debug,
+    marker::PhantomData,
+    num::{NonZeroI16, NonZeroI32, NonZeroI64, NonZeroU16, NonZeroU32, NonZeroU64},
+};
 use wasmi_core::{F32, F64};
 
 /// Error that may occur upon converting values to [`Const16`].
@@ -60,9 +64,21 @@ impl From<i16> for Const16<i32> {
     }
 }
 
+impl From<NonZeroI16> for Const16<NonZeroI32> {
+    fn from(value: NonZeroI16) -> Self {
+        Self::new(AnyConst16::from_i16(value.get()))
+    }
+}
+
 impl From<u16> for Const16<u32> {
     fn from(value: u16) -> Self {
         Self::new(AnyConst16::from_u16(value))
+    }
+}
+
+impl From<NonZeroU16> for Const16<NonZeroU32> {
+    fn from(value: NonZeroU16) -> Self {
+        Self::new(AnyConst16::from_u16(value.get()))
     }
 }
 
@@ -72,33 +88,77 @@ impl From<i16> for Const16<i64> {
     }
 }
 
+impl From<NonZeroI16> for Const16<NonZeroI64> {
+    fn from(value: NonZeroI16) -> Self {
+        Self::new(AnyConst16::from_i16(value.get()))
+    }
+}
+
 impl From<u16> for Const16<u64> {
     fn from(value: u16) -> Self {
         Self::new(AnyConst16::from_u16(value))
     }
 }
 
+impl From<NonZeroU16> for Const16<NonZeroU64> {
+    fn from(value: NonZeroU16) -> Self {
+        Self::new(AnyConst16::from_u16(value.get()))
+    }
+}
+
 impl From<Const16<i32>> for i32 {
-    fn from(value: Const16<i32>) -> Self {
+    fn from(value: Const16<Self>) -> Self {
         value.inner.to_i32()
     }
 }
 
+impl From<Const16<NonZeroI32>> for NonZeroI32 {
+    fn from(value: Const16<Self>) -> Self {
+        // SAFETY: Due to construction of `Const16<NonZeroU32` we are guaranteed
+        //         that `value.inner` is a valid non-zero value.
+        unsafe { Self::new_unchecked(value.inner.to_i32()) }
+    }
+}
+
 impl From<Const16<u32>> for u32 {
-    fn from(value: Const16<u32>) -> Self {
+    fn from(value: Const16<Self>) -> Self {
         value.inner.to_u32()
     }
 }
 
+impl From<Const16<NonZeroU32>> for NonZeroU32 {
+    fn from(value: Const16<Self>) -> Self {
+        // SAFETY: Due to construction of `Const16<NonZeroU32` we are guaranteed
+        //         that `value.inner` is a valid non-zero value.
+        unsafe { Self::new_unchecked(value.inner.to_u32()) }
+    }
+}
+
 impl From<Const16<i64>> for i64 {
-    fn from(value: Const16<i64>) -> Self {
+    fn from(value: Const16<Self>) -> Self {
         value.inner.to_i64()
     }
 }
 
+impl From<Const16<NonZeroI64>> for NonZeroI64 {
+    fn from(value: Const16<Self>) -> Self {
+        // SAFETY: Due to construction of `Const16<NonZeroU64` we are guaranteed
+        //         that `value.inner` is a valid non-zero value.
+        unsafe { Self::new_unchecked(value.inner.to_i64()) }
+    }
+}
+
 impl From<Const16<u64>> for u64 {
-    fn from(value: Const16<u64>) -> Self {
+    fn from(value: Const16<Self>) -> Self {
         value.inner.to_u64()
+    }
+}
+
+impl From<Const16<NonZeroU64>> for NonZeroU64 {
+    fn from(value: Const16<Self>) -> Self {
+        // SAFETY: Due to construction of `Const16<NonZeroU64` we are guaranteed
+        //         that `value.inner` is a valid non-zero value.
+        unsafe { Self::new_unchecked(value.inner.to_u64()) }
     }
 }
 
@@ -110,11 +170,27 @@ impl TryFrom<i32> for Const16<i32> {
     }
 }
 
+impl TryFrom<NonZeroI32> for Const16<NonZeroI32> {
+    type Error = OutOfBoundsConst;
+
+    fn try_from(value: NonZeroI32) -> Result<Self, Self::Error> {
+        Self::from_nonzero_i32(value).ok_or(OutOfBoundsConst)
+    }
+}
+
 impl TryFrom<u32> for Const16<u32> {
     type Error = OutOfBoundsConst;
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         Self::from_u32(value).ok_or(OutOfBoundsConst)
+    }
+}
+
+impl TryFrom<NonZeroU32> for Const16<NonZeroU32> {
+    type Error = OutOfBoundsConst;
+
+    fn try_from(value: NonZeroU32) -> Result<Self, Self::Error> {
+        Self::from_nonzero_u32(value).ok_or(OutOfBoundsConst)
     }
 }
 
@@ -126,11 +202,27 @@ impl TryFrom<i64> for Const16<i64> {
     }
 }
 
+impl TryFrom<NonZeroI64> for Const16<NonZeroI64> {
+    type Error = OutOfBoundsConst;
+
+    fn try_from(value: NonZeroI64) -> Result<Self, Self::Error> {
+        Self::from_nonzero_i64(value).ok_or(OutOfBoundsConst)
+    }
+}
+
 impl TryFrom<u64> for Const16<u64> {
     type Error = OutOfBoundsConst;
 
     fn try_from(value: u64) -> Result<Self, Self::Error> {
         Self::from_u64(value).ok_or(OutOfBoundsConst)
+    }
+}
+
+impl TryFrom<NonZeroU64> for Const16<NonZeroU64> {
+    type Error = OutOfBoundsConst;
+
+    fn try_from(value: NonZeroU64) -> Result<Self, Self::Error> {
+        Self::from_nonzero_u64(value).ok_or(OutOfBoundsConst)
     }
 }
 
@@ -146,6 +238,18 @@ impl Const16<u32> {
     }
 }
 
+impl Const16<NonZeroI32> {
+    pub fn from_nonzero_i32(value: NonZeroI32) -> Option<Self> {
+        NonZeroI16::try_from(value).map(Self::from).ok()
+    }
+}
+
+impl Const16<NonZeroU32> {
+    pub fn from_nonzero_u32(value: NonZeroU32) -> Option<Self> {
+        NonZeroU16::try_from(value).map(Self::from).ok()
+    }
+}
+
 impl Const16<i64> {
     pub fn from_i64(value: i64) -> Option<Self> {
         i16::try_from(value).map(Self::from).ok()
@@ -155,6 +259,18 @@ impl Const16<i64> {
 impl Const16<u64> {
     pub fn from_u64(value: u64) -> Option<Self> {
         u16::try_from(value).map(Self::from).ok()
+    }
+}
+
+impl Const16<NonZeroI64> {
+    pub fn from_nonzero_i64(value: NonZeroI64) -> Option<Self> {
+        NonZeroI16::try_from(value).map(Self::from).ok()
+    }
+}
+
+impl Const16<NonZeroU64> {
+    pub fn from_nonzero_u64(value: NonZeroU64) -> Option<Self> {
+        NonZeroU16::try_from(value).map(Self::from).ok()
     }
 }
 
@@ -234,37 +350,37 @@ impl From<f32> for Const32<f64> {
 }
 
 impl From<Const32<i32>> for i32 {
-    fn from(value: Const32<i32>) -> Self {
+    fn from(value: Const32<Self>) -> Self {
         value.inner.to_i32()
     }
 }
 
 impl From<Const32<u32>> for u32 {
-    fn from(value: Const32<u32>) -> Self {
+    fn from(value: Const32<Self>) -> Self {
         value.inner.to_u32()
     }
 }
 
 impl From<Const32<i64>> for i64 {
-    fn from(value: Const32<i64>) -> Self {
+    fn from(value: Const32<Self>) -> Self {
         value.inner.to_i64()
     }
 }
 
 impl From<Const32<u64>> for u64 {
-    fn from(value: Const32<u64>) -> Self {
+    fn from(value: Const32<Self>) -> Self {
         value.inner.to_u64()
     }
 }
 
 impl From<Const32<f32>> for f32 {
-    fn from(value: Const32<f32>) -> Self {
+    fn from(value: Const32<Self>) -> Self {
         f32::from(value.inner.to_f32())
     }
 }
 
 impl From<Const32<f64>> for f64 {
-    fn from(value: Const32<f64>) -> Self {
+    fn from(value: Const32<Self>) -> Self {
         f64::from(value.inner.to_f64())
     }
 }

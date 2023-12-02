@@ -40,6 +40,7 @@ pub(crate) use self::{
     },
 };
 use crate::engine::{CompiledFunc, TranslationError};
+use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
 use wasmi_core::TrapCode;
 
 /// A `wasmi` instruction.
@@ -2562,14 +2563,14 @@ pub enum Instruction {
     ///
     /// - Optimized variant of [`Instruction::I32DivS`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
-    I32DivSImm16(BinInstrImm16<i32>),
+    I32DivSImm16(BinInstrImm16<NonZeroI32>),
     /// `i64` singed-division immediate instruction: `r0 = r1 / c0`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I64DivS`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
-    I64DivSImm16(BinInstrImm16<i64>),
+    I64DivSImm16(BinInstrImm16<NonZeroI64>),
     /// `i32` singed-division immediate instruction: `r0 = c0 / r1`
     ///
     /// # Note
@@ -2600,7 +2601,7 @@ pub enum Instruction {
     /// # Encoding
     ///
     /// Optimized variant of [`Instruction::I32DivU`] for 16-bit constant values.
-    I32DivUImm16(BinInstrImm16<u32>),
+    I32DivUImm16(BinInstrImm16<NonZeroU32>),
     /// `i64` unsinged-division immediate instruction: `r0 = r1 / c0`
     ///
     /// # Note
@@ -2610,7 +2611,7 @@ pub enum Instruction {
     /// # Encoding
     ///
     /// Optimized variant of [`Instruction::I64DivU`] for 16-bit constant values.
-    I64DivUImm16(BinInstrImm16<u64>),
+    I64DivUImm16(BinInstrImm16<NonZeroU64>),
     /// `i32` unsinged-division immediate instruction: `r0 = c0 / r1`
     ///
     /// # Note
@@ -2638,14 +2639,14 @@ pub enum Instruction {
     ///
     /// - Optimized variant of [`Instruction::I32RemS`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
-    I32RemSImm16(BinInstrImm16<i32>),
+    I32RemSImm16(BinInstrImm16<NonZeroI32>),
     /// `i64` singed-remainder immediate instruction: `r0 = r1 % c0`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I64RemS`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
-    I64RemSImm16(BinInstrImm16<i64>),
+    I64RemSImm16(BinInstrImm16<NonZeroI64>),
     /// `i32` singed-remainder immediate instruction: `r0 = c0 % r1`
     ///
     /// # Note
@@ -2673,14 +2674,14 @@ pub enum Instruction {
     ///
     /// - Optimized variant of [`Instruction::I32RemU`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
-    I32RemUImm16(BinInstrImm16<u32>),
+    I32RemUImm16(BinInstrImm16<NonZeroU32>),
     /// `i64` singed-remainder immediate instruction: `r0 = r1 % c0`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I64RemU`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
-    I64RemUImm16(BinInstrImm16<u64>),
+    I64RemUImm16(BinInstrImm16<NonZeroU64>),
     /// `i32` unsigned-remainder immediate instruction: `r0 = c0 % r1`
     ///
     /// # Note

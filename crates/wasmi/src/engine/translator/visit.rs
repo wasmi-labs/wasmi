@@ -29,6 +29,7 @@ use crate::{
     Mutability,
 };
 use alloc::collections::BTreeMap;
+use core::num::{NonZeroU32, NonZeroU64};
 use wasmi_core::{TrapCode, ValueType, F32, F64};
 use wasmparser::VisitOperator;
 
@@ -2245,7 +2246,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_div_u(&mut self) -> Self::Output {
-        self.translate_divrem::<u32>(
+        self.translate_divrem::<u32, NonZeroU32>(
             Instruction::i32_div_u,
             Instruction::i32_div_u_imm16,
             Instruction::i32_div_u_imm16_rev,
@@ -2281,7 +2282,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_rem_u(&mut self) -> Self::Output {
-        self.translate_divrem::<u32>(
+        self.translate_divrem::<u32, NonZeroU32>(
             Instruction::i32_rem_u,
             Instruction::i32_rem_u_imm16,
             Instruction::i32_rem_u_imm16_rev,
@@ -2553,7 +2554,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_div_u(&mut self) -> Self::Output {
-        self.translate_divrem::<u64>(
+        self.translate_divrem::<u64, NonZeroU64>(
             Instruction::i64_div_u,
             Instruction::i64_div_u_imm16,
             Instruction::i64_div_u_imm16_rev,
@@ -2589,7 +2590,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_rem_u(&mut self) -> Self::Output {
-        self.translate_divrem::<u64>(
+        self.translate_divrem::<u64, NonZeroU64>(
             Instruction::i64_rem_u,
             Instruction::i64_rem_u_imm16,
             Instruction::i64_rem_u_imm16_rev,

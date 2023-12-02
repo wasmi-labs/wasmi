@@ -1469,10 +1469,14 @@ impl<'parser> FuncTranslator<'parser> {
     ///
     /// - `{i32, i64}.{div_u, div_s, rem_u, rem_s}`
     #[allow(clippy::too_many_arguments)]
-    pub fn translate_divrem<T>(
+    pub fn translate_divrem<T, NonZeroT>(
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
+        make_instr_imm16: fn(
+            result: Register,
+            lhs: Register,
+            rhs: Const16<NonZeroT>,
+        ) -> Instruction,
         make_instr_imm16_rev: fn(result: Register, lhs: Const16<T>, rhs: Register) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> Result<TypedValue, TrapCode>,
         make_instr_opt: fn(
@@ -1488,6 +1492,7 @@ impl<'parser> FuncTranslator<'parser> {
     ) -> Result<(), TranslationError>
     where
         T: WasmInteger,
+        NonZeroT: Copy + TryFrom<T> + TryInto<Const16<NonZeroT>>,
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
@@ -1499,16 +1504,16 @@ impl<'parser> FuncTranslator<'parser> {
                 self.push_binary_instr(lhs, rhs, make_instr)
             }
             (TypedProvider::Register(lhs), TypedProvider::Const(rhs)) => {
-                if T::from(rhs).eq_zero() {
+                let Some(non_zero_rhs) = NonZeroT::try_from(T::from(rhs)).ok() else {
                     // Optimization: division by zero always traps
                     self.translate_trap(TrapCode::IntegerDivisionByZero)?;
                     return Ok(());
-                }
+                };
                 if make_instr_reg_imm_opt(self, lhs, T::from(rhs))? {
                     // Custom optimization was applied: return early
                     return Ok(());
                 }
-                if self.try_push_binary_instr_imm16(lhs, T::from(rhs), make_instr_imm16)? {
+                if self.try_push_binary_instr_imm16(lhs, non_zero_rhs, make_instr_imm16)? {
                     // Optimization was applied: return early.
                     return Ok(());
                 }

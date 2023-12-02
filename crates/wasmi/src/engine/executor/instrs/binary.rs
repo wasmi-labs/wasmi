@@ -3,6 +3,7 @@ use crate::{
     core::{TrapCode, UntypedValue},
     engine::bytecode::{BinInstr, BinInstrImm, BinInstrImm16, Sign},
 };
+use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
 
 #[cfg(doc)]
 use crate::engine::bytecode::Instruction;
@@ -167,28 +168,103 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 }
 
-macro_rules! impl_fallible_binary_imm16 {
+pub trait DivRemImm: Sized {
+    fn i32_div_s(self, rhs: NonZeroI32) -> Result<Self, TrapCode>;
+    fn i32_div_u(self, rhs: NonZeroU32) -> Self;
+    fn i32_rem_s(self, rhs: NonZeroI32) -> Result<Self, TrapCode>;
+    fn i32_rem_u(self, rhs: NonZeroU32) -> Self;
+
+    fn i64_div_s(self, rhs: NonZeroI64) -> Result<Self, TrapCode>;
+    fn i64_div_u(self, rhs: NonZeroU64) -> Self;
+    fn i64_rem_s(self, rhs: NonZeroI64) -> Result<Self, TrapCode>;
+    fn i64_rem_u(self, rhs: NonZeroU64) -> Self;
+}
+
+impl DivRemImm for UntypedValue {
+    fn i32_div_s(self, rhs: NonZeroI32) -> Result<Self, TrapCode> {
+        i32::from(self)
+            .checked_div(rhs.get())
+            .map(Self::from)
+            .ok_or(TrapCode::IntegerOverflow)
+    }
+
+    fn i32_div_u(self, rhs: NonZeroU32) -> Self {
+        Self::from(u32::from(self) / rhs)
+    }
+
+    fn i32_rem_s(self, rhs: NonZeroI32) -> Result<Self, TrapCode> {
+        i32::from(self)
+            .checked_rem(rhs.get())
+            .map(Self::from)
+            .ok_or(TrapCode::IntegerOverflow)
+    }
+
+    fn i32_rem_u(self, rhs: NonZeroU32) -> Self {
+        Self::from(u32::from(self) % rhs)
+    }
+
+    fn i64_div_s(self, rhs: NonZeroI64) -> Result<Self, TrapCode> {
+        i64::from(self)
+            .checked_div(rhs.get())
+            .map(Self::from)
+            .ok_or(TrapCode::IntegerOverflow)
+    }
+
+    fn i64_div_u(self, rhs: NonZeroU64) -> Self {
+        Self::from(u64::from(self) / rhs)
+    }
+
+    fn i64_rem_s(self, rhs: NonZeroI64) -> Result<Self, TrapCode> {
+        i64::from(self)
+            .checked_rem(rhs.get())
+            .map(Self::from)
+            .ok_or(TrapCode::IntegerOverflow)
+    }
+
+    fn i64_rem_u(self, rhs: NonZeroU64) -> Self {
+        Self::from(u64::from(self) % rhs)
+    }
+}
+
+macro_rules! impl_divrem_s_imm16 {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             #[inline(always)]
             pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) -> Result<(), TrapCode> {
-                self.try_execute_binary_imm16(instr, $op)
+                self.try_execute_divrem_imm16(instr, $op)
             }
         )*
     };
 }
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
-    impl_fallible_binary_imm16! {
-        (i32, Instruction::I32DivSImm16, execute_i32_div_s_imm16, UntypedValue::i32_div_s),
-        (u32, Instruction::I32DivUImm16, execute_i32_div_u_imm16, UntypedValue::i32_div_u),
-        (i32, Instruction::I32RemSImm16, execute_i32_rem_s_imm16, UntypedValue::i32_rem_s),
-        (u32, Instruction::I32RemUImm16, execute_i32_rem_u_imm16, UntypedValue::i32_rem_u),
+    impl_divrem_s_imm16! {
+        (NonZeroI32, Instruction::I32DivSImm16, execute_i32_div_s_imm16, <UntypedValue as DivRemImm>::i32_div_s),
+        (NonZeroI32, Instruction::I32RemSImm16, execute_i32_rem_s_imm16, <UntypedValue as DivRemImm>::i32_rem_s),
 
-        (i64, Instruction::I64DivSImm16, execute_i64_div_s_imm16, UntypedValue::i64_div_s),
-        (u64, Instruction::I64DivUImm16, execute_i64_div_u_imm16, UntypedValue::i64_div_u),
-        (i64, Instruction::I64RemSImm16, execute_i64_rem_s_imm16, UntypedValue::i64_rem_s),
-        (u64, Instruction::I64RemUImm16, execute_i64_rem_u_imm16, UntypedValue::i64_rem_u),
+        (NonZeroI64, Instruction::I64DivSImm16, execute_i64_div_s_imm16, <UntypedValue as DivRemImm>::i64_div_s),
+        (NonZeroI64, Instruction::I64RemSImm16, execute_i64_rem_s_imm16, <UntypedValue as DivRemImm>::i64_rem_s),
+    }
+}
+
+macro_rules! impl_divrem_u_imm16 {
+    ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
+        $(
+            #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
+            #[inline(always)]
+            pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) {
+                self.execute_divrem_imm16(instr, $op)
+            }
+        )*
+    };
+}
+impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+    impl_divrem_u_imm16! {
+        (NonZeroU32, Instruction::I32DivUImm16, execute_i32_div_u_imm16, <UntypedValue as DivRemImm>::i32_div_u),
+        (NonZeroU32, Instruction::I32RemUImm16, execute_i32_rem_u_imm16, <UntypedValue as DivRemImm>::i32_rem_u),
+
+        (NonZeroU64, Instruction::I64DivUImm16, execute_i64_div_u_imm16, <UntypedValue as DivRemImm>::i64_div_u),
+        (NonZeroU64, Instruction::I64RemUImm16, execute_i64_rem_u_imm16, <UntypedValue as DivRemImm>::i64_rem_u),
     }
 }
 
