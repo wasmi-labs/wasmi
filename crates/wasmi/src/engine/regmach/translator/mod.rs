@@ -12,6 +12,9 @@ mod utils;
 mod visit;
 mod visit_register;
 
+#[cfg(test)]
+mod tests;
+
 use self::{
     control_frame::{
         BlockControlFrame,

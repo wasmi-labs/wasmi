@@ -3,7 +3,7 @@ use crate::{
     core::UntypedValue,
     engine::{
         bytecode::BranchOffset,
-        regmach::tests::{
+        regmach::translator::tests::{
             display_wasm::DisplayValueType,
             driver::ExpectedFunc,
             wasm_type::WasmType,

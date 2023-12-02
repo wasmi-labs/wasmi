@@ -1,7 +1,11 @@
 use super::*;
 use crate::engine::{
     bytecode::{BranchOffset, BranchOffset16, RegisterSpan},
-    regmach::tests::{display_wasm::DisplayValueType, driver::ExpectedFunc, wasm_type::WasmType},
+    regmach::translator::tests::{
+        display_wasm::DisplayValueType,
+        driver::ExpectedFunc,
+        wasm_type::WasmType,
+    },
 };
 use core::fmt::Display;
 use wasmi_core::UntypedValue;

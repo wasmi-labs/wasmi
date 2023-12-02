@@ -3,7 +3,7 @@ use crate::{
     core::ValueType,
     engine::{
         bytecode::{BranchOffset, BranchOffset16, GlobalIdx},
-        regmach::tests::display_wasm::DisplayValueType,
+        regmach::translator::tests::display_wasm::DisplayValueType,
     },
 };
 use std::fmt::{Debug, Display};

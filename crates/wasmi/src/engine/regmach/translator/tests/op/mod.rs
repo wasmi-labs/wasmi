@@ -22,6 +22,7 @@ mod table;
 mod unary;
 
 use super::{
+    display_wasm::DisplayValueType,
     driver::ExpectedFunc,
     swap_ops,
     test_binary_consteval,

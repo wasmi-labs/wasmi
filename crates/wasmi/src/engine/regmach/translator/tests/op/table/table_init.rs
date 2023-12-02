@@ -1,5 +1,5 @@
 use super::*;
-use crate::{core::ValueType, engine::regmach::tests::display_wasm::DisplayValueType};
+use crate::core::ValueType;
 
 fn test_init(ty: ValueType) {
     let display_ty = DisplayValueType::from(ty);
