@@ -624,7 +624,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let provider_params = &mut self.alloc.buffer;
         self.alloc.stack.pop_n(params.len(), provider_params);
         let results = self.alloc.stack.push_dynamic_n(results.len())?;
-        let instr = match self.res.get_compiled_func_2(func_idx) {
+        let instr = match self.res.get_compiled_func(func_idx) {
             Some(compiled_func) => {
                 // Case: We are calling an internal function and can optimize
                 //       this case by using the special instruction for it.
@@ -700,7 +700,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let params = func_type.params();
         let provider_params = &mut self.alloc.buffer;
         self.alloc.stack.pop_n(params.len(), provider_params);
-        let instr = match self.res.get_compiled_func_2(func_idx) {
+        let instr = match self.res.get_compiled_func(func_idx) {
             Some(compiled_func) => {
                 // Case: We are calling an internal function and can optimize
                 //       this case by using the special instruction for it.
