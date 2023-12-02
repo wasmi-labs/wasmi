@@ -37,7 +37,7 @@ pub(crate) use self::{
     executor::Stack,
     func_args::{FuncFinished, FuncParams, FuncResults},
     func_types::DedupFuncType,
-    regmach::FuncTranslatorAllocations as FuncTranslatorAllocations2,
+    regmach::FuncTranslatorAllocations,
 };
 use crate::{core::Trap, Func, FuncType, StoreContextMut};
 use alloc::{sync::Arc, vec::Vec};

@@ -1,7 +1,7 @@
 pub use self::block_type::BlockType;
 use super::{parser::ReusableAllocations, FuncIdx, ModuleResources};
 use crate::{
-    engine::{CompiledFunc, FuncBuilder, FuncTranslatorAllocations2 as FuncTranslatorAllocations},
+    engine::{CompiledFunc, FuncBuilder, FuncTranslatorAllocations},
     errors::ModuleError,
 };
 use wasmparser::{FuncValidator, FunctionBody, ValidatorResources};
