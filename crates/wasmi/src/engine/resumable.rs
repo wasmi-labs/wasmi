@@ -132,7 +132,7 @@ impl ResumableInvocation {
     /// # Note
     ///
     /// This should only be called from the register-machine `wasmi` engine backend.
-    pub(super) fn update_2(
+    pub(super) fn update(
         &mut self,
         host_func: Func,
         host_error: Trap,

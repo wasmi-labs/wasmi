@@ -154,7 +154,7 @@ impl EngineInner {
                 host_trap,
                 caller_results,
             }) => {
-                invocation.update_2(host_func, host_trap, caller_results);
+                invocation.update(host_func, host_trap, caller_results);
                 Ok(ResumableCallBase::Resumable(invocation))
             }
         }
