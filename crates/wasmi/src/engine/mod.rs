@@ -14,6 +14,9 @@ mod traits;
 mod translator;
 
 #[cfg(test)]
+mod tests;
+
+#[cfg(test)]
 use self::bytecode::RegisterSpan;
 
 use self::{
