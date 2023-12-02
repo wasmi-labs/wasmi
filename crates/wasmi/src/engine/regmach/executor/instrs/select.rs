@@ -1,7 +1,7 @@
 use super::Executor;
-use crate::engine::regmach::{
+use crate::engine::{
     bytecode::{AnyConst32, Const32, Instruction, Register},
-    code_map::InstructionPtr,
+    regmach::code_map::InstructionPtr,
 };
 use wasmi_core::UntypedValue;
 

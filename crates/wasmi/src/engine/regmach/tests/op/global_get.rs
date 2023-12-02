@@ -1,6 +1,6 @@
 use super::*;
 
-use crate::engine::regmach::bytecode::GlobalIdx;
+use crate::engine::bytecode::GlobalIdx;
 use core::fmt::Display;
 use wasm_type::WasmType;
 

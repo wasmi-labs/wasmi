@@ -6,9 +6,15 @@ use super::{
     BinInstrImm16,
     BranchBinOpInstr,
     BranchBinOpInstrImm16,
+    BranchOffset,
     CallIndirectParams,
+    CompiledFunc,
     Const16,
     Const32,
+    DataSegmentIdx,
+    ElementSegmentIdx,
+    FuncIdx,
+    GlobalIdx,
     Instruction,
     LoadAtInstr,
     LoadInstr,
@@ -16,15 +22,12 @@ use super::{
     Register,
     RegisterSpan,
     RegisterSpanIter,
+    SignatureIdx,
     StoreAtInstr,
     StoreInstr,
     StoreOffset16Instr,
+    TableIdx,
     UnaryInstr,
-};
-use crate::engine::regmach::{
-    bytecode,
-    bytecode::{BranchOffset, DataSegmentIdx, ElementSegmentIdx, FuncIdx, SignatureIdx, TableIdx},
-    CompiledFunc,
 };
 
 macro_rules! constructor_for {
@@ -533,20 +536,17 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::GlobalGet`].
-    pub fn global_get(result: Register, global: bytecode::GlobalIdx) -> Self {
+    pub fn global_get(result: Register, global: GlobalIdx) -> Self {
         Self::GlobalGet { result, global }
     }
 
     /// Creates a new [`Instruction::GlobalSet`].
-    pub fn global_set(global: bytecode::GlobalIdx, input: Register) -> Self {
+    pub fn global_set(global: GlobalIdx, input: Register) -> Self {
         Self::GlobalSet { global, input }
     }
 
     /// Creates a new [`Instruction::GlobalSetI32Imm16`].
-    pub fn global_set_i32imm16(
-        global: bytecode::GlobalIdx,
-        input: impl Into<Const16<i32>>,
-    ) -> Self {
+    pub fn global_set_i32imm16(global: GlobalIdx, input: impl Into<Const16<i32>>) -> Self {
         Self::GlobalSetI32Imm16 {
             global,
             input: input.into(),
@@ -554,10 +554,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::GlobalSetI64Imm16`].
-    pub fn global_set_i64imm16(
-        global: bytecode::GlobalIdx,
-        input: impl Into<Const16<i64>>,
-    ) -> Self {
+    pub fn global_set_i64imm16(global: GlobalIdx, input: impl Into<Const16<i64>>) -> Self {
         Self::GlobalSetI64Imm16 {
             global,
             input: input.into(),

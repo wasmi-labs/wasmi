@@ -1,9 +1,9 @@
 use super::Executor;
 use crate::{
     core::UntypedValue,
-    engine::regmach::{
+    engine::{
         bytecode::{AnyConst32, Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
-        stack::ValueStackPtr,
+        regmach::stack::ValueStackPtr,
     },
 };
 use core::slice;

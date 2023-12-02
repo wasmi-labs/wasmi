@@ -1,12 +1,5 @@
 use super::{stack::ValueStack, TranslationError, TypedProvider, TypedValue};
-use crate::engine::regmach::bytecode::{
-    AnyConst16,
-    Const16,
-    Provider,
-    Register,
-    RegisterSpanIter,
-    Sign,
-};
+use crate::engine::bytecode::{AnyConst16, Const16, Provider, Register, RegisterSpanIter, Sign};
 
 /// A WebAssembly integer. Either `i32` or `i64`.
 ///

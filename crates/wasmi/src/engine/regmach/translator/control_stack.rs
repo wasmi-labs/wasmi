@@ -1,6 +1,6 @@
 use super::{typed_value::TypedValue, ControlFrame};
 use crate::engine::{
-    regmach::bytecode::{Provider, ProviderSliceStack},
+    bytecode::{Provider, ProviderSliceStack},
     TranslationError,
 };
 use alloc::vec::{Drain, Vec};

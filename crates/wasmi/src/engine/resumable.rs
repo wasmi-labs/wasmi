@@ -1,4 +1,4 @@
-use super::{regmach::bytecode::RegisterSpan, Func};
+use super::{bytecode::RegisterSpan, Func};
 use crate::{
     engine::Stack,
     func::CallResultsTuple,

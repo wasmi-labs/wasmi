@@ -1,9 +1,9 @@
 use super::{wasm_type::WasmType, *};
 use crate::{
     core::ValueType,
-    engine::regmach::{
+    engine::{
         bytecode::{BranchOffset, BranchOffset16, GlobalIdx},
-        tests::display_wasm::DisplayValueType,
+        regmach::tests::display_wasm::DisplayValueType,
     },
 };
 use std::fmt::{Debug, Display};

@@ -1,9 +1,13 @@
 use super::*;
 use crate::{
     core::UntypedValue,
-    engine::regmach::{
+    engine::{
         bytecode::BranchOffset,
-        tests::{display_wasm::DisplayValueType, driver::ExpectedFunc, wasm_type::WasmType},
+        regmach::tests::{
+            display_wasm::DisplayValueType,
+            driver::ExpectedFunc,
+            wasm_type::WasmType,
+        },
     },
 };
 use core::fmt::Display;

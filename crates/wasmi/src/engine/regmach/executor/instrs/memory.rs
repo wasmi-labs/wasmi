@@ -3,9 +3,9 @@ use wasmi_core::Pages;
 use super::Executor;
 use crate::{
     core::TrapCode,
-    engine::regmach::{
+    engine::{
         bytecode::{Const16, DataSegmentIdx, Instruction, Register},
-        code_map::InstructionPtr,
+        regmach::code_map::InstructionPtr,
     },
     error::EntityGrowError,
     store::ResourceLimiterRef,

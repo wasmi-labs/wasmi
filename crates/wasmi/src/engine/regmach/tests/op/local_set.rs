@@ -1,7 +1,7 @@
 use super::*;
-use crate::engine::regmach::{
+use crate::engine::{
     bytecode::{FuncIdx, RegisterSpan, SignatureIdx, TableIdx},
-    CompiledFunc,
+    regmach::CompiledFunc,
 };
 
 #[test]

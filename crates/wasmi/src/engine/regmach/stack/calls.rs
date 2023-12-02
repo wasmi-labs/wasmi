@@ -1,6 +1,6 @@
 use super::{err_stack_overflow, BaseValueStackOffset, FrameValueStackOffset};
 use crate::{
-    engine::regmach::{bytecode::RegisterSpan, code_map::InstructionPtr},
+    engine::{bytecode::RegisterSpan, regmach::code_map::InstructionPtr},
     Instance,
 };
 use alloc::vec::Vec;
@@ -8,8 +8,8 @@ use wasmi_core::TrapCode;
 
 #[cfg(doc)]
 use crate::{
-    engine::regmach::bytecode::Instruction,
-    engine::regmach::bytecode::Register,
+    engine::bytecode::Instruction,
+    engine::bytecode::Register,
     engine::regmach::stack::ValueStack,
     engine::CompiledFunc,
     Global,

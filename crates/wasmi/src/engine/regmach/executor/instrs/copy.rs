@@ -1,7 +1,7 @@
 use super::Executor;
 use crate::{
     core::UntypedValue,
-    engine::regmach::bytecode::{AnyConst32, Const32, Instruction, Register, RegisterSpan},
+    engine::bytecode::{AnyConst32, Const32, Instruction, Register, RegisterSpan},
 };
 use core::slice;
 use smallvec::SmallVec;

@@ -1,11 +1,13 @@
 use super::Executor;
 use crate::{
     core::TrapCode,
-    engine::regmach::{
+    engine::{
         bytecode::{FuncIdx, Instruction, Register, RegisterSpan, SignatureIdx, TableIdx},
-        code_map::{CompiledFuncEntity, InstructionPtr},
-        stack::{CallFrame, Stack, ValueStackPtr},
-        CompiledFunc,
+        regmach::{
+            code_map::{CompiledFuncEntity, InstructionPtr},
+            stack::{CallFrame, Stack, ValueStackPtr},
+            CompiledFunc,
+        },
     },
     func::FuncEntity,
     Func,

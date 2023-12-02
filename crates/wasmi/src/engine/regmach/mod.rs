@@ -1,4 +1,3 @@
-pub mod bytecode;
 pub mod code_map;
 mod executor;
 mod stack;
@@ -8,6 +7,7 @@ mod trap;
 #[cfg(test)]
 mod tests;
 
+pub(super) use self::translator::TranslationErrorInner;
 pub use self::{
     code_map::{CodeMap, CompiledFunc},
     stack::Stack,
@@ -19,7 +19,7 @@ pub use self::{
         TranslationError,
     },
 };
-use self::{executor::EngineExecutor, translator::TranslationErrorInner, trap::TaggedTrap};
+use self::{executor::EngineExecutor, trap::TaggedTrap};
 use super::resumable::ResumableCallBase;
 use crate::{
     core::Trap,

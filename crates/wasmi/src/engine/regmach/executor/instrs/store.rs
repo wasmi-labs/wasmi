@@ -1,9 +1,9 @@
 use super::Executor;
 use crate::{
     core::{TrapCode, UntypedValue},
-    engine::regmach::{
+    engine::{
         bytecode::{Const16, Instruction, Register, StoreAtInstr, StoreInstr, StoreOffset16Instr},
-        code_map::InstructionPtr,
+        regmach::code_map::InstructionPtr,
     },
 };
 

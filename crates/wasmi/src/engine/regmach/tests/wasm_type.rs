@@ -2,7 +2,7 @@ use wasmi_core::ValueType;
 
 use crate::{
     core::{UntypedValue, F32},
-    engine::regmach::bytecode::{Const32, Instruction, Register},
+    engine::bytecode::{Const32, Instruction, Register},
 };
 use core::fmt::Display;
 

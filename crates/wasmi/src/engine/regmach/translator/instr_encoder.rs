@@ -7,22 +7,20 @@ use super::{
 };
 use crate::{
     engine::{
-        regmach::{
-            bytecode::{
-                BinInstr,
-                BinInstrImm16,
-                BranchOffset,
-                BranchOffset16,
-                Const16,
-                Const32,
-                Instruction,
-                Provider,
-                Register,
-                RegisterSpan,
-                RegisterSpanIter,
-            },
-            translator::{stack::RegisterSpace, ValueStack},
+        bytecode::{
+            BinInstr,
+            BinInstrImm16,
+            BranchOffset,
+            BranchOffset16,
+            Const16,
+            Const32,
+            Instruction,
+            Provider,
+            Register,
+            RegisterSpan,
+            RegisterSpanIter,
         },
+        regmach::translator::{stack::RegisterSpace, ValueStack},
         FuelCosts,
         TranslationError,
     },
@@ -1350,7 +1348,7 @@ impl Instruction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::engine::regmach::{bytecode::RegisterSpan, translator::typed_value::TypedValue};
+    use crate::engine::{bytecode::RegisterSpan, regmach::translator::typed_value::TypedValue};
 
     #[test]
     fn has_overlapping_copies_works() {

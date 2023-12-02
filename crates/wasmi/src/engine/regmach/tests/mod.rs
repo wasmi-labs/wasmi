@@ -12,7 +12,7 @@ use self::{
 };
 use crate::{
     core::UntypedValue,
-    engine::regmach::bytecode::{AnyConst32, Const16, Const32, Instruction, Register},
+    engine::bytecode::{AnyConst32, Const16, Const32, Instruction, Register},
     Config,
     Engine,
     Module,

@@ -18,10 +18,8 @@ use super::{
 };
 use crate::{
     engine::{
-        regmach::{
-            bytecode::{self, Const16, Instruction, Provider, Register, SignatureIdx},
-            translator::AcquiredTarget,
-        },
+        bytecode::{self, Const16, Instruction, Provider, Register, SignatureIdx},
+        regmach::translator::AcquiredTarget,
         FuelCosts,
         TranslationError,
     },

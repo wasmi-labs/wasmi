@@ -1,11 +1,11 @@
 use super::Executor;
 use crate::{
     core::UntypedValue,
-    engine::regmach::bytecode::{BinInstr, BinInstrImm16},
+    engine::bytecode::{BinInstr, BinInstrImm16},
 };
 
 #[cfg(doc)]
-use crate::engine::regmach::bytecode::Instruction;
+use crate::engine::bytecode::Instruction;
 
 macro_rules! impl_comparison {
     ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {

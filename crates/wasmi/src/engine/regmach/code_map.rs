@@ -5,7 +5,7 @@
 //! This is the data structure specialized to handle compiled
 //! register machine based bytecode functions.
 
-use crate::engine::regmach::{bytecode::Instruction, translator::FuncLocalConstsIter};
+use crate::engine::{bytecode::Instruction, regmach::translator::FuncLocalConstsIter};
 use alloc::boxed::Box;
 use wasmi_arena::{Arena, ArenaIndex};
 use wasmi_core::UntypedValue;

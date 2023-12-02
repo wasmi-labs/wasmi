@@ -1,9 +1,9 @@
 use super::Executor;
 use crate::{
     core::TrapCode,
-    engine::regmach::{
+    engine::{
         bytecode::{Const16, Const32, ElementSegmentIdx, Instruction, Register, TableIdx},
-        code_map::InstructionPtr,
+        regmach::code_map::InstructionPtr,
     },
     error::EntityGrowError,
     store::ResourceLimiterRef,

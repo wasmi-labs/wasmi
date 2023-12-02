@@ -1,4 +1,4 @@
-use crate::engine::regmach::bytecode::{
+use crate::engine::bytecode::{
     BinInstr,
     BinInstrImm,
     BranchBinOpInstr,

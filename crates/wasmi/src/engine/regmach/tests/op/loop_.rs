@@ -1,5 +1,5 @@
 use super::*;
-use crate::engine::regmach::bytecode::{BranchOffset, RegisterSpan};
+use crate::engine::bytecode::{BranchOffset, RegisterSpan};
 
 #[test]
 #[cfg_attr(miri, ignore)]

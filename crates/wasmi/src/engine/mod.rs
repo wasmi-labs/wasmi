@@ -1,5 +1,6 @@
 //! The `wasmi` interpreter.
 
+pub mod bytecode;
 mod cache;
 mod config;
 mod func_args;
@@ -11,8 +12,14 @@ mod traits;
 mod translator;
 
 #[cfg(test)]
-use self::regmach::bytecode::RegisterSpan;
+use self::bytecode::RegisterSpan;
 
+use self::{
+    bytecode::Instruction as Instruction2,
+    func_types::FuncTypeRegistry,
+    regmach::{code_map::CompiledFuncEntity, CodeMap, FuncLocalConstsIter, Stack},
+    resumable::ResumableCallBase,
+};
 pub(crate) use self::{
     config::FuelCosts,
     func_args::{FuncFinished, FuncParams, FuncResults},
@@ -26,17 +33,6 @@ pub use self::{
     resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
     traits::{CallParams, CallResults},
     translator::FuncBuilder,
-};
-use self::{
-    func_types::FuncTypeRegistry,
-    regmach::{
-        bytecode::Instruction as Instruction2,
-        code_map::CompiledFuncEntity,
-        CodeMap,
-        FuncLocalConstsIter,
-        Stack,
-    },
-    resumable::ResumableCallBase,
 };
 use crate::{core::Trap, Func, FuncType, StoreContextMut};
 use alloc::{sync::Arc, vec::Vec};

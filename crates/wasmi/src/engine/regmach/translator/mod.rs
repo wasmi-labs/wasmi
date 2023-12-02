@@ -35,21 +35,19 @@ pub use self::{
 };
 use crate::{
     engine::{
-        config::FuelCosts,
-        regmach::{
-            bytecode::{
-                AnyConst32,
-                Const16,
-                Const32,
-                Instruction,
-                Register,
-                RegisterSpan,
-                RegisterSpanIter,
-                Sign,
-                SignatureIdx,
-            },
-            CompiledFunc,
+        bytecode::{
+            AnyConst32,
+            Const16,
+            Const32,
+            Instruction,
+            Register,
+            RegisterSpan,
+            RegisterSpanIter,
+            Sign,
+            SignatureIdx,
         },
+        config::FuelCosts,
+        regmach::CompiledFunc,
     },
     module::{BlockType, FuncIdx, FuncTypeIdx, ModuleResources},
     Engine,

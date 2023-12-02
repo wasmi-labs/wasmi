@@ -1,6 +1,6 @@
-use super::bytecode::RegisterSpan;
 use crate::{
     core::{Trap, TrapCode},
+    engine::bytecode::RegisterSpan,
     Func,
 };
 

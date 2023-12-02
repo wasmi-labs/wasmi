@@ -10,10 +10,8 @@ pub use self::{
 use super::TypedValue;
 use crate::{
     engine::{
-        regmach::{
-            bytecode::{Provider, Register, RegisterSpan, UntypedProvider},
-            TranslationErrorInner,
-        },
+        bytecode::{Provider, Register, RegisterSpan, UntypedProvider},
+        regmach::TranslationErrorInner,
         TranslationError,
     },
     FuncType,

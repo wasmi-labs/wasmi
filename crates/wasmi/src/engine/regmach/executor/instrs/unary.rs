@@ -1,8 +1,8 @@
 use super::Executor;
-use crate::{core::UntypedValue, engine::regmach::bytecode::UnaryInstr};
+use crate::{core::UntypedValue, engine::bytecode::UnaryInstr};
 
 #[cfg(doc)]
-use crate::engine::regmach::bytecode::Instruction;
+use crate::engine::bytecode::Instruction;
 
 macro_rules! impl_unary_impls {
     ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {

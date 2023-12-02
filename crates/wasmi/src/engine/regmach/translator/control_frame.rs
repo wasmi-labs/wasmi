@@ -5,10 +5,8 @@ use super::LabelRef;
 use super::ValueStack;
 use crate::{
     engine::{
-        regmach::{
-            bytecode::{RegisterSpan, RegisterSpanIter},
-            TranslationErrorInner,
-        },
+        bytecode::{RegisterSpan, RegisterSpanIter},
+        regmach::TranslationErrorInner,
         Instr,
         TranslationError,
     },

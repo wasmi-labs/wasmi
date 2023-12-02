@@ -1,5 +1,5 @@
 use super::Executor;
-use crate::engine::regmach::bytecode::{
+use crate::engine::bytecode::{
     BranchBinOpInstr,
     BranchBinOpInstrImm16,
     BranchOffset,
@@ -12,7 +12,7 @@ use core::cmp;
 use wasmi_core::UntypedValue;
 
 #[cfg(doc)]
-use crate::engine::regmach::bytecode::Instruction;
+use crate::engine::bytecode::Instruction;
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Branches and adjusts the value stack.
