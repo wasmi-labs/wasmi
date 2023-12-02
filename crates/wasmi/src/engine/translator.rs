@@ -27,12 +27,12 @@ impl<'parser> FuncBuilder<'parser> {
     /// Creates a new [`FuncBuilder`].
     pub fn new(
         func: FuncIdx,
-        compiled_func_2: CompiledFunc,
+        compiled_func: CompiledFunc,
         res: ModuleResources<'parser>,
         validator: FuncValidator,
         allocations: FuncTranslatorAllocations,
     ) -> Result<Self, TranslationError> {
-        let translator = FuncTranslator::new(func, compiled_func_2, res, allocations)?;
+        let translator = FuncTranslator::new(func, compiled_func, res, allocations)?;
         Ok(Self {
             pos: 0,
             validator,
