@@ -57,12 +57,6 @@ impl Display for TranslationError {
                     "branch table targets are out of bounds for wasmi bytecode"
                 )
             }
-            TranslationErrorInner::ConstRefOutOfBounds => {
-                write!(
-                    f,
-                    "constant reference index is out of bounds for wasmi bytecode"
-                )
-            }
             TranslationErrorInner::BranchOffsetOutOfBounds => {
                 write!(f, "branching offset is out of bounds for wasmi bytecode")
             }
@@ -118,8 +112,6 @@ pub enum TranslationErrorInner {
     BranchOffsetOutOfBounds,
     /// Fuel required for a block is out of bounds.
     BlockFuelOutOfBounds,
-    /// The constant reference index is out of bounds.
-    ConstRefOutOfBounds,
     /// Tried to allocate more registers than possible.
     AllocatedTooManyRegisters,
     /// Tried to use an out of bounds register index.
