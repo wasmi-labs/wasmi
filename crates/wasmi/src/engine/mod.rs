@@ -1,43 +1,44 @@
 //! The `wasmi` interpreter.
 
+pub mod bytecode;
 mod cache;
+mod code_map;
 mod config;
+mod executor;
 mod func_args;
 mod func_types;
 mod limits;
-mod regmach;
 mod resumable;
 mod traits;
 mod translator;
-mod trap;
 
 #[cfg(test)]
-use self::regmach::bytecode::RegisterSpan;
+mod tests;
 
-pub(crate) use self::{
-    config::FuelCosts,
-    func_args::{FuncFinished, FuncParams, FuncResults},
-    func_types::DedupFuncType,
-    regmach::FuncTranslatorAllocations as FuncTranslatorAllocations2,
+#[cfg(test)]
+use self::bytecode::RegisterSpan;
+
+use self::{
+    bytecode::Instruction,
+    code_map::{CodeMap, CompiledFuncEntity},
+    func_types::FuncTypeRegistry,
+    resumable::ResumableCallBase,
+    translator::FuncLocalConstsIter,
 };
 pub use self::{
+    code_map::CompiledFunc,
     config::{Config, FuelConsumptionMode},
     limits::StackLimits,
-    regmach::{CompiledFunc, Instr, TranslationError},
     resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
     traits::{CallParams, CallResults},
-    translator::FuncBuilder,
+    translator::{Instr, TranslationError, ValidatingFuncTranslator},
 };
-use self::{
-    func_types::FuncTypeRegistry,
-    regmach::{
-        bytecode::Instruction as Instruction2,
-        code_map::CompiledFuncEntity,
-        CodeMap,
-        FuncLocalConstsIter,
-        Stack,
-    },
-    resumable::ResumableCallBase,
+pub(crate) use self::{
+    config::FuelCosts,
+    executor::Stack,
+    func_args::{FuncFinished, FuncParams, FuncResults},
+    func_types::DedupFuncType,
+    translator::FuncTranslatorAllocations,
 };
 use crate::{core::Trap, Func, FuncType, StoreContextMut};
 use alloc::{sync::Arc, vec::Vec};
@@ -146,8 +147,8 @@ impl Engine {
     /// Allocates a new uninitialized [`CompiledFunc`] to the [`Engine`].
     ///
     /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
-    pub(super) fn alloc_func_2(&self) -> CompiledFunc {
-        self.inner.alloc_func_2()
+    pub(super) fn alloc_func(&self) -> CompiledFunc {
+        self.inner.alloc_func()
     }
 
     /// Initializes the uninitialized [`CompiledFunc`] for the [`Engine`].
@@ -156,7 +157,7 @@ impl Engine {
     ///
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
-    fn init_func_2<I>(
+    fn init_func<I>(
         &self,
         func: CompiledFunc,
         len_registers: u16,
@@ -164,10 +165,10 @@ impl Engine {
         func_locals: FuncLocalConstsIter,
         instrs: I,
     ) where
-        I: IntoIterator<Item = Instruction2>,
+        I: IntoIterator<Item = Instruction>,
     {
         self.inner
-            .init_func_2(func, len_registers, len_results, func_locals, instrs)
+            .init_func(func, len_registers, len_results, func_locals, instrs)
     }
 
     /// Resolves the [`CompiledFuncEntity`] for [`CompiledFunc`] and applies `f` to it.
@@ -175,11 +176,11 @@ impl Engine {
     /// # Panics
     ///
     /// If [`CompiledFunc`] is invalid for [`Engine`].
-    pub(super) fn resolve_func_2<F, R>(&self, func: CompiledFunc, f: F) -> R
+    pub(super) fn resolve_func<F, R>(&self, func: CompiledFunc, f: F) -> R
     where
         F: FnOnce(&CompiledFuncEntity) -> R,
     {
-        self.inner.resolve_func_2(func, f)
+        self.inner.resolve_func(func, f)
     }
 
     /// Resolves the [`CompiledFunc`] to the underlying `wasmi` bytecode instructions.
@@ -197,8 +198,8 @@ impl Engine {
     /// - If the [`CompiledFunc`] is invalid for the [`Engine`].
     /// - If register machine bytecode translation is disabled.
     #[cfg(test)]
-    pub(crate) fn resolve_instr_2(&self, func: CompiledFunc, index: usize) -> Option<Instruction2> {
-        self.inner.resolve_instr_2(func, index)
+    pub(crate) fn resolve_instr(&self, func: CompiledFunc, index: usize) -> Option<Instruction> {
+        self.inner.resolve_instr(func, index)
     }
 
     /// Resolves the function local constant of [`CompiledFunc`] at `index` if any.
@@ -214,8 +215,8 @@ impl Engine {
     /// - If the [`CompiledFunc`] is invalid for the [`Engine`].
     /// - If register machine bytecode translation is disabled.
     #[cfg(test)]
-    fn get_func_const_2(&self, func: CompiledFunc, index: usize) -> Option<UntypedValue> {
-        self.inner.get_func_const_2(func, index)
+    fn get_func_const(&self, func: CompiledFunc, index: usize) -> Option<UntypedValue> {
+        self.inner.get_func_const(func, index)
     }
 
     /// Executes the given [`Func`] with parameters `params`.
@@ -351,11 +352,7 @@ pub struct EngineInner {
 #[derive(Debug)]
 pub struct EngineStacks {
     /// Stacks to be (re)used.
-    ///
-    /// # Note
-    ///
-    /// These are the stack used by the register-machine `wasmi` implementation.
-    stacks2: Vec<Stack>,
+    stacks: Vec<Stack>,
     /// Stack limits for newly constructed engine stacks.
     limits: StackLimits,
     /// How many stacks should be kept for reuse at most.
@@ -366,15 +363,15 @@ impl EngineStacks {
     /// Creates new [`EngineStacks`] with the given [`StackLimits`].
     pub fn new(config: &Config) -> Self {
         Self {
-            stacks2: Vec::new(),
+            stacks: Vec::new(),
             limits: config.stack_limits(),
             keep: config.cached_stacks(),
         }
     }
 
     /// Reuse or create a new [`Stack`] if none was available.
-    pub fn reuse_or_new_2(&mut self) -> Stack {
-        match self.stacks2.pop() {
+    pub fn reuse_or_new(&mut self) -> Stack {
+        match self.stacks.pop() {
             Some(stack) => stack,
             None => Stack::new(self.limits),
         }
@@ -382,8 +379,8 @@ impl EngineStacks {
 
     /// Disose and recycle the `stack`.
     pub fn recycle(&mut self, stack: Stack) {
-        if !stack.is_empty() && self.stacks2.len() < self.keep {
-            self.stacks2.push(stack);
+        if !stack.is_empty() && self.stacks.len() < self.keep {
+            self.stacks.push(stack);
         }
     }
 }
@@ -424,8 +421,8 @@ impl EngineInner {
     /// Allocates a new uninitialized [`CompiledFunc`] to the [`EngineInner`].
     ///
     /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
-    fn alloc_func_2(&self) -> CompiledFunc {
-        self.res.write().code_map_2.alloc_func()
+    fn alloc_func(&self) -> CompiledFunc {
+        self.res.write().code_map.alloc_func()
     }
 
     /// Initializes the uninitialized [`CompiledFunc`] for the [`EngineInner`].
@@ -434,7 +431,7 @@ impl EngineInner {
     ///
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
-    fn init_func_2<I>(
+    fn init_func<I>(
         &self,
         func: CompiledFunc,
         len_registers: u16,
@@ -442,11 +439,11 @@ impl EngineInner {
         func_locals: FuncLocalConstsIter,
         instrs: I,
     ) where
-        I: IntoIterator<Item = Instruction2>,
+        I: IntoIterator<Item = Instruction>,
     {
         self.res
             .write()
-            .code_map_2
+            .code_map
             .init_func(func, len_registers, len_results, func_locals, instrs)
     }
 
@@ -455,18 +452,18 @@ impl EngineInner {
     /// # Panics
     ///
     /// If [`CompiledFunc`] is invalid for [`Engine`].
-    pub(super) fn resolve_func_2<F, R>(&self, func: CompiledFunc, f: F) -> R
+    pub(super) fn resolve_func<F, R>(&self, func: CompiledFunc, f: F) -> R
     where
         F: FnOnce(&CompiledFuncEntity) -> R,
     {
-        f(self.res.read().code_map_2.get(func))
+        f(self.res.read().code_map.get(func))
     }
 
     #[cfg(test)]
-    pub(crate) fn resolve_instr_2(&self, func: CompiledFunc, index: usize) -> Option<Instruction2> {
+    pub(crate) fn resolve_instr(&self, func: CompiledFunc, index: usize) -> Option<Instruction> {
         self.res
             .read()
-            .code_map_2
+            .code_map
             .get(func)
             .instrs()
             .get(index)
@@ -474,13 +471,13 @@ impl EngineInner {
     }
 
     #[cfg(test)]
-    fn get_func_const_2(&self, func: CompiledFunc, index: usize) -> Option<UntypedValue> {
+    fn get_func_const(&self, func: CompiledFunc, index: usize) -> Option<UntypedValue> {
         // Function local constants are stored in reverse order of their indices since
         // they are allocated in reverse order to their absolute indices during function
         // translation. That is why we need to access them in reverse order.
         self.res
             .read()
-            .code_map_2
+            .code_map
             .get(func)
             .consts()
             .iter()
@@ -489,67 +486,7 @@ impl EngineInner {
             .copied()
     }
 
-    /// Executes the given [`Func`] with the given `params` and returns the `results`.
-    ///
-    /// Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
-    ///
-    /// # Errors
-    ///
-    /// If the Wasm execution traps or runs out of resources.
-    fn execute_func<T, Results>(
-        &self,
-        ctx: StoreContextMut<T>,
-        func: &Func,
-        params: impl CallParams,
-        results: Results,
-    ) -> Result<<Results as CallResults>::Results, Trap>
-    where
-        Results: CallResults,
-    {
-        self.execute_func_regmach(ctx, func, params, results)
-    }
-
-    /// Executes the given [`Func`] resumably with the given `params` and returns the `results`.
-    ///
-    /// Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
-    ///
-    /// # Errors
-    ///
-    /// If the Wasm execution traps or runs out of resources.
-    fn execute_func_resumable<T, Results>(
-        &self,
-        ctx: StoreContextMut<T>,
-        func: &Func,
-        params: impl CallParams,
-        results: Results,
-    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
-    where
-        Results: CallResults,
-    {
-        self.execute_func_resumable_regmach(ctx, func, params, results)
-    }
-
-    /// Resumes the given [`Func`] with the given `params` and returns the `results`.
-    ///
-    /// - Uses the [`StoreContextMut`] for context information about the Wasm [`Store`].
-    ///
-    /// # Errors
-    ///
-    /// If the Wasm execution traps or runs out of resources.
-    fn resume_func<T, Results>(
-        &self,
-        ctx: StoreContextMut<T>,
-        invocation: ResumableInvocation,
-        params: impl CallParams,
-        results: Results,
-    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
-    where
-        Results: CallResults,
-    {
-        self.resume_func_regmach(ctx, invocation, params, results)
-    }
-
-    /// Recycles the given [`Stack`] for the register-machine `wasmi` engine backend.
+    /// Recycles the given [`Stack`].
     fn recycle_stack(&self, stack: Stack) {
         self.stacks.lock().recycle(stack)
     }
@@ -561,7 +498,7 @@ impl EngineInner {
 #[derive(Debug)]
 pub struct EngineResources {
     /// Stores information about all compiled functions.
-    code_map_2: CodeMap,
+    code_map: CodeMap,
     /// Deduplicated function types.
     ///
     /// # Note
@@ -576,7 +513,7 @@ impl EngineResources {
     fn new() -> Self {
         let engine_idx = EngineIdx::new();
         Self {
-            code_map_2: CodeMap::default(),
+            code_map: CodeMap::default(),
             func_types: FuncTypeRegistry::new(engine_idx),
         }
     }

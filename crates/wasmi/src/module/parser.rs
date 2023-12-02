@@ -13,7 +13,7 @@ use super::{
     Read,
 };
 use crate::{
-    engine::{CompiledFunc, FuncTranslatorAllocations2 as FuncTranslatorAllocations},
+    engine::{CompiledFunc, FuncTranslatorAllocations},
     Engine,
     FuncType,
     MemoryType,

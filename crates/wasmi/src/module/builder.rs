@@ -245,7 +245,7 @@ impl<'engine> ModuleBuilder<'engine> {
             let func_type_idx = func?;
             let func_type = self.func_types[func_type_idx.into_u32() as usize];
             self.funcs.push(func_type);
-            self.compiled_funcs_2.push(self.engine.alloc_func_2());
+            self.compiled_funcs_2.push(self.engine.alloc_func());
         }
         Ok(())
     }
