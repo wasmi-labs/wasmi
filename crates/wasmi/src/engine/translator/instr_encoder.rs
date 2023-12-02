@@ -417,6 +417,10 @@ impl InstrEncoder {
             }
             [v0, v1, rest @ ..] => {
                 debug_assert!(!rest.is_empty());
+                // Note: The fuel for copies might result in 0 charges if there aren't
+                //       enough copies to account for at least 1 fuel. Therefore we need
+                //       to also bump by `FuelCosts::base` to charge at least 1 fuel.
+                self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
                 self.bump_fuel_consumption(fuel_info, |costs| {
                     costs.fuel_for_copies(rest.len() as u64 + 3)
                 })?;
@@ -567,6 +571,10 @@ impl InstrEncoder {
             }
             [v0, v1, v2, rest @ ..] => {
                 debug_assert!(!rest.is_empty());
+                // Note: The fuel for return values might result in 0 charges if there aren't
+                //       enough return values to account for at least 1 fuel. Therefore we need
+                //       to also bump by `FuelCosts::base` to charge at least 1 fuel.
+                self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
                 self.bump_fuel_consumption(fuel_info, |costs| {
                     costs.fuel_for_copies(rest.len() as u64 + 3)
                 })?;
@@ -625,6 +633,10 @@ impl InstrEncoder {
             }
             [v0, v1, rest @ ..] => {
                 debug_assert!(!rest.is_empty());
+                // Note: The fuel for return values might result in 0 charges if there aren't
+                //       enough return values to account for at least 1 fuel. Therefore we need
+                //       to also bump by `FuelCosts::base` to charge at least 1 fuel.
+                self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
                 self.bump_fuel_consumption(fuel_info, |costs| {
                     costs.fuel_for_copies(rest.len() as u64 + 3)
                 })?;
