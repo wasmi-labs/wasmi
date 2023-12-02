@@ -1,7 +1,7 @@
 use super::*;
 use crate::engine::{
     bytecode::{BranchOffset, BranchOffset16, GlobalIdx, RegisterSpan},
-    regmach::CompiledFunc,
+    CompiledFunc,
 };
 use wasmi_core::{TrapCode, UntypedValue};
 

@@ -13,7 +13,7 @@ use crate::{
             SignatureIdx,
             UnaryInstr,
         },
-        regmach::CompiledFunc,
+        CompiledFunc,
         CompiledFuncEntity,
         TranslationError,
     },

@@ -8,7 +8,6 @@ mod executor;
 mod func_args;
 mod func_types;
 mod limits;
-mod regmach;
 mod resumable;
 mod traits;
 mod translator;
@@ -23,24 +22,23 @@ use self::{
     bytecode::Instruction,
     code_map::{CodeMap, CompiledFuncEntity},
     func_types::FuncTypeRegistry,
-    regmach::FuncLocalConstsIter,
     resumable::ResumableCallBase,
+    translator::FuncLocalConstsIter,
 };
 pub use self::{
     code_map::CompiledFunc,
     config::{Config, FuelConsumptionMode},
     limits::StackLimits,
-    regmach::{Instr, TranslationError},
     resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
     traits::{CallParams, CallResults},
-    translator::FuncBuilder,
+    translator::{FuncBuilder, Instr, TranslationError},
 };
 pub(crate) use self::{
     config::FuelCosts,
     executor::Stack,
     func_args::{FuncFinished, FuncParams, FuncResults},
     func_types::DedupFuncType,
-    regmach::FuncTranslatorAllocations,
+    translator::FuncTranslatorAllocations,
 };
 use crate::{core::Trap, Func, FuncType, StoreContextMut};
 use alloc::{sync::Arc, vec::Vec};

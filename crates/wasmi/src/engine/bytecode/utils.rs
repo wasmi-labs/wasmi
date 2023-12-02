@@ -1,5 +1,5 @@
 use super::{Const16, Const32};
-use crate::engine::{regmach::TranslationErrorInner, Instr, TranslationError};
+use crate::engine::{translator::TranslationErrorInner, Instr, TranslationError};
 
 #[cfg(doc)]
 use super::Instruction;

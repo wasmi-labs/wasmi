@@ -19,7 +19,7 @@ use super::{
 use crate::{
     engine::{
         bytecode::{self, Const16, Instruction, Provider, Register, SignatureIdx},
-        regmach::translator::AcquiredTarget,
+        translator::AcquiredTarget,
         FuelCosts,
         TranslationError,
     },

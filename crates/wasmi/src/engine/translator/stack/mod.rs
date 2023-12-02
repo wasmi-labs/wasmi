@@ -11,7 +11,7 @@ use super::TypedValue;
 use crate::{
     engine::{
         bytecode::{Provider, Register, RegisterSpan, UntypedProvider},
-        regmach::TranslationErrorInner,
+        translator::TranslationErrorInner,
         TranslationError,
     },
     FuncType,

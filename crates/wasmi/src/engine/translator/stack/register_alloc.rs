@@ -1,7 +1,7 @@
 use super::{TaggedProvider, TypedProvider};
 use crate::engine::{
     bytecode::{Register, RegisterSpan},
-    regmach::TranslationErrorInner,
+    translator::TranslationErrorInner,
     TranslationError,
 };
 use core::{
@@ -11,7 +11,7 @@ use core::{
 use multi_stash::{Key as StashKey, MultiStash};
 
 #[cfg(doc)]
-use crate::engine::regmach::translator::InstrEncoder;
+use crate::engine::translator::InstrEncoder;
 
 /// The register allocator using during translation.
 ///

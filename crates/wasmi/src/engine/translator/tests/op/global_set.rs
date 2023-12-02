@@ -2,7 +2,7 @@ use super::*;
 
 use crate::engine::{
     bytecode::GlobalIdx,
-    regmach::translator::tests::{display_wasm::DisplayValueType, driver::ExpectedFunc},
+    translator::tests::{display_wasm::DisplayValueType, driver::ExpectedFunc},
 };
 use core::fmt::Display;
 use wasm_type::WasmType;

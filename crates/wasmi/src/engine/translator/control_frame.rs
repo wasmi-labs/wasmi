@@ -6,7 +6,7 @@ use super::ValueStack;
 use crate::{
     engine::{
         bytecode::{RegisterSpan, RegisterSpanIter},
-        regmach::TranslationErrorInner,
+        translator::TranslationErrorInner,
         Instr,
         TranslationError,
     },
