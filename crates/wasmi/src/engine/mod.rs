@@ -145,8 +145,8 @@ impl Engine {
     /// Allocates a new uninitialized [`CompiledFunc`] to the [`Engine`].
     ///
     /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
-    pub(super) fn alloc_func_2(&self) -> CompiledFunc {
-        self.inner.alloc_func_2()
+    pub(super) fn alloc_func(&self) -> CompiledFunc {
+        self.inner.alloc_func()
     }
 
     /// Initializes the uninitialized [`CompiledFunc`] for the [`Engine`].
@@ -155,7 +155,7 @@ impl Engine {
     ///
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
-    fn init_func_2<I>(
+    fn init_func<I>(
         &self,
         func: CompiledFunc,
         len_registers: u16,
@@ -166,7 +166,7 @@ impl Engine {
         I: IntoIterator<Item = Instruction2>,
     {
         self.inner
-            .init_func_2(func, len_registers, len_results, func_locals, instrs)
+            .init_func(func, len_registers, len_results, func_locals, instrs)
     }
 
     /// Resolves the [`CompiledFuncEntity`] for [`CompiledFunc`] and applies `f` to it.
@@ -174,11 +174,11 @@ impl Engine {
     /// # Panics
     ///
     /// If [`CompiledFunc`] is invalid for [`Engine`].
-    pub(super) fn resolve_func_2<F, R>(&self, func: CompiledFunc, f: F) -> R
+    pub(super) fn resolve_func<F, R>(&self, func: CompiledFunc, f: F) -> R
     where
         F: FnOnce(&CompiledFuncEntity) -> R,
     {
-        self.inner.resolve_func_2(func, f)
+        self.inner.resolve_func(func, f)
     }
 
     /// Resolves the [`CompiledFunc`] to the underlying `wasmi` bytecode instructions.
@@ -196,8 +196,8 @@ impl Engine {
     /// - If the [`CompiledFunc`] is invalid for the [`Engine`].
     /// - If register machine bytecode translation is disabled.
     #[cfg(test)]
-    pub(crate) fn resolve_instr_2(&self, func: CompiledFunc, index: usize) -> Option<Instruction2> {
-        self.inner.resolve_instr_2(func, index)
+    pub(crate) fn resolve_instr(&self, func: CompiledFunc, index: usize) -> Option<Instruction2> {
+        self.inner.resolve_instr(func, index)
     }
 
     /// Resolves the function local constant of [`CompiledFunc`] at `index` if any.
@@ -213,8 +213,8 @@ impl Engine {
     /// - If the [`CompiledFunc`] is invalid for the [`Engine`].
     /// - If register machine bytecode translation is disabled.
     #[cfg(test)]
-    fn get_func_const_2(&self, func: CompiledFunc, index: usize) -> Option<UntypedValue> {
-        self.inner.get_func_const_2(func, index)
+    fn get_func_const(&self, func: CompiledFunc, index: usize) -> Option<UntypedValue> {
+        self.inner.get_func_const(func, index)
     }
 
     /// Executes the given [`Func`] with parameters `params`.
@@ -423,7 +423,7 @@ impl EngineInner {
     /// Allocates a new uninitialized [`CompiledFunc`] to the [`EngineInner`].
     ///
     /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
-    fn alloc_func_2(&self) -> CompiledFunc {
+    fn alloc_func(&self) -> CompiledFunc {
         self.res.write().code_map_2.alloc_func()
     }
 
@@ -433,7 +433,7 @@ impl EngineInner {
     ///
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
-    fn init_func_2<I>(
+    fn init_func<I>(
         &self,
         func: CompiledFunc,
         len_registers: u16,
@@ -454,7 +454,7 @@ impl EngineInner {
     /// # Panics
     ///
     /// If [`CompiledFunc`] is invalid for [`Engine`].
-    pub(super) fn resolve_func_2<F, R>(&self, func: CompiledFunc, f: F) -> R
+    pub(super) fn resolve_func<F, R>(&self, func: CompiledFunc, f: F) -> R
     where
         F: FnOnce(&CompiledFuncEntity) -> R,
     {
@@ -462,7 +462,7 @@ impl EngineInner {
     }
 
     #[cfg(test)]
-    pub(crate) fn resolve_instr_2(&self, func: CompiledFunc, index: usize) -> Option<Instruction2> {
+    pub(crate) fn resolve_instr(&self, func: CompiledFunc, index: usize) -> Option<Instruction2> {
         self.res
             .read()
             .code_map_2
@@ -473,7 +473,7 @@ impl EngineInner {
     }
 
     #[cfg(test)]
-    fn get_func_const_2(&self, func: CompiledFunc, index: usize) -> Option<UntypedValue> {
+    fn get_func_const(&self, func: CompiledFunc, index: usize) -> Option<UntypedValue> {
         // Function local constants are stored in reverse order of their indices since
         // they are allocated in reverse order to their absolute indices during function
         // translation. That is why we need to access them in reverse order.

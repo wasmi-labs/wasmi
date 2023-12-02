@@ -563,7 +563,7 @@ fn relink_call_internal(
 ) -> Result<bool, TranslationError> {
     let len_results = res
         .engine()
-        .resolve_func_2(func, CompiledFuncEntity::len_results);
+        .resolve_func(func, CompiledFuncEntity::len_results);
     if len_results != 1 {
         return Ok(false);
     }

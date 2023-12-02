@@ -259,7 +259,7 @@ impl<'parser> FuncTranslator<'parser> {
             .map_err(|_| TranslationError::new(TranslationErrorInner::TooManyFunctionResults))?;
         let func_consts = self.alloc.stack.func_local_consts();
         let instrs = self.alloc.instr_encoder.drain_instrs();
-        self.res.engine().init_func_2(
+        self.res.engine().init_func(
             self.compiled_func,
             len_registers,
             len_results,
