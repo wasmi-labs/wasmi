@@ -1,13 +1,12 @@
 mod executor;
 mod stack;
 mod translator;
-mod trap;
 
 #[cfg(test)]
 mod tests;
 
+use self::executor::EngineExecutor;
 pub(super) use self::translator::TranslationErrorInner;
-use self::{executor::EngineExecutor, trap::TaggedTrap};
 pub use self::{
     stack::Stack,
     translator::{
@@ -21,7 +20,7 @@ pub use self::{
 use super::resumable::ResumableCallBase;
 use crate::{
     core::Trap,
-    engine::{CallParams, CallResults, CompiledFunc, EngineInner},
+    engine::{CallParams, CallResults, CompiledFunc, EngineInner, TaggedTrap},
     AsContext as _,
     AsContextMut as _,
     Func,
