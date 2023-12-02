@@ -133,8 +133,7 @@ impl EngineInner {
         let res = self.res.read();
         let host_func = invocation.host_func();
         let caller_results = invocation.caller_results();
-        let mut stack = invocation.take_stack();
-        let results = EngineExecutor::new(&res, &mut stack).resume_func(
+        let results = EngineExecutor::new(&res, &mut invocation.stack).resume_func(
             ctx,
             host_func,
             params,
@@ -143,11 +142,11 @@ impl EngineInner {
         );
         match results {
             Ok(results) => {
-                self.stacks.lock().recycle(stack);
+                self.stacks.lock().recycle(invocation.take_stack());
                 Ok(ResumableCallBase::Finished(results))
             }
             Err(TaggedTrap::Wasm(trap)) => {
-                self.stacks.lock().recycle(stack);
+                self.stacks.lock().recycle(invocation.take_stack());
                 Err(trap)
             }
             Err(TaggedTrap::Host {
@@ -155,7 +154,7 @@ impl EngineInner {
                 host_trap,
                 caller_results,
             }) => {
-                invocation.update_2(stack, host_func, host_trap, caller_results);
+                invocation.update_2(host_func, host_trap, caller_results);
                 Ok(ResumableCallBase::Resumable(invocation))
             }
         }
