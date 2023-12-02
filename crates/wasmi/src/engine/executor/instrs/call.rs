@@ -4,10 +4,8 @@ use crate::{
     engine::{
         bytecode::{FuncIdx, Instruction, Register, RegisterSpan, SignatureIdx, TableIdx},
         code_map::InstructionPtr,
-        regmach::{
-            executor::stack::{CallFrame, Stack, ValueStackPtr},
-            CompiledFunc,
-        },
+        executor::stack::{CallFrame, Stack, ValueStackPtr},
+        CompiledFunc,
         CompiledFuncEntity,
     },
     func::FuncEntity,
@@ -229,7 +227,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// We refer to the top-most [`CallFrame`] as the `caller` since this method is used for
     /// tail call instructions for which the top-most [`CallFrame`] is the caller.
     ///
-    /// [`CallStack`]: crate::engine::regmach::executor::stack::CallStack
+    /// [`CallStack`]: crate::engine::executor::stack::CallStack
     fn caller_results(&self) -> RegisterSpan {
         self.call_stack
             .peek()

@@ -10,7 +10,7 @@ use wasmi_core::TrapCode;
 use crate::{
     engine::bytecode::Instruction,
     engine::bytecode::Register,
-    engine::regmach::executor::stack::ValueStack,
+    engine::executor::stack::ValueStack,
     engine::CompiledFunc,
     Global,
     Memory,

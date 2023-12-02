@@ -4,6 +4,7 @@ pub mod bytecode;
 mod cache;
 mod code_map;
 mod config;
+mod executor;
 mod func_args;
 mod func_types;
 mod limits;
@@ -33,9 +34,10 @@ pub use self::{
 };
 pub(crate) use self::{
     config::FuelCosts,
+    executor::Stack,
     func_args::{FuncFinished, FuncParams, FuncResults},
     func_types::DedupFuncType,
-    regmach::{FuncTranslatorAllocations as FuncTranslatorAllocations2, Stack},
+    regmach::FuncTranslatorAllocations as FuncTranslatorAllocations2,
 };
 use crate::{core::Trap, Func, FuncType, StoreContextMut};
 use alloc::{sync::Arc, vec::Vec};

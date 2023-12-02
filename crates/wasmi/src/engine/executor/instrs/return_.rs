@@ -3,7 +3,7 @@ use crate::{
     core::UntypedValue,
     engine::{
         bytecode::{AnyConst32, Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
-        regmach::executor::stack::ValueStackPtr,
+        executor::stack::ValueStackPtr,
     },
 };
 use core::slice;
