@@ -11,8 +11,8 @@ pub enum TaggedTrap {
     Wasm(Trap),
     /// The trap is originating from a host function.
     Host {
-        host_func: Func,
         host_trap: Trap,
+        host_func: Func,
         caller_results: RegisterSpan,
     },
 }
