@@ -89,12 +89,8 @@ impl FuncTranslatorAllocations {
 /// The used function validator type.
 type FuncValidator = wasmparser::FuncValidator<wasmparser::ValidatorResources>;
 
-/// The interface to build a `wasmi` bytecode function using Wasm bytecode.
-///
-/// # Note
-///
-/// This includes validation of the incoming Wasm bytecode.
-pub struct FuncBuilder<'parser> {
+/// A Wasm to `wasmi` IR function translator that also validates its input.
+pub struct ValidatingFuncTranslator<'parser> {
     /// The current position in the Wasm binary while parsing operators.
     pos: usize,
     /// The Wasm function validator.
@@ -103,8 +99,8 @@ pub struct FuncBuilder<'parser> {
     translator: FuncTranslator<'parser>,
 }
 
-impl<'parser> FuncBuilder<'parser> {
-    /// Creates a new [`FuncBuilder`].
+impl<'parser> ValidatingFuncTranslator<'parser> {
+    /// Creates a new [`ValidatingFuncTranslator`].
     pub fn new(
         func: FuncIdx,
         compiled_func: CompiledFunc,
@@ -132,7 +128,7 @@ impl<'parser> FuncBuilder<'parser> {
         Ok(())
     }
 
-    /// This informs the [`FuncBuilder`] that the function header translation is finished.
+    /// This informs the [`ValidatingFuncTranslator`] that the function header translation is finished.
     ///
     /// # Note
     ///
@@ -236,7 +232,7 @@ macro_rules! impl_visit_operator {
     () => {};
 }
 
-impl<'a> VisitOperator<'a> for FuncBuilder<'a> {
+impl<'a> VisitOperator<'a> for ValidatingFuncTranslator<'a> {
     type Output = Result<(), TranslationError>;
 
     wasmparser::for_each_operator!(impl_visit_operator);

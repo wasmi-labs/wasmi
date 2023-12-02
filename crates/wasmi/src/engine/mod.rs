@@ -31,7 +31,7 @@ pub use self::{
     limits::StackLimits,
     resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
     traits::{CallParams, CallResults},
-    translator::{FuncBuilder, Instr, TranslationError},
+    translator::{Instr, TranslationError, ValidatingFuncTranslator},
 };
 pub(crate) use self::{
     config::FuelCosts,
