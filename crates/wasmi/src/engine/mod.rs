@@ -15,7 +15,7 @@ mod translator;
 use self::bytecode::RegisterSpan;
 
 use self::{
-    bytecode::Instruction as Instruction2,
+    bytecode::Instruction,
     func_types::FuncTypeRegistry,
     regmach::{code_map::CompiledFuncEntity, CodeMap, FuncLocalConstsIter, Stack},
     resumable::ResumableCallBase,
@@ -159,7 +159,7 @@ impl Engine {
         func_locals: FuncLocalConstsIter,
         instrs: I,
     ) where
-        I: IntoIterator<Item = Instruction2>,
+        I: IntoIterator<Item = Instruction>,
     {
         self.inner
             .init_func(func, len_registers, len_results, func_locals, instrs)
@@ -192,7 +192,7 @@ impl Engine {
     /// - If the [`CompiledFunc`] is invalid for the [`Engine`].
     /// - If register machine bytecode translation is disabled.
     #[cfg(test)]
-    pub(crate) fn resolve_instr(&self, func: CompiledFunc, index: usize) -> Option<Instruction2> {
+    pub(crate) fn resolve_instr(&self, func: CompiledFunc, index: usize) -> Option<Instruction> {
         self.inner.resolve_instr(func, index)
     }
 
@@ -433,7 +433,7 @@ impl EngineInner {
         func_locals: FuncLocalConstsIter,
         instrs: I,
     ) where
-        I: IntoIterator<Item = Instruction2>,
+        I: IntoIterator<Item = Instruction>,
     {
         self.res
             .write()
@@ -454,7 +454,7 @@ impl EngineInner {
     }
 
     #[cfg(test)]
-    pub(crate) fn resolve_instr(&self, func: CompiledFunc, index: usize) -> Option<Instruction2> {
+    pub(crate) fn resolve_instr(&self, func: CompiledFunc, index: usize) -> Option<Instruction> {
         self.res
             .read()
             .code_map
