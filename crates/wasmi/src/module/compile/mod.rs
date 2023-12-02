@@ -29,15 +29,8 @@ pub fn translate<'parser>(
     res: ModuleResources<'parser>,
     allocations: FuncTranslatorAllocations,
 ) -> Result<ReusableAllocations, ModuleError> {
-    FunctionTranslator::new(
-        func,
-        compiled_func,
-        func_body,
-        validator,
-        res,
-        allocations,
-    )?
-    .translate()
+    FunctionTranslator::new(func, compiled_func, func_body, validator, res, allocations)?
+        .translate()
 }
 
 /// Translates Wasm bytecode into `wasmi` bytecode for a single Wasm function.
