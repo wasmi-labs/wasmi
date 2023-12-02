@@ -1,19 +1,16 @@
 mod executor;
-mod stack;
 mod translator;
 
 #[cfg(test)]
 mod tests;
 
+pub(crate) use self::executor::Stack;
 pub(super) use self::translator::TranslationErrorInner;
-pub use self::{
-    stack::Stack,
-    translator::{
-        FuncLocalConstsIter,
-        FuncTranslator,
-        FuncTranslatorAllocations,
-        Instr,
-        TranslationError,
-    },
+pub use self::translator::{
+    FuncLocalConstsIter,
+    FuncTranslator,
+    FuncTranslatorAllocations,
+    Instr,
+    TranslationError,
 };
 use crate::engine::CompiledFunc;

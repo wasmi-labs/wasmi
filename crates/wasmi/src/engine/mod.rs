@@ -19,7 +19,7 @@ use self::{
     bytecode::Instruction,
     code_map::{CodeMap, CompiledFuncEntity},
     func_types::FuncTypeRegistry,
-    regmach::{FuncLocalConstsIter, Stack},
+    regmach::FuncLocalConstsIter,
     resumable::ResumableCallBase,
 };
 pub use self::{
@@ -35,7 +35,7 @@ pub(crate) use self::{
     config::FuelCosts,
     func_args::{FuncFinished, FuncParams, FuncResults},
     func_types::DedupFuncType,
-    regmach::FuncTranslatorAllocations as FuncTranslatorAllocations2,
+    regmach::{FuncTranslatorAllocations as FuncTranslatorAllocations2, Stack},
 };
 use crate::{core::Trap, Func, FuncType, StoreContextMut};
 use alloc::{sync::Arc, vec::Vec};

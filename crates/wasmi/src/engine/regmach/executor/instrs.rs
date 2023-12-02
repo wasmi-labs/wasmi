@@ -19,7 +19,7 @@ use crate::{
         code_map::InstructionPtr,
         config::FuelCosts,
         func_types::FuncTypeRegistry,
-        regmach::stack::{CallFrame, CallStack, ValueStack, ValueStackPtr},
+        regmach::executor::stack::{CallFrame, CallStack, ValueStack, ValueStackPtr},
         CodeMap,
     },
     store::ResourceLimiterRef,

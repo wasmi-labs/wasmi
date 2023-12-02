@@ -1,9 +1,9 @@
+pub(crate) use self::stack::Stack;
 use self::{
     instrs::{execute_instrs, CallKind, WasmOutcome},
+    stack::CallFrame,
     trap::TaggedTrap,
 };
-use super::stack::CallFrame;
-pub use super::Stack;
 use crate::{
     engine::{
         bytecode::{Register, RegisterSpan},
@@ -31,6 +31,7 @@ use wasmi_core::{Trap, TrapCode};
 use crate::{engine::StackLimits, Store};
 
 mod instrs;
+mod stack;
 mod trap;
 
 impl EngineInner {
