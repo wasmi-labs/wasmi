@@ -70,7 +70,7 @@ impl<'engine> EngineExecutor<'engine> {
                 // We reserve space on the stack to write the results of the root function execution.
                 self.stack.values.extend_zeros(results.len_results());
                 let instance = wasm_func.instance();
-                let compiled_func = self.res.code_map_2.get(wasm_func.func_body());
+                let compiled_func = self.res.code_map.get(wasm_func.func_body());
                 let (base_ptr, frame_ptr) = self.stack.values.alloc_call_frame(compiled_func)?;
                 // Safety: We use the `base_ptr` that we just received upon allocating the new
                 //         call frame which is guaranteed to be valid for this particular operation
@@ -374,7 +374,7 @@ impl<'engine> EngineExecutor<'engine> {
         let (store_inner, mut resource_limiter) = ctx.store.store_inner_and_resource_limiter_ref();
         let value_stack = &mut self.stack.values;
         let call_stack = &mut self.stack.calls;
-        let code_map = &self.res.code_map_2;
+        let code_map = &self.res.code_map;
         let func_types = &self.res.func_types;
 
         execute_instrs(

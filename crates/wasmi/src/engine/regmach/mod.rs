@@ -54,7 +54,7 @@ impl EngineInner {
         Results: CallResults,
     {
         let res = self.res.read();
-        let mut stack = self.stacks.lock().reuse_or_new_2();
+        let mut stack = self.stacks.lock().reuse_or_new();
         let results = EngineExecutor::new(&res, &mut stack)
             .execute_root_func(ctx, func, params, results)
             .map_err(TaggedTrap::into_trap);
@@ -81,7 +81,7 @@ impl EngineInner {
         Results: CallResults,
     {
         let res = self.res.read();
-        let mut stack = self.stacks.lock().reuse_or_new_2();
+        let mut stack = self.stacks.lock().reuse_or_new();
         let results = EngineExecutor::new(&res, &mut stack).execute_root_func(
             ctx.as_context_mut(),
             func,

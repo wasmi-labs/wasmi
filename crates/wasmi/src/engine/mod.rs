@@ -350,11 +350,7 @@ pub struct EngineInner {
 #[derive(Debug)]
 pub struct EngineStacks {
     /// Stacks to be (re)used.
-    ///
-    /// # Note
-    ///
-    /// These are the stack used by the register-machine `wasmi` implementation.
-    stacks2: Vec<Stack>,
+    stacks: Vec<Stack>,
     /// Stack limits for newly constructed engine stacks.
     limits: StackLimits,
     /// How many stacks should be kept for reuse at most.
@@ -365,15 +361,15 @@ impl EngineStacks {
     /// Creates new [`EngineStacks`] with the given [`StackLimits`].
     pub fn new(config: &Config) -> Self {
         Self {
-            stacks2: Vec::new(),
+            stacks: Vec::new(),
             limits: config.stack_limits(),
             keep: config.cached_stacks(),
         }
     }
 
     /// Reuse or create a new [`Stack`] if none was available.
-    pub fn reuse_or_new_2(&mut self) -> Stack {
-        match self.stacks2.pop() {
+    pub fn reuse_or_new(&mut self) -> Stack {
+        match self.stacks.pop() {
             Some(stack) => stack,
             None => Stack::new(self.limits),
         }
@@ -381,8 +377,8 @@ impl EngineStacks {
 
     /// Disose and recycle the `stack`.
     pub fn recycle(&mut self, stack: Stack) {
-        if !stack.is_empty() && self.stacks2.len() < self.keep {
-            self.stacks2.push(stack);
+        if !stack.is_empty() && self.stacks.len() < self.keep {
+            self.stacks.push(stack);
         }
     }
 }
@@ -424,7 +420,7 @@ impl EngineInner {
     ///
     /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
     fn alloc_func(&self) -> CompiledFunc {
-        self.res.write().code_map_2.alloc_func()
+        self.res.write().code_map.alloc_func()
     }
 
     /// Initializes the uninitialized [`CompiledFunc`] for the [`EngineInner`].
@@ -445,7 +441,7 @@ impl EngineInner {
     {
         self.res
             .write()
-            .code_map_2
+            .code_map
             .init_func(func, len_registers, len_results, func_locals, instrs)
     }
 
@@ -458,14 +454,14 @@ impl EngineInner {
     where
         F: FnOnce(&CompiledFuncEntity) -> R,
     {
-        f(self.res.read().code_map_2.get(func))
+        f(self.res.read().code_map.get(func))
     }
 
     #[cfg(test)]
     pub(crate) fn resolve_instr(&self, func: CompiledFunc, index: usize) -> Option<Instruction2> {
         self.res
             .read()
-            .code_map_2
+            .code_map
             .get(func)
             .instrs()
             .get(index)
@@ -479,7 +475,7 @@ impl EngineInner {
         // translation. That is why we need to access them in reverse order.
         self.res
             .read()
-            .code_map_2
+            .code_map
             .get(func)
             .consts()
             .iter()
@@ -548,7 +544,7 @@ impl EngineInner {
         self.resume_func_regmach(ctx, invocation, params, results)
     }
 
-    /// Recycles the given [`Stack`] for the register-machine `wasmi` engine backend.
+    /// Recycles the given [`Stack`].
     fn recycle_stack(&self, stack: Stack) {
         self.stacks.lock().recycle(stack)
     }
@@ -560,7 +556,7 @@ impl EngineInner {
 #[derive(Debug)]
 pub struct EngineResources {
     /// Stores information about all compiled functions.
-    code_map_2: CodeMap,
+    code_map: CodeMap,
     /// Deduplicated function types.
     ///
     /// # Note
@@ -575,7 +571,7 @@ impl EngineResources {
     fn new() -> Self {
         let engine_idx = EngineIdx::new();
         Self {
-            code_map_2: CodeMap::default(),
+            code_map: CodeMap::default(),
             func_types: FuncTypeRegistry::new(engine_idx),
         }
     }
