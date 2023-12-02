@@ -5,10 +5,12 @@
 //! This is the data structure specialized to handle compiled
 //! register machine based bytecode functions.
 
-use crate::engine::{bytecode::Instruction, regmach::translator::FuncLocalConstsIter};
+use crate::{
+    core::UntypedValue,
+    engine::{bytecode::Instruction, regmach::translator::FuncLocalConstsIter},
+};
 use alloc::boxed::Box;
 use wasmi_arena::{Arena, ArenaIndex};
-use wasmi_core::UntypedValue;
 
 /// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`](crate::Engine).
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
