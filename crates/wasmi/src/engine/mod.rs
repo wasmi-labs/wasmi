@@ -11,7 +11,6 @@ mod regmach;
 mod resumable;
 mod traits;
 mod translator;
-mod trap;
 
 #[cfg(test)]
 use self::bytecode::RegisterSpan;
@@ -22,7 +21,6 @@ use self::{
     func_types::FuncTypeRegistry,
     regmach::{FuncLocalConstsIter, Stack},
     resumable::ResumableCallBase,
-    trap::TaggedTrap,
 };
 pub use self::{
     code_map::CompiledFunc,

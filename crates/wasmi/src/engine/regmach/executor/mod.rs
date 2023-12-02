@@ -1,6 +1,9 @@
-use self::instrs::{execute_instrs, CallKind, WasmOutcome};
+use self::{
+    instrs::{execute_instrs, CallKind, WasmOutcome},
+    trap::TaggedTrap,
+};
+use super::stack::CallFrame;
 pub use super::Stack;
-use super::{stack::CallFrame, TaggedTrap};
 use crate::{
     engine::{
         bytecode::{Register, RegisterSpan},
@@ -25,9 +28,10 @@ use crate::{
 use wasmi_core::{Trap, TrapCode};
 
 #[cfg(doc)]
-use crate::{Store, engine::StackLimits};
+use crate::{engine::StackLimits, Store};
 
 mod instrs;
+mod trap;
 
 impl EngineInner {
     /// Executes the given [`Func`] with the given `params` and returns the `results`.

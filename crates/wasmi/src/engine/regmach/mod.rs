@@ -16,4 +16,4 @@ pub use self::{
         TranslationError,
     },
 };
-use crate::engine::{CompiledFunc, TaggedTrap};
+use crate::engine::CompiledFunc;
