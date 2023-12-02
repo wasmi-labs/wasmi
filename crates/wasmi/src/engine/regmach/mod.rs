@@ -17,6 +17,3 @@ pub use self::{
     },
 };
 use crate::engine::{CompiledFunc, TaggedTrap};
-
-#[cfg(doc)]
-use crate::Store;
