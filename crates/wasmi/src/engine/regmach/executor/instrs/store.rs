@@ -3,7 +3,7 @@ use crate::{
     core::{TrapCode, UntypedValue},
     engine::{
         bytecode::{Const16, Instruction, Register, StoreAtInstr, StoreInstr, StoreOffset16Instr},
-        regmach::code_map::InstructionPtr,
+        code_map::InstructionPtr,
     },
 };
 

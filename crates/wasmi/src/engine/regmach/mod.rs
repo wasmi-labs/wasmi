@@ -1,4 +1,3 @@
-pub mod code_map;
 mod executor;
 mod stack;
 mod translator;
@@ -8,8 +7,8 @@ mod trap;
 mod tests;
 
 pub(super) use self::translator::TranslationErrorInner;
+use self::{executor::EngineExecutor, trap::TaggedTrap};
 pub use self::{
-    code_map::{CodeMap, CompiledFunc},
     stack::Stack,
     translator::{
         FuncLocalConstsIter,
@@ -19,11 +18,10 @@ pub use self::{
         TranslationError,
     },
 };
-use self::{executor::EngineExecutor, trap::TaggedTrap};
 use super::resumable::ResumableCallBase;
 use crate::{
     core::Trap,
-    engine::{CallParams, CallResults, EngineInner},
+    engine::{CallParams, CallResults, CompiledFunc, EngineInner},
     AsContext as _,
     AsContextMut as _,
     Func,

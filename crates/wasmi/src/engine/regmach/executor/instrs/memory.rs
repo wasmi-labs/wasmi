@@ -5,7 +5,7 @@ use crate::{
     core::TrapCode,
     engine::{
         bytecode::{Const16, DataSegmentIdx, Instruction, Register},
-        regmach::code_map::InstructionPtr,
+        code_map::InstructionPtr,
     },
     error::EntityGrowError,
     store::ResourceLimiterRef,

@@ -2,6 +2,7 @@
 
 pub mod bytecode;
 mod cache;
+mod code_map;
 mod config;
 mod func_args;
 mod func_types;
@@ -16,23 +17,25 @@ use self::bytecode::RegisterSpan;
 
 use self::{
     bytecode::Instruction,
+    code_map::{CodeMap, CompiledFuncEntity},
     func_types::FuncTypeRegistry,
-    regmach::{code_map::CompiledFuncEntity, CodeMap, FuncLocalConstsIter, Stack},
+    regmach::{FuncLocalConstsIter, Stack},
     resumable::ResumableCallBase,
+};
+pub use self::{
+    code_map::CompiledFunc,
+    config::{Config, FuelConsumptionMode},
+    limits::StackLimits,
+    regmach::{Instr, TranslationError},
+    resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
+    traits::{CallParams, CallResults},
+    translator::FuncBuilder,
 };
 pub(crate) use self::{
     config::FuelCosts,
     func_args::{FuncFinished, FuncParams, FuncResults},
     func_types::DedupFuncType,
     regmach::FuncTranslatorAllocations as FuncTranslatorAllocations2,
-};
-pub use self::{
-    config::{Config, FuelConsumptionMode},
-    limits::StackLimits,
-    regmach::{CompiledFunc, Instr, TranslationError},
-    resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
-    traits::{CallParams, CallResults},
-    translator::FuncBuilder,
 };
 use crate::{core::Trap, Func, FuncType, StoreContextMut};
 use alloc::{sync::Arc, vec::Vec};

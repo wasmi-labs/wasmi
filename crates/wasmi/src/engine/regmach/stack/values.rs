@@ -1,7 +1,7 @@
 use super::err_stack_overflow;
 use crate::{
     core::UntypedValue,
-    engine::{bytecode::Register, regmach::code_map::CompiledFuncEntity},
+    engine::{bytecode::Register, CompiledFuncEntity},
 };
 use alloc::vec::Vec;
 use core::{fmt, fmt::Debug, iter, mem};

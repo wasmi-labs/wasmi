@@ -3,11 +3,12 @@ use crate::{
     core::TrapCode,
     engine::{
         bytecode::{FuncIdx, Instruction, Register, RegisterSpan, SignatureIdx, TableIdx},
+        code_map::InstructionPtr,
         regmach::{
-            code_map::{CompiledFuncEntity, InstructionPtr},
             stack::{CallFrame, Stack, ValueStackPtr},
             CompiledFunc,
         },
+        CompiledFuncEntity,
     },
     func::FuncEntity,
     Func,

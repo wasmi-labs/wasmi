@@ -3,7 +3,7 @@ use crate::{
     core::TrapCode,
     engine::{
         bytecode::{Const16, Const32, ElementSegmentIdx, Instruction, Register, TableIdx},
-        regmach::code_map::InstructionPtr,
+        code_map::InstructionPtr,
     },
     error::EntityGrowError,
     store::ResourceLimiterRef,

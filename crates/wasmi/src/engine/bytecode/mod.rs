@@ -39,7 +39,7 @@ pub(crate) use self::{
         UnaryInstr,
     },
 };
-use crate::engine::{regmach::CompiledFunc, TranslationError};
+use crate::engine::{CompiledFunc, TranslationError};
 use wasmi_core::TrapCode;
 
 /// A `wasmi` instruction.

@@ -5,10 +5,7 @@
 //! This is the data structure specialized to handle compiled
 //! register machine based bytecode functions.
 
-use crate::{
-    core::UntypedValue,
-    engine::{bytecode::Instruction, regmach::translator::FuncLocalConstsIter},
-};
+use crate::{core::UntypedValue, engine::bytecode::Instruction};
 use alloc::boxed::Box;
 use wasmi_arena::{Arena, ArenaIndex};
 
@@ -65,16 +62,13 @@ impl CompiledFuncEntity {
     ///
     /// - If `instrs` is empty.
     /// - If `instrs` contains more than `u32::MAX` instructions.
-    fn new<I>(
-        len_registers: u16,
-        len_results: u16,
-        instrs: I,
-        func_consts: FuncLocalConstsIter,
-    ) -> Self
+    fn new<I, C>(len_registers: u16, len_results: u16, instrs: I, consts: C) -> Self
     where
         I: IntoIterator<Item = Instruction>,
+        C: IntoIterator<Item = UntypedValue>,
     {
         let instrs: Box<[Instruction]> = instrs.into_iter().collect();
+        let consts: Box<[UntypedValue]> = consts.into_iter().collect();
         assert!(
             !instrs.is_empty(),
             "compiled functions must have at least one instruction"
@@ -83,7 +77,7 @@ impl CompiledFuncEntity {
             instrs,
             len_registers,
             len_results,
-            consts: func_consts.collect(),
+            consts,
         }
     }
 
@@ -164,15 +158,16 @@ impl CodeMap {
     ///
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
-    pub fn init_func<I>(
+    pub fn init_func<I, C>(
         &mut self,
         func: CompiledFunc,
         len_registers: u16,
         len_results: u16,
-        func_locals: FuncLocalConstsIter,
+        func_locals: C,
         instrs: I,
     ) where
         I: IntoIterator<Item = Instruction>,
+        C: IntoIterator<Item = UntypedValue>,
     {
         assert!(
             self.get(func).is_uninit(),

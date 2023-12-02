@@ -5,7 +5,7 @@ use crate::{
     engine::{
         bytecode::{Register, RegisterSpan},
         cache::InstanceCache,
-        regmach::code_map::InstructionPtr,
+        code_map::InstructionPtr,
         CallParams,
         CallResults,
         EngineResources,
