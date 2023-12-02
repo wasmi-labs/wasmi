@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1701419373984,
+  "lastUpdate": 1701519237417,
   "repoUrl": "https://github.com/paritytech/wasmi",
   "entries": {
     "Wasmi criterion benchmark": [
@@ -8075,6 +8075,276 @@ window.BENCHMARK_DATA = {
             "name": "overhead/call/untyped/16",
             "value": 2472205,
             "range": "± 26236",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "robin.freyler@gmail.com",
+            "name": "Robin Freyler",
+            "username": "Robbepop"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3ac1af977a2b726be0067939231e91df1dd4b86c",
+          "message": "Post stack-machine `wasmi` engine backend removal cleanup (#820)\n\n* remove empty trap.rs file\r\n\r\n* refactor resumable call stack usage\r\n\r\nThis refactoring was needed when there were still 2 different wasmi backend engines. Now the situation is simpler again so we can reverse the original refactoring.\r\n\r\n* rename method\r\n\r\n* rename a bunch of Engine and EngineInner methods\r\n\r\n* perform more renamings of engine internals\r\n\r\n* rename function param\r\n\r\n* reorder fields in TaggedTrap::Host variant\r\n\r\n* remove unused TranslationErrorInner variant\r\n\r\n* move bytecode submodule up into engine\r\n\r\n* rename Instruction2 import to just Instruction\r\n\r\n* use UntypedValue wasmi re-export\r\n\r\n* move code_map.rs up into engine module\r\n\r\n* move trap.rs up into engine module\r\n\r\n* move EngineInner executor impls into executor submodule\r\n\r\n* fix intra doc links\r\n\r\n* move trap.rs into executor submodule\r\n\r\n* move stack submodule into executor submodule\r\n\r\n* move executor up into the engine module\r\n\r\n* re-export FuncTranslatorAllocations without alias\r\n\r\n* move non-translation tests into engine/tests submodule\r\n\r\n* move translation tests into translator submodule\r\n\r\n* move translator submodule up into engine module\r\n\r\n* remove EngineInner forwarding methods\r\n\r\n* rename FuncBuilder to ValidatingFuncTranslator",
+          "timestamp": "2023-12-02T13:07:06+01:00",
+          "tree_id": "57706dd363c1120483f20e1f8616de92573afaec",
+          "url": "https://github.com/paritytech/wasmi/commit/3ac1af977a2b726be0067939231e91df1dd4b86c"
+        },
+        "date": 1701519237397,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "translate/wasm_kernel/default",
+            "value": 5019697,
+            "range": "± 10387",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/fuel",
+            "value": 5168391,
+            "range": "± 17887",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/default",
+            "value": 87790232,
+            "range": "± 435562",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/fuel",
+            "value": 90253343,
+            "range": "± 216126",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/default",
+            "value": 3829291,
+            "range": "± 12774",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/fuel",
+            "value": 3907071,
+            "range": "± 12422",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/default",
+            "value": 1363004,
+            "range": "± 4839",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/fuel",
+            "value": 1404039,
+            "range": "± 10577",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/default",
+            "value": 134445,
+            "range": "± 731",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/fuel",
+            "value": 141459,
+            "range": "± 186",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/default",
+            "value": 191154,
+            "range": "± 782",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/fuel",
+            "value": 200091,
+            "range": "± 1534",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/default",
+            "value": 279032,
+            "range": "± 2764",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/fuel",
+            "value": 295932,
+            "range": "± 1336",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "instantiate/wasm_kernel",
+            "value": 53129,
+            "range": "± 892",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/tiny_keccak",
+            "value": 347155,
+            "range": "± 762",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/rev_complement",
+            "value": 442154,
+            "range": "± 1344",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/regex_redux",
+            "value": 594264,
+            "range": "± 2414",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/count_until",
+            "value": 7482851,
+            "range": "± 4439",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/br_table",
+            "value": 1507217,
+            "range": "± 7044",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/trunc_f2i",
+            "value": 615034,
+            "range": "± 16975",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global/bump",
+            "value": 1320491,
+            "range": "± 546",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global/get_const",
+            "value": 733751,
+            "range": "± 408",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial/rec",
+            "value": 675018,
+            "range": "± 1032",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial/iter",
+            "value": 260732,
+            "range": "± 1152",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/call/rec",
+            "value": 167873,
+            "range": "± 971",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_scan",
+            "value": 187318,
+            "range": "± 698",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_trap",
+            "value": 15690,
+            "range": "± 60",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/call/host/1",
+            "value": 46283,
+            "range": "± 669",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fuse",
+            "value": 7808593,
+            "range": "± 59303",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/rec",
+            "value": 5998221,
+            "range": "± 11798",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/tail",
+            "value": 1475724,
+            "range": "± 3430",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/iter",
+            "value": 1284853,
+            "range": "± 5388",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/is_even/rec",
+            "value": 1080845,
+            "range": "± 3439",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/sum_bytes",
+            "value": 1038180,
+            "range": "± 5512",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/fill_bytes",
+            "value": 1087973,
+            "range": "± 4674",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/vec_add",
+            "value": 2949554,
+            "range": "± 3001",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/typed/0",
+            "value": 1208262,
+            "range": "± 24565",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/typed/16",
+            "value": 1602246,
+            "range": "± 8305",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/untyped/0",
+            "value": 1604703,
+            "range": "± 16596",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/untyped/16",
+            "value": 2451711,
+            "range": "± 7068",
             "unit": "ns/iter"
           }
         ]
