@@ -168,7 +168,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 }
 
-pub trait DivRemImm: Sized {
+pub trait DivRemExt: Sized {
     fn i32_div_s(self, rhs: NonZeroI32) -> Result<Self, TrapCode>;
     fn i32_div_u(self, rhs: NonZeroU32) -> Self;
     fn i32_rem_s(self, rhs: NonZeroI32) -> Result<Self, TrapCode>;
@@ -180,7 +180,7 @@ pub trait DivRemImm: Sized {
     fn i64_rem_u(self, rhs: NonZeroU64) -> Self;
 }
 
-impl DivRemImm for UntypedValue {
+impl DivRemExt for UntypedValue {
     fn i32_div_s(self, rhs: NonZeroI32) -> Result<Self, TrapCode> {
         i32::from(self)
             .checked_div(rhs.get())
@@ -239,11 +239,11 @@ macro_rules! impl_divrem_s_imm16 {
 }
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     impl_divrem_s_imm16! {
-        (NonZeroI32, Instruction::I32DivSImm16, execute_i32_div_s_imm16, <UntypedValue as DivRemImm>::i32_div_s),
-        (NonZeroI32, Instruction::I32RemSImm16, execute_i32_rem_s_imm16, <UntypedValue as DivRemImm>::i32_rem_s),
+        (NonZeroI32, Instruction::I32DivSImm16, execute_i32_div_s_imm16, <UntypedValue as DivRemExt>::i32_div_s),
+        (NonZeroI32, Instruction::I32RemSImm16, execute_i32_rem_s_imm16, <UntypedValue as DivRemExt>::i32_rem_s),
 
-        (NonZeroI64, Instruction::I64DivSImm16, execute_i64_div_s_imm16, <UntypedValue as DivRemImm>::i64_div_s),
-        (NonZeroI64, Instruction::I64RemSImm16, execute_i64_rem_s_imm16, <UntypedValue as DivRemImm>::i64_rem_s),
+        (NonZeroI64, Instruction::I64DivSImm16, execute_i64_div_s_imm16, <UntypedValue as DivRemExt>::i64_div_s),
+        (NonZeroI64, Instruction::I64RemSImm16, execute_i64_rem_s_imm16, <UntypedValue as DivRemExt>::i64_rem_s),
     }
 }
 
@@ -260,11 +260,11 @@ macro_rules! impl_divrem_u_imm16 {
 }
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     impl_divrem_u_imm16! {
-        (NonZeroU32, Instruction::I32DivUImm16, execute_i32_div_u_imm16, <UntypedValue as DivRemImm>::i32_div_u),
-        (NonZeroU32, Instruction::I32RemUImm16, execute_i32_rem_u_imm16, <UntypedValue as DivRemImm>::i32_rem_u),
+        (NonZeroU32, Instruction::I32DivUImm16, execute_i32_div_u_imm16, <UntypedValue as DivRemExt>::i32_div_u),
+        (NonZeroU32, Instruction::I32RemUImm16, execute_i32_rem_u_imm16, <UntypedValue as DivRemExt>::i32_rem_u),
 
-        (NonZeroU64, Instruction::I64DivUImm16, execute_i64_div_u_imm16, <UntypedValue as DivRemImm>::i64_div_u),
-        (NonZeroU64, Instruction::I64RemUImm16, execute_i64_rem_u_imm16, <UntypedValue as DivRemImm>::i64_rem_u),
+        (NonZeroU64, Instruction::I64DivUImm16, execute_i64_div_u_imm16, <UntypedValue as DivRemExt>::i64_div_u),
+        (NonZeroU64, Instruction::I64RemUImm16, execute_i64_rem_u_imm16, <UntypedValue as DivRemExt>::i64_rem_u),
     }
 }
 
