@@ -125,7 +125,7 @@ impl From<Const16<u64>> for u64 {
 
 impl From<Const16<NonZeroI32>> for NonZeroI32 {
     fn from(value: Const16<Self>) -> Self {
-        // SAFETY: Due to construction of `Const16<NonZeroU32` we are guaranteed
+        // SAFETY: Due to construction of `Const16<NonZeroI32>` we are guaranteed
         //         that `value.inner` is a valid non-zero value.
         unsafe { Self::new_unchecked(i32::from(value.inner)) }
     }
@@ -133,7 +133,7 @@ impl From<Const16<NonZeroI32>> for NonZeroI32 {
 
 impl From<Const16<NonZeroU32>> for NonZeroU32 {
     fn from(value: Const16<Self>) -> Self {
-        // SAFETY: Due to construction of `Const16<NonZeroU32` we are guaranteed
+        // SAFETY: Due to construction of `Const16<NonZeroU32>` we are guaranteed
         //         that `value.inner` is a valid non-zero value.
         unsafe { Self::new_unchecked(u32::from(value.inner)) }
     }
@@ -141,7 +141,7 @@ impl From<Const16<NonZeroU32>> for NonZeroU32 {
 
 impl From<Const16<NonZeroI64>> for NonZeroI64 {
     fn from(value: Const16<Self>) -> Self {
-        // SAFETY: Due to construction of `Const16<NonZeroU64` we are guaranteed
+        // SAFETY: Due to construction of `Const16<NonZeroI64>` we are guaranteed
         //         that `value.inner` is a valid non-zero value.
         unsafe { Self::new_unchecked(i64::from(value.inner)) }
     }
@@ -149,7 +149,7 @@ impl From<Const16<NonZeroI64>> for NonZeroI64 {
 
 impl From<Const16<NonZeroU64>> for NonZeroU64 {
     fn from(value: Const16<Self>) -> Self {
-        // SAFETY: Due to construction of `Const16<NonZeroU64` we are guaranteed
+        // SAFETY: Due to construction of `Const16<NonZeroU64>` we are guaranteed
         //         that `value.inner` is a valid non-zero value.
         unsafe { Self::new_unchecked(u64::from(value.inner)) }
     }
