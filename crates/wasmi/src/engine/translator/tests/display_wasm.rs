@@ -1,5 +1,9 @@
 use crate::{core::ValueType, Value};
-use core::{fmt, fmt::Display};
+use core::{
+    fmt,
+    fmt::Display,
+    num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64},
+};
 
 /// [`Display`] wrapper for a value `T` where `T` is a Wasm type.
 pub struct DisplayWasm<T>(T);
@@ -11,8 +15,8 @@ impl<T> From<T> for DisplayWasm<T> {
 }
 
 macro_rules! impl_display_for_int {
-    ( $float_ty:ty ) => {
-        impl Display for DisplayWasm<$float_ty> {
+    ( $int_ty:ty ) => {
+        impl Display for DisplayWasm<$int_ty> {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 write!(f, "{}", self.0)
             }
@@ -27,6 +31,20 @@ impl_display_for_int!(i32);
 impl_display_for_int!(u32);
 impl_display_for_int!(i64);
 impl_display_for_int!(u64);
+
+macro_rules! impl_display_for_nonzero_int {
+    ( $nonzero_int:ty ) => {
+        impl Display for DisplayWasm<$nonzero_int> {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                write!(f, "{}", self.0.get())
+            }
+        }
+    };
+}
+impl_display_for_nonzero_int!(NonZeroI32);
+impl_display_for_nonzero_int!(NonZeroI64);
+impl_display_for_nonzero_int!(NonZeroU32);
+impl_display_for_nonzero_int!(NonZeroU64);
 
 macro_rules! impl_display_for_float {
     ( $float_ty:ty ) => {

@@ -27,7 +27,7 @@ fn reg_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm16() {
-    test_binary_reg_imm16::<u32>(WASM_OP, 100, Instruction::i32_div_u_imm16)
+    test_binary_reg_imm16::<NonZeroU32>(WASM_OP, nonzero_u32(100), Instruction::i32_div_u_imm16)
 }
 
 #[test]

@@ -444,10 +444,10 @@ impl Instruction {
             I::I32AddImm16(instr) |
             I::I32SubImm16(instr) |
             I::I32SubImm16Rev(instr) |
-            I::I32MulImm16(instr) |
-            I::I32DivSImm16(instr) |
-            I::I32DivSImm16Rev(instr) |
-            I::I32RemSImm16(instr) |
+            I::I32MulImm16(instr) => relink_simple(instr, new_result, old_result),
+            I::I32DivSImm16(instr) => relink_simple(instr, new_result, old_result),
+            I::I32DivSImm16Rev(instr) => relink_simple(instr, new_result, old_result),
+            I::I32RemSImm16(instr) => relink_simple(instr, new_result, old_result),
             I::I32RemSImm16Rev(instr) |
             I::I32AndEqzImm16(instr) |
             I::I32AndImm16(instr) |
@@ -465,18 +465,18 @@ impl Instruction {
             I::I32RotlImm16Rev(instr) |
             I::I32RotrImm(instr) |
             I::I32RotrImm16Rev(instr) => relink_simple(instr, new_result, old_result),
-            I::I32DivUImm16(instr) |
-            I::I32DivUImm16Rev(instr) |
-            I::I32RemUImm16(instr) |
+            I::I32DivUImm16(instr) => relink_simple(instr, new_result, old_result),
+            I::I32DivUImm16Rev(instr) => relink_simple(instr, new_result, old_result),
+            I::I32RemUImm16(instr) => relink_simple(instr, new_result, old_result),
             I::I32RemUImm16Rev(instr) => relink_simple(instr, new_result, old_result),
 
             I::I64AddImm16(instr) |
             I::I64SubImm16(instr) |
             I::I64SubImm16Rev(instr) |
-            I::I64MulImm16(instr) |
-            I::I64DivSImm16(instr) |
-            I::I64DivSImm16Rev(instr) |
-            I::I64RemSImm16(instr) |
+            I::I64MulImm16(instr) => relink_simple(instr, new_result, old_result),
+            I::I64DivSImm16(instr) => relink_simple(instr, new_result, old_result),
+            I::I64DivSImm16Rev(instr) => relink_simple(instr, new_result, old_result),
+            I::I64RemSImm16(instr) => relink_simple(instr, new_result, old_result),
             I::I64RemSImm16Rev(instr) |
             I::I64AndImm16(instr) |
             I::I64OrImm16(instr) |
@@ -491,9 +491,9 @@ impl Instruction {
             I::I64RotlImm16Rev(instr) |
             I::I64RotrImm(instr) |
             I::I64RotrImm16Rev(instr) => relink_simple(instr, new_result, old_result),
-            I::I64DivUImm16(instr) |
-            I::I64DivUImm16Rev(instr) |
-            I::I64RemUImm16(instr) |
+            I::I64DivUImm16(instr) => relink_simple(instr, new_result, old_result),
+            I::I64DivUImm16Rev(instr) => relink_simple(instr, new_result, old_result),
+            I::I64RemUImm16(instr) => relink_simple(instr, new_result, old_result),
             I::I64RemUImm16Rev(instr) => relink_simple(instr, new_result, old_result),
 
             I::I32WrapI64(instr) |

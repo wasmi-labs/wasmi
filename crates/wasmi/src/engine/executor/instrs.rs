@@ -719,13 +719,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::I32DivSImm16(instr) => self.execute_i32_div_s_imm16(instr)?,
                 Instr::I32DivSImm16Rev(instr) => self.execute_i32_div_s_imm16_rev(instr)?,
                 Instr::I32DivU(instr) => self.execute_i32_div_u(instr)?,
-                Instr::I32DivUImm16(instr) => self.execute_i32_div_u_imm16(instr)?,
+                Instr::I32DivUImm16(instr) => self.execute_i32_div_u_imm16(instr),
                 Instr::I32DivUImm16Rev(instr) => self.execute_i32_div_u_imm16_rev(instr)?,
                 Instr::I32RemS(instr) => self.execute_i32_rem_s(instr)?,
                 Instr::I32RemSImm16(instr) => self.execute_i32_rem_s_imm16(instr)?,
                 Instr::I32RemSImm16Rev(instr) => self.execute_i32_rem_s_imm16_rev(instr)?,
                 Instr::I32RemU(instr) => self.execute_i32_rem_u(instr)?,
-                Instr::I32RemUImm16(instr) => self.execute_i32_rem_u_imm16(instr)?,
+                Instr::I32RemUImm16(instr) => self.execute_i32_rem_u_imm16(instr),
                 Instr::I32RemUImm16Rev(instr) => self.execute_i32_rem_u_imm16_rev(instr)?,
                 Instr::I32And(instr) => self.execute_i32_and(instr),
                 Instr::I32AndEqz(instr) => self.execute_i32_and_eqz(instr),
@@ -765,13 +765,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::I64DivSImm16(instr) => self.execute_i64_div_s_imm16(instr)?,
                 Instr::I64DivSImm16Rev(instr) => self.execute_i64_div_s_imm16_rev(instr)?,
                 Instr::I64DivU(instr) => self.execute_i64_div_u(instr)?,
-                Instr::I64DivUImm16(instr) => self.execute_i64_div_u_imm16(instr)?,
+                Instr::I64DivUImm16(instr) => self.execute_i64_div_u_imm16(instr),
                 Instr::I64DivUImm16Rev(instr) => self.execute_i64_div_u_imm16_rev(instr)?,
                 Instr::I64RemS(instr) => self.execute_i64_rem_s(instr)?,
                 Instr::I64RemSImm16(instr) => self.execute_i64_rem_s_imm16(instr)?,
                 Instr::I64RemSImm16Rev(instr) => self.execute_i64_rem_s_imm16_rev(instr)?,
                 Instr::I64RemU(instr) => self.execute_i64_rem_u(instr)?,
-                Instr::I64RemUImm16(instr) => self.execute_i64_rem_u_imm16(instr)?,
+                Instr::I64RemUImm16(instr) => self.execute_i64_rem_u_imm16(instr),
                 Instr::I64RemUImm16Rev(instr) => self.execute_i64_rem_u_imm16_rev(instr)?,
                 Instr::I64And(instr) => self.execute_i64_and(instr),
                 Instr::I64AndImm16(instr) => self.execute_i64_and_imm16(instr),
@@ -1176,19 +1176,32 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a fallible generic binary [`Instruction`].
-    fn try_execute_binary_imm16<T>(
+    fn try_execute_divrem_imm16<NonZeroT>(
         &mut self,
-        instr: BinInstrImm16<T>,
-        op: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
+        instr: BinInstrImm16<NonZeroT>,
+        op: fn(UntypedValue, NonZeroT) -> Result<UntypedValue, TrapCode>,
     ) -> Result<(), TrapCode>
     where
-        T: From<Const16<T>>,
-        UntypedValue: From<T>,
+        NonZeroT: From<Const16<NonZeroT>>,
     {
         let lhs = self.get_register(instr.reg_in);
-        let rhs = UntypedValue::from(<T>::from(instr.imm_in));
+        let rhs = <NonZeroT>::from(instr.imm_in);
         self.set_register(instr.result, op(lhs, rhs)?);
         self.try_next_instr()
+    }
+
+    /// Executes a fallible generic binary [`Instruction`].
+    fn execute_divrem_imm16<NonZeroT>(
+        &mut self,
+        instr: BinInstrImm16<NonZeroT>,
+        op: fn(UntypedValue, NonZeroT) -> UntypedValue,
+    ) where
+        NonZeroT: From<Const16<NonZeroT>>,
+    {
+        let lhs = self.get_register(instr.reg_in);
+        let rhs = <NonZeroT>::from(instr.imm_in);
+        self.set_register(instr.result, op(lhs, rhs));
+        self.next_instr()
     }
 
     /// Executes a fallible generic binary [`Instruction`] with reversed operands.
