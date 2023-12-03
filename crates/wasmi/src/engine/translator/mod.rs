@@ -203,7 +203,7 @@ impl<'parser> WasmTranslator<'parser> for ValidatingFuncTranslator<'parser> {
     ) -> Result<(), TranslationError> {
         self.validator
             .define_locals(self.current_pos(), amount, value_type)?;
-        self.translator.register_locals(amount)?;
+        self.translator.translate_locals(amount, value_type)?;
         Ok(())
     }
 
@@ -219,14 +219,67 @@ impl<'parser> WasmTranslator<'parser> for ValidatingFuncTranslator<'parser> {
     fn finish(mut self) -> Result<Self::Allocations, TranslationError> {
         let pos = self.current_pos();
         self.validator.finish(pos)?;
-        self.translator.finish()?;
-        let translation = self.translator.into_allocations();
+        let translation = self.translator.finish()?;
         let validation = self.validator.into_allocations();
         let allocations = ReusableAllocations {
             translation,
             validation,
         };
         Ok(allocations)
+    }
+}
+
+impl<'parser> WasmTranslator<'parser> for FuncTranslator<'parser> {
+    type Allocations = FuncTranslatorAllocations;
+
+    fn translate_locals(
+        &mut self,
+        amount: u32,
+        _value_type: wasmparser::ValType,
+    ) -> Result<(), TranslationError> {
+        self.alloc.stack.register_locals(amount)
+    }
+
+    fn finish_translate_locals(&mut self) -> Result<(), TranslationError> {
+        self.alloc.stack.finish_register_locals();
+        Ok(())
+    }
+
+    fn update_pos(&mut self, _pos: usize) {}
+
+    fn finish(mut self) -> Result<Self::Allocations, TranslationError> {
+        self.alloc
+            .instr_encoder
+            .defrag_registers(&mut self.alloc.stack)?;
+        self.alloc.instr_encoder.update_branch_offsets()?;
+        let len_registers = self.alloc.stack.len_registers();
+        if let Some(fuel_costs) = self.fuel_costs() {
+            // Note: Fuel metering is enabled so we need to bump the fuel
+            //       of the function enclosing Wasm `block` by an amount
+            //       that depends on the total number of registers used by
+            //       the compiled function.
+            // Note: The function enclosing block fuel instruction is always
+            //       the instruction at the 0th index if fuel metering is enabled.
+            let fuel_instr = Instr::from_u32(0);
+            let fuel_info = FuelInfo::some(*fuel_costs, fuel_instr);
+            self.alloc
+                .instr_encoder
+                .bump_fuel_consumption(fuel_info, |costs| {
+                    costs.fuel_for_copies(u64::from(len_registers))
+                })?;
+        }
+        let len_results = u16::try_from(self.func_type().results().len())
+            .map_err(|_| TranslationError::new(TranslationErrorInner::TooManyFunctionResults))?;
+        let func_consts = self.alloc.stack.func_local_consts();
+        let instrs = self.alloc.instr_encoder.drain_instrs();
+        self.res.engine().init_func(
+            self.compiled_func,
+            len_registers,
+            len_results,
+            func_consts,
+            instrs,
+        );
+        Ok(self.into_allocations())
     }
 }
 
@@ -413,63 +466,6 @@ impl<'parser> FuncTranslator<'parser> {
         for _param_type in self.func_type().params() {
             self.alloc.stack.register_locals(1)?;
         }
-        Ok(())
-    }
-
-    /// Registers an `amount` of local variables.
-    ///
-    /// # Panics
-    ///
-    /// If too many local variables have been registered.
-    pub fn register_locals(&mut self, amount: u32) -> Result<(), TranslationError> {
-        self.alloc.stack.register_locals(amount)
-    }
-
-    /// This informs the [`FuncTranslator`] that the function header translation is finished.
-    ///
-    /// # Note
-    ///
-    /// This was introduced to properly calculate the fuel costs for all local variables
-    /// and function parameters. After this function call no more locals and parameters may
-    /// be added to this function translation.
-    pub fn finish_translate_locals(&mut self) -> Result<(), TranslationError> {
-        self.alloc.stack.finish_register_locals();
-        Ok(())
-    }
-
-    /// Finishes constructing the function and returns its [`CompiledFunc`].
-    pub fn finish(&mut self) -> Result<(), TranslationError> {
-        self.alloc
-            .instr_encoder
-            .defrag_registers(&mut self.alloc.stack)?;
-        self.alloc.instr_encoder.update_branch_offsets()?;
-        let len_registers = self.alloc.stack.len_registers();
-        if let Some(fuel_costs) = self.fuel_costs() {
-            // Note: Fuel metering is enabled so we need to bump the fuel
-            //       of the function enclosing Wasm `block` by an amount
-            //       that depends on the total number of registers used by
-            //       the compiled function.
-            // Note: The function enclosing block fuel instruction is always
-            //       the instruction at the 0th index if fuel metering is enabled.
-            let fuel_instr = Instr::from_u32(0);
-            let fuel_info = FuelInfo::some(*fuel_costs, fuel_instr);
-            self.alloc
-                .instr_encoder
-                .bump_fuel_consumption(fuel_info, |costs| {
-                    costs.fuel_for_copies(u64::from(len_registers))
-                })?;
-        }
-        let len_results = u16::try_from(self.func_type().results().len())
-            .map_err(|_| TranslationError::new(TranslationErrorInner::TooManyFunctionResults))?;
-        let func_consts = self.alloc.stack.func_local_consts();
-        let instrs = self.alloc.instr_encoder.drain_instrs();
-        self.res.engine().init_func(
-            self.compiled_func,
-            len_registers,
-            len_results,
-            func_consts,
-            instrs,
-        );
         Ok(())
     }
 
