@@ -18,15 +18,8 @@ pub struct Const16<T> {
     marker: PhantomData<fn() -> T>,
 }
 
-impl Const16<i32> {
-    /// Returns `true` if the [`Const16`]`<i32>` is equal to zero.
-    pub fn is_zero(&self) -> bool {
-        self.inner == AnyConst16::from(0_i16)
-    }
-}
-
-impl Const16<i64> {
-    /// Returns `true` if the [`Const16`]`<i64>` is equal to zero.
+impl<T> Const16<T> {
+    /// Returns `true` if the [`Const16`] is equal to zero.
     pub fn is_zero(&self) -> bool {
         self.inner == AnyConst16::from(0_i16)
     }
