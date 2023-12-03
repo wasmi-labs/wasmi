@@ -57,6 +57,6 @@ mod i64_xor;
 ///
 /// If the `value` cannot be converted into `f32` losslessly.
 fn return_f64imm32_instr(value: f64) -> Instruction {
-    let const32 = <Const32<f64>>::from_f64(value).expect("value must be 32-bit encodable");
+    let const32 = <Const32<f64>>::try_from(value).expect("value must be 32-bit encodable");
     Instruction::return_f64imm32(const32)
 }

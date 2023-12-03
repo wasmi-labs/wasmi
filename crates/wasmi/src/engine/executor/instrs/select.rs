@@ -30,7 +30,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         addr.add(1);
         match *addr.get() {
             Instruction::Register(register) => self.get_register(register),
-            Instruction::Const32(value) => UntypedValue::from(value.to_u32()),
+            Instruction::Const32(value) => UntypedValue::from(u32::from(value)),
             Instruction::I64Const32(value) => UntypedValue::from(i64::from(value)),
             Instruction::F64Const32(value) => UntypedValue::from(f64::from(value)),
             unexpected => unreachable!(
@@ -79,7 +79,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes an [`Instruction::SelectImm32`].
     pub fn execute_select_imm32(&mut self, result: Register, lhs: AnyConst32) {
         let (condition, rhs) = fetch_select_imm_param!(self, SelectImm32);
-        self.execute_select_impl(result, condition, |_| lhs.to_u32(), |_| rhs.to_u32())
+        self.execute_select_impl(result, condition, |_| u32::from(lhs), |_| u32::from(rhs))
     }
 
     /// Executes an [`Instruction::SelectI64Imm32`].

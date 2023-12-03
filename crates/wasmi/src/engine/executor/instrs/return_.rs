@@ -140,7 +140,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Execute an [`Instruction::ReturnImm32`] returning a single 32-bit value.
     #[inline(always)]
     pub fn execute_return_imm32(&mut self, value: AnyConst32) -> ReturnOutcome {
-        self.execute_return_value(value, |_, value| value.to_u32().into())
+        self.execute_return_value(value, |_, value| u32::from(value).into())
     }
 
     /// Execute an [`Instruction::ReturnI64Imm32`] returning a single 32-bit encoded `i64` value.
