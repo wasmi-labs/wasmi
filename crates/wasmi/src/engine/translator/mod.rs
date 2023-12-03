@@ -292,7 +292,7 @@ macro_rules! impl_visit_operator {
             let offset = self.current_pos();
             self.validate_then_translate(
                 |validator| validator.visitor(offset).$visit($arg.clone()),
-                |translator| translator.$visit($arg.clone()).map_err(Into::into),
+                |translator| translator.$visit($arg.clone()),
             )
         }
         impl_visit_operator!($($rest)*);
@@ -320,7 +320,7 @@ macro_rules! impl_visit_operator {
             let offset = self.current_pos();
             self.validate_then_translate(
                 move |validator| validator.visitor(offset).$visit($($($arg),*)?),
-                move |translator| translator.$visit($($($arg),*)?).map_err(Into::into),
+                move |translator| translator.$visit($($($arg),*)?),
             )
         }
         impl_visit_operator!($($rest)*);
