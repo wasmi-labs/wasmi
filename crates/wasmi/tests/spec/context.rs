@@ -52,6 +52,7 @@ impl<'a> TestContext<'a> {
         let engine = Engine::new(&config);
         let mut linker = Linker::new(&engine);
         let mut store = Store::new(&engine, ());
+        _ = store.add_fuel(1_000_000_000);
         let default_memory = Memory::new(&mut store, MemoryType::new(1, Some(2)).unwrap()).unwrap();
         let default_table = Table::new(
             &mut store,
