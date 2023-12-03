@@ -265,79 +265,31 @@ constructor_for_branch_binop_imm! {
     fn branch_i64_ge_u_imm(u64) -> Self::BranchI64GeUImm;
 }
 
+macro_rules! constructor_for_branch_binop_imm {
+    ( $( fn $name:ident($ty:ty) -> Self::$op_code:ident; )* ) => {
+        impl Instruction {
+            $(
+                #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+                pub fn $name(result: Register, lhs: Register, rhs: impl Into<Const16<$ty>>) -> Self {
+                    Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
+                }
+            )*
+        }
+    }
+}
+constructor_for_branch_binop_imm! {
+    fn i32_div_s_imm16(NonZeroI32) -> Self::I32DivSImm16;
+    fn i32_div_u_imm16(NonZeroU32) -> Self::I32DivUImm16;
+    fn i32_rem_s_imm16(NonZeroI32) -> Self::I32RemSImm16;
+    fn i32_rem_u_imm16(NonZeroU32) -> Self::I32RemUImm16;
+
+    fn i64_div_s_imm16(NonZeroI64) -> Self::I64DivSImm16;
+    fn i64_div_u_imm16(NonZeroU64) -> Self::I64DivUImm16;
+    fn i64_rem_s_imm16(NonZeroI64) -> Self::I64RemSImm16;
+    fn i64_rem_u_imm16(NonZeroU64) -> Self::I64RemUImm16;
+}
+
 impl Instruction {
-    /// Creates a new [`Instruction::I32DivSImm16`].
-    pub fn i32_div_s_imm16(
-        result: Register,
-        lhs: Register,
-        rhs: impl Into<Const16<NonZeroI32>>,
-    ) -> Self {
-        Self::I32DivSImm16(BinInstrImm16::new(result, lhs, rhs.into()))
-    }
-
-    /// Creates a new [`Instruction::I32DivUImm16`].
-    pub fn i32_div_u_imm16(
-        result: Register,
-        lhs: Register,
-        rhs: impl Into<Const16<NonZeroU32>>,
-    ) -> Self {
-        Self::I32DivUImm16(BinInstrImm16::new(result, lhs, rhs.into()))
-    }
-
-    /// Creates a new [`Instruction::I64DivSImm16`].
-    pub fn i64_div_s_imm16(
-        result: Register,
-        lhs: Register,
-        rhs: impl Into<Const16<NonZeroI64>>,
-    ) -> Self {
-        Self::I64DivSImm16(BinInstrImm16::new(result, lhs, rhs.into()))
-    }
-
-    /// Creates a new [`Instruction::I64DivUImm16`].
-    pub fn i64_div_u_imm16(
-        result: Register,
-        lhs: Register,
-        rhs: impl Into<Const16<NonZeroU64>>,
-    ) -> Self {
-        Self::I64DivUImm16(BinInstrImm16::new(result, lhs, rhs.into()))
-    }
-
-    /// Creates a new [`Instruction::I32RemSImm16`].
-    pub fn i32_rem_s_imm16(
-        result: Register,
-        lhs: Register,
-        rhs: impl Into<Const16<NonZeroI32>>,
-    ) -> Self {
-        Self::I32RemSImm16(BinInstrImm16::new(result, lhs, rhs.into()))
-    }
-
-    /// Creates a new [`Instruction::I32RemUImm16`].
-    pub fn i32_rem_u_imm16(
-        result: Register,
-        lhs: Register,
-        rhs: impl Into<Const16<NonZeroU32>>,
-    ) -> Self {
-        Self::I32RemUImm16(BinInstrImm16::new(result, lhs, rhs.into()))
-    }
-
-    /// Creates a new [`Instruction::I64RemSImm16`].
-    pub fn i64_rem_s_imm16(
-        result: Register,
-        lhs: Register,
-        rhs: impl Into<Const16<NonZeroI64>>,
-    ) -> Self {
-        Self::I64RemSImm16(BinInstrImm16::new(result, lhs, rhs.into()))
-    }
-
-    /// Creates a new [`Instruction::I64RemUImm16`].
-    pub fn i64_rem_u_imm16(
-        result: Register,
-        lhs: Register,
-        rhs: impl Into<Const16<NonZeroU64>>,
-    ) -> Self {
-        Self::I64RemUImm16(BinInstrImm16::new(result, lhs, rhs.into()))
-    }
-
     /// Creates a new [`Instruction::Const32`] from the given `value`.
     pub fn const32(value: impl Into<AnyConst32>) -> Self {
         Self::Const32(value.into())
@@ -1614,35 +1566,27 @@ impl Instruction {
         // Integer Division & Remainder
 
         fn i32_div_u(binary) -> Self::I32DivU;
-        // fn i32_div_u_imm16(binary_u32imm16) -> Self::I32DivUImm16;
         fn i32_div_u_imm16_rev(binary_u32imm16_rev) -> Self::I32DivUImm16Rev;
 
         fn i64_div_u(binary) -> Self::I64DivU;
-        // fn i64_div_u_imm16(binary_u64imm16) -> Self::I64DivUImm16;
         fn i64_div_u_imm16_rev(binary_u64imm16_rev) -> Self::I64DivUImm16Rev;
 
         fn i32_div_s(binary) -> Self::I32DivS;
-        // fn i32_div_s_imm16(binary_i32imm16) -> Self::I32DivSImm16;
         fn i32_div_s_imm16_rev(binary_i32imm16_rev) -> Self::I32DivSImm16Rev;
 
         fn i64_div_s(binary) -> Self::I64DivS;
-        // fn i64_div_s_imm16(binary_i64imm16) -> Self::I64DivSImm16;
         fn i64_div_s_imm16_rev(binary_i64imm16_rev) -> Self::I64DivSImm16Rev;
 
         fn i32_rem_u(binary) -> Self::I32RemU;
-        // fn i32_rem_u_imm16(binary_u32imm16) -> Self::I32RemUImm16;
         fn i32_rem_u_imm16_rev(binary_u32imm16_rev) -> Self::I32RemUImm16Rev;
 
         fn i64_rem_u(binary) -> Self::I64RemU;
-        // fn i64_rem_u_imm16(binary_u64imm16) -> Self::I64RemUImm16;
         fn i64_rem_u_imm16_rev(binary_u64imm16_rev) -> Self::I64RemUImm16Rev;
 
         fn i32_rem_s(binary) -> Self::I32RemS;
-        // fn i32_rem_s_imm16(binary_i32imm16) -> Self::I32RemSImm16;
         fn i32_rem_s_imm16_rev(binary_i32imm16_rev) -> Self::I32RemSImm16Rev;
 
         fn i64_rem_s(binary) -> Self::I64RemS;
-        // fn i64_rem_s_imm16(binary_i64imm16) -> Self::I64RemSImm16;
         fn i64_rem_s_imm16_rev(binary_i64imm16_rev) -> Self::I64RemSImm16Rev;
 
         // Integer Bitwise Logic
