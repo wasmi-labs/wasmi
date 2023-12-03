@@ -195,7 +195,7 @@ impl<'parser> ValidatingFuncTranslator<'parser> {
     }
 
     /// Returns the current position within the Wasm binary while parsing operators.
-    pub fn current_pos(&self) -> usize {
+    fn current_pos(&self) -> usize {
         self.pos
     }
 
