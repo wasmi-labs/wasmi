@@ -56,7 +56,7 @@ fn reg_1_after_mod32() {
 #[cfg_attr(miri, ignore)]
 fn zero_reg() {
     let expected = [Instruction::ReturnImm32 {
-        value: AnyConst32::from_i32(0_i32),
+        value: AnyConst32::from(0_i32),
     }];
     test_binary_reg_imm_rev_with(WASM_OP, 0_i32, expected).run()
 }
@@ -65,7 +65,7 @@ fn zero_reg() {
 #[cfg_attr(miri, ignore)]
 fn minus_one_reg() {
     let expected = [Instruction::ReturnImm32 {
-        value: AnyConst32::from_i32(-1_i32),
+        value: AnyConst32::from(-1_i32),
     }];
     test_binary_reg_imm_rev_with(WASM_OP, -1_i32, expected).run()
 }
@@ -80,7 +80,7 @@ fn consteval() {
         lhs,
         rhs,
         [Instruction::ReturnImm32 {
-            value: AnyConst32::from_i32(lhs.rotate_left(rhs as u32)),
+            value: AnyConst32::from(lhs.rotate_left(rhs as u32)),
         }],
     )
 }

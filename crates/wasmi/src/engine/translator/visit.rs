@@ -665,7 +665,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let provider_params = &mut self.alloc.buffer;
         self.alloc.stack.pop_n(params.len(), provider_params);
         let table_params = match index {
-            TypedProvider::Const(index) => match <Const16<u32>>::from_u32(u32::from(index)) {
+            TypedProvider::Const(index) => match <Const16<u32>>::try_from(u32::from(index)).ok() {
                 Some(index) => {
                     // Case: the index is encodable as 16-bit constant value
                     //       which allows us to use an optimized instruction.
@@ -737,7 +737,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let provider_params = &mut self.alloc.buffer;
         self.alloc.stack.pop_n(params.len(), provider_params);
         let table_params = match index {
-            TypedProvider::Const(index) => match <Const16<u32>>::from_u32(u32::from(index)) {
+            TypedProvider::Const(index) => match <Const16<u32>>::try_from(u32::from(index)).ok() {
                 Some(index) => {
                     // Case: the index is encodable as 16-bit constant value
                     //       which allows us to use an optimized instruction.
@@ -853,7 +853,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 debug_assert_eq!(global_type.content(), input.ty());
                 match global_type.content() {
                     ValueType::I32 => {
-                        if let Some(value) = Const16::from_i32(i32::from(input)) {
+                        if let Ok(value) = Const16::try_from(i32::from(input)) {
                             self.push_fueled_instr(
                                 Instruction::global_set_i32imm16(global, value),
                                 FuelCosts::entity,
@@ -862,7 +862,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                         }
                     }
                     ValueType::I64 => {
-                        if let Some(value) = Const16::from_i64(i64::from(input)) {
+                        if let Ok(value) = Const16::try_from(i64::from(input)) {
                             self.push_fueled_instr(
                                 Instruction::global_set_i64imm16(global, value),
                                 FuelCosts::entity,

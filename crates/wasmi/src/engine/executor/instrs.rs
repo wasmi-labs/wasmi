@@ -1100,7 +1100,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Returns the [`Instruction::Const32`] parameter for an [`Instruction`].
     fn fetch_address_offset(&self, offset: usize) -> u32 {
-        self.fetch_const32(offset).to_u32()
+        u32::from(self.fetch_const32(offset))
     }
 
     /// Executes a generic unary [`Instruction`].

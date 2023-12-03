@@ -1646,7 +1646,7 @@ impl<'parser> FuncTranslator<'parser> {
         let offset = Self::memarg_offset(memarg);
         match self.alloc.stack.pop() {
             TypedProvider::Register(ptr) => {
-                if let Some(offset) = <Const16<u32>>::from_u32(offset) {
+                if let Ok(offset) = <Const16<u32>>::try_from(offset) {
                     let result = self.alloc.stack.push_dynamic()?;
                     self.push_fueled_instr(
                         make_instr_offset16(result, ptr, offset),
