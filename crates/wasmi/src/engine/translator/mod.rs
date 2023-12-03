@@ -162,9 +162,9 @@ impl<'parser> ValidatingFuncTranslator<'parser> {
         compiled_func: CompiledFunc,
         res: ModuleResources<'parser>,
         validator: FuncValidator,
-        allocations: FuncTranslatorAllocations,
+        alloc: FuncTranslatorAllocations,
     ) -> Result<Self, TranslationError> {
-        let translator = FuncTranslator::new(func, compiled_func, res, allocations)?;
+        let translator = FuncTranslator::new(func, compiled_func, res, alloc)?;
         Ok(Self {
             pos: 0,
             validator,
