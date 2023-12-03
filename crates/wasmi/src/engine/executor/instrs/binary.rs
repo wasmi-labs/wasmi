@@ -168,15 +168,24 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 }
 
+/// Extension trait to provide more optimized divide and remainder implementations.
 pub trait DivRemExt: Sized {
+    /// Optimized variant of Wasm `i32.div_s` for immutable non-zero `rhs` values.
     fn i32_div_s(self, rhs: NonZeroI32) -> Result<Self, TrapCode>;
+    /// Optimized variant of Wasm `i32.div_u` for immutable non-zero `rhs` values.
     fn i32_div_u(self, rhs: NonZeroU32) -> Self;
+    /// Optimized variant of Wasm `i32.rem_s` for immutable non-zero `rhs` values.
     fn i32_rem_s(self, rhs: NonZeroI32) -> Result<Self, TrapCode>;
+    /// Optimized variant of Wasm `i32.rem_u` for immutable non-zero `rhs` values.
     fn i32_rem_u(self, rhs: NonZeroU32) -> Self;
 
+    /// Optimized variant of Wasm `i64.div_s` for immutable non-zero `rhs` values.
     fn i64_div_s(self, rhs: NonZeroI64) -> Result<Self, TrapCode>;
+    /// Optimized variant of Wasm `i64.div_u` for immutable non-zero `rhs` values.
     fn i64_div_u(self, rhs: NonZeroU64) -> Self;
+    /// Optimized variant of Wasm `i64.rem_s` for immutable non-zero `rhs` values.
     fn i64_rem_s(self, rhs: NonZeroI64) -> Result<Self, TrapCode>;
+    /// Optimized variant of Wasm `i64.rem_u` for immutable non-zero `rhs` values.
     fn i64_rem_u(self, rhs: NonZeroU64) -> Self;
 }
 
