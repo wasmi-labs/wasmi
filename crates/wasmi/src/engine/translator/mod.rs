@@ -99,6 +99,55 @@ pub struct ValidatingFuncTranslator<'parser> {
     translator: FuncTranslator<'parser>,
 }
 
+/// A WebAssembly (Wasm) function translator.
+pub trait WasmTranslator: for<'a> VisitOperator<'a> {
+    /// The reusable allocations required by the [`WasmTranslator`].
+    ///
+    /// # Note
+    ///
+    /// Those allocations can be cached on the caller side for reusability
+    /// in order to avoid frequent memory allocations and deallocations.
+    type Allocations: Default;
+
+    /// Translates the given local variables for the translated function.
+    fn translate_locals(
+        &mut self,
+        amount: u32,
+        value_type: wasmparser::ValType,
+    ) -> Result<(), TranslationError>;
+
+    /// Informs the [`WasmTranslator`] that the Wasm function header translation is finished.
+    ///
+    /// # Note
+    ///
+    /// - After this function call no more locals and parameters may be registered
+    ///   to the [`WasmTranslator`] via [`WasmTranslator::translate_locals`].
+    /// - After this function call the [`WasmTranslator`] expects its [`VisitOperator`]
+    ///   trait methods to be called for translating the Wasm operators of the
+    ///   translated function.
+    ///
+    /// # Dev. Note
+    ///
+    /// This got introduced to properly calculate the fuel costs for all local variables
+    /// and function parameters.
+    fn finish_translate_locals(&mut self) -> Result<(), TranslationError>;
+
+    /// Updates the [`WasmTranslator`] about the current byte position within translated Wasm binary.
+    ///
+    /// # Note
+    ///
+    /// This information is mainly required for properly locating translation errors.
+    fn update_pos(&mut self, pos: usize);
+
+    /// Finishes constructing the Wasm function translation.
+    ///
+    /// # Note
+    ///
+    /// - Initialized the [`CompiledFunc`] in the [`Engine`].
+    /// - Returns the allocations used for translation.
+    fn finish(self) -> Result<ReusableAllocations, TranslationError>;
+}
+
 impl<'parser> ValidatingFuncTranslator<'parser> {
     /// Creates a new [`ValidatingFuncTranslator`].
     pub fn new(
