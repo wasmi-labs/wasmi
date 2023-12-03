@@ -851,14 +851,14 @@ fn bench_execute_fuse(c: &mut Criterion) {
     let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/fuse.wat"));
     let mut bench_fuse = |bench_id: &str, func_name: &str, input: i32| {
         c.bench_function(bench_id, |b| {
-            let fib = instance
+            let test = instance
                 .get_export(&store, func_name)
                 .and_then(Extern::into_func)
                 .unwrap()
                 .typed::<i32, i32>(&store)
                 .unwrap();
             b.iter(|| {
-                assert_eq!(fib.call(&mut store, input).unwrap(), input);
+                assert_eq!(test.call(&mut store, input).unwrap(), input);
             });
         });
     };
