@@ -36,7 +36,7 @@ impl WasmType for u64 {
     const VALUE_TYPE: ValueType = ValueType::I64;
 
     fn return_imm_instr(&self) -> Instruction {
-        match <Const32<i64>>::from_i64(*self as i64) {
+        match <Const32<i64>>::try_from(*self as i64).ok() {
             Some(value) => Instruction::return_i64imm32(value),
             None => Instruction::return_reg(Register::from_i16(-1)),
         }
@@ -48,7 +48,7 @@ impl WasmType for i64 {
     const VALUE_TYPE: ValueType = ValueType::I64;
 
     fn return_imm_instr(&self) -> Instruction {
-        match <Const32<i64>>::from_i64(*self) {
+        match <Const32<i64>>::try_from(*self).ok() {
             Some(value) => Instruction::return_i64imm32(value),
             None => Instruction::return_reg(Register::from_i16(-1)),
         }
@@ -69,7 +69,7 @@ impl WasmType for f64 {
     const VALUE_TYPE: ValueType = ValueType::F64;
 
     fn return_imm_instr(&self) -> Instruction {
-        match <Const32<f64>>::from_f64(*self) {
+        match <Const32<f64>>::try_from(*self).ok() {
             Some(value) => Instruction::return_f64imm32(value),
             None => Instruction::return_reg(Register::from_i16(-1)),
         }

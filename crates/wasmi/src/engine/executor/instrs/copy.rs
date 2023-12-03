@@ -40,7 +40,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes an [`Instruction::CopyImm32`].
     #[inline(always)]
     pub fn execute_copy_imm32(&mut self, result: Register, value: AnyConst32) {
-        self.execute_copy_impl(result, value, |_, value| UntypedValue::from(value.to_u32()))
+        self.execute_copy_impl(result, value, |_, value| {
+            UntypedValue::from(u32::from(value))
+        })
     }
 
     /// Executes an [`Instruction::CopyI64Imm32`].

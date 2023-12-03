@@ -122,7 +122,7 @@ impl Provider<Const16<u32>> {
     /// procedures for certain Wasm `table` instructions.
     pub fn new(provider: TypedProvider, stack: &mut ValueStack) -> Result<Self, TranslationError> {
         match provider {
-            TypedProvider::Const(value) => match Const16::from_u32(u32::from(value)) {
+            TypedProvider::Const(value) => match Const16::try_from(u32::from(value)).ok() {
                 Some(value) => Ok(Self::Const(value)),
                 None => {
                     let register = stack.alloc_const(value)?;
