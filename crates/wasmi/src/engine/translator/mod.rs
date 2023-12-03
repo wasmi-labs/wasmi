@@ -107,7 +107,9 @@ pub struct ReusableAllocations {
 }
 
 /// A WebAssembly (Wasm) function translator.
-pub trait WasmTranslator<'parser>: VisitOperator<'parser> {
+pub trait WasmTranslator<'parser>:
+    VisitOperator<'parser, Output = Result<(), TranslationError>>
+{
     /// The reusable allocations required by the [`WasmTranslator`].
     ///
     /// # Note

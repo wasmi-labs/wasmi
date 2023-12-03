@@ -31,14 +31,20 @@ pub use self::{
     limits::StackLimits,
     resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
     traits::{CallParams, CallResults},
-    translator::{Instr, TranslationError, ValidatingFuncTranslator},
+    translator::{Instr, TranslationError},
 };
 pub(crate) use self::{
     config::FuelCosts,
     executor::Stack,
     func_args::{FuncFinished, FuncParams, FuncResults},
     func_types::DedupFuncType,
-    translator::{FuncTranslatorAllocations, ReusableAllocations, WasmTranslator},
+    translator::{
+        FuncTranslator,
+        FuncTranslatorAllocations,
+        ReusableAllocations,
+        ValidatingFuncTranslator,
+        WasmTranslator,
+    },
 };
 use crate::{core::Trap, Func, FuncType, StoreContextMut};
 use alloc::{sync::Arc, vec::Vec};

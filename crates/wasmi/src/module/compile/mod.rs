@@ -3,6 +3,7 @@ use super::{FuncIdx, ModuleResources};
 use crate::{
     engine::{
         CompiledFunc,
+        FuncTranslator,
         FuncTranslatorAllocations,
         ReusableAllocations,
         ValidatingFuncTranslator,
@@ -14,7 +15,7 @@ use wasmparser::{FuncValidator, FunctionBody, ValidatorResources};
 
 mod block_type;
 
-/// Translates the Wasm bytecode into `wasmi` bytecode.
+/// Validates and translates the Wasm bytecode into `wasmi` IR bytecode.
 ///
 /// # Note
 ///
@@ -26,7 +27,7 @@ mod block_type;
 ///
 /// # Errors
 ///
-/// If the function body fails to validate.
+/// If the function body fails to validate or translate the Wasm function body.
 pub fn translate<'parser>(
     func: FuncIdx,
     compiled_func: CompiledFunc,
@@ -39,15 +40,37 @@ pub fn translate<'parser>(
         .translate()
 }
 
-/// Translates Wasm bytecode into `wasmi` bytecode for a single Wasm function.
-struct FunctionTranslator<'parser> {
-    /// The function body that shall be translated.
+/// Translates the Wasm bytecode into `wasmi` IR bytecode.
+///
+/// # Note
+///
+/// - Uses the given `engine` as target for the translation.
+/// - Uses the given module resources `res` as shared immutable data of the
+///   already parsed and validated module parts required for the translation.
+/// - Does _not_ validate the Wasm input.
+///
+/// # Errors
+///
+/// If the function body fails to translate the Wasm function body.
+pub fn translate_unchecked<'parser>(
+    func: FuncIdx,
+    compiled_func: CompiledFunc,
     func_body: FunctionBody<'parser>,
-    /// The interface to incrementally build up the `wasmi` bytecode function.
-    func_builder: ValidatingFuncTranslator<'parser>,
+    res: ModuleResources<'parser>,
+    allocations: FuncTranslatorAllocations,
+) -> Result<FuncTranslatorAllocations, ModuleError> {
+    FunctionTranslator::new_unchecked(func, compiled_func, func_body, res, allocations)?.translate()
 }
 
-impl<'parser> FunctionTranslator<'parser> {
+/// Translates Wasm bytecode into `wasmi` bytecode for a single Wasm function.
+struct FunctionTranslator<'parser, T> {
+    /// The function body that shall be translated.
+    func_body: FunctionBody<'parser>,
+    /// The underlying translator used for the translation (and validation) process.
+    translator: T,
+}
+
+impl<'parser> FunctionTranslator<'parser, ValidatingFuncTranslator<'parser>> {
     /// Creates a new Wasm to `wasmi` bytecode function translator.
     fn new(
         func: FuncIdx,
@@ -57,16 +80,38 @@ impl<'parser> FunctionTranslator<'parser> {
         res: ModuleResources<'parser>,
         allocations: FuncTranslatorAllocations,
     ) -> Result<Self, ModuleError> {
-        let func_builder =
+        let translator =
             ValidatingFuncTranslator::new(func, compiled_func, res, validator, allocations)?;
         Ok(Self {
             func_body,
-            func_builder,
+            translator,
         })
     }
+}
 
+impl<'parser> FunctionTranslator<'parser, FuncTranslator<'parser>> {
+    /// Creates a new Wasm to `wasmi` bytecode function translator.
+    fn new_unchecked(
+        func: FuncIdx,
+        compiled_func: CompiledFunc,
+        func_body: FunctionBody<'parser>,
+        res: ModuleResources<'parser>,
+        allocations: FuncTranslatorAllocations,
+    ) -> Result<Self, ModuleError> {
+        let translator = FuncTranslator::new(func, compiled_func, res, allocations)?;
+        Ok(Self {
+            func_body,
+            translator,
+        })
+    }
+}
+
+impl<'parser, T> FunctionTranslator<'parser, T>
+where
+    T: WasmTranslator<'parser>,
+{
     /// Starts translation of the Wasm stream into `wasmi` bytecode.
-    fn translate(mut self) -> Result<ReusableAllocations, ModuleError> {
+    fn translate(mut self) -> Result<T::Allocations, ModuleError> {
         self.translate_locals()?;
         let offset = self.translate_operators()?;
         let allocations = self.finish(offset)?;
@@ -74,9 +119,9 @@ impl<'parser> FunctionTranslator<'parser> {
     }
 
     /// Finishes construction of the function and returns its [`CompiledFunc`].
-    fn finish(mut self, offset: usize) -> Result<ReusableAllocations, ModuleError> {
-        self.func_builder.update_pos(offset);
-        self.func_builder.finish().map_err(Into::into)
+    fn finish(mut self, offset: usize) -> Result<T::Allocations, ModuleError> {
+        self.translator.update_pos(offset);
+        self.translator.finish().map_err(Into::into)
     }
 
     /// Translates local variables of the Wasm function.
@@ -86,10 +131,10 @@ impl<'parser> FunctionTranslator<'parser> {
         for _ in 0..len_locals {
             let offset = reader.original_position();
             let (amount, value_type) = reader.read()?;
-            self.func_builder.update_pos(offset);
-            self.func_builder.translate_locals(amount, value_type)?;
+            self.translator.update_pos(offset);
+            self.translator.translate_locals(amount, value_type)?;
         }
-        self.func_builder.finish_translate_locals()?;
+        self.translator.finish_translate_locals()?;
         Ok(())
     }
 
@@ -100,8 +145,8 @@ impl<'parser> FunctionTranslator<'parser> {
         let mut reader = self.func_body.get_operators_reader()?;
         while !reader.eof() {
             let pos = reader.original_position();
-            self.func_builder.update_pos(pos);
-            reader.visit_operator(&mut self.func_builder)??;
+            self.translator.update_pos(pos);
+            reader.visit_operator(&mut self.translator)??;
         }
         reader.ensure_end()?;
         Ok(reader.original_position())
