@@ -100,20 +100,10 @@ pub struct ValidatingFuncTranslator<'parser> {
 }
 
 /// Reusable heap allocations for function validation and translation.
+#[derive(Default)]
 pub struct ReusableAllocations {
     pub translation: FuncTranslatorAllocations,
     pub validation: FuncValidatorAllocations,
-}
-
-impl Default for ReusableAllocations {
-    fn default() -> Self {
-        let translation = FuncTranslatorAllocations::default();
-        let validation = FuncValidatorAllocations::default();
-        Self {
-            translation,
-            validation,
-        }
-    }
 }
 
 /// A WebAssembly (Wasm) function translator.
