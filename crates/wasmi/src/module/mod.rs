@@ -150,7 +150,7 @@ impl Module {
     /// - If the Wasm bytecode yielded by `stream` violates restrictions
     ///   set in the [`Config`] used by the `engine`.
     /// - If `wasmi` cannot translate the Wasm bytecode yielded by `stream`.
-    /// 
+    ///
     /// [`Config`]: crate::Config
     pub fn new(engine: &Engine, stream: impl Read) -> Result<Self, Error> {
         parse(engine, stream).map_err(Into::into)
@@ -176,7 +176,7 @@ impl Module {
     /// # Errors
     ///
     /// If the `stream` cannot be parsed as a valid Wasm module.
-    /// 
+    ///
     /// [`Config`]: crate::Config
     pub unsafe fn new_unchecked(engine: &Engine, stream: impl Read) -> Result<Self, Error> {
         unsafe { parse_unchecked(engine, stream).map_err(Into::into) }
