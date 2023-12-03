@@ -207,6 +207,10 @@ impl ModuleInstance {
         self.signatures.borrow().get(idx as usize).cloned()
     }
 
+    fn funcs(&self) -> RefCell<Vec<FuncRef>> {
+        self.funcs.clone()
+    }
+
     fn push_func(&self, func: FuncRef) {
         self.funcs.borrow_mut().push(func);
     }
@@ -243,6 +247,7 @@ impl ModuleInstance {
         tracer: Option<Rc<RefCell<Tracer>>>,
     ) -> Result<ModuleRef, Error> {
         let module = loaded_module.module();
+
         let instance = ModuleRef(Rc::new(ModuleInstance::default()));
 
         for &Type::Function(ref ty) in module.type_section().map(|ts| ts.types()).unwrap_or(&[]) {
@@ -287,7 +292,7 @@ impl ModuleInstance {
                         }
 
                         if import.field() == "wasm_input" {
-                            if let Some(tracer) = tracer.clone() {
+                            if let Some(tracer) = tracer.as_ref() {
                                 tracer.borrow_mut().wasm_input_func_ref = Some(func.clone());
                             }
                         }
@@ -348,10 +353,10 @@ impl ModuleInstance {
                     Rc::downgrade(&instance.0),
                     signature,
                     func_body,
-                    index,
+                    instance.funcs().borrow().len(),
                 );
 
-                if let Some(tracer) = tracer.clone() {
+                if let Some(tracer) = tracer.as_ref() {
                     tracer
                         .borrow_mut()
                         .push_type_of_func_ref(func_instance.clone(), ty.type_ref())
@@ -434,6 +439,20 @@ impl ModuleInstance {
             instance.insert_export(field, extern_val);
         }
 
+        if let Some(tracer) = tracer {
+            if let Some(name_section) = module.names_section() {
+                let mut tracer = tracer.borrow_mut();
+
+                name_section.functions().map(|function_names| {
+                    for (function_index, name) in function_names.names().iter() {
+                        tracer
+                            .function_lookup_name
+                            .insert(function_index, name.to_string());
+                    }
+                });
+            }
+        }
+
         Ok(instance)
     }
 
@@ -453,9 +472,7 @@ impl ModuleInstance {
         let module_ref = ModuleInstance::alloc_module(loaded_module, extern_vals, tracer.clone())?;
 
         if let Some(tracer) = tracer.clone() {
-            tracer
-                .borrow_mut()
-                .register_module_instance(loaded_module, &module_ref);
+            tracer.borrow_mut().register_module_instance(&module_ref);
         }
 
         for element_segment in module

@@ -1,7 +1,6 @@
 use parity_wasm::elements::ValueType;
 use specs::{
     etable::{EventTable, EventTableEntry},
-    itable::InstructionTableEntry,
     mtable::{MemoryReadSize, MemoryStoreSize, VarType},
     step::StepInfo,
 };
@@ -126,7 +125,8 @@ pub(crate) trait ETable {
 
     fn push(
         &mut self,
-        inst: InstructionTableEntry,
+        fid: u32,
+        iid: u32,
         sp: u32,
         allocated_memory_pages: u32,
         last_jump_eid: u32,
@@ -145,7 +145,8 @@ impl ETable for EventTable {
 
     fn push(
         &mut self,
-        inst: InstructionTableEntry,
+        fid: u32,
+        iid: u32,
         sp: u32,
         allocated_memory_pages: u32,
         last_jump_eid: u32,
@@ -159,10 +160,11 @@ impl ETable for EventTable {
 
         let eentry = EventTableEntry {
             eid: (self.entries().len() + 1).try_into().unwrap(),
+            fid,
+            iid,
             sp,
             allocated_memory_pages,
             last_jump_eid,
-            inst,
             step_info,
         };
 

@@ -1,9 +1,4 @@
-use specs::{
-    host_function::HostPlugin,
-    itable::InstructionTableEntry,
-    step::StepInfo,
-    types::ValueType,
-};
+use specs::{host_function::HostPlugin, step::StepInfo, types::ValueType};
 
 use super::{etable::ETable, Tracer};
 use crate::{
@@ -52,7 +47,6 @@ impl Tracer {
         allocated_memory_pages: u32,
         callee_func_ref: &FuncRef,
         callee_sig: &Signature,
-        // Wasm Image Function Id
         keep_value: Option<u64>,
     ) {
         let has_return_value = callee_sig.return_type().is_some();
@@ -71,13 +65,7 @@ impl Tracer {
 
         let last_jump_eid = self.last_jump_eid();
         let fid = self.lookup_function(callee_func_ref);
-        let wasm_input_function_idx = self.wasm_input_func_idx.unwrap();
 
-        let mut inst = PhantomFunction::build_phantom_function_instructions(
-            &callee_sig,
-            wasm_input_function_idx,
-        )
-        .into_iter();
         let mut iid = 0;
 
         let wasm_input_host_function_ref = self.wasm_input_func_ref.clone().unwrap();
@@ -90,11 +78,8 @@ impl Tracer {
 
         if has_return_value {
             self.etable.push(
-                InstructionTableEntry {
-                    fid,
-                    iid,
-                    opcode: inst.next().unwrap().into(&self.function_index_translation),
-                },
+                fid,
+                iid,
                 current_sp,
                 allocated_memory_pages,
                 last_jump_eid,
@@ -104,11 +89,8 @@ impl Tracer {
             iid += 1;
 
             self.etable.push(
-                InstructionTableEntry {
-                    fid,
-                    iid,
-                    opcode: inst.next().unwrap().into(&self.function_index_translation),
-                },
+                fid,
+                iid,
                 current_sp + 1,
                 allocated_memory_pages,
                 last_jump_eid,
@@ -130,11 +112,8 @@ impl Tracer {
 
             if callee_sig.return_type() != Some(wasmi_core::ValueType::I64) {
                 self.etable.push(
-                    InstructionTableEntry {
-                        fid,
-                        iid,
-                        opcode: inst.next().unwrap().into(&self.function_index_translation),
-                    },
+                    fid,
+                    iid,
                     current_sp + 1,
                     allocated_memory_pages,
                     last_jump_eid,
@@ -149,11 +128,8 @@ impl Tracer {
         }
 
         self.etable.push(
-            InstructionTableEntry {
-                fid,
-                iid,
-                opcode: inst.next().unwrap().into(&self.function_index_translation),
-            },
+            fid,
+            iid,
             current_sp + has_return_value as u32,
             allocated_memory_pages,
             last_jump_eid,

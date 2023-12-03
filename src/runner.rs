@@ -33,7 +33,7 @@ use core::{cell::RefCell, fmt, ops, u32, usize};
 use parity_wasm::elements::Local;
 use specs::{
     external_host_call_table::ExternalHostCallSignature,
-    itable::{BinOp, BitOp, InstructionTableEntry, RelOp, ShiftOp, UnaryOp},
+    itable::{BinOp, BitOp, RelOp, ShiftOp, UnaryOp},
     jtable::JumpTableEntry,
     mtable::{MemoryReadSize, MemoryStoreSize, VarType},
     step::StepInfo,
@@ -360,17 +360,15 @@ impl Interpreter {
 
                                 let eid = tracer.eid();
                                 let last_jump_eid = tracer.last_jump_eid();
-
-                                let inst = tracer.lookup_ientry(
-                                    &function_context.function,
-                                    function_context.position,
-                                );
+                                let fid = tracer.lookup_function(&function_context.function);
+                                let iid = function_context.position;
 
                                 tracer.jtable.push(JumpTableEntry {
                                     eid,
                                     last_jump_eid,
                                     callee_fid,
-                                    inst: Box::new(inst.into()),
+                                    fid,
+                                    iid,
                                 });
 
                                 tracer.push_frame();
@@ -1058,12 +1056,10 @@ impl Interpreter {
                     let tracer = self.tracer.clone().unwrap();
                     let tracer = tracer.borrow();
 
-                    let desc = tracer.function_index_translation.get(&index).unwrap();
+                    let desc = tracer.function_desc.get(&index).unwrap();
 
                     match &desc.ftype {
-                        specs::types::FunctionType::WasmFunction => StepInfo::Call {
-                            index: desc.index_within_jtable,
-                        },
+                        specs::types::FunctionType::WasmFunction => StepInfo::Call { index },
                         specs::types::FunctionType::HostFunction {
                             plugin,
                             function_index: host_function_idx,
@@ -1120,6 +1116,7 @@ impl Interpreter {
                 } = pre_status.unwrap()
                 {
                     let tracer = self.tracer.clone().unwrap();
+                    let tracer = tracer.borrow();
 
                     let table = context
                         .module()
@@ -1127,7 +1124,7 @@ impl Interpreter {
                         .unwrap();
                     let func_ref = table.get(offset).unwrap().unwrap();
 
-                    let func_idx = tracer.borrow().lookup_function(&func_ref);
+                    let func_idx = tracer.lookup_function(&func_ref);
 
                     StepInfo::CallIndirect {
                         table_index: table_idx,
@@ -2034,20 +2031,13 @@ impl Interpreter {
 
                         let mut tracer = tracer.borrow_mut();
 
-                        let instruction = { instruction.into(&tracer.function_index_translation) };
-
                         let function = tracer.lookup_function(&function_context.function);
 
                         let last_jump_eid = tracer.last_jump_eid();
 
-                        let inst_entry = InstructionTableEntry {
-                            fid: function,
-                            iid: pc,
-                            opcode: instruction,
-                        };
-
                         tracer.etable.push(
-                            inst_entry,
+                            function,
+                            pc,
                             sp.try_into().unwrap(),
                             current_memory.try_into().unwrap(),
                             last_jump_eid,

@@ -14,7 +14,7 @@ use alloc::{
     rc::{Rc, Weak},
     vec::Vec,
 };
-use core::{cell::RefCell, fmt};
+use core::{cell::RefCell, fmt, hash::Hash};
 use parity_wasm::elements::Local;
 
 /// Reference to a function (See [`FuncInstance`] for details).
@@ -22,7 +22,7 @@ use parity_wasm::elements::Local;
 /// This reference has a reference-counting semantics.
 ///
 /// [`FuncInstance`]: struct.FuncInstance.html
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct FuncRef(Rc<FuncInstance>);
 
 impl ::core::ops::Deref for FuncRef {
@@ -46,7 +46,7 @@ impl ::core::ops::Deref for FuncRef {
 ///   See more in [`Externals`].
 ///
 /// [`Externals`]: trait.Externals.html
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq, Hash)]
 pub struct FuncInstance(FuncInstanceInternal);
 
 #[derive(Clone)]
@@ -55,7 +55,7 @@ pub(crate) enum FuncInstanceInternal {
         signature: Rc<Signature>,
         module: Weak<ModuleInstance>,
         body: Rc<FuncBody>,
-        image_func_index: usize,
+        index: usize,
     },
     Host {
         signature: Signature,
@@ -63,19 +63,29 @@ pub(crate) enum FuncInstanceInternal {
     },
 }
 
+impl Hash for FuncInstanceInternal {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        match self {
+            FuncInstanceInternal::Internal { index, .. } => {
+                0.hash(state);
+                index.hash(state);
+            }
+            FuncInstanceInternal::Host {
+                host_func_index, ..
+            } => {
+                1.hash(state);
+                host_func_index.hash(state);
+            }
+        }
+    }
+}
+
 impl PartialEq for FuncInstanceInternal {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (
-                Self::Internal {
-                    image_func_index: l_image_func_index,
-                    ..
-                },
-                Self::Internal {
-                    image_func_index: r_image_func_index,
-                    ..
-                },
-            ) => l_image_func_index == r_image_func_index,
+            (Self::Internal { index: l_index, .. }, Self::Internal { index: r_index, .. }) => {
+                l_index == r_index
+            }
             (
                 Self::Host {
                     signature: l_signature,
@@ -91,13 +101,23 @@ impl PartialEq for FuncInstanceInternal {
     }
 }
 
+impl Eq for FuncInstanceInternal {}
+
 impl fmt::Debug for FuncInstance {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.as_internal() {
-            FuncInstanceInternal::Internal { ref signature, .. } => {
+            FuncInstanceInternal::Internal {
+                ref signature,
+                index,
+                ..
+            } => {
                 // We can't write description of self.module here, because it generate
                 // debug string for function instances and this will lead to infinite loop.
-                write!(f, "Internal {{ signature={:?} }}", signature,)
+                write!(
+                    f,
+                    "Internal {{ signature={:?}, index={} }}",
+                    signature, index
+                )
             }
             FuncInstanceInternal::Host { ref signature, .. } => {
                 write!(f, "Host {{ signature={:?} }}", signature)
@@ -143,13 +163,13 @@ impl FuncInstance {
         module: Weak<ModuleInstance>,
         signature: Rc<Signature>,
         body: FuncBody,
-        image_func_index: usize,
+        index: usize,
     ) -> FuncRef {
         let func = FuncInstanceInternal::Internal {
             signature,
             module,
             body: Rc::new(body),
-            image_func_index,
+            index,
         };
         FuncRef(Rc::new(FuncInstance(func)))
     }
