@@ -17,7 +17,7 @@ use self::{
     export::ExternIdx,
     global::Global,
     import::{ExternTypeIdx, Import},
-    parser::parse,
+    parser::{parse, parse_unchecked},
     read::ReadError,
 };
 pub use self::{
@@ -139,12 +139,47 @@ impl ModuleImports {
 impl Module {
     /// Creates a new Wasm [`Module`] from the given byte stream.
     ///
+    /// # Note
+    ///
+    /// This parses, validates and translates the Wasm bytecode yielded by `stream`.
+    ///
     /// # Errors
     ///
-    /// - If the `stream` cannot be decoded into a valid Wasm module.
-    /// - If unsupported Wasm proposals are encountered.
+    /// - If the `stream` cannot be parsed as a valid Wasm module.
+    /// - If the Wasm bytecode yielded by `stream` is not valid.
+    /// - If the Wasm bytecode yielded by `stream` violates restrictions
+    ///   set in the [`Config`] used by the `engine`.
+    /// - If `wasmi` cannot translate the Wasm bytecode yielded by `stream`.
+    ///
+    /// [`Config`]: crate::Config
     pub fn new(engine: &Engine, stream: impl Read) -> Result<Self, Error> {
         parse(engine, stream).map_err(Into::into)
+    }
+
+    /// Creates a new Wasm [`Module`] from the given byte stream.
+    ///
+    /// # Note
+    ///
+    /// - This parses and translates the Wasm bytecode yielded by `stream`.
+    /// - This still validates Wasm bytecode outside of function bodies.
+    ///
+    /// # Safety
+    ///
+    /// - This does _not_ fully validate the Wasm bytecode yielded by `stream`.
+    /// - It is the caller's responsibility to call this function only with
+    ///   a `stream` that yields fully valid Wasm bytecode.
+    /// - Additionally it is the caller's responsibility that the Wasm bytecode
+    ///   yielded by `stream` must adhere to the restrictions set by the used
+    ///   [`Config`] of the `engine`.
+    /// - Violating these rules may lead to undefined behavior.
+    ///
+    /// # Errors
+    ///
+    /// If the `stream` cannot be parsed as a valid Wasm module.
+    ///
+    /// [`Config`]: crate::Config
+    pub unsafe fn new_unchecked(engine: &Engine, stream: impl Read) -> Result<Self, Error> {
+        unsafe { parse_unchecked(engine, stream).map_err(Into::into) }
     }
 
     /// Returns the [`Engine`] used during creation of the [`Module`].
