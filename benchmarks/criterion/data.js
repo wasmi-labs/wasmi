@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1701608694042,
+  "lastUpdate": 1701610593804,
   "repoUrl": "https://github.com/paritytech/wasmi",
   "entries": {
     "Wasmi criterion benchmark": [
@@ -9701,6 +9701,282 @@ window.BENCHMARK_DATA = {
             "name": "overhead/call/untyped/16",
             "value": 2690451,
             "range": "± 11795",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "robin.freyler@gmail.com",
+            "name": "Robin Freyler",
+            "username": "Robbepop"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "63b1a63169c44b287eeb2ef4ef2fda1ac9cee3b4",
+          "message": "Optimize divrem with non-zero immediate `rhs` values (#825)\n\n* optimize divrem with non-zero immediate rhs values\r\n\r\n* rename DivRemImm -> DivRemExt\r\n\r\n* add docs to DivRemExt trait\r\n\r\n* use macro to generate divrem instr constructors\r\n\r\n* refactor AnyConst{16,32}, Const16<T> and Const32<T> APIs\r\n\r\nThey now offer all their API via From and TryFrom impls if possible.\r\n\r\n* generalize Const16::is_zero method\r\n\r\n* fix SAFETY comment\r\n\r\n* fix naming in fure benchmark test\r\n\r\n* add benchmark test for divrem",
+          "timestamp": "2023-12-03T14:28:54+01:00",
+          "tree_id": "35592de261aa93522f3f8f91edee0ec2198e5ceb",
+          "url": "https://github.com/paritytech/wasmi/commit/63b1a63169c44b287eeb2ef4ef2fda1ac9cee3b4"
+        },
+        "date": 1701610593789,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "translate/wasm_kernel/default",
+            "value": 4987290,
+            "range": "± 22728",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/fuel",
+            "value": 5143431,
+            "range": "± 13525",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/default",
+            "value": 88056913,
+            "range": "± 434676",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/fuel",
+            "value": 90434519,
+            "range": "± 257450",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/default",
+            "value": 3751570,
+            "range": "± 18598",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/fuel",
+            "value": 3842954,
+            "range": "± 10517",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/default",
+            "value": 1368457,
+            "range": "± 1769",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/fuel",
+            "value": 1414833,
+            "range": "± 7922",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/default",
+            "value": 134775,
+            "range": "± 400",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/fuel",
+            "value": 143674,
+            "range": "± 1022",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/default",
+            "value": 191384,
+            "range": "± 1129",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/fuel",
+            "value": 201892,
+            "range": "± 746",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/default",
+            "value": 279411,
+            "range": "± 2210",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/fuel",
+            "value": 299433,
+            "range": "± 645",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "instantiate/wasm_kernel",
+            "value": 51841,
+            "range": "± 1504",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/tiny_keccak",
+            "value": 350429,
+            "range": "± 1531",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/rev_complement",
+            "value": 443971,
+            "range": "± 1017",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/regex_redux",
+            "value": 589389,
+            "range": "± 5993",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/count_until",
+            "value": 6626851,
+            "range": "± 5430",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/br_table",
+            "value": 1533176,
+            "range": "± 8454",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/trunc_f2i",
+            "value": 617587,
+            "range": "± 61601",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global/bump",
+            "value": 1319735,
+            "range": "± 2058",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global/get_const",
+            "value": 714275,
+            "range": "± 3621",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial/rec",
+            "value": 717110,
+            "range": "± 2018",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial/iter",
+            "value": 238029,
+            "range": "± 3951",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/call/rec",
+            "value": 168147,
+            "range": "± 606",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_scan",
+            "value": 186793,
+            "range": "± 300",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_trap",
+            "value": 15386,
+            "range": "± 21",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/call/host/1",
+            "value": 45005,
+            "range": "± 211",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fuse",
+            "value": 7352303,
+            "range": "± 23199",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/divrem",
+            "value": 6227226,
+            "range": "± 15653",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/rec",
+            "value": 6103879,
+            "range": "± 17771",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/tail",
+            "value": 1481719,
+            "range": "± 1626",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/iter",
+            "value": 1291480,
+            "range": "± 8910",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/is_even/rec",
+            "value": 1081005,
+            "range": "± 2232",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/sum_bytes",
+            "value": 1103152,
+            "range": "± 99133",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/fill_bytes",
+            "value": 1081522,
+            "range": "± 1610",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/vec_add",
+            "value": 2948599,
+            "range": "± 3309",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/typed/0",
+            "value": 1237782,
+            "range": "± 12938",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/typed/16",
+            "value": 1618335,
+            "range": "± 11515",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/untyped/0",
+            "value": 1625767,
+            "range": "± 12471",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/untyped/16",
+            "value": 2431901,
+            "range": "± 10232",
             "unit": "ns/iter"
           }
         ]
