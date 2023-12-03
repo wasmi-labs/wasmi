@@ -27,7 +27,7 @@ fn reg_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm16() {
-    test_binary_reg_imm16::<i32>(WASM_OP, 100, Instruction::i32_rem_s_imm16)
+    test_binary_reg_imm16::<NonZeroI32>(WASM_OP, nonzero_i32(100), Instruction::i32_rem_s_imm16)
 }
 
 #[test]
@@ -59,7 +59,7 @@ fn reg_zero() {
 #[cfg_attr(miri, ignore)]
 fn reg_one() {
     let expected = [Instruction::ReturnImm32 {
-        value: AnyConst32::from_i32(0),
+        value: AnyConst32::from(0),
     }];
     test_binary_reg_imm_with(WASM_OP, 1_i32, expected).run()
 }
@@ -68,7 +68,7 @@ fn reg_one() {
 #[cfg_attr(miri, ignore)]
 fn reg_minus_one() {
     let expected = [Instruction::ReturnImm32 {
-        value: AnyConst32::from_i32(0),
+        value: AnyConst32::from(0),
     }];
     test_binary_reg_imm_with(WASM_OP, -1_i32, expected).run()
 }
@@ -83,7 +83,7 @@ fn consteval() {
         lhs,
         rhs,
         [Instruction::ReturnImm32 {
-            value: AnyConst32::from_i32(lhs % rhs),
+            value: AnyConst32::from(lhs % rhs),
         }],
     )
 }
@@ -98,7 +98,7 @@ fn consteval_2() {
         lhs,
         rhs,
         [Instruction::ReturnImm32 {
-            value: AnyConst32::from_i32(0), // as mandated by the Wasm spec
+            value: AnyConst32::from(0), // as mandated by the Wasm spec
         }],
     )
 }

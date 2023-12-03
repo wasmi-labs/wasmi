@@ -1,5 +1,5 @@
 use super::{
-    compile::translate,
+    compile::{translate, translate_unchecked},
     export::ExternIdx,
     global::Global,
     import::{FuncTypeIdx, Import},
@@ -13,21 +13,20 @@ use super::{
     Read,
 };
 use crate::{
-    engine::{CompiledFunc, FuncTranslatorAllocations},
+    engine::{CompiledFunc, ReusableAllocations},
     Engine,
     FuncType,
     MemoryType,
     TableType,
 };
 use alloc::{boxed::Box, vec::Vec};
-use core::{mem::replace, ops::Range};
+use core::{mem, ops::Range};
 use wasmparser::{
     Chunk,
     DataSectionReader,
     ElementSectionReader,
     Encoding,
     ExportSectionReader,
-    FuncValidatorAllocations,
     FunctionBody,
     FunctionSectionReader,
     GlobalSectionReader,
@@ -41,16 +40,28 @@ use wasmparser::{
     WasmFeatures,
 };
 
-/// Parses and validates the given Wasm bytecode stream.
+/// Parse, validate and translate the Wasm bytecode stream into Wasm IR bytecode.
 ///
-/// Returns the compiled and validated Wasm [`Module`] upon success.
-/// Uses the given [`Engine`] as the translation target of the process.
+/// - Returns the fully compiled and validated Wasm [`Module`] upon success.
+/// - Uses the given [`Engine`] as the translation target of the process.
 ///
 /// # Errors
 ///
-/// If the Wasm bytecode stream fails to validate.
+/// If the Wasm bytecode stream fails to parse, validate or translate.
 pub fn parse(engine: &Engine, stream: impl Read) -> Result<Module, ModuleError> {
     ModuleParser::new(engine).parse(stream)
+}
+
+/// Parse and translate the Wasm bytecode stream into Wasm IR bytecode.
+///
+/// - Returns the fully compiled Wasm [`Module`] upon success.
+/// - Uses the given [`Engine`] as the translation target of the process.
+///
+/// # Errors
+///
+/// If the Wasm bytecode stream fails to parse or translate.
+pub unsafe fn parse_unchecked(engine: &Engine, stream: impl Read) -> Result<Module, ModuleError> {
+    unsafe { ModuleParser::new(engine).parse_unchecked(stream) }
 }
 
 /// Context used to construct a WebAssembly module from a stream of bytes.
@@ -67,24 +78,6 @@ pub struct ModuleParser<'engine> {
     allocations: ReusableAllocations,
 }
 
-/// Reusable heap allocations for function validation and translation.
-pub struct ReusableAllocations {
-    pub translation: FuncTranslatorAllocations,
-    pub validation: FuncValidatorAllocations,
-}
-
-impl ReusableAllocations {
-    /// Creates new [`ReusableAllocations`] for the given [`Engine`].
-    pub fn new() -> Self {
-        let translation = FuncTranslatorAllocations::default();
-        let validation = FuncValidatorAllocations::default();
-        Self {
-            translation,
-            validation,
-        }
-    }
-}
-
 impl<'engine> ModuleParser<'engine> {
     /// Creates a new [`ModuleParser`] for the given [`Engine`].
     fn new(engine: &'engine Engine) -> Self {
@@ -96,7 +89,7 @@ impl<'engine> ModuleParser<'engine> {
             validator,
             parser,
             compiled_funcs: 0,
-            allocations: ReusableAllocations::new(),
+            allocations: ReusableAllocations::default(),
         }
     }
 
@@ -112,7 +105,33 @@ impl<'engine> ModuleParser<'engine> {
     /// # Errors
     ///
     /// If the Wasm bytecode stream fails to validate.
-    pub fn parse(mut self, mut stream: impl Read) -> Result<Module, ModuleError> {
+    pub fn parse(self, stream: impl Read) -> Result<Module, ModuleError> {
+        self.parse_impl(true, stream)
+    }
+
+    /// Starts parsing and validating the Wasm bytecode stream.
+    ///
+    /// Returns the compiled and validated Wasm [`Module`] upon success.
+    ///
+    /// # Errors
+    ///
+    /// If the Wasm bytecode stream fails to validate.
+    pub unsafe fn parse_unchecked(self, stream: impl Read) -> Result<Module, ModuleError> {
+        self.parse_impl(false, stream)
+    }
+
+    /// Starts parsing and validating the Wasm bytecode stream.
+    ///
+    /// Returns the compiled and validated Wasm [`Module`] upon success.
+    ///
+    /// # Errors
+    ///
+    /// If the Wasm bytecode stream fails to validate.
+    fn parse_impl(
+        mut self,
+        validate_funcs: bool,
+        mut stream: impl Read,
+    ) -> Result<Module, ModuleError> {
         let mut buffer = Vec::new();
         let mut eof = false;
         'outer: loop {
@@ -122,7 +141,7 @@ impl<'engine> ModuleParser<'engine> {
                     continue 'outer;
                 }
                 Chunk::Parsed { consumed, payload } => {
-                    eof = self.process_payload(payload)?;
+                    eof = self.process_payload(payload, validate_funcs)?;
                     // Cut away the parts from the intermediate buffer that have already been parsed.
                     buffer.drain(..consumed);
                     if eof {
@@ -166,7 +185,11 @@ impl<'engine> ModuleParser<'engine> {
     /// - If Wasm validation of the payload fails.
     /// - If some unsupported Wasm proposal definition is encountered.
     /// - If `wasmi` limits are exceeded.
-    fn process_payload(&mut self, payload: Payload) -> Result<bool, ModuleError> {
+    fn process_payload(
+        &mut self,
+        payload: Payload,
+        validate_funcs: bool,
+    ) -> Result<bool, ModuleError> {
         match payload {
             Payload::Version {
                 num,
@@ -188,7 +211,9 @@ impl<'engine> ModuleParser<'engine> {
             Payload::DataSection(section) => self.process_data(section),
             Payload::CustomSection { .. } => Ok(()),
             Payload::CodeSectionStart { count, range, .. } => self.process_code_start(count, range),
-            Payload::CodeSectionEntry(func_body) => self.process_code_entry(func_body),
+            Payload::CodeSectionEntry(func_body) => {
+                self.process_code_entry(func_body, validate_funcs)
+            }
             Payload::UnknownSection { id, range, .. } => self.process_unknown(id, range),
             Payload::ModuleSection { parser: _, range } => {
                 self.process_unsupported_component_model(range)
@@ -508,21 +533,39 @@ impl<'engine> ModuleParser<'engine> {
     /// # Errors
     ///
     /// If the function body fails to validate.
-    fn process_code_entry(&mut self, func_body: FunctionBody) -> Result<(), ModuleError> {
-        let (func, compiled_func_2) = self.next_func();
+    fn process_code_entry(
+        &mut self,
+        func_body: FunctionBody,
+        validate_funcs: bool,
+    ) -> Result<(), ModuleError> {
+        let (func, compiled_func) = self.next_func();
         let validator = self.validator.code_section_entry(&func_body)?;
-        let module_resources = ModuleResources::new(&self.builder);
-        let dummy_allocations = ReusableAllocations::new();
-        let allocations = replace(&mut self.allocations, dummy_allocations);
-        let allocations = translate(
-            func,
-            compiled_func_2,
-            func_body,
-            validator.into_validator(allocations.validation),
-            module_resources,
-            allocations.translation,
-        )?;
-        let _ = replace(&mut self.allocations, allocations);
+        let res = ModuleResources::new(&self.builder);
+        let allocations = mem::take(&mut self.allocations);
+        let allocations = match validate_funcs {
+            true => translate(
+                func,
+                compiled_func,
+                func_body,
+                validator.into_validator(allocations.validation),
+                res,
+                allocations.translation,
+            )?,
+            false => {
+                let translation = translate_unchecked(
+                    func,
+                    compiled_func,
+                    func_body,
+                    res,
+                    allocations.translation,
+                )?;
+                ReusableAllocations {
+                    translation,
+                    validation: allocations.validation,
+                }
+            }
+        };
+        _ = mem::replace(&mut self.allocations, allocations);
         Ok(())
     }
 

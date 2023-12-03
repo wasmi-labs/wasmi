@@ -5,6 +5,7 @@
 //! These tests include Wasm arithmetic, logical, bitwise, shift and rotate instructions.
 
 use super::*;
+use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
 
 mod f32_add;
 mod f32_copysign;
@@ -51,12 +52,32 @@ mod i64_shr_u;
 mod i64_sub;
 mod i64_xor;
 
+/// Helper to create a [`NonZeroI32`].
+fn nonzero_i32(value: i32) -> NonZeroI32 {
+    NonZeroI32::new(value).unwrap()
+}
+
+/// Helper to create a [`NonZeroU32`].
+fn nonzero_u32(value: u32) -> NonZeroU32 {
+    NonZeroU32::new(value).unwrap()
+}
+
+/// Helper to create a [`NonZeroI64`].
+fn nonzero_i64(value: i64) -> NonZeroI64 {
+    NonZeroI64::new(value).unwrap()
+}
+
+/// Helper to create a [`NonZeroU64`].
+fn nonzero_u64(value: u64) -> NonZeroU64 {
+    NonZeroU64::new(value).unwrap()
+}
+
 /// Creates an [`Instruction::ReturnF64Imm32`] from the given `f64` value.
 ///
 /// # Panics
 ///
 /// If the `value` cannot be converted into `f32` losslessly.
 fn return_f64imm32_instr(value: f64) -> Instruction {
-    let const32 = <Const32<f64>>::from_f64(value).expect("value must be 32-bit encodable");
+    let const32 = <Const32<f64>>::try_from(value).expect("value must be 32-bit encodable");
     Instruction::return_f64imm32(const32)
 }

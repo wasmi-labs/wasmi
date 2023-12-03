@@ -27,7 +27,7 @@ fn reg_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm16() {
-    test_binary_reg_imm16::<i32>(WASM_OP, 100, Instruction::i32_div_s_imm16)
+    test_binary_reg_imm16::<NonZeroI32>(WASM_OP, nonzero_i32(100), Instruction::i32_div_s_imm16)
 }
 
 #[test]
@@ -72,7 +72,7 @@ fn consteval() {
         lhs,
         rhs,
         [Instruction::ReturnImm32 {
-            value: AnyConst32::from_i32(lhs / rhs),
+            value: AnyConst32::from(lhs / rhs),
         }],
     )
 }

@@ -352,11 +352,11 @@ impl InstrEncoder {
             TypedProvider::Const(value) => match value.ty() {
                 ValueType::I32 => Instruction::copy_imm32(result, i32::from(value)),
                 ValueType::F32 => Instruction::copy_imm32(result, f32::from(value)),
-                ValueType::I64 => match <Const32<i64>>::from_i64(i64::from(value)) {
+                ValueType::I64 => match <Const32<i64>>::try_from(i64::from(value)).ok() {
                     Some(value) => Instruction::copy_i64imm32(result, value),
                     None => copy_imm(stack, result, value)?,
                 },
-                ValueType::F64 => match <Const32<f64>>::from_f64(f64::from(value)) {
+                ValueType::F64 => match <Const32<f64>>::try_from(f64::from(value)).ok() {
                     Some(value) => Instruction::copy_f64imm32(result, value),
                     None => copy_imm(stack, result, value)?,
                 },
@@ -417,6 +417,10 @@ impl InstrEncoder {
             }
             [v0, v1, rest @ ..] => {
                 debug_assert!(!rest.is_empty());
+                // Note: The fuel for copies might result in 0 charges if there aren't
+                //       enough copies to account for at least 1 fuel. Therefore we need
+                //       to also bump by `FuelCosts::base` to charge at least 1 fuel.
+                self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
                 self.bump_fuel_consumption(fuel_info, |costs| {
                     costs.fuel_for_copies(rest.len() as u64 + 3)
                 })?;
@@ -541,12 +545,12 @@ impl InstrEncoder {
             [TypedProvider::Register(reg)] => Instruction::return_reg(*reg),
             [TypedProvider::Const(value)] => match value.ty() {
                 ValueType::I32 => Instruction::return_imm32(i32::from(*value)),
-                ValueType::I64 => match <Const32<i64>>::from_i64(i64::from(*value)) {
+                ValueType::I64 => match <Const32<i64>>::try_from(i64::from(*value)).ok() {
                     Some(value) => Instruction::return_i64imm32(value),
                     None => Instruction::return_reg(stack.alloc_const(*value)?),
                 },
                 ValueType::F32 => Instruction::return_imm32(F32::from(*value)),
-                ValueType::F64 => match <Const32<f64>>::from_f64(f64::from(*value)) {
+                ValueType::F64 => match <Const32<f64>>::try_from(f64::from(*value)).ok() {
                     Some(value) => Instruction::return_f64imm32(value),
                     None => Instruction::return_reg(stack.alloc_const(*value)?),
                 },
@@ -567,6 +571,10 @@ impl InstrEncoder {
             }
             [v0, v1, v2, rest @ ..] => {
                 debug_assert!(!rest.is_empty());
+                // Note: The fuel for return values might result in 0 charges if there aren't
+                //       enough return values to account for at least 1 fuel. Therefore we need
+                //       to also bump by `FuelCosts::base` to charge at least 1 fuel.
+                self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
                 self.bump_fuel_consumption(fuel_info, |costs| {
                     costs.fuel_for_copies(rest.len() as u64 + 3)
                 })?;
@@ -605,12 +613,12 @@ impl InstrEncoder {
             [TypedProvider::Register(reg)] => Instruction::return_nez_reg(condition, *reg),
             [TypedProvider::Const(value)] => match value.ty() {
                 ValueType::I32 => Instruction::return_nez_imm32(condition, i32::from(*value)),
-                ValueType::I64 => match <Const32<i64>>::from_i64(i64::from(*value)) {
+                ValueType::I64 => match <Const32<i64>>::try_from(i64::from(*value)).ok() {
                     Some(value) => Instruction::return_nez_i64imm32(condition, value),
                     None => Instruction::return_nez_reg(condition, stack.alloc_const(*value)?),
                 },
                 ValueType::F32 => Instruction::return_nez_imm32(condition, F32::from(*value)),
-                ValueType::F64 => match <Const32<f64>>::from_f64(f64::from(*value)) {
+                ValueType::F64 => match <Const32<f64>>::try_from(f64::from(*value)).ok() {
                     Some(value) => Instruction::return_nez_f64imm32(condition, value),
                     None => Instruction::return_nez_reg(condition, stack.alloc_const(*value)?),
                 },
@@ -625,6 +633,10 @@ impl InstrEncoder {
             }
             [v0, v1, rest @ ..] => {
                 debug_assert!(!rest.is_empty());
+                // Note: The fuel for return values might result in 0 charges if there aren't
+                //       enough return values to account for at least 1 fuel. Therefore we need
+                //       to also bump by `FuelCosts::base` to charge at least 1 fuel.
+                self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
                 self.bump_fuel_consumption(fuel_info, |costs| {
                     costs.fuel_for_copies(rest.len() as u64 + 3)
                 })?;

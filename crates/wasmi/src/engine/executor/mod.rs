@@ -198,7 +198,9 @@ impl<'engine> EngineExecutor<'engine> {
         match ctx.as_context().store.inner.resolve_func(func) {
             FuncEntity::Wasm(wasm_func) => {
                 // We reserve space on the stack to write the results of the root function execution.
-                self.stack.values.extend_zeros(results.len_results());
+                let len_results = results.len_results();
+                self.stack.values.reserve(len_results)?;
+                self.stack.values.extend_zeros(len_results);
                 let instance = wasm_func.instance();
                 let compiled_func = self.res.code_map.get(wasm_func.func_body());
                 let (base_ptr, frame_ptr) = self.stack.values.alloc_call_frame(compiled_func)?;

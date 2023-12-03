@@ -29,6 +29,7 @@ use crate::{
     Mutability,
 };
 use alloc::collections::BTreeMap;
+use core::num::{NonZeroU32, NonZeroU64};
 use wasmi_core::{TrapCode, ValueType, F32, F64};
 use wasmparser::VisitOperator;
 
@@ -664,7 +665,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let provider_params = &mut self.alloc.buffer;
         self.alloc.stack.pop_n(params.len(), provider_params);
         let table_params = match index {
-            TypedProvider::Const(index) => match <Const16<u32>>::from_u32(u32::from(index)) {
+            TypedProvider::Const(index) => match <Const16<u32>>::try_from(u32::from(index)).ok() {
                 Some(index) => {
                     // Case: the index is encodable as 16-bit constant value
                     //       which allows us to use an optimized instruction.
@@ -736,7 +737,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let provider_params = &mut self.alloc.buffer;
         self.alloc.stack.pop_n(params.len(), provider_params);
         let table_params = match index {
-            TypedProvider::Const(index) => match <Const16<u32>>::from_u32(u32::from(index)) {
+            TypedProvider::Const(index) => match <Const16<u32>>::try_from(u32::from(index)).ok() {
                 Some(index) => {
                     // Case: the index is encodable as 16-bit constant value
                     //       which allows us to use an optimized instruction.
@@ -852,7 +853,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 debug_assert_eq!(global_type.content(), input.ty());
                 match global_type.content() {
                     ValueType::I32 => {
-                        if let Some(value) = Const16::from_i32(i32::from(input)) {
+                        if let Ok(value) = Const16::try_from(i32::from(input)) {
                             self.push_fueled_instr(
                                 Instruction::global_set_i32imm16(global, value),
                                 FuelCosts::entity,
@@ -861,7 +862,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                         }
                     }
                     ValueType::I64 => {
-                        if let Some(value) = Const16::from_i64(i64::from(input)) {
+                        if let Ok(value) = Const16::try_from(i64::from(input)) {
                             self.push_fueled_instr(
                                 Instruction::global_set_i64imm16(global, value),
                                 FuelCosts::entity,
@@ -2245,7 +2246,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_div_u(&mut self) -> Self::Output {
-        self.translate_divrem::<u32>(
+        self.translate_divrem::<u32, NonZeroU32>(
             Instruction::i32_div_u,
             Instruction::i32_div_u_imm16,
             Instruction::i32_div_u_imm16_rev,
@@ -2281,7 +2282,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i32_rem_u(&mut self) -> Self::Output {
-        self.translate_divrem::<u32>(
+        self.translate_divrem::<u32, NonZeroU32>(
             Instruction::i32_rem_u,
             Instruction::i32_rem_u_imm16,
             Instruction::i32_rem_u_imm16_rev,
@@ -2553,7 +2554,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_div_u(&mut self) -> Self::Output {
-        self.translate_divrem::<u64>(
+        self.translate_divrem::<u64, NonZeroU64>(
             Instruction::i64_div_u,
             Instruction::i64_div_u_imm16,
             Instruction::i64_div_u_imm16_rev,
@@ -2589,7 +2590,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_i64_rem_u(&mut self) -> Self::Output {
-        self.translate_divrem::<u64>(
+        self.translate_divrem::<u64, NonZeroU64>(
             Instruction::i64_rem_u,
             Instruction::i64_rem_u_imm16,
             Instruction::i64_rem_u_imm16_rev,

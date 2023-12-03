@@ -198,7 +198,7 @@ fn branched_block_1_imm_i32() {
 fn branched_block_1_imm_i64imm32() {
     fn test_for_i64imm32(value: i64) {
         let const32 =
-            <Const32<i64>>::from_i64(value).expect("value must be 32-bit encodable for this test");
+            <Const32<i64>>::try_from(value).expect("value must be 32-bit encodable for this test");
         testcase_branched_block_1_imm::<i64>(value)
             .expect_func_instrs([
                 Instruction::copy_i64imm32(Register::from_i16(0), const32),
@@ -261,7 +261,7 @@ fn branched_block_1_imm_f32() {
 #[cfg_attr(miri, ignore)]
 fn branched_block_1_imm_f64imm32() {
     fn test_for_f64imm32(value: f64) {
-        let const32 = <Const32<f64>>::from_f64(value)
+        let const32 = <Const32<f64>>::try_from(value)
             .expect("value must be losslessly 32-bit encodable for this test");
         testcase_branched_block_1_imm::<f64>(value)
             .expect_func_instrs([

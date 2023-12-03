@@ -99,8 +99,8 @@ fn test_i32imm16(value: i32) {
         )
     "#,
     ));
-    let imm16 = <Const16<i32>>::from_i32(value)
-        .unwrap_or_else(|| panic!("cannot convert `value` to 16-bit encoding: {value}"));
+    let imm16 = <Const16<i32>>::try_from(value)
+        .unwrap_or_else(|_| panic!("cannot convert `value` to 16-bit encoding: {value}"));
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::global_set_i32imm16(GlobalIdx::from(0), imm16),
@@ -133,8 +133,8 @@ fn test_i64imm16(value: i64) {
         )
     "#,
     ));
-    let imm16 = <Const16<i64>>::from_i64(value)
-        .unwrap_or_else(|| panic!("cannot convert `value` to 16-bit encoding: {value}"));
+    let imm16 = <Const16<i64>>::try_from(value)
+        .unwrap_or_else(|_| panic!("cannot convert `value` to 16-bit encoding: {value}"));
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::global_set_i64imm16(GlobalIdx::from(0), imm16),
