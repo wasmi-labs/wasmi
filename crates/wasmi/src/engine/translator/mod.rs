@@ -479,7 +479,7 @@ impl<'parser> FuncTranslator<'parser> {
     }
 
     /// Consumes `self` and returns the underlying reusable [`FuncTranslatorAllocations`].
-    pub fn into_allocations(self) -> FuncTranslatorAllocations {
+    fn into_allocations(self) -> FuncTranslatorAllocations {
         self.alloc
     }
 
@@ -1520,7 +1520,7 @@ impl<'parser> FuncTranslator<'parser> {
     ///
     /// - `{i32, i64}.{div_u, div_s, rem_u, rem_s}`
     #[allow(clippy::too_many_arguments)]
-    pub fn translate_divrem<T, NonZeroT>(
+    fn translate_divrem<T, NonZeroT>(
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
         make_instr_imm16: fn(
@@ -1588,16 +1588,12 @@ impl<'parser> FuncTranslator<'parser> {
     }
 
     /// Can be used for [`Self::translate_binary`] (and variants) if no custom optimization shall be applied.
-    pub fn no_custom_opt<Lhs, Rhs>(
-        &mut self,
-        _lhs: Lhs,
-        _rhs: Rhs,
-    ) -> Result<bool, TranslationError> {
+    fn no_custom_opt<Lhs, Rhs>(&mut self, _lhs: Lhs, _rhs: Rhs) -> Result<bool, TranslationError> {
         Ok(false)
     }
 
     /// Translates a unary Wasm instruction to `wasmi` bytecode.
-    pub fn translate_unary(
+    fn translate_unary(
         &mut self,
         make_instr: fn(result: Register, input: Register) -> Instruction,
         consteval: fn(input: TypedValue) -> TypedValue,
@@ -1617,7 +1613,7 @@ impl<'parser> FuncTranslator<'parser> {
     }
 
     /// Translates a fallible unary Wasm instruction to `wasmi` bytecode.
-    pub fn translate_unary_fallible(
+    fn translate_unary_fallible(
         &mut self,
         make_instr: fn(result: Register, input: Register) -> Instruction,
         consteval: fn(input: TypedValue) -> Result<TypedValue, TrapCode>,
@@ -1682,7 +1678,7 @@ impl<'parser> FuncTranslator<'parser> {
     /// - `{i32, i64, f32, f64}.load`
     /// - `i32.{load8_s, load8_u, load16_s, load16_u}`
     /// - `i64.{load8_s, load8_u, load16_s, load16_u load32_s, load32_u}`
-    pub fn translate_load(
+    fn translate_load(
         &mut self,
         memarg: MemArg,
         make_instr: fn(result: Register, ptr: Register) -> Instruction,
@@ -2329,7 +2325,7 @@ impl<'parser> FuncTranslator<'parser> {
     }
 
     /// Translates a Wasm `reinterpret` instruction.
-    pub fn translate_reinterpret(&mut self, ty: ValueType) -> Result<(), TranslationError> {
+    fn translate_reinterpret(&mut self, ty: ValueType) -> Result<(), TranslationError> {
         bail_unreachable!(self);
         match self.alloc.stack.pop() {
             TypedProvider::Register(reg) => {
@@ -2346,13 +2342,13 @@ impl<'parser> FuncTranslator<'parser> {
     }
 
     /// Translates an unconditional `return` instruction.
-    pub fn translate_return(&mut self) -> Result<(), TranslationError> {
+    fn translate_return(&mut self) -> Result<(), TranslationError> {
         let fuel_info = self.fuel_info();
         self.translate_return_with(fuel_info)
     }
 
     /// Translates an unconditional `return` instruction given fuel information.
-    pub fn translate_return_with(&mut self, fuel_info: FuelInfo) -> Result<(), TranslationError> {
+    fn translate_return_with(&mut self, fuel_info: FuelInfo) -> Result<(), TranslationError> {
         let func_type = self.func_type();
         let results = func_type.results();
         let values = &mut self.alloc.buffer;
@@ -2365,7 +2361,7 @@ impl<'parser> FuncTranslator<'parser> {
     }
 
     /// Translates a conditional `br_if` that targets the function enclosing `block`.
-    pub fn translate_return_if(&mut self, condition: Register) -> Result<(), TranslationError> {
+    fn translate_return_if(&mut self, condition: Register) -> Result<(), TranslationError> {
         bail_unreachable!(self);
         let len_results = self.func_type().results().len();
         let fuel_info = self.fuel_info();
