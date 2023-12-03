@@ -52,13 +52,13 @@ use crate::{
         config::FuelCosts,
         CompiledFunc,
     },
-    module::{BlockType, FuncIdx, FuncTypeIdx, ModuleResources, ReusableAllocations},
+    module::{BlockType, FuncIdx, FuncTypeIdx, ModuleResources},
     Engine,
     FuncType,
 };
 use alloc::vec::Vec;
 use wasmi_core::{TrapCode, UntypedValue, ValueType};
-use wasmparser::{BinaryReaderError, MemArg, VisitOperator};
+use wasmparser::{BinaryReaderError, FuncValidatorAllocations, MemArg, VisitOperator};
 
 /// Reusable allocations of a [`FuncTranslator`].
 #[derive(Debug, Default)]
@@ -99,8 +99,25 @@ pub struct ValidatingFuncTranslator<'parser> {
     translator: FuncTranslator<'parser>,
 }
 
+/// Reusable heap allocations for function validation and translation.
+pub struct ReusableAllocations {
+    pub translation: FuncTranslatorAllocations,
+    pub validation: FuncValidatorAllocations,
+}
+
+impl Default for ReusableAllocations {
+    fn default() -> Self {
+        let translation = FuncTranslatorAllocations::default();
+        let validation = FuncValidatorAllocations::default();
+        Self {
+            translation,
+            validation,
+        }
+    }
+}
+
 /// A WebAssembly (Wasm) function translator.
-pub trait WasmTranslator: for<'a> VisitOperator<'a> {
+pub trait WasmTranslator<'parser>: VisitOperator<'parser> {
     /// The reusable allocations required by the [`WasmTranslator`].
     ///
     /// # Note
@@ -165,51 +182,9 @@ impl<'parser> ValidatingFuncTranslator<'parser> {
         })
     }
 
-    /// Translates the given local variables for the translated function.
-    pub fn translate_locals(
-        &mut self,
-        offset: usize,
-        amount: u32,
-        value_type: wasmparser::ValType,
-    ) -> Result<(), TranslationError> {
-        self.validator.define_locals(offset, amount, value_type)?;
-        self.translator.register_locals(amount)?;
-        Ok(())
-    }
-
-    /// This informs the [`ValidatingFuncTranslator`] that the function header translation is finished.
-    ///
-    /// # Note
-    ///
-    /// This was introduced to properly calculate the fuel costs for all local variables
-    /// and function parameters. After this function call no more locals and parameters may
-    /// be added to this function translation.
-    pub fn finish_translate_locals(&mut self) -> Result<(), TranslationError> {
-        self.translator.finish_translate_locals()?;
-        Ok(())
-    }
-
-    /// Updates the current position within the Wasm binary while parsing operators.
-    pub fn update_pos(&mut self, pos: usize) {
-        self.pos = pos;
-    }
-
     /// Returns the current position within the Wasm binary while parsing operators.
     fn current_pos(&self) -> usize {
         self.pos
-    }
-
-    /// Finishes constructing the function by initializing its [`CompiledFunc`].
-    pub fn finish(mut self, offset: usize) -> Result<ReusableAllocations, TranslationError> {
-        self.validator.finish(offset)?;
-        self.translator.finish()?;
-        let translation = self.translator.into_allocations();
-        let validation = self.validator.into_allocations();
-        let allocations = ReusableAllocations {
-            translation,
-            validation,
-        };
-        Ok(allocations)
     }
 
     /// Translates into `wasmi` bytecode if the current code path is reachable.
@@ -225,6 +200,43 @@ impl<'parser> ValidatingFuncTranslator<'parser> {
         validate(&mut self.validator)?;
         translate(&mut self.translator)?;
         Ok(())
+    }
+}
+
+impl<'parser> WasmTranslator<'parser> for ValidatingFuncTranslator<'parser> {
+    type Allocations = ReusableAllocations;
+
+    fn translate_locals(
+        &mut self,
+        amount: u32,
+        value_type: wasmparser::ValType,
+    ) -> Result<(), TranslationError> {
+        self.validator
+            .define_locals(self.current_pos(), amount, value_type)?;
+        self.translator.register_locals(amount)?;
+        Ok(())
+    }
+
+    fn finish_translate_locals(&mut self) -> Result<(), TranslationError> {
+        self.translator.finish_translate_locals()?;
+        Ok(())
+    }
+
+    fn update_pos(&mut self, pos: usize) {
+        self.pos = pos;
+    }
+
+    fn finish(mut self) -> Result<ReusableAllocations, TranslationError> {
+        let pos = self.current_pos();
+        self.validator.finish(pos)?;
+        self.translator.finish()?;
+        let translation = self.translator.into_allocations();
+        let validation = self.validator.into_allocations();
+        let allocations = ReusableAllocations {
+            translation,
+            validation,
+        };
+        Ok(allocations)
     }
 }
 

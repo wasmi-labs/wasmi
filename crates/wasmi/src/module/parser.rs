@@ -13,7 +13,7 @@ use super::{
     Read,
 };
 use crate::{
-    engine::{CompiledFunc, FuncTranslatorAllocations},
+    engine::{CompiledFunc, ReusableAllocations},
     Engine,
     FuncType,
     MemoryType,
@@ -27,7 +27,6 @@ use wasmparser::{
     ElementSectionReader,
     Encoding,
     ExportSectionReader,
-    FuncValidatorAllocations,
     FunctionBody,
     FunctionSectionReader,
     GlobalSectionReader,
@@ -67,24 +66,6 @@ pub struct ModuleParser<'engine> {
     allocations: ReusableAllocations,
 }
 
-/// Reusable heap allocations for function validation and translation.
-pub struct ReusableAllocations {
-    pub translation: FuncTranslatorAllocations,
-    pub validation: FuncValidatorAllocations,
-}
-
-impl ReusableAllocations {
-    /// Creates new [`ReusableAllocations`] for the given [`Engine`].
-    pub fn new() -> Self {
-        let translation = FuncTranslatorAllocations::default();
-        let validation = FuncValidatorAllocations::default();
-        Self {
-            translation,
-            validation,
-        }
-    }
-}
-
 impl<'engine> ModuleParser<'engine> {
     /// Creates a new [`ModuleParser`] for the given [`Engine`].
     fn new(engine: &'engine Engine) -> Self {
@@ -96,7 +77,7 @@ impl<'engine> ModuleParser<'engine> {
             validator,
             parser,
             compiled_funcs: 0,
-            allocations: ReusableAllocations::new(),
+            allocations: ReusableAllocations::default(),
         }
     }
 
@@ -512,7 +493,7 @@ impl<'engine> ModuleParser<'engine> {
         let (func, compiled_func_2) = self.next_func();
         let validator = self.validator.code_section_entry(&func_body)?;
         let module_resources = ModuleResources::new(&self.builder);
-        let dummy_allocations = ReusableAllocations::new();
+        let dummy_allocations = ReusableAllocations::default();
         let allocations = replace(&mut self.allocations, dummy_allocations);
         let allocations = translate(
             func,
