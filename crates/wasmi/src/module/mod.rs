@@ -28,7 +28,6 @@ pub use self::{
     global::GlobalIdx,
     import::{FuncTypeIdx, ImportName},
     instantiate::{InstancePre, InstantiationError},
-    parser::ReusableAllocations,
     read::Read,
 };
 pub(crate) use self::{

@@ -1,7 +1,13 @@
 pub use self::block_type::BlockType;
-use super::{parser::ReusableAllocations, FuncIdx, ModuleResources};
+use super::{FuncIdx, ModuleResources};
 use crate::{
-    engine::{CompiledFunc, FuncTranslatorAllocations, ValidatingFuncTranslator},
+    engine::{
+        CompiledFunc,
+        FuncTranslatorAllocations,
+        ReusableAllocations,
+        ValidatingFuncTranslator,
+        WasmTranslator,
+    },
     errors::ModuleError,
 };
 use wasmparser::{FuncValidator, FunctionBody, ValidatorResources};
@@ -68,8 +74,9 @@ impl<'parser> FunctionTranslator<'parser> {
     }
 
     /// Finishes construction of the function and returns its [`CompiledFunc`].
-    fn finish(self, offset: usize) -> Result<ReusableAllocations, ModuleError> {
-        self.func_builder.finish(offset).map_err(Into::into)
+    fn finish(mut self, offset: usize) -> Result<ReusableAllocations, ModuleError> {
+        self.func_builder.update_pos(offset);
+        self.func_builder.finish().map_err(Into::into)
     }
 
     /// Translates local variables of the Wasm function.
@@ -79,8 +86,8 @@ impl<'parser> FunctionTranslator<'parser> {
         for _ in 0..len_locals {
             let offset = reader.original_position();
             let (amount, value_type) = reader.read()?;
-            self.func_builder
-                .translate_locals(offset, amount, value_type)?;
+            self.func_builder.update_pos(offset);
+            self.func_builder.translate_locals(amount, value_type)?;
         }
         self.func_builder.finish_translate_locals()?;
         Ok(())
