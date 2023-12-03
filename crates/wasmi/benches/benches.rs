@@ -73,6 +73,7 @@ criterion_group! {
         bench_execute_recursive_trap,
         bench_execute_host_calls,
         bench_execute_fuse,
+        bench_execute_divrem,
         bench_execute_fibonacci,
         bench_execute_recursive_is_even,
         bench_execute_memory_sum,
@@ -863,6 +864,24 @@ fn bench_execute_fuse(c: &mut Criterion) {
         });
     };
     bench_fuse("execute/fuse", "test", 1_000_000);
+}
+
+fn bench_execute_divrem(c: &mut Criterion) {
+    let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/divrem.wat"));
+    let mut bench_fuse = |bench_id: &str, func_name: &str, input: i32| {
+        c.bench_function(bench_id, |b| {
+            let fib = instance
+                .get_export(&store, func_name)
+                .and_then(Extern::into_func)
+                .unwrap()
+                .typed::<i32, i32>(&store)
+                .unwrap();
+            b.iter(|| {
+                assert_eq!(fib.call(&mut store, input).unwrap(), 0);
+            });
+        });
+    };
+    bench_fuse("execute/divrem", "test", 250_000);
 }
 
 fn bench_execute_fibonacci(c: &mut Criterion) {
