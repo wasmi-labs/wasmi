@@ -152,7 +152,7 @@ pub trait WasmTranslator<'parser>: VisitOperator<'parser> {
     ///
     /// - Initialized the [`CompiledFunc`] in the [`Engine`].
     /// - Returns the allocations used for translation.
-    fn finish(self) -> Result<ReusableAllocations, TranslationError>;
+    fn finish(self) -> Result<Self::Allocations, TranslationError>;
 }
 
 impl<'parser> ValidatingFuncTranslator<'parser> {
@@ -216,7 +216,7 @@ impl<'parser> WasmTranslator<'parser> for ValidatingFuncTranslator<'parser> {
         self.pos = pos;
     }
 
-    fn finish(mut self) -> Result<ReusableAllocations, TranslationError> {
+    fn finish(mut self) -> Result<Self::Allocations, TranslationError> {
         let pos = self.current_pos();
         self.validator.finish(pos)?;
         self.translator.finish()?;
