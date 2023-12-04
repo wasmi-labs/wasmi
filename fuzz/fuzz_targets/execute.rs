@@ -1,4 +1,5 @@
 #![no_main]
+
 use arbitrary::Arbitrary;
 use libfuzzer_sys::fuzz_target;
 use wasm_smith::ConfiguredModule;
