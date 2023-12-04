@@ -289,7 +289,7 @@ jobs:
           # Note: We use `|| true` because cargo install returns an error
           #       if cargo-udeps was already installed on the CI runner.
           cargo install cargo-fuzz || true
-      - name: Fuzz (Execution)
+      - name: Fuzz (Differential)
         run: cargo fuzz run differential -j 2 --verbose -- -max_total_time=120 # 2 minutes of fuzzing
 
   miri:
