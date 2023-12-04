@@ -4,7 +4,7 @@ use super::*;
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_0() {
     let wat = include_str!("fuzz_0.wat");
-    let wasm = wat2wasm(&wat[..]);
+    let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(1, 0),
@@ -18,7 +18,7 @@ fn fuzz_regression_0() {
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_1() {
     let wat = include_str!("fuzz_1.wat");
-    let wasm = wat2wasm(&wat[..]);
+    let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(1, 0),
