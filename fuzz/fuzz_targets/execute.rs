@@ -4,6 +4,7 @@ use libfuzzer_sys::fuzz_target;
 use wasm_smith::ConfiguredModule;
 use wasmi::{core::ValueType, Engine, Linker, Module, Store, Value};
 
+/// The configuration used to produce `wasmi` compatible fuzzing Wasm modules.
 #[derive(Debug, Arbitrary)]
 struct ExecConfig;
 
