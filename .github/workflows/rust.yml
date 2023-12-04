@@ -32,9 +32,9 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
+            ~/target/
+          key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-build-
       - name: Add extra targets
         # Workaround for https://github.com/actions-rs/toolchain/issues/165
         run: |
@@ -84,9 +84,9 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
+            ~/target/
+          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-test-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Test (default features)
@@ -140,9 +140,9 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
+            ~/target/
+          key: ${{ runner.os }}-cargo-doc-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-doc-
       - uses: actions-rs/cargo@v1
         env:
           RUSTDOCFLAGS: "-D warnings"
@@ -184,7 +184,7 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target/
+            ~/target/
           key: ${{ runner.os }}-cargo-udeps-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-udeps-
       - name: Checkout Submodules
@@ -199,16 +199,12 @@ jobs:
           command: udeps
           args: --all-targets
 
-  fuzz:
-    name: Fuzzing
+  fuzz_translate:
+    name: Fuzz (Translation)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
+      - uses: dtolnay/rust-toolchain@nightly
       - name: Set up Cargo cache
         uses: actions/cache@v3
         continue-on-error: false
@@ -218,27 +214,53 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target/
-            fuzz/target/
-          key: ${{ runner.os }}-cargo-fuzz-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-fuzz-
+            ~/target/
+            ~/fuzz/target/
+            ~/fuzz/corpus/translate/
+            ~/fuzz/curpus/translate_metered/
+          key: ${{ runner.os }}-cargo-fuzz-translation-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-fuzz-translation-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Install cargo-fuzz
         run: |
           # Note: We use `|| true` because cargo install returns an error
           #       if cargo-udeps was already installed on the CI runner.
-          cargo install --locked cargo-fuzz || true
-      - name: Fuzz Translate
-        uses: actions-rs/cargo@v1
+          cargo install cargo-fuzz || true
+      - name: Fuzz (Translation)
+        run: cargo fuzz run translate -j 2 --verbose -- -max_total_time=60 # 1 minute of fuzzing
+      - name: Fuzz (Translation) + fuel
+        run: cargo fuzz run translate_metered -j 2 --verbose -- -max_total_time=60 # 1 minute of fuzzing
+
+  fuzz_execute:
+    name: Fuzz (Execution)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+      - uses: dtolnay/rust-toolchain@nightly
+      - name: Set up Cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
         with:
-          command: fuzz
-          args: run translate -j 2 --verbose -- -max_total_time=60 # 1 minute of fuzzing
-      - name: Fuzz Translate (metered)
-        uses: actions-rs/cargo@v1
-        with:
-          command: fuzz
-          args: run translate -j 2 --verbose -- -max_total_time=60 # 1 minute of fuzzing
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            ~/target/
+            ~/fuzz/target/
+            ~/fuzz/corpus/execute/
+          key: ${{ runner.os }}-cargo-fuzz-execution-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-fuzz-execution-
+      - name: Checkout Submodules
+        run: git submodule update --init --recursive
+      - name: Install cargo-fuzz
+        run: |
+          # Note: We use `|| true` because cargo install returns an error
+          #       if cargo-udeps was already installed on the CI runner.
+          cargo install cargo-fuzz || true
+      - name: Fuzz (Execution)
+        run: cargo fuzz run execute -j 2 --verbose -- -max_total_time=120 # 2 minutes of fuzzing
 
   miri:
     name: Miri
@@ -260,7 +282,7 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target/
+            ~/target/
           key: ${{ runner.os }}-cargo-miri-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-miri-
       - name: Miri (--lib)
@@ -294,9 +316,9 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
+            ~/target/
+          key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-clippy-
       - name: Clippy (default features)
         uses: actions-rs/cargo@v1
         with:
@@ -340,7 +362,7 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target/
+            ~/target/
           key: ${{ runner.os }}-cargo-coverage-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-coverage-
       - name: Checkout Submodules
