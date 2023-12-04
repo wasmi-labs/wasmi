@@ -222,6 +222,8 @@ jobs:
           restore-keys: ${{ runner.os }}-cargo-fuzz-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
+      - name: Cargo Info
+        run: cargo --version
       - name: Update Dependencies
         run: cargo update
       - name: Install cargo-fuzz
