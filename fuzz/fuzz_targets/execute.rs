@@ -2,7 +2,7 @@
 use arbitrary::Arbitrary;
 use libfuzzer_sys::fuzz_target;
 use wasm_smith::ConfiguredModule;
-use wasmi::{core::ValueType, Engine, Extern, Linker, Module, Store, StoreLimitsBuilder, Value};
+use wasmi::{core::ValueType, Engine, Extern, Linker, Module, Store, Value};
 
 #[derive(Debug, Arbitrary)]
 struct ExecConfig;
@@ -96,11 +96,7 @@ fuzz_target!(|cfg_module: ConfiguredModule<ExecConfig>| {
     let wasm = smith_module.to_bytes();
     let engine = Engine::default();
     let linker = Linker::new(&engine);
-    let limiter = StoreLimitsBuilder::new()
-        .memory_size(1000 * 0x10000)
-        .build();
-    let mut store = Store::new(&engine, limiter);
-    store.limiter(|lim| lim);
+    let mut store = Store::new(&engine, ());
     let module = Module::new(store.engine(), wasm.as_slice()).unwrap();
     let Ok(preinstance) = linker.instantiate(&mut store, &module) else {
         return;
@@ -110,7 +106,6 @@ fuzz_target!(|cfg_module: ConfiguredModule<ExecConfig>| {
     };
 
     let mut invocations = Vec::new();
-
     let exports = instance.exports(&store);
     for e in exports {
         let name = e.name().to_string();
@@ -143,10 +138,10 @@ fuzz_target!(|cfg_module: ConfiguredModule<ExecConfig>| {
 /// zeroed, positive, negative and NaN values for their respective types.
 fn ty_to_val(ty: &ValueType) -> Value {
     match ty {
-        ValueType::I32 => Self::I32(1),
-        ValueType::I64 => Self::I64(1),
-        ValueType::F32 => Self::F32(1.0.into()),
-        ValueType::F64 => Self::F64(1.0.into()),
+        ValueType::I32 => Value::I32(1),
+        ValueType::I64 => Value::I64(1),
+        ValueType::F32 => Value::F32(1.0.into()),
+        ValueType::F64 => Value::F64(1.0.into()),
         _ => panic!("execution fuzzing does not support reference types, yet"),
     }
 }
