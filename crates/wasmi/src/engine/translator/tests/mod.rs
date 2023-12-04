@@ -4,6 +4,7 @@ mod display_wasm;
 pub mod driver;
 mod op;
 pub mod wasm_type;
+mod regression;
 
 use self::{
     display_wasm::DisplayWasm,
