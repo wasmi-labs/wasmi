@@ -2325,18 +2325,19 @@ impl<'parser> FuncTranslator<'parser> {
     /// Translates a Wasm `reinterpret` instruction.
     fn translate_reinterpret(&mut self, ty: ValueType) -> Result<(), TranslationError> {
         bail_unreachable!(self);
-        match self.alloc.stack.pop() {
-            TypedProvider::Register(reg) => {
-                // Nothing to do in this case so we simply push the popped register back.
-                self.alloc.stack.push_register(reg)?;
-                Ok(())
-            }
-            TypedProvider::Const(value) => {
-                // In case of a constant value we have to adjust for its new type and push it back.
-                self.alloc.stack.push_const(value.reinterpret(ty));
-                Ok(())
-            }
+        if let TypedProvider::Register(_) = self.alloc.stack.peek() {
+            // Nothing to do.
+            //
+            // We try to not manipulate the emulation stack if not needed.
+            return Ok(());
         }
+        // Case: At this point we know that the top-most stack item is a constant value.
+        //       We pop it, change its type and push it back onto the stack.
+        let TypedProvider::Const(value) = self.alloc.stack.pop() else {
+            panic!("the top-most stack item was asserted to be a constant value but a register was found")
+        };
+        self.alloc.stack.push_const(value.reinterpret(ty));
+        Ok(())
     }
 
     /// Translates an unconditional `return` instruction.

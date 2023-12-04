@@ -347,7 +347,7 @@ impl RegisterAlloc {
         let key = Self::reg2key(register);
         self.preservations
             .take_one(key)
-            .expect("missing preservation slot for {register:?}");
+            .unwrap_or_else(|| panic!("missing preservation slot for {register:?}"));
     }
 
     /// Updates the minimum preservation [`Register`] index if needed.
