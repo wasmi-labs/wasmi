@@ -219,6 +219,10 @@ impl ValueStack {
                 return Ok(());
             }
             RegisterSpace::Storage => {
+                // Note: we currently do not call `self.reg_alloc.push_storage()`
+                //       since that API would push always another register on the preservation
+                //       stack instead of trying to bump the amount of already existing
+                //       preservation slots for the same register if possible.
                 self.providers.push_storage(reg);
             }
             RegisterSpace::Local => {
