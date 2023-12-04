@@ -237,11 +237,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly-2023-11-01
-          override: true
+      - uses: dtolnay/rust-toolchain@nightly
       - name: Set up Cargo cache
         uses: actions/cache@v3
         continue-on-error: false
@@ -262,12 +258,9 @@ jobs:
         run: |
           # Note: We use `|| true` because cargo install returns an error
           #       if cargo-udeps was already installed on the CI runner.
-          cargo install --locked cargo-fuzz || true
+          cargo install cargo-fuzz || true
       - name: Fuzz (Execution)
-        uses: actions-rs/cargo@v1
-        with:
-          command: fuzz
-          args: run execute -j 2 --verbose -- -max_total_time=120 # 2 minutes of fuzzing
+        run: cargo fuzz run execute -j 2 --verbose -- -max_total_time=120 # 2 minutes of fuzzing
 
   miri:
     name: Miri
