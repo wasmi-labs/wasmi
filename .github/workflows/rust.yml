@@ -262,6 +262,36 @@ jobs:
       - name: Fuzz (Execution)
         run: cargo fuzz run execute -j 2 --verbose -- -max_total_time=120 # 2 minutes of fuzzing
 
+  fuzz_differential:
+    name: Fuzz (Differential)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+      - uses: dtolnay/rust-toolchain@nightly
+      - name: Set up Cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            ~/target/
+            ~/fuzz/target/
+            ~/fuzz/corpus/execute/
+          key: ${{ runner.os }}-cargo-fuzz-differential-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-fuzz-differential-
+      - name: Checkout Submodules
+        run: git submodule update --init --recursive
+      - name: Install cargo-fuzz
+        run: |
+          # Note: We use `|| true` because cargo install returns an error
+          #       if cargo-udeps was already installed on the CI runner.
+          cargo install cargo-fuzz || true
+      - name: Fuzz (Differential)
+        run: cargo fuzz run differential -j 2 --verbose -- -max_total_time=120 # 2 minutes of fuzzing
+
   miri:
     name: Miri
     runs-on: ubuntu-latest
