@@ -228,9 +228,9 @@ jobs:
           #       if cargo-udeps was already installed on the CI runner.
           cargo install --locked cargo-fuzz || true
       - name: Fuzz (Translation)
-        run: cargo run translate -j 2 --verbose -- -max_total_time=60 # 1 minute of fuzzing
+        run: cargo fuzz run translate -j 2 --verbose -- -max_total_time=60 # 1 minute of fuzzing
       - name: Fuzz (Translation) + fuel
-        run: cargo run translate_metered -j 2 --verbose -- -max_total_time=60 # 1 minute of fuzzing
+        run: cargo fuzz run translate_metered -j 2 --verbose -- -max_total_time=60 # 1 minute of fuzzing
 
   fuzz_execute:
     name: Fuzz (Execution)
