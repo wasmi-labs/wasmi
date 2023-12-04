@@ -220,6 +220,8 @@ jobs:
             ~/.cargo/git/db/
             target/
             fuzz/target/
+            fuzz/corpus/translate/
+            fuzz/curpus/translate_metered/
           key: ${{ runner.os }}-cargo-fuzz-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-fuzz-
       - name: Checkout Submodules
@@ -261,6 +263,7 @@ jobs:
             ~/.cargo/git/db/
             target/
             fuzz/target/
+            fuzz/corpus/execute/
           key: ${{ runner.os }}-cargo-fuzz-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-fuzz-
       - name: Checkout Submodules
