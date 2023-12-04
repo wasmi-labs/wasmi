@@ -121,6 +121,6 @@ fn ty_to_val(ty: &ValueType) -> Value {
         ValueType::I64 => Value::I64(1),
         ValueType::F32 => Value::F32(1.0.into()),
         ValueType::F64 => Value::F64(1.0.into()),
-        _ => panic!("execution fuzzing does not support reference types, yet"),
+        unsupported => panic!("execution fuzzing does not support reference types, yet but found: {unsupported:?}"),
     }
 }
