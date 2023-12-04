@@ -2329,7 +2329,7 @@ impl<'parser> FuncTranslator<'parser> {
             // Nothing to do.
             //
             // We try to not manipulate the emulation stack if not needed.
-            return Ok(())
+            return Ok(());
         }
         // Case: At this point we know that the top-most stack item is a constant value.
         //       We pop it, change its type and push it back onto the stack.
