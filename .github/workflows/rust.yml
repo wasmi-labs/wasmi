@@ -229,16 +229,16 @@ jobs:
           # Note: We use `|| true` because cargo install returns an error
           #       if cargo-udeps was already installed on the CI runner.
           cargo install --locked cargo-fuzz || true
-      - name: Fuzz Translate
+      - name: Fuzz (Translation)
         uses: actions-rs/cargo@v1
         with:
           command: fuzz
           args: run translate -j 2 --verbose -- -max_total_time=60 # 1 minute of fuzzing
-      - name: Fuzz Translate (metered)
+      - name: Fuzz (Translation) + fuel
         uses: actions-rs/cargo@v1
         with:
           command: fuzz
-          args: run translate -j 2 --verbose -- -max_total_time=60 # 1 minute of fuzzing
+          args: run translate_metered -j 2 --verbose -- -max_total_time=60 # 1 minute of fuzzing
 
   fuzz_execute:
     name: Fuzz (Execution)
@@ -270,7 +270,7 @@ jobs:
           # Note: We use `|| true` because cargo install returns an error
           #       if cargo-udeps was already installed on the CI runner.
           cargo install --locked cargo-fuzz || true
-      - name: Fuzz Translate
+      - name: Fuzz (Execution)
         uses: actions-rs/cargo@v1
         with:
           command: fuzz
