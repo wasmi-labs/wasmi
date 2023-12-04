@@ -2,7 +2,7 @@
 use arbitrary::Arbitrary;
 use libfuzzer_sys::fuzz_target;
 use wasm_smith::ConfiguredModule;
-use wasmi::{core::ValueType, Engine, Linker, Module, Store, Value};
+use wasmi::{core::ValueType, StoreLimitsBuilder, Engine, Linker, Module, Store, Value};
 
 /// The configuration used to produce `wasmi` compatible fuzzing Wasm modules.
 #[derive(Debug, Arbitrary)]
@@ -72,7 +72,11 @@ fuzz_target!(|cfg_module: ConfiguredModule<ExecConfig>| {
     let wasm = smith_module.to_bytes();
     let engine = Engine::default();
     let linker = Linker::new(&engine);
-    let mut store = Store::new(&engine, ());
+    let limiter = StoreLimitsBuilder::new()
+        .memory_size(1000 * 0x10000)
+        .build();
+    let mut store = Store::new(&engine, limiter);
+    store.limiter(|lim| lim);
     let module = Module::new(store.engine(), wasm.as_slice()).unwrap();
     let Ok(preinstance) = linker.instantiate(&mut store, &module) else {
         return;
