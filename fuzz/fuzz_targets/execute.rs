@@ -2,7 +2,7 @@
 use arbitrary::Arbitrary;
 use libfuzzer_sys::fuzz_target;
 use wasm_smith::ConfiguredModule;
-use wasmi::{core::ValueType, Engine, Extern, Linker, Module, Store, Value};
+use wasmi::{core::ValueType, Engine, Linker, Module, Store, Value};
 
 #[derive(Debug, Arbitrary)]
 struct ExecConfig;
@@ -61,31 +61,6 @@ impl wasm_smith::Config for ExecConfig {
     }
 }
 
-/// A fuzzed invocation for an exported Wasm function. 
-pub struct Invocation {
-    /// The name of the exported Wasm function.
-    name: Box<str>,
-    /// The parameters expected by the exported Wasm function.
-    params: Box<[Value]>,
-    /// The results buffer used for storing the result of the exported Wasm function.
-    results: Box<[Value]>,
-}
-
-impl Invocation {
-    /// Creates a new [`Invocation`].
-    pub fn new<P, R>(name: impl Into<Box<str>>, params: P, results: R) -> Self
-    where
-        P: IntoIterator<Item = Value>,
-        R: IntoIterator<Item = Value>,
-    {
-        Self {
-            name: name.into(),
-            params: params.into_iter().collect(),
-            results: results.into_iter().collect(),
-        }
-    }
-}
-
 fuzz_target!(|cfg_module: ConfiguredModule<ExecConfig>| {
     let mut smith_module = cfg_module.module;
     // TODO: We could use `wasmi`'s built-in fuel metering instead.
@@ -105,27 +80,25 @@ fuzz_target!(|cfg_module: ConfiguredModule<ExecConfig>| {
         return;
     };
 
-    let mut invocations = Vec::new();
+    let mut funcs = Vec::new();
+    let mut params = Vec::new();
+    let mut results = Vec::new();
+
     let exports = instance.exports(&store);
     for e in exports {
-        let name = e.name().to_string();
         let Some(func) = e.into_func() else {
             // Export is no function which we cannot execute, therefore we ignore it.
             continue;
         };
-        let ty = func.ty(&store);
-        invocations.push(Invocation::new(
-            name,
-            ty.params().iter().map(ty_to_val),
-            ty.results().iter().map(ty_to_val),
-        ));
+        funcs.push(func);
     }
-    for i in &mut invocations {
-        let wasm_fn = instance
-            .get_export(&store, &i.name)
-            .and_then(Extern::into_func)
-            .unwrap();
-        _ = wasm_fn.call(&mut store, &i.params, &mut i.results);
+    for func in &funcs {
+        params.clear();
+        results.clear();
+        let ty = func.ty(&store);
+        params.extend(ty.params().iter().map(ty_to_val));
+        results.extend(ty.results().iter().map(ty_to_val));
+        _ = func.call(&mut store, &params, &mut results);
     }
 });
 
