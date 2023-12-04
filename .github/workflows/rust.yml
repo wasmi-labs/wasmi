@@ -33,8 +33,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
+          key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-build-
       - name: Add extra targets
         # Workaround for https://github.com/actions-rs/toolchain/issues/165
         run: |
@@ -85,8 +85,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
+          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-test-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Test (default features)
@@ -141,8 +141,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
+          key: ${{ runner.os }}-cargo-doc-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-doc-
       - uses: actions-rs/cargo@v1
         env:
           RUSTDOCFLAGS: "-D warnings"
@@ -218,8 +218,8 @@ jobs:
             ~/fuzz/target/
             ~/fuzz/corpus/translate/
             ~/fuzz/curpus/translate_metered/
-          key: ${{ runner.os }}-cargo-fuzz-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-fuzz-
+          key: ${{ runner.os }}-cargo-fuzz-translation-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-fuzz-translation-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Install cargo-fuzz
@@ -250,8 +250,8 @@ jobs:
             ~/target/
             ~/fuzz/target/
             ~/fuzz/corpus/execute/
-          key: ${{ runner.os }}-cargo-fuzz-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-fuzz-
+          key: ${{ runner.os }}-cargo-fuzz-execution-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-fuzz-execution-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Install cargo-fuzz
@@ -317,8 +317,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
+          key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-clippy-
       - name: Clippy (default features)
         uses: actions-rs/cargo@v1
         with:
