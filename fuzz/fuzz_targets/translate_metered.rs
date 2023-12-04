@@ -1,6 +1,6 @@
 #![no_main]
 use libfuzzer_sys::fuzz_target;
-use wasmi::{Engine, Module, Config};
+use wasmi::{Config, Engine, Module};
 
 fuzz_target!(|data: wasm_smith::Module| {
     let wasm = data.to_bytes();
