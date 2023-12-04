@@ -9,8 +9,9 @@ edition = "2021"
 cargo-fuzz = true
 
 [dependencies]
-libfuzzer-sys = "0.4"
-wasm-smith = "0.11"
+libfuzzer-sys = "0.4.7"
+wasm-smith = "=0.13.1"
+arbitrary = { version = "=1.3.2", features = ["derive"] }
 
 [dependencies.wasmi]
 path = "../crates/wasmi"
@@ -28,5 +29,11 @@ doc = false
 [[bin]]
 name = "translate_metered"
 path = "fuzz_targets/translate_metered.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "execute"
+path = "fuzz_targets/execute.rs"
 test = false
 doc = false
