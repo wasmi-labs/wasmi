@@ -796,7 +796,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 //
                 // Note: This does not require any preservation since it won't change
                 //       the value of `local $n`.
-                return Ok(())
+                return Ok(());
             }
         }
         let preserved = self.alloc.stack.preserve_locals(local_index)?;
