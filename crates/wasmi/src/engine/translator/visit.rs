@@ -790,6 +790,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         bail_unreachable!(self);
         let value = self.alloc.stack.pop();
         let local = Register::try_from(local_index)?;
+        if let TypedProvider::Register(value) = value {
+            if value == local {
+                // Case: `(local.set $n (local.get $n))` is a no-op so we can ignore it.
+                //
+                // Note: This does not require any preservation since it won't change
+                //       the value of `local $n`.
+                return Ok(());
+            }
+        }
         let preserved = self.alloc.stack.preserve_locals(local_index)?;
         let fuel_info = self.fuel_info();
         self.alloc.instr_encoder.encode_local_set(
