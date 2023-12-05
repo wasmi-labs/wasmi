@@ -180,20 +180,36 @@ impl RegisterSpanIter {
         min <= register && register <= max
     }
 
-    /// Returns `true` if both `self` and `other` have overlapping [`Register`].
-    pub fn is_overlapping(&self, other: &Self) -> bool {
-        if self.is_empty() || other.is_empty() {
+    /// Returns `true` if `copy_span results <- values` has overlapping copies.
+    ///
+    /// # Examples
+    ///
+    /// - `[ ]`: empty never overlaps
+    /// - `[ 1 <- 0 ]`: single element never overlaps
+    /// - `[ 0 <- 1, 1 <- 2, 2 <- 3 ]``: no overlap
+    /// - `[ 1 <- 0, 2 <- 1 ]`: overlaps!
+    pub fn has_overlapping_copies(results: Self, values: Self) -> bool {
+        assert_eq!(
+            results.len_as_u16(),
+            values.len_as_u16(),
+            "cannot copy between different sized register spans"
+        );
+        let len = results.len_as_u16();
+        if len <= 1 {
+            // Empty spans or single-element spans can never overlap.
             return false;
         }
-        let self_min = self.min_register();
-        let other_min = other.min_register();
-        let self_max = self.max_register();
-        let other_max = other.max_register();
-        if self_min < other_min {
-            other_min <= self_max
-        } else {
-            self_min <= other_max
+        let first_value = values.span().head();
+        let first_result = results.span().head();
+        if first_value >= first_result {
+            // This case can never result in overlapping copies.
+            return false;
         }
+        let mut values = values;
+        let last_value = values
+            .next_back()
+            .expect("span is non empty and thus must return");
+        last_value >= first_result
     }
 }
 
