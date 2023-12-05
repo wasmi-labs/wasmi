@@ -462,21 +462,7 @@ impl InstrEncoder {
     /// - `[ 0 <- 1, 1 <- 2, 2 <- 3 ]``: no overlap
     /// - `[ 1 <- 0, 2 <- 1 ]`: overlaps!
     fn has_overlapping_copy_spans(results: RegisterSpan, values: RegisterSpan, len: usize) -> bool {
-        if len <= 1 {
-            // Empty spans or single-element spans can never overlap.
-            return false;
-        }
-        let first_value = values.head();
-        let first_result = results.head();
-        if first_value >= first_result {
-            // This case can never result in overlapping copies.
-            return false;
-        }
-        let last_value = values
-            .iter(len)
-            .next_back()
-            .expect("span is non empty and thus must return");
-        last_value >= first_result
+        RegisterSpanIter::has_overlapping_copies(results.iter(len), values.iter(len))
     }
 
     /// Returns `true` if the `copy results <- values` instruction has overlaps.
