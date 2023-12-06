@@ -51,11 +51,21 @@ RESULT=$(for d in */; do
 
             MASTER_TIME=$(jq .slope.point_estimate ${d}master/estimates.json)
             PR_TIME=$(jq .slope.point_estimate ${d}new/estimates.json)
+            if [[ $MASTER_TIME='null' || $PR_TIME='null' ]]
+              then
+              MASTER_TIME=$(jq .mean.point_estimate ${d}master/estimates.json)
+              PR_TIME=$(jq .mean.point_estimate ${d}new/estimates.json)
+            fi
             PERF_CHANGE=$(get_performance_change_status "$(grep -A 3 -e $(echo "${d::-1}" | tr "_" ".") ../bench-pr)")
             DIFF=$(jq .mean.point_estimate ${d}change/estimates.json)
 
             WASM_MASTER_TIME=$(jq .slope.point_estimate ../wasmtime-criterion/${d}master-wasm/estimates.json)
             WASM_PR_TIME=$(jq .slope.point_estimate ../wasmtime-criterion/${d}new/estimates.json)
+            if [[ WASM_MASTER_TIME='null' || WASM_PR_TIME='null' ]]
+              then
+              WASM_MASTER_TIME=$(jq .mean.point_estimate ../wasmtime-criterion/${d}master-wasm/estimates.json)
+              WASM_PR_TIME=$(jq .mean.point_estimate ../wasmtime-criterion/${d}new/estimates.json)
+            fi
             WASM_PERF_CHANGE=$(get_performance_change_status "$(grep -A 3 -e $(echo "${d::-1}" | tr "_" ".") ../wasmtime-pr)")
             WASM_DIFF=$(jq .mean.point_estimate ../wasmtime-criterion/${d}change/estimates.json)
 
