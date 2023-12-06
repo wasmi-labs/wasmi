@@ -16,7 +16,7 @@ use wasmi_core::{Pages, ValueType, F32, F64};
 criterion_group!(
     name = bench_translate;
     config = Criterion::default()
-        .sample_size(10)
+        .sample_size(5)
         .measurement_time(Duration::from_millis(2000))
         .warm_up_time(Duration::from_millis(1000));
     targets =
