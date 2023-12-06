@@ -17,7 +17,7 @@ criterion_group!(
     name = bench_translate;
     config = Criterion::default()
         .sample_size(10)
-        .measurement_time(Duration::from_millis(4000))
+        .measurement_time(Duration::from_millis(6000))
         .warm_up_time(Duration::from_millis(1000));
     targets =
         bench_translate_wasm_kernel,
