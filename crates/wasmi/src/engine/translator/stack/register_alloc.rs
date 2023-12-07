@@ -164,7 +164,7 @@ impl RegisterAlloc {
     }
 
     /// Returns the minimum index of any dynamically allocated [`Register`].
-    pub fn min_dynamic(&self) -> i16 {
+    fn min_dynamic(&self) -> i16 {
         self.len_locals() as i16
     }
 
@@ -274,7 +274,7 @@ impl RegisterAlloc {
     ///
     /// - If the dynamic register allocation stack is empty.
     /// - If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
-    pub fn pop_dynamic(&mut self) {
+    fn pop_dynamic(&mut self) {
         self.assert_alloc_phase();
         assert_ne!(
             self.next_dynamic,
@@ -350,7 +350,7 @@ impl RegisterAlloc {
     ///
     /// - If the dynamic register allocation stack is empty.
     /// - If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
-    pub fn pop_preserved(&mut self, register: Register) {
+    fn pop_preserved(&mut self, register: Register) {
         self.assert_alloc_phase();
         let key = Self::reg2key(register);
         self.preservations
@@ -396,7 +396,7 @@ impl RegisterAlloc {
     }
 
     /// Returns `true` if the [`Register`] is allocated in the [`RegisterSpace::Preserve`].
-    pub fn is_preserved(&self, reg: Register) -> bool {
+    fn is_preserved(&self, reg: Register) -> bool {
         self.min_preserve < reg.to_i16()
     }
 
