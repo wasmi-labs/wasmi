@@ -4,13 +4,12 @@ use crate::engine::{
     translator::TranslationErrorInner,
     TranslationError,
 };
-use multi_stash::Key;
 use alloc::collections::BTreeSet;
 use core::{
     cmp::{max, min},
     num::NonZeroUsize,
 };
-use multi_stash::{Key as StashKey, MultiStash};
+use multi_stash::{Key, Key as StashKey, MultiStash};
 
 #[cfg(doc)]
 use crate::engine::translator::InstrEncoder;
@@ -329,7 +328,12 @@ impl RegisterAlloc {
         };
         self.assert_alloc_phase();
         for &key in &self.removed_preserved {
-            if let Some((1, _)) = self.preservations.get(key) {
+            let entry = self.preservations.get(key);
+            debug_assert!(
+                !matches!(entry, Some((0, _))),
+                "found preserved register allocation entry with invalid 0 amount"
+            );
+            if let Some((1, _)) = entry {
                 // Case: we only have one preservation left which
                 //       indicates that all preserved registers have
                 //       been used, thus we can remove this entry
