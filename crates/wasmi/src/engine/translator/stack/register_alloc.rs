@@ -304,11 +304,11 @@ impl RegisterAlloc {
         pop_impl(self, n).expect("dynamic register underflow")
     }
 
-    /// Allocates a new [`Register`] on the storage allocation stack and returns it.
+    /// Allocates a new [`Register`] on the preservation stack and returns it.
     ///
     /// # Note
     ///
-    /// Registers allocated to the storage allocation space generally need
+    /// Registers allocated to the preservation space generally need
     /// to be readjusted later on in order to have a consecutive register space.
     ///
     /// # Errors
