@@ -332,6 +332,7 @@ impl RegisterAlloc {
     ///
     /// If `register` is not a preservation [`Register`].
     pub fn bump_storage(&mut self, register: Register) {
+        debug_assert!(matches!(self.register_space(register), RegisterSpace::Storage));
         let key = Self::reg2key(register);
         self.preservations.bump(key, 1);
     }
