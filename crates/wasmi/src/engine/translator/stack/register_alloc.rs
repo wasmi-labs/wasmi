@@ -341,7 +341,12 @@ impl RegisterAlloc {
             RegisterSpace::Preserve
         ));
         let key = Self::reg2key(register);
-        self.preservations.bump(key, 1);
+        let old_amount = self.preservations.bump(key, 1);
+        debug_assert!(
+            // Note: We check that the returned value is `Some` to guard
+            //       against unexpected vacant entries at the `register` slot.
+            old_amount.is_some()
+        );
     }
 
     /// Pops the [`Register`] from the preservation stack.
