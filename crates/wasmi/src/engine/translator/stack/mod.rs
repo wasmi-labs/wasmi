@@ -223,6 +223,7 @@ impl ValueStack {
                 //       since that API would push always another register on the preservation
                 //       stack instead of trying to bump the amount of already existing
                 //       preservation slots for the same register if possible.
+                self.reg_alloc.bump_preserved(reg);
                 self.providers.push_preserved(reg);
             }
             RegisterSpace::Local => {

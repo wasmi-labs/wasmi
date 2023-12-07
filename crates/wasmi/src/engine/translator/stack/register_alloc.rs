@@ -4,6 +4,8 @@ use crate::engine::{
     translator::TranslationErrorInner,
     TranslationError,
 };
+use multi_stash::Key;
+use alloc::collections::BTreeSet;
 use core::{
     cmp::{max, min},
     num::NonZeroUsize,
@@ -59,6 +61,8 @@ use crate::engine::translator::InstrEncoder;
 pub struct RegisterAlloc {
     /// The preservation stack.
     preservations: MultiStash<()>,
+    /// Keys that might have been fully removed from the `preservations` stack.
+    removed_preserved: BTreeSet<Key>,
     /// The current phase of the register allocation procedure.
     phase: AllocPhase,
     /// The combined number of registered function inputs and local variables.
@@ -319,12 +323,23 @@ impl RegisterAlloc {
     ///
     /// If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
     pub fn push_preserved(&mut self) -> Result<Register, TranslationError> {
-        const NZ_ONE: NonZeroUsize = match NonZeroUsize::new(1) {
+        const NZ_TWO: NonZeroUsize = match NonZeroUsize::new(2) {
             Some(value) => value,
             None => unreachable!(),
         };
         self.assert_alloc_phase();
-        let key = self.preservations.put(NZ_ONE, ());
+        for &key in &self.removed_preserved {
+            if let Some((1, _)) = self.preservations.get(key) {
+                // Case: we only have one preservation left which
+                //       indicates that all preserved registers have
+                //       been used, thus we can remove this entry
+                //       which makes it available for allocation again.
+                self.preservations.take_all(key);
+            }
+        }
+        // Now we can clear the removed preserved registers.
+        self.removed_preserved.clear();
+        let key = self.preservations.put(NZ_TWO, ());
         let reg = Self::key2reg(key);
         self.update_min_preserved(reg.prev())?;
         Ok(reg)
@@ -358,6 +373,7 @@ impl RegisterAlloc {
     fn pop_preserved(&mut self, register: Register) {
         self.assert_alloc_phase();
         let key = Self::reg2key(register);
+        self.removed_preserved.insert(key);
         self.preservations
             .take_one(key)
             .unwrap_or_else(|| panic!("missing preservation slot for {register:?}"));
