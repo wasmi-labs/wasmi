@@ -1,4 +1,5 @@
 use super::*;
+use crate::core::TrapCode;
 use crate::engine::{
     bytecode::{BranchOffset, BranchOffset16, RegisterSpan},
     CompiledFunc,
@@ -69,6 +70,83 @@ fn fuzz_regression_3() {
             Instruction::branch_table(Register::from_i16(5), 2),
             Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter_u16(3)),
             Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter_u16(3)),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_4() {
+    let wat = include_str!("fuzz_4.wat");
+    let wasm = wat2wasm(wat);
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::copy(2, 1),
+            Instruction::copy(1, 0),
+            Instruction::branch_i32_eq_imm(Register::from_i16(1), 0, BranchOffset16::from(2)),
+            Instruction::Trap(TrapCode::UnreachableCodeReached),
+            Instruction::Trap(TrapCode::UnreachableCodeReached),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_5() {
+    let wat = include_str!("fuzz_5.wat");
+    let wasm = wat2wasm(wat);
+    _ = wasmparser::validate(&wasm[..]).unwrap();
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            // TODO: debugging
+            Instruction::Return,
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_6() {
+    let wat = include_str!("fuzz_6.wat");
+    let wasm = wat2wasm(wat);
+    _ = wasmparser::validate(&wasm[..]).unwrap();
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            // TODO: debugging
+            Instruction::Return,
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_7() {
+    let wat = include_str!("fuzz_7.wat");
+    let wasm = wat2wasm(wat);
+    _ = wasmparser::validate(&wasm[..]).unwrap();
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::copy(1, 0),
+            Instruction::copy_imm32(Register::from_i16(0), 1),
+            Instruction::return_reg(1),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_8() {
+    let wat = include_str!("fuzz_8.wat");
+    let wasm = wat2wasm(wat);
+    _ = wasmparser::validate(&wasm[..]).unwrap();
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::copy(4, 1),
+            Instruction::copy_imm32(Register::from_i16(1), 10),
+            Instruction::copy(3, 0),
+            Instruction::copy_imm32(Register::from_i16(0), 20),
+            Instruction::copy(2, 4),
+            Instruction::return_reg2(3, 2),
         ])
         .run()
 }
