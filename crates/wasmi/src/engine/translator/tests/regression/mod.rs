@@ -152,3 +152,26 @@ fn fuzz_regression_8() {
         ])
         .run()
 }
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_9() {
+    let wat = include_str!("fuzz_9.wat");
+    let wasm = wat2wasm(wat);
+    _ = wasmparser::validate(&wasm[..]).unwrap();
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::copy(6, 1),
+            Instruction::copy_imm32(Register::from_i16(1), 10),
+            Instruction::copy(5, 0),
+            Instruction::copy_imm32(Register::from_i16(0), 20),
+            Instruction::branch_i32_eq_imm(Register::from_i16(0), 0, BranchOffset16::from(5)),
+            Instruction::i32_add(Register::from_i16(3), Register::from_i16(5), Register::from_i16(6)),
+            Instruction::copy(4, 2),
+            Instruction::copy_imm32(Register::from_i16(2), 30),
+            Instruction::branch(BranchOffset::from(2)),
+            Instruction::i32_mul(Register::from_i16(3), Register::from_i16(5), Register::from_i16(6)),
+            Instruction::return_reg(3),
+        ])
+        .run()
+}

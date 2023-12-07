@@ -241,6 +241,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 self.alloc
                     .control_stack
                     .push_else_providers(self.alloc.buffer.iter().copied())?;
+                self.alloc
+                    .buffer
+                    .iter()
+                    .copied()
+                    .filter_map(TypedProvider::into_register)
+                    .for_each(|register| self.alloc.stack.inc_register_usage(register));
                 // Create the `else` label and the conditional branch to `else`.
                 let else_label = self.alloc.instr_encoder.new_label();
                 self.alloc.instr_encoder.encode_branch_eqz(
@@ -318,6 +324,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 .trunc(frame.block_height().into_u16() as usize);
             for provider in self.alloc.control_stack.pop_else_providers() {
                 self.alloc.stack.push_provider(provider)?;
+                if let TypedProvider::Register(register) = provider {
+                    self.alloc.stack.dec_register_usage(register);
+                }
             }
         }
         match (frame.is_then_reachable(), frame.is_else_reachable()) {

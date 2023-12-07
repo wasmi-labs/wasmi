@@ -391,4 +391,24 @@ impl ValueStack {
     pub fn get_register_space(&self, register: Register) -> RegisterSpace {
         self.reg_alloc.register_space(register)
     }
+
+    /// Increase preservation [`Register`] usage.
+    /// 
+    /// # Note
+    /// 
+    /// - This is mainly used to extend the lifetime of `else` providers on the stack.
+    /// - This does nothing if `register` is not a preservation [`Register`].
+    pub fn inc_register_usage(&mut self, register: Register) {
+        self.reg_alloc.inc_register_usage(register)
+    }
+
+    /// Decrease preservation [`Register`] usage.
+    /// 
+    /// # Note
+    /// 
+    /// - This is mainly used to shorten the lifetime of `else` providers on the stack.
+    /// - This does nothing if `register` is not a preservation [`Register`].
+    pub fn dec_register_usage(&mut self, register: Register) {
+        self.reg_alloc.dec_register_usage(register)
+    }
 }

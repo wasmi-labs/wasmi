@@ -449,4 +449,30 @@ impl RegisterAlloc {
         }
         Register::from_i16(register.to_i16() - self.defrag_offset)
     }
+
+    /// Increase preservation [`Register`] usage.
+    /// 
+    /// # Note
+    /// 
+    /// - This is mainly used to extend the lifetime of `else` providers on the stack.
+    /// - This does nothing if `register` is not a preservation [`Register`].
+    pub fn inc_register_usage(&mut self, register: Register) {
+        if !self.is_preserved(register) {
+            return;
+        }
+        self.bump_preserved(register)
+    }
+
+    /// Decrease preservation [`Register`] usage.
+    /// 
+    /// # Note
+    /// 
+    /// - This is mainly used to shorten the lifetime of `else` providers on the stack.
+    /// - This does nothing if `register` is not a preservation [`Register`].
+    pub fn dec_register_usage(&mut self, register: Register) {
+        if !self.is_preserved(register) {
+            return;
+        }
+        self.pop_preserved(register)
+    }
 }
