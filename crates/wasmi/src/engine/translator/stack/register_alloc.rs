@@ -61,12 +61,12 @@ pub struct RegisterAlloc {
     /// The preservation stack.
     preservations: MultiStash<()>,
     /// Keys that might have been fully removed from the `preservations` stack.
-    /// 
+    ///
     /// When popping a preserved register we store its key into this set.
     /// The next time allocating a preserved register we first check if any
     /// of the preserved register allocations in this set are now fully unused
     /// and then remove them. We achieve this by having a starting amount of 2.
-    /// 
+    ///
     /// This allows to extend the lifetimes of preserved registers so that we
     /// can re-push them in case we still need them until the next allocation.
     removed_preserved: BTreeSet<Key>,
