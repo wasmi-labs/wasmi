@@ -64,11 +64,11 @@ impl ProviderStack {
             debug_assert!(matches!(provider, TaggedProvider::Local(_)));
             let preserved_register = match preserved {
                 Some(register) => {
-                    reg_alloc.bump_storage(register);
+                    reg_alloc.bump_preserved(register);
                     register
                 }
                 None => {
-                    let register = reg_alloc.push_storage()?;
+                    let register = reg_alloc.push_preserved()?;
                     preserved = Some(register);
                     register
                 }

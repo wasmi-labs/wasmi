@@ -218,7 +218,7 @@ impl ValueStack {
                 self.providers.push_dynamic(reg);
                 return Ok(());
             }
-            RegisterSpace::Storage => {
+            RegisterSpace::Preserve => {
                 // Note: we currently do not call `self.reg_alloc.push_storage()`
                 //       since that API would push always another register on the preservation
                 //       stack instead of trying to bump the amount of already existing
