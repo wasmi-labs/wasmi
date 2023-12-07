@@ -241,11 +241,11 @@ impl ValueStack {
     ///
     /// If too many registers have been registered.
     pub fn push_local(&mut self, local_index: u32) -> Result<Register, TranslationError> {
-        let index = i16::try_from(local_index)
+        let reg = i16::try_from(local_index)
             .ok()
-            .filter(|&value| value as u16 <= self.reg_alloc.len_locals())
+            .map(Register::from_i16)
+            .filter(|reg| self.reg_alloc.is_local(*reg))
             .ok_or_else(|| TranslationError::new(TranslationErrorInner::RegisterOutOfBounds))?;
-        let reg = Register::from_i16(index);
         self.providers.push_local(reg);
         Ok(reg)
     }
