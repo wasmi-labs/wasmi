@@ -1,8 +1,10 @@
 use super::*;
-use crate::core::TrapCode;
-use crate::engine::{
-    bytecode::{BranchOffset, BranchOffset16, RegisterSpan},
-    CompiledFunc,
+use crate::{
+    core::TrapCode,
+    engine::{
+        bytecode::{BranchOffset, BranchOffset16, RegisterSpan},
+        CompiledFunc,
+    },
 };
 
 #[test]

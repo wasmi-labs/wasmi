@@ -49,7 +49,7 @@ impl From<TaggedProvider> for TypedProvider {
         match provider {
             TaggedProvider::Local(register)
             | TaggedProvider::Dynamic(register)
-            | TaggedProvider::Storage(register)
+            | TaggedProvider::Preserved(register)
             | TaggedProvider::ConstLocal(register) => Self::Register(register),
             TaggedProvider::ConstValue(value) => Self::Const(value),
         }

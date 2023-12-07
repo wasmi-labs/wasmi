@@ -135,7 +135,7 @@ impl RegisterAlloc {
                 self.pop_dynamic();
                 TypedProvider::Register(reg)
             }
-            TaggedProvider::Storage(reg) => {
+            TaggedProvider::Preserved(reg) => {
                 self.pop_preserved(reg);
                 TypedProvider::Register(reg)
             }
@@ -336,7 +336,10 @@ impl RegisterAlloc {
     ///
     /// If `register` is not a preservation [`Register`].
     pub fn bump_preserved(&mut self, register: Register) {
-        debug_assert!(matches!(self.register_space(register), RegisterSpace::Preserve));
+        debug_assert!(matches!(
+            self.register_space(register),
+            RegisterSpace::Preserve
+        ));
         let key = Self::reg2key(register);
         self.preservations.bump(key, 1);
     }
@@ -392,7 +395,7 @@ impl RegisterAlloc {
         !reg.is_const() && reg.to_i16() < self.min_dynamic()
     }
 
-    /// Returns `true` if the [`Register`] is allocated in the [`RegisterSpace::Storage`].
+    /// Returns `true` if the [`Register`] is allocated in the [`RegisterSpace::Preserve`].
     pub fn is_preserved(&self, reg: Register) -> bool {
         self.min_preserve < reg.to_i16()
     }

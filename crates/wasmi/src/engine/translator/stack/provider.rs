@@ -19,8 +19,8 @@ pub enum TaggedProvider {
     Local(Register),
     /// A register referring to a dynamically allocated register.
     Dynamic(Register),
-    /// A register referring to a storage allocated register.
-    Storage(Register),
+    /// A register referring to a preservation allocated register.
+    Preserved(Register),
     /// An untyped constant value.
     ConstValue(TypedValue),
 }
@@ -73,7 +73,7 @@ impl ProviderStack {
                     register
                 }
             };
-            *provider = TaggedProvider::Storage(preserved_register);
+            *provider = TaggedProvider::Preserved(preserved_register);
         }
         Ok(preserved)
     }
@@ -115,7 +115,7 @@ impl ProviderStack {
     /// Pushes a storage allocated [`Register`] to the [`ProviderStack`].
     pub fn push_storage(&mut self, reg: Register) {
         debug_assert!(!reg.is_const());
-        self.push(TaggedProvider::Storage(reg));
+        self.push(TaggedProvider::Preserved(reg));
     }
 
     /// Pushes a [`Register`] to the [`ProviderStack`] referring to a function parameter or local variable.
