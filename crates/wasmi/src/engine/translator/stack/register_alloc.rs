@@ -319,8 +319,12 @@ impl RegisterAlloc {
     ///
     /// If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
     pub fn push_storage(&mut self) -> Result<Register, TranslationError> {
+        const NZ_ONE: NonZeroUsize = match NonZeroUsize::new(1) {
+            Some(value) => value,
+            None => unreachable!(),
+        };
         self.assert_alloc_phase();
-        let key = self.preservations.put(NonZeroUsize::new(1).unwrap(), ());
+        let key = self.preservations.put(NZ_ONE, ());
         let reg = Self::key2reg(key);
         self.update_min_storage(reg.prev())?;
         Ok(reg)
