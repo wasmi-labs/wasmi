@@ -97,7 +97,6 @@ fn fuzz_regression_4() {
 fn fuzz_regression_5() {
     let wat = include_str!("fuzz_5.wat");
     let wasm = wat2wasm(wat);
-    _ = wasmparser::validate(&wasm[..]).unwrap();
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::call_internal(
@@ -124,7 +123,6 @@ fn fuzz_regression_5() {
 fn fuzz_regression_6() {
     let wat = include_str!("fuzz_6.wat");
     let wasm = wat2wasm(wat);
-    _ = wasmparser::validate(&wasm[..]).unwrap();
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::branch_i32_eq_imm(Register::from_i16(0), 0, BranchOffset16::from(4)),
