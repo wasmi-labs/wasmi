@@ -38,6 +38,7 @@ pub(crate) use self::{
 };
 use crate::{
     engine::{CompiledFunc, DedupFuncType},
+    module::error::UnsupportedFeature,
     Engine,
     Error,
     ExternType,
@@ -48,6 +49,7 @@ use crate::{
 };
 use alloc::{boxed::Box, collections::BTreeMap, sync::Arc};
 use core::{iter, slice::Iter as SliceIter};
+use wasmparser::{FuncValidatorAllocations, Parser, ValidPayload, Validator};
 
 /// A parsed and validated WebAssembly module.
 #[derive(Debug)]
@@ -185,6 +187,56 @@ impl Module {
     /// Returns the [`Engine`] used during creation of the [`Module`].
     pub fn engine(&self) -> &Engine {
         &self.engine
+    }
+
+    /// Validates `wasm` as a WebAssembly binary given the configuration (via [`Config`]) in `engine`.
+    ///
+    /// This function performs Wasm validation of the binary input WebAssembly module and
+    /// returns either `Ok`` or `Err`` depending on the results of the validation.
+    /// The [`Config`] of the `engine` is used for Wasm validation which indicates which WebAssembly
+    /// features are valid and invalid for the validation.
+    ///
+    /// # Note
+    ///
+    /// - The input `wasm` must be in binary form, the text format is not accepted by this function.
+    /// - This will only validate the `wasm` but not try to translate it. Therefore `Module::new`
+    ///   might still fail if translation of the Wasm binary input fails to translate via the `wasmi`
+    ///   [`Engine`].
+    /// - Validation automatically happens as part of [`Module::new`].
+    ///
+    /// # Errors
+    ///
+    /// If Wasm validation for `wasm` fails for the given [`Config`] provided via `engine`.
+    ///
+    /// [`Config`]: crate::Config
+    pub fn validate(&self, engine: &Engine, wasm: &[u8]) -> Result<(), Error> {
+        let mut validator = Validator::new_with_features(engine.config().wasm_features());
+        let mut functions = Vec::new();
+        for payload in Parser::new(0).parse_all(wasm) {
+            let payload = payload.map_err(ModuleError::from)?;
+            if let ValidPayload::Func(a, b) =
+                validator.payload(&payload).map_err(ModuleError::from)?
+            {
+                functions.push((a, b));
+            }
+            if let wasmparser::Payload::Version {
+                encoding: wasmparser::Encoding::Component,
+                ..
+            } = &payload
+            {
+                return Err(Error::from(ModuleError::from(
+                    UnsupportedFeature::ComponentModel,
+                )));
+            }
+        }
+        for (func_validator, func_body) in functions {
+            // TODO: we might be able to validate function bodies in parallel.
+            func_validator
+                .into_validator(FuncValidatorAllocations::default())
+                .validate(&func_body)
+                .map_err(ModuleError::from)?;
+        }
+        Ok(())
     }
 
     /// Creates a new [`Module`] from the [`ModuleBuilder`].
