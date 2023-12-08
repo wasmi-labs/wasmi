@@ -131,11 +131,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
+      - uses: dtolnay/rust-toolchain@nightly
       - name: Set up Cargo cache
         uses: actions/cache@v3
         continue-on-error: false
@@ -155,10 +151,8 @@ jobs:
           # Note: We use `|| true` because cargo install returns an error
           #       if cargo-udeps was already installed on the CI runner.
           cargo install --locked cargo-udeps || true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: udeps
-          args: --all-targets
+      - name: Check uDeps
+        run: cargo udeps --all-targets
 
   fuzz_translate:
     name: Fuzz (Translation)
