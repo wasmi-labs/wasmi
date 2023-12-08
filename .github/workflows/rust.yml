@@ -117,15 +117,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: audit
-          args: ""
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo-audit
+        run: |
+          # Note: We use `|| true` because cargo install returns an error
+          #       if cargo-audit was already installed on the CI runner.
+          cargo install cargo-audit || true
+      - name: Check Audit
+        run: cargo audit
 
   udeps:
     name: uDeps
