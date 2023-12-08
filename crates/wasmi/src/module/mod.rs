@@ -211,13 +211,15 @@ impl Module {
     /// [`Config`]: crate::Config
     pub fn validate(&self, engine: &Engine, wasm: &[u8]) -> Result<(), Error> {
         let mut validator = Validator::new_with_features(engine.config().wasm_features());
-        let mut functions = Vec::new();
         for payload in Parser::new(0).parse_all(wasm) {
             let payload = payload.map_err(ModuleError::from)?;
-            if let ValidPayload::Func(a, b) =
+            if let ValidPayload::Func(func_to_validate, func_body) =
                 validator.payload(&payload).map_err(ModuleError::from)?
             {
-                functions.push((a, b));
+                func_to_validate
+                    .into_validator(FuncValidatorAllocations::default())
+                    .validate(&func_body)
+                    .map_err(ModuleError::from)?;
             }
             if let wasmparser::Payload::Version {
                 encoding: wasmparser::Encoding::Component,
@@ -228,13 +230,6 @@ impl Module {
                     UnsupportedFeature::ComponentModel,
                 )));
             }
-        }
-        for (func_validator, func_body) in functions {
-            // TODO: we might be able to validate function bodies in parallel.
-            func_validator
-                .into_validator(FuncValidatorAllocations::default())
-                .validate(&func_body)
-                .map_err(ModuleError::from)?;
         }
         Ok(())
     }
