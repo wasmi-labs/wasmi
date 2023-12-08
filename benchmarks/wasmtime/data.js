@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1701875989555,
+  "lastUpdate": 1702031666453,
   "repoUrl": "https://github.com/paritytech/wasmi",
   "entries": {
     "Wasmi criterion wasmtime": [
@@ -12773,6 +12773,366 @@ window.BENCHMARK_DATA = {
             "name": "overhead/call/untyped/16",
             "value": 3914803,
             "range": "± 6616",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "robin.freyler@gmail.com",
+            "name": "Robin Freyler",
+            "username": "Robbepop"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "336bb11940677c5a7fd3e5968c06b73b217d4c0b",
+          "message": "Fix a bunch of register-machine `wasmi` translation bugs (#838)\n\n* add failing translation tests\r\n\r\n* add debug_assert\r\n\r\n* remove NonZeroUsize runtime check\r\n\r\n* improve docs\r\n\r\n* fix naming of preservation registers and space\r\n\r\nPreviously we called this the \"storage\" space but now we renamed all occurrences to \"preservation\". This should improve code readability.\r\n\r\n* more renamings from storage to preserve\r\n\r\n* make some methods private if possible\r\n\r\n* cleanup push_local method\r\n\r\n* add debug_assert to bump_preserved\r\n\r\n* rename storage -> preserve\r\n\r\n* improve lifetime tracking of preserved registers\r\n\r\nThe new systems starts preserved register amounts at 2 instead of 1. This prevents removal of the slot when popping it from the preservation stack. In order to properly recycle preservation registers again, we now check for all previously removed preservation registers if they are truly removed (amount = 1) and remove them before allocating a new preservation register.\r\n\r\n* add debug_assert to push_preserved\r\n\r\n* add dev docs for new semantics\r\n\r\n* add else provider regression test and fix bug\r\n\r\n* apply rustfmt\r\n\r\n* remove unneeded validation checks\r\n\r\n* add dev comment\r\n\r\n* add missing call to dec_register_usage\r\n\r\n* fix intra doc link\r\n\r\n* apply rustfmt\r\n\r\n* add another if test with missing else\r\n\r\n* simplify fuzz_6.wat test case\r\n\r\n* finalize testcases 5 and 6\r\n\r\n* fix test cases 5 and 6",
+          "timestamp": "2023-12-08T11:34:07+01:00",
+          "tree_id": "3db817ad649d2cc82224428e51549708b38c5812",
+          "url": "https://github.com/paritytech/wasmi/commit/336bb11940677c5a7fd3e5968c06b73b217d4c0b"
+        },
+        "date": 1702031666434,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "translate/wasm_kernel/checked/default",
+            "value": 8702552,
+            "range": "± 19563",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/checked/fuel",
+            "value": 9070012,
+            "range": "± 18033",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/unchecked/default",
+            "value": 6833543,
+            "range": "± 8510",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/unchecked/fuel",
+            "value": 7170733,
+            "range": "± 21873",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/checked/default",
+            "value": 154992040,
+            "range": "± 886314",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/checked/fuel",
+            "value": 161185610,
+            "range": "± 567838",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/unchecked/default",
+            "value": 120337774,
+            "range": "± 230709",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/unchecked/fuel",
+            "value": 126189338,
+            "range": "± 178647",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/checked/default",
+            "value": 6421915,
+            "range": "± 25247",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/checked/fuel",
+            "value": 6732475,
+            "range": "± 23591",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/unchecked/default",
+            "value": 5101307,
+            "range": "± 45783",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/unchecked/fuel",
+            "value": 5349999,
+            "range": "± 21123",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/checked/default",
+            "value": 2456532,
+            "range": "± 4852",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/checked/fuel",
+            "value": 2594706,
+            "range": "± 16124",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/unchecked/default",
+            "value": 1954238,
+            "range": "± 9462",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/unchecked/fuel",
+            "value": 2070309,
+            "range": "± 5007",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/checked/default",
+            "value": 228930,
+            "range": "± 657",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/checked/fuel",
+            "value": 240103,
+            "range": "± 365",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/unchecked/default",
+            "value": 184796,
+            "range": "± 382",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/unchecked/fuel",
+            "value": 191384,
+            "range": "± 495",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/checked/default",
+            "value": 331519,
+            "range": "± 854",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/checked/fuel",
+            "value": 347649,
+            "range": "± 368",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/unchecked/default",
+            "value": 263233,
+            "range": "± 348",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/unchecked/fuel",
+            "value": 274105,
+            "range": "± 1003",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/checked/default",
+            "value": 476098,
+            "range": "± 2134",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/checked/fuel",
+            "value": 504555,
+            "range": "± 959",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/unchecked/default",
+            "value": 384812,
+            "range": "± 1446",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/unchecked/fuel",
+            "value": 405630,
+            "range": "± 689",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "instantiate/wasm_kernel",
+            "value": 56214,
+            "range": "± 233",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/tiny_keccak",
+            "value": 375017,
+            "range": "± 347",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/rev_complement",
+            "value": 629789,
+            "range": "± 1800",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/regex_redux",
+            "value": 1014982,
+            "range": "± 1187",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/count_until",
+            "value": 7470434,
+            "range": "± 3896",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/br_table",
+            "value": 1345063,
+            "range": "± 952",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/trunc_f2i",
+            "value": 1137598,
+            "range": "± 931",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global/bump",
+            "value": 1532717,
+            "range": "± 1024",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global/get_const",
+            "value": 746778,
+            "range": "± 516",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial/rec",
+            "value": 1284226,
+            "range": "± 1398",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial/iter",
+            "value": 314966,
+            "range": "± 416",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/call/rec",
+            "value": 349332,
+            "range": "± 273",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_scan",
+            "value": 382367,
+            "range": "± 505",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_trap",
+            "value": 35220,
+            "range": "± 22",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/call/host/1",
+            "value": 63589,
+            "range": "± 646",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fuse",
+            "value": 11595533,
+            "range": "± 19425",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/divrem",
+            "value": 6968111,
+            "range": "± 10195",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/rec",
+            "value": 12904199,
+            "range": "± 9801",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/tail",
+            "value": 3579256,
+            "range": "± 3862",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/iter",
+            "value": 1275504,
+            "range": "± 935",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/is_even/rec",
+            "value": 2236214,
+            "range": "± 6521",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/sum_bytes",
+            "value": 1403673,
+            "range": "± 186773",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/fill_bytes",
+            "value": 1316149,
+            "range": "± 324",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/vec_add",
+            "value": 3582018,
+            "range": "± 4700",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/typed/0",
+            "value": 784701,
+            "range": "± 723",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/typed/16",
+            "value": 1856084,
+            "range": "± 3461",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/untyped/0",
+            "value": 1223110,
+            "range": "± 3152",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/untyped/16",
+            "value": 3908184,
+            "range": "± 3862",
             "unit": "ns/iter"
           }
         ]
