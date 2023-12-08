@@ -70,11 +70,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
+      - uses: dtolnay/rust-toolchain@stable
       - name: Set up Cargo cache
         uses: actions/cache@v3
         continue-on-error: false
@@ -90,19 +86,13 @@ jobs:
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Test (default features)
-        uses: actions-rs/cargo@v1
         env:
           RUSTFLAGS: "--cfg debug_assertions"
-        with:
-          command: test
-          args: --workspace --release
+        run: cargo test --workspace --release
       - name: Test (all features)
-        uses: actions-rs/cargo@v1
         env:
           RUSTFLAGS: "--cfg debug_assertions"
-        with:
-          command: test
-          args: --workspace --release --all-features
+        run: cargo test --workspace --release --all-features
 
   fmt:
     name: Formatting
