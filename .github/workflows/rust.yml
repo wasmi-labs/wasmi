@@ -17,12 +17,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+      - uses: dtolnay/rust-toolchain@stable
       - uses: actions-rs/toolchain@v1
         with:
-          profile: minimal
-          toolchain: stable
-          target: wasm32-unknown-unknown
-          override: true
+          targets: wasm32-unknown-unknown, thumbv7em-none-eabi
       - name: Set up Cargo cache
         uses: actions/cache@v3
         continue-on-error: false
@@ -35,30 +33,14 @@ jobs:
             ~/target/
           key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-build-
-      - name: Add extra targets
-        # Workaround for https://github.com/actions-rs/toolchain/issues/165
-        run: |
-          rustup target add thumbv7em-none-eabi
       - name: Build (default features)
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --workspace
+        run: cargo build --workspace
       - name: Build (all features)
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --workspace --all-features
+        run: cargo build --workspace --all-features
       - name: Build (no_std)
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --workspace --lib --no-default-features --target thumbv7em-none-eabi --exclude wasmi_cli --exclude wasmi_wasi
+        run: cargo build --workspace --lib --no-default-features --target thumbv7em-none-eabi --exclude wasmi_cli --exclude wasmi_wasi
       - name: Build (wasm32)
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --workspace --lib --no-default-features --target wasm32-unknown-unknown --exclude wasmi_cli --exclude wasmi_wasi
+        run: cargo build --workspace --lib --no-default-features --target wasm32-unknown-unknown --exclude wasmi_cli --exclude wasmi_wasi
 
   test:
     name: Test
