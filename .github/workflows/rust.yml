@@ -292,11 +292,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@nightly
         with:
-          profile: minimal
-          toolchain: nightly
-          override: true
           components: miri
       - name: Set up Cargo cache
         uses: actions/cache@v3
@@ -311,15 +308,9 @@ jobs:
           key: ${{ runner.os }}-cargo-miri-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-miri-
       - name: Miri (--lib)
-        uses: actions-rs/cargo@v1
-        with:
-          command: miri
-          args: test --lib --workspace
+        run: cargo miri test --lib --workspace
       - name: Miri (--doc)
-        uses: actions-rs/cargo@v1
-        with:
-          command: miri
-          args: test --doc --workspace
+        run: cargo miri test --doc --workspace
 
   clippy:
     name: Clippy
