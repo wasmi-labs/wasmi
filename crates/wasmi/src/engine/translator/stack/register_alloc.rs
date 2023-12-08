@@ -4,11 +4,12 @@ use crate::engine::{
     translator::TranslationErrorInner,
     TranslationError,
 };
+use alloc::collections::BTreeSet;
 use core::{
     cmp::{max, min},
     num::NonZeroUsize,
 };
-use multi_stash::{Key as StashKey, MultiStash};
+use multi_stash::{Key, Key as StashKey, MultiStash};
 
 #[cfg(doc)]
 use crate::engine::translator::InstrEncoder;
@@ -37,28 +38,38 @@ use crate::engine::translator::InstrEncoder;
 ///
 /// The stack of registers is always ordered in this way:
 ///
-/// | `inputs` | `locals` | `dynamics` | `storage` |
+/// | `inputs` | `locals` | `dynamics` | `preservation` |
 ///
 /// Where
 ///
 /// - `inputs`: function inputs
 /// - `locals`: function local variables
 /// - `dynamics:` dynamically allocated registers
-/// - `storage:` registers holding state for later use
+/// - `preservations:` registers holding state for later use
 ///
 /// The dynamically allocated registers grow upwards
 /// starting with the lowest index possible whereas the
-/// storage registers are growing downwards starting with
+/// preservation registers are growing downwards starting with
 /// the largest index (`u16::MAX`).
 /// If both meet we officially ran out of registers to allocate.
 ///
-/// After allocation the storage registers are normalized and
+/// After allocation the preservation registers are normalized and
 /// simply appended to the dynamically registers to form a
 /// consecutive block of registers for the function.
 #[derive(Debug, Default)]
 pub struct RegisterAlloc {
     /// The preservation stack.
     preservations: MultiStash<()>,
+    /// Keys that might have been fully removed from the `preservations` stack.
+    ///
+    /// When popping a preserved register we store its key into this set.
+    /// The next time allocating a preserved register we first check if any
+    /// of the preserved register allocations in this set are now fully unused
+    /// and then remove them. We achieve this by having a starting amount of 2.
+    ///
+    /// This allows to extend the lifetimes of preserved registers so that we
+    /// can re-push them in case we still need them until the next allocation.
+    removed_preserved: BTreeSet<Key>,
     /// The current phase of the register allocation procedure.
     phase: AllocPhase,
     /// The combined number of registered function inputs and local variables.
@@ -67,8 +78,8 @@ pub struct RegisterAlloc {
     next_dynamic: i16,
     /// The maximum index registered for a dynamically allocated register.
     max_dynamic: i16,
-    /// The minimum index registered for a storage allocated register.
-    min_storage: i16,
+    /// The minimum index registered for a preservation allocated register.
+    min_preserve: i16,
     /// The offset for the defragmentation register index.
     defrag_offset: i16,
 }
@@ -90,7 +101,7 @@ enum AllocPhase {
     /// This disallows registering new local variables to the [`RegisterAlloc`].
     Alloc,
     /// The [`RegisterAlloc`] finished allocation and now
-    /// can defragment registers allocated for storage purposes
+    /// can defragment registers allocated for preservation purposes
     /// to form a consecutive register stack.
     ///
     /// # Note
@@ -110,7 +121,7 @@ pub enum RegisterSpace {
     /// Dynamically allocated parameters are assigned to this [`RegisterSpace`].
     Dynamic,
     /// Preserved local variables are assigned to this [`RegisterSpace`].
-    Storage,
+    Preserve,
 }
 
 impl RegisterAlloc {
@@ -124,7 +135,7 @@ impl RegisterAlloc {
         self.len_locals = 0;
         self.next_dynamic = 0;
         self.max_dynamic = 0;
-        self.min_storage = i16::MAX;
+        self.min_preserve = i16::MAX;
     }
 
     /// Adjusts the [`RegisterAlloc`] for the popped [`TaggedProvider`] and returns a [`TypedProvider`].
@@ -135,8 +146,8 @@ impl RegisterAlloc {
                 self.pop_dynamic();
                 TypedProvider::Register(reg)
             }
-            TaggedProvider::Storage(reg) => {
-                self.pop_storage(reg);
+            TaggedProvider::Preserved(reg) => {
+                self.pop_preserved(reg);
                 TypedProvider::Register(reg)
             }
             TaggedProvider::ConstLocal(reg) => TypedProvider::Register(reg),
@@ -152,8 +163,8 @@ impl RegisterAlloc {
         if self.is_local(register) {
             return RegisterSpace::Local;
         }
-        if self.is_storage(register) {
-            return RegisterSpace::Storage;
+        if self.is_preserved(register) {
+            return RegisterSpace::Preserve;
         }
         RegisterSpace::Dynamic
     }
@@ -164,13 +175,13 @@ impl RegisterAlloc {
     }
 
     /// Returns the minimum index of any dynamically allocated [`Register`].
-    pub fn min_dynamic(&self) -> i16 {
+    fn min_dynamic(&self) -> i16 {
         self.len_locals() as i16
     }
 
     /// Returns the number of registers allocated by the [`RegisterAlloc`].
     pub fn len_registers(&self) -> u16 {
-        (i16::MAX as u16) - self.max_dynamic.abs_diff(self.min_storage)
+        (i16::MAX as u16) - self.max_dynamic.abs_diff(self.min_preserve)
     }
 
     /// Registers an `amount` of function inputs or local variables.
@@ -207,7 +218,7 @@ impl RegisterAlloc {
     /// # Note
     ///
     /// After this operation no local variable can be registered anymore.
-    /// However, it is then possible to push and pop dynamic and storage registers to the stack.
+    /// However, it is then possible to push and pop dynamic and preserved registers to the stack.
     pub fn finish_register_locals(&mut self) {
         assert!(matches!(self.phase, AllocPhase::Init));
         self.phase = AllocPhase::Alloc;
@@ -231,7 +242,7 @@ impl RegisterAlloc {
     /// If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
     pub fn push_dynamic(&mut self) -> Result<Register, TranslationError> {
         self.assert_alloc_phase();
-        if self.next_dynamic == self.min_storage {
+        if self.next_dynamic == self.min_preserve {
             return Err(TranslationError::new(
                 TranslationErrorInner::AllocatedTooManyRegisters,
             ));
@@ -255,7 +266,7 @@ impl RegisterAlloc {
         fn next_dynamic_n(this: &mut RegisterAlloc, n: usize) -> Option<RegisterSpan> {
             let n = i16::try_from(n).ok()?;
             let next_dynamic = this.next_dynamic.checked_add(n)?;
-            if next_dynamic >= this.min_storage {
+            if next_dynamic >= this.min_preserve {
                 return None;
             }
             let register = RegisterSpan::new(Register::from_i16(this.next_dynamic));
@@ -274,7 +285,7 @@ impl RegisterAlloc {
     ///
     /// - If the dynamic register allocation stack is empty.
     /// - If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
-    pub fn pop_dynamic(&mut self) {
+    fn pop_dynamic(&mut self) {
         self.assert_alloc_phase();
         assert_ne!(
             self.next_dynamic,
@@ -304,11 +315,11 @@ impl RegisterAlloc {
         pop_impl(self, n).expect("dynamic register underflow")
     }
 
-    /// Allocates a new [`Register`] on the storage allocation stack and returns it.
+    /// Allocates a new [`Register`] on the preservation stack and returns it.
     ///
     /// # Note
     ///
-    /// Registers allocated to the storage allocation space generally need
+    /// Registers allocated to the preservation space generally need
     /// to be readjusted later on in order to have a consecutive register space.
     ///
     /// # Errors
@@ -318,11 +329,31 @@ impl RegisterAlloc {
     /// # Panics
     ///
     /// If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
-    pub fn push_storage(&mut self) -> Result<Register, TranslationError> {
+    pub fn push_preserved(&mut self) -> Result<Register, TranslationError> {
+        const NZ_TWO: NonZeroUsize = match NonZeroUsize::new(2) {
+            Some(value) => value,
+            None => unreachable!(),
+        };
         self.assert_alloc_phase();
-        let key = self.preservations.put(NonZeroUsize::new(1).unwrap(), ());
+        for &key in &self.removed_preserved {
+            let entry = self.preservations.get(key);
+            debug_assert!(
+                !matches!(entry, Some((0, _))),
+                "found preserved register allocation entry with invalid 0 amount"
+            );
+            if let Some((1, _)) = entry {
+                // Case: we only have one preservation left which
+                //       indicates that all preserved registers have
+                //       been used, thus we can remove this entry
+                //       which makes it available for allocation again.
+                self.preservations.take_all(key);
+            }
+        }
+        // Now we can clear the removed preserved registers.
+        self.removed_preserved.clear();
+        let key = self.preservations.put(NZ_TWO, ());
         let reg = Self::key2reg(key);
-        self.update_min_storage(reg.prev())?;
+        self.update_min_preserved(reg.prev())?;
         Ok(reg)
     }
 
@@ -331,9 +362,18 @@ impl RegisterAlloc {
     /// # Panics
     ///
     /// If `register` is not a preservation [`Register`].
-    pub fn bump_storage(&mut self, register: Register) {
+    pub fn bump_preserved(&mut self, register: Register) {
+        debug_assert!(matches!(
+            self.register_space(register),
+            RegisterSpace::Preserve
+        ));
         let key = Self::reg2key(register);
-        self.preservations.bump(key, 1);
+        let old_amount = self.preservations.bump(key, 1);
+        debug_assert!(
+            // Note: We check that the returned value is `Some` to guard
+            //       against unexpected vacant entries at the `register` slot.
+            old_amount.is_some()
+        );
     }
 
     /// Pops the [`Register`] from the preservation stack.
@@ -342,18 +382,19 @@ impl RegisterAlloc {
     ///
     /// - If the dynamic register allocation stack is empty.
     /// - If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
-    pub fn pop_storage(&mut self, register: Register) {
+    fn pop_preserved(&mut self, register: Register) {
         self.assert_alloc_phase();
         let key = Self::reg2key(register);
+        self.removed_preserved.insert(key);
         self.preservations
             .take_one(key)
             .unwrap_or_else(|| panic!("missing preservation slot for {register:?}"));
     }
 
     /// Updates the minimum preservation [`Register`] index if needed.
-    fn update_min_storage(&mut self, register: Register) -> Result<(), TranslationError> {
-        self.min_storage = min(self.min_storage, register.to_i16());
-        if self.next_dynamic == self.min_storage {
+    fn update_min_preserved(&mut self, register: Register) -> Result<(), TranslationError> {
+        self.min_preserve = min(self.min_preserve, register.to_i16());
+        if self.next_dynamic == self.min_preserve {
             return Err(TranslationError::new(
                 TranslationErrorInner::AllocatedTooManyRegisters,
             ));
@@ -387,25 +428,51 @@ impl RegisterAlloc {
         !reg.is_const() && reg.to_i16() < self.min_dynamic()
     }
 
-    /// Returns `true` if the [`Register`] is allocated in the [`RegisterSpace::Storage`].
-    pub fn is_storage(&self, reg: Register) -> bool {
-        self.min_storage < reg.to_i16()
+    /// Returns `true` if the [`Register`] is allocated in the [`RegisterSpace::Preserve`].
+    fn is_preserved(&self, reg: Register) -> bool {
+        self.min_preserve < reg.to_i16()
     }
 
     /// Finalizes register allocation and allows to defragment the register space.
     pub fn finalize_alloc(&mut self) {
         assert!(matches!(self.phase, AllocPhase::Alloc));
         self.phase = AllocPhase::Defrag;
-        self.defrag_offset = (self.min_storage - self.max_dynamic).saturating_add(1);
+        self.defrag_offset = (self.min_preserve - self.max_dynamic).saturating_add(1);
     }
 
     /// Returns the defragmented [`Register`].
     pub fn defrag_register(&self, register: Register) -> Register {
         assert!(matches!(self.phase, AllocPhase::Defrag));
-        if !self.is_storage(register) {
-            // Only registers allocated to the storage-space need defragmentation.
+        if !self.is_preserved(register) {
+            // Only registers allocated to the preservation space need defragmentation.
             return register;
         }
         Register::from_i16(register.to_i16() - self.defrag_offset)
+    }
+
+    /// Increase preservation [`Register`] usage.
+    ///
+    /// # Note
+    ///
+    /// - This is mainly used to extend the lifetime of `else` providers on the stack.
+    /// - This does nothing if `register` is not a preservation [`Register`].
+    pub fn inc_register_usage(&mut self, register: Register) {
+        if !self.is_preserved(register) {
+            return;
+        }
+        self.bump_preserved(register)
+    }
+
+    /// Decrease preservation [`Register`] usage.
+    ///
+    /// # Note
+    ///
+    /// - This is mainly used to shorten the lifetime of `else` providers on the stack.
+    /// - This does nothing if `register` is not a preservation [`Register`].
+    pub fn dec_register_usage(&mut self, register: Register) {
+        if !self.is_preserved(register) {
+            return;
+        }
+        self.pop_preserved(register)
     }
 }

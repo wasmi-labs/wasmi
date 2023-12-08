@@ -37,6 +37,16 @@ pub enum Provider<T> {
     Const(T),
 }
 
+impl<T> Provider<T> {
+    /// Returns `Some` if `self` is a [`Provider::Register`].
+    pub fn into_register(self) -> Option<Register> {
+        match self {
+            Self::Register(register) => Some(register),
+            Self::Const(_) => None,
+        }
+    }
+}
+
 /// An untyped [`Provider`].
 ///
 /// # Note

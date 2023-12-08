@@ -19,8 +19,8 @@ pub enum TaggedProvider {
     Local(Register),
     /// A register referring to a dynamically allocated register.
     Dynamic(Register),
-    /// A register referring to a storage allocated register.
-    Storage(Register),
+    /// A register referring to a preservation allocated register.
+    Preserved(Register),
     /// An untyped constant value.
     ConstValue(TypedValue),
 }
@@ -45,10 +45,10 @@ impl ProviderStack {
         self.locals.reset();
     }
 
-    /// Preserves `local.get` on the [`ProviderStack`] by shifting to storage space.
+    /// Preserves `local.get` on the [`ProviderStack`] by shifting to the preservation space.
     ///
     /// In case there are `local.get n` with `n == preserve_index` on the [`ProviderStack`]
-    /// there is a [`Register`] on the storage space allocated for them. The [`Register`]
+    /// there is a [`Register`] on the preservation space allocated for them. The [`Register`]
     /// allocated this way is returned. Otherwise `None` is returned.
     pub fn preserve_locals(
         &mut self,
@@ -64,16 +64,16 @@ impl ProviderStack {
             debug_assert!(matches!(provider, TaggedProvider::Local(_)));
             let preserved_register = match preserved {
                 Some(register) => {
-                    reg_alloc.bump_storage(register);
+                    reg_alloc.bump_preserved(register);
                     register
                 }
                 None => {
-                    let register = reg_alloc.push_storage()?;
+                    let register = reg_alloc.push_preserved()?;
                     preserved = Some(register);
                     register
                 }
             };
-            *provider = TaggedProvider::Storage(preserved_register);
+            *provider = TaggedProvider::Preserved(preserved_register);
         }
         Ok(preserved)
     }
@@ -112,10 +112,10 @@ impl ProviderStack {
         self.push(TaggedProvider::Dynamic(reg));
     }
 
-    /// Pushes a storage allocated [`Register`] to the [`ProviderStack`].
-    pub fn push_storage(&mut self, reg: Register) {
+    /// Pushes a preservation allocated [`Register`] to the [`ProviderStack`].
+    pub fn push_preserved(&mut self, reg: Register) {
         debug_assert!(!reg.is_const());
-        self.push(TaggedProvider::Storage(reg));
+        self.push(TaggedProvider::Preserved(reg));
     }
 
     /// Pushes a [`Register`] to the [`ProviderStack`] referring to a function parameter or local variable.

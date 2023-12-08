@@ -49,7 +49,7 @@ impl From<TaggedProvider> for TypedProvider {
         match provider {
             TaggedProvider::Local(register)
             | TaggedProvider::Dynamic(register)
-            | TaggedProvider::Storage(register)
+            | TaggedProvider::Preserved(register)
             | TaggedProvider::ConstLocal(register) => Self::Register(register),
             TaggedProvider::ConstValue(value) => Self::Const(value),
         }
@@ -218,12 +218,13 @@ impl ValueStack {
                 self.providers.push_dynamic(reg);
                 return Ok(());
             }
-            RegisterSpace::Storage => {
+            RegisterSpace::Preserve => {
                 // Note: we currently do not call `self.reg_alloc.push_storage()`
                 //       since that API would push always another register on the preservation
                 //       stack instead of trying to bump the amount of already existing
                 //       preservation slots for the same register if possible.
-                self.providers.push_storage(reg);
+                self.reg_alloc.bump_preserved(reg);
+                self.providers.push_preserved(reg);
             }
             RegisterSpace::Local => {
                 self.providers.push_local(reg);
@@ -241,11 +242,11 @@ impl ValueStack {
     ///
     /// If too many registers have been registered.
     pub fn push_local(&mut self, local_index: u32) -> Result<Register, TranslationError> {
-        let index = i16::try_from(local_index)
+        let reg = i16::try_from(local_index)
             .ok()
-            .filter(|&value| value as u16 <= self.reg_alloc.len_locals())
+            .map(Register::from_i16)
+            .filter(|reg| self.reg_alloc.is_local(*reg))
             .ok_or_else(|| TranslationError::new(TranslationErrorInner::RegisterOutOfBounds))?;
-        let reg = Register::from_i16(index);
         self.providers.push_local(reg);
         Ok(reg)
     }
@@ -389,5 +390,25 @@ impl ValueStack {
     /// Returns the [`RegisterSpace`] for the given [`Register`].
     pub fn get_register_space(&self, register: Register) -> RegisterSpace {
         self.reg_alloc.register_space(register)
+    }
+
+    /// Increase preservation [`Register`] usage.
+    ///
+    /// # Note
+    ///
+    /// - This is mainly used to extend the lifetime of `else` providers on the stack.
+    /// - This does nothing if `register` is not a preservation [`Register`].
+    pub fn inc_register_usage(&mut self, register: Register) {
+        self.reg_alloc.inc_register_usage(register)
+    }
+
+    /// Decrease preservation [`Register`] usage.
+    ///
+    /// # Note
+    ///
+    /// - This is mainly used to shorten the lifetime of `else` providers on the stack.
+    /// - This does nothing if `register` is not a preservation [`Register`].
+    pub fn dec_register_usage(&mut self, register: Register) {
+        self.reg_alloc.dec_register_usage(register)
     }
 }
