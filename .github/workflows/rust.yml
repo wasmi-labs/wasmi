@@ -120,11 +120,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
-          toolchain: stable
-          override: true
           components: rust-docs, rust-src
       - name: Set up Cargo cache
         uses: actions/cache@v3
@@ -138,12 +135,10 @@ jobs:
             ~/target/
           key: ${{ runner.os }}-cargo-doc-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-doc-
-      - uses: actions-rs/cargo@v1
+      - name: Check Docs
         env:
           RUSTDOCFLAGS: "-D warnings"
-        with:
-          command: doc
-          args: --workspace --all-features --no-deps --document-private-items
+        run: cargo doc --workspace --all-features --no-deps --document-private-items
 
   audit:
     name: Audit
