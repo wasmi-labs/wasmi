@@ -1,5 +1,6 @@
 use super::{
     compile::{translate, translate_unchecked},
+    error::UnsupportedFeature,
     export::ExternIdx,
     global::Global,
     import::{FuncTypeIdx, Import},
@@ -572,12 +573,9 @@ impl<'engine> ModuleParser<'engine> {
     /// Process the entries for the Wasm component model proposal.
     fn process_unsupported_component_model(
         &mut self,
-        range: Range<usize>,
+        _range: Range<usize>,
     ) -> Result<(), ModuleError> {
-        panic!(
-            "wasmi does not support the `component-model` Wasm proposal: bytes[{}..{}]",
-            range.start, range.end
-        )
+        Err(ModuleError::from(UnsupportedFeature::ComponentModel))
     }
 
     /// Process an unknown Wasm module section.

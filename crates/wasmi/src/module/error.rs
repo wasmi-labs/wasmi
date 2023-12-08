@@ -15,15 +15,33 @@ pub enum ModuleError {
     Parser(ParserError),
     /// Encountered when there is a Wasm to `wasmi` translation error.
     Translation(TranslationError),
+    /// Encountered unsupported Wasm feature usage.
+    Unsupported(UnsupportedFeature),
+}
+
+/// An unsupported Wasm feature.
+#[derive(Debug)]
+pub enum UnsupportedFeature {
+    /// The Wasm component model.
+    ComponentModel,
 }
 
 impl Display for ModuleError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ModuleError::Read(error) => Display::fmt(error, f),
-            ModuleError::Parser(error) => Display::fmt(error, f),
-            ModuleError::Translation(error) => Display::fmt(error, f),
+            Self::Read(error) => Display::fmt(error, f),
+            Self::Parser(error) => Display::fmt(error, f),
+            Self::Translation(error) => Display::fmt(error, f),
+            Self::Unsupported(feature) => {
+                write!(f, "encountered unsupported Wasm feature: {feature:?}")
+            }
         }
+    }
+}
+
+impl From<UnsupportedFeature> for ModuleError {
+    fn from(feature: UnsupportedFeature) -> Self {
+        Self::Unsupported(feature)
     }
 }
 
