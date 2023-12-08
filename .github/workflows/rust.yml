@@ -317,11 +317,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@nightly
         with:
-          profile: minimal
-          toolchain: nightly
-          override: true
           components: clippy
       - name: Set up Cargo cache
         uses: actions/cache@v3
@@ -336,25 +333,13 @@ jobs:
           key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-clippy-
       - name: Clippy (default features)
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --workspace -- -D warnings
+        run: cargo clippy --workspace -- -D warnings
       - name: Clippy (all features)
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --workspace --all-features -- -D warnings
+        run: cargo clippy --workspace --all-features -- -D warnings
       - name: Clippy (no_std)
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --workspace --no-default-features -- -D warnings
+        run: cargo clippy --workspace --no-default-features -- -D warnings
       - name: Clippy (tests)
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --workspace --tests -- -D warnings
+        run: cargo clippy --workspace --tests -- -D warnings
 
   coverage:
     name: Coverage
