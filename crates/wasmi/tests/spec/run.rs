@@ -25,19 +25,23 @@ pub fn run_wasm_spec_test(name: &str, config: Config) {
     lexer.allow_confusing_unicode(true);
     let parse_buffer = match ParseBuffer::new_with_lexer(lexer) {
         Ok(buffer) => buffer,
-        Err(error) => panic!(
-            "failed to create ParseBuffer for {}: {}",
-            test.path(),
-            error
-        ),
+        Err(error) => {
+            panic!(
+                "failed to create ParseBuffer for {}: {}",
+                test.path(),
+                error
+            )
+        }
     };
     let wast = match wast::parser::parse(&parse_buffer) {
         Ok(wast) => wast,
-        Err(error) => panic!(
-            "failed to parse `.wast` spec test file for {}: {}",
-            test.path(),
-            error
-        ),
+        Err(error) => {
+            panic!(
+                "failed to parse `.wast` spec test file for {}: {}",
+                test.path(),
+                error
+            )
+        }
     };
 
     execute_directives(wast, &mut context).unwrap_or_else(|error| {
