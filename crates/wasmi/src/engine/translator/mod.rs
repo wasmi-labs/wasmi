@@ -909,6 +909,9 @@ impl<'parser> FuncTranslator<'parser> {
             self.alloc.stack.trunc(if_height);
             for provider in self.alloc.control_stack.pop_else_providers() {
                 self.alloc.stack.push_provider(provider)?;
+                if let TypedProvider::Register(register) = provider {
+                    self.alloc.stack.dec_register_usage(register);
+                }
             }
             self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
         }
