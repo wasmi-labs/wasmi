@@ -53,9 +53,8 @@ fn imm16() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn imm_zero() {
-    let wasm =
-        wat2wasm(
-            r"
+    let wasm = wat2wasm(
+        r"
         (module
             (memory $m 10)
             (func (result i32)
@@ -63,7 +62,7 @@ fn imm_zero() {
                 (memory.grow $m)
             )
         )",
-        );
+    );
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::memory_size(Register::from_i16(0)),

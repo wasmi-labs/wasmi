@@ -253,21 +253,19 @@ fn assert_results(context: &TestContext, span: Span, results: &[Value], expected
                     );
                 }
             },
-            (Value::F64(result), WastRetCore::F64(expected)) => {
-                match expected {
-                    NanPattern::CanonicalNan | NanPattern::ArithmeticNan => {
-                        assert!(result.is_nan(), "in {}", context.spanned(span))
-                    }
-                    NanPattern::Value(expected) => {
-                        assert_eq!(
-                            result.to_bits(),
-                            expected.bits,
-                            "in {}",
-                            context.spanned(span)
-                        );
-                    }
+            (Value::F64(result), WastRetCore::F64(expected)) => match expected {
+                NanPattern::CanonicalNan | NanPattern::ArithmeticNan => {
+                    assert!(result.is_nan(), "in {}", context.spanned(span))
                 }
-            }
+                NanPattern::Value(expected) => {
+                    assert_eq!(
+                        result.to_bits(),
+                        expected.bits,
+                        "in {}",
+                        context.spanned(span)
+                    );
+                }
+            },
             (Value::FuncRef(funcref), WastRetCore::RefNull(Some(HeapType::Func))) => {
                 assert!(funcref.is_null());
             }

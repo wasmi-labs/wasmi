@@ -104,9 +104,8 @@ fn resumable_call_smoldot_01() {
 
 #[test]
 fn resumable_call_smoldot_tail_01() {
-    let (mut store, wasm_fn) =
-        resumable_call_smoldot_common(
-            r#"
+    let (mut store, wasm_fn) = resumable_call_smoldot_common(
+        r#"
         (module
             (import "env" "host_fn" (func $host_fn (result i32)))
             (func (export "test") (result i32)
@@ -114,7 +113,7 @@ fn resumable_call_smoldot_tail_01() {
             )
         )
         "#,
-        );
+    );
     assert_eq!(
         wasm_fn
             .call_resumable(&mut store, ())
@@ -210,9 +209,8 @@ fn resumable_call() {
         }
     });
     linker.define("env", "host_fn", host_fn).unwrap();
-    let wasm =
-        wat::parse_str(
-            r#"
+    let wasm = wat::parse_str(
+        r#"
             (module
                 (import "env" "host_fn" (func $host_fn (param i32) (result i32)))
                 (func (export "wasm_fn") (param $wasm_trap i32) (result i32)
@@ -229,8 +227,8 @@ fn resumable_call() {
                 )
             )
             "#,
-        )
-        .unwrap();
+    )
+    .unwrap();
 
     let module = Module::new(store.engine(), &mut &wasm[..]).unwrap();
     let instance = linker
@@ -308,7 +306,10 @@ fn run_test(wasm_fn: Func, mut store: &mut Store<TestData>, wasm_trap: bool) {
     if wasm_trap {
         match call.unwrap_err() {
             Error::Trap(trap) => {
-                assert!(matches!(trap.trap_code(), Some(TrapCode::UnreachableCodeReached)));
+                assert!(matches!(
+                    trap.trap_code(),
+                    Some(TrapCode::UnreachableCodeReached)
+                ));
             }
             _ => panic!("expected Wasm trap"),
         }
@@ -361,7 +362,10 @@ fn run_test_typed(wasm_fn: Func, mut store: &mut Store<TestData>, wasm_trap: boo
     if wasm_trap {
         match call.unwrap_err() {
             Error::Trap(trap) => {
-                assert!(matches!(trap.trap_code(), Some(TrapCode::UnreachableCodeReached)));
+                assert!(matches!(
+                    trap.trap_code(),
+                    Some(TrapCode::UnreachableCodeReached)
+                ));
             }
             _ => panic!("expected Wasm trap"),
         }

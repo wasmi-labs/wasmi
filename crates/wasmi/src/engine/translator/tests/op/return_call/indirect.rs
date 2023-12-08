@@ -398,9 +398,8 @@ fn two_reg_params_rev_imm16() {
 #[cfg_attr(miri, ignore)]
 fn two_imm_params_imm16() {
     fn test_with(index: u32) {
-        let wasm =
-            wat2wasm(&format!(
-                r#"
+        let wasm = wat2wasm(&format!(
+            r#"
             (module
                 (import "" "table" (table $table 10 funcref))
                 (type $type (func (param i32 i32) (result i32 i32)))
@@ -412,7 +411,7 @@ fn two_imm_params_imm16() {
                 )
             )
         "#,
-            ));
+        ));
         let elem_index = u32imm16(index);
         TranslationTest::new(wasm)
             .expect_func(
@@ -491,9 +490,8 @@ fn three_reg_params_reg_rev() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn three_imm_params_reg() {
-    let wasm =
-        wat2wasm(
-            r#"
+    let wasm = wat2wasm(
+        r#"
         (module
             (import "" "table" (table $table 10 funcref))
             (type $type (func (param i32 i32 i32) (result i32 i32 i32)))
@@ -506,7 +504,7 @@ fn three_imm_params_reg() {
             )
         )
     "#,
-        );
+    );
     let elem_index = Register::from_i16(0);
     TranslationTest::new(wasm)
         .expect_func(

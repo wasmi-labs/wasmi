@@ -40,15 +40,14 @@ fn nan_reg() {
 #[cfg_attr(miri, ignore)]
 fn reg_zero() {
     // We cannot optimize `x - 0` -> `x` because `-0 - 0` -> `0` according to IEEE.
-    let expected =
-        [
-            Instruction::f64_sub(
-                Register::from_i16(1),
-                Register::from_i16(0),
-                Register::from_i16(-1),
-            ),
-            Instruction::return_reg(1),
-        ];
+    let expected = [
+        Instruction::f64_sub(
+            Register::from_i16(1),
+            Register::from_i16(0),
+            Register::from_i16(-1),
+        ),
+        Instruction::return_reg(1),
+    ];
     testcase_binary_reg_imm(WASM_OP, 0.0_f64)
         .expect_func(ExpectedFunc::new(expected).consts([0.0_f64]))
         .run()

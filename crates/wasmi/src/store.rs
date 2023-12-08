@@ -51,9 +51,9 @@ impl ArenaIndex for StoreIdx {
     }
 
     fn from_usize(value: usize) -> Self {
-        let value = value.try_into().unwrap_or_else(
-            |error| panic!("index {value} is out of bounds as store index: {error}")
-        );
+        let value = value.try_into().unwrap_or_else(|error| {
+            panic!("index {value} is out of bounds as store index: {error}")
+        });
         Self(value)
     }
 }
@@ -517,9 +517,9 @@ impl StoreInner {
     ) -> (&mut TableEntity, &mut TableEntity) {
         let fst = self.unwrap_stored(fst.as_inner());
         let snd = self.unwrap_stored(snd.as_inner());
-        self.tables.get_pair_mut(fst, snd).unwrap_or_else(
-            || panic!("failed to resolve stored pair of entities: {fst:?} and {snd:?}")
-        )
+        self.tables.get_pair_mut(fst, snd).unwrap_or_else(|| {
+            panic!("failed to resolve stored pair of entities: {fst:?} and {snd:?}")
+        })
     }
 
     /// Returns a triple of:
@@ -714,9 +714,9 @@ impl StoreInner {
     /// - If the [`Func`] cannot be resolved to its entity.
     pub fn resolve_func(&self, func: &Func) -> &FuncEntity {
         let entity_index = self.unwrap_stored(func.as_inner());
-        self.funcs.get(entity_index).unwrap_or_else(
-            || panic!("failed to resolve stored Wasm or host function: {entity_index:?}")
-        )
+        self.funcs.get(entity_index).unwrap_or_else(|| {
+            panic!("failed to resolve stored Wasm or host function: {entity_index:?}")
+        })
     }
 }
 

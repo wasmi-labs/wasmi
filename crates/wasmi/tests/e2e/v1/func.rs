@@ -28,19 +28,18 @@ macro_rules! assert_eq_tuple {
 fn setup_add2() -> (Store<()>, Func, Func) {
     let mut store = test_setup();
     let add2 = Func::wrap(&mut store, |lhs: i32, rhs: i32| lhs + rhs);
-    let add2_dyn =
-        Func::new(
-            &mut store,
-            FuncType::new([ValueType::I32, ValueType::I32], [ValueType::I32]),
-            |_caller, inputs: &[Value], results: &mut [Value]| {
-                assert_eq!(inputs.len(), 2);
-                assert_eq!(results.len(), 1);
-                let lhs = &inputs[0].i32().unwrap();
-                let rhs = &inputs[1].i32().unwrap();
-                results[0] = (lhs + rhs).into();
-                Ok(())
-            },
-        );
+    let add2_dyn = Func::new(
+        &mut store,
+        FuncType::new([ValueType::I32, ValueType::I32], [ValueType::I32]),
+        |_caller, inputs: &[Value], results: &mut [Value]| {
+            assert_eq!(inputs.len(), 2);
+            assert_eq!(results.len(), 1);
+            let lhs = &inputs[0].i32().unwrap();
+            let rhs = &inputs[1].i32().unwrap();
+            results[0] = (lhs + rhs).into();
+            Ok(())
+        },
+    );
     (store, add2, add2_dyn)
 }
 
@@ -148,19 +147,18 @@ fn static_add3_works() {
 fn setup_duplicate() -> (Store<()>, Func, Func) {
     let mut store = test_setup();
     let duplicate = Func::wrap(&mut store, |value: i32| (value, value));
-    let duplicate_dyn =
-        Func::new(
-            &mut store,
-            FuncType::new([ValueType::I32], [ValueType::I32, ValueType::I32]),
-            |_caller, inputs: &[Value], results: &mut [Value]| {
-                assert_eq!(inputs.len(), 1);
-                assert_eq!(results.len(), 2);
-                let input = inputs[0].i32().unwrap();
-                results[0] = input.into();
-                results[1] = input.into();
-                Ok(())
-            },
-        );
+    let duplicate_dyn = Func::new(
+        &mut store,
+        FuncType::new([ValueType::I32], [ValueType::I32, ValueType::I32]),
+        |_caller, inputs: &[Value], results: &mut [Value]| {
+            assert_eq!(inputs.len(), 1);
+            assert_eq!(results.len(), 2);
+            let input = inputs[0].i32().unwrap();
+            results[0] = input.into();
+            results[1] = input.into();
+            Ok(())
+        },
+    );
     (store, duplicate, duplicate_dyn)
 }
 

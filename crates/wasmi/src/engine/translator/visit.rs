@@ -282,24 +282,21 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_else(&mut self) -> Self::Output {
-        let mut frame =
-            match self.alloc.control_stack.pop_frame() {
-                ControlFrame::If(frame) => frame,
-                ControlFrame::Unreachable(frame)
-                    if matches!(frame.kind(), ControlFrameKind::If) =>
-                {
-                    // Case: `else` branch for unreachable `if` block.
-                    //
-                    // In this case we can simply ignore the entire `else`
-                    // branch since it is unreachable anyways.
-                    self.alloc.control_stack.push_frame(frame);
-                    return Ok(());
-                }
-                unexpected => panic!(
-                    "expected `if` control flow frame on top for `else` but found: {:?}",
-                    unexpected,
-                ),
-            };
+        let mut frame = match self.alloc.control_stack.pop_frame() {
+            ControlFrame::If(frame) => frame,
+            ControlFrame::Unreachable(frame) if matches!(frame.kind(), ControlFrameKind::If) => {
+                // Case: `else` branch for unreachable `if` block.
+                //
+                // In this case we can simply ignore the entire `else`
+                // branch since it is unreachable anyways.
+                self.alloc.control_stack.push_frame(frame);
+                return Ok(());
+            }
+            unexpected => panic!(
+                "expected `if` control flow frame on top for `else` but found: {:?}",
+                unexpected,
+            ),
+        };
         frame.visited_else();
         if frame.is_then_reachable() {
             frame.update_end_of_then_reachability(self.reachable);
@@ -528,19 +525,18 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         // We check if branch parameters for all `br_table` targets are the same
         // because this allows us to encode the `br_table` a bit more efficiently
         // and is a relatively common case.
-        let same_branch_params =
-            self.alloc.br_table_targets.iter().copied().all(|target| {
-                match self.alloc.control_stack.acquire_target(target) {
-                    AcquiredTarget::Return(_) => {
-                        // Return instructions never need to copy anything and
-                        // thus we can simply ignore them for this conditional.
-                        true
-                    }
-                    AcquiredTarget::Branch(frame) => {
-                        default_branch_params == frame.branch_params(self.res.engine())
-                    }
+        let same_branch_params = self.alloc.br_table_targets.iter().copied().all(|target| {
+            match self.alloc.control_stack.acquire_target(target) {
+                AcquiredTarget::Return(_) => {
+                    // Return instructions never need to copy anything and
+                    // thus we can simply ignore them for this conditional.
+                    true
                 }
-            });
+                AcquiredTarget::Branch(frame) => {
+                    default_branch_params == frame.branch_params(self.res.engine())
+                }
+            }
+        });
         if default_branch_params.is_empty() || same_branch_params {
             // Case 1: No `br_target` target requires values to be copied around.
             // Case 2: All `br_target` targets use the same branch parameter registers.

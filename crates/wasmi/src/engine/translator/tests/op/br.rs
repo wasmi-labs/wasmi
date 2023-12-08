@@ -15,15 +15,14 @@ use core::fmt::Display;
 #[test]
 #[cfg_attr(miri, ignore)]
 fn as_return() {
-    let wasm =
-        wat2wasm(
-            r"
+    let wasm = wat2wasm(
+        r"
         (module
             (func (param i32)
                 (br 0)
             )
         )",
-        );
+    );
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::Return])
         .run()

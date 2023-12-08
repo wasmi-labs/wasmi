@@ -12,15 +12,14 @@ use core::fmt::Display;
 #[test]
 #[cfg_attr(miri, ignore)]
 fn return_0() {
-    let wasm =
-        wat2wasm(
-            r"
+    let wasm = wat2wasm(
+        r"
         (module
             (func (param i32)
                 (return)
             )
         )",
-        );
+    );
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::Return])
         .run()
@@ -183,9 +182,8 @@ fn return_2() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn return_2_imm() {
-    let wasm =
-        wat2wasm(
-            r"
+    let wasm = wat2wasm(
+        r"
         (module
             (func (result i32 i32)
                 (i32.const 10)
@@ -193,7 +191,7 @@ fn return_2_imm() {
                 (return)
             )
         )",
-        );
+    );
     TranslationTest::new(wasm)
         .expect_func(ExpectedFunc::new([Instruction::return_reg2(-1, -2)]).consts([10_i32, 20]))
         .run()
@@ -292,9 +290,9 @@ fn return_4_span() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs(
-            [Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter(4))]
-        )
+        .expect_func_instrs([Instruction::return_span(
+            RegisterSpan::new(Register::from_i16(0)).iter(4),
+        )])
         .run()
 }
 
@@ -321,9 +319,8 @@ fn return_4() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn return_5_span() {
-    let wasm =
-        wat2wasm(
-            r"
+    let wasm = wat2wasm(
+        r"
         (module
             (func (param i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32)
                 (local.get 0)
@@ -334,11 +331,11 @@ fn return_5_span() {
                 (return)
             )
         )",
-        );
+    );
     TranslationTest::new(wasm)
-        .expect_func_instrs(
-            [Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter(5))]
-        )
+        .expect_func_instrs([Instruction::return_span(
+            RegisterSpan::new(Register::from_i16(0)).iter(5),
+        )])
         .run()
 }
 
@@ -449,9 +446,8 @@ fn return_8() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn return_9() {
-    let wasm =
-        wat2wasm(
-            r"
+    let wasm = wat2wasm(
+        r"
         (module
             (func (param i32 i32) (result i32 i32 i32 i32 i32 i32 i32 i32 i32)
                 (local.get 0)
@@ -466,7 +462,7 @@ fn return_9() {
                 (return)
             )
         )",
-        );
+    );
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_many(0, 1, 0),

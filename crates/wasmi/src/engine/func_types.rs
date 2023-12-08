@@ -12,9 +12,9 @@ impl ArenaIndex for DedupFuncTypeIdx {
     }
 
     fn from_usize(value: usize) -> Self {
-        let value = value.try_into().unwrap_or_else(
-            |error| panic!("index {value} is out of bounds as dedup func type index: {error}")
-        );
+        let value = value.try_into().unwrap_or_else(|error| {
+            panic!("index {value} is out of bounds as dedup func type index: {error}")
+        });
         Self(value)
     }
 }
@@ -105,7 +105,10 @@ impl FuncTypeRegistry {
 
     /// Allocates a new function type to the engine.
     pub(crate) fn alloc_func_type(&mut self, func_type: FuncType) -> DedupFuncType {
-        DedupFuncType::from_inner(Guarded::new(self.engine_idx, self.func_types.alloc(func_type)))
+        DedupFuncType::from_inner(Guarded::new(
+            self.engine_idx,
+            self.func_types.alloc(func_type),
+        ))
     }
 
     /// Resolves a deduplicated function type into a [`FuncType`] entity.

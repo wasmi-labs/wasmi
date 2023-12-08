@@ -508,9 +508,8 @@ fn copy_from_exact() {
 
 fn testcase_copy_from_to_exact(ty: ValueType, dst: u32, src: u32, len: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
-    let wasm =
-        wat2wasm(&format!(
-            r"
+    let wasm = wat2wasm(&format!(
+        r"
         (module
             (table $t1 10 {display_ty})
             (table $t2 10 {display_ty})
@@ -521,7 +520,7 @@ fn testcase_copy_from_to_exact(ty: ValueType, dst: u32, src: u32, len: u32) -> T
                 (table.copy $t1 $t2)
             )
         )",
-        ));
+    ));
     TranslationTest::new(wasm)
 }
 

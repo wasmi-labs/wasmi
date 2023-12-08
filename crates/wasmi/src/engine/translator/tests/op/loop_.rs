@@ -32,16 +32,15 @@ fn nested_empty_loop() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn identity_loop_1() {
-    let wasm =
-        wat2wasm(
-            r"
+    let wasm = wat2wasm(
+        r"
         (module
             (func (param i32) (result i32)
                 (local.get 0)
                 (loop (param i32) (result i32))
             )
         )",
-        );
+    );
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
@@ -223,9 +222,8 @@ fn identity_loop_4_mixed_1() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn identity_loop_4_mixed_2() {
-    let wasm =
-        wat2wasm(
-            r"
+    let wasm = wat2wasm(
+        r"
         (module
             (func (param i32 i32) (result i32 i32 i32 i32)
                 (local.get 0)
@@ -235,7 +233,7 @@ fn identity_loop_4_mixed_2() {
                 (loop (param i32 i32 i32 i32) (result i32 i32 i32 i32))
             )
         )",
-        );
+    );
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_many_non_overlapping(RegisterSpan::new(Register::from_i16(2)), 0, 0),

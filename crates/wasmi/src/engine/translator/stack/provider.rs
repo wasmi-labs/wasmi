@@ -56,24 +56,23 @@ impl ProviderStack {
         reg_alloc: &mut RegisterAlloc,
     ) -> Result<Option<Register>, TranslationError> {
         let mut preserved = None;
-        let local = Register::from_i16(i16::try_from(preserve_index).unwrap_or_else(
-            |_| panic!("encountered invalid local register index: {preserve_index}")
-        ));
+        let local = Register::from_i16(i16::try_from(preserve_index).unwrap_or_else(|_| {
+            panic!("encountered invalid local register index: {preserve_index}")
+        }));
         for provider_index in self.locals.drain_at(local) {
             let provider = &mut self.providers[provider_index];
             debug_assert!(matches!(provider, TaggedProvider::Local(_)));
-            let preserved_register =
-                match preserved {
-                    Some(register) => {
-                        reg_alloc.bump_preserved(register);
-                        register
-                    }
-                    None => {
-                        let register = reg_alloc.push_preserved()?;
-                        preserved = Some(register);
-                        register
-                    }
-                };
+            let preserved_register = match preserved {
+                Some(register) => {
+                    reg_alloc.bump_preserved(register);
+                    register
+                }
+                None => {
+                    let register = reg_alloc.push_preserved()?;
+                    preserved = Some(register);
+                    register
+                }
+            };
             *provider = TaggedProvider::Preserved(preserved_register);
         }
         Ok(preserved)
@@ -239,9 +238,9 @@ impl LocalRefs {
     /// - If the `local` index is out of bounds.
     /// - If there is no `local.get` stack index on the stack.
     pub fn pop_at(&mut self, local: Register) -> StackIndex {
-        self.get_indices_mut(local).pop().unwrap_or_else(
-            || panic!("missing stack index for local on the provider stack: {local:?}")
-        )
+        self.get_indices_mut(local).pop().unwrap_or_else(|| {
+            panic!("missing stack index for local on the provider stack: {local:?}")
+        })
     }
 
     /// Drains all `local.get` indices of the `local` variable on the [`ProviderStack`].

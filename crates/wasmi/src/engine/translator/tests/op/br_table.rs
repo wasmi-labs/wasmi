@@ -4,9 +4,8 @@ use crate::engine::bytecode::{BranchOffset, GlobalIdx, RegisterSpan};
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_len_targets_1() {
-    let wasm =
-        wat2wasm(
-            r"
+    let wasm = wat2wasm(
+        r"
         (module
             (func (param $index i32) (result i32)
                 (block
@@ -15,7 +14,7 @@ fn reg_len_targets_1() {
                 (return (i32.const 10))
             )
         )",
-        );
+    );
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::branch(BranchOffset::from(1)),

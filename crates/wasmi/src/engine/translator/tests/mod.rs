@@ -261,11 +261,10 @@ fn test_binary_reg_imm16<T>(
     let immediate: Const16<T> = value
         .try_into()
         .unwrap_or_else(|_| panic!("failed to convert {} to Const16", DisplayWasm::from(value)));
-    let expected =
-        [
-            make_instr(Register::from_i16(1), Register::from_i16(0), immediate),
-            Instruction::return_reg(1),
-        ];
+    let expected = [
+        make_instr(Register::from_i16(1), Register::from_i16(0), immediate),
+        Instruction::return_reg(1),
+    ];
     test_binary_reg_imm_with(wasm_op, value, expected).run()
 }
 
@@ -281,11 +280,10 @@ fn test_binary_reg_imm16_rev<T>(
     let immediate: Const16<T> = value
         .try_into()
         .unwrap_or_else(|_| panic!("failed to convert {} to Const16", DisplayWasm::from(value)));
-    let expected =
-        [
-            make_instr(Register::from_i16(1), immediate, Register::from_i16(0)),
-            Instruction::return_reg(1),
-        ];
+    let expected = [
+        make_instr(Register::from_i16(1), immediate, Register::from_i16(0)),
+        Instruction::return_reg(1),
+    ];
     test_binary_reg_imm_rev_with(wasm_op, value, expected).run()
 }
 

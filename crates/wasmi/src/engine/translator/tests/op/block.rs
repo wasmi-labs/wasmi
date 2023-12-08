@@ -36,16 +36,15 @@ fn nested_empty_block() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn identity_block_1() {
-    let wasm =
-        wat2wasm(
-            r"
+    let wasm = wat2wasm(
+        r"
         (module
             (func (param i32) (result i32)
                 (local.get 0)
                 (block (param i32) (result i32))
             )
         )",
-        );
+    );
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_reg(Register::from_i16(0))])
         .run()
@@ -54,9 +53,8 @@ fn identity_block_1() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn identity_block_2() {
-    let wasm =
-        wat2wasm(
-            r"
+    let wasm = wat2wasm(
+        r"
         (module
             (func (param i32 i64) (result i32)
                 (local.get 0)
@@ -65,7 +63,7 @@ fn identity_block_2() {
                 (drop)
             )
         )",
-        );
+    );
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_reg(Register::from_i16(0))])
         .run()

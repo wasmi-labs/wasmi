@@ -49,11 +49,10 @@ fn host_call_from_host_params_2_results_1() {
 #[test]
 fn host_call_from_host_params_0_results_2() {
     let mut store = setup_store();
-    let get_data =
-        Func::wrap(&mut store, |caller: Caller<i32>| {
-            let data = *caller.data();
-            (data + data, data * data)
-        });
+    let get_data = Func::wrap(&mut store, |caller: Caller<i32>| {
+        let data = *caller.data();
+        (data + data, data * data)
+    });
     let get_data = get_data.typed::<(), (i32, i32)>(&mut store).unwrap();
     assert_eq!(get_data.call(&mut store, ()).unwrap(), (10, 25));
     *store.data_mut() = 10;

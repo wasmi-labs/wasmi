@@ -622,7 +622,10 @@ impl<T> Linker<T> {
         module: &str,
         name: &str,
     ) -> Option<&Definition<T>> {
-        assert!(Engine::same(context.as_context().store.engine(), self.engine()));
+        assert!(Engine::same(
+            context.as_context().store.engine(),
+            self.engine()
+        ));
         let key = ImportKey {
             module: self.strings.get(module)?,
             name: self.strings.get(name)?,
@@ -685,9 +688,11 @@ impl<T> Linker<T> {
                     .cloned()
                     .ok_or_else(invalid_type)?;
                 if &found_type != expected_type {
-                    return Err(Error::from(
-                        LinkerError::func_type_mismatch(import_name, expected_type, &found_type)
-                    ));
+                    return Err(Error::from(LinkerError::func_type_mismatch(
+                        import_name,
+                        expected_type,
+                        &found_type,
+                    )));
                 }
                 let func = resolved
                     .as_func(&mut context)
@@ -701,9 +706,9 @@ impl<T> Linker<T> {
                     .and_then(Extern::into_table)
                     .ok_or_else(invalid_type)?;
                 let found_type = table.dynamic_ty(context);
-                found_type.is_subtype_or_err(expected_type).map_err(
-                    |_| LinkerError::table_type_mismatch(import_name, expected_type, &found_type)
-                )?;
+                found_type.is_subtype_or_err(expected_type).map_err(|_| {
+                    LinkerError::table_type_mismatch(import_name, expected_type, &found_type)
+                })?;
                 Ok(Extern::Table(table))
             }
             ExternType::Memory(expected_type) => {
@@ -726,9 +731,11 @@ impl<T> Linker<T> {
                     .ok_or_else(invalid_type)?;
                 let found_type = global.ty(context);
                 if &found_type != expected_type {
-                    return Err(Error::from(
-                        LinkerError::global_type_mismatch(import_name, expected_type, &found_type)
-                    ));
+                    return Err(Error::from(LinkerError::global_type_mismatch(
+                        import_name,
+                        expected_type,
+                        &found_type,
+                    )));
                 }
                 Ok(Extern::Global(global))
             }
@@ -815,12 +822,11 @@ mod tests {
             "#;
         let wasm = wat::parse_str(wat).unwrap();
         let module = Module::new(&engine, &mut &wasm[..]).unwrap();
-        let instance =
-            linker
-                .instantiate(&mut store, &module)
-                .unwrap()
-                .start(&mut store)
-                .unwrap();
+        let instance = linker
+            .instantiate(&mut store, &module)
+            .unwrap()
+            .start(&mut store)
+            .unwrap();
 
         let wasm_get_a = instance
             .get_typed_func::<(), i32>(&store, "wasm_get_a")
