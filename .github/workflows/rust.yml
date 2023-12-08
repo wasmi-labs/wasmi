@@ -17,12 +17,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
-          toolchain: stable
-          target: wasm32-unknown-unknown
-          override: true
+          targets: wasm32-unknown-unknown, thumbv7em-none-eabi
       - name: Set up Cargo cache
         uses: actions/cache@v3
         continue-on-error: false
@@ -35,30 +32,14 @@ jobs:
             ~/target/
           key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-build-
-      - name: Add extra targets
-        # Workaround for https://github.com/actions-rs/toolchain/issues/165
-        run: |
-          rustup target add thumbv7em-none-eabi
       - name: Build (default features)
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --workspace
+        run: cargo build --workspace
       - name: Build (all features)
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --workspace --all-features
+        run: cargo build --workspace --all-features
       - name: Build (no_std)
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --workspace --lib --no-default-features --target thumbv7em-none-eabi --exclude wasmi_cli --exclude wasmi_wasi
+        run: cargo build --workspace --lib --no-default-features --target thumbv7em-none-eabi --exclude wasmi_cli --exclude wasmi_wasi
       - name: Build (wasm32)
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --workspace --lib --no-default-features --target wasm32-unknown-unknown --exclude wasmi_cli --exclude wasmi_wasi
+        run: cargo build --workspace --lib --no-default-features --target wasm32-unknown-unknown --exclude wasmi_cli --exclude wasmi_wasi
 
   test:
     name: Test
@@ -70,11 +51,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
+      - uses: dtolnay/rust-toolchain@stable
       - name: Set up Cargo cache
         uses: actions/cache@v3
         continue-on-error: false
@@ -90,19 +67,13 @@ jobs:
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Test (default features)
-        uses: actions-rs/cargo@v1
         env:
           RUSTFLAGS: "--cfg debug_assertions"
-        with:
-          command: test
-          args: --workspace --release
+        run: cargo test --workspace --release
       - name: Test (all features)
-        uses: actions-rs/cargo@v1
         env:
           RUSTFLAGS: "--cfg debug_assertions"
-        with:
-          command: test
-          args: --workspace --release --all-features
+        run: cargo test --workspace --release --all-features
 
   fmt:
     name: Formatting
@@ -120,11 +91,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
-          toolchain: stable
-          override: true
           components: rust-docs, rust-src
       - name: Set up Cargo cache
         uses: actions/cache@v3
@@ -138,38 +106,31 @@ jobs:
             ~/target/
           key: ${{ runner.os }}-cargo-doc-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-doc-
-      - uses: actions-rs/cargo@v1
+      - name: Check Docs
         env:
           RUSTDOCFLAGS: "-D warnings"
-        with:
-          command: doc
-          args: --workspace --all-features --no-deps --document-private-items
+        run: cargo doc --workspace --all-features --no-deps --document-private-items
 
   audit:
     name: Audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: audit
-          args: ""
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo-audit
+        run: |
+          # Note: We use `|| true` because cargo install returns an error
+          #       if cargo-audit was already installed on the CI runner.
+          cargo install cargo-audit || true
+      - name: Check Audit
+        run: cargo audit
 
   udeps:
     name: uDeps
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
+      - uses: dtolnay/rust-toolchain@nightly
       - name: Set up Cargo cache
         uses: actions/cache@v3
         continue-on-error: false
@@ -189,10 +150,8 @@ jobs:
           # Note: We use `|| true` because cargo install returns an error
           #       if cargo-udeps was already installed on the CI runner.
           cargo install --locked cargo-udeps || true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: udeps
-          args: --all-targets
+      - name: Check uDeps
+        run: cargo udeps --all-targets
 
   fuzz_translate:
     name: Fuzz (Translation)
@@ -292,11 +251,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@nightly
         with:
-          profile: minimal
-          toolchain: nightly
-          override: true
           components: miri
       - name: Set up Cargo cache
         uses: actions/cache@v3
@@ -311,26 +267,17 @@ jobs:
           key: ${{ runner.os }}-cargo-miri-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-miri-
       - name: Miri (--lib)
-        uses: actions-rs/cargo@v1
-        with:
-          command: miri
-          args: test --lib --workspace
+        run: cargo miri test --lib --workspace
       - name: Miri (--doc)
-        uses: actions-rs/cargo@v1
-        with:
-          command: miri
-          args: test --doc --workspace
+        run: cargo miri test --doc --workspace
 
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@nightly
         with:
-          profile: minimal
-          toolchain: nightly
-          override: true
           components: clippy
       - name: Set up Cargo cache
         uses: actions/cache@v3
@@ -345,25 +292,13 @@ jobs:
           key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-clippy-
       - name: Clippy (default features)
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --workspace -- -D warnings
+        run: cargo clippy --workspace -- -D warnings
       - name: Clippy (all features)
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --workspace --all-features -- -D warnings
+        run: cargo clippy --workspace --all-features -- -D warnings
       - name: Clippy (no_std)
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --workspace --no-default-features -- -D warnings
+        run: cargo clippy --workspace --no-default-features -- -D warnings
       - name: Clippy (tests)
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --workspace --tests -- -D warnings
+        run: cargo clippy --workspace --tests -- -D warnings
 
   coverage:
     name: Coverage
@@ -373,11 +308,7 @@ jobs:
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
         with:
           fetch-depth: 0
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+      - uses: dtolnay/rust-toolchain@stable
       - name: Set up Cargo cache
         uses: actions/cache@v3
         continue-on-error: false
@@ -393,7 +324,7 @@ jobs:
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Run cargo-tarpaulin (default features)
-        uses: actions-rs/tarpaulin@v0.1
+        uses: actions-rs/tarpaulin@v0.1.3
         with:
           version: "0.18.0"
           args: --workspace
