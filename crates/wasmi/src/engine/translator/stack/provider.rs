@@ -34,7 +34,17 @@ pub enum TaggedProvider {
 pub struct ProviderStack {
     /// The internal stack of providers.
     providers: Vec<TaggedProvider>,
-    /// The indices of `local.get` providers on the [`ProviderStack`].
+    /// Indicates whether to use `locals` to store `locals` on the provider stack.
+    ///
+    /// # Note
+    ///
+    /// This is an optimization since using [`LocalRefs`] is expensive.
+    /// We mainly use [`LocalRefs`] to mitigate some attack surfaces of malicious inputs.
+    /// We flip this `bool` flag once `providers` grow beyond a certain threshold.
+    /// This way linear operations on `providers` can be seen as constant and
+    /// thus not attackable.
+    use_locals: bool,
+    /// Used to store indices of `local.get` on the `providers` stack.
     locals: LocalRefs,
 }
 
@@ -42,6 +52,7 @@ impl ProviderStack {
     /// Resets the [`ProviderStack`].
     pub fn reset(&mut self) {
         self.providers.clear();
+        self.use_locals = false;
         self.locals.reset();
     }
 
@@ -55,10 +66,92 @@ impl ProviderStack {
         preserve_index: u32,
         reg_alloc: &mut RegisterAlloc,
     ) -> Result<Option<Register>, TranslationError> {
+        /// Maximum provider stack height before switching to attack-immune
+        /// [`LocalRefs`] implementation for `local.get` preservation.
+        const THRESHOLD: usize = 16;
+
+        if !self.use_locals && self.providers.len() >= THRESHOLD {
+            self.sync_local_refs()
+        }
+        let local = i16::try_from(preserve_index)
+            .map(Register::from_i16)
+            .unwrap_or_else(|_| {
+                panic!("encountered invalid local register index: {preserve_index}")
+            });
+        match self.use_locals {
+            false => self.preserve_locals_inplace(local, reg_alloc),
+            true => self.preserve_locals_extern(local, reg_alloc),
+        }
+    }
+
+    /// Synchronizes [`LocalRefs`] with the current state of the `providers` stack.
+    ///
+    /// This is required to initialize usage of the attack-immune [`LocalRefs`] before first use.
+    fn sync_local_refs(&mut self) {
+        self.locals.reset();
+        self.use_locals = true;
+        for (index, provider) in self.providers.iter().enumerate() {
+            let TaggedProvider::Local(local) = provider else {
+                continue;
+            };
+            self.locals.push_at(*local, index);
+        }
+        self.use_locals = true;
+    }
+
+    /// Preserves the `local` [`Register`] on the provider stack in-place.
+    ///
+    /// # Note
+    ///
+    /// - This is the efficient case which is susceptible to malicious inputs
+    ///   since it needs to iterate over the entire provider stack and might be
+    ///   called roughly once per Wasm instruction in the worst-case.
+    /// - Therefore we only use it behind a safety guard to remove the attack surface.
+    fn preserve_locals_inplace(
+        &mut self,
+        local: Register,
+        reg_alloc: &mut RegisterAlloc,
+    ) -> Result<Option<Register>, TranslationError> {
+        debug_assert!(!self.use_locals);
         let mut preserved = None;
-        let local = Register::from_i16(i16::try_from(preserve_index).unwrap_or_else(|_| {
-            panic!("encountered invalid local register index: {preserve_index}")
-        }));
+        for provider in &mut self.providers {
+            let TaggedProvider::Local(register) = provider else {
+                continue;
+            };
+            if *register != local {
+                continue;
+            }
+            let preserved_register = match preserved {
+                None => {
+                    let register = reg_alloc.push_preserved()?;
+                    preserved = Some(register);
+                    register
+                }
+                Some(register) => {
+                    reg_alloc.bump_preserved(register);
+                    register
+                }
+            };
+            *provider = TaggedProvider::Preserved(preserved_register);
+        }
+        Ok(preserved)
+    }
+
+    /// Preserves the `local` [`Register`] on the provider stack out-of-place.
+    ///
+    /// # Note
+    ///
+    /// - This is the inefficient case which is immune to malicious inputs
+    ///   since it only iterates over the locals required for preservation
+    ///   which are stored out-of-place of the provider stack.
+    /// - Since this is slower we only use it when necessary.
+    fn preserve_locals_extern(
+        &mut self,
+        local: Register,
+        reg_alloc: &mut RegisterAlloc,
+    ) -> Result<Option<Register>, TranslationError> {
+        debug_assert!(self.use_locals);
+        let mut preserved = None;
         for provider_index in self.locals.drain_at(local) {
             let provider = &mut self.providers[provider_index];
             debug_assert!(matches!(provider, TaggedProvider::Local(_)));
@@ -103,7 +196,9 @@ impl ProviderStack {
     pub fn push_local(&mut self, reg: Register) {
         debug_assert!(!reg.is_const());
         let index = self.push(TaggedProvider::Local(reg));
-        self.locals.push_at(reg, index);
+        if self.use_locals {
+            self.locals.push_at(reg, index);
+        }
     }
 
     /// Pushes a dynamically allocated [`Register`] to the [`ProviderStack`].
@@ -155,10 +250,12 @@ impl ProviderStack {
             .pop()
             .unwrap_or_else(|| panic!("tried to pop provider from empty provider stack"));
         if let TaggedProvider::Local(register) = popped {
-            // If a `local.get` was popped from the provider stack we
-            // also need to pop it from the `local.get` indices stack.
-            let stack_index = self.locals.pop_at(register);
-            debug_assert_eq!(self.providers.len(), stack_index);
+            if self.use_locals {
+                // If a `local.get` was popped from the provider stack we
+                // also need to pop it from the `local.get` indices stack.
+                let stack_index = self.locals.pop_at(register);
+                debug_assert_eq!(self.providers.len(), stack_index);
+            }
         }
         popped
     }
