@@ -1,0 +1,112 @@
+test translate/wasm_kernel/checked/default ... bench:     9144622 ns/iter (+/- 42362)
+
+test translate/wasm_kernel/checked/fuel ... bench:     9531003 ns/iter (+/- 41547)
+
+test translate/wasm_kernel/unchecked/default ... bench:     7591825 ns/iter (+/- 19388)
+
+test translate/wasm_kernel/unchecked/fuel ... bench:     7353098 ns/iter (+/- 13862)
+
+test translate/spidermonkey/checked/default ... bench:   166017931 ns/iter (+/- 553652)
+
+test translate/spidermonkey/checked/fuel ... bench:   172565123 ns/iter (+/- 208277)
+
+test translate/spidermonkey/unchecked/default ... bench:   125449499 ns/iter (+/- 282227)
+
+test translate/spidermonkey/unchecked/fuel ... bench:   131817454 ns/iter (+/- 471767)
+
+test translate/pulldown_cmark/checked/default ... bench:     6860085 ns/iter (+/- 85052)
+
+test translate/pulldown_cmark/checked/fuel ... bench:     7136669 ns/iter (+/- 19081)
+
+test translate/pulldown_cmark/unchecked/default ... bench:     5300797 ns/iter (+/- 22468)
+
+test translate/pulldown_cmark/unchecked/fuel ... bench:     5563228 ns/iter (+/- 30386)
+
+test translate/bz2/checked/default ... bench:     2631919 ns/iter (+/- 9423)
+
+test translate/bz2/checked/fuel ... bench:     2758204 ns/iter (+/- 4560)
+
+test translate/bz2/unchecked/default ... bench:     2018227 ns/iter (+/- 15060)
+
+test translate/bz2/unchecked/fuel ... bench:     2143609 ns/iter (+/- 15147)
+
+test translate/erc20/checked/default ... bench:      244927 ns/iter (+/- 1281)
+
+test translate/erc20/checked/fuel ... bench:      255079 ns/iter (+/- 1948)
+
+test translate/erc20/unchecked/default ... bench:      190253 ns/iter (+/- 615)
+
+test translate/erc20/unchecked/fuel ... bench:      199637 ns/iter (+/- 448)
+
+test translate/erc721/checked/default ... bench:      355754 ns/iter (+/- 2074)
+
+test translate/erc721/checked/fuel ... bench:      367121 ns/iter (+/- 1570)
+
+test translate/erc721/unchecked/default ... bench:      269485 ns/iter (+/- 926)
+
+test translate/erc721/unchecked/fuel ... bench:      284863 ns/iter (+/- 1386)
+
+test translate/erc1155/checked/default ... bench:      510174 ns/iter (+/- 2169)
+
+test translate/erc1155/checked/fuel ... bench:      539511 ns/iter (+/- 10596)
+
+test translate/erc1155/unchecked/default ... bench:      397648 ns/iter (+/- 1775)
+
+test translate/erc1155/unchecked/fuel ... bench:      420171 ns/iter (+/- 1255)
+
+test instantiate/wasm_kernel ... bench:       53025 ns/iter (+/- 499)
+
+test execute/tiny_keccak ... bench:      376502 ns/iter (+/- 610)
+
+test execute/rev_complement ... bench:      643909 ns/iter (+/- 18960)
+
+test execute/regex_redux ... bench:     1037497 ns/iter (+/- 1184)
+
+test execute/count_until ... bench:     7521707 ns/iter (+/- 9925)
+
+test execute/br_table ... bench:     1326007 ns/iter (+/- 3747)
+
+test execute/trunc_f2i ... bench:      962987 ns/iter (+/- 1352)
+
+test execute/global/bump ... bench:     1540738 ns/iter (+/- 3115)
+
+test execute/global/get_const ... bench:      750126 ns/iter (+/- 724)
+
+test execute/factorial/rec ... bench:     1261216 ns/iter (+/- 1928)
+
+test execute/factorial/iter ... bench:      308300 ns/iter (+/- 978)
+
+test execute/call/rec ... bench:      346826 ns/iter (+/- 377)
+
+test execute/recursive_scan ... bench:      381314 ns/iter (+/- 694)
+
+test execute/recursive_trap ... bench:       34485 ns/iter (+/- 79)
+
+test execute/call/host/1 ... bench:       69271 ns/iter (+/- 51)
+
+test execute/fuse ... bench:    11430322 ns/iter (+/- 23850)
+
+test execute/divrem ... bench:     6956944 ns/iter (+/- 41400)
+
+test execute/fibonacci/rec ... bench:    13062105 ns/iter (+/- 17111)
+
+test execute/fibonacci/tail ... bench:     3688636 ns/iter (+/- 5418)
+
+test execute/fibonacci/iter ... bench:     1261979 ns/iter (+/- 1843)
+
+test execute/is_even/rec ... bench:     2195271 ns/iter (+/- 3807)
+
+test execute/memory/sum_bytes ... bench:     1251451 ns/iter (+/- 2527)
+
+test execute/memory/fill_bytes ... bench:     1318106 ns/iter (+/- 3225)
+
+test execute/memory/vec_add ... bench:     3611337 ns/iter (+/- 3562)
+
+test overhead/call/typed/0 ... bench:      765475 ns/iter (+/- 1553)
+
+test overhead/call/typed/16 ... bench:     1933369 ns/iter (+/- 8758)
+
+test overhead/call/untyped/0 ... bench:     1234322 ns/iter (+/- 1134)
+
+test overhead/call/untyped/16 ... bench:     3950036 ns/iter (+/- 4592)
+
