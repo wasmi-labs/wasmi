@@ -8,12 +8,13 @@ use crate::{
 };
 
 /// The function signature of Wasm store operations.
-type WasmStoreOp = fn(
-    memory: &mut [u8],
-    address: UntypedValue,
-    offset: u32,
-    value: UntypedValue,
-) -> Result<(), TrapCode>;
+type WasmStoreOp =
+    fn(
+        memory: &mut [u8],
+        address: UntypedValue,
+        offset: u32,
+        value: UntypedValue,
+    ) -> Result<(), TrapCode>;
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Returns the [`Instruction::Register`] parameter for an [`Instruction`].

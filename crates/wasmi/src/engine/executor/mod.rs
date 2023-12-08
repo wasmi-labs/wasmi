@@ -130,13 +130,14 @@ impl EngineInner {
         let res = self.res.read();
         let host_func = invocation.host_func();
         let caller_results = invocation.caller_results();
-        let results = EngineExecutor::new(&res, &mut invocation.stack).resume_func(
-            ctx,
-            host_func,
-            params,
-            caller_results,
-            results,
-        );
+        let results =
+            EngineExecutor::new(&res, &mut invocation.stack).resume_func(
+                ctx,
+                host_func,
+                params,
+                caller_results,
+                results,
+            );
         match results {
             Ok(results) => {
                 self.stacks.lock().recycle(invocation.take_stack());

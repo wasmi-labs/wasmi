@@ -7,15 +7,16 @@ use crate::engine::{
 #[test]
 #[cfg_attr(miri, ignore)]
 fn imm() {
-    let wasm = wat2wasm(
-        r"
+    let wasm =
+        wat2wasm(
+            r"
         (module
             (func (param i32) (result i32)
                 (local.set 0 (i32.const 10))
                 (local.get 0)
             )
         )",
-    );
+        );
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_imm32(Register::from_i16(0), 10_i32),
@@ -46,8 +47,9 @@ fn imm_tee() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn overwrite_result_1() {
-    let wasm = wat2wasm(
-        r"
+    let wasm =
+        wat2wasm(
+            r"
         (module
             (func (param $lhs i32) (param $rhs i32) (result i32)
                 (local.tee $lhs
@@ -58,7 +60,7 @@ fn overwrite_result_1() {
                 )
             )
         )",
-    );
+        );
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::i32_add(
@@ -280,8 +282,9 @@ fn preserve_result_1() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn preserve_result_2() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm =
+        wat2wasm(
+            r#"
         (module
             (func (param $lhs i32) (param $rhs i32) (result i32 i32)
                 (local.get 0)
@@ -294,7 +297,7 @@ fn preserve_result_2() {
                 )
             )
         )"#,
-    );
+        );
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(Register::from_i16(3), Register::from_i16(0)),
@@ -311,15 +314,16 @@ fn preserve_result_2() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn preserve_multiple_0() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm =
+        wat2wasm(
+            r#"
         (module
             (func (param i32) (result i32)
                 (local.get 0)
                 (local.set 0 (i32.const 10))
             )
         )"#,
-    );
+        );
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(Register::from_i16(1), Register::from_i16(0)),

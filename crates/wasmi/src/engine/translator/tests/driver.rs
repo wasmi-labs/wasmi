@@ -141,9 +141,10 @@ impl ExpectedFunc {
     fn assert_consts(&self, engine: &Engine, func: CompiledFunc) {
         let expected_consts = self.expected_consts();
         for (index, expected_value) in expected_consts.iter().copied().enumerate() {
-            let actual_value = engine.get_func_const(func, index).unwrap_or_else(|| {
-                panic!("missing function local constant value of for {func:?} at index {index}")
-            });
+            let actual_value =
+                engine.get_func_const(func, index).unwrap_or_else(|| {
+                    panic!("missing function local constant value of for {func:?} at index {index}")
+                });
             assert_eq!(
                 actual_value, expected_value,
                 "function local constant value mismatch for {func:?} at index {index}"

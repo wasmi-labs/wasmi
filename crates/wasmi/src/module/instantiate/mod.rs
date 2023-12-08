@@ -264,28 +264,29 @@ impl Module {
     /// Extracts the Wasm exports from the module and registers them into the [`Instance`].
     fn extract_exports(&self, builder: &mut InstanceEntityBuilder) {
         for (field, idx) in &self.exports {
-            let external = match idx {
-                export::ExternIdx::Func(func_index) => {
-                    let func_index = func_index.into_u32();
-                    let func = builder.get_func(func_index);
-                    Extern::Func(func)
-                }
-                export::ExternIdx::Table(table_index) => {
-                    let table_index = table_index.into_u32();
-                    let table = builder.get_table(table_index);
-                    Extern::Table(table)
-                }
-                export::ExternIdx::Memory(memory_index) => {
-                    let memory_index = memory_index.into_u32();
-                    let memory = builder.get_memory(memory_index);
-                    Extern::Memory(memory)
-                }
-                export::ExternIdx::Global(global_index) => {
-                    let global_index = global_index.into_u32();
-                    let global = builder.get_global(global_index);
-                    Extern::Global(global)
-                }
-            };
+            let external =
+                match idx {
+                    export::ExternIdx::Func(func_index) => {
+                        let func_index = func_index.into_u32();
+                        let func = builder.get_func(func_index);
+                        Extern::Func(func)
+                    }
+                    export::ExternIdx::Table(table_index) => {
+                        let table_index = table_index.into_u32();
+                        let table = builder.get_table(table_index);
+                        Extern::Table(table)
+                    }
+                    export::ExternIdx::Memory(memory_index) => {
+                        let memory_index = memory_index.into_u32();
+                        let memory = builder.get_memory(memory_index);
+                        Extern::Memory(memory)
+                    }
+                    export::ExternIdx::Global(global_index) => {
+                        let global_index = global_index.into_u32();
+                        let global = builder.get_global(global_index);
+                        Extern::Global(global)
+                    }
+                };
             builder.push_export(field, external);
         }
     }
@@ -306,11 +307,8 @@ impl Module {
         for segment in &self.element_segments[..] {
             let element = ElementSegment::new(context.as_context_mut(), segment);
             if let ElementSegmentKind::Active(active) = segment.kind() {
-                let dst_index = u32::from(Self::eval_init_expr(
-                    &mut *context,
-                    builder,
-                    active.offset(),
-                ));
+                let dst_index =
+                    u32::from(Self::eval_init_expr(&mut *context, builder, active.offset()));
                 let table = builder.get_table(active.table_index().into_u32());
                 // Note: This checks not only that the elements in the element segments properly
                 //       fit into the table at the given offset but also that the element segment

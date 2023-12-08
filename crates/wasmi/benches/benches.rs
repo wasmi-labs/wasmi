@@ -126,15 +126,16 @@ fn bench_translate_for(
     if matches!(fuel_metering, FuelMetering::Enabled) {
         config.consume_fuel(true);
     }
-    let create_module = match validation {
-        Validation::Checked => {
-            |engine: &Engine, bytes: &[u8]| -> Module { Module::new(&engine, &bytes[..]).unwrap() }
-        }
-        Validation::Unchecked => |engine: &Engine, bytes: &[u8]| -> Module {
-            // Safety: We made sure that all translation benchmark inputs are valid Wasm.
-            unsafe { Module::new_unchecked(engine, &bytes[..]).unwrap() }
-        },
-    };
+    let create_module =
+        match validation {
+            Validation::Checked => |engine: &Engine, bytes: &[u8]| -> Module {
+                Module::new(&engine, &bytes[..]).unwrap()
+            },
+            Validation::Unchecked => |engine: &Engine, bytes: &[u8]| -> Module {
+                // Safety: We made sure that all translation benchmark inputs are valid Wasm.
+                unsafe { Module::new_unchecked(engine, &bytes[..]).unwrap() }
+            },
+        };
     c.bench_function(&bench_id, |b| {
         let wasm_bytes = load_wasm_from_file(path);
         b.iter(|| {
@@ -393,10 +394,11 @@ fn bench_execute_rev_comp(c: &mut Criterion) {
             .write(&mut store, input_data_mem_offset as usize, REVCOMP_INPUT)
             .expect("failed to write test data into a wasm memory");
 
-        let bench_rev_complement = instance
-            .get_export(&store, "bench_rev_complement")
-            .and_then(Extern::into_func)
-            .unwrap();
+        let bench_rev_complement =
+            instance
+                .get_export(&store, "bench_rev_complement")
+                .and_then(Extern::into_func)
+                .unwrap();
 
         b.iter(|| {
             bench_rev_complement
@@ -1001,11 +1003,12 @@ fn bench_execute_memory_fill(c: &mut Criterion) {
         let len = 100_000;
         let value = 0x42_u8;
         mem.data_mut(&mut store)[ptr..(ptr + len)].fill(0x00);
-        let params = [
-            Value::I32(ptr as i32),
-            Value::I32(len as i32),
-            Value::I32(value as i32),
-        ];
+        let params =
+            [
+                Value::I32(ptr as i32),
+                Value::I32(len as i32),
+                Value::I32(value as i32),
+            ];
         b.iter(|| {
             fill.call(&mut store, &params, &mut []).unwrap();
         });

@@ -320,8 +320,9 @@ fn test_store_at_imm_for<T>(
         .expect("testcase requires valid ptr+offset address");
     let display_value = DisplayWasm::from(value);
     let param_ty = wasm_op.param_ty();
-    let wasm = wat2wasm(&format!(
-        r#"
+    let wasm =
+        wat2wasm(&format!(
+            r#"
         (module
             (memory 1)
             (func
@@ -331,7 +332,7 @@ fn test_store_at_imm_for<T>(
             )
         )
     "#,
-    ));
+        ));
     TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
@@ -373,8 +374,9 @@ where
     );
     let display_value = DisplayWasm::from(value);
     let param_ty = wasm_op.param_ty();
-    let wasm = wat2wasm(&format!(
-        r#"
+    let wasm =
+        wat2wasm(&format!(
+            r#"
         (module
             (memory 1)
             (func
@@ -384,7 +386,7 @@ where
             )
         )
     "#,
-    ));
+        ));
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::Trap(TrapCode::MemoryOutOfBounds)])
         .run();

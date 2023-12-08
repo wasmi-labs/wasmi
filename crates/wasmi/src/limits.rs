@@ -253,10 +253,12 @@ impl ResourceLimiter for StoreLimits {
     ) -> Result<bool, MemoryError> {
         let allow = match self.memory_size {
             Some(limit) if desired > limit => false,
-            _ => match maximum {
-                Some(max) if desired > max => false,
-                Some(_) | None => true,
-            },
+            _ => {
+                match maximum {
+                    Some(max) if desired > max => false,
+                    Some(_) | None => true,
+                }
+            }
         };
         if !allow && self.trap_on_grow_failure {
             Err(MemoryError::OutOfBoundsGrowth)
@@ -273,10 +275,12 @@ impl ResourceLimiter for StoreLimits {
     ) -> Result<bool, TableError> {
         let allow = match self.table_elements {
             Some(limit) if desired > limit => false,
-            _ => match maximum {
-                Some(max) if desired > max => false,
-                Some(_) | None => true,
-            },
+            _ => {
+                match maximum {
+                    Some(max) if desired > max => false,
+                    Some(_) | None => true,
+                }
+            }
         };
         if !allow && self.trap_on_grow_failure {
             Err(TableError::GrowOutOfBounds {

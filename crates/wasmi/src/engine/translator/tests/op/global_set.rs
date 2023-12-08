@@ -15,8 +15,9 @@ where
 {
     let ty = T::NAME;
     let display_value = DisplayWasm::from(T::default());
-    let wasm = wat2wasm(&format!(
-        r#"
+    let wasm =
+        wat2wasm(&format!(
+            r#"
         (module
             (global $g (mut {ty}) ({ty}.const {display_value}))
             (func (param $value {ty})
@@ -25,7 +26,7 @@ where
             )
         )
     "#,
-    ));
+        ));
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::global_set(GlobalIdx::from(0), Register::from_i16(0)),

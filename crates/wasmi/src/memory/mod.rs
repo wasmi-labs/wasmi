@@ -25,9 +25,9 @@ impl ArenaIndex for MemoryIdx {
     }
 
     fn from_usize(value: usize) -> Self {
-        let value = value.try_into().unwrap_or_else(|error| {
-            panic!("index {value} is out of bounds as memory index: {error}")
-        });
+        let value = value.try_into().unwrap_or_else(
+            |error| panic!("index {value} is out of bounds as memory index: {error}")
+        );
         Self(value)
     }
 }
@@ -48,12 +48,13 @@ impl MemoryType {
     /// maximum limits of 2^16 pages.
     pub fn new(initial: u32, maximum: Option<u32>) -> Result<Self, MemoryError> {
         let initial_pages = Pages::new(initial).ok_or(MemoryError::InvalidMemoryType)?;
-        let maximum_pages = match maximum {
-            Some(maximum) => Pages::new(maximum)
-                .ok_or(MemoryError::InvalidMemoryType)?
-                .into(),
-            None => None,
-        };
+        let maximum_pages =
+            match maximum {
+                Some(maximum) => Pages::new(maximum)
+                    .ok_or(MemoryError::InvalidMemoryType)?
+                    .into(),
+                None => None,
+            };
         Ok(Self {
             initial_pages,
             maximum_pages,

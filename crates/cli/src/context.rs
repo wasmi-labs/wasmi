@@ -30,14 +30,14 @@ impl Context {
         }
         let engine = wasmi::Engine::new(&config);
         let wasm_bytes = utils::read_wasm_or_wat(wasm_file)?;
-        let module = wasmi::Module::new(&engine, &mut &wasm_bytes[..]).map_err(|error| {
-            anyhow!("failed to parse and validate Wasm module {wasm_file:?}: {error}")
-        })?;
+        let module = wasmi::Module::new(&engine, &mut &wasm_bytes[..]).map_err(
+            |error| anyhow!("failed to parse and validate Wasm module {wasm_file:?}: {error}")
+        )?;
         let mut store = wasmi::Store::new(&engine, wasi_ctx);
         if let Some(fuel) = fuel {
-            store.add_fuel(fuel).unwrap_or_else(|error| {
-                panic!("error: fuel metering is enabled but encountered: {error}")
-            });
+            store.add_fuel(fuel).unwrap_or_else(
+                |error| panic!("error: fuel metering is enabled but encountered: {error}")
+            );
         }
         let mut linker = <wasmi::Linker<WasiCtx>>::new(&engine);
         wasmi_wasi::add_to_linker(&mut linker, |ctx| ctx)

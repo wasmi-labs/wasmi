@@ -452,13 +452,14 @@ impl<'parser> FuncTranslator<'parser> {
         // We can do this since the branch parameters of the function enclosing block
         // are never used due to optimizations to directly return to the caller instead.
         let branch_params = RegisterSpan::new(Register::from_i16(0));
-        let block_frame = BlockControlFrame::new(
-            block_type,
-            end_label,
-            branch_params,
-            BlockHeight::default(),
-            consume_fuel,
-        );
+        let block_frame =
+            BlockControlFrame::new(
+                block_type,
+                end_label,
+                branch_params,
+                BlockHeight::default(),
+                consume_fuel,
+            );
         self.alloc.control_stack.push_frame(block_frame);
         Ok(())
     }
@@ -1793,11 +1794,9 @@ impl<'parser> FuncTranslator<'parser> {
                             make_instr(ptr, Const32::from(offset)),
                             FuelCosts::store,
                         )?;
-                        self.alloc
-                            .instr_encoder
-                            .append_instr(Instruction::Register(
-                                self.alloc.stack.alloc_const(value)?,
-                            ))?;
+                        self.alloc.instr_encoder.append_instr(
+                            Instruction::Register(self.alloc.stack.alloc_const(value)?)
+                        )?;
                         Ok(())
                     }
                 }
@@ -1887,11 +1886,9 @@ impl<'parser> FuncTranslator<'parser> {
                             make_instr(ptr, Const32::from(offset)),
                             FuelCosts::store,
                         )?;
-                        self.alloc
-                            .instr_encoder
-                            .append_instr(Instruction::Register(
-                                self.alloc.stack.alloc_const(value)?,
-                            ))?;
+                        self.alloc.instr_encoder.append_instr(
+                            Instruction::Register(self.alloc.stack.alloc_const(value)?)
+                        )?;
                         Ok(())
                     }
                 }

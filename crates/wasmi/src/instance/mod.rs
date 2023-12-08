@@ -36,9 +36,9 @@ impl ArenaIndex for InstanceIdx {
     }
 
     fn from_usize(value: usize) -> Self {
-        let value = value.try_into().unwrap_or_else(|error| {
-            panic!("index {value} is out of bounds as instance index: {error}")
-        });
+        let value = value.try_into().unwrap_or_else(
+            |error| panic!("index {value} is out of bounds as instance index: {error}")
+        );
         Self(value)
     }
 }

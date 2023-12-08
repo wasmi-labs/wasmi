@@ -212,16 +212,17 @@ fn test_fill_at16_imm(dst: u32, value: u32) {
 #[cfg_attr(miri, ignore)]
 fn fill_at16_imm() {
     let dst_values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
-    let test_values = [
-        0,
-        1,
-        42,
-        u32::from(u16::MAX) - 1,
-        u32::from(u16::MAX),
-        u32::from(u16::MAX) + 1,
-        u32::MAX - 1,
-        u32::MAX,
-    ];
+    let test_values =
+        [
+            0,
+            1,
+            42,
+            u32::from(u16::MAX) - 1,
+            u32::from(u16::MAX),
+            u32::from(u16::MAX) + 1,
+            u32::MAX - 1,
+            u32::MAX,
+        ];
     for dst in dst_values {
         for value in test_values {
             test_fill_at16_imm(dst, value);
@@ -362,16 +363,17 @@ fn test_fill_imm_exact16(value: u32, len: u32) {
 #[cfg_attr(miri, ignore)]
 fn fill_imm_exact16() {
     let len_values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
-    let values = [
-        0,
-        1,
-        42,
-        u32::from(u16::MAX) - 1,
-        u32::from(u16::MAX),
-        u32::from(u16::MAX) + 1,
-        u32::MAX - 1,
-        u32::MAX,
-    ];
+    let values =
+        [
+            0,
+            1,
+            42,
+            u32::from(u16::MAX) - 1,
+            u32::from(u16::MAX),
+            u32::from(u16::MAX) + 1,
+            u32::MAX - 1,
+            u32::MAX,
+        ];
     for value in values {
         for len in len_values {
             test_fill_imm_exact16(value, len);

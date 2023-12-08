@@ -78,8 +78,9 @@ fn one_param_imm() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn two_params_reg() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm =
+        wat2wasm(
+            r#"
         (module
             (import "env" "f" (func $f (param i32 i32) (result i32 i32)))
             (func (param i32 i32) (result i32 i32)
@@ -87,7 +88,7 @@ fn two_params_reg() {
             )
         )
     "#,
-    );
+        );
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::call_imported(RegisterSpan::new(Register::from_i16(2)), FuncIdx::from(0)),
@@ -100,8 +101,9 @@ fn two_params_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn two_params_reg_rev() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm =
+        wat2wasm(
+            r#"
         (module
             (import "env" "f" (func $f (param i32 i32) (result i32 i32)))
             (func (param i32 i32) (result i32 i32)
@@ -109,7 +111,7 @@ fn two_params_reg_rev() {
             )
         )
     "#,
-    );
+        );
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::call_imported(RegisterSpan::new(Register::from_i16(2)), FuncIdx::from(0)),

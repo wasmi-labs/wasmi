@@ -508,9 +508,7 @@ impl TryFrom<BranchOffset> for BranchOffset16 {
 
     fn try_from(offset: BranchOffset) -> Result<Self, Self::Error> {
         let Ok(offset16) = i16::try_from(offset.to_i32()) else {
-            return Err(TranslationError::new(
-                TranslationErrorInner::BranchOffsetOutOfBounds,
-            ));
+            return Err(TranslationError::new(TranslationErrorInner::BranchOffsetOutOfBounds));
         };
         Ok(Self(offset16))
     }
@@ -544,9 +542,7 @@ impl BranchOffset16 {
         assert!(valid_offset.is_init());
         assert!(!self.is_init());
         let Some(valid_offset16) = Self::new(valid_offset) else {
-            return Err(TranslationError::new(
-                TranslationErrorInner::BranchOffsetOutOfBounds,
-            ));
+            return Err(TranslationError::new(TranslationErrorInner::BranchOffsetOutOfBounds));
         };
         *self = valid_offset16;
         Ok(())
@@ -798,9 +794,7 @@ impl TryFrom<u64> for BlockFuel {
     fn try_from(index: u64) -> Result<Self, Self::Error> {
         match u32::try_from(index) {
             Ok(index) => Ok(Self(index)),
-            Err(_) => Err(TranslationError::new(
-                TranslationErrorInner::BlockFuelOutOfBounds,
-            )),
+            Err(_) => Err(TranslationError::new(TranslationErrorInner::BlockFuelOutOfBounds)),
         }
     }
 }

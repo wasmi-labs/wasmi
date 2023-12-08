@@ -46,9 +46,9 @@ impl Instr {
     ///
     /// If the `value` exceeds limitations for [`Instr`].
     pub fn from_usize(value: usize) -> Self {
-        let value = value.try_into().unwrap_or_else(|error| {
-            panic!("invalid index {value} for instruction reference: {error}")
-        });
+        let value = value.try_into().unwrap_or_else(
+            |error| panic!("invalid index {value} for instruction reference: {error}")
+        );
         Self(value)
     }
 
@@ -341,29 +341,30 @@ impl InstrEncoder {
             let cref = stack.alloc_const(value.into())?;
             Ok(Instruction::copy(result, cref))
         }
-        let instr = match value {
-            TypedProvider::Register(value) => {
-                if result == value {
-                    // Optimization: copying from register `x` into `x` is a no-op.
-                    return Ok(None);
+        let instr =
+            match value {
+                TypedProvider::Register(value) => {
+                    if result == value {
+                        // Optimization: copying from register `x` into `x` is a no-op.
+                        return Ok(None);
+                    }
+                    Instruction::copy(result, value)
                 }
-                Instruction::copy(result, value)
-            }
-            TypedProvider::Const(value) => match value.ty() {
-                ValueType::I32 => Instruction::copy_imm32(result, i32::from(value)),
-                ValueType::F32 => Instruction::copy_imm32(result, f32::from(value)),
-                ValueType::I64 => match <Const32<i64>>::try_from(i64::from(value)).ok() {
-                    Some(value) => Instruction::copy_i64imm32(result, value),
-                    None => copy_imm(stack, result, value)?,
+                TypedProvider::Const(value) => match value.ty() {
+                    ValueType::I32 => Instruction::copy_imm32(result, i32::from(value)),
+                    ValueType::F32 => Instruction::copy_imm32(result, f32::from(value)),
+                    ValueType::I64 => match <Const32<i64>>::try_from(i64::from(value)).ok() {
+                        Some(value) => Instruction::copy_i64imm32(result, value),
+                        None => copy_imm(stack, result, value)?,
+                    },
+                    ValueType::F64 => match <Const32<f64>>::try_from(f64::from(value)).ok() {
+                        Some(value) => Instruction::copy_f64imm32(result, value),
+                        None => copy_imm(stack, result, value)?,
+                    },
+                    ValueType::FuncRef => copy_imm(stack, result, value)?,
+                    ValueType::ExternRef => copy_imm(stack, result, value)?,
                 },
-                ValueType::F64 => match <Const32<f64>>::try_from(f64::from(value)).ok() {
-                    Some(value) => Instruction::copy_f64imm32(result, value),
-                    None => copy_imm(stack, result, value)?,
-                },
-                ValueType::FuncRef => copy_imm(stack, result, value)?,
-                ValueType::ExternRef => copy_imm(stack, result, value)?,
-            },
-        };
+            };
         self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
         let instr = self.push_instr(instr)?;
         Ok(Some(instr))
@@ -594,49 +595,50 @@ impl InstrEncoder {
         //       actually needed for the computation. We might revisit this decision
         //       later. An alternative solution would consume fuel during execution
         //       time only when the return is taken.
-        let instr = match values {
-            [] => Instruction::return_nez(condition),
-            [TypedProvider::Register(reg)] => Instruction::return_nez_reg(condition, *reg),
-            [TypedProvider::Const(value)] => match value.ty() {
-                ValueType::I32 => Instruction::return_nez_imm32(condition, i32::from(*value)),
-                ValueType::I64 => match <Const32<i64>>::try_from(i64::from(*value)).ok() {
-                    Some(value) => Instruction::return_nez_i64imm32(condition, value),
-                    None => Instruction::return_nez_reg(condition, stack.alloc_const(*value)?),
+        let instr =
+            match values {
+                [] => Instruction::return_nez(condition),
+                [TypedProvider::Register(reg)] => Instruction::return_nez_reg(condition, *reg),
+                [TypedProvider::Const(value)] => match value.ty() {
+                    ValueType::I32 => Instruction::return_nez_imm32(condition, i32::from(*value)),
+                    ValueType::I64 => match <Const32<i64>>::try_from(i64::from(*value)).ok() {
+                        Some(value) => Instruction::return_nez_i64imm32(condition, value),
+                        None => Instruction::return_nez_reg(condition, stack.alloc_const(*value)?),
+                    },
+                    ValueType::F32 => Instruction::return_nez_imm32(condition, F32::from(*value)),
+                    ValueType::F64 => match <Const32<f64>>::try_from(f64::from(*value)).ok() {
+                        Some(value) => Instruction::return_nez_f64imm32(condition, value),
+                        None => Instruction::return_nez_reg(condition, stack.alloc_const(*value)?),
+                    },
+                    ValueType::FuncRef | ValueType::ExternRef => {
+                        Instruction::return_nez_reg(condition, stack.alloc_const(*value)?)
+                    }
                 },
-                ValueType::F32 => Instruction::return_nez_imm32(condition, F32::from(*value)),
-                ValueType::F64 => match <Const32<f64>>::try_from(f64::from(*value)).ok() {
-                    Some(value) => Instruction::return_nez_f64imm32(condition, value),
-                    None => Instruction::return_nez_reg(condition, stack.alloc_const(*value)?),
-                },
-                ValueType::FuncRef | ValueType::ExternRef => {
-                    Instruction::return_nez_reg(condition, stack.alloc_const(*value)?)
+                [v0, v1] => {
+                    let reg0 = Self::provider2reg(stack, v0)?;
+                    let reg1 = Self::provider2reg(stack, v1)?;
+                    Instruction::return_nez_reg2(condition, reg0, reg1)
                 }
-            },
-            [v0, v1] => {
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
-                Instruction::return_nez_reg2(condition, reg0, reg1)
-            }
-            [v0, v1, rest @ ..] => {
-                debug_assert!(!rest.is_empty());
-                // Note: The fuel for return values might result in 0 charges if there aren't
-                //       enough return values to account for at least 1 fuel. Therefore we need
-                //       to also bump by `FuelCosts::base` to charge at least 1 fuel.
-                self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
-                self.bump_fuel_consumption(fuel_info, |costs| {
-                    costs.fuel_for_copies(rest.len() as u64 + 3)
-                })?;
-                if let Some(span) = RegisterSpanIter::from_providers(values) {
-                    self.push_instr(Instruction::return_nez_span(condition, span))?;
+                [v0, v1, rest @ ..] => {
+                    debug_assert!(!rest.is_empty());
+                    // Note: The fuel for return values might result in 0 charges if there aren't
+                    //       enough return values to account for at least 1 fuel. Therefore we need
+                    //       to also bump by `FuelCosts::base` to charge at least 1 fuel.
+                    self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
+                    self.bump_fuel_consumption(fuel_info, |costs| {
+                        costs.fuel_for_copies(rest.len() as u64 + 3)
+                    })?;
+                    if let Some(span) = RegisterSpanIter::from_providers(values) {
+                        self.push_instr(Instruction::return_nez_span(condition, span))?;
+                        return Ok(());
+                    }
+                    let reg0 = Self::provider2reg(stack, v0)?;
+                    let reg1 = Self::provider2reg(stack, v1)?;
+                    self.push_instr(Instruction::return_nez_many(condition, reg0, reg1))?;
+                    self.encode_register_list(stack, rest)?;
                     return Ok(());
                 }
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
-                self.push_instr(Instruction::return_nez_many(condition, reg0, reg1))?;
-                self.encode_register_list(stack, rest)?;
-                return Ok(());
-            }
-        };
+            };
         self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
         self.push_instr(instr)?;
         Ok(())
@@ -745,10 +747,7 @@ impl InstrEncoder {
             Ok(())
         }
 
-        debug_assert!(matches!(
-            stack.get_register_space(local),
-            RegisterSpace::Local
-        ));
+        debug_assert!(matches!(stack.get_register_space(local), RegisterSpace::Local));
         let TypedProvider::Register(returned_value) = value else {
             // Cannot apply the optimization for `local.set C` where `C` is a constant value.
             return fallback_case(self, stack, local, value, preserved, fuel_info);

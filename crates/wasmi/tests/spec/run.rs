@@ -25,19 +25,23 @@ pub fn run_wasm_spec_test(name: &str, config: Config) {
     lexer.allow_confusing_unicode(true);
     let parse_buffer = match ParseBuffer::new_with_lexer(lexer) {
         Ok(buffer) => buffer,
-        Err(error) => panic!(
-            "failed to create ParseBuffer for {}: {}",
-            test.path(),
-            error
-        ),
+        Err(error) => {
+            panic!(
+                "failed to create ParseBuffer for {}: {}",
+                test.path(),
+                error
+            )
+        }
     };
     let wast = match wast::parser::parse(&parse_buffer) {
         Ok(wast) => wast,
-        Err(error) => panic!(
-            "failed to parse `.wast` spec test file for {}: {}",
-            test.path(),
-            error
-        ),
+        Err(error) => {
+            panic!(
+                "failed to parse `.wast` spec test file for {}: {}",
+                test.path(),
+                error
+            )
+        }
     };
 
     execute_directives(wast, &mut context).unwrap_or_else(|error| {
@@ -249,19 +253,21 @@ fn assert_results(context: &TestContext, span: Span, results: &[Value], expected
                     );
                 }
             },
-            (Value::F64(result), WastRetCore::F64(expected)) => match expected {
-                NanPattern::CanonicalNan | NanPattern::ArithmeticNan => {
-                    assert!(result.is_nan(), "in {}", context.spanned(span))
+            (Value::F64(result), WastRetCore::F64(expected)) => {
+                match expected {
+                    NanPattern::CanonicalNan | NanPattern::ArithmeticNan => {
+                        assert!(result.is_nan(), "in {}", context.spanned(span))
+                    }
+                    NanPattern::Value(expected) => {
+                        assert_eq!(
+                            result.to_bits(),
+                            expected.bits,
+                            "in {}",
+                            context.spanned(span)
+                        );
+                    }
                 }
-                NanPattern::Value(expected) => {
-                    assert_eq!(
-                        result.to_bits(),
-                        expected.bits,
-                        "in {}",
-                        context.spanned(span)
-                    );
-                }
-            },
+            }
             (Value::FuncRef(funcref), WastRetCore::RefNull(Some(HeapType::Func))) => {
                 assert!(funcref.is_null());
             }
