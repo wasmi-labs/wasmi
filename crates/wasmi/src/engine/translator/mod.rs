@@ -900,6 +900,7 @@ impl<'parser> FuncTranslator<'parser> {
                 .expect("must have `else` label since `else` is reachable"),
         );
         let if_height = frame.block_height().into_u16() as usize;
+        let else_providers = self.alloc.control_stack.pop_else_providers();
         if has_results {
             // We haven't visited the `else` block and thus the `else`
             // providers are still on the auxiliary stack and need to
@@ -907,20 +908,20 @@ impl<'parser> FuncTranslator<'parser> {
             // when entering the `if` block so that we can properly copy
             // the `else` results to were they are expected.
             self.alloc.stack.trunc(if_height);
-            for provider in self.alloc.control_stack.pop_else_providers() {
+            for provider in else_providers {
                 self.alloc.stack.push_provider(provider)?;
                 if let TypedProvider::Register(register) = provider {
                     self.alloc.stack.dec_register_usage(register);
                 }
             }
-            self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
+            self.translate_copy_branch_params(frame.branch_params(self.res.engine()))?;
         }
         // After `else` parameters have been copied we can finally pin the `end` label.
         self.alloc.instr_encoder.pin_label(frame.end_label());
         // Without `else` block the code after the `if` is always reachable and
         // thus we need to clean up and prepare the value stack for the following code.
         self.alloc.stack.trunc(if_height);
-        for result in frame.branch_params(self.engine()) {
+        for result in frame.branch_params(self.res.engine()) {
             self.alloc.stack.push_register(result)?;
         }
         self.reachable = true;
