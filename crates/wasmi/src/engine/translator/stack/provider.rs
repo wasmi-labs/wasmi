@@ -88,7 +88,6 @@ impl ProviderStack {
     ///
     /// This is required to initialize usage of the attack-immune [`LocalRefs`] before first use.
     fn sync_local_refs(&mut self) {
-        self.locals.reset();
         self.use_locals = true;
         for (index, provider) in self.providers.iter().enumerate() {
             let TaggedProvider::Local(local) = provider else {
