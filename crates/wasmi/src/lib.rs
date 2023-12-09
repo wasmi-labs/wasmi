@@ -121,10 +121,10 @@ pub mod errors {
 
 pub use self::{
     engine::{
+        CompilationMode,
         Config,
         Engine,
         FuelConsumptionMode,
-        CompilationMode,
         ResumableCall,
         ResumableInvocation,
         StackLimits,
