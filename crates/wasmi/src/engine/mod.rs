@@ -27,7 +27,7 @@ use self::{
 };
 pub use self::{
     code_map::CompiledFunc,
-    config::{Config, FuelConsumptionMode},
+    config::{Config, FuelConsumptionMode, CompilationMode},
     limits::StackLimits,
     resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
     traits::{CallParams, CallResults},
