@@ -322,7 +322,6 @@ impl ModuleParser {
 
     /// Processes the end of the Wasm binary.
     fn process_end(&mut self, offset: usize) -> Result<(), ModuleError> {
-        println!("process_end");
         self.validator.end(offset)?;
         Ok(())
     }
@@ -575,7 +574,6 @@ impl ModuleParser {
     /// This is part of the bulk memory operations Wasm proposal and not yet supported
     /// by `wasmi`.
     fn process_data_count(&mut self, count: u32, range: Range<usize>) -> Result<(), ModuleError> {
-        println!("process_data_count: {count}");
         self.validator
             .data_count_section(count, &range)
             .map_err(Into::into)
@@ -599,7 +597,6 @@ impl ModuleParser {
         let segments = section
             .into_iter()
             .map(|segment| segment.map(DataSegment::from).map_err(ModuleError::from));
-        println!("process_data: {}", segments.len());
         builder.push_data_segments(segments)?;
         Ok(())
     }
