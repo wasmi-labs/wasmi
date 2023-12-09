@@ -12,6 +12,14 @@ mod parser;
 mod read;
 mod utils;
 
+use self::{
+    builder::ModuleBuilder,
+    export::ExternIdx,
+    global::Global,
+    import::{ExternTypeIdx, Import},
+    parser::{parse, parse_unchecked},
+    read::ReadError,
+};
 pub use self::{
     builder::ModuleResources,
     compile::BlockType,
@@ -21,14 +29,6 @@ pub use self::{
     import::{FuncTypeIdx, ImportName},
     instantiate::{InstancePre, InstantiationError},
     read::Read,
-};
-use self::{
-    builder::{ModuleBuilder, ModuleImportsBuilder},
-    export::ExternIdx,
-    global::Global,
-    import::{ExternTypeIdx, Import},
-    parser::{parse, parse_unchecked},
-    read::ReadError,
 };
 pub(crate) use self::{
     data::{DataSegment, DataSegmentKind},
@@ -110,32 +110,6 @@ pub struct ModuleImports {
     ///
     /// [`Table`]: [`crate::Table`]
     len_tables: usize,
-}
-
-impl ModuleImports {
-    /// Creates a new [`ModuleImports`] from the [`ModuleBuilder`] definitions.
-    fn from_builder(imports: ModuleImportsBuilder) -> Self {
-        let len_funcs = imports.funcs.len();
-        let len_globals = imports.globals.len();
-        let len_memories = imports.memories.len();
-        let len_tables = imports.tables.len();
-        let funcs = imports.funcs.into_iter().map(Imported::Func);
-        let tables = imports.tables.into_iter().map(Imported::Table);
-        let memories = imports.memories.into_iter().map(Imported::Memory);
-        let globals = imports.globals.into_iter().map(Imported::Global);
-        let items = funcs
-            .chain(tables)
-            .chain(memories)
-            .chain(globals)
-            .collect::<Box<[_]>>();
-        Self {
-            items,
-            len_funcs,
-            len_globals,
-            len_memories,
-            len_tables,
-        }
-    }
 }
 
 impl Module {
@@ -232,25 +206,6 @@ impl Module {
             }
         }
         Ok(())
-    }
-
-    /// Creates a new [`Module`] from the [`ModuleBuilder`].
-    fn from_builder(builder: ModuleBuilder) -> Self {
-        Self {
-            engine: builder.engine().clone(),
-            func_types: builder.func_types.into(),
-            imports: ModuleImports::from_builder(builder.imports),
-            funcs: builder.funcs.into(),
-            tables: builder.tables.into(),
-            memories: builder.memories.into(),
-            globals: builder.globals.into(),
-            globals_init: builder.globals_init.into(),
-            exports: builder.exports,
-            start: builder.start,
-            compiled_funcs: builder.compiled_funcs.into(),
-            element_segments: builder.element_segments.into(),
-            data_segments: builder.data_segments.into(),
-        }
     }
 
     /// Returns the number of non-imported functions of the [`Module`].

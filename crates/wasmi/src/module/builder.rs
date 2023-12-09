@@ -10,7 +10,9 @@ use super::{
     GlobalIdx,
     Import,
     ImportName,
+    Imported,
     Module,
+    ModuleImports,
 };
 use crate::{
     engine::{CompiledFunc, DedupFuncType},
@@ -26,6 +28,13 @@ use alloc::{boxed::Box, collections::BTreeMap, vec::Vec};
 /// A builder for a WebAssembly [`Module`].
 #[derive(Debug)]
 pub struct ModuleBuilder<'engine> {
+    pub header: ModuleHeaderBuilder<'engine>,
+    pub data_segments: Vec<DataSegment>,
+}
+
+/// A builder for a WebAssembly [`Module`] header.
+#[derive(Debug)]
+pub struct ModuleHeaderBuilder<'engine> {
     engine: &'engine Engine,
     pub func_types: Vec<DedupFuncType>,
     pub imports: ModuleImportsBuilder,
@@ -38,7 +47,31 @@ pub struct ModuleBuilder<'engine> {
     pub start: Option<FuncIdx>,
     pub compiled_funcs: Vec<CompiledFunc>,
     pub element_segments: Vec<ElementSegment>,
-    pub data_segments: Vec<DataSegment>,
+}
+
+impl<'engine> ModuleHeaderBuilder<'engine> {
+    /// Creates a new [`ModuleHeaderBuilder`] for the given [`Engine`].
+    pub fn new(engine: &'engine Engine) -> Self {
+        Self {
+            engine,
+            func_types: Vec::new(),
+            imports: ModuleImportsBuilder::default(),
+            funcs: Vec::new(),
+            tables: Vec::new(),
+            memories: Vec::new(),
+            globals: Vec::new(),
+            globals_init: Vec::new(),
+            exports: BTreeMap::new(),
+            start: None,
+            compiled_funcs: Vec::new(),
+            element_segments: Vec::new(),
+        }
+    }
+
+    /// Returns the [`Engine`] of the [`ModuleHeaderBuilder`].
+    pub fn engine(&'engine self) -> &'engine Engine {
+        self.engine
+    }
 }
 
 /// The import names of the [`Module`] imports.
@@ -60,22 +93,46 @@ impl ModuleImportsBuilder {
     pub fn len_funcs(&self) -> usize {
         self.funcs.len()
     }
+
+    /// Finishes construction of [`ModuleImports`].
+    pub fn finish(self) -> ModuleImports {
+        let len_funcs = self.funcs.len();
+        let len_globals = self.globals.len();
+        let len_memories = self.memories.len();
+        let len_tables = self.tables.len();
+        let funcs = self.funcs.into_iter().map(Imported::Func);
+        let tables = self.tables.into_iter().map(Imported::Table);
+        let memories = self.memories.into_iter().map(Imported::Memory);
+        let globals = self.globals.into_iter().map(Imported::Global);
+        let items = funcs
+            .chain(tables)
+            .chain(memories)
+            .chain(globals)
+            .collect::<Box<[_]>>();
+        ModuleImports {
+            items,
+            len_funcs,
+            len_globals,
+            len_memories,
+            len_tables,
+        }
+    }
 }
 
 /// The resources of a [`Module`] required for translating function bodies.
 #[derive(Debug, Copy, Clone)]
 pub struct ModuleResources<'a> {
-    res: &'a ModuleBuilder<'a>,
+    res: &'a ModuleHeaderBuilder<'a>,
 }
 
 impl<'a> ModuleResources<'a> {
     /// Returns the [`Engine`] of the [`ModuleResources`].
     pub fn engine(&'a self) -> &'a Engine {
-        self.res.engine
+        self.res.engine()
     }
 
     /// Creates new [`ModuleResources`] from the given [`ModuleBuilder`].
-    pub fn new(res: &'a ModuleBuilder) -> Self {
+    pub fn new(res: &'a ModuleHeaderBuilder) -> Self {
         Self { res }
     }
 
@@ -126,25 +183,9 @@ impl<'engine> ModuleBuilder<'engine> {
     /// Creates a new [`ModuleBuilder`] for the given [`Engine`].
     pub fn new(engine: &'engine Engine) -> Self {
         Self {
-            engine,
-            func_types: Vec::new(),
-            imports: ModuleImportsBuilder::default(),
-            funcs: Vec::new(),
-            tables: Vec::new(),
-            memories: Vec::new(),
-            globals: Vec::new(),
-            globals_init: Vec::new(),
-            exports: BTreeMap::new(),
-            start: None,
-            compiled_funcs: Vec::new(),
-            element_segments: Vec::new(),
+            header: ModuleHeaderBuilder::new(engine),
             data_segments: Vec::new(),
         }
-    }
-
-    /// Returns a shared reference to the [`Engine`] of the [`Module`] under construction.
-    pub fn engine(&self) -> &Engine {
-        self.engine
     }
 
     /// Pushes the given function types to the [`Module`] under construction.
@@ -161,13 +202,13 @@ impl<'engine> ModuleBuilder<'engine> {
         T: IntoIterator<Item = Result<FuncType, ModuleError>>,
     {
         assert!(
-            self.func_types.is_empty(),
+            self.header.func_types.is_empty(),
             "tried to initialize module function types twice"
         );
         for func_type in func_types {
             let func_type = func_type?;
-            let dedup = self.engine.alloc_func_type(func_type);
-            self.func_types.push(dedup)
+            let dedup = self.header.engine.alloc_func_type(func_type);
+            self.header.func_types.push(dedup)
         }
         Ok(())
     }
@@ -190,21 +231,21 @@ impl<'engine> ModuleBuilder<'engine> {
             let (name, kind) = import.into_name_and_type();
             match kind {
                 ExternTypeIdx::Func(func_type_idx) => {
-                    self.imports.funcs.push(name);
-                    let func_type = self.func_types[func_type_idx.into_u32() as usize];
-                    self.funcs.push(func_type);
+                    self.header.imports.funcs.push(name);
+                    let func_type = self.header.func_types[func_type_idx.into_u32() as usize];
+                    self.header.funcs.push(func_type);
                 }
                 ExternTypeIdx::Table(table_type) => {
-                    self.imports.tables.push(name);
-                    self.tables.push(table_type);
+                    self.header.imports.tables.push(name);
+                    self.header.tables.push(table_type);
                 }
                 ExternTypeIdx::Memory(memory_type) => {
-                    self.imports.memories.push(name);
-                    self.memories.push(memory_type);
+                    self.header.imports.memories.push(name);
+                    self.header.memories.push(memory_type);
                 }
                 ExternTypeIdx::Global(global_type) => {
-                    self.imports.globals.push(name);
-                    self.globals.push(global_type);
+                    self.header.imports.globals.push(name);
+                    self.header.globals.push(global_type);
                 }
             }
         }
@@ -225,15 +266,17 @@ impl<'engine> ModuleBuilder<'engine> {
         T: IntoIterator<Item = Result<FuncTypeIdx, ModuleError>>,
     {
         assert_eq!(
-            self.funcs.len(),
-            self.imports.funcs.len(),
+            self.header.funcs.len(),
+            self.header.imports.funcs.len(),
             "tried to initialize module function declarations twice"
         );
         for func in funcs {
             let func_type_idx = func?;
-            let func_type = self.func_types[func_type_idx.into_u32() as usize];
-            self.funcs.push(func_type);
-            self.compiled_funcs.push(self.engine.alloc_func());
+            let func_type = self.header.func_types[func_type_idx.into_u32() as usize];
+            self.header.funcs.push(func_type);
+            self.header
+                .compiled_funcs
+                .push(self.header.engine.alloc_func());
         }
         Ok(())
     }
@@ -252,13 +295,13 @@ impl<'engine> ModuleBuilder<'engine> {
         T: IntoIterator<Item = Result<TableType, ModuleError>>,
     {
         assert_eq!(
-            self.tables.len(),
-            self.imports.tables.len(),
+            self.header.tables.len(),
+            self.header.imports.tables.len(),
             "tried to initialize module table declarations twice"
         );
         for table in tables {
             let table = table?;
-            self.tables.push(table);
+            self.header.tables.push(table);
         }
         Ok(())
     }
@@ -277,13 +320,13 @@ impl<'engine> ModuleBuilder<'engine> {
         T: IntoIterator<Item = Result<MemoryType, ModuleError>>,
     {
         assert_eq!(
-            self.memories.len(),
-            self.imports.memories.len(),
+            self.header.memories.len(),
+            self.header.imports.memories.len(),
             "tried to initialize module linear memory declarations twice"
         );
         for memory in memories {
             let memory = memory?;
-            self.memories.push(memory);
+            self.header.memories.push(memory);
         }
         Ok(())
     }
@@ -302,15 +345,15 @@ impl<'engine> ModuleBuilder<'engine> {
         T: IntoIterator<Item = Result<Global, ModuleError>>,
     {
         assert_eq!(
-            self.globals.len(),
-            self.imports.globals.len(),
+            self.header.globals.len(),
+            self.header.imports.globals.len(),
             "tried to initialize module global variable declarations twice"
         );
         for global in globals {
             let global = global?;
             let (global_decl, global_init) = global.into_type_and_init();
-            self.globals.push(global_decl);
-            self.globals_init.push(global_init);
+            self.header.globals.push(global_decl);
+            self.header.globals_init.push(global_init);
         }
         Ok(())
     }
@@ -329,10 +372,10 @@ impl<'engine> ModuleBuilder<'engine> {
         T: IntoIterator<Item = Result<(Box<str>, ExternIdx), ModuleError>>,
     {
         assert!(
-            self.exports.is_empty(),
+            self.header.exports.is_empty(),
             "tried to initialize module export declarations twice"
         );
-        self.exports = exports.into_iter().collect::<Result<BTreeMap<_, _>, _>>()?;
+        self.header.exports = exports.into_iter().collect::<Result<BTreeMap<_, _>, _>>()?;
         Ok(())
     }
 
@@ -342,10 +385,10 @@ impl<'engine> ModuleBuilder<'engine> {
     ///
     /// If this function has already been called on the same [`ModuleBuilder`].
     pub fn set_start(&mut self, start: FuncIdx) {
-        if let Some(old_start) = &self.start {
+        if let Some(old_start) = &self.header.start {
             panic!("encountered multiple start functions: {old_start:?}, {start:?}")
         }
-        self.start = Some(start);
+        self.header.start = Some(start);
     }
 
     /// Pushes the given table elements to the [`Module`] under construction.
@@ -362,10 +405,10 @@ impl<'engine> ModuleBuilder<'engine> {
         T: IntoIterator<Item = Result<ElementSegment, ModuleError>>,
     {
         assert!(
-            self.element_segments.is_empty(),
+            self.header.element_segments.is_empty(),
             "tried to initialize module export declarations twice"
         );
-        self.element_segments = elements.into_iter().collect::<Result<Vec<_>, _>>()?;
+        self.header.element_segments = elements.into_iter().collect::<Result<Vec<_>, _>>()?;
         Ok(())
     }
 
@@ -392,6 +435,20 @@ impl<'engine> ModuleBuilder<'engine> {
 
     /// Finishes construction of the WebAssembly [`Module`].
     pub fn finish(self) -> Module {
-        Module::from_builder(self)
+        Module {
+            engine: self.header.engine().clone(),
+            func_types: self.header.func_types.into(),
+            imports: self.header.imports.finish(),
+            funcs: self.header.funcs.into(),
+            tables: self.header.tables.into(),
+            memories: self.header.memories.into(),
+            globals: self.header.globals.into(),
+            globals_init: self.header.globals_init.into(),
+            exports: self.header.exports,
+            start: self.header.start,
+            compiled_funcs: self.header.compiled_funcs.into(),
+            element_segments: self.header.element_segments.into(),
+            data_segments: self.data_segments.into(),
+        }
     }
 }

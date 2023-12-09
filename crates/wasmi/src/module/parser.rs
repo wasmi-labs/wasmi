@@ -513,11 +513,11 @@ impl<'engine> ModuleParser<'engine> {
     /// Returns the next `FuncIdx` for processing of its function body.
     fn next_func(&mut self) -> (FuncIdx, CompiledFunc) {
         let index = self.compiled_funcs;
-        let compiled_func_2 = self.builder.compiled_funcs[index as usize];
+        let compiled_func_2 = self.builder.header.compiled_funcs[index as usize];
         self.compiled_funcs += 1;
         // We have to adjust the initial func reference to the first
         // internal function before we process any of the internal functions.
-        let len_func_imports = u32::try_from(self.builder.imports.funcs.len())
+        let len_func_imports = u32::try_from(self.builder.header.imports.funcs.len())
             .unwrap_or_else(|_| panic!("too many imported functions"));
         let func_idx = FuncIdx::from(index + len_func_imports);
         (func_idx, compiled_func_2)
@@ -541,7 +541,7 @@ impl<'engine> ModuleParser<'engine> {
     ) -> Result<(), ModuleError> {
         let (func, compiled_func) = self.next_func();
         let validator = self.validator.code_section_entry(&func_body)?;
-        let res = ModuleResources::new(&self.builder);
+        let res = ModuleResources::new(&self.builder.header);
         let allocations = mem::take(&mut self.allocations);
         let allocations = match validate_funcs {
             true => translate(
