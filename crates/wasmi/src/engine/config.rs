@@ -427,6 +427,7 @@ impl Config {
     /// Returns the [`CompilationMode`] used for the [`Engine`].
     ///
     /// [`Engine`]: crate::Engine
+    #[allow(dead_code)] // TODO: remove
     pub(crate) fn get_compilation_mode(&self) -> CompilationMode {
         self.compilation_mode
     }
