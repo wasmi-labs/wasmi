@@ -12,14 +12,6 @@ mod parser;
 mod read;
 mod utils;
 
-use self::{
-    builder::ModuleBuilder,
-    export::ExternIdx,
-    global::Global,
-    import::{ExternTypeIdx, Import},
-    parser::{parse, parse_unchecked},
-    read::ReadError,
-};
 pub use self::{
     builder::ModuleResources,
     compile::BlockType,
@@ -29,6 +21,14 @@ pub use self::{
     import::{FuncTypeIdx, ImportName},
     instantiate::{InstancePre, InstantiationError},
     read::Read,
+};
+use self::{
+    builder::{ModuleBuilder, ModuleImportsBuilder},
+    export::ExternIdx,
+    global::Global,
+    import::{ExternTypeIdx, Import},
+    parser::{parse, parse_unchecked},
+    read::ReadError,
 };
 pub(crate) use self::{
     data::{DataSegment, DataSegmentKind},
@@ -114,7 +114,7 @@ pub struct ModuleImports {
 
 impl ModuleImports {
     /// Creates a new [`ModuleImports`] from the [`ModuleBuilder`] definitions.
-    fn from_builder(imports: builder::ModuleImports) -> Self {
+    fn from_builder(imports: ModuleImportsBuilder) -> Self {
         let len_funcs = imports.funcs.len();
         let len_globals = imports.globals.len();
         let len_memories = imports.memories.len();

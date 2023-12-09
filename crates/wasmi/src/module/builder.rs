@@ -28,7 +28,7 @@ use alloc::{boxed::Box, collections::BTreeMap, vec::Vec};
 pub struct ModuleBuilder<'engine> {
     engine: &'engine Engine,
     pub func_types: Vec<DedupFuncType>,
-    pub imports: ModuleImports,
+    pub imports: ModuleImportsBuilder,
     pub funcs: Vec<DedupFuncType>,
     pub tables: Vec<TableType>,
     pub memories: Vec<MemoryType>,
@@ -43,14 +43,14 @@ pub struct ModuleBuilder<'engine> {
 
 /// The import names of the [`Module`] imports.
 #[derive(Debug, Default)]
-pub struct ModuleImports {
+pub struct ModuleImportsBuilder {
     pub funcs: Vec<ImportName>,
     pub tables: Vec<ImportName>,
     pub memories: Vec<ImportName>,
     pub globals: Vec<ImportName>,
 }
 
-impl ModuleImports {
+impl ModuleImportsBuilder {
     /// Returns the number of imported global variables.
     pub fn len_globals(&self) -> usize {
         self.globals.len()
@@ -128,7 +128,7 @@ impl<'engine> ModuleBuilder<'engine> {
         Self {
             engine,
             func_types: Vec::new(),
-            imports: ModuleImports::default(),
+            imports: ModuleImportsBuilder::default(),
             funcs: Vec::new(),
             tables: Vec::new(),
             memories: Vec::new(),
