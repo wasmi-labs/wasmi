@@ -80,7 +80,7 @@ struct ModuleHeaderInner {
 }
 
 impl ModuleHeader {
-    /// Returns the [`Engine`] of the [`ModuleResources`].
+    /// Returns the [`Engine`] of the [`ModuleHeader`].
     pub fn engine(&self) -> &Engine {
         &self.inner.engine
     }
