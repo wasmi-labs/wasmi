@@ -90,8 +90,8 @@ impl<'a> ModuleResources<'a> {
     }
 
     /// Returns the [`GlobalType`] the the indexed global variable.
-    pub fn get_type_of_global(&self, global_idx: GlobalIdx) -> GlobalType {
-        self.res.globals[global_idx.into_u32() as usize]
+    pub fn get_type_of_global(&self, global_idx: GlobalIdx) -> &GlobalType {
+        &self.res.globals[global_idx.into_u32() as usize]
     }
 
     /// Returns the [`CompiledFunc`] for the given [`FuncIdx`].
@@ -107,7 +107,7 @@ impl<'a> ModuleResources<'a> {
     }
 
     /// Returns the global variable type and optional initial value.
-    pub fn get_global(&self, global_idx: GlobalIdx) -> (GlobalType, Option<&ConstExpr>) {
+    pub fn get_global(&self, global_idx: GlobalIdx) -> (&GlobalType, Option<&ConstExpr>) {
         let index = global_idx.into_u32() as usize;
         let len_imports = self.res.imports.len_globals();
         let global_type = self.get_type_of_global(global_idx);
