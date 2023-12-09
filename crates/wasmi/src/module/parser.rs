@@ -138,14 +138,14 @@ impl ModuleParser {
     }
 
     /// Parse the Wasm module header.
-    /// 
+    ///
     /// - The Wasm module header is the set of all sections that appear before
     ///   the Wasm code section.
     /// - We separate parsing of the Wasm module header since the information of
     ///   the Wasm module header is required for translating the Wasm code section.
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// If the Wasm bytecode stream fails to parse or validate.
     fn parse_header(
         &mut self,
@@ -220,13 +220,13 @@ impl ModuleParser {
     }
 
     /// Parse the Wasm data section and finalize parsing.
-    /// 
+    ///
     /// We separate parsing of the Wasm data section since it is the only Wasm
     /// section that comes after the Wasm code section that we have to separate
     /// out for technical reasons.
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// If the Wasm bytecode stream fails to parse or validate.
     fn parse_code(
         &mut self,
