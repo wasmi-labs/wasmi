@@ -52,7 +52,7 @@ use crate::{
         config::FuelCosts,
         CompiledFunc,
     },
-    module::{BlockType, FuncIdx, FuncTypeIdx, ModuleResources},
+    module::{BlockType, FuncIdx, FuncTypeIdx, ModuleHeader},
     Engine,
     FuncType,
 };
@@ -90,13 +90,13 @@ impl FuncTranslatorAllocations {
 type FuncValidator = wasmparser::FuncValidator<wasmparser::ValidatorResources>;
 
 /// A Wasm to `wasmi` IR function translator that also validates its input.
-pub struct ValidatingFuncTranslator<'parser> {
+pub struct ValidatingFuncTranslator {
     /// The current position in the Wasm binary while parsing operators.
     pos: usize,
     /// The Wasm function validator.
     validator: FuncValidator,
     /// The chosen function translator.
-    translator: FuncTranslator<'parser>,
+    translator: FuncTranslator,
 }
 
 /// Reusable heap allocations for function validation and translation.
@@ -157,12 +157,12 @@ pub trait WasmTranslator<'parser>:
     fn finish(self) -> Result<Self::Allocations, TranslationError>;
 }
 
-impl<'parser> ValidatingFuncTranslator<'parser> {
+impl ValidatingFuncTranslator {
     /// Creates a new [`ValidatingFuncTranslator`].
     pub fn new(
         func: FuncIdx,
         compiled_func: CompiledFunc,
-        res: ModuleResources<'parser>,
+        res: ModuleHeader,
         validator: FuncValidator,
         alloc: FuncTranslatorAllocations,
     ) -> Result<Self, TranslationError> {
@@ -187,7 +187,7 @@ impl<'parser> ValidatingFuncTranslator<'parser> {
     ) -> Result<(), TranslationError>
     where
         V: FnOnce(&mut FuncValidator) -> Result<(), BinaryReaderError>,
-        T: FnOnce(&mut FuncTranslator<'parser>) -> Result<(), TranslationError>,
+        T: FnOnce(&mut FuncTranslator) -> Result<(), TranslationError>,
     {
         validate(&mut self.validator)?;
         translate(&mut self.translator)?;
@@ -195,7 +195,7 @@ impl<'parser> ValidatingFuncTranslator<'parser> {
     }
 }
 
-impl<'parser> WasmTranslator<'parser> for ValidatingFuncTranslator<'parser> {
+impl<'parser> WasmTranslator<'parser> for ValidatingFuncTranslator {
     type Allocations = ReusableAllocations;
 
     fn translate_locals(
@@ -231,7 +231,7 @@ impl<'parser> WasmTranslator<'parser> for ValidatingFuncTranslator<'parser> {
     }
 }
 
-impl<'parser> WasmTranslator<'parser> for FuncTranslator<'parser> {
+impl<'parser> WasmTranslator<'parser> for FuncTranslator {
     type Allocations = FuncTranslatorAllocations;
 
     fn translate_locals(
@@ -338,20 +338,20 @@ macro_rules! impl_visit_operator {
     () => {};
 }
 
-impl<'a> VisitOperator<'a> for ValidatingFuncTranslator<'a> {
+impl<'a> VisitOperator<'a> for ValidatingFuncTranslator {
     type Output = Result<(), TranslationError>;
 
     wasmparser::for_each_operator!(impl_visit_operator);
 }
 
 /// Type concerned with translating from Wasm bytecode to `wasmi` bytecode.
-pub struct FuncTranslator<'parser> {
+pub struct FuncTranslator {
     /// The reference to the Wasm module function under construction.
     func: FuncIdx,
     /// The reference to the compiled func allocated to the [`Engine`].
     compiled_func: CompiledFunc,
     /// The immutable `wasmi` module resources.
-    res: ModuleResources<'parser>,
+    res: ModuleHeader,
     /// This represents the reachability of the currently translated code.
     ///
     /// - `true`: The currently translated code is reachable.
@@ -409,12 +409,12 @@ impl FuelInfo {
     }
 }
 
-impl<'parser> FuncTranslator<'parser> {
+impl FuncTranslator {
     /// Creates a new [`FuncTranslator`].
     pub fn new(
         func: FuncIdx,
         compiled_func: CompiledFunc,
-        res: ModuleResources<'parser>,
+        res: ModuleHeader,
         alloc: FuncTranslatorAllocations,
     ) -> Result<Self, TranslationError> {
         let config = res.engine().config();
@@ -1933,7 +1933,7 @@ impl<'parser> FuncTranslator<'parser> {
         /// Helper for `select` instructions where one of `lhs` and `rhs`
         /// is a [`Register`] and the other a funtion local constant value.
         fn encode_select_imm(
-            this: &mut FuncTranslator<'_>,
+            this: &mut FuncTranslator,
             result: Register,
             condition: Register,
             reg_in: Register,
@@ -1959,7 +1959,7 @@ impl<'parser> FuncTranslator<'parser> {
         /// Helper for `select` instructions where one of `lhs` and `rhs`
         /// is a [`Register`] and the other a 32-bit constant value.
         fn encode_select_imm32(
-            this: &mut FuncTranslator<'_>,
+            this: &mut FuncTranslator,
             result: Register,
             condition: Register,
             reg_in: Register,
@@ -1984,7 +1984,7 @@ impl<'parser> FuncTranslator<'parser> {
         /// Helper for `select` instructions where one of `lhs` and `rhs`
         /// is a [`Register`] and the other a 64-bit constant value.
         fn encode_select_imm64<T>(
-            this: &mut FuncTranslator<'_>,
+            this: &mut FuncTranslator,
             result: Register,
             condition: Register,
             reg_in: Register,
@@ -2161,7 +2161,7 @@ impl<'parser> FuncTranslator<'parser> {
                         /// Helper for `select` instructions where both
                         /// `lhs` and `rhs` are 32-bit constant values.
                         fn encode_select_imm32<T: Into<AnyConst32>>(
-                            this: &mut FuncTranslator<'_>,
+                            this: &mut FuncTranslator,
                             result: Register,
                             condition: Register,
                             lhs: T,
@@ -2184,7 +2184,7 @@ impl<'parser> FuncTranslator<'parser> {
                         /// Helper for `select` instructions where both
                         /// `lhs` and `rhs` are 64-bit constant values.
                         fn encode_select_imm64<T>(
-                            this: &mut FuncTranslator<'_>,
+                            this: &mut FuncTranslator,
                             result: Register,
                             condition: Register,
                             lhs: T,
@@ -2243,7 +2243,7 @@ impl<'parser> FuncTranslator<'parser> {
                         /// Helper for `select` instructions where both `lhs`
                         /// and `rhs` are function local constant values.
                         fn encode_select_imm<T>(
-                            this: &mut FuncTranslator<'_>,
+                            this: &mut FuncTranslator,
                             result: Register,
                             condition: Register,
                             lhs: T,

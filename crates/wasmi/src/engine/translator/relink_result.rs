@@ -17,14 +17,14 @@ use crate::{
         CompiledFuncEntity,
         TranslationError,
     },
-    module::ModuleResources,
+    module::ModuleHeader,
 };
 
 impl Instruction {
     #[rustfmt::skip]
     pub fn relink_result(
         &mut self,
-        res: &ModuleResources,
+        res: &ModuleHeader,
         new_result: Register,
         old_result: Register,
     ) -> Result<bool, TranslationError> {
@@ -555,7 +555,7 @@ where
 fn relink_call_internal(
     results: &mut RegisterSpan,
     func: CompiledFunc,
-    res: &ModuleResources,
+    res: &ModuleHeader,
     new_result: Register,
     old_result: Register,
 ) -> Result<bool, TranslationError> {
@@ -571,7 +571,7 @@ fn relink_call_internal(
 fn relink_call_imported(
     results: &mut RegisterSpan,
     func: FuncIdx,
-    res: &ModuleResources,
+    res: &ModuleHeader,
     new_result: Register,
     old_result: Register,
 ) -> Result<bool, TranslationError> {
@@ -589,7 +589,7 @@ fn relink_call_imported(
 fn relink_call_indirect(
     results: &mut RegisterSpan,
     func_type: SignatureIdx,
-    res: &ModuleResources,
+    res: &ModuleHeader,
     new_result: Register,
     old_result: Register,
 ) -> Result<bool, TranslationError> {

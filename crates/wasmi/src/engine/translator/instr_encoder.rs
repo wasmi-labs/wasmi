@@ -24,7 +24,7 @@ use crate::{
         FuelCosts,
         TranslationError,
     },
-    module::ModuleResources,
+    module::ModuleHeader,
 };
 use alloc::vec::{Drain, Vec};
 use core::mem;
@@ -722,7 +722,7 @@ impl InstrEncoder {
     pub fn encode_local_set(
         &mut self,
         stack: &mut ValueStack,
-        res: &ModuleResources,
+        res: &ModuleHeader,
         local: Register,
         value: TypedProvider,
         preserved: Option<Register>,

@@ -75,7 +75,7 @@ macro_rules! impl_visit_operator {
     () => {};
 }
 
-impl FuncTranslator<'_> {
+impl FuncTranslator {
     /// Called when translating an unsupported Wasm operator.
     ///
     /// # Note
@@ -89,7 +89,7 @@ impl FuncTranslator<'_> {
     }
 }
 
-impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
+impl<'a> VisitOperator<'a> for FuncTranslator {
     type Output = Result<(), TranslationError>;
 
     wasmparser::for_each_operator!(impl_visit_operator);
@@ -107,7 +107,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_block(&mut self, block_type: wasmparser::BlockType) -> Self::Output {
-        let block_type = BlockType::new(block_type, self.res);
+        let block_type = BlockType::new(block_type, &self.res);
         if !self.is_reachable() {
             // We keep track of unreachable control flow frames so that we
             // can associated `end` operators to their respective control flow
@@ -143,7 +143,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_loop(&mut self, block_type: wasmparser::BlockType) -> Self::Output {
-        let block_type = BlockType::new(block_type, self.res);
+        let block_type = BlockType::new(block_type, &self.res);
         if !self.is_reachable() {
             // See `visit_block` for rational of tracking unreachable control flow.
             self.alloc
@@ -190,7 +190,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_if(&mut self, block_type: wasmparser::BlockType) -> Self::Output {
-        let block_type = BlockType::new(block_type, self.res);
+        let block_type = BlockType::new(block_type, &self.res);
         if !self.is_reachable() {
             // We keep track of unreachable control flow frames so that we
             // can associated `end` operators to their respective control flow

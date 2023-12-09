@@ -136,7 +136,7 @@ impl<'module> ModuleExportsIter<'module> {
     /// Creates a new [`ModuleExportsIter`] from the given [`Module`].
     pub(super) fn new(module: &'module Module) -> Self {
         Self {
-            exports: module.exports.iter(),
+            exports: module.header.inner.exports.iter(),
             module,
         }
     }

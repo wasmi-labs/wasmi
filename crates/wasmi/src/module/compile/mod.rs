@@ -1,5 +1,5 @@
 pub use self::block_type::BlockType;
-use super::{FuncIdx, ModuleResources};
+use super::{FuncIdx, ModuleHeader};
 use crate::{
     engine::{
         CompiledFunc,
@@ -28,12 +28,12 @@ mod block_type;
 /// # Errors
 ///
 /// If the function body fails to validate or translate the Wasm function body.
-pub fn translate<'parser>(
+pub fn translate(
     func: FuncIdx,
     compiled_func: CompiledFunc,
-    func_body: FunctionBody<'parser>,
+    func_body: FunctionBody,
     validator: FuncValidator<ValidatorResources>,
-    res: ModuleResources<'parser>,
+    res: ModuleHeader,
     allocations: FuncTranslatorAllocations,
 ) -> Result<ReusableAllocations, ModuleError> {
     FunctionTranslator::new(func, compiled_func, func_body, validator, res, allocations)?
@@ -52,11 +52,11 @@ pub fn translate<'parser>(
 /// # Errors
 ///
 /// If the function body fails to translate the Wasm function body.
-pub fn translate_unchecked<'parser>(
+pub fn translate_unchecked(
     func: FuncIdx,
     compiled_func: CompiledFunc,
-    func_body: FunctionBody<'parser>,
-    res: ModuleResources<'parser>,
+    func_body: FunctionBody,
+    res: ModuleHeader,
     allocations: FuncTranslatorAllocations,
 ) -> Result<FuncTranslatorAllocations, ModuleError> {
     FunctionTranslator::new_unchecked(func, compiled_func, func_body, res, allocations)?.translate()
@@ -70,14 +70,14 @@ struct FunctionTranslator<'parser, T> {
     translator: T,
 }
 
-impl<'parser> FunctionTranslator<'parser, ValidatingFuncTranslator<'parser>> {
+impl<'parser> FunctionTranslator<'parser, ValidatingFuncTranslator> {
     /// Creates a new Wasm to `wasmi` bytecode function translator.
     fn new(
         func: FuncIdx,
         compiled_func: CompiledFunc,
         func_body: FunctionBody<'parser>,
         validator: FuncValidator<ValidatorResources>,
-        res: ModuleResources<'parser>,
+        res: ModuleHeader,
         allocations: FuncTranslatorAllocations,
     ) -> Result<Self, ModuleError> {
         let translator =
@@ -89,13 +89,13 @@ impl<'parser> FunctionTranslator<'parser, ValidatingFuncTranslator<'parser>> {
     }
 }
 
-impl<'parser> FunctionTranslator<'parser, FuncTranslator<'parser>> {
+impl<'parser> FunctionTranslator<'parser, FuncTranslator> {
     /// Creates a new Wasm to `wasmi` bytecode function translator.
     fn new_unchecked(
         func: FuncIdx,
         compiled_func: CompiledFunc,
         func_body: FunctionBody<'parser>,
-        res: ModuleResources<'parser>,
+        res: ModuleHeader,
         allocations: FuncTranslatorAllocations,
     ) -> Result<Self, ModuleError> {
         let translator = FuncTranslator::new(func, compiled_func, res, allocations)?;
