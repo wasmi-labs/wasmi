@@ -44,6 +44,7 @@ pub(crate) use self::{
     translator::{
         FuncTranslator,
         FuncTranslatorAllocations,
+        LazyFuncTranslator,
         ReusableAllocations,
         ValidatingFuncTranslator,
         WasmTranslator,
