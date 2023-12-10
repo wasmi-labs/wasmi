@@ -36,7 +36,7 @@ pub fn translate(
     res: ModuleHeader,
     allocations: FuncTranslatorAllocations,
 ) -> Result<ReusableAllocations, ModuleError> {
-    FunctionTranslator::new(func, compiled_func, func_body, validator, res, allocations)?
+    FuncTranslationDriver::new(func, compiled_func, func_body, validator, res, allocations)?
         .translate()
 }
 
@@ -59,18 +59,18 @@ pub fn translate_unchecked(
     res: ModuleHeader,
     allocations: FuncTranslatorAllocations,
 ) -> Result<FuncTranslatorAllocations, ModuleError> {
-    FunctionTranslator::new_unchecked(func, compiled_func, func_body, res, allocations)?.translate()
+    FuncTranslationDriver::new_unchecked(func, compiled_func, func_body, res, allocations)?.translate()
 }
 
 /// Translates Wasm bytecode into `wasmi` bytecode for a single Wasm function.
-struct FunctionTranslator<'parser, T> {
+struct FuncTranslationDriver<'parser, T> {
     /// The function body that shall be translated.
     func_body: FunctionBody<'parser>,
     /// The underlying translator used for the translation (and validation) process.
     translator: T,
 }
 
-impl<'parser> FunctionTranslator<'parser, ValidatingFuncTranslator> {
+impl<'parser> FuncTranslationDriver<'parser, ValidatingFuncTranslator> {
     /// Creates a new Wasm to `wasmi` bytecode function translator.
     fn new(
         func: FuncIdx,
@@ -89,7 +89,7 @@ impl<'parser> FunctionTranslator<'parser, ValidatingFuncTranslator> {
     }
 }
 
-impl<'parser> FunctionTranslator<'parser, FuncTranslator> {
+impl<'parser> FuncTranslationDriver<'parser, FuncTranslator> {
     /// Creates a new Wasm to `wasmi` bytecode function translator.
     fn new_unchecked(
         func: FuncIdx,
@@ -106,7 +106,7 @@ impl<'parser> FunctionTranslator<'parser, FuncTranslator> {
     }
 }
 
-impl<'parser, T> FunctionTranslator<'parser, T>
+impl<'parser, T> FuncTranslationDriver<'parser, T>
 where
     T: WasmTranslator<'parser>,
 {
