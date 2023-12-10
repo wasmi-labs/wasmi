@@ -253,6 +253,74 @@ impl<'parser> WasmTranslator<'parser> for ValidatingFuncTranslator {
     }
 }
 
+/// A lazy Wasm function translator that defers translation when the function is first used.
+pub struct LazyFuncTranslator {
+    /// The identifier of the to be compiled function.
+    compiled_func: CompiledFunc,
+    /// The Wasm module header information used for translation.
+    module: ModuleHeader,
+}
+
+impl LazyFuncTranslator {
+    /// Create a new [`LazyFuncTranslator`].
+    pub fn new(compiled_func: CompiledFunc, module: &ModuleHeader) -> Self {
+        Self {
+            compiled_func,
+            module: module.clone(),
+        }
+    }
+}
+
+impl<'parser> WasmTranslator<'parser> for LazyFuncTranslator {
+    type Allocations = ();
+
+    fn setup(&mut self, bytes: &[u8]) -> Result<bool, TranslationError> {
+        self.module
+            .engine()
+            .init_lazy_func(self.compiled_func, bytes, &self.module);
+        Ok(true)
+    }
+
+    #[inline]
+    fn translate_locals(
+        &mut self,
+        _amount: u32,
+        _value_type: wasmparser::ValType,
+    ) -> Result<(), TranslationError> {
+        Ok(())
+    }
+
+    #[inline]
+    fn finish_translate_locals(&mut self) -> Result<(), TranslationError> {
+        Ok(())
+    }
+
+    #[inline]
+    fn update_pos(&mut self, _pos: usize) {}
+
+    #[inline]
+    fn finish(self) -> Result<Self::Allocations, TranslationError> {
+        Ok(())
+    }
+}
+
+macro_rules! impl_visit_operator {
+    ( @$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $($rest:tt)* ) => {
+        #[inline]
+        fn $visit(&mut self $($(, $arg: $argty)*)?) -> Self::Output {
+            Ok(())
+        }
+        impl_visit_operator!($($rest)*);
+    };
+    () => {};
+}
+
+impl<'a> VisitOperator<'a> for LazyFuncTranslator {
+    type Output = Result<(), TranslationError>;
+
+    wasmparser::for_each_operator!(impl_visit_operator);
+}
+
 impl<'parser> WasmTranslator<'parser> for FuncTranslator {
     type Allocations = FuncTranslatorAllocations;
 
