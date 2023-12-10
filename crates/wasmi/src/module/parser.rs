@@ -1,6 +1,6 @@
 use super::{
     builder::ModuleHeaderBuilder,
-    compile::{translate, translate_unchecked},
+    compile::translate,
     export::ExternIdx,
     global::Global,
     import::{FuncTypeIdx, Import},
@@ -14,7 +14,15 @@ use super::{
     Read,
 };
 use crate::{
-    engine::{CompiledFunc, ReusableAllocations},
+    engine::{
+        CompiledFunc,
+        FuncTranslator,
+        FuncTranslatorAllocations,
+        LazyFuncTranslator,
+        ReusableAllocations,
+        ValidatingFuncTranslator,
+    },
+    CompilationMode,
     Engine,
     FuncType,
     MemoryType,
@@ -75,9 +83,18 @@ pub struct ModuleParser {
     /// The number of compiled or processed functions.
     compiled_funcs: u32,
     /// Reusable allocations for validating and translation functions.
-    allocations: ReusableAllocations,
+    allocations: ReusableAllocations<FuncTranslatorAllocations>,
     /// Flag, `true` when `stream` is at the end.
     eof: bool,
+}
+
+/// The mode of Wasm validation when parsing a Wasm module.
+#[derive(Debug, Copy, Clone)]
+pub enum ValidationMode {
+    /// Perform Wasm validation on the entire Wasm module including Wasm function bodies.
+    All,
+    /// Perform Wasm validation only on the Wasm header but not on Wasm function bodies.
+    HeaderOnly,
 }
 
 impl ModuleParser {
@@ -103,7 +120,7 @@ impl ModuleParser {
     ///
     /// If the Wasm bytecode stream fails to validate.
     pub fn parse(self, stream: impl Read) -> Result<Module, ModuleError> {
-        self.parse_impl(true, stream)
+        self.parse_impl(ValidationMode::All, stream)
     }
 
     /// Starts parsing and validating the Wasm bytecode stream.
@@ -114,7 +131,7 @@ impl ModuleParser {
     ///
     /// If the Wasm bytecode stream fails to validate.
     pub unsafe fn parse_unchecked(self, stream: impl Read) -> Result<Module, ModuleError> {
-        self.parse_impl(false, stream)
+        self.parse_impl(ValidationMode::HeaderOnly, stream)
     }
 
     /// Starts parsing and validating the Wasm bytecode stream.
@@ -126,13 +143,13 @@ impl ModuleParser {
     /// If the Wasm bytecode stream fails to validate.
     fn parse_impl(
         mut self,
-        validate_funcs: bool,
+        validation_mode: ValidationMode,
         mut stream: impl Read,
     ) -> Result<Module, ModuleError> {
         let mut buffer = Vec::new();
         let header = Self::parse_header(&mut self, &mut stream, &mut buffer)?;
         let builder =
-            Self::parse_code(&mut self, validate_funcs, &mut stream, &mut buffer, header)?;
+            Self::parse_code(&mut self, validation_mode, &mut stream, &mut buffer, header)?;
         let module = Self::parse_data(&mut self, &mut stream, &mut buffer, builder)?;
         Ok(module)
     }
@@ -230,7 +247,7 @@ impl ModuleParser {
     /// If the Wasm bytecode stream fails to parse or validate.
     fn parse_code(
         &mut self,
-        validate_funcs: bool,
+        validation_mode: ValidationMode,
         stream: &mut impl Read,
         buffer: &mut Vec<u8>,
         header: ModuleHeader,
@@ -250,7 +267,7 @@ impl ModuleParser {
                             let remaining = func_body.get_binary_reader().bytes_remaining();
                             let start = consumed - remaining;
                             let bytes = &buffer[start..start + remaining];
-                            self.process_code_entry(func_body, validate_funcs, bytes, &header)?;
+                            self.process_code_entry(func_body, validation_mode, bytes, &header)?;
                         }
                         Payload::CustomSection { .. } => {}
                         Payload::UnknownSection { id, range, .. } => {
@@ -651,7 +668,7 @@ impl ModuleParser {
     fn process_code_entry(
         &mut self,
         func_body: FunctionBody,
-        validate_funcs: bool,
+        validation_mode: ValidationMode,
         bytes: &[u8],
         header: &ModuleHeader,
     ) -> Result<(), ModuleError> {
@@ -659,29 +676,39 @@ impl ModuleParser {
         let validator = self.validator.code_section_entry(&func_body)?;
         let res = header.clone();
         let allocations = mem::take(&mut self.allocations);
-        let allocations = match validate_funcs {
-            true => translate(
-                func,
-                compiled_func,
-                func_body,
-                bytes,
-                validator.into_validator(allocations.validation),
-                res,
-                allocations.translation,
-            )?,
-            false => {
-                let translation = translate_unchecked(
-                    func,
-                    compiled_func,
-                    func_body,
-                    bytes,
-                    res,
-                    allocations.translation,
-                )?;
+        let compilation_mode = res.engine().config().get_compilation_mode();
+        let allocations = match (compilation_mode, validation_mode) {
+            (CompilationMode::Eager, ValidationMode::All) => {
+                let translator =
+                    FuncTranslator::new(func, compiled_func, res, allocations.translation)?;
+                let validator = validator.into_validator(allocations.validation);
+                let translator = ValidatingFuncTranslator::new(validator, translator)?;
+                let allocations = translate(func_body, bytes, translator)?;
+                allocations
+            }
+            (CompilationMode::Eager, ValidationMode::HeaderOnly) => {
+                let translator =
+                    FuncTranslator::new(func, compiled_func, res, allocations.translation)?;
+                let translation = translate(func_body, bytes, translator)?;
                 ReusableAllocations {
                     translation,
-                    validation: allocations.validation,
+                    ..allocations
                 }
+            }
+            (CompilationMode::Lazy, ValidationMode::All) => {
+                let translator = LazyFuncTranslator::new(compiled_func, res);
+                let validator = validator.into_validator(allocations.validation);
+                let translator = ValidatingFuncTranslator::new(validator, translator)?;
+                let validation = translate(func_body, bytes, translator)?.validation;
+                ReusableAllocations {
+                    validation,
+                    ..allocations
+                }
+            }
+            (CompilationMode::Lazy, ValidationMode::HeaderOnly) => {
+                let translator = LazyFuncTranslator::new(compiled_func, res);
+                translate(func_body, bytes, translator)?;
+                allocations
             }
         };
         _ = mem::replace(&mut self.allocations, allocations);

@@ -1,53 +1,8 @@
 pub use self::block_type::BlockType;
-use super::{FuncIdx, ModuleHeader};
-use crate::{
-    engine::{
-        CompiledFunc,
-        FuncTranslator,
-        FuncTranslatorAllocations,
-        ReusableAllocations,
-        ValidatingFuncTranslator,
-        WasmTranslator,
-    },
-    errors::ModuleError,
-};
-use wasmparser::{FuncValidator, FunctionBody, ValidatorResources};
+use crate::{engine::WasmTranslator, errors::ModuleError};
+use wasmparser::FunctionBody;
 
 mod block_type;
-
-/// Validates and translates the Wasm bytecode into `wasmi` IR bytecode.
-///
-/// # Note
-///
-/// - Uses the given `engine` as target for the translation.
-/// - Uses the given `parser` and `validator` for parsing and validation of
-///   the incoming Wasm bytecode stream.
-/// - Uses the given module resources `res` as shared immutable data of the
-///   already parsed and validated module parts required for the translation.
-///
-/// # Errors
-///
-/// If the function body fails to validate or translate the Wasm function body.
-pub fn translate(
-    func: FuncIdx,
-    compiled_func: CompiledFunc,
-    func_body: FunctionBody,
-    bytes: &[u8],
-    validator: FuncValidator<ValidatorResources>,
-    res: ModuleHeader,
-    allocations: FuncTranslatorAllocations,
-) -> Result<ReusableAllocations, ModuleError> {
-    <FuncTranslationDriver<'_, ValidatingFuncTranslator>>::new(
-        func,
-        compiled_func,
-        func_body,
-        bytes,
-        validator,
-        res,
-        allocations,
-    )?
-    .translate()
-}
 
 /// Translates the Wasm bytecode into `wasmi` IR bytecode.
 ///
@@ -61,23 +16,15 @@ pub fn translate(
 /// # Errors
 ///
 /// If the function body fails to translate the Wasm function body.
-pub fn translate_unchecked(
-    func: FuncIdx,
-    compiled_func: CompiledFunc,
-    func_body: FunctionBody,
-    bytes: &[u8],
-    res: ModuleHeader,
-    allocations: FuncTranslatorAllocations,
-) -> Result<FuncTranslatorAllocations, ModuleError> {
-    <FuncTranslationDriver<'_, FuncTranslator>>::new(
-        func,
-        compiled_func,
-        func_body,
-        bytes,
-        res,
-        allocations,
-    )?
-    .translate()
+pub fn translate<'a, T>(
+    func_body: FunctionBody<'a>,
+    bytes: &'a [u8],
+    translator: T,
+) -> Result<T::Allocations, ModuleError>
+where
+    T: WasmTranslator<'a>,
+{
+    <FuncTranslationDriver<'a, T>>::new(func_body, bytes, translator)?.translate()
 }
 
 /// Translates Wasm bytecode into `wasmi` bytecode for a single Wasm function.
@@ -90,38 +37,13 @@ struct FuncTranslationDriver<'parser, T> {
     translator: T,
 }
 
-impl<'parser> FuncTranslationDriver<'parser, ValidatingFuncTranslator> {
+impl<'parser, T> FuncTranslationDriver<'parser, T> {
     /// Creates a new Wasm to `wasmi` bytecode function translator.
     fn new(
-        func: FuncIdx,
-        compiled_func: CompiledFunc,
         func_body: FunctionBody<'parser>,
         bytes: &'parser [u8],
-        validator: FuncValidator<ValidatorResources>,
-        res: ModuleHeader,
-        allocations: FuncTranslatorAllocations,
+        translator: T,
     ) -> Result<Self, ModuleError> {
-        let translator =
-            ValidatingFuncTranslator::new(func, compiled_func, res, validator, allocations)?;
-        Ok(Self {
-            func_body,
-            bytes,
-            translator,
-        })
-    }
-}
-
-impl<'parser> FuncTranslationDriver<'parser, FuncTranslator> {
-    /// Creates a new Wasm to `wasmi` bytecode function translator.
-    fn new(
-        func: FuncIdx,
-        compiled_func: CompiledFunc,
-        func_body: FunctionBody<'parser>,
-        bytes: &'parser [u8],
-        res: ModuleHeader,
-        allocations: FuncTranslatorAllocations,
-    ) -> Result<Self, ModuleError> {
-        let translator = FuncTranslator::new(func, compiled_func, res, allocations)?;
         Ok(Self {
             func_body,
             bytes,
