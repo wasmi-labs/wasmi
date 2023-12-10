@@ -230,7 +230,8 @@ impl ModuleHeaderBuilder {
             self.funcs.push(func_type);
             let compiled_func = self.engine.alloc_func();
             self.compiled_funcs.push(compiled_func);
-            self.compiled_funcs_idx.insert(compiled_func, FuncIdx::from(func_index));
+            self.compiled_funcs_idx
+                .insert(compiled_func, FuncIdx::from(func_index));
         }
         Ok(())
     }

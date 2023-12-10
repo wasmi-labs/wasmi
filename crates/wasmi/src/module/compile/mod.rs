@@ -59,7 +59,8 @@ pub fn translate_unchecked(
     res: ModuleHeader,
     allocations: FuncTranslatorAllocations,
 ) -> Result<FuncTranslatorAllocations, ModuleError> {
-    FuncTranslationDriver::new_unchecked(func, compiled_func, func_body, res, allocations)?.translate()
+    FuncTranslationDriver::new_unchecked(func, compiled_func, func_body, res, allocations)?
+        .translate()
 }
 
 /// Translates Wasm bytecode into `wasmi` bytecode for a single Wasm function.
