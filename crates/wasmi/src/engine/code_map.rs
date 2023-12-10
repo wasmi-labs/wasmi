@@ -267,7 +267,7 @@ impl CodeMap {
         };
         let bytes = bytes.into();
         let module = module.clone();
-        *func = InternalFuncEntity::Uncompiled(UncompiledFuncEntity { bytes, module }).into();
+        *func = InternalFuncEntity::Uncompiled(UncompiledFuncEntity { bytes, module });
     }
 
     /// Returns the [`InternalFuncEntity`] of the [`CompiledFunc`].

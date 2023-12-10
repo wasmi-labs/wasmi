@@ -683,8 +683,7 @@ impl ModuleParser {
                     FuncTranslator::new(func, compiled_func, res, allocations.translation)?;
                 let validator = validator.into_validator(allocations.validation);
                 let translator = ValidatingFuncTranslator::new(validator, translator)?;
-                let allocations = translate(func_body, bytes, translator)?;
-                allocations
+                translate(func_body, bytes, translator)?
             }
             (CompilationMode::Eager, ValidationMode::HeaderOnly) => {
                 let translator =
