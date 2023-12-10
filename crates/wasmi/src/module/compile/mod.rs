@@ -68,7 +68,7 @@ where
         Ok(allocations)
     }
 
-    /// Finishes construction of the function and returns its [`CompiledFunc`].
+    /// Finishes construction of the function and returns its reusable allocations.
     fn finish(mut self, offset: usize) -> Result<T::Allocations, ModuleError> {
         self.translator.update_pos(offset);
         self.translator.finish().map_err(Into::into)
