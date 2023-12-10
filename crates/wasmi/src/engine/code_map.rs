@@ -99,6 +99,7 @@ pub struct UncompiledFuncEntity {
     module: ModuleHeader,
 }
 
+#[allow(dead_code)] // TODO: remove
 impl UncompiledFuncEntity {
     /// Create a new [`UncompiledFuncEntity`].
     pub fn new(bytes: &[u8], module: ModuleHeader) -> Self {
