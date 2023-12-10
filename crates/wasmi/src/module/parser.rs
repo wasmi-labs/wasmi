@@ -243,7 +243,14 @@ impl ModuleParser {
                 Chunk::Parsed { consumed, payload } => {
                     match payload {
                         Payload::CodeSectionEntry(func_body) => {
-                            self.process_code_entry(func_body, validate_funcs, &header)?;
+                            // Note: Unfortunately the `wasmparser` crate is missing an API
+                            //       to return the byte slice for the respective code section
+                            //       entry payload. Please remove this work around as soon as
+                            //       such an API becomes available.
+                            let remaining = func_body.get_binary_reader().bytes_remaining();
+                            let start = consumed - remaining;
+                            let bytes = &buffer[start..start + remaining];
+                            self.process_code_entry(func_body, validate_funcs, bytes, &header)?;
                         }
                         Payload::CustomSection { .. } => {}
                         Payload::UnknownSection { id, range, .. } => {
@@ -645,6 +652,7 @@ impl ModuleParser {
         &mut self,
         func_body: FunctionBody,
         validate_funcs: bool,
+        bytes: &[u8],
         header: &ModuleHeader,
     ) -> Result<(), ModuleError> {
         let (func, compiled_func) = self.next_func(header);
@@ -656,6 +664,7 @@ impl ModuleParser {
                 func,
                 compiled_func,
                 func_body,
+                bytes,
                 validator.into_validator(allocations.validation),
                 res,
                 allocations.translation,
@@ -665,6 +674,7 @@ impl ModuleParser {
                     func,
                     compiled_func,
                     func_body,
+                    bytes,
                     res,
                     allocations.translation,
                 )?;

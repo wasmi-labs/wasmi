@@ -118,6 +118,21 @@ pub trait WasmTranslator<'parser>:
     /// in order to avoid frequent memory allocations and deallocations.
     type Allocations: Default;
 
+    /// Sets up the translation process for the Wasm `bytes` and Wasm `module` header.
+    ///
+    /// - Returns `true` if the [`WasmTranslator`] is done with the translation process.
+    /// - Returns `false` if the [`WasmTranslator`] demands the translation driver to
+    ///   proceed with the process of parsing the Wasm module and feeding parse pieces
+    ///   to the [`WasmTranslator`].
+    ///
+    /// # Note
+    ///
+    /// - This method requires `bytes` to be the slice of bytes that make up the entire
+    ///   Wasm function body (including local variables).
+    /// - Also `module` must be a reference to the Wasm module header that is going to be
+    ///   used for translation of the Wasm function body.
+    fn setup(&mut self, bytes: &[u8]) -> Result<bool, TranslationError>;
+
     /// Translates the given local variables for the translated function.
     fn translate_locals(
         &mut self,
@@ -198,6 +213,13 @@ impl ValidatingFuncTranslator {
 impl<'parser> WasmTranslator<'parser> for ValidatingFuncTranslator {
     type Allocations = ReusableAllocations;
 
+    fn setup(&mut self, bytes: &[u8]) -> Result<bool, TranslationError> {
+        self.translator.setup(bytes)?;
+        // Note: Wasm validation always need to be driven, therefore returning `Ok(false)`
+        //       even if the underlying Wasm translator does not need a translation driver.
+        Ok(false)
+    }
+
     fn translate_locals(
         &mut self,
         amount: u32,
@@ -233,6 +255,10 @@ impl<'parser> WasmTranslator<'parser> for ValidatingFuncTranslator {
 
 impl<'parser> WasmTranslator<'parser> for FuncTranslator {
     type Allocations = FuncTranslatorAllocations;
+
+    fn setup(&mut self, _bytes: &[u8]) -> Result<bool, TranslationError> {
+        Ok(false)
+    }
 
     fn translate_locals(
         &mut self,

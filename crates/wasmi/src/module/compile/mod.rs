@@ -32,6 +32,7 @@ pub fn translate(
     func: FuncIdx,
     compiled_func: CompiledFunc,
     func_body: FunctionBody,
+    bytes: &[u8],
     validator: FuncValidator<ValidatorResources>,
     res: ModuleHeader,
     allocations: FuncTranslatorAllocations,
@@ -40,6 +41,7 @@ pub fn translate(
         func,
         compiled_func,
         func_body,
+        bytes,
         validator,
         res,
         allocations,
@@ -63,6 +65,7 @@ pub fn translate_unchecked(
     func: FuncIdx,
     compiled_func: CompiledFunc,
     func_body: FunctionBody,
+    bytes: &[u8],
     res: ModuleHeader,
     allocations: FuncTranslatorAllocations,
 ) -> Result<FuncTranslatorAllocations, ModuleError> {
@@ -70,6 +73,7 @@ pub fn translate_unchecked(
         func,
         compiled_func,
         func_body,
+        bytes,
         res,
         allocations,
     )?
@@ -80,6 +84,8 @@ pub fn translate_unchecked(
 struct FuncTranslationDriver<'parser, T> {
     /// The function body that shall be translated.
     func_body: FunctionBody<'parser>,
+    /// The bytes that make up the entirety of the function body.
+    bytes: &'parser [u8],
     /// The underlying translator used for the translation (and validation) process.
     translator: T,
 }
@@ -90,6 +96,7 @@ impl<'parser> FuncTranslationDriver<'parser, ValidatingFuncTranslator> {
         func: FuncIdx,
         compiled_func: CompiledFunc,
         func_body: FunctionBody<'parser>,
+        bytes: &'parser [u8],
         validator: FuncValidator<ValidatorResources>,
         res: ModuleHeader,
         allocations: FuncTranslatorAllocations,
@@ -98,6 +105,7 @@ impl<'parser> FuncTranslationDriver<'parser, ValidatingFuncTranslator> {
             ValidatingFuncTranslator::new(func, compiled_func, res, validator, allocations)?;
         Ok(Self {
             func_body,
+            bytes,
             translator,
         })
     }
@@ -109,12 +117,14 @@ impl<'parser> FuncTranslationDriver<'parser, FuncTranslator> {
         func: FuncIdx,
         compiled_func: CompiledFunc,
         func_body: FunctionBody<'parser>,
+        bytes: &'parser [u8],
         res: ModuleHeader,
         allocations: FuncTranslatorAllocations,
     ) -> Result<Self, ModuleError> {
         let translator = FuncTranslator::new(func, compiled_func, res, allocations)?;
         Ok(Self {
             func_body,
+            bytes,
             translator,
         })
     }
@@ -126,6 +136,10 @@ where
 {
     /// Starts translation of the Wasm stream into `wasmi` bytecode.
     fn translate(mut self) -> Result<T::Allocations, ModuleError> {
+        if self.translator.setup(self.bytes)? {
+            let allocations = self.translator.finish()?;
+            return Ok(allocations);
+        }
         self.translate_locals()?;
         let offset = self.translate_operators()?;
         let allocations = self.finish(offset)?;
