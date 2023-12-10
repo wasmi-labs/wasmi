@@ -222,7 +222,7 @@ impl CodeMap {
     /// The uninitialized [`CompiledFunc`] must be initialized using
     /// [`CodeMap::init_func`] before it is executed.
     pub fn alloc_func(&mut self) -> CompiledFunc {
-        self.entities.alloc(CompiledFuncEntity::uninit().into())
+        self.entities.alloc(InternalFuncEntity::uninit())
     }
 
     /// Initializes the [`CompiledFunc`] for eager translation.
