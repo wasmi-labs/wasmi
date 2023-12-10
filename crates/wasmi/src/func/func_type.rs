@@ -58,6 +58,11 @@ impl FuncType {
         &self.params_results[self.len_params..]
     }
 
+    /// Returns the number of result types of the function type.
+    pub fn len_results(&self) -> usize {
+        self.results().len()
+    }
+
     /// Returns the pair of parameter and result types of the function type.
     pub(crate) fn params_results(&self) -> (&[ValueType], &[ValueType]) {
         self.params_results.split_at(self.len_params)
