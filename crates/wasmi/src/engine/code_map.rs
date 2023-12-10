@@ -31,9 +31,10 @@ impl ArenaIndex for CompiledFunc {
     }
 
     fn from_usize(index: usize) -> Self {
-        let index = u32::try_from(index)
-            .unwrap_or_else(|_| panic!("out of bounds compiled func index: {index}"));
-        CompiledFunc(index)
+        let Ok(index) = u32::try_from(index) else {
+            panic!("out of bounds compiled func index: {index}")
+        };
+        Self(index)
     }
 }
 
