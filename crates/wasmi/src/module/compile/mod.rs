@@ -36,8 +36,15 @@ pub fn translate(
     res: ModuleHeader,
     allocations: FuncTranslatorAllocations,
 ) -> Result<ReusableAllocations, ModuleError> {
-    FuncTranslationDriver::new(func, compiled_func, func_body, validator, res, allocations)?
-        .translate()
+    <FuncTranslationDriver<'_, ValidatingFuncTranslator>>::new(
+        func,
+        compiled_func,
+        func_body,
+        validator,
+        res,
+        allocations,
+    )?
+    .translate()
 }
 
 /// Translates the Wasm bytecode into `wasmi` IR bytecode.
@@ -59,8 +66,14 @@ pub fn translate_unchecked(
     res: ModuleHeader,
     allocations: FuncTranslatorAllocations,
 ) -> Result<FuncTranslatorAllocations, ModuleError> {
-    FuncTranslationDriver::new_unchecked(func, compiled_func, func_body, res, allocations)?
-        .translate()
+    <FuncTranslationDriver<'_, FuncTranslator>>::new(
+        func,
+        compiled_func,
+        func_body,
+        res,
+        allocations,
+    )?
+    .translate()
 }
 
 /// Translates Wasm bytecode into `wasmi` bytecode for a single Wasm function.
@@ -92,7 +105,7 @@ impl<'parser> FuncTranslationDriver<'parser, ValidatingFuncTranslator> {
 
 impl<'parser> FuncTranslationDriver<'parser, FuncTranslator> {
     /// Creates a new Wasm to `wasmi` bytecode function translator.
-    fn new_unchecked(
+    fn new(
         func: FuncIdx,
         compiled_func: CompiledFunc,
         func_body: FunctionBody<'parser>,
