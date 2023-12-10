@@ -14,10 +14,10 @@ use crate::{
             UnaryInstr,
         },
         CompiledFunc,
-        CompiledFuncEntity,
         TranslationError,
     },
     module::ModuleHeader,
+    FuncType,
 };
 
 impl Instruction {
@@ -559,9 +559,13 @@ fn relink_call_internal(
     new_result: Register,
     old_result: Register,
 ) -> Result<bool, TranslationError> {
+    let Some(module_func) = res.get_func_index(func) else {
+        panic!("missing module func for compiled func: {func:?}")
+    };
+    let func_type = res.get_type_of_func(module_func);
     let len_results = res
         .engine()
-        .resolve_func(func, CompiledFuncEntity::len_results);
+        .resolve_func_type(func_type, FuncType::len_results);
     if len_results != 1 {
         return Ok(false);
     }
