@@ -7,6 +7,7 @@
 
 use crate::{core::UntypedValue, engine::bytecode::Instruction, module::ModuleHeader};
 use alloc::boxed::Box;
+use core::{ops, slice};
 use wasmi_arena::{Arena, ArenaIndex};
 
 /// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`](crate::Engine).
@@ -91,12 +92,66 @@ impl InternalFuncEntity {
 #[derive(Debug)]
 pub struct UncompiledFuncEntity {
     /// The Wasm binary bytes.
-    bytes: Box<[u8]>,
+    bytes: SmallByteSlice,
     /// The Wasm module of the Wasm function.
     ///
     /// This is required for Wasm module related information in order
     /// to compile the Wasm function body.
     module: ModuleHeader,
+}
+
+/// A boxed byte slice that stores up to 22 bytes inline.
+#[derive(Debug)]
+pub enum SmallByteSlice {
+    /// The byte slice fits in the inline buffer.
+    Small {
+        /// The length of the byte slice.
+        len: u8,
+        /// The bytes stored inline.
+        ///
+        /// Bytes beyond `len` are zeroed.
+        bytes: [u8; 22],
+    },
+    /// The byte slice is too big and allocated on the heap.
+    Big(Box<[u8]>),
+}
+
+impl SmallByteSlice {
+    /// The maximum amount of bytes that can be stored inline.
+    const MAX_INLINE_SIZE: usize = 22;
+
+    /// Returns the underlying slice of bytes.
+    #[inline]
+    pub fn as_slice(&self) -> &[u8] {
+        match self {
+            SmallByteSlice::Small { len, bytes } => &bytes[..usize::from(*len)],
+            SmallByteSlice::Big(bytes) => &bytes[..],
+        }
+    }
+}
+
+impl<I> ops::Index<I> for SmallByteSlice
+where
+    I: slice::SliceIndex<[u8]>,
+{
+    type Output = <I as slice::SliceIndex<[u8]>>::Output;
+
+    #[inline]
+    fn index(&self, index: I) -> &Self::Output {
+        self.as_slice().index(index)
+    }
+}
+
+impl<'a> From<&'a [u8]> for SmallByteSlice {
+    fn from(bytes: &'a [u8]) -> Self {
+        if bytes.len() <= Self::MAX_INLINE_SIZE {
+            let len = bytes.len() as u8;
+            let mut buffer = [0x00_u8; 22];
+            buffer[..usize::from(len)].copy_from_slice(bytes);
+            return Self::Small { len, bytes: buffer };
+        }
+        Self::Big(bytes.into())
+    }
 }
 
 #[allow(dead_code)] // TODO: remove
