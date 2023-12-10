@@ -10,7 +10,7 @@ use alloc::boxed::Box;
 use wasmi_arena::{Arena, ArenaIndex};
 
 /// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`](crate::Engine).
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CompiledFunc(u32);
 
 impl CompiledFunc {

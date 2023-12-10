@@ -47,6 +47,7 @@ pub struct ModuleHeaderBuilder {
     pub exports: BTreeMap<Box<str>, ExternIdx>,
     pub start: Option<FuncIdx>,
     pub compiled_funcs: Vec<CompiledFunc>,
+    pub compiled_funcs_idx: BTreeMap<CompiledFunc, FuncIdx>,
     pub element_segments: Vec<ElementSegment>,
 }
 
@@ -65,6 +66,7 @@ impl ModuleHeaderBuilder {
             exports: BTreeMap::new(),
             start: None,
             compiled_funcs: Vec::new(),
+            compiled_funcs_idx: BTreeMap::new(),
             element_segments: Vec::new(),
         }
     }
@@ -84,6 +86,7 @@ impl ModuleHeaderBuilder {
                 exports: self.exports,
                 start: self.start,
                 compiled_funcs: self.compiled_funcs.into(),
+                compiled_funcs_idx: self.compiled_funcs_idx,
                 element_segments: self.element_segments.into(),
             }),
         }
@@ -221,8 +224,13 @@ impl ModuleHeaderBuilder {
         for func in funcs {
             let func_type_idx = func?;
             let func_type = self.func_types[func_type_idx.into_u32() as usize];
+            let Ok(func_index) = u32::try_from(self.funcs.len()) else {
+                panic!("function index out of bounds: {}", self.funcs.len())
+            };
             self.funcs.push(func_type);
-            self.compiled_funcs.push(self.engine.alloc_func());
+            let compiled_func = self.engine.alloc_func();
+            self.compiled_funcs.push(compiled_func);
+            self.compiled_funcs_idx.insert(compiled_func, FuncIdx::from(func_index));
         }
         Ok(())
     }

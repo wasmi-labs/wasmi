@@ -76,6 +76,7 @@ struct ModuleHeaderInner {
     exports: BTreeMap<Box<str>, ExternIdx>,
     start: Option<FuncIdx>,
     compiled_funcs: Box<[CompiledFunc]>,
+    compiled_funcs_idx: BTreeMap<CompiledFunc, FuncIdx>,
     element_segments: Box<[ElementSegment]>,
 }
 
@@ -110,6 +111,11 @@ impl ModuleHeader {
         // Note: It is a bug if this index access is out of bounds
         //       therefore we panic here instead of using `get`.
         Some(self.inner.compiled_funcs[index])
+    }
+
+    /// Returns the [`FuncIdx`] for the given [`CompiledFunc`].
+    pub fn get_func_index(&self, func: CompiledFunc) -> Option<FuncIdx> {
+        self.inner.compiled_funcs_idx.get(&func).copied()
     }
 
     /// Returns the global variable type and optional initial value.
