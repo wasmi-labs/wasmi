@@ -50,8 +50,6 @@ pub struct CompiledFuncEntity {
     /// This includes registers to store the function local constant values,
     /// function parameters, function locals and dynamically used registers.
     len_registers: u16,
-    /// The number of results that the [`CompiledFunc`] returns.
-    len_results: u16,
     /// The constant values local to the [`CompiledFunc`].
     consts: Box<[UntypedValue]>,
 }
@@ -63,7 +61,7 @@ impl CompiledFuncEntity {
     ///
     /// - If `instrs` is empty.
     /// - If `instrs` contains more than `u32::MAX` instructions.
-    fn new<I, C>(len_registers: u16, len_results: u16, instrs: I, consts: C) -> Self
+    fn new<I, C>(len_registers: u16, instrs: I, consts: C) -> Self
     where
         I: IntoIterator<Item = Instruction>,
         C: IntoIterator<Item = UntypedValue>,
@@ -77,7 +75,6 @@ impl CompiledFuncEntity {
         Self {
             instrs,
             len_registers,
-            len_results,
             consts,
         }
     }
@@ -87,7 +84,6 @@ impl CompiledFuncEntity {
         Self {
             instrs: [].into(),
             len_registers: 0,
-            len_results: 0,
             consts: [].into(),
         }
     }
@@ -105,11 +101,6 @@ impl CompiledFuncEntity {
     /// Returns the number of registers used by the [`CompiledFunc`].
     pub fn len_registers(&self) -> u16 {
         self.len_registers
-    }
-
-    /// Returns the number of results returned by the [`CompiledFunc`].
-    pub fn len_results(&self) -> u16 {
-        self.len_results
     }
 
     /// Returns the number of mutable registers used by the [`CompiledFunc`].

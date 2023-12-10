@@ -364,17 +364,11 @@ impl<'parser> WasmTranslator<'parser> for FuncTranslator {
                     costs.fuel_for_copies(u64::from(len_registers))
                 })?;
         }
-        let len_results = u16::try_from(self.func_type().results().len())
-            .map_err(|_| TranslationError::new(TranslationErrorInner::TooManyFunctionResults))?;
         let func_consts = self.alloc.stack.func_local_consts();
         let instrs = self.alloc.instr_encoder.drain_instrs();
-        self.res.engine().init_func(
-            self.compiled_func,
-            len_registers,
-            len_results,
-            func_consts,
-            instrs,
-        );
+        self.res
+            .engine()
+            .init_func(self.compiled_func, len_registers, func_consts, instrs);
         Ok(self.into_allocations())
     }
 }

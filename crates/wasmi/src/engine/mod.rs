@@ -178,7 +178,7 @@ impl Engine {
         I: IntoIterator<Item = Instruction>,
     {
         self.inner
-            .init_func(func, len_registers, len_results, func_locals, instrs)
+            .init_func(func, len_registers, func_locals, instrs)
     }
 
     /// Resolves the [`CompiledFuncEntity`] for [`CompiledFunc`] and applies `f` to it.
@@ -458,7 +458,7 @@ impl EngineInner {
         self.res
             .write()
             .code_map
-            .init_func(func, len_registers, len_results, func_locals, instrs)
+            .init_func(func, len_registers, func_locals, instrs)
     }
 
     /// Resolves the [`CompiledFuncEntity`] for [`CompiledFunc`] and applies `f` to it.
