@@ -18,6 +18,9 @@ mod tests;
 #[cfg(test)]
 use self::bytecode::RegisterSpan;
 
+#[cfg(test)]
+use self::code_map::InternalFuncEntity;
+
 use self::{
     bytecode::Instruction,
     code_map::{CodeMap, CompiledFuncEntity},
@@ -46,7 +49,7 @@ pub(crate) use self::{
         WasmTranslator,
     },
 };
-use crate::{core::Trap, Func, FuncType, StoreContextMut};
+use crate::{core::Trap, module::ModuleHeader, Func, FuncType, StoreContextMut};
 use alloc::{sync::Arc, vec::Vec};
 use core::sync::atomic::{AtomicU32, Ordering};
 use spin::{Mutex, RwLock};
@@ -158,9 +161,9 @@ impl Engine {
     }
 
     /// Initializes the uninitialized [`CompiledFunc`] for the [`Engine`].
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// The initialized function will be compiled and ready to be executed after this call.
     ///
     /// # Panics
@@ -171,7 +174,6 @@ impl Engine {
         &self,
         func: CompiledFunc,
         len_registers: u16,
-        len_results: u16,
         func_locals: FuncLocalConstsIter,
         instrs: I,
     ) where
@@ -181,16 +183,19 @@ impl Engine {
             .init_func(func, len_registers, func_locals, instrs)
     }
 
-    /// Resolves the [`CompiledFuncEntity`] for [`CompiledFunc`] and applies `f` to it.
+    /// Initializes the uninitialized [`CompiledFunc`] for the [`Engine`].
+    ///
+    /// # Note
+    ///
+    /// The initialized function will not be compiled after this call and instead
+    /// be prepared to be compiled on the fly when it is called the first time.
     ///
     /// # Panics
     ///
-    /// If [`CompiledFunc`] is invalid for [`Engine`].
-    pub(super) fn resolve_func<F, R>(&self, func: CompiledFunc, f: F) -> R
-    where
-        F: FnOnce(&CompiledFuncEntity) -> R,
-    {
-        self.inner.resolve_func(func, f)
+    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
+    /// - If `func` refers to an already initialized [`CompiledFunc`].
+    fn init_lazy_func(&self, func: CompiledFunc, bytes: &[u8], module: &ModuleHeader) {
+        self.inner.init_lazy_func(func, bytes, module)
     }
 
     /// Resolves the [`CompiledFunc`] to the underlying `wasmi` bytecode instructions.
@@ -436,9 +441,9 @@ impl EngineInner {
     }
 
     /// Initializes the uninitialized [`CompiledFunc`] for the [`EngineInner`].
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// The initialized function will be compiled and ready to be executed after this call.
     ///
     /// # Panics
@@ -449,7 +454,6 @@ impl EngineInner {
         &self,
         func: CompiledFunc,
         len_registers: u16,
-        len_results: u16,
         func_locals: FuncLocalConstsIter,
         instrs: I,
     ) where
@@ -461,57 +465,72 @@ impl EngineInner {
             .init_func(func, len_registers, func_locals, instrs)
     }
 
-    /// Resolves the [`CompiledFuncEntity`] for [`CompiledFunc`] and applies `f` to it.
+    /// Initializes the uninitialized [`CompiledFunc`] for the [`Engine`].
+    ///
+    /// # Note
+    ///
+    /// The initialized function will not be compiled after this call and instead
+    /// be prepared to be compiled on the fly when it is called the first time.
+    ///
+    /// # Panics
+    ///
+    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
+    /// - If `func` refers to an already initialized [`CompiledFunc`].
+    fn init_lazy_func(&self, func: CompiledFunc, bytes: &[u8], module: &ModuleHeader) {
+        self.res
+            .write()
+            .code_map
+            .init_lazy_func(func, bytes, module)
+    }
+
+    /// Resolves the [`InternalFuncEntity`] for [`CompiledFunc`] and applies `f` to it.
     ///
     /// # Panics
     ///
     /// If [`CompiledFunc`] is invalid for [`Engine`].
+    #[cfg(test)]
     pub(super) fn resolve_func<F, R>(&self, func: CompiledFunc, f: F) -> R
     where
-        F: FnOnce(&CompiledFuncEntity) -> R,
+        F: FnOnce(&InternalFuncEntity) -> R,
     {
         f(self.res.read().code_map.get(func))
     }
 
     /// Returns the [`Instruction`] of `func` at `index`.
-    /// 
+    ///
     /// Returns `None` if the function has no instruction at `index`.
-    /// 
+    ///
     /// # Pancis
-    /// 
+    ///
     /// If `func` cannot be resolved to a function for the [`EngineInner`].
     #[cfg(test)]
     pub(crate) fn resolve_instr(&self, func: CompiledFunc, index: usize) -> Option<Instruction> {
-        self.res
-            .read()
-            .code_map
-            .get(func)
-            .instrs()
-            .get(index)
-            .copied()
+        self.resolve_func(func, |func| {
+            let Some(compiled) = func.as_compiled() else {
+                panic!("cannot resolve instruction from uncompiled function: {func:?}")
+            };
+            compiled.instrs().get(index).copied()
+        })
     }
 
     /// Returns the function local constant value of `func` at `index`.
-    /// 
+    ///
     /// Returns `None` if the function has no function local constant at `index`.
-    /// 
+    ///
     /// # Pancis
-    /// 
+    ///
     /// If `func` cannot be resolved to a function for the [`EngineInner`].
     #[cfg(test)]
     fn get_func_const(&self, func: CompiledFunc, index: usize) -> Option<UntypedValue> {
         // Function local constants are stored in reverse order of their indices since
         // they are allocated in reverse order to their absolute indices during function
         // translation. That is why we need to access them in reverse order.
-        self.res
-            .read()
-            .code_map
-            .get(func)
-            .consts()
-            .iter()
-            .rev()
-            .nth(index)
-            .copied()
+        self.resolve_func(func, |func| {
+            let Some(compiled) = func.as_compiled() else {
+                panic!("cannot resolve instruction from uncompiled function: {func:?}")
+            };
+            compiled.consts().iter().rev().nth(index).copied()
+        })
     }
 
     /// Recycles the given [`Stack`].

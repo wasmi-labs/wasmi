@@ -3,7 +3,7 @@ use crate::{
     core::TrapCode,
     engine::{
         bytecode::{FuncIdx, Instruction, Register, RegisterSpan, SignatureIdx, TableIdx},
-        code_map::InstructionPtr,
+        code_map::{InstructionPtr, InternalFuncEntity},
         executor::stack::{CallFrame, Stack, ValueStackPtr},
         CompiledFunc,
         CompiledFuncEntity,
@@ -168,7 +168,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         params: CallParams,
         call_kind: CallKind,
     ) -> Result<(), TrapCode> {
-        let func = self.code_map.get(func);
+        let func = match self.code_map.get(func) {
+            InternalFuncEntity::Compiled(func) => func,
+            InternalFuncEntity::Uncompiled(func) => {
+                unimplemented!("lazy function calls are not yet implemented but found: {func:?}")
+            }
+        };
         let mut called = self.dispatch_compiled_func(results, func)?;
         if let CallParams::Some = params {
             let called_sp = self.frame_stack_ptr(&called);

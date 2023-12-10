@@ -5,7 +5,7 @@
 //! This is the data structure specialized to handle compiled
 //! register machine based bytecode functions.
 
-use crate::{core::UntypedValue, engine::bytecode::Instruction};
+use crate::{core::UntypedValue, engine::bytecode::Instruction, module::ModuleHeader};
 use alloc::boxed::Box;
 use wasmi_arena::{Arena, ArenaIndex};
 
@@ -35,6 +35,86 @@ impl ArenaIndex for CompiledFunc {
             panic!("out of bounds compiled func index: {index}")
         };
         Self(index)
+    }
+}
+
+/// An internal function entity.
+///
+/// Either an already compiled or still uncompiled function entity.
+#[derive(Debug)]
+pub enum InternalFuncEntity {
+    /// An internal function that has already been compiled.
+    Compiled(CompiledFuncEntity),
+    /// An internal function that has not yet been compiled.
+    Uncompiled(UncompiledFuncEntity),
+}
+
+impl From<CompiledFuncEntity> for InternalFuncEntity {
+    fn from(func: CompiledFuncEntity) -> Self {
+        Self::Compiled(func)
+    }
+}
+
+impl From<UncompiledFuncEntity> for InternalFuncEntity {
+    fn from(func: UncompiledFuncEntity) -> Self {
+        Self::Uncompiled(func)
+    }
+}
+
+impl InternalFuncEntity {
+    /// Create a new uninitialized [`InternalFuncEntity`].
+    fn uninit() -> Self {
+        Self::from(CompiledFuncEntity::uninit())
+    }
+
+    /// Returns `true` if the [`InternalFuncEntity`] is uninitialized.
+    fn is_init(&self) -> bool {
+        match self {
+            InternalFuncEntity::Compiled(func) => func.is_init(),
+            InternalFuncEntity::Uncompiled(_) => true,
+        }
+    }
+
+    /// Returns `Some` [`CompiledFuncEntity`] if possible.
+    ///
+    /// Otherwise returns `None`.
+    pub fn as_compiled(&self) -> Option<&CompiledFuncEntity> {
+        match self {
+            InternalFuncEntity::Compiled(func) => Some(func),
+            InternalFuncEntity::Uncompiled(_) => None,
+        }
+    }
+}
+
+/// An internal uncompiled function entity.
+#[derive(Debug)]
+pub struct UncompiledFuncEntity {
+    /// The Wasm binary bytes.
+    bytes: Box<[u8]>,
+    /// The Wasm module of the Wasm function.
+    ///
+    /// This is required for Wasm module related information in order
+    /// to compile the Wasm function body.
+    module: ModuleHeader,
+}
+
+impl UncompiledFuncEntity {
+    /// Create a new [`UncompiledFuncEntity`].
+    pub fn new(bytes: &[u8], module: ModuleHeader) -> Self {
+        Self {
+            bytes: bytes.into(),
+            module,
+        }
+    }
+
+    /// Returns the underlying Wasm bytes of the [`UncompiledFuncEntity`].
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes[..]
+    }
+
+    /// Returns the Wasm module header of the [`UncompiledFuncEntity`].
+    pub fn module(&self) -> &ModuleHeader {
+        &self.module
     }
 }
 
@@ -89,8 +169,8 @@ impl CompiledFuncEntity {
     }
 
     /// Returns `true` if the [`CompiledFuncEntity`] is uninitialized.
-    fn is_uninit(&self) -> bool {
-        self.instrs.is_empty()
+    fn is_init(&self) -> bool {
+        !self.instrs.is_empty()
     }
 
     /// Returns the sequence of [`Instruction`] of the [`CompiledFunc`].
@@ -130,7 +210,7 @@ impl CompiledFuncEntity {
 #[derive(Debug, Default)]
 pub struct CodeMap {
     /// The headers of all compiled functions.
-    entities: Arena<CompiledFunc, CompiledFuncEntity>,
+    entities: Arena<CompiledFunc, InternalFuncEntity>,
 }
 
 impl CodeMap {
@@ -141,10 +221,10 @@ impl CodeMap {
     /// The uninitialized [`CompiledFunc`] must be initialized using
     /// [`CodeMap::init_func`] before it is executed.
     pub fn alloc_func(&mut self) -> CompiledFunc {
-        self.entities.alloc(CompiledFuncEntity::uninit())
+        self.entities.alloc(CompiledFuncEntity::uninit().into())
     }
 
-    /// Initializes the [`CompiledFunc`].
+    /// Initializes the [`CompiledFunc`] for eager translation.
     ///
     /// # Panics
     ///
@@ -154,7 +234,6 @@ impl CodeMap {
         &mut self,
         func: CompiledFunc,
         len_registers: u16,
-        len_results: u16,
         func_locals: C,
         instrs: I,
     ) where
@@ -162,19 +241,37 @@ impl CodeMap {
         C: IntoIterator<Item = UntypedValue>,
     {
         assert!(
-            self.get(func).is_uninit(),
+            !self.get(func).is_init(),
             "func {func:?} is already initialized"
         );
-        let func = self
-            .entities
-            .get_mut(func)
-            .unwrap_or_else(|| panic!("tried to initialize invalid compiled func: {func:?}"));
-        *func = CompiledFuncEntity::new(len_registers, len_results, instrs, func_locals);
+        let Some(func) = self.entities.get_mut(func) else {
+            panic!("tried to initialize invalid compiled func: {func:?}")
+        };
+        *func = CompiledFuncEntity::new(len_registers, instrs, func_locals).into();
     }
 
-    /// Returns the [`CompiledFuncEntity`] of the [`CompiledFunc`].
+    /// Initializes the [`CompiledFunc`] for lazy translation.
+    ///
+    /// # Panics
+    ///
+    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
+    /// - If `func` refers to an already initialized [`CompiledFunc`].
+    pub fn init_lazy_func(&mut self, func: CompiledFunc, bytes: &[u8], module: &ModuleHeader) {
+        assert!(
+            !self.get(func).is_init(),
+            "func {func:?} is already initialized"
+        );
+        let Some(func) = self.entities.get_mut(func) else {
+            panic!("tried to initialize invalid compiled func: {func:?}")
+        };
+        let bytes = bytes.into();
+        let module = module.clone();
+        *func = InternalFuncEntity::Uncompiled(UncompiledFuncEntity { bytes, module }).into();
+    }
+
+    /// Returns the [`InternalFuncEntity`] of the [`CompiledFunc`].
     #[track_caller]
-    pub fn get(&self, func: CompiledFunc) -> &CompiledFuncEntity {
+    pub fn get(&self, func: CompiledFunc) -> &InternalFuncEntity {
         self.entities
             .get(func)
             .unwrap_or_else(|| panic!("invalid compiled func: {func:?}"))
