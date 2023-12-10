@@ -158,6 +158,10 @@ impl Engine {
     }
 
     /// Initializes the uninitialized [`CompiledFunc`] for the [`Engine`].
+    /// 
+    /// # Note
+    /// 
+    /// The initialized function will be compiled and ready to be executed after this call.
     ///
     /// # Panics
     ///
@@ -432,6 +436,10 @@ impl EngineInner {
     }
 
     /// Initializes the uninitialized [`CompiledFunc`] for the [`EngineInner`].
+    /// 
+    /// # Note
+    /// 
+    /// The initialized function will be compiled and ready to be executed after this call.
     ///
     /// # Panics
     ///
@@ -465,6 +473,13 @@ impl EngineInner {
         f(self.res.read().code_map.get(func))
     }
 
+    /// Returns the [`Instruction`] of `func` at `index`.
+    /// 
+    /// Returns `None` if the function has no instruction at `index`.
+    /// 
+    /// # Pancis
+    /// 
+    /// If `func` cannot be resolved to a function for the [`EngineInner`].
     #[cfg(test)]
     pub(crate) fn resolve_instr(&self, func: CompiledFunc, index: usize) -> Option<Instruction> {
         self.res
@@ -476,6 +491,13 @@ impl EngineInner {
             .copied()
     }
 
+    /// Returns the function local constant value of `func` at `index`.
+    /// 
+    /// Returns `None` if the function has no function local constant at `index`.
+    /// 
+    /// # Pancis
+    /// 
+    /// If `func` cannot be resolved to a function for the [`EngineInner`].
     #[cfg(test)]
     fn get_func_const(&self, func: CompiledFunc, index: usize) -> Option<UntypedValue> {
         // Function local constants are stored in reverse order of their indices since
