@@ -78,6 +78,7 @@ impl InternalFuncEntity {
     /// Returns `Some` [`CompiledFuncEntity`] if possible.
     ///
     /// Otherwise returns `None`.
+    #[cfg(test)]
     pub fn as_compiled(&self) -> Option<&CompiledFuncEntity> {
         match self {
             InternalFuncEntity::Compiled(func) => Some(func),
