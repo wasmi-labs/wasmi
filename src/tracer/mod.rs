@@ -147,19 +147,13 @@ impl Tracer {
         for i in 0..(pages * ENTRIES) {
             let mut buf = [0u8; 8];
             (*memref).get_into(i * 8, &mut buf).unwrap();
-            self.imtable
-                .push(false, true, i, VarType::I64, u64::from_le_bytes(buf));
-        }
 
-        // TODO: perf
-        for offset in (pages * ENTRIES)
-            ..memref
-                .limits()
-                .maximum()
-                .map(|limit| limit * ENTRIES)
-                .unwrap_or(u32::MAX)
-        {
-            self.imtable.push(false, true, offset, VarType::I64, 0);
+            let v = u64::from_le_bytes(buf);
+
+            if v != 0 {
+                self.imtable
+                    .push(false, true, i, VarType::I64, u64::from_le_bytes(buf));
+            }
         }
     }
 
