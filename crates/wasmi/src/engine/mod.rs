@@ -29,6 +29,7 @@ pub(crate) use self::{
     func_args::{FuncFinished, FuncParams, FuncResults},
     func_types::DedupFuncType,
     translator::{
+        translate,
         FuncTranslator,
         FuncTranslatorAllocations,
         LazyFuncTranslator,

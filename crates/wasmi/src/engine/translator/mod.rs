@@ -2,6 +2,7 @@
 
 mod control_frame;
 mod control_stack;
+mod driver;
 mod error;
 mod instr_encoder;
 mod labels;
@@ -32,6 +33,7 @@ use self::{
 pub use self::{
     control_frame::{ControlFrame, ControlFrameKind},
     control_stack::ControlStack,
+    driver::translate,
     error::TranslationError,
     instr_encoder::{Instr, InstrEncoder},
     stack::{FuncLocalConstsIter, TypedProvider},

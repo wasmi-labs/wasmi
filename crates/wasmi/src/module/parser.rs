@@ -1,6 +1,5 @@
 use super::{
     builder::ModuleHeaderBuilder,
-    compile::translate,
     export::ExternIdx,
     global::Global,
     import::{FuncTypeIdx, Import},
@@ -14,6 +13,7 @@ use super::{
 };
 use crate::{
     engine::{
+        translate,
         CompiledFunc,
         FuncTranslator,
         FuncTranslatorAllocations,
