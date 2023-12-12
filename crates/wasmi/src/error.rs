@@ -12,6 +12,7 @@ use crate::{
     engine::TranslationError,
     module::ReadError,
 };
+use alloc::boxed::Box;
 use core::{fmt, fmt::Display};
 use wasmparser::BinaryReaderError as WasmError;
 
