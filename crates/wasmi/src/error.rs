@@ -15,10 +15,45 @@ use crate::{
 use core::{fmt, fmt::Display};
 use wasmparser::BinaryReaderError as WasmError;
 
+/// The generic `wasmi` root error type.
+#[derive(Debug)]
+pub struct Error {
+    /// The underlying kind of the error and its specific information.
+    kind: Box<ErrorKind>,
+}
+
+impl Error {
+    /// Creates a new [`Error`] from the [`ErrorKind`].
+    fn new(kind: ErrorKind) -> Self {
+        Self {
+            kind: Box::new(kind),
+        }
+    }
+
+    /// Converts `self` into the underlying [`ErrorKind`].
+    pub fn into_kind(self) -> ErrorKind {
+        *self.kind
+    }
+
+    /// Returns the [`ErrorKind`] of the [`Error`].
+    pub fn kind(&self) -> &ErrorKind {
+        &self.kind
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for Error {}
+
+impl Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        Display::fmt(&self.kind, f)
+    }
+}
+
 /// An error that may occur upon operating on Wasm modules or module instances.
 #[derive(Debug)]
 #[non_exhaustive]
-pub enum Error {
+pub enum ErrorKind {
     /// A global variable error.
     Global(GlobalError),
     /// A linear memory error.
@@ -44,9 +79,9 @@ pub enum Error {
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for Error {}
+impl std::error::Error for ErrorKind {}
 
-impl Display for Error {
+impl Display for ErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Trap(error) => Display::fmt(error, f),
@@ -56,7 +91,6 @@ impl Display for Error {
             Self::Linker(error) => Display::fmt(error, f),
             Self::Func(error) => Display::fmt(error, f),
             Self::Instantiation(error) => Display::fmt(error, f),
-            // Self::Module(error) => Display::fmt(error, f),
             Self::Fuel(error) => Display::fmt(error, f),
             Self::Read(error) => Display::fmt(error, f),
             Self::Wasm(error) => Display::fmt(error, f),
@@ -70,7 +104,7 @@ macro_rules! impl_from {
         $(
             impl From<$from> for Error {
                 fn from(error: $from) -> Self {
-                    Self::$name(error)
+                    Error::new(ErrorKind::$name(error))
                 }
             }
         )*

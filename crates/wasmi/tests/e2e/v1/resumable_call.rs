@@ -3,10 +3,10 @@
 use core::slice;
 
 use wasmi::{
+    errors::ErrorKind,
     Caller,
     Config,
     Engine,
-    Error,
     Extern,
     Func,
     Linker,
@@ -183,8 +183,8 @@ fn resumable_call_host() {
     let error = host_fn
         .call_resumable(&mut store, &[], &mut [])
         .unwrap_err();
-    match error {
-        Error::Trap(trap) => {
+    match error.kind() {
+        ErrorKind::Trap(trap) => {
             assert_eq!(trap.i32_exit_status(), Some(100));
         }
         _ => panic!("expected Wasm trap"),
@@ -304,8 +304,8 @@ fn run_test(wasm_fn: Func, mut store: &mut Store<TestData>, wasm_trap: bool) {
         .assert_resumable(store, 20, &[ValueType::I32]);
     let call = invocation.resume(&mut store, &[Value::I32(3)], slice::from_mut(&mut results));
     if wasm_trap {
-        match call.unwrap_err() {
-            Error::Trap(trap) => {
+        match call.unwrap_err().kind() {
+            ErrorKind::Trap(trap) => {
                 assert!(matches!(
                     trap.trap_code(),
                     Some(TrapCode::UnreachableCodeReached)
@@ -360,8 +360,8 @@ fn run_test_typed(wasm_fn: Func, mut store: &mut Store<TestData>, wasm_trap: boo
         .assert_resumable(store, 20, &[ValueType::I32]);
     let call = invocation.resume(&mut store, &[Value::I32(3)]);
     if wasm_trap {
-        match call.unwrap_err() {
-            Error::Trap(trap) => {
+        match call.unwrap_err().kind() {
+            ErrorKind::Trap(trap) => {
                 assert!(matches!(
                     trap.trap_code(),
                     Some(TrapCode::UnreachableCodeReached)

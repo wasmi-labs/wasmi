@@ -44,7 +44,7 @@ fn main() -> Result<()> {
             Ok(())
         }
         Err(error) => {
-            if let wasmi::Error::Trap(trap) = &error {
+            if let wasmi::errors::ErrorKind::Trap(trap) = error.kind() {
                 if let Some(exit_code) = trap.i32_exit_status() {
                     // We received an exit code from the WASI program,
                     // therefore we exit with the same exit code after
