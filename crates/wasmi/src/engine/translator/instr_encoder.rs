@@ -22,9 +22,9 @@ use crate::{
         },
         translator::{stack::RegisterSpace, ValueStack},
         FuelCosts,
-        TranslationError,
     },
     module::ModuleHeader,
+    Error,
 };
 use alloc::vec::{Drain, Vec};
 use core::mem;
@@ -119,7 +119,7 @@ impl InstrSequence {
     /// # Errors
     ///
     /// If there are too many instructions in the instruction sequence.
-    fn push(&mut self, instruction: Instruction) -> Result<Instr, TranslationError> {
+    fn push(&mut self, instruction: Instruction) -> Result<Instr, Error> {
         let instr = self.next_instr();
         self.instrs.push(instruction);
         Ok(instr)
@@ -140,11 +140,7 @@ impl InstrSequence {
     /// # Errors
     ///
     /// If there are too many instructions in the instruction sequence.
-    fn push_before(
-        &mut self,
-        instr: Instr,
-        instruction: Instruction,
-    ) -> Result<Instr, TranslationError> {
+    fn push_before(&mut self, instr: Instr, instruction: Instruction) -> Result<Instr, Error> {
         self.instrs.insert(instr.into_usize(), instruction);
         let shifted_instr = instr
             .into_u32()
@@ -272,7 +268,7 @@ impl InstrEncoder {
     ///
     /// Returns an uninitialized [`BranchOffset`] if the `label` cannot yet
     /// be resolved and defers resolution to later.
-    pub fn try_resolve_label(&mut self, label: LabelRef) -> Result<BranchOffset, TranslationError> {
+    pub fn try_resolve_label(&mut self, label: LabelRef) -> Result<BranchOffset, Error> {
         let user = self.instrs.next_instr();
         self.try_resolve_label_for(label, user)
     }
@@ -285,7 +281,7 @@ impl InstrEncoder {
         &mut self,
         label: LabelRef,
         instr: Instr,
-    ) -> Result<BranchOffset, TranslationError> {
+    ) -> Result<BranchOffset, Error> {
         self.labels.try_resolve_label(label, instr)
     }
 
@@ -294,7 +290,7 @@ impl InstrEncoder {
     /// # Panics
     ///
     /// If this is used before all branching labels have been pinned.
-    pub fn update_branch_offsets(&mut self) -> Result<(), TranslationError> {
+    pub fn update_branch_offsets(&mut self) -> Result<(), Error> {
         for (user, offset) in self.labels.resolved_users() {
             self.instrs.get_mut(user).update_branch_offset(offset?)?;
         }
@@ -302,7 +298,7 @@ impl InstrEncoder {
     }
 
     /// Push the [`Instruction`] to the [`InstrEncoder`].
-    pub fn push_instr(&mut self, instr: Instruction) -> Result<Instr, TranslationError> {
+    pub fn push_instr(&mut self, instr: Instruction) -> Result<Instr, Error> {
         let last_instr = self.instrs.push(instr)?;
         self.last_instr = Some(last_instr);
         Ok(last_instr)
@@ -315,7 +311,7 @@ impl InstrEncoder {
     /// This is used primarily for [`Instruction`] words that are just carrying
     /// parameters for the [`Instruction`]. An example of this is [`Instruction::Const32`]
     /// carrying the `offset` parameter for [`Instruction::I32Load`].
-    pub fn append_instr(&mut self, instr: Instruction) -> Result<Instr, TranslationError> {
+    pub fn append_instr(&mut self, instr: Instruction) -> Result<Instr, Error> {
         self.instrs.push(instr)
     }
 
@@ -331,13 +327,13 @@ impl InstrEncoder {
         result: Register,
         value: TypedProvider,
         fuel_info: FuelInfo,
-    ) -> Result<Option<Instr>, TranslationError> {
+    ) -> Result<Option<Instr>, Error> {
         /// Convenience to create an [`Instruction::Copy`] to copy a constant value.
         fn copy_imm(
             stack: &mut ValueStack,
             result: Register,
             value: impl Into<UntypedValue>,
-        ) -> Result<Instruction, TranslationError> {
+        ) -> Result<Instruction, Error> {
             let cref = stack.alloc_const(value.into())?;
             Ok(Instruction::copy(result, cref))
         }
@@ -381,7 +377,7 @@ impl InstrEncoder {
         mut results: RegisterSpanIter,
         values: &[TypedProvider],
         fuel_info: FuelInfo,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         assert_eq!(results.len(), values.len());
         if let Some((TypedProvider::Register(value), rest)) = values.split_first() {
             if results.span().head() == *value {
@@ -500,11 +496,7 @@ impl InstrEncoder {
     /// # Errors
     ///
     /// If consumed fuel is out of bounds after this operation.
-    pub fn bump_fuel_consumption<F>(
-        &mut self,
-        fuel_info: FuelInfo,
-        f: F,
-    ) -> Result<(), TranslationError>
+    pub fn bump_fuel_consumption<F>(&mut self, fuel_info: FuelInfo, f: F) -> Result<(), Error>
     where
         F: FnOnce(&FuelCosts) -> u64,
     {
@@ -525,7 +517,7 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         values: &[TypedProvider],
         fuel_info: FuelInfo,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         let instr = match values {
             [] => Instruction::Return,
             [TypedProvider::Register(reg)] => Instruction::return_reg(*reg),
@@ -588,7 +580,7 @@ impl InstrEncoder {
         condition: Register,
         values: &[TypedProvider],
         fuel_info: FuelInfo,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         // Note: We bump fuel unconditionally even if the conditional return is not taken.
         //       This is very conservative and may lead to more fuel costs than
         //       actually needed for the computation. We might revisit this decision
@@ -645,10 +637,7 @@ impl InstrEncoder {
     /// Converts a [`TypedProvider`] into a [`Register`].
     ///
     /// This allocates constant values for [`TypedProvider::Const`].
-    fn provider2reg(
-        stack: &mut ValueStack,
-        provider: &TypedProvider,
-    ) -> Result<Register, TranslationError> {
+    fn provider2reg(stack: &mut ValueStack, provider: &TypedProvider) -> Result<Register, Error> {
         match provider {
             Provider::Register(register) => Ok(*register),
             Provider::Const(value) => stack.alloc_const(*value),
@@ -674,7 +663,7 @@ impl InstrEncoder {
         &mut self,
         stack: &mut ValueStack,
         inputs: &[TypedProvider],
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         let mut remaining = inputs;
         loop {
             match remaining {
@@ -727,7 +716,7 @@ impl InstrEncoder {
         value: TypedProvider,
         preserved: Option<Register>,
         fuel_info: FuelInfo,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         fn fallback_case(
             this: &mut InstrEncoder,
             stack: &mut ValueStack,
@@ -735,7 +724,7 @@ impl InstrEncoder {
             value: TypedProvider,
             preserved: Option<Register>,
             fuel_info: FuelInfo,
-        ) -> Result<(), TranslationError> {
+        ) -> Result<(), Error> {
             if let Some(preserved) = preserved {
                 this.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
                 let preserve_instr = this.push_instr(Instruction::copy(preserved, local))?;
@@ -820,7 +809,7 @@ impl InstrEncoder {
     }
 
     /// Defragments storage-space registers of all encoded [`Instruction`].
-    pub fn defrag_registers(&mut self, stack: &mut ValueStack) -> Result<(), TranslationError> {
+    pub fn defrag_registers(&mut self, stack: &mut ValueStack) -> Result<(), Error> {
         stack.finalize_alloc();
         if let Some(notified_preserved) = self.notified_preservation {
             for instr in self.instrs.get_slice_at_mut(notified_preserved) {
@@ -891,7 +880,7 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         condition: Register,
         label: LabelRef,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         type BranchCmpConstructor = fn(Register, Register, BranchOffset16) -> Instruction;
         type BranchCmpImmConstructor<T> = fn(Register, Const16<T>, BranchOffset16) -> Instruction;
 
@@ -902,7 +891,7 @@ impl InstrEncoder {
             this: &mut InstrEncoder,
             condition: Register,
             label: LabelRef,
-        ) -> Result<(), TranslationError> {
+        ) -> Result<(), Error> {
             let offset = this
                 .try_resolve_label(label)
                 .and_then(BranchOffset16::try_from)?;
@@ -920,7 +909,7 @@ impl InstrEncoder {
             instr: BinInstr,
             label: LabelRef,
             make_instr: BranchCmpConstructor,
-        ) -> Result<Option<Instruction>, TranslationError> {
+        ) -> Result<Option<Instruction>, Error> {
             if matches!(stack.get_register_space(instr.result), RegisterSpace::Local) {
                 // We need to filter out instructions that store their result
                 // into a local register slot because they introduce observable behavior
@@ -943,7 +932,7 @@ impl InstrEncoder {
             instr: BinInstrImm16<T>,
             label: LabelRef,
             make_instr: BranchCmpImmConstructor<T>,
-        ) -> Result<Option<Instruction>, TranslationError> {
+        ) -> Result<Option<Instruction>, Error> {
             if matches!(stack.get_register_space(instr.result), RegisterSpace::Local) {
                 // We need to filter out instructions that store their result
                 // into a local register slot because they introduce observable behavior
@@ -1073,7 +1062,7 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         condition: Register,
         label: LabelRef,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         type BranchCmpConstructor = fn(Register, Register, BranchOffset16) -> Instruction;
         type BranchCmpImmConstructor<T> = fn(Register, Const16<T>, BranchOffset16) -> Instruction;
 
@@ -1084,7 +1073,7 @@ impl InstrEncoder {
             this: &mut InstrEncoder,
             condition: Register,
             label: LabelRef,
-        ) -> Result<(), TranslationError> {
+        ) -> Result<(), Error> {
             let offset = this
                 .try_resolve_label(label)
                 .and_then(BranchOffset16::try_from)?;
@@ -1102,7 +1091,7 @@ impl InstrEncoder {
             instr: BinInstr,
             label: LabelRef,
             make_instr: BranchCmpConstructor,
-        ) -> Result<Option<Instruction>, TranslationError> {
+        ) -> Result<Option<Instruction>, Error> {
             if matches!(stack.get_register_space(instr.result), RegisterSpace::Local) {
                 // We need to filter out instructions that store their result
                 // into a local register slot because they introduce observable behavior
@@ -1125,7 +1114,7 @@ impl InstrEncoder {
             instr: BinInstrImm16<T>,
             label: LabelRef,
             make_instr: BranchCmpImmConstructor<T>,
-        ) -> Result<Option<Instruction>, TranslationError> {
+        ) -> Result<Option<Instruction>, Error> {
             if matches!(stack.get_register_space(instr.result), RegisterSpace::Local) {
                 // We need to filter out instructions that store their result
                 // into a local register slot because they introduce observable behavior
@@ -1265,10 +1254,7 @@ impl Instruction {
     /// # Panics
     ///
     /// If `self` is not a branch [`Instruction`].
-    pub fn update_branch_offset(
-        &mut self,
-        new_offset: BranchOffset,
-    ) -> Result<(), TranslationError> {
+    pub fn update_branch_offset(&mut self, new_offset: BranchOffset) -> Result<(), Error> {
         match self {
             Instruction::Branch { offset } => {
                 offset.init(new_offset);

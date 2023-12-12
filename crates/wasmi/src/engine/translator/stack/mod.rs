@@ -11,9 +11,9 @@ use super::TypedValue;
 use crate::{
     engine::{
         bytecode::{Provider, Register, RegisterSpan, UntypedProvider},
-        translator::TranslationErrorInner,
         TranslationError,
     },
+    Error,
     FuncType,
 };
 use alloc::vec::Vec;
@@ -100,7 +100,7 @@ impl ValueStack {
         &mut self,
         func_type: &FuncType,
         provider_buffer: &mut Vec<TypedProvider>,
-    ) -> Result<RegisterSpan, TranslationError> {
+    ) -> Result<RegisterSpan, Error> {
         let (params, results) = func_type.params_results();
         self.pop_n(params.len(), provider_buffer);
         let results = self.push_dynamic_n(results.len())?;
@@ -112,10 +112,7 @@ impl ValueStack {
     /// In case there are `local.get n` with `n == preserve_index` on the [`ProviderStack`]
     /// there is a [`Register`] on the storage space allocated for them. The [`Register`]
     /// allocated this way is returned. Otherwise `None` is returned.
-    pub fn preserve_locals(
-        &mut self,
-        preserve_index: u32,
-    ) -> Result<Option<Register>, TranslationError> {
+    pub fn preserve_locals(&mut self, preserve_index: u32) -> Result<Option<Register>, Error> {
         self.providers
             .preserve_locals(preserve_index, &mut self.reg_alloc)
     }
@@ -144,7 +141,7 @@ impl ValueStack {
     /// # Panics
     ///
     /// If the [`RegisterAlloc`] is not in its initialization phase.
-    pub fn register_locals(&mut self, amount: u32) -> Result<(), TranslationError> {
+    pub fn register_locals(&mut self, amount: u32) -> Result<(), Error> {
         self.providers.register_locals(amount);
         self.reg_alloc.register_locals(amount)?;
         Ok(())
@@ -165,7 +162,7 @@ impl ValueStack {
     /// # Note
     ///
     /// Constant values allocated this way are deduplicated and return shared [`Register`].
-    pub fn alloc_const<T>(&mut self, value: T) -> Result<Register, TranslationError>
+    pub fn alloc_const<T>(&mut self, value: T) -> Result<Register, Error>
     where
         T: Into<UntypedValue>,
     {
@@ -190,7 +187,7 @@ impl ValueStack {
     /// # Note
     ///
     /// This is a convenice method for [`ValueStack::push_register`] and [`ValueStack::push_const`].
-    pub fn push_provider(&mut self, provider: TypedProvider) -> Result<(), TranslationError> {
+    pub fn push_provider(&mut self, provider: TypedProvider) -> Result<(), Error> {
         match provider {
             Provider::Register(register) => self.push_register(register)?,
             Provider::Const(value) => self.push_const(value),
@@ -211,7 +208,7 @@ impl ValueStack {
     /// # Errors
     ///
     /// If too many registers have been registered.
-    pub fn push_register(&mut self, reg: Register) -> Result<(), TranslationError> {
+    pub fn push_register(&mut self, reg: Register) -> Result<(), Error> {
         match self.reg_alloc.register_space(reg) {
             RegisterSpace::Dynamic => {
                 self.reg_alloc.push_dynamic()?;
@@ -241,12 +238,12 @@ impl ValueStack {
     /// # Errors
     ///
     /// If too many registers have been registered.
-    pub fn push_local(&mut self, local_index: u32) -> Result<Register, TranslationError> {
+    pub fn push_local(&mut self, local_index: u32) -> Result<Register, Error> {
         let reg = i16::try_from(local_index)
             .ok()
             .map(Register::from_i16)
             .filter(|reg| self.reg_alloc.is_local(*reg))
-            .ok_or_else(|| TranslationError::new(TranslationErrorInner::RegisterOutOfBounds))?;
+            .ok_or_else(|| Error::from(TranslationError::RegisterOutOfBounds))?;
         self.providers.push_local(reg);
         Ok(reg)
     }
@@ -256,7 +253,7 @@ impl ValueStack {
     /// # Errors
     ///
     /// If too many registers have been registered.
-    pub fn push_dynamic(&mut self) -> Result<Register, TranslationError> {
+    pub fn push_dynamic(&mut self) -> Result<Register, Error> {
         let reg = self.reg_alloc.push_dynamic()?;
         self.providers.push_dynamic(reg);
         Ok(reg)
@@ -330,7 +327,7 @@ impl ValueStack {
     /// # Errors
     ///
     /// If too many registers have been registered.
-    pub fn push_n(&mut self, providers: &[TypedProvider]) -> Result<(), TranslationError> {
+    pub fn push_n(&mut self, providers: &[TypedProvider]) -> Result<(), Error> {
         for provider in providers {
             match *provider {
                 TypedProvider::Register(register) => self.push_register(register)?,
@@ -352,7 +349,7 @@ impl ValueStack {
     /// # Errors
     ///
     /// If this procedure would allocate more registers than are available.
-    pub fn push_dynamic_n(&mut self, n: usize) -> Result<RegisterSpan, TranslationError> {
+    pub fn push_dynamic_n(&mut self, n: usize) -> Result<RegisterSpan, Error> {
         let registers = self.reg_alloc.push_dynamic_n(n)?;
         for register in registers.iter(n) {
             self.providers.push_dynamic(register);
@@ -371,7 +368,7 @@ impl ValueStack {
     /// # Errors
     ///
     /// If this procedure would allocate more registers than are available.
-    pub fn peek_dynamic_n(&mut self, n: usize) -> Result<RegisterSpan, TranslationError> {
+    pub fn peek_dynamic_n(&mut self, n: usize) -> Result<RegisterSpan, Error> {
         let registers = self.reg_alloc.push_dynamic_n(n)?;
         self.reg_alloc.pop_dynamic_n(n);
         Ok(registers)

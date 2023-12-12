@@ -14,9 +14,9 @@ use crate::{
             UnaryInstr,
         },
         CompiledFunc,
-        TranslationError,
     },
     module::ModuleHeader,
+    Error,
     FuncType,
 };
 
@@ -27,7 +27,7 @@ impl Instruction {
         res: &ModuleHeader,
         new_result: Register,
         old_result: Register,
-    ) -> Result<bool, TranslationError> {
+    ) -> Result<bool, Error> {
         use Instruction as I;
         match self {
             I::TableIdx(_)
@@ -538,7 +538,7 @@ fn relink_simple<T>(
     result: &mut T,
     new_result: Register,
     old_result: Register,
-) -> Result<bool, TranslationError>
+) -> Result<bool, Error>
 where
     T: ResultMut,
 {
@@ -558,7 +558,7 @@ fn relink_call_internal(
     res: &ModuleHeader,
     new_result: Register,
     old_result: Register,
-) -> Result<bool, TranslationError> {
+) -> Result<bool, Error> {
     let Some(module_func) = res.get_func_index(func) else {
         panic!("missing module func for compiled func: {func:?}")
     };
@@ -578,7 +578,7 @@ fn relink_call_imported(
     res: &ModuleHeader,
     new_result: Register,
     old_result: Register,
-) -> Result<bool, TranslationError> {
+) -> Result<bool, Error> {
     let func_idx = func.to_u32().into();
     let func_type = res.get_type_of_func(func_idx);
     let len_results = res
@@ -596,7 +596,7 @@ fn relink_call_indirect(
     res: &ModuleHeader,
     new_result: Register,
     old_result: Register,
-) -> Result<bool, TranslationError> {
+) -> Result<bool, Error> {
     let func_type_idx = func_type.to_u32().into();
     let func_type = res.get_func_type(func_type_idx);
     let len_results = res

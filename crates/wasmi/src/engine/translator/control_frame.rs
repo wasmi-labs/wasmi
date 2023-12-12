@@ -6,12 +6,12 @@ use super::ValueStack;
 use crate::{
     engine::{
         bytecode::{RegisterSpan, RegisterSpanIter},
-        translator::TranslationErrorInner,
         BlockType,
         Instr,
         TranslationError,
     },
     Engine,
+    Error,
 };
 
 /// The height of the [`ValueStack`] upon entering the control frame without its parameters.
@@ -25,11 +25,7 @@ pub struct BlockHeight(u16);
 
 impl BlockHeight {
     /// Creates a new [`BlockHeight`] for the given [`ValueStack`] `height` and [`BlockType`].
-    pub fn new(
-        engine: &Engine,
-        height: usize,
-        block_type: BlockType,
-    ) -> Result<Self, TranslationError> {
+    pub fn new(engine: &Engine, height: usize, block_type: BlockType) -> Result<Self, Error> {
         fn new_impl(engine: &Engine, height: usize, block_type: BlockType) -> Option<BlockHeight> {
             let len_params = u16::try_from(block_type.len_params(engine)).ok()?;
             let height = u16::try_from(height).ok()?;
@@ -37,8 +33,8 @@ impl BlockHeight {
             Some(Self(block_height))
         }
         new_impl(engine, height, block_type)
-            .ok_or_else(|| TranslationErrorInner::EmulatedValueStackOverflow)
-            .map_err(TranslationError::new)
+            .ok_or(TranslationError::EmulatedValueStackOverflow)
+            .map_err(Error::from)
     }
 
     /// Returns the `u16` value of the [`BlockHeight`].

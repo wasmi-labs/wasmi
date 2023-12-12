@@ -32,7 +32,7 @@ use self::{
 pub use self::{
     control_frame::{ControlFrame, ControlFrameKind},
     control_stack::ControlStack,
-    error::{TranslationError, TranslationErrorInner},
+    error::TranslationError,
     instr_encoder::{Instr, InstrEncoder},
     stack::{FuncLocalConstsIter, TypedProvider},
 };
@@ -55,6 +55,7 @@ use crate::{
     },
     module::{FuncIdx, FuncTypeIdx, ModuleHeader},
     Engine,
+    Error,
     FuncType,
 };
 use alloc::vec::Vec;
@@ -108,9 +109,7 @@ pub struct ReusableAllocations<T> {
 }
 
 /// A WebAssembly (Wasm) function translator.
-pub trait WasmTranslator<'parser>:
-    VisitOperator<'parser, Output = Result<(), TranslationError>>
-{
+pub trait WasmTranslator<'parser>: VisitOperator<'parser, Output = Result<(), Error>> {
     /// The reusable allocations required by the [`WasmTranslator`].
     ///
     /// # Note
@@ -132,14 +131,14 @@ pub trait WasmTranslator<'parser>:
     ///   Wasm function body (including local variables).
     /// - Also `module` must be a reference to the Wasm module header that is going to be
     ///   used for translation of the Wasm function body.
-    fn setup(&mut self, bytes: &[u8]) -> Result<bool, TranslationError>;
+    fn setup(&mut self, bytes: &[u8]) -> Result<bool, Error>;
 
     /// Translates the given local variables for the translated function.
     fn translate_locals(
         &mut self,
         amount: u32,
         value_type: wasmparser::ValType,
-    ) -> Result<(), TranslationError>;
+    ) -> Result<(), Error>;
 
     /// Informs the [`WasmTranslator`] that the Wasm function header translation is finished.
     ///
@@ -155,7 +154,7 @@ pub trait WasmTranslator<'parser>:
     ///
     /// This got introduced to properly calculate the fuel costs for all local variables
     /// and function parameters.
-    fn finish_translate_locals(&mut self) -> Result<(), TranslationError>;
+    fn finish_translate_locals(&mut self) -> Result<(), Error>;
 
     /// Updates the [`WasmTranslator`] about the current byte position within translated Wasm binary.
     ///
@@ -170,12 +169,12 @@ pub trait WasmTranslator<'parser>:
     ///
     /// - Initialized the [`CompiledFunc`] in the [`Engine`].
     /// - Returns the allocations used for translation.
-    fn finish(self) -> Result<Self::Allocations, TranslationError>;
+    fn finish(self) -> Result<Self::Allocations, Error>;
 }
 
 impl<T> ValidatingFuncTranslator<T> {
     /// Creates a new [`ValidatingFuncTranslator`].
-    pub fn new(validator: FuncValidator, translator: T) -> Result<Self, TranslationError> {
+    pub fn new(validator: FuncValidator, translator: T) -> Result<Self, Error> {
         Ok(Self {
             pos: 0,
             validator,
@@ -193,10 +192,10 @@ impl<T> ValidatingFuncTranslator<T> {
         &mut self,
         validate: Validate,
         translate: Translate,
-    ) -> Result<(), TranslationError>
+    ) -> Result<(), Error>
     where
         Validate: FnOnce(&mut FuncValidator) -> Result<(), BinaryReaderError>,
-        Translate: FnOnce(&mut T) -> Result<(), TranslationError>,
+        Translate: FnOnce(&mut T) -> Result<(), Error>,
     {
         validate(&mut self.validator)?;
         translate(&mut self.translator)?;
@@ -210,7 +209,7 @@ where
 {
     type Allocations = ReusableAllocations<T::Allocations>;
 
-    fn setup(&mut self, bytes: &[u8]) -> Result<bool, TranslationError> {
+    fn setup(&mut self, bytes: &[u8]) -> Result<bool, Error> {
         self.translator.setup(bytes)?;
         // Note: Wasm validation always need to be driven, therefore returning `Ok(false)`
         //       even if the underlying Wasm translator does not need a translation driver.
@@ -221,14 +220,14 @@ where
         &mut self,
         amount: u32,
         value_type: wasmparser::ValType,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         self.validator
             .define_locals(self.current_pos(), amount, value_type)?;
         self.translator.translate_locals(amount, value_type)?;
         Ok(())
     }
 
-    fn finish_translate_locals(&mut self) -> Result<(), TranslationError> {
+    fn finish_translate_locals(&mut self) -> Result<(), Error> {
         self.translator.finish_translate_locals()?;
         Ok(())
     }
@@ -237,7 +236,7 @@ where
         self.pos = pos;
     }
 
-    fn finish(mut self) -> Result<Self::Allocations, TranslationError> {
+    fn finish(mut self) -> Result<Self::Allocations, Error> {
         let pos = self.current_pos();
         self.validator.finish(pos)?;
         let translation = self.translator.finish()?;
@@ -307,7 +306,7 @@ impl<'a, T> VisitOperator<'a> for ValidatingFuncTranslator<T>
 where
     T: WasmTranslator<'a>,
 {
-    type Output = Result<(), TranslationError>;
+    type Output = Result<(), Error>;
 
     wasmparser::for_each_operator!(impl_visit_operator);
 }
@@ -334,7 +333,7 @@ impl LazyFuncTranslator {
 impl<'parser> WasmTranslator<'parser> for LazyFuncTranslator {
     type Allocations = ();
 
-    fn setup(&mut self, bytes: &[u8]) -> Result<bool, TranslationError> {
+    fn setup(&mut self, bytes: &[u8]) -> Result<bool, Error> {
         self.module
             .engine()
             .init_lazy_func(self.compiled_func, bytes, &self.module);
@@ -346,12 +345,12 @@ impl<'parser> WasmTranslator<'parser> for LazyFuncTranslator {
         &mut self,
         _amount: u32,
         _value_type: wasmparser::ValType,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         Ok(())
     }
 
     #[inline]
-    fn finish_translate_locals(&mut self) -> Result<(), TranslationError> {
+    fn finish_translate_locals(&mut self) -> Result<(), Error> {
         Ok(())
     }
 
@@ -359,7 +358,7 @@ impl<'parser> WasmTranslator<'parser> for LazyFuncTranslator {
     fn update_pos(&mut self, _pos: usize) {}
 
     #[inline]
-    fn finish(self) -> Result<Self::Allocations, TranslationError> {
+    fn finish(self) -> Result<Self::Allocations, Error> {
         Ok(())
     }
 }
@@ -376,7 +375,7 @@ macro_rules! impl_visit_operator {
 }
 
 impl<'a> VisitOperator<'a> for LazyFuncTranslator {
-    type Output = Result<(), TranslationError>;
+    type Output = Result<(), Error>;
 
     wasmparser::for_each_operator!(impl_visit_operator);
 }
@@ -410,7 +409,7 @@ pub struct FuncTranslator {
 impl<'parser> WasmTranslator<'parser> for FuncTranslator {
     type Allocations = FuncTranslatorAllocations;
 
-    fn setup(&mut self, _bytes: &[u8]) -> Result<bool, TranslationError> {
+    fn setup(&mut self, _bytes: &[u8]) -> Result<bool, Error> {
         Ok(false)
     }
 
@@ -418,18 +417,18 @@ impl<'parser> WasmTranslator<'parser> for FuncTranslator {
         &mut self,
         amount: u32,
         _value_type: wasmparser::ValType,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         self.alloc.stack.register_locals(amount)
     }
 
-    fn finish_translate_locals(&mut self) -> Result<(), TranslationError> {
+    fn finish_translate_locals(&mut self) -> Result<(), Error> {
         self.alloc.stack.finish_register_locals();
         Ok(())
     }
 
     fn update_pos(&mut self, _pos: usize) {}
 
-    fn finish(mut self) -> Result<Self::Allocations, TranslationError> {
+    fn finish(mut self) -> Result<Self::Allocations, Error> {
         self.alloc
             .instr_encoder
             .defrag_registers(&mut self.alloc.stack)?;
@@ -505,7 +504,7 @@ impl FuncTranslator {
         compiled_func: CompiledFunc,
         res: ModuleHeader,
         alloc: FuncTranslatorAllocations,
-    ) -> Result<Self, TranslationError> {
+    ) -> Result<Self, Error> {
         let config = res.engine().config();
         let fuel_costs = config
             .get_consume_fuel()
@@ -523,7 +522,7 @@ impl FuncTranslator {
     }
 
     /// Initializes a newly constructed [`FuncTranslator`].
-    fn init(mut self) -> Result<Self, TranslationError> {
+    fn init(mut self) -> Result<Self, Error> {
         self.alloc.reset();
         self.init_func_body_block()?;
         self.init_func_params()?;
@@ -531,7 +530,7 @@ impl FuncTranslator {
     }
 
     /// Registers the `block` control frame surrounding the entire function body.
-    fn init_func_body_block(&mut self) -> Result<(), TranslationError> {
+    fn init_func_body_block(&mut self) -> Result<(), Error> {
         let func_type = self.res.get_type_of_func(self.func);
         let block_type = BlockType::func_type(func_type);
         let end_label = self.alloc.instr_encoder.new_label();
@@ -553,7 +552,7 @@ impl FuncTranslator {
     }
 
     /// Registers the function parameters in the emulated value stack.
-    fn init_func_params(&mut self) -> Result<(), TranslationError> {
+    fn init_func_params(&mut self) -> Result<(), Error> {
         for _param_type in self.func_type().params() {
             self.alloc.stack.register_locals(1)?;
         }
@@ -630,7 +629,7 @@ impl FuncTranslator {
     /// Pushes a [`Instruction::ConsumeFuel`] with base costs if fuel metering is enabled.
     ///
     /// Returns `None` if fuel metering is disabled.
-    fn make_fuel_instr(&mut self) -> Result<Option<Instr>, TranslationError> {
+    fn make_fuel_instr(&mut self) -> Result<Option<Instr>, Error> {
         let Some(fuel_costs) = self.fuel_costs() else {
             // Fuel metering is disabled so there is no need to create an `Instruction::ConsumeFuel`.
             return Ok(None);
@@ -644,7 +643,7 @@ impl FuncTranslator {
     /// Bumps fuel consumption of the most recent [`Instruction::ConsumeFuel`] in the translation process.
     ///
     /// Does nothing if gas metering is disabled.
-    fn bump_fuel_consumption<F>(&mut self, f: F) -> Result<(), TranslationError>
+    fn bump_fuel_consumption<F>(&mut self, f: F) -> Result<(), Error>
     where
         F: FnOnce(&FuelCosts) -> u64,
     {
@@ -660,7 +659,7 @@ impl FuncTranslator {
     /// # Note
     ///
     /// Fuel metering is only encoded or adjusted if it is enabled.
-    fn push_fueled_instr<F>(&mut self, instr: Instruction, f: F) -> Result<Instr, TranslationError>
+    fn push_fueled_instr<F>(&mut self, instr: Instruction, f: F) -> Result<Instr, Error>
     where
         F: FnOnce(&FuelCosts) -> u64,
     {
@@ -673,7 +672,7 @@ impl FuncTranslator {
     /// # Note
     ///
     /// Fuel metering is only encoded or adjusted if it is enabled.
-    fn push_base_instr(&mut self, instr: Instruction) -> Result<Instr, TranslationError> {
+    fn push_base_instr(&mut self, instr: Instruction) -> Result<Instr, Error> {
         self.push_fueled_instr(instr, FuelCosts::base)
     }
 
@@ -681,7 +680,7 @@ impl FuncTranslator {
     fn translate_copy_branch_params(
         &mut self,
         branch_params: RegisterSpanIter,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         if branch_params.is_empty() {
             // If the block does not have branch parameters there is no need to copy anything.
             return Ok(());
@@ -699,7 +698,7 @@ impl FuncTranslator {
     }
 
     /// Translates the `end` of a Wasm `block` control frame.
-    fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), TranslationError> {
+    fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
         if self.alloc.control_stack.is_empty() {
             bail_unreachable!(self);
             let fuel_info = match self.fuel_costs().copied() {
@@ -747,7 +746,7 @@ impl FuncTranslator {
     }
 
     /// Translates the `end` of a Wasm `loop` control frame.
-    fn translate_end_loop(&mut self, _frame: LoopControlFrame) -> Result<(), TranslationError> {
+    fn translate_end_loop(&mut self, _frame: LoopControlFrame) -> Result<(), Error> {
         debug_assert!(
             !self.alloc.control_stack.is_empty(),
             "control stack must not be empty since its first element is always a `block`"
@@ -765,7 +764,7 @@ impl FuncTranslator {
     }
 
     /// Translates the `end` of a Wasm `if` control frame.
-    fn translate_end_if(&mut self, frame: IfControlFrame) -> Result<(), TranslationError> {
+    fn translate_end_if(&mut self, frame: IfControlFrame) -> Result<(), Error> {
         debug_assert!(
             !self.alloc.control_stack.is_empty(),
             "control stack must not be empty since its first element is always a `block`"
@@ -800,10 +799,7 @@ impl FuncTranslator {
     /// ```
     ///
     /// where `X` is a constant value that evaluates to `true` such as `(i32.const 1)`.
-    fn translate_end_if_then_only(
-        &mut self,
-        frame: IfControlFrame,
-    ) -> Result<(), TranslationError> {
+    fn translate_end_if_then_only(&mut self, frame: IfControlFrame) -> Result<(), Error> {
         debug_assert!(frame.is_then_reachable());
         debug_assert!(!frame.is_else_reachable());
         debug_assert!(frame.else_label().is_none());
@@ -863,10 +859,7 @@ impl FuncTranslator {
     /// ```
     ///
     /// where `X` is a constant value that evaluates to `false` such as `(i32.const 0)`.
-    fn translate_end_if_else_only(
-        &mut self,
-        frame: IfControlFrame,
-    ) -> Result<(), TranslationError> {
+    fn translate_end_if_else_only(&mut self, frame: IfControlFrame) -> Result<(), Error> {
         debug_assert!(!frame.is_then_reachable());
         debug_assert!(frame.is_else_reachable());
         debug_assert!(frame.else_label().is_none());
@@ -905,10 +898,7 @@ impl FuncTranslator {
     }
 
     /// Translates the `end` of a Wasm `if` [`ControlFrame`] were both `then` and `else` are reachable.
-    fn translate_end_if_then_else(
-        &mut self,
-        frame: IfControlFrame,
-    ) -> Result<(), TranslationError> {
+    fn translate_end_if_then_else(&mut self, frame: IfControlFrame) -> Result<(), Error> {
         debug_assert!(frame.is_then_reachable());
         debug_assert!(frame.is_else_reachable());
         match frame.has_visited_else() {
@@ -918,10 +908,7 @@ impl FuncTranslator {
     }
 
     /// Variant of [`Self::translate_end_if_then_else`] were the `else` block exists.
-    fn translate_end_if_then_with_else(
-        &mut self,
-        frame: IfControlFrame,
-    ) -> Result<(), TranslationError> {
+    fn translate_end_if_then_with_else(&mut self, frame: IfControlFrame) -> Result<(), Error> {
         debug_assert!(frame.has_visited_else());
         let end_of_then_reachable = frame
             .is_end_of_then_reachable()
@@ -962,10 +949,7 @@ impl FuncTranslator {
     /// # Note
     ///
     /// A missing `else` block forwards the [`IfControlFrame`] inputs like an identity function.
-    fn translate_end_if_then_missing_else(
-        &mut self,
-        frame: IfControlFrame,
-    ) -> Result<(), TranslationError> {
+    fn translate_end_if_then_missing_else(&mut self, frame: IfControlFrame) -> Result<(), Error> {
         debug_assert!(!frame.has_visited_else());
         let end_of_then_reachable = self.reachable;
         let has_results = frame.block_type().len_results(self.engine()) >= 1;
@@ -1018,10 +1002,7 @@ impl FuncTranslator {
     }
 
     /// Translates the `end` of an unreachable control frame.
-    fn translate_end_unreachable(
-        &mut self,
-        _frame: UnreachableControlFrame,
-    ) -> Result<(), TranslationError> {
+    fn translate_end_unreachable(&mut self, _frame: UnreachableControlFrame) -> Result<(), Error> {
         Ok(())
     }
 
@@ -1057,7 +1038,7 @@ impl FuncTranslator {
         &mut self,
         len_block_params: usize,
         len_branch_params: usize,
-    ) -> Result<RegisterSpan, TranslationError> {
+    ) -> Result<RegisterSpan, Error> {
         let params = &mut self.alloc.buffer;
         // Pop the block parameters off the stack.
         self.alloc.stack.pop_n(len_block_params, params);
@@ -1075,7 +1056,7 @@ impl FuncTranslator {
         lhs: Register,
         rhs: Register,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         let result = self.alloc.stack.push_dynamic()?;
         self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCosts::base)?;
         Ok(())
@@ -1093,7 +1074,7 @@ impl FuncTranslator {
         lhs: Register,
         rhs: T,
         make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
-    ) -> Result<bool, TranslationError>
+    ) -> Result<bool, Error>
     where
         T: Copy + TryInto<Const16<T>>,
     {
@@ -1112,7 +1093,7 @@ impl FuncTranslator {
         lhs: T,
         rhs: Register,
         make_instr_imm16: fn(result: Register, lhs: Const16<T>, rhs: Register) -> Instruction,
-    ) -> Result<bool, TranslationError>
+    ) -> Result<bool, Error>
     where
         T: Copy + TryInto<Const16<T>>,
     {
@@ -1131,7 +1112,7 @@ impl FuncTranslator {
         lhs: TypedValue,
         rhs: TypedValue,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         self.alloc.stack.push_const(consteval(lhs, rhs));
         Ok(())
     }
@@ -1147,7 +1128,7 @@ impl FuncTranslator {
         lhs: Register,
         rhs: T,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-    ) -> Result<(), TranslationError>
+    ) -> Result<(), Error>
     where
         T: Into<UntypedValue>,
     {
@@ -1168,7 +1149,7 @@ impl FuncTranslator {
         lhs: T,
         rhs: Register,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-    ) -> Result<(), TranslationError>
+    ) -> Result<(), Error>
     where
         T: Into<UntypedValue>,
     {
@@ -1179,7 +1160,7 @@ impl FuncTranslator {
     }
 
     /// Translates a [`TrapCode`] as [`Instruction`].
-    fn translate_trap(&mut self, trap_code: TrapCode) -> Result<(), TranslationError> {
+    fn translate_trap(&mut self, trap_code: TrapCode) -> Result<(), Error> {
         bail_unreachable!(self);
         self.push_fueled_instr(Instruction::Trap(trap_code), FuelCosts::base)?;
         self.reachable = false;
@@ -1214,22 +1195,10 @@ impl FuncTranslator {
         make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
         make_instr_imm16_rev: fn(result: Register, lhs: Const16<T>, rhs: Register) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
-        make_instr_opt: fn(
-            &mut Self,
-            lhs: Register,
-            rhs: Register,
-        ) -> Result<bool, TranslationError>,
-        make_instr_reg_imm_opt: fn(
-            &mut Self,
-            lhs: Register,
-            rhs: T,
-        ) -> Result<bool, TranslationError>,
-        make_instr_imm_reg_opt: fn(
-            &mut Self,
-            lhs: T,
-            rhs: Register,
-        ) -> Result<bool, TranslationError>,
-    ) -> Result<(), TranslationError>
+        make_instr_opt: fn(&mut Self, lhs: Register, rhs: Register) -> Result<bool, Error>,
+        make_instr_reg_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, Error>,
+        make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Register) -> Result<bool, Error>,
+    ) -> Result<(), Error>
     where
         T: Copy + From<TypedValue> + Into<TypedValue> + TryInto<Const16<T>>,
     {
@@ -1296,22 +1265,10 @@ impl FuncTranslator {
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
-        make_instr_opt: fn(
-            &mut Self,
-            lhs: Register,
-            rhs: Register,
-        ) -> Result<bool, TranslationError>,
-        make_instr_reg_imm_opt: fn(
-            &mut Self,
-            lhs: Register,
-            rhs: T,
-        ) -> Result<bool, TranslationError>,
-        make_instr_imm_reg_opt: fn(
-            &mut Self,
-            lhs: T,
-            rhs: Register,
-        ) -> Result<bool, TranslationError>,
-    ) -> Result<(), TranslationError>
+        make_instr_opt: fn(&mut Self, lhs: Register, rhs: Register) -> Result<bool, Error>,
+        make_instr_reg_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, Error>,
+        make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Register) -> Result<bool, Error>,
+    ) -> Result<(), Error>
     where
         T: WasmFloat,
     {
@@ -1365,7 +1322,7 @@ impl FuncTranslator {
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
         make_instr_imm: fn(result: Register, lhs: Register, rhs: Sign) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
-    ) -> Result<(), TranslationError>
+    ) -> Result<(), Error>
     where
         T: WasmFloat,
     {
@@ -1421,13 +1378,9 @@ impl FuncTranslator {
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
         make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
-        make_instr_opt: fn(
-            &mut Self,
-            lhs: Register,
-            rhs: Register,
-        ) -> Result<bool, TranslationError>,
-        make_instr_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, TranslationError>,
-    ) -> Result<(), TranslationError>
+        make_instr_opt: fn(&mut Self, lhs: Register, rhs: Register) -> Result<bool, Error>,
+        make_instr_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, Error>,
+    ) -> Result<(), Error>
     where
         T: Copy + From<TypedValue> + TryInto<Const16<T>>,
     {
@@ -1482,13 +1435,9 @@ impl FuncTranslator {
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
-        make_instr_opt: fn(
-            &mut Self,
-            lhs: Register,
-            rhs: Register,
-        ) -> Result<bool, TranslationError>,
-        make_instr_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, TranslationError>,
-    ) -> Result<(), TranslationError>
+        make_instr_opt: fn(&mut Self, lhs: Register, rhs: Register) -> Result<bool, Error>,
+        make_instr_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, Error>,
+    ) -> Result<(), Error>
     where
         T: WasmFloat,
     {
@@ -1543,12 +1492,8 @@ impl FuncTranslator {
         make_instr_imm: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
         make_instr_imm16_rev: fn(result: Register, lhs: Const16<T>, rhs: Register) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> TypedValue,
-        make_instr_imm_reg_opt: fn(
-            &mut Self,
-            lhs: T,
-            rhs: Register,
-        ) -> Result<bool, TranslationError>,
-    ) -> Result<(), TranslationError>
+        make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Register) -> Result<bool, Error>,
+    ) -> Result<(), Error>
     where
         T: WasmInteger,
         Const16<T>: From<i16>,
@@ -1621,17 +1566,9 @@ impl FuncTranslator {
         ) -> Instruction,
         make_instr_imm16_rev: fn(result: Register, lhs: Const16<T>, rhs: Register) -> Instruction,
         consteval: fn(TypedValue, TypedValue) -> Result<TypedValue, TrapCode>,
-        make_instr_opt: fn(
-            &mut Self,
-            lhs: Register,
-            rhs: Register,
-        ) -> Result<bool, TranslationError>,
-        make_instr_reg_imm_opt: fn(
-            &mut Self,
-            lhs: Register,
-            rhs: T,
-        ) -> Result<bool, TranslationError>,
-    ) -> Result<(), TranslationError>
+        make_instr_opt: fn(&mut Self, lhs: Register, rhs: Register) -> Result<bool, Error>,
+        make_instr_reg_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, Error>,
+    ) -> Result<(), Error>
     where
         T: WasmInteger,
         NonZeroT: Copy + TryFrom<T> + TryInto<Const16<NonZeroT>>,
@@ -1679,7 +1616,7 @@ impl FuncTranslator {
     }
 
     /// Can be used for [`Self::translate_binary`] (and variants) if no custom optimization shall be applied.
-    fn no_custom_opt<Lhs, Rhs>(&mut self, _lhs: Lhs, _rhs: Rhs) -> Result<bool, TranslationError> {
+    fn no_custom_opt<Lhs, Rhs>(&mut self, _lhs: Lhs, _rhs: Rhs) -> Result<bool, Error> {
         Ok(false)
     }
 
@@ -1688,7 +1625,7 @@ impl FuncTranslator {
         &mut self,
         make_instr: fn(result: Register, input: Register) -> Instruction,
         consteval: fn(input: TypedValue) -> TypedValue,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         bail_unreachable!(self);
         match self.alloc.stack.pop() {
             TypedProvider::Register(input) => {
@@ -1708,7 +1645,7 @@ impl FuncTranslator {
         &mut self,
         make_instr: fn(result: Register, input: Register) -> Instruction,
         consteval: fn(input: TypedValue) -> Result<TypedValue, TrapCode>,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         bail_unreachable!(self);
         match self.alloc.stack.pop() {
             TypedProvider::Register(input) => {
@@ -1747,8 +1684,8 @@ impl FuncTranslator {
         &mut self,
         ptr: TypedValue,
         offset: u32,
-        f: impl FnOnce(&mut Self, u32) -> Result<(), TranslationError>,
-    ) -> Result<(), TranslationError> {
+        f: impl FnOnce(&mut Self, u32) -> Result<(), Error>,
+    ) -> Result<(), Error> {
         match u32::from(ptr).checked_add(offset) {
             Some(address) => f(self, address),
             None => self.translate_trap(TrapCode::MemoryOutOfBounds),
@@ -1779,7 +1716,7 @@ impl FuncTranslator {
             offset: Const16<u32>,
         ) -> Instruction,
         make_instr_at: fn(result: Register, address: Const32<u32>) -> Instruction,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         bail_unreachable!(self);
         let offset = Self::memarg_offset(memarg);
         match self.alloc.stack.pop() {
@@ -1832,7 +1769,7 @@ impl FuncTranslator {
         make_instr_offset16_imm: fn(ptr: Register, offset: u16, value: U) -> Instruction,
         make_instr_at: fn(address: Const32<u32>, value: Register) -> Instruction,
         make_instr_at_imm: fn(address: Const32<u32>, value: U) -> Instruction,
-    ) -> Result<(), TranslationError>
+    ) -> Result<(), Error>
     where
         T: Copy + From<TypedValue>,
         U: TryFrom<T>,
@@ -1938,7 +1875,7 @@ impl FuncTranslator {
         make_instr: fn(ptr: Register, offset: Const32<u32>) -> Instruction,
         make_instr_offset16: fn(ptr: Register, offset: u16, value: Register) -> Instruction,
         make_instr_at: fn(address: Const32<u32>, value: Register) -> Instruction,
-    ) -> Result<(), TranslationError> {
+    ) -> Result<(), Error> {
         bail_unreachable!(self);
         let offset = Self::memarg_offset(memarg);
         match self.alloc.stack.pop2() {
@@ -2014,7 +1951,7 @@ impl FuncTranslator {
     /// - If both `lhs` and `rhs` are equal registers or constant values `lhs` is forwarded.
     /// - Properly chooses the correct `select` instruction encoding and optimizes for
     ///   cases with 32-bit constant values.
-    fn translate_select(&mut self, type_hint: Option<ValueType>) -> Result<(), TranslationError> {
+    fn translate_select(&mut self, type_hint: Option<ValueType>) -> Result<(), Error> {
         /// Convenience function to encode a `select` instruction.
         ///
         /// # Note
@@ -2032,7 +1969,7 @@ impl FuncTranslator {
                 condition: Register,
                 lhs_or_rhs: Register,
             ) -> Instruction,
-        ) -> Result<(), TranslationError> {
+        ) -> Result<(), Error> {
             this.push_fueled_instr(make_instr(result, condition, reg_in), FuelCosts::base)?;
             let rhs = this.alloc.stack.alloc_const(imm_in)?;
             this.alloc
@@ -2058,7 +1995,7 @@ impl FuncTranslator {
                 condition: Register,
                 lhs_or_rhs: Register,
             ) -> Instruction,
-        ) -> Result<(), TranslationError> {
+        ) -> Result<(), Error> {
             this.push_fueled_instr(make_instr(result, condition, reg_in), FuelCosts::base)?;
             this.alloc
                 .instr_encoder
@@ -2084,7 +2021,7 @@ impl FuncTranslator {
                 lhs_or_rhs: Register,
             ) -> Instruction,
             make_instr_param: fn(Const32<T>) -> Instruction,
-        ) -> Result<(), TranslationError>
+        ) -> Result<(), Error>
         where
             T: Copy + Into<UntypedValue>,
             Const32<T>: TryFrom<T>,
@@ -2255,7 +2192,7 @@ impl FuncTranslator {
                             condition: Register,
                             lhs: T,
                             rhs: T,
-                        ) -> Result<(), TranslationError> {
+                        ) -> Result<(), Error> {
                             this.push_fueled_instr(
                                 Instruction::select_imm32(result, lhs),
                                 FuelCosts::base,
@@ -2283,7 +2220,7 @@ impl FuncTranslator {
                                 lhs_or_rhs: Const32<T>,
                             ) -> Instruction,
                             make_param: fn(Const32<T>) -> Instruction,
-                        ) -> Result<(), TranslationError>
+                        ) -> Result<(), Error>
                         where
                             T: Copy + Into<UntypedValue>,
                             Const32<T>: TryFrom<T>,
@@ -2337,7 +2274,7 @@ impl FuncTranslator {
                             condition: Register,
                             lhs: T,
                             rhs: T,
-                        ) -> Result<(), TranslationError>
+                        ) -> Result<(), Error>
                         where
                             T: Into<UntypedValue>,
                         {
@@ -2416,7 +2353,7 @@ impl FuncTranslator {
     }
 
     /// Translates a Wasm `reinterpret` instruction.
-    fn translate_reinterpret(&mut self, ty: ValueType) -> Result<(), TranslationError> {
+    fn translate_reinterpret(&mut self, ty: ValueType) -> Result<(), Error> {
         bail_unreachable!(self);
         if let TypedProvider::Register(_) = self.alloc.stack.peek() {
             // Nothing to do.
@@ -2434,13 +2371,13 @@ impl FuncTranslator {
     }
 
     /// Translates an unconditional `return` instruction.
-    fn translate_return(&mut self) -> Result<(), TranslationError> {
+    fn translate_return(&mut self) -> Result<(), Error> {
         let fuel_info = self.fuel_info();
         self.translate_return_with(fuel_info)
     }
 
     /// Translates an unconditional `return` instruction given fuel information.
-    fn translate_return_with(&mut self, fuel_info: FuelInfo) -> Result<(), TranslationError> {
+    fn translate_return_with(&mut self, fuel_info: FuelInfo) -> Result<(), Error> {
         let func_type = self.func_type();
         let results = func_type.results();
         let values = &mut self.alloc.buffer;
@@ -2453,7 +2390,7 @@ impl FuncTranslator {
     }
 
     /// Translates a conditional `br_if` that targets the function enclosing `block`.
-    fn translate_return_if(&mut self, condition: Register) -> Result<(), TranslationError> {
+    fn translate_return_if(&mut self, condition: Register) -> Result<(), Error> {
         bail_unreachable!(self);
         let len_results = self.func_type().results().len();
         let fuel_info = self.fuel_info();

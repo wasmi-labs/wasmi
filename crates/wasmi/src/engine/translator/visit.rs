@@ -22,9 +22,9 @@ use crate::{
         translator::AcquiredTarget,
         BlockType,
         FuelCosts,
-        TranslationError,
     },
     module::{self, FuncIdx, WasmiValueType},
+    Error,
     ExternRef,
     FuncRef,
     Mutability,
@@ -85,13 +85,13 @@ impl FuncTranslator {
     /// errors should have been filtered out by the validation procedure
     /// already, therefore encountering an unsupported Wasm operator
     /// in the function translation procedure can be considered a bug.
-    fn unsupported_operator(&self, name: &str) -> Result<(), TranslationError> {
+    fn unsupported_operator(&self, name: &str) -> Result<(), Error> {
         panic!("tried to translate an unsupported Wasm operator: {name}")
     }
 }
 
 impl<'a> VisitOperator<'a> for FuncTranslator {
-    type Output = Result<(), TranslationError>;
+    type Output = Result<(), Error>;
 
     wasmparser::for_each_operator!(impl_visit_operator);
 

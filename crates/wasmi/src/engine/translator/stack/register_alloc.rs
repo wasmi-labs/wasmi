@@ -1,8 +1,10 @@
 use super::{TaggedProvider, TypedProvider};
-use crate::engine::{
-    bytecode::{Register, RegisterSpan},
-    translator::TranslationErrorInner,
-    TranslationError,
+use crate::{
+    engine::{
+        bytecode::{Register, RegisterSpan},
+        TranslationError,
+    },
+    Error,
 };
 use alloc::collections::BTreeSet;
 use core::{
@@ -193,7 +195,7 @@ impl RegisterAlloc {
     /// # Panics
     ///
     /// If the current [`AllocPhase`] is not [`AllocPhase::Init`].
-    pub fn register_locals(&mut self, amount: u32) -> Result<(), TranslationError> {
+    pub fn register_locals(&mut self, amount: u32) -> Result<(), Error> {
         /// Bumps `len_locals` by `amount` if possible.
         fn bump_locals(len_locals: u16, amount: u32) -> Option<u16> {
             let amount = u16::try_from(amount).ok()?;
@@ -204,9 +206,8 @@ impl RegisterAlloc {
             Some(new_len)
         }
         assert!(matches!(self.phase, AllocPhase::Init));
-        self.len_locals = bump_locals(self.len_locals, amount).ok_or_else(|| {
-            TranslationError::new(TranslationErrorInner::AllocatedTooManyRegisters)
-        })?;
+        self.len_locals = bump_locals(self.len_locals, amount)
+            .ok_or_else(|| Error::from(TranslationError::AllocatedTooManyRegisters))?;
         // We can convert `len_locals` to `i16` because it is always without bounds of `0..i16::MAX`.
         self.next_dynamic = self.len_locals as i16;
         self.max_dynamic = self.len_locals as i16;
@@ -240,12 +241,10 @@ impl RegisterAlloc {
     /// # Panics
     ///
     /// If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
-    pub fn push_dynamic(&mut self) -> Result<Register, TranslationError> {
+    pub fn push_dynamic(&mut self) -> Result<Register, Error> {
         self.assert_alloc_phase();
         if self.next_dynamic == self.min_preserve {
-            return Err(TranslationError::new(
-                TranslationErrorInner::AllocatedTooManyRegisters,
-            ));
+            return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
         }
         let reg = Register::from_i16(self.next_dynamic);
         self.next_dynamic += 1;
@@ -262,7 +261,7 @@ impl RegisterAlloc {
     /// # Panics
     ///
     /// If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
-    pub fn push_dynamic_n(&mut self, n: usize) -> Result<RegisterSpan, TranslationError> {
+    pub fn push_dynamic_n(&mut self, n: usize) -> Result<RegisterSpan, Error> {
         fn next_dynamic_n(this: &mut RegisterAlloc, n: usize) -> Option<RegisterSpan> {
             let n = i16::try_from(n).ok()?;
             let next_dynamic = this.next_dynamic.checked_add(n)?;
@@ -276,7 +275,7 @@ impl RegisterAlloc {
         }
         self.assert_alloc_phase();
         next_dynamic_n(self, n)
-            .ok_or_else(|| TranslationError::new(TranslationErrorInner::AllocatedTooManyRegisters))
+            .ok_or_else(|| Error::from(TranslationError::AllocatedTooManyRegisters))
     }
 
     /// Pops the top-most dynamically allocated [`Register`] from the allocation stack.
@@ -329,7 +328,7 @@ impl RegisterAlloc {
     /// # Panics
     ///
     /// If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
-    pub fn push_preserved(&mut self) -> Result<Register, TranslationError> {
+    pub fn push_preserved(&mut self) -> Result<Register, Error> {
         const NZ_TWO: NonZeroUsize = match NonZeroUsize::new(2) {
             Some(value) => value,
             None => unreachable!(),
@@ -392,12 +391,10 @@ impl RegisterAlloc {
     }
 
     /// Updates the minimum preservation [`Register`] index if needed.
-    fn update_min_preserved(&mut self, register: Register) -> Result<(), TranslationError> {
+    fn update_min_preserved(&mut self, register: Register) -> Result<(), Error> {
         self.min_preserve = min(self.min_preserve, register.to_i16());
         if self.next_dynamic == self.min_preserve {
-            return Err(TranslationError::new(
-                TranslationErrorInner::AllocatedTooManyRegisters,
-            ));
+            return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
         }
         Ok(())
     }

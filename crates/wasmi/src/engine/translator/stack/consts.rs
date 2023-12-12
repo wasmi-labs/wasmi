@@ -1,8 +1,5 @@
 use super::Register;
-use crate::{
-    core::UntypedValue,
-    engine::{translator::TranslationErrorInner, TranslationError},
-};
+use crate::{core::UntypedValue, engine::TranslationError, Error};
 use alloc::{
     collections::{btree_map, BTreeMap},
     vec::Vec,
@@ -71,11 +68,9 @@ impl FuncLocalConsts {
     /// # Errors
     ///
     /// If too many constant values have been allocated for this [`FuncLocalConsts`].
-    pub fn alloc(&mut self, value: UntypedValue) -> Result<Register, TranslationError> {
+    pub fn alloc(&mut self, value: UntypedValue) -> Result<Register, Error> {
         if self.next_idx == Self::last_index() {
-            return Err(TranslationError::new(
-                TranslationErrorInner::TooManyFuncLocalConstValues,
-            ));
+            return Err(Error::from(TranslationError::TooManyFuncLocalConstValues));
         }
         match self.const2idx.entry(value) {
             btree_map::Entry::Occupied(entry) => Ok(*entry.get()),

@@ -1,7 +1,7 @@
 use super::{typed_value::TypedValue, ControlFrame};
-use crate::engine::{
-    bytecode::{Provider, ProviderSliceStack},
-    TranslationError,
+use crate::{
+    engine::bytecode::{Provider, ProviderSliceStack},
+    Error,
 };
 use alloc::vec::{Drain, Vec};
 
@@ -85,7 +85,7 @@ impl ControlStack {
     /// Push a [`Provider`] slice for the `else` branch of an [`IfControlFrame`] to the [`ControlStack`].
     ///
     /// [`IfControlFrame`]: super::control_frame::IfControlFrame
-    pub fn push_else_providers<I>(&mut self, providers: I) -> Result<(), TranslationError>
+    pub fn push_else_providers<I>(&mut self, providers: I) -> Result<(), Error>
     where
         I: IntoIterator<Item = Provider<TypedValue>>,
     {

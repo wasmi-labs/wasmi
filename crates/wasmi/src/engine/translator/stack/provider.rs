@@ -1,7 +1,7 @@
 use ::core::iter;
 
 use super::{RegisterAlloc, TypedValue};
-use crate::engine::{bytecode::Register, TranslationError};
+use crate::{engine::bytecode::Register, Error};
 use alloc::vec::Vec;
 use smallvec::SmallVec;
 
@@ -65,7 +65,7 @@ impl ProviderStack {
         &mut self,
         preserve_index: u32,
         reg_alloc: &mut RegisterAlloc,
-    ) -> Result<Option<Register>, TranslationError> {
+    ) -> Result<Option<Register>, Error> {
         /// Maximum provider stack height before switching to attack-immune
         /// [`LocalRefs`] implementation for `local.get` preservation.
         const THRESHOLD: usize = 16;
@@ -110,7 +110,7 @@ impl ProviderStack {
         &mut self,
         local: Register,
         reg_alloc: &mut RegisterAlloc,
-    ) -> Result<Option<Register>, TranslationError> {
+    ) -> Result<Option<Register>, Error> {
         debug_assert!(!self.use_locals);
         let mut preserved = None;
         for provider in &mut self.providers {
@@ -148,7 +148,7 @@ impl ProviderStack {
         &mut self,
         local: Register,
         reg_alloc: &mut RegisterAlloc,
-    ) -> Result<Option<Register>, TranslationError> {
+    ) -> Result<Option<Register>, Error> {
         debug_assert!(self.use_locals);
         let mut preserved = None;
         for provider_index in self.locals.drain_at(local) {

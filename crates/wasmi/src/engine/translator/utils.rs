@@ -1,5 +1,8 @@
-use super::{stack::ValueStack, TranslationError, TypedProvider, TypedValue};
-use crate::engine::bytecode::{AnyConst16, Const16, Provider, Register, RegisterSpanIter, Sign};
+use super::{stack::ValueStack, TypedProvider, TypedValue};
+use crate::{
+    engine::bytecode::{AnyConst16, Const16, Provider, Register, RegisterSpanIter, Sign},
+    Error,
+};
 
 /// A WebAssembly integer. Either `i32` or `i64`.
 ///
@@ -120,7 +123,7 @@ impl Provider<Const16<u32>> {
     ///
     /// This is a convenience function and used by translation
     /// procedures for certain Wasm `table` instructions.
-    pub fn new(provider: TypedProvider, stack: &mut ValueStack) -> Result<Self, TranslationError> {
+    pub fn new(provider: TypedProvider, stack: &mut ValueStack) -> Result<Self, Error> {
         match provider {
             TypedProvider::Const(value) => match Const16::try_from(u32::from(value)).ok() {
                 Some(value) => Ok(Self::Const(value)),
