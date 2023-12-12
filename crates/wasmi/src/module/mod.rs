@@ -36,7 +36,6 @@ pub use self::{
 };
 use crate::{
     engine::{CompiledFunc, DedupFuncType},
-    module::error::UnsupportedFeature,
     Engine,
     Error,
     ExternType,
@@ -270,15 +269,6 @@ impl Module {
                     .into_validator(FuncValidatorAllocations::default())
                     .validate(&func_body)
                     .map_err(ModuleError::from)?;
-            }
-            if let wasmparser::Payload::Version {
-                encoding: wasmparser::Encoding::Component,
-                ..
-            } = &payload
-            {
-                return Err(Error::from(ModuleError::from(
-                    UnsupportedFeature::ComponentModel,
-                )));
             }
         }
         Ok(())
