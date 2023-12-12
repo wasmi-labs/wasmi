@@ -9,7 +9,6 @@ use super::{
     FuncIdx,
     Module,
     ModuleBuilder,
-    ModuleError,
     ModuleHeader,
     Read,
 };
@@ -24,6 +23,7 @@ use crate::{
     },
     CompilationMode,
     Engine,
+    Error,
     FuncType,
     MemoryType,
     TableType,
@@ -56,7 +56,7 @@ use wasmparser::{
 /// # Errors
 ///
 /// If the Wasm bytecode stream fails to parse, validate or translate.
-pub fn parse(engine: &Engine, stream: impl Read) -> Result<Module, ModuleError> {
+pub fn parse(engine: &Engine, stream: impl Read) -> Result<Module, Error> {
     ModuleParser::new(engine).parse(stream)
 }
 
@@ -68,7 +68,7 @@ pub fn parse(engine: &Engine, stream: impl Read) -> Result<Module, ModuleError> 
 /// # Errors
 ///
 /// If the Wasm bytecode stream fails to parse or translate.
-pub unsafe fn parse_unchecked(engine: &Engine, stream: impl Read) -> Result<Module, ModuleError> {
+pub unsafe fn parse_unchecked(engine: &Engine, stream: impl Read) -> Result<Module, Error> {
     unsafe { ModuleParser::new(engine).parse_unchecked(stream) }
 }
 
@@ -119,7 +119,7 @@ impl ModuleParser {
     /// # Errors
     ///
     /// If the Wasm bytecode stream fails to validate.
-    pub fn parse(self, stream: impl Read) -> Result<Module, ModuleError> {
+    pub fn parse(self, stream: impl Read) -> Result<Module, Error> {
         self.parse_impl(ValidationMode::All, stream)
     }
 
@@ -130,7 +130,7 @@ impl ModuleParser {
     /// # Errors
     ///
     /// If the Wasm bytecode stream fails to validate.
-    pub unsafe fn parse_unchecked(self, stream: impl Read) -> Result<Module, ModuleError> {
+    pub unsafe fn parse_unchecked(self, stream: impl Read) -> Result<Module, Error> {
         self.parse_impl(ValidationMode::HeaderOnly, stream)
     }
 
@@ -145,7 +145,7 @@ impl ModuleParser {
         mut self,
         validation_mode: ValidationMode,
         mut stream: impl Read,
-    ) -> Result<Module, ModuleError> {
+    ) -> Result<Module, Error> {
         let mut buffer = Vec::new();
         let header = Self::parse_header(&mut self, &mut stream, &mut buffer)?;
         let builder =
@@ -168,7 +168,7 @@ impl ModuleParser {
         &mut self,
         stream: &mut impl Read,
         buffer: &mut Vec<u8>,
-    ) -> Result<ModuleHeader, ModuleError> {
+    ) -> Result<ModuleHeader, Error> {
         let mut header = ModuleHeaderBuilder::new(&self.engine);
         loop {
             match self.parser.parse(&buffer[..], self.eof)? {
@@ -251,7 +251,7 @@ impl ModuleParser {
         stream: &mut impl Read,
         buffer: &mut Vec<u8>,
         header: ModuleHeader,
-    ) -> Result<ModuleBuilder, ModuleError> {
+    ) -> Result<ModuleBuilder, Error> {
         loop {
             match self.parser.parse(&buffer[..], self.eof)? {
                 Chunk::NeedMoreData(hint) => {
@@ -288,7 +288,7 @@ impl ModuleParser {
         stream: &mut impl Read,
         buffer: &mut Vec<u8>,
         mut builder: ModuleBuilder,
-    ) -> Result<Module, ModuleError> {
+    ) -> Result<Module, Error> {
         loop {
             match self.parser.parse(&buffer[..], self.eof)? {
                 Chunk::NeedMoreData(hint) => {
@@ -326,11 +326,7 @@ impl ModuleParser {
     /// # Note
     ///
     /// Uses `hint` to efficiently preallocate enough space for the next payload.
-    fn pull_bytes(
-        buffer: &mut Vec<u8>,
-        hint: u64,
-        stream: &mut impl Read,
-    ) -> Result<bool, ModuleError> {
+    fn pull_bytes(buffer: &mut Vec<u8>, hint: u64, stream: &mut impl Read) -> Result<bool, Error> {
         // Use the hint to preallocate more space, then read
         // some more data into the buffer.
         //
@@ -345,7 +341,7 @@ impl ModuleParser {
     }
 
     /// Processes the end of the Wasm binary.
-    fn process_end(&mut self, offset: usize) -> Result<(), ModuleError> {
+    fn process_end(&mut self, offset: usize) -> Result<(), Error> {
         self.validator.end(offset)?;
         Ok(())
     }
@@ -356,7 +352,7 @@ impl ModuleParser {
         num: u16,
         encoding: Encoding,
         range: Range<usize>,
-    ) -> Result<(), ModuleError> {
+    ) -> Result<(), Error> {
         self.validator
             .version(num, encoding, &range)
             .map_err(Into::into)
@@ -375,7 +371,7 @@ impl ModuleParser {
         &mut self,
         section: TypeSectionReader,
         header: &mut ModuleHeaderBuilder,
-    ) -> Result<(), ModuleError> {
+    ) -> Result<(), Error> {
         self.validator.type_section(&section)?;
         let func_types = section.into_iter().map(|result| match result? {
             wasmparser::Type::Func(ty) => Ok(FuncType::from_wasmparser(ty)),
@@ -398,11 +394,11 @@ impl ModuleParser {
         &mut self,
         section: ImportSectionReader,
         header: &mut ModuleHeaderBuilder,
-    ) -> Result<(), ModuleError> {
+    ) -> Result<(), Error> {
         self.validator.import_section(&section)?;
         let imports = section
             .into_iter()
-            .map(|import| import.map(Import::from).map_err(ModuleError::from));
+            .map(|import| import.map(Import::from).map_err(Error::from));
         header.push_imports(imports)?;
         Ok(())
     }
@@ -416,7 +412,7 @@ impl ModuleParser {
     fn process_instances(
         &mut self,
         section: wasmparser::InstanceSectionReader,
-    ) -> Result<(), ModuleError> {
+    ) -> Result<(), Error> {
         self.validator
             .instance_section(&section)
             .map_err(Into::into)
@@ -435,11 +431,11 @@ impl ModuleParser {
         &mut self,
         section: FunctionSectionReader,
         header: &mut ModuleHeaderBuilder,
-    ) -> Result<(), ModuleError> {
+    ) -> Result<(), Error> {
         self.validator.function_section(&section)?;
         let funcs = section
             .into_iter()
-            .map(|func| func.map(FuncTypeIdx::from).map_err(ModuleError::from));
+            .map(|func| func.map(FuncTypeIdx::from).map_err(Error::from));
         header.push_funcs(funcs)?;
         Ok(())
     }
@@ -457,13 +453,11 @@ impl ModuleParser {
         &mut self,
         section: TableSectionReader,
         header: &mut ModuleHeaderBuilder,
-    ) -> Result<(), ModuleError> {
+    ) -> Result<(), Error> {
         self.validator.table_section(&section)?;
-        let tables = section.into_iter().map(|table| {
-            table
-                .map(TableType::from_wasmparser)
-                .map_err(ModuleError::from)
-        });
+        let tables = section
+            .into_iter()
+            .map(|table| table.map(TableType::from_wasmparser).map_err(Error::from));
         header.push_tables(tables)?;
         Ok(())
     }
@@ -481,13 +475,11 @@ impl ModuleParser {
         &mut self,
         section: MemorySectionReader,
         header: &mut ModuleHeaderBuilder,
-    ) -> Result<(), ModuleError> {
+    ) -> Result<(), Error> {
         self.validator.memory_section(&section)?;
-        let memories = section.into_iter().map(|memory| {
-            memory
-                .map(MemoryType::from_wasmparser)
-                .map_err(ModuleError::from)
-        });
+        let memories = section
+            .into_iter()
+            .map(|memory| memory.map(MemoryType::from_wasmparser).map_err(Error::from));
         header.push_memories(memories)?;
         Ok(())
     }
@@ -498,7 +490,7 @@ impl ModuleParser {
     ///
     /// This is part of the module linking Wasm proposal and not yet supported
     /// by `wasmi`.
-    fn process_tags(&mut self, section: wasmparser::TagSectionReader) -> Result<(), ModuleError> {
+    fn process_tags(&mut self, section: wasmparser::TagSectionReader) -> Result<(), Error> {
         self.validator.tag_section(&section).map_err(Into::into)
     }
 
@@ -515,11 +507,11 @@ impl ModuleParser {
         &mut self,
         section: GlobalSectionReader,
         header: &mut ModuleHeaderBuilder,
-    ) -> Result<(), ModuleError> {
+    ) -> Result<(), Error> {
         self.validator.global_section(&section)?;
         let globals = section
             .into_iter()
-            .map(|global| global.map(Global::from).map_err(ModuleError::from));
+            .map(|global| global.map(Global::from).map_err(Error::from));
         header.push_globals(globals)?;
         Ok(())
     }
@@ -537,7 +529,7 @@ impl ModuleParser {
         &mut self,
         section: ExportSectionReader,
         header: &mut ModuleHeaderBuilder,
-    ) -> Result<(), ModuleError> {
+    ) -> Result<(), Error> {
         self.validator.export_section(&section)?;
         let exports = section.into_iter().map(|export| {
             let export = export?;
@@ -563,7 +555,7 @@ impl ModuleParser {
         func: u32,
         range: Range<usize>,
         header: &mut ModuleHeaderBuilder,
-    ) -> Result<(), ModuleError> {
+    ) -> Result<(), Error> {
         self.validator.start_section(func, &range)?;
         header.set_start(FuncIdx::from(func));
         Ok(())
@@ -582,11 +574,11 @@ impl ModuleParser {
         &mut self,
         section: ElementSectionReader,
         header: &mut ModuleHeaderBuilder,
-    ) -> Result<(), ModuleError> {
+    ) -> Result<(), Error> {
         self.validator.element_section(&section)?;
         let segments = section
             .into_iter()
-            .map(|segment| segment.map(ElementSegment::from).map_err(ModuleError::from));
+            .map(|segment| segment.map(ElementSegment::from).map_err(Error::from));
         header.push_element_segments(segments)?;
         Ok(())
     }
@@ -597,7 +589,7 @@ impl ModuleParser {
     ///
     /// This is part of the bulk memory operations Wasm proposal and not yet supported
     /// by `wasmi`.
-    fn process_data_count(&mut self, count: u32, range: Range<usize>) -> Result<(), ModuleError> {
+    fn process_data_count(&mut self, count: u32, range: Range<usize>) -> Result<(), Error> {
         self.validator
             .data_count_section(count, &range)
             .map_err(Into::into)
@@ -616,11 +608,11 @@ impl ModuleParser {
         &mut self,
         section: DataSectionReader,
         builder: &mut ModuleBuilder,
-    ) -> Result<(), ModuleError> {
+    ) -> Result<(), Error> {
         self.validator.data_section(&section)?;
         let segments = section
             .into_iter()
-            .map(|segment| segment.map(DataSegment::from).map_err(ModuleError::from));
+            .map(|segment| segment.map(DataSegment::from).map_err(Error::from));
         builder.push_data_segments(segments)?;
         Ok(())
     }
@@ -636,7 +628,7 @@ impl ModuleParser {
     /// # Errors
     ///
     /// If the code start section fails to validate.
-    fn process_code_start(&mut self, count: u32, range: Range<usize>) -> Result<(), ModuleError> {
+    fn process_code_start(&mut self, count: u32, range: Range<usize>) -> Result<(), Error> {
         self.validator.code_section_start(count, &range)?;
         Ok(())
     }
@@ -671,7 +663,7 @@ impl ModuleParser {
         validation_mode: ValidationMode,
         bytes: &[u8],
         header: &ModuleHeader,
-    ) -> Result<(), ModuleError> {
+    ) -> Result<(), Error> {
         let (func, compiled_func) = self.next_func(header);
         let validator = self.validator.code_section_entry(&func_body)?;
         let res = header.clone();
@@ -720,7 +712,7 @@ impl ModuleParser {
     /// # Note
     ///
     /// This generally will be treated as an error for now.
-    fn process_unknown(&mut self, id: u8, range: Range<usize>) -> Result<(), ModuleError> {
+    fn process_unknown(&mut self, id: u8, range: Range<usize>) -> Result<(), Error> {
         self.validator
             .unknown_section(id, &range)
             .map_err(Into::into)

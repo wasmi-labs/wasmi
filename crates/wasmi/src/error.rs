@@ -5,11 +5,15 @@ use super::errors::{
     InstantiationError,
     LinkerError,
     MemoryError,
-    ModuleError,
     TableError,
 };
-use crate::core::{Trap, TrapCode};
+use crate::{
+    core::{Trap, TrapCode},
+    engine::TranslationError,
+    module::ReadError,
+};
 use core::{fmt, fmt::Display};
+use wasmparser::BinaryReaderError as WasmError;
 
 /// An error that may occur upon operating on Wasm modules or module instances.
 #[derive(Debug)]
@@ -25,14 +29,18 @@ pub enum Error {
     Linker(LinkerError),
     /// A module instantiation error.
     Instantiation(InstantiationError),
-    /// A module compilation, validation and translation error.
-    Module(ModuleError),
     /// A fuel error.
     Fuel(FuelError),
     /// A function error.
     Func(FuncError),
     /// A trap as defined by the WebAssembly specification.
     Trap(Trap),
+    /// Encountered when there is a problem with the Wasm input stream.
+    Read(ReadError),
+    /// Encountered when there is a Wasm parsing or validation error.
+    Wasm(WasmError),
+    /// Encountered when there is a Wasm to `wasmi` translation error.
+    Translation(TranslationError),
 }
 
 #[cfg(feature = "std")]
@@ -48,64 +56,38 @@ impl Display for Error {
             Self::Linker(error) => Display::fmt(error, f),
             Self::Func(error) => Display::fmt(error, f),
             Self::Instantiation(error) => Display::fmt(error, f),
-            Self::Module(error) => Display::fmt(error, f),
+            // Self::Module(error) => Display::fmt(error, f),
             Self::Fuel(error) => Display::fmt(error, f),
+            Self::Read(error) => Display::fmt(error, f),
+            Self::Wasm(error) => Display::fmt(error, f),
+            Self::Translation(error) => Display::fmt(error, f),
         }
     }
 }
 
-impl From<Trap> for Error {
-    fn from(error: Trap) -> Self {
-        Self::Trap(error)
+macro_rules! impl_from {
+    ( $( impl From<$from:ident> for Error::$name:ident );* $(;)? ) => {
+        $(
+            impl From<$from> for Error {
+                fn from(error: $from) -> Self {
+                    Self::$name(error)
+                }
+            }
+        )*
     }
 }
-
-impl From<GlobalError> for Error {
-    fn from(error: GlobalError) -> Self {
-        Self::Global(error)
-    }
-}
-
-impl From<MemoryError> for Error {
-    fn from(error: MemoryError) -> Self {
-        Self::Memory(error)
-    }
-}
-
-impl From<TableError> for Error {
-    fn from(error: TableError) -> Self {
-        Self::Table(error)
-    }
-}
-
-impl From<LinkerError> for Error {
-    fn from(error: LinkerError) -> Self {
-        Self::Linker(error)
-    }
-}
-
-impl From<InstantiationError> for Error {
-    fn from(error: InstantiationError) -> Self {
-        Self::Instantiation(error)
-    }
-}
-
-impl From<ModuleError> for Error {
-    fn from(error: ModuleError) -> Self {
-        Self::Module(error)
-    }
-}
-
-impl From<FuelError> for Error {
-    fn from(error: FuelError) -> Self {
-        Self::Fuel(error)
-    }
-}
-
-impl From<FuncError> for Error {
-    fn from(error: FuncError) -> Self {
-        Self::Func(error)
-    }
+impl_from! {
+    impl From<Trap> for Error::Trap;
+    impl From<GlobalError> for Error::Global;
+    impl From<MemoryError> for Error::Memory;
+    impl From<TableError> for Error::Table;
+    impl From<LinkerError> for Error::Linker;
+    impl From<InstantiationError> for Error::Instantiation;
+    impl From<TranslationError> for Error::Translation;
+    impl From<WasmError> for Error::Wasm;
+    impl From<ReadError> for Error::Read;
+    impl From<FuelError> for Error::Fuel;
+    impl From<FuncError> for Error::Func;
 }
 
 /// An error that can occur upon `memory.grow` or `table.grow`.

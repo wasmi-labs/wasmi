@@ -2,7 +2,6 @@ mod builder;
 mod compile;
 mod data;
 mod element;
-mod error;
 mod export;
 mod global;
 mod import;
@@ -18,7 +17,6 @@ use self::{
     global::Global,
     import::{ExternTypeIdx, Import},
     parser::{parse, parse_unchecked},
-    read::ReadError,
 };
 pub(crate) use self::{
     data::{DataSegment, DataSegmentKind},
@@ -27,12 +25,11 @@ pub(crate) use self::{
     utils::WasmiValueType,
 };
 pub use self::{
-    error::ModuleError,
     export::{ExportType, FuncIdx, MemoryIdx, ModuleExportsIter, TableIdx},
     global::GlobalIdx,
     import::{FuncTypeIdx, ImportName},
     instantiate::{InstancePre, InstantiationError},
-    read::Read,
+    read::{Read, ReadError},
 };
 use crate::{
     engine::{CompiledFunc, DedupFuncType},
@@ -261,14 +258,11 @@ impl Module {
     pub fn validate(&self, engine: &Engine, wasm: &[u8]) -> Result<(), Error> {
         let mut validator = Validator::new_with_features(engine.config().wasm_features());
         for payload in Parser::new(0).parse_all(wasm) {
-            let payload = payload.map_err(ModuleError::from)?;
-            if let ValidPayload::Func(func_to_validate, func_body) =
-                validator.payload(&payload).map_err(ModuleError::from)?
-            {
+            let payload = payload?;
+            if let ValidPayload::Func(func_to_validate, func_body) = validator.payload(&payload)? {
                 func_to_validate
                     .into_validator(FuncValidatorAllocations::default())
-                    .validate(&func_body)
-                    .map_err(ModuleError::from)?;
+                    .validate(&func_body)?;
             }
         }
         Ok(())

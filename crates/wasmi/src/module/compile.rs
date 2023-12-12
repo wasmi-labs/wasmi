@@ -1,4 +1,4 @@
-use crate::{engine::WasmTranslator, errors::ModuleError};
+use crate::{engine::WasmTranslator, Error};
 use wasmparser::FunctionBody;
 
 /// Translates the Wasm bytecode into `wasmi` IR bytecode.
@@ -17,7 +17,7 @@ pub fn translate<'a, T>(
     offset: impl Into<Option<usize>>,
     bytes: &'a [u8],
     translator: T,
-) -> Result<T::Allocations, ModuleError>
+) -> Result<T::Allocations, Error>
 where
     T: WasmTranslator<'a>,
 {
@@ -36,11 +36,7 @@ struct FuncTranslationDriver<'parser, T> {
 
 impl<'parser, T> FuncTranslationDriver<'parser, T> {
     /// Creates a new Wasm to `wasmi` bytecode function translator.
-    fn new(
-        offset: Option<usize>,
-        bytes: &'parser [u8],
-        translator: T,
-    ) -> Result<Self, ModuleError> {
+    fn new(offset: Option<usize>, bytes: &'parser [u8], translator: T) -> Result<Self, Error> {
         let offset = offset.unwrap_or(0);
         let func_body = FunctionBody::new(offset, bytes);
         Ok(Self {
@@ -56,7 +52,7 @@ where
     T: WasmTranslator<'parser>,
 {
     /// Starts translation of the Wasm stream into `wasmi` bytecode.
-    fn translate(mut self) -> Result<T::Allocations, ModuleError> {
+    fn translate(mut self) -> Result<T::Allocations, Error> {
         if self.translator.setup(self.bytes)? {
             let allocations = self.translator.finish()?;
             return Ok(allocations);
@@ -68,13 +64,13 @@ where
     }
 
     /// Finishes construction of the function and returns its reusable allocations.
-    fn finish(mut self, offset: usize) -> Result<T::Allocations, ModuleError> {
+    fn finish(mut self, offset: usize) -> Result<T::Allocations, Error> {
         self.translator.update_pos(offset);
         self.translator.finish().map_err(Into::into)
     }
 
     /// Translates local variables of the Wasm function.
-    fn translate_locals(&mut self) -> Result<(), ModuleError> {
+    fn translate_locals(&mut self) -> Result<(), Error> {
         let mut reader = self.func_body.get_locals_reader()?;
         let len_locals = reader.get_count();
         for _ in 0..len_locals {
@@ -90,7 +86,7 @@ where
     /// Translates the Wasm operators of the Wasm function.
     ///
     /// Returns the offset of the `End` Wasm operator.
-    fn translate_operators(&mut self) -> Result<usize, ModuleError> {
+    fn translate_operators(&mut self) -> Result<usize, Error> {
         let mut reader = self.func_body.get_operators_reader()?;
         while !reader.eof() {
             let pos = reader.original_position();

@@ -17,8 +17,8 @@ use super::{
 };
 use crate::{
     engine::{CompiledFunc, DedupFuncType},
-    errors::ModuleError,
     Engine,
+    Error,
     FuncType,
     GlobalType,
     MemoryType,
@@ -148,9 +148,9 @@ impl ModuleHeaderBuilder {
     /// # Panics
     ///
     /// If this function has already been called on the same [`ModuleBuilder`].
-    pub fn push_func_types<T>(&mut self, func_types: T) -> Result<(), ModuleError>
+    pub fn push_func_types<T>(&mut self, func_types: T) -> Result<(), Error>
     where
-        T: IntoIterator<Item = Result<FuncType, ModuleError>>,
+        T: IntoIterator<Item = Result<FuncType, Error>>,
     {
         assert!(
             self.func_types.is_empty(),
@@ -173,9 +173,9 @@ impl ModuleHeaderBuilder {
     /// # Panics
     ///
     /// If this function has already been called on the same [`ModuleBuilder`].
-    pub fn push_imports<T>(&mut self, imports: T) -> Result<(), ModuleError>
+    pub fn push_imports<T>(&mut self, imports: T) -> Result<(), Error>
     where
-        T: IntoIterator<Item = Result<Import, ModuleError>>,
+        T: IntoIterator<Item = Result<Import, Error>>,
     {
         for import in imports {
             let import = import?;
@@ -212,9 +212,9 @@ impl ModuleHeaderBuilder {
     /// # Panics
     ///
     /// If this function has already been called on the same [`ModuleBuilder`].
-    pub fn push_funcs<T>(&mut self, funcs: T) -> Result<(), ModuleError>
+    pub fn push_funcs<T>(&mut self, funcs: T) -> Result<(), Error>
     where
-        T: IntoIterator<Item = Result<FuncTypeIdx, ModuleError>>,
+        T: IntoIterator<Item = Result<FuncTypeIdx, Error>>,
     {
         assert_eq!(
             self.funcs.len(),
@@ -245,9 +245,9 @@ impl ModuleHeaderBuilder {
     /// # Panics
     ///
     /// If this function has already been called on the same [`ModuleBuilder`].
-    pub fn push_tables<T>(&mut self, tables: T) -> Result<(), ModuleError>
+    pub fn push_tables<T>(&mut self, tables: T) -> Result<(), Error>
     where
-        T: IntoIterator<Item = Result<TableType, ModuleError>>,
+        T: IntoIterator<Item = Result<TableType, Error>>,
     {
         assert_eq!(
             self.tables.len(),
@@ -270,9 +270,9 @@ impl ModuleHeaderBuilder {
     /// # Panics
     ///
     /// If this function has already been called on the same [`ModuleBuilder`].
-    pub fn push_memories<T>(&mut self, memories: T) -> Result<(), ModuleError>
+    pub fn push_memories<T>(&mut self, memories: T) -> Result<(), Error>
     where
-        T: IntoIterator<Item = Result<MemoryType, ModuleError>>,
+        T: IntoIterator<Item = Result<MemoryType, Error>>,
     {
         assert_eq!(
             self.memories.len(),
@@ -295,9 +295,9 @@ impl ModuleHeaderBuilder {
     /// # Panics
     ///
     /// If this function has already been called on the same [`ModuleBuilder`].
-    pub fn push_globals<T>(&mut self, globals: T) -> Result<(), ModuleError>
+    pub fn push_globals<T>(&mut self, globals: T) -> Result<(), Error>
     where
-        T: IntoIterator<Item = Result<Global, ModuleError>>,
+        T: IntoIterator<Item = Result<Global, Error>>,
     {
         assert_eq!(
             self.globals.len(),
@@ -322,9 +322,9 @@ impl ModuleHeaderBuilder {
     /// # Panics
     ///
     /// If this function has already been called on the same [`ModuleBuilder`].
-    pub fn push_exports<T>(&mut self, exports: T) -> Result<(), ModuleError>
+    pub fn push_exports<T>(&mut self, exports: T) -> Result<(), Error>
     where
-        T: IntoIterator<Item = Result<(Box<str>, ExternIdx), ModuleError>>,
+        T: IntoIterator<Item = Result<(Box<str>, ExternIdx), Error>>,
     {
         assert!(
             self.exports.is_empty(),
@@ -355,9 +355,9 @@ impl ModuleHeaderBuilder {
     /// # Panics
     ///
     /// If this function has already been called on the same [`ModuleBuilder`].
-    pub fn push_element_segments<T>(&mut self, elements: T) -> Result<(), ModuleError>
+    pub fn push_element_segments<T>(&mut self, elements: T) -> Result<(), Error>
     where
-        T: IntoIterator<Item = Result<ElementSegment, ModuleError>>,
+        T: IntoIterator<Item = Result<ElementSegment, Error>>,
     {
         assert!(
             self.element_segments.is_empty(),
@@ -378,9 +378,9 @@ impl ModuleBuilder {
     /// # Panics
     ///
     /// If this function has already been called on the same [`ModuleBuilder`].
-    pub fn push_data_segments<T>(&mut self, data: T) -> Result<(), ModuleError>
+    pub fn push_data_segments<T>(&mut self, data: T) -> Result<(), Error>
     where
-        T: IntoIterator<Item = Result<DataSegment, ModuleError>>,
+        T: IntoIterator<Item = Result<DataSegment, Error>>,
     {
         assert!(
             self.data_segments.is_empty(),

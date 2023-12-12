@@ -113,7 +113,7 @@ pub mod errors {
         global::GlobalError,
         linker::LinkerError,
         memory::MemoryError,
-        module::{InstantiationError, ModuleError},
+        module::InstantiationError,
         store::FuelError,
         table::TableError,
     };
