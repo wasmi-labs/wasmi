@@ -27,8 +27,8 @@ pub enum Error {
     Instantiation(InstantiationError),
     /// A module compilation, validation and translation error.
     Module(ModuleError),
-    /// A store error.
-    Store(FuelError),
+    /// A fuel error.
+    Fuel(FuelError),
     /// A function error.
     Func(FuncError),
     /// A trap as defined by the WebAssembly specification.
@@ -49,7 +49,7 @@ impl Display for Error {
             Self::Func(error) => Display::fmt(error, f),
             Self::Instantiation(error) => Display::fmt(error, f),
             Self::Module(error) => Display::fmt(error, f),
-            Self::Store(error) => Display::fmt(error, f),
+            Self::Fuel(error) => Display::fmt(error, f),
         }
     }
 }
@@ -98,7 +98,7 @@ impl From<ModuleError> for Error {
 
 impl From<FuelError> for Error {
     fn from(error: FuelError) -> Self {
-        Self::Store(error)
+        Self::Fuel(error)
     }
 }
 
