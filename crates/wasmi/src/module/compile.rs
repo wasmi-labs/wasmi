@@ -14,14 +14,14 @@ use wasmparser::FunctionBody;
 ///
 /// If the function body fails to translate the Wasm function body.
 pub fn translate<'a, T>(
-    func_body: FunctionBody<'a>,
+    offset: impl Into<Option<usize>>,
     bytes: &'a [u8],
     translator: T,
 ) -> Result<T::Allocations, ModuleError>
 where
     T: WasmTranslator<'a>,
 {
-    <FuncTranslationDriver<'a, T>>::new(func_body, bytes, translator)?.translate()
+    <FuncTranslationDriver<'a, T>>::new(offset.into(), bytes, translator)?.translate()
 }
 
 /// Translates Wasm bytecode into `wasmi` bytecode for a single Wasm function.
@@ -37,10 +37,12 @@ struct FuncTranslationDriver<'parser, T> {
 impl<'parser, T> FuncTranslationDriver<'parser, T> {
     /// Creates a new Wasm to `wasmi` bytecode function translator.
     fn new(
-        func_body: FunctionBody<'parser>,
+        offset: Option<usize>,
         bytes: &'parser [u8],
         translator: T,
     ) -> Result<Self, ModuleError> {
+        let offset = offset.unwrap_or(0);
+        let func_body = FunctionBody::new(offset, bytes);
         Ok(Self {
             func_body,
             bytes,

@@ -677,18 +677,19 @@ impl ModuleParser {
         let res = header.clone();
         let allocations = mem::take(&mut self.allocations);
         let compilation_mode = res.engine().config().get_compilation_mode();
+        let offset = func_body.get_binary_reader().original_position();
         let allocations = match (compilation_mode, validation_mode) {
             (CompilationMode::Eager, ValidationMode::All) => {
                 let translator =
                     FuncTranslator::new(func, compiled_func, res, allocations.translation)?;
                 let validator = validator.into_validator(allocations.validation);
                 let translator = ValidatingFuncTranslator::new(validator, translator)?;
-                translate(func_body, bytes, translator)?
+                translate(offset, bytes, translator)?
             }
             (CompilationMode::Eager, ValidationMode::HeaderOnly) => {
                 let translator =
                     FuncTranslator::new(func, compiled_func, res, allocations.translation)?;
-                let translation = translate(func_body, bytes, translator)?;
+                let translation = translate(offset, bytes, translator)?;
                 ReusableAllocations {
                     translation,
                     ..allocations
@@ -698,7 +699,7 @@ impl ModuleParser {
                 let translator = LazyFuncTranslator::new(compiled_func, res);
                 let validator = validator.into_validator(allocations.validation);
                 let translator = ValidatingFuncTranslator::new(validator, translator)?;
-                let validation = translate(func_body, bytes, translator)?.validation;
+                let validation = translate(offset, bytes, translator)?.validation;
                 ReusableAllocations {
                     validation,
                     ..allocations
@@ -706,7 +707,7 @@ impl ModuleParser {
             }
             (CompilationMode::Lazy, ValidationMode::HeaderOnly) => {
                 let translator = LazyFuncTranslator::new(compiled_func, res);
-                translate(func_body, bytes, translator)?;
+                translate(offset, bytes, translator)?;
                 allocations
             }
         };
