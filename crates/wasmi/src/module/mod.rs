@@ -10,7 +10,7 @@ mod init_expr;
 mod instantiate;
 mod parser;
 mod read;
-mod utils;
+pub(crate) mod utils;
 
 use self::{
     builder::ModuleBuilder,
@@ -20,20 +20,19 @@ use self::{
     parser::{parse, parse_unchecked},
     read::ReadError,
 };
+pub(crate) use self::{
+    data::{DataSegment, DataSegmentKind},
+    element::{ElementSegment, ElementSegmentItems, ElementSegmentKind},
+    init_expr::ConstExpr,
+    utils::WasmiValueType,
+};
 pub use self::{
-    compile::BlockType,
     error::ModuleError,
     export::{ExportType, FuncIdx, MemoryIdx, ModuleExportsIter, TableIdx},
     global::GlobalIdx,
     import::{FuncTypeIdx, ImportName},
     instantiate::{InstancePre, InstantiationError},
     read::Read,
-};
-pub(crate) use self::{
-    data::{DataSegment, DataSegmentKind},
-    element::{ElementSegment, ElementSegmentItems, ElementSegmentKind},
-    init_expr::ConstExpr,
-    utils::WasmiValueType,
 };
 use crate::{
     engine::{CompiledFunc, DedupFuncType},

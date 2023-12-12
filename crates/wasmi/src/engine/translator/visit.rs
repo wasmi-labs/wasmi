@@ -20,10 +20,11 @@ use crate::{
     engine::{
         bytecode::{self, Const16, Instruction, Provider, Register, SignatureIdx},
         translator::AcquiredTarget,
+        BlockType,
         FuelCosts,
         TranslationError,
     },
-    module::{self, BlockType, FuncIdx, WasmiValueType},
+    module::{self, FuncIdx, WasmiValueType},
     ExternRef,
     FuncRef,
     Mutability,

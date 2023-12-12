@@ -1,5 +1,9 @@
-use super::super::{utils::WasmiValueType, FuncTypeIdx};
-use crate::{core::ValueType, engine::DedupFuncType, module::ModuleHeader, Engine};
+use crate::{
+    core::ValueType,
+    engine::DedupFuncType,
+    module::{utils::WasmiValueType, FuncTypeIdx, ModuleHeader},
+    Engine,
+};
 
 /// The type of a Wasm control flow block.
 #[derive(Debug, Copy, Clone)]

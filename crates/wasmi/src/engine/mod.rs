@@ -1,5 +1,6 @@
 //! The `wasmi` interpreter.
 
+mod block_type;
 pub mod bytecode;
 mod cache;
 mod code_map;
@@ -21,6 +22,21 @@ use self::bytecode::RegisterSpan;
 #[cfg(test)]
 use self::code_map::InternalFuncEntity;
 
+pub(crate) use self::{
+    block_type::BlockType,
+    config::FuelCosts,
+    executor::Stack,
+    func_args::{FuncFinished, FuncParams, FuncResults},
+    func_types::DedupFuncType,
+    translator::{
+        FuncTranslator,
+        FuncTranslatorAllocations,
+        LazyFuncTranslator,
+        ReusableAllocations,
+        ValidatingFuncTranslator,
+        WasmTranslator,
+    },
+};
 use self::{
     bytecode::Instruction,
     code_map::{CodeMap, CompiledFuncEntity},
@@ -35,20 +51,6 @@ pub use self::{
     resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
     traits::{CallParams, CallResults},
     translator::{Instr, TranslationError},
-};
-pub(crate) use self::{
-    config::FuelCosts,
-    executor::Stack,
-    func_args::{FuncFinished, FuncParams, FuncResults},
-    func_types::DedupFuncType,
-    translator::{
-        FuncTranslator,
-        FuncTranslatorAllocations,
-        LazyFuncTranslator,
-        ReusableAllocations,
-        ValidatingFuncTranslator,
-        WasmTranslator,
-    },
 };
 use crate::{core::Trap, module::ModuleHeader, Func, FuncType, StoreContextMut};
 use alloc::{sync::Arc, vec::Vec};

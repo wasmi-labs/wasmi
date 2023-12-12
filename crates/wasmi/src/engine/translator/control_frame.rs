@@ -7,10 +7,10 @@ use crate::{
     engine::{
         bytecode::{RegisterSpan, RegisterSpanIter},
         translator::TranslationErrorInner,
+        BlockType,
         Instr,
         TranslationError,
     },
-    module::BlockType,
     Engine,
 };
 

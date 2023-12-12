@@ -50,9 +50,10 @@ use crate::{
             SignatureIdx,
         },
         config::FuelCosts,
+        BlockType,
         CompiledFunc,
     },
-    module::{BlockType, FuncIdx, FuncTypeIdx, ModuleHeader},
+    module::{FuncIdx, FuncTypeIdx, ModuleHeader},
     Engine,
     FuncType,
 };

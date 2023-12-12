@@ -1,8 +1,5 @@
-pub use self::block_type::BlockType;
 use crate::{engine::WasmTranslator, errors::ModuleError};
 use wasmparser::FunctionBody;
-
-mod block_type;
 
 /// Translates the Wasm bytecode into `wasmi` IR bytecode.
 ///
