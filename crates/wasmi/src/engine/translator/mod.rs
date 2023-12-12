@@ -33,7 +33,7 @@ use self::{
 pub use self::{
     control_frame::{ControlFrame, ControlFrameKind},
     control_stack::ControlStack,
-    driver::translate,
+    driver::translate_wasm_func,
     error::TranslationError,
     instr_encoder::{Instr, InstrEncoder},
     stack::{FuncLocalConstsIter, TypedProvider},

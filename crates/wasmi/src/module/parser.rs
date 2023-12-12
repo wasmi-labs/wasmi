@@ -13,7 +13,7 @@ use super::{
 };
 use crate::{
     engine::{
-        translate,
+        translate_wasm_func,
         CompiledFunc,
         FuncTranslator,
         FuncTranslatorAllocations,
@@ -676,12 +676,12 @@ impl ModuleParser {
                     FuncTranslator::new(func, compiled_func, res, allocations.translation)?;
                 let validator = validator.into_validator(allocations.validation);
                 let translator = ValidatingFuncTranslator::new(validator, translator)?;
-                translate(offset, bytes, translator)?
+                translate_wasm_func(offset, bytes, translator)?
             }
             (CompilationMode::Eager, ValidationMode::HeaderOnly) => {
                 let translator =
                     FuncTranslator::new(func, compiled_func, res, allocations.translation)?;
-                let translation = translate(offset, bytes, translator)?;
+                let translation = translate_wasm_func(offset, bytes, translator)?;
                 ReusableAllocations {
                     translation,
                     ..allocations
@@ -691,7 +691,7 @@ impl ModuleParser {
                 let translator = LazyFuncTranslator::new(compiled_func, res);
                 let validator = validator.into_validator(allocations.validation);
                 let translator = ValidatingFuncTranslator::new(validator, translator)?;
-                let validation = translate(offset, bytes, translator)?.validation;
+                let validation = translate_wasm_func(offset, bytes, translator)?.validation;
                 ReusableAllocations {
                     validation,
                     ..allocations
@@ -699,7 +699,7 @@ impl ModuleParser {
             }
             (CompilationMode::Lazy, ValidationMode::HeaderOnly) => {
                 let translator = LazyFuncTranslator::new(compiled_func, res);
-                translate(offset, bytes, translator)?;
+                translate_wasm_func(offset, bytes, translator)?;
                 allocations
             }
         };
