@@ -3,9 +3,10 @@ use super::{
     TrampolineEntity,
 };
 use crate::{
-    core::{Trap, ValueType, F32, F64},
+    core::{ValueType, F32, F64},
     foreach_tuple::for_each_tuple,
     Caller,
+    Error,
     ExternRef,
     FuncRef,
     FuncType,
@@ -75,7 +76,7 @@ macro_rules! impl_into_func {
                     <Self::Results as WasmTypeList>::types(),
                 );
                 let trampoline = TrampolineEntity::new(
-                    move |caller: Caller<T>, params_results: FuncParams| -> Result<FuncFinished, Trap> {
+                    move |caller: Caller<T>, params_results: FuncParams| -> Result<FuncFinished, Error> {
                         let (($($tuple,)*), func_results): (Self::Params, FuncResults) = params_results.decode_params();
                         let results: Self::Results =
                             (self)(caller, $($tuple),*).into_fallible()?;
@@ -96,7 +97,7 @@ pub trait WasmRet {
 
     #[doc(hidden)]
     #[allow(clippy::missing_errors_doc)] // TODO: remove when clippy bug is fixed (https://github.com/rust-lang/rust-clippy/issues/11501)
-    fn into_fallible(self) -> Result<<Self as WasmRet>::Ok, Trap>;
+    fn into_fallible(self) -> Result<<Self as WasmRet>::Ok, Error>;
 }
 
 impl<T1> WasmRet for T1
@@ -106,19 +107,19 @@ where
     type Ok = T1;
 
     #[inline]
-    fn into_fallible(self) -> Result<Self::Ok, Trap> {
+    fn into_fallible(self) -> Result<Self::Ok, Error> {
         Ok(self)
     }
 }
 
-impl<T1> WasmRet for Result<T1, Trap>
+impl<T1> WasmRet for Result<T1, Error>
 where
     T1: WasmType,
 {
     type Ok = T1;
 
     #[inline]
-    fn into_fallible(self) -> Result<<Self as WasmRet>::Ok, Trap> {
+    fn into_fallible(self) -> Result<<Self as WasmRet>::Ok, Error> {
         self
     }
 }
@@ -134,12 +135,12 @@ macro_rules! impl_wasm_return_type {
             type Ok = ($($tuple,)*);
 
             #[inline]
-            fn into_fallible(self) -> Result<Self::Ok, Trap> {
+            fn into_fallible(self) -> Result<Self::Ok, Error> {
                 Ok(self)
             }
         }
 
-        impl<$($tuple),*> WasmRet for Result<($($tuple,)*), Trap>
+        impl<$($tuple),*> WasmRet for Result<($($tuple,)*), Error>
         where
             $(
                 $tuple: WasmType
@@ -148,7 +149,7 @@ macro_rules! impl_wasm_return_type {
             type Ok = ($($tuple,)*);
 
             #[inline]
-            fn into_fallible(self) -> Result<<Self as WasmRet>::Ok, Trap> {
+            fn into_fallible(self) -> Result<<Self as WasmRet>::Ok, Error> {
                 self
             }
         }
@@ -360,9 +361,9 @@ mod tests {
         assert!(implements_wasm_results!(i32));
         assert!(implements_wasm_results!((i32,)));
         assert!(implements_wasm_results!((i32, u32, i64, u64, F32, F64)));
-        assert!(implements_wasm_results!(Result<(), Trap>));
-        assert!(implements_wasm_results!(Result<i32, Trap>));
-        assert!(implements_wasm_results!(Result<(i32,), Trap>));
-        assert!(implements_wasm_results!(Result<(i32, u32, i64, u64, F32, F64), Trap>));
+        assert!(implements_wasm_results!(Result<(), Error>));
+        assert!(implements_wasm_results!(Result<i32, Error>));
+        assert!(implements_wasm_results!(Result<(i32,), Error>));
+        assert!(implements_wasm_results!(Result<(i32, u32, i64, u64, F32, F64), Error>));
     }
 }

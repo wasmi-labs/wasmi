@@ -1,12 +1,13 @@
 //! Test to assert that resumable call feature works as intended.
 
 use core::slice;
-
 use wasmi::{
+    core::{Trap, TrapCode, ValueType},
     errors::ErrorKind,
     Caller,
     Config,
     Engine,
+    Error,
     Extern,
     Func,
     Linker,
@@ -19,7 +20,6 @@ use wasmi::{
     TypedResumableInvocation,
     Value,
 };
-use wasmi_core::{Trap, TrapCode, ValueType};
 
 fn test_setup(remaining: u32) -> (Store<TestData>, Linker<TestData>) {
     let mut config = Config::default();
@@ -49,7 +49,9 @@ fn resumable_call_smoldot_common(wasm: &str) -> (Store<TestData>, TypedFunc<(), 
         .func_wrap(
             "env",
             "host_fn",
-            |mut _caller: Caller<'_, TestData>| -> Result<i32, Trap> { Err(Trap::i32_exit(100)) },
+            |mut _caller: Caller<'_, TestData>| -> Result<i32, Error> {
+                Err(Error::from(Trap::i32_exit(100)))
+            },
         )
         .unwrap();
     // The Wasm defines a single function that calls the
@@ -72,7 +74,7 @@ pub trait UnwrapResumable {
     fn unwrap_resumable(self) -> TypedResumableInvocation<Self::Results>;
 }
 
-impl<Results> UnwrapResumable for Result<TypedResumableCall<Results>, Trap> {
+impl<Results> UnwrapResumable for Result<TypedResumableCall<Results>, Error> {
     type Results = Results;
 
     fn unwrap_resumable(self) -> TypedResumableInvocation<Self::Results> {
@@ -118,7 +120,8 @@ fn resumable_call_smoldot_tail_01() {
         wasm_fn
             .call_resumable(&mut store, ())
             .unwrap_err()
-            .i32_exit_status(),
+            .as_trap()
+            .and_then(Trap::i32_exit_status),
         Some(100),
     );
 }
@@ -174,8 +177,8 @@ fn resumable_call_smoldot_02() {
 #[test]
 fn resumable_call_host() {
     let (mut store, _linker) = test_setup(0);
-    let host_fn = Func::wrap(&mut store, || -> Result<(), Trap> {
-        Err(Trap::i32_exit(100))
+    let host_fn = Func::wrap(&mut store, || -> Result<(), Error> {
+        Err(Error::from(Trap::i32_exit(100)))
     });
     // Even though the called host function traps we expect a normal error
     // since the host function is the root function of the call and therefore
@@ -195,16 +198,16 @@ fn resumable_call_host() {
         .unwrap()
         .call_resumable(&mut store, ())
         .unwrap_err();
-    assert_eq!(trap.i32_exit_status(), Some(100));
+    assert_eq!(trap.as_trap().and_then(Trap::i32_exit_status), Some(100));
 }
 
 #[test]
 fn resumable_call() {
     let (mut store, mut linker) = test_setup(0);
-    let host_fn = Func::wrap(&mut store, |input: i32| -> Result<i32, Trap> {
+    let host_fn = Func::wrap(&mut store, |input: i32| -> Result<i32, Error> {
         match input {
-            1 => Err(Trap::i32_exit(10)),
-            2 => Err(Trap::i32_exit(20)),
+            1 => Err(Error::from(Trap::i32_exit(10))),
+            2 => Err(Error::from(Trap::i32_exit(20))),
             n => Ok(n + 1),
         }
     });
@@ -272,7 +275,13 @@ impl AssertResumable for ResumableCall {
     ) -> Self::Invocation {
         match self {
             Self::Resumable(invocation) => {
-                assert_eq!(invocation.host_error().i32_exit_status(), Some(exit_status));
+                assert_eq!(
+                    invocation
+                        .host_error()
+                        .as_trap()
+                        .and_then(Trap::i32_exit_status),
+                    Some(exit_status)
+                );
                 assert_eq!(invocation.host_func().ty(store).results(), host_results,);
                 invocation
             }
@@ -331,7 +340,13 @@ impl<Results> AssertResumable for TypedResumableCall<Results> {
     ) -> Self::Invocation {
         match self {
             Self::Resumable(invocation) => {
-                assert_eq!(invocation.host_error().i32_exit_status(), Some(exit_status));
+                assert_eq!(
+                    invocation
+                        .host_error()
+                        .as_trap()
+                        .and_then(Trap::i32_exit_status),
+                    Some(exit_status)
+                );
                 assert_eq!(invocation.host_func().ty(store).results(), host_results,);
                 invocation
             }

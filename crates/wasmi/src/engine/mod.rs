@@ -53,7 +53,7 @@ pub use self::{
     traits::{CallParams, CallResults},
     translator::{Instr, TranslationError},
 };
-use crate::{core::Trap, module::ModuleHeader, Func, FuncType, StoreContextMut};
+use crate::{module::ModuleHeader, Error, Func, FuncType, StoreContextMut};
 use alloc::{sync::Arc, vec::Vec};
 use core::sync::atomic::{AtomicU32, Ordering};
 use spin::{Mutex, RwLock};
@@ -264,7 +264,7 @@ impl Engine {
         func: &Func,
         params: impl CallParams,
         results: Results,
-    ) -> Result<<Results as CallResults>::Results, Trap>
+    ) -> Result<<Results as CallResults>::Results, Error>
     where
         Results: CallResults,
     {
@@ -300,7 +300,7 @@ impl Engine {
         func: &Func,
         params: impl CallParams,
         results: Results,
-    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
+    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Error>
     where
         Results: CallResults,
     {
@@ -337,7 +337,7 @@ impl Engine {
         invocation: ResumableInvocation,
         params: impl CallParams,
         results: Results,
-    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
+    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Error>
     where
         Results: CallResults,
     {

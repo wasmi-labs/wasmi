@@ -40,6 +40,11 @@ impl Error {
     pub fn kind(&self) -> &ErrorKind {
         &self.kind
     }
+
+    /// Returns a reference to [`Trap`] if [`Error`] is a [`Trap`].
+    pub fn as_trap(&self) -> Option<&Trap> {
+        self.kind().as_trap()
+    }
 }
 
 #[cfg(feature = "std")]
@@ -77,6 +82,16 @@ pub enum ErrorKind {
     Wasm(WasmError),
     /// Encountered when there is a Wasm to `wasmi` translation error.
     Translation(TranslationError),
+}
+
+impl ErrorKind {
+    /// Returns a reference to [`Trap`] if [`ErrorKind`] is a [`Trap`].
+    pub fn as_trap(&self) -> Option<&Trap> {
+        match self {
+            Self::Trap(trap) => Some(trap),
+            _ => None,
+        }
+    }
 }
 
 #[cfg(feature = "std")]

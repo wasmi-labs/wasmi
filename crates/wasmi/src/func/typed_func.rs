@@ -1,5 +1,6 @@
 use super::{into_func::WasmTypeList, Func};
 use crate::{
+    core::UntypedValue,
     engine::{CallParams, CallResults},
     AsContext,
     AsContextMut,
@@ -7,7 +8,6 @@ use crate::{
     TypedResumableCall,
 };
 use core::{fmt, fmt::Debug, marker::PhantomData};
-use wasmi_core::{Trap, UntypedValue};
 
 /// A typed [`Func`] instance.
 ///
@@ -81,7 +81,7 @@ where
 
     /// Calls this Wasm or host function with the specified parameters.
     ///
-    /// Returns either the results of the call, or a [`Trap`] if one happened.
+    /// Returns either the results of the call, or a [`Error`] if one happened.
     ///
     /// For more information, see the [`Func::typed`] and [`Func::call`]
     /// documentation.
@@ -93,7 +93,7 @@ where
     /// # Errors
     ///
     /// If the execution of the called Wasm function traps.
-    pub fn call(&self, mut ctx: impl AsContextMut, params: Params) -> Result<Results, Trap> {
+    pub fn call(&self, mut ctx: impl AsContextMut, params: Params) -> Result<Results, Error> {
         // Note: Cloning an [`Engine`] is intentionally a cheap operation.
         ctx.as_context().store.engine().clone().execute_func(
             ctx.as_context_mut(),
@@ -117,12 +117,12 @@ where
     ///
     /// # Errors
     ///
-    /// If the function returned a [`Trap`] originating from WebAssembly.
+    /// If the function returned a [`Error`] originating from WebAssembly.
     pub fn call_resumable(
         &self,
         mut ctx: impl AsContextMut,
         params: Params,
-    ) -> Result<TypedResumableCall<Results>, Trap> {
+    ) -> Result<TypedResumableCall<Results>, Error> {
         // Note: Cloning an [`Engine`] is intentionally a cheap operation.
         ctx.as_context()
             .store

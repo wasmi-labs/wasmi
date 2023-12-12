@@ -22,7 +22,7 @@ use super::{
     StoreContext,
     Stored,
 };
-use crate::{core::Trap, engine::ResumableCall, Engine, Error, Value};
+use crate::{engine::ResumableCall, Engine, Error, Value};
 use alloc::{boxed::Box, sync::Arc};
 use core::{fmt, fmt::Debug, num::NonZeroU32};
 use wasmi_arena::ArenaIndex;
@@ -200,7 +200,10 @@ impl<T> HostFuncTrampolineEntity<T> {
     pub fn new(
         engine: &Engine,
         ty: FuncType,
-        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Trap> + Send + Sync + 'static,
+        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Error>
+            + Send
+            + Sync
+            + 'static,
     ) -> Self {
         // Preprocess parameters and results buffers so that we can reuse those
         // computations within the closure implementation. We put both parameters
@@ -244,7 +247,7 @@ impl<T> HostFuncTrampolineEntity<T> {
 }
 
 type TrampolineFn<T> =
-    dyn Fn(Caller<T>, FuncParams) -> Result<FuncFinished, Trap> + Send + Sync + 'static;
+    dyn Fn(Caller<T>, FuncParams) -> Result<FuncFinished, Error> + Send + Sync + 'static;
 
 pub struct TrampolineEntity<T> {
     closure: Arc<TrampolineFn<T>>,
@@ -260,7 +263,7 @@ impl<T> TrampolineEntity<T> {
     /// Creates a new [`TrampolineEntity`] from the given host function.
     pub fn new<F>(trampoline: F) -> Self
     where
-        F: Fn(Caller<T>, FuncParams) -> Result<FuncFinished, Trap> + Send + Sync + 'static,
+        F: Fn(Caller<T>, FuncParams) -> Result<FuncFinished, Error> + Send + Sync + 'static,
     {
         Self {
             closure: Arc::new(trampoline),
@@ -275,7 +278,7 @@ impl<T> TrampolineEntity<T> {
         mut ctx: impl AsContextMut<UserState = T>,
         instance: Option<&Instance>,
         params: FuncParams,
-    ) -> Result<FuncFinished, Trap> {
+    ) -> Result<FuncFinished, Error> {
         let caller = <Caller<T>>::new(&mut ctx, instance);
         (self.closure)(caller, params)
     }
@@ -331,7 +334,10 @@ impl Func {
     pub fn new<T>(
         mut ctx: impl AsContextMut<UserState = T>,
         ty: FuncType,
-        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Trap> + Send + Sync + 'static,
+        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Error>
+            + Send
+            + Sync
+            + 'static,
     ) -> Self {
         let engine = ctx.as_context().store.engine();
         let host_func = HostFuncTrampolineEntity::new(engine, ty, func);
@@ -382,7 +388,7 @@ impl Func {
     ///
     /// # Errors
     ///
-    /// - If the function returned a [`Trap`].
+    /// - If the function returned a [`Error`].
     /// - If the types of the `inputs` do not match the expected types for the
     ///   function signature of `self`.
     /// - If the number of input values does not match the expected number of
@@ -422,7 +428,7 @@ impl Func {
     ///
     /// # Errors
     ///
-    /// - If the function returned a Wasm [`Trap`].
+    /// - If the function returned a Wasm [`Error`].
     /// - If the types of the `inputs` do not match the expected types for the
     ///   function signature of `self`.
     /// - If the number of input values does not match the expected number of

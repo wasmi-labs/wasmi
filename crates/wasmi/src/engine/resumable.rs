@@ -9,7 +9,6 @@ use crate::{
     WasmResults,
 };
 use core::{fmt, marker::PhantomData, mem::replace, ops::Deref};
-use wasmi_core::Trap;
 
 /// Returned by [`Engine`] methods for calling a function in a resumable way.
 ///
@@ -83,7 +82,7 @@ pub struct ResumableInvocation {
     /// This might be useful to users of this API to inspect the
     /// actual host error. This is therefore guaranteed to never
     /// be a Wasm trap.
-    host_error: Trap,
+    host_error: Error,
     /// The registers where to put provided host function results upon resumption.
     ///
     /// # Note
@@ -108,7 +107,7 @@ impl ResumableInvocation {
         engine: Engine,
         func: Func,
         host_func: Func,
-        host_error: Trap,
+        host_error: Error,
         caller_results: RegisterSpan,
         stack: Stack,
     ) -> Self {
@@ -135,7 +134,7 @@ impl ResumableInvocation {
     pub(super) fn update(
         &mut self,
         host_func: Func,
-        host_error: Trap,
+        host_error: Error,
         caller_results: RegisterSpan,
     ) {
         self.host_func = host_func;
@@ -169,7 +168,7 @@ impl ResumableInvocation {
     /// # Note
     ///
     /// This is guaranteed to never be a Wasm trap.
-    pub fn host_error(&self) -> &Trap {
+    pub fn host_error(&self) -> &Error {
         &self.host_error
     }
 
@@ -192,7 +191,7 @@ impl ResumableInvocation {
     ///
     /// # Errors
     ///
-    /// - If the function resumption returned a Wasm [`Trap`].
+    /// - If the function resumption returned a Wasm [`Error`].
     /// - If the types or the number of values in `inputs` does not match
     ///   the types and number of result values of the erroneous host function.
     /// - If the number of output values does not match the expected number of
@@ -270,7 +269,7 @@ impl<Results> TypedResumableInvocation<Results> {
     ///
     /// # Errors
     ///
-    /// - If the function resumption returned a Wasm [`Trap`].
+    /// - If the function resumption returned a Wasm [`Error`].
     /// - If the types or the number of values in `inputs` does not match
     ///   the types and number of result values of the erroneous host function.
     ///

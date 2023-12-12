@@ -21,13 +21,15 @@ fn dummy_raw_waker() -> RawWaker {
 
 // Creates a dummy waker which does *nothing*, as the future itsef polls to ready at first poll
 // A waker is needed to do any polling at all, as it is the primary constituent of the `Context` for polling
-fn run_in_dummy_executor<F: std::future::Future>(f: F) -> Result<F::Output, Trap> {
+fn run_in_dummy_executor<F: std::future::Future>(f: F) -> Result<F::Output, wasmi::Error> {
     let mut f = Pin::from(Box::new(f));
     let waker = unsafe { Waker::from_raw(dummy_raw_waker()) };
     let mut cx = Context::from_waker(&waker);
     match f.as_mut().poll(&mut cx) {
         std::task::Poll::Ready(val) => Ok(val),
-        std::task::Poll::Pending => Err(Trap::new("Cannot wait on pending future")),
+        std::task::Poll::Pending => Err(wasmi::Error::from(Trap::new(
+            "Cannot wait on pending future",
+        ))),
     }
 }
 
@@ -65,19 +67,19 @@ macro_rules! impl_add_to_linker_for_funcs {
                 linker.func_wrap(
                     "wasi_snapshot_preview1",
                     stringify!($fname),
-                    move |mut caller: Caller<'_, T>, $($arg : $typ,)*| {
+                    move |mut caller: Caller<'_, T>, $($arg : $typ,)*| -> Result<$ret, wasmi::Error> {
                         let result = async {
                             let memory = match caller.get_export("memory") {
                                 Some(Extern::Memory(m)) => m,
-                                _ => return Err(Trap::new(String::from("missing required WASI memory export"))),
+                                _ => return Err(wasmi::Error::from(Trap::new(String::from("missing required WASI memory export")))),
                             };
                             let(memory, ctx) = memory.data_and_store_mut(&mut caller);
                             let ctx = wasi_ctx(ctx);
                             let memory = WasmiGuestMemory::new(memory);
                             match wasi_common::snapshots::preview_1::wasi_snapshot_preview1::$fname(ctx, &memory, $($arg,)*).await {
                                 Ok(r) => Ok(<$ret>::from(r)),
-                                Err(wiggle::Trap::String(err)) => Err(Trap::new(err)),
-                                Err(wiggle::Trap::I32Exit(i)) => Err(Trap::i32_exit(i)),
+                                Err(wiggle::Trap::String(err)) => Err(wasmi::Error::from(Trap::new(err))),
+                                Err(wiggle::Trap::I32Exit(i)) => Err(wasmi::Error::from(Trap::i32_exit(i))),
                             }
                         };
                         run_in_dummy_executor(result)?

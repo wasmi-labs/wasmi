@@ -21,6 +21,7 @@ use crate::{
     func::HostFuncEntity,
     AsContext,
     AsContextMut,
+    Error,
     Func,
     FuncEntity,
     Instance,
@@ -49,7 +50,7 @@ impl EngineInner {
         func: &Func,
         params: impl CallParams,
         results: Results,
-    ) -> Result<<Results as CallResults>::Results, Trap>
+    ) -> Result<<Results as CallResults>::Results, Error>
     where
         Results: CallResults,
     {
@@ -57,7 +58,7 @@ impl EngineInner {
         let mut stack = self.stacks.lock().reuse_or_new();
         let results = EngineExecutor::new(&res, &mut stack)
             .execute_root_func(ctx, func, params, results)
-            .map_err(TaggedTrap::into_trap);
+            .map_err(TaggedTrap::into_error);
         self.stacks.lock().recycle(stack);
         results
     }
@@ -75,7 +76,7 @@ impl EngineInner {
         func: &Func,
         params: impl CallParams,
         results: Results,
-    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
+    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Error>
     where
         Results: CallResults,
     {
@@ -92,19 +93,19 @@ impl EngineInner {
                 self.stacks.lock().recycle(stack);
                 Ok(ResumableCallBase::Finished(results))
             }
-            Err(TaggedTrap::Wasm(trap)) => {
+            Err(TaggedTrap::Wasm(error)) => {
                 self.stacks.lock().recycle(stack);
-                Err(trap)
+                Err(error)
             }
             Err(TaggedTrap::Host {
                 host_func,
-                host_trap,
+                host_error,
                 caller_results,
             }) => Ok(ResumableCallBase::Resumable(ResumableInvocation::new(
                 ctx.as_context().store.engine().clone(),
                 *func,
                 host_func,
-                host_trap,
+                host_error,
                 caller_results,
                 stack,
             ))),
@@ -124,7 +125,7 @@ impl EngineInner {
         mut invocation: ResumableInvocation,
         params: impl CallParams,
         results: Results,
-    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
+    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Error>
     where
         Results: CallResults,
     {
@@ -143,16 +144,16 @@ impl EngineInner {
                 self.stacks.lock().recycle(invocation.take_stack());
                 Ok(ResumableCallBase::Finished(results))
             }
-            Err(TaggedTrap::Wasm(trap)) => {
+            Err(TaggedTrap::Wasm(error)) => {
                 self.stacks.lock().recycle(invocation.take_stack());
-                Err(trap)
+                Err(error)
             }
             Err(TaggedTrap::Host {
                 host_func,
-                host_trap,
+                host_error,
                 caller_results,
             }) => {
-                invocation.update(host_func, host_trap, caller_results);
+                invocation.update(host_func, host_error, caller_results);
                 Ok(ResumableCallBase::Resumable(invocation))
             }
         }
@@ -355,7 +356,7 @@ impl<'engine> EngineExecutor<'engine> {
             //
             // This is the default case and we can easily make host function
             // errors return a resumable call handle.
-            result.map_err(|trap| TaggedTrap::host(*func, trap, results))?;
+            result.map_err(|error| TaggedTrap::host(*func, error, results))?;
         } else {
             // Case: No frame is on the call stack. (edge case)
             //
@@ -412,7 +413,7 @@ impl<'engine> EngineExecutor<'engine> {
         ctx: StoreContextMut<T>,
         host_func: HostFuncEntity,
         caller: HostFuncCaller,
-    ) -> Result<(), Trap> {
+    ) -> Result<(), Error> {
         // The host function signature is required for properly
         // adjusting, inspecting and manipulating the value stack.
         let (input_types, output_types) = self

@@ -1,5 +1,6 @@
 //! Tests to check if wasmi's ResourceLimiter works as intended.
 use wasmi::{
+    core::{Trap, TrapCode},
     Config,
     Engine,
     Error,
@@ -10,7 +11,6 @@ use wasmi::{
     StoreLimitsBuilder,
     TypedFunc,
 };
-use wasmi_core::TrapCode;
 
 /// Setup [`Engine`] and [`Store`] for resource limiting.
 fn test_setup(limits: StoreLimits) -> (Store<StoreLimits>, Linker<StoreLimits>) {
@@ -153,7 +153,8 @@ fn test_memory_traps_on_limited_growth() -> Result<(), Error> {
         test.memory_grow
             .call(&mut test.store, (0x10,))
             .unwrap_err()
-            .trap_code(),
+            .as_trap()
+            .and_then(Trap::trap_code),
         Some(TrapCode::GrowthOperationLimited)
     ));
     // Check memory size is what we expect.
@@ -200,7 +201,8 @@ fn test_table_traps_on_limited_growth() -> Result<(), Error> {
         test.table_grow
             .call(&mut test.store, (1,))
             .unwrap_err()
-            .trap_code(),
+            .as_trap()
+            .and_then(Trap::trap_code),
         Some(TrapCode::GrowthOperationLimited)
     ));
     // Check table size is what we expect.
