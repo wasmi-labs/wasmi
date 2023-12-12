@@ -1,19 +1,19 @@
 use crate::{engine::WasmTranslator, Error};
 use wasmparser::FunctionBody;
 
-/// Translates the Wasm bytecode into `wasmi` IR bytecode.
+/// Translates the Wasm `bytes` of a Wasm function into `wasmi` IR bytecode.
 ///
 /// # Note
 ///
-/// - Uses the given `engine` as target for the translation.
-/// - Uses the given module resources `res` as shared immutable data of the
-///   already parsed and validated module parts required for the translation.
-/// - The used `translator` is responsible for Wasm validation.
+/// - `bytes` resemble the Wasm function body bytes.
+/// - `offset` represents the global offset of `bytes` in the Wasm module.
+///   `offset` is used for Wasm validation and thus not required.
+/// - `translator` is responsible for Wasm validation and translation.
 ///
 /// # Errors
 ///
 /// If the function body fails to translate the Wasm function body.
-pub fn translate<'a, T>(
+pub fn translate_wasm_func<'a, T>(
     offset: impl Into<Option<usize>>,
     bytes: &'a [u8],
     translator: T,
