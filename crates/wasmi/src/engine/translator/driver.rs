@@ -8,7 +8,7 @@ use wasmparser::FunctionBody;
 /// - Uses the given `engine` as target for the translation.
 /// - Uses the given module resources `res` as shared immutable data of the
 ///   already parsed and validated module parts required for the translation.
-/// - Does _not_ validate the Wasm input.
+/// - The used `translator` is responsible for Wasm validation.
 ///
 /// # Errors
 ///
