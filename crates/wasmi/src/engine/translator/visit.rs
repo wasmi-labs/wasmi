@@ -108,7 +108,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_block(&mut self, block_type: wasmparser::BlockType) -> Self::Output {
-        let block_type = BlockType::new(block_type, &self.res);
+        let block_type = BlockType::new(block_type, &self.module);
         if !self.is_reachable() {
             // We keep track of unreachable control flow frames so that we
             // can associated `end` operators to their respective control flow
@@ -144,7 +144,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_loop(&mut self, block_type: wasmparser::BlockType) -> Self::Output {
-        let block_type = BlockType::new(block_type, &self.res);
+        let block_type = BlockType::new(block_type, &self.module);
         if !self.is_reachable() {
             // See `visit_block` for rational of tracking unreachable control flow.
             self.alloc
@@ -191,7 +191,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_if(&mut self, block_type: wasmparser::BlockType) -> Self::Output {
-        let block_type = BlockType::new(block_type, &self.res);
+        let block_type = BlockType::new(block_type, &self.module);
         if !self.is_reachable() {
             // We keep track of unreachable control flow frames so that we
             // can associated `end` operators to their respective control flow
@@ -383,7 +383,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             AcquiredTarget::Branch(frame) => {
                 frame.bump_branches();
                 let branch_dst = frame.branch_destination();
-                let branch_params = frame.branch_params(self.res.engine());
+                let branch_params = frame.branch_params(self.module.engine());
                 self.translate_copy_branch_params(branch_params)?;
                 let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
                 self.push_base_instr(Instruction::branch(branch_offset))?;
@@ -414,7 +414,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     AcquiredTarget::Branch(frame) => {
                         frame.bump_branches();
                         let branch_dst = frame.branch_destination();
-                        let branch_params = frame.branch_params(self.res.engine());
+                        let branch_params = frame.branch_params(self.module.engine());
                         if branch_params.is_empty() {
                             // Case: no values need to be copied so we can directly
                             //       encode the `br_if` as efficient `branch_nez`.
@@ -515,7 +515,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             .control_stack
             .acquire_target(default_target)
             .control_frame()
-            .branch_params(self.res.engine());
+            .branch_params(self.module.engine());
         // Add `br_table` targets to `br_table_targets` buffer including default target.
         // This allows us to uniformely treat all `br_table` targets the same and only parse once.
         self.alloc.br_table_targets.clear();
@@ -534,7 +534,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     true
                 }
                 AcquiredTarget::Branch(frame) => {
-                    default_branch_params == frame.branch_params(self.res.engine())
+                    default_branch_params == frame.branch_params(self.module.engine())
                 }
             }
         });
@@ -608,7 +608,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     frame.bump_branches();
                     self.alloc.instr_encoder.encode_copies(
                         &mut self.alloc.stack,
-                        frame.branch_params(self.res.engine()),
+                        frame.branch_params(self.module.engine()),
                         values,
                         fuel_info,
                     )?;
@@ -640,7 +640,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let provider_params = &mut self.alloc.buffer;
         self.alloc.stack.pop_n(params.len(), provider_params);
         let results = self.alloc.stack.push_dynamic_n(results.len())?;
-        let instr = match self.res.get_compiled_func(func_idx) {
+        let instr = match self.module.get_compiled_func(func_idx) {
             Some(compiled_func) => {
                 // Case: We are calling an internal function and can optimize
                 //       this case by using the special instruction for it.
@@ -716,7 +716,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let params = func_type.params();
         let provider_params = &mut self.alloc.buffer;
         self.alloc.stack.pop_n(params.len(), provider_params);
-        let instr = match self.res.get_compiled_func(func_idx) {
+        let instr = match self.module.get_compiled_func(func_idx) {
             Some(compiled_func) => {
                 // Case: We are calling an internal function and can optimize
                 //       this case by using the special instruction for it.
@@ -818,7 +818,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let fuel_info = self.fuel_info();
         self.alloc.instr_encoder.encode_local_set(
             &mut self.alloc.stack,
-            &self.res,
+            &self.module,
             local,
             value,
             preserved,
@@ -837,7 +837,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_global_get(&mut self, global_index: u32) -> Self::Output {
         bail_unreachable!(self);
         let global_idx = module::GlobalIdx::from(global_index);
-        let (global_type, init_value) = self.res.get_global(global_idx);
+        let (global_type, init_value) = self.module.get_global(global_idx);
         let content = global_type.content();
         if let (Mutability::Const, Some(init_expr)) = (global_type.mutability(), init_value) {
             if let Some(value) = init_expr.eval_const() {
@@ -872,8 +872,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 Ok(())
             }
             TypedProvider::Const(input) => {
-                let (global_type, _init_value) =
-                    self.res.get_global(module::GlobalIdx::from(global_index));
+                let (global_type, _init_value) = self
+                    .module
+                    .get_global(module::GlobalIdx::from(global_index));
                 debug_assert_eq!(global_type.content(), input.ty());
                 match global_type.content() {
                     ValueType::I32 => {

@@ -389,7 +389,7 @@ pub struct FuncTranslator {
     /// The reference to the compiled func allocated to the [`Engine`].
     compiled_func: CompiledFunc,
     /// The immutable `wasmi` module resources.
-    res: ModuleHeader,
+    module: ModuleHeader,
     /// This represents the reachability of the currently translated code.
     ///
     /// - `true`: The currently translated code is reachable.
@@ -453,7 +453,7 @@ impl<'parser> WasmTranslator<'parser> for FuncTranslator {
         }
         let func_consts = self.alloc.stack.func_local_consts();
         let instrs = self.alloc.instr_encoder.drain_instrs();
-        self.res
+        self.module
             .engine()
             .init_func(self.compiled_func, len_registers, func_consts, instrs);
         Ok(self.into_allocations())
@@ -515,7 +515,7 @@ impl FuncTranslator {
         Self {
             func,
             compiled_func,
-            res,
+            module: res,
             reachable: true,
             fuel_costs,
             alloc,
@@ -533,7 +533,7 @@ impl FuncTranslator {
 
     /// Registers the `block` control frame surrounding the entire function body.
     fn init_func_body_block(&mut self) -> Result<(), Error> {
-        let func_type = self.res.get_type_of_func(self.func);
+        let func_type = self.module.get_type_of_func(self.func);
         let block_type = BlockType::func_type(func_type);
         let end_label = self.alloc.instr_encoder.new_label();
         let consume_fuel = self.make_fuel_instr()?;
@@ -563,7 +563,7 @@ impl FuncTranslator {
 
     /// Returns a shared reference to the underlying [`Engine`].
     fn engine(&self) -> &Engine {
-        self.res.engine()
+        self.module.engine()
     }
 
     /// Consumes `self` and returns the underlying reusable [`FuncTranslatorAllocations`].
@@ -573,7 +573,7 @@ impl FuncTranslator {
 
     /// Returns the [`FuncType`] of the function that is currently translated.
     fn func_type(&self) -> FuncType {
-        let dedup_func_type = self.res.get_type_of_func(self.func);
+        let dedup_func_type = self.module.get_type_of_func(self.func);
         self.engine()
             .resolve_func_type(dedup_func_type, Clone::clone)
     }
@@ -581,16 +581,16 @@ impl FuncTranslator {
     /// Resolves the [`FuncType`] of the given [`FuncTypeIdx`].
     fn func_type_at(&self, func_type_index: SignatureIdx) -> FuncType {
         let func_type_index = FuncTypeIdx::from(func_type_index.to_u32()); // TODO: use the same type
-        let dedup_func_type = self.res.get_func_type(func_type_index);
-        self.res
+        let dedup_func_type = self.module.get_func_type(func_type_index);
+        self.module
             .engine()
             .resolve_func_type(dedup_func_type, Clone::clone)
     }
 
     /// Resolves the [`FuncType`] of the given [`FuncIdx`].
     fn func_type_of(&self, func_index: FuncIdx) -> FuncType {
-        let dedup_func_type = self.res.get_type_of_func(func_index);
-        self.res
+        let dedup_func_type = self.module.get_type_of_func(func_index);
+        self.module
             .engine()
             .resolve_func_type(dedup_func_type, Clone::clone)
     }
@@ -989,14 +989,14 @@ impl FuncTranslator {
                     self.alloc.stack.dec_register_usage(register);
                 }
             }
-            self.translate_copy_branch_params(frame.branch_params(self.res.engine()))?;
+            self.translate_copy_branch_params(frame.branch_params(self.module.engine()))?;
         }
         // After `else` parameters have been copied we can finally pin the `end` label.
         self.alloc.instr_encoder.pin_label(frame.end_label());
         // Without `else` block the code after the `if` is always reachable and
         // thus we need to clean up and prepare the value stack for the following code.
         self.alloc.stack.trunc(if_height);
-        for result in frame.branch_params(self.res.engine()) {
+        for result in frame.branch_params(self.module.engine()) {
             self.alloc.stack.push_register(result)?;
         }
         self.reachable = true;
