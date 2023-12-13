@@ -297,13 +297,10 @@ impl CodeMap {
         I: IntoIterator<Item = Instruction>,
         C: IntoIterator<Item = UntypedValue>,
     {
-        assert!(
-            !self.get(func).is_init(),
-            "func {func:?} is already initialized"
-        );
         let Some(func) = self.entities.get_mut(func) else {
             panic!("tried to initialize invalid compiled func: {func:?}")
         };
+        assert!(!func.is_init(), "func {func:?} is already initialized");
         *func = CompiledFuncEntity::new(len_registers, instrs, func_locals).into();
     }
 
@@ -314,13 +311,10 @@ impl CodeMap {
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
     pub fn init_lazy_func(&mut self, func: CompiledFunc, bytes: &[u8], module: &ModuleHeader) {
-        assert!(
-            !self.get(func).is_init(),
-            "func {func:?} is already initialized"
-        );
         let Some(func) = self.entities.get_mut(func) else {
             panic!("tried to initialize invalid compiled func: {func:?}")
         };
+        assert!(!func.is_init(), "func {func:?} is already initialized");
         let bytes = bytes.into();
         let module = module.clone();
         *func = InternalFuncEntity::Uncompiled(UncompiledFuncEntity { bytes, module });
