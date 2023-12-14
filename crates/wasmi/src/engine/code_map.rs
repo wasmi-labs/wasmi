@@ -176,28 +176,6 @@ impl<'a> From<&'a [u8]> for SmallByteSlice {
     }
 }
 
-#[allow(dead_code)] // TODO: remove
-impl UncompiledFuncEntity {
-    /// Create a new [`UncompiledFuncEntity`].
-    pub fn new(func_idx: FuncIdx, bytes: &[u8], module: ModuleHeader) -> Self {
-        Self {
-            bytes: bytes.into(),
-            module,
-            func_idx,
-        }
-    }
-
-    /// Returns the underlying Wasm bytes of the [`UncompiledFuncEntity`].
-    pub fn bytes(&self) -> &[u8] {
-        &self.bytes[..]
-    }
-
-    /// Returns the Wasm module header of the [`UncompiledFuncEntity`].
-    pub fn module(&self) -> &ModuleHeader {
-        &self.module
-    }
-}
-
 /// Meta information about a [`CompiledFunc`].
 #[derive(Debug)]
 pub struct CompiledFuncEntity {
