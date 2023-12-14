@@ -654,7 +654,7 @@ impl EngineInner {
         self.res
             .write()
             .code_map
-            .init_func_v2(compiled_func, func_entity)
+            .init_func(compiled_func, func_entity)
     }
 
     /// Initializes the uninitialized [`CompiledFunc`] for the [`Engine`].

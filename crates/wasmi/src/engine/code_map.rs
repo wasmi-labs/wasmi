@@ -311,7 +311,7 @@ impl CodeMap {
     ///
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
-    pub fn init_func_v2(&mut self, func: CompiledFunc, entity: CompiledFuncEntity) {
+    pub fn init_func(&mut self, func: CompiledFunc, entity: CompiledFuncEntity) {
         let Some(func) = self.entities.get_mut(func).map(RwLock::get_mut) else {
             panic!("tried to initialize invalid compiled func: {func:?}")
         };
