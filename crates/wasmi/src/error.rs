@@ -120,7 +120,7 @@ macro_rules! impl_from {
         $(
             impl From<$from> for Error {
                 fn from(error: $from) -> Self {
-                    Error::new(ErrorKind::$name(error))
+                    Self::new(ErrorKind::$name(error))
                 }
             }
         )*
@@ -138,6 +138,14 @@ impl_from! {
     impl From<ReadError> for Error::Read;
     impl From<FuelError> for Error::Fuel;
     impl From<FuncError> for Error::Func;
+}
+
+impl From<TrapCode> for Error {
+    #[cold]
+    #[inline]
+    fn from(trap_code: TrapCode) -> Self {
+        Self::new(ErrorKind::Trap(Trap::from(trap_code)))
+    }
 }
 
 /// An error that can occur upon `memory.grow` or `table.grow`.

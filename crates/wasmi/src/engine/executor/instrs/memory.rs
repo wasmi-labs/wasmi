@@ -9,6 +9,7 @@ use crate::{
     },
     error::EntityGrowError,
     store::ResourceLimiterRef,
+    Error,
 };
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
@@ -48,7 +49,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         result: Register,
         delta: Register,
         resource_limiter: &mut ResourceLimiterRef<'ctx>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let delta: u32 = self.get_register_as(delta);
         self.execute_memory_grow_impl(result, delta, resource_limiter)
     }
@@ -60,7 +61,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         result: Register,
         delta: Const16<u32>,
         resource_limiter: &mut ResourceLimiterRef<'ctx>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let delta: u32 = delta.into();
         self.execute_memory_grow_impl(result, delta, resource_limiter)
     }
@@ -71,7 +72,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         result: Register,
         delta: u32,
         resource_limiter: &mut ResourceLimiterRef<'ctx>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         if delta == 0 {
             // Case: growing by 0 pages means there is nothing to do
             self.execute_memory_size(result);
@@ -107,7 +108,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let return_value = match return_value {
             Ok(return_value) => return_value,
             Err(EntityGrowError::InvalidGrow) => EntityGrowError::ERROR_CODE,
-            Err(EntityGrowError::TrapCode(trap_code)) => return Err(trap_code),
+            Err(EntityGrowError::TrapCode(trap_code)) => return Err(Error::from(trap_code)),
         };
         self.set_register(result, return_value);
         self.try_next_instr()
@@ -120,7 +121,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Register,
         src: Register,
         len: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = self.get_register_as(src);
         let len: u32 = self.get_register_as(len);
@@ -134,7 +135,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Const16<u32>,
         src: Register,
         len: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = self.get_register_as(src);
         let len: u32 = self.get_register_as(len);
@@ -148,7 +149,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Register,
         src: Const16<u32>,
         len: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = src.into();
         let len: u32 = self.get_register_as(len);
@@ -162,7 +163,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Const16<u32>,
         src: Const16<u32>,
         len: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = src.into();
         let len: u32 = self.get_register_as(len);
@@ -176,7 +177,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Register,
         src: Register,
         len: Const16<u32>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = self.get_register_as(src);
         let len: u32 = len.into();
@@ -190,7 +191,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Const16<u32>,
         src: Register,
         len: Const16<u32>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = self.get_register_as(src);
         let len: u32 = len.into();
@@ -204,7 +205,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Register,
         src: Const16<u32>,
         len: Const16<u32>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = src.into();
         let len: u32 = len.into();
@@ -218,7 +219,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Const16<u32>,
         src: Const16<u32>,
         len: Const16<u32>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = src.into();
         let len: u32 = len.into();
@@ -231,8 +232,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst_index: u32,
         src_index: u32,
         len: u32,
-    ) -> Result<(), TrapCode> {
-        self.consume_fuel_with(
+    ) -> Result<(), Error> {
+        self.consume_fuel_with::<_, Error>(
             |costs| costs.fuel_for_bytes(u64::from(len)),
             |this| {
                 let len = len as usize;
@@ -260,7 +261,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Register,
         value: Register,
         len: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let value: u8 = self.get_register_as(value);
         let len: u32 = self.get_register_as(len);
@@ -274,7 +275,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Const16<u32>,
         value: Register,
         len: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let value: u8 = self.get_register_as(value);
         let len: u32 = self.get_register_as(len);
@@ -288,7 +289,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Register,
         value: u8,
         len: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let len: u32 = self.get_register_as(len);
         self.execute_memory_fill_impl(dst, value, len)
@@ -301,7 +302,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Const16<u32>,
         value: u8,
         len: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let len: u32 = self.get_register_as(len);
         self.execute_memory_fill_impl(dst, value, len)
@@ -314,7 +315,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Register,
         value: Register,
         len: Const16<u32>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let value: u8 = self.get_register_as(value);
         let len: u32 = len.into();
@@ -328,7 +329,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Const16<u32>,
         value: Register,
         len: Const16<u32>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let value: u8 = self.get_register_as(value);
         let len: u32 = len.into();
@@ -342,7 +343,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Register,
         value: u8,
         len: Const16<u32>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let len: u32 = len.into();
         self.execute_memory_fill_impl(dst, value, len)
@@ -355,15 +356,15 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Const16<u32>,
         value: u8,
         len: Const16<u32>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let len: u32 = len.into();
         self.execute_memory_fill_impl(dst, value, len)
     }
 
     /// Executes a generic `memory.fill` instruction.
-    fn execute_memory_fill_impl(&mut self, dst: u32, value: u8, len: u32) -> Result<(), TrapCode> {
-        self.consume_fuel_with(
+    fn execute_memory_fill_impl(&mut self, dst: u32, value: u8, len: u32) -> Result<(), Error> {
+        self.consume_fuel_with::<_, Error>(
             |costs| costs.fuel_for_bytes(u64::from(len)),
             |this| {
                 let dst = dst as usize;
@@ -388,7 +389,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Register,
         src: Register,
         len: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = self.get_register_as(src);
         let len: u32 = self.get_register_as(len);
@@ -402,7 +403,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Const16<u32>,
         src: Register,
         len: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = self.get_register_as(src);
         let len: u32 = self.get_register_as(len);
@@ -416,7 +417,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Register,
         src: Const16<u32>,
         len: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = src.into();
         let len: u32 = self.get_register_as(len);
@@ -430,7 +431,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Const16<u32>,
         src: Const16<u32>,
         len: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = src.into();
         let len: u32 = self.get_register_as(len);
@@ -444,7 +445,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Register,
         src: Register,
         len: Const16<u32>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = self.get_register_as(src);
         let len: u32 = len.into();
@@ -458,7 +459,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Const16<u32>,
         src: Register,
         len: Const16<u32>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = self.get_register_as(src);
         let len: u32 = len.into();
@@ -472,7 +473,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Register,
         src: Const16<u32>,
         len: Const16<u32>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = src.into();
         let len: u32 = len.into();
@@ -486,7 +487,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Const16<u32>,
         src: Const16<u32>,
         len: Const16<u32>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = src.into();
         let len: u32 = len.into();
@@ -494,8 +495,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic `memory.init` instruction.
-    fn execute_memory_init_impl(&mut self, dst: u32, src: u32, len: u32) -> Result<(), TrapCode> {
-        self.consume_fuel_with(
+    fn execute_memory_init_impl(&mut self, dst: u32, src: u32, len: u32) -> Result<(), Error> {
+        self.consume_fuel_with::<_, Error>(
             |costs| costs.fuel_for_bytes(u64::from(len)),
             |this| {
                 let dst_index = dst as usize;

@@ -26,7 +26,6 @@ use crate::{
     Instance,
     StoreContextMut,
 };
-use wasmi_core::{Trap, TrapCode};
 
 #[cfg(doc)]
 use crate::{engine::StackLimits, Store};
@@ -493,23 +492,12 @@ impl<'engine> EngineExecutor<'engine> {
         &mut self,
         ctx: StoreContextMut<T>,
         cache: &mut InstanceCache,
-    ) -> Result<WasmOutcome, Trap> {
-        /// Converts a [`TrapCode`] into a [`Trap`].
-        ///
-        /// This function exists for performance reasons since its `#[cold]`
-        /// annotation has severe effects on performance.
-        #[inline]
-        #[cold]
-        fn make_trap(code: TrapCode) -> Trap {
-            code.into()
-        }
-
+    ) -> Result<WasmOutcome, Error> {
         let (store_inner, mut resource_limiter) = ctx.store.store_inner_and_resource_limiter_ref();
         let value_stack = &mut self.stack.values;
         let call_stack = &mut self.stack.calls;
         let code_map = &self.res.code_map;
         let func_types = &self.res.func_types;
-
         execute_instrs(
             store_inner,
             cache,
@@ -519,7 +507,6 @@ impl<'engine> EngineExecutor<'engine> {
             func_types,
             &mut resource_limiter,
         )
-        .map_err(make_trap)
     }
 
     /// Writes the results of the function execution back into the `results` buffer.
