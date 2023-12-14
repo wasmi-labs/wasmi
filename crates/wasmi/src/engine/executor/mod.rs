@@ -4,7 +4,6 @@ use self::{
     stack::CallFrame,
     trap::TaggedTrap,
 };
-use super::code_map::InternalFuncEntity;
 use crate::{
     engine::{
         bytecode::{Register, RegisterSpan},
@@ -204,13 +203,7 @@ impl<'engine> EngineExecutor<'engine> {
                 self.stack.values.reserve(len_results)?;
                 self.stack.values.extend_zeros(len_results);
                 let instance = wasm_func.instance();
-                let compiled_func = match self.res.code_map.get(wasm_func.func_body()) {
-                    InternalFuncEntity::Compiled(func) => func,
-                    InternalFuncEntity::Uncompiled(func) => unimplemented!(
-                        "lazy compilation is not yet implemented but found: {:?}",
-                        func
-                    ),
-                };
+                let compiled_func = self.res.code_map.get(wasm_func.func_body())?;
                 let (base_ptr, frame_ptr) = self.stack.values.alloc_call_frame(compiled_func)?;
                 // Safety: We use the `base_ptr` that we just received upon allocating the new
                 //         call frame which is guaranteed to be valid for this particular operation

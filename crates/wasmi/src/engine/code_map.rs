@@ -5,9 +5,16 @@
 //! This is the data structure specialized to handle compiled
 //! register machine based bytecode functions.
 
-use crate::{core::UntypedValue, engine::bytecode::Instruction, module::ModuleHeader};
+use super::{FuncTranslationDriver, FuncTranslator};
+use crate::{
+    core::UntypedValue,
+    engine::bytecode::Instruction,
+    module::{FuncIdx, ModuleHeader},
+    Error,
+};
 use alloc::boxed::Box;
-use core::{ops, slice};
+use core::{mem, ops, slice};
+use spin::RwLock;
 use wasmi_arena::{Arena, ArenaIndex};
 
 /// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`](crate::Engine).
@@ -79,18 +86,24 @@ impl InternalFuncEntity {
     /// Returns `Some` [`CompiledFuncEntity`] if possible.
     ///
     /// Otherwise returns `None`.
-    #[cfg(test)]
     pub fn as_compiled(&self) -> Option<&CompiledFuncEntity> {
         match self {
             InternalFuncEntity::Compiled(func) => Some(func),
             InternalFuncEntity::Uncompiled(_) => None,
         }
     }
+
+    /// Returns `true` if `self` is a [`CompiledFuncEntity`].
+    pub fn is_compiled(&self) -> bool {
+        self.as_compiled().is_some()
+    }
 }
 
 /// An internal uncompiled function entity.
 #[derive(Debug)]
 pub struct UncompiledFuncEntity {
+    /// The index of the function within the `module`.
+    func_idx: FuncIdx,
     /// The Wasm binary bytes.
     bytes: SmallByteSlice,
     /// The Wasm module of the Wasm function.
@@ -114,6 +127,15 @@ pub enum SmallByteSlice {
     },
     /// The byte slice is too big and allocated on the heap.
     Big(Box<[u8]>),
+}
+
+impl Default for SmallByteSlice {
+    fn default() -> Self {
+        Self::Small {
+            len: 0,
+            bytes: [0x00; 22],
+        }
+    }
 }
 
 impl SmallByteSlice {
@@ -157,10 +179,11 @@ impl<'a> From<&'a [u8]> for SmallByteSlice {
 #[allow(dead_code)] // TODO: remove
 impl UncompiledFuncEntity {
     /// Create a new [`UncompiledFuncEntity`].
-    pub fn new(bytes: &[u8], module: ModuleHeader) -> Self {
+    pub fn new(func_idx: FuncIdx, bytes: &[u8], module: ModuleHeader) -> Self {
         Self {
             bytes: bytes.into(),
             module,
+            func_idx,
         }
     }
 
@@ -198,7 +221,7 @@ impl CompiledFuncEntity {
     ///
     /// - If `instrs` is empty.
     /// - If `instrs` contains more than `u32::MAX` instructions.
-    fn new<I, C>(len_registers: u16, instrs: I, consts: C) -> Self
+    pub fn new<I, C>(len_registers: u16, instrs: I, consts: C) -> Self
     where
         I: IntoIterator<Item = Instruction>,
         C: IntoIterator<Item = UntypedValue>,
@@ -267,7 +290,7 @@ impl CompiledFuncEntity {
 #[derive(Debug, Default)]
 pub struct CodeMap {
     /// The headers of all compiled functions.
-    entities: Arena<CompiledFunc, InternalFuncEntity>,
+    entities: Arena<CompiledFunc, RwLock<InternalFuncEntity>>,
 }
 
 impl CodeMap {
@@ -278,30 +301,22 @@ impl CodeMap {
     /// The uninitialized [`CompiledFunc`] must be initialized using
     /// [`CodeMap::init_func`] before it is executed.
     pub fn alloc_func(&mut self) -> CompiledFunc {
-        self.entities.alloc(InternalFuncEntity::uninit())
+        self.entities
+            .alloc(RwLock::new(InternalFuncEntity::uninit()))
     }
 
-    /// Initializes the [`CompiledFunc`] for eager translation.
+    /// Initializes the [`CompiledFunc`] with its [`CompiledFuncEntity`].
     ///
     /// # Panics
     ///
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
-    pub fn init_func<I, C>(
-        &mut self,
-        func: CompiledFunc,
-        len_registers: u16,
-        func_locals: C,
-        instrs: I,
-    ) where
-        I: IntoIterator<Item = Instruction>,
-        C: IntoIterator<Item = UntypedValue>,
-    {
-        let Some(func) = self.entities.get_mut(func) else {
+    pub fn init_func_v2(&mut self, func: CompiledFunc, entity: CompiledFuncEntity) {
+        let Some(func) = self.entities.get_mut(func).map(RwLock::get_mut) else {
             panic!("tried to initialize invalid compiled func: {func:?}")
         };
         assert!(!func.is_init(), "func {func:?} is already initialized");
-        *func = CompiledFuncEntity::new(len_registers, instrs, func_locals).into();
+        *func = entity.into();
     }
 
     /// Initializes the [`CompiledFunc`] for lazy translation.
@@ -310,22 +325,70 @@ impl CodeMap {
     ///
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
-    pub fn init_lazy_func(&mut self, func: CompiledFunc, bytes: &[u8], module: &ModuleHeader) {
-        let Some(func) = self.entities.get_mut(func) else {
+    pub fn init_lazy_func(
+        &mut self,
+        func_idx: FuncIdx,
+        func: CompiledFunc,
+        bytes: &[u8],
+        module: &ModuleHeader,
+    ) {
+        let Some(func) = self.entities.get_mut(func).map(RwLock::get_mut) else {
             panic!("tried to initialize invalid compiled func: {func:?}")
         };
         assert!(!func.is_init(), "func {func:?} is already initialized");
         let bytes = bytes.into();
         let module = module.clone();
-        *func = InternalFuncEntity::Uncompiled(UncompiledFuncEntity { bytes, module });
+        *func = InternalFuncEntity::Uncompiled(UncompiledFuncEntity {
+            func_idx,
+            bytes,
+            module,
+        });
     }
 
     /// Returns the [`InternalFuncEntity`] of the [`CompiledFunc`].
     #[track_caller]
-    pub fn get(&self, func: CompiledFunc) -> &InternalFuncEntity {
-        self.entities
-            .get(func)
-            .unwrap_or_else(|| panic!("invalid compiled func: {func:?}"))
+    pub fn get(&self, compiled_func: CompiledFunc) -> Result<&CompiledFuncEntity, Error> {
+        let func = self
+            .entities
+            .get(compiled_func)
+            .unwrap_or_else(|| panic!("invalid compiled func: {compiled_func:?}"));
+        {
+            let func = func.read();
+            if func.is_compiled() {
+                let func = spin::RwLockReadGuard::leak(func)
+                    .as_compiled()
+                    .expect("it was already asserted that `func` is compiled");
+                return Ok(func);
+            }
+        }
+        // Case: function was not already compiled.
+        //
+        // This requires the function to be compiled before returning a reference
+        // to the resulting compiled function.
+        let mut func = func.write();
+        let InternalFuncEntity::Uncompiled(uncompiled) = &mut *func else {
+            // Note: Due to race conditions the function might have already been compiled by
+            //       another thread so we have to check this before we actually perform compilation.
+            let func = spin::RwLockReadGuard::leak(func.downgrade())
+                .as_compiled()
+                .expect("it was already asserted that `func` is compiled");
+            return Ok(func);
+        };
+        let func_idx = uncompiled.func_idx;
+        let bytes = mem::take(&mut uncompiled.bytes);
+        let module = uncompiled.module.clone();
+        let engine = module.engine().clone();
+        let allocs = engine.get_translation_allocs();
+        let translator = FuncTranslator::new(func_idx, module, allocs)?;
+        let allocs =
+            FuncTranslationDriver::new(0, &bytes[..], translator)?.translate(|compiled_func| {
+                *func = InternalFuncEntity::Compiled(compiled_func);
+            })?;
+        engine.recycle_translation_allocs(allocs);
+        let func = spin::RwLockReadGuard::leak(func.downgrade())
+            .as_compiled()
+            .expect("the function has just been compiled");
+        Ok(func)
     }
 }
 

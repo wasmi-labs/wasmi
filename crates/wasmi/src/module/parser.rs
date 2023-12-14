@@ -11,25 +11,9 @@ use super::{
     ModuleHeader,
     Read,
 };
-use crate::{
-    engine::{
-        translate_wasm_func,
-        CompiledFunc,
-        FuncTranslator,
-        FuncTranslatorAllocations,
-        LazyFuncTranslator,
-        ReusableAllocations,
-        ValidatingFuncTranslator,
-    },
-    CompilationMode,
-    Engine,
-    Error,
-    FuncType,
-    MemoryType,
-    TableType,
-};
+use crate::{engine::CompiledFunc, Engine, Error, FuncType, MemoryType, TableType};
 use alloc::{boxed::Box, vec::Vec};
-use core::{mem, ops::Range};
+use core::ops::Range;
 use wasmparser::{
     Chunk,
     DataSectionReader,
@@ -82,8 +66,6 @@ pub struct ModuleParser {
     parser: WasmParser,
     /// The number of compiled or processed functions.
     compiled_funcs: u32,
-    /// Reusable allocations for validating and translation functions.
-    allocations: ReusableAllocations<FuncTranslatorAllocations>,
     /// Flag, `true` when `stream` is at the end.
     eof: bool,
 }
@@ -107,7 +89,6 @@ impl ModuleParser {
             validator,
             parser,
             compiled_funcs: 0,
-            allocations: ReusableAllocations::default(),
             eof: false,
         }
     }
@@ -665,45 +646,14 @@ impl ModuleParser {
         header: &ModuleHeader,
     ) -> Result<(), Error> {
         let (func, compiled_func) = self.next_func(header);
-        let validator = self.validator.code_section_entry(&func_body)?;
-        let res = header.clone();
-        let allocations = mem::take(&mut self.allocations);
-        let compilation_mode = res.engine().config().get_compilation_mode();
+        let module = header.clone();
+        let engine = module.engine().clone();
         let offset = func_body.get_binary_reader().original_position();
-        let allocations = match (compilation_mode, validation_mode) {
-            (CompilationMode::Eager, ValidationMode::All) => {
-                let translator =
-                    FuncTranslator::new(func, compiled_func, res, allocations.translation)?;
-                let validator = validator.into_validator(allocations.validation);
-                let translator = ValidatingFuncTranslator::new(validator, translator)?;
-                translate_wasm_func(offset, bytes, translator)?
-            }
-            (CompilationMode::Eager, ValidationMode::HeaderOnly) => {
-                let translator =
-                    FuncTranslator::new(func, compiled_func, res, allocations.translation)?;
-                let translation = translate_wasm_func(offset, bytes, translator)?;
-                ReusableAllocations {
-                    translation,
-                    ..allocations
-                }
-            }
-            (CompilationMode::Lazy, ValidationMode::All) => {
-                let translator = LazyFuncTranslator::new(compiled_func, res);
-                let validator = validator.into_validator(allocations.validation);
-                let translator = ValidatingFuncTranslator::new(validator, translator)?;
-                let validation = translate_wasm_func(offset, bytes, translator)?.validation;
-                ReusableAllocations {
-                    validation,
-                    ..allocations
-                }
-            }
-            (CompilationMode::Lazy, ValidationMode::HeaderOnly) => {
-                let translator = LazyFuncTranslator::new(compiled_func, res);
-                translate_wasm_func(offset, bytes, translator)?;
-                allocations
-            }
+        let func_to_validate = match validation_mode {
+            ValidationMode::All => Some(self.validator.code_section_entry(&func_body)?),
+            ValidationMode::HeaderOnly => None,
         };
-        _ = mem::replace(&mut self.allocations, allocations);
+        engine.translate_func(func, compiled_func, offset, bytes, module, func_to_validate)?;
         Ok(())
     }
 

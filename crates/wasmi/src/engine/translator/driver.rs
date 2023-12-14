@@ -1,31 +1,35 @@
-use crate::{engine::WasmTranslator, Error};
+use crate::{
+    engine::{code_map::CompiledFuncEntity, WasmTranslator},
+    Error,
+};
 use wasmparser::FunctionBody;
 
-/// Translates the Wasm `bytes` of a Wasm function into `wasmi` IR bytecode.
-///
-/// # Note
-///
-/// - `bytes` resemble the Wasm function body bytes.
-/// - `offset` represents the global offset of `bytes` in the Wasm module.
-///   `offset` is used for Wasm validation and thus not required.
-/// - `translator` is responsible for Wasm validation and translation.
-///
-/// # Errors
-///
-/// If the function body fails to translate the Wasm function body.
-pub fn translate_wasm_func<'a, T>(
-    offset: impl Into<Option<usize>>,
-    bytes: &'a [u8],
-    translator: T,
-) -> Result<T::Allocations, Error>
-where
-    T: WasmTranslator<'a>,
-{
-    <FuncTranslationDriver<'a, T>>::new(offset.into(), bytes, translator)?.translate()
-}
+// /// Translates the Wasm `bytes` of a Wasm function into `wasmi` IR bytecode.
+// ///
+// /// # Note
+// ///
+// /// - `bytes` resemble the Wasm function body bytes.
+// /// - `offset` represents the global offset of `bytes` in the Wasm module.
+// ///   `offset` is used for Wasm validation and thus not required.
+// /// - `translator` is responsible for Wasm validation and translation.
+// ///
+// /// # Errors
+// ///
+// /// If the function body fails to translate the Wasm function body.
+// pub fn translate_wasm_func<'a, T>(
+//     offset: impl Into<Option<usize>>,
+//     bytes: &'a [u8],
+//     translator: T,
+//     finalize: impl FnOnce(CompiledFuncEntity),
+// ) -> Result<T::Allocations, Error>
+// where
+//     T: WasmTranslator<'a>,
+// {
+//     <FuncTranslationDriver<'a, T>>::new(offset.into(), bytes, translator)?.translate(finalize)
+// }
 
 /// Translates Wasm bytecode into `wasmi` bytecode for a single Wasm function.
-struct FuncTranslationDriver<'parser, T> {
+pub struct FuncTranslationDriver<'parser, T> {
     /// The function body that shall be translated.
     func_body: FunctionBody<'parser>,
     /// The bytes that make up the entirety of the function body.
@@ -36,8 +40,12 @@ struct FuncTranslationDriver<'parser, T> {
 
 impl<'parser, T> FuncTranslationDriver<'parser, T> {
     /// Creates a new Wasm to `wasmi` bytecode function translator.
-    fn new(offset: Option<usize>, bytes: &'parser [u8], translator: T) -> Result<Self, Error> {
-        let offset = offset.unwrap_or(0);
+    pub fn new(
+        offset: impl Into<Option<usize>>,
+        bytes: &'parser [u8],
+        translator: T,
+    ) -> Result<Self, Error> {
+        let offset = offset.into().unwrap_or(0);
         let func_body = FunctionBody::new(offset, bytes);
         Ok(Self {
             func_body,
@@ -52,21 +60,28 @@ where
     T: WasmTranslator<'parser>,
 {
     /// Starts translation of the Wasm stream into `wasmi` bytecode.
-    fn translate(mut self) -> Result<T::Allocations, Error> {
+    pub fn translate(
+        mut self,
+        finalize: impl FnOnce(CompiledFuncEntity),
+    ) -> Result<T::Allocations, Error> {
         if self.translator.setup(self.bytes)? {
-            let allocations = self.translator.finish()?;
+            let allocations = self.translator.finish(finalize)?;
             return Ok(allocations);
         }
         self.translate_locals()?;
         let offset = self.translate_operators()?;
-        let allocations = self.finish(offset)?;
+        let allocations = self.finish(offset, finalize)?;
         Ok(allocations)
     }
 
     /// Finishes construction of the function and returns its reusable allocations.
-    fn finish(mut self, offset: usize) -> Result<T::Allocations, Error> {
+    fn finish(
+        mut self,
+        offset: usize,
+        finalize: impl FnOnce(CompiledFuncEntity),
+    ) -> Result<T::Allocations, Error> {
         self.translator.update_pos(offset);
-        self.translator.finish().map_err(Into::into)
+        self.translator.finish(finalize).map_err(Into::into)
     }
 
     /// Translates local variables of the Wasm function.

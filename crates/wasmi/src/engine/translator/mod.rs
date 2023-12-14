@@ -33,11 +33,12 @@ use self::{
 pub use self::{
     control_frame::{ControlFrame, ControlFrameKind},
     control_stack::ControlStack,
-    driver::translate_wasm_func,
+    driver::FuncTranslationDriver,
     error::TranslationError,
     instr_encoder::{Instr, InstrEncoder},
-    stack::{FuncLocalConstsIter, TypedProvider},
+    stack::TypedProvider,
 };
+use super::code_map::CompiledFuncEntity;
 use crate::{
     engine::{
         bytecode::{
@@ -171,7 +172,7 @@ pub trait WasmTranslator<'parser>: VisitOperator<'parser, Output = Result<(), Er
     ///
     /// - Initialized the [`CompiledFunc`] in the [`Engine`].
     /// - Returns the allocations used for translation.
-    fn finish(self) -> Result<Self::Allocations, Error>;
+    fn finish(self, finalize: impl FnOnce(CompiledFuncEntity)) -> Result<Self::Allocations, Error>;
 }
 
 impl<T> ValidatingFuncTranslator<T> {
@@ -238,10 +239,13 @@ where
         self.pos = pos;
     }
 
-    fn finish(mut self) -> Result<Self::Allocations, Error> {
+    fn finish(
+        mut self,
+        finalize: impl FnOnce(CompiledFuncEntity),
+    ) -> Result<Self::Allocations, Error> {
         let pos = self.current_pos();
         self.validator.finish(pos)?;
-        let translation = self.translator.finish()?;
+        let translation = self.translator.finish(finalize)?;
         let validation = self.validator.into_allocations();
         let allocations = ReusableAllocations {
             translation,
@@ -316,6 +320,8 @@ where
 /// A lazy Wasm function translator that defers translation when the function is first used.
 #[derive(Debug)]
 pub struct LazyFuncTranslator {
+    /// The index of the lazily compiled function within its module.
+    func_idx: FuncIdx,
     /// The identifier of the to be compiled function.
     compiled_func: CompiledFunc,
     /// The Wasm module header information used for translation.
@@ -324,8 +330,9 @@ pub struct LazyFuncTranslator {
 
 impl LazyFuncTranslator {
     /// Create a new [`LazyFuncTranslator`].
-    pub fn new(compiled_func: CompiledFunc, module: ModuleHeader) -> Self {
+    pub fn new(func_idx: FuncIdx, compiled_func: CompiledFunc, module: ModuleHeader) -> Self {
         Self {
+            func_idx,
             compiled_func,
             module,
         }
@@ -338,7 +345,7 @@ impl<'parser> WasmTranslator<'parser> for LazyFuncTranslator {
     fn setup(&mut self, bytes: &[u8]) -> Result<bool, Error> {
         self.module
             .engine()
-            .init_lazy_func(self.compiled_func, bytes, &self.module);
+            .init_lazy_func(self.func_idx, self.compiled_func, bytes, &self.module);
         Ok(true)
     }
 
@@ -360,7 +367,10 @@ impl<'parser> WasmTranslator<'parser> for LazyFuncTranslator {
     fn update_pos(&mut self, _pos: usize) {}
 
     #[inline]
-    fn finish(self) -> Result<Self::Allocations, Error> {
+    fn finish(
+        self,
+        _finalize: impl FnOnce(CompiledFuncEntity),
+    ) -> Result<Self::Allocations, Error> {
         Ok(())
     }
 }
@@ -386,8 +396,6 @@ impl<'a> VisitOperator<'a> for LazyFuncTranslator {
 pub struct FuncTranslator {
     /// The reference to the Wasm module function under construction.
     func: FuncIdx,
-    /// The reference to the compiled func allocated to the [`Engine`].
-    compiled_func: CompiledFunc,
     /// The immutable `wasmi` module resources.
     module: ModuleHeader,
     /// This represents the reachability of the currently translated code.
@@ -430,7 +438,10 @@ impl<'parser> WasmTranslator<'parser> for FuncTranslator {
 
     fn update_pos(&mut self, _pos: usize) {}
 
-    fn finish(mut self) -> Result<Self::Allocations, Error> {
+    fn finish(
+        mut self,
+        finalize: impl FnOnce(CompiledFuncEntity),
+    ) -> Result<Self::Allocations, Error> {
         self.alloc
             .instr_encoder
             .defrag_registers(&mut self.alloc.stack)?;
@@ -453,9 +464,7 @@ impl<'parser> WasmTranslator<'parser> for FuncTranslator {
         }
         let func_consts = self.alloc.stack.func_local_consts();
         let instrs = self.alloc.instr_encoder.drain_instrs();
-        self.module
-            .engine()
-            .init_func(self.compiled_func, len_registers, func_consts, instrs);
+        finalize(CompiledFuncEntity::new(len_registers, instrs, func_consts));
         Ok(self.into_allocations())
     }
 }
@@ -503,7 +512,6 @@ impl FuncTranslator {
     /// Creates a new [`FuncTranslator`].
     pub fn new(
         func: FuncIdx,
-        compiled_func: CompiledFunc,
         res: ModuleHeader,
         alloc: FuncTranslatorAllocations,
     ) -> Result<Self, Error> {
@@ -514,7 +522,6 @@ impl FuncTranslator {
             .copied();
         Self {
             func,
-            compiled_func,
             module: res,
             reachable: true,
             fuel_costs,
