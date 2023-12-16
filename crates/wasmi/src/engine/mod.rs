@@ -456,7 +456,7 @@ pub struct ReusableAllocationStack {
 impl Default for ReusableAllocationStack {
     fn default() -> Self {
         Self {
-            max_height: 2,
+            max_height: 1,
             translation: Vec::new(),
             validation: Vec::new(),
         }
@@ -494,6 +494,7 @@ impl ReusableAllocationStack {
 
     /// Recycles the given [`FuncTranslatorAllocations`] in the [`Engine`].
     pub fn recycle_translation_allocs(&mut self, recycled: FuncTranslatorAllocations) {
+        debug_assert!(self.translation.len() <= self.max_height);
         if self.translation.len() >= self.max_height {
             return;
         }
@@ -502,6 +503,7 @@ impl ReusableAllocationStack {
 
     /// Recycles the given [`FuncValidatorAllocations`] in the [`Engine`].
     pub fn recycle_validation_allocs(&mut self, recycled: FuncValidatorAllocations) {
+        debug_assert!(self.validation.len() <= self.max_height);
         if self.validation.len() >= self.max_height {
             return;
         }
