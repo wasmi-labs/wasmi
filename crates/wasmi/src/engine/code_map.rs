@@ -118,7 +118,7 @@ pub enum SmallByteSlice {
         /// The bytes stored inline.
         ///
         /// Bytes beyond `len` are zeroed.
-        bytes: [u8; 22],
+        bytes: [u8; Self::MAX_INLINE_SIZE],
     },
     /// The byte slice is too big and allocated on the heap.
     Big(Box<[u8]>),
