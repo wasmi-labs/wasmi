@@ -98,7 +98,7 @@ enum FuelMetering {
     Disabled,
 }
 
-/// How to translate a Wasm module.
+/// How to validate a Wasm module on translation.
 enum Validation {
     /// Uses [`Module::new`].
     Checked,
@@ -106,25 +106,46 @@ enum Validation {
     Unchecked,
 }
 
+/// How to translate a Wasm module.
+enum CompilationMode {
+    /// Eagerly compiles Wasm function bodies.
+    Eager,
+    /// Lazily compiles Wasm function bodies.
+    Lazy,
+}
+
 fn bench_translate_for(
     c: &mut Criterion,
     name: &str,
     path: &str,
     validation: Validation,
+    mode: CompilationMode,
     fuel_metering: FuelMetering,
 ) {
+    let validation_id = match validation {
+        Validation::Checked => "checked",
+        Validation::Unchecked => "unchecked",
+    };
+    let mode_id = match mode {
+        CompilationMode::Eager => "eager",
+        CompilationMode::Lazy => "lazy",
+    };
     let fuel_id = match fuel_metering {
         FuelMetering::Enabled => "fuel",
         FuelMetering::Disabled => "default",
     };
-    let safety = match validation {
-        Validation::Checked => "checked",
-        Validation::Unchecked => "unchecked",
-    };
-    let bench_id = format!("translate/{name}/{safety}/{fuel_id}");
+    let bench_id = format!("translate/{name}/{validation_id}/{mode_id}/{fuel_id}");
     let mut config = bench_config();
     if matches!(fuel_metering, FuelMetering::Enabled) {
         config.consume_fuel(true);
+    }
+    match mode {
+        CompilationMode::Eager => {
+            // config.compilation_mode(wasmi::CompilationMode::Eager);
+        }
+        CompilationMode::Lazy => {
+            // config.compilation_mode(wasmi::CompilationMode::Lazy);
+        }
     }
     let create_module = match validation {
         Validation::Checked => {
@@ -145,10 +166,54 @@ fn bench_translate_for(
 }
 
 fn bench_translate_for_all(c: &mut Criterion, name: &str, path: &str) {
-    bench_translate_for(c, name, path, Validation::Checked, FuelMetering::Disabled);
-    bench_translate_for(c, name, path, Validation::Checked, FuelMetering::Enabled);
-    bench_translate_for(c, name, path, Validation::Unchecked, FuelMetering::Disabled);
-    bench_translate_for(c, name, path, Validation::Unchecked, FuelMetering::Enabled);
+    bench_translate_for(
+        c,
+        name,
+        path,
+        Validation::Checked,
+        CompilationMode::Eager,
+        FuelMetering::Disabled,
+    );
+    bench_translate_for(
+        c,
+        name,
+        path,
+        Validation::Checked,
+        CompilationMode::Eager,
+        FuelMetering::Enabled,
+    );
+    bench_translate_for(
+        c,
+        name,
+        path,
+        Validation::Checked,
+        CompilationMode::Lazy,
+        FuelMetering::Disabled,
+    );
+    bench_translate_for(
+        c,
+        name,
+        path,
+        Validation::Unchecked,
+        CompilationMode::Eager,
+        FuelMetering::Disabled,
+    );
+    bench_translate_for(
+        c,
+        name,
+        path,
+        Validation::Unchecked,
+        CompilationMode::Eager,
+        FuelMetering::Enabled,
+    );
+    bench_translate_for(
+        c,
+        name,
+        path,
+        Validation::Unchecked,
+        CompilationMode::Lazy,
+        FuelMetering::Disabled,
+    );
 }
 
 fn bench_translate_wasm_kernel(c: &mut Criterion) {
