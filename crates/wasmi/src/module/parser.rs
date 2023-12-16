@@ -647,8 +647,8 @@ impl ModuleParser {
         header: &ModuleHeader,
     ) -> Result<(), Error> {
         let (func, compiled_func) = self.next_func(header);
+        let engine = header.engine();
         let module = header.clone();
-        let engine = module.engine().clone();
         let offset = func_body.get_binary_reader().original_position();
         let func_to_validate = match validation_mode {
             ValidationMode::All => Some(self.validator.code_section_entry(&func_body)?),
