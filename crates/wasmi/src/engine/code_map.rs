@@ -163,7 +163,7 @@ impl<'a> From<&'a [u8]> for SmallByteSlice {
     fn from(bytes: &'a [u8]) -> Self {
         if bytes.len() <= Self::MAX_INLINE_SIZE {
             let len = bytes.len() as u8;
-            let mut buffer = [0x00_u8; 22];
+            let mut buffer = [0x00_u8; Self::MAX_INLINE_SIZE];
             buffer[..usize::from(len)].copy_from_slice(bytes);
             return Self::Small { len, bytes: buffer };
         }
