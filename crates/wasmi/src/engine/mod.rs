@@ -54,7 +54,10 @@ use crate::{
     FuncType,
     StoreContextMut,
 };
-use alloc::{sync::Arc, vec::Vec};
+use alloc::{
+    sync::{Arc, Weak},
+    vec::Vec,
+};
 use core::sync::atomic::{AtomicU32, Ordering};
 use spin::{Mutex, RwLock};
 use wasmi_arena::{ArenaIndex, GuardedEntity};
@@ -115,6 +118,24 @@ pub struct Engine {
     inner: Arc<EngineInner>,
 }
 
+/// A weak reference to an [`Engine`].
+/// 
+/// # Note
+/// 
+/// This was required to break a reference cycle between [`Engine`] and [`ModuleHeader`].
+#[derive(Debug, Clone)]
+pub struct EngineWeak {
+    inner: Weak<EngineInner>,
+}
+
+impl EngineWeak {
+    /// Upgrades the [`EngineWeak`] to an [`Engine`] if the [`Engine`] does still exist.
+    pub fn upgrade(&self) -> Option<Engine> {
+        let inner = self.inner.upgrade()?;
+        Some(Engine { inner })
+    }
+}
+
 impl Default for Engine {
     fn default() -> Self {
         Self::new(&Config::default())
@@ -130,6 +151,13 @@ impl Engine {
     pub fn new(config: &Config) -> Self {
         Self {
             inner: Arc::new(EngineInner::new(config)),
+        }
+    }
+
+    /// Creates an [`EngineWeak`] from the given [`Engine`].
+    pub fn downgrade(&self) -> EngineWeak {
+        EngineWeak {
+            inner: Arc::downgrade(&self.inner),
         }
     }
 

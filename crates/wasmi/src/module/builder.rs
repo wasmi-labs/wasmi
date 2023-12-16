@@ -75,7 +75,7 @@ impl ModuleHeaderBuilder {
     pub fn finish(self) -> ModuleHeader {
         ModuleHeader {
             inner: Arc::new(ModuleHeaderInner {
-                engine: self.engine,
+                engine: self.engine.downgrade(),
                 func_types: self.func_types.into(),
                 imports: self.imports.finish(),
                 funcs: self.funcs.into(),
@@ -391,8 +391,9 @@ impl ModuleBuilder {
     }
 
     /// Finishes construction of the WebAssembly [`Module`].
-    pub fn finish(self) -> Module {
+    pub fn finish(self, engine: &Engine) -> Module {
         Module {
+            engine: engine.clone(),
             header: self.header,
             data_segments: self.data_segments.into(),
         }

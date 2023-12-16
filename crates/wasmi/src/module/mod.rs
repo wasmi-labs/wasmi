@@ -31,7 +31,7 @@ pub use self::{
     read::{Read, ReadError},
 };
 use crate::{
-    engine::{CompiledFunc, DedupFuncType},
+    engine::{CompiledFunc, DedupFuncType, EngineWeak},
     Engine,
     Error,
     ExternType,
@@ -47,6 +47,7 @@ use wasmparser::{FuncValidatorAllocations, Parser, ValidPayload, Validator};
 /// A parsed and validated WebAssembly module.
 #[derive(Debug)]
 pub struct Module {
+    engine: Engine,
     header: ModuleHeader,
     data_segments: Box<[DataSegment]>,
 }
@@ -59,7 +60,7 @@ pub struct ModuleHeader {
 
 #[derive(Debug)]
 struct ModuleHeaderInner {
-    engine: Engine,
+    engine: EngineWeak,
     func_types: Arc<[DedupFuncType]>,
     imports: ModuleImports,
     funcs: Box<[DedupFuncType]>,
@@ -76,7 +77,7 @@ struct ModuleHeaderInner {
 
 impl ModuleHeader {
     /// Returns the [`Engine`] of the [`ModuleHeader`].
-    pub fn engine(&self) -> &Engine {
+    pub fn engine(&self) -> &EngineWeak {
         &self.inner.engine
     }
 
@@ -231,7 +232,7 @@ impl Module {
 
     /// Returns the [`Engine`] used during creation of the [`Module`].
     pub fn engine(&self) -> &Engine {
-        self.header.engine()
+        &self.engine
     }
 
     /// Validates `wasm` as a WebAssembly binary given the configuration (via [`Config`]) in `engine`.
@@ -298,7 +299,7 @@ impl Module {
         let len_imported_funcs = self.header.inner.imports.len_funcs;
         let len_imported_globals = self.header.inner.imports.len_globals;
         ModuleImportsIter {
-            engine: self.header.engine(),
+            engine: self.engine(),
             names: self.header.inner.imports.items.iter(),
             funcs: self.header.inner.funcs[..len_imported_funcs].iter(),
             tables: self.header.inner.tables.iter(),
@@ -383,10 +384,7 @@ impl Module {
         match idx {
             ExternIdx::Func(index) => {
                 let dedup = &self.header.inner.funcs[index.into_u32() as usize];
-                let func_type = self
-                    .header
-                    .engine()
-                    .resolve_func_type(dedup, Clone::clone);
+                let func_type = self.engine().resolve_func_type(dedup, Clone::clone);
                 ExternType::Func(func_type)
             }
             ExternIdx::Table(index) => {

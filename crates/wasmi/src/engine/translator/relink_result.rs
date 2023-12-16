@@ -16,6 +16,7 @@ use crate::{
         CompiledFunc,
     },
     module::ModuleHeader,
+    Engine,
     Error,
     FuncType,
 };
@@ -24,7 +25,7 @@ impl Instruction {
     #[rustfmt::skip]
     pub fn relink_result(
         &mut self,
-        res: &ModuleHeader,
+        module: &ModuleHeader,
         new_result: Register,
         old_result: Register,
     ) -> Result<bool, Error> {
@@ -143,13 +144,13 @@ impl Instruction {
             | I::ReturnCallIndirect0 { .. }
             | I::ReturnCallIndirect { .. } => Ok(false),
             I::CallInternal0 { results, func } | I::CallInternal { results, func } => {
-                relink_call_internal(results, *func, res, new_result, old_result)
+                relink_call_internal(results, *func, module, new_result, old_result)
             }
             I::CallImported0 { results, func } | I::CallImported { results, func } => {
-                relink_call_imported(results, *func, res, new_result, old_result)
+                relink_call_imported(results, *func, module, new_result, old_result)
             }
             I::CallIndirect0 { results, func_type } | I::CallIndirect { results, func_type } => {
-                relink_call_indirect(results, *func_type, res, new_result, old_result)
+                relink_call_indirect(results, *func_type, module, new_result, old_result)
             }
             I::Select { result, .. }
             | I::SelectRev { result, .. }
@@ -552,20 +553,28 @@ where
     Ok(true)
 }
 
+fn get_engine(module: &ModuleHeader) -> Engine {
+    module.engine().upgrade().unwrap_or_else(|| {
+        panic!(
+            "engine for result relinking does not exist: {:?}",
+            module.engine()
+        )
+    })
+}
+
 fn relink_call_internal(
     results: &mut RegisterSpan,
     func: CompiledFunc,
-    res: &ModuleHeader,
+    module: &ModuleHeader,
     new_result: Register,
     old_result: Register,
 ) -> Result<bool, Error> {
-    let Some(module_func) = res.get_func_index(func) else {
+    let Some(module_func) = module.get_func_index(func) else {
         panic!("missing module func for compiled func: {func:?}")
     };
-    let func_type = res.get_type_of_func(module_func);
-    let len_results = res
-        .engine()
-        .resolve_func_type(func_type, FuncType::len_results);
+    let engine = get_engine(module);
+    let func_type = module.get_type_of_func(module_func);
+    let len_results = engine.resolve_func_type(func_type, FuncType::len_results);
     if len_results != 1 {
         return Ok(false);
     }
@@ -575,15 +584,14 @@ fn relink_call_internal(
 fn relink_call_imported(
     results: &mut RegisterSpan,
     func: FuncIdx,
-    res: &ModuleHeader,
+    module: &ModuleHeader,
     new_result: Register,
     old_result: Register,
 ) -> Result<bool, Error> {
+    let engine = get_engine(module);
     let func_idx = func.to_u32().into();
-    let func_type = res.get_type_of_func(func_idx);
-    let len_results = res
-        .engine()
-        .resolve_func_type(func_type, |func_type| func_type.results().len());
+    let func_type = module.get_type_of_func(func_idx);
+    let len_results = engine.resolve_func_type(func_type, |func_type| func_type.results().len());
     if len_results != 1 {
         return Ok(false);
     }
@@ -593,15 +601,14 @@ fn relink_call_imported(
 fn relink_call_indirect(
     results: &mut RegisterSpan,
     func_type: SignatureIdx,
-    res: &ModuleHeader,
+    module: &ModuleHeader,
     new_result: Register,
     old_result: Register,
 ) -> Result<bool, Error> {
+    let engine = get_engine(module);
     let func_type_idx = func_type.to_u32().into();
-    let func_type = res.get_func_type(func_type_idx);
-    let len_results = res
-        .engine()
-        .resolve_func_type(func_type, |func_type| func_type.results().len());
+    let func_type = module.get_func_type(func_type_idx);
+    let len_results = engine.resolve_func_type(func_type, |func_type| func_type.results().len());
     if len_results != 1 {
         return Ok(false);
     }

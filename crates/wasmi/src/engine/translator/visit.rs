@@ -378,12 +378,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_br(&mut self, relative_depth: u32) -> Self::Output {
         bail_unreachable!(self);
+        let engine = self.engine().clone();
         match self.alloc.control_stack.acquire_target(relative_depth) {
             AcquiredTarget::Return(_frame) => self.translate_return(),
             AcquiredTarget::Branch(frame) => {
                 frame.bump_branches();
                 let branch_dst = frame.branch_destination();
-                let branch_params = frame.branch_params(self.module.engine());
+                let branch_params = frame.branch_params(&engine);
                 self.translate_copy_branch_params(branch_params)?;
                 let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
                 self.push_base_instr(Instruction::branch(branch_offset))?;
@@ -395,6 +396,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_br_if(&mut self, relative_depth: u32) -> Self::Output {
         bail_unreachable!(self);
+        let engine = self.engine().clone();
         match self.alloc.stack.pop() {
             TypedProvider::Const(condition) => {
                 if i32::from(condition) != 0 {
@@ -414,7 +416,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     AcquiredTarget::Branch(frame) => {
                         frame.bump_branches();
                         let branch_dst = frame.branch_destination();
-                        let branch_params = frame.branch_params(self.module.engine());
+                        let branch_params = frame.branch_params(&engine);
                         if branch_params.is_empty() {
                             // Case: no values need to be copied so we can directly
                             //       encode the `br_if` as efficient `branch_nez`.
@@ -481,6 +483,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_br_table(&mut self, targets: wasmparser::BrTable<'a>) -> Self::Output {
         bail_unreachable!(self);
+        let engine = self.engine().clone();
         let fuel_info = self.fuel_info();
         let index = self.alloc.stack.pop();
         if targets.is_empty() {
@@ -515,7 +518,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             .control_stack
             .acquire_target(default_target)
             .control_frame()
-            .branch_params(self.module.engine());
+            .branch_params(&engine);
         // Add `br_table` targets to `br_table_targets` buffer including default target.
         // This allows us to uniformely treat all `br_table` targets the same and only parse once.
         self.alloc.br_table_targets.clear();
@@ -534,7 +537,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     true
                 }
                 AcquiredTarget::Branch(frame) => {
-                    default_branch_params == frame.branch_params(self.module.engine())
+                    default_branch_params == frame.branch_params(&engine)
                 }
             }
         });
@@ -608,7 +611,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     frame.bump_branches();
                     self.alloc.instr_encoder.encode_copies(
                         &mut self.alloc.stack,
-                        frame.branch_params(self.module.engine()),
+                        frame.branch_params(&engine),
                         values,
                         fuel_info,
                     )?;

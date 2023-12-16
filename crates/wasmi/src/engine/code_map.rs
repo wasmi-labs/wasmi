@@ -366,7 +366,12 @@ impl CodeMap {
             let func_idx = uncompiled.func_idx;
             let bytes = mem::take(&mut uncompiled.bytes);
             let module = uncompiled.module.clone();
-            let engine = module.engine().clone();
+            let Some(engine) = module.engine().upgrade() else {
+                panic!(
+                    "cannot compile function lazily since engine does no longer exist: {:?}",
+                    module.engine()
+                )
+            };
             let allocs = engine.get_translation_allocs();
             let translator = FuncTranslator::new(func_idx, module, allocs)?;
             let allocs = FuncTranslationDriver::new(0, &bytes[..], translator)?.translate(

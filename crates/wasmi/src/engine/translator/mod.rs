@@ -345,6 +345,13 @@ impl<'parser> WasmTranslator<'parser> for LazyFuncTranslator {
     fn setup(&mut self, bytes: &[u8]) -> Result<bool, Error> {
         self.module
             .engine()
+            .upgrade()
+            .unwrap_or_else(|| {
+                panic!(
+                    "engine does no longer exist for lazy compilation setup: {:?}",
+                    self.module.engine()
+                )
+            })
             .init_lazy_func(self.func_idx, self.compiled_func, bytes, &self.module);
         Ok(true)
     }
@@ -396,6 +403,14 @@ impl<'a> VisitOperator<'a> for LazyFuncTranslator {
 pub struct FuncTranslator {
     /// The reference to the Wasm module function under construction.
     func: FuncIdx,
+    /// The engine for which the function is compiled.
+    /// 
+    /// # Note
+    /// 
+    /// Technicaly this is not needed since the information is redundant given via
+    /// the `module` field. However, this acts like a faster access since `module`
+    /// only holds a weak reference to the engine.
+    engine: Engine,
     /// The immutable `wasmi` module resources.
     module: ModuleHeader,
     /// This represents the reachability of the currently translated code.
@@ -515,19 +530,31 @@ impl FuncTranslator {
         res: ModuleHeader,
         alloc: FuncTranslatorAllocations,
     ) -> Result<Self, Error> {
-        let config = res.engine().config();
+        let Some(engine) = res.engine().upgrade() else {
+            panic!(
+                "cannot compile function since engine does no longer exist: {:?}",
+                res.engine()
+            )
+        };
+        let config = engine.config();
         let fuel_costs = config
             .get_consume_fuel()
             .then(|| config.fuel_costs())
             .copied();
         Self {
             func,
+            engine,
             module: res,
             reachable: true,
             fuel_costs,
             alloc,
         }
         .init()
+    }
+
+    /// Returns the [`Engine`] for which the function is compiled.
+    fn engine(&self) -> &Engine {
+        &self.engine
     }
 
     /// Initializes a newly constructed [`FuncTranslator`].
@@ -568,11 +595,6 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Returns a shared reference to the underlying [`Engine`].
-    fn engine(&self) -> &Engine {
-        self.module.engine()
-    }
-
     /// Consumes `self` and returns the underlying reusable [`FuncTranslatorAllocations`].
     fn into_allocations(self) -> FuncTranslatorAllocations {
         self.alloc
@@ -589,16 +611,14 @@ impl FuncTranslator {
     fn func_type_at(&self, func_type_index: SignatureIdx) -> FuncType {
         let func_type_index = FuncTypeIdx::from(func_type_index.to_u32()); // TODO: use the same type
         let dedup_func_type = self.module.get_func_type(func_type_index);
-        self.module
-            .engine()
+        self.engine()
             .resolve_func_type(dedup_func_type, Clone::clone)
     }
 
     /// Resolves the [`FuncType`] of the given [`FuncIdx`].
     fn func_type_of(&self, func_index: FuncIdx) -> FuncType {
         let dedup_func_type = self.module.get_type_of_func(func_index);
-        self.module
-            .engine()
+        self.engine()
             .resolve_func_type(dedup_func_type, Clone::clone)
     }
 
@@ -981,6 +1001,7 @@ impl FuncTranslator {
                 .else_label()
                 .expect("must have `else` label since `else` is reachable"),
         );
+        let engine = self.engine().clone();
         let if_height = frame.block_height().into_u16() as usize;
         let else_providers = self.alloc.control_stack.pop_else_providers();
         if has_results {
@@ -996,14 +1017,14 @@ impl FuncTranslator {
                     self.alloc.stack.dec_register_usage(register);
                 }
             }
-            self.translate_copy_branch_params(frame.branch_params(self.module.engine()))?;
+            self.translate_copy_branch_params(frame.branch_params(&engine))?;
         }
         // After `else` parameters have been copied we can finally pin the `end` label.
         self.alloc.instr_encoder.pin_label(frame.end_label());
         // Without `else` block the code after the `if` is always reachable and
         // thus we need to clean up and prepare the value stack for the following code.
         self.alloc.stack.trunc(if_height);
-        for result in frame.branch_params(self.module.engine()) {
+        for result in frame.branch_params(&engine) {
             self.alloc.stack.push_register(result)?;
         }
         self.reachable = true;

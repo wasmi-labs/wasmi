@@ -298,7 +298,7 @@ impl ModuleParser {
                 }
             }
         }
-        Ok(builder.finish())
+        Ok(builder.finish(&self.engine))
     }
 
     /// Pulls more bytes from the `stream` in order to produce Wasm payload.
@@ -647,14 +647,14 @@ impl ModuleParser {
         header: &ModuleHeader,
     ) -> Result<(), Error> {
         let (func, compiled_func) = self.next_func(header);
-        let engine = header.engine();
         let module = header.clone();
         let offset = func_body.get_binary_reader().original_position();
         let func_to_validate = match validation_mode {
             ValidationMode::All => Some(self.validator.code_section_entry(&func_body)?),
             ValidationMode::HeaderOnly => None,
         };
-        engine.translate_func(func, compiled_func, offset, bytes, module, func_to_validate)?;
+        self.engine
+            .translate_func(func, compiled_func, offset, bytes, module, func_to_validate)?;
         Ok(())
     }
 
