@@ -119,9 +119,9 @@ pub struct Engine {
 }
 
 /// A weak reference to an [`Engine`].
-/// 
+///
 /// # Note
-/// 
+///
 /// This was required to break a reference cycle between [`Engine`] and [`ModuleHeader`].
 #[derive(Debug, Clone)]
 pub struct EngineWeak {

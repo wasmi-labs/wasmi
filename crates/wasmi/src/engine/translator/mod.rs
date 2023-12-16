@@ -404,9 +404,9 @@ pub struct FuncTranslator {
     /// The reference to the Wasm module function under construction.
     func: FuncIdx,
     /// The engine for which the function is compiled.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// Technicaly this is not needed since the information is redundant given via
     /// the `module` field. However, this acts like a faster access since `module`
     /// only holds a weak reference to the engine.
