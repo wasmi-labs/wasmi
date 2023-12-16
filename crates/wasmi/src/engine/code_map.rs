@@ -92,11 +92,6 @@ impl InternalFuncEntity {
             InternalFuncEntity::Uncompiled(_) => None,
         }
     }
-
-    /// Returns `true` if `self` is a [`CompiledFuncEntity`].
-    pub fn is_compiled(&self) -> bool {
-        self.as_compiled().is_some()
-    }
 }
 
 /// An internal uncompiled function entity.
@@ -330,43 +325,66 @@ impl CodeMap {
             .entities
             .get(compiled_func)
             .unwrap_or_else(|| panic!("invalid compiled func: {compiled_func:?}"));
-        {
-            let func = func.read();
-            if func.is_compiled() {
-                let func = spin::RwLockReadGuard::leak(func)
-                    .as_compiled()
-                    .expect("it was already asserted that `func` is compiled");
-                return Ok(func);
-            }
+        // Safety: Internal function entities of compiled functions are immutable.
+        //         Therefore returning read-only access to compiled function entities is safe.
+        let func_ptr = unsafe { &*func.as_mut_ptr() };
+        if let InternalFuncEntity::Compiled(compiled) = func_ptr {
+            Ok(compiled)
+        } else {
+            self.compile_or_get(func)
         }
-        // Case: function was not already compiled.
-        //
-        // This requires the function to be compiled before returning a reference
-        // to the resulting compiled function.
-        let mut func = func.write();
-        let InternalFuncEntity::Uncompiled(uncompiled) = &mut *func else {
-            // Note: Due to race conditions the function might have already been compiled by
-            //       another thread so we have to check this before we actually perform compilation.
+    }
+
+    /// Returns the compiled result of `func`.
+    ///
+    /// This tries to acquire write-access to `func` in order to compile it.
+    /// Whichever threads gets write-access first compiles `func` to completion.
+    /// All other threads are going to use the result of the single compilation.
+    #[cold]
+    fn compile_or_get<'a>(
+        &'a self,
+        func: &'a RwLock<InternalFuncEntity>,
+    ) -> Result<&'a CompiledFuncEntity, Error> {
+        loop {
+            // Note: We intentionally do _not_ use the safe read-lock API in order to make
+            //       locking for write-access fairer in cases where many threads are trying to compile `func`.
+            //       This is needed since read-write locks are unfair towards writers.
+            //
+            // Safety: Internal function entities of compiled functions are immutable.
+            //         Therefore returning read-only access to compiled function entities is safe.
+            if let InternalFuncEntity::Compiled(compiled) = unsafe { &*func.as_mut_ptr() } {
+                // Case: Another thread already compiled `func` so we can return the result of the compilation.
+                return Ok(compiled);
+            }
+            let Some(mut func) = func.try_write() else {
+                continue;
+            };
+            let InternalFuncEntity::Uncompiled(uncompiled) = &mut *func else {
+                // Note: After compilation it is no longer possible to acquire a write lock to the internal function entity.
+                unreachable!("function has unexpectedly already been compiled: {func:?}");
+            };
+            let func_idx = uncompiled.func_idx;
+            let bytes = mem::take(&mut uncompiled.bytes);
+            let module = uncompiled.module.clone();
+            let engine = module.engine().clone();
+            let allocs = engine.get_translation_allocs();
+            let translator = FuncTranslator::new(func_idx, module, allocs)?;
+            let allocs = FuncTranslationDriver::new(0, &bytes[..], translator)?.translate(
+                |compiled_func| {
+                    *func = InternalFuncEntity::Compiled(compiled_func);
+                },
+            )?;
+            // TODO: In case translation of `func` fails it is going to be recompiled over and over again
+            //       for every threads which might be very costly. A status flag that indicates compilation
+            //       failure might be required to fix this.
+            engine.recycle_translation_allocs(allocs);
+            // Note: Leaking a read-lock will deny write access to all future accesses.
+            //       This is fine since function entities are immutable once compiled.
             let func = spin::RwLockReadGuard::leak(func.downgrade())
                 .as_compiled()
-                .expect("it was already asserted that `func` is compiled");
+                .expect("the function has just been compiled");
             return Ok(func);
-        };
-        let func_idx = uncompiled.func_idx;
-        let bytes = mem::take(&mut uncompiled.bytes);
-        let module = uncompiled.module.clone();
-        let engine = module.engine().clone();
-        let allocs = engine.get_translation_allocs();
-        let translator = FuncTranslator::new(func_idx, module, allocs)?;
-        let allocs =
-            FuncTranslationDriver::new(0, &bytes[..], translator)?.translate(|compiled_func| {
-                *func = InternalFuncEntity::Compiled(compiled_func);
-            })?;
-        engine.recycle_translation_allocs(allocs);
-        let func = spin::RwLockReadGuard::leak(func.downgrade())
-            .as_compiled()
-            .expect("the function has just been compiled");
-        Ok(func)
+        }
     }
 }
 
