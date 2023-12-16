@@ -873,9 +873,9 @@ fn bench_execute_recursive_trap(c: &mut Criterion) {
                 .call(&mut store, &[Value::I32(1000)], &mut result)
                 .unwrap_err();
             match error.kind() {
-                wasmi::errors::ErrorKind::Trap(trap) => assert_matches::assert_matches!(
-                    trap.trap_code(),
-                    Some(TrapCode::UnreachableCodeReached),
+                wasmi::errors::ErrorKind::TrapCode(trap_code) => assert_matches::assert_matches!(
+                    trap_code,
+                    TrapCode::UnreachableCodeReached,
                     "expected unreachable trap",
                 ),
                 _ => panic!("expected unreachable trap"),

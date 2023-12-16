@@ -1,9 +1,4 @@
-use crate::{
-    core::{Trap, TrapCode},
-    engine::bytecode::RegisterSpan,
-    Error,
-    Func,
-};
+use crate::{core::TrapCode, engine::bytecode::RegisterSpan, Error, Func};
 
 /// Either a Wasm trap or a host trap with its originating host [`Func`].
 #[derive(Debug)]
@@ -37,12 +32,6 @@ impl TaggedTrap {
     }
 }
 
-impl From<Trap> for TaggedTrap {
-    fn from(trap: Trap) -> Self {
-        Self::Wasm(trap.into())
-    }
-}
-
 impl From<Error> for TaggedTrap {
     fn from(error: Error) -> Self {
         Self::Wasm(error)
@@ -51,6 +40,6 @@ impl From<Error> for TaggedTrap {
 
 impl From<TrapCode> for TaggedTrap {
     fn from(trap_code: TrapCode) -> Self {
-        Self::Wasm(Trap::from(trap_code).into())
+        Self::Wasm(trap_code.into())
     }
 }

@@ -1,16 +1,7 @@
 //! Tests to check if wasmi's fuel metering works as intended.
 
 use std::fmt::Debug;
-use wasmi::{
-    core::{Trap, TrapCode},
-    Config,
-    Engine,
-    Error,
-    Func,
-    Linker,
-    Module,
-    Store,
-};
+use wasmi::{core::TrapCode, Config, Engine, Error, Func, Linker, Module, Store};
 
 /// Setup [`Engine`] and [`Store`] for fuel metering.
 fn test_setup() -> (Store<()>, Linker<()>) {
@@ -68,7 +59,7 @@ where
     T: Debug,
 {
     assert!(matches!(
-        call_result.unwrap_err().as_trap().and_then(Trap::trap_code),
+        call_result.unwrap_err().as_trap_code(),
         Some(TrapCode::OutOfFuel)
     ));
 }

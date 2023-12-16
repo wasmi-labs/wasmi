@@ -44,15 +44,13 @@ fn main() -> Result<()> {
             Ok(())
         }
         Err(error) => {
-            if let wasmi::errors::ErrorKind::Trap(trap) = error.kind() {
-                if let Some(exit_code) = trap.i32_exit_status() {
-                    // We received an exit code from the WASI program,
-                    // therefore we exit with the same exit code after
-                    // pretty printing the results.
-                    print_remaining_fuel(&args, &ctx);
-                    print_pretty_results(&func_results);
-                    process::exit(exit_code)
-                }
+            if let Some(exit_code) = error.i32_exit_status() {
+                // We received an exit code from the WASI program,
+                // therefore we exit with the same exit code after
+                // pretty printing the results.
+                print_remaining_fuel(&args, &ctx);
+                print_pretty_results(&func_results);
+                process::exit(exit_code)
             }
             bail!("failed during execution of {func_name}: {error}")
         }

@@ -26,7 +26,7 @@ use crate::{
     Table,
     Value,
 };
-use wasmi_core::{Trap, UntypedValue};
+use wasmi_core::UntypedValue;
 
 impl Module {
     /// Instantiates a new [`Instance`] from the given compiled [`Module`].
@@ -332,11 +332,9 @@ impl Module {
                         .store
                         .inner
                         .resolve_table_element(&table, &element);
-                    table
-                        .init(dst_index, element, 0, len_items, |func_index| {
-                            builder.get_func(func_index)
-                        })
-                        .map_err(Trap::from)?;
+                    table.init(dst_index, element, 0, len_items, |func_index| {
+                        builder.get_func(func_index)
+                    })?;
                 }
                 // Now drop the active element segment as commanded by the Wasm spec.
                 element.drop_items(&mut context);
