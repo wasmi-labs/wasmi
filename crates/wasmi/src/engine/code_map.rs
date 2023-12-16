@@ -128,7 +128,7 @@ impl Default for SmallByteSlice {
     fn default() -> Self {
         Self::Small {
             len: 0,
-            bytes: [0x00; 22],
+            bytes: [0x00; Self::MAX_INLINE_SIZE],
         }
     }
 }
