@@ -149,7 +149,7 @@ fn bench_translate_for(
     }
     let create_module = match validation {
         Validation::Checked => {
-            |engine: &Engine, bytes: &[u8]| -> Module { Module::new(&engine, bytes).unwrap() }
+            |engine: &Engine, bytes: &[u8]| -> Module { Module::new(engine, bytes).unwrap() }
         }
         Validation::Unchecked => |engine: &Engine, bytes: &[u8]| -> Module {
             // Safety: We made sure that all translation benchmark inputs are valid Wasm.
@@ -261,8 +261,8 @@ fn bench_instantiate_contract(c: &mut Criterion, name: &str, path: &str) {
     c.bench_function(&bench_id, |b| {
         let module = load_module_from_file(path);
         let engine = module.engine();
-        let mut store = Store::new(&engine, ());
-        let mut linker = <Linker<()>>::new(&engine);
+        let mut store = Store::new(engine, ());
+        let mut linker = <Linker<()>>::new(engine);
         linker
             .define(
                 "env",
@@ -1076,7 +1076,7 @@ fn bench_execute_memory_fill(c: &mut Criterion) {
         });
         assert!(mem.data(&store)[ptr..(ptr + len)]
             .iter()
-            .all(|byte| (*byte as u8) == value));
+            .all(|byte| *byte == value));
     });
 }
 
