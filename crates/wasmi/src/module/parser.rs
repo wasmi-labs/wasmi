@@ -282,6 +282,7 @@ impl ModuleParser {
                         }
                         Payload::End(offset) => {
                             self.process_end(offset)?;
+                            buffer.drain(..consumed);
                             break;
                         }
                         Payload::CustomSection { .. } => {}
