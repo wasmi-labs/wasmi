@@ -166,46 +166,46 @@ fn bench_translate_for(
 }
 
 fn bench_translate_for_all(c: &mut Criterion, name: &str, path: &str) {
-    // bench_translate_for(
-    //     c,
-    //     name,
-    //     path,
-    //     Validation::Checked,
-    //     CompilationMode::Eager,
-    //     FuelMetering::Disabled,
-    // );
-    // bench_translate_for(
-    //     c,
-    //     name,
-    //     path,
-    //     Validation::Checked,
-    //     CompilationMode::Eager,
-    //     FuelMetering::Enabled,
-    // );
-    // bench_translate_for(
-    //     c,
-    //     name,
-    //     path,
-    //     Validation::Checked,
-    //     CompilationMode::Lazy,
-    //     FuelMetering::Disabled,
-    // );
-    // bench_translate_for(
-    //     c,
-    //     name,
-    //     path,
-    //     Validation::Unchecked,
-    //     CompilationMode::Eager,
-    //     FuelMetering::Disabled,
-    // );
-    // bench_translate_for(
-    //     c,
-    //     name,
-    //     path,
-    //     Validation::Unchecked,
-    //     CompilationMode::Eager,
-    //     FuelMetering::Enabled,
-    // );
+    bench_translate_for(
+        c,
+        name,
+        path,
+        Validation::Checked,
+        CompilationMode::Eager,
+        FuelMetering::Disabled,
+    );
+    bench_translate_for(
+        c,
+        name,
+        path,
+        Validation::Checked,
+        CompilationMode::Eager,
+        FuelMetering::Enabled,
+    );
+    bench_translate_for(
+        c,
+        name,
+        path,
+        Validation::Checked,
+        CompilationMode::Lazy,
+        FuelMetering::Disabled,
+    );
+    bench_translate_for(
+        c,
+        name,
+        path,
+        Validation::Unchecked,
+        CompilationMode::Eager,
+        FuelMetering::Disabled,
+    );
+    bench_translate_for(
+        c,
+        name,
+        path,
+        Validation::Unchecked,
+        CompilationMode::Eager,
+        FuelMetering::Enabled,
+    );
     bench_translate_for(
         c,
         name,
