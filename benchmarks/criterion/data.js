@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1702757030429,
+  "lastUpdate": 1702759094092,
   "repoUrl": "https://github.com/paritytech/wasmi",
   "entries": {
     "Wasmi criterion benchmark": [
@@ -15377,6 +15377,450 @@ window.BENCHMARK_DATA = {
             "name": "overhead/call/untyped/16",
             "value": 2519607,
             "range": "± 8507",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "robin.freyler@gmail.com",
+            "name": "Robin Freyler",
+            "username": "Robbepop"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1b9aae2f4ee5462fc5ef7cc5487808ef60319c96",
+          "message": "Implement lazy Wasm to `wasmi` bytecode translation (#844)\n\n* add CompilationMode to Config\r\n\r\n* rename builder::ModuleImports -> ModuleImportsBuilder\r\n\r\n* return reference to GlobalType\r\n\r\n* split ModuleBuilder into its header\r\n\r\n* refactor Wasm module parsing\r\n\r\nThis commit removes all lifetime annotations from parsing related types. This is going to be important since we require the new ModuleHeader type to be stored in the Engine for all lazily compiled Wasm functions for translation purposes.\r\n\r\n* apply rustfmt\r\n\r\n* remove debug printlns\r\n\r\n* fix intra doc link\r\n\r\n* re-export CompilationMode from crate root\r\n\r\n* apply rustfmt\r\n\r\n* silence warning\r\n\r\n* rename FunctionTranslator -> FuncTranslationDriver\r\n\r\n* refactor ArenaIndex impl for CompiledFunc\r\n\r\n* add CompiledFunc -> FuncIdx mapping for ModuleHeader\r\n\r\n* apply rustftm\r\n\r\n* use ModuleHeader info in relink_result\r\n\r\nThis fixes a problem in relink_result that CompiledFunc info is oftentimes results.len() is not available at the time is it required due to uninitialized compiled function entities. Using ModuleHeader instead fixes this issue which should improve codegen in these situations and make codegen non-order dependent.\r\n\r\n* add FuncType::len_results\r\n\r\nRequired in last commit. (oups)\r\n\r\n* use new as uniform translation driver constructor\r\n\r\n* add setup method to the WasmTranslator trait\r\n\r\n* add LazyFuncTranslator type\r\n\r\n* extend Engine[Inner] docs\r\n\r\n* remove len_results field from CompiledFuncEntity\r\n\r\n* add InternalFuncEntity to CodeMap\r\n\r\n- This divides CompiledFuncEntity for eager translation and UncompiledFuncEntity for lazy translation.\r\n- This commit does not yet dispatch on UncompiledFuncEntity during execution of call instructions.\r\n- Furthermore this commit does not yet use the new LazyFuncTranslator to actually translate Wasm functions lazily.\r\n\r\n* make as_compiled method test-only\r\n\r\n* make use of InternalFuncEntity::uninit\r\n\r\n* re-export LazyFuncTranslator from engine module\r\n\r\n* refactor and use new func translators\r\n\r\n* apply clippy suggestions\r\n\r\n* allow dead code temporarily\r\n\r\n* fix intra doc link\r\n\r\n* add lazy translation benchmark tests\r\n\r\n* prevent heap allocations for small Wasm funcs\r\n\r\nWasm function bodies up to 22 bytes will now be stored inline instead of allocated on the heap which should decrease burden on the memory allocator for many small Wasm functions in lazy compilation mode.\r\n\r\n* move block_type into engine submodule\r\n\r\nAlso flatten module/compile submodule.\r\n\r\n* no longer use FunctionBody in translate method\r\n\r\nThis is so that we can later use translate from within the Engine when lazily compiling functions since they do not have a FunctionBody field but just raw bytes and module header information. Fortunately it is possible to restore the FunctionBody from this information.\r\n\r\n* rename Error::Store to Error::Fuel\r\n\r\n* remove unneeded UnsupportedFeatures error\r\n\r\nComponent model validation is already performed by the wasmparser crate.\r\n\r\n* replace ModuleError by Error\r\n\r\nFlatten sub-errors of ModuleError as new variants into Error.\r\nThis allows us to move translation driver routines into engine.\r\n\r\n* make Error type pointer sized\r\n\r\n* fix no_std build\r\n\r\n* refactor TranslationError\r\n\r\n- All functions that returned TranslationError now return wasmi::Error instead.\r\n- Removed TranslationErrorInner and moved variants to outer TranslationError type.\r\n- Moved TranslationError::Validate kind to Error as Error::Wasm.\r\n\r\n* move translation driver into engine submodule\r\n\r\n* improve docs\r\n\r\n* rename translate -> translate_wasm_func\r\n\r\n* improve docs of translate_wasm_func\r\n\r\n* rename FuncTranslator::res field to module\r\n\r\n* use Error instead of Trap in Func::call et.al. and host functions\r\n\r\nThis is a major refactoring that will significantly affect wasmi users unfortunately.\r\nHowever, there is no better alternative to having a unified Error type when introducing lazy Wasm function compilation during execution.\r\nThis requires execution to handle Error which could be a TranslationError due to problems during lazy translation.\r\nThis means, Func::call et.al. also need to return Error instead of Trap.\r\nIf we want to allow host function calls to call Wasm functions and propagate their result we therefore also need to return the Error type from host functions instead of just a Trap.\r\nThis commit handles all of these cases.\r\nFor ease of use we introduced Error::as_trap convenience method.\r\nThe great thing about this is that a unified Error type is closer to how Wasmtime API looks and feels. So we kinda improved our Wasmtime mirror with this commit.\r\n\r\n* refactor func initialization asserts\r\n\r\n* implement lazy compilation during execution\r\n\r\nThis commit requires a follow-up to return wasmi::Error instead of TrapCode from wasmi instruction executor functions so that call instructions can properly forward translation errors.\r\nFurthermore CodeMap::get (where lazy translation happens) is currently not perfectly implemented and might dead lock in malicious usage scenarios. I already know how to fix this in another later commit.\r\n\r\n* rename CodeMap::init_func_v2 -> init_func\r\n\r\n* remove some TODOs\r\n\r\n* return Error from wasmi instruction executors\r\n\r\nThis allows us to properly handle failed lazy translations in call instruction executions.\r\n\r\n* remove usage of Trap\r\n\r\nNow wasmi::Error takes over responsibilities of Trap.\r\nThis make it possible to remove an unnecessary Box indirection.\r\n\r\n* improve CodeMap::get method internals\r\n\r\nThis makes fast path faster and fixes some problems with unfair write access.\r\n\r\n* fix internal doc links\r\n\r\n* fix no_std build\r\n\r\n* rename EngineInner::init_func_v2 -> init_func\r\n\r\n* limit ReusableAllocationStack height to just 1\r\n\r\n* experiment: comment out most translation benchmarks\r\n\r\nCurrently Wasm benchmark CI runs out of memory for spidermonkey lazy unchecked translation. We want to see if there are memory dependencies between the different translation benchmark runs.\r\n\r\n* Revert \"experiment: comment out most translation benchmarks\"\r\n\r\nThis reverts commit 1dd9a1e9c2bb5d076656e54af459c9851308275d.\r\n\r\n* add forgotten buffer.drain call\r\n\r\n* remove commented out code\r\n\r\n* apply wasm-opt -Oz to spidermonkey.wasm (version 116)\r\n\r\n* improve byte slicing\r\n\r\n* use Self::MAX_INLINE_SIZE constant\r\n\r\n* use Self::MAX_INLINE_SIZE in more places\r\n\r\n* use Self::MAX_INLINE_SIZE in more places (2)\r\n\r\n* increase MAX_INLINE_SIZE in SmallByteSlice to 30\r\n\r\n* avoid unnecessary Engine clone\r\n\r\n* remove unnecessary slicing\r\n\r\n* apply clippy suggestions\r\n\r\n* refactor translation benchmark test runner\r\n\r\n* remove direct use of ModuleHeader::engine field\r\n\r\n* fix memory leak due to cyclic Arc usage\r\n\r\nThe cycle existed because Engine held ModuleHeader which itself held Engine.\r\nThe cycle was broken by introducing EngineWeak and make ModuleHeader hold EngineWeak instead of Engine which is just a fancy wrapper around a Weak pointer to an Engine. Therefore Engine access via ModuleHeader now may fail if the Engine does no longer exist. However, due to the fact that ModuleHeader is only accessed via its Engine, this should technically never occure.\r\n\r\n* apply rustfmt\r\n\r\n* make Engine::downgrade method crate private",
+          "timestamp": "2023-12-16T21:37:58+01:00",
+          "tree_id": "56ec2d2f814c4675b0078ccf41a8c080aa2e0021",
+          "url": "https://github.com/paritytech/wasmi/commit/1b9aae2f4ee5462fc5ef7cc5487808ef60319c96"
+        },
+        "date": 1702759094074,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "translate/wasm_kernel/checked/eager/default",
+            "value": 5012918,
+            "range": "± 14523",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/checked/eager/fuel",
+            "value": 5147347,
+            "range": "± 9902",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/checked/lazy/default",
+            "value": 5018330,
+            "range": "± 12438",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/unchecked/eager/default",
+            "value": 4086549,
+            "range": "± 23424",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/unchecked/eager/fuel",
+            "value": 4195122,
+            "range": "± 30480",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/unchecked/lazy/default",
+            "value": 4062555,
+            "range": "± 25987",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/checked/eager/default",
+            "value": 76337598,
+            "range": "± 183677",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/checked/eager/fuel",
+            "value": 82445038,
+            "range": "± 270979",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/checked/lazy/default",
+            "value": 76454623,
+            "range": "± 210643",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/unchecked/eager/default",
+            "value": 62824141,
+            "range": "± 83857",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/unchecked/eager/fuel",
+            "value": 68735789,
+            "range": "± 113975",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/unchecked/lazy/default",
+            "value": 63008734,
+            "range": "± 134749",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/checked/eager/default",
+            "value": 3618637,
+            "range": "± 15063",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/checked/eager/fuel",
+            "value": 3889393,
+            "range": "± 12424",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/checked/lazy/default",
+            "value": 3623946,
+            "range": "± 10228",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/unchecked/eager/default",
+            "value": 3015725,
+            "range": "± 7418",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/unchecked/eager/fuel",
+            "value": 3283174,
+            "range": "± 6369",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/unchecked/lazy/default",
+            "value": 3009709,
+            "range": "± 5218",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/checked/eager/default",
+            "value": 1368269,
+            "range": "± 3361",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/checked/eager/fuel",
+            "value": 1467602,
+            "range": "± 3741",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/checked/lazy/default",
+            "value": 1369025,
+            "range": "± 2901",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/unchecked/eager/default",
+            "value": 1097407,
+            "range": "± 1422",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/unchecked/eager/fuel",
+            "value": 1202762,
+            "range": "± 4711",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/unchecked/lazy/default",
+            "value": 1099364,
+            "range": "± 3765",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/checked/eager/default",
+            "value": 135162,
+            "range": "± 594",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/checked/eager/fuel",
+            "value": 143162,
+            "range": "± 310",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/checked/lazy/default",
+            "value": 135152,
+            "range": "± 310",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/unchecked/eager/default",
+            "value": 111446,
+            "range": "± 195",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/unchecked/eager/fuel",
+            "value": 118875,
+            "range": "± 142",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/unchecked/lazy/default",
+            "value": 111446,
+            "range": "± 246",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/checked/eager/default",
+            "value": 193720,
+            "range": "± 455",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/checked/eager/fuel",
+            "value": 204596,
+            "range": "± 490",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/checked/lazy/default",
+            "value": 193814,
+            "range": "± 661",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/unchecked/eager/default",
+            "value": 155851,
+            "range": "± 422",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/unchecked/eager/fuel",
+            "value": 166147,
+            "range": "± 597",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/unchecked/lazy/default",
+            "value": 155806,
+            "range": "± 369",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/checked/eager/default",
+            "value": 281712,
+            "range": "± 1001",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/checked/eager/fuel",
+            "value": 303145,
+            "range": "± 1339",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/checked/lazy/default",
+            "value": 281152,
+            "range": "± 1386",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/unchecked/eager/default",
+            "value": 230629,
+            "range": "± 127",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/unchecked/eager/fuel",
+            "value": 250175,
+            "range": "± 531",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/unchecked/lazy/default",
+            "value": 231412,
+            "range": "± 202",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "instantiate/wasm_kernel",
+            "value": 55435,
+            "range": "± 179",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/tiny_keccak",
+            "value": 347464,
+            "range": "± 1121",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/rev_complement",
+            "value": 442980,
+            "range": "± 2253",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/regex_redux",
+            "value": 594683,
+            "range": "± 1725",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/count_until",
+            "value": 7481064,
+            "range": "± 10029",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/br_table",
+            "value": 1583099,
+            "range": "± 6254",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/trunc_f2i",
+            "value": 613425,
+            "range": "± 349",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global/bump",
+            "value": 1318913,
+            "range": "± 682",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global/get_const",
+            "value": 733665,
+            "range": "± 699",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial/rec",
+            "value": 676455,
+            "range": "± 490",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial/iter",
+            "value": 262448,
+            "range": "± 1048",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/call/rec",
+            "value": 165214,
+            "range": "± 147",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_scan",
+            "value": 183626,
+            "range": "± 498",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_trap",
+            "value": 15284,
+            "range": "± 124",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/call/host/1",
+            "value": 44835,
+            "range": "± 1013",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fuse",
+            "value": 7770160,
+            "range": "± 36990",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/divrem",
+            "value": 6262948,
+            "range": "± 4229",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/rec",
+            "value": 6000276,
+            "range": "± 7005",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/tail",
+            "value": 1358076,
+            "range": "± 2268",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/iter",
+            "value": 1291073,
+            "range": "± 7888",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/is_even/rec",
+            "value": 1064611,
+            "range": "± 3058",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/sum_bytes",
+            "value": 1041348,
+            "range": "± 203450",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/fill_bytes",
+            "value": 1094098,
+            "range": "± 1454",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/vec_add",
+            "value": 2947068,
+            "range": "± 1646",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/typed/0",
+            "value": 1216959,
+            "range": "± 9005",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/typed/16",
+            "value": 1622369,
+            "range": "± 12409",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/untyped/0",
+            "value": 1614153,
+            "range": "± 13250",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/untyped/16",
+            "value": 2473369,
+            "range": "± 3814",
             "unit": "ns/iter"
           }
         ]
