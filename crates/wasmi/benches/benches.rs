@@ -135,28 +135,28 @@ fn bench_translate_for(
         FuelMetering::Disabled => "default",
     };
     let bench_id = format!("translate/{name}/{validation_id}/{mode_id}/{fuel_id}");
-    let mut config = bench_config();
-    if matches!(fuel_metering, FuelMetering::Enabled) {
-        config.consume_fuel(true);
-    }
-    match mode {
-        CompilationMode::Eager => {
-            config.compilation_mode(wasmi::CompilationMode::Eager);
-        }
-        CompilationMode::Lazy => {
-            config.compilation_mode(wasmi::CompilationMode::Lazy);
-        }
-    }
-    let create_module = match validation {
-        Validation::Checked => {
-            |engine: &Engine, bytes: &[u8]| -> Module { Module::new(engine, bytes).unwrap() }
-        }
-        Validation::Unchecked => |engine: &Engine, bytes: &[u8]| -> Module {
-            // Safety: We made sure that all translation benchmark inputs are valid Wasm.
-            unsafe { Module::new_unchecked(engine, bytes).unwrap() }
-        },
-    };
     c.bench_function(&bench_id, |b| {
+        let mut config = bench_config();
+        if matches!(fuel_metering, FuelMetering::Enabled) {
+            config.consume_fuel(true);
+        }
+        match mode {
+            CompilationMode::Eager => {
+                config.compilation_mode(wasmi::CompilationMode::Eager);
+            }
+            CompilationMode::Lazy => {
+                config.compilation_mode(wasmi::CompilationMode::Lazy);
+            }
+        }
+        let create_module = match validation {
+            Validation::Checked => {
+                |engine: &Engine, bytes: &[u8]| -> Module { Module::new(engine, bytes).unwrap() }
+            }
+            Validation::Unchecked => |engine: &Engine, bytes: &[u8]| -> Module {
+                // Safety: We made sure that all translation benchmark inputs are valid Wasm.
+                unsafe { Module::new_unchecked(engine, bytes).unwrap() }
+            },
+        };
         let wasm_bytes = load_wasm_from_file(path);
         b.iter(|| {
             let engine = Engine::new(&config);
