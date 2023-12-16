@@ -385,8 +385,7 @@ impl Module {
                 let dedup = &self.header.inner.funcs[index.into_u32() as usize];
                 let func_type = self
                     .header
-                    .inner
-                    .engine
+                    .engine()
                     .resolve_func_type(dedup, Clone::clone);
                 ExternType::Func(func_type)
             }
