@@ -37,7 +37,7 @@ impl Error {
         }
     }
 
-    /// Creates a new [`Trap`] described by a `message`.
+    /// Creates a new [`Error`] described by a `message`.
     #[inline]
     #[cold]
     pub fn new<T>(message: T) -> Self
@@ -145,7 +145,7 @@ pub enum ErrorKind {
 }
 
 impl ErrorKind {
-    /// Returns a reference to [`Trap`] if [`ErrorKind`] is a [`Trap`].
+    /// Returns a reference to [`TrapCode`] if [`ErrorKind`] is a [`TrapCode`].
     pub fn as_trap_code(&self) -> Option<TrapCode> {
         match self {
             Self::TrapCode(trap_code) => Some(*trap_code),
@@ -153,7 +153,7 @@ impl ErrorKind {
         }
     }
 
-    /// Returns a reference to [`Trap`] if [`ErrorKind`] is a [`Trap`].
+    /// Returns a [`i32`] if [`ErrorKind`] is an [`ErrorKind::I32ExitStatus`].
     pub fn as_i32_exit_status(&self) -> Option<i32> {
         match self {
             Self::I32ExitStatus(exit_status) => Some(*exit_status),
