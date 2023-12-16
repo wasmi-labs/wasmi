@@ -247,7 +247,7 @@ impl ModuleParser {
                             //       such an API becomes available.
                             let remaining = func_body.get_binary_reader().bytes_remaining();
                             let start = consumed - remaining;
-                            let bytes = &buffer[start..start + remaining];
+                            let bytes = &buffer[start..consumed];
                             self.process_code_entry(func_body, validation_mode, bytes, &header)?;
                         }
                         Payload::CustomSection { .. } => {}
