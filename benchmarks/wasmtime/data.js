@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1702054455889,
+  "lastUpdate": 1702724802035,
   "repoUrl": "https://github.com/paritytech/wasmi",
   "entries": {
     "Wasmi criterion wasmtime": [
@@ -14573,6 +14573,366 @@ window.BENCHMARK_DATA = {
             "name": "overhead/call/untyped/16",
             "value": 3882919,
             "range": "± 5921",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "robin.freyler@gmail.com",
+            "name": "Robin Freyler",
+            "username": "Robbepop"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e5bad7a3f8b2013b062d7614f2ed9daa8bddea7d",
+          "message": "Adjust benchmarks to make lazy-comp benchmark CI work (#846)\n\nadjust benchmarks to make lazy-comp PR succeed",
+          "timestamp": "2023-12-16T12:06:27+01:00",
+          "tree_id": "bbf08db21dd656fd43b4c2b69b6696bf4a0fe66f",
+          "url": "https://github.com/paritytech/wasmi/commit/e5bad7a3f8b2013b062d7614f2ed9daa8bddea7d"
+        },
+        "date": 1702724802018,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "translate/wasm_kernel/checked/default",
+            "value": 8775116,
+            "range": "± 14363",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/checked/fuel",
+            "value": 9153345,
+            "range": "± 19454",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/unchecked/default",
+            "value": 6656660,
+            "range": "± 10486",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/unchecked/fuel",
+            "value": 7049811,
+            "range": "± 18138",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/checked/default",
+            "value": 156846188,
+            "range": "± 379604",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/checked/fuel",
+            "value": 163803196,
+            "range": "± 121823",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/unchecked/default",
+            "value": 118250483,
+            "range": "± 481298",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/unchecked/fuel",
+            "value": 124850165,
+            "range": "± 135031",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/checked/default",
+            "value": 6536709,
+            "range": "± 36525",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/checked/fuel",
+            "value": 6795817,
+            "range": "± 27301",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/unchecked/default",
+            "value": 4969547,
+            "range": "± 6620",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/unchecked/fuel",
+            "value": 5239173,
+            "range": "± 14079",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/checked/default",
+            "value": 2463066,
+            "range": "± 5927",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/checked/fuel",
+            "value": 2593526,
+            "range": "± 6292",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/unchecked/default",
+            "value": 1835741,
+            "range": "± 4659",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/unchecked/fuel",
+            "value": 1975221,
+            "range": "± 4294",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/checked/default",
+            "value": 230515,
+            "range": "± 415",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/checked/fuel",
+            "value": 240694,
+            "range": "± 400",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/unchecked/default",
+            "value": 177748,
+            "range": "± 819",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/unchecked/fuel",
+            "value": 188346,
+            "range": "± 294",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/checked/default",
+            "value": 334745,
+            "range": "± 376",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/checked/fuel",
+            "value": 349531,
+            "range": "± 1040",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/unchecked/default",
+            "value": 252095,
+            "range": "± 272",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/unchecked/fuel",
+            "value": 266309,
+            "range": "± 221",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/checked/default",
+            "value": 478843,
+            "range": "± 1030",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/checked/fuel",
+            "value": 506360,
+            "range": "± 1019",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/unchecked/default",
+            "value": 367342,
+            "range": "± 1613",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/unchecked/fuel",
+            "value": 393521,
+            "range": "± 810",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "instantiate/wasm_kernel",
+            "value": 55750,
+            "range": "± 739",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/tiny_keccak",
+            "value": 375113,
+            "range": "± 541",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/rev_complement",
+            "value": 642024,
+            "range": "± 593",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/regex_redux",
+            "value": 1031284,
+            "range": "± 2615",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/count_until",
+            "value": 7591811,
+            "range": "± 3687",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/br_table",
+            "value": 1309045,
+            "range": "± 1356",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/trunc_f2i",
+            "value": 964987,
+            "range": "± 802",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global/bump",
+            "value": 1534313,
+            "range": "± 800",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global/get_const",
+            "value": 744704,
+            "range": "± 362",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial/rec",
+            "value": 1255068,
+            "range": "± 1019",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial/iter",
+            "value": 311128,
+            "range": "± 1027",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/call/rec",
+            "value": 343203,
+            "range": "± 351",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_scan",
+            "value": 376661,
+            "range": "± 480",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_trap",
+            "value": 33378,
+            "range": "± 30",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/call/host/1",
+            "value": 66548,
+            "range": "± 259",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fuse",
+            "value": 11490392,
+            "range": "± 12103",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/divrem",
+            "value": 6943730,
+            "range": "± 33984",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/rec",
+            "value": 12765130,
+            "range": "± 31423",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/tail",
+            "value": 3560328,
+            "range": "± 3028",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/iter",
+            "value": 1248726,
+            "range": "± 836",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/is_even/rec",
+            "value": 2175314,
+            "range": "± 4980",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/sum_bytes",
+            "value": 1402719,
+            "range": "± 189541",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/fill_bytes",
+            "value": 1314383,
+            "range": "± 3038",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/vec_add",
+            "value": 3598124,
+            "range": "± 14375",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/typed/0",
+            "value": 840074,
+            "range": "± 2926",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/typed/16",
+            "value": 2131999,
+            "range": "± 26442",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/untyped/0",
+            "value": 1317681,
+            "range": "± 7296",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/untyped/16",
+            "value": 4019407,
+            "range": "± 6978",
             "unit": "ns/iter"
           }
         ]
