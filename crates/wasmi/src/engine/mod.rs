@@ -155,7 +155,7 @@ impl Engine {
     }
 
     /// Creates an [`EngineWeak`] from the given [`Engine`].
-    pub fn downgrade(&self) -> EngineWeak {
+    pub(crate) fn downgrade(&self) -> EngineWeak {
         EngineWeak {
             inner: Arc::downgrade(&self.inner),
         }
