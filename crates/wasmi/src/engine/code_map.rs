@@ -108,7 +108,7 @@ pub struct UncompiledFuncEntity {
     module: ModuleHeader,
 }
 
-/// A boxed byte slice that stores up to 22 bytes inline.
+/// A boxed byte slice that stores up to 30 bytes inline.
 #[derive(Debug)]
 pub enum SmallByteSlice {
     /// The byte slice fits in the inline buffer.
@@ -135,7 +135,7 @@ impl Default for SmallByteSlice {
 
 impl SmallByteSlice {
     /// The maximum amount of bytes that can be stored inline.
-    const MAX_INLINE_SIZE: usize = 22;
+    const MAX_INLINE_SIZE: usize = 30;
 
     /// Returns the underlying slice of bytes.
     #[inline]
