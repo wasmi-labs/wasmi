@@ -2,6 +2,7 @@ use super::{Executor, UntypedValueExt};
 use crate::{
     core::{TrapCode, UntypedValue},
     engine::bytecode::{BinInstr, BinInstrImm, BinInstrImm16, Sign},
+    Error,
 };
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
 
@@ -148,8 +149,8 @@ macro_rules! impl_fallible_binary {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             #[inline(always)]
-            pub fn $fn_name(&mut self, instr: BinInstr) -> Result<(), TrapCode> {
-                self.try_execute_binary(instr, $op)
+            pub fn $fn_name(&mut self, instr: BinInstr) -> Result<(), Error> {
+                self.try_execute_binary(instr, $op).map_err(Into::into)
             }
         )*
     };
@@ -171,63 +172,63 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 /// Extension trait to provide more optimized divide and remainder implementations.
 pub trait DivRemExt: Sized {
     /// Optimized variant of Wasm `i32.div_s` for immutable non-zero `rhs` values.
-    fn i32_div_s(self, rhs: NonZeroI32) -> Result<Self, TrapCode>;
+    fn i32_div_s(self, rhs: NonZeroI32) -> Result<Self, Error>;
     /// Optimized variant of Wasm `i32.div_u` for immutable non-zero `rhs` values.
     fn i32_div_u(self, rhs: NonZeroU32) -> Self;
     /// Optimized variant of Wasm `i32.rem_s` for immutable non-zero `rhs` values.
-    fn i32_rem_s(self, rhs: NonZeroI32) -> Result<Self, TrapCode>;
+    fn i32_rem_s(self, rhs: NonZeroI32) -> Result<Self, Error>;
     /// Optimized variant of Wasm `i32.rem_u` for immutable non-zero `rhs` values.
     fn i32_rem_u(self, rhs: NonZeroU32) -> Self;
 
     /// Optimized variant of Wasm `i64.div_s` for immutable non-zero `rhs` values.
-    fn i64_div_s(self, rhs: NonZeroI64) -> Result<Self, TrapCode>;
+    fn i64_div_s(self, rhs: NonZeroI64) -> Result<Self, Error>;
     /// Optimized variant of Wasm `i64.div_u` for immutable non-zero `rhs` values.
     fn i64_div_u(self, rhs: NonZeroU64) -> Self;
     /// Optimized variant of Wasm `i64.rem_s` for immutable non-zero `rhs` values.
-    fn i64_rem_s(self, rhs: NonZeroI64) -> Result<Self, TrapCode>;
+    fn i64_rem_s(self, rhs: NonZeroI64) -> Result<Self, Error>;
     /// Optimized variant of Wasm `i64.rem_u` for immutable non-zero `rhs` values.
     fn i64_rem_u(self, rhs: NonZeroU64) -> Self;
 }
 
 impl DivRemExt for UntypedValue {
-    fn i32_div_s(self, rhs: NonZeroI32) -> Result<Self, TrapCode> {
+    fn i32_div_s(self, rhs: NonZeroI32) -> Result<Self, Error> {
         i32::from(self)
             .checked_div(rhs.get())
             .map(Self::from)
-            .ok_or(TrapCode::IntegerOverflow)
+            .ok_or_else(|| Error::from(TrapCode::IntegerOverflow))
     }
 
     fn i32_div_u(self, rhs: NonZeroU32) -> Self {
         Self::from(u32::from(self) / rhs)
     }
 
-    fn i32_rem_s(self, rhs: NonZeroI32) -> Result<Self, TrapCode> {
+    fn i32_rem_s(self, rhs: NonZeroI32) -> Result<Self, Error> {
         i32::from(self)
             .checked_rem(rhs.get())
             .map(Self::from)
-            .ok_or(TrapCode::IntegerOverflow)
+            .ok_or_else(|| Error::from(TrapCode::IntegerOverflow))
     }
 
     fn i32_rem_u(self, rhs: NonZeroU32) -> Self {
         Self::from(u32::from(self) % rhs)
     }
 
-    fn i64_div_s(self, rhs: NonZeroI64) -> Result<Self, TrapCode> {
+    fn i64_div_s(self, rhs: NonZeroI64) -> Result<Self, Error> {
         i64::from(self)
             .checked_div(rhs.get())
             .map(Self::from)
-            .ok_or(TrapCode::IntegerOverflow)
+            .ok_or_else(|| Error::from(TrapCode::IntegerOverflow))
     }
 
     fn i64_div_u(self, rhs: NonZeroU64) -> Self {
         Self::from(u64::from(self) / rhs)
     }
 
-    fn i64_rem_s(self, rhs: NonZeroI64) -> Result<Self, TrapCode> {
+    fn i64_rem_s(self, rhs: NonZeroI64) -> Result<Self, Error> {
         i64::from(self)
             .checked_rem(rhs.get())
             .map(Self::from)
-            .ok_or(TrapCode::IntegerOverflow)
+            .ok_or_else(|| Error::from(TrapCode::IntegerOverflow))
     }
 
     fn i64_rem_u(self, rhs: NonZeroU64) -> Self {
@@ -240,7 +241,7 @@ macro_rules! impl_divrem_s_imm16 {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             #[inline(always)]
-            pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) -> Result<(), TrapCode> {
+            pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) -> Result<(), Error> {
                 self.try_execute_divrem_imm16(instr, $op)
             }
         )*
@@ -282,8 +283,8 @@ macro_rules! impl_fallible_binary_imm16_rev {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             #[inline(always)]
-            pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) -> Result<(), TrapCode> {
-                self.try_execute_binary_imm16_rev(instr, $op)
+            pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) -> Result<(), Error> {
+                self.try_execute_binary_imm16_rev(instr, $op).map_err(Into::into)
             }
         )*
     };

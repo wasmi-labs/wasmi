@@ -245,8 +245,6 @@ impl ConstExpr {
         }
 
         let mut reader = expr.get_operators_reader();
-        // TODO: we might want to avoid heap allocation in the simple cases that
-        //       only have one operator via the small vector data structure.
         let mut stack = TranslationBuffer::new();
         loop {
             let op = reader.read().unwrap_or_else(|error| {

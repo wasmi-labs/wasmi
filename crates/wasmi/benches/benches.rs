@@ -135,28 +135,28 @@ fn bench_translate_for(
         FuelMetering::Disabled => "default",
     };
     let bench_id = format!("translate/{name}/{validation_id}/{mode_id}/{fuel_id}");
-    let mut config = bench_config();
-    if matches!(fuel_metering, FuelMetering::Enabled) {
-        config.consume_fuel(true);
-    }
-    match mode {
-        CompilationMode::Eager => {
-            // config.compilation_mode(wasmi::CompilationMode::Eager);
-        }
-        CompilationMode::Lazy => {
-            // config.compilation_mode(wasmi::CompilationMode::Lazy);
-        }
-    }
-    let create_module = match validation {
-        Validation::Checked => {
-            |engine: &Engine, bytes: &[u8]| -> Module { Module::new(&engine, &bytes[..]).unwrap() }
-        }
-        Validation::Unchecked => |engine: &Engine, bytes: &[u8]| -> Module {
-            // Safety: We made sure that all translation benchmark inputs are valid Wasm.
-            unsafe { Module::new_unchecked(engine, &bytes[..]).unwrap() }
-        },
-    };
     c.bench_function(&bench_id, |b| {
+        let mut config = bench_config();
+        if matches!(fuel_metering, FuelMetering::Enabled) {
+            config.consume_fuel(true);
+        }
+        match mode {
+            CompilationMode::Eager => {
+                config.compilation_mode(wasmi::CompilationMode::Eager);
+            }
+            CompilationMode::Lazy => {
+                config.compilation_mode(wasmi::CompilationMode::Lazy);
+            }
+        }
+        let create_module = match validation {
+            Validation::Checked => {
+                |engine: &Engine, bytes: &[u8]| -> Module { Module::new(engine, bytes).unwrap() }
+            }
+            Validation::Unchecked => |engine: &Engine, bytes: &[u8]| -> Module {
+                // Safety: We made sure that all translation benchmark inputs are valid Wasm.
+                unsafe { Module::new_unchecked(engine, bytes).unwrap() }
+            },
+        };
         let wasm_bytes = load_wasm_from_file(path);
         b.iter(|| {
             let engine = Engine::new(&config);
@@ -261,8 +261,8 @@ fn bench_instantiate_contract(c: &mut Criterion, name: &str, path: &str) {
     c.bench_function(&bench_id, |b| {
         let module = load_module_from_file(path);
         let engine = module.engine();
-        let mut store = Store::new(&engine, ());
-        let mut linker = <Linker<()>>::new(&engine);
+        let mut store = Store::new(engine, ());
+        let mut linker = <Linker<()>>::new(engine);
         linker
             .define(
                 "env",
@@ -872,10 +872,10 @@ fn bench_execute_recursive_trap(c: &mut Criterion) {
             let error = bench_call
                 .call(&mut store, &[Value::I32(1000)], &mut result)
                 .unwrap_err();
-            match error {
-                wasmi::Error::Trap(trap) => assert_matches::assert_matches!(
-                    trap.trap_code(),
-                    Some(TrapCode::UnreachableCodeReached),
+            match error.kind() {
+                wasmi::errors::ErrorKind::TrapCode(trap_code) => assert_matches::assert_matches!(
+                    trap_code,
+                    TrapCode::UnreachableCodeReached,
                     "expected unreachable trap",
                 ),
                 _ => panic!("expected unreachable trap"),
@@ -1076,7 +1076,7 @@ fn bench_execute_memory_fill(c: &mut Criterion) {
         });
         assert!(mem.data(&store)[ptr..(ptr + len)]
             .iter()
-            .all(|byte| (*byte as u8) == value));
+            .all(|byte| *byte == value));
     });
 }
 

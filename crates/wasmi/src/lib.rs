@@ -109,11 +109,12 @@ pub use wasmi_core as core;
 /// Defines some errors that may occur upon interaction with `wasmi`.
 pub mod errors {
     pub use super::{
+        error::ErrorKind,
         func::FuncError,
         global::GlobalError,
         linker::LinkerError,
         memory::MemoryError,
-        module::{InstantiationError, ModuleError},
+        module::InstantiationError,
         store::FuelError,
         table::TableError,
     };
@@ -121,6 +122,7 @@ pub mod errors {
 
 pub use self::{
     engine::{
+        CompilationMode,
         Config,
         Engine,
         FuelConsumptionMode,

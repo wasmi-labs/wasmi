@@ -1,5 +1,5 @@
-use super::{Instr, TranslationError};
-use crate::engine::bytecode::BranchOffset;
+use super::Instr;
+use crate::{engine::bytecode::BranchOffset, Error};
 use alloc::vec::Vec;
 use core::{
     fmt::{self, Display},
@@ -143,7 +143,7 @@ impl LabelRegistry {
         &mut self,
         label: LabelRef,
         user: Instr,
-    ) -> Result<BranchOffset, TranslationError> {
+    ) -> Result<BranchOffset, Error> {
         let offset = match *self.get_label(label) {
             Label::Pinned(target) => BranchOffset::from_src_to_dst(user, target)?,
             Label::Unpinned => {
@@ -193,7 +193,7 @@ pub struct ResolvedUserIter<'a> {
 }
 
 impl<'a> Iterator for ResolvedUserIter<'a> {
-    type Item = (Instr, Result<BranchOffset, TranslationError>);
+    type Item = (Instr, Result<BranchOffset, Error>);
 
     fn next(&mut self) -> Option<Self::Item> {
         let next = self.users.next()?;

@@ -1,7 +1,6 @@
 //! Tests to check if wasmi's fuel metering works as intended.
 
-use wasmi::{Config, Engine, FuelConsumptionMode, Func, Linker, Module, Store};
-use wasmi_core::Trap;
+use wasmi::{Config, Engine, Error, FuelConsumptionMode, Func, Linker, Module, Store};
 
 /// Setup [`Engine`] and [`Store`] for fuel metering.
 fn test_setup(mode: FuelConsumptionMode) -> (Store<()>, Linker<()>) {
@@ -46,7 +45,7 @@ fn default_test_setup(mode: FuelConsumptionMode, wasm: &[u8]) -> (Store<()>, Fun
 ///
 /// We just check if the call succeeded, not if the results are correct.
 /// That is to be determined by another kind of test.
-fn assert_success(call_result: Result<i32, Trap>) {
+fn assert_success(call_result: Result<i32, Error>) {
     assert!(call_result.is_ok());
     assert_eq!(call_result.unwrap(), -1);
 }

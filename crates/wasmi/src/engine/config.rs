@@ -39,6 +39,8 @@ pub struct Config {
     fuel_consumption_mode: FuelConsumptionMode,
     /// The configured fuel costs of all `wasmi` bytecode instructions.
     fuel_costs: FuelCosts,
+    /// The mode of Wasm to `wasmi` bytecode compilation.
+    compilation_mode: CompilationMode,
 }
 
 /// The fuel consumption mode of the `wasmi` [`Engine`].
@@ -194,6 +196,16 @@ impl Default for FuelCosts {
     }
 }
 
+/// The chosen mode of Wasm to `wasmi` bytecode compilation.
+#[derive(Debug, Default, Copy, Clone)]
+pub enum CompilationMode {
+    /// The Wasm code is compiled eagerly to `wasmi` bytecode.
+    #[default]
+    Eager,
+    /// The Wasm code is compiled lazily on use to `wasmi` bytecode.
+    Lazy,
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
@@ -211,6 +223,7 @@ impl Default for Config {
             consume_fuel: false,
             fuel_costs: FuelCosts::default(),
             fuel_consumption_mode: FuelConsumptionMode::default(),
+            compilation_mode: CompilationMode::default(),
         }
     }
 }
@@ -401,6 +414,21 @@ impl Config {
     pub(crate) fn get_fuel_consumption_mode(&self) -> Option<FuelConsumptionMode> {
         self.get_consume_fuel()
             .then_some(self.fuel_consumption_mode)
+    }
+
+    /// Sets the [`CompilationMode`] used for the [`Engine`].
+    ///
+    /// [`Engine`]: crate::Engine
+    pub fn compilation_mode(&mut self, mode: CompilationMode) -> &mut Self {
+        self.compilation_mode = mode;
+        self
+    }
+
+    /// Returns the [`CompilationMode`] used for the [`Engine`].
+    ///
+    /// [`Engine`]: crate::Engine
+    pub(super) fn get_compilation_mode(&self) -> CompilationMode {
+        self.compilation_mode
     }
 
     /// Returns the [`WasmFeatures`] represented by the [`Config`].

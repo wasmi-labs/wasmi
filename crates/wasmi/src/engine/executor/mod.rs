@@ -20,12 +20,12 @@ use crate::{
     func::HostFuncEntity,
     AsContext,
     AsContextMut,
+    Error,
     Func,
     FuncEntity,
     Instance,
     StoreContextMut,
 };
-use wasmi_core::{Trap, TrapCode};
 
 #[cfg(doc)]
 use crate::{engine::StackLimits, Store};
@@ -48,7 +48,7 @@ impl EngineInner {
         func: &Func,
         params: impl CallParams,
         results: Results,
-    ) -> Result<<Results as CallResults>::Results, Trap>
+    ) -> Result<<Results as CallResults>::Results, Error>
     where
         Results: CallResults,
     {
@@ -56,7 +56,7 @@ impl EngineInner {
         let mut stack = self.stacks.lock().reuse_or_new();
         let results = EngineExecutor::new(&res, &mut stack)
             .execute_root_func(ctx, func, params, results)
-            .map_err(TaggedTrap::into_trap);
+            .map_err(TaggedTrap::into_error);
         self.stacks.lock().recycle(stack);
         results
     }
@@ -74,7 +74,7 @@ impl EngineInner {
         func: &Func,
         params: impl CallParams,
         results: Results,
-    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
+    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Error>
     where
         Results: CallResults,
     {
@@ -91,19 +91,19 @@ impl EngineInner {
                 self.stacks.lock().recycle(stack);
                 Ok(ResumableCallBase::Finished(results))
             }
-            Err(TaggedTrap::Wasm(trap)) => {
+            Err(TaggedTrap::Wasm(error)) => {
                 self.stacks.lock().recycle(stack);
-                Err(trap)
+                Err(error)
             }
             Err(TaggedTrap::Host {
                 host_func,
-                host_trap,
+                host_error,
                 caller_results,
             }) => Ok(ResumableCallBase::Resumable(ResumableInvocation::new(
                 ctx.as_context().store.engine().clone(),
                 *func,
                 host_func,
-                host_trap,
+                host_error,
                 caller_results,
                 stack,
             ))),
@@ -123,7 +123,7 @@ impl EngineInner {
         mut invocation: ResumableInvocation,
         params: impl CallParams,
         results: Results,
-    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
+    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Error>
     where
         Results: CallResults,
     {
@@ -142,16 +142,16 @@ impl EngineInner {
                 self.stacks.lock().recycle(invocation.take_stack());
                 Ok(ResumableCallBase::Finished(results))
             }
-            Err(TaggedTrap::Wasm(trap)) => {
+            Err(TaggedTrap::Wasm(error)) => {
                 self.stacks.lock().recycle(invocation.take_stack());
-                Err(trap)
+                Err(error)
             }
             Err(TaggedTrap::Host {
                 host_func,
-                host_trap,
+                host_error,
                 caller_results,
             }) => {
-                invocation.update(host_func, host_trap, caller_results);
+                invocation.update(host_func, host_error, caller_results);
                 Ok(ResumableCallBase::Resumable(invocation))
             }
         }
@@ -202,7 +202,7 @@ impl<'engine> EngineExecutor<'engine> {
                 self.stack.values.reserve(len_results)?;
                 self.stack.values.extend_zeros(len_results);
                 let instance = wasm_func.instance();
-                let compiled_func = self.res.code_map.get(wasm_func.func_body());
+                let compiled_func = self.res.code_map.get(wasm_func.func_body())?;
                 let (base_ptr, frame_ptr) = self.stack.values.alloc_call_frame(compiled_func)?;
                 // Safety: We use the `base_ptr` that we just received upon allocating the new
                 //         call frame which is guaranteed to be valid for this particular operation
@@ -348,7 +348,7 @@ impl<'engine> EngineExecutor<'engine> {
             //
             // This is the default case and we can easily make host function
             // errors return a resumable call handle.
-            result.map_err(|trap| TaggedTrap::host(*func, trap, results))?;
+            result.map_err(|error| TaggedTrap::host(*func, error, results))?;
         } else {
             // Case: No frame is on the call stack. (edge case)
             //
@@ -405,7 +405,7 @@ impl<'engine> EngineExecutor<'engine> {
         ctx: StoreContextMut<T>,
         host_func: HostFuncEntity,
         caller: HostFuncCaller,
-    ) -> Result<(), Trap> {
+    ) -> Result<(), Error> {
         // The host function signature is required for properly
         // adjusting, inspecting and manipulating the value stack.
         let (input_types, output_types) = self
@@ -492,23 +492,12 @@ impl<'engine> EngineExecutor<'engine> {
         &mut self,
         ctx: StoreContextMut<T>,
         cache: &mut InstanceCache,
-    ) -> Result<WasmOutcome, Trap> {
-        /// Converts a [`TrapCode`] into a [`Trap`].
-        ///
-        /// This function exists for performance reasons since its `#[cold]`
-        /// annotation has severe effects on performance.
-        #[inline]
-        #[cold]
-        fn make_trap(code: TrapCode) -> Trap {
-            code.into()
-        }
-
+    ) -> Result<WasmOutcome, Error> {
         let (store_inner, mut resource_limiter) = ctx.store.store_inner_and_resource_limiter_ref();
         let value_stack = &mut self.stack.values;
         let call_stack = &mut self.stack.calls;
         let code_map = &self.res.code_map;
         let func_types = &self.res.func_types;
-
         execute_instrs(
             store_inner,
             cache,
@@ -518,7 +507,6 @@ impl<'engine> EngineExecutor<'engine> {
             func_types,
             &mut resource_limiter,
         )
-        .map_err(make_trap)
     }
 
     /// Writes the results of the function execution back into the `results` buffer.

@@ -1,5 +1,5 @@
 use super::GlobalIdx;
-use crate::{errors::ModuleError, ExternType, Module};
+use crate::{Error, ExternType, Module};
 use alloc::{boxed::Box, collections::btree_map::Iter as BTreeIter};
 
 /// The index of a function declaration within a [`Module`].
@@ -88,7 +88,7 @@ impl ExternIdx {
     /// # Errors
     ///
     /// If an unsupported external definition is encountered.
-    pub fn new(kind: wasmparser::ExternalKind, index: u32) -> Result<Self, ModuleError> {
+    pub fn new(kind: wasmparser::ExternalKind, index: u32) -> Result<Self, Error> {
         match kind {
             wasmparser::ExternalKind::Func => Ok(ExternIdx::Func(FuncIdx(index))),
             wasmparser::ExternalKind::Table => Ok(ExternIdx::Table(TableIdx(index))),
@@ -136,7 +136,7 @@ impl<'module> ModuleExportsIter<'module> {
     /// Creates a new [`ModuleExportsIter`] from the given [`Module`].
     pub(super) fn new(module: &'module Module) -> Self {
         Self {
-            exports: module.exports.iter(),
+            exports: module.header.inner.exports.iter(),
             module,
         }
     }

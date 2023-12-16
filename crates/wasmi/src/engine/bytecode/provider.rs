@@ -1,5 +1,5 @@
 use super::{AnyConst32, Register};
-use crate::engine::translator::{TranslationError, TranslationErrorInner};
+use crate::{engine::translator::TranslationError, Error};
 use alloc::vec::{Drain, Vec};
 use wasmi_core::UntypedValue;
 
@@ -20,9 +20,9 @@ pub struct ProviderSliceRef(AnyConst32);
 
 impl ProviderSliceRef {
     /// Returns a new [`ProviderSliceRef`] from the given `usize` index.
-    fn from_index(index: usize) -> Result<Self, TranslationError> {
+    fn from_index(index: usize) -> Result<Self, Error> {
         u32::try_from(index)
-            .map_err(|_| TranslationError::new(TranslationErrorInner::ProviderSliceOverflow))
+            .map_err(|_| Error::from(TranslationError::ProviderSliceOverflow))
             .map(AnyConst32::from)
             .map(Self)
     }
@@ -94,7 +94,7 @@ impl<T> Default for ProviderSliceStack<T> {
 
 impl<T> ProviderSliceStack<T> {
     /// Pushes a new [`Provider`] slice and returns its [`ProviderSliceRef`].
-    pub fn push<I>(&mut self, providers: I) -> Result<ProviderSliceRef, TranslationError>
+    pub fn push<I>(&mut self, providers: I) -> Result<ProviderSliceRef, Error>
     where
         I: IntoIterator<Item = Provider<T>>,
     {

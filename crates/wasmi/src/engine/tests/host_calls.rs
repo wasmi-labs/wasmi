@@ -1,6 +1,6 @@
 //! This submodule tests the unusual use case of calling host functions through the engine from the host side.
 
-use crate::{core::Trap, Caller, Config, Engine, Func, Store};
+use crate::{Caller, Config, Engine, Error, Func, Store};
 
 /// Setup a new `Store` for testing with initial value of 5.
 fn setup_store() -> Store<i32> {
@@ -14,7 +14,7 @@ fn host_call_from_host_params_0_results_0() {
     let mut store = setup_store();
     let err_if_zero = Func::wrap(&mut store, |caller: Caller<i32>| {
         if *caller.data() == 0 {
-            return Err(Trap::new("test trap"));
+            return Err(Error::new("test trap"));
         }
         Ok(())
     });

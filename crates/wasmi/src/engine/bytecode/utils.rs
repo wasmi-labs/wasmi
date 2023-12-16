@@ -1,5 +1,8 @@
 use super::{Const16, Const32};
-use crate::engine::{translator::TranslationErrorInner, Instr, TranslationError};
+use crate::{
+    engine::{Instr, TranslationError},
+    Error,
+};
 
 #[cfg(doc)]
 use super::Instruction;
@@ -15,11 +18,11 @@ impl From<i16> for Register {
 }
 
 impl TryFrom<u32> for Register {
-    type Error = TranslationError;
+    type Error = Error;
 
     fn try_from(local_index: u32) -> Result<Self, Self::Error> {
         let index = i16::try_from(local_index)
-            .map_err(|_| TranslationError::new(TranslationErrorInner::RegisterOutOfBounds))?;
+            .map_err(|_| Error::from(TranslationError::RegisterOutOfBounds))?;
         Ok(Self::from_i16(index))
     }
 }
@@ -504,13 +507,11 @@ impl From<i16> for BranchOffset16 {
 }
 
 impl TryFrom<BranchOffset> for BranchOffset16 {
-    type Error = TranslationError;
+    type Error = Error;
 
     fn try_from(offset: BranchOffset) -> Result<Self, Self::Error> {
         let Ok(offset16) = i16::try_from(offset.to_i32()) else {
-            return Err(TranslationError::new(
-                TranslationErrorInner::BranchOffsetOutOfBounds,
-            ));
+            return Err(Error::from(TranslationError::BranchOffsetOutOfBounds));
         };
         Ok(Self(offset16))
     }
@@ -540,13 +541,11 @@ impl BranchOffset16 {
     ///
     /// - If the [`BranchOffset`] have already been initialized.
     /// - If the given [`BranchOffset`] is not properly initialized.
-    pub fn init(&mut self, valid_offset: BranchOffset) -> Result<(), TranslationError> {
+    pub fn init(&mut self, valid_offset: BranchOffset) -> Result<(), Error> {
         assert!(valid_offset.is_init());
         assert!(!self.is_init());
         let Some(valid_offset16) = Self::new(valid_offset) else {
-            return Err(TranslationError::new(
-                TranslationErrorInner::BranchOffsetOutOfBounds,
-            ));
+            return Err(Error::from(TranslationError::BranchOffsetOutOfBounds));
         };
         *self = valid_offset16;
         Ok(())
@@ -751,9 +750,9 @@ impl BranchOffset {
     /// # Panics
     ///
     /// If the resulting [`BranchOffset`] is uninitialized, aka equal to 0.
-    pub fn from_src_to_dst(src: Instr, dst: Instr) -> Result<Self, TranslationError> {
-        fn make_err() -> TranslationError {
-            TranslationError::new(TranslationErrorInner::BranchOffsetOutOfBounds)
+    pub fn from_src_to_dst(src: Instr, dst: Instr) -> Result<Self, Error> {
+        fn make_err() -> Error {
+            Error::from(TranslationError::BranchOffsetOutOfBounds)
         }
         let src = i64::from(src.into_u32());
         let dst = i64::from(dst.into_u32());
@@ -793,14 +792,12 @@ impl BranchOffset {
 pub struct BlockFuel(u32);
 
 impl TryFrom<u64> for BlockFuel {
-    type Error = TranslationError;
+    type Error = Error;
 
     fn try_from(index: u64) -> Result<Self, Self::Error> {
         match u32::try_from(index) {
             Ok(index) => Ok(Self(index)),
-            Err(_) => Err(TranslationError::new(
-                TranslationErrorInner::BlockFuelOutOfBounds,
-            )),
+            Err(_) => Err(Error::from(TranslationError::BlockFuelOutOfBounds)),
         }
     }
 }
@@ -811,15 +808,12 @@ impl BlockFuel {
     /// # Errors
     ///
     /// If the new fuel amount after this operation is out of bounds.
-    pub fn bump_by(&mut self, amount: u64) -> Result<(), TranslationError> {
+    pub fn bump_by(&mut self, amount: u64) -> Result<(), Error> {
         let new_amount = self
             .to_u64()
             .checked_add(amount)
-            .ok_or(TranslationErrorInner::BlockFuelOutOfBounds)
-            .map_err(TranslationError::new)?;
-        self.0 = u32::try_from(new_amount)
-            .map_err(|_| TranslationErrorInner::BlockFuelOutOfBounds)
-            .map_err(TranslationError::new)?;
+            .ok_or(TranslationError::BlockFuelOutOfBounds)?;
+        self.0 = u32::try_from(new_amount).map_err(|_| TranslationError::BlockFuelOutOfBounds)?;
         Ok(())
     }
 

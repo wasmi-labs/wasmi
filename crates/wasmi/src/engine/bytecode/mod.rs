@@ -39,7 +39,7 @@ pub(crate) use self::{
         UnaryInstr,
     },
 };
-use crate::engine::{CompiledFunc, TranslationError};
+use crate::{engine::CompiledFunc, Error};
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
 use wasmi_core::TrapCode;
 
@@ -3127,7 +3127,7 @@ pub enum Instruction {
 
 impl Instruction {
     /// Convenience method to create a new [`Instruction::ConsumeFuel`].
-    pub fn consume_fuel(amount: u64) -> Result<Self, TranslationError> {
+    pub fn consume_fuel(amount: u64) -> Result<Self, Error> {
         let block_fuel = BlockFuel::try_from(amount)?;
         Ok(Self::ConsumeFuel(block_fuel))
     }
@@ -3138,7 +3138,7 @@ impl Instruction {
     ///
     /// - If `self` is not a [`Instruction::ConsumeFuel`] instruction.
     /// - If the new fuel consumption overflows the internal `u64` value.
-    pub fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), TranslationError> {
+    pub fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), Error> {
         match self {
             Self::ConsumeFuel(block_fuel) => block_fuel.bump_by(delta),
             instr => panic!("expected Instruction::ConsumeFuel but found: {instr:?}"),

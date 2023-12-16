@@ -8,6 +8,7 @@ use crate::{
     error::EntityGrowError,
     store::ResourceLimiterRef,
     table::TableEntity,
+    Error,
 };
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
@@ -33,7 +34,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableGet`].
     #[inline(always)]
-    pub fn execute_table_get(&mut self, result: Register, index: Register) -> Result<(), TrapCode> {
+    pub fn execute_table_get(&mut self, result: Register, index: Register) -> Result<(), Error> {
         let index: u32 = self.get_register_as(index);
         self.execute_table_get_impl(result, index)
     }
@@ -44,12 +45,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         result: Register,
         index: Const32<u32>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         self.execute_table_get_impl(result, u32::from(index))
     }
 
     /// Executes a `table.get` instruction generically.
-    fn execute_table_get_impl(&mut self, result: Register, index: u32) -> Result<(), TrapCode> {
+    fn execute_table_get_impl(&mut self, result: Register, index: u32) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         let table = self.cache.get_table(self.ctx, table_index);
         let value = self
@@ -77,7 +78,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableSet`].
     #[inline(always)]
-    pub fn execute_table_set(&mut self, index: Register, value: Register) -> Result<(), TrapCode> {
+    pub fn execute_table_set(&mut self, index: Register, value: Register) -> Result<(), Error> {
         let index: u32 = self.get_register_as(index);
         self.execute_table_set_impl(index, value)
     }
@@ -88,13 +89,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         index: Const32<u32>,
         value: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let index = u32::from(index);
         self.execute_table_set_impl(index, value)
     }
 
     /// Executes a generic `table.set` instruction.
-    fn execute_table_set_impl(&mut self, index: u32, value: Register) -> Result<(), TrapCode> {
+    fn execute_table_set_impl(&mut self, index: u32, value: Register) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         let table = self.cache.get_table(self.ctx, table_index);
         let value = self.get_register(value);
@@ -112,7 +113,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Register,
         src: Register,
         len: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = self.get_register_as(src);
         let len: u32 = self.get_register_as(len);
@@ -126,7 +127,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Const16<u32>,
         src: Register,
         len: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = self.get_register_as(src);
         let len: u32 = self.get_register_as(len);
@@ -140,7 +141,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Register,
         src: Const16<u32>,
         len: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = src.into();
         let len: u32 = self.get_register_as(len);
@@ -154,7 +155,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Const16<u32>,
         src: Const16<u32>,
         len: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = src.into();
         let len: u32 = self.get_register_as(len);
@@ -168,7 +169,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Register,
         src: Register,
         len: Const16<u32>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = self.get_register_as(src);
         let len: u32 = len.into();
@@ -182,7 +183,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Const16<u32>,
         src: Register,
         len: Const16<u32>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = self.get_register_as(src);
         let len: u32 = len.into();
@@ -196,7 +197,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Register,
         src: Const16<u32>,
         len: Const16<u32>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = src.into();
         let len: u32 = len.into();
@@ -210,7 +211,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Const16<u32>,
         src: Const16<u32>,
         len: Const16<u32>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = src.into();
         let len: u32 = len.into();
@@ -223,10 +224,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst_index: u32,
         src_index: u32,
         len: u32,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst_table_index = self.fetch_table_index(1);
         let src_table_index = self.fetch_table_index(2);
-        self.consume_fuel_with(
+        self.consume_fuel_with::<_, Error>(
             |costs| costs.fuel_for_copies(u64::from(len)),
             |this| {
                 if dst_table_index == src_table_index {
@@ -257,7 +258,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Register,
         src: Register,
         len: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = self.get_register_as(src);
         let len: u32 = self.get_register_as(len);
@@ -271,7 +272,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Const16<u32>,
         src: Register,
         len: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = self.get_register_as(src);
         let len: u32 = self.get_register_as(len);
@@ -285,7 +286,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Register,
         src: Const16<u32>,
         len: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = src.into();
         let len: u32 = self.get_register_as(len);
@@ -299,7 +300,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Const16<u32>,
         src: Const16<u32>,
         len: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = src.into();
         let len: u32 = self.get_register_as(len);
@@ -313,7 +314,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Register,
         src: Register,
         len: Const16<u32>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = self.get_register_as(src);
         let len: u32 = len.into();
@@ -327,7 +328,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Const16<u32>,
         src: Register,
         len: Const16<u32>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = self.get_register_as(src);
         let len: u32 = len.into();
@@ -341,7 +342,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Register,
         src: Const16<u32>,
         len: Const16<u32>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = src.into();
         let len: u32 = len.into();
@@ -355,7 +356,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Const16<u32>,
         src: Const16<u32>,
         len: Const16<u32>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = src.into();
         let len: u32 = len.into();
@@ -368,10 +369,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst_index: u32,
         src_index: u32,
         len: u32,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         let element_index = self.fetch_element_segment_index(2);
-        self.consume_fuel_with(
+        self.consume_fuel_with::<_, Error>(
             |costs| costs.fuel_for_copies(u64::from(len)),
             |this| {
                 let (instance, table, element) =
@@ -395,7 +396,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Register,
         len: Register,
         value: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let len: u32 = self.get_register_as(len);
         self.execute_table_fill_impl(dst, len, value)
@@ -408,7 +409,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Const16<u32>,
         len: Register,
         value: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let len: u32 = self.get_register_as(len);
         self.execute_table_fill_impl(dst, len, value)
@@ -421,7 +422,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Register,
         len: Const16<u32>,
         value: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let len: u32 = len.into();
         self.execute_table_fill_impl(dst, len, value)
@@ -434,7 +435,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: Const16<u32>,
         len: Const16<u32>,
         value: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let len: u32 = len.into();
         self.execute_table_fill_impl(dst, len, value)
@@ -446,9 +447,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         dst: u32,
         len: u32,
         value: Register,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
-        self.consume_fuel_with(
+        self.consume_fuel_with::<_, Error>(
             |costs| costs.fuel_for_copies(u64::from(len)),
             |this| {
                 let value = this.get_register(value);
@@ -470,7 +471,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         delta: Register,
         value: Register,
         resource_limiter: &mut ResourceLimiterRef<'ctx>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let delta: u32 = self.get_register_as(delta);
         self.execute_table_grow_impl(result, delta, value, resource_limiter)
     }
@@ -483,7 +484,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         delta: Const16<u32>,
         value: Register,
         resource_limiter: &mut ResourceLimiterRef<'ctx>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let delta: u32 = delta.into();
         self.execute_table_grow_impl(result, delta, value, resource_limiter)
     }
@@ -495,7 +496,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         delta: u32,
         value: Register,
         resource_limiter: &mut ResourceLimiterRef<'ctx>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         if delta == 0 {
             // Case: growing by 0 elements means there is nothing to do
@@ -515,7 +516,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let return_value = match return_value {
             Ok(return_value) => return_value,
             Err(EntityGrowError::InvalidGrow) => EntityGrowError::ERROR_CODE,
-            Err(EntityGrowError::TrapCode(trap_code)) => return Err(trap_code),
+            Err(EntityGrowError::TrapCode(trap_code)) => return Err(Error::from(trap_code)),
         };
         self.set_register(result, return_value);
         self.try_next_instr_at(2)

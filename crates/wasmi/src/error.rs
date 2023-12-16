@@ -5,16 +5,123 @@ use super::errors::{
     InstantiationError,
     LinkerError,
     MemoryError,
-    ModuleError,
     TableError,
 };
-use crate::core::{Trap, TrapCode};
+use crate::{
+    core::{HostError, TrapCode},
+    engine::TranslationError,
+    module::ReadError,
+};
+use alloc::{boxed::Box, string::String};
 use core::{fmt, fmt::Display};
+use wasmparser::BinaryReaderError as WasmError;
+
+/// The generic `wasmi` root error type.
+#[derive(Debug)]
+pub struct Error {
+    /// The underlying kind of the error and its specific information.
+    kind: Box<ErrorKind>,
+}
+
+#[test]
+fn error_size() {
+    use core::mem;
+    assert_eq!(mem::size_of::<Error>(), 8);
+}
+
+impl Error {
+    /// Creates a new [`Error`] from the [`ErrorKind`].
+    fn from_kind(kind: ErrorKind) -> Self {
+        Self {
+            kind: Box::new(kind),
+        }
+    }
+
+    /// Creates a new [`Error`] described by a `message`.
+    #[inline]
+    #[cold]
+    pub fn new<T>(message: T) -> Self
+    where
+        T: Into<String>,
+    {
+        Self::from_kind(ErrorKind::Message(message.into().into_boxed_str()))
+    }
+
+    /// Creates a new `Error` representing an explicit program exit with a classic `i32` exit status value.
+    ///
+    /// # Note
+    ///
+    /// This is usually used as return code by WASI applications.
+    #[inline]
+    #[cold]
+    pub fn i32_exit(status: i32) -> Self {
+        Self::from_kind(ErrorKind::I32ExitStatus(status))
+    }
+
+    /// Converts `self` into the underlying [`ErrorKind`].
+    pub fn into_kind(self) -> ErrorKind {
+        *self.kind
+    }
+
+    /// Returns the [`ErrorKind`] of the [`Error`].
+    pub fn kind(&self) -> &ErrorKind {
+        &self.kind
+    }
+
+    /// Returns the [`ErrorKind`] of the [`Error`].
+    pub fn kind_mut(&mut self) -> &mut ErrorKind {
+        &mut self.kind
+    }
+
+    /// Returns a reference to [`TrapCode`] if [`Error`] is a [`TrapCode`].
+    pub fn as_trap_code(&self) -> Option<TrapCode> {
+        self.kind().as_trap_code()
+    }
+
+    /// Returns the classic `i32` exit program code of a `Trap` if any.
+    ///
+    /// Otherwise returns `None`.
+    pub fn i32_exit_status(&self) -> Option<i32> {
+        self.kind().as_i32_exit_status()
+    }
+
+    /// Returns a dynamic reference to [`HostError`] if [`ErrorKind`] is a [`HostError`].
+    pub fn as_host(&self) -> Option<&dyn HostError> {
+        self.kind().as_host()
+    }
+
+    /// Returns a dynamic reference to [`HostError`] if [`ErrorKind`] is a [`HostError`].
+    pub fn as_host_mut(&mut self) -> Option<&mut dyn HostError> {
+        self.kind_mut().as_host_mut()
+    }
+
+    /// Returns a [`HostError`] if [`ErrorKind`] is a [`HostError`].
+    pub fn into_host(self) -> Option<Box<dyn HostError>> {
+        self.into_kind().into_host()
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for Error {}
+
+impl Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        Display::fmt(&self.kind, f)
+    }
+}
 
 /// An error that may occur upon operating on Wasm modules or module instances.
 #[derive(Debug)]
 #[non_exhaustive]
-pub enum Error {
+pub enum ErrorKind {
+    /// A trap code as defined by the WebAssembly specification.
+    TrapCode(TrapCode),
+    /// A message ususally provided by Wasmi users of host function calls.
+    Message(Box<str>),
+    /// An `i32` exit status usually used by WASI applications.
+    I32ExitStatus(i32),
+    /// A trap as defined by the WebAssembly specification.
+    Host(Box<dyn HostError>),
     /// A global variable error.
     Global(GlobalError),
     /// A linear memory error.
@@ -25,87 +132,109 @@ pub enum Error {
     Linker(LinkerError),
     /// A module instantiation error.
     Instantiation(InstantiationError),
-    /// A module compilation, validation and translation error.
-    Module(ModuleError),
-    /// A store error.
-    Store(FuelError),
+    /// A fuel error.
+    Fuel(FuelError),
     /// A function error.
     Func(FuncError),
-    /// A trap as defined by the WebAssembly specification.
-    Trap(Trap),
+    /// Encountered when there is a problem with the Wasm input stream.
+    Read(ReadError),
+    /// Encountered when there is a Wasm parsing or validation error.
+    Wasm(WasmError),
+    /// Encountered when there is a Wasm to `wasmi` translation error.
+    Translation(TranslationError),
+}
+
+impl ErrorKind {
+    /// Returns a reference to [`TrapCode`] if [`ErrorKind`] is a [`TrapCode`].
+    pub fn as_trap_code(&self) -> Option<TrapCode> {
+        match self {
+            Self::TrapCode(trap_code) => Some(*trap_code),
+            _ => None,
+        }
+    }
+
+    /// Returns a [`i32`] if [`ErrorKind`] is an [`ErrorKind::I32ExitStatus`].
+    pub fn as_i32_exit_status(&self) -> Option<i32> {
+        match self {
+            Self::I32ExitStatus(exit_status) => Some(*exit_status),
+            _ => None,
+        }
+    }
+
+    /// Returns a dynamic reference to [`HostError`] if [`ErrorKind`] is a [`HostError`].
+    pub fn as_host(&self) -> Option<&dyn HostError> {
+        match self {
+            Self::Host(error) => Some(error.as_ref()),
+            _ => None,
+        }
+    }
+
+    /// Returns a dynamic reference to [`HostError`] if [`ErrorKind`] is a [`HostError`].
+    pub fn as_host_mut(&mut self) -> Option<&mut dyn HostError> {
+        match self {
+            Self::Host(error) => Some(error.as_mut()),
+            _ => None,
+        }
+    }
+
+    /// Returns the [`HostError`] if [`ErrorKind`] is a [`HostError`].
+    pub fn into_host(self) -> Option<Box<dyn HostError>> {
+        match self {
+            Self::Host(error) => Some(error),
+            _ => None,
+        }
+    }
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for Error {}
+impl std::error::Error for ErrorKind {}
 
-impl Display for Error {
+impl Display for ErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Trap(error) => Display::fmt(error, f),
+            Self::TrapCode(error) => Display::fmt(error, f),
+            Self::I32ExitStatus(status) => writeln!(f, "Exited with i32 exit status {status}"),
+            Self::Message(message) => Display::fmt(message, f),
+            Self::Host(error) => Display::fmt(error, f),
             Self::Global(error) => Display::fmt(error, f),
             Self::Memory(error) => Display::fmt(error, f),
             Self::Table(error) => Display::fmt(error, f),
             Self::Linker(error) => Display::fmt(error, f),
             Self::Func(error) => Display::fmt(error, f),
             Self::Instantiation(error) => Display::fmt(error, f),
-            Self::Module(error) => Display::fmt(error, f),
-            Self::Store(error) => Display::fmt(error, f),
+            Self::Fuel(error) => Display::fmt(error, f),
+            Self::Read(error) => Display::fmt(error, f),
+            Self::Wasm(error) => Display::fmt(error, f),
+            Self::Translation(error) => Display::fmt(error, f),
         }
     }
 }
 
-impl From<Trap> for Error {
-    fn from(error: Trap) -> Self {
-        Self::Trap(error)
+macro_rules! impl_from {
+    ( $( impl From<$from:ident> for Error::$name:ident );* $(;)? ) => {
+        $(
+            impl From<$from> for Error {
+                #[inline]
+                #[cold]
+                fn from(error: $from) -> Self {
+                    Self::from_kind(ErrorKind::$name(error))
+                }
+            }
+        )*
     }
 }
-
-impl From<GlobalError> for Error {
-    fn from(error: GlobalError) -> Self {
-        Self::Global(error)
-    }
-}
-
-impl From<MemoryError> for Error {
-    fn from(error: MemoryError) -> Self {
-        Self::Memory(error)
-    }
-}
-
-impl From<TableError> for Error {
-    fn from(error: TableError) -> Self {
-        Self::Table(error)
-    }
-}
-
-impl From<LinkerError> for Error {
-    fn from(error: LinkerError) -> Self {
-        Self::Linker(error)
-    }
-}
-
-impl From<InstantiationError> for Error {
-    fn from(error: InstantiationError) -> Self {
-        Self::Instantiation(error)
-    }
-}
-
-impl From<ModuleError> for Error {
-    fn from(error: ModuleError) -> Self {
-        Self::Module(error)
-    }
-}
-
-impl From<FuelError> for Error {
-    fn from(error: FuelError) -> Self {
-        Self::Store(error)
-    }
-}
-
-impl From<FuncError> for Error {
-    fn from(error: FuncError) -> Self {
-        Self::Func(error)
-    }
+impl_from! {
+    impl From<TrapCode> for Error::TrapCode;
+    impl From<GlobalError> for Error::Global;
+    impl From<MemoryError> for Error::Memory;
+    impl From<TableError> for Error::Table;
+    impl From<LinkerError> for Error::Linker;
+    impl From<InstantiationError> for Error::Instantiation;
+    impl From<TranslationError> for Error::Translation;
+    impl From<WasmError> for Error::Wasm;
+    impl From<ReadError> for Error::Read;
+    impl From<FuelError> for Error::Fuel;
+    impl From<FuncError> for Error::Func;
 }
 
 /// An error that can occur upon `memory.grow` or `table.grow`.

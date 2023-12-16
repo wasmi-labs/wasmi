@@ -9,6 +9,7 @@ use crate::{
         CompiledFuncEntity,
     },
     func::FuncEntity,
+    Error,
     Func,
     FuncRef,
 };
@@ -103,7 +104,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         results: RegisterSpan,
         func: &CompiledFuncEntity,
-    ) -> Result<CallFrame, TrapCode> {
+    ) -> Result<CallFrame, Error> {
         let instrs = func.instrs();
         let instr_ptr = InstructionPtr::new(instrs.as_ptr());
         let (base_ptr, frame_ptr) = self.value_stack.alloc_call_frame(func)?;
@@ -167,8 +168,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func: CompiledFunc,
         params: CallParams,
         call_kind: CallKind,
-    ) -> Result<(), TrapCode> {
-        let func = self.code_map.get(func);
+    ) -> Result<(), Error> {
+        let func = self.code_map.get(func)?;
         let mut called = self.dispatch_compiled_func(results, func)?;
         if let CallParams::Some = params {
             let called_sp = self.frame_stack_ptr(&called);
@@ -200,13 +201,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::ReturnCallInternal0`].
     #[inline(always)]
-    pub fn execute_return_call_internal_0(&mut self, func: CompiledFunc) -> Result<(), TrapCode> {
+    pub fn execute_return_call_internal_0(&mut self, func: CompiledFunc) -> Result<(), Error> {
         self.execute_return_call_internal_impl(func, CallParams::None)
     }
 
     /// Executes an [`Instruction::ReturnCallInternal`].
     #[inline(always)]
-    pub fn execute_return_call_internal(&mut self, func: CompiledFunc) -> Result<(), TrapCode> {
+    pub fn execute_return_call_internal(&mut self, func: CompiledFunc) -> Result<(), Error> {
         self.execute_return_call_internal_impl(func, CallParams::Some)
     }
 
@@ -215,7 +216,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         func: CompiledFunc,
         params: CallParams,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let results = self.caller_results();
         self.prepare_compiled_func_call(results, func, params, CallKind::Tail)
     }
@@ -241,7 +242,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         results: RegisterSpan,
         func: CompiledFunc,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         self.prepare_compiled_func_call(results, func, CallParams::None, CallKind::Nested)
     }
 
@@ -251,22 +252,19 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         results: RegisterSpan,
         func: CompiledFunc,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         self.prepare_compiled_func_call(results, func, CallParams::Some, CallKind::Nested)
     }
 
     /// Executes an [`Instruction::ReturnCallImported0`].
     #[inline(always)]
-    pub fn execute_return_call_imported_0(
-        &mut self,
-        func: FuncIdx,
-    ) -> Result<CallOutcome, TrapCode> {
+    pub fn execute_return_call_imported_0(&mut self, func: FuncIdx) -> Result<CallOutcome, Error> {
         self.execute_return_call_imported_impl(func, CallParams::None)
     }
 
     /// Executes an [`Instruction::ReturnCallImported`].
     #[inline(always)]
-    pub fn execute_return_call_imported(&mut self, func: FuncIdx) -> Result<CallOutcome, TrapCode> {
+    pub fn execute_return_call_imported(&mut self, func: FuncIdx) -> Result<CallOutcome, Error> {
         self.execute_return_call_imported_impl(func, CallParams::Some)
     }
 
@@ -275,7 +273,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         func: FuncIdx,
         params: CallParams,
-    ) -> Result<CallOutcome, TrapCode> {
+    ) -> Result<CallOutcome, Error> {
         let func = self.cache.get_func(self.ctx, func);
         let results = self.caller_results();
         self.execute_call_imported_impl(results, &func, params, CallKind::Tail)
@@ -287,7 +285,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         results: RegisterSpan,
         func: FuncIdx,
-    ) -> Result<CallOutcome, TrapCode> {
+    ) -> Result<CallOutcome, Error> {
         let func = self.cache.get_func(self.ctx, func);
         self.execute_call_imported_impl(results, &func, CallParams::None, CallKind::Nested)
     }
@@ -298,7 +296,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         results: RegisterSpan,
         func: FuncIdx,
-    ) -> Result<CallOutcome, TrapCode> {
+    ) -> Result<CallOutcome, Error> {
         let func = self.cache.get_func(self.ctx, func);
         self.execute_call_imported_impl(results, &func, CallParams::Some, CallKind::Nested)
     }
@@ -310,7 +308,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func: &Func,
         params: CallParams,
         call_kind: CallKind,
-    ) -> Result<CallOutcome, TrapCode> {
+    ) -> Result<CallOutcome, Error> {
         match self.ctx.resolve_func(func) {
             FuncEntity::Wasm(func) => {
                 let instance = *func.instance();
@@ -361,7 +359,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     pub fn execute_return_call_indirect_0(
         &mut self,
         func_type: SignatureIdx,
-    ) -> Result<CallOutcome, TrapCode> {
+    ) -> Result<CallOutcome, Error> {
         let (index, table) = self.pull_call_indirect_params();
         let results = self.caller_results();
         self.execute_call_indirect_impl(
@@ -379,7 +377,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     pub fn execute_return_call_indirect(
         &mut self,
         func_type: SignatureIdx,
-    ) -> Result<CallOutcome, TrapCode> {
+    ) -> Result<CallOutcome, Error> {
         let (index, table) = self.pull_call_indirect_params();
         let results = self.caller_results();
         self.execute_call_indirect_impl(
@@ -398,7 +396,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         results: RegisterSpan,
         func_type: SignatureIdx,
-    ) -> Result<CallOutcome, TrapCode> {
+    ) -> Result<CallOutcome, Error> {
         let (index, table) = self.pull_call_indirect_params();
         self.execute_call_indirect_impl(
             results,
@@ -416,7 +414,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         results: RegisterSpan,
         func_type: SignatureIdx,
-    ) -> Result<CallOutcome, TrapCode> {
+    ) -> Result<CallOutcome, Error> {
         let (index, table) = self.pull_call_indirect_params();
         self.execute_call_indirect_impl(
             results,
@@ -437,7 +435,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         table: TableIdx,
         params: CallParams,
         call_kind: CallKind,
-    ) -> Result<CallOutcome, TrapCode> {
+    ) -> Result<CallOutcome, Error> {
         let table = self.cache.get_table(self.ctx, table);
         let funcref = self
             .ctx
@@ -455,7 +453,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 panic!("missing signature for call_indirect at index: {func_type:?}")
             });
         if actual_signature != expected_signature {
-            return Err(TrapCode::BadSignature);
+            return Err(Error::from(TrapCode::BadSignature));
         }
         self.execute_call_imported_impl(results, func, params, call_kind)
     }

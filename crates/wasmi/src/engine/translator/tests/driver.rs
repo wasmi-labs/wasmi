@@ -119,6 +119,7 @@ impl ExpectedFunc {
                     let actual_instr =
                         engine
                             .resolve_instr(compiled_func, index)
+                            .unwrap_or_else(|error| panic!("failed to compiled lazily initialized function: {}", error))
                             .unwrap_or_else(|| {
                                 panic!("missing instruction at index {index} for {compiled_func:?} ({func_type:?})")
                             });
@@ -132,7 +133,7 @@ impl ExpectedFunc {
                     - found: {actual:?}",
             );
         }
-        if let Some(unexpected) = engine.resolve_instr(compiled_func, len_expected) {
+        if let Ok(Some(unexpected)) = engine.resolve_instr(compiled_func, len_expected) {
             panic!("unexpected instruction at index {len_expected}: {unexpected:?}");
         }
     }
@@ -141,9 +142,14 @@ impl ExpectedFunc {
     fn assert_consts(&self, engine: &Engine, func: CompiledFunc) {
         let expected_consts = self.expected_consts();
         for (index, expected_value) in expected_consts.iter().copied().enumerate() {
-            let actual_value = engine.get_func_const(func, index).unwrap_or_else(|| {
-                panic!("missing function local constant value of for {func:?} at index {index}")
-            });
+            let actual_value = engine
+                .get_func_const(func, index)
+                .unwrap_or_else(|error| {
+                    panic!("failed to compiled lazily initialized function: {}", error)
+                })
+                .unwrap_or_else(|| {
+                    panic!("missing function local constant value of for {func:?} at index {index}")
+                });
             assert_eq!(
                 actual_value, expected_value,
                 "function local constant value mismatch for {func:?} at index {index}"
@@ -151,7 +157,7 @@ impl ExpectedFunc {
         }
         // Check that there are not more function local constants than we already expected.
         let len_consts = expected_consts.len();
-        if let Some(unexpected) = engine.get_func_const(func, len_consts) {
+        if let Ok(Some(unexpected)) = engine.get_func_const(func, len_consts) {
             panic!("unexpected function local constant value (= {unexpected:?}) for {func:?} at index {len_consts}")
         }
     }

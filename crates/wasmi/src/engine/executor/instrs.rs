@@ -23,6 +23,7 @@ use crate::{
         CodeMap,
     },
     store::ResourceLimiterRef,
+    Error,
     FuelConsumptionMode,
     Func,
     FuncRef,
@@ -105,7 +106,7 @@ pub fn execute_instrs<'ctx, 'engine>(
     code_map: &'engine CodeMap,
     func_types: &'engine FuncTypeRegistry,
     resource_limiter: &'ctx mut ResourceLimiterRef<'ctx>,
-) -> Result<WasmOutcome, TrapCode> {
+) -> Result<WasmOutcome, Error> {
     Executor::new(ctx, cache, value_stack, call_stack, code_map, func_types)
         .execute(resource_limiter)
 }
@@ -186,7 +187,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn execute(
         mut self,
         resource_limiter: &'ctx mut ResourceLimiterRef<'ctx>,
-    ) -> Result<WasmOutcome, TrapCode> {
+    ) -> Result<WasmOutcome, Error> {
         use Instruction as Instr;
         loop {
             match *self.ip.get() {
@@ -909,7 +910,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// This is a convenience function for fallible instructions.
     #[inline(always)]
-    fn try_next_instr(&mut self) -> Result<(), TrapCode> {
+    fn try_next_instr(&mut self) -> Result<(), Error> {
         self.try_next_instr_at(1)
     }
 
@@ -922,7 +923,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// This is a convenience function for fallible instructions.
     #[inline(always)]
-    fn try_next_instr_at(&mut self, skip: usize) -> Result<(), TrapCode> {
+    fn try_next_instr_at(&mut self, skip: usize) -> Result<(), Error> {
         self.next_instr_at(skip);
         Ok(())
     }
@@ -1115,7 +1116,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         instr: UnaryInstr,
         op: fn(UntypedValue) -> Result<UntypedValue, TrapCode>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let value = self.get_register(instr.input);
         self.set_register(instr.result, op(value)?);
         self.try_next_instr()
@@ -1168,7 +1169,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         instr: BinInstr,
         op: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), Error> {
         let lhs = self.get_register(instr.lhs);
         let rhs = self.get_register(instr.rhs);
         self.set_register(instr.result, op(lhs, rhs)?);
@@ -1179,8 +1180,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn try_execute_divrem_imm16<NonZeroT>(
         &mut self,
         instr: BinInstrImm16<NonZeroT>,
-        op: fn(UntypedValue, NonZeroT) -> Result<UntypedValue, TrapCode>,
-    ) -> Result<(), TrapCode>
+        op: fn(UntypedValue, NonZeroT) -> Result<UntypedValue, Error>,
+    ) -> Result<(), Error>
     where
         NonZeroT: From<Const16<NonZeroT>>,
     {
@@ -1209,7 +1210,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         instr: BinInstrImm16<T>,
         op: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
-    ) -> Result<(), TrapCode>
+    ) -> Result<(), Error>
     where
         T: From<Const16<T>>,
         UntypedValue: From<T>,
@@ -1229,19 +1230,19 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// This includes [`Instruction`] variants such as [`Instruction::TableIdx`]
     /// that primarily carry parameters for actually executable [`Instruction`].
     #[inline(always)]
-    fn invalid_instruction_word(&mut self) -> Result<(), TrapCode> {
+    fn invalid_instruction_word(&mut self) -> Result<(), Error> {
         self.execute_trap(TrapCode::UnreachableCodeReached)
     }
 
     /// Executes a Wasm `unreachable` instruction.
     #[inline(always)]
-    fn execute_trap(&mut self, trap_code: TrapCode) -> Result<(), TrapCode> {
-        Err(trap_code)
+    fn execute_trap(&mut self, trap_code: TrapCode) -> Result<(), Error> {
+        Err(Error::from(trap_code))
     }
 
     /// Executes an [`Instruction::ConsumeFuel`].
     #[inline(always)]
-    fn execute_consume_fuel(&mut self, block_fuel: BlockFuel) -> Result<(), TrapCode> {
+    fn execute_consume_fuel(&mut self, block_fuel: BlockFuel) -> Result<(), Error> {
         // We do not have to check if fuel metering is enabled since
         // [`Instruction::ConsumeFuel`] are only generated if fuel metering
         // is enabled to begin with.

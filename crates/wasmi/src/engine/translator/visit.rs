@@ -20,10 +20,11 @@ use crate::{
     engine::{
         bytecode::{self, Const16, Instruction, Provider, Register, SignatureIdx},
         translator::AcquiredTarget,
+        BlockType,
         FuelCosts,
-        TranslationError,
     },
-    module::{self, BlockType, FuncIdx, WasmiValueType},
+    module::{self, FuncIdx, WasmiValueType},
+    Error,
     ExternRef,
     FuncRef,
     Mutability,
@@ -75,7 +76,7 @@ macro_rules! impl_visit_operator {
     () => {};
 }
 
-impl FuncTranslator<'_> {
+impl FuncTranslator {
     /// Called when translating an unsupported Wasm operator.
     ///
     /// # Note
@@ -84,13 +85,13 @@ impl FuncTranslator<'_> {
     /// errors should have been filtered out by the validation procedure
     /// already, therefore encountering an unsupported Wasm operator
     /// in the function translation procedure can be considered a bug.
-    fn unsupported_operator(&self, name: &str) -> Result<(), TranslationError> {
+    fn unsupported_operator(&self, name: &str) -> Result<(), Error> {
         panic!("tried to translate an unsupported Wasm operator: {name}")
     }
 }
 
-impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
-    type Output = Result<(), TranslationError>;
+impl<'a> VisitOperator<'a> for FuncTranslator {
+    type Output = Result<(), Error>;
 
     wasmparser::for_each_operator!(impl_visit_operator);
 
@@ -107,7 +108,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_block(&mut self, block_type: wasmparser::BlockType) -> Self::Output {
-        let block_type = BlockType::new(block_type, self.res);
+        let block_type = BlockType::new(block_type, &self.module);
         if !self.is_reachable() {
             // We keep track of unreachable control flow frames so that we
             // can associated `end` operators to their respective control flow
@@ -143,7 +144,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_loop(&mut self, block_type: wasmparser::BlockType) -> Self::Output {
-        let block_type = BlockType::new(block_type, self.res);
+        let block_type = BlockType::new(block_type, &self.module);
         if !self.is_reachable() {
             // See `visit_block` for rational of tracking unreachable control flow.
             self.alloc
@@ -190,7 +191,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     }
 
     fn visit_if(&mut self, block_type: wasmparser::BlockType) -> Self::Output {
-        let block_type = BlockType::new(block_type, self.res);
+        let block_type = BlockType::new(block_type, &self.module);
         if !self.is_reachable() {
             // We keep track of unreachable control flow frames so that we
             // can associated `end` operators to their respective control flow
@@ -377,12 +378,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_br(&mut self, relative_depth: u32) -> Self::Output {
         bail_unreachable!(self);
+        let engine = self.engine().clone();
         match self.alloc.control_stack.acquire_target(relative_depth) {
             AcquiredTarget::Return(_frame) => self.translate_return(),
             AcquiredTarget::Branch(frame) => {
                 frame.bump_branches();
                 let branch_dst = frame.branch_destination();
-                let branch_params = frame.branch_params(self.res.engine());
+                let branch_params = frame.branch_params(&engine);
                 self.translate_copy_branch_params(branch_params)?;
                 let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
                 self.push_base_instr(Instruction::branch(branch_offset))?;
@@ -394,6 +396,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_br_if(&mut self, relative_depth: u32) -> Self::Output {
         bail_unreachable!(self);
+        let engine = self.engine().clone();
         match self.alloc.stack.pop() {
             TypedProvider::Const(condition) => {
                 if i32::from(condition) != 0 {
@@ -413,7 +416,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     AcquiredTarget::Branch(frame) => {
                         frame.bump_branches();
                         let branch_dst = frame.branch_destination();
-                        let branch_params = frame.branch_params(self.res.engine());
+                        let branch_params = frame.branch_params(&engine);
                         if branch_params.is_empty() {
                             // Case: no values need to be copied so we can directly
                             //       encode the `br_if` as efficient `branch_nez`.
@@ -480,6 +483,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
 
     fn visit_br_table(&mut self, targets: wasmparser::BrTable<'a>) -> Self::Output {
         bail_unreachable!(self);
+        let engine = self.engine().clone();
         let fuel_info = self.fuel_info();
         let index = self.alloc.stack.pop();
         if targets.is_empty() {
@@ -514,7 +518,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
             .control_stack
             .acquire_target(default_target)
             .control_frame()
-            .branch_params(self.res.engine());
+            .branch_params(&engine);
         // Add `br_table` targets to `br_table_targets` buffer including default target.
         // This allows us to uniformely treat all `br_table` targets the same and only parse once.
         self.alloc.br_table_targets.clear();
@@ -533,7 +537,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     true
                 }
                 AcquiredTarget::Branch(frame) => {
-                    default_branch_params == frame.branch_params(self.res.engine())
+                    default_branch_params == frame.branch_params(&engine)
                 }
             }
         });
@@ -607,7 +611,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                     frame.bump_branches();
                     self.alloc.instr_encoder.encode_copies(
                         &mut self.alloc.stack,
-                        frame.branch_params(self.res.engine()),
+                        frame.branch_params(&engine),
                         values,
                         fuel_info,
                     )?;
@@ -639,7 +643,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let provider_params = &mut self.alloc.buffer;
         self.alloc.stack.pop_n(params.len(), provider_params);
         let results = self.alloc.stack.push_dynamic_n(results.len())?;
-        let instr = match self.res.get_compiled_func(func_idx) {
+        let instr = match self.module.get_compiled_func(func_idx) {
             Some(compiled_func) => {
                 // Case: We are calling an internal function and can optimize
                 //       this case by using the special instruction for it.
@@ -715,7 +719,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let params = func_type.params();
         let provider_params = &mut self.alloc.buffer;
         self.alloc.stack.pop_n(params.len(), provider_params);
-        let instr = match self.res.get_compiled_func(func_idx) {
+        let instr = match self.module.get_compiled_func(func_idx) {
             Some(compiled_func) => {
                 // Case: We are calling an internal function and can optimize
                 //       this case by using the special instruction for it.
@@ -817,7 +821,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
         let fuel_info = self.fuel_info();
         self.alloc.instr_encoder.encode_local_set(
             &mut self.alloc.stack,
-            &self.res,
+            &self.module,
             local,
             value,
             preserved,
@@ -836,7 +840,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
     fn visit_global_get(&mut self, global_index: u32) -> Self::Output {
         bail_unreachable!(self);
         let global_idx = module::GlobalIdx::from(global_index);
-        let (global_type, init_value) = self.res.get_global(global_idx);
+        let (global_type, init_value) = self.module.get_global(global_idx);
         let content = global_type.content();
         if let (Mutability::Const, Some(init_expr)) = (global_type.mutability(), init_value) {
             if let Some(value) = init_expr.eval_const() {
@@ -871,8 +875,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator<'a> {
                 Ok(())
             }
             TypedProvider::Const(input) => {
-                let (global_type, _init_value) =
-                    self.res.get_global(module::GlobalIdx::from(global_index));
+                let (global_type, _init_value) = self
+                    .module
+                    .get_global(module::GlobalIdx::from(global_index));
                 debug_assert_eq!(global_type.content(), input.ty());
                 match global_type.content() {
                     ValueType::I32 => {

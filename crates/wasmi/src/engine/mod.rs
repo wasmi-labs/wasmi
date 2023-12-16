@@ -1,5 +1,6 @@
 //! The `wasmi` interpreter.
 
+mod block_type;
 pub mod bytecode;
 mod cache;
 mod code_map;
@@ -18,39 +19,52 @@ mod tests;
 #[cfg(test)]
 use self::bytecode::RegisterSpan;
 
-use self::{
-    bytecode::Instruction,
-    code_map::{CodeMap, CompiledFuncEntity},
-    func_types::FuncTypeRegistry,
-    resumable::ResumableCallBase,
-    translator::FuncLocalConstsIter,
-};
-pub use self::{
-    code_map::CompiledFunc,
-    config::{Config, FuelConsumptionMode},
-    limits::StackLimits,
-    resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
-    traits::{CallParams, CallResults},
-    translator::{Instr, TranslationError},
-};
 pub(crate) use self::{
+    block_type::BlockType,
     config::FuelCosts,
     executor::Stack,
     func_args::{FuncFinished, FuncParams, FuncResults},
     func_types::DedupFuncType,
     translator::{
+        FuncTranslationDriver,
         FuncTranslator,
         FuncTranslatorAllocations,
-        ReusableAllocations,
+        LazyFuncTranslator,
         ValidatingFuncTranslator,
         WasmTranslator,
     },
 };
-use crate::{core::Trap, Func, FuncType, StoreContextMut};
-use alloc::{sync::Arc, vec::Vec};
+pub use self::{
+    code_map::CompiledFunc,
+    config::{CompilationMode, Config, FuelConsumptionMode},
+    limits::StackLimits,
+    resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
+    traits::{CallParams, CallResults},
+    translator::{Instr, TranslationError},
+};
+use self::{
+    code_map::{CodeMap, CompiledFuncEntity},
+    func_types::FuncTypeRegistry,
+    resumable::ResumableCallBase,
+};
+use crate::{
+    module::{FuncIdx, ModuleHeader},
+    Error,
+    Func,
+    FuncType,
+    StoreContextMut,
+};
+use alloc::{
+    sync::{Arc, Weak},
+    vec::Vec,
+};
 use core::sync::atomic::{AtomicU32, Ordering};
 use spin::{Mutex, RwLock};
 use wasmi_arena::{ArenaIndex, GuardedEntity};
+use wasmparser::{FuncToValidate, FuncValidatorAllocations, ValidatorResources};
+
+#[cfg(test)]
+use self::bytecode::Instruction;
 
 #[cfg(test)]
 use wasmi_core::UntypedValue;
@@ -104,6 +118,24 @@ pub struct Engine {
     inner: Arc<EngineInner>,
 }
 
+/// A weak reference to an [`Engine`].
+///
+/// # Note
+///
+/// This was required to break a reference cycle between [`Engine`] and [`ModuleHeader`].
+#[derive(Debug, Clone)]
+pub struct EngineWeak {
+    inner: Weak<EngineInner>,
+}
+
+impl EngineWeak {
+    /// Upgrades the [`EngineWeak`] to an [`Engine`] if the [`Engine`] does still exist.
+    pub fn upgrade(&self) -> Option<Engine> {
+        let inner = self.inner.upgrade()?;
+        Some(Engine { inner })
+    }
+}
+
 impl Default for Engine {
     fn default() -> Self {
         Self::new(&Config::default())
@@ -119,6 +151,13 @@ impl Engine {
     pub fn new(config: &Config) -> Self {
         Self {
             inner: Arc::new(EngineInner::new(config)),
+        }
+    }
+
+    /// Creates an [`EngineWeak`] from the given [`Engine`].
+    pub(crate) fn downgrade(&self) -> EngineWeak {
+        EngineWeak {
+            inner: Arc::downgrade(&self.inner),
         }
     }
 
@@ -157,36 +196,98 @@ impl Engine {
         self.inner.alloc_func()
     }
 
+    /// Translates the Wasm function using the [`Engine`].
+    ///
+    /// - Uses the internal [`Config`] to drive the function translation as mandated.
+    /// - Reuses translation and validation allocations to be more efficient when used for many translation units.
+    ///
+    /// # Parameters
+    ///
+    /// - `func_index`: The index of the translated function within its Wasm module.
+    /// - `compiled_func`: The index of the translated function in the [`Engine`].
+    /// - `offset`: The global offset of the Wasm function body within the Wasm binary.
+    /// - `bytes`: The bytes that make up the Wasm encoded function body of the translated function.
+    /// - `module`: The module header information of the Wasm module of the translated function.
+    /// - `func_to_validate`: Optionally validates the translated function.
+    ///
+    /// # Errors
+    ///
+    /// - If function translation fails.
+    /// - If function validation fails.
+    pub(crate) fn translate_func(
+        &self,
+        func_index: FuncIdx,
+        compiled_func: CompiledFunc,
+        offset: usize,
+        bytes: &[u8],
+        module: ModuleHeader,
+        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+    ) -> Result<(), Error> {
+        match (self.config().get_compilation_mode(), func_to_validate) {
+            (CompilationMode::Eager, Some(func_to_validate)) => {
+                let (translation_allocs, validation_allocs) = self.inner.get_allocs();
+                let validator = func_to_validate.into_validator(validation_allocs);
+                let translator = FuncTranslator::new(func_index, module, translation_allocs)?;
+                let translator = ValidatingFuncTranslator::new(validator, translator)?;
+                let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
+                    .translate(|func_entity| self.inner.init_func(compiled_func, func_entity))?;
+                self.inner
+                    .recycle_allocs(allocs.translation, allocs.validation);
+            }
+            (CompilationMode::Eager, None) => {
+                let allocs = self.inner.get_translation_allocs();
+                let translator = FuncTranslator::new(func_index, module, allocs)?;
+                let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
+                    .translate(|func_entity| self.inner.init_func(compiled_func, func_entity))?;
+                self.inner.recycle_translation_allocs(allocs);
+            }
+            (CompilationMode::Lazy, Some(func_to_validate)) => {
+                let allocs = self.inner.get_validation_allocs();
+                let translator = LazyFuncTranslator::new(func_index, compiled_func, module);
+                let validator = func_to_validate.into_validator(allocs);
+                let translator = ValidatingFuncTranslator::new(validator, translator)?;
+                let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
+                    .translate(|func_entity| self.inner.init_func(compiled_func, func_entity))?;
+                self.inner.recycle_validation_allocs(allocs.validation);
+            }
+            (CompilationMode::Lazy, None) => {
+                let translator = LazyFuncTranslator::new(func_index, compiled_func, module);
+                FuncTranslationDriver::new(offset, bytes, translator)?
+                    .translate(|func_entity| self.inner.init_func(compiled_func, func_entity))?;
+            }
+        }
+        Ok(())
+    }
+
+    /// Returns reusable [`FuncTranslatorAllocations`] from the [`Engine`].
+    pub(crate) fn get_translation_allocs(&self) -> FuncTranslatorAllocations {
+        self.inner.get_translation_allocs()
+    }
+
+    /// Recycles the given [`FuncTranslatorAllocations`] in the [`Engine`].
+    pub(crate) fn recycle_translation_allocs(&self, allocs: FuncTranslatorAllocations) {
+        self.inner.recycle_translation_allocs(allocs)
+    }
+
     /// Initializes the uninitialized [`CompiledFunc`] for the [`Engine`].
+    ///
+    /// # Note
+    ///
+    /// The initialized function will not be compiled after this call and instead
+    /// be prepared to be compiled on the fly when it is called the first time.
     ///
     /// # Panics
     ///
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
-    fn init_func<I>(
+    fn init_lazy_func(
         &self,
+        func_idx: FuncIdx,
         func: CompiledFunc,
-        len_registers: u16,
-        len_results: u16,
-        func_locals: FuncLocalConstsIter,
-        instrs: I,
-    ) where
-        I: IntoIterator<Item = Instruction>,
-    {
-        self.inner
-            .init_func(func, len_registers, len_results, func_locals, instrs)
-    }
-
-    /// Resolves the [`CompiledFuncEntity`] for [`CompiledFunc`] and applies `f` to it.
-    ///
-    /// # Panics
-    ///
-    /// If [`CompiledFunc`] is invalid for [`Engine`].
-    pub(super) fn resolve_func<F, R>(&self, func: CompiledFunc, f: F) -> R
-    where
-        F: FnOnce(&CompiledFuncEntity) -> R,
-    {
-        self.inner.resolve_func(func, f)
+        bytes: &[u8],
+        module: &ModuleHeader,
+    ) {
+        self.inner.init_lazy_func(func_idx, func, bytes, module)
     }
 
     /// Resolves the [`CompiledFunc`] to the underlying `wasmi` bytecode instructions.
@@ -199,12 +300,20 @@ impl Engine {
     ///   outside of this context. The function bodies are intended to be data private
     ///   to the `wasmi` interpreter.
     ///
+    /// # Errors
+    ///
+    /// If the `func` fails Wasm to `wasmi` bytecode translation after it was lazily initialized.
+    ///
     /// # Panics
     ///
     /// - If the [`CompiledFunc`] is invalid for the [`Engine`].
     /// - If register machine bytecode translation is disabled.
     #[cfg(test)]
-    pub(crate) fn resolve_instr(&self, func: CompiledFunc, index: usize) -> Option<Instruction> {
+    pub(crate) fn resolve_instr(
+        &self,
+        func: CompiledFunc,
+        index: usize,
+    ) -> Result<Option<Instruction>, Error> {
         self.inner.resolve_instr(func, index)
     }
 
@@ -216,12 +325,20 @@ impl Engine {
     /// outside of this context. The function bodies are intended to be data
     /// private to the `wasmi` interpreter.
     ///
+    /// # Errors
+    ///
+    /// If the `func` fails Wasm to `wasmi` bytecode translation after it was lazily initialized.
+    ///
     /// # Panics
     ///
     /// - If the [`CompiledFunc`] is invalid for the [`Engine`].
     /// - If register machine bytecode translation is disabled.
     #[cfg(test)]
-    fn get_func_const(&self, func: CompiledFunc, index: usize) -> Option<UntypedValue> {
+    fn get_func_const(
+        &self,
+        func: CompiledFunc,
+        index: usize,
+    ) -> Result<Option<UntypedValue>, Error> {
         self.inner.get_func_const(func, index)
     }
 
@@ -251,7 +368,7 @@ impl Engine {
         func: &Func,
         params: impl CallParams,
         results: Results,
-    ) -> Result<<Results as CallResults>::Results, Trap>
+    ) -> Result<<Results as CallResults>::Results, Error>
     where
         Results: CallResults,
     {
@@ -287,7 +404,7 @@ impl Engine {
         func: &Func,
         params: impl CallParams,
         results: Results,
-    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
+    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Error>
     where
         Results: CallResults,
     {
@@ -324,7 +441,7 @@ impl Engine {
         invocation: ResumableInvocation,
         params: impl CallParams,
         results: Results,
-    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Trap>
+    ) -> Result<ResumableCallBase<<Results as CallResults>::Results>, Error>
     where
         Results: CallResults,
     {
@@ -344,12 +461,82 @@ pub struct EngineInner {
     config: Config,
     /// Engine resources shared across multiple engine executors.
     res: RwLock<EngineResources>,
+    /// Reusable allocation stacks.
+    allocs: Mutex<ReusableAllocationStack>,
     /// Reusable engine stacks for Wasm execution.
     ///
     /// Concurrently executing Wasm executions each require their own stack to
     /// operate on. Therefore a Wasm engine is required to provide stacks and
     /// ideally recycles old ones since creation of a new stack is rather expensive.
     stacks: Mutex<EngineStacks>,
+}
+
+/// Stacks to hold and distribute reusable allocations.
+pub struct ReusableAllocationStack {
+    /// The maximum height of each of the allocations stacks.
+    max_height: usize,
+    /// Allocations required by Wasm function translators.
+    translation: Vec<FuncTranslatorAllocations>,
+    /// Allocations required by Wasm function validators.
+    validation: Vec<FuncValidatorAllocations>,
+}
+
+impl Default for ReusableAllocationStack {
+    fn default() -> Self {
+        Self {
+            max_height: 1,
+            translation: Vec::new(),
+            validation: Vec::new(),
+        }
+    }
+}
+
+impl core::fmt::Debug for ReusableAllocationStack {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("ReusableAllocationStack")
+            .field("translation", &self.translation)
+            // Note: FuncValidatorAllocations is missing Debug impl at the time of writing this commit.
+            //       We should derive Debug as soon as FuncValidatorAllocations has a Debug impl in future
+            //       wasmparser versions.
+            .field("validation", &self.validation.len())
+            .finish()
+    }
+}
+
+impl ReusableAllocationStack {
+    /// Returns reusable [`FuncTranslatorAllocations`] from the [`Engine`].
+    pub fn get_translation_allocs(&mut self) -> FuncTranslatorAllocations {
+        match self.translation.pop() {
+            Some(allocs) => allocs,
+            None => FuncTranslatorAllocations::default(),
+        }
+    }
+
+    /// Returns reusable [`FuncValidatorAllocations`] from the [`Engine`].
+    pub fn get_validation_allocs(&mut self) -> FuncValidatorAllocations {
+        match self.validation.pop() {
+            Some(allocs) => allocs,
+            None => FuncValidatorAllocations::default(),
+        }
+    }
+
+    /// Recycles the given [`FuncTranslatorAllocations`] in the [`Engine`].
+    pub fn recycle_translation_allocs(&mut self, recycled: FuncTranslatorAllocations) {
+        debug_assert!(self.translation.len() <= self.max_height);
+        if self.translation.len() >= self.max_height {
+            return;
+        }
+        self.translation.push(recycled);
+    }
+
+    /// Recycles the given [`FuncValidatorAllocations`] in the [`Engine`].
+    pub fn recycle_validation_allocs(&mut self, recycled: FuncValidatorAllocations) {
+        debug_assert!(self.validation.len() <= self.max_height);
+        if self.validation.len() >= self.max_height {
+            return;
+        }
+        self.validation.push(recycled);
+    }
 }
 
 /// The engine's stacks for reuse.
@@ -397,6 +584,7 @@ impl EngineInner {
         Self {
             config: *config,
             res: RwLock::new(EngineResources::new()),
+            allocs: Mutex::new(ReusableAllocationStack::default()),
             stacks: Mutex::new(EngineStacks::new(config)),
         }
     }
@@ -431,65 +619,152 @@ impl EngineInner {
         self.res.write().code_map.alloc_func()
     }
 
+    /// Returns reusable [`FuncTranslatorAllocations`] from the [`Engine`].
+    fn get_translation_allocs(&self) -> FuncTranslatorAllocations {
+        self.allocs.lock().get_translation_allocs()
+    }
+
+    /// Returns reusable [`FuncValidatorAllocations`] from the [`Engine`].
+    fn get_validation_allocs(&self) -> FuncValidatorAllocations {
+        self.allocs.lock().get_validation_allocs()
+    }
+
+    /// Returns reusable [`FuncTranslatorAllocations`] and [`FuncValidatorAllocations`] from the [`Engine`].
+    ///
+    /// # Note
+    ///
+    /// This method is a bit more efficient than calling both
+    /// - [`EngineInner::get_translation_allocs`]
+    /// - [`EngineInner::get_validation_allocs`]
+    fn get_allocs(&self) -> (FuncTranslatorAllocations, FuncValidatorAllocations) {
+        let mut allocs = self.allocs.lock();
+        let translation = allocs.get_translation_allocs();
+        let validation = allocs.get_validation_allocs();
+        (translation, validation)
+    }
+
+    /// Recycles the given [`FuncTranslatorAllocations`] in the [`Engine`].
+    fn recycle_translation_allocs(&self, allocs: FuncTranslatorAllocations) {
+        self.allocs.lock().recycle_translation_allocs(allocs)
+    }
+
+    /// Recycles the given [`FuncValidatorAllocations`] in the [`Engine`].
+    fn recycle_validation_allocs(&self, allocs: FuncValidatorAllocations) {
+        self.allocs.lock().recycle_validation_allocs(allocs)
+    }
+
+    /// Recycles the given [`FuncTranslatorAllocations`] and [`FuncValidatorAllocations`] in the [`Engine`].
+    ///
+    /// # Note
+    ///
+    /// This method is a bit more efficient than calling both
+    /// - [`EngineInner::recycle_translation_allocs`]
+    /// - [`EngineInner::recycle_validation_allocs`]
+    fn recycle_allocs(
+        &self,
+        translation: FuncTranslatorAllocations,
+        validation: FuncValidatorAllocations,
+    ) {
+        let mut allocs = self.allocs.lock();
+        allocs.recycle_translation_allocs(translation);
+        allocs.recycle_validation_allocs(validation);
+    }
+
     /// Initializes the uninitialized [`CompiledFunc`] for the [`EngineInner`].
+    ///
+    /// # Note
+    ///
+    /// The initialized function will be compiled and ready to be executed after this call.
     ///
     /// # Panics
     ///
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
-    fn init_func<I>(
-        &self,
-        func: CompiledFunc,
-        len_registers: u16,
-        len_results: u16,
-        func_locals: FuncLocalConstsIter,
-        instrs: I,
-    ) where
-        I: IntoIterator<Item = Instruction>,
-    {
+    fn init_func(&self, compiled_func: CompiledFunc, func_entity: CompiledFuncEntity) {
         self.res
             .write()
             .code_map
-            .init_func(func, len_registers, len_results, func_locals, instrs)
+            .init_func(compiled_func, func_entity)
     }
 
-    /// Resolves the [`CompiledFuncEntity`] for [`CompiledFunc`] and applies `f` to it.
+    /// Initializes the uninitialized [`CompiledFunc`] for the [`Engine`].
+    ///
+    /// # Note
+    ///
+    /// The initialized function will not be compiled after this call and instead
+    /// be prepared to be compiled on the fly when it is called the first time.
+    ///
+    /// # Panics
+    ///
+    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
+    /// - If `func` refers to an already initialized [`CompiledFunc`].
+    fn init_lazy_func(
+        &self,
+        func_idx: FuncIdx,
+        func: CompiledFunc,
+        bytes: &[u8],
+        module: &ModuleHeader,
+    ) {
+        self.res
+            .write()
+            .code_map
+            .init_lazy_func(func_idx, func, bytes, module)
+    }
+
+    /// Resolves the [`InternalFuncEntity`] for [`CompiledFunc`] and applies `f` to it.
     ///
     /// # Panics
     ///
     /// If [`CompiledFunc`] is invalid for [`Engine`].
-    pub(super) fn resolve_func<F, R>(&self, func: CompiledFunc, f: F) -> R
+    #[cfg(test)]
+    pub(super) fn resolve_func<F, R>(&self, func: CompiledFunc, f: F) -> Result<R, Error>
     where
         F: FnOnce(&CompiledFuncEntity) -> R,
     {
-        f(self.res.read().code_map.get(func))
+        Ok(f(self.res.read().code_map.get(func)?))
     }
 
+    /// Returns the [`Instruction`] of `func` at `index`.
+    ///
+    /// Returns `None` if the function has no instruction at `index`.
+    ///
+    /// # Errors
+    ///
+    /// If the `func` fails Wasm to `wasmi` bytecode translation after it was lazily initialized.
+    ///
+    /// # Pancis
+    ///
+    /// If `func` cannot be resolved to a function for the [`EngineInner`].
     #[cfg(test)]
-    pub(crate) fn resolve_instr(&self, func: CompiledFunc, index: usize) -> Option<Instruction> {
-        self.res
-            .read()
-            .code_map
-            .get(func)
-            .instrs()
-            .get(index)
-            .copied()
+    pub(crate) fn resolve_instr(
+        &self,
+        func: CompiledFunc,
+        index: usize,
+    ) -> Result<Option<Instruction>, Error> {
+        self.resolve_func(func, |func| func.instrs().get(index).copied())
     }
 
+    /// Returns the function local constant value of `func` at `index`.
+    ///
+    /// Returns `None` if the function has no function local constant at `index`.
+    ///
+    /// # Errors
+    ///
+    /// If the `func` fails Wasm to `wasmi` bytecode translation after it was lazily initialized.
+    ///
+    /// # Pancis
+    ///
+    /// If `func` cannot be resolved to a function for the [`EngineInner`].
     #[cfg(test)]
-    fn get_func_const(&self, func: CompiledFunc, index: usize) -> Option<UntypedValue> {
+    fn get_func_const(
+        &self,
+        func: CompiledFunc,
+        index: usize,
+    ) -> Result<Option<UntypedValue>, Error> {
         // Function local constants are stored in reverse order of their indices since
         // they are allocated in reverse order to their absolute indices during function
         // translation. That is why we need to access them in reverse order.
-        self.res
-            .read()
-            .code_map
-            .get(func)
-            .consts()
-            .iter()
-            .rev()
-            .nth(index)
-            .copied()
+        self.resolve_func(func, |func| func.consts().iter().rev().nth(index).copied())
     }
 
     /// Recycles the given [`Stack`].

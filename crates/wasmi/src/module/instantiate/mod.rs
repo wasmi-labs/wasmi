@@ -26,7 +26,7 @@ use crate::{
     Table,
     Value,
 };
-use wasmi_core::{Trap, UntypedValue};
+use wasmi_core::UntypedValue;
 
 impl Module {
     /// Instantiates a new [`Instance`] from the given compiled [`Module`].
@@ -118,7 +118,7 @@ impl Module {
                 (ExternType::Func(expected_signature), Extern::Func(func)) => {
                     let actual_signature = func.ty_dedup(context.as_context());
                     let actual_signature = self
-                        .engine
+                        .engine()
                         .resolve_func_type(actual_signature, FuncType::clone);
                     // Note: We can compare function signatures without resolving them because
                     //       we deduplicate them before registering. Therefore two equal instances of
@@ -263,7 +263,7 @@ impl Module {
 
     /// Extracts the Wasm exports from the module and registers them into the [`Instance`].
     fn extract_exports(&self, builder: &mut InstanceEntityBuilder) {
-        for (field, idx) in &self.exports {
+        for (field, idx) in &self.header.inner.exports {
             let external = match idx {
                 export::ExternIdx::Func(func_index) => {
                     let func_index = func_index.into_u32();
@@ -292,7 +292,7 @@ impl Module {
 
     /// Extracts the optional start function for the build instance.
     fn extract_start_fn(&self, builder: &mut InstanceEntityBuilder) {
-        if let Some(start_fn) = self.start {
+        if let Some(start_fn) = self.header.inner.start {
             builder.set_start(start_fn)
         }
     }
@@ -303,7 +303,7 @@ impl Module {
         mut context: &mut impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
     ) -> Result<(), Error> {
-        for segment in &self.element_segments[..] {
+        for segment in &self.header.inner.element_segments[..] {
             let element = ElementSegment::new(context.as_context_mut(), segment);
             if let ElementSegmentKind::Active(active) = segment.kind() {
                 let dst_index = u32::from(Self::eval_init_expr(
@@ -332,11 +332,9 @@ impl Module {
                         .store
                         .inner
                         .resolve_table_element(&table, &element);
-                    table
-                        .init(dst_index, element, 0, len_items, |func_index| {
-                            builder.get_func(func_index)
-                        })
-                        .map_err(Trap::from)?;
+                    table.init(dst_index, element, 0, len_items, |func_index| {
+                        builder.get_func(func_index)
+                    })?;
                 }
                 // Now drop the active element segment as commanded by the Wasm spec.
                 element.drop_items(&mut context);

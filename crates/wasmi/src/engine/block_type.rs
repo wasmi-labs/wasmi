@@ -1,5 +1,9 @@
-use super::super::{utils::WasmiValueType, FuncTypeIdx, ModuleResources};
-use crate::{core::ValueType, engine::DedupFuncType, Engine};
+use crate::{
+    core::ValueType,
+    engine::DedupFuncType,
+    module::{utils::WasmiValueType, FuncTypeIdx, ModuleHeader},
+    Engine,
+};
 
 /// The type of a Wasm control flow block.
 #[derive(Debug, Copy, Clone)]
@@ -24,7 +28,7 @@ impl BlockType {
     /// # Errors
     ///
     /// If the conversion is not valid or unsupported.
-    pub fn new(block_type: wasmparser::BlockType, res: ModuleResources) -> Self {
+    pub fn new(block_type: wasmparser::BlockType, res: &ModuleHeader) -> Self {
         match block_type {
             wasmparser::BlockType::Empty => Self::empty(),
             wasmparser::BlockType::Type(return_type) => {

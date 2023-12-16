@@ -228,7 +228,7 @@ impl Instance {
     {
         self.get_export(&store, name)
             .and_then(Extern::into_func)
-            .ok_or_else(|| Error::Func(FuncError::ExportedFuncNotFound))?
+            .ok_or_else(|| Error::from(FuncError::ExportedFuncNotFound))?
             .typed::<Params, Results>(store)
     }
 

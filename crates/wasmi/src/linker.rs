@@ -1,5 +1,4 @@
 use crate::{
-    core::Trap,
     func::{FuncEntity, HostFuncEntity, HostFuncTrampolineEntity},
     module::{ImportName, ImportType},
     AsContext,
@@ -512,7 +511,10 @@ impl<T> Linker<T> {
         module: &str,
         name: &str,
         ty: FuncType,
-        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Trap> + Send + Sync + 'static,
+        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Error>
+            + Send
+            + Sync
+            + 'static,
     ) -> Result<&mut Self, LinkerError> {
         let func = HostFuncTrampolineEntity::new(&self.engine, ty, func);
         let key = self.import_key(module, name);
