@@ -202,7 +202,7 @@ impl Engine {
                 let translator = FuncTranslator::new(func_index, module, translation_allocs)?;
                 let translator = ValidatingFuncTranslator::new(validator, translator)?;
                 let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
-                    .translate(|func_entity| self.inner.init_func_v2(compiled_func, func_entity))?;
+                    .translate(|func_entity| self.inner.init_func(compiled_func, func_entity))?;
                 self.inner
                     .recycle_allocs(allocs.translation, allocs.validation);
             }
@@ -210,7 +210,7 @@ impl Engine {
                 let allocs = self.inner.get_translation_allocs();
                 let translator = FuncTranslator::new(func_index, module, allocs)?;
                 let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
-                    .translate(|func_entity| self.inner.init_func_v2(compiled_func, func_entity))?;
+                    .translate(|func_entity| self.inner.init_func(compiled_func, func_entity))?;
                 self.inner.recycle_translation_allocs(allocs);
             }
             (CompilationMode::Lazy, Some(func_to_validate)) => {
@@ -219,13 +219,13 @@ impl Engine {
                 let validator = func_to_validate.into_validator(allocs);
                 let translator = ValidatingFuncTranslator::new(validator, translator)?;
                 let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
-                    .translate(|func_entity| self.inner.init_func_v2(compiled_func, func_entity))?;
+                    .translate(|func_entity| self.inner.init_func(compiled_func, func_entity))?;
                 self.inner.recycle_validation_allocs(allocs.validation);
             }
             (CompilationMode::Lazy, None) => {
                 let translator = LazyFuncTranslator::new(func_index, compiled_func, module);
                 FuncTranslationDriver::new(offset, bytes, translator)?
-                    .translate(|func_entity| self.inner.init_func_v2(compiled_func, func_entity))?;
+                    .translate(|func_entity| self.inner.init_func(compiled_func, func_entity))?;
             }
         }
         Ok(())
@@ -650,7 +650,7 @@ impl EngineInner {
     ///
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
-    fn init_func_v2(&self, compiled_func: CompiledFunc, func_entity: CompiledFuncEntity) {
+    fn init_func(&self, compiled_func: CompiledFunc, func_entity: CompiledFuncEntity) {
         self.res
             .write()
             .code_map
