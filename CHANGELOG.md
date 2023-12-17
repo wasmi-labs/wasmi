@@ -32,6 +32,10 @@ Dates in this file are formattes as `YYYY-MM-DD`.
       when users know that their inputs are valid Wasm binaries.
     - This improves Wasm compilation performance for faster startup times.
 - Added optional lazy Wasm module compilation. (https://github.com/paritytech/wasmi/pull/844)
+    - Until now Wasmi used to eagerly compile all functions when creating a new Wasm module via `Module::new`.
+      This proved to be very costly, especially for very large Wasm modules. And since Wasm compilation became
+      even more costly with the new register-machine execution engine a new approach was needed.
+      Lazy compilation defers costly Wasm compilation until the first use of a Wasm function during execution.
     - This greatly speeds up Wasm compilation performance, especially for bigger Wasm binaries.
     - When paired with the new `Module::new_unchecked` we measured up to 27x faster compilation performance.
     - With `Module::new` (Wasm validation) performance improvements are up to 3x.
