@@ -82,6 +82,10 @@ pub struct Args {
     #[clap(long = "invoke", value_name = "FUNCTION")]
     invoke: Option<String>,
 
+    /// Enable lazy Wasm compilation.
+    #[clap(long = "lazy")]
+    lazy: bool,
+
     /// Enable execution fiel metering with N units of fuel.
     ///
     /// The execution will trap after running out of the N units of fuel.
@@ -112,6 +116,11 @@ impl Args {
     /// Returns the amount of fuel given to the CLI app if any.
     pub fn fuel(&self) -> Option<u64> {
         self.fuel
+    }
+
+    /// Returns `true` if lazy Wasm compilation is enabled.
+    pub fn lazy(&self) -> bool {
+        self.lazy
     }
 
     /// Pre-opens all directories given in `--dir` and returns them for use by the [`WasiCtx`].
