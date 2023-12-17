@@ -25,6 +25,8 @@ impl Context {
     /// - If adding WASI defintions to the linker failed.
     pub fn new(wasm_file: &Path, wasi_ctx: WasiCtx, fuel: Option<u64>) -> Result<Self, Error> {
         let mut config = Config::default();
+        config.wasm_tail_call(true);
+        config.wasm_extended_const(true);
         if fuel.is_some() {
             config.consume_fuel(true);
         }
