@@ -54,8 +54,8 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Removed
 
-- Remove the stack-machine bytecode based Wasmi [`Engine`] backend. (https://github.com/paritytech/wasmi/pull/818)
-    - The new register-machine bytecode based Wasmi [`Engine`] is more promising
+- Remove the stack-machine bytecode based Wasmi `Engine` backend. (https://github.com/paritytech/wasmi/pull/818)
+    - The new register-machine bytecode based Wasmi `Engine` is more promising
       and the Wasmi team does not want to maintain two different engine backends.
 - Updated CI jobs to use `dtolnay/rust-toolchain` instead of `actions-rs` because the latter was deprecated. (https://github.com/paritytech/wasmi/pull/842)
 
