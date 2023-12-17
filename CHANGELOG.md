@@ -8,6 +8,63 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.32.0-beta.0`] - 2023-12-17
+
+**Note:**
+
+- This is the beta of the upcoming `v0.32.0` release.
+  This version is not production ready yet and might contain serious bugs.
+  Please use this only for experimentation or at your own risk.
+- Performance tests indicated that the new register-machine bytecode based
+  Wasmi engine performance is very sensitive to hardware or OS specifics
+  which may lead to very different performance characteristics.
+    - We are working on fixing this until the stable release.
+    - Measurements concluded that execution performance can be equal or sometimes
+        even surpass Wasm3 execution performance.
+
+### Added
+
+- Added new engine based on register-machine bytecode. (https://github.com/paritytech/wasmi/pull/729)
+    - The register-machine Wasmi `Engine` takes roughly 30% longer to compile Wasm to Wasmi bytecode
+      and executes roughly 80-100% faster according to benchmarks conducted so far.
+- Add `Module::new_unchecked` API. (https://github.com/paritytech/wasmi/pull/829)
+    - This allows to compile a Wasm module without Wasm validation which can be useful
+      when users know that their inputs are valid Wasm binaries.
+    - This improves Wasm compilation performance for faster startup times.
+- Add optional lazy Wasm module compilation. (https://github.com/paritytech/wasmi/pull/844)
+    - This greatly speeds up Wasm compilation performance, especially when compiling bigger Wasm binaries.
+    - Especially when paired with the new `Module::new_unchecked` we measured performance improvements of
+      up to 27x faster compilation performance.
+    - With `Module::new` (Wasm validation) performance improvements are up to 3x.
+    - Enable lazy Wasm compilation with:
+      ```rust
+      let mut config = wasmi::Config::default();
+      config.compilation_mode(wasmi::CompilationMode::Lazy);
+      ```
+- Add `Module::validate` API. (https://github.com/paritytech/wasmi/pull/840)
+    - This allows to quickly check if a Wasm binary is valid according to a Wasmi `Engine` config.
+    - Note that this does not translate the Wasm and thus `Module::new` or `Module::new_unchecked`
+      might still fail due to translation errors.
+- CLI: Add `--lazy` argument to enable lazy Wasm compilation. (https://github.com/paritytech/wasmi/pull/849)
+
+### Changed
+
+- CLI: Enable Wasm `tail-calls` and `extend-const` proposals by default. (https://github.com/paritytech/wasmi/pull/849)
+    - We expect those Wasm proposals to be stabilized very soon so we feel safe to enable them by default already.
+
+### Removed
+
+- Remove the stack-machine bytecode based Wasmi [`Engine`] backend. (https://github.com/paritytech/wasmi/pull/818)
+    - The new register-machine bytecode based Wasmi [`Engine`] is more promising
+      and the Wasmi team does not want to maintain two different engine backends.
+- Updated CI jobs to use `dtolnay/rust-toolchain` instead of `actions-rs` because the latter was deprecated. (https://github.com/paritytech/wasmi/pull/842)
+
+### Dev. Note
+
+- Added execution fuzzing and differential fuzzing.
+    - PRs: https://github.com/paritytech/wasmi/pull/832, https://github.com/paritytech/wasmi/pull/833
+    - Both fuzzing strategies are applied on each commit in our CI pipeline.
+
 ## [`0.31.0`] - 2023-07-31
 
 ### Added
