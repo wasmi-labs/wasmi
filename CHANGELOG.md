@@ -24,14 +24,14 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Added
 
-- Added new engine based on register-machine bytecode. (https://github.com/paritytech/wasmi/pull/729)
+- Added a new execution engine based on register-machine bytecode. (https://github.com/paritytech/wasmi/pull/729)
     - The register-machine Wasmi `Engine` takes roughly 30% longer to compile Wasm to Wasmi bytecode
       and executes roughly 80-100% faster according to benchmarks conducted so far.
-- Add `Module::new_unchecked` API. (https://github.com/paritytech/wasmi/pull/829)
+- Added `Module::new_unchecked` API. (https://github.com/paritytech/wasmi/pull/829)
     - This allows to compile a Wasm module without Wasm validation which can be useful
       when users know that their inputs are valid Wasm binaries.
     - This improves Wasm compilation performance for faster startup times.
-- Add optional lazy Wasm module compilation. (https://github.com/paritytech/wasmi/pull/844)
+- Added optional lazy Wasm module compilation. (https://github.com/paritytech/wasmi/pull/844)
     - This greatly speeds up Wasm compilation performance, especially when compiling bigger Wasm binaries.
     - Especially when paired with the new `Module::new_unchecked` we measured performance improvements of
       up to 27x faster compilation performance.
@@ -41,20 +41,20 @@ Dates in this file are formattes as `YYYY-MM-DD`.
       let mut config = wasmi::Config::default();
       config.compilation_mode(wasmi::CompilationMode::Lazy);
       ```
-- Add `Module::validate` API. (https://github.com/paritytech/wasmi/pull/840)
+- Added `Module::validate` API. (https://github.com/paritytech/wasmi/pull/840)
     - This allows to quickly check if a Wasm binary is valid according to a Wasmi `Engine` config.
     - Note that this does not translate the Wasm and thus `Module::new` or `Module::new_unchecked`
       might still fail due to translation errors.
-- CLI: Add `--lazy` argument to enable lazy Wasm compilation. (https://github.com/paritytech/wasmi/pull/849)
+- CLI: Added `--lazy` argument to enable lazy Wasm compilation. (https://github.com/paritytech/wasmi/pull/849)
 
 ### Changed
 
-- CLI: Enable Wasm `tail-calls` and `extend-const` proposals by default. (https://github.com/paritytech/wasmi/pull/849)
+- CLI: Enabled Wasm `tail-calls` and `extend-const` proposals by default. (https://github.com/paritytech/wasmi/pull/849)
     - We expect those Wasm proposals to be stabilized very soon so we feel safe to enable them by default already.
 
 ### Removed
 
-- Remove the stack-machine bytecode based Wasmi `Engine` backend. (https://github.com/paritytech/wasmi/pull/818)
+- Removed the stack-machine bytecode based Wasmi `Engine` backend. (https://github.com/paritytech/wasmi/pull/818)
     - The new register-machine bytecode based Wasmi `Engine` is more promising
       and the Wasmi team does not want to maintain two different engine backends.
 
