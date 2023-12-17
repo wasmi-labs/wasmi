@@ -255,7 +255,7 @@ impl Module {
     /// If Wasm validation for `wasm` fails for the given [`Config`] provided via `engine`.
     ///
     /// [`Config`]: crate::Config
-    pub fn validate(&self, engine: &Engine, wasm: &[u8]) -> Result<(), Error> {
+    pub fn validate(engine: &Engine, wasm: &[u8]) -> Result<(), Error> {
         let mut validator = Validator::new_with_features(engine.config().wasm_features());
         for payload in Parser::new(0).parse_all(wasm) {
             let payload = payload?;
