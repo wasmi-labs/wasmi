@@ -57,13 +57,13 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Remove the stack-machine bytecode based Wasmi `Engine` backend. (https://github.com/paritytech/wasmi/pull/818)
     - The new register-machine bytecode based Wasmi `Engine` is more promising
       and the Wasmi team does not want to maintain two different engine backends.
-- Updated CI jobs to use `dtolnay/rust-toolchain` instead of `actions-rs` because the latter was deprecated. (https://github.com/paritytech/wasmi/pull/842)
 
 ### Dev. Note
 
 - Added execution fuzzing and differential fuzzing.
     - PRs: https://github.com/paritytech/wasmi/pull/832, https://github.com/paritytech/wasmi/pull/833
     - Both fuzzing strategies are applied on each commit in our CI pipeline.
+- Updated CI jobs to use `dtolnay/rust-toolchain` instead of `actions-rs` because the latter was deprecated. (https://github.com/paritytech/wasmi/pull/842)
 
 ## [`0.31.0`] - 2023-07-31
 
