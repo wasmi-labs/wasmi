@@ -181,7 +181,7 @@ fuzz_target!(|cfg_module: ConfiguredModule<ExecConfig>| {
             let errstr_stack = error_stack.to_string();
             if errstr_reg != errstr_stack {
                 panic!(
-                    "wasmi (register) and wasmi (stack) fail with different error codes\n \
+                    "wasmi (register) and wasmi (stack) fail with different error codes\n\
                     |    wasmi (register): {errstr_reg}\n\
                     |    wasmi (stack)   : {errstr_stack}",
                 )
