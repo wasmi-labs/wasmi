@@ -210,7 +210,7 @@ pub enum CompilationMode {
     ///
     /// This configuration might be removed in the future since it results in
     /// partial Wasm module validation which is a controversial topic.
-    /// Read more here: https://github.com/WebAssembly/design/issues/1464
+    /// Read more here: <https://github.com/WebAssembly/design/issues/1464>
     Lazy,
 }
 
