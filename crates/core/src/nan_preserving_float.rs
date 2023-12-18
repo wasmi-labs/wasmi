@@ -144,6 +144,9 @@ macro_rules! float {
 
         impl ::core::fmt::Debug for $for {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+                if self.is_nan() {
+                    return core::write!(f, "nan:0x{:X?}", self.to_bits())
+                }
                 <$is as ::core::fmt::Debug>::fmt(
                     &<$is as ::core::convert::From<Self>>::from(*self),
                     f,
@@ -153,6 +156,9 @@ macro_rules! float {
 
         impl ::core::fmt::Display for $for {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+                if self.is_nan() {
+                    return core::write!(f, "nan:0x{:X?}", self.to_bits())
+                }
                 <$is as ::core::fmt::Display>::fmt(
                     &<$is as ::core::convert::From<Self>>::from(*self),
                     f,
