@@ -6,7 +6,6 @@ use assert_matches::assert_matches;
 use wasmi::{
     errors::{ErrorKind, FuncError},
     Engine,
-    Error,
     Func,
     FuncType,
     Store,
@@ -428,8 +427,9 @@ fn dynamic_type_check_works() {
     assert_matches!(
         identity
             .call(&mut store, &[], core::slice::from_mut(&mut result))
-            .map_err(Error::into_kind),
-        Err(ErrorKind::Func(FuncError::MismatchingParameterLen))
+            .unwrap_err()
+            .kind(),
+        ErrorKind::Func(FuncError::MismatchingParameterLen)
     );
     // Case: Too many inputs given to function.
     assert_matches!(
@@ -439,15 +439,17 @@ fn dynamic_type_check_works() {
                 &[Value::I32(0), Value::I32(1)],
                 core::slice::from_mut(&mut result)
             )
-            .map_err(Error::into_kind),
-        Err(ErrorKind::Func(FuncError::MismatchingParameterLen))
+            .unwrap_err()
+            .kind(),
+        ErrorKind::Func(FuncError::MismatchingParameterLen)
     );
     // Case: Too few outputs given to function.
     assert_matches!(
         identity
             .call(&mut store, &[Value::I32(0)], &mut [],)
-            .map_err(Error::into_kind),
-        Err(ErrorKind::Func(FuncError::MismatchingResultLen))
+            .unwrap_err()
+            .kind(),
+        ErrorKind::Func(FuncError::MismatchingResultLen)
     );
     // Case: Too many outputs given to function.
     assert_matches!(
@@ -457,8 +459,9 @@ fn dynamic_type_check_works() {
                 &[Value::I32(0)],
                 &mut [Value::I32(0), Value::I32(1)],
             )
-            .map_err(Error::into_kind),
-        Err(ErrorKind::Func(FuncError::MismatchingResultLen))
+            .unwrap_err()
+            .kind(),
+        ErrorKind::Func(FuncError::MismatchingResultLen)
     );
     // Case: Mismatching type given as input to function.
     for input in &[
@@ -473,8 +476,9 @@ fn dynamic_type_check_works() {
                     core::slice::from_ref(input),
                     core::slice::from_mut(&mut result)
                 )
-                .map_err(Error::into_kind),
-            Err(ErrorKind::Func(FuncError::MismatchingParameterType))
+                .unwrap_err()
+                .kind(),
+            ErrorKind::Func(FuncError::MismatchingParameterType)
         );
     }
     // Case: Allow for incorrect result type.
@@ -492,44 +496,38 @@ fn static_type_check_works() {
     let identity = Func::wrap(&mut store, |value: i32| value);
     // Case: Too few inputs given to function.
     assert_matches!(
-        identity
-            .typed::<(), i32>(&mut store)
-            .map_err(Error::into_kind),
-        Err(ErrorKind::Func(FuncError::MismatchingParameterLen))
+        identity.typed::<(), i32>(&mut store).unwrap_err().kind(),
+        ErrorKind::Func(FuncError::MismatchingParameterLen)
     );
     // Case: Too many inputs given to function.
     assert_matches!(
         identity
             .typed::<(i32, i32), i32>(&mut store)
-            .map_err(Error::into_kind),
-        Err(ErrorKind::Func(FuncError::MismatchingParameterLen))
+            .unwrap_err()
+            .kind(),
+        ErrorKind::Func(FuncError::MismatchingParameterLen)
     );
     // Case: Too few results given to function.
     assert_matches!(
-        identity
-            .typed::<i32, ()>(&mut store)
-            .map_err(Error::into_kind),
-        Err(ErrorKind::Func(FuncError::MismatchingResultLen))
+        identity.typed::<i32, ()>(&mut store).unwrap_err().kind(),
+        ErrorKind::Func(FuncError::MismatchingResultLen)
     );
     // Case: Too many results given to function.
     assert_matches!(
         identity
             .typed::<i32, (i32, i32)>(&mut store)
-            .map_err(Error::into_kind),
-        Err(ErrorKind::Func(FuncError::MismatchingResultLen))
+            .unwrap_err()
+            .kind(),
+        ErrorKind::Func(FuncError::MismatchingResultLen)
     );
     // Case: Mismatching type given as input to function.
     assert_matches!(
-        identity
-            .typed::<i64, i32>(&mut store)
-            .map_err(Error::into_kind),
-        Err(ErrorKind::Func(FuncError::MismatchingParameterType))
+        identity.typed::<i64, i32>(&mut store).unwrap_err().kind(),
+        ErrorKind::Func(FuncError::MismatchingParameterType)
     );
     // Case: Mismatching type given as output of function.
     assert_matches!(
-        identity
-            .typed::<i32, i64>(&mut store)
-            .map_err(Error::into_kind),
-        Err(ErrorKind::Func(FuncError::MismatchingResultType))
+        identity.typed::<i32, i64>(&mut store).unwrap_err().kind(),
+        ErrorKind::Func(FuncError::MismatchingResultType)
     );
 }

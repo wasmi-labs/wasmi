@@ -58,19 +58,9 @@ impl Error {
         Self::from_kind(ErrorKind::I32ExitStatus(status))
     }
 
-    /// Converts `self` into the underlying [`ErrorKind`].
-    pub fn into_kind(self) -> ErrorKind {
-        *self.kind
-    }
-
     /// Returns the [`ErrorKind`] of the [`Error`].
     pub fn kind(&self) -> &ErrorKind {
         &self.kind
-    }
-
-    /// Returns the [`ErrorKind`] of the [`Error`].
-    pub fn kind_mut(&mut self) -> &mut ErrorKind {
-        &mut self.kind
     }
 
     /// Returns a reference to [`TrapCode`] if [`Error`] is a [`TrapCode`].
