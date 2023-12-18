@@ -18,6 +18,7 @@ trait DifferentialTarget: Sized {
     /// Sets up the store and exported functions for the backend if possible.
     fn setup(wasm: &[u8]) -> Option<Self>;
 
+    /// Calls the exported function with `name` and returns the result.
     fn call(&mut self, name: &str) -> Result<&[Self::Value], Self::Error>;
 }
 
