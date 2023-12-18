@@ -36,7 +36,7 @@ impl Context {
             config.consume_fuel(true);
         }
         let mode = match lazy {
-            true => CompilationMode::Lazy,
+            true => CompilationMode::LazyTranslation,
             false => CompilationMode::Eager,
         };
         config.compilation_mode(mode);

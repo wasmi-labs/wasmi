@@ -145,7 +145,7 @@ fn bench_translate_for(
                 config.compilation_mode(wasmi::CompilationMode::Eager);
             }
             CompilationMode::Lazy => {
-                config.compilation_mode(wasmi::CompilationMode::Lazy);
+                config.compilation_mode(wasmi::CompilationMode::LazyTranslation);
             }
         }
         let create_module = match validation {

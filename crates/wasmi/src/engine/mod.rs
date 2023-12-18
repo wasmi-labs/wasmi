@@ -241,7 +241,7 @@ impl Engine {
                     .translate(|func_entity| self.inner.init_func(compiled_func, func_entity))?;
                 self.inner.recycle_translation_allocs(allocs);
             }
-            (CompilationMode::Lazy, Some(func_to_validate)) => {
+            (CompilationMode::LazyTranslation, Some(func_to_validate)) => {
                 let allocs = self.inner.get_validation_allocs();
                 let translator = LazyFuncTranslator::new(func_index, compiled_func, module);
                 let validator = func_to_validate.into_validator(allocs);
@@ -250,7 +250,7 @@ impl Engine {
                     .translate(|func_entity| self.inner.init_func(compiled_func, func_entity))?;
                 self.inner.recycle_validation_allocs(allocs.validation);
             }
-            (CompilationMode::Lazy, None) => {
+            (CompilationMode::LazyTranslation, None) => {
                 let translator = LazyFuncTranslator::new(func_index, compiled_func, module);
                 FuncTranslationDriver::new(offset, bytes, translator)?
                     .translate(|func_entity| self.inner.init_func(compiled_func, func_entity))?;

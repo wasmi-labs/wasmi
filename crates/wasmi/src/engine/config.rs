@@ -202,8 +202,8 @@ pub enum CompilationMode {
     /// The Wasm code is compiled eagerly to `wasmi` bytecode.
     #[default]
     Eager,
-    /// The Wasm code is compiled lazily on use to `wasmi` bytecode.
-    Lazy,
+    /// The Wasm code is validated eagerly and translated lazily on first use.
+    LazyTranslation,
 }
 
 impl Default for Config {
