@@ -62,8 +62,16 @@ use crate::{
     FuncType,
 };
 use alloc::vec::Vec;
+use core::fmt;
 use wasmi_core::{TrapCode, UntypedValue, ValueType};
-use wasmparser::{BinaryReaderError, FuncValidatorAllocations, MemArg, VisitOperator};
+use wasmparser::{
+    BinaryReaderError,
+    FuncToValidate,
+    FuncValidatorAllocations,
+    MemArg,
+    ValidatorResources,
+    VisitOperator,
+};
 
 /// Reusable allocations of a [`FuncTranslator`].
 #[derive(Debug, Default)]
@@ -318,7 +326,6 @@ where
 }
 
 /// A lazy Wasm function translator that defers translation when the function is first used.
-#[derive(Debug)]
 pub struct LazyFuncTranslator {
     /// The index of the lazily compiled function within its module.
     func_idx: FuncIdx,
@@ -326,15 +333,34 @@ pub struct LazyFuncTranslator {
     compiled_func: CompiledFunc,
     /// The Wasm module header information used for translation.
     module: ModuleHeader,
+    /// Optional information about lazy Wasm validation.
+    func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+}
+
+impl fmt::Debug for LazyFuncTranslator {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("LazyFuncTranslator")
+            .field("func_idx", &self.func_idx)
+            .field("compiled_func", &self.compiled_func)
+            .field("module", &self.module)
+            .field("validate", &self.func_to_validate.is_some())
+            .finish()
+    }
 }
 
 impl LazyFuncTranslator {
     /// Create a new [`LazyFuncTranslator`].
-    pub fn new(func_idx: FuncIdx, compiled_func: CompiledFunc, module: ModuleHeader) -> Self {
+    pub fn new(
+        func_idx: FuncIdx,
+        compiled_func: CompiledFunc,
+        module: ModuleHeader,
+        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+    ) -> Self {
         Self {
             func_idx,
             compiled_func,
             module,
+            func_to_validate,
         }
     }
 }
@@ -352,7 +378,13 @@ impl<'parser> WasmTranslator<'parser> for LazyFuncTranslator {
                     self.module.engine()
                 )
             })
-            .init_lazy_func(self.func_idx, self.compiled_func, bytes, &self.module);
+            .init_lazy_func(
+                self.func_idx,
+                self.compiled_func,
+                bytes,
+                &self.module,
+                self.func_to_validate.take(),
+            );
         Ok(true)
     }
 

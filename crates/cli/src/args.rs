@@ -1,5 +1,5 @@
 use anyhow::{Context, Error, Result};
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use std::{
     ffi::OsStr,
     net::SocketAddr,
@@ -83,8 +83,8 @@ pub struct Args {
     invoke: Option<String>,
 
     /// Enable lazy Wasm compilation.
-    #[clap(long = "lazy")]
-    lazy: bool,
+    #[clap(long = "compilation-mode", value_enum, default_value_t=CompilationMode::Eager)]
+    compilation_mode: CompilationMode,
 
     /// Enable execution fiel metering with N units of fuel.
     ///
@@ -95,6 +95,25 @@ pub struct Args {
     /// Arguments given to the Wasm module or the invoked function.
     #[clap(value_name = "ARGS")]
     func_args: Vec<String>,
+}
+
+/// The chosen Wasmi compilation mode.
+#[derive(Debug, Default, Copy, Clone, ValueEnum)]
+enum CompilationMode {
+    #[default]
+    Eager,
+    LazyTranslation,
+    Lazy,
+}
+
+impl From<CompilationMode> for wasmi::CompilationMode {
+    fn from(mode: CompilationMode) -> Self {
+        match mode {
+            CompilationMode::Eager => Self::Eager,
+            CompilationMode::LazyTranslation => Self::LazyTranslation,
+            CompilationMode::Lazy => Self::Lazy,
+        }
+    }
 }
 
 impl Args {
@@ -119,8 +138,8 @@ impl Args {
     }
 
     /// Returns `true` if lazy Wasm compilation is enabled.
-    pub fn lazy(&self) -> bool {
-        self.lazy
+    pub fn compilation_mode(&self) -> wasmi::CompilationMode {
+        self.compilation_mode.into()
     }
 
     /// Pre-opens all directories given in `--dir` and returns them for use by the [`WasiCtx`].

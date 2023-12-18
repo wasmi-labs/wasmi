@@ -27,7 +27,7 @@ impl Context {
         wasm_file: &Path,
         wasi_ctx: WasiCtx,
         fuel: Option<u64>,
-        lazy: bool,
+        compilation_mode: CompilationMode,
     ) -> Result<Self, Error> {
         let mut config = Config::default();
         config.wasm_tail_call(true);
@@ -35,11 +35,7 @@ impl Context {
         if fuel.is_some() {
             config.consume_fuel(true);
         }
-        let mode = match lazy {
-            true => CompilationMode::Lazy,
-            false => CompilationMode::Eager,
-        };
-        config.compilation_mode(mode);
+        config.compilation_mode(compilation_mode);
         let engine = wasmi::Engine::new(&config);
         let wasm_bytes = utils::read_wasm_or_wat(wasm_file)?;
         let module = wasmi::Module::new(&engine, &mut &wasm_bytes[..]).map_err(|error| {
