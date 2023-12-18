@@ -10,11 +10,11 @@ use wasmi as wasmi_reg;
 use wasmi_reg::core::ValueType;
 
 /// The context of a differential fuzzing backend.
-struct Context<Store, T> {
+struct Context<Store, Func> {
     /// The store of the differential fuzzing backend.
     store: Store,
     /// A map of all exported functions and their names.
-    funcs: BTreeMap<Box<str>, T>,
+    funcs: BTreeMap<Box<str>, Func>,
 }
 
 /// Trait implemented by differential fuzzing backends.
