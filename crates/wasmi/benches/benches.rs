@@ -10,7 +10,18 @@ use self::bench::{
 use bench::bench_config;
 use core::{slice, time::Duration};
 use criterion::{criterion_group, criterion_main, Bencher, Criterion};
-use wasmi::{core::TrapCode, Engine, Extern, Func, Linker, Memory, Module, Store, Value};
+use wasmi::{
+    core::TrapCode,
+    CompilationMode,
+    Engine,
+    Extern,
+    Func,
+    Linker,
+    Memory,
+    Module,
+    Store,
+    Value,
+};
 use wasmi_core::{Pages, ValueType, F32, F64};
 
 criterion_group!(
@@ -106,14 +117,6 @@ enum Validation {
     Unchecked,
 }
 
-/// How to translate a Wasm module.
-enum CompilationMode {
-    /// Eagerly compiles Wasm function bodies.
-    Eager,
-    /// Lazily compiles Wasm function bodies.
-    Lazy,
-}
-
 fn bench_translate_for(
     c: &mut Criterion,
     name: &str,
@@ -128,6 +131,7 @@ fn bench_translate_for(
     };
     let mode_id = match mode {
         CompilationMode::Eager => "eager",
+        CompilationMode::LazyTranslation => "lazy-translation",
         CompilationMode::Lazy => "lazy",
     };
     let fuel_id = match fuel_metering {
@@ -140,14 +144,7 @@ fn bench_translate_for(
         if matches!(fuel_metering, FuelMetering::Enabled) {
             config.consume_fuel(true);
         }
-        match mode {
-            CompilationMode::Eager => {
-                config.compilation_mode(wasmi::CompilationMode::Eager);
-            }
-            CompilationMode::Lazy => {
-                config.compilation_mode(wasmi::CompilationMode::LazyTranslation);
-            }
-        }
+        config.compilation_mode(mode);
         let create_module = match validation {
             Validation::Checked => {
                 |engine: &Engine, bytes: &[u8]| -> Module { Module::new(engine, bytes).unwrap() }
@@ -187,6 +184,14 @@ fn bench_translate_for_all(c: &mut Criterion, name: &str, path: &str) {
         name,
         path,
         Validation::Checked,
+        CompilationMode::LazyTranslation,
+        FuelMetering::Disabled,
+    );
+    bench_translate_for(
+        c,
+        name,
+        path,
+        Validation::Checked,
         CompilationMode::Lazy,
         FuelMetering::Disabled,
     );
@@ -196,22 +201,6 @@ fn bench_translate_for_all(c: &mut Criterion, name: &str, path: &str) {
         path,
         Validation::Unchecked,
         CompilationMode::Eager,
-        FuelMetering::Disabled,
-    );
-    bench_translate_for(
-        c,
-        name,
-        path,
-        Validation::Unchecked,
-        CompilationMode::Eager,
-        FuelMetering::Enabled,
-    );
-    bench_translate_for(
-        c,
-        name,
-        path,
-        Validation::Unchecked,
-        CompilationMode::Lazy,
         FuelMetering::Disabled,
     );
 }
