@@ -47,6 +47,16 @@ impl Error {
         Self::from_kind(ErrorKind::Message(message.into().into_boxed_str()))
     }
 
+    /// Creates a custom [`HostError`].
+    #[inline]
+    #[cold]
+    pub fn host<E>(host_error: E) -> Self
+    where
+        E: HostError,
+    {
+        Self::from_kind(ErrorKind::Host(Box::new(host_error)))
+    }
+
     /// Creates a new `Error` representing an explicit program exit with a classic `i32` exit status value.
     ///
     /// # Note
