@@ -160,6 +160,67 @@ impl DifferentialTarget for WasmiStack {
     }
 }
 
+/// Differential fuzzing backend for Wasmtime.
+struct Wasmtime {
+    store: wasmtime::Store<wasmtime::StoreLimits>,
+    instance: wasmtime::Instance,
+    params: Vec<wasmtime::Val>,
+    results: Vec<wasmtime::Val>,
+}
+
+impl Wasmtime {
+    fn type_to_value(ty: wasmtime::ValType) -> wasmtime::Val {
+        match ty {
+            wasmtime::ValType::I32 => wasmtime::Val::I32(1),
+            wasmtime::ValType::I64 => wasmtime::Val::I64(1),
+            wasmtime::ValType::F32 => wasmtime::Val::F32(1.0_f32.to_bits()),
+            wasmtime::ValType::F64 => wasmtime::Val::F64(1.0_f64.to_bits()),
+            unsupported => panic!(
+                "execution fuzzing does not support reference types, yet but found: {unsupported:?}"
+            ),
+        }
+    }
+}
+
+impl DifferentialTarget for Wasmtime {
+    type Value = wasmtime::Val;
+    type Error = wasmtime::Error;
+
+    fn call(&mut self, name: &str) -> Result<&[Self::Value], Self::Error> {
+        let Some(func) = self.instance.get_func(&mut self.store, name) else {
+            panic!("wasmtime is missing exported function {name} that exists in wasmi (register)")
+        };
+        let ty = func.ty(&self.store);
+        self.params.clear();
+        self.results.clear();
+        self.params.extend(ty.params().map(Self::type_to_value));
+        self.results.extend(ty.results().map(Self::type_to_value));
+        func.call(&mut self.store, &self.params[..], &mut self.results[..])?;
+        Ok(&self.results[..])
+    }
+
+    fn setup(wasm: &[u8]) -> Option<Self> {
+        use wasmtime::{Engine, Linker, Module, Store, StoreLimitsBuilder};
+        let engine = Engine::default();
+        let linker = Linker::new(&engine);
+        let limiter = StoreLimitsBuilder::new()
+            .memory_size(1000 * 0x10000)
+            .build();
+        let mut store = Store::new(&engine, limiter);
+        store.limiter(|lim| lim);
+        let module = Module::new(store.engine(), wasm).unwrap();
+        let Ok(instance) = linker.instantiate(&mut store, &module) else {
+            return None;
+        };
+        Some(Self {
+            store,
+            instance,
+            params: Vec::new(),
+            results: Vec::new(),
+        })
+    }
+}
+
 fuzz_target!(|cfg_module: ConfiguredModule<ExecConfig>| {
     let mut smith_module = cfg_module.module;
     // Note: We cannot use built-in fuel metering of the different engines since that
@@ -197,11 +258,35 @@ fuzz_target!(|cfg_module: ConfiguredModule<ExecConfig>| {
                 .map(FuzzValue::from)
                 .collect::<Vec<FuzzValue>>();
             if results_reg != results_stack {
-                panic!(
-                    "wasmi (register) and wasmi (stack) disagree with function execution: fn {name}\n\
-                    |    wasmi (register): {results_reg:?}\n\
-                    |    wasmi (stack)   : {results_stack:?}\n"
-                )
+                let Some(mut context_wasmtime) = <Wasmtime as DifferentialTarget>::setup(&wasm[..])
+                else {
+                    panic!("failed to setup Wasmtime fuzzing");
+                };
+                let Ok(results_wasmtime) = context_wasmtime.call(&name) else {
+                    panic!("failed to execute function {name} via Wasmtime")
+                };
+                let results_wasmtime = results_wasmtime
+                    .iter()
+                    .map(FuzzValue::from)
+                    .collect::<Vec<FuzzValue>>();
+                let text = match (
+                    results_wasmtime == results_reg,
+                    results_wasmtime == results_stack,
+                ) {
+                    (true, false) => "Wasmi (stack) disagrees with Wasmi (register) and Wasmtime",
+                    (false, true) => "Wasmi (register) disagrees with Wasmi (stack) and Wasmtime",
+                    (false, false) => "Wasmi (register), Wasmi (stack) and Wasmtime disagree",
+                    (true, true) => unreachable!("results_reg and results_stack differ"),
+                };
+                println!(
+                    "{text} for function execution: {name}\n\
+                    |    Wasmi (register): {results_reg:?}\n\
+                    |    Wasmi (stack)   : {results_stack:?}\n\
+                    |    Wasmtime        : {results_wasmtime:?}"
+                );
+                if results_wasmtime != results_reg {
+                    panic!()
+                }
             }
         }
     }
@@ -258,6 +343,18 @@ impl<'a> From<&'a wasmi_stack::Value> for FuzzValue {
             wasmi_stack::Value::I64(value) => Self::I64(*value),
             wasmi_stack::Value::F32(value) => Self::F32(F32::from_bits(value.to_bits())),
             wasmi_stack::Value::F64(value) => Self::F64(F64::from_bits(value.to_bits())),
+            _ => panic!("unsupported value type"),
+        }
+    }
+}
+
+impl<'a> From<&'a wasmtime::Val> for FuzzValue {
+    fn from(value: &wasmtime::Val) -> Self {
+        match value {
+            wasmtime::Val::I32(value) => Self::I32(*value),
+            wasmtime::Val::I64(value) => Self::I64(*value),
+            wasmtime::Val::F32(value) => Self::F32(F32::from_bits(*value)),
+            wasmtime::Val::F64(value) => Self::F64(F64::from_bits(*value)),
             _ => panic!("unsupported value type"),
         }
     }
