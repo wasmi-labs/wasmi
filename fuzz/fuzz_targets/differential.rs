@@ -59,9 +59,9 @@ impl DifferentialTarget for WasmiRegister {
         self.params.clear();
         self.results.clear();
         self.params
-            .extend(ty.params().iter().map(WasmiRegister::type_to_value));
+            .extend(ty.params().iter().map(Self::type_to_value));
         self.results
-            .extend(ty.results().iter().map(WasmiRegister::type_to_value));
+            .extend(ty.results().iter().map(Self::type_to_value));
         func.call(&mut self.store, &self.params[..], &mut self.results[..])?;
         Ok(&self.results[..])
     }
@@ -128,9 +128,9 @@ impl DifferentialTarget for WasmiStack {
         self.params.clear();
         self.results.clear();
         self.params
-            .extend(ty.params().iter().map(WasmiStack::type_to_value));
+            .extend(ty.params().iter().map(Self::type_to_value));
         self.results
-            .extend(ty.results().iter().map(WasmiStack::type_to_value));
+            .extend(ty.results().iter().map(Self::type_to_value));
         func.call(&mut self.store, &self.params[..], &mut self.results[..])?;
         Ok(&self.results[..])
     }
