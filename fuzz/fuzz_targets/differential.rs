@@ -14,7 +14,7 @@ struct Context<Store, T> {
     /// The store of the differential fuzzing backend.
     store: Store,
     /// A map of all exported functions and their names.
-    funcs: BTreeMap<String, T>,
+    funcs: BTreeMap<Box<str>, T>,
 }
 
 /// Trait implemented by differential fuzzing backends.
@@ -67,7 +67,7 @@ impl DifferentialTarget for WasmiRegister {
         let Ok(instance) = preinstance.ensure_no_start(&mut store) else {
             return None;
         };
-        let mut funcs: BTreeMap<String, Func> = BTreeMap::new();
+        let mut funcs: BTreeMap<Box<str>, Func> = BTreeMap::new();
         let exports = instance.exports(&store);
         for e in exports {
             let name = e.name().to_string();
@@ -75,7 +75,7 @@ impl DifferentialTarget for WasmiRegister {
                 // Export is no function which we cannot execute, therefore we ignore it.
                 continue;
             };
-            funcs.insert(name, func);
+            funcs.insert(name.into(), func);
         }
         Some(Context { store, funcs })
     }
@@ -117,7 +117,7 @@ impl DifferentialTarget for WasmiStack {
         let Ok(instance) = preinstance.ensure_no_start(&mut store) else {
             return None;
         };
-        let mut funcs: BTreeMap<String, Func> = BTreeMap::new();
+        let mut funcs: BTreeMap<Box<str>, Func> = BTreeMap::new();
         let exports = instance.exports(&store);
         for e in exports {
             let name = e.name().to_string();
@@ -125,7 +125,7 @@ impl DifferentialTarget for WasmiStack {
                 // Export is no function which we cannot execute, therefore we ignore it.
                 continue;
             };
-            funcs.insert(name, func);
+            funcs.insert(name.into(), func);
         }
         Some(Context { store, funcs })
     }
