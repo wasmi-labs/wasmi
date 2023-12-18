@@ -3,56 +3,70 @@
 mod utils;
 
 use libfuzzer_sys::fuzz_target;
-use std::collections::BTreeMap;
 use utils::{ty_to_val, ExecConfig};
 use wasm_smith::ConfiguredModule;
 use wasmi as wasmi_reg;
-use wasmi_reg::core::ValueType;
-
-/// The context of a differential fuzzing backend.
-struct Context<Store, Func> {
-    /// The store of the differential fuzzing backend.
-    store: Store,
-    /// A map of all exported functions and their names.
-    funcs: BTreeMap<Box<str>, Func>,
-}
+use wasmi_reg::core::{F32, F64};
 
 /// Trait implemented by differential fuzzing backends.
-trait DifferentialTarget {
-    /// The store type of the backend.
-    type Store;
-    /// The function type of the backend.
-    type Func;
+trait DifferentialTarget: Sized {
     /// The value type of the backend.
     type Value;
-
-    /// Returns a default initialized value for the given type.
-    ///
-    /// # ToDo
-    ///
-    /// We actually want the bytes buffer given by the `Arbitrary` crate to influence
-    /// the values chosen for the resulting [`Value`]. Also we ideally want to produce
-    /// zeroed, positive, negative and NaN values for their respective types.
-    fn type_to_value(ty: &ValueType) -> Self::Value;
+    /// The error type of the backend.
+    type Error;
 
     /// Sets up the store and exported functions for the backend if possible.
-    fn setup(wasm: &[u8]) -> Option<Context<Self::Store, Self::Func>>;
+    fn setup(wasm: &[u8]) -> Option<Self>;
+
+    fn call(&mut self, name: &str) -> Result<&[Self::Value], Self::Error>;
 }
 
 /// Differential fuzzing backend for the register-machine `wasmi`.
-struct WasmiRegister;
+struct WasmiRegister {
+    store: wasmi_reg::Store<wasmi_reg::StoreLimits>,
+    instance: wasmi_reg::Instance,
+    params: Vec<wasmi_reg::Value>,
+    results: Vec<wasmi_reg::Value>,
+}
 
-impl DifferentialTarget for WasmiRegister {
-    type Store = wasmi_reg::Store<wasmi_reg::StoreLimits>;
-    type Func = wasmi_reg::Func;
-    type Value = wasmi_reg::Value;
-
-    fn type_to_value(ty: &ValueType) -> Self::Value {
-        ty_to_val(ty)
+impl WasmiRegister {
+    /// Returns the names of all exported functions.
+    pub fn exported_funcs(&self) -> Vec<Box<str>> {
+        self.instance
+            .exports(&self.store)
+            .filter(|e| matches!(e.ty(&self.store), wasmi_reg::ExternType::Func(_)))
+            .map(|e| e.name().into())
+            .collect()
     }
 
-    fn setup(wasm: &[u8]) -> Option<Context<Self::Store, Self::Func>> {
-        use wasmi_reg::{Engine, Func, Linker, Module, Store, StoreLimitsBuilder};
+    fn type_to_value(ty: &wasmi_reg::core::ValueType) -> wasmi_reg::Value {
+        ty_to_val(ty)
+    }
+}
+
+impl DifferentialTarget for WasmiRegister {
+    type Value = wasmi_reg::Value;
+    type Error = wasmi_reg::Error;
+
+    fn call(&mut self, name: &str) -> Result<&[Self::Value], Self::Error> {
+        let Some(func) = self.instance.get_func(&self.store, name) else {
+            panic!(
+                "wasmi (register) is missing exported function {name} that exists in wasmi (register)"
+            )
+        };
+        let ty = func.ty(&self.store);
+        self.params.clear();
+        self.results.clear();
+        self.params
+            .extend(ty.params().iter().map(WasmiRegister::type_to_value));
+        self.results
+            .extend(ty.results().iter().map(WasmiRegister::type_to_value));
+        func.call(&mut self.store, &self.params[..], &mut self.results[..])?;
+        Ok(&self.results[..])
+    }
+
+    fn setup(wasm: &[u8]) -> Option<Self> {
+        use wasmi_reg::{Engine, Linker, Module, Store, StoreLimitsBuilder};
         let engine = Engine::default();
         let linker = Linker::new(&engine);
         let limiter = StoreLimitsBuilder::new()
@@ -67,29 +81,26 @@ impl DifferentialTarget for WasmiRegister {
         let Ok(instance) = preinstance.ensure_no_start(&mut store) else {
             return None;
         };
-        let mut funcs: BTreeMap<Box<str>, Func> = BTreeMap::new();
-        let exports = instance.exports(&store);
-        for e in exports {
-            let name = e.name().to_string();
-            let Some(func) = e.into_func() else {
-                // Export is no function which we cannot execute, therefore we ignore it.
-                continue;
-            };
-            funcs.insert(name.into(), func);
-        }
-        Some(Context { store, funcs })
+        Some(Self {
+            store,
+            instance,
+            params: Vec::new(),
+            results: Vec::new(),
+        })
     }
 }
 
 /// Differential fuzzing backend for the stack-machine `wasmi`.
-struct WasmiStack;
+struct WasmiStack {
+    store: wasmi_stack::Store<wasmi_stack::StoreLimits>,
+    instance: wasmi_stack::Instance,
+    params: Vec<wasmi_stack::Value>,
+    results: Vec<wasmi_stack::Value>,
+}
 
-impl DifferentialTarget for WasmiStack {
-    type Store = wasmi_stack::Store<wasmi_stack::StoreLimits>;
-    type Func = wasmi_stack::Func;
-    type Value = wasmi_stack::Value;
-
-    fn type_to_value(ty: &ValueType) -> Self::Value {
+impl WasmiStack {
+    fn type_to_value(ty: &wasmi_stack::core::ValueType) -> wasmi_stack::Value {
+        use wasmi_stack::core::ValueType;
         match ty {
             ValueType::I32 => wasmi_stack::Value::I32(1),
             ValueType::I64 => wasmi_stack::Value::I64(1),
@@ -100,9 +111,31 @@ impl DifferentialTarget for WasmiStack {
             ),
         }
     }
+}
 
-    fn setup(wasm: &[u8]) -> Option<Context<Self::Store, Self::Func>> {
-        use wasmi_stack::{Engine, Func, Linker, Module, Store, StoreLimitsBuilder};
+impl DifferentialTarget for WasmiStack {
+    type Value = wasmi_stack::Value;
+    type Error = wasmi_stack::Error;
+
+    fn call(&mut self, name: &str) -> Result<&[Self::Value], Self::Error> {
+        let Some(func) = self.instance.get_func(&self.store, name) else {
+            panic!(
+                "wasmi (stack) is missing exported function {name} that exists in wasmi (register)"
+            )
+        };
+        let ty = func.ty(&self.store);
+        self.params.clear();
+        self.results.clear();
+        self.params
+            .extend(ty.params().iter().map(WasmiStack::type_to_value));
+        self.results
+            .extend(ty.results().iter().map(WasmiStack::type_to_value));
+        func.call(&mut self.store, &self.params[..], &mut self.results[..])?;
+        Ok(&self.results[..])
+    }
+
+    fn setup(wasm: &[u8]) -> Option<Self> {
+        use wasmi_stack::{Engine, Linker, Module, Store, StoreLimitsBuilder};
         let engine = Engine::default();
         let linker = Linker::new(&engine);
         let limiter = StoreLimitsBuilder::new()
@@ -117,17 +150,12 @@ impl DifferentialTarget for WasmiStack {
         let Ok(instance) = preinstance.ensure_no_start(&mut store) else {
             return None;
         };
-        let mut funcs: BTreeMap<Box<str>, Func> = BTreeMap::new();
-        let exports = instance.exports(&store);
-        for e in exports {
-            let name = e.name().to_string();
-            let Some(func) = e.into_func() else {
-                // Export is no function which we cannot execute, therefore we ignore it.
-                continue;
-            };
-            funcs.insert(name.into(), func);
-        }
-        Some(Context { store, funcs })
+        Some(Self {
+            store,
+            instance,
+            params: Vec::new(),
+            results: Vec::new(),
+        })
     }
 }
 
@@ -145,60 +173,93 @@ fuzz_target!(|cfg_module: ConfiguredModule<ExecConfig>| {
     let Some(mut context_stack) = <WasmiStack as DifferentialTarget>::setup(&wasm[..]) else {
         panic!("wasmi (register) succeeded to create Context while wasmi (stack) failed");
     };
-    assert_eq!(
-        context_reg.funcs.len(),
-        context_stack.funcs.len(),
-        "wasmi (register) and wasmi (stack) found a different number of exported functions"
-    );
-
-    let mut params_reg = Vec::new();
-    let mut params_stack = Vec::new();
-    let mut results_reg = Vec::new();
-    let mut results_stack = Vec::new();
-
-    for (name, func_reg) in &context_reg.funcs {
-        params_reg.clear();
-        results_reg.clear();
-        params_stack.clear();
-        results_stack.clear();
-        let ty = func_reg.ty(&context_reg.store);
-        params_reg.extend(ty.params().iter().map(WasmiRegister::type_to_value));
-        results_reg.extend(ty.results().iter().map(WasmiRegister::type_to_value));
-        let result_reg = func_reg.call(
-            &mut context_reg.store,
-            &params_reg[..],
-            &mut results_reg[..],
-        );
-        let func_stack = context_stack.funcs.get(name).unwrap_or_else(|| {
-            panic!(
-                "wasmi (stack) is missing exported function {name} that exists in wasmi (register)"
-            )
-        });
-        params_stack.extend(ty.params().iter().map(WasmiStack::type_to_value));
-        results_stack.extend(ty.results().iter().map(WasmiStack::type_to_value));
-        let result_stack = func_stack.call(
-            &mut context_stack.store,
-            &params_stack[..],
-            &mut results_stack[..],
-        );
+    let exported_funcs = context_reg.exported_funcs();
+    for name in exported_funcs {
+        let result_reg = context_reg.call(&name);
+        let result_stack = context_stack.call(&name);
         if let (Err(error_reg), Err(error_stack)) = (&result_reg, &result_stack) {
-            let str_reg = error_reg.to_string();
-            let str_stack = error_stack.to_string();
-            assert_eq!(
-                str_reg, str_stack,
-                "wasmi (register) and wasmi (stack) fail with different error codes\n    \
-                wasmi (register): {str_reg}    \
-                wasmi (stack)   : {str_stack}",
-            );
+            let errstr_reg = error_reg.to_string();
+            let errstr_stack = error_stack.to_string();
+            if errstr_reg != errstr_stack {
+                panic!(
+                    "wasmi (register) and wasmi (stack) fail with different error codes\n \
+                    |    wasmi (register): {errstr_reg}\n\
+                    |    wasmi (stack)   : {errstr_stack}",
+                )
+            }
         }
-        if result_reg.is_ok() != result_stack.is_ok() {
-            panic!(
-                "wasmi (register) and wasmi (stack) disagree with function execution: fn {name}\n\
-                    wasmi (register): {result_reg:?}\n\
-                    |       results : {results_reg:?}\n\
-                    wasmi (stack)   : {result_stack:?}\n\
-                    |       results : {results_stack:?}\n"
-            );
+        if let (Ok(results_reg), Ok(results_stack)) = (&result_reg, &result_stack) {
+            let results_reg = results_reg
+                .iter()
+                .map(FuzzValue::from)
+                .collect::<Vec<FuzzValue>>();
+            let results_stack = results_stack
+                .iter()
+                .map(FuzzValue::from)
+                .collect::<Vec<FuzzValue>>();
+            if results_reg != results_stack {
+                panic!(
+                    "wasmi (register) and wasmi (stack) disagree with function execution: fn {name}\n\
+                    |    wasmi (register): {results_reg:?}\n\
+                    |    wasmi (stack)   : {results_stack:?}\n"
+                )
+            }
         }
     }
 });
+
+#[derive(Debug, Copy, Clone)]
+pub enum FuzzValue {
+    I32(i32),
+    I64(i64),
+    F32(F32),
+    F64(F64),
+}
+
+impl PartialEq for FuzzValue {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::I32(lhs), Self::I32(rhs)) => lhs == rhs,
+            (Self::I64(lhs), Self::I64(rhs)) => lhs == rhs,
+            (Self::F32(lhs), Self::F32(rhs)) => {
+                if lhs.is_nan() && rhs.is_nan() {
+                    // TODO: we might want to test if NaN bits are the same.
+                    return true;
+                }
+                lhs == rhs
+            }
+            (Self::F64(lhs), Self::F64(rhs)) => {
+                if lhs.is_nan() && rhs.is_nan() {
+                    // TODO: we might want to test if NaN bits are the same.
+                    return true;
+                }
+                lhs == rhs
+            }
+            _ => false,
+        }
+    }
+}
+
+impl<'a> From<&'a wasmi_reg::Value> for FuzzValue {
+    fn from(value: &wasmi_reg::Value) -> Self {
+        match value {
+            wasmi_reg::Value::I32(value) => Self::I32(*value),
+            wasmi_reg::Value::I64(value) => Self::I64(*value),
+            wasmi_reg::Value::F32(value) => Self::F32(*value),
+            wasmi_reg::Value::F64(value) => Self::F64(*value),
+            _ => panic!("unsupported value type"),
+        }
+    }
+}
+
+impl<'a> From<&'a wasmi_stack::Value> for FuzzValue {
+    fn from(value: &wasmi_stack::Value) -> Self {
+        match value {
+            wasmi_stack::Value::I32(value) => Self::I32(*value),
+            wasmi_stack::Value::I64(value) => Self::I64(*value),
+            wasmi_stack::Value::F32(value) => Self::F32(F32::from_bits(value.to_bits())),
+            wasmi_stack::Value::F64(value) => Self::F64(F64::from_bits(value.to_bits())),
+            _ => panic!("unsupported value type"),
+        }
+    }
+}
