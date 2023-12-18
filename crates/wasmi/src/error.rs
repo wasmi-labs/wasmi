@@ -58,19 +58,9 @@ impl Error {
         Self::from_kind(ErrorKind::I32ExitStatus(status))
     }
 
-    /// Converts `self` into the underlying [`ErrorKind`].
-    pub fn into_kind(self) -> ErrorKind {
-        *self.kind
-    }
-
     /// Returns the [`ErrorKind`] of the [`Error`].
     pub fn kind(&self) -> &ErrorKind {
         &self.kind
-    }
-
-    /// Returns the [`ErrorKind`] of the [`Error`].
-    pub fn kind_mut(&mut self) -> &mut ErrorKind {
-        &mut self.kind
     }
 
     /// Returns a reference to [`TrapCode`] if [`Error`] is a [`TrapCode`].
@@ -85,19 +75,44 @@ impl Error {
         self.kind().as_i32_exit_status()
     }
 
-    /// Returns a dynamic reference to [`HostError`] if [`ErrorKind`] is a [`HostError`].
-    pub fn as_host(&self) -> Option<&dyn HostError> {
-        self.kind().as_host()
+    /// Downcasts the [`Error`] into the `T: HostError` if possible.
+    ///
+    /// Returns `None` otherwise.
+    #[inline]
+    pub fn downcast_ref<T>(&self) -> Option<&T>
+    where
+        T: HostError,
+    {
+        self.kind
+            .as_host()
+            .and_then(<(dyn HostError + 'static)>::downcast_ref)
     }
 
-    /// Returns a dynamic reference to [`HostError`] if [`ErrorKind`] is a [`HostError`].
-    pub fn as_host_mut(&mut self) -> Option<&mut dyn HostError> {
-        self.kind_mut().as_host_mut()
+    /// Downcasts the [`Error`] into the `T: HostError` if possible.
+    ///
+    /// Returns `None` otherwise.
+    #[inline]
+    pub fn downcast_mut<T>(&mut self) -> Option<&mut T>
+    where
+        T: HostError,
+    {
+        self.kind
+            .as_host_mut()
+            .and_then(<(dyn HostError + 'static)>::downcast_mut)
     }
 
-    /// Returns a [`HostError`] if [`ErrorKind`] is a [`HostError`].
-    pub fn into_host(self) -> Option<Box<dyn HostError>> {
-        self.into_kind().into_host()
+    /// Consumes `self` to downcast the [`Error`] into the `T: HostError` if possible.
+    ///
+    /// Returns `None` otherwise.
+    #[inline]
+    pub fn downcast<T>(self) -> Option<T>
+    where
+        T: HostError,
+    {
+        self.kind
+            .into_host()
+            .and_then(|error| error.downcast().ok())
+            .map(|boxed| *boxed)
     }
 }
 
