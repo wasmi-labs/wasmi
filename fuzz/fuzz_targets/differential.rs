@@ -23,6 +23,17 @@ trait DifferentialTarget {
     type Store;
     /// The function type of the backend.
     type Func;
+    /// The value type of the backend.
+    type Value;
+
+    /// Returns a default initialized value for the given type.
+    ///
+    /// # ToDo
+    ///
+    /// We actually want the bytes buffer given by the `Arbitrary` crate to influence
+    /// the values chosen for the resulting [`Value`]. Also we ideally want to produce
+    /// zeroed, positive, negative and NaN values for their respective types.
+    fn type_to_value(ty: &ValueType) -> Self::Value;
 
     /// Sets up the store and exported functions for the backend if possible.
     fn setup(wasm: &[u8]) -> Option<Context<Self::Store, Self::Func>>;
@@ -34,6 +45,11 @@ struct WasmiRegister;
 impl DifferentialTarget for WasmiRegister {
     type Store = wasmi_reg::Store<wasmi_reg::StoreLimits>;
     type Func = wasmi_reg::Func;
+    type Value = wasmi_reg::Value;
+
+    fn type_to_value(ty: &ValueType) -> Self::Value {
+        ty_to_val(ty)
+    }
 
     fn setup(wasm: &[u8]) -> Option<Context<Self::Store, Self::Func>> {
         use wasmi_reg::{Engine, Func, Linker, Module, Store, StoreLimitsBuilder};
@@ -71,6 +87,19 @@ struct WasmiStack;
 impl DifferentialTarget for WasmiStack {
     type Store = wasmi_stack::Store<wasmi_stack::StoreLimits>;
     type Func = wasmi_stack::Func;
+    type Value = wasmi_stack::Value;
+
+    fn type_to_value(ty: &ValueType) -> Self::Value {
+        match ty {
+            ValueType::I32 => wasmi_stack::Value::I32(1),
+            ValueType::I64 => wasmi_stack::Value::I64(1),
+            ValueType::F32 => wasmi_stack::Value::F32(1.0.into()),
+            ValueType::F64 => wasmi_stack::Value::F64(1.0.into()),
+            unsupported => panic!(
+                "execution fuzzing does not support reference types, yet but found: {unsupported:?}"
+            ),
+        }
+    }
 
     fn setup(wasm: &[u8]) -> Option<Context<Self::Store, Self::Func>> {
         use wasmi_stack::{Engine, Func, Linker, Module, Store, StoreLimitsBuilder};
@@ -133,8 +162,8 @@ fuzz_target!(|cfg_module: ConfiguredModule<ExecConfig>| {
         params_stack.clear();
         results_stack.clear();
         let ty = func_reg.ty(&context_reg.store);
-        params_reg.extend(ty.params().iter().map(ty_to_val));
-        results_reg.extend(ty.results().iter().map(ty_to_val));
+        params_reg.extend(ty.params().iter().map(WasmiRegister::type_to_value));
+        results_reg.extend(ty.results().iter().map(WasmiRegister::type_to_value));
         let result_reg = func_reg.call(
             &mut context_reg.store,
             &params_reg[..],
@@ -145,25 +174,22 @@ fuzz_target!(|cfg_module: ConfiguredModule<ExecConfig>| {
                 "wasmi (stack) is missing exported function {name} that exists in wasmi (register)"
             )
         });
-        params_stack.extend(ty.params().iter().map(ty_to_val_stack));
-        results_stack.extend(ty.results().iter().map(ty_to_val_stack));
+        params_stack.extend(ty.params().iter().map(WasmiStack::type_to_value));
+        results_stack.extend(ty.results().iter().map(WasmiStack::type_to_value));
         let result_stack = func_stack.call(
             &mut context_stack.store,
             &params_stack[..],
             &mut results_stack[..],
         );
-        match (&result_reg, &result_stack) {
-            (Err(error_reg), Err(error_stack)) => {
-                let str_reg = error_reg.to_string();
-                let str_stack = error_stack.to_string();
-                assert_eq!(
-                    str_reg, str_stack,
-                    "wasmi (register) and wasmi (stack) fail with different error codes\n    \
-                    wasmi (register): {str_reg}    \
-                    wasmi (stack)   : {str_stack}",
-                );
-            }
-            _ => {}
+        if let (Err(error_reg), Err(error_stack)) = (&result_reg, &result_stack) {
+            let str_reg = error_reg.to_string();
+            let str_stack = error_stack.to_string();
+            assert_eq!(
+                str_reg, str_stack,
+                "wasmi (register) and wasmi (stack) fail with different error codes\n    \
+                wasmi (register): {str_reg}    \
+                wasmi (stack)   : {str_stack}",
+            );
         }
         if result_reg.is_ok() != result_stack.is_ok() {
             panic!(
@@ -176,22 +202,3 @@ fuzz_target!(|cfg_module: ConfiguredModule<ExecConfig>| {
         }
     }
 });
-
-/// Converts a [`ValueType`] into a [`Value`] with default initialization of 1.
-///
-/// # ToDo
-///
-/// We actually want the bytes buffer given by the `Arbitrary` crate to influence
-/// the values chosen for the resulting [`Value`]. Also we ideally want to produce
-/// zeroed, positive, negative and NaN values for their respective types.
-pub fn ty_to_val_stack(ty: &ValueType) -> wasmi_stack::Value {
-    match ty {
-        ValueType::I32 => wasmi_stack::Value::I32(1),
-        ValueType::I64 => wasmi_stack::Value::I64(1),
-        ValueType::F32 => wasmi_stack::Value::F32(1.0.into()),
-        ValueType::F64 => wasmi_stack::Value::F64(1.0.into()),
-        unsupported => panic!(
-            "execution fuzzing does not support reference types, yet but found: {unsupported:?}"
-        ),
-    }
-}
