@@ -55,6 +55,8 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     - Note that this does not translate the Wasm and thus `Module::new` or `Module::new_unchecked`
       might still fail due to translation errors.
 - CLI: Added `--compilation-mode` argument to enable lazy Wasm compilation. (https://github.com/paritytech/wasmi/pull/849)
+- Improve `Debug` and `Display` impls for NaNs of Wasm `f32` and `f64` values.
+  - They now show `nan:0x{bytes}` where `{bytes}` is their respective raw bytes.
 
 ### Changed
 
