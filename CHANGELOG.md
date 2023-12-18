@@ -8,7 +8,7 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
-## [`0.32.0-beta.0`] - 2023-12-17
+## [`0.32.0-beta.1`] - 2023-12-18
 
 **Note:**
 
@@ -25,20 +25,26 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 ### Added
 
 - Added a new execution engine based on register-machine bytecode. (https://github.com/paritytech/wasmi/pull/729)
-    - The register-machine Wasmi `Engine` takes roughly 30% longer to compile Wasm to Wasmi bytecode
-      and executes roughly 80-100% faster according to benchmarks conducted so far.
+    - The register-machine Wasmi `Engine` executes roughly 80-100% faster and
+      compiles roughly 30% slower according to benchmarks conducted so far.
 - Added `Module::new_unchecked` API. (https://github.com/paritytech/wasmi/pull/829)
     - This allows to compile a Wasm module without Wasm validation which can be useful
       when users know that their inputs are valid Wasm binaries.
-    - This improves Wasm compilation performance for faster startup times.
-- Added optional lazy Wasm module compilation. (https://github.com/paritytech/wasmi/pull/844)
-    - Until now Wasmi used to eagerly compile all functions when creating a new Wasm module via `Module::new`.
-      This proved to be very costly, especially for very large Wasm modules. And since Wasm compilation became
-      even more costly with the new register-machine execution engine a new approach was needed.
-      Lazy compilation defers costly Wasm compilation until the first use of a Wasm function during execution.
-    - This greatly speeds up Wasm compilation performance, especially for bigger Wasm binaries.
-    - When paired with the new `Module::new_unchecked` we measured up to 27x faster compilation performance.
-    - With `Module::new` (Wasm validation) performance improvements are up to 3x.
+    - This improves Wasm compilation performance for faster startup times by roughly 10-20%.
+- Added Wasm compilation modes. (https://github.com/paritytech/wasmi/pull/844)
+    - When using `Module::new` Wasmi eagerly compiles Wasm bytecode into Wasmi bytecode
+      which is optimized for efficient execution. However, this compilation can become very
+      costly especially for large Wasm binaries.
+    - The solution to this problem is to introduce new compilation modes, namely:
+      - `CompilationMode::Eager`: Eager compilation, what Wasmi did so far. (default)
+      - `CompilationMode::LazyTranslation`: Eager Wasm validation and lazy Wasm translation.
+      - `CompilationMode::Lazy`: Lazy Wasm validation and translation.
+    - Benchmarks concluded that
+      - `CompilationMode::LazyTanslation`: Usually improves startup performance by a factor of 2 to 3.
+      - `CompilationMode::Lazy`: Usually improves startup performance by a factor of up to 27.
+    - Note that `CompilationMode::Lazy` can lead to partially validated Wasm modules
+      which can introduce non-determinism when using different Wasm implementations.
+      Therefore users should know what they are doing when using `CompilationMode::Lazy` if this is a concern.
     - Enable lazy Wasm compilation with:
       ```rust
       let mut config = wasmi::Config::default();
@@ -48,7 +54,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     - This allows to quickly check if a Wasm binary is valid according to a Wasmi `Engine` config.
     - Note that this does not translate the Wasm and thus `Module::new` or `Module::new_unchecked`
       might still fail due to translation errors.
-- CLI: Added `--lazy` argument to enable lazy Wasm compilation. (https://github.com/paritytech/wasmi/pull/849)
+- CLI: Added `--compilation-mode` argument to enable lazy Wasm compilation. (https://github.com/paritytech/wasmi/pull/849)
 
 ### Changed
 
