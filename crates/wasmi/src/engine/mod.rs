@@ -243,15 +243,16 @@ impl Engine {
             }
             (CompilationMode::LazyTranslation, Some(func_to_validate)) => {
                 let allocs = self.inner.get_validation_allocs();
-                let translator = LazyFuncTranslator::new(func_index, compiled_func, module);
+                let translator = LazyFuncTranslator::new(func_index, compiled_func, module, None);
                 let validator = func_to_validate.into_validator(allocs);
                 let translator = ValidatingFuncTranslator::new(validator, translator)?;
                 let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
                     .translate(|func_entity| self.inner.init_func(compiled_func, func_entity))?;
                 self.inner.recycle_validation_allocs(allocs.validation);
             }
-            (CompilationMode::LazyTranslation, None) => {
-                let translator = LazyFuncTranslator::new(func_index, compiled_func, module);
+            (CompilationMode::Lazy | CompilationMode::LazyTranslation, func_to_validate) => {
+                let translator =
+                    LazyFuncTranslator::new(func_index, compiled_func, module, func_to_validate);
                 FuncTranslationDriver::new(offset, bytes, translator)?
                     .translate(|func_entity| self.inner.init_func(compiled_func, func_entity))?;
             }
@@ -264,9 +265,23 @@ impl Engine {
         self.inner.get_translation_allocs()
     }
 
+    /// Returns reusable [`FuncTranslatorAllocations`] and [`FuncValidatorAllocations`] from the [`Engine`].
+    pub(crate) fn get_allocs(&self) -> (FuncTranslatorAllocations, FuncValidatorAllocations) {
+        self.inner.get_allocs()
+    }
+
     /// Recycles the given [`FuncTranslatorAllocations`] in the [`Engine`].
     pub(crate) fn recycle_translation_allocs(&self, allocs: FuncTranslatorAllocations) {
         self.inner.recycle_translation_allocs(allocs)
+    }
+
+    /// Recycles the given [`FuncTranslatorAllocations`] and [`FuncValidatorAllocations`] in the [`Engine`].
+    pub(crate) fn recycle_allocs(
+        &self,
+        translation: FuncTranslatorAllocations,
+        validation: FuncValidatorAllocations,
+    ) {
+        self.inner.recycle_allocs(translation, validation)
     }
 
     /// Initializes the uninitialized [`CompiledFunc`] for the [`Engine`].
@@ -286,8 +301,10 @@ impl Engine {
         func: CompiledFunc,
         bytes: &[u8],
         module: &ModuleHeader,
+        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
     ) {
-        self.inner.init_lazy_func(func_idx, func, bytes, module)
+        self.inner
+            .init_lazy_func(func_idx, func, bytes, module, func_to_validate)
     }
 
     /// Resolves the [`CompiledFunc`] to the underlying `wasmi` bytecode instructions.
@@ -704,11 +721,12 @@ impl EngineInner {
         func: CompiledFunc,
         bytes: &[u8],
         module: &ModuleHeader,
+        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
     ) {
         self.res
             .write()
             .code_map
-            .init_lazy_func(func_idx, func, bytes, module)
+            .init_lazy_func(func_idx, func, bytes, module, func_to_validate)
     }
 
     /// Resolves the [`InternalFuncEntity`] for [`CompiledFunc`] and applies `f` to it.

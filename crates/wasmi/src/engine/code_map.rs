@@ -5,7 +5,7 @@
 //! This is the data structure specialized to handle compiled
 //! register machine based bytecode functions.
 
-use super::{FuncTranslationDriver, FuncTranslator};
+use super::{FuncTranslationDriver, FuncTranslator, ValidatingFuncTranslator};
 use crate::{
     core::UntypedValue,
     engine::bytecode::Instruction,
@@ -13,9 +13,10 @@ use crate::{
     Error,
 };
 use alloc::boxed::Box;
-use core::{mem, ops, slice};
+use core::{fmt, mem, ops, slice};
 use spin::RwLock;
 use wasmi_arena::{Arena, ArenaIndex};
+use wasmparser::{FuncToValidate, ValidatorResources};
 
 /// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`](crate::Engine).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -95,7 +96,6 @@ impl InternalFuncEntity {
 }
 
 /// An internal uncompiled function entity.
-#[derive(Debug)]
 pub struct UncompiledFuncEntity {
     /// The index of the function within the `module`.
     func_idx: FuncIdx,
@@ -106,6 +106,21 @@ pub struct UncompiledFuncEntity {
     /// This is required for Wasm module related information in order
     /// to compile the Wasm function body.
     module: ModuleHeader,
+    /// Optional Wasm validation information.
+    ///
+    /// This is `Some` if the [`UncompiledFuncEntity`] is to be validated upon compilation.
+    func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+}
+
+impl fmt::Debug for UncompiledFuncEntity {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("UncompiledFuncEntity")
+            .field("func_idx", &self.func_idx)
+            .field("bytes", &self.bytes)
+            .field("module", &self.module)
+            .field("validate", &self.func_to_validate.is_some())
+            .finish()
+    }
 }
 
 /// A boxed byte slice that stores up to 30 bytes inline.
@@ -304,6 +319,7 @@ impl CodeMap {
         func: CompiledFunc,
         bytes: &[u8],
         module: &ModuleHeader,
+        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
     ) {
         let Some(func) = self.entities.get_mut(func).map(RwLock::get_mut) else {
             panic!("tried to initialize invalid compiled func: {func:?}")
@@ -315,6 +331,7 @@ impl CodeMap {
             func_idx,
             bytes,
             module,
+            func_to_validate,
         });
     }
 
@@ -372,17 +389,33 @@ impl CodeMap {
                     module.engine()
                 )
             };
-            let allocs = engine.get_translation_allocs();
-            let translator = FuncTranslator::new(func_idx, module, allocs)?;
-            let allocs = FuncTranslationDriver::new(0, &bytes[..], translator)?.translate(
-                |compiled_func| {
-                    *func = InternalFuncEntity::Compiled(compiled_func);
-                },
-            )?;
+            match uncompiled.func_to_validate.take() {
+                Some(func_to_validate) => {
+                    let allocs = engine.get_allocs();
+                    let translator = FuncTranslator::new(func_idx, module, allocs.0)?;
+                    let validator = func_to_validate.into_validator(allocs.1);
+                    let translator = ValidatingFuncTranslator::new(validator, translator)?;
+                    let allocs = FuncTranslationDriver::new(0, &bytes[..], translator)?.translate(
+                        |compiled_func| {
+                            *func = InternalFuncEntity::Compiled(compiled_func);
+                        },
+                    )?;
+                    engine.recycle_allocs(allocs.translation, allocs.validation);
+                }
+                None => {
+                    let allocs = engine.get_translation_allocs();
+                    let translator = FuncTranslator::new(func_idx, module, allocs)?;
+                    let allocs = FuncTranslationDriver::new(0, &bytes[..], translator)?.translate(
+                        |compiled_func| {
+                            *func = InternalFuncEntity::Compiled(compiled_func);
+                        },
+                    )?;
+                    engine.recycle_translation_allocs(allocs);
+                }
+            }
             // TODO: In case translation of `func` fails it is going to be recompiled over and over again
             //       for every threads which might be very costly. A status flag that indicates compilation
             //       failure might be required to fix this.
-            engine.recycle_translation_allocs(allocs);
             // Note: Leaking a read-lock will deny write access to all future accesses.
             //       This is fine since function entities are immutable once compiled.
             let func = spin::RwLockReadGuard::leak(func.downgrade())

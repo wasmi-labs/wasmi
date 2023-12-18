@@ -204,6 +204,14 @@ pub enum CompilationMode {
     Eager,
     /// The Wasm code is validated eagerly and translated lazily on first use.
     LazyTranslation,
+    /// The Wasm code is validated and translated lazily on first use.
+    ///
+    /// # Note
+    ///
+    /// This configuration might be removed in the future since it results in
+    /// partial Wasm module validation which is a controversial topic.
+    /// Read more here: https://github.com/WebAssembly/design/issues/1464
+    Lazy,
 }
 
 impl Default for Config {
