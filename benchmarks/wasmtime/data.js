@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1702917140161,
+  "lastUpdate": 1703111397452,
   "repoUrl": "https://github.com/paritytech/wasmi",
   "entries": {
     "Wasmi criterion wasmtime": [
@@ -19649,6 +19649,408 @@ window.BENCHMARK_DATA = {
             "name": "overhead/call/untyped/16",
             "value": 4155501,
             "range": "± 9406",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "robin.freyler@gmail.com",
+            "name": "Robin Freyler",
+            "username": "Robbepop"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f96475ef1135d11858e0859cee97ea07f93c6d3d",
+          "message": "Relaxed branch+cmp offset encoding (#860)\n\n* add BranchCmpFallback instruction\r\n\r\nTranslation does not yet actually emit the new instruction. Needs to be implemented in another commit.\r\n\r\n* exchange Err with unreachable! in offset init\r\n\r\n* apply rustfmt\r\n\r\n* remove BranchOffset16::new\r\n\r\nSuperseeded by TryFrom impl.\r\n\r\n* refactor BranchOffset::from_src_to_dst\r\n\r\n* add Error section to docs\r\n\r\n* apply rustfmt\r\n\r\n* remove superseeded replacements\r\n\r\nThese are no longer needed since the BranchI32Eqz and BranchI32Nez instruction have been removed some time ago.\r\n\r\n* encode fallback branch+cmp for 32-bit offsets\r\n\r\nThis is encoding only for forward branches.\r\n\r\n* add #Error doc section to init method\r\n\r\n* reduce line noise\r\n\r\n* implement branch+cmp fallback encoding for forward jumps\r\n\r\n* disable std feature of num-traits dependency",
+          "timestamp": "2023-12-20T23:23:05+01:00",
+          "tree_id": "7e70e2556011fdfe3bfd7d559cd16ce3ad5c2ef2",
+          "url": "https://github.com/paritytech/wasmi/commit/f96475ef1135d11858e0859cee97ea07f93c6d3d"
+        },
+        "date": 1703111397434,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "translate/wasm_kernel/checked/eager/default",
+            "value": 8773782,
+            "range": "± 20276",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/checked/eager/fuel",
+            "value": 9206452,
+            "range": "± 27207",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/checked/lazy-translation/default",
+            "value": 3993612,
+            "range": "± 29205",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/checked/lazy/default",
+            "value": 487310,
+            "range": "± 1395",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/unchecked/eager/default",
+            "value": 6852158,
+            "range": "± 29217",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/checked/eager/default",
+            "value": 135430565,
+            "range": "± 175102",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/checked/eager/fuel",
+            "value": 146158965,
+            "range": "± 474106",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/checked/lazy-translation/default",
+            "value": 55956483,
+            "range": "± 84674",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/checked/lazy/default",
+            "value": 3900483,
+            "range": "± 36327",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/unchecked/eager/default",
+            "value": 106200174,
+            "range": "± 244152",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/checked/eager/default",
+            "value": 6245944,
+            "range": "± 17920",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/checked/eager/fuel",
+            "value": 6730250,
+            "range": "± 14570",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/checked/lazy-translation/default",
+            "value": 2559153,
+            "range": "± 4793",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/checked/lazy/default",
+            "value": 250245,
+            "range": "± 1301",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/unchecked/eager/default",
+            "value": 4944931,
+            "range": "± 10696",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/checked/eager/default",
+            "value": 2442881,
+            "range": "± 4139",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/checked/eager/fuel",
+            "value": 2657395,
+            "range": "± 4795",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/checked/lazy-translation/default",
+            "value": 964010,
+            "range": "± 3861",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/checked/lazy/default",
+            "value": 46138,
+            "range": "± 98",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/unchecked/eager/default",
+            "value": 1892302,
+            "range": "± 4066",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/checked/eager/default",
+            "value": 230810,
+            "range": "± 808",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/checked/eager/fuel",
+            "value": 242956,
+            "range": "± 629",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/checked/lazy-translation/default",
+            "value": 107264,
+            "range": "± 146",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/checked/lazy/default",
+            "value": 24319,
+            "range": "± 31",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/unchecked/eager/default",
+            "value": 180228,
+            "range": "± 368",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/checked/eager/default",
+            "value": 332593,
+            "range": "± 1451",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/checked/eager/fuel",
+            "value": 350667,
+            "range": "± 2536",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/checked/lazy-translation/default",
+            "value": 151398,
+            "range": "± 309",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/checked/lazy/default",
+            "value": 28880,
+            "range": "± 67",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/unchecked/eager/default",
+            "value": 256611,
+            "range": "± 609",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/checked/eager/default",
+            "value": 480848,
+            "range": "± 844",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/checked/eager/fuel",
+            "value": 512955,
+            "range": "± 1372",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/checked/lazy-translation/default",
+            "value": 211143,
+            "range": "± 282",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/checked/lazy/default",
+            "value": 31975,
+            "range": "± 53",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/unchecked/eager/default",
+            "value": 374830,
+            "range": "± 1451",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "instantiate/wasm_kernel",
+            "value": 53567,
+            "range": "± 1445",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/tiny_keccak",
+            "value": 391212,
+            "range": "± 344",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/rev_complement",
+            "value": 727141,
+            "range": "± 752",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/regex_redux",
+            "value": 1201700,
+            "range": "± 1198",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/count_until",
+            "value": 7783714,
+            "range": "± 12962",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/br_table",
+            "value": 1301030,
+            "range": "± 1049",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/trunc_f2i",
+            "value": 946512,
+            "range": "± 853",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global/bump",
+            "value": 1616643,
+            "range": "± 1040",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global/get_const",
+            "value": 783673,
+            "range": "± 712",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial/rec",
+            "value": 1351411,
+            "range": "± 995",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial/iter",
+            "value": 291673,
+            "range": "± 227",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/call/rec",
+            "value": 373932,
+            "range": "± 465",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_scan",
+            "value": 391581,
+            "range": "± 200",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_trap",
+            "value": 36772,
+            "range": "± 34",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/call/host/1",
+            "value": 66374,
+            "range": "± 91",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fuse",
+            "value": 11273266,
+            "range": "± 9066",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/divrem",
+            "value": 7036168,
+            "range": "± 9578",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/rec",
+            "value": 13352583,
+            "range": "± 10694",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/tail",
+            "value": 4729578,
+            "range": "± 2439",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/iter",
+            "value": 1240268,
+            "range": "± 2452",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/is_even/rec",
+            "value": 2317440,
+            "range": "± 8757",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/sum_bytes",
+            "value": 1270177,
+            "range": "± 1316",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/fill_bytes",
+            "value": 1323694,
+            "range": "± 2058",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/vec_add",
+            "value": 3522710,
+            "range": "± 14625",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/typed/0",
+            "value": 928874,
+            "range": "± 2138",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/typed/16",
+            "value": 3055474,
+            "range": "± 13837",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/untyped/0",
+            "value": 1293693,
+            "range": "± 1574",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/untyped/16",
+            "value": 4594613,
+            "range": "± 6936",
             "unit": "ns/iter"
           }
         ]
