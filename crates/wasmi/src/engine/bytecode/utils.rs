@@ -745,9 +745,6 @@ impl BranchOffset {
     ///
     /// If the resulting [`BranchOffset`] is uninitialized, aka equal to 0.
     pub fn from_src_to_dst(src: Instr, dst: Instr) -> Result<Self, Error> {
-        fn make_err() -> Error {
-            Error::from(TranslationError::BranchOffsetOutOfBounds)
-        }
         let src = i64::from(src.into_u32());
         let dst = i64::from(dst.into_u32());
         let Some(offset) = dst.checked_sub(src) else {
@@ -756,7 +753,9 @@ impl BranchOffset {
                 "offset for forward branches must have `src` be smaller than or equal to `dst`"
             );
         };
-        let offset = i32::try_from(offset).map_err(|_| make_err())?;
+        let Ok(offset) = i32::try_from(offset) else {
+            return Err(Error::from(TranslationError::BranchOffsetOutOfBounds));
+        };
         Ok(Self(offset))
     }
 
