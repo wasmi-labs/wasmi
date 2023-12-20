@@ -492,7 +492,9 @@ impl<'parser> WasmTranslator<'parser> for FuncTranslator {
         self.alloc
             .instr_encoder
             .defrag_registers(&mut self.alloc.stack)?;
-        self.alloc.instr_encoder.update_branch_offsets()?;
+        self.alloc
+            .instr_encoder
+            .update_branch_offsets(&mut self.alloc.stack)?;
         let len_registers = self.alloc.stack.len_registers();
         if let Some(fuel_costs) = self.fuel_costs() {
             // Note: Fuel metering is enabled so we need to bump the fuel

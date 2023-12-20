@@ -296,9 +296,11 @@ impl InstrEncoder {
     /// # Panics
     ///
     /// If this is used before all branching labels have been pinned.
-    pub fn update_branch_offsets(&mut self) -> Result<(), Error> {
+    pub fn update_branch_offsets(&mut self, stack: &mut ValueStack) -> Result<(), Error> {
         for (user, offset) in self.labels.resolved_users() {
-            self.instrs.get_mut(user).update_branch_offset(offset?)?;
+            self.instrs
+                .get_mut(user)
+                .update_branch_offset(stack, offset?)?;
         }
         Ok(())
     }
@@ -1254,76 +1256,103 @@ impl Instruction {
     /// # Panics
     ///
     /// If `self` is not a branch [`Instruction`].
-    pub fn update_branch_offset(&mut self, new_offset: BranchOffset) -> Result<(), Error> {
+    #[rustfmt::skip]
+    pub fn update_branch_offset(&mut self, stack: &mut ValueStack, new_offset: BranchOffset) -> Result<(), Error> {
+        /// Initializes the 16-bit offset of `instr` if possible.
+        /// 
+        /// If `new_offset` cannot be encoded as 16-bit offset `self` is replaced with a fallback instruction.
+        macro_rules! init_offset {
+            ($instr:expr, $new_offset:expr, $cmp:expr) => {{
+                if let Err(_) = $instr.offset.init($new_offset) {
+                    let params = stack.alloc_const(ComparatorOffsetParam::new($cmp, $new_offset))?;
+                    *self = Instruction::branch_cmp_fallback($instr.lhs, $instr.rhs, params);
+                }
+                Ok(())
+            }}
+        }
+
+        macro_rules! init_offset_imm {
+            ($ty:ty, $instr:expr, $new_offset:expr, $cmp:expr) => {{
+                if let Err(_) = $instr.offset.init($new_offset) {
+                    let rhs = stack.alloc_const(<$ty>::from($instr.rhs))?;
+                    let params = stack.alloc_const(ComparatorOffsetParam::new($cmp, $new_offset))?;
+                    *self = Instruction::branch_cmp_fallback($instr.lhs, rhs, params);
+                }
+                Ok(())
+            }};
+        }
+
+        use Instruction as I;
+        use BranchComparator as Cmp;
         match self {
             Instruction::Branch { offset } => {
                 offset.init(new_offset);
                 Ok(())
             }
-            Instruction::BranchI32And(instr)
-            | Instruction::BranchI32Or(instr)
-            | Instruction::BranchI32Xor(instr)
-            | Instruction::BranchI32AndEqz(instr)
-            | Instruction::BranchI32OrEqz(instr)
-            | Instruction::BranchI32XorEqz(instr)
-            | Instruction::BranchI32Eq(instr)
-            | Instruction::BranchI32Ne(instr)
-            | Instruction::BranchI32LtS(instr)
-            | Instruction::BranchI32LtU(instr)
-            | Instruction::BranchI32LeS(instr)
-            | Instruction::BranchI32LeU(instr)
-            | Instruction::BranchI32GtS(instr)
-            | Instruction::BranchI32GtU(instr)
-            | Instruction::BranchI32GeS(instr)
-            | Instruction::BranchI32GeU(instr)
-            | Instruction::BranchI64Eq(instr)
-            | Instruction::BranchI64Ne(instr)
-            | Instruction::BranchI64LtS(instr)
-            | Instruction::BranchI64LtU(instr)
-            | Instruction::BranchI64LeS(instr)
-            | Instruction::BranchI64LeU(instr)
-            | Instruction::BranchI64GtS(instr)
-            | Instruction::BranchI64GtU(instr)
-            | Instruction::BranchI64GeS(instr)
-            | Instruction::BranchI64GeU(instr)
-            | Instruction::BranchF32Eq(instr)
-            | Instruction::BranchF32Ne(instr)
-            | Instruction::BranchF32Lt(instr)
-            | Instruction::BranchF32Le(instr)
-            | Instruction::BranchF32Gt(instr)
-            | Instruction::BranchF32Ge(instr)
-            | Instruction::BranchF64Eq(instr)
-            | Instruction::BranchF64Ne(instr)
-            | Instruction::BranchF64Lt(instr)
-            | Instruction::BranchF64Le(instr)
-            | Instruction::BranchF64Gt(instr)
-            | Instruction::BranchF64Ge(instr) => instr.offset.init(new_offset),
-            Instruction::BranchI32AndImm(instr)
-            | Instruction::BranchI32OrImm(instr)
-            | Instruction::BranchI32XorImm(instr)
-            | Instruction::BranchI32AndEqzImm(instr)
-            | Instruction::BranchI32OrEqzImm(instr)
-            | Instruction::BranchI32XorEqzImm(instr)
-            | Instruction::BranchI32EqImm(instr)
-            | Instruction::BranchI32NeImm(instr)
-            | Instruction::BranchI32LtSImm(instr)
-            | Instruction::BranchI32LeSImm(instr)
-            | Instruction::BranchI32GtSImm(instr)
-            | Instruction::BranchI32GeSImm(instr) => instr.offset.init(new_offset),
-            Instruction::BranchI32LtUImm(instr)
-            | Instruction::BranchI32LeUImm(instr)
-            | Instruction::BranchI32GtUImm(instr)
-            | Instruction::BranchI32GeUImm(instr) => instr.offset.init(new_offset),
-            Instruction::BranchI64EqImm(instr)
-            | Instruction::BranchI64NeImm(instr)
-            | Instruction::BranchI64LtSImm(instr)
-            | Instruction::BranchI64LeSImm(instr)
-            | Instruction::BranchI64GtSImm(instr)
-            | Instruction::BranchI64GeSImm(instr) => instr.offset.init(new_offset),
-            Instruction::BranchI64LtUImm(instr)
-            | Instruction::BranchI64LeUImm(instr)
-            | Instruction::BranchI64GtUImm(instr)
-            | Instruction::BranchI64GeUImm(instr) => instr.offset.init(new_offset),
+            I::BranchI32And(instr) => init_offset!(instr, new_offset, Cmp::I32And),
+            I::BranchI32Or(instr) => init_offset!(instr, new_offset, Cmp::I32Or),
+            I::BranchI32Xor(instr) => init_offset!(instr, new_offset, Cmp::I32Xor),
+            I::BranchI32AndEqz(instr) => init_offset!(instr, new_offset, Cmp::I32AndEqz),
+            I::BranchI32OrEqz(instr) => init_offset!(instr, new_offset, Cmp::I32OrEqz),
+            I::BranchI32XorEqz(instr) => init_offset!(instr, new_offset, Cmp::I32XorEqz),
+            I::BranchI32Eq(instr) => init_offset!(instr, new_offset, Cmp::I32Eq),
+            I::BranchI32Ne(instr) => init_offset!(instr, new_offset, Cmp::I32Ne),
+            I::BranchI32LtS(instr) => init_offset!(instr, new_offset, Cmp::I32LtS),
+            I::BranchI32LtU(instr) => init_offset!(instr, new_offset, Cmp::I32LtU),
+            I::BranchI32LeS(instr) => init_offset!(instr, new_offset, Cmp::I32LeS),
+            I::BranchI32LeU(instr) => init_offset!(instr, new_offset, Cmp::I32LeU),
+            I::BranchI32GtS(instr) => init_offset!(instr, new_offset, Cmp::I32GtS),
+            I::BranchI32GtU(instr) => init_offset!(instr, new_offset, Cmp::I32GtU),
+            I::BranchI32GeS(instr) => init_offset!(instr, new_offset, Cmp::I32GeS),
+            I::BranchI32GeU(instr) => init_offset!(instr, new_offset, Cmp::I32GeU),
+            I::BranchI64Eq(instr) => init_offset!(instr, new_offset, Cmp::I64Eq),
+            I::BranchI64Ne(instr) => init_offset!(instr, new_offset, Cmp::I64Ne),
+            I::BranchI64LtS(instr) => init_offset!(instr, new_offset, Cmp::I64LtS),
+            I::BranchI64LtU(instr) => init_offset!(instr, new_offset, Cmp::I64LtU),
+            I::BranchI64LeS(instr) => init_offset!(instr, new_offset, Cmp::I64LeS),
+            I::BranchI64LeU(instr) => init_offset!(instr, new_offset, Cmp::I64LeU),
+            I::BranchI64GtS(instr) => init_offset!(instr, new_offset, Cmp::I64GtS),
+            I::BranchI64GtU(instr) => init_offset!(instr, new_offset, Cmp::I64GtU),
+            I::BranchI64GeS(instr) => init_offset!(instr, new_offset, Cmp::I64GeS),
+            I::BranchI64GeU(instr) => init_offset!(instr, new_offset, Cmp::I64GeU),
+            I::BranchF32Eq(instr) => init_offset!(instr, new_offset, Cmp::F32Eq),
+            I::BranchF32Ne(instr) => init_offset!(instr, new_offset, Cmp::F32Ne),
+            I::BranchF32Lt(instr) => init_offset!(instr, new_offset, Cmp::F32Lt),
+            I::BranchF32Le(instr) => init_offset!(instr, new_offset, Cmp::F32Le),
+            I::BranchF32Gt(instr) => init_offset!(instr, new_offset, Cmp::F32Gt),
+            I::BranchF32Ge(instr) => init_offset!(instr, new_offset, Cmp::F32Ge),
+            I::BranchF64Eq(instr) => init_offset!(instr, new_offset, Cmp::F64Eq),
+            I::BranchF64Ne(instr) => init_offset!(instr, new_offset, Cmp::F64Ne),
+            I::BranchF64Lt(instr) => init_offset!(instr, new_offset, Cmp::F64Lt),
+            I::BranchF64Le(instr) => init_offset!(instr, new_offset, Cmp::F64Le),
+            I::BranchF64Gt(instr) => init_offset!(instr, new_offset, Cmp::F64Gt),
+            I::BranchF64Ge(instr) => init_offset!(instr, new_offset, Cmp::F64Ge),
+            I::BranchI32AndImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32And),
+            I::BranchI32OrImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32Or),
+            I::BranchI32XorImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32Xor),
+            I::BranchI32AndEqzImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32AndEqz),
+            I::BranchI32OrEqzImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32OrEqz),
+            I::BranchI32XorEqzImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32XorEqz),
+            I::BranchI32EqImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32Eq),
+            I::BranchI32NeImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32Ne),
+            I::BranchI32LtSImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32LtS),
+            I::BranchI32LeSImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32LeS),
+            I::BranchI32GtSImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32GtS),
+            I::BranchI32GeSImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32GeS),
+            I::BranchI32LtUImm(instr) => init_offset_imm!(u32, instr, new_offset, Cmp::I32LtU),
+            I::BranchI32LeUImm(instr) => init_offset_imm!(u32, instr, new_offset, Cmp::I32LeU),
+            I::BranchI32GtUImm(instr) => init_offset_imm!(u32, instr, new_offset, Cmp::I32GtU),
+            I::BranchI32GeUImm(instr) => init_offset_imm!(u32, instr, new_offset, Cmp::I32GeU),
+            I::BranchI64EqImm(instr) => init_offset_imm!(i64, instr, new_offset, Cmp::I64Eq),
+            I::BranchI64NeImm(instr) => init_offset_imm!(i64, instr, new_offset, Cmp::I64Ne),
+            I::BranchI64LtSImm(instr) => init_offset_imm!(i64, instr, new_offset, Cmp::I64LtS),
+            I::BranchI64LeSImm(instr) => init_offset_imm!(i64, instr, new_offset, Cmp::I64LeS),
+            I::BranchI64GtSImm(instr) => init_offset_imm!(i64, instr, new_offset, Cmp::I64GtS),
+            I::BranchI64GeSImm(instr) => init_offset_imm!(i64, instr, new_offset, Cmp::I64GeS),
+            I::BranchI64LtUImm(instr) => init_offset_imm!(u64, instr, new_offset, Cmp::I64LtU),
+            I::BranchI64LeUImm(instr) => init_offset_imm!(u64, instr, new_offset, Cmp::I64LeU),
+            I::BranchI64GtUImm(instr) => init_offset_imm!(u64, instr, new_offset, Cmp::I64GtU),
+            I::BranchI64GeUImm(instr) => init_offset_imm!(u64, instr, new_offset, Cmp::I64GeU),
             _ => panic!("tried to update branch offset of a non-branch instruction: {self:?}"),
         }
     }
