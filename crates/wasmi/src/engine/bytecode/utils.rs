@@ -3,6 +3,8 @@ use crate::{
     engine::{Instr, TranslationError},
     Error,
 };
+use num_derive::FromPrimitive;
+use wasmi_core::UntypedValue;
 
 #[cfg(doc)]
 use super::Instruction;
@@ -820,5 +822,105 @@ impl BlockFuel {
     /// Returns the index value as `u64`.
     pub fn to_u64(self) -> u64 {
         u64::from(self.0)
+    }
+}
+
+/// Encodes the conditional branch comparator.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, FromPrimitive)]
+#[repr(u32)]
+pub enum BranchComparator {
+    I32Eq = 0,
+    I32Ne = 1,
+    I32LtS = 2,
+    I32LtU = 3,
+    I32LeS = 4,
+    I32LeU = 5,
+    I32GtS = 6,
+    I32GtU = 7,
+    I32GeS = 8,
+    I32GeU = 9,
+
+    I32And = 10,
+    I32Or = 11,
+    I32Xor = 12,
+    I32AndEqz = 13,
+    I32OrEqz = 14,
+    I32XorEqz = 15,
+
+    I64Eq = 16,
+    I64Ne = 17,
+    I64LtS = 18,
+    I64LtU = 19,
+    I64LeS = 20,
+    I64LeU = 21,
+    I64GtS = 22,
+    I64GtU = 23,
+    I64GeS = 24,
+    I64GeU = 25,
+
+    F32Eq = 26,
+    F32Ne = 27,
+    F32Lt = 28,
+    F32Le = 29,
+    F32Gt = 30,
+    F32Ge = 31,
+
+    F64Eq = 32,
+    F64Ne = 33,
+    F64Lt = 34,
+    F64Le = 35,
+    F64Gt = 36,
+    F64Ge = 37,
+}
+
+/// Encodes the conditional branch comparator and 32-bit offset of the [`Instruction::BranchCmpFallback`].
+///
+/// # Note
+///
+/// This type can be converted from and to a `u64` value.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct ComparatorOffsetParam {
+    /// Encodes the actual binary operator for the conditional branch.
+    pub cmp: BranchComparator,
+    //// Encodes the 32-bit branching offset.
+    pub offset: BranchOffset,
+}
+
+impl ComparatorOffsetParam {
+    /// Create a new [`ComparatorOffsetParam`].
+    pub fn new(cmp: BranchComparator, offset: BranchOffset) -> Self {
+        Self { cmp, offset }
+    }
+
+    /// Creates a new [`ComparatorOffsetParam`] from the given `u64` value.
+    ///
+    /// Returns `None` if the `u64` has an invalid encoding.
+    pub fn from_u64(value: u64) -> Option<Self> {
+        use num_traits::FromPrimitive as _;
+        let hi = (value >> 32) as u32;
+        let lo = (value & 0xFFFF_FFFF) as u32;
+        let cmp = BranchComparator::from_u32(hi)?;
+        let offset = BranchOffset::from(lo as i32);
+        Some(Self { cmp, offset })
+    }
+
+    /// Creates a new [`ComparatorOffsetParam`] from the given [`UntypedValue`].
+    ///
+    /// Returns `None` if the [`UntypedValue`] has an invalid encoding.
+    pub fn from_untyped(value: UntypedValue) -> Option<Self> {
+        Self::from_u64(u64::from(value))
+    }
+
+    /// Converts the [`ComparatorOffsetParam`] into an `u64` value.
+    pub fn as_u64(&self) -> u64 {
+        let hi = self.cmp as u64;
+        let lo = self.offset.to_i32() as u64;
+        hi << 32 & lo
+    }
+}
+
+impl From<ComparatorOffsetParam> for UntypedValue {
+    fn from(params: ComparatorOffsetParam) -> Self {
+        Self::from(params.as_u64())
     }
 }

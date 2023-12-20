@@ -167,6 +167,13 @@ macro_rules! constructor_for {
     };
 }
 
+impl Instruction {
+    /// Creates a new [`Instruction::BranchCmpFallback`].
+    pub fn branch_cmp_fallback(lhs: Register, rhs: Register, params: Register) -> Self {
+        Self::BranchCmpFallback { lhs, rhs, params }
+    }
+}
+
 macro_rules! constructor_for_branch_binop {
     ( $( fn $name:ident() -> Self::$op_code:ident; )* ) => {
         impl Instruction {

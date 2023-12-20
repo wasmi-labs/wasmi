@@ -23,6 +23,8 @@ spin = { version = "0.9", default-features = false, features = [
 ] }
 smallvec = { version = "1.10.0", features = ["union"] }
 multi-stash = { version = "0.2.0" }
+num-traits = "0.2"
+num-derive = "0.4"
 
 [dev-dependencies]
 wat = "1"

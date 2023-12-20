@@ -80,6 +80,7 @@ impl VisitInputRegisters for Instruction {
             Instruction::Branch { .. } => {},
             Instruction::BranchTable { index, .. } => f(index),
 
+            Instruction::BranchCmpFallback { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
             Instruction::BranchI32And(instr) => instr.visit_input_registers(f),
             Instruction::BranchI32AndImm(instr) => instr.visit_input_registers(f),
             Instruction::BranchI32Or(instr) => instr.visit_input_registers(f),

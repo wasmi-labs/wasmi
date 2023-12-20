@@ -17,9 +17,11 @@ pub(crate) use self::{
         BranchBinOpInstr,
         BranchBinOpInstrImm,
         BranchBinOpInstrImm16,
+        BranchComparator,
         BranchOffset,
         BranchOffset16,
         CallIndirectParams,
+        ComparatorOffsetParam,
         DataSegmentIdx,
         ElementSegmentIdx,
         FuncIdx,
@@ -364,6 +366,32 @@ pub enum Instruction {
         offset: BranchOffset,
     },
 
+    /// A fallback instruction for cmp+branch instructions with branch offsets that cannot be 16-bit encoded.
+    ///
+    /// # Note
+    ///
+    /// This instruction fits in a single instruction word but arguably executes slower than
+    /// cmp+branch instructions with a 16-bit encoded branch offset. It only ever gets encoded
+    /// and used whenever a branch offset of a cmp+branch instruction cannot be 16-bit encoded.
+    BranchCmpFallback {
+        /// The left-hand side value for the comparison.
+        lhs: Register,
+        /// The right-hand side value for the comparison.
+        ///
+        /// # Note
+        ///
+        /// We allocate constant values as function local constant values and use
+        /// their register to only require a single fallback instruction variant.
+        rhs: Register,
+        /// The register that stores the [`ComparatorOffsetParam`] of this instruction.
+        ///
+        /// # Note
+        ///
+        /// The [`ComparatorOffsetParam`] is loaded from register as `u64` value and
+        /// decoded into a [`ComparatorOffsetParam`] before access its comparator
+        /// and 32-bit branch offset fields.
+        params: Register,
+    },
     /// A fused [`Instruction::I32And`] and Wasm branch instruction.
     BranchI32And(BranchBinOpInstr),
     /// A fused [`Instruction::I32And`] and Wasm branch instruction.

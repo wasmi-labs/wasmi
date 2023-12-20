@@ -63,6 +63,7 @@ impl Instruction {
             | I::ReturnNezSpan { .. }
             | I::ReturnNezMany { .. }
             | I::Branch { .. }
+            | I::BranchCmpFallback { .. }
             | I::BranchI32And(_)
             | I::BranchI32AndImm(_)
             | I::BranchI32Or(_)

@@ -260,6 +260,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::BranchTable { index, len_targets } => {
                     self.execute_branch_table(index, len_targets)
                 }
+                Instr::BranchCmpFallback { lhs, rhs, params } => {
+                    self.execute_branch_cmp_fallback(lhs, rhs, params)
+                }
                 Instr::BranchI32And(instr) => self.execute_branch_i32_and(instr),
                 Instr::BranchI32AndImm(instr) => self.execute_branch_i32_and_imm(instr),
                 Instr::BranchI32Or(instr) => self.execute_branch_i32_or(instr),
