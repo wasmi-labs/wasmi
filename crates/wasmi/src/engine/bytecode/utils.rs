@@ -758,7 +758,10 @@ impl BranchOffset {
         }
         let src = i64::from(src.into_u32());
         let dst = i64::from(dst.into_u32());
-        let offset = dst.checked_sub(src).ok_or_else(make_err)?;
+        let Some(offset) = dst.checked_sub(src) else {
+            // Note: This never needs to be called on backwards branches since they are immediated resolved.
+            unreachable!("offset for forward branches must have `src` be smaller than or equal to `dst`");
+        };
         let offset = i32::try_from(offset).map_err(|_| make_err())?;
         Ok(Self(offset))
     }
