@@ -277,9 +277,9 @@ impl InstrEncoder {
     ///
     /// Returns an uninitialized [`BranchOffset`] if the `label` cannot yet
     /// be resolved and defers resolution to later.
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// If the [`BranchOffset`] cannot be encoded in 32 bits.
     pub fn try_resolve_label_for(
         &mut self,
