@@ -526,12 +526,6 @@ impl From<BranchOffset16> for BranchOffset {
 }
 
 impl BranchOffset16 {
-    /// Creates a 16-bit [`BranchOffset16`] from a 32-bit [`BranchOffset`] if possible.
-    pub fn new(offset: BranchOffset) -> Option<Self> {
-        let offset16 = i16::try_from(offset.to_i32()).ok()?;
-        Some(Self(offset16))
-    }
-
     /// Returns `true` if the [`BranchOffset16`] has been initialized.
     pub fn is_init(self) -> bool {
         self.to_i16() != 0
@@ -546,9 +540,7 @@ impl BranchOffset16 {
     pub fn init(&mut self, valid_offset: BranchOffset) -> Result<(), Error> {
         assert!(valid_offset.is_init());
         assert!(!self.is_init());
-        let Some(valid_offset16) = Self::new(valid_offset) else {
-            return Err(Error::from(TranslationError::BranchOffsetOutOfBounds));
-        };
+        let valid_offset16 = Self::try_from(valid_offset)?;
         *self = valid_offset16;
         Ok(())
     }

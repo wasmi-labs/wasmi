@@ -917,8 +917,9 @@ impl InstrEncoder {
                 return Ok(None);
             }
             let offset = this.try_resolve_label_for(label, last_instr)?;
-            let instr = BranchOffset16::new(offset)
-                .map(|offset16| make_instr(instr.lhs, instr.rhs, offset16));
+            let instr = BranchOffset16::try_from(offset)
+                .map(|offset16| make_instr(instr.lhs, instr.rhs, offset16))
+                .ok();
             Ok(instr)
         }
 
@@ -940,8 +941,9 @@ impl InstrEncoder {
                 return Ok(None);
             }
             let offset = this.try_resolve_label_for(label, last_instr)?;
-            let instr = BranchOffset16::new(offset)
-                .map(|offset16| make_instr(instr.reg_in, instr.imm_in, offset16));
+            let instr = BranchOffset16::try_from(offset)
+                .map(|offset16| make_instr(instr.reg_in, instr.imm_in, offset16))
+                .ok();
             Ok(instr)
         }
         use Instruction as I;
@@ -1099,8 +1101,9 @@ impl InstrEncoder {
                 return Ok(None);
             }
             let offset = this.try_resolve_label_for(label, last_instr)?;
-            let instr = BranchOffset16::new(offset)
-                .map(|offset16| make_instr(instr.lhs, instr.rhs, offset16));
+            let instr = BranchOffset16::try_from(offset)
+                .map(|offset16| make_instr(instr.lhs, instr.rhs, offset16))
+                .ok();
             Ok(instr)
         }
 
@@ -1122,8 +1125,9 @@ impl InstrEncoder {
                 return Ok(None);
             }
             let offset = this.try_resolve_label_for(label, last_instr)?;
-            let instr = BranchOffset16::new(offset)
-                .map(|offset16| make_instr(instr.reg_in, instr.imm_in, offset16));
+            let instr = BranchOffset16::try_from(offset)
+                .map(|offset16| make_instr(instr.reg_in, instr.imm_in, offset16))
+                .ok();
             Ok(instr)
         }
         use Instruction as I;
