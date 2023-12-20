@@ -958,46 +958,6 @@ impl InstrEncoder {
 
         #[rustfmt::skip]
         let fused_instr = match *self.instrs.get(last_instr) {
-            I::I32EqImm16(instr) if instr.imm_in.is_zero() => {
-                match stack.get_register_space(instr.result) {
-                    RegisterSpace::Local => None,
-                    _ => {
-                        let offset16 = self.try_resolve_label_for(label, last_instr)
-                            .and_then(BranchOffset16::try_from)?;
-                        Some(Instruction::branch_i32_nez(instr.reg_in, offset16))
-                    }
-                }
-            }
-            I::I64EqImm16(instr) if instr.imm_in.is_zero() => {
-                match stack.get_register_space(instr.result) {
-                    RegisterSpace::Local => None,
-                    _ => {
-                        let offset16 = self.try_resolve_label_for(label, last_instr)
-                            .and_then(BranchOffset16::try_from)?;
-                        Some(Instruction::branch_i64_nez(instr.reg_in, offset16))
-                    }
-                }
-            }
-            I::I32NeImm16(instr) if instr.imm_in.is_zero() => {
-                match stack.get_register_space(instr.result) {
-                    RegisterSpace::Local => None,
-                    _ => {
-                        let offset16 = self.try_resolve_label_for(label, last_instr)
-                            .and_then(BranchOffset16::try_from)?;
-                        Some(Instruction::branch_i32_eqz(instr.reg_in, offset16))
-                    }
-                }
-            }
-            I::I64NeImm16(instr) if instr.imm_in.is_zero() => {
-                match stack.get_register_space(instr.result) {
-                    RegisterSpace::Local => None,
-                    _ => {
-                        let offset16 = self.try_resolve_label_for(label, last_instr)
-                            .and_then(BranchOffset16::try_from)?;
-                        Some(Instruction::branch_i64_eqz(instr.reg_in, offset16))
-                    }
-                }
-            }
             I::I32And(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_and_eqz as _)?,
             I::I32Or(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_or_eqz as _)?,
             I::I32Xor(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_xor_eqz as _)?,
@@ -1142,46 +1102,6 @@ impl InstrEncoder {
 
         #[rustfmt::skip]
         let fused_instr = match *self.instrs.get(last_instr) {
-            I::I32EqImm16(instr) if instr.imm_in.is_zero() => {
-                match stack.get_register_space(instr.result) {
-                    RegisterSpace::Local => None,
-                    _ => {
-                        let offset16 = self.try_resolve_label_for(label, last_instr)
-                            .and_then(BranchOffset16::try_from)?;
-                        Some(Instruction::branch_i32_eqz(instr.reg_in, offset16))
-                    }
-                }
-            }
-            I::I64EqImm16(instr) if instr.imm_in.is_zero() => {
-                match stack.get_register_space(instr.result) {
-                    RegisterSpace::Local => None,
-                    _ => {
-                        let offset16 = self.try_resolve_label_for(label, last_instr)
-                            .and_then(BranchOffset16::try_from)?;
-                        Some(Instruction::branch_i64_eqz(instr.reg_in, offset16))
-                    }
-                }
-            }
-            I::I32NeImm16(instr) if instr.imm_in.is_zero() => {
-                match stack.get_register_space(instr.result) {
-                    RegisterSpace::Local => None,
-                    _ => {
-                        let offset16 = self.try_resolve_label_for(label, last_instr)
-                            .and_then(BranchOffset16::try_from)?;
-                        Some(Instruction::branch_i32_nez(instr.reg_in, offset16))
-                    }
-                }
-            }
-            I::I64NeImm16(instr) if instr.imm_in.is_zero() => {
-                match stack.get_register_space(instr.result) {
-                    RegisterSpace::Local => None,
-                    _ => {
-                        let offset16 = self.try_resolve_label_for(label, last_instr)
-                            .and_then(BranchOffset16::try_from)?;
-                        Some(Instruction::branch_i64_nez(instr.reg_in, offset16))
-                    }
-                }
-            }
             I::I32And(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_and as _)?,
             I::I32Or(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_or as _)?,
             I::I32Xor(instr) => fuse(self, stack, last_instr, instr, label, I::branch_i32_xor as _)?,
