@@ -537,6 +537,10 @@ impl BranchOffset16 {
     ///
     /// - If the [`BranchOffset`] have already been initialized.
     /// - If the given [`BranchOffset`] is not properly initialized.
+    ///
+    /// # Errors
+    ///
+    /// If `valid_offset` cannot be encoded as 16-bit [`BranchOffset16`].
     pub fn init(&mut self, valid_offset: BranchOffset) -> Result<(), Error> {
         assert!(valid_offset.is_init());
         assert!(!self.is_init());
