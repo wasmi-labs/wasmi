@@ -315,8 +315,8 @@ impl CodeMap {
     /// - If `func` refers to an already initialized [`CompiledFunc`].
     pub fn init_lazy_func(
         &mut self,
-        func_idx: FuncIdx,
         func: CompiledFunc,
+        func_idx: FuncIdx,
         bytes: &[u8],
         module: &ModuleHeader,
         func_to_validate: Option<FuncToValidate<ValidatorResources>>,
