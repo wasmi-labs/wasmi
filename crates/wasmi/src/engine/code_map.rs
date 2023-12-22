@@ -582,6 +582,7 @@ impl FuncEntity {
     /// Returns the [`CompiledFuncEntity`] if possible.
     ///
     /// Returns `None` if the [`FuncEntity`] has not yet been compiled.
+    #[inline]
     pub fn get_compiled(&self) -> Option<&CompiledFuncEntity> {
         if self.phase.is_compiled() {
             // SAFETY: Since `phase.is_compiled()` returned `true` we are guaranteed that
@@ -609,6 +610,7 @@ impl FuncEntity {
     /// # Errors
     ///
     /// If translation or Wasm validation of the [`FuncEntity`] failed.
+    #[cold]
     pub fn compile_and_get(&self) -> Result<&CompiledFuncEntity, Error> {
         loop {
             if let Some(func) = self.get_compiled() {
