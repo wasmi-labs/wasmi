@@ -5,7 +5,7 @@
 //! This is the data structure specialized to handle compiled
 //! register machine based bytecode functions.
 
-use super::{FuncTranslationDriver, FuncTranslator, ValidatingFuncTranslator};
+use super::{FuncTranslationDriver, FuncTranslator, TranslationError, ValidatingFuncTranslator};
 use crate::{
     core::UntypedValue,
     engine::bytecode::Instruction,
@@ -13,8 +13,14 @@ use crate::{
     Error,
 };
 use alloc::boxed::Box;
-use core::{fmt, mem, ops, slice};
-use spin::RwLock;
+use core::{
+    cell::UnsafeCell,
+    fmt,
+    mem,
+    ops,
+    slice,
+    sync::atomic::{AtomicU8, Ordering},
+};
 use wasmi_arena::{Arena, ArenaIndex};
 use wasmparser::{FuncToValidate, ValidatorResources};
 
@@ -76,22 +82,57 @@ impl InternalFuncEntity {
         Self::from(CompiledFuncEntity::uninit())
     }
 
-    /// Returns `true` if the [`InternalFuncEntity`] is uninitialized.
-    fn is_init(&self) -> bool {
-        match self {
-            InternalFuncEntity::Compiled(func) => func.is_init(),
-            InternalFuncEntity::Uncompiled(_) => true,
-        }
-    }
-
-    /// Returns `Some` [`CompiledFuncEntity`] if possible.
+    /// Compile the uncompiled [`FuncEntity`].
     ///
-    /// Otherwise returns `None`.
-    pub fn as_compiled(&self) -> Option<&CompiledFuncEntity> {
-        match self {
-            InternalFuncEntity::Compiled(func) => Some(func),
-            InternalFuncEntity::Uncompiled(_) => None,
-        }
+    /// # Panics
+    ///
+    /// - If the `func` unexpectedly has already been compiled.
+    /// - If the `engine` unexpectedly no longer exists due to weak referencing.
+    ///
+    /// # Errors
+    ///
+    /// If function translation failed.
+    fn compile(&mut self) -> Result<(), Error> {
+        let uncompiled = match self {
+            InternalFuncEntity::Uncompiled(func) => func,
+            InternalFuncEntity::Compiled(func) => {
+                unreachable!("expected func to be uncompiled: {func:?}")
+            }
+        };
+        let func_idx = uncompiled.func_idx;
+        let bytes = mem::take(&mut uncompiled.bytes);
+        let module = uncompiled.module.clone();
+        let Some(engine) = module.engine().upgrade() else {
+            panic!(
+                "cannot compile function lazily since engine does no longer exist: {:?}",
+                module.engine()
+            )
+        };
+        match uncompiled.func_to_validate.take() {
+            Some(func_to_validate) => {
+                let allocs = engine.get_allocs();
+                let translator = FuncTranslator::new(func_idx, module, allocs.0)?;
+                let validator = func_to_validate.into_validator(allocs.1);
+                let translator = ValidatingFuncTranslator::new(validator, translator)?;
+                let allocs = FuncTranslationDriver::new(0, &bytes[..], translator)?.translate(
+                    |compiled_func| {
+                        *self = InternalFuncEntity::Compiled(compiled_func);
+                    },
+                )?;
+                engine.recycle_allocs(allocs.translation, allocs.validation);
+            }
+            None => {
+                let allocs = engine.get_translation_allocs();
+                let translator = FuncTranslator::new(func_idx, module, allocs)?;
+                let allocs = FuncTranslationDriver::new(0, &bytes[..], translator)?.translate(
+                    |compiled_func| {
+                        *self = InternalFuncEntity::Compiled(compiled_func);
+                    },
+                )?;
+                engine.recycle_translation_allocs(allocs);
+            }
+        };
+        Ok(())
     }
 }
 
@@ -110,6 +151,23 @@ pub struct UncompiledFuncEntity {
     ///
     /// This is `Some` if the [`UncompiledFuncEntity`] is to be validated upon compilation.
     func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+}
+
+impl UncompiledFuncEntity {
+    /// Creates a new [`UncompiledFuncEntity`].
+    pub fn new(
+        func_idx: FuncIdx,
+        bytes: impl Into<SmallByteSlice>,
+        module: ModuleHeader,
+        func_to_validate: impl Into<Option<FuncToValidate<ValidatorResources>>>,
+    ) -> Self {
+        Self {
+            func_idx,
+            bytes: bytes.into(),
+            module,
+            func_to_validate: func_to_validate.into(),
+        }
+    }
 }
 
 impl fmt::Debug for UncompiledFuncEntity {
@@ -236,11 +294,6 @@ impl CompiledFuncEntity {
         }
     }
 
-    /// Returns `true` if the [`CompiledFuncEntity`] is uninitialized.
-    fn is_init(&self) -> bool {
-        !self.instrs.is_empty()
-    }
-
     /// Returns the sequence of [`Instruction`] of the [`CompiledFunc`].
     pub fn instrs(&self) -> &[Instruction] {
         &self.instrs[..]
@@ -277,8 +330,319 @@ impl CompiledFuncEntity {
 /// Datastructure to efficiently store information about compiled functions.
 #[derive(Debug, Default)]
 pub struct CodeMap {
-    /// The headers of all compiled functions.
-    entities: Arena<CompiledFunc, RwLock<InternalFuncEntity>>,
+    funcs: Arena<CompiledFunc, FuncEntity>,
+}
+
+/// Atomicly accessible [`CompilationPhase`].
+pub struct AtomicCompilationPhase {
+    /// The inner atomic `u8` value to represent the current [`CompilationPhase`].
+    inner: AtomicU8,
+}
+
+impl fmt::Debug for AtomicCompilationPhase {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.get().fmt(f)
+    }
+}
+
+/// Error that may occur when changing [`AtomicCompilationPhase`].
+#[derive(Debug)]
+pub enum CompilationPhaseError {
+    InvalidPhase,
+}
+
+impl AtomicCompilationPhase {
+    /// Convenience `u8` constant to represent [`CompilationPhase::Uninitialized`].
+    const UNINITIALIZED: u8 = CompilationPhase::Uninitialized as u8;
+
+    /// Convenience `u8` constant to represent [`CompilationPhase::Initializing`].
+    const INITIALIZING: u8 = CompilationPhase::Initializing as u8;
+
+    /// Convenience `u8` constant to represent [`CompilationPhase::Uncompiled`].
+    const UNCOMPILED: u8 = CompilationPhase::Uncompiled as u8;
+
+    /// Convenience `u8` constant to represent [`CompilationPhase::Compiling`].
+    const COMPILING: u8 = CompilationPhase::Compiling as u8;
+
+    /// Convenience `u8` constant to represent [`CompilationPhase::CompilationFailed`].
+    const COMPILATION_FAILED: u8 = CompilationPhase::CompilationFailed as u8;
+
+    /// Convenience `u8` constant to represent [`CompilationPhase::Compiled`].
+    const COMPILED: u8 = CompilationPhase::Compiled as u8;
+
+    /// Creates a new [`AtomicCompilationPhase`] initialized to the given [`CompilationPhase`].
+    const fn new(phase: CompilationPhase) -> Self {
+        Self {
+            inner: AtomicU8::new(phase as u8),
+        }
+    }
+
+    /// Creates a new [`AtomicCompilationPhase`] set to [`CompilationPhase::Uninitialized`].
+    pub const fn uninit() -> Self {
+        Self::new(CompilationPhase::Uninitialized)
+    }
+
+    /// Returns the current [`CompilationPhase`].
+    pub fn get(&self) -> CompilationPhase {
+        match self.inner.load(Ordering::Acquire) {
+            Self::UNINITIALIZED => CompilationPhase::Uninitialized,
+            Self::INITIALIZING => CompilationPhase::Initializing,
+            Self::UNCOMPILED => CompilationPhase::Uncompiled,
+            Self::COMPILING => CompilationPhase::Compiling,
+            Self::COMPILATION_FAILED => CompilationPhase::CompilationFailed,
+            Self::COMPILED => CompilationPhase::Compiled,
+            state => unreachable!("encountered invalid compilation phase state: {state}"),
+        }
+    }
+
+    /// Returns `true` if [`AtomicCompilationPhase`] is [`CompilationPhase::Compiled`].
+    pub fn is_compiled(&self) -> bool {
+        self.inner.load(Ordering::Acquire) == Self::COMPILED
+    }
+
+    /// Change [`AtomicCompilationPhase`] from `from` to `to`.
+    ///
+    /// Returns `true` if the phase change was successful.
+    #[inline]
+    fn change_phase(
+        &self,
+        from: CompilationPhase,
+        to: CompilationPhase,
+    ) -> Result<(), CompilationPhaseError> {
+        let from = from as u8;
+        let to = to as u8;
+        match self
+            .inner
+            .compare_exchange(from, to, Ordering::SeqCst, Ordering::Relaxed)
+        {
+            Ok(phase) if phase == from => Ok(()),
+            _ => Err(CompilationPhaseError::InvalidPhase),
+        }
+    }
+
+    /// Sets [`AtomicCompilationPhase`] to [`CompilationPhase::Initializing`].
+    ///
+    /// # Errors
+    ///
+    /// If the current [`CompilationPhase`] is not [`CompilationPhase::Uninitialized`].
+    pub fn init(&self) -> Result<(), CompilationPhaseError> {
+        self.change_phase(
+            CompilationPhase::Uninitialized,
+            CompilationPhase::Initializing,
+        )
+    }
+
+    /// Sets [`AtomicCompilationPhase`] to [`CompilationPhase::Compiled`].
+    ///
+    /// # Errors
+    ///
+    /// If the current [`CompilationPhase`] is not [`CompilationPhase::Initializing`].
+    pub fn init_compiled(&self) -> Result<(), CompilationPhaseError> {
+        self.change_phase(CompilationPhase::Initializing, CompilationPhase::Compiled)
+    }
+
+    /// Sets [`AtomicCompilationPhase`] to [`CompilationPhase::Uncompiled`].
+    ///
+    /// # Errors
+    ///
+    /// If the current [`CompilationPhase`] is not [`CompilationPhase::Initializing`].
+    pub fn init_uncompiled(&self) -> Result<(), CompilationPhaseError> {
+        self.change_phase(CompilationPhase::Initializing, CompilationPhase::Uncompiled)
+    }
+
+    /// Sets [`AtomicCompilationPhase`] to [`CompilationPhase::Compiling`].
+    ///
+    /// # Errors
+    ///
+    /// If the current [`CompilationPhase`] is not [`CompilationPhase::Uncompiled`].
+    pub fn set_compiling(&self) -> Result<(), CompilationPhaseError> {
+        self.change_phase(CompilationPhase::Uncompiled, CompilationPhase::Compiling)
+    }
+
+    /// Sets [`AtomicCompilationPhase`] to [`CompilationPhase::CompilationFailed`].
+    ///
+    /// # Errors
+    ///
+    /// If the current [`CompilationPhase`] is not [`CompilationPhase::Compiling`].
+    pub fn set_compilation_failed(&self) -> Result<(), CompilationPhaseError> {
+        self.change_phase(
+            CompilationPhase::Compiling,
+            CompilationPhase::CompilationFailed,
+        )
+    }
+
+    /// Sets [`AtomicCompilationPhase`] to [`CompilationPhase::CompilationFailed`].
+    ///
+    /// # Errors
+    ///
+    /// If the current [`CompilationPhase`] is not [`CompilationPhase::Compiling`].
+    pub fn set_compiled(&self) -> Result<(), CompilationPhaseError> {
+        self.change_phase(CompilationPhase::Compiling, CompilationPhase::Compiled)
+    }
+}
+
+/// The current [`CompilationPhase`] of an [`InternalFuncEntity`].
+#[derive(Debug, Copy, Clone)]
+#[repr(u8)]
+pub enum CompilationPhase {
+    /// The function has not yet been initialized.
+    ///
+    /// # Note
+    ///
+    /// After allocation of a function entity the function is uninitialized
+    /// until it has been initialized for either eager or lazy compilation purposes.
+    Uninitialized = 0,
+    /// The function is currently being initialized.
+    Initializing = 1,
+    /// The function is in an uncompiled state and awaits lazy compilation.
+    Uncompiled = 2,
+    /// The function is currently being lazily compiled.
+    Compiling = 3,
+    /// The function has been lazily compiled successfully and is available for execution.
+    Compiled = 4,
+    /// Lazy compilation of the function has failed.
+    CompilationFailed = 5,
+}
+
+/// A function entity of a [`CodeMap`].
+#[derive(Debug)]
+struct FuncEntity {
+    /// Synchronization for the `func` field.
+    phase: AtomicCompilationPhase,
+    /// The underlying function entity.
+    func: UnsafeCell<InternalFuncEntity>,
+}
+
+impl FuncEntity {
+    /// Create a new uninitialized [`FuncEntity`].
+    pub fn uninit() -> Self {
+        Self {
+            phase: AtomicCompilationPhase::uninit(),
+            func: UnsafeCell::new(InternalFuncEntity::uninit()),
+        }
+    }
+
+    /// Initializes the [`CompiledFunc`] with a [`CompiledFuncEntity`].
+    ///
+    /// # Panics
+    ///
+    /// If `func` has already been initialized [`CompiledFunc`].
+    pub fn init_compiled(&self, entity: CompiledFuncEntity) {
+        assert!(
+            self.phase.init().is_ok(),
+            "function ({:?}) must be uninitialized but found: {:?}",
+            self.func,
+            self.phase
+        );
+        // SAFETY: A write-lock was just acquired by setting the phase to initializing
+        //         and no other thread will intervene. It is the responsibility of this
+        //         thread to initialize the associated function entity and finalize the
+        //         phase.
+        let func = unsafe { &mut *self.func.get() };
+        *func = entity.into();
+        assert!(
+            self.phase.init_compiled().is_ok(),
+            "function ({:?}) must be initializing but found: {:?}",
+            self.func,
+            self.phase
+        )
+    }
+
+    /// Initializes the [`CompiledFunc`] to an uncompiled state.
+    ///
+    /// # Panics
+    ///
+    /// If `func` has already been initialized [`CompiledFunc`].
+    pub fn init_uncompiled(
+        &self,
+        func_idx: FuncIdx,
+        bytes: &[u8],
+        module: &ModuleHeader,
+        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+    ) {
+        assert!(
+            self.phase.init().is_ok(),
+            "function ({:?}) must be uninitialized but found: {:?}",
+            self.func,
+            self.phase
+        );
+        let entity = UncompiledFuncEntity::new(func_idx, bytes, module.clone(), func_to_validate);
+        // SAFETY: A write-lock was just acquired by setting the phase to initializing
+        //         and no other thread will intervene. It is the responsibility of this
+        //         thread to initialize the associated function entity and finalize the
+        //         phase.
+        let func = unsafe { &mut *self.func.get() };
+        *func = entity.into();
+        assert!(
+            self.phase.init_uncompiled().is_ok(),
+            "function ({:?}) must be initializing but found: {:?}",
+            self.func,
+            self.phase
+        )
+    }
+
+    /// Returns the [`CompiledFuncEntity`] if possible.
+    ///
+    /// Returns `None` if the [`FuncEntity`] has not yet been compiled.
+    pub fn get_compiled(&self) -> Option<&CompiledFuncEntity> {
+        if self.phase.is_compiled() {
+            // SAFETY: Since `phase.is_compiled()` returned `true` we are guaranteed that
+            //         `self.func` is immutably initialized with a `CompiledFuncEntity`.
+            //         A `CompiledFuncEntity` cannot be mutated after it has been compiled.
+            match unsafe { &*self.func.get() } {
+                InternalFuncEntity::Compiled(func) => return Some(func),
+                InternalFuncEntity::Uncompiled(func) => {
+                    unreachable!("expected func to be compiled: {func:?}")
+                }
+            }
+        }
+        None
+    }
+
+    /// Compile the [`FuncEntity`] if necessary and return the resulting [`CompiledFuncEntity`].
+    ///
+    /// # Note
+    ///
+    /// This will either compile the [`FuncEntity`] or busy wait until
+    /// another thread is done compiling the [`FuncEntity`].
+    ///
+    /// # Errors
+    ///
+    /// If translation or Wasm validation of the [`FuncEntity`] failed.
+    pub fn compile_and_get(&self) -> Result<&CompiledFuncEntity, Error> {
+        loop {
+            if let Some(func) = self.get_compiled() {
+                // Case: The function has been compiled and can be returned.
+                return Ok(func);
+            }
+            if matches!(self.phase.get(), CompilationPhase::CompilationFailed) {
+                // Case: Another thread failed to compile the function.
+                return Err(Error::from(TranslationError::LazyCompilationFailed));
+            }
+            let Ok(_) = self.phase.set_compiling() else {
+                // Case: Another thread is currently compiling the function so we have to wait.
+                continue;
+            };
+            // At this point we are now in charge of driving the function translation.
+            //
+            // SAFETY: This method is only called after a lock has been acquired
+            //         to take responsibility for driving the function translation.
+            let func = unsafe { &mut *self.func.get() };
+            match func.compile() {
+                Ok(()) => {
+                    self.phase
+                        .set_compiled()
+                        .expect("unexpectedly failed to finish function compilation");
+                }
+                Err(error) => {
+                    self.phase
+                        .set_compilation_failed()
+                        .expect("unexpectedly failed to mark function compilation failed");
+                    return Err(error);
+                }
+            }
+        }
+    }
 }
 
 impl CodeMap {
@@ -289,8 +653,7 @@ impl CodeMap {
     /// The uninitialized [`CompiledFunc`] must be initialized using
     /// [`CodeMap::init_func`] before it is executed.
     pub fn alloc_func(&mut self) -> CompiledFunc {
-        self.entities
-            .alloc(RwLock::new(InternalFuncEntity::uninit()))
+        self.funcs.alloc(FuncEntity::uninit())
     }
 
     /// Initializes the [`CompiledFunc`] with its [`CompiledFuncEntity`].
@@ -299,12 +662,11 @@ impl CodeMap {
     ///
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
-    pub fn init_func(&mut self, func: CompiledFunc, entity: CompiledFuncEntity) {
-        let Some(func) = self.entities.get_mut(func).map(RwLock::get_mut) else {
-            panic!("tried to initialize invalid compiled func: {func:?}")
+    pub fn init_func(&self, func: CompiledFunc, entity: CompiledFuncEntity) {
+        let Some(func) = self.funcs.get(func) else {
+            panic!("encountered invalid function index for initialization: {func:?}")
         };
-        assert!(!func.is_init(), "func {func:?} is already initialized");
-        *func = entity.into();
+        func.init_compiled(entity);
     }
 
     /// Initializes the [`CompiledFunc`] for lazy translation.
@@ -321,107 +683,21 @@ impl CodeMap {
         module: &ModuleHeader,
         func_to_validate: Option<FuncToValidate<ValidatorResources>>,
     ) {
-        let Some(func) = self.entities.get_mut(func).map(RwLock::get_mut) else {
-            panic!("tried to initialize invalid compiled func: {func:?}")
+        let Some(func) = self.funcs.get(func) else {
+            panic!("encountered invalid function index for initialization: {func:?}")
         };
-        assert!(!func.is_init(), "func {func:?} is already initialized");
-        let bytes = bytes.into();
-        let module = module.clone();
-        *func = InternalFuncEntity::Uncompiled(UncompiledFuncEntity {
-            func_idx,
-            bytes,
-            module,
-            func_to_validate,
-        });
+        func.init_uncompiled(func_idx, bytes, module, func_to_validate);
     }
 
     /// Returns the [`InternalFuncEntity`] of the [`CompiledFunc`].
     #[track_caller]
     pub fn get(&self, compiled_func: CompiledFunc) -> Result<&CompiledFuncEntity, Error> {
-        let func = self
-            .entities
-            .get(compiled_func)
-            .unwrap_or_else(|| panic!("invalid compiled func: {compiled_func:?}"));
-        // Safety: Internal function entities of compiled functions are immutable.
-        //         Therefore returning read-only access to compiled function entities is safe.
-        let func_ptr = unsafe { &*func.as_mut_ptr() };
-        if let InternalFuncEntity::Compiled(compiled) = func_ptr {
-            Ok(compiled)
-        } else {
-            self.compile_or_get(func)
-        }
-    }
-
-    /// Returns the compiled result of `func`.
-    ///
-    /// This tries to acquire write-access to `func` in order to compile it.
-    /// Whichever threads gets write-access first compiles `func` to completion.
-    /// All other threads are going to use the result of the single compilation.
-    #[cold]
-    fn compile_or_get<'a>(
-        &'a self,
-        func: &'a RwLock<InternalFuncEntity>,
-    ) -> Result<&'a CompiledFuncEntity, Error> {
-        loop {
-            // Note: We intentionally do _not_ use the safe read-lock API in order to make
-            //       locking for write-access fairer in cases where many threads are trying to compile `func`.
-            //       This is needed since read-write locks are unfair towards writers.
-            //
-            // Safety: Internal function entities of compiled functions are immutable.
-            //         Therefore returning read-only access to compiled function entities is safe.
-            if let InternalFuncEntity::Compiled(compiled) = unsafe { &*func.as_mut_ptr() } {
-                // Case: Another thread already compiled `func` so we can return the result of the compilation.
-                return Ok(compiled);
-            }
-            let Some(mut func) = func.try_write() else {
-                continue;
-            };
-            let InternalFuncEntity::Uncompiled(uncompiled) = &mut *func else {
-                // Note: After compilation it is no longer possible to acquire a write lock to the internal function entity.
-                unreachable!("function has unexpectedly already been compiled: {func:?}");
-            };
-            let func_idx = uncompiled.func_idx;
-            let bytes = mem::take(&mut uncompiled.bytes);
-            let module = uncompiled.module.clone();
-            let Some(engine) = module.engine().upgrade() else {
-                panic!(
-                    "cannot compile function lazily since engine does no longer exist: {:?}",
-                    module.engine()
-                )
-            };
-            match uncompiled.func_to_validate.take() {
-                Some(func_to_validate) => {
-                    let allocs = engine.get_allocs();
-                    let translator = FuncTranslator::new(func_idx, module, allocs.0)?;
-                    let validator = func_to_validate.into_validator(allocs.1);
-                    let translator = ValidatingFuncTranslator::new(validator, translator)?;
-                    let allocs = FuncTranslationDriver::new(0, &bytes[..], translator)?.translate(
-                        |compiled_func| {
-                            *func = InternalFuncEntity::Compiled(compiled_func);
-                        },
-                    )?;
-                    engine.recycle_allocs(allocs.translation, allocs.validation);
-                }
-                None => {
-                    let allocs = engine.get_translation_allocs();
-                    let translator = FuncTranslator::new(func_idx, module, allocs)?;
-                    let allocs = FuncTranslationDriver::new(0, &bytes[..], translator)?.translate(
-                        |compiled_func| {
-                            *func = InternalFuncEntity::Compiled(compiled_func);
-                        },
-                    )?;
-                    engine.recycle_translation_allocs(allocs);
-                }
-            }
-            // TODO: In case translation of `func` fails it is going to be recompiled over and over again
-            //       for every threads which might be very costly. A status flag that indicates compilation
-            //       failure might be required to fix this.
-            // Note: Leaking a read-lock will deny write access to all future accesses.
-            //       This is fine since function entities are immutable once compiled.
-            let func = spin::RwLockReadGuard::leak(func.downgrade())
-                .as_compiled()
-                .expect("the function has just been compiled");
-            return Ok(func);
+        let Some(func) = self.funcs.get(compiled_func) else {
+            panic!("invalid compiled func: {compiled_func:?}")
+        };
+        match func.get_compiled() {
+            Some(func) => Ok(func),
+            None => func.compile_and_get(),
         }
     }
 }
