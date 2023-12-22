@@ -57,7 +57,7 @@ impl ArenaIndex for CompiledFunc {
 ///
 /// Either an already compiled or still uncompiled function entity.
 #[derive(Debug)]
-pub enum InternalFuncEntity {
+enum InternalFuncEntity {
     /// An internal function that has already been compiled.
     Compiled(CompiledFuncEntity),
     /// An internal function that has not yet been compiled.
