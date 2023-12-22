@@ -355,9 +355,6 @@ impl AtomicCompilationPhase {
     /// Convenience `u8` constant to represent [`CompilationPhase::Uninitialized`].
     const UNINITIALIZED: u8 = CompilationPhase::Uninitialized as u8;
 
-    /// Convenience `u8` constant to represent [`CompilationPhase::Initializing`].
-    const INITIALIZING: u8 = CompilationPhase::Initializing as u8;
-
     /// Convenience `u8` constant to represent [`CompilationPhase::Uncompiled`].
     const UNCOMPILED: u8 = CompilationPhase::Uncompiled as u8;
 
@@ -386,7 +383,6 @@ impl AtomicCompilationPhase {
     pub fn get(&self) -> CompilationPhase {
         match self.inner.load(Ordering::Acquire) {
             Self::UNINITIALIZED => CompilationPhase::Uninitialized,
-            Self::INITIALIZING => CompilationPhase::Initializing,
             Self::UNCOMPILED => CompilationPhase::Uncompiled,
             Self::COMPILING => CompilationPhase::Compiling,
             Self::COMPILATION_FAILED => CompilationPhase::CompilationFailed,
@@ -398,6 +394,11 @@ impl AtomicCompilationPhase {
     /// Returns `true` if [`AtomicCompilationPhase`] is [`CompilationPhase::Compiled`].
     pub fn is_compiled(&self) -> bool {
         self.inner.load(Ordering::Acquire) == Self::COMPILED
+    }
+
+    /// Returns `true` if [`AtomicCompilationPhase`] is [`CompilationPhase::Uninitialized`].
+    pub fn is_uninit(&mut self) -> bool {
+        *self.inner.get_mut() == CompilationPhase::Uninitialized as u8
     }
 
     /// Change [`AtomicCompilationPhase`] from `from` to `to`.
@@ -420,16 +421,21 @@ impl AtomicCompilationPhase {
         }
     }
 
-    /// Sets [`AtomicCompilationPhase`] to [`CompilationPhase::Initializing`].
+    /// Change [`AtomicCompilationPhase`] from `from` to `to`.
     ///
-    /// # Errors
-    ///
-    /// If the current [`CompilationPhase`] is not [`CompilationPhase::Uninitialized`].
-    pub fn init(&self) -> Result<(), CompilationPhaseError> {
-        self.change_phase(
-            CompilationPhase::Uninitialized,
-            CompilationPhase::Initializing,
-        )
+    /// Returns `true` if the phase change was successful.
+    #[inline]
+    fn change_phase_mut(
+        &mut self,
+        from: CompilationPhase,
+        to: CompilationPhase,
+    ) -> Result<(), CompilationPhaseError> {
+        let phase = self.inner.get_mut();
+        if *phase != from as u8 {
+            return Err(CompilationPhaseError::InvalidPhase);
+        }
+        *phase = to as u8;
+        Ok(())
     }
 
     /// Sets [`AtomicCompilationPhase`] to [`CompilationPhase::Compiled`].
@@ -437,8 +443,8 @@ impl AtomicCompilationPhase {
     /// # Errors
     ///
     /// If the current [`CompilationPhase`] is not [`CompilationPhase::Initializing`].
-    pub fn init_compiled(&self) -> Result<(), CompilationPhaseError> {
-        self.change_phase(CompilationPhase::Initializing, CompilationPhase::Compiled)
+    pub fn init_compiled(&mut self) -> Result<(), CompilationPhaseError> {
+        self.change_phase_mut(CompilationPhase::Uninitialized, CompilationPhase::Compiled)
     }
 
     /// Sets [`AtomicCompilationPhase`] to [`CompilationPhase::Uncompiled`].
@@ -446,8 +452,11 @@ impl AtomicCompilationPhase {
     /// # Errors
     ///
     /// If the current [`CompilationPhase`] is not [`CompilationPhase::Initializing`].
-    pub fn init_uncompiled(&self) -> Result<(), CompilationPhaseError> {
-        self.change_phase(CompilationPhase::Initializing, CompilationPhase::Uncompiled)
+    pub fn init_uncompiled(&mut self) -> Result<(), CompilationPhaseError> {
+        self.change_phase_mut(
+            CompilationPhase::Uninitialized,
+            CompilationPhase::Uncompiled,
+        )
     }
 
     /// Sets [`AtomicCompilationPhase`] to [`CompilationPhase::Compiling`].
@@ -492,16 +501,14 @@ pub enum CompilationPhase {
     /// After allocation of a function entity the function is uninitialized
     /// until it has been initialized for either eager or lazy compilation purposes.
     Uninitialized = 0,
-    /// The function is currently being initialized.
-    Initializing = 1,
     /// The function is in an uncompiled state and awaits lazy compilation.
-    Uncompiled = 2,
+    Uncompiled = 1,
     /// The function is currently being lazily compiled.
-    Compiling = 3,
+    Compiling = 2,
     /// The function has been lazily compiled successfully and is available for execution.
-    Compiled = 4,
+    Compiled = 3,
     /// Lazy compilation of the function has failed.
-    CompilationFailed = 5,
+    CompilationFailed = 4,
 }
 
 /// A function entity of a [`CodeMap`].
@@ -527,19 +534,14 @@ impl FuncEntity {
     /// # Panics
     ///
     /// If `func` has already been initialized [`CompiledFunc`].
-    pub fn init_compiled(&self, entity: CompiledFuncEntity) {
+    pub fn init_compiled(&mut self, entity: CompiledFuncEntity) {
         assert!(
-            self.phase.init().is_ok(),
+            self.phase.is_uninit(),
             "function ({:?}) must be uninitialized but found: {:?}",
             self.func,
             self.phase
         );
-        // SAFETY: A write-lock was just acquired by setting the phase to initializing
-        //         and no other thread will intervene. It is the responsibility of this
-        //         thread to initialize the associated function entity and finalize the
-        //         phase.
-        let func = unsafe { &mut *self.func.get() };
-        *func = entity.into();
+        *self.func.get_mut() = entity.into();
         assert!(
             self.phase.init_compiled().is_ok(),
             "function ({:?}) must be initializing but found: {:?}",
@@ -554,25 +556,20 @@ impl FuncEntity {
     ///
     /// If `func` has already been initialized [`CompiledFunc`].
     pub fn init_uncompiled(
-        &self,
+        &mut self,
         func_idx: FuncIdx,
         bytes: &[u8],
         module: &ModuleHeader,
         func_to_validate: Option<FuncToValidate<ValidatorResources>>,
     ) {
         assert!(
-            self.phase.init().is_ok(),
+            self.phase.is_uninit(),
             "function ({:?}) must be uninitialized but found: {:?}",
             self.func,
             self.phase
         );
-        let entity = UncompiledFuncEntity::new(func_idx, bytes, module.clone(), func_to_validate);
-        // SAFETY: A write-lock was just acquired by setting the phase to initializing
-        //         and no other thread will intervene. It is the responsibility of this
-        //         thread to initialize the associated function entity and finalize the
-        //         phase.
-        let func = unsafe { &mut *self.func.get() };
-        *func = entity.into();
+        *self.func.get_mut() =
+            UncompiledFuncEntity::new(func_idx, bytes, module.clone(), func_to_validate).into();
         assert!(
             self.phase.init_uncompiled().is_ok(),
             "function ({:?}) must be initializing but found: {:?}",
@@ -662,8 +659,8 @@ impl CodeMap {
     ///
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
-    pub fn init_func(&self, func: CompiledFunc, entity: CompiledFuncEntity) {
-        let Some(func) = self.funcs.get(func) else {
+    pub fn init_func(&mut self, func: CompiledFunc, entity: CompiledFuncEntity) {
+        let Some(func) = self.funcs.get_mut(func) else {
             panic!("encountered invalid function index for initialization: {func:?}")
         };
         func.init_compiled(entity);
@@ -683,7 +680,7 @@ impl CodeMap {
         module: &ModuleHeader,
         func_to_validate: Option<FuncToValidate<ValidatorResources>>,
     ) {
-        let Some(func) = self.funcs.get(func) else {
+        let Some(func) = self.funcs.get_mut(func) else {
             panic!("encountered invalid function index for initialization: {func:?}")
         };
         func.init_uncompiled(func_idx, bytes, module, func_to_validate);
