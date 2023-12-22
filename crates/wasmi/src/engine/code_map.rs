@@ -16,6 +16,7 @@ use alloc::boxed::Box;
 use core::{
     cell::UnsafeCell,
     fmt,
+    hint,
     mem,
     ops,
     slice,
@@ -588,8 +589,10 @@ impl FuncEntity {
             //         A `CompiledFuncEntity` cannot be mutated after it has been compiled.
             match unsafe { &*self.func.get() } {
                 InternalFuncEntity::Compiled(func) => return Some(func),
-                InternalFuncEntity::Uncompiled(func) => {
-                    unreachable!("expected func to be compiled: {func:?}")
+                InternalFuncEntity::Uncompiled(_func) => {
+                    // SAFETY: Since the function is in compiled state we are guaranteed
+                    //         that it is an `InternalFuncEntity::Compiled` variant.
+                    unsafe { hint::unreachable_unchecked() }
                 }
             }
         }
