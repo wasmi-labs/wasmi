@@ -442,7 +442,7 @@ impl AtomicCompilationPhase {
     ///
     /// # Errors
     ///
-    /// If the current [`CompilationPhase`] is not [`CompilationPhase::Initializing`].
+    /// If the current [`CompilationPhase`] is not [`CompilationPhase::Uninitialized`].
     pub fn init_compiled(&mut self) -> Result<(), CompilationPhaseError> {
         self.change_phase_mut(CompilationPhase::Uninitialized, CompilationPhase::Compiled)
     }
@@ -451,7 +451,7 @@ impl AtomicCompilationPhase {
     ///
     /// # Errors
     ///
-    /// If the current [`CompilationPhase`] is not [`CompilationPhase::Initializing`].
+    /// If the current [`CompilationPhase`] is not [`CompilationPhase::Uninitialized`].
     pub fn init_uncompiled(&mut self) -> Result<(), CompilationPhaseError> {
         self.change_phase_mut(
             CompilationPhase::Uninitialized,
