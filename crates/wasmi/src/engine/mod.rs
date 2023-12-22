@@ -726,7 +726,7 @@ impl EngineInner {
         self.res
             .write()
             .code_map
-            .init_lazy_func(func_idx, func, bytes, module, func_to_validate)
+            .init_lazy_func(func, func_idx, bytes, module, func_to_validate)
     }
 
     /// Resolves the [`InternalFuncEntity`] for [`CompiledFunc`] and applies `f` to it.

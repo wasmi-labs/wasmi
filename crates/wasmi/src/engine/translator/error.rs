@@ -27,6 +27,8 @@ pub enum TranslationError {
     TooManyFunctionResults,
     /// Tried to define a function with too many function parameters.
     TooManyFunctionParams,
+    /// The function failed to compiled lazily.
+    LazyCompilationFailed,
 }
 
 impl TranslationError {
@@ -91,6 +93,12 @@ impl Display for TranslationError {
             }
             Self::TooManyFunctionParams => {
                 write!(f, "encountered function with too many function parameters")
+            }
+            Self::LazyCompilationFailed => {
+                write!(
+                    f,
+                    "lazy function compilation encountered a Wasm validation or translation error"
+                )
             }
         }
     }
