@@ -57,6 +57,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// # Note
     ///
     /// The `offset` denotes how many [`Instruction`] words make up the call instruction.
+    #[inline(always)]
     fn update_instr_ptr_at(&mut self, offset: usize) {
         // Note: we explicitly do not mutate `self.ip` since that would make
         // other parts of the code more fragile with respect to instruction ordering.
@@ -80,6 +81,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// - This is required for some instructions that do not fit into
     ///   a single instruction word and store a [`TableIdx`] value in
     ///   another instruction word.
+    #[inline(always)]
     fn pull_call_indirect_params(&mut self) -> (u32, TableIdx) {
         self.ip.add(1);
         match self.ip.get() {
@@ -100,6 +102,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Creates a [`CallFrame`] for calling the [`CompiledFunc`].
+    #[inline(always)]
     fn dispatch_compiled_func(
         &mut self,
         results: RegisterSpan,
@@ -126,6 +129,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// This will also adjust the instruction pointer to point to the
     /// last call parameter [`Instruction`] if any.
     #[must_use]
+    #[inline(always)]
     fn copy_call_params(&mut self, mut called_regs: ValueStackPtr) -> InstructionPtr {
         let mut dst = Register::from_i16(0);
         let mut ip = self.ip;
@@ -162,6 +166,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Prepares a [`CompiledFunc`] call with optional [`CallParams`].
+    #[inline(always)]
     fn prepare_compiled_func_call(
         &mut self,
         results: RegisterSpan,
@@ -212,6 +217,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::ReturnCallInternal`] or [`Instruction::ReturnCallInternal0`].
+    #[inline(always)]
     fn execute_return_call_internal_impl(
         &mut self,
         func: CompiledFunc,
@@ -229,6 +235,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// tail call instructions for which the top-most [`CallFrame`] is the caller.
     ///
     /// [`CallStack`]: crate::engine::executor::stack::CallStack
+    #[inline(always)]
     fn caller_results(&self) -> RegisterSpan {
         self.call_stack
             .peek()
@@ -269,6 +276,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::ReturnCallImported`] or [`Instruction::ReturnCallImported0`].
+    #[inline(always)]
     fn execute_return_call_imported_impl(
         &mut self,
         func: FuncIdx,
@@ -302,6 +310,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an imported or indirect (tail) call instruction.
+    #[inline(always)]
     fn execute_call_imported_impl(
         &mut self,
         results: RegisterSpan,
@@ -427,6 +436,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::CallIndirect`] and [`Instruction::CallIndirect0`].
+    #[inline(always)]
     fn execute_call_indirect_impl(
         &mut self,
         results: RegisterSpan,
