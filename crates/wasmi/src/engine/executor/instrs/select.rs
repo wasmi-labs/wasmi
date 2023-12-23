@@ -25,7 +25,7 @@ macro_rules! fetch_select_imm_param {
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Returns the parameter of [`Instruction::Select`] or [`Instruction::SelectRev`] as [`UntypedValue`].
-    #[inline(always)]
+    #[inline]
     fn fetch_select_param(&self) -> UntypedValue {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
@@ -41,7 +41,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a `select` instruction generically.
-    #[inline(always)]
+    #[inline]
     fn execute_select_impl<L, R>(
         &mut self,
         result: Register,
