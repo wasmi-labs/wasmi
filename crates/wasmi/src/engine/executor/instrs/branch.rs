@@ -54,6 +54,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic fused compare and branch instruction.
+    #[inline(always)]
     fn execute_branch_binop<T>(&mut self, instr: BranchBinOpInstr, f: fn(T, T) -> bool)
     where
         T: From<UntypedValue>,
@@ -62,6 +63,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic fused compare and branch instruction with raw inputs.
+    #[inline(always)]
     fn execute_branch_binop_raw<T>(
         &mut self,
         lhs: Register,
@@ -80,6 +82,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic fused compare and branch instruction with immediate `rhs` operand.
+    #[inline(always)]
     fn execute_branch_binop_imm<T>(&mut self, instr: BranchBinOpInstrImm16<T>, f: fn(T, T) -> bool)
     where
         T: From<UntypedValue> + From<Const16<T>>,
@@ -93,6 +96,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 }
 
+#[inline(always)]
 fn cmp_eq<T>(a: T, b: T) -> bool
 where
     T: PartialEq,
@@ -100,6 +104,7 @@ where
     a == b
 }
 
+#[inline(always)]
 fn cmp_ne<T>(a: T, b: T) -> bool
 where
     T: PartialEq,
@@ -107,6 +112,7 @@ where
     a != b
 }
 
+#[inline(always)]
 fn cmp_lt<T>(a: T, b: T) -> bool
 where
     T: PartialOrd,
@@ -114,6 +120,7 @@ where
     a < b
 }
 
+#[inline(always)]
 fn cmp_le<T>(a: T, b: T) -> bool
 where
     T: PartialOrd,
@@ -121,6 +128,7 @@ where
     a <= b
 }
 
+#[inline(always)]
 fn cmp_gt<T>(a: T, b: T) -> bool
 where
     T: PartialOrd,
@@ -128,6 +136,7 @@ where
     a > b
 }
 
+#[inline(always)]
 fn cmp_ge<T>(a: T, b: T) -> bool
 where
     T: PartialOrd,
@@ -135,26 +144,32 @@ where
     a >= b
 }
 
+#[inline(always)]
 fn cmp_i32_and(a: i32, b: i32) -> bool {
     (a & b) != 0
 }
 
+#[inline(always)]
 fn cmp_i32_or(a: i32, b: i32) -> bool {
     (a | b) != 0
 }
 
+#[inline(always)]
 fn cmp_i32_xor(a: i32, b: i32) -> bool {
     (a ^ b) != 0
 }
 
+#[inline(always)]
 fn cmp_i32_and_eqz(a: i32, b: i32) -> bool {
     !cmp_i32_and(a, b)
 }
 
+#[inline(always)]
 fn cmp_i32_or_eqz(a: i32, b: i32) -> bool {
     !cmp_i32_or(a, b)
 }
 
+#[inline(always)]
 fn cmp_i32_xor_eqz(a: i32, b: i32) -> bool {
     !cmp_i32_xor(a, b)
 }
@@ -261,6 +276,7 @@ impl_execute_branch_binop_imm! {
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes an [`Instruction::BranchCmpFallback`].
+    #[inline(always)]
     pub fn execute_branch_cmp_fallback(&mut self, lhs: Register, rhs: Register, params: Register) {
         use BranchComparator as C;
         let params = self.get_register(params);

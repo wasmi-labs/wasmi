@@ -18,6 +18,7 @@ type WasmStoreOp = fn(
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Returns the [`Instruction::Register`] parameter for an [`Instruction`].
+    #[inline(always)]
     fn fetch_store_value(&self, offset: usize) -> Register {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
@@ -50,6 +51,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         Ok(())
     }
 
+    #[inline(always)]
     fn execute_store(&mut self, instr: StoreInstr, store_op: WasmStoreOp) -> Result<(), Error> {
         let value = self.fetch_store_value(1);
         self.execute_store_wrap(
@@ -61,6 +63,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.try_next_instr_at(2)
     }
 
+    #[inline(always)]
     fn execute_store_offset16(
         &mut self,
         instr: StoreOffset16Instr<Register>,
@@ -75,6 +78,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.try_next_instr()
     }
 
+    #[inline(always)]
     fn execute_store_offset16_imm16<T, V>(
         &mut self,
         instr: StoreOffset16Instr<V>,
@@ -92,6 +96,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.try_next_instr()
     }
 
+    #[inline(always)]
     fn execute_store_at(
         &mut self,
         instr: StoreAtInstr<Register>,
@@ -106,6 +111,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.try_next_instr()
     }
 
+    #[inline(always)]
     fn execute_store_at_imm16<T, V>(
         &mut self,
         instr: StoreAtInstr<V>,

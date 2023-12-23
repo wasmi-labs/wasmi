@@ -191,6 +191,7 @@ pub trait DivRemExt: Sized {
 }
 
 impl DivRemExt for UntypedValue {
+    #[inline(always)]
     fn i32_div_s(self, rhs: NonZeroI32) -> Result<Self, Error> {
         i32::from(self)
             .checked_div(rhs.get())
@@ -198,10 +199,12 @@ impl DivRemExt for UntypedValue {
             .ok_or_else(|| Error::from(TrapCode::IntegerOverflow))
     }
 
+    #[inline(always)]
     fn i32_div_u(self, rhs: NonZeroU32) -> Self {
         Self::from(u32::from(self) / rhs)
     }
 
+    #[inline(always)]
     fn i32_rem_s(self, rhs: NonZeroI32) -> Result<Self, Error> {
         i32::from(self)
             .checked_rem(rhs.get())
@@ -209,10 +212,12 @@ impl DivRemExt for UntypedValue {
             .ok_or_else(|| Error::from(TrapCode::IntegerOverflow))
     }
 
+    #[inline(always)]
     fn i32_rem_u(self, rhs: NonZeroU32) -> Self {
         Self::from(u32::from(self) % rhs)
     }
 
+    #[inline(always)]
     fn i64_div_s(self, rhs: NonZeroI64) -> Result<Self, Error> {
         i64::from(self)
             .checked_div(rhs.get())
@@ -220,10 +225,12 @@ impl DivRemExt for UntypedValue {
             .ok_or_else(|| Error::from(TrapCode::IntegerOverflow))
     }
 
+    #[inline(always)]
     fn i64_div_u(self, rhs: NonZeroU64) -> Self {
         Self::from(u64::from(self) / rhs)
     }
 
+    #[inline(always)]
     fn i64_rem_s(self, rhs: NonZeroI64) -> Result<Self, Error> {
         i64::from(self)
             .checked_rem(rhs.get())
@@ -231,6 +238,7 @@ impl DivRemExt for UntypedValue {
             .ok_or_else(|| Error::from(TrapCode::IntegerOverflow))
     }
 
+    #[inline(always)]
     fn i64_rem_u(self, rhs: NonZeroU64) -> Self {
         Self::from(u64::from(self) % rhs)
     }

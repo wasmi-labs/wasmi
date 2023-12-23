@@ -36,6 +36,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic `global.set` instruction.
+    #[inline(always)]
     fn execute_global_set_impl(&mut self, global: GlobalIdx, new_value: UntypedValue) {
         self.cache.set_global(self.ctx, global, new_value);
         self.next_instr()

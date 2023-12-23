@@ -109,11 +109,13 @@ impl ValueStack {
     }
 
     /// Returns the root [`ValueStackPtr`] pointing to the first value on the [`ValueStack`].
+    #[inline]
     pub fn root_stack_ptr(&mut self) -> ValueStackPtr {
         ValueStackPtr::new(self.values.as_mut_ptr())
     }
 
     /// Returns the [`ValueStackPtr`] at the given `offset`.
+    #[inline]
     pub unsafe fn stack_ptr_at(&mut self, offset: impl Into<ValueStackOffset>) -> ValueStackPtr {
         self.root_stack_ptr().apply_offset(offset.into())
     }
@@ -123,6 +125,7 @@ impl ValueStack {
     /// # Panics (Debug)
     ///
     /// If `n` is greater than the height of the [`ValueStack`].
+    #[inline]
     pub unsafe fn stack_ptr_last_n(&mut self, n: usize) -> ValueStackPtr {
         let len_values = self.len();
         debug_assert!(n <= len_values);
@@ -131,16 +134,19 @@ impl ValueStack {
     }
 
     /// Returns the capacity of the [`ValueStack`].
+    #[inline]
     fn capacity(&self) -> usize {
         self.values.len()
     }
 
     /// Returns `true` if the [`ValueStack`] is empty.
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.values.capacity() == 0
     }
 
     /// Returns the current length of the [`ValueStack`].
+    #[inline]
     fn len(&self) -> usize {
         self.sp
     }

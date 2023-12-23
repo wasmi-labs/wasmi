@@ -867,12 +867,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Returns the [`Register`] value.
+    #[inline(always)]
     fn get_register(&self, register: Register) -> UntypedValue {
         // Safety: TODO
         unsafe { self.sp.get(register) }
     }
 
     /// Returns the [`Register`] value.
+    #[inline(always)]
     fn get_register_as<T>(&self, register: Register) -> T
     where
         T: From<UntypedValue>,
@@ -881,6 +883,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Sets the [`Register`] value to `value`.
+    #[inline(always)]
     fn set_register(&mut self, register: Register, value: impl Into<UntypedValue>) {
         // Safety: TODO
         let cell = unsafe { self.sp.get_mut(register) };
@@ -932,11 +935,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Returns the [`ValueStackPtr`] of the [`CallFrame`].
+    #[inline(always)]
     fn frame_stack_ptr(&mut self, frame: &CallFrame) -> ValueStackPtr {
         Self::frame_stack_ptr_impl(self.value_stack, frame)
     }
 
     /// Returns the [`ValueStackPtr`] of the [`CallFrame`].
+    #[inline(always)]
     fn frame_stack_ptr_impl(value_stack: &mut ValueStack, frame: &CallFrame) -> ValueStackPtr {
         // Safety: We are using the frame's own base offset as input because it is
         //         guaranteed by the Wasm validation and translation phase to be
@@ -949,6 +954,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// # Note
     ///
     /// The initialization of the [`Executor`] allows for efficient execution.
+    #[inline(always)]
     fn init_call_frame(&mut self, frame: &CallFrame) {
         Self::init_call_frame_impl(
             self.value_stack,
@@ -964,6 +970,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// # Note
     ///
     /// The initialization of the [`Executor`] allows for efficient execution.
+    #[inline(always)]
     fn init_call_frame_impl(
         value_stack: &mut ValueStack,
         sp: &mut ValueStackPtr,
@@ -1093,6 +1100,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Returns the [`Instruction::Const32`] parameter for an [`Instruction`].
+    #[inline(always)]
     fn fetch_const32(&self, offset: usize) -> AnyConst32 {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
@@ -1103,11 +1111,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Returns the [`Instruction::Const32`] parameter for an [`Instruction`].
+    #[inline(always)]
     fn fetch_address_offset(&self, offset: usize) -> u32 {
         u32::from(self.fetch_const32(offset))
     }
 
     /// Executes a generic unary [`Instruction`].
+    #[inline(always)]
     fn execute_unary(&mut self, instr: UnaryInstr, op: fn(UntypedValue) -> UntypedValue) {
         let value = self.get_register(instr.input);
         self.set_register(instr.result, op(value));
@@ -1115,6 +1125,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a fallible generic unary [`Instruction`].
+    #[inline(always)]
     fn try_execute_unary(
         &mut self,
         instr: UnaryInstr,
@@ -1126,6 +1137,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic binary [`Instruction`].
+    #[inline(always)]
     fn execute_binary(
         &mut self,
         instr: BinInstr,
@@ -1138,6 +1150,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic binary [`Instruction`].
+    #[inline(always)]
     fn execute_binary_imm16<T>(
         &mut self,
         instr: BinInstrImm16<T>,
@@ -1153,6 +1166,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic binary [`Instruction`] with reversed operands.
+    #[inline(always)]
     fn execute_binary_imm16_rev<T>(
         &mut self,
         instr: BinInstrImm16<T>,
@@ -1168,6 +1182,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a fallible generic binary [`Instruction`].
+    #[inline(always)]
     fn try_execute_binary(
         &mut self,
         instr: BinInstr,
@@ -1180,6 +1195,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a fallible generic binary [`Instruction`].
+    #[inline(always)]
     fn try_execute_divrem_imm16<NonZeroT>(
         &mut self,
         instr: BinInstrImm16<NonZeroT>,
@@ -1195,6 +1211,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a fallible generic binary [`Instruction`].
+    #[inline(always)]
     fn execute_divrem_imm16<NonZeroT>(
         &mut self,
         instr: BinInstrImm16<NonZeroT>,
@@ -1209,6 +1226,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a fallible generic binary [`Instruction`] with reversed operands.
+    #[inline(always)]
     fn try_execute_binary_imm16_rev<T>(
         &mut self,
         instr: BinInstrImm16<T>,
@@ -1276,14 +1294,17 @@ trait UntypedValueExt {
 }
 
 impl UntypedValueExt for UntypedValue {
+    #[inline(always)]
     fn i32_and_eqz(x: UntypedValue, y: UntypedValue) -> UntypedValue {
         (i32::from(UntypedValue::i32_and(x, y)) == 0).into()
     }
 
+    #[inline(always)]
     fn i32_or_eqz(x: UntypedValue, y: UntypedValue) -> UntypedValue {
         (i32::from(UntypedValue::i32_or(x, y)) == 0).into()
     }
 
+    #[inline(always)]
     fn i32_xor_eqz(x: UntypedValue, y: UntypedValue) -> UntypedValue {
         (i32::from(UntypedValue::i32_xor(x, y)) == 0).into()
     }

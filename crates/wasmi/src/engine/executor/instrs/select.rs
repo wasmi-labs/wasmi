@@ -25,6 +25,7 @@ macro_rules! fetch_select_imm_param {
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Returns the parameter of [`Instruction::Select`] or [`Instruction::SelectRev`] as [`UntypedValue`].
+    #[inline(always)]
     fn fetch_select_param(&self) -> UntypedValue {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
@@ -40,6 +41,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a `select` instruction generically.
+    #[inline(always)]
     fn execute_select_impl<L, R>(
         &mut self,
         result: Register,
@@ -60,6 +62,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::Select`].
+    #[inline(always)]
     pub fn execute_select(&mut self, result: Register, condition: Register, lhs: Register) {
         self.execute_select_impl(
             result,
@@ -70,6 +73,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::SelectRev`].
+    #[inline(always)]
     pub fn execute_select_rev(&mut self, result: Register, condition: Register, rhs: Register) {
         self.execute_select_impl(result, condition, Self::fetch_select_param, |this| {
             this.get_register(rhs)
@@ -77,18 +81,21 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::SelectImm32`].
+    #[inline(always)]
     pub fn execute_select_imm32(&mut self, result: Register, lhs: AnyConst32) {
         let (condition, rhs) = fetch_select_imm_param!(self, SelectImm32);
         self.execute_select_impl(result, condition, |_| u32::from(lhs), |_| u32::from(rhs))
     }
 
     /// Executes an [`Instruction::SelectI64Imm32`].
+    #[inline(always)]
     pub fn execute_select_i64imm32(&mut self, result: Register, lhs: Const32<i64>) {
         let (condition, rhs) = fetch_select_imm_param!(self, SelectI64Imm32);
         self.execute_select_impl(result, condition, |_| i64::from(lhs), |_| i64::from(rhs))
     }
 
     /// Executes an [`Instruction::SelectF64Imm32`].
+    #[inline(always)]
     pub fn execute_select_f64imm32(&mut self, result: Register, lhs: Const32<f64>) {
         let (condition, rhs) = fetch_select_imm_param!(self, SelectF64Imm32);
         self.execute_select_impl(result, condition, |_| f64::from(lhs), |_| f64::from(rhs))
