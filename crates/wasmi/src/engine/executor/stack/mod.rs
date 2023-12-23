@@ -47,6 +47,7 @@ impl Stack {
     }
 
     /// Resets the [`Stack`] for clean reuse.
+    #[inline]
     pub fn reset(&mut self) {
         self.values.reset();
         self.calls.reset();
@@ -69,6 +70,7 @@ impl Stack {
     /// # Note
     ///
     /// Empty [`Stack`] instances are usually non-usable dummy instances.
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.values.is_empty()
     }
