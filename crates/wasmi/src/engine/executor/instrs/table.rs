@@ -13,6 +13,7 @@ use crate::{
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Returns the [`Instruction::TableIdx`] parameter for an [`Instruction`].
+    #[inline(always)]
     fn fetch_table_index(&self, offset: usize) -> TableIdx {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
@@ -23,6 +24,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Returns the [`Instruction::ElementSegmentIdx`] parameter for an [`Instruction`].
+    #[inline(always)]
     fn fetch_element_segment_index(&self, offset: usize) -> ElementSegmentIdx {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
@@ -50,6 +52,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a `table.get` instruction generically.
+    #[inline(always)]
     fn execute_table_get_impl(&mut self, result: Register, index: u32) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         let table = self.cache.get_table(self.ctx, table_index);
@@ -70,6 +73,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic `table.size` instruction.
+    #[inline(always)]
     fn execute_table_size_impl(&mut self, result: Register, table_index: TableIdx) {
         let table = self.cache.get_table(self.ctx, table_index);
         let size = self.ctx.resolve_table(&table).size();
@@ -95,6 +99,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic `table.set` instruction.
+    #[inline(always)]
     fn execute_table_set_impl(&mut self, index: u32, value: Register) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         let table = self.cache.get_table(self.ctx, table_index);
@@ -219,6 +224,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic `table.copy` instruction.
+    #[inline(always)]
     fn execute_table_copy_impl(
         &mut self,
         dst_index: u32,
@@ -364,6 +370,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic `table.init` instruction.
+    #[inline(always)]
     fn execute_table_init_impl(
         &mut self,
         dst_index: u32,
@@ -442,6 +449,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic `table.fill` instruction.
+    #[inline(always)]
     fn execute_table_fill_impl(
         &mut self,
         dst: u32,
@@ -490,6 +498,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic `table.grow` instruction.
+    #[inline(always)]
     fn execute_table_grow_impl(
         &mut self,
         result: Register,

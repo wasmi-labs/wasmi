@@ -14,6 +14,7 @@ use crate::{
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Returns the [`Instruction::DataSegmentIdx`] parameter for an [`Instruction`].
+    #[inline(always)]
     fn fetch_data_segment_index(&self, offset: usize) -> DataSegmentIdx {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
@@ -67,6 +68,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic `memory.grow` instruction.
+    #[inline(always)]
     fn execute_memory_grow_impl(
         &mut self,
         result: Register,
@@ -227,6 +229,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic `memory.copy` instruction.
+    #[inline(always)]
     fn execute_memory_copy_impl(
         &mut self,
         dst_index: u32,
@@ -363,6 +366,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic `memory.fill` instruction.
+    #[inline(always)]
     fn execute_memory_fill_impl(&mut self, dst: u32, value: u8, len: u32) -> Result<(), Error> {
         self.consume_fuel_with::<_, Error>(
             |costs| costs.fuel_for_bytes(u64::from(len)),
@@ -495,6 +499,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic `memory.init` instruction.
+    #[inline(always)]
     fn execute_memory_init_impl(&mut self, dst: u32, src: u32, len: u32) -> Result<(), Error> {
         self.consume_fuel_with::<_, Error>(
             |costs| costs.fuel_for_bytes(u64::from(len)),
