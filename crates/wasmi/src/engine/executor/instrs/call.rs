@@ -244,7 +244,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::CallInternal0`].
-    #[inline(never)]
+    #[inline(always)]
     pub fn execute_call_internal_0(
         &mut self,
         results: RegisterSpan,
@@ -254,7 +254,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::CallInternal`].
-    #[inline(never)]
+    #[inline(always)]
     pub fn execute_call_internal(
         &mut self,
         results: RegisterSpan,
