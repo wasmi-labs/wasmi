@@ -490,6 +490,7 @@ impl ValueStackPtrIter {
     }
 
     /// Returns the next [`UntypedValue`] of the [`ValueStackPtrIter`].
+    #[allow(dead_code)] // TODO: remove
     pub unsafe fn get_next(&mut self) -> UntypedValue {
         unsafe {
             let value = ptr::read(self.ptr);
