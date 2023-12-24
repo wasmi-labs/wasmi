@@ -136,8 +136,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 //         registers of the `caller` that does not overlap with the
                 //         registers of the callee since they reside in different
                 //         call frames. Therefore this access is safe.
-                let cell = unsafe { called_regs.get_mut(dst) };
-                *cell = value;
+                unsafe { called_regs.set(dst, value) }
                 dst = dst.next();
             }
         };

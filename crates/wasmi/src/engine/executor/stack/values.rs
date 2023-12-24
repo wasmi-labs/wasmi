@@ -439,13 +439,23 @@ impl ValueStackPtr {
         unsafe { *ptr }
     }
 
+    /// Sets the value of the `register` to `value`.`
+    ///
+    /// # Safety
+    ///
+    /// It is the callers responsibility to provide a [`Register`] that
+    /// does not access the underlying [`ValueStack`] out of bounds.
+    pub unsafe fn set(&mut self, register: Register, value: UntypedValue) {
+        *self.get_mut(register) = value;
+    }
+
     /// Returns an exclusive reference to the [`UntypedValue`] at the given [`Register`].
     ///
     /// # Safety
     ///
     /// It is the callers responsibility to provide a [`Register`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn get_mut(&mut self, register: Register) -> &mut UntypedValue {
+    unsafe fn get_mut(&mut self, register: Register) -> &mut UntypedValue {
         let ptr = self.register_ptr(register);
         unsafe { &mut *ptr }
     }
