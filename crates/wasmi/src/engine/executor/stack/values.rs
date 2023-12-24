@@ -308,11 +308,7 @@ impl ValueStack {
     /// - This also invalidates all [`FrameValueStackOffset`] and [`BaseValueStackOffset`] indices
     /// within the range `from..`.
     #[inline]
-    pub unsafe fn drain(
-        &mut self,
-        from: FrameValueStackOffset,
-        to: FrameValueStackOffset,
-    ) -> usize {
+    pub fn drain(&mut self, from: FrameValueStackOffset, to: FrameValueStackOffset) -> usize {
         debug_assert!(from <= to);
         let from = from.0 .0;
         let to = to.0 .0;

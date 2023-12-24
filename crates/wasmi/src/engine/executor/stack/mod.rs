@@ -105,8 +105,7 @@ impl Stack {
         // Therefore only value stack offsets of the top-most call frame on the
         // value stack are going to be invalidated which we ensure to adjust and
         // reinstantiate after this operation.
-        let len_drained =
-            unsafe { value_stack.drain(caller.frame_offset(), callee.frame_offset()) };
+        let len_drained = value_stack.drain(caller.frame_offset(), callee.frame_offset());
         callee.move_down(len_drained);
     }
 }
