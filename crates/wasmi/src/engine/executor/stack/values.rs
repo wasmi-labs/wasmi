@@ -468,7 +468,7 @@ impl ValueStackPtr {
 }
 
 /// An iterator over the [`UntypedValue`] of a [`ValueStackPtr`].
-/// 
+///
 /// This is a convenience abstraction for efficiently iterating through the values of a [`ValueStackPtr`].
 pub struct ValueStackPtrIter {
     ptr: *mut UntypedValue,
