@@ -3,7 +3,13 @@ mod values;
 
 pub use self::{
     calls::{CallFrame, CallStack},
-    values::{BaseValueStackOffset, FrameValueStackOffset, ValueStack, ValueStackPtr},
+    values::{
+        BaseValueStackOffset,
+        FrameValueStackOffset,
+        ValueStack,
+        ValueStackPtr,
+        ValueStackPtrIter,
+    },
 };
 use crate::{core::TrapCode, StackLimits};
 

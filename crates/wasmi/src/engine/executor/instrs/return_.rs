@@ -3,7 +3,7 @@ use crate::{
     core::UntypedValue,
     engine::{
         bytecode::{AnyConst32, Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
-        executor::stack::ValueStackPtr,
+        executor::stack::ValueStackPtrIter,
     },
 };
 use core::slice;
@@ -50,10 +50,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.return_impl()
     }
 
-    /// Returns the [`ValueStackPtr`] of the caller and the [`RegisterSpan`] of the results.
+    /// Returns the [`ValueStackPtrIter`] of the caller and the [`RegisterSpan`] of the results.
     ///
-    /// The returned [`ValueStackPtr`] is valid for all [`Register`] in the returned [`RegisterSpan`].
-    fn return_caller_results(&mut self) -> (ValueStackPtr, RegisterSpan) {
+    /// The returned [`ValueStackPtrIter`] is valid for all [`Register`] in the returned [`RegisterSpan`].
+    fn return_caller_results(&mut self) -> ValueStackPtrIter {
         let (callee, caller) = self
             .call_stack
             .peek_2()
@@ -69,7 +69,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 //         and therefore it is safe to acquire its value stack pointer.
                 let caller_sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
                 let results = callee.results();
-                (caller_sp, results)
+                ValueStackPtrIter::new(caller_sp, results.head())
             }
             None => {
                 // Case: the root call frame is returning.
@@ -78,7 +78,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 // register span of the entire value stack which is simply its zero index.
                 let dst_sp = self.value_stack.root_stack_ptr();
                 let results = RegisterSpan::new(Register::from_i16(0));
-                (dst_sp, results)
+                ValueStackPtrIter::new(dst_sp, results.head())
             }
         }
     }
@@ -89,13 +89,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         value: T,
         f: fn(&Self, T) -> UntypedValue,
     ) -> ReturnOutcome {
-        let (mut caller_sp, results) = self.return_caller_results();
+        let mut caller_results = self.return_caller_results();
         let value = f(self, value);
         // Safety: The `callee.results()` always refer to a span of valid
         //         registers of the `caller` that does not overlap with the
         //         registers of the callee since they reside in different
         //         call frames. Therefore this access is safe.
-        unsafe { caller_sp.set(results.head(), value) }
+        unsafe { caller_results.set_next(value) }
         self.return_impl()
     }
 
@@ -122,15 +122,15 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         values: [Register; N],
     ) -> ReturnOutcome {
-        let (mut caller_sp, results) = self.return_caller_results();
+        let mut caller_results = self.return_caller_results();
         debug_assert!(u16::try_from(N).is_ok());
-        for (result, value) in results.iter_u16(N as u16).zip(values) {
+        for value in values {
             let value = self.get_register(value);
             // Safety: The `callee.results()` always refer to a span of valid
             //         registers of the `caller` that does not overlap with the
             //         registers of the callee since they reside in different
             //         call frames. Therefore this access is safe.
-            unsafe { caller_sp.set(result, value) }
+            unsafe { caller_results.set_next(value) }
         }
         self.return_impl()
     }
@@ -156,15 +156,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Execute an [`Instruction::ReturnSpan`] returning many values.
     #[inline(always)]
     pub fn execute_return_span(&mut self, values: RegisterSpanIter) -> ReturnOutcome {
-        let (mut caller_sp, results) = self.return_caller_results();
-        let results = results.iter(values.len());
-        for (result, value) in results.zip(values) {
+        let mut caller_results = self.return_caller_results();
+        for value in values {
             let value = self.get_register(value);
             // Safety: The `callee.results()` always refer to a span of valid
             //         registers of the `caller` that does not overlap with the
             //         registers of the callee since they reside in different
             //         call frames. Therefore this access is safe.
-            unsafe { caller_sp.set(result, value) }
+            unsafe { caller_results.set_next(value) }
         }
         self.return_impl()
     }
@@ -177,8 +176,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes [`Instruction::ReturnMany`] or parts of [`Instruction::ReturnNezMany`] generically.
     fn execute_return_many_impl(&mut self, values: &[Register]) -> ReturnOutcome {
-        let (mut caller_sp, results) = self.return_caller_results();
-        let mut result = results.head();
+        let mut caller_results = self.return_caller_results();
         let mut copy_results = |values: &[Register]| {
             for value in values {
                 let value = self.get_register(*value);
@@ -186,8 +184,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 //         registers of the `caller` that does not overlap with the
                 //         registers of the callee since they reside in different
                 //         call frames. Therefore this access is safe.
-                unsafe { caller_sp.set(result, value) }
-                result = result.next();
+                unsafe { caller_results.set_next(value) }
             }
         };
         copy_results(values);

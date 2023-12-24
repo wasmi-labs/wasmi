@@ -4,7 +4,7 @@ use crate::{
     engine::{bytecode::Register, CompiledFuncEntity},
 };
 use alloc::vec::Vec;
-use core::{fmt, fmt::Debug, iter, mem};
+use core::{fmt, fmt::Debug, iter, mem, ptr};
 use wasmi_core::TrapCode;
 
 #[cfg(doc)]
@@ -468,5 +468,43 @@ impl ValueStackPtr {
     /// does not access the underlying [`ValueStack`] out of bounds.
     unsafe fn register_ptr(&self, register: Register) -> *mut UntypedValue {
         unsafe { self.ptr.offset(register.to_i16() as isize) }
+    }
+}
+
+/// An iterator over the [`UntypedValue`] of a [`ValueStackPtr`].
+/// 
+/// This is a convenience abstraction for efficiently iterating through the values of a [`ValueStackPtr`].
+pub struct ValueStackPtrIter {
+    ptr: *mut UntypedValue,
+}
+
+impl ValueStackPtrIter {
+    /// Creates a new [`ValueStackPtrIter`] from the given [`ValueStackPtr`] and a [`Register`] offset.
+    pub fn new(ptr: ValueStackPtr, register: Register) -> Self {
+        let ptr = unsafe { ptr.ptr.offset(isize::from(register.to_i16())) };
+        Self { ptr }
+    }
+
+    /// Sets the next [`UntypedValue`] of the [`ValueStackPtrIter`].
+    pub unsafe fn set_next(&mut self, value: UntypedValue) {
+        unsafe {
+            ptr::write(self.ptr, value);
+            self.ptr = self.ptr.add(1);
+        }
+    }
+
+    /// Returns the next [`UntypedValue`] of the [`ValueStackPtrIter`].
+    pub unsafe fn get_next(&mut self) -> UntypedValue {
+        unsafe {
+            let value = ptr::read(self.ptr);
+            self.ptr = self.ptr.add(1);
+            value
+        }
+    }
+}
+
+impl Debug for ValueStackPtrIter {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", &self.ptr)
     }
 }

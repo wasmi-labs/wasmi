@@ -4,7 +4,7 @@ use crate::{
     engine::{
         bytecode::{FuncIdx, Instruction, Register, RegisterSpan, SignatureIdx, TableIdx},
         code_map::InstructionPtr,
-        executor::stack::{CallFrame, Stack, ValueStackPtr},
+        executor::stack::{CallFrame, Stack, ValueStackPtr, ValueStackPtrIter},
         CompiledFunc,
         CompiledFuncEntity,
     },
@@ -268,9 +268,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// last call parameter [`Instruction`] if any.
     #[must_use]
     #[inline(always)]
-    fn copy_call_params(&mut self, mut called_regs: ValueStackPtr) -> InstructionPtr {
-        let mut dst = Register::from_i16(0);
+    fn copy_call_params(&mut self, callee_regs: ValueStackPtr) -> InstructionPtr {
         let mut ip = self.ip;
+        let mut callee_regs = ValueStackPtrIter::new(callee_regs, Register::from_i16(0));
         let mut copy_params = |values: &[Register]| {
             for value in values {
                 let value = self.get_register(*value);
@@ -278,8 +278,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 //         registers of the `caller` that does not overlap with the
                 //         registers of the callee since they reside in different
                 //         call frames. Therefore this access is safe.
-                unsafe { called_regs.set(dst, value) }
-                dst = dst.next();
+                unsafe { callee_regs.set_next(value) }
             }
         };
         ip.add(1);
