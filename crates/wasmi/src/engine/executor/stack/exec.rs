@@ -76,8 +76,7 @@ impl<'a> ExecStack<'a> {
     ///
     /// # Note
     ///
-    /// This is used by `wasmi` instructions that have a fixed
-    /// encoding size of two instruction words such as [`Instruction::Branch`].
+    /// This is used by `wasmi` instructions that have a fixed encoding size of multi instruction words.
     #[inline(always)]
     pub fn offset_instr_ptr(&mut self, amount: isize) {
         self.ip.offset(amount)
