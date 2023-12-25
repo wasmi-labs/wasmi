@@ -3,7 +3,7 @@ mod values;
 
 pub use self::{
     calls::{CallFrame, CallStack},
-    values::{BaseValueStackOffset, FrameValueStackOffset, ValueStack, ValueStackPtr},
+    values::{BaseValueStackOffset, FrameRegisters, FrameValueStackOffset, ValueStack},
 };
 use crate::{core::TrapCode, StackLimits};
 
@@ -82,9 +82,9 @@ impl Stack {
     ///
     /// # Safety
     ///
-    /// Any [`ValueStackPtr`] allocated within the range `from..to` on the [`ValueStack`]
+    /// Any [`FrameRegisters`] allocated within the range `from..to` on the [`ValueStack`]
     /// may be invalidated by this operation. It is the caller's responsibility to reinstantiate
-    /// all [`ValueStackPtr`] affected by this.
+    /// all [`FrameRegisters`] affected by this.
     #[inline(always)]
     pub unsafe fn merge_call_frames(
         call_stack: &mut CallStack,
@@ -100,8 +100,7 @@ impl Stack {
         // Therefore only value stack offsets of the top-most call frame on the
         // value stack are going to be invalidated which we ensure to adjust and
         // reinstantiate after this operation.
-        let len_drained =
-            unsafe { value_stack.drain(caller.frame_offset(), callee.frame_offset()) };
+        let len_drained = value_stack.drain(caller.frame_offset(), callee.frame_offset());
         callee.move_down(len_drained);
     }
 }
