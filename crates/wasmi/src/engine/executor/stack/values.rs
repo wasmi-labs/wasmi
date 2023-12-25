@@ -450,7 +450,7 @@ impl From<FrameRegisters> for FrameRegistersCursor {
 
 impl FrameRegistersCursor {
     /// Creates a new [`FrameRegistersCursor`] from the given [`FrameRegisters`] and a [`Register`] offset.
-    pub fn new(ptr: FrameRegisters, register: Register) -> Self {
+    pub unsafe fn new(ptr: FrameRegisters, register: Register) -> Self {
         let ptr = unsafe { ptr.ptr.offset(isize::from(register.to_i16())) };
         Self { ptr }
     }

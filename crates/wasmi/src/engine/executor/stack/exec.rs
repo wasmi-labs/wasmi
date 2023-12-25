@@ -117,7 +117,8 @@ impl<'a> ExecStack<'a> {
                 //         and therefore it is safe to acquire its value stack pointer.
                 let caller_sp = unsafe { self.values.stack_ptr_at(caller.base_offset()) };
                 let results = callee.results();
-                FrameRegistersCursor::new(caller_sp, results.head())
+                // Safety: The caller result registers are valid for its own call frame.
+                unsafe { FrameRegistersCursor::new(caller_sp, results.head()) }
             }
             None => {
                 // Case: the root call frame is returning.
