@@ -129,7 +129,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// last call parameter [`Instruction`] if any.
     #[inline(always)]
     #[must_use]
-    #[inline(always)]
     fn copy_call_params(&mut self, callee_regs: ValueStackPtr) -> InstructionPtr {
         let mut ip = self.ip;
         let mut callee_regs = ValueStackPtrIter::new(callee_regs, Register::from_i16(0));
