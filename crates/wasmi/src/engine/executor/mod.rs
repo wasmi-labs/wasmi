@@ -275,8 +275,7 @@ impl<'engine> EngineExecutor<'engine> {
         let call_params = params.call_params();
         let len_params = call_params.len();
         for (result, param) in caller_results.iter(len_params).zip(call_params) {
-            let cell = unsafe { caller_sp.get_mut(result) };
-            *cell = param;
+            unsafe { caller_sp.set(result, param) };
         }
         self.execute_func(ctx.as_context_mut())?;
         let results = self.write_results_back(results);
@@ -466,10 +465,7 @@ impl<'engine> EngineExecutor<'engine> {
             let values = RegisterSpan::new(Register::from_i16(0)).iter(len_outputs);
             for (result, value) in results.zip(values) {
                 // # Safety: See Safety (1) above.
-                let result_cell = unsafe { caller_sp.get_mut(result) };
-                // # Safety: See Safety (1) above.
-                let value_cell = unsafe { callee_sp.get(value) };
-                *result_cell = value_cell;
+                unsafe { caller_sp.set(result, callee_sp.get(value)) };
             }
             // Finally, the value stack needs to be truncated to its original size.
             self.stack.values.drop(max_inout);

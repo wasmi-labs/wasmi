@@ -95,8 +95,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         //         registers of the `caller` that does not overlap with the
         //         registers of the callee since they reside in different
         //         call frames. Therefore this access is safe.
-        let result = unsafe { caller_sp.get_mut(results.head()) };
-        *result = value;
+        unsafe { caller_sp.set(results.head(), value) }
         self.return_impl()
     }
 
@@ -131,8 +130,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             //         registers of the `caller` that does not overlap with the
             //         registers of the callee since they reside in different
             //         call frames. Therefore this access is safe.
-            let cell = unsafe { caller_sp.get_mut(result) };
-            *cell = value;
+            unsafe { caller_sp.set(result, value) }
         }
         self.return_impl()
     }
@@ -165,8 +163,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             //         registers of the `caller` that does not overlap with the
             //         registers of the callee since they reside in different
             //         call frames. Therefore this access is safe.
-            let cell = unsafe { caller_sp.get_mut(result) };
-            *cell = self.get_register(value);
+            let value = self.get_register(value);
+            unsafe { caller_sp.set(result, value) }
         }
         self.return_impl()
     }
@@ -188,8 +186,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 //         registers of the `caller` that does not overlap with the
                 //         registers of the callee since they reside in different
                 //         call frames. Therefore this access is safe.
-                let cell = unsafe { caller_sp.get_mut(result) };
-                *cell = value;
+                unsafe { caller_sp.set(result, value) }
                 result = result.next();
             }
         };

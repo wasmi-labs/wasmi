@@ -883,8 +883,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Sets the [`Register`] value to `value`.
     fn set_register(&mut self, register: Register, value: impl Into<UntypedValue>) {
         // Safety: TODO
-        let cell = unsafe { self.sp.get_mut(register) };
-        *cell = value.into();
+        unsafe { self.sp.set(register, value.into()) };
     }
 
     /// Shifts the instruction pointer to the next instruction.
