@@ -57,6 +57,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// # Note
     ///
     /// The `offset` denotes how many [`Instruction`] words make up the call instruction.
+    #[inline]
     fn update_instr_ptr_at(&mut self, offset: usize) {
         // Note: we explicitly do not mutate `self.ip` since that would make
         // other parts of the code more fragile with respect to instruction ordering.
@@ -126,6 +127,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// This will also adjust the instruction pointer to point to the
     /// last call parameter [`Instruction`] if any.
+    #[inline(always)]
     #[must_use]
     #[inline(always)]
     fn copy_call_params(&mut self, callee_regs: ValueStackPtr) -> InstructionPtr {
