@@ -52,146 +52,6 @@ pub enum CallKind {
 }
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
-    /// Executes an [`Instruction::ReturnCallInternal0`].
-    #[inline(always)]
-    pub fn execute_return_call_internal_0(&mut self, func: CompiledFunc) -> Result<(), Error> {
-        self.execute_return_call_internal_impl(func, CallParams::None)
-    }
-
-    /// Executes an [`Instruction::ReturnCallInternal`].
-    #[inline(always)]
-    pub fn execute_return_call_internal(&mut self, func: CompiledFunc) -> Result<(), Error> {
-        self.execute_return_call_internal_impl(func, CallParams::Some)
-    }
-
-    /// Executes an [`Instruction::CallInternal0`].
-    #[inline(always)]
-    pub fn execute_call_internal_0(
-        &mut self,
-        results: RegisterSpan,
-        func: CompiledFunc,
-    ) -> Result<(), Error> {
-        self.prepare_compiled_func_call(results, func, CallParams::None, CallKind::Nested)
-    }
-
-    /// Executes an [`Instruction::CallInternal`].
-    #[inline(always)]
-    pub fn execute_call_internal(
-        &mut self,
-        results: RegisterSpan,
-        func: CompiledFunc,
-    ) -> Result<(), Error> {
-        self.prepare_compiled_func_call(results, func, CallParams::Some, CallKind::Nested)
-    }
-
-    /// Executes an [`Instruction::ReturnCallImported0`].
-    #[inline(always)]
-    pub fn execute_return_call_imported_0(&mut self, func: FuncIdx) -> Result<CallOutcome, Error> {
-        self.execute_return_call_imported_impl(func, CallParams::None)
-    }
-
-    /// Executes an [`Instruction::ReturnCallImported`].
-    #[inline(always)]
-    pub fn execute_return_call_imported(&mut self, func: FuncIdx) -> Result<CallOutcome, Error> {
-        self.execute_return_call_imported_impl(func, CallParams::Some)
-    }
-
-    /// Executes an [`Instruction::CallImported0`].
-    #[inline(always)]
-    pub fn execute_call_imported_0(
-        &mut self,
-        results: RegisterSpan,
-        func: FuncIdx,
-    ) -> Result<CallOutcome, Error> {
-        let func = self.cache.get_func(self.ctx, func);
-        self.execute_call_imported_impl(results, &func, CallParams::None, CallKind::Nested)
-    }
-
-    /// Executes an [`Instruction::CallImported`].
-    #[inline(always)]
-    pub fn execute_call_imported(
-        &mut self,
-        results: RegisterSpan,
-        func: FuncIdx,
-    ) -> Result<CallOutcome, Error> {
-        let func = self.cache.get_func(self.ctx, func);
-        self.execute_call_imported_impl(results, &func, CallParams::Some, CallKind::Nested)
-    }
-
-    /// Executes an [`Instruction::CallIndirect0`].
-    #[inline(always)]
-    pub fn execute_return_call_indirect_0(
-        &mut self,
-        func_type: SignatureIdx,
-    ) -> Result<CallOutcome, Error> {
-        let (index, table) = self.pull_call_indirect_params();
-        let results = self.caller_results();
-        self.execute_call_indirect_impl(
-            results,
-            func_type,
-            index,
-            table,
-            CallParams::None,
-            CallKind::Tail,
-        )
-    }
-
-    /// Executes an [`Instruction::CallIndirect0`].
-    #[inline(always)]
-    pub fn execute_return_call_indirect(
-        &mut self,
-        func_type: SignatureIdx,
-    ) -> Result<CallOutcome, Error> {
-        let (index, table) = self.pull_call_indirect_params();
-        let results = self.caller_results();
-        self.execute_call_indirect_impl(
-            results,
-            func_type,
-            index,
-            table,
-            CallParams::Some,
-            CallKind::Tail,
-        )
-    }
-
-    /// Executes an [`Instruction::CallIndirect0`].
-    #[inline(always)]
-    pub fn execute_call_indirect_0(
-        &mut self,
-        results: RegisterSpan,
-        func_type: SignatureIdx,
-    ) -> Result<CallOutcome, Error> {
-        let (index, table) = self.pull_call_indirect_params();
-        self.execute_call_indirect_impl(
-            results,
-            func_type,
-            index,
-            table,
-            CallParams::None,
-            CallKind::Nested,
-        )
-    }
-
-    /// Executes an [`Instruction::CallIndirect`].
-    #[inline(always)]
-    pub fn execute_call_indirect(
-        &mut self,
-        results: RegisterSpan,
-        func_type: SignatureIdx,
-    ) -> Result<CallOutcome, Error> {
-        let (index, table) = self.pull_call_indirect_params();
-        self.execute_call_indirect_impl(
-            results,
-            func_type,
-            index,
-            table,
-            CallParams::Some,
-            CallKind::Nested,
-        )
-    }
-}
-
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Updates the [`InstructionPtr`] of the caller [`CallFrame`] before dispatching a call.
     ///
     /// # Note
@@ -340,6 +200,18 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         Ok(())
     }
 
+    /// Executes an [`Instruction::ReturnCallInternal0`].
+    #[inline(always)]
+    pub fn execute_return_call_internal_0(&mut self, func: CompiledFunc) -> Result<(), Error> {
+        self.execute_return_call_internal_impl(func, CallParams::None)
+    }
+
+    /// Executes an [`Instruction::ReturnCallInternal`].
+    #[inline(always)]
+    pub fn execute_return_call_internal(&mut self, func: CompiledFunc) -> Result<(), Error> {
+        self.execute_return_call_internal_impl(func, CallParams::Some)
+    }
+
     /// Executes an [`Instruction::ReturnCallInternal`] or [`Instruction::ReturnCallInternal0`].
     fn execute_return_call_internal_impl(
         &mut self,
@@ -365,6 +237,38 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             .results()
     }
 
+    /// Executes an [`Instruction::CallInternal0`].
+    #[inline(always)]
+    pub fn execute_call_internal_0(
+        &mut self,
+        results: RegisterSpan,
+        func: CompiledFunc,
+    ) -> Result<(), Error> {
+        self.prepare_compiled_func_call(results, func, CallParams::None, CallKind::Nested)
+    }
+
+    /// Executes an [`Instruction::CallInternal`].
+    #[inline(always)]
+    pub fn execute_call_internal(
+        &mut self,
+        results: RegisterSpan,
+        func: CompiledFunc,
+    ) -> Result<(), Error> {
+        self.prepare_compiled_func_call(results, func, CallParams::Some, CallKind::Nested)
+    }
+
+    /// Executes an [`Instruction::ReturnCallImported0`].
+    #[inline(always)]
+    pub fn execute_return_call_imported_0(&mut self, func: FuncIdx) -> Result<CallOutcome, Error> {
+        self.execute_return_call_imported_impl(func, CallParams::None)
+    }
+
+    /// Executes an [`Instruction::ReturnCallImported`].
+    #[inline(always)]
+    pub fn execute_return_call_imported(&mut self, func: FuncIdx) -> Result<CallOutcome, Error> {
+        self.execute_return_call_imported_impl(func, CallParams::Some)
+    }
+
     /// Executes an [`Instruction::ReturnCallImported`] or [`Instruction::ReturnCallImported0`].
     fn execute_return_call_imported_impl(
         &mut self,
@@ -374,6 +278,28 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let func = self.cache.get_func(self.ctx, func);
         let results = self.caller_results();
         self.execute_call_imported_impl(results, &func, params, CallKind::Tail)
+    }
+
+    /// Executes an [`Instruction::CallImported0`].
+    #[inline(always)]
+    pub fn execute_call_imported_0(
+        &mut self,
+        results: RegisterSpan,
+        func: FuncIdx,
+    ) -> Result<CallOutcome, Error> {
+        let func = self.cache.get_func(self.ctx, func);
+        self.execute_call_imported_impl(results, &func, CallParams::None, CallKind::Nested)
+    }
+
+    /// Executes an [`Instruction::CallImported`].
+    #[inline(always)]
+    pub fn execute_call_imported(
+        &mut self,
+        results: RegisterSpan,
+        func: FuncIdx,
+    ) -> Result<CallOutcome, Error> {
+        let func = self.cache.get_func(self.ctx, func);
+        self.execute_call_imported_impl(results, &func, CallParams::Some, CallKind::Nested)
     }
 
     /// Executes an imported or indirect (tail) call instruction.
@@ -427,6 +353,78 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 })
             }
         }
+    }
+
+    /// Executes an [`Instruction::CallIndirect0`].
+    #[inline(always)]
+    pub fn execute_return_call_indirect_0(
+        &mut self,
+        func_type: SignatureIdx,
+    ) -> Result<CallOutcome, Error> {
+        let (index, table) = self.pull_call_indirect_params();
+        let results = self.caller_results();
+        self.execute_call_indirect_impl(
+            results,
+            func_type,
+            index,
+            table,
+            CallParams::None,
+            CallKind::Tail,
+        )
+    }
+
+    /// Executes an [`Instruction::CallIndirect0`].
+    #[inline(always)]
+    pub fn execute_return_call_indirect(
+        &mut self,
+        func_type: SignatureIdx,
+    ) -> Result<CallOutcome, Error> {
+        let (index, table) = self.pull_call_indirect_params();
+        let results = self.caller_results();
+        self.execute_call_indirect_impl(
+            results,
+            func_type,
+            index,
+            table,
+            CallParams::Some,
+            CallKind::Tail,
+        )
+    }
+
+    /// Executes an [`Instruction::CallIndirect0`].
+    #[inline(always)]
+    pub fn execute_call_indirect_0(
+        &mut self,
+        results: RegisterSpan,
+        func_type: SignatureIdx,
+    ) -> Result<CallOutcome, Error> {
+        let (index, table) = self.pull_call_indirect_params();
+        self.execute_call_indirect_impl(
+            results,
+            func_type,
+            index,
+            table,
+            CallParams::None,
+            CallKind::Nested,
+        )
+    }
+
+    /// Executes an [`Instruction::CallIndirect`].
+    #[inline(always)]
+    pub fn execute_call_indirect(
+        &mut self,
+        results: RegisterSpan,
+        func_type: SignatureIdx,
+    ) -> Result<CallOutcome, Error> {
+        let (index, table) = self.pull_call_indirect_params();
+        self.execute_call_indirect_impl(
+            results,
+            func_type,
+            index,
+            table,
+            CallParams::Some,
+            CallKind::Nested,
+        )
     }
 
     /// Executes an [`Instruction::CallIndirect`] and [`Instruction::CallIndirect0`].
