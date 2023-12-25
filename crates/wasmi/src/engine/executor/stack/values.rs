@@ -110,7 +110,7 @@ impl ValueStack {
 
     /// Returns the root [`FrameRegisters`] pointing to the first value on the [`ValueStack`].
     pub fn root_stack_ptr(&mut self) -> FrameRegisters {
-        unsafe { self.stack_ptr_at(ValueStackOffset(0)) }
+        FrameRegisters::new(self.values.as_mut_ptr())
     }
 
     /// Returns the [`FrameRegisters`] at the given `offset`.
