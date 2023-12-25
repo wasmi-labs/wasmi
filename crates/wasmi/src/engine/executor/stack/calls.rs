@@ -80,6 +80,21 @@ impl CallStack {
         self.calls.pop()
     }
 
+    /// Pops the 2nd last [`CallFrame`] from the [`CallStack`].
+    ///
+    /// # Note
+    ///
+    /// - The top [`CallFrame`] will remain the top [`CallFrame`] after this operation.
+    /// - The 2nd last [`CallFrame`] is the caller of the top-most [`CallFrame`].
+    ///
+    /// # Panics
+    ///
+    /// If the call stack does not have at least 2 [`CallFrame`].
+    #[inline]
+    pub fn pop_caller(&mut self) -> CallFrame {
+        self.calls.swap_remove(self.calls.len() - 2)
+    }
+
     /// Peeks the last [`CallFrame`] of the [`CallStack`] if any.
     #[inline]
     pub fn peek(&self) -> Option<&CallFrame> {
