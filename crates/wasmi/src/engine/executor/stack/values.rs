@@ -435,21 +435,21 @@ impl FrameRegisters {
     }
 }
 
-/// An iterator over the [`UntypedValue`] of a [`ValueStackPtr`].
+/// An iterator over the [`UntypedValue`] of a [`FrameRegisters`].
 ///
-/// This is a convenience abstraction for efficiently iterating through the values of a [`ValueStackPtr`].
-pub struct ValueStackPtrIter {
+/// This is a convenience abstraction for efficiently iterating through the values of a [`FrameRegisters`].
+pub struct FrameRegistersIter {
     ptr: *mut UntypedValue,
 }
 
-impl ValueStackPtrIter {
-    /// Creates a new [`ValueStackPtrIter`] from the given [`ValueStackPtr`] and a [`Register`] offset.
+impl FrameRegistersIter {
+    /// Creates a new [`FrameRegistersIter`] from the given [`FrameRegisters`] and a [`Register`] offset.
     pub fn new(ptr: FrameRegisters, register: Register) -> Self {
         let ptr = unsafe { ptr.ptr.offset(isize::from(register.to_i16())) };
         Self { ptr }
     }
 
-    /// Sets the next [`UntypedValue`] of the [`ValueStackPtrIter`].
+    /// Sets the next [`UntypedValue`] of the [`FrameRegistersIter`].
     pub unsafe fn set_next(&mut self, value: UntypedValue) {
         unsafe {
             ptr::write(self.ptr, value);
@@ -457,7 +457,7 @@ impl ValueStackPtrIter {
         }
     }
 
-    /// Returns the next [`UntypedValue`] of the [`ValueStackPtrIter`].
+    /// Returns the next [`UntypedValue`] of the [`FrameRegistersIter`].
     #[allow(dead_code)] // TODO: remove
     pub unsafe fn get_next(&mut self) -> UntypedValue {
         unsafe {
@@ -468,7 +468,7 @@ impl ValueStackPtrIter {
     }
 }
 
-impl Debug for ValueStackPtrIter {
+impl Debug for FrameRegistersIter {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", &self.ptr)
     }

@@ -9,7 +9,7 @@ pub use self::{
         FrameRegisters,
         FrameValueStackOffset,
         ValueStack,
-        ValueStackPtrIter,
+        FrameRegistersIter,
     },
 };
 use crate::{core::TrapCode, StackLimits};

@@ -1,6 +1,6 @@
 #![allow(dead_code)] // TODO: remove
 
-use super::{CallFrame, CallStack, FrameRegisters, Stack, ValueStack, ValueStackPtrIter};
+use super::{CallFrame, CallStack, FrameRegisters, Stack, ValueStack, FrameRegistersIter};
 use crate::{
     core::UntypedValue,
     engine::{
@@ -101,7 +101,7 @@ impl<'a> ExecStack<'a> {
     }
 
     /// Returns the [`ValueStackPtrIter`] of the caller results.
-    fn return_caller_results(&mut self) -> ValueStackPtrIter {
+    fn return_caller_results(&mut self) -> FrameRegistersIter {
         let (callee, caller) = self
             .calls
             .peek_2()
@@ -117,7 +117,7 @@ impl<'a> ExecStack<'a> {
                 //         and therefore it is safe to acquire its value stack pointer.
                 let caller_sp = unsafe { self.values.stack_ptr_at(caller.base_offset()) };
                 let results = callee.results();
-                ValueStackPtrIter::new(caller_sp, results.head())
+                FrameRegistersIter::new(caller_sp, results.head())
             }
             None => {
                 // Case: the root call frame is returning.
@@ -126,7 +126,7 @@ impl<'a> ExecStack<'a> {
                 // register span of the entire value stack which is simply its zero index.
                 let dst_sp = self.values.root_stack_ptr();
                 let results = RegisterSpan::new(Register::from_i16(0));
-                ValueStackPtrIter::new(dst_sp, results.head())
+                FrameRegistersIter::new(dst_sp, results.head())
             }
         }
     }

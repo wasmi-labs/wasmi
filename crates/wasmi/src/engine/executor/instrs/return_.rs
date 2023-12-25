@@ -3,7 +3,7 @@ use crate::{
     core::UntypedValue,
     engine::{
         bytecode::{AnyConst32, Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
-        executor::stack::ValueStackPtrIter,
+        executor::stack::FrameRegistersIter,
     },
 };
 use core::slice;
@@ -53,7 +53,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Returns the [`ValueStackPtrIter`] of the caller and the [`RegisterSpan`] of the results.
     ///
     /// The returned [`ValueStackPtrIter`] is valid for all [`Register`] in the returned [`RegisterSpan`].
-    fn return_caller_results(&mut self) -> ValueStackPtrIter {
+    fn return_caller_results(&mut self) -> FrameRegistersIter {
         let (callee, caller) = self
             .call_stack
             .peek_2()
@@ -69,7 +69,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 //         and therefore it is safe to acquire its value stack pointer.
                 let caller_sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
                 let results = callee.results();
-                ValueStackPtrIter::new(caller_sp, results.head())
+                FrameRegistersIter::new(caller_sp, results.head())
             }
             None => {
                 // Case: the root call frame is returning.
@@ -78,7 +78,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 // register span of the entire value stack which is simply its zero index.
                 let dst_sp = self.value_stack.root_stack_ptr();
                 let results = RegisterSpan::new(Register::from_i16(0));
-                ValueStackPtrIter::new(dst_sp, results.head())
+                FrameRegistersIter::new(dst_sp, results.head())
             }
         }
     }
