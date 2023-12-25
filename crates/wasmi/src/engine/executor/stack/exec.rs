@@ -1,6 +1,6 @@
 #![allow(dead_code)] // TODO: remove
 
-use super::{CallFrame, CallStack, FrameRegisters, Stack, ValueStack, FrameRegistersIter};
+use super::{CallFrame, CallStack, FrameRegisters, FrameRegistersIter, Stack, ValueStack};
 use crate::{
     core::UntypedValue,
     engine::{

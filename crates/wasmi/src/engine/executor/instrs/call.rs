@@ -4,7 +4,7 @@ use crate::{
     engine::{
         bytecode::{FuncIdx, Instruction, Register, RegisterSpan, SignatureIdx, TableIdx},
         code_map::InstructionPtr,
-        executor::stack::{CallFrame, FrameRegisters, Stack, FrameRegistersIter},
+        executor::stack::{CallFrame, FrameRegisters, FrameRegistersIter, Stack},
         CompiledFunc,
         CompiledFuncEntity,
     },
