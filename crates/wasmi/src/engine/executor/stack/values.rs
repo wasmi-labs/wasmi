@@ -431,8 +431,7 @@ impl ValueStackPtr {
     /// It is the callers responsibility to provide a [`Register`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
     pub unsafe fn get(&self, register: Register) -> UntypedValue {
-        let ptr = self.register_ptr(register);
-        unsafe { *ptr }
+        ptr::read(self.register_offset(register))
     }
 
     /// Sets the value of the `register` to `value`.`
@@ -442,27 +441,11 @@ impl ValueStackPtr {
     /// It is the callers responsibility to provide a [`Register`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
     pub unsafe fn set(&mut self, register: Register, value: UntypedValue) {
-        *self.get_mut(register) = value;
+        ptr::write(self.register_offset(register), value)
     }
 
-    /// Returns an exclusive reference to the [`UntypedValue`] at the given [`Register`].
-    ///
-    /// # Safety
-    ///
-    /// It is the callers responsibility to provide a [`Register`] that
-    /// does not access the underlying [`ValueStack`] out of bounds.
-    unsafe fn get_mut(&mut self, register: Register) -> &mut UntypedValue {
-        let ptr = self.register_ptr(register);
-        unsafe { &mut *ptr }
-    }
-
-    /// Returns the pointer to the [`UntypedValue`] at the [`Register`].
-    ///
-    /// # Safety
-    ///
-    /// It is the callers responsibility to provide a [`Register`] that
-    /// does not access the underlying [`ValueStack`] out of bounds.
-    unsafe fn register_ptr(&self, register: Register) -> *mut UntypedValue {
+    /// Returns the underlying pointer offset by the [`Register`] index.
+    unsafe fn register_offset(&self, register: Register) -> *mut UntypedValue {
         unsafe { self.ptr.offset(register.to_i16() as isize) }
     }
 }
