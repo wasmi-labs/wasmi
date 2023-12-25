@@ -2,7 +2,7 @@ use super::Executor;
 use crate::{
     core::UntypedValue,
     engine::{
-        bytecode::{AnyConst32, Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
+        bytecode::{AnyConst32, Const32, Instruction, Register, RegisterSpanIter},
         executor::stack::FrameRegistersIter,
     },
 };
@@ -77,8 +77,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 // In this case we transfer the single return `value` to the root
                 // register span of the entire value stack which is simply its zero index.
                 let dst_sp = self.value_stack.root_stack_ptr();
-                let results = RegisterSpan::new(Register::from_i16(0));
-                FrameRegistersIter::new(dst_sp, results.head())
+                FrameRegistersIter::from(dst_sp)
             }
         }
     }

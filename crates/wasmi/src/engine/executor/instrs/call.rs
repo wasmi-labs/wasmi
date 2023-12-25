@@ -131,7 +131,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[must_use]
     fn copy_call_params(&mut self, callee_regs: FrameRegisters) -> InstructionPtr {
         let mut ip = self.ip;
-        let mut callee_regs = FrameRegistersIter::new(callee_regs, Register::from_i16(0));
+        let mut callee_regs = FrameRegistersIter::from(callee_regs);
         let mut copy_params = |values: &[Register]| {
             for value in values {
                 let value = self.get_register(*value);

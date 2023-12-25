@@ -125,8 +125,7 @@ impl<'a> ExecStack<'a> {
                 // In this case we transfer the single return `value` to the root
                 // register span of the entire value stack which is simply its zero index.
                 let dst_sp = self.values.root_stack_ptr();
-                let results = RegisterSpan::new(Register::from_i16(0));
-                FrameRegistersIter::new(dst_sp, results.head())
+                FrameRegistersIter::from(dst_sp)
             }
         }
     }

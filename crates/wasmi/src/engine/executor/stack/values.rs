@@ -442,6 +442,12 @@ pub struct FrameRegistersIter {
     ptr: *mut UntypedValue,
 }
 
+impl From<FrameRegisters> for FrameRegistersIter {
+    fn from(registers: FrameRegisters) -> Self {
+        Self { ptr: registers.ptr }
+    }
+}
+
 impl FrameRegistersIter {
     /// Creates a new [`FrameRegistersIter`] from the given [`FrameRegisters`] and a [`Register`] offset.
     pub fn new(ptr: FrameRegisters, register: Register) -> Self {
