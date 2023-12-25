@@ -7,7 +7,7 @@ pub use self::{
     values::{
         BaseValueStackOffset,
         FrameRegisters,
-        FrameRegistersIter,
+        FrameRegistersCursor,
         FrameValueStackOffset,
         ValueStack,
     },

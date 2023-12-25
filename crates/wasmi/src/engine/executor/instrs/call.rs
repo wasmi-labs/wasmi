@@ -4,7 +4,7 @@ use crate::{
     engine::{
         bytecode::{FuncIdx, Instruction, Register, RegisterSpan, SignatureIdx, TableIdx},
         code_map::InstructionPtr,
-        executor::stack::{CallFrame, FrameRegisters, FrameRegistersIter, Stack},
+        executor::stack::{CallFrame, FrameRegisters, FrameRegistersCursor, Stack},
         CompiledFunc,
         CompiledFuncEntity,
     },
@@ -131,7 +131,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[must_use]
     fn copy_call_params(&mut self, callee_regs: FrameRegisters) -> InstructionPtr {
         let mut ip = self.ip;
-        let mut callee_regs = FrameRegistersIter::from(callee_regs);
+        let mut callee_regs = FrameRegistersCursor::from(callee_regs);
         let mut copy_params = |values: &[Register]| {
             for value in values {
                 let value = self.get_register(*value);

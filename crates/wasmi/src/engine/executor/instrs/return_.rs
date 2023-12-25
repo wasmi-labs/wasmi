@@ -3,7 +3,7 @@ use crate::{
     core::UntypedValue,
     engine::{
         bytecode::{AnyConst32, Const32, Instruction, Register, RegisterSpanIter},
-        executor::stack::FrameRegistersIter,
+        executor::stack::FrameRegistersCursor,
     },
 };
 use core::slice;
@@ -50,10 +50,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.return_impl()
     }
 
-    /// Returns the [`FrameRegistersIter`] of the caller and the [`RegisterSpan`] of the results.
+    /// Returns the [`FrameRegistersCursor`] of the caller and the [`RegisterSpan`] of the results.
     ///
-    /// The returned [`FrameRegistersIter`] is valid for all [`Register`] in the returned [`RegisterSpan`].
-    fn return_caller_results(&mut self) -> FrameRegistersIter {
+    /// The returned [`FrameRegistersCursor`] is valid for all [`Register`] in the returned [`RegisterSpan`].
+    fn return_caller_results(&mut self) -> FrameRegistersCursor {
         let (callee, caller) = self
             .call_stack
             .peek_2()
@@ -69,7 +69,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 //         and therefore it is safe to acquire its value stack pointer.
                 let caller_sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
                 let results = callee.results();
-                FrameRegistersIter::new(caller_sp, results.head())
+                FrameRegistersCursor::new(caller_sp, results.head())
             }
             None => {
                 // Case: the root call frame is returning.
@@ -77,7 +77,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 // In this case we transfer the single return `value` to the root
                 // register span of the entire value stack which is simply its zero index.
                 let dst_sp = self.value_stack.root_stack_ptr();
-                FrameRegistersIter::from(dst_sp)
+                FrameRegistersCursor::from(dst_sp)
             }
         }
     }

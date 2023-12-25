@@ -438,24 +438,24 @@ impl FrameRegisters {
 /// An iterator over the [`UntypedValue`] of a [`FrameRegisters`].
 ///
 /// This is a convenience abstraction for efficiently iterating through the values of a [`FrameRegisters`].
-pub struct FrameRegistersIter {
+pub struct FrameRegistersCursor {
     ptr: *mut UntypedValue,
 }
 
-impl From<FrameRegisters> for FrameRegistersIter {
+impl From<FrameRegisters> for FrameRegistersCursor {
     fn from(registers: FrameRegisters) -> Self {
         Self { ptr: registers.ptr }
     }
 }
 
-impl FrameRegistersIter {
-    /// Creates a new [`FrameRegistersIter`] from the given [`FrameRegisters`] and a [`Register`] offset.
+impl FrameRegistersCursor {
+    /// Creates a new [`FrameRegistersCursor`] from the given [`FrameRegisters`] and a [`Register`] offset.
     pub fn new(ptr: FrameRegisters, register: Register) -> Self {
         let ptr = unsafe { ptr.ptr.offset(isize::from(register.to_i16())) };
         Self { ptr }
     }
 
-    /// Sets the next [`UntypedValue`] of the [`FrameRegistersIter`].
+    /// Sets the next [`UntypedValue`] of the [`FrameRegistersCursor`].
     pub unsafe fn set_next(&mut self, value: UntypedValue) {
         unsafe {
             ptr::write(self.ptr, value);
@@ -463,7 +463,7 @@ impl FrameRegistersIter {
         }
     }
 
-    /// Returns the next [`UntypedValue`] of the [`FrameRegistersIter`].
+    /// Returns the next [`UntypedValue`] of the [`FrameRegistersCursor`].
     #[allow(dead_code)] // TODO: remove
     pub unsafe fn get_next(&mut self) -> UntypedValue {
         unsafe {
@@ -474,7 +474,7 @@ impl FrameRegistersIter {
     }
 }
 
-impl Debug for FrameRegistersIter {
+impl Debug for FrameRegistersCursor {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", &self.ptr)
     }
