@@ -50,9 +50,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.return_impl()
     }
 
-    /// Returns the [`FrameRegistersCursor`] of the caller and the [`RegisterSpan`] of the results.
-    ///
-    /// The returned [`FrameRegistersCursor`] is valid for all [`Register`] in the returned [`RegisterSpan`].
+    /// Returns the [`FrameRegistersCursor`] of the caller results.
     fn return_caller_results(&mut self) -> FrameRegistersCursor {
         let (callee, caller) = self
             .call_stack
