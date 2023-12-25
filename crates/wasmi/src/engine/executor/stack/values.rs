@@ -110,12 +110,13 @@ impl ValueStack {
 
     /// Returns the root [`FrameRegisters`] pointing to the first value on the [`ValueStack`].
     pub fn root_stack_ptr(&mut self) -> FrameRegisters {
-        FrameRegisters::new(self.values.as_mut_ptr())
+        unsafe { self.stack_ptr_at(ValueStackOffset(0)) }
     }
 
     /// Returns the [`FrameRegisters`] at the given `offset`.
     pub unsafe fn stack_ptr_at(&mut self, offset: impl Into<ValueStackOffset>) -> FrameRegisters {
-        self.root_stack_ptr().apply_offset(offset.into())
+        let ptr = self.values.as_mut_ptr().add(offset.into().0);
+        FrameRegisters::new(ptr)
     }
 
     /// Returns the [`FrameRegisters`] at the given `offset` from the back.
@@ -127,7 +128,7 @@ impl ValueStack {
         let len_values = self.len();
         debug_assert!(n <= len_values);
         let offset = len_values - n;
-        self.root_stack_ptr().apply_offset(ValueStackOffset(offset))
+        self.stack_ptr_at(ValueStackOffset(offset))
     }
 
     /// Returns the capacity of the [`ValueStack`].
@@ -408,16 +409,6 @@ impl FrameRegisters {
     /// Creates a new [`FrameRegisters`].
     fn new(ptr: *mut UntypedValue) -> Self {
         Self { ptr }
-    }
-
-    /// Applies the [`ValueStackOffset`] to `self` and returns the result.
-    ///
-    /// # Safety
-    ///
-    /// It is the callers responsibility to provide a [`ValueStackOffset`]
-    /// that does not access the underlying [`ValueStack`] out of bounds.
-    unsafe fn apply_offset(self, offset: ValueStackOffset) -> Self {
-        Self::new(unsafe { self.ptr.add(offset.0) })
     }
 
     /// Returns the [`UntypedValue`] at the given [`Register`].
