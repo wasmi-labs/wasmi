@@ -932,6 +932,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Returns the [`ValueStackPtr`] of the [`CallFrame`].
+    #[inline]
     fn frame_stack_ptr(&mut self, frame: &CallFrame) -> ValueStackPtr {
         Self::frame_stack_ptr_impl(self.value_stack, frame)
     }

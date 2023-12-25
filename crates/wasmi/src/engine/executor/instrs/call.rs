@@ -57,6 +57,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// # Note
     ///
     /// The `offset` denotes how many [`Instruction`] words make up the call instruction.
+    #[inline]
     fn update_instr_ptr_at(&mut self, offset: usize) {
         // Note: we explicitly do not mutate `self.ip` since that would make
         // other parts of the code more fragile with respect to instruction ordering.
@@ -100,6 +101,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Creates a [`CallFrame`] for calling the [`CompiledFunc`].
+    #[inline(always)]
     fn dispatch_compiled_func(
         &mut self,
         results: RegisterSpan,
@@ -125,6 +127,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// This will also adjust the instruction pointer to point to the
     /// last call parameter [`Instruction`] if any.
+    #[inline(always)]
     #[must_use]
     fn copy_call_params(&mut self, mut called_regs: ValueStackPtr) -> InstructionPtr {
         let mut dst = Register::from_i16(0);
@@ -162,6 +165,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Prepares a [`CompiledFunc`] call with optional [`CallParams`].
+    #[inline(always)]
     fn prepare_compiled_func_call(
         &mut self,
         results: RegisterSpan,
