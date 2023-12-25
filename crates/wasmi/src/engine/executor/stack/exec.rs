@@ -100,7 +100,7 @@ impl<'a> ExecStack<'a> {
         }
     }
 
-    /// Returns the [`ValueStackPtrIter`] of the caller results.
+    /// Returns the [`FrameRegistersIter`] of the caller results.
     fn return_caller_results(&mut self) -> FrameRegistersIter {
         let (callee, caller) = self
             .calls
@@ -140,8 +140,8 @@ impl<'a> ExecStack<'a> {
     ) -> Result<(), Error> {
         let instr_ptr = InstructionPtr::new(func.instrs().as_ptr());
         let (base_ptr, frame_ptr) = self.values.alloc_call_frame(func)?;
-        // We have to reinstantiate the `self.sp` [`ValueStackPtr`] since we just called
-        // [`ValueStack::alloc_call_frame`] which might invalidate all live [`ValueStackPtr`].
+        // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
+        // [`ValueStack::alloc_call_frame`] which might invalidate all live [`FrameRegisters`].
         let caller = self.calls.peek().expect("missing caller call frame");
         // Safety: We use the base offset of a live call frame on the call stack.
         self.sp = unsafe { self.values.stack_ptr_at(caller.base_offset()) };
@@ -160,9 +160,9 @@ impl<'a> ExecStack<'a> {
     ///
     /// # Safety
     ///
-    /// Any [`ValueStackPtr`] allocated within the range `from..to` on the [`ValueStack`]
+    /// Any [`FrameRegisters`] allocated within the range `from..to` on the [`ValueStack`]
     /// may be invalidated by this operation. It is the caller's responsibility to reinstantiate
-    /// all [`ValueStackPtr`] affected by this.
+    /// all [`FrameRegisters`] affected by this.
     pub fn merge_call_frames(&mut self) {
         let caller = self.calls.pop_caller();
         let callee = self.calls.peek_mut().expect("missing callee call frame");

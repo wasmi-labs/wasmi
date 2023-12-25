@@ -50,9 +50,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.return_impl()
     }
 
-    /// Returns the [`ValueStackPtrIter`] of the caller and the [`RegisterSpan`] of the results.
+    /// Returns the [`FrameRegistersIter`] of the caller and the [`RegisterSpan`] of the results.
     ///
-    /// The returned [`ValueStackPtrIter`] is valid for all [`Register`] in the returned [`RegisterSpan`].
+    /// The returned [`FrameRegistersIter`] is valid for all [`Register`] in the returned [`RegisterSpan`].
     fn return_caller_results(&mut self) -> FrameRegistersIter {
         let (callee, caller) = self
             .call_stack
