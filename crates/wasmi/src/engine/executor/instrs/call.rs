@@ -129,7 +129,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// last call parameter [`Instruction`] if any.
     #[inline(always)]
     #[must_use]
-    fn copy_call_params(&mut self, mut called_regs: ValueStackPtr) -> InstructionPtr {
+    fn copy_call_params(&mut self, mut callee_regs: ValueStackPtr) -> InstructionPtr {
         let mut dst = Register::from_i16(0);
         let mut ip = self.ip;
         let mut copy_params = |values: &[Register]| {
@@ -139,8 +139,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 //         registers of the `caller` that does not overlap with the
                 //         registers of the callee since they reside in different
                 //         call frames. Therefore this access is safe.
-                let cell = unsafe { called_regs.get_mut(dst) };
-                *cell = value;
+                unsafe { callee_regs.set(dst, value) }
                 dst = dst.next();
             }
         };

@@ -4,7 +4,7 @@ use crate::{
     engine::{bytecode::Register, CompiledFuncEntity},
 };
 use alloc::vec::Vec;
-use core::{fmt, fmt::Debug, iter, mem};
+use core::{fmt, fmt::Debug, iter, mem, ptr};
 use wasmi_core::TrapCode;
 
 #[cfg(doc)]
@@ -435,28 +435,21 @@ impl ValueStackPtr {
     /// It is the callers responsibility to provide a [`Register`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
     pub unsafe fn get(&self, register: Register) -> UntypedValue {
-        let ptr = self.register_ptr(register);
-        unsafe { *ptr }
+        ptr::read(self.register_offset(register))
     }
 
-    /// Returns an exclusive reference to the [`UntypedValue`] at the given [`Register`].
+    /// Sets the value of the `register` to `value`.`
     ///
     /// # Safety
     ///
     /// It is the callers responsibility to provide a [`Register`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn get_mut(&mut self, register: Register) -> &mut UntypedValue {
-        let ptr = self.register_ptr(register);
-        unsafe { &mut *ptr }
+    pub unsafe fn set(&mut self, register: Register, value: UntypedValue) {
+        ptr::write(self.register_offset(register), value)
     }
 
-    /// Returns the pointer to the [`UntypedValue`] at the [`Register`].
-    ///
-    /// # Safety
-    ///
-    /// It is the callers responsibility to provide a [`Register`] that
-    /// does not access the underlying [`ValueStack`] out of bounds.
-    unsafe fn register_ptr(&self, register: Register) -> *mut UntypedValue {
+    /// Returns the underlying pointer offset by the [`Register`] index.
+    unsafe fn register_offset(&self, register: Register) -> *mut UntypedValue {
         unsafe { self.ptr.offset(register.to_i16() as isize) }
     }
 }
