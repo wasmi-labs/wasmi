@@ -3,7 +3,7 @@ use crate::{
     core::UntypedValue,
     engine::{
         bytecode::{AnyConst32, Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
-        executor::stack::ValueStackPtr,
+        executor::stack::FrameRegisters,
     },
 };
 use core::slice;
@@ -50,10 +50,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.return_impl()
     }
 
-    /// Returns the [`ValueStackPtr`] of the caller and the [`RegisterSpan`] of the results.
+    /// Returns the [`FrameRegisters`] of the caller and the [`RegisterSpan`] of the results.
     ///
-    /// The returned [`ValueStackPtr`] is valid for all [`Register`] in the returned [`RegisterSpan`].
-    fn return_caller_results(&mut self) -> (ValueStackPtr, RegisterSpan) {
+    /// The returned [`FrameRegisters`] is valid for all [`Register`] in the returned [`RegisterSpan`].
+    fn return_caller_results(&mut self) -> (FrameRegisters, RegisterSpan) {
         let (callee, caller) = self
             .call_stack
             .peek_2()

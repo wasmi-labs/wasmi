@@ -18,7 +18,7 @@ use crate::{
         cache::InstanceCache,
         code_map::InstructionPtr,
         config::FuelCosts,
-        executor::stack::{CallFrame, CallStack, ValueStack, ValueStackPtr},
+        executor::stack::{CallFrame, CallStack, FrameRegisters, ValueStack},
         func_types::FuncTypeRegistry,
         CodeMap,
     },
@@ -115,7 +115,7 @@ pub fn execute_instrs<'ctx, 'engine>(
 #[derive(Debug)]
 struct Executor<'ctx, 'engine> {
     /// Stores the value stack of live values on the Wasm stack.
-    sp: ValueStackPtr,
+    sp: FrameRegisters,
     /// The pointer to the currently executed instruction.
     ip: InstructionPtr,
     /// Stores frequently used instance related data.
@@ -930,14 +930,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         Ok(())
     }
 
-    /// Returns the [`ValueStackPtr`] of the [`CallFrame`].
+    /// Returns the [`FrameRegisters`] of the [`CallFrame`].
     #[inline]
-    fn frame_stack_ptr(&mut self, frame: &CallFrame) -> ValueStackPtr {
+    fn frame_stack_ptr(&mut self, frame: &CallFrame) -> FrameRegisters {
         Self::frame_stack_ptr_impl(self.value_stack, frame)
     }
 
-    /// Returns the [`ValueStackPtr`] of the [`CallFrame`].
-    fn frame_stack_ptr_impl(value_stack: &mut ValueStack, frame: &CallFrame) -> ValueStackPtr {
+    /// Returns the [`FrameRegisters`] of the [`CallFrame`].
+    fn frame_stack_ptr_impl(value_stack: &mut ValueStack, frame: &CallFrame) -> FrameRegisters {
         // Safety: We are using the frame's own base offset as input because it is
         //         guaranteed by the Wasm validation and translation phase to be
         //         valid for all register indices used by the associated function body.
@@ -966,7 +966,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// The initialization of the [`Executor`] allows for efficient execution.
     fn init_call_frame_impl(
         value_stack: &mut ValueStack,
-        sp: &mut ValueStackPtr,
+        sp: &mut FrameRegisters,
         ip: &mut InstructionPtr,
         cache: &mut InstanceCache,
         frame: &CallFrame,

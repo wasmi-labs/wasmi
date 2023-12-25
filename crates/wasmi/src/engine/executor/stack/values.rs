@@ -108,22 +108,22 @@ impl ValueStack {
         self.sp = 0;
     }
 
-    /// Returns the root [`ValueStackPtr`] pointing to the first value on the [`ValueStack`].
-    pub fn root_stack_ptr(&mut self) -> ValueStackPtr {
-        ValueStackPtr::new(self.values.as_mut_ptr())
+    /// Returns the root [`FrameRegisters`] pointing to the first value on the [`ValueStack`].
+    pub fn root_stack_ptr(&mut self) -> FrameRegisters {
+        FrameRegisters::new(self.values.as_mut_ptr())
     }
 
-    /// Returns the [`ValueStackPtr`] at the given `offset`.
-    pub unsafe fn stack_ptr_at(&mut self, offset: impl Into<ValueStackOffset>) -> ValueStackPtr {
+    /// Returns the [`FrameRegisters`] at the given `offset`.
+    pub unsafe fn stack_ptr_at(&mut self, offset: impl Into<ValueStackOffset>) -> FrameRegisters {
         self.root_stack_ptr().apply_offset(offset.into())
     }
 
-    /// Returns the [`ValueStackPtr`] at the given `offset` from the back.
+    /// Returns the [`FrameRegisters`] at the given `offset` from the back.
     ///
     /// # Panics (Debug)
     ///
     /// If `n` is greater than the height of the [`ValueStack`].
-    pub unsafe fn stack_ptr_last_n(&mut self, n: usize) -> ValueStackPtr {
+    pub unsafe fn stack_ptr_last_n(&mut self, n: usize) -> FrameRegisters {
         let len_values = self.len();
         debug_assert!(n <= len_values);
         let offset = len_values - n;
@@ -244,7 +244,7 @@ impl ValueStack {
     ///
     /// # Note
     ///
-    /// - All live [`ValueStackPtr`] might be invalidated and need to be reinstantiated.
+    /// - All live [`FrameRegisters`] might be invalidated and need to be reinstantiated.
     /// - The parameters of the allocated [`CompiledFunc`] are set to zero
     ///   and require proper initialization after this call.
     ///
@@ -303,7 +303,7 @@ impl ValueStack {
     ///
     /// # Safety
     ///
-    /// - This invalidates all [`ValueStackPtr`] within the range `from..` and the caller has to
+    /// - This invalidates all [`FrameRegisters`] within the range `from..` and the caller has to
     /// make sure to properly reinstantiate all those pointers after this operation.
     /// - This also invalidates all [`FrameValueStackOffset`] and [`BaseValueStackOffset`] indices
     /// within the range `from..`.
@@ -325,7 +325,7 @@ impl ValueStack {
     }
 }
 
-/// The offset of the [`ValueStackPtr`].
+/// The offset of the [`FrameRegisters`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ValueStackOffset(usize);
 
@@ -392,24 +392,20 @@ impl From<BaseValueStackOffset> for usize {
     }
 }
 
-/// The [`ValueStack`] pointer.
-///
-/// # Dev. Note
-///
-/// [`ValueStackPtr`] is explicitly non-[`Copy`] since it can be seen as a `&mut UntypedValue`.
-pub struct ValueStackPtr {
+/// Accessor to the [`Register`] values of a [`CallFrame`] on the [`CallStack`].
+pub struct FrameRegisters {
     /// The underlying raw pointer to a [`CallFrame`] on the [`ValueStack`].
     ptr: *mut UntypedValue,
 }
 
-impl Debug for ValueStackPtr {
+impl Debug for FrameRegisters {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", &self.ptr)
     }
 }
 
-impl ValueStackPtr {
-    /// Creates a new [`ValueStackPtr`].
+impl FrameRegisters {
+    /// Creates a new [`FrameRegisters`].
     fn new(ptr: *mut UntypedValue) -> Self {
         Self { ptr }
     }
