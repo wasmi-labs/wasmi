@@ -414,7 +414,6 @@ impl Debug for ValueStackPtr {
 
 impl ValueStackPtr {
     /// Creates a new [`ValueStackPtr`].
-    #[inline]
     fn new(ptr: *mut UntypedValue) -> Self {
         Self { ptr }
     }
@@ -425,7 +424,6 @@ impl ValueStackPtr {
     ///
     /// It is the callers responsibility to provide a [`ValueStackOffset`]
     /// that does not access the underlying [`ValueStack`] out of bounds.
-    #[inline]
     unsafe fn apply_offset(self, offset: ValueStackOffset) -> Self {
         Self::new(unsafe { self.ptr.add(offset.0) })
     }
@@ -436,7 +434,6 @@ impl ValueStackPtr {
     ///
     /// It is the callers responsibility to provide a [`Register`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    #[inline]
     pub unsafe fn get(&self, register: Register) -> UntypedValue {
         ptr::read(self.register_offset(register))
     }
@@ -447,13 +444,11 @@ impl ValueStackPtr {
     ///
     /// It is the callers responsibility to provide a [`Register`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    #[inline]
     pub unsafe fn set(&mut self, register: Register, value: UntypedValue) {
         ptr::write(self.register_offset(register), value)
     }
 
     /// Returns the underlying pointer offset by the [`Register`] index.
-    #[inline]
     unsafe fn register_offset(&self, register: Register) -> *mut UntypedValue {
         unsafe { self.ptr.offset(register.to_i16() as isize) }
     }
