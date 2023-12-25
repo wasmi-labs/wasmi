@@ -392,10 +392,6 @@ impl From<BaseValueStackOffset> for usize {
     }
 }
 
-/// Type-wrapper that is excplicitly non-[`Copy`].
-#[derive(Debug, Default)]
-pub struct NonCopy<T>(T);
-
 /// The [`ValueStack`] pointer.
 ///
 /// # Dev. Note
