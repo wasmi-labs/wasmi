@@ -4,7 +4,7 @@ use crate::{
     engine::{
         bytecode::{FuncIdx, Instruction, Register, RegisterSpan, SignatureIdx, TableIdx},
         code_map::InstructionPtr,
-        executor::stack::{CallFrame, Stack, ValueStackPtr, ValueStackPtrIter},
+        executor::stack::{CallFrame, FrameRegisters, Stack, ValueStackPtrIter},
         CompiledFunc,
         CompiledFuncEntity,
     },
@@ -110,8 +110,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let instrs = func.instrs();
         let instr_ptr = InstructionPtr::new(instrs.as_ptr());
         let (base_ptr, frame_ptr) = self.value_stack.alloc_call_frame(func)?;
-        // We have to reinstantiate the `self.sp` [`ValueStackPtr`] since we just called
-        // [`ValueStack::alloc_call_frame`] which might invalidate all live [`ValueStackPtr`].
+        // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
+        // [`ValueStack::alloc_call_frame`] which might invalidate all live [`FrameRegisters`].
         let caller = self
             .call_stack
             .peek()
@@ -129,7 +129,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// last call parameter [`Instruction`] if any.
     #[inline(always)]
     #[must_use]
-    fn copy_call_params(&mut self, callee_regs: ValueStackPtr) -> InstructionPtr {
+    fn copy_call_params(&mut self, callee_regs: FrameRegisters) -> InstructionPtr {
         let mut ip = self.ip;
         let mut callee_regs = ValueStackPtrIter::new(callee_regs, Register::from_i16(0));
         let mut copy_params = |values: &[Register]| {
@@ -327,8 +327,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 let len_results = output_types.len();
                 let max_inout = len_params.max(len_results);
                 self.value_stack.reserve(max_inout)?;
-                // We have to reinstantiate the `self.sp` [`ValueStackPtr`] since we just called
-                // [`ValueStack::reserve`] which might invalidate all live [`ValueStackPtr`].
+                // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
+                // [`ValueStack::reserve`] which might invalidate all live [`FrameRegisters`].
                 let caller = self
                     .call_stack
                     .peek()
