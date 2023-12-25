@@ -390,6 +390,8 @@ impl From<BaseValueStackOffset> for usize {
 }
 
 /// Accessor to the [`Register`] values of a [`CallFrame`] on the [`CallStack`].
+///
+/// [`CallStack`]: [`super::CallStack`]
 pub struct FrameRegisters {
     /// The underlying raw pointer to a [`CallFrame`] on the [`ValueStack`].
     ptr: *mut UntypedValue,
