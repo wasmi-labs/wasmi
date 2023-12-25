@@ -1,6 +1,6 @@
 #![allow(dead_code)] // TODO: remove
 
-use super::{CallFrame, CallStack, Stack, ValueStack, ValueStackPtr, ValueStackPtrIter};
+use super::{CallFrame, CallStack, FrameRegisters, Stack, ValueStack, ValueStackPtrIter};
 use crate::{
     core::UntypedValue,
     engine::{
@@ -20,7 +20,7 @@ pub struct ExecStack<'a> {
     /// The current stack pointer.
     ///
     /// This provides an efficient register access for the currently executed call frame.
-    sp: ValueStackPtr,
+    sp: FrameRegisters,
     /// The current instruction pointer within the currently executed frame.
     ip: InstructionPtr,
     /// The entire value stack.

@@ -444,7 +444,7 @@ pub struct ValueStackPtrIter {
 
 impl ValueStackPtrIter {
     /// Creates a new [`ValueStackPtrIter`] from the given [`ValueStackPtr`] and a [`Register`] offset.
-    pub fn new(ptr: ValueStackPtr, register: Register) -> Self {
+    pub fn new(ptr: FrameRegisters, register: Register) -> Self {
         let ptr = unsafe { ptr.ptr.offset(isize::from(register.to_i16())) };
         Self { ptr }
     }
