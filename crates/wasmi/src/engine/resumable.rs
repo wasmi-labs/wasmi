@@ -104,15 +104,15 @@ pub struct ResumableInvocation {
 // # Safety
 //
 // `ResumableInvocation` is not `Sync` because of the following sequence of fields:
-// 
+//
 // - `ResumableInvocation`'s `Stack` is not `Sync`
 // - `Stack`'s `CallStack` is not `Sync`
 // - `CallStack`'s `CallFrame` sequence is not `Sync`
 // - `CallFrame`'s `InstructionPtr` is not `Sync` because it is a raw pointer to an `Instruction` buffer owned by the [`Engine`].
-// 
+//
 // Since `Engine` is owned by `ResumableInvocation` it cannot be outlived.
 // Also the `Instruction` buffers that are pointed to by the `InstructionPtr` are immutable.
-// 
+//
 // Therefore `ResumableInvocation` can safely be assumed to be `Sync`.
 unsafe impl Sync for ResumableInvocation {}
 
