@@ -34,6 +34,11 @@ pub struct FuncDesc {
 }
 
 #[derive(Debug)]
+pub struct Observer {
+    pub counter: usize,
+}
+
+#[derive(Debug)]
 pub struct Tracer {
     pub itable: InstructionTableInternal,
     pub imtable: IMTable,
@@ -54,7 +59,8 @@ pub struct Tracer {
     pub wasm_input_func_idx: Option<u32>,
     pub wasm_input_func_ref: Option<FuncRef>,
     dry_run: bool,
-    counter: usize,
+
+    pub observer: Observer,
 }
 
 impl Tracer {
@@ -83,7 +89,8 @@ impl Tracer {
             wasm_input_func_ref: None,
             wasm_input_func_idx: None,
             dry_run,
-            counter: 0,
+
+            observer: Observer { counter: 0 },
         }
     }
 
@@ -111,15 +118,11 @@ impl Tracer {
     }
 
     pub fn inc_counter(&mut self) {
-        self.counter += 1;
+        self.observer.counter += 1;
     }
 
     pub fn dry_run(&self) -> bool {
         self.dry_run
-    }
-
-    pub fn get_trace_count(&self) -> usize {
-        self.counter
     }
 }
 
