@@ -1,4 +1,4 @@
-//! Function translation for the register-machine bytecode based `wasmi` engine.
+//! Function translation for the register-machine bytecode based Wasmi engine.
 
 mod control_frame;
 mod control_stack;
@@ -102,7 +102,7 @@ impl FuncTranslatorAllocations {
 /// The used function validator type.
 type FuncValidator = wasmparser::FuncValidator<wasmparser::ValidatorResources>;
 
-/// A Wasm to `wasmi` IR function translator that also validates its input.
+/// A Wasm to Wasmi IR function translator that also validates its input.
 pub struct ValidatingFuncTranslator<T> {
     /// The current position in the Wasm binary while parsing operators.
     pos: usize,
@@ -198,7 +198,7 @@ impl<T> ValidatingFuncTranslator<T> {
         self.pos
     }
 
-    /// Translates into `wasmi` bytecode if the current code path is reachable.
+    /// Translates into Wasmi bytecode if the current code path is reachable.
     fn validate_then_translate<Validate, Translate>(
         &mut self,
         validate: Validate,
@@ -431,7 +431,7 @@ impl<'a> VisitOperator<'a> for LazyFuncTranslator {
     wasmparser::for_each_operator!(impl_visit_operator);
 }
 
-/// Type concerned with translating from Wasm bytecode to `wasmi` bytecode.
+/// Type concerned with translating from Wasm bytecode to Wasmi bytecode.
 pub struct FuncTranslator {
     /// The reference to the Wasm module function under construction.
     func: FuncIdx,
@@ -443,7 +443,7 @@ pub struct FuncTranslator {
     /// the `module` field. However, this acts like a faster access since `module`
     /// only holds a weak reference to the engine.
     engine: Engine,
-    /// The immutable `wasmi` module resources.
+    /// The immutable Wasmi module resources.
     module: ModuleHeader,
     /// This represents the reachability of the currently translated code.
     ///
@@ -1231,7 +1231,7 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Translate a non-commutative binary `wasmi` integer instruction.
+    /// Translate a non-commutative binary Wasmi integer instruction.
     ///
     /// # Note
     ///
@@ -1249,7 +1249,7 @@ impl FuncTranslator {
     ///
     /// # Usage
     ///
-    /// Used for translating the following Wasm operators to `wasmi` bytecode:
+    /// Used for translating the following Wasm operators to Wasmi bytecode:
     ///
     /// - `{i32, i64}.{sub, lt_s, lt_u, le_s, le_u, gt_s, gt_u, ge_s, ge_u}`
     #[allow(clippy::too_many_arguments)]
@@ -1303,7 +1303,7 @@ impl FuncTranslator {
         }
     }
 
-    /// Translate a non-commutative binary `wasmi` float instruction.
+    /// Translate a non-commutative binary Wasmi float instruction.
     ///
     /// # Note
     ///
@@ -1321,7 +1321,7 @@ impl FuncTranslator {
     ///
     /// # Usage
     ///
-    /// Used for translating the following Wasm operators to `wasmi` bytecode:
+    /// Used for translating the following Wasm operators to Wasmi bytecode:
     ///
     /// - `{f32, f64}.{sub, div}`
     #[allow(clippy::too_many_arguments)]
@@ -1375,7 +1375,7 @@ impl FuncTranslator {
         }
     }
 
-    /// Translate `wasmi` float `{f32,f64}.copysign` instructions.
+    /// Translate Wasmi float `{f32,f64}.copysign` instructions.
     ///
     /// # Note
     ///
@@ -1417,7 +1417,7 @@ impl FuncTranslator {
         }
     }
 
-    /// Translate a commutative binary `wasmi` integer instruction.
+    /// Translate a commutative binary Wasmi integer instruction.
     ///
     /// # Note
     ///
@@ -1433,7 +1433,7 @@ impl FuncTranslator {
     ///
     /// # Usage
     ///
-    /// Used for translating the following Wasm operators to `wasmi` bytecode:
+    /// Used for translating the following Wasm operators to Wasmi bytecode:
     ///
     /// - `{i32, i64}.{eq, ne, add, mul, and, or, xor}`
     #[allow(clippy::too_many_arguments)]
@@ -1475,7 +1475,7 @@ impl FuncTranslator {
         }
     }
 
-    /// Translate a commutative binary `wasmi` float instruction.
+    /// Translate a commutative binary Wasmi float instruction.
     ///
     /// # Note
     ///
@@ -1491,7 +1491,7 @@ impl FuncTranslator {
     ///
     /// # Usage
     ///
-    /// Used for translating the following Wasm operators to `wasmi` bytecode:
+    /// Used for translating the following Wasm operators to Wasmi bytecode:
     ///
     /// - `{f32, f64}.{add, mul, min, max}`
     #[allow(clippy::too_many_arguments)]
@@ -1533,7 +1533,7 @@ impl FuncTranslator {
         }
     }
 
-    /// Translate a shift or rotate `wasmi` instruction.
+    /// Translate a shift or rotate Wasmi instruction.
     ///
     /// # Note
     ///
@@ -1546,7 +1546,7 @@ impl FuncTranslator {
     ///
     /// # Usage
     ///
-    /// Used for translating the following Wasm operators to `wasmi` bytecode:
+    /// Used for translating the following Wasm operators to Wasmi bytecode:
     ///
     /// - `{i32, i64}.{shl, shr_s, shr_u, rotl, rotr}`
     #[allow(clippy::too_many_arguments)]
@@ -1603,7 +1603,7 @@ impl FuncTranslator {
         }
     }
 
-    /// Translate an integer division or remainder `wasmi` instruction.
+    /// Translate an integer division or remainder Wasmi instruction.
     ///
     /// # Note
     ///
@@ -1616,7 +1616,7 @@ impl FuncTranslator {
     ///
     /// # Usage
     ///
-    /// Used for translating the following Wasm operators to `wasmi` bytecode:
+    /// Used for translating the following Wasm operators to Wasmi bytecode:
     ///
     /// - `{i32, i64}.{div_u, div_s, rem_u, rem_s}`
     #[allow(clippy::too_many_arguments)]
@@ -1684,7 +1684,7 @@ impl FuncTranslator {
         Ok(false)
     }
 
-    /// Translates a unary Wasm instruction to `wasmi` bytecode.
+    /// Translates a unary Wasm instruction to Wasmi bytecode.
     fn translate_unary(
         &mut self,
         make_instr: fn(result: Register, input: Register) -> Instruction,
@@ -1704,7 +1704,7 @@ impl FuncTranslator {
         }
     }
 
-    /// Translates a fallible unary Wasm instruction to `wasmi` bytecode.
+    /// Translates a fallible unary Wasm instruction to Wasmi bytecode.
     fn translate_unary_fallible(
         &mut self,
         make_instr: fn(result: Register, input: Register) -> Instruction,
@@ -1756,7 +1756,7 @@ impl FuncTranslator {
         }
     }
 
-    /// Translates a Wasm `load` instruction to `wasmi` bytecode.
+    /// Translates a Wasm `load` instruction to Wasmi bytecode.
     ///
     /// # Note
     ///
@@ -1765,7 +1765,7 @@ impl FuncTranslator {
     ///
     /// # Usage
     ///
-    /// Used for translating the following Wasm operators to `wasmi` bytecode:
+    /// Used for translating the following Wasm operators to Wasmi bytecode:
     ///
     /// - `{i32, i64, f32, f64}.load`
     /// - `i32.{load8_s, load8_u, load16_s, load16_u}`
@@ -1813,7 +1813,7 @@ impl FuncTranslator {
         }
     }
 
-    /// Translates Wasm integer `store` and `storeN` instructions to `wasmi` bytecode.
+    /// Translates Wasm integer `store` and `storeN` instructions to Wasmi bytecode.
     ///
     /// # Note
     ///
@@ -1822,7 +1822,7 @@ impl FuncTranslator {
     ///
     /// # Usage
     ///
-    /// Used for translating the following Wasm operators to `wasmi` bytecode:
+    /// Used for translating the following Wasm operators to Wasmi bytecode:
     ///
     /// - `{i32, i64}.{store, store8, store16, store32}`
     fn translate_istore<T, U>(
@@ -1921,7 +1921,7 @@ impl FuncTranslator {
         }
     }
 
-    /// Translates Wasm float `store` instructions to `wasmi` bytecode.
+    /// Translates Wasm float `store` instructions to Wasmi bytecode.
     ///
     /// # Note
     ///
@@ -1930,7 +1930,7 @@ impl FuncTranslator {
     ///
     /// # Usage
     ///
-    /// Used for translating the following Wasm operators to `wasmi` bytecode:
+    /// Used for translating the following Wasm operators to Wasmi bytecode:
     ///
     /// - `{f32, f64}.store`
     fn translate_fstore(

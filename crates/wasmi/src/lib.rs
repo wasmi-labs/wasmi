@@ -1,4 +1,4 @@
-//! The `wasmi` virtual machine definitions.
+//! The Wasmi virtual machine definitions.
 //!
 //! These closely mirror the WebAssembly specification definitions.
 //! The overall structure is heavily inspired by the `wasmtime` virtual
@@ -106,7 +106,7 @@ mod value;
 #[doc(inline)]
 pub use wasmi_core as core;
 
-/// Defines some errors that may occur upon interaction with `wasmi`.
+/// Defines some errors that may occur upon interaction with Wasmi.
 pub mod errors {
     pub use super::{
         error::ErrorKind,

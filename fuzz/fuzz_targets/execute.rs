@@ -9,7 +9,7 @@ use wasmi::{Engine, Linker, Module, Store, StoreLimitsBuilder};
 
 fuzz_target!(|cfg_module: ConfiguredModule<ExecConfig>| {
     let mut smith_module = cfg_module.module;
-    // TODO: We could use `wasmi`'s built-in fuel metering instead.
+    // TODO: We could use Wasmi's built-in fuel metering instead.
     //       This would improve test coverage and may be more efficient
     //       given that `wasm-smith`'s fuel metering uses global variables
     //       to communicate used fuel.

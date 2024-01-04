@@ -1,7 +1,7 @@
 use arbitrary::Arbitrary;
 use wasmi::{core::ValueType, Value};
 
-/// The configuration used to produce `wasmi` compatible fuzzing Wasm modules.
+/// The configuration used to produce Wasmi compatible fuzzing Wasm modules.
 #[derive(Debug, Arbitrary)]
 pub struct ExecConfig;
 

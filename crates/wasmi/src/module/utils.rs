@@ -75,7 +75,7 @@ impl FuncType {
         ///
         /// # Panics
         ///
-        /// If the [`wasmparser::Type`] is not supported by `wasmi`.
+        /// If the [`wasmparser::Type`] is not supported by Wasmi.
         fn extract_value_type(value_type: &wasmparser::ValType) -> ValueType {
             WasmiValueType::from(*value_type).into_inner()
         }
@@ -85,7 +85,7 @@ impl FuncType {
     }
 }
 
-/// A `wasmi` [`ValueType`].
+/// A Wasmi [`ValueType`].
 ///
 /// # Note
 ///

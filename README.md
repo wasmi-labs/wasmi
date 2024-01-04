@@ -15,30 +15,30 @@
 [license-mit-badge]: https://img.shields.io/badge/license-MIT-blue.svg
 [license-apache-badge]: https://img.shields.io/badge/license-APACHE-orange.svg
 
-# `wasmi`- WebAssembly (Wasm) Interpreter
+# Wasmi- WebAssembly (Wasm) Interpreter
 
 <p align="center">
   <img src="./resources/wasmi-logo.png" width="100" height="100">
 </p>
 
-`wasmi` is an efficient WebAssembly interpreter with low-overhead and support
+Wasmi is an efficient WebAssembly interpreter with low-overhead and support
 for embedded environment such as WebAssembly itself.
 
-At Parity we are using `wasmi` in [Substrate](https://github.com/paritytech/substrate)
+At Parity we are using Wasmi in [Substrate](https://github.com/paritytech/substrate)
 as the execution engine for our WebAssembly based smart contracts.
-Furthermore we run `wasmi` within the Substrate runtime which is a WebAssembly
+Furthermore we run Wasmi within the Substrate runtime which is a WebAssembly
 environment itself and driven via [Wasmtime] at the time of this writing.
-As such `wasmi`'s implementation requires a high degree of correctness and
+As such Wasmi's implementation requires a high degree of correctness and
 Wasm specification conformance.
 
-Since `wasmi` is relatively lightweight compared to other Wasm virtual machines
+Since Wasmi is relatively lightweight compared to other Wasm virtual machines
 such as Wasmtime it is also a decent option for initial prototyping.
 
 [Wasmtime]: https://github.com/bytecodealliance/wasmtime
 
 ## Distinct Features
 
-The following list states some of the distinct features of `wasmi`.
+The following list states some of the distinct features of Wasmi.
 
 - Focus on simple, correct and deterministic WebAssembly execution.
 - Can itself run inside of WebAssembly.
@@ -50,7 +50,7 @@ The following list states some of the distinct features of `wasmi`.
 
 ## WebAssembly Proposals
 
-The new `wasmi` engine supports a variety of WebAssembly proposals and will support even more of them in the future.
+The new Wasmi engine supports a variety of WebAssembly proposals and will support even more of them in the future.
 
 | WebAssembly Proposal | Status | Comment |
 |:--|:--:|:--|
@@ -69,7 +69,7 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 | [`threads`] | 📅 | Planned but not yet implemented. [(#777)] |
 | [`relaxed-simd`] | ❌ | Unlikely to be supported since `simd` is unlikely to be supported. |
 | | |
-| [WASI] | 👨‍🔬 | Experimental support via the [`wasmi_wasi` crate] or the `wasmi` CLI application. |
+| [WASI] | 👨‍🔬 | Experimental support via the [`wasmi_wasi` crate] or the Wasmi CLI application. |
 
 [`mutable-global`]: https://github.com/WebAssembly/mutable-global
 [`saturating-float-to-int`]: https://github.com/WebAssembly/nontrapping-float-to-int-conversions
@@ -106,7 +106,7 @@ The new `wasmi` engine supports a variety of WebAssembly proposals and will supp
 
 ### As CLI Application
 
-Install the newest `wasmi` CLI version via:
+Install the newest Wasmi CLI version via:
 ```console
 cargo install wasmi_cli
 ```
@@ -117,16 +117,16 @@ wasmi_cli <WASM_FILE> <FUNC_NAME> [<FUNC_ARGS>]*
 
 ### As Rust Library
 
-Any Rust crate can depend on the [`wasmi` crate](https://crates.io/crates/wasmi)
+Any Rust crate can depend on the [Wasmi crate](https://crates.io/crates/wasmi)
 in order to integrate a WebAssembly intepreter into their stack.
 
-Refer to the [`wasmi` crate docs](https://docs.rs/wasmi) to learn how to use the `wasmi` crate as library.
+Refer to the [Wasmi crate docs](https://docs.rs/wasmi) to learn how to use the Wasmi crate as library.
 
 ## Development
 
 ### Building
 
-Clone `wasmi` from our official repository and then build using the standard `cargo` procedure:
+Clone Wasmi from our official repository and then build using the standard `cargo` procedure:
 
 ```console
 git clone https://github.com/paritytech/wasmi.git
@@ -136,7 +136,7 @@ cargo build
 
 ### Testing
 
-In order to test `wasmi` you need to initialize and update the Git submodules using:
+In order to test Wasmi you need to initialize and update the Git submodules using:
 
 ```console
 git submodule update --init --recursive
@@ -156,7 +156,7 @@ cargo test --workspace
 
 ### Benchmarks
 
-In order to benchmark `wasmi` use the following command:
+In order to benchmark Wasmi use the following command:
 
 ```console
 cargo bench
@@ -177,7 +177,7 @@ We maintain a timeline for benchmarks of every commit to `master` that [can be v
 ## Supported Platforms
 
 Supported platforms are primarily Linux, MacOS, Windows and WebAssembly.  
-Other platforms might be working but are not guaranteed to be so by the `wasmi` maintainers.
+Other platforms might be working but are not guaranteed to be so by the Wasmi maintainers.
 
 Use the following command in order to produce a WebAssembly build:
 
@@ -187,8 +187,8 @@ cargo build --no-default-features --target wasm32-unknown-unknown
 
 ## Production Builds
 
-In order to reap the most performance out of `wasmi` we highly recommended
-to compile the `wasmi` crate using the following Cargo `profile`:
+In order to reap the most performance out of Wasmi we highly recommended
+to compile the Wasmi crate using the following Cargo `profile`:
 
 ```toml
 [profile.release]
@@ -197,7 +197,7 @@ codegen-units = 1
 ```
 
 When compiling for the WebAssembly target we highly recommend to post-optimize
-`wasmi` using [Binaryen]'s `wasm-opt` tool since our experiments displayed a
+Wasmi using [Binaryen]'s `wasm-opt` tool since our experiments displayed a
 80-100% performance improvements when executed under Wasmtime and also
 slightly smaller Wasm binaries.
 
@@ -205,7 +205,7 @@ slightly smaller Wasm binaries.
 
 ## License
 
-`wasmi` is primarily distributed under the terms of both the MIT
+Wasmi is primarily distributed under the terms of both the MIT
 license and the APACHE license (Version 2.0), at your choice.
 
 See `LICENSE-APACHE` and `LICENSE-MIT` for details.
@@ -213,5 +213,5 @@ See `LICENSE-APACHE` and `LICENSE-MIT` for details.
 ## Contribution
 
 Unless you explicitly state otherwise, any contribution intentionally submitted
-for inclusion in `wasmi` by you, as defined in the APACHE 2.0 license, shall be
+for inclusion in Wasmi by you, as defined in the APACHE 2.0 license, shall be
 dual licensed as above, without any additional terms or conditions.

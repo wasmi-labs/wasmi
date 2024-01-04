@@ -45,16 +45,16 @@ use crate::{engine::CompiledFunc, Error};
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
 use wasmi_core::TrapCode;
 
-/// A `wasmi` instruction.
+/// A Wasmi instruction.
 ///
-/// Actually `wasmi` instructions are composed of so-called instruction words.
+/// Actually Wasmi instructions are composed of so-called instruction words.
 /// In fact this type represents single instruction words but for simplicity
 /// we call the type [`Instruction`] still.
 /// Most instructions are composed of a single instruction words. An example of
 /// this is [`Instruction::I32Add`]. However, some instructions like
 /// [`Instruction::Select`] are composed of two or more instruction words.
-/// The `wasmi` bytecode translation phase makes sure that those instruction words
-/// always appear in valid sequences. The `wasmi` executor relies on this guarantee.
+/// The Wasmi bytecode translation phase makes sure that those instruction words
+/// always appear in valid sequences. The Wasmi executor relies on this guarantee.
 /// The documentation of each [`Instruction`] variant describes its encoding in the
 /// `#Encoding` section of its documentation if it requires more than a single
 /// instruction word for its encoding.
@@ -658,7 +658,7 @@ pub enum Instruction {
     ///
     /// # Note
     ///
-    /// This is a `wasmi` utility instruction used to translate Wasm control flow.
+    /// This is a Wasmi utility instruction used to translate Wasm control flow.
     Copy {
         /// The register holding the result of the instruction.
         result: Register,
@@ -669,7 +669,7 @@ pub enum Instruction {
     ///
     /// # Note
     ///
-    /// This is a `wasmi` utility instruction used to translate Wasm control flow.
+    /// This is a Wasmi utility instruction used to translate Wasm control flow.
     Copy2 {
         /// The registers holding the result of the instruction.
         results: RegisterSpan,
@@ -772,7 +772,7 @@ pub enum Instruction {
         values: [Register; 2],
     },
 
-    /// Wasm `return_call` equivalent `wasmi` instruction.
+    /// Wasm `return_call` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
@@ -781,7 +781,7 @@ pub enum Instruction {
         /// The called internal function.
         func: CompiledFunc,
     },
-    /// Wasm `return_call` equivalent `wasmi` instruction.
+    /// Wasm `return_call` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
@@ -801,7 +801,7 @@ pub enum Instruction {
         func: CompiledFunc,
     },
 
-    /// Wasm `return_call` equivalent `wasmi` instruction.
+    /// Wasm `return_call` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
@@ -810,7 +810,7 @@ pub enum Instruction {
         /// The called imported function.
         func: FuncIdx,
     },
-    /// Wasm `return_call` equivalent `wasmi` instruction.
+    /// Wasm `return_call` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
@@ -830,7 +830,7 @@ pub enum Instruction {
         func: FuncIdx,
     },
 
-    /// Wasm `return_call_indirect` equivalent `wasmi` instruction.
+    /// Wasm `return_call_indirect` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
@@ -847,7 +847,7 @@ pub enum Instruction {
         /// The called internal function.
         func_type: SignatureIdx,
     },
-    /// Wasm `return_call_indirect` equivalent `wasmi` instruction.
+    /// Wasm `return_call_indirect` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
@@ -870,7 +870,7 @@ pub enum Instruction {
         func_type: SignatureIdx,
     },
 
-    /// Wasm `call` equivalent `wasmi` instruction.
+    /// Wasm `call` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
@@ -881,7 +881,7 @@ pub enum Instruction {
         /// The called internal function.
         func: CompiledFunc,
     },
-    /// Wasm `call` equivalent `wasmi` instruction.
+    /// Wasm `call` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
@@ -903,7 +903,7 @@ pub enum Instruction {
         func: CompiledFunc,
     },
 
-    /// Wasm `call` equivalent `wasmi` instruction.
+    /// Wasm `call` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
@@ -914,7 +914,7 @@ pub enum Instruction {
         /// The called imported function.
         func: FuncIdx,
     },
-    /// Wasm `call` equivalent `wasmi` instruction.
+    /// Wasm `call` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
@@ -936,7 +936,7 @@ pub enum Instruction {
         func: FuncIdx,
     },
 
-    /// Wasm `call_indirect` equivalent `wasmi` instruction.
+    /// Wasm `call_indirect` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
@@ -955,7 +955,7 @@ pub enum Instruction {
         /// The called internal function.
         func_type: SignatureIdx,
     },
-    /// Wasm `call_indirect` equivalent `wasmi` instruction.
+    /// Wasm `call_indirect` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
@@ -1068,7 +1068,7 @@ pub enum Instruction {
         lhs_or_rhs: Const32<f64>,
     },
 
-    /// A Wasm `ref.func` equivalent `wasmi` instruction.
+    /// A Wasm `ref.func` equivalent Wasmi instruction.
     RefFunc {
         /// The register storing the result of the instruction.
         result: Register,
@@ -1516,9 +1516,9 @@ pub enum Instruction {
         value: Register,
     },
 
-    /// A Wasm `elem.drop` equalivalent `wasmi` instruction.
+    /// A Wasm `elem.drop` equalivalent Wasmi instruction.
     ElemDrop(ElementSegmentIdx),
-    /// A Wasm `data.drop` equalivalent `wasmi` instruction.
+    /// A Wasm `data.drop` equalivalent Wasmi instruction.
     DataDrop(DataSegmentIdx),
 
     /// Wasm `memory.size` instruction.
@@ -1831,21 +1831,21 @@ pub enum Instruction {
         len: Const16<u32>,
     },
 
-    /// Wasm `global.get` equivalent `wasmi` instruction.
+    /// Wasm `global.get` equivalent Wasmi instruction.
     GlobalGet {
         /// The register storing the result of the instruction.
         result: Register,
         /// The index identifying the global variable for the `global.get` instruction.
         global: GlobalIdx,
     },
-    /// Wasm `global.set` equivalent `wasmi` instruction.
+    /// Wasm `global.set` equivalent Wasmi instruction.
     GlobalSet {
         /// The index identifying the global variable for the `global.set` instruction.
         global: GlobalIdx,
         /// The register holding the value to be stored in the global variable.
         input: Register,
     },
-    /// Wasm `global.set` equivalent `wasmi` instruction.
+    /// Wasm `global.set` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
@@ -1856,7 +1856,7 @@ pub enum Instruction {
         /// The 16-bit encoded `i32` value.
         input: Const16<i32>,
     },
-    /// Wasm `global.set` equivalent `wasmi` instruction.
+    /// Wasm `global.set` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
@@ -1868,287 +1868,287 @@ pub enum Instruction {
         input: Const16<i64>,
     },
 
-    /// Wasm `i32.load` equivalent `wasmi` instruction.
+    /// Wasm `i32.load` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
     I32Load(LoadInstr),
-    /// Wasm `i32.load` equivalent `wasmi` instruction.
+    /// Wasm `i32.load` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I32Load`] with a constant load address.
     I32LoadAt(LoadAtInstr),
-    /// Wasm `i32.load` equivalent `wasmi` instruction.
+    /// Wasm `i32.load` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I32Load`] for small offset values.
     I32LoadOffset16(LoadOffset16Instr),
 
-    /// Wasm `i64.load` equivalent `wasmi` instruction.
+    /// Wasm `i64.load` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
     I64Load(LoadInstr),
-    /// Wasm `i64.load` equivalent `wasmi` instruction.
+    /// Wasm `i64.load` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load`] with a constant load address.
     I64LoadAt(LoadAtInstr),
-    /// Wasm `i64.load` equivalent `wasmi` instruction.
+    /// Wasm `i64.load` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load`] for small offset values.
     I64LoadOffset16(LoadOffset16Instr),
 
-    /// Wasm `f32.load` equivalent `wasmi` instruction.
+    /// Wasm `f32.load` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
     F32Load(LoadInstr),
-    /// Wasm `f32.load` equivalent `wasmi` instruction.
+    /// Wasm `f32.load` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::F32Load`] with a constant load address.
     F32LoadAt(LoadAtInstr),
-    /// Wasm `f32.load` equivalent `wasmi` instruction.
+    /// Wasm `f32.load` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::F32Load`] for small offset values.
     F32LoadOffset16(LoadOffset16Instr),
 
-    /// Wasm `f64.load` equivalent `wasmi` instruction.
+    /// Wasm `f64.load` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
     F64Load(LoadInstr),
-    /// Wasm `f64.load` equivalent `wasmi` instruction.
+    /// Wasm `f64.load` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::F64Load`] with a constant load address.
     F64LoadAt(LoadAtInstr),
-    /// Wasm `f64.load` equivalent `wasmi` instruction.
+    /// Wasm `f64.load` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::F64Load`] for small offset values.
     F64LoadOffset16(LoadOffset16Instr),
 
-    /// Wasm `i32.load8_s` equivalent `wasmi` instruction.
+    /// Wasm `i32.load8_s` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
     I32Load8s(LoadInstr),
-    /// Wasm `i32.load8_s` equivalent `wasmi` instruction.
+    /// Wasm `i32.load8_s` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I32Load8s`] with a constant load address.
     I32Load8sAt(LoadAtInstr),
-    /// Wasm `i32.load8_s` equivalent `wasmi` instruction.
+    /// Wasm `i32.load8_s` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I32Load8s`] for small offset values.
     I32Load8sOffset16(LoadOffset16Instr),
 
-    /// Wasm `i32.load8_u` equivalent `wasmi` instruction.
+    /// Wasm `i32.load8_u` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
     I32Load8u(LoadInstr),
-    /// Wasm `i32.load8_u` equivalent `wasmi` instruction.
+    /// Wasm `i32.load8_u` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I32Load8u`] with a constant load address.
     I32Load8uAt(LoadAtInstr),
-    /// Wasm `i32.load8_u` equivalent `wasmi` instruction.
+    /// Wasm `i32.load8_u` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I32Load8u`] for small offset values.
     I32Load8uOffset16(LoadOffset16Instr),
 
-    /// Wasm `i32.load16_s` equivalent `wasmi` instruction.
+    /// Wasm `i32.load16_s` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
     I32Load16s(LoadInstr),
-    /// Wasm `i32.load16_s` equivalent `wasmi` instruction.
+    /// Wasm `i32.load16_s` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I32Load16s`] with a constant load address.
     I32Load16sAt(LoadAtInstr),
-    /// Wasm `i32.load16_s` equivalent `wasmi` instruction.
+    /// Wasm `i32.load16_s` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I32Load16s`] for small offset values.
     I32Load16sOffset16(LoadOffset16Instr),
 
-    /// Wasm `i32.load16_u` equivalent `wasmi` instruction.
+    /// Wasm `i32.load16_u` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
     I32Load16u(LoadInstr),
-    /// Wasm `i32.load16_u` equivalent `wasmi` instruction.
+    /// Wasm `i32.load16_u` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I32Load16u`] with a constant load address.
     I32Load16uAt(LoadAtInstr),
-    /// Wasm `i32.load16_u` equivalent `wasmi` instruction.
+    /// Wasm `i32.load16_u` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I32Load16u`] for small offset values.
     I32Load16uOffset16(LoadOffset16Instr),
 
-    /// Wasm `i64.load8_s` equivalent `wasmi` instruction.
+    /// Wasm `i64.load8_s` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
     I64Load8s(LoadInstr),
-    /// Wasm `i64.load8_s` equivalent `wasmi` instruction.
+    /// Wasm `i64.load8_s` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load8s`] with a constant load address.
     I64Load8sAt(LoadAtInstr),
-    /// Wasm `i64.load8_s` equivalent `wasmi` instruction.
+    /// Wasm `i64.load8_s` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load8s`] for small offset values.
     I64Load8sOffset16(LoadOffset16Instr),
 
-    /// Wasm `i64.load8_u` equivalent `wasmi` instruction.
+    /// Wasm `i64.load8_u` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
     I64Load8u(LoadInstr),
-    /// Wasm `i64.load8_u` equivalent `wasmi` instruction.
+    /// Wasm `i64.load8_u` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load8u`] with a constant load address.
     I64Load8uAt(LoadAtInstr),
-    /// Wasm `i64.load8_u` equivalent `wasmi` instruction.
+    /// Wasm `i64.load8_u` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load8u`] for small offset values.
     I64Load8uOffset16(LoadOffset16Instr),
 
-    /// Wasm `i64.load16_s` equivalent `wasmi` instruction.
+    /// Wasm `i64.load16_s` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
     I64Load16s(LoadInstr),
-    /// Wasm `i64.load16_s` equivalent `wasmi` instruction.
+    /// Wasm `i64.load16_s` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load16s`] with a constant load address.
     I64Load16sAt(LoadAtInstr),
-    /// Wasm `i64.load16_s` equivalent `wasmi` instruction.
+    /// Wasm `i64.load16_s` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load16s`] for small offset values.
     I64Load16sOffset16(LoadOffset16Instr),
 
-    /// Wasm `i64.load16_u` equivalent `wasmi` instruction.
+    /// Wasm `i64.load16_u` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
     I64Load16u(LoadInstr),
-    /// Wasm `i64.load16_u` equivalent `wasmi` instruction.
+    /// Wasm `i64.load16_u` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load16u`] with a constant load address.
     I64Load16uAt(LoadAtInstr),
-    /// Wasm `i64.load16_u` equivalent `wasmi` instruction.
+    /// Wasm `i64.load16_u` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load16u`] for small offset values.
     I64Load16uOffset16(LoadOffset16Instr),
 
-    /// Wasm `i64.load32_s` equivalent `wasmi` instruction.
+    /// Wasm `i64.load32_s` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
     I64Load32s(LoadInstr),
-    /// Wasm `i64.load32_s` equivalent `wasmi` instruction.
+    /// Wasm `i64.load32_s` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load32s`] with a constant load address.
     I64Load32sAt(LoadAtInstr),
-    /// Wasm `i64.load32_s` equivalent `wasmi` instruction.
+    /// Wasm `i64.load32_s` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load32s`] for small offset values.
     I64Load32sOffset16(LoadOffset16Instr),
 
-    /// Wasm `i64.load32_u` equivalent `wasmi` instruction.
+    /// Wasm `i64.load32_u` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
     I64Load32u(LoadInstr),
-    /// Wasm `i64.load32_u` equivalent `wasmi` instruction.
+    /// Wasm `i64.load32_u` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load32u`] with a constant load address.
     I64Load32uAt(LoadAtInstr),
-    /// Wasm `i64.load32_u` equivalent `wasmi` instruction.
+    /// Wasm `i64.load32_u` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load32u`] for small offset values.
     I64Load32uOffset16(LoadOffset16Instr),
 
-    /// Wasm `i32.store` equivalent `wasmi` instruction.
+    /// Wasm `i32.store` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
@@ -2163,7 +2163,7 @@ pub enum Instruction {
     /// Variant of [`Instruction::I32StoreAt`] for constant 16-bit `value`.
     I32StoreAtImm16(StoreAtInstr<Const16<i32>>),
 
-    /// Wasm `i32.store8` equivalent `wasmi` instruction.
+    /// Wasm `i32.store8` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
@@ -2178,7 +2178,7 @@ pub enum Instruction {
     /// Variant of [`Instruction::I32Store8At`] for constant `value`.
     I32Store8AtImm(StoreAtInstr<i8>),
 
-    /// Wasm `i32.store16` equivalent `wasmi` instruction.
+    /// Wasm `i32.store16` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
@@ -2193,7 +2193,7 @@ pub enum Instruction {
     /// Variant of [`Instruction::I32Store16At`] for constant `value`.
     I32Store16AtImm(StoreAtInstr<i16>),
 
-    /// Wasm `i64.store` equivalent `wasmi` instruction.
+    /// Wasm `i64.store` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
@@ -2208,7 +2208,7 @@ pub enum Instruction {
     /// Variant of [`Instruction::I64StoreAt`] for 16-bit `value`.
     I64StoreAtImm16(StoreAtInstr<Const16<i64>>),
 
-    /// Wasm `i64.store8` equivalent `wasmi` instruction.
+    /// Wasm `i64.store8` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
@@ -2223,7 +2223,7 @@ pub enum Instruction {
     /// Variant of [`Instruction::I64Store8At`] for constant `value`.
     I64Store8AtImm(StoreAtInstr<i8>),
 
-    /// Wasm `i64.store16` equivalent `wasmi` instruction.
+    /// Wasm `i64.store16` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
@@ -2238,7 +2238,7 @@ pub enum Instruction {
     /// Variant of [`Instruction::I64Store16At`] for constant `value`.
     I64Store16AtImm(StoreAtInstr<i16>),
 
-    /// Wasm `i64.store32` equivalent `wasmi` instruction.
+    /// Wasm `i64.store32` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
@@ -2253,7 +2253,7 @@ pub enum Instruction {
     /// Variant of [`Instruction::I64Store32At`] for constant 16-bit `value`.
     I64Store32AtImm16(StoreAtInstr<Const16<i32>>),
 
-    /// Wasm `f32.store` equivalent `wasmi` instruction.
+    /// Wasm `f32.store` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
@@ -2264,7 +2264,7 @@ pub enum Instruction {
     /// Variant of [`Instruction::F32Store`] for constant `address`.
     F32StoreAt(StoreAtInstr<Register>),
 
-    /// Wasm `f32.store` equivalent `wasmi` instruction.
+    /// Wasm `f32.store` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///

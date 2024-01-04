@@ -390,7 +390,7 @@ impl ModuleParser {
     /// # Note
     ///
     /// This is part of the module linking Wasm proposal and not yet supported
-    /// by `wasmi`.
+    /// by Wasmi.
     fn process_instances(
         &mut self,
         section: wasmparser::InstanceSectionReader,
@@ -471,7 +471,7 @@ impl ModuleParser {
     /// # Note
     ///
     /// This is part of the module linking Wasm proposal and not yet supported
-    /// by `wasmi`.
+    /// by Wasmi.
     fn process_tags(&mut self, section: wasmparser::TagSectionReader) -> Result<(), Error> {
         self.validator.tag_section(&section).map_err(Into::into)
     }
@@ -570,7 +570,7 @@ impl ModuleParser {
     /// # Note
     ///
     /// This is part of the bulk memory operations Wasm proposal and not yet supported
-    /// by `wasmi`.
+    /// by Wasmi.
     fn process_data_count(&mut self, count: u32, range: Range<usize>) -> Result<(), Error> {
         self.validator
             .data_count_section(count, &range)
@@ -634,7 +634,7 @@ impl ModuleParser {
     ///
     /// This contains the local variables and Wasm instructions of
     /// a single function body.
-    /// This procedure is translating the Wasm bytecode into `wasmi` bytecode.
+    /// This procedure is translating the Wasm bytecode into Wasmi bytecode.
     ///
     /// # Errors
     ///

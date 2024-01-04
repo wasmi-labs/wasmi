@@ -1,28 +1,28 @@
 # Contribution Guidelines
 
-First of all, thank you for taking your time to contribute to `wasmi`!
+First of all, thank you for taking your time to contribute to Wasmi!
 
 Reading these contribution guidelines is your best initial step towards
-successfully driving the development of `wasmi` forward with your own ideas
+successfully driving the development of Wasmi forward with your own ideas
 and use cases.
 
 ## Code of Conduct
 
 Please respect our [code of conduct](./CODE_OF_CONDUCT.md) in every
-communication and discussion related to the `wasmi` project.
+communication and discussion related to the Wasmi project.
 
 ## I don't want to contribute, I just have some questions
 
-For technical questions about `wasmi` feel free to contact
+For technical questions about Wasmi feel free to contact
 us via one of the following communication channels:
 
 - GitHub Discussions
     - Write a [**new GitHub Discussions post**](https://github.com/paritytech/wasmi/discussions/new).
-    - For simple questions around usage or development of `wasmi`.
+    - For simple questions around usage or development of Wasmi.
 - Polkadot Forums
     - Write a new post in the [**Polkadot Forum**](https://forum.polkadot.network/).
     - For public Pokadot, smart contract, ink! or `pallet-contracts`
-      related `wasmi` questions.
+      related Wasmi questions.
 - GitHub Issue
     - Write a [**new GitHub issue**](https://github.com/paritytech/wasmi/issues/new).
     - To initiate a technical (design) discussion or debate.
@@ -40,7 +40,7 @@ People from all around the globe with different cultures and native tongues
 come together to work towards a common goal.
 
 English naturally is the language of choice for developing and communicating
-technicalities concerning `wasmi`. If you feel like your English skills are not
+technicalities concerning Wasmi. If you feel like your English skills are not
 on par to properly communicate your intent don't feel ashamed to use any of
 the well known translators in order to make everyone's lifes simpler.
 Feeding properly articulated sentences in your language to an established
@@ -48,7 +48,7 @@ translation engine usually yields good translation results.
 
 ## Feature Development
 
-Before developing a new feature for the `wasmi` interpreter on your own
+Before developing a new feature for the Wasmi interpreter on your own
 we recommend checking in on the maintainers via a GitHub issue to discuss
 your proposed feature in technical details.
 Maintainers usually have a fundamental understanding of the codebase and
@@ -75,7 +75,7 @@ components installed via `rustup component add`:
 Furthermore you are going to need `git` version control on your system which
 you usually can install via your package manager.
 
-Checkout the `wasmi` repository using
+Checkout the Wasmi repository using
 ```
 git clone git@github.com:paritytech/wasmi.git
 ```
@@ -99,7 +99,7 @@ they need in order to help unblock you.
 
 ### Fuzz Testing
 
-Run `wasmi` fuzz tests using the following command:
+Run Wasmi fuzz tests using the following command:
 
 ```
 cargo +nightly fuzz run <target>
@@ -110,7 +110,7 @@ does not work on the stable Rust channel.
 
 ## Optimizations
 
-If you are working on changes that are going to optimize any part of the `wasmi`
+If you are working on changes that are going to optimize any part of the Wasmi
 interpreter please provide proper benchmarks and make sure that the optimized
 code parts are properly tested.
 

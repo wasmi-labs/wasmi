@@ -1,4 +1,4 @@
-//! Tests for the register-machine `wasmi` engine translation implementation.
+//! Tests for the register-machine Wasmi engine translation implementation.
 
 mod display_wasm;
 pub mod driver;

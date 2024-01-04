@@ -40,7 +40,7 @@ pub struct ExpectedFunc {
 }
 
 impl ExpectedFunc {
-    /// Create a new [`ExpectedFunc`] with the given `wasmi` bytecode [`Instruction`] sequence.
+    /// Create a new [`ExpectedFunc`] with the given Wasmi bytecode [`Instruction`] sequence.
     pub fn new<I>(instrs: I) -> Self
     where
         I: IntoIterator<Item = Instruction>,

@@ -113,7 +113,7 @@ where
     ///
     /// This is a non-standard WebAssembly API and might not be available
     /// at other WebAssembly engines. Please be aware that depending on this
-    /// feature might mean a lock-in to `wasmi` for users.
+    /// feature might mean a lock-in to Wasmi for users.
     ///
     /// # Errors
     ///

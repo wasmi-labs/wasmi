@@ -23,7 +23,7 @@ pub trait IntoFunc<T, Params, Results>: Send + Sync + 'static {
     #[doc(hidden)]
     type Results: WasmTypeList;
 
-    /// Converts the function into its `wasmi` signature and its trampoline.
+    /// Converts the function into its Wasmi signature and its trampoline.
     #[doc(hidden)]
     fn into_func(self) -> (FuncType, TrampolineEntity<T>);
 }

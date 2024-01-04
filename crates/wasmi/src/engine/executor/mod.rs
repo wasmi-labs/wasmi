@@ -158,7 +158,7 @@ impl EngineInner {
     }
 }
 
-/// The internal state of the `wasmi` engine.
+/// The internal state of the Wasmi engine.
 #[derive(Debug)]
 pub struct EngineExecutor<'engine> {
     /// Shared and reusable generic engine resources.

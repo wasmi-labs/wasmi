@@ -24,7 +24,7 @@ use wast::token::{Id, Span};
 /// The context of a single Wasm test spec suite run.
 #[derive(Debug)]
 pub struct TestContext<'a> {
-    /// The `wasmi` engine used for executing functions used during the test.
+    /// The Wasmi engine used for executing functions used during the test.
     engine: Engine,
     /// The linker for linking together Wasm test modules.
     linker: Linker<()>,

@@ -10,7 +10,7 @@
 //! # Note
 //!
 //! Technically `{i32, i64}.eqz` are unary instructions but we still
-//! include them here since in `wasmi` bytecode these are represented by
+//! include them here since in Wasmi bytecode these are represented by
 //! more generic comparison instructions.
 
 use super::*;

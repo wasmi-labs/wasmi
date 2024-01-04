@@ -197,7 +197,7 @@ impl Module {
     /// - If the Wasm bytecode yielded by `stream` is not valid.
     /// - If the Wasm bytecode yielded by `stream` violates restrictions
     ///   set in the [`Config`] used by the `engine`.
-    /// - If `wasmi` cannot translate the Wasm bytecode yielded by `stream`.
+    /// - If Wasmi cannot translate the Wasm bytecode yielded by `stream`.
     ///
     /// [`Config`]: crate::Config
     pub fn new(engine: &Engine, stream: impl Read) -> Result<Self, Error> {
@@ -246,7 +246,7 @@ impl Module {
     ///
     /// - The input `wasm` must be in binary form, the text format is not accepted by this function.
     /// - This will only validate the `wasm` but not try to translate it. Therefore `Module::new`
-    ///   might still fail if translation of the Wasm binary input fails to translate via the `wasmi`
+    ///   might still fail if translation of the Wasm binary input fails to translate via the Wasmi
     ///   [`Engine`].
     /// - Validation automatically happens as part of [`Module::new`].
     ///

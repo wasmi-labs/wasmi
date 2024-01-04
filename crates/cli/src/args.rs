@@ -36,7 +36,7 @@ impl FromStr for KeyValue {
     }
 }
 
-/// The `wasmi` CLI application arguments.
+/// The Wasmi CLI application arguments.
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None, trailing_var_arg = true)]
 pub struct Args {
@@ -75,9 +75,9 @@ pub struct Args {
 
     /// The function to invoke.
     ///
-    /// If this argument is missing, `wasmi` CLI will try to run `""` or `_start`.
+    /// If this argument is missing, Wasmi CLI will try to run `""` or `_start`.
     ///
-    /// If neither are exported the `wasmi` CLI will display out all exported
+    /// If neither are exported the Wasmi CLI will display out all exported
     /// functions of the Wasm module and return with an error.
     #[clap(long = "invoke", value_name = "FUNCTION")]
     invoke: Option<String>,

@@ -22,7 +22,7 @@ trait DifferentialTarget: Sized {
     fn call(&mut self, name: &str) -> Result<&[Self::Value], Self::Error>;
 }
 
-/// Differential fuzzing backend for the register-machine `wasmi`.
+/// Differential fuzzing backend for the register-machine Wasmi.
 struct WasmiRegister {
     store: wasmi_reg::Store<wasmi_reg::StoreLimits>,
     instance: wasmi_reg::Instance,
@@ -91,7 +91,7 @@ impl DifferentialTarget for WasmiRegister {
     }
 }
 
-/// Differential fuzzing backend for the stack-machine `wasmi`.
+/// Differential fuzzing backend for the stack-machine Wasmi.
 struct WasmiStack {
     store: wasmi_stack::Store<wasmi_stack::StoreLimits>,
     instance: wasmi_stack::Instance,

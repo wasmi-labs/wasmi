@@ -111,7 +111,7 @@ pub fn execute_instrs<'ctx, 'engine>(
         .execute(resource_limiter)
 }
 
-/// An execution context for executing a `wasmi` function frame.
+/// An execution context for executing a Wasmi function frame.
 #[derive(Debug)]
 struct Executor<'ctx, 'engine> {
     /// Stores the value stack of live values on the Wasm stack.
@@ -152,7 +152,7 @@ struct Executor<'ctx, 'engine> {
 }
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
-    /// Creates a new [`Executor`] for executing a `wasmi` function frame.
+    /// Creates a new [`Executor`] for executing a Wasmi function frame.
     #[inline(always)]
     pub fn new(
         ctx: &'ctx mut StoreInner,
@@ -899,7 +899,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// # Note
     ///
-    /// This is used by `wasmi` instructions that have a fixed
+    /// This is used by Wasmi instructions that have a fixed
     /// encoding size of two instruction words such as [`Instruction::Branch`].
     #[inline(always)]
     fn next_instr_at(&mut self, skip: usize) {

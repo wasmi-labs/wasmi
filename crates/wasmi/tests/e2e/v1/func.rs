@@ -1,4 +1,4 @@
-//! Tests for the `Func` type in `wasmi`.
+//! Tests for the `Func` type in Wasmi.
 
 use core::slice;
 
