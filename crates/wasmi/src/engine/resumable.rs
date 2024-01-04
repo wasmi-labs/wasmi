@@ -87,7 +87,7 @@ pub struct ResumableInvocation {
     ///
     /// # Note
     ///
-    /// This is only needed for the register-machine `wasmi` engine backend.
+    /// This is only needed for the register-machine Wasmi engine backend.
     caller_results: RegisterSpan,
     /// The value and call stack in use by the [`ResumableInvocation`].
     ///
@@ -145,7 +145,7 @@ impl ResumableInvocation {
     ///
     /// # Note
     ///
-    /// This should only be called from the register-machine `wasmi` engine backend.
+    /// This should only be called from the register-machine Wasmi engine backend.
     pub(super) fn update(
         &mut self,
         host_func: Func,
@@ -191,7 +191,7 @@ impl ResumableInvocation {
     ///
     /// # Note
     ///
-    /// This is `Some` only for [`ResumableInvocation`] originating from the register-machine `wasmi` engine.
+    /// This is `Some` only for [`ResumableInvocation`] originating from the register-machine Wasmi engine.
     pub(crate) fn caller_results(&self) -> RegisterSpan {
         self.caller_results
     }

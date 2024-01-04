@@ -907,7 +907,7 @@ impl<T> Store<T> {
     }
 }
 
-/// A trait used to get shared access to a [`Store`] in `wasmi`.
+/// A trait used to get shared access to a [`Store`] in Wasmi.
 pub trait AsContext {
     /// The user state associated with the [`Store`], aka the `T` in `Store<T>`.
     type UserState;
@@ -916,7 +916,7 @@ pub trait AsContext {
     fn as_context(&self) -> StoreContext<Self::UserState>;
 }
 
-/// A trait used to get exclusive access to a [`Store`] in `wasmi`.
+/// A trait used to get exclusive access to a [`Store`] in Wasmi.
 pub trait AsContextMut: AsContext {
     /// Returns the store context that this type provides access to.
     fn as_context_mut(&mut self) -> StoreContextMut<Self::UserState>;

@@ -1,4 +1,4 @@
-//! The `wasmi` interpreter.
+//! The Wasmi interpreter.
 
 mod block_type;
 pub mod bytecode;
@@ -106,11 +106,11 @@ impl EngineIdx {
 /// An entity owned by the [`Engine`].
 type Guarded<Idx> = GuardedEntity<EngineIdx, Idx>;
 
-/// The `wasmi` interpreter.
+/// The Wasmi interpreter.
 ///
 /// # Note
 ///
-/// - The current `wasmi` engine implements a bytecode interpreter.
+/// - The current Wasmi engine implements a bytecode interpreter.
 /// - This structure is intentionally cheap to copy.
 ///   Most of its API has a `&self` receiver, so can be shared easily.
 #[derive(Debug, Clone)]
@@ -307,7 +307,7 @@ impl Engine {
             .init_lazy_func(func_idx, func, bytes, module, func_to_validate)
     }
 
-    /// Resolves the [`CompiledFunc`] to the underlying `wasmi` bytecode instructions.
+    /// Resolves the [`CompiledFunc`] to the underlying Wasmi bytecode instructions.
     ///
     /// # Note
     ///
@@ -315,11 +315,11 @@ impl Engine {
     ///   machine based bytecode instructions.
     /// - This API is mainly intended for unit testing purposes and shall not be used
     ///   outside of this context. The function bodies are intended to be data private
-    ///   to the `wasmi` interpreter.
+    ///   to the Wasmi interpreter.
     ///
     /// # Errors
     ///
-    /// If the `func` fails Wasm to `wasmi` bytecode translation after it was lazily initialized.
+    /// If the `func` fails Wasm to Wasmi bytecode translation after it was lazily initialized.
     ///
     /// # Panics
     ///
@@ -340,11 +340,11 @@ impl Engine {
     ///
     /// This API is intended for unit testing purposes and shall not be used
     /// outside of this context. The function bodies are intended to be data
-    /// private to the `wasmi` interpreter.
+    /// private to the Wasmi interpreter.
     ///
     /// # Errors
     ///
-    /// If the `func` fails Wasm to `wasmi` bytecode translation after it was lazily initialized.
+    /// If the `func` fails Wasm to Wasmi bytecode translation after it was lazily initialized.
     ///
     /// # Panics
     ///
@@ -471,7 +471,7 @@ impl Engine {
     }
 }
 
-/// The internal state of the `wasmi` [`Engine`].
+/// The internal state of the Wasmi [`Engine`].
 #[derive(Debug)]
 pub struct EngineInner {
     /// The [`Config`] of the engine.
@@ -748,7 +748,7 @@ impl EngineInner {
     ///
     /// # Errors
     ///
-    /// If the `func` fails Wasm to `wasmi` bytecode translation after it was lazily initialized.
+    /// If the `func` fails Wasm to Wasmi bytecode translation after it was lazily initialized.
     ///
     /// # Pancis
     ///
@@ -768,7 +768,7 @@ impl EngineInner {
     ///
     /// # Errors
     ///
-    /// If the `func` fails Wasm to `wasmi` bytecode translation after it was lazily initialized.
+    /// If the `func` fails Wasm to Wasmi bytecode translation after it was lazily initialized.
     ///
     /// # Pancis
     ///

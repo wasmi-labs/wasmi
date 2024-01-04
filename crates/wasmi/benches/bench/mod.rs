@@ -5,7 +5,7 @@ use wasmi::{Config, StackLimits};
 ///
 /// # Note
 ///
-/// This includes validation and compilation to `wasmi` bytecode.
+/// This includes validation and compilation to Wasmi bytecode.
 ///
 /// # Panics
 ///
@@ -28,11 +28,11 @@ pub fn bench_config() -> Config {
     config
 }
 
-/// Parses the Wasm binary at the given `file_name` into a `wasmi` module.
+/// Parses the Wasm binary at the given `file_name` into a Wasmi module.
 ///
 /// # Note
 ///
-/// This includes validation and compilation to `wasmi` bytecode.
+/// This includes validation and compilation to Wasmi bytecode.
 ///
 /// # Panics
 ///
@@ -48,11 +48,11 @@ pub fn load_module_from_file(file_name: &str) -> wasmi::Module {
     })
 }
 
-/// Parses the Wasm binary from the given `file_name` into a `wasmi` module.
+/// Parses the Wasm binary from the given `file_name` into a Wasmi module.
 ///
 /// # Note
 ///
-/// This includes validation and compilation to `wasmi` bytecode.
+/// This includes validation and compilation to Wasmi bytecode.
 ///
 /// # Panics
 ///
@@ -74,11 +74,11 @@ pub fn wat2wasm(bytes: &[u8]) -> Vec<u8> {
     wat::parse_bytes(bytes).unwrap().into_owned()
 }
 
-/// Parses the Wasm source from the given `.wat` bytes into a `wasmi` module.
+/// Parses the Wasm source from the given `.wat` bytes into a Wasmi module.
 ///
 /// # Note
 ///
-/// This includes validation and compilation to `wasmi` bytecode.
+/// This includes validation and compilation to Wasmi bytecode.
 ///
 /// # Panics
 ///

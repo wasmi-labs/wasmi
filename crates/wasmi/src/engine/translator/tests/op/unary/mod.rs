@@ -9,7 +9,7 @@ use std::fmt::Display;
 use wasm_type::WasmType;
 use wasmi_core::{TrapCode, UntypedValue};
 
-/// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary `wasmi` instruction.
+/// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary Wasmi instruction.
 fn conversion_reg_with<I, O, E>(wasm_op: &str, expected: E)
 where
     I: WasmType,
@@ -33,7 +33,7 @@ where
         .run();
 }
 
-/// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary `wasmi` instruction.
+/// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary Wasmi instruction.
 fn conversion_reg<I, O>(
     wasm_op: &str,
     make_instr: fn(result: Register, input: Register) -> Instruction,
@@ -48,7 +48,7 @@ fn conversion_reg<I, O>(
     conversion_reg_with::<I, O, _>(wasm_op, expected)
 }
 
-/// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary `wasmi` instruction.
+/// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary Wasmi instruction.
 fn unary_reg<T>(wasm_op: &str, make_instr: fn(result: Register, input: Register) -> Instruction)
 where
     T: WasmType,
@@ -56,7 +56,7 @@ where
     conversion_reg::<T, T>(wasm_op, make_instr)
 }
 
-/// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary `wasmi` instruction.
+/// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary Wasmi instruction.
 fn conversion_imm<I, O>(wasm_op: &str, input: I, eval: fn(input: I) -> O)
 where
     I: WasmType,
@@ -88,7 +88,7 @@ where
     testcase.run();
 }
 
-/// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary `wasmi` instruction.
+/// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary Wasmi instruction.
 fn unary_imm<T>(wasm_op: &str, input: T, eval: fn(input: T) -> T)
 where
     T: WasmType,
@@ -97,7 +97,7 @@ where
     conversion_imm::<T, T>(wasm_op, input, eval)
 }
 
-/// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary `wasmi` instruction.
+/// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary Wasmi instruction.
 fn fallible_conversion_imm_err<I, O>(wasm_op: &str, input: I, eval: fn(input: I) -> TrapCode)
 where
     I: WasmType,

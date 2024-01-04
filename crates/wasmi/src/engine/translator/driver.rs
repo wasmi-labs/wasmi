@@ -4,7 +4,7 @@ use crate::{
 };
 use wasmparser::FunctionBody;
 
-/// Translates Wasm bytecode into `wasmi` bytecode for a single Wasm function.
+/// Translates Wasm bytecode into Wasmi bytecode for a single Wasm function.
 pub struct FuncTranslationDriver<'parser, T> {
     /// The function body that shall be translated.
     func_body: FunctionBody<'parser>,
@@ -15,7 +15,7 @@ pub struct FuncTranslationDriver<'parser, T> {
 }
 
 impl<'parser, T> FuncTranslationDriver<'parser, T> {
-    /// Creates a new Wasm to `wasmi` bytecode function translator.
+    /// Creates a new Wasm to Wasmi bytecode function translator.
     pub fn new(
         offset: impl Into<Option<usize>>,
         bytes: &'parser [u8],
@@ -35,7 +35,7 @@ impl<'parser, T> FuncTranslationDriver<'parser, T>
 where
     T: WasmTranslator<'parser>,
 {
-    /// Starts translation of the Wasm stream into `wasmi` bytecode.
+    /// Starts translation of the Wasm stream into Wasmi bytecode.
     pub fn translate(
         mut self,
         finalize: impl FnOnce(CompiledFuncEntity),

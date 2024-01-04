@@ -280,7 +280,7 @@ pub enum TrapCode {
 
     /// This trap is raised when a WebAssembly execution ran out of fuel.
     ///
-    /// The `wasmi` execution engine can be configured to instrument its
+    /// The Wasmi execution engine can be configured to instrument its
     /// internal bytecode so that fuel is consumed for each executed instruction.
     /// This is useful to deterministically halt or yield a WebAssembly execution.
     OutOfFuel,

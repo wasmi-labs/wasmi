@@ -79,7 +79,7 @@ impl Instr {
     }
 }
 
-/// Encodes `wasmi` bytecode instructions to an [`Instruction`] stream.
+/// Encodes Wasmi bytecode instructions to an [`Instruction`] stream.
 #[derive(Debug, Default)]
 pub struct InstrEncoder {
     /// Already encoded [`Instruction`] words.

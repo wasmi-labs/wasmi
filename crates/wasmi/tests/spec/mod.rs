@@ -61,7 +61,7 @@ fn mvp_config() -> Config {
     config
 }
 
-/// Create a [`Config`] with all Wasm feature supported by `wasmi` enabled.
+/// Create a [`Config`] with all Wasm feature supported by Wasmi enabled.
 ///
 /// # Note
 ///

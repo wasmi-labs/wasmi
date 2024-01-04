@@ -58,7 +58,7 @@ impl DedupFuncType {
 /// The big advantage of deduplicated [`FuncType`] entities is that we can use
 /// this for indirect calls to speed up the signature checks since comparing
 /// deduplicated [`FuncType`] instances is as fast as comparing integer values.
-/// Also with respect to `wasmi` bytecode deduplicated [`FuncType`] entities
+/// Also with respect to Wasmi bytecode deduplicated [`FuncType`] entities
 /// require a lot less space to be stored.
 #[derive(Debug)]
 pub struct FuncTypeRegistry {

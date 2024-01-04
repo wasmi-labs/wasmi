@@ -16,7 +16,7 @@ use alloc::{boxed::Box, string::String};
 use core::{fmt, fmt::Display};
 use wasmparser::BinaryReaderError as WasmError;
 
-/// The generic `wasmi` root error type.
+/// The generic Wasmi root error type.
 #[derive(Debug)]
 pub struct Error {
     /// The underlying kind of the error and its specific information.
@@ -165,7 +165,7 @@ pub enum ErrorKind {
     Read(ReadError),
     /// Encountered when there is a Wasm parsing or validation error.
     Wasm(WasmError),
-    /// Encountered when there is a Wasm to `wasmi` translation error.
+    /// Encountered when there is a Wasm to Wasmi translation error.
     Translation(TranslationError),
 }
 

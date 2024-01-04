@@ -1,6 +1,6 @@
-//! This crate provides support for WASI `preview1` for the `wasmi` interpreter.
+//! This crate provides support for WASI `preview1` for the Wasmi interpreter.
 //!
-//! Use [`add_to_linker`] to add all supported WASI definitions to the `wasmi` linker.
+//! Use [`add_to_linker`] to add all supported WASI definitions to the Wasmi linker.
 
 mod guest_memory;
 

@@ -8,7 +8,7 @@ use smallvec::SmallVec;
 #[cfg(doc)]
 use wasmi_core::UntypedValue;
 
-/// Tagged providers are inputs to `wasmi` bytecode instructions.
+/// Tagged providers are inputs to Wasmi bytecode instructions.
 ///
 /// Either a [`Register`] or a constant [`UntypedValue`].
 #[derive(Debug, Copy, Clone)]

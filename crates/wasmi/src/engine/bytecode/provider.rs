@@ -52,7 +52,7 @@ impl<T> Provider<T> {
 /// # Note
 ///
 /// The [`UntypedProvider`] is primarily used for execution of
-/// `wasmi` bytecode where typing usually no longer plays a role.
+/// Wasmi bytecode where typing usually no longer plays a role.
 pub type UntypedProvider = Provider<UntypedValue>;
 
 impl From<Register> for UntypedProvider {

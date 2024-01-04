@@ -6,7 +6,7 @@ use core::{
     slice::Iter as SliceIter,
 };
 
-/// A label during the `wasmi` compilation process.
+/// A label during the Wasmi compilation process.
 #[derive(Debug, Copy, Clone)]
 pub enum Label {
     /// The label has already been pinned to a particular [`Instr`].

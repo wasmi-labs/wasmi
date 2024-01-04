@@ -2,7 +2,7 @@
 //! https://github.com/paritytech/wasmi/issues/587
 //!
 //! The problem was that Wasm memories (and tables) were defined twice for a
-//! `wasmi` instance for every imported Wasm memory (or table). Since `wasmi`
+//! Wasmi instance for every imported Wasm memory (or table). Since Wasmi
 //! does not support the `multi-memory` Wasm proposal this resulted Wasm
 //! instances with more than 1 memory (or table) if the Wasm module imported
 //! those entities.

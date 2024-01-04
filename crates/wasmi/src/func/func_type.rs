@@ -126,7 +126,7 @@ impl FuncType {
     /// # Note
     ///
     /// This is required by an implementation detail of how function result passing is current
-    /// implemented in the `wasmi` execution engine and might change in the future.
+    /// implemented in the Wasmi execution engine and might change in the future.
     ///
     /// # Panics
     ///

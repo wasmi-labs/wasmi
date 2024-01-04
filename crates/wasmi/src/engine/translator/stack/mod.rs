@@ -19,13 +19,13 @@ use crate::{
 use alloc::vec::Vec;
 use wasmi_core::UntypedValue;
 
-/// Typed inputs to `wasmi` bytecode instructions.
+/// Typed inputs to Wasmi bytecode instructions.
 ///
 /// Either a [`Register`] or a constant [`UntypedValue`].
 ///
 /// # Note
 ///
-/// The [`TypedProvider`] is used primarily during translation of a `wasmi`
+/// The [`TypedProvider`] is used primarily during translation of a Wasmi
 /// function where types of constant values play an important role.
 pub type TypedProvider = Provider<TypedValue>;
 

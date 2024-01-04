@@ -33,17 +33,17 @@ pub struct Config {
     extended_const: bool,
     /// Is `true` if Wasm instructions on `f32` and `f64` types are allowed.
     floats: bool,
-    /// Is `true` if `wasmi` executions shall consume fuel.
+    /// Is `true` if Wasmi executions shall consume fuel.
     consume_fuel: bool,
-    /// The fuel consumption mode of the `wasmi` [`Engine`](crate::Engine).
+    /// The fuel consumption mode of the Wasmi [`Engine`](crate::Engine).
     fuel_consumption_mode: FuelConsumptionMode,
-    /// The configured fuel costs of all `wasmi` bytecode instructions.
+    /// The configured fuel costs of all Wasmi bytecode instructions.
     fuel_costs: FuelCosts,
-    /// The mode of Wasm to `wasmi` bytecode compilation.
+    /// The mode of Wasm to Wasmi bytecode compilation.
     compilation_mode: CompilationMode,
 }
 
-/// The fuel consumption mode of the `wasmi` [`Engine`].
+/// The fuel consumption mode of the Wasmi [`Engine`].
 ///
 /// This mode affects when fuel is charged for Wasm bulk-operations.
 /// Affected Wasm instructions are:
@@ -103,30 +103,30 @@ pub struct FuelCosts {
 }
 
 impl FuelCosts {
-    /// Returns the base fuel costs for all `wasmi` IR instructions.
+    /// Returns the base fuel costs for all Wasmi IR instructions.
     pub fn base(&self) -> u64 {
         self.base
     }
 
-    /// Returns the base fuel costs for all `wasmi` IR entity related instructions.
+    /// Returns the base fuel costs for all Wasmi IR entity related instructions.
     pub fn entity(&self) -> u64 {
         // Note: For simplicity we currently simply use base costs.
         self.base
     }
 
-    /// Returns the base fuel costs for all `wasmi` IR load instructions.
+    /// Returns the base fuel costs for all Wasmi IR load instructions.
     pub fn load(&self) -> u64 {
         // Note: For simplicity we currently simply use base costs.
         self.base
     }
 
-    /// Returns the base fuel costs for all `wasmi` IR store instructions.
+    /// Returns the base fuel costs for all Wasmi IR store instructions.
     pub fn store(&self) -> u64 {
         // Note: For simplicity we currently simply use base costs.
         self.base
     }
 
-    /// Returns the base fuel costs for all `wasmi` IR call instructions.
+    /// Returns the base fuel costs for all Wasmi IR call instructions.
     pub fn call(&self) -> u64 {
         // Note: For simplicity we currently simply use base costs.
         self.base
@@ -142,11 +142,11 @@ impl FuelCosts {
         self.bytes_per_fuel
     }
 
-    /// Returns the fuel costs for `len_copies` register copies in `wasmi` IR.
+    /// Returns the fuel costs for `len_copies` register copies in Wasmi IR.
     ///
     /// # Note
     ///
-    /// Registers are copied for the following `wasmi` IR instructions:
+    /// Registers are copied for the following Wasmi IR instructions:
     ///
     /// - calls (parameter passing)
     /// - `copy_span`
@@ -161,11 +161,11 @@ impl FuelCosts {
         Self::costs_per(len_copies, self.copies_per_fuel())
     }
 
-    /// Returns the fuel costs for `len_copies` register copies in `wasmi` IR.
+    /// Returns the fuel costs for `len_copies` register copies in Wasmi IR.
     ///
     /// # Note
     ///
-    /// Registers are copied for the following `wasmi` IR instructions:
+    /// Registers are copied for the following Wasmi IR instructions:
     ///
     /// - `memory.grow`
     /// - `memory.copy`
@@ -196,10 +196,10 @@ impl Default for FuelCosts {
     }
 }
 
-/// The chosen mode of Wasm to `wasmi` bytecode compilation.
+/// The chosen mode of Wasm to Wasmi bytecode compilation.
 #[derive(Debug, Default, Copy, Clone)]
 pub enum CompilationMode {
-    /// The Wasm code is compiled eagerly to `wasmi` bytecode.
+    /// The Wasm code is compiled eagerly to Wasmi bytecode.
     #[default]
     Eager,
     /// The Wasm code is validated eagerly and translated lazily on first use.
@@ -367,11 +367,11 @@ impl Config {
         self
     }
 
-    /// Configures whether `wasmi` will consume fuel during execution to either halt execution as desired.
+    /// Configures whether Wasmi will consume fuel during execution to either halt execution as desired.
     ///
     /// # Note
     ///
-    /// This configuration can be used to make `wasmi` instrument its internal bytecode
+    /// This configuration can be used to make Wasmi instrument its internal bytecode
     /// so that it consumes fuel as it executes. Once an execution runs out of fuel
     /// a [`TrapCode::OutOfFuel`](crate::core::TrapCode::OutOfFuel) trap is raised.
     /// This way users can deterministically halt or yield the execution of WebAssembly code.

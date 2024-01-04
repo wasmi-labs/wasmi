@@ -4,7 +4,7 @@ use std::path::Path;
 use wasmi::{CompilationMode, Config, ExternType, Func, FuncType, Instance, Module, Store};
 use wasmi_wasi::WasiCtx;
 
-/// The [`Context`] for the `wasmi` CLI application.
+/// The [`Context`] for the Wasmi CLI application.
 ///
 /// This simply stores all the necessary data.
 pub struct Context {

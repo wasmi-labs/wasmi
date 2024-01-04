@@ -66,7 +66,7 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
             }
             WastDirective::Wat(_) => {
                 test_context.profile().bump_quote_module();
-                // For the purpose of testing `wasmi` we are not
+                // For the purpose of testing Wasmi we are not
                 // interested in parsing `.wat` files, therefore
                 // we silently ignore this case for now.
                 // This might change once wasmi supports `.wat` files.
@@ -230,7 +230,7 @@ fn assert_results(context: &TestContext, span: Span, results: &[Value], expected
     let expected = expected.iter().map(|expected| match expected {
         WastRet::Core(expected) => expected,
         WastRet::Component(expected) => panic!(
-            "{:?}: `wasmi` does not support the Wasm `component-model` proposal but found {expected:?}",
+            "{:?}: Wasmi does not support the Wasm `component-model` proposal but found {expected:?}",
             context.spanned(span),
         ),
     });
@@ -375,7 +375,7 @@ fn execute_wast_invoke(
                 )
             }),
             wast::WastArg::Component(arg) => panic!(
-                "{}: `wasmi` does not support the Wasm `component-model` but found {arg:?}",
+                "{}: Wasmi does not support the Wasm `component-model` but found {arg:?}",
                 context.spanned(span)
             ),
         };

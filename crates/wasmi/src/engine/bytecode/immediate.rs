@@ -492,7 +492,7 @@ impl From<AnyConst16> for u64 {
 /// Upon use the small 32-bit value has to be sign-extended to
 /// the actual integer type, e.g. `i32` or `i64`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(align(2))] // 2-byte alignment is sufficient for `wasmi` bytecode
+#[repr(align(2))] // 2-byte alignment is sufficient for Wasmi bytecode
 pub struct AnyConst32([u8; 4]);
 
 impl TryFrom<u64> for AnyConst32 {

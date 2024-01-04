@@ -1,3 +1,3 @@
-//! End-to-end tests for `wasmi`.
+//! End-to-end tests for Wasmi.
 
 mod v1;
