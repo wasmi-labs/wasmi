@@ -739,7 +739,8 @@ impl EngineInner {
     where
         F: FnOnce(&CompiledFuncEntity) -> R,
     {
-        Ok(f(self.res.read().code_map.get(func)?))
+        // Note: We use `None` so this test-only function will never charge for compilation fuel.
+        Ok(f(self.res.read().code_map.get(None, func)?))
     }
 
     /// Returns the [`Instruction`] of `func` at `index`.

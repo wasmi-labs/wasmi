@@ -201,8 +201,13 @@ impl<'engine> EngineExecutor<'engine> {
                 let len_results = results.len_results();
                 self.stack.values.reserve(len_results)?;
                 self.stack.values.extend_zeros(len_results);
-                let instance = wasm_func.instance();
-                let compiled_func = self.res.code_map.get(wasm_func.func_body())?;
+                let instance = *wasm_func.instance();
+                let compiled_func = wasm_func.func_body();
+                let ctx = ctx.as_context_mut();
+                let compiled_func = self
+                    .res
+                    .code_map
+                    .get(Some(&mut ctx.store.inner), compiled_func)?;
                 let (base_ptr, frame_ptr) = self.stack.values.alloc_call_frame(compiled_func)?;
                 // Safety: We use the `base_ptr` that we just received upon allocating the new
                 //         call frame which is guaranteed to be valid for this particular operation
@@ -215,9 +220,9 @@ impl<'engine> EngineExecutor<'engine> {
                     frame_ptr,
                     base_ptr,
                     RegisterSpan::new(Register::from_i16(0)),
-                    *instance,
+                    instance,
                 ))?;
-                self.execute_func(ctx.as_context_mut())?;
+                self.execute_func(ctx)?;
             }
             FuncEntity::Host(host_func) => {
                 // The host function signature is required for properly
