@@ -245,8 +245,8 @@ impl MemoryEntity {
         let Some(new_size) = new_pages.to_bytes() else {
             return notify_limiter(limiter, EntityGrowError::InvalidGrow);
         };
-        let additional_bytes = additional.to_bytes().unwrap_or(usize::MAX) as u64;
         if let Some(fuel) = fuel {
+            let additional_bytes = additional.to_bytes().unwrap_or(usize::MAX) as u64;
             match fuel.consume_fuel(|costs| costs.fuel_for_bytes(additional_bytes)) {
                 Ok(_) | Err(FuelError::FuelMeteringDisabled) => {}
                 Err(FuelError::OutOfFuel) => {
