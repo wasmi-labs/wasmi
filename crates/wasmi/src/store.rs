@@ -222,8 +222,9 @@ pub struct Fuel {
 impl Fuel {
     /// Creates a new [`Fuel`] for the [`Engine`].
     pub fn new(engine: &Engine) -> Self {
-        let enabled = engine.config().get_consume_fuel();
-        let costs = *engine.config().fuel_costs();
+        let config = engine.config();
+        let enabled = config.get_consume_fuel();
+        let costs = *config.fuel_costs();
         Self {
             remaining: 0,
             total: 0,
