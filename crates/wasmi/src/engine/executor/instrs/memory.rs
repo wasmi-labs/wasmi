@@ -86,27 +86,19 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 return self.try_next_instr();
             }
         };
-        let return_value = self.consume_fuel_with(
-            |costs| {
-                let delta_in_bytes = delta.to_bytes().unwrap_or(0) as u64;
-                costs.fuel_for_bytes(delta_in_bytes)
-            },
-            |this| {
-                let memory = this.cache.default_memory(this.ctx);
-                let new_pages = this
-                    .ctx
-                    .resolve_memory_mut(memory)
-                    .grow(delta, None, resource_limiter) // TODO: use fuel properly
-                    .map(u32::from)?;
+        let memory = self.cache.default_memory(self.ctx);
+        let (memory, fuel) = self.ctx.resolve_memory_and_fuel_mut(memory);
+        let return_value = memory
+            .grow(delta, Some(fuel), resource_limiter)
+            .map(u32::from);
+        let return_value = match return_value {
+            Ok(return_value) => {
                 // The `memory.grow` operation might have invalidated the cached
                 // linear memory so we need to reset it in order for the cache to
                 // reload in case it is used again.
-                this.cache.reset_default_memory_bytes();
-                Ok(new_pages)
-            },
-        );
-        let return_value = match return_value {
-            Ok(return_value) => return_value,
+                self.cache.reset_default_memory_bytes();
+                return_value
+            }
             Err(EntityGrowError::InvalidGrow) => EntityGrowError::ERROR_CODE,
             Err(EntityGrowError::TrapCode(trap_code)) => return Err(Error::from(trap_code)),
         };

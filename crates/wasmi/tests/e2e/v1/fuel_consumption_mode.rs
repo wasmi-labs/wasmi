@@ -87,5 +87,5 @@ fn lazy_consumption_mode() {
 
 #[test]
 fn eager_consumption_mode() {
-    check_consumption_mode(FuelConsumptionMode::Eager, 1030, 1027);
+    check_consumption_mode(FuelConsumptionMode::Eager, 1030, 3);
 }

@@ -686,6 +686,22 @@ impl StoreInner {
         Self::resolve_mut(idx, &mut self.memories)
     }
 
+    /// Returns an exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Memory`] does not originate from this [`Store`].
+    /// - If the [`Memory`] cannot be resolved to its entity.
+    pub fn resolve_memory_and_fuel_mut(
+        &mut self,
+        memory: &Memory,
+    ) -> (&mut MemoryEntity, &mut Fuel) {
+        let idx = self.unwrap_stored(memory.as_inner());
+        let memory = Self::resolve_mut(idx, &mut self.memories);
+        let fuel = &mut self.fuel;
+        (memory, fuel)
+    }
+
     /// Returns a pair of:
     ///
     /// - An exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`].
