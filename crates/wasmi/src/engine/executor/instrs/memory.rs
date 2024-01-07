@@ -96,7 +96,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 let new_pages = this
                     .ctx
                     .resolve_memory_mut(memory)
-                    .grow(delta, resource_limiter)
+                    .grow(delta, None, resource_limiter) // TODO: use fuel properly
                     .map(u32::from)?;
                 // The `memory.grow` operation might have invalidated the cached
                 // linear memory so we need to reset it in order for the cache to

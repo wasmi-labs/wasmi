@@ -11,7 +11,10 @@ pub use self::{
     error::MemoryError,
 };
 use super::{AsContext, AsContextMut, StoreContext, StoreContextMut, Stored};
-use crate::{error::EntityGrowError, store::ResourceLimiterRef};
+use crate::{
+    error::EntityGrowError,
+    store::{Fuel, FuelError, ResourceLimiterRef},
+};
 use wasmi_arena::ArenaIndex;
 use wasmi_core::{Pages, TrapCode};
 
@@ -196,8 +199,19 @@ impl MemoryEntity {
     pub fn grow(
         &mut self,
         additional: Pages,
+        fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<Pages, EntityGrowError> {
+        fn notify_limiter(
+            limiter: &mut ResourceLimiterRef<'_>,
+            err: EntityGrowError,
+        ) -> Result<Pages, EntityGrowError> {
+            if let Some(limiter) = limiter.as_resource_limiter() {
+                limiter.memory_grow_failed(&MemoryError::OutOfBoundsGrowth)
+            }
+            Err(err)
+        }
+
         let current_pages = self.current_pages();
         if additional == Pages::from(0) {
             // Nothing to do in this case. Bail out early.
@@ -222,28 +236,32 @@ impl MemoryEntity {
             }
         }
 
-        let mut ret: Result<Pages, EntityGrowError> = Err(EntityGrowError::InvalidGrow);
-
-        if let Some(new_pages) = desired_pages {
-            if new_pages <= maximum_pages {
-                if let Some(new_size) = new_pages.to_bytes() {
-                    // At this point it is okay to grow the underlying virtual memory
-                    // by the given amount of additional pages.
-                    self.bytes.grow(new_size);
-                    self.current_pages = new_pages;
-                    ret = Ok(current_pages)
+        let Some(new_pages) = desired_pages else {
+            return notify_limiter(limiter, EntityGrowError::InvalidGrow);
+        };
+        if new_pages > maximum_pages {
+            return notify_limiter(limiter, EntityGrowError::InvalidGrow);
+        }
+        let Some(new_size) = new_pages.to_bytes() else {
+            return notify_limiter(limiter, EntityGrowError::InvalidGrow);
+        };
+        let additional_bytes = additional.to_bytes().unwrap_or(usize::MAX) as u64;
+        if let Some(fuel) = fuel {
+            match fuel.consume_fuel(|costs| costs.fuel_for_bytes(additional_bytes)) {
+                Ok(_) | Err(FuelError::FuelMeteringDisabled) => {}
+                Err(FuelError::OutOfFuel) => {
+                    return notify_limiter(limiter, EntityGrowError::TrapCode(TrapCode::OutOfFuel))
                 }
             }
         }
-
-        // If there was an error, ResourceLimiter gets to see.
-        if ret.is_err() {
-            if let Some(limiter) = limiter.as_resource_limiter() {
-                limiter.memory_grow_failed(&MemoryError::OutOfBoundsGrowth)
-            }
-        }
-
-        ret
+        // At this point all checks passed to grow the linear memory:
+        //
+        // 1. The resource limiter validated the memory consumption.
+        // 2. The growth is within bounds.
+        // 3. There is enough fuel for the operation.
+        self.bytes.grow(new_size);
+        self.current_pages = new_pages;
+        Ok(current_pages)
     }
 
     /// Returns a shared slice to the bytes underlying to the byte buffer.
@@ -384,7 +402,7 @@ impl Memory {
             .store_inner_and_resource_limiter_ref();
         inner
             .resolve_memory_mut(self)
-            .grow(additional, &mut limiter)
+            .grow(additional, None, &mut limiter)
             .map_err(|_| MemoryError::OutOfBoundsGrowth)
     }
 
