@@ -9,7 +9,6 @@ use crate::{
         CompiledFuncEntity,
     },
     func::FuncEntity,
-    store::FuelTap,
     Error,
     Func,
     FuncRef,
@@ -173,7 +172,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         params: CallParams,
         call_kind: CallKind,
     ) -> Result<(), Error> {
-        let func = self.code_map.get(FuelTap::new(&mut *self.ctx), func)?;
+        let func = self.code_map.get(Some(self.ctx.fuel_mut()), func)?;
         let mut called = self.dispatch_compiled_func(results, func)?;
         if let CallParams::Some = params {
             let called_sp = self.frame_stack_ptr(&called);

@@ -10,7 +10,7 @@ use crate::{
     core::UntypedValue,
     engine::bytecode::Instruction,
     module::{FuncIdx, ModuleHeader},
-    store::FuelTap,
+    store::{Fuel, FuelError},
     Error,
 };
 use alloc::boxed::Box;
@@ -24,6 +24,7 @@ use core::{
     sync::atomic::{AtomicU8, Ordering},
 };
 use wasmi_arena::{Arena, ArenaIndex};
+use wasmi_core::TrapCode;
 use wasmparser::{FuncToValidate, ValidatorResources};
 
 /// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`](crate::Engine).
@@ -95,7 +96,7 @@ impl InternalFuncEntity {
     ///
     /// - If function translation failed.
     /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
-    fn compile(&mut self, mut fuel: FuelTap) -> Result<(), Error> {
+    fn compile(&mut self, fuel: Option<&mut Fuel>) -> Result<(), Error> {
         let uncompiled = match self {
             InternalFuncEntity::Uncompiled(func) => func,
             InternalFuncEntity::Compiled(func) => {
@@ -104,7 +105,12 @@ impl InternalFuncEntity {
         };
         let func_idx = uncompiled.func_idx;
         let bytes = mem::take(&mut uncompiled.bytes);
-        fuel.consume_fuel(|costs| costs.fuel_for_bytes(bytes.as_slice().len() as u64))?;
+        if let Some(fuel) = fuel {
+            match fuel.consume_fuel(|costs| costs.fuel_for_bytes(bytes.as_slice().len() as u64)) {
+                Err(FuelError::OutOfFuel) => return Err(Error::from(TrapCode::OutOfFuel)),
+                Ok(_) | Err(FuelError::FuelMeteringDisabled) => {}
+            }
+        }
         let module = uncompiled.module.clone();
         let Some(engine) = module.engine().upgrade() else {
             panic!(
@@ -615,7 +621,10 @@ impl FuncEntity {
     /// - If translation or Wasm validation of the [`FuncEntity`] failed.
     /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
     #[cold]
-    pub fn compile_and_get(&self, mut fuel: FuelTap) -> Result<&CompiledFuncEntity, Error> {
+    pub fn compile_and_get(
+        &self,
+        mut fuel: Option<&mut Fuel>,
+    ) -> Result<&CompiledFuncEntity, Error> {
         loop {
             if let Some(func) = self.get_compiled() {
                 // Case: The function has been compiled and can be returned.
@@ -636,7 +645,7 @@ impl FuncEntity {
             let func = unsafe { &mut *self.func.get() };
             // Note: We need to use `take` because Rust doesn't know that this part of
             //       the loop is only executed once.
-            let fuel = mem::take(&mut fuel);
+            let fuel = fuel.take();
             match func.compile(fuel) {
                 Ok(()) => {
                     self.phase
@@ -707,7 +716,7 @@ impl CodeMap {
     #[track_caller]
     pub fn get(
         &self,
-        fuel: FuelTap,
+        fuel: Option<&mut Fuel>,
         compiled_func: CompiledFunc,
     ) -> Result<&CompiledFuncEntity, Error> {
         let Some(func) = self.funcs.get(compiled_func) else {

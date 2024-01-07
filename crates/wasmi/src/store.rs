@@ -312,52 +312,6 @@ impl Fuel {
     }
 }
 
-/// Wrapper around [`StoreInner`] for guarded fuel consumption.
-#[derive(Debug, Default)]
-pub(crate) struct FuelTap<'a> {
-    inner: Option<&'a mut StoreInner>,
-}
-
-impl<'a> FuelTap<'a> {
-    /// Creates a new [`FuelTap`].
-    ///
-    /// # Note
-    ///
-    /// - If `inner` is `None` no fuel is ever going to be consumed by the returned [`FuelTap`].
-    /// - Fuel is only consumed if `inner` is `Some` and fuel metering is enabled for the underlying
-    ///   [`StoreInner`].
-    pub fn new(inner: impl Into<Option<&'a mut StoreInner>>) -> Self {
-        Self {
-            inner: inner.into(),
-        }
-    }
-
-    /// Consume an amount of fuel determined by `f`.
-    ///
-    /// # Note
-    ///
-    /// - Does _not_ consume fuel if fuel metering is disabled.
-    /// - Does _not_ consume fuel if [`FuelTap`] is configured to never consume fuel
-    ///   even if fuel metering is enabled. This is achieved by using `FuelTap::new(None)`.
-    ///
-    /// # Errors
-    ///
-    /// If the underlying [`StoreInner`] ran out of fuel.
-    pub fn consume_fuel(&mut self, f: impl FnOnce(&FuelCosts) -> u64) -> Result<(), TrapCode> {
-        let Some(inner) = self.inner.as_mut() else {
-            return Ok(());
-        };
-        let config = inner.engine.config();
-        if !config.get_consume_fuel() {
-            return Ok(());
-        }
-        let fuel_costs = config.fuel_costs();
-        let delta = f(fuel_costs);
-        inner.fuel_mut().consume_fuel_unchecked(delta)?;
-        Ok(())
-    }
-}
-
 impl StoreInner {
     /// Creates a new [`StoreInner`] for the given [`Engine`].
     pub fn new(engine: &Engine) -> Self {
