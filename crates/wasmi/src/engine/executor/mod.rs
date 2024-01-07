@@ -18,6 +18,7 @@ use crate::{
         ResumableInvocation,
     },
     func::HostFuncEntity,
+    store::FuelTap,
     AsContext,
     AsContextMut,
     Error,
@@ -207,7 +208,7 @@ impl<'engine> EngineExecutor<'engine> {
                 let compiled_func = self
                     .res
                     .code_map
-                    .get(Some(&mut ctx.store.inner), compiled_func)?;
+                    .get(FuelTap::new(&mut ctx.store.inner), compiled_func)?;
                 let (base_ptr, frame_ptr) = self.stack.values.alloc_call_frame(compiled_func)?;
                 // Safety: We use the `base_ptr` that we just received upon allocating the new
                 //         call frame which is guaranteed to be valid for this particular operation
