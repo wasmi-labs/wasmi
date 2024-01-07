@@ -1052,7 +1052,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let result = exec(self)?;
         self.ctx
             .fuel_mut()
-            .consume_fuel(delta)
+            .consume_fuel_unchecked(delta)
             .expect("remaining fuel has already been approved prior");
         Ok(result)
     }
@@ -1072,7 +1072,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     where
         E: From<TrapCode>,
     {
-        self.ctx.fuel_mut().consume_fuel(delta)?;
+        self.ctx.fuel_mut().consume_fuel_unchecked(delta)?;
         exec(self)
     }
 
@@ -1249,7 +1249,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         // We do not have to check if fuel metering is enabled since
         // [`Instruction::ConsumeFuel`] are only generated if fuel metering
         // is enabled to begin with.
-        self.ctx.fuel_mut().consume_fuel(block_fuel.to_u64())?;
+        self.ctx
+            .fuel_mut()
+            .consume_fuel_unchecked(block_fuel.to_u64())?;
         self.try_next_instr()
     }
 

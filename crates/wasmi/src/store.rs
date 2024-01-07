@@ -205,21 +205,55 @@ impl FuelError {
 }
 
 /// The remaining and consumed fuel counters.
-#[derive(Debug, Default, Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Fuel {
     /// The remaining fuel.
     remaining: u64,
     /// The total amount of fuel so far.
     total: u64,
+    /// This is `true` if fuel metering is enabled for the [`Engine`].
+    enabled: bool,
+    /// The fuel costs provided by the [`Engine`]'s [`Config`].
+    /// 
+    /// [`Config`]: crate::Config
+    costs: FuelCosts,
 }
 
 impl Fuel {
+    /// Creates a new [`Fuel`] for the [`Engine`].
+    pub fn new(engine: &Engine) -> Self {
+        let enabled = engine.config().get_consume_fuel();
+        let costs = *engine.config().fuel_costs();
+        Self {
+            remaining: 0,
+            total: 0,
+            enabled,
+            costs,
+        }
+    }
+
+    /// Returns `true` if fuel metering is enabled.
+    fn is_fuel_metering_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    /// Returns `Ok` if fuel metering is enabled.
+    ///
+    /// Returns descriptive [`FuelError`] otherwise.
+    fn check_fuel_metering_enabled(&self) -> Result<(), FuelError> {
+        if !self.is_fuel_metering_enabled() {
+            return Err(FuelError::fuel_metering_disabled());
+        }
+        Ok(())
+    }
+
     /// Adds `delta` quantity of fuel to the remaining [`Fuel`].
     ///
     /// # Panics
     ///
     /// If this overflows the [`Fuel`] counter.
-    pub fn add_fuel(&mut self, delta: u64) {
+    pub fn add_fuel(&mut self, delta: u64) -> Result<(), FuelError> {
+        self.check_fuel_metering_enabled()?;
         self.total = self.total.checked_add(delta).unwrap_or_else(|| {
             panic!(
                 "encountered total fuel overflow: fuel = {}, delta = {delta}",
@@ -228,11 +262,14 @@ impl Fuel {
         });
         // No need to check as well since `self.total >= self.remaining`.
         self.remaining = self.remaining.wrapping_add(delta);
+        Ok(())
     }
 
     /// Returns the amount of [`Fuel`] consumed by executions of the [`Store`] so far.
-    pub fn fuel_consumed(&self) -> u64 {
-        self.total.wrapping_sub(self.remaining)
+    pub fn fuel_consumed(&self) -> Option<u64> {
+        self.check_fuel_metering_enabled().ok()?;
+        let consumed = self.total.wrapping_sub(self.remaining);
+        Some(consumed)
     }
 
     /// Returns `Ok` if enough fuel is remaining to satisfy `delta` fuel consumption.
@@ -248,12 +285,29 @@ impl Fuel {
     /// Synthetically consumes an amount of [`Fuel`] for the [`Store`].
     ///
     /// Returns the remaining amount of [`Fuel`] after this operation.
-    pub fn consume_fuel(&mut self, delta: u64) -> Result<u64, TrapCode> {
+    ///
+    /// # Note
+    ///
+    /// - This does not check if fuel metering is enabled.
+    /// - This API is intended for use cases where it is clear that fuel metering is
+    ///   enabled and where a check would incur unnecessary overhead in a hot path.
+    ///   An example of this is the execution of consume fuel instructions since
+    ///   those only exist if fuel metering is enabled.
+    pub fn consume_fuel_unchecked(&mut self, delta: u64) -> Result<u64, TrapCode> {
         self.remaining = self
             .remaining
             .checked_sub(delta)
             .ok_or(TrapCode::OutOfFuel)?;
         Ok(self.remaining)
+    }
+
+    /// Synthetically consumes an amount of [`Fuel`] for the [`Store`].
+    ///
+    /// Returns the remaining amount of [`Fuel`] after this operation.
+    pub fn consume_fuel(&mut self, f: impl FnOnce(&FuelCosts) -> u64) -> Result<u64, FuelError> {
+        self.check_fuel_metering_enabled()?;
+        self.consume_fuel_unchecked(f(&self.costs))
+            .map_err(|_| FuelError::OutOfFuel)
     }
 }
 
@@ -298,7 +352,7 @@ impl<'a> FuelTap<'a> {
         }
         let fuel_costs = config.fuel_costs();
         let delta = f(fuel_costs);
-        inner.fuel_mut().consume_fuel(delta)?;
+        inner.fuel_mut().consume_fuel_unchecked(delta)?;
         Ok(())
     }
 }
@@ -306,6 +360,7 @@ impl<'a> FuelTap<'a> {
 impl StoreInner {
     /// Creates a new [`StoreInner`] for the given [`Engine`].
     pub fn new(engine: &Engine) -> Self {
+        let fuel = Fuel::new(engine);
         StoreInner {
             engine: engine.clone(),
             store_idx: StoreIdx::new(),
@@ -317,7 +372,7 @@ impl StoreInner {
             datas: Arena::new(),
             elems: Arena::new(),
             extern_objects: Arena::new(),
-            fuel: Fuel::default(),
+            fuel,
         }
     }
 
@@ -856,21 +911,6 @@ impl<T> Store<T> {
         (&mut self.inner, resource_limiter)
     }
 
-    /// Returns `true` if fuel metering has been enabled.
-    fn is_fuel_metering_enabled(&self) -> bool {
-        self.engine().config().get_consume_fuel()
-    }
-
-    /// Returns `Ok` if fuel metering has been enabled.
-    ///
-    /// Otherwise returns the respective [`FuelError`].
-    fn check_fuel_metering_enabled(&self) -> Result<(), FuelError> {
-        if !self.is_fuel_metering_enabled() {
-            return Err(FuelError::fuel_metering_disabled());
-        }
-        Ok(())
-    }
-
     /// Adds `delta` quantity of fuel to the remaining fuel.
     ///
     /// # Panics
@@ -881,17 +921,14 @@ impl<T> Store<T> {
     ///
     /// If fuel metering is disabled.
     pub fn add_fuel(&mut self, delta: u64) -> Result<(), FuelError> {
-        self.check_fuel_metering_enabled()?;
-        self.inner.fuel.add_fuel(delta);
-        Ok(())
+        self.inner.fuel.add_fuel(delta)
     }
 
     /// Returns the amount of fuel consumed by executions of the [`Store`] so far.
     ///
     /// Returns `None` if fuel metering is disabled.
     pub fn fuel_consumed(&self) -> Option<u64> {
-        self.check_fuel_metering_enabled().ok()?;
-        Some(self.inner.fuel.fuel_consumed())
+        self.inner.fuel.fuel_consumed()
     }
 
     /// Synthetically consumes an amount of fuel for the [`Store`].
@@ -907,11 +944,7 @@ impl<T> Store<T> {
     /// - If fuel metering is disabled.
     /// - If more fuel is consumed than available.
     pub fn consume_fuel(&mut self, delta: u64) -> Result<u64, FuelError> {
-        self.check_fuel_metering_enabled()?;
-        self.inner
-            .fuel
-            .consume_fuel(delta)
-            .map_err(|_error| FuelError::out_of_fuel())
+        self.inner.fuel.consume_fuel(|_| delta)
     }
 
     /// Allocates a new [`TrampolineEntity`] and returns a [`Trampoline`] reference to it.
