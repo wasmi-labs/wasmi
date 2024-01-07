@@ -6,7 +6,7 @@ use super::{AsContext, AsContextMut, Stored};
 use crate::{
     error::EntityGrowError,
     module::FuncIdx,
-    store::ResourceLimiterRef,
+    store::{Fuel, FuelError, ResourceLimiterRef},
     value::WithType,
     Func,
     FuncRef,
@@ -213,12 +213,13 @@ impl TableEntity {
         &mut self,
         delta: u32,
         init: Value,
+        fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u32, EntityGrowError> {
         self.ty()
             .matches_element_type(init.ty())
             .map_err(|_| EntityGrowError::InvalidGrow)?;
-        self.grow_untyped(delta, init.into(), limiter)
+        self.grow_untyped(delta, init.into(), fuel, limiter)
     }
 
     /// Grows the table by the given amount of elements.
@@ -238,6 +239,7 @@ impl TableEntity {
         &mut self,
         delta: u32,
         init: UntypedValue,
+        fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u32, EntityGrowError> {
         // ResourceLimiter gets first look at the request.
@@ -253,22 +255,32 @@ impl TableEntity {
         }
 
         let maximum = maximum.unwrap_or(u32::MAX);
-        if let Some(desired) = desired {
-            if desired <= maximum {
-                self.elements.resize(desired as usize, init);
-                return Ok(current);
+        let notify_limiter =
+            |limiter: &mut ResourceLimiterRef<'_>| -> Result<u32, EntityGrowError> {
+                if let Some(limiter) = limiter.as_resource_limiter() {
+                    limiter.table_grow_failed(&TableError::GrowOutOfBounds {
+                        maximum,
+                        current,
+                        delta,
+                    });
+                }
+                Err(EntityGrowError::InvalidGrow)
+            };
+
+        let Some(desired) = desired else {
+            return notify_limiter(limiter);
+        };
+        if desired > maximum {
+            return notify_limiter(limiter);
+        }
+        if let Some(fuel) = fuel {
+            match fuel.consume_fuel(|costs| costs.fuel_for_copies(u64::from(delta))) {
+                Ok(_) | Err(FuelError::FuelMeteringDisabled) => {}
+                Err(FuelError::OutOfFuel) => return notify_limiter(limiter),
             }
         }
-
-        // If there was an error, ResourceLimiter gets to see.
-        if let Some(limiter) = limiter.as_resource_limiter() {
-            limiter.table_grow_failed(&TableError::GrowOutOfBounds {
-                maximum,
-                current,
-                delta,
-            });
-        }
-        Err(EntityGrowError::InvalidGrow)
+        self.elements.resize(desired as usize, init);
+        Ok(current)
     }
 
     /// Converts the internal [`UntypedValue`] into a [`Value`] for this [`Table`] element type.
@@ -603,7 +615,7 @@ impl Table {
         let current = table.size();
         let maximum = table.ty().maximum().unwrap_or(u32::MAX);
         table
-            .grow(delta, init, &mut limiter)
+            .grow(delta, init, None, &mut limiter)
             .map_err(|_| TableError::GrowOutOfBounds {
                 maximum,
                 current,

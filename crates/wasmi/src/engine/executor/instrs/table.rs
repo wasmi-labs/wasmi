@@ -508,9 +508,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             |this| {
                 let table = this.cache.get_table(this.ctx, table_index);
                 let value = this.get_register(value);
-                this.ctx
-                    .resolve_table_mut(&table)
-                    .grow_untyped(delta, value, resource_limiter)
+                this.ctx.resolve_table_mut(&table).grow_untyped(
+                    delta,
+                    value,
+                    None,
+                    resource_limiter,
+                )
             },
         );
         let return_value = match return_value {
