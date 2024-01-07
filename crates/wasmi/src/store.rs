@@ -214,7 +214,7 @@ pub struct Fuel {
     /// This is `true` if fuel metering is enabled for the [`Engine`].
     enabled: bool,
     /// The fuel costs provided by the [`Engine`]'s [`Config`].
-    /// 
+    ///
     /// [`Config`]: crate::Config
     costs: FuelCosts,
 }
