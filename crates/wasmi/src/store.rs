@@ -738,10 +738,12 @@ impl StoreInner {
         (memory, fuel)
     }
 
-    /// Returns a pair of:
+    /// Returns the triple of:
     ///
     /// - An exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`].
     /// - A shared reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
+    /// - An exclusive reference to the [`Fuel`] for fuel metering.
+    ///
     ///
     /// # Note
     ///
@@ -754,16 +756,17 @@ impl StoreInner {
     /// - If the [`Memory`] cannot be resolved to its entity.
     /// - If the [`DataSegment`] does not originate from this [`Store`].
     /// - If the [`DataSegment`] cannot be resolved to its entity.
-    pub(super) fn resolve_memory_mut_and_data_segment(
+    pub(super) fn resolve_memory_init_triplet(
         &mut self,
         memory: &Memory,
         segment: &DataSegment,
-    ) -> (&mut MemoryEntity, &DataSegmentEntity) {
+    ) -> (&mut MemoryEntity, &DataSegmentEntity, &mut Fuel) {
         let mem_idx = self.unwrap_stored(memory.as_inner());
         let data_idx = segment.as_inner();
         let data = self.resolve(data_idx, &self.datas);
         let mem = Self::resolve_mut(mem_idx, &mut self.memories);
-        (mem, data)
+        let fuel = &mut self.fuel;
+        (mem, data, fuel)
     }
 
     /// Returns a shared reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].

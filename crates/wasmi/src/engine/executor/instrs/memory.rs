@@ -480,28 +480,21 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes a generic `memory.init` instruction.
     fn execute_memory_init_impl(&mut self, dst: u32, src: u32, len: u32) -> Result<(), Error> {
-        self.consume_fuel_with::<_, Error>(
-            |costs| costs.fuel_for_bytes(u64::from(len)),
-            |this| {
-                let dst_index = dst as usize;
-                let src_index = src as usize;
-                let len = len as usize;
-                let data_index: DataSegmentIdx = this.fetch_data_segment_index(1);
-                let (memory, data) = this
-                    .cache
-                    .get_default_memory_and_data_segment(this.ctx, data_index);
-                let memory = memory
-                    .get_mut(dst_index..)
-                    .and_then(|memory| memory.get_mut(..len))
-                    .ok_or(TrapCode::MemoryOutOfBounds)?;
-                let data = data
-                    .get(src_index..)
-                    .and_then(|data| data.get(..len))
-                    .ok_or(TrapCode::MemoryOutOfBounds)?;
-                memory.copy_from_slice(data);
-                Ok(())
-            },
-        )?;
+        let dst_index = dst as usize;
+        let src_index = src as usize;
+        let len = len as usize;
+        let data_index: DataSegmentIdx = self.fetch_data_segment_index(1);
+        let (memory, data, fuel) = self.cache.get_memory_init_triplet(self.ctx, data_index);
+        let memory = memory
+            .get_mut(dst_index..)
+            .and_then(|memory| memory.get_mut(..len))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        let data = data
+            .get(src_index..)
+            .and_then(|data| data.get(..len))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(len as u64))?;
+        memory.copy_from_slice(data);
         self.try_next_instr_at(2)
     }
 }
