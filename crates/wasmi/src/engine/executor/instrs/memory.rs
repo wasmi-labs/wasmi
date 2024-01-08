@@ -225,24 +225,20 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         src_index: u32,
         len: u32,
     ) -> Result<(), Error> {
-        self.consume_fuel_with::<_, Error>(
-            |costs| costs.fuel_for_bytes(u64::from(len)),
-            |this| {
-                let len = len as usize;
-                let src_index = src_index as usize;
-                let dst_index = dst_index as usize;
-                let data = this.cache.default_memory_bytes(this.ctx);
-                // These accesses just perform the bounds checks required by the Wasm spec.
-                data.get(src_index..)
-                    .and_then(|memory| memory.get(..len))
-                    .ok_or(TrapCode::MemoryOutOfBounds)?;
-                data.get(dst_index..)
-                    .and_then(|memory| memory.get(..len))
-                    .ok_or(TrapCode::MemoryOutOfBounds)?;
-                data.copy_within(src_index..src_index.wrapping_add(len), dst_index);
-                Ok(())
-            },
-        )?;
+        let src_index = src_index as usize;
+        let dst_index = dst_index as usize;
+        let default_memory = self.cache.default_memory(self.ctx);
+        let (memory, fuel) = self.ctx.resolve_memory_and_fuel_mut(default_memory);
+        let data = memory.data_mut();
+        // These accesses just perform the bounds checks required by the Wasm spec.
+        data.get(src_index..)
+            .and_then(|memory| memory.get(..len as usize))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        data.get(dst_index..)
+            .and_then(|memory| memory.get(..len as usize))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        Self::try_consume_fuel(fuel, |costs| costs.fuel_for_bytes(u64::from(len)))?;
+        data.copy_within(src_index..src_index.wrapping_add(len as usize), dst_index);
         self.try_next_instr()
     }
 
