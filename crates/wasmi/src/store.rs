@@ -302,11 +302,11 @@ impl Fuel {
     ///   enabled and where a check would incur unnecessary overhead in a hot path.
     ///   An example of this is the execution of consume fuel instructions since
     ///   those only exist if fuel metering is enabled.
-    pub fn consume_fuel_unchecked(&mut self, delta: u64) -> Result<u64, TrapCode> {
     ///
     /// # Errors
     ///
     /// If out of fuel.
+    pub(crate) fn consume_fuel_unchecked(&mut self, delta: u64) -> Result<u64, TrapCode> {
         self.remaining = self
             .remaining
             .checked_sub(delta)
