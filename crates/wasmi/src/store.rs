@@ -291,7 +291,7 @@ impl Fuel {
             .ok_or(TrapCode::OutOfFuel)
     }
 
-    /// Synthetically consumes an amount of [`Fuel`] for the [`Store`].
+    /// Synthetically consumes an amount of [`Fuel`] from the [`Store`].
     ///
     /// Returns the remaining amount of [`Fuel`] after this operation.
     ///
