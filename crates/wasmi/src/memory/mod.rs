@@ -13,7 +13,7 @@ pub use self::{
 use super::{AsContext, AsContextMut, StoreContext, StoreContextMut, Stored};
 use crate::{
     error::EntityGrowError,
-    store::{Fuel, FuelError, ResourceLimiterRef},
+    store::{Fuel, ResourceLimiterRef},
 };
 use wasmi_arena::ArenaIndex;
 use wasmi_core::{Pages, TrapCode};
@@ -247,11 +247,11 @@ impl MemoryEntity {
         };
         if let Some(fuel) = fuel {
             let additional_bytes = additional.to_bytes().unwrap_or(usize::MAX) as u64;
-            match fuel.consume_fuel(|costs| costs.fuel_for_bytes(additional_bytes)) {
-                Ok(_) | Err(FuelError::FuelMeteringDisabled) => {}
-                Err(FuelError::OutOfFuel) => {
-                    return notify_limiter(limiter, EntityGrowError::TrapCode(TrapCode::OutOfFuel))
-                }
+            if fuel
+                .consume_fuel_if(|costs| costs.fuel_for_bytes(additional_bytes))
+                .is_err()
+            {
+                return notify_limiter(limiter, EntityGrowError::TrapCode(TrapCode::OutOfFuel));
             }
         }
         // At this point all checks passed to grow the linear memory:

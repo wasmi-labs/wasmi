@@ -22,7 +22,7 @@ use crate::{
         func_types::FuncTypeRegistry,
         CodeMap,
     },
-    store::{Fuel, FuelError, ResourceLimiterRef},
+    store::ResourceLimiterRef,
     Error,
     FuelConsumptionMode,
     Func,
@@ -974,27 +974,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         *sp = Self::frame_stack_ptr_impl(value_stack, frame);
         *ip = frame.instr_ptr();
         cache.update_instance(frame.instance());
-    }
-
-    /// Tries to consume fuel with an amount determined by `f`.
-    ///
-    /// # Note
-    ///
-    /// This does nothing if fuel metering is disabled.
-    ///
-    /// # Errors
-    ///
-    /// If the associated [`Store`] ran out of fuel.
-    ///
-    /// [`Store`]: crate::Store
-    fn try_consume_fuel(
-        fuel: &mut Fuel,
-        f: impl FnOnce(&FuelCosts) -> u64,
-    ) -> Result<(), TrapCode> {
-        match fuel.consume_fuel(f) {
-            Err(FuelError::OutOfFuel) => Err(TrapCode::OutOfFuel),
-            Err(FuelError::FuelMeteringDisabled) | Ok(_) => Ok(()),
-        }
     }
 
     /// Consume an amount of fuel specified by `delta` if `exec` succeeds.

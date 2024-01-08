@@ -327,6 +327,25 @@ impl Fuel {
         self.consume_fuel_unchecked(f(&self.costs))
             .map_err(|_| FuelError::OutOfFuel)
     }
+
+    /// Synthetically consumes an amount of [`Fuel`] from the [`Store`] if fuel metering is enabled.
+    ///
+    /// # Note
+    ///
+    /// This does nothing if fuel metering is disabled.
+    ///
+    /// # Errors
+    ///
+    /// - If out of fuel.
+    pub(crate) fn consume_fuel_if(
+        &mut self,
+        f: impl FnOnce(&FuelCosts) -> u64,
+    ) -> Result<(), TrapCode> {
+        match self.consume_fuel(f) {
+            Err(FuelError::OutOfFuel) => Err(TrapCode::OutOfFuel),
+            Err(FuelError::FuelMeteringDisabled) | Ok(_) => Ok(()),
+        }
+    }
 }
 
 impl StoreInner {

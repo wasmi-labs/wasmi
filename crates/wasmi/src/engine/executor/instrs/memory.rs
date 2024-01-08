@@ -237,7 +237,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         data.get(dst_index..)
             .and_then(|memory| memory.get(..len as usize))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
-        Self::try_consume_fuel(fuel, |costs| costs.fuel_for_bytes(u64::from(len)))?;
+        fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(u64::from(len)))?;
         data.copy_within(src_index..src_index.wrapping_add(len as usize), dst_index);
         self.try_next_instr()
     }
