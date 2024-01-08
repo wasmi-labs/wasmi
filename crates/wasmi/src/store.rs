@@ -241,6 +241,10 @@ impl Fuel {
     /// Returns `Ok` if fuel metering is enabled.
     ///
     /// Returns descriptive [`FuelError`] otherwise.
+    ///
+    /// # Errors
+    ///
+    /// If fuel metering is disabled.
     fn check_fuel_metering_enabled(&self) -> Result<(), FuelError> {
         if !self.is_fuel_metering_enabled() {
             return Err(FuelError::fuel_metering_disabled());
@@ -253,6 +257,10 @@ impl Fuel {
     /// # Panics
     ///
     /// If this overflows the [`Fuel`] counter.
+    ///
+    /// # Errors
+    ///
+    /// If fuel metering is disabled.
     pub fn add_fuel(&mut self, delta: u64) -> Result<(), FuelError> {
         self.check_fuel_metering_enabled()?;
         self.total = self.total.checked_add(delta).unwrap_or_else(|| {
@@ -295,6 +303,10 @@ impl Fuel {
     ///   An example of this is the execution of consume fuel instructions since
     ///   those only exist if fuel metering is enabled.
     pub fn consume_fuel_unchecked(&mut self, delta: u64) -> Result<u64, TrapCode> {
+    ///
+    /// # Errors
+    ///
+    /// If out of fuel.
         self.remaining = self
             .remaining
             .checked_sub(delta)
@@ -305,6 +317,11 @@ impl Fuel {
     /// Synthetically consumes an amount of [`Fuel`] for the [`Store`].
     ///
     /// Returns the remaining amount of [`Fuel`] after this operation.
+    ///
+    /// # Errors
+    ///
+    /// - If fuel metering is disabled.
+    /// - If out of fuel.
     pub fn consume_fuel(&mut self, f: impl FnOnce(&FuelCosts) -> u64) -> Result<u64, FuelError> {
         self.check_fuel_metering_enabled()?;
         self.consume_fuel_unchecked(f(&self.costs))
