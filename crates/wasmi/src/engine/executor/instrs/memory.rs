@@ -352,21 +352,17 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes a generic `memory.fill` instruction.
     fn execute_memory_fill_impl(&mut self, dst: u32, value: u8, len: u32) -> Result<(), Error> {
-        self.consume_fuel_with::<_, Error>(
-            |costs| costs.fuel_for_bytes(u64::from(len)),
-            |this| {
-                let dst = dst as usize;
-                let len = len as usize;
-                let memory = this
-                    .cache
-                    .default_memory_bytes(this.ctx)
-                    .get_mut(dst..)
-                    .and_then(|memory| memory.get_mut(..len))
-                    .ok_or(TrapCode::MemoryOutOfBounds)?;
-                memory.fill(value);
-                Ok(())
-            },
-        )?;
+        let dst = dst as usize;
+        let len = len as usize;
+        let default_memory = self.cache.default_memory(self.ctx);
+        let (memory, fuel) = self.ctx.resolve_memory_and_fuel_mut(default_memory);
+        let memory = memory
+            .data_mut()
+            .get_mut(dst..)
+            .and_then(|memory| memory.get_mut(..len))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(len as u64))?;
+        memory.fill(value);
         self.try_next_instr()
     }
 
