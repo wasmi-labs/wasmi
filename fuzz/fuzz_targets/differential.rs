@@ -8,6 +8,19 @@ use wasm_smith::ConfiguredModule;
 use wasmi as wasmi_reg;
 use wasmi_reg::core::{F32, F64};
 
+/// Names of exported items.
+#[derive(Debug, Default)]
+pub struct Exports {
+    /// Names of exported functions.
+    funcs: Vec<Box<str>>,
+    /// Names of exported global variables.
+    globals: Vec<Box<str>>,
+    /// Names of exported linear memories.
+    memories: Vec<Box<str>>,
+    /// Names of exported tables.
+    tables: Vec<Box<str>>,
+}
+
 /// Trait implemented by differential fuzzing backends.
 trait DifferentialTarget: Sized {
     /// The value type of the backend.
@@ -31,13 +44,20 @@ struct WasmiRegister {
 }
 
 impl WasmiRegister {
-    /// Returns the names of all exported functions.
-    pub fn exported_funcs(&self) -> Vec<Box<str>> {
-        self.instance
-            .exports(&self.store)
-            .filter(|e| matches!(e.ty(&self.store), wasmi_reg::ExternType::Func(_)))
-            .map(|e| e.name().into())
-            .collect()
+    /// Returns the names of all exported items.
+    pub fn exports(&self) -> Exports {
+        let mut exports = Exports::default();
+        for export in self.instance.exports(&self.store) {
+            let name = export.name();
+            let dst = match export.ty(&self.store) {
+                wasmi::ExternType::Func(_) => &mut exports.funcs,
+                wasmi::ExternType::Global(_) => &mut exports.globals,
+                wasmi::ExternType::Memory(_) => &mut exports.memories,
+                wasmi::ExternType::Table(_) => &mut exports.tables,
+            };
+            dst.push(name.into());
+        }
+        exports
     }
 
     fn type_to_value(ty: &wasmi_reg::core::ValueType) -> wasmi_reg::Value {
@@ -233,10 +253,10 @@ fuzz_target!(|cfg_module: ConfiguredModule<ExecConfig>| {
     let Some(mut context_stack) = <WasmiStack as DifferentialTarget>::setup(&wasm[..]) else {
         panic!("wasmi (register) succeeded to create Context while wasmi (stack) failed");
     };
-    let exported_funcs = context_reg.exported_funcs();
-    for name in exported_funcs {
-        let result_reg = context_reg.call(&name);
-        let result_stack = context_stack.call(&name);
+    let exports = context_reg.exports();
+    for name in &exports.funcs {
+        let result_reg = context_reg.call(name);
+        let result_stack = context_stack.call(name);
         if let (Err(error_reg), Err(error_stack)) = (&result_reg, &result_stack) {
             let errstr_reg = error_reg.to_string();
             let errstr_stack = error_stack.to_string();
@@ -262,7 +282,7 @@ fuzz_target!(|cfg_module: ConfiguredModule<ExecConfig>| {
                 else {
                     panic!("failed to setup Wasmtime fuzzing");
                 };
-                let Ok(results_wasmtime) = context_wasmtime.call(&name) else {
+                let Ok(results_wasmtime) = context_wasmtime.call(name) else {
                     panic!("failed to execute function {name} via Wasmtime")
                 };
                 let results_wasmtime = results_wasmtime
