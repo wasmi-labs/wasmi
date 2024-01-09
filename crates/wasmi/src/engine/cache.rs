@@ -126,13 +126,14 @@ impl InstanceCache {
         (memory.data_mut(), segment.bytes(), fuel)
     }
 
-    /// Loads the [`ElementSegment`] at `index` of the currently used [`Instance`].
+    /// Returns all necessary data required to execute a `table.init` instruction.
     ///
     /// # Panics
     ///
-    /// If there is no [`ElementSegment`] for the [`Instance`] at the `index`.
+    /// - If there is no [`Table`] for given `table` index.
+    /// - If there is no [`ElementSegment`] for `segment` index.
     #[inline]
-    pub fn get_table_and_element_segment<'a>(
+    pub fn get_table_init_params<'a>(
         &mut self,
         ctx: &'a mut StoreInner,
         table: TableIdx,
@@ -141,11 +142,12 @@ impl InstanceCache {
         &'a InstanceEntity,
         &'a mut TableEntity,
         &'a ElementSegmentEntity,
+        &'a mut Fuel,
     ) {
         let tab = self.get_table(ctx, table);
         let seg = self.get_element_segment(ctx, segment);
         let inst = self.instance();
-        ctx.resolve_instance_table_element(inst, &tab, &seg)
+        ctx.resolve_table_init_params(inst, &tab, &seg)
     }
 
     /// Loads the default [`Memory`] of the currently used [`Instance`].

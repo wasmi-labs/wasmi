@@ -365,18 +365,19 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         let element_index = self.fetch_element_segment_index(2);
-        self.consume_fuel_with::<_, Error>(
-            |costs| costs.fuel_for_copies(u64::from(len)),
-            |this| {
-                let (instance, table, element) =
-                    this.cache
-                        .get_table_and_element_segment(this.ctx, table_index, element_index);
-                table.init(dst_index, element, src_index, len, |func_index| {
-                    instance
-                        .get_func(func_index)
-                        .unwrap_or_else(|| panic!("missing function at index {func_index}"))
-                })?;
-                Ok(())
+        let (instance, table, element, fuel) =
+            self.cache
+                .get_table_init_params(self.ctx, table_index, element_index);
+        table.init(
+            dst_index,
+            element,
+            src_index,
+            len,
+            Some(fuel),
+            |func_index| {
+                instance
+                    .get_func(func_index)
+                    .unwrap_or_else(|| panic!("missing function at index {func_index}"))
             },
         )?;
         self.try_next_instr_at(3)

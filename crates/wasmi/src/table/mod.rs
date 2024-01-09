@@ -358,6 +358,7 @@ impl TableEntity {
         element: &ElementSegmentEntity,
         src_index: u32,
         len: u32,
+        fuel: Option<&mut Fuel>,
         get_func: impl Fn(u32) -> Func,
     ) -> Result<(), TrapCode> {
         let table_type = self.ty();
@@ -388,6 +389,9 @@ impl TableEntity {
             // The Wasm spec demands to still perform the bounds check
             // so we cannot bail out earlier.
             return Ok(());
+        }
+        if let Some(fuel) = fuel {
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copies(len as u64))?;
         }
         // Perform the actual table initialization.
         match table_type.element() {

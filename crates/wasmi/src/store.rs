@@ -660,11 +660,12 @@ impl StoreInner {
         (table, elem)
     }
 
-    /// Returns a triple of:
+    /// Returns the following data:
     ///
     /// - A shared reference to the [`InstanceEntity`] associated to the given [`Instance`].
     /// - An exclusive reference to the [`TableEntity`] associated to the given [`Table`].
     /// - A shared reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
+    /// - An exclusive reference to the [`Fuel`] of the [`StoreInner`].
     ///
     /// # Note
     ///
@@ -679,19 +680,25 @@ impl StoreInner {
     /// - If the [`Table`] cannot be resolved to its entity.
     /// - If the [`ElementSegment`] does not originate from this [`Store`].
     /// - If the [`ElementSegment`] cannot be resolved to its entity.
-    pub(super) fn resolve_instance_table_element(
+    pub(super) fn resolve_table_init_params(
         &mut self,
         instance: &Instance,
         table: &Table,
         segment: &ElementSegment,
-    ) -> (&InstanceEntity, &mut TableEntity, &ElementSegmentEntity) {
+    ) -> (
+        &InstanceEntity,
+        &mut TableEntity,
+        &ElementSegmentEntity,
+        &mut Fuel,
+    ) {
         let mem_idx = self.unwrap_stored(table.as_inner());
         let data_idx = segment.as_inner();
         let instance_idx = instance.as_inner();
         let instance = self.resolve(instance_idx, &self.instances);
         let data = self.resolve(data_idx, &self.elems);
         let mem = Self::resolve_mut(mem_idx, &mut self.tables);
-        (instance, mem, data)
+        let fuel = &mut self.fuel;
+        (instance, mem, data, fuel)
     }
 
     /// Returns a shared reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
