@@ -227,27 +227,20 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ) -> Result<(), Error> {
         let dst_table_index = self.fetch_table_index(1);
         let src_table_index = self.fetch_table_index(2);
-        self.consume_fuel_with::<_, Error>(
-            |costs| costs.fuel_for_copies(u64::from(len)),
-            |this| {
-                if dst_table_index == src_table_index {
-                    // Case: copy within the same table
-                    let table = this.cache.get_table(this.ctx, dst_table_index);
-                    this.ctx
-                        .resolve_table_mut(&table)
-                        .copy_within(dst_index, src_index, len)?;
-                } else {
-                    // Case: copy between two different tables
-                    let dst_table = this.cache.get_table(this.ctx, dst_table_index);
-                    let src_table = this.cache.get_table(this.ctx, src_table_index);
-                    // Copy from one table to another table:
-                    let (dst_table, src_table) =
-                        this.ctx.resolve_table_pair_mut(&dst_table, &src_table);
-                    TableEntity::copy(dst_table, dst_index, src_table, src_index, len)?;
-                }
-                Ok(())
-            },
-        )?;
+        if dst_table_index == src_table_index {
+            // Case: copy within the same table
+            let table = self.cache.get_table(self.ctx, dst_table_index);
+            let (table, fuel) = self.ctx.resolve_table_and_fuel_mut(&table);
+            table.copy_within(dst_index, src_index, len, Some(fuel))?;
+        } else {
+            // Case: copy between two different tables
+            let dst_table = self.cache.get_table(self.ctx, dst_table_index);
+            let src_table = self.cache.get_table(self.ctx, src_table_index);
+            // Copy from one table to another table:
+            let (dst_table, src_table, fuel) =
+                self.ctx.resolve_table_pair_and_fuel(&dst_table, &src_table);
+            TableEntity::copy(dst_table, dst_index, src_table, src_index, len, Some(fuel))?;
+        }
         self.try_next_instr_at(3)
     }
 

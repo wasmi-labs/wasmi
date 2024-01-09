@@ -596,22 +596,40 @@ impl StoreInner {
         Self::resolve_mut(idx, &mut self.tables)
     }
 
+    /// Returns both
+    ///
+    /// - an exclusive reference to the [`TableEntity`] associated to the given [`Table`]
+    /// - an exclusive reference to the [`Fuel`] of the [`StoreInner`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Table`] does not originate from this [`Store`].
+    /// - If the [`Table`] cannot be resolved to its entity.
+    pub fn resolve_table_and_fuel_mut(&mut self, table: &Table) -> (&mut TableEntity, &mut Fuel) {
+        let idx = self.unwrap_stored(table.as_inner());
+        let table = Self::resolve_mut(idx, &mut self.tables);
+        let fuel = &mut self.fuel;
+        (table, fuel)
+    }
+
     /// Returns an exclusive reference to the [`TableEntity`] associated to the given [`Table`].
     ///
     /// # Panics
     ///
     /// - If the [`Table`] does not originate from this [`Store`].
     /// - If the [`Table`] cannot be resolved to its entity.
-    pub fn resolve_table_pair_mut(
+    pub fn resolve_table_pair_and_fuel(
         &mut self,
         fst: &Table,
         snd: &Table,
-    ) -> (&mut TableEntity, &mut TableEntity) {
+    ) -> (&mut TableEntity, &mut TableEntity, &mut Fuel) {
         let fst = self.unwrap_stored(fst.as_inner());
         let snd = self.unwrap_stored(snd.as_inner());
-        self.tables.get_pair_mut(fst, snd).unwrap_or_else(|| {
+        let (fst, snd) = self.tables.get_pair_mut(fst, snd).unwrap_or_else(|| {
             panic!("failed to resolve stored pair of entities: {fst:?} and {snd:?}")
-        })
+        });
+        let fuel = &mut self.fuel;
+        (fst, snd, fuel)
     }
 
     /// Returns a triple of:

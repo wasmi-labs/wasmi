@@ -422,6 +422,7 @@ impl TableEntity {
         src_table: &Self,
         src_index: u32,
         len: u32,
+        fuel: Option<&mut Fuel>,
     ) -> Result<(), TrapCode> {
         // Turn parameters into proper slice indices.
         let src_index = src_index as usize;
@@ -438,6 +439,9 @@ impl TableEntity {
             .get(src_index..)
             .and_then(|items| items.get(..len))
             .ok_or(TrapCode::TableOutOfBounds)?;
+        if let Some(fuel) = fuel {
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copies(len as u64))?;
+        }
         // Finally, copy elements in-place for the table.
         dst_items.copy_from_slice(src_items);
         Ok(())
@@ -453,6 +457,7 @@ impl TableEntity {
         dst_index: u32,
         src_index: u32,
         len: u32,
+        fuel: Option<&mut Fuel>,
     ) -> Result<(), TrapCode> {
         // These accesses just perform the bounds checks required by the Wasm spec.
         let max_offset = max(dst_index, src_index);
@@ -464,6 +469,9 @@ impl TableEntity {
         let src_index = src_index as usize;
         let dst_index = dst_index as usize;
         let len = len as usize;
+        if let Some(fuel) = fuel {
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copies(len as u64))?;
+        }
         // Finally, copy elements in-place for the table.
         self.elements
             .copy_within(src_index..src_index.wrapping_add(len), dst_index);
@@ -696,7 +704,7 @@ impl Table {
                 .inner
                 .resolve_table_mut(dst_table);
             table
-                .copy_within(dst_index, src_index, len)
+                .copy_within(dst_index, src_index, len, None)
                 .map_err(|_| TableError::CopyOutOfBounds)
         } else {
             // The `dst_table` and `src_table` are different entities
@@ -704,12 +712,12 @@ impl Table {
             let dst_ty = dst_table.ty(&store);
             let src_ty = src_table.ty(&store).element();
             dst_ty.matches_element_type(src_ty)?;
-            let (dst_table, src_table) = store
+            let (dst_table, src_table, _fuel) = store
                 .as_context_mut()
                 .store
                 .inner
-                .resolve_table_pair_mut(dst_table, src_table);
-            TableEntity::copy(dst_table, dst_index, src_table, src_index, len)
+                .resolve_table_pair_and_fuel(dst_table, src_table);
+            TableEntity::copy(dst_table, dst_index, src_table, src_index, len, None)
                 .map_err(|_| TableError::CopyOutOfBounds)
         }
     }
