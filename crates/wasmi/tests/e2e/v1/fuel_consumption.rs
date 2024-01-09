@@ -1,11 +1,11 @@
 //! Tests to check if wasmi's fuel metering works as intended.
 
-use wasmi::{Config, Engine, Error, FuelConsumptionMode, Func, Linker, Module, Store};
+use wasmi::{Config, Engine, Error, Func, Linker, Module, Store};
 
 /// Setup [`Engine`] and [`Store`] for fuel metering.
-fn test_setup(mode: FuelConsumptionMode) -> (Store<()>, Linker<()>) {
+fn test_setup() -> (Store<()>, Linker<()>) {
     let mut config = Config::default();
-    config.consume_fuel(true).fuel_consumption_mode(mode);
+    config.consume_fuel(true);
     let engine = Engine::new(&config);
     let store = Store::new(&engine, ());
     let linker = Linker::new(&engine);
@@ -27,8 +27,8 @@ fn create_module(store: &Store<()>, bytes: &[u8]) -> Module {
 }
 
 /// Setup [`Store`] and [`Instance`] for fuel metering.
-fn default_test_setup(mode: FuelConsumptionMode, wasm: &[u8]) -> (Store<()>, Func) {
-    let (mut store, linker) = test_setup(mode);
+fn default_test_setup(wasm: &[u8]) -> (Store<()>, Func) {
+    let (mut store, linker) = test_setup();
     let module = create_module(&store, wasm);
     let instance = linker
         .instantiate(&mut store, &module)
@@ -69,10 +69,10 @@ fn test_module() -> &'static str {
     )"#
 }
 
-fn check_consumption_mode(mode: FuelConsumptionMode, given_fuel: u64, consumed_fuel: u64) {
+fn check_fuel_consumption(given_fuel: u64, consumed_fuel: u64) {
     assert!(given_fuel >= consumed_fuel);
     let wasm = wat2wasm(test_module());
-    let (mut store, func) = default_test_setup(mode, &wasm);
+    let (mut store, func) = default_test_setup(&wasm);
     let func = func.typed::<(), i32>(&store).unwrap();
     // Now add enough fuel, so execution should succeed.
     store.add_fuel(given_fuel).unwrap(); // this is just enough fuel for a successful `memory.grow`
@@ -81,11 +81,6 @@ fn check_consumption_mode(mode: FuelConsumptionMode, given_fuel: u64, consumed_f
 }
 
 #[test]
-fn lazy_consumption_mode() {
-    check_consumption_mode(FuelConsumptionMode::Lazy, 1030, 3);
-}
-
-#[test]
-fn eager_consumption_mode() {
-    check_consumption_mode(FuelConsumptionMode::Eager, 1030, 3);
+fn fuel_consumption_01() {
+    check_fuel_consumption(3, 3);
 }
