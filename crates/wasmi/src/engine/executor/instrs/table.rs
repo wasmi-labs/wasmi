@@ -490,19 +490,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             self.execute_table_size_impl(result, table_index);
             return self.try_next_instr_at(2);
         }
-        let return_value = self.consume_fuel_with(
-            |costs| costs.fuel_for_copies(u64::from(delta)),
-            |this| {
-                let table = this.cache.get_table(this.ctx, table_index);
-                let value = this.get_register(value);
-                this.ctx.resolve_table_mut(&table).grow_untyped(
-                    delta,
-                    value,
-                    None,
-                    resource_limiter,
-                )
-            },
-        );
+        let table = self.cache.get_table(self.ctx, table_index);
+        let value = self.get_register(value);
+        let (table, fuel) = self.ctx.resolve_table_and_fuel_mut(&table);
+        let return_value = table.grow_untyped(delta, value, Some(fuel), resource_limiter);
         let return_value = match return_value {
             Ok(return_value) => return_value,
             Err(EntityGrowError::InvalidGrow) => EntityGrowError::ERROR_CODE,
