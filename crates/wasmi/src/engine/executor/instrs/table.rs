@@ -443,17 +443,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         value: Register,
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
-        self.consume_fuel_with::<_, Error>(
-            |costs| costs.fuel_for_copies(u64::from(len)),
-            |this| {
-                let value = this.get_register(value);
-                let table = this.cache.get_table(this.ctx, table_index);
-                this.ctx
-                    .resolve_table_mut(&table)
-                    .fill_untyped(dst, value, len)?;
-                Ok(())
-            },
-        )?;
+        let value = self.get_register(value);
+        let table = self.cache.get_table(self.ctx, table_index);
+        let (table, fuel) = self.ctx.resolve_table_and_fuel_mut(&table);
+        table.fill_untyped(dst, value, len, Some(fuel))?;
         self.try_next_instr_at(2)
     }
 

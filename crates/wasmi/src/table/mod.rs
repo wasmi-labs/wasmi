@@ -495,11 +495,17 @@ impl TableEntity {
     /// If `ctx` does not own `dst_table` or `src_table`.
     ///
     /// [`Store`]: [`crate::Store`]
-    pub fn fill(&mut self, dst: u32, val: Value, len: u32) -> Result<(), TrapCode> {
+    pub fn fill(
+        &mut self,
+        dst: u32,
+        val: Value,
+        len: u32,
+        fuel: Option<&mut Fuel>,
+    ) -> Result<(), TrapCode> {
         self.ty()
             .matches_element_type(val.ty())
             .map_err(|_| TrapCode::BadSignature)?;
-        self.fill_untyped(dst, val.into(), len)
+        self.fill_untyped(dst, val.into(), len, fuel)
     }
 
     /// Fill `table[dst..(dst + len)]` with the given value.
@@ -517,7 +523,13 @@ impl TableEntity {
     /// If `ctx` does not own `dst_table` or `src_table`.
     ///
     /// [`Store`]: [`crate::Store`]
-    pub fn fill_untyped(&mut self, dst: u32, val: UntypedValue, len: u32) -> Result<(), TrapCode> {
+    pub fn fill_untyped(
+        &mut self,
+        dst: u32,
+        val: UntypedValue,
+        len: u32,
+        fuel: Option<&mut Fuel>,
+    ) -> Result<(), TrapCode> {
         let dst_index = dst as usize;
         let len = len as usize;
         let dst = self
@@ -525,6 +537,9 @@ impl TableEntity {
             .get_mut(dst_index..)
             .and_then(|elements| elements.get_mut(..len))
             .ok_or(TrapCode::TableOutOfBounds)?;
+        if let Some(fuel) = fuel {
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copies(len as u64))?;
+        }
         dst.fill(val);
         Ok(())
     }
@@ -750,6 +765,6 @@ impl Table {
             .store
             .inner
             .resolve_table_mut(self)
-            .fill(dst, val, len)
+            .fill(dst, val, len, None)
     }
 }
