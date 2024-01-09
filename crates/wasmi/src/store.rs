@@ -281,16 +281,6 @@ impl Fuel {
         Some(consumed)
     }
 
-    /// Returns `Ok` if enough fuel is remaining to satisfy `delta` fuel consumption.
-    ///
-    /// Returns a [`TrapCode::OutOfFuel`] error otherwise.
-    pub fn sufficient_fuel(&self, delta: u64) -> Result<(), TrapCode> {
-        self.remaining
-            .checked_sub(delta)
-            .map(|_| ())
-            .ok_or(TrapCode::OutOfFuel)
-    }
-
     /// Synthetically consumes an amount of [`Fuel`] from the [`Store`].
     ///
     /// Returns the remaining amount of [`Fuel`] after this operation.
@@ -370,11 +360,6 @@ impl StoreInner {
     /// Returns the [`Engine`] that this store is associated with.
     pub fn engine(&self) -> &Engine {
         &self.engine
-    }
-
-    /// Returns a shared reference to the [`Fuel`] counters.
-    pub fn fuel(&self) -> &Fuel {
-        &self.fuel
     }
 
     /// Returns an exclusive reference to the [`Fuel`] counters.
@@ -792,17 +777,6 @@ impl StoreInner {
         let mem = Self::resolve_mut(mem_idx, &mut self.memories);
         let fuel = &mut self.fuel;
         (mem, data, fuel)
-    }
-
-    /// Returns a shared reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
-    ///
-    /// # Panics
-    ///
-    /// - If the [`DataSegment`] does not originate from this [`Store`].
-    /// - If the [`DataSegment`] cannot be resolved to its entity.
-    #[allow(unused)] // Note: We allow this unused API to exist to uphold code symmetry.
-    pub fn resolve_data_segment(&self, segment: &DataSegment) -> &DataSegmentEntity {
-        self.resolve(segment.as_inner(), &self.datas)
     }
 
     /// Returns an exclusive reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
