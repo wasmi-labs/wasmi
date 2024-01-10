@@ -249,15 +249,17 @@ fn both_error(
 ) {
     let errstr_reg = error_reg.to_string();
     let errstr_stack = error_stack.to_string();
-    if errstr_reg != errstr_stack {
-        panic!(
-            "\
-            Wasmi (register) and Wasmi (stack) both fail with different error codes:\n\
-            \x20   Function: {func_name}\n\
-            \x20   Wasmi (register): {errstr_reg}\n\
-            \x20   Wasmi (stack)   : {errstr_stack}",
-        )
+    if errstr_reg == errstr_stack {
+        // Bail out since both Wasmi (register) and Wasmi (stack) agree on the execution failure.
+        return;
     }
+    panic!(
+        "\
+        Wasmi (register) and Wasmi (stack) both fail with different error codes:\n\
+        \x20   Function: {func_name:?}\n\
+        \x20   Wasmi (register): {errstr_reg}\n\
+        \x20   Wasmi (stack)   : {errstr_stack}",
+    )
     // TODO: if errors are equal
     // - run Wasmtime and see if and how it errors
     // - compare globals, memories, tables
@@ -321,28 +323,30 @@ fn both_ok(
         .iter()
         .map(FuzzValue::from)
         .collect::<Vec<FuzzValue>>();
-    if results_reg != results_stack {
-        let results_wasmtime = run_wasmtime(wasm, func_name).unwrap_or_else(|error| {
-            panic!("failed to execute func ({func_name}) via Wasmtime fuzzing backend: {error}")
-        });
-        let text = match (
-            results_wasmtime == results_reg,
-            results_wasmtime == results_stack,
-        ) {
-            (true, false) => "Wasmi (stack) disagrees with Wasmi (register) and Wasmtime",
-            (false, true) => "Wasmi (register) disagrees with Wasmi (stack) and Wasmtime",
-            (false, false) => "Wasmi (register), Wasmi (stack) and Wasmtime disagree",
-            (true, true) => unreachable!("results_reg and results_stack differ"),
-        };
-        println!(
-            "{text} for function execution: {func_name}\n\
-            \x20   Wasmi (register): {results_reg:?}\n\
-            \x20   Wasmi (stack)   : {results_stack:?}\n\
-            \x20   Wasmtime        : {results_wasmtime:?}"
-        );
-        if results_wasmtime != results_reg {
-            panic!()
-        }
+    if results_reg == results_stack {
+        // Bail out since both Wasmi (register) and Wasmi (stack) agree on the execution results.
+        return;
+    }
+    let results_wasmtime = run_wasmtime(wasm, func_name).unwrap_or_else(|error| {
+        panic!("failed to execute func ({func_name}) via Wasmtime fuzzing backend: {error}")
+    });
+    let text = match (
+        results_wasmtime == results_reg,
+        results_wasmtime == results_stack,
+    ) {
+        (true, false) => "Wasmi (stack) disagrees with Wasmi (register) and Wasmtime",
+        (false, true) => "Wasmi (register) disagrees with Wasmi (stack) and Wasmtime",
+        (false, false) => "Wasmi (register), Wasmi (stack) and Wasmtime disagree",
+        (true, true) => unreachable!("results_reg and results_stack differ"),
+    };
+    println!(
+        "{text} for function execution: {func_name:?}\n\
+        \x20   Wasmi (register): {results_reg:?}\n\
+        \x20   Wasmi (stack)   : {results_stack:?}\n\
+        \x20   Wasmtime        : {results_wasmtime:?}"
+    );
+    if results_wasmtime != results_reg {
+        panic!()
     }
     // TODO:
     // - compare globals, memories, tables
