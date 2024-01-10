@@ -211,3 +211,23 @@ fn fuzz_regression_10() {
         ])
         .run()
 }
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_11() {
+    let wat = include_str!("fuzz_11.wat");
+    let wasm = wat2wasm(wat);
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::i32_and_imm16(Register::from_i16(1), Register::from_i16(0), 2),
+            Instruction::i32_eq_imm16(Register::from_i16(0), Register::from_i16(0), 0),
+            Instruction::i32_and(
+                Register::from_i16(1),
+                Register::from_i16(1),
+                Register::from_i16(0),
+            ),
+            Instruction::return_nez(1),
+            Instruction::Trap(TrapCode::UnreachableCodeReached),
+        ])
+        .run()
+}
