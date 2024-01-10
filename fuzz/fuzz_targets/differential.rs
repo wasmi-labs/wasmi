@@ -242,7 +242,7 @@ impl DifferentialTarget for Wasmtime {
 }
 
 fn both_error(
-    _wasm: &[u8],
+    wasm: &[u8],
     func_name: &str,
     error_reg: <WasmiRegister as DifferentialTarget>::Error,
     error_stack: <WasmiStack as DifferentialTarget>::Error,
@@ -253,19 +253,21 @@ fn both_error(
         // Bail out since both Wasmi (register) and Wasmi (stack) agree on the execution failure.
         return;
     }
+    let wasmtime_result = run_wasmtime(wasm, func_name);
     panic!(
         "\
         Wasmi (register) and Wasmi (stack) both fail with different error codes:\n\
         \x20   Function: {func_name:?}\n\
         \x20   Wasmi (register): {errstr_reg}\n\
-        \x20   Wasmi (stack)   : {errstr_stack}",
+        \x20   Wasmi (stack)   : {errstr_stack}\n\
+        \x20   Wasmtime        : {wasmtime_result:?}",
     )
     // TODO: if errors are equal
-    // - run Wasmtime and see if and how it errors
     // - compare globals, memories, tables
 }
 
 fn reg_ok_stack_err(
+    wasm: &[u8],
     func_name: &str,
     results_reg: &[<WasmiRegister as DifferentialTarget>::Value],
     error_stack: <WasmiStack as DifferentialTarget>::Error,
@@ -275,19 +277,22 @@ fn reg_ok_stack_err(
         .map(FuzzValue::from)
         .collect::<Vec<FuzzValue>>();
     let errstr_stack = error_stack.to_string();
+    let wasmtime_result = run_wasmtime(wasm, func_name);
+    std::fs::write("failure.wasm", wasm).unwrap();
     panic!(
         "\
         Wasmi (register) succeeded and Wasmi (stack) failed:\n\
         \x20   Function: {func_name:?}\n\
         \x20   Wasmi (register): {results_reg:?}\n\
-        \x20   Wasmi (stack)   : {errstr_stack}",
+        \x20   Wasmi (stack)   : {errstr_stack}\n\
+        \x20   Wasmtime        : {wasmtime_result:?}",
     )
     // TODO:
-    // - run Wasmtime to decide a winner
     // - compare globals, memories, tables
 }
 
 fn reg_err_stack_ok(
+    wasm: &[u8],
     func_name: &str,
     error_reg: <WasmiRegister as DifferentialTarget>::Error,
     result_stack: &[<WasmiStack as DifferentialTarget>::Value],
@@ -297,15 +302,16 @@ fn reg_err_stack_ok(
         .iter()
         .map(FuzzValue::from)
         .collect::<Vec<FuzzValue>>();
+    let wasmtime_result = run_wasmtime(wasm, func_name);
     panic!(
         "\
         Wasmi (register) failed and Wasmi (stack) succeeded:\n\
         \x20   Function: {func_name:?}\n\
         \x20   Wasmi (register): {errstr_reg}\n\
-        \x20   Wasmi (stack)   : {results_stack:?}",
+        \x20   Wasmi (stack)   : {results_stack:?}\n\
+        \x20   Wasmtime        : {wasmtime_result:?}",
     )
     // TODO:
-    // - run Wasmtime to decide a winner
     // - compare globals, memories, tables
 }
 
@@ -390,10 +396,10 @@ fuzz_target!(|cfg_module: ConfiguredModule<ExecConfig>| {
         let result_reg = context_reg.call(name);
         let result_stack = context_stack.call(name);
         match (result_reg, result_stack) {
-            (Err(error_reg), Err(error_stack)) => both_error(&wasm, name, error_reg, error_stack),
-            (Ok(result_reg), Err(error_stack)) => reg_ok_stack_err(name, result_reg, error_stack),
-            (Err(error_reg), Ok(result_stack)) => reg_err_stack_ok(name, error_reg, result_stack),
-            (Ok(result_reg), Ok(result_stack)) => both_ok(&wasm, name, result_reg, result_stack),
+            (Err(err_reg), Err(err_stack)) => both_error(&wasm, name, err_reg, err_stack),
+            (Ok(ok_reg), Err(err_stack)) => reg_ok_stack_err(&wasm, name, ok_reg, err_stack),
+            (Err(err_reg), Ok(ok_stack)) => reg_err_stack_ok(&wasm, name, err_reg, ok_stack),
+            (Ok(ok_reg), Ok(ok_stack)) => both_ok(&wasm, name, ok_reg, ok_stack),
         }
     }
 });
