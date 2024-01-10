@@ -276,7 +276,7 @@ fn reg_ok_stack_err(
     panic!(
         "\
         Wasmi (register) succeeded and Wasmi (stack) failed:\n\
-        \x20   Function: {func_name}\n\
+        \x20   Function: {func_name:?}\n\
         \x20   Wasmi (register): {results_reg:?}\n\
         \x20   Wasmi (stack)   : {errstr_stack}",
     )
@@ -298,7 +298,7 @@ fn reg_err_stack_ok(
     panic!(
         "\
         Wasmi (register) failed and Wasmi (stack) succeeded:\n\
-        \x20   Function: {func_name}\n\
+        \x20   Function: {func_name:?}\n\
         \x20   Wasmi (register): {errstr_reg}\n\
         \x20   Wasmi (stack)   : {results_stack:?}",
     )
