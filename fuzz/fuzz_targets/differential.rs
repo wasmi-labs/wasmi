@@ -241,11 +241,139 @@ impl DifferentialTarget for Wasmtime {
     }
 }
 
+fn both_error(
+    _wasm: &[u8],
+    func_name: &str,
+    error_reg: <WasmiRegister as DifferentialTarget>::Error,
+    error_stack: <WasmiStack as DifferentialTarget>::Error,
+) {
+    let errstr_reg = error_reg.to_string();
+    let errstr_stack = error_stack.to_string();
+    if errstr_reg != errstr_stack {
+        panic!(
+            "\
+            Wasmi (register) and Wasmi (stack) both fail with different error codes:\n\
+            \x20   Function: {func_name}\n\
+            \x20   Wasmi (register): {errstr_reg}\n\
+            \x20   Wasmi (stack)   : {errstr_stack}",
+        )
+    }
+    // TODO: if errors are equal
+    // - run Wasmtime and see if and how it errors
+    // - compare globals, memories, tables
+}
+
+fn reg_ok_stack_err(
+    func_name: &str,
+    results_reg: &[<WasmiRegister as DifferentialTarget>::Value],
+    error_stack: <WasmiStack as DifferentialTarget>::Error,
+) {
+    let results_reg = results_reg
+        .iter()
+        .map(FuzzValue::from)
+        .collect::<Vec<FuzzValue>>();
+    let errstr_stack = error_stack.to_string();
+    panic!(
+        "\
+        Wasmi (register) succeeded and Wasmi (stack) failed:\n\
+        \x20   Function: {func_name}\n\
+        \x20   Wasmi (register): {results_reg:?}\n\
+        \x20   Wasmi (stack)   : {errstr_stack}",
+    )
+    // TODO:
+    // - run Wasmtime to decide a winner
+    // - compare globals, memories, tables
+}
+
+fn reg_err_stack_ok(
+    func_name: &str,
+    error_reg: <WasmiRegister as DifferentialTarget>::Error,
+    result_stack: &[<WasmiStack as DifferentialTarget>::Value],
+) {
+    let errstr_reg = error_reg.to_string();
+    let results_stack = result_stack
+        .iter()
+        .map(FuzzValue::from)
+        .collect::<Vec<FuzzValue>>();
+    panic!(
+        "\
+        Wasmi (register) failed and Wasmi (stack) succeeded:\n\
+        \x20   Function: {func_name}\n\
+        \x20   Wasmi (register): {errstr_reg}\n\
+        \x20   Wasmi (stack)   : {results_stack:?}",
+    )
+    // TODO:
+    // - run Wasmtime to decide a winner
+    // - compare globals, memories, tables
+}
+
+fn both_ok(
+    wasm: &[u8],
+    func_name: &str,
+    results_reg: &[<WasmiRegister as DifferentialTarget>::Value],
+    results_stack: &[<WasmiStack as DifferentialTarget>::Value],
+) {
+    let results_reg = results_reg
+        .iter()
+        .map(FuzzValue::from)
+        .collect::<Vec<FuzzValue>>();
+    let results_stack = results_stack
+        .iter()
+        .map(FuzzValue::from)
+        .collect::<Vec<FuzzValue>>();
+    if results_reg != results_stack {
+        let results_wasmtime = run_wasmtime(wasm, func_name).unwrap_or_else(|error| {
+            panic!("failed to execute func ({func_name}) via Wasmtime fuzzing backend: {error}")
+        });
+        let text = match (
+            results_wasmtime == results_reg,
+            results_wasmtime == results_stack,
+        ) {
+            (true, false) => "Wasmi (stack) disagrees with Wasmi (register) and Wasmtime",
+            (false, true) => "Wasmi (register) disagrees with Wasmi (stack) and Wasmtime",
+            (false, false) => "Wasmi (register), Wasmi (stack) and Wasmtime disagree",
+            (true, true) => unreachable!("results_reg and results_stack differ"),
+        };
+        println!(
+            "{text} for function execution: {func_name}\n\
+            |    Wasmi (register): {results_reg:?}\n\
+            |    Wasmi (stack)   : {results_stack:?}\n\
+            |    Wasmtime        : {results_wasmtime:?}"
+        );
+        if results_wasmtime != results_reg {
+            panic!()
+        }
+    }
+    // TODO:
+    // - compare globals, memories, tables
+}
+
+/// Setups the Wasmtime fuzzing backend for `wasm` and returns the result of executing `func`.
+///
+/// # Errors
+///
+/// - If Wasmtime fuzzing backend setup failed.
+/// - If executing `func` failed.
+fn run_wasmtime(wasm: &[u8], func: &str) -> Result<Vec<FuzzValue>, wasmtime::Error> {
+    let Some(mut context_wasmtime) = <Wasmtime as DifferentialTarget>::setup(wasm) else {
+        return Err(wasmtime::Error::msg(
+            "failed to setup Wasmtime fuzzing backend",
+        ));
+    };
+    match context_wasmtime.call(func) {
+        Err(error) => Err(error),
+        Ok(results) => Ok(results
+            .iter()
+            .map(FuzzValue::from)
+            .collect::<Vec<FuzzValue>>()),
+    }
+}
+
 fuzz_target!(|cfg_module: ConfiguredModule<ExecConfig>| {
     let mut smith_module = cfg_module.module;
     // Note: We cannot use built-in fuel metering of the different engines since that
     //       would introduce unwanted non-determinism with respect to fuzz testing.
-    smith_module.ensure_termination(1000 /* fuel */);
+    smith_module.ensure_termination(1_000 /* fuel */);
     let wasm = smith_module.to_bytes();
     let Some(mut context_reg) = <WasmiRegister as DifferentialTarget>::setup(&wasm[..]) else {
         return;
@@ -257,57 +385,11 @@ fuzz_target!(|cfg_module: ConfiguredModule<ExecConfig>| {
     for name in &exports.funcs {
         let result_reg = context_reg.call(name);
         let result_stack = context_stack.call(name);
-        if let (Err(error_reg), Err(error_stack)) = (&result_reg, &result_stack) {
-            let errstr_reg = error_reg.to_string();
-            let errstr_stack = error_stack.to_string();
-            if errstr_reg != errstr_stack {
-                panic!(
-                    "wasmi (register) and wasmi (stack) fail with different error codes\n\
-                    |    wasmi (register): {errstr_reg}\n\
-                    |    wasmi (stack)   : {errstr_stack}",
-                )
-            }
-        }
-        if let (Ok(results_reg), Ok(results_stack)) = (&result_reg, &result_stack) {
-            let results_reg = results_reg
-                .iter()
-                .map(FuzzValue::from)
-                .collect::<Vec<FuzzValue>>();
-            let results_stack = results_stack
-                .iter()
-                .map(FuzzValue::from)
-                .collect::<Vec<FuzzValue>>();
-            if results_reg != results_stack {
-                let Some(mut context_wasmtime) = <Wasmtime as DifferentialTarget>::setup(&wasm[..])
-                else {
-                    panic!("failed to setup Wasmtime fuzzing");
-                };
-                let Ok(results_wasmtime) = context_wasmtime.call(name) else {
-                    panic!("failed to execute function {name} via Wasmtime")
-                };
-                let results_wasmtime = results_wasmtime
-                    .iter()
-                    .map(FuzzValue::from)
-                    .collect::<Vec<FuzzValue>>();
-                let text = match (
-                    results_wasmtime == results_reg,
-                    results_wasmtime == results_stack,
-                ) {
-                    (true, false) => "Wasmi (stack) disagrees with Wasmi (register) and Wasmtime",
-                    (false, true) => "Wasmi (register) disagrees with Wasmi (stack) and Wasmtime",
-                    (false, false) => "Wasmi (register), Wasmi (stack) and Wasmtime disagree",
-                    (true, true) => unreachable!("results_reg and results_stack differ"),
-                };
-                println!(
-                    "{text} for function execution: {name}\n\
-                    |    Wasmi (register): {results_reg:?}\n\
-                    |    Wasmi (stack)   : {results_stack:?}\n\
-                    |    Wasmtime        : {results_wasmtime:?}"
-                );
-                if results_wasmtime != results_reg {
-                    panic!()
-                }
-            }
+        match (result_reg, result_stack) {
+            (Err(error_reg), Err(error_stack)) => both_error(&wasm, name, error_reg, error_stack),
+            (Ok(result_reg), Err(error_stack)) => reg_ok_stack_err(name, result_reg, error_stack),
+            (Err(error_reg), Ok(result_stack)) => reg_err_stack_ok(name, error_reg, result_stack),
+            (Ok(result_reg), Ok(result_stack)) => both_ok(&wasm, name, result_reg, result_stack),
         }
     }
 });
