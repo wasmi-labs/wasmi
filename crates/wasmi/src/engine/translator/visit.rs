@@ -801,6 +801,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_local_get(&mut self, local_index: u32) -> Self::Output {
         bail_unreachable!(self);
         self.alloc.stack.push_local(local_index)?;
+        self.alloc.instr_encoder.reset_last_instr();
         Ok(())
     }
 
@@ -1163,24 +1164,28 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_const(&mut self, value: i32) -> Self::Output {
         bail_unreachable!(self);
         self.alloc.stack.push_const(value);
+        self.alloc.instr_encoder.reset_last_instr();
         Ok(())
     }
 
     fn visit_i64_const(&mut self, value: i64) -> Self::Output {
         bail_unreachable!(self);
         self.alloc.stack.push_const(value);
+        self.alloc.instr_encoder.reset_last_instr();
         Ok(())
     }
 
     fn visit_f32_const(&mut self, value: wasmparser::Ieee32) -> Self::Output {
         bail_unreachable!(self);
         self.alloc.stack.push_const(F32::from_bits(value.bits()));
+        self.alloc.instr_encoder.reset_last_instr();
         Ok(())
     }
 
     fn visit_f64_const(&mut self, value: wasmparser::Ieee64) -> Self::Output {
         bail_unreachable!(self);
         self.alloc.stack.push_const(F64::from_bits(value.bits()));
+        self.alloc.instr_encoder.reset_last_instr();
         Ok(())
     }
 
@@ -1193,6 +1198,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             _ => panic!("must be a Wasm reftype"),
         };
         self.alloc.stack.push_const(null);
+        self.alloc.instr_encoder.reset_last_instr();
         Ok(())
     }
 
