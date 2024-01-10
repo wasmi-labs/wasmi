@@ -336,9 +336,9 @@ fn both_ok(
         };
         println!(
             "{text} for function execution: {func_name}\n\
-            |    Wasmi (register): {results_reg:?}\n\
-            |    Wasmi (stack)   : {results_stack:?}\n\
-            |    Wasmtime        : {results_wasmtime:?}"
+            \x20   Wasmi (register): {results_reg:?}\n\
+            \x20   Wasmi (stack)   : {results_stack:?}\n\
+            \x20   Wasmtime        : {results_wasmtime:?}"
         );
         if results_wasmtime != results_reg {
             panic!()
