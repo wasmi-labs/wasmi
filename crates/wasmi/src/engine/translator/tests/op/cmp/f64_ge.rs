@@ -5,9 +5,14 @@ const WASM_OP: WasmOp = WasmOp::cmp(WasmType::F64, "ge");
 #[test]
 #[cfg_attr(miri, ignore)]
 fn same_reg() {
-    let expected = [Instruction::ReturnImm32 {
-        value: AnyConst32::from(true),
-    }];
+    let expected = [
+        Instruction::f64_ge(
+            Register::from_i16(1),
+            Register::from_i16(0),
+            Register::from_i16(0),
+        ),
+        Instruction::return_reg(1),
+    ];
     test_binary_same_reg(WASM_OP, expected)
 }
 
