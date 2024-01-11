@@ -220,7 +220,7 @@ impl DifferentialTarget for Wasmtime {
     }
 
     fn setup(wasm: &[u8]) -> Option<Self> {
-        use wasmtime::{Engine, Linker, Module, Store, StoreLimitsBuilder};
+        use wasmtime::{Config, Engine, Linker, Module, Store, StoreLimitsBuilder};
         let mut config = Config::default();
         // We disabled backtraces since they sometimes become so large
         // that the entire output is obliberated by them. Generally we are
