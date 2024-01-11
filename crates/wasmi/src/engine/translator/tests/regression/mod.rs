@@ -295,3 +295,41 @@ fn fuzz_regression_12_f64() {
         )
         .run()
 }
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_13_codegen() {
+    let wat = include_str!("fuzz_13.wat");
+    let wasm = wat2wasm(wat);
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::return_nez_many(0, 0, 0),
+            Instruction::Register(Register::from_i16(0)),
+            Instruction::return_reg3(0, 0, 0),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_13_execute() {
+    use crate::{Engine, Linker, Store};
+    let wat = include_str!("fuzz_13.wat");
+    let wasm = wat2wasm(wat);
+    let engine = Engine::default();
+    let mut store = <Store<()>>::new(&engine, ());
+    let linker = Linker::new(&engine);
+    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    let func = instance
+        .get_func(&store, "")
+        .unwrap()
+        .typed::<(), (i32, i32, i32)>(&store)
+        .unwrap();
+    let (x, y, z) = func.call(&mut store, ()).unwrap();
+    assert!(x == 0 && y == 0 && z == 0);
+}
