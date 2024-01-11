@@ -297,6 +297,17 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         condition: Register,
         values: [Register; 2],
     ) -> ReturnOutcome {
-        self.execute_return_nez_impl(condition, &values[..], Self::execute_return_many_impl)
+        let condition = self.get_register(condition);
+        match bool::from(condition) {
+            true => self.execute_return_many_impl(&values),
+            false => {
+                self.ip.add(1);
+                while let Instruction::RegisterList(_values) = self.ip.get() {
+                    self.ip.add(1);
+                }
+                self.ip.add(1);
+                ReturnOutcome::Wasm
+            }
+        }
     }
 }
