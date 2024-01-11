@@ -87,8 +87,17 @@ impl DifferentialTarget for WasmiRegister {
     }
 
     fn setup(wasm: &[u8]) -> Option<Self> {
-        use wasmi_reg::{Engine, Linker, Module, Store, StoreLimitsBuilder};
-        let engine = Engine::default();
+        use wasmi_reg::{Config, Engine, Linker, Module, StackLimits, Store, StoreLimitsBuilder};
+        let mut config = Config::default();
+        config.set_stack_limits(
+            StackLimits::new(
+                1024,             // 1 kiB
+                1024 * 1024 * 10, // 10 MiB
+                1024,
+            )
+            .unwrap(),
+        );
+        let engine = Engine::new(&config);
         let linker = Linker::new(&engine);
         let limiter = StoreLimitsBuilder::new()
             .memory_size(1000 * 0x10000)
