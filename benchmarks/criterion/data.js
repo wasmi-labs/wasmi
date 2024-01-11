@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1704990775698,
+  "lastUpdate": 1705007662626,
   "repoUrl": "https://github.com/paritytech/wasmi",
   "entries": {
     "Wasmi criterion benchmark": [
@@ -24071,6 +24071,408 @@ window.BENCHMARK_DATA = {
             "name": "overhead/call/untyped/16",
             "value": 2497693,
             "range": "± 8712",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "robin.freyler@gmail.com",
+            "name": "Robin Freyler",
+            "username": "Robbepop"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "418dc0020c427e4cd78b307052a55160f4d7c81c",
+          "message": "Improve differential fuzzing (#879)\n\n* collect all exported names in diff fuzz\r\n\r\n* refactor and clean up differential fuzzing\r\n\r\n* improve panic message formatting\r\n\r\n* add fmt and clippy checks to CI for fuzz directory\r\n\r\n* use debug formatting for func name\r\n\r\n* use early returns\r\n\r\n* add regression test case found via fuzzing\r\n\r\n* fix new regression test case\r\n\r\nThe problem was that Wasm instructions such as {i32,i64,f32,f64}.const, local.get and ref.null did not reset the InstrEncoder last instruction thus not preventing invalid instruction fusion of i32.and and i32.eqz.\r\n\r\n* run Wasmtime on all fuzzing branches\r\n\r\n* shrink test case a bit\r\n\r\n* disabled Wasm backtraces for Wasmtime differential backend\r\n\r\n* apply rustfmt\r\n\r\n* set stack limits for Wasmi (register)\r\n\r\nDue to codegen Wasmi (register) might use more stack space for malicious recursive workloads than Wasmi (stack). Wasmtime theoretically suffers from the same problems as Wasmi (register) but can offset a lot of those problems due to its optimizations.\r\n\r\n* add comment about custom limits\r\n\r\n* diff fuzz: compare global and memory state\r\n\r\nThis required a major refactoring of the fuzzing code. In all honesty it is a bit ugly but it works. We are going to need another cleanup soon.",
+          "timestamp": "2024-01-11T22:05:08+01:00",
+          "tree_id": "76e9e60b15534dad5775cfe09cdd3bb4b212f507",
+          "url": "https://github.com/paritytech/wasmi/commit/418dc0020c427e4cd78b307052a55160f4d7c81c"
+        },
+        "date": 1705007662609,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "translate/wasm_kernel/checked/eager/default",
+            "value": 5205244,
+            "range": "± 11606",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/checked/eager/fuel",
+            "value": 5360602,
+            "range": "± 13312",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/checked/lazy-translation/default",
+            "value": 2452169,
+            "range": "± 11924",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/checked/lazy/default",
+            "value": 433231,
+            "range": "± 2359",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/unchecked/eager/default",
+            "value": 4250218,
+            "range": "± 11347",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/checked/eager/default",
+            "value": 77820721,
+            "range": "± 135386",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/checked/eager/fuel",
+            "value": 83934885,
+            "range": "± 125952",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/checked/lazy-translation/default",
+            "value": 33182759,
+            "range": "± 47734",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/checked/lazy/default",
+            "value": 4108940,
+            "range": "± 23647",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/unchecked/eager/default",
+            "value": 65091484,
+            "range": "± 317381",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/checked/eager/default",
+            "value": 3735256,
+            "range": "± 16196",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/checked/eager/fuel",
+            "value": 4028102,
+            "range": "± 11530",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/checked/lazy-translation/default",
+            "value": 1539288,
+            "range": "± 5596",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/checked/lazy/default",
+            "value": 230755,
+            "range": "± 1617",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/unchecked/eager/default",
+            "value": 3162557,
+            "range": "± 9777",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/checked/eager/default",
+            "value": 1338311,
+            "range": "± 4533",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/checked/eager/fuel",
+            "value": 1442532,
+            "range": "± 5691",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/checked/lazy-translation/default",
+            "value": 544232,
+            "range": "± 1171",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/checked/lazy/default",
+            "value": 37053,
+            "range": "± 198",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/unchecked/eager/default",
+            "value": 1100379,
+            "range": "± 4353",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/checked/eager/default",
+            "value": 137540,
+            "range": "± 468",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/checked/eager/fuel",
+            "value": 144544,
+            "range": "± 412",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/checked/lazy-translation/default",
+            "value": 65652,
+            "range": "± 252",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/checked/lazy/default",
+            "value": 19496,
+            "range": "± 143",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/unchecked/eager/default",
+            "value": 112872,
+            "range": "± 168",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/checked/eager/default",
+            "value": 196183,
+            "range": "± 532",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/checked/eager/fuel",
+            "value": 205609,
+            "range": "± 914",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/checked/lazy-translation/default",
+            "value": 91308,
+            "range": "± 189",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/checked/lazy/default",
+            "value": 23056,
+            "range": "± 282",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/unchecked/eager/default",
+            "value": 158491,
+            "range": "± 667",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/checked/eager/default",
+            "value": 283883,
+            "range": "± 1234",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/checked/eager/fuel",
+            "value": 303685,
+            "range": "± 912",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/checked/lazy-translation/default",
+            "value": 127550,
+            "range": "± 687",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/checked/lazy/default",
+            "value": 26153,
+            "range": "± 101",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/unchecked/eager/default",
+            "value": 234228,
+            "range": "± 749",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "instantiate/wasm_kernel",
+            "value": 56900,
+            "range": "± 597",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/tiny_keccak",
+            "value": 352468,
+            "range": "± 458",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/rev_complement",
+            "value": 452458,
+            "range": "± 8204",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/regex_redux",
+            "value": 586070,
+            "range": "± 1952",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/count_until",
+            "value": 5357312,
+            "range": "± 7732",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/br_table",
+            "value": 1487000,
+            "range": "± 7003",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/trunc_f2i",
+            "value": 635791,
+            "range": "± 995",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global/bump",
+            "value": 1314665,
+            "range": "± 634",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global/get_const",
+            "value": 479909,
+            "range": "± 526",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial/rec",
+            "value": 812839,
+            "range": "± 723",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial/iter",
+            "value": 250187,
+            "range": "± 669",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/call/rec",
+            "value": 175755,
+            "range": "± 640",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_scan",
+            "value": 194911,
+            "range": "± 1053",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_trap",
+            "value": 16254,
+            "range": "± 50",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/call/host/1",
+            "value": 51813,
+            "range": "± 935",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fuse",
+            "value": 7088098,
+            "range": "± 7773",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/divrem",
+            "value": 6341711,
+            "range": "± 13547",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/rec",
+            "value": 6023107,
+            "range": "± 44270",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/tail",
+            "value": 1288709,
+            "range": "± 1588",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/iter",
+            "value": 1338503,
+            "range": "± 1449",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/is_even/rec",
+            "value": 1162479,
+            "range": "± 35970",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/sum_bytes",
+            "value": 1063806,
+            "range": "± 14058",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/fill_bytes",
+            "value": 1149153,
+            "range": "± 1743",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/vec_add",
+            "value": 2951119,
+            "range": "± 2296",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/typed/0",
+            "value": 1256103,
+            "range": "± 11410",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/typed/16",
+            "value": 1654244,
+            "range": "± 11924",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/untyped/0",
+            "value": 1597800,
+            "range": "± 16337",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/untyped/16",
+            "value": 2442017,
+            "range": "± 15987",
             "unit": "ns/iter"
           }
         ]
