@@ -10,7 +10,7 @@ use crate::{
     core::UntypedValue,
     engine::bytecode::Instruction,
     module::{FuncIdx, ModuleHeader},
-    store::StoreInner,
+    store::{Fuel, FuelError},
     Error,
 };
 use alloc::boxed::Box;
@@ -24,6 +24,7 @@ use core::{
     sync::atomic::{AtomicU8, Ordering},
 };
 use wasmi_arena::{Arena, ArenaIndex};
+use wasmi_core::TrapCode;
 use wasmparser::{FuncToValidate, ValidatorResources};
 
 /// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`](crate::Engine).
@@ -84,22 +85,6 @@ impl InternalFuncEntity {
         Self::from(CompiledFuncEntity::uninit())
     }
 
-    /// Charge fuel for compiling the given `bytes` representing the Wasm function body.
-    ///
-    /// # Note
-    ///
-    /// This only charges fuel if `ctx` is `Some` and `fuel_metering` is enabled.
-    fn charge_compilation_fuel(ctx: Option<&mut StoreInner>, bytes: &[u8]) -> Result<(), Error> {
-        let Some(ctx) = ctx else { return Ok(()) };
-        if !ctx.engine().config().get_consume_fuel() {
-            return Ok(());
-        }
-        let fuel_costs = ctx.engine().config().fuel_costs();
-        let delta = fuel_costs.fuel_for_bytes(bytes.len() as u64);
-        ctx.fuel_mut().consume_fuel(delta)?;
-        Ok(())
-    }
-
     /// Compile the uncompiled [`FuncEntity`].
     ///
     /// # Panics
@@ -111,7 +96,7 @@ impl InternalFuncEntity {
     ///
     /// - If function translation failed.
     /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
-    fn compile(&mut self, ctx: Option<&mut StoreInner>) -> Result<(), Error> {
+    fn compile(&mut self, fuel: Option<&mut Fuel>) -> Result<(), Error> {
         let uncompiled = match self {
             InternalFuncEntity::Uncompiled(func) => func,
             InternalFuncEntity::Compiled(func) => {
@@ -120,7 +105,12 @@ impl InternalFuncEntity {
         };
         let func_idx = uncompiled.func_idx;
         let bytes = mem::take(&mut uncompiled.bytes);
-        Self::charge_compilation_fuel(ctx, bytes.as_slice())?;
+        if let Some(fuel) = fuel {
+            match fuel.consume_fuel(|costs| costs.fuel_for_bytes(bytes.as_slice().len() as u64)) {
+                Err(FuelError::OutOfFuel) => return Err(Error::from(TrapCode::OutOfFuel)),
+                Ok(_) | Err(FuelError::FuelMeteringDisabled) => {}
+            }
+        }
         let module = uncompiled.module.clone();
         let Some(engine) = module.engine().upgrade() else {
             panic!(
@@ -633,7 +623,7 @@ impl FuncEntity {
     #[cold]
     pub fn compile_and_get(
         &self,
-        mut ctx: Option<&mut StoreInner>,
+        mut fuel: Option<&mut Fuel>,
     ) -> Result<&CompiledFuncEntity, Error> {
         loop {
             if let Some(func) = self.get_compiled() {
@@ -655,8 +645,8 @@ impl FuncEntity {
             let func = unsafe { &mut *self.func.get() };
             // Note: We need to use `take` because Rust doesn't know that this part of
             //       the loop is only executed once.
-            let ctx = ctx.take();
-            match func.compile(ctx) {
+            let fuel = fuel.take();
+            match func.compile(fuel) {
                 Ok(()) => {
                     self.phase
                         .set_compiled()
@@ -726,7 +716,7 @@ impl CodeMap {
     #[track_caller]
     pub fn get(
         &self,
-        ctx: Option<&mut StoreInner>,
+        fuel: Option<&mut Fuel>,
         compiled_func: CompiledFunc,
     ) -> Result<&CompiledFuncEntity, Error> {
         let Some(func) = self.funcs.get(compiled_func) else {
@@ -734,7 +724,7 @@ impl CodeMap {
         };
         match func.get_compiled() {
             Some(func) => Ok(func),
-            None => func.compile_and_get(ctx),
+            None => func.compile_and_get(fuel),
         }
     }
 }

@@ -125,7 +125,6 @@ pub use self::{
         CompilationMode,
         Config,
         Engine,
-        FuelConsumptionMode,
         ResumableCall,
         ResumableInvocation,
         StackLimits,

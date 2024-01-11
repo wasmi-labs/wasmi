@@ -332,7 +332,7 @@ impl Module {
                         .store
                         .inner
                         .resolve_table_element(&table, &element);
-                    table.init(dst_index, element, 0, len_items, |func_index| {
+                    table.init(dst_index, element, 0, len_items, None, |func_index| {
                         builder.get_func(func_index)
                     })?;
                 }

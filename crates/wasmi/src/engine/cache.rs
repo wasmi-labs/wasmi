@@ -3,6 +3,7 @@ use crate::{
     instance::InstanceEntity,
     memory::DataSegment,
     module::DEFAULT_MEMORY_INDEX,
+    store::Fuel,
     table::TableEntity,
     ElementSegment,
     ElementSegmentEntity,
@@ -114,24 +115,25 @@ impl InstanceCache {
     ///
     /// If there is no [`DataSegment`] for the [`Instance`] at the `index`.
     #[inline]
-    pub fn get_default_memory_and_data_segment<'a>(
+    pub fn get_memory_init_triplet<'a>(
         &mut self,
         ctx: &'a mut StoreInner,
         segment: DataSegmentIdx,
-    ) -> (&'a mut [u8], &'a [u8]) {
+    ) -> (&'a mut [u8], &'a [u8], &'a mut Fuel) {
         let seg = self.get_data_segment(ctx, segment.to_u32());
         let mem = self.default_memory(ctx);
-        let (memory, segment) = ctx.resolve_memory_mut_and_data_segment(mem, &seg);
-        (memory.data_mut(), segment.bytes())
+        let (memory, segment, fuel) = ctx.resolve_memory_init_triplet(mem, &seg);
+        (memory.data_mut(), segment.bytes(), fuel)
     }
 
-    /// Loads the [`ElementSegment`] at `index` of the currently used [`Instance`].
+    /// Returns all necessary data required to execute a `table.init` instruction.
     ///
     /// # Panics
     ///
-    /// If there is no [`ElementSegment`] for the [`Instance`] at the `index`.
+    /// - If there is no [`Table`] for given `table` index.
+    /// - If there is no [`ElementSegment`] for `segment` index.
     #[inline]
-    pub fn get_table_and_element_segment<'a>(
+    pub fn get_table_init_params<'a>(
         &mut self,
         ctx: &'a mut StoreInner,
         table: TableIdx,
@@ -140,11 +142,12 @@ impl InstanceCache {
         &'a InstanceEntity,
         &'a mut TableEntity,
         &'a ElementSegmentEntity,
+        &'a mut Fuel,
     ) {
         let tab = self.get_table(ctx, table);
         let seg = self.get_element_segment(ctx, segment);
         let inst = self.instance();
-        ctx.resolve_instance_table_element(inst, &tab, &seg)
+        ctx.resolve_table_init_params(inst, &tab, &seg)
     }
 
     /// Loads the default [`Memory`] of the currently used [`Instance`].

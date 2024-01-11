@@ -231,3 +231,67 @@ fn fuzz_regression_11() {
         ])
         .run()
 }
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_12_f32() {
+    let wat = include_str!("fuzz_12_f32.wat");
+    let wasm = wat2wasm(wat);
+    TranslationTest::new(wasm)
+        .expect_func(ExpectedFunc::new([
+            Instruction::copy_imm32(Register::from_i16(0), u32::MAX),
+            Instruction::f32_le(
+                Register::from_i16(1),
+                Register::from_i16(0),
+                Register::from_i16(0),
+            ),
+            Instruction::return_nez(1),
+            Instruction::Trap(TrapCode::UnreachableCodeReached),
+        ]))
+        .expect_func(ExpectedFunc::new([
+            Instruction::copy_imm32(Register::from_i16(0), u32::MAX),
+            Instruction::f32_ge(
+                Register::from_i16(1),
+                Register::from_i16(0),
+                Register::from_i16(0),
+            ),
+            Instruction::return_nez(1),
+            Instruction::Trap(TrapCode::UnreachableCodeReached),
+        ]))
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_12_f64() {
+    let wat = include_str!("fuzz_12_f64.wat");
+    let wasm = wat2wasm(wat);
+    TranslationTest::new(wasm)
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::copy(0, -1),
+                Instruction::f64_le(
+                    Register::from_i16(1),
+                    Register::from_i16(0),
+                    Register::from_i16(0),
+                ),
+                Instruction::return_nez(1),
+                Instruction::Trap(TrapCode::UnreachableCodeReached),
+            ])
+            .consts([u64::MAX]),
+        )
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::copy(0, -1),
+                Instruction::f64_ge(
+                    Register::from_i16(1),
+                    Register::from_i16(0),
+                    Register::from_i16(0),
+                ),
+                Instruction::return_nez(1),
+                Instruction::Trap(TrapCode::UnreachableCodeReached),
+            ])
+            .consts([u64::MAX]),
+        )
+        .run()
+}

@@ -1950,14 +1950,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_fbinary(
             Instruction::f32_le,
             TypedValue::f32_le,
-            |this, lhs: Register, rhs: Register| {
-                if lhs == rhs {
-                    // Optimization: `x < x` is always `true`
-                    this.alloc.stack.push_const(true);
-                    return Ok(true);
-                }
-                Ok(false)
-            },
+            Self::no_custom_opt,
             |this, _lhs: Register, rhs: f32| {
                 if rhs.is_nan() {
                     // Optimization: `x <= NAN` is always `false`
@@ -1981,14 +1974,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_fbinary(
             Instruction::f32_ge,
             TypedValue::f32_ge,
-            |this, lhs: Register, rhs: Register| {
-                if lhs == rhs {
-                    // Optimization: `x >= x` is always `true`
-                    this.alloc.stack.push_const(true);
-                    return Ok(true);
-                }
-                Ok(false)
-            },
+            Self::no_custom_opt,
             |this, _lhs: Register, rhs: f32| {
                 if rhs.is_nan() {
                     // Optimization: `x >= NAN` is always `false`
@@ -2126,14 +2112,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_fbinary(
             Instruction::f64_le,
             TypedValue::f64_le,
-            |this, lhs: Register, rhs: Register| {
-                if lhs == rhs {
-                    // Optimization: `x < x` is always `true`
-                    this.alloc.stack.push_const(true);
-                    return Ok(true);
-                }
-                Ok(false)
-            },
+            Self::no_custom_opt,
             |this, _lhs: Register, rhs: f64| {
                 if rhs.is_nan() {
                     // Optimization: `x <= NAN` is always `false`
@@ -2157,14 +2136,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_fbinary(
             Instruction::f64_ge,
             TypedValue::f64_ge,
-            |this, lhs: Register, rhs: Register| {
-                if lhs == rhs {
-                    // Optimization: `x >= x` is always `true`
-                    this.alloc.stack.push_const(true);
-                    return Ok(true);
-                }
-                Ok(false)
-            },
+            Self::no_custom_opt,
             |this, _lhs: Register, rhs: f64| {
                 if rhs.is_nan() {
                     // Optimization: `x >= NAN` is always `false`
