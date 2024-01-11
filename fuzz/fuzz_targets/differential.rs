@@ -89,6 +89,13 @@ impl DifferentialTarget for WasmiRegister {
     fn setup(wasm: &[u8]) -> Option<Self> {
         use wasmi_reg::{Config, Engine, Linker, Module, StackLimits, Store, StoreLimitsBuilder};
         let mut config = Config::default();
+        // We set custom limits since Wasmi (register) might use more
+        // stack space than Wasmi (stack) for some malicious recursive workloads.
+        // Wasmtime technically suffers from the same problems (register machine)
+        // but can offset them due to its superior optimizations.
+        //
+        // We increase the maximum stack space for Wasmi (register) to avoid
+        // common stack overflows in certain generated fuzz test cases this way.
         config.set_stack_limits(
             StackLimits::new(
                 1024,             // 1 kiB
