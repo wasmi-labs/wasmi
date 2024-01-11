@@ -6,7 +6,7 @@ use super::{AsContext, AsContextMut, Stored};
 use crate::{
     error::EntityGrowError,
     module::FuncIdx,
-    store::ResourceLimiterRef,
+    store::{Fuel, FuelError, ResourceLimiterRef},
     value::WithType,
     Func,
     FuncRef,
@@ -213,12 +213,13 @@ impl TableEntity {
         &mut self,
         delta: u32,
         init: Value,
+        fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u32, EntityGrowError> {
         self.ty()
             .matches_element_type(init.ty())
             .map_err(|_| EntityGrowError::InvalidGrow)?;
-        self.grow_untyped(delta, init.into(), limiter)
+        self.grow_untyped(delta, init.into(), fuel, limiter)
     }
 
     /// Grows the table by the given amount of elements.
@@ -238,6 +239,7 @@ impl TableEntity {
         &mut self,
         delta: u32,
         init: UntypedValue,
+        fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u32, EntityGrowError> {
         // ResourceLimiter gets first look at the request.
@@ -253,22 +255,32 @@ impl TableEntity {
         }
 
         let maximum = maximum.unwrap_or(u32::MAX);
-        if let Some(desired) = desired {
-            if desired <= maximum {
-                self.elements.resize(desired as usize, init);
-                return Ok(current);
+        let notify_limiter =
+            |limiter: &mut ResourceLimiterRef<'_>| -> Result<u32, EntityGrowError> {
+                if let Some(limiter) = limiter.as_resource_limiter() {
+                    limiter.table_grow_failed(&TableError::GrowOutOfBounds {
+                        maximum,
+                        current,
+                        delta,
+                    });
+                }
+                Err(EntityGrowError::InvalidGrow)
+            };
+
+        let Some(desired) = desired else {
+            return notify_limiter(limiter);
+        };
+        if desired > maximum {
+            return notify_limiter(limiter);
+        }
+        if let Some(fuel) = fuel {
+            match fuel.consume_fuel(|costs| costs.fuel_for_copies(u64::from(delta))) {
+                Ok(_) | Err(FuelError::FuelMeteringDisabled) => {}
+                Err(FuelError::OutOfFuel) => return notify_limiter(limiter),
             }
         }
-
-        // If there was an error, ResourceLimiter gets to see.
-        if let Some(limiter) = limiter.as_resource_limiter() {
-            limiter.table_grow_failed(&TableError::GrowOutOfBounds {
-                maximum,
-                current,
-                delta,
-            });
-        }
-        Err(EntityGrowError::InvalidGrow)
+        self.elements.resize(desired as usize, init);
+        Ok(current)
     }
 
     /// Converts the internal [`UntypedValue`] into a [`Value`] for this [`Table`] element type.
@@ -346,6 +358,7 @@ impl TableEntity {
         element: &ElementSegmentEntity,
         src_index: u32,
         len: u32,
+        fuel: Option<&mut Fuel>,
         get_func: impl Fn(u32) -> Func,
     ) -> Result<(), TrapCode> {
         let table_type = self.ty();
@@ -376,6 +389,9 @@ impl TableEntity {
             // The Wasm spec demands to still perform the bounds check
             // so we cannot bail out earlier.
             return Ok(());
+        }
+        if let Some(fuel) = fuel {
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copies(len as u64))?;
         }
         // Perform the actual table initialization.
         match table_type.element() {
@@ -410,6 +426,7 @@ impl TableEntity {
         src_table: &Self,
         src_index: u32,
         len: u32,
+        fuel: Option<&mut Fuel>,
     ) -> Result<(), TrapCode> {
         // Turn parameters into proper slice indices.
         let src_index = src_index as usize;
@@ -426,6 +443,9 @@ impl TableEntity {
             .get(src_index..)
             .and_then(|items| items.get(..len))
             .ok_or(TrapCode::TableOutOfBounds)?;
+        if let Some(fuel) = fuel {
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copies(len as u64))?;
+        }
         // Finally, copy elements in-place for the table.
         dst_items.copy_from_slice(src_items);
         Ok(())
@@ -441,6 +461,7 @@ impl TableEntity {
         dst_index: u32,
         src_index: u32,
         len: u32,
+        fuel: Option<&mut Fuel>,
     ) -> Result<(), TrapCode> {
         // These accesses just perform the bounds checks required by the Wasm spec.
         let max_offset = max(dst_index, src_index);
@@ -452,6 +473,9 @@ impl TableEntity {
         let src_index = src_index as usize;
         let dst_index = dst_index as usize;
         let len = len as usize;
+        if let Some(fuel) = fuel {
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copies(len as u64))?;
+        }
         // Finally, copy elements in-place for the table.
         self.elements
             .copy_within(src_index..src_index.wrapping_add(len), dst_index);
@@ -471,11 +495,17 @@ impl TableEntity {
     /// If `ctx` does not own `dst_table` or `src_table`.
     ///
     /// [`Store`]: [`crate::Store`]
-    pub fn fill(&mut self, dst: u32, val: Value, len: u32) -> Result<(), TrapCode> {
+    pub fn fill(
+        &mut self,
+        dst: u32,
+        val: Value,
+        len: u32,
+        fuel: Option<&mut Fuel>,
+    ) -> Result<(), TrapCode> {
         self.ty()
             .matches_element_type(val.ty())
             .map_err(|_| TrapCode::BadSignature)?;
-        self.fill_untyped(dst, val.into(), len)
+        self.fill_untyped(dst, val.into(), len, fuel)
     }
 
     /// Fill `table[dst..(dst + len)]` with the given value.
@@ -493,7 +523,13 @@ impl TableEntity {
     /// If `ctx` does not own `dst_table` or `src_table`.
     ///
     /// [`Store`]: [`crate::Store`]
-    pub fn fill_untyped(&mut self, dst: u32, val: UntypedValue, len: u32) -> Result<(), TrapCode> {
+    pub fn fill_untyped(
+        &mut self,
+        dst: u32,
+        val: UntypedValue,
+        len: u32,
+        fuel: Option<&mut Fuel>,
+    ) -> Result<(), TrapCode> {
         let dst_index = dst as usize;
         let len = len as usize;
         let dst = self
@@ -501,6 +537,9 @@ impl TableEntity {
             .get_mut(dst_index..)
             .and_then(|elements| elements.get_mut(..len))
             .ok_or(TrapCode::TableOutOfBounds)?;
+        if let Some(fuel) = fuel {
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copies(len as u64))?;
+        }
         dst.fill(val);
         Ok(())
     }
@@ -603,7 +642,7 @@ impl Table {
         let current = table.size();
         let maximum = table.ty().maximum().unwrap_or(u32::MAX);
         table
-            .grow(delta, init, &mut limiter)
+            .grow(delta, init, None, &mut limiter)
             .map_err(|_| TableError::GrowOutOfBounds {
                 maximum,
                 current,
@@ -684,7 +723,7 @@ impl Table {
                 .inner
                 .resolve_table_mut(dst_table);
             table
-                .copy_within(dst_index, src_index, len)
+                .copy_within(dst_index, src_index, len, None)
                 .map_err(|_| TableError::CopyOutOfBounds)
         } else {
             // The `dst_table` and `src_table` are different entities
@@ -692,12 +731,12 @@ impl Table {
             let dst_ty = dst_table.ty(&store);
             let src_ty = src_table.ty(&store).element();
             dst_ty.matches_element_type(src_ty)?;
-            let (dst_table, src_table) = store
+            let (dst_table, src_table, _fuel) = store
                 .as_context_mut()
                 .store
                 .inner
-                .resolve_table_pair_mut(dst_table, src_table);
-            TableEntity::copy(dst_table, dst_index, src_table, src_index, len)
+                .resolve_table_pair_and_fuel(dst_table, src_table);
+            TableEntity::copy(dst_table, dst_index, src_table, src_index, len, None)
                 .map_err(|_| TableError::CopyOutOfBounds)
         }
     }
@@ -726,6 +765,6 @@ impl Table {
             .store
             .inner
             .resolve_table_mut(self)
-            .fill(dst, val, len)
+            .fill(dst, val, len, None)
     }
 }

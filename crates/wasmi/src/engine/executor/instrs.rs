@@ -17,14 +17,12 @@ use crate::{
         },
         cache::InstanceCache,
         code_map::InstructionPtr,
-        config::FuelCosts,
         executor::stack::{CallFrame, CallStack, FrameRegisters, ValueStack},
         func_types::FuncTypeRegistry,
         CodeMap,
     },
     store::ResourceLimiterRef,
     Error,
-    FuelConsumptionMode,
     Func,
     FuncRef,
     StoreInner,
@@ -976,122 +974,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         cache.update_instance(frame.instance());
     }
 
-    /// Consume an amount of fuel specified by `delta` if `exec` succeeds.
-    ///
-    /// # Note
-    ///
-    /// - `delta` is only evaluated if fuel metering is enabled.
-    /// - `exec` is only evaluated if the remaining fuel is sufficient
-    ///    for amount of required fuel determined by `delta` or if
-    ///    fuel metering is disabled.
-    ///
-    /// # Errors
-    ///
-    /// - If the [`StoreInner`] ran out of fuel.
-    /// - If the `exec` closure traps.
-    #[inline(always)]
-    fn consume_fuel_with<T, E>(
-        &mut self,
-        delta: impl FnOnce(&FuelCosts) -> u64,
-        exec: impl FnOnce(&mut Self) -> Result<T, E>,
-    ) -> Result<T, E>
-    where
-        E: From<TrapCode>,
-    {
-        match self.get_fuel_consumption_mode() {
-            None => exec(self),
-            Some(mode) => self.consume_fuel_with_mode(mode, delta, exec),
-        }
-    }
-
-    /// Consume an amount of fuel specified by `delta` and executes `exec`.
-    ///
-    /// The `mode` determines when and if the fuel determined by `delta` is charged.
-    ///
-    /// # Errors
-    ///
-    /// - If the [`StoreInner`] ran out of fuel.
-    /// - If the `exec` closure traps.
-    #[inline(always)]
-    fn consume_fuel_with_mode<T, E>(
-        &mut self,
-        mode: FuelConsumptionMode,
-        delta: impl FnOnce(&FuelCosts) -> u64,
-        exec: impl FnOnce(&mut Self) -> Result<T, E>,
-    ) -> Result<T, E>
-    where
-        E: From<TrapCode>,
-    {
-        let delta = delta(self.fuel_costs());
-        match mode {
-            FuelConsumptionMode::Lazy => self.consume_fuel_with_lazy(delta, exec),
-            FuelConsumptionMode::Eager => self.consume_fuel_with_eager(delta, exec),
-        }
-    }
-
-    /// Consume an amount of fuel specified by `delta` if `exec` succeeds.
-    ///
-    /// Prior to executing `exec` it is checked if enough fuel is remaining
-    /// determined by `delta`. The fuel is charged only after `exec` has been
-    /// finished successfully.
-    ///
-    /// # Errors
-    ///
-    /// - If the [`StoreInner`] ran out of fuel.
-    /// - If the `exec` closure traps.
-    #[inline(always)]
-    fn consume_fuel_with_lazy<T, E>(
-        &mut self,
-        delta: u64,
-        exec: impl FnOnce(&mut Self) -> Result<T, E>,
-    ) -> Result<T, E>
-    where
-        E: From<TrapCode>,
-    {
-        self.ctx.fuel().sufficient_fuel(delta)?;
-        let result = exec(self)?;
-        self.ctx
-            .fuel_mut()
-            .consume_fuel(delta)
-            .expect("remaining fuel has already been approved prior");
-        Ok(result)
-    }
-
-    /// Consume an amount of fuel specified by `delta` and executes `exec`.
-    ///
-    /// # Errors
-    ///
-    /// - If the [`StoreInner`] ran out of fuel.
-    /// - If the `exec` closure traps.
-    #[inline(always)]
-    fn consume_fuel_with_eager<T, E>(
-        &mut self,
-        delta: u64,
-        exec: impl FnOnce(&mut Self) -> Result<T, E>,
-    ) -> Result<T, E>
-    where
-        E: From<TrapCode>,
-    {
-        self.ctx.fuel_mut().consume_fuel(delta)?;
-        exec(self)
-    }
-
-    /// Returns a shared reference to the [`FuelCosts`] of the [`Engine`].
-    ///
-    /// [`Engine`]: crate::Engine
-    #[inline]
-    fn fuel_costs(&self) -> &FuelCosts {
-        self.ctx.engine().config().fuel_costs()
-    }
-
-    /// Returns the [`FuelConsumptionMode`] of the [`Engine`].
-    ///
-    /// [`Engine`]: crate::Engine
-    #[inline]
-    fn get_fuel_consumption_mode(&self) -> Option<FuelConsumptionMode> {
-        self.ctx.engine().config().get_fuel_consumption_mode()
-    }
-
     /// Returns the [`Instruction::Const32`] parameter for an [`Instruction`].
     fn fetch_const32(&self, offset: usize) -> AnyConst32 {
         let mut addr: InstructionPtr = self.ip;
@@ -1249,7 +1131,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         // We do not have to check if fuel metering is enabled since
         // [`Instruction::ConsumeFuel`] are only generated if fuel metering
         // is enabled to begin with.
-        self.ctx.fuel_mut().consume_fuel(block_fuel.to_u64())?;
+        self.ctx
+            .fuel_mut()
+            .consume_fuel_unchecked(block_fuel.to_u64())?;
         self.try_next_instr()
     }
 

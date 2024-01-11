@@ -1,5 +1,5 @@
 use crate::{
-    engine::DedupFuncType,
+    engine::{DedupFuncType, FuelCosts},
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
     func::{Trampoline, TrampolineEntity, TrampolineIdx},
     memory::{DataSegment, MemoryError},
@@ -205,21 +205,64 @@ impl FuelError {
 }
 
 /// The remaining and consumed fuel counters.
-#[derive(Debug, Default, Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Fuel {
     /// The remaining fuel.
     remaining: u64,
     /// The total amount of fuel so far.
     total: u64,
+    /// This is `true` if fuel metering is enabled for the [`Engine`].
+    enabled: bool,
+    /// The fuel costs provided by the [`Engine`]'s [`Config`].
+    ///
+    /// [`Config`]: crate::Config
+    costs: FuelCosts,
 }
 
 impl Fuel {
+    /// Creates a new [`Fuel`] for the [`Engine`].
+    pub fn new(engine: &Engine) -> Self {
+        let config = engine.config();
+        let enabled = config.get_consume_fuel();
+        let costs = *config.fuel_costs();
+        Self {
+            remaining: 0,
+            total: 0,
+            enabled,
+            costs,
+        }
+    }
+
+    /// Returns `true` if fuel metering is enabled.
+    fn is_fuel_metering_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    /// Returns `Ok` if fuel metering is enabled.
+    ///
+    /// Returns descriptive [`FuelError`] otherwise.
+    ///
+    /// # Errors
+    ///
+    /// If fuel metering is disabled.
+    fn check_fuel_metering_enabled(&self) -> Result<(), FuelError> {
+        if !self.is_fuel_metering_enabled() {
+            return Err(FuelError::fuel_metering_disabled());
+        }
+        Ok(())
+    }
+
     /// Adds `delta` quantity of fuel to the remaining [`Fuel`].
     ///
     /// # Panics
     ///
     /// If this overflows the [`Fuel`] counter.
-    pub fn add_fuel(&mut self, delta: u64) {
+    ///
+    /// # Errors
+    ///
+    /// If fuel metering is disabled.
+    pub fn add_fuel(&mut self, delta: u64) -> Result<(), FuelError> {
+        self.check_fuel_metering_enabled()?;
         self.total = self.total.checked_add(delta).unwrap_or_else(|| {
             panic!(
                 "encountered total fuel overflow: fuel = {}, delta = {delta}",
@@ -228,38 +271,77 @@ impl Fuel {
         });
         // No need to check as well since `self.total >= self.remaining`.
         self.remaining = self.remaining.wrapping_add(delta);
+        Ok(())
     }
 
     /// Returns the amount of [`Fuel`] consumed by executions of the [`Store`] so far.
-    pub fn fuel_consumed(&self) -> u64 {
-        self.total.wrapping_sub(self.remaining)
+    pub fn fuel_consumed(&self) -> Option<u64> {
+        self.check_fuel_metering_enabled().ok()?;
+        let consumed = self.total.wrapping_sub(self.remaining);
+        Some(consumed)
     }
 
-    /// Returns `Ok` if enough fuel is remaining to satisfy `delta` fuel consumption.
-    ///
-    /// Returns a [`TrapCode::OutOfFuel`] error otherwise.
-    pub fn sufficient_fuel(&self, delta: u64) -> Result<(), TrapCode> {
-        self.remaining
-            .checked_sub(delta)
-            .map(|_| ())
-            .ok_or(TrapCode::OutOfFuel)
-    }
-
-    /// Synthetically consumes an amount of [`Fuel`] for the [`Store`].
+    /// Synthetically consumes an amount of [`Fuel`] from the [`Store`].
     ///
     /// Returns the remaining amount of [`Fuel`] after this operation.
-    pub fn consume_fuel(&mut self, delta: u64) -> Result<u64, TrapCode> {
+    ///
+    /// # Note
+    ///
+    /// - This does not check if fuel metering is enabled.
+    /// - This API is intended for use cases where it is clear that fuel metering is
+    ///   enabled and where a check would incur unnecessary overhead in a hot path.
+    ///   An example of this is the execution of consume fuel instructions since
+    ///   those only exist if fuel metering is enabled.
+    ///
+    /// # Errors
+    ///
+    /// If out of fuel.
+    pub(crate) fn consume_fuel_unchecked(&mut self, delta: u64) -> Result<u64, TrapCode> {
         self.remaining = self
             .remaining
             .checked_sub(delta)
             .ok_or(TrapCode::OutOfFuel)?;
         Ok(self.remaining)
     }
+
+    /// Synthetically consumes an amount of [`Fuel`] for the [`Store`].
+    ///
+    /// Returns the remaining amount of [`Fuel`] after this operation.
+    ///
+    /// # Errors
+    ///
+    /// - If fuel metering is disabled.
+    /// - If out of fuel.
+    pub fn consume_fuel(&mut self, f: impl FnOnce(&FuelCosts) -> u64) -> Result<u64, FuelError> {
+        self.check_fuel_metering_enabled()?;
+        self.consume_fuel_unchecked(f(&self.costs))
+            .map_err(|_| FuelError::OutOfFuel)
+    }
+
+    /// Synthetically consumes an amount of [`Fuel`] from the [`Store`] if fuel metering is enabled.
+    ///
+    /// # Note
+    ///
+    /// This does nothing if fuel metering is disabled.
+    ///
+    /// # Errors
+    ///
+    /// - If out of fuel.
+    pub(crate) fn consume_fuel_if(
+        &mut self,
+        f: impl FnOnce(&FuelCosts) -> u64,
+    ) -> Result<(), TrapCode> {
+        match self.consume_fuel(f) {
+            Err(FuelError::OutOfFuel) => Err(TrapCode::OutOfFuel),
+            Err(FuelError::FuelMeteringDisabled) | Ok(_) => Ok(()),
+        }
+    }
 }
 
 impl StoreInner {
     /// Creates a new [`StoreInner`] for the given [`Engine`].
     pub fn new(engine: &Engine) -> Self {
+        let fuel = Fuel::new(engine);
         StoreInner {
             engine: engine.clone(),
             store_idx: StoreIdx::new(),
@@ -271,18 +353,13 @@ impl StoreInner {
             datas: Arena::new(),
             elems: Arena::new(),
             extern_objects: Arena::new(),
-            fuel: Fuel::default(),
+            fuel,
         }
     }
 
     /// Returns the [`Engine`] that this store is associated with.
     pub fn engine(&self) -> &Engine {
         &self.engine
-    }
-
-    /// Returns a shared reference to the [`Fuel`] counters.
-    pub fn fuel(&self) -> &Fuel {
-        &self.fuel
     }
 
     /// Returns an exclusive reference to the [`Fuel`] counters.
@@ -504,22 +581,40 @@ impl StoreInner {
         Self::resolve_mut(idx, &mut self.tables)
     }
 
+    /// Returns both
+    ///
+    /// - an exclusive reference to the [`TableEntity`] associated to the given [`Table`]
+    /// - an exclusive reference to the [`Fuel`] of the [`StoreInner`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Table`] does not originate from this [`Store`].
+    /// - If the [`Table`] cannot be resolved to its entity.
+    pub fn resolve_table_and_fuel_mut(&mut self, table: &Table) -> (&mut TableEntity, &mut Fuel) {
+        let idx = self.unwrap_stored(table.as_inner());
+        let table = Self::resolve_mut(idx, &mut self.tables);
+        let fuel = &mut self.fuel;
+        (table, fuel)
+    }
+
     /// Returns an exclusive reference to the [`TableEntity`] associated to the given [`Table`].
     ///
     /// # Panics
     ///
     /// - If the [`Table`] does not originate from this [`Store`].
     /// - If the [`Table`] cannot be resolved to its entity.
-    pub fn resolve_table_pair_mut(
+    pub fn resolve_table_pair_and_fuel(
         &mut self,
         fst: &Table,
         snd: &Table,
-    ) -> (&mut TableEntity, &mut TableEntity) {
+    ) -> (&mut TableEntity, &mut TableEntity, &mut Fuel) {
         let fst = self.unwrap_stored(fst.as_inner());
         let snd = self.unwrap_stored(snd.as_inner());
-        self.tables.get_pair_mut(fst, snd).unwrap_or_else(|| {
+        let (fst, snd) = self.tables.get_pair_mut(fst, snd).unwrap_or_else(|| {
             panic!("failed to resolve stored pair of entities: {fst:?} and {snd:?}")
-        })
+        });
+        let fuel = &mut self.fuel;
+        (fst, snd, fuel)
     }
 
     /// Returns a triple of:
@@ -550,11 +645,12 @@ impl StoreInner {
         (table, elem)
     }
 
-    /// Returns a triple of:
+    /// Returns the following data:
     ///
     /// - A shared reference to the [`InstanceEntity`] associated to the given [`Instance`].
     /// - An exclusive reference to the [`TableEntity`] associated to the given [`Table`].
     /// - A shared reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
+    /// - An exclusive reference to the [`Fuel`] of the [`StoreInner`].
     ///
     /// # Note
     ///
@@ -569,19 +665,25 @@ impl StoreInner {
     /// - If the [`Table`] cannot be resolved to its entity.
     /// - If the [`ElementSegment`] does not originate from this [`Store`].
     /// - If the [`ElementSegment`] cannot be resolved to its entity.
-    pub(super) fn resolve_instance_table_element(
+    pub(super) fn resolve_table_init_params(
         &mut self,
         instance: &Instance,
         table: &Table,
         segment: &ElementSegment,
-    ) -> (&InstanceEntity, &mut TableEntity, &ElementSegmentEntity) {
+    ) -> (
+        &InstanceEntity,
+        &mut TableEntity,
+        &ElementSegmentEntity,
+        &mut Fuel,
+    ) {
         let mem_idx = self.unwrap_stored(table.as_inner());
         let data_idx = segment.as_inner();
         let instance_idx = instance.as_inner();
         let instance = self.resolve(instance_idx, &self.instances);
         let data = self.resolve(data_idx, &self.elems);
         let mem = Self::resolve_mut(mem_idx, &mut self.tables);
-        (instance, mem, data)
+        let fuel = &mut self.fuel;
+        (instance, mem, data, fuel)
     }
 
     /// Returns a shared reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
@@ -630,10 +732,28 @@ impl StoreInner {
         Self::resolve_mut(idx, &mut self.memories)
     }
 
-    /// Returns a pair of:
+    /// Returns an exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`].
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Memory`] does not originate from this [`Store`].
+    /// - If the [`Memory`] cannot be resolved to its entity.
+    pub fn resolve_memory_and_fuel_mut(
+        &mut self,
+        memory: &Memory,
+    ) -> (&mut MemoryEntity, &mut Fuel) {
+        let idx = self.unwrap_stored(memory.as_inner());
+        let memory = Self::resolve_mut(idx, &mut self.memories);
+        let fuel = &mut self.fuel;
+        (memory, fuel)
+    }
+
+    /// Returns the triple of:
     ///
     /// - An exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`].
     /// - A shared reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
+    /// - An exclusive reference to the [`Fuel`] for fuel metering.
+    ///
     ///
     /// # Note
     ///
@@ -646,27 +766,17 @@ impl StoreInner {
     /// - If the [`Memory`] cannot be resolved to its entity.
     /// - If the [`DataSegment`] does not originate from this [`Store`].
     /// - If the [`DataSegment`] cannot be resolved to its entity.
-    pub(super) fn resolve_memory_mut_and_data_segment(
+    pub(super) fn resolve_memory_init_triplet(
         &mut self,
         memory: &Memory,
         segment: &DataSegment,
-    ) -> (&mut MemoryEntity, &DataSegmentEntity) {
+    ) -> (&mut MemoryEntity, &DataSegmentEntity, &mut Fuel) {
         let mem_idx = self.unwrap_stored(memory.as_inner());
         let data_idx = segment.as_inner();
         let data = self.resolve(data_idx, &self.datas);
         let mem = Self::resolve_mut(mem_idx, &mut self.memories);
-        (mem, data)
-    }
-
-    /// Returns a shared reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
-    ///
-    /// # Panics
-    ///
-    /// - If the [`DataSegment`] does not originate from this [`Store`].
-    /// - If the [`DataSegment`] cannot be resolved to its entity.
-    #[allow(unused)] // Note: We allow this unused API to exist to uphold code symmetry.
-    pub fn resolve_data_segment(&self, segment: &DataSegment) -> &DataSegmentEntity {
-        self.resolve(segment.as_inner(), &self.datas)
+        let fuel = &mut self.fuel;
+        (mem, data, fuel)
     }
 
     /// Returns an exclusive reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
@@ -810,21 +920,6 @@ impl<T> Store<T> {
         (&mut self.inner, resource_limiter)
     }
 
-    /// Returns `true` if fuel metering has been enabled.
-    fn is_fuel_metering_enabled(&self) -> bool {
-        self.engine().config().get_consume_fuel()
-    }
-
-    /// Returns `Ok` if fuel metering has been enabled.
-    ///
-    /// Otherwise returns the respective [`FuelError`].
-    fn check_fuel_metering_enabled(&self) -> Result<(), FuelError> {
-        if !self.is_fuel_metering_enabled() {
-            return Err(FuelError::fuel_metering_disabled());
-        }
-        Ok(())
-    }
-
     /// Adds `delta` quantity of fuel to the remaining fuel.
     ///
     /// # Panics
@@ -835,17 +930,14 @@ impl<T> Store<T> {
     ///
     /// If fuel metering is disabled.
     pub fn add_fuel(&mut self, delta: u64) -> Result<(), FuelError> {
-        self.check_fuel_metering_enabled()?;
-        self.inner.fuel.add_fuel(delta);
-        Ok(())
+        self.inner.fuel.add_fuel(delta)
     }
 
     /// Returns the amount of fuel consumed by executions of the [`Store`] so far.
     ///
     /// Returns `None` if fuel metering is disabled.
     pub fn fuel_consumed(&self) -> Option<u64> {
-        self.check_fuel_metering_enabled().ok()?;
-        Some(self.inner.fuel.fuel_consumed())
+        self.inner.fuel.fuel_consumed()
     }
 
     /// Synthetically consumes an amount of fuel for the [`Store`].
@@ -861,11 +953,7 @@ impl<T> Store<T> {
     /// - If fuel metering is disabled.
     /// - If more fuel is consumed than available.
     pub fn consume_fuel(&mut self, delta: u64) -> Result<u64, FuelError> {
-        self.check_fuel_metering_enabled()?;
-        self.inner
-            .fuel
-            .consume_fuel(delta)
-            .map_err(|_error| FuelError::out_of_fuel())
+        self.inner.fuel.consume_fuel(|_| delta)
     }
 
     /// Allocates a new [`TrampolineEntity`] and returns a [`Trampoline`] reference to it.

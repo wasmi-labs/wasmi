@@ -227,27 +227,20 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ) -> Result<(), Error> {
         let dst_table_index = self.fetch_table_index(1);
         let src_table_index = self.fetch_table_index(2);
-        self.consume_fuel_with::<_, Error>(
-            |costs| costs.fuel_for_copies(u64::from(len)),
-            |this| {
-                if dst_table_index == src_table_index {
-                    // Case: copy within the same table
-                    let table = this.cache.get_table(this.ctx, dst_table_index);
-                    this.ctx
-                        .resolve_table_mut(&table)
-                        .copy_within(dst_index, src_index, len)?;
-                } else {
-                    // Case: copy between two different tables
-                    let dst_table = this.cache.get_table(this.ctx, dst_table_index);
-                    let src_table = this.cache.get_table(this.ctx, src_table_index);
-                    // Copy from one table to another table:
-                    let (dst_table, src_table) =
-                        this.ctx.resolve_table_pair_mut(&dst_table, &src_table);
-                    TableEntity::copy(dst_table, dst_index, src_table, src_index, len)?;
-                }
-                Ok(())
-            },
-        )?;
+        if dst_table_index == src_table_index {
+            // Case: copy within the same table
+            let table = self.cache.get_table(self.ctx, dst_table_index);
+            let (table, fuel) = self.ctx.resolve_table_and_fuel_mut(&table);
+            table.copy_within(dst_index, src_index, len, Some(fuel))?;
+        } else {
+            // Case: copy between two different tables
+            let dst_table = self.cache.get_table(self.ctx, dst_table_index);
+            let src_table = self.cache.get_table(self.ctx, src_table_index);
+            // Copy from one table to another table:
+            let (dst_table, src_table, fuel) =
+                self.ctx.resolve_table_pair_and_fuel(&dst_table, &src_table);
+            TableEntity::copy(dst_table, dst_index, src_table, src_index, len, Some(fuel))?;
+        }
         self.try_next_instr_at(3)
     }
 
@@ -372,18 +365,19 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         let element_index = self.fetch_element_segment_index(2);
-        self.consume_fuel_with::<_, Error>(
-            |costs| costs.fuel_for_copies(u64::from(len)),
-            |this| {
-                let (instance, table, element) =
-                    this.cache
-                        .get_table_and_element_segment(this.ctx, table_index, element_index);
-                table.init(dst_index, element, src_index, len, |func_index| {
-                    instance
-                        .get_func(func_index)
-                        .unwrap_or_else(|| panic!("missing function at index {func_index}"))
-                })?;
-                Ok(())
+        let (instance, table, element, fuel) =
+            self.cache
+                .get_table_init_params(self.ctx, table_index, element_index);
+        table.init(
+            dst_index,
+            element,
+            src_index,
+            len,
+            Some(fuel),
+            |func_index| {
+                instance
+                    .get_func(func_index)
+                    .unwrap_or_else(|| panic!("missing function at index {func_index}"))
             },
         )?;
         self.try_next_instr_at(3)
@@ -449,17 +443,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         value: Register,
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
-        self.consume_fuel_with::<_, Error>(
-            |costs| costs.fuel_for_copies(u64::from(len)),
-            |this| {
-                let value = this.get_register(value);
-                let table = this.cache.get_table(this.ctx, table_index);
-                this.ctx
-                    .resolve_table_mut(&table)
-                    .fill_untyped(dst, value, len)?;
-                Ok(())
-            },
-        )?;
+        let value = self.get_register(value);
+        let table = self.cache.get_table(self.ctx, table_index);
+        let (table, fuel) = self.ctx.resolve_table_and_fuel_mut(&table);
+        table.fill_untyped(dst, value, len, Some(fuel))?;
         self.try_next_instr_at(2)
     }
 
@@ -503,16 +490,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             self.execute_table_size_impl(result, table_index);
             return self.try_next_instr_at(2);
         }
-        let return_value = self.consume_fuel_with(
-            |costs| costs.fuel_for_copies(u64::from(delta)),
-            |this| {
-                let table = this.cache.get_table(this.ctx, table_index);
-                let value = this.get_register(value);
-                this.ctx
-                    .resolve_table_mut(&table)
-                    .grow_untyped(delta, value, resource_limiter)
-            },
-        );
+        let table = self.cache.get_table(self.ctx, table_index);
+        let value = self.get_register(value);
+        let (table, fuel) = self.ctx.resolve_table_and_fuel_mut(&table);
+        let return_value = table.grow_untyped(delta, value, Some(fuel), resource_limiter);
         let return_value = match return_value {
             Ok(return_value) => return_value,
             Err(EntityGrowError::InvalidGrow) => EntityGrowError::ERROR_CODE,

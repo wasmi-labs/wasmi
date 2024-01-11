@@ -86,27 +86,19 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 return self.try_next_instr();
             }
         };
-        let return_value = self.consume_fuel_with(
-            |costs| {
-                let delta_in_bytes = delta.to_bytes().unwrap_or(0) as u64;
-                costs.fuel_for_bytes(delta_in_bytes)
-            },
-            |this| {
-                let memory = this.cache.default_memory(this.ctx);
-                let new_pages = this
-                    .ctx
-                    .resolve_memory_mut(memory)
-                    .grow(delta, resource_limiter)
-                    .map(u32::from)?;
+        let memory = self.cache.default_memory(self.ctx);
+        let (memory, fuel) = self.ctx.resolve_memory_and_fuel_mut(memory);
+        let return_value = memory
+            .grow(delta, Some(fuel), resource_limiter)
+            .map(u32::from);
+        let return_value = match return_value {
+            Ok(return_value) => {
                 // The `memory.grow` operation might have invalidated the cached
                 // linear memory so we need to reset it in order for the cache to
                 // reload in case it is used again.
-                this.cache.reset_default_memory_bytes();
-                Ok(new_pages)
-            },
-        );
-        let return_value = match return_value {
-            Ok(return_value) => return_value,
+                self.cache.reset_default_memory_bytes();
+                return_value
+            }
             Err(EntityGrowError::InvalidGrow) => EntityGrowError::ERROR_CODE,
             Err(EntityGrowError::TrapCode(trap_code)) => return Err(Error::from(trap_code)),
         };
@@ -233,24 +225,20 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         src_index: u32,
         len: u32,
     ) -> Result<(), Error> {
-        self.consume_fuel_with::<_, Error>(
-            |costs| costs.fuel_for_bytes(u64::from(len)),
-            |this| {
-                let len = len as usize;
-                let src_index = src_index as usize;
-                let dst_index = dst_index as usize;
-                let data = this.cache.default_memory_bytes(this.ctx);
-                // These accesses just perform the bounds checks required by the Wasm spec.
-                data.get(src_index..)
-                    .and_then(|memory| memory.get(..len))
-                    .ok_or(TrapCode::MemoryOutOfBounds)?;
-                data.get(dst_index..)
-                    .and_then(|memory| memory.get(..len))
-                    .ok_or(TrapCode::MemoryOutOfBounds)?;
-                data.copy_within(src_index..src_index.wrapping_add(len), dst_index);
-                Ok(())
-            },
-        )?;
+        let src_index = src_index as usize;
+        let dst_index = dst_index as usize;
+        let default_memory = self.cache.default_memory(self.ctx);
+        let (memory, fuel) = self.ctx.resolve_memory_and_fuel_mut(default_memory);
+        let data = memory.data_mut();
+        // These accesses just perform the bounds checks required by the Wasm spec.
+        data.get(src_index..)
+            .and_then(|memory| memory.get(..len as usize))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        data.get(dst_index..)
+            .and_then(|memory| memory.get(..len as usize))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(u64::from(len)))?;
+        data.copy_within(src_index..src_index.wrapping_add(len as usize), dst_index);
         self.try_next_instr()
     }
 
@@ -364,21 +352,17 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes a generic `memory.fill` instruction.
     fn execute_memory_fill_impl(&mut self, dst: u32, value: u8, len: u32) -> Result<(), Error> {
-        self.consume_fuel_with::<_, Error>(
-            |costs| costs.fuel_for_bytes(u64::from(len)),
-            |this| {
-                let dst = dst as usize;
-                let len = len as usize;
-                let memory = this
-                    .cache
-                    .default_memory_bytes(this.ctx)
-                    .get_mut(dst..)
-                    .and_then(|memory| memory.get_mut(..len))
-                    .ok_or(TrapCode::MemoryOutOfBounds)?;
-                memory.fill(value);
-                Ok(())
-            },
-        )?;
+        let dst = dst as usize;
+        let len = len as usize;
+        let default_memory = self.cache.default_memory(self.ctx);
+        let (memory, fuel) = self.ctx.resolve_memory_and_fuel_mut(default_memory);
+        let memory = memory
+            .data_mut()
+            .get_mut(dst..)
+            .and_then(|memory| memory.get_mut(..len))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(len as u64))?;
+        memory.fill(value);
         self.try_next_instr()
     }
 
@@ -496,28 +480,21 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes a generic `memory.init` instruction.
     fn execute_memory_init_impl(&mut self, dst: u32, src: u32, len: u32) -> Result<(), Error> {
-        self.consume_fuel_with::<_, Error>(
-            |costs| costs.fuel_for_bytes(u64::from(len)),
-            |this| {
-                let dst_index = dst as usize;
-                let src_index = src as usize;
-                let len = len as usize;
-                let data_index: DataSegmentIdx = this.fetch_data_segment_index(1);
-                let (memory, data) = this
-                    .cache
-                    .get_default_memory_and_data_segment(this.ctx, data_index);
-                let memory = memory
-                    .get_mut(dst_index..)
-                    .and_then(|memory| memory.get_mut(..len))
-                    .ok_or(TrapCode::MemoryOutOfBounds)?;
-                let data = data
-                    .get(src_index..)
-                    .and_then(|data| data.get(..len))
-                    .ok_or(TrapCode::MemoryOutOfBounds)?;
-                memory.copy_from_slice(data);
-                Ok(())
-            },
-        )?;
+        let dst_index = dst as usize;
+        let src_index = src as usize;
+        let len = len as usize;
+        let data_index: DataSegmentIdx = self.fetch_data_segment_index(1);
+        let (memory, data, fuel) = self.cache.get_memory_init_triplet(self.ctx, data_index);
+        let memory = memory
+            .get_mut(dst_index..)
+            .and_then(|memory| memory.get_mut(..len))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        let data = data
+            .get(src_index..)
+            .and_then(|data| data.get(..len))
+            .ok_or(TrapCode::MemoryOutOfBounds)?;
+        fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(len as u64))?;
+        memory.copy_from_slice(data);
         self.try_next_instr_at(2)
     }
 }
