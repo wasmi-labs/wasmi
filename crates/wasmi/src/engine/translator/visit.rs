@@ -856,6 +856,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 // Optmization: Access to immutable internally defined global variables
                 //              can be replaced with their constant initialization value.
                 self.alloc.stack.push_const(TypedValue::new(content, value));
+                self.alloc.instr_encoder.reset_last_instr();
                 return Ok(());
             }
             if let Some(func_index) = init_expr.funcref() {
