@@ -141,7 +141,7 @@ impl Display for Error {
 pub enum ErrorKind {
     /// A trap code as defined by the WebAssembly specification.
     TrapCode(TrapCode),
-    /// A message ususally provided by Wasmi users of host function calls.
+    /// A message usually provided by Wasmi users of host function calls.
     Message(Box<str>),
     /// An `i32` exit status usually used by WASI applications.
     I32ExitStatus(i32),
