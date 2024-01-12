@@ -439,7 +439,7 @@ pub struct FuncTranslator {
     ///
     /// # Note
     ///
-    /// Technicaly this is not needed since the information is redundant given via
+    /// Technically this is not needed since the information is redundant given via
     /// the `module` field. However, this acts like a faster access since `module`
     /// only holds a weak reference to the engine.
     engine: Engine,
@@ -1132,7 +1132,7 @@ impl FuncTranslator {
     ///
     /// - Returns `Ok(true)` is the optmization was applied.
     /// - Returns `Ok(false)` is the optimization could not be applied.
-    /// - Returns `Err(_)` if a translation error occured.
+    /// - Returns `Err(_)` if a translation error occurred.
     fn try_push_binary_instr_imm16<T>(
         &mut self,
         lhs: Register,
@@ -2021,7 +2021,7 @@ impl FuncTranslator {
         /// # Note
         ///
         /// Helper for `select` instructions where one of `lhs` and `rhs`
-        /// is a [`Register`] and the other a funtion local constant value.
+        /// is a [`Register`] and the other a function local constant value.
         fn encode_select_imm(
             this: &mut FuncTranslator,
             result: Register,
