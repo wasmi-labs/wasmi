@@ -36,6 +36,7 @@ pub struct FuncDesc {
 #[derive(Debug)]
 pub struct Observer {
     pub counter: usize,
+    pub is_in_phantom: bool,
 }
 
 #[derive(Debug)]
@@ -90,7 +91,10 @@ impl Tracer {
             wasm_input_func_idx: None,
             dry_run,
 
-            observer: Observer { counter: 0 },
+            observer: Observer {
+                counter: 0,
+                is_in_phantom: false,
+            },
         }
     }
 
@@ -119,6 +123,14 @@ impl Tracer {
 
     pub fn inc_counter(&mut self) {
         self.observer.counter += 1;
+    }
+
+    pub fn set_in_phantom(&mut self) {
+        self.observer.is_in_phantom = true;
+    }
+
+    pub fn set_exit_phantom(&mut self) {
+        self.observer.is_in_phantom = false;
     }
 
     pub fn dry_run(&self) -> bool {
