@@ -333,3 +333,23 @@ fn fuzz_regression_13_execute() {
     let (x, y, z) = func.call(&mut store, ()).unwrap();
     assert!(x == 0 && y == 0 && z == 0);
 }
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_14() {
+    let wat = include_str!("fuzz_14.wat");
+    let wasm = wat2wasm(wat);
+    TranslationTest::new(wasm)
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::i32_and(
+                    Register::from_i16(2),
+                    Register::from_i16(0),
+                    Register::from_i16(1),
+                ),
+                Instruction::return_reg2(2, -1),
+            ])
+            .consts([0_i32]),
+        )
+        .run()
+}
