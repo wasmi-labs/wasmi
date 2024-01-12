@@ -8,7 +8,7 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
-## [`0.32.0-beta.1`] - 2023-12-18
+## [`0.32.0-beta.3`] - 2024-01-12
 
 **Note:**
 
@@ -50,6 +50,9 @@ Dates in this file are formattes as `YYYY-MM-DD`.
       let mut config = wasmi::Config::default();
       config.compilation_mode(wasmi::CompilationMode::Lazy);
       ```
+    - When `CompilationMode::Lazy` or `CompilationMode::LazyTranslation` and fuel metering is enabled
+      the first function access that triggers compilation (and validation) will charge fuel respective
+      to the number of bytes of the Wasm function body. (https://github.com/paritytech/wasmi/pull/876) 
 - Added `Module::validate` API. (https://github.com/paritytech/wasmi/pull/840)
     - This allows to quickly check if a Wasm binary is valid according to a Wasmi `Engine` config.
     - Note that this does not translate the Wasm and thus `Module::new` or `Module::new_unchecked`
@@ -62,12 +65,20 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     - We expect those Wasm proposals to be stabilized very soon so we feel safe to enable them by default already.
 - Improve `Debug` and `Display` impls for NaNs of Wasm `f32` and `f64` values.
   - They now show `nan:0x{bytes}` where `{bytes}` is their respective raw bytes.
+- Implement `Sync` for `ResumableInvocation` and `TypedResumableInvocation`. (https://github.com/paritytech/wasmi/pull/870)
 
 ### Removed
 
 - Removed the stack-machine bytecode based Wasmi `Engine` backend. (https://github.com/paritytech/wasmi/pull/818)
     - The new register-machine bytecode based Wasmi `Engine` is more promising
       and the Wasmi team does not want to maintain two different engine backends.
+- Remove `FuelConsumptionMode` from `Config`. (https://github.com/paritytech/wasmi/pull/877)
+    - `FuelConsumptionMode` was required to differentiate between lazy and eager fuel consumption.
+      This was necessary due to how lazy fuel consumption was implemented in that it would pre-charge
+      for instruction execution were the exact amount of required fuel was not possible to determine
+      at compilation time. Examples are `memory.grow` and `table.copy` instructions. The linked PR
+      improved lazy fuel consumption to no longer pre-charge and instead pre-check if the operation
+      is going to succeed and only charge fuel in that case.
 
 ### Dev. Note
 
