@@ -38,7 +38,7 @@ fn imm_tee() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_imm32(Register::from_i16(0), 10_i32),
-            Instruction::return_reg(Register::from_i16(0)),
+            Instruction::return_imm32(10_i32),
         ])
         .run()
 }
@@ -241,8 +241,8 @@ fn local_tee_chain() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_imm32(Register::from_i16(0), 10_i32),
-            Instruction::copy(Register::from_i16(1), Register::from_i16(0)),
-            Instruction::return_reg(Register::from_i16(1)),
+            Instruction::copy_imm32(Register::from_i16(1), 10_i32),
+            Instruction::return_imm32(10_i32),
         ])
         .run()
 }
