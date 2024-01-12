@@ -258,6 +258,28 @@ impl Interpreter {
         }
     }
 
+    fn push_phantom_frame(&mut self, sp: u32) {
+        if self.mask_tracer.is_empty() {
+            self.tracer
+                .as_ref()
+                .map(|tracer| tracer.borrow_mut().set_in_phantom());
+        }
+
+        self.mask_tracer.push(sp);
+    }
+
+    fn pop_phantom_frame(&mut self) -> Option<u32> {
+        let r = self.mask_tracer.pop();
+
+        if self.mask_tracer.is_empty() {
+            self.tracer
+                .as_ref()
+                .map(|tracer| tracer.borrow_mut().set_exit_phantom());
+        }
+
+        r
+    }
+
     pub fn state(&self) -> &InterpreterState {
         &self.state
     }
@@ -379,7 +401,7 @@ impl Interpreter {
                                     .borrow()
                                     .is_phantom_function(&nested_context.function)
                                 {
-                                    self.mask_tracer.push(self.value_stack.sp as u32);
+                                    self.push_phantom_frame(self.value_stack.sp as u32);
                                 }
                             }
 
@@ -2071,7 +2093,7 @@ impl Interpreter {
                             .borrow()
                             .is_phantom_function(&function_context.function)
                         {
-                            let sp_before = self.mask_tracer.pop().unwrap();
+                            let sp_before = self.pop_phantom_frame().unwrap();
 
                             if self.mask_tracer.is_empty() {
                                 tracer.borrow_mut().fill_trace(
