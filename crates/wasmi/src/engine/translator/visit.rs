@@ -833,8 +833,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_local_tee(&mut self, local_index: u32) -> Self::Output {
         bail_unreachable!(self);
+        let input = self.alloc.stack.peek();
         self.visit_local_set(local_index)?;
-        self.alloc.stack.push_local(local_index)?;
+        match input {
+            Provider::Register(_register) => {
+                self.alloc.stack.push_local(local_index)?;
+            }
+            Provider::Const(value) => {
+                self.alloc.stack.push_const(value);
+            }
+        }
         Ok(())
     }
 
