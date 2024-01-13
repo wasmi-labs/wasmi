@@ -357,7 +357,7 @@ fn fuzz_regression_14() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn fuzz_regression_15_01_codegen() {
+fn fuzz_regression_15_01() {
     let wat = include_str!("fuzz_15_01.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
@@ -382,7 +382,7 @@ fn fuzz_regression_15_01_codegen() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn fuzz_regression_15_02_codegen() {
+fn fuzz_regression_15_02() {
     let wat = include_str!("fuzz_15_02.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
