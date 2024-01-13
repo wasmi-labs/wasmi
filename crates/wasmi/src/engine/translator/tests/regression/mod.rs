@@ -6,6 +6,7 @@ use crate::{
         CompiledFunc,
     },
 };
+use wasmi_core::F32;
 
 #[test]
 #[cfg_attr(miri, ignore)]
@@ -350,6 +351,57 @@ fn fuzz_regression_14() {
                 Instruction::return_reg2(2, -1),
             ])
             .consts([0_i32]),
+        )
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_15_01_codegen() {
+    let wat = include_str!("fuzz_15_01.wat");
+    let wasm = wat2wasm(wat);
+    TranslationTest::new(wasm)
+        .expect_func(
+            // Note:
+            //
+            // - The bug is that `copy_imm32` overwrites `i32_wrap_i64` which is the `index` of the `br_table`.
+            // - Furthermore `br_table` somehow uses `reg(0)` for `index` instead of `reg(1)` where `i32_wrap_i64`
+            //   stores its `index` result.
+            ExpectedFunc::new([
+                Instruction::i32_wrap_i64(Register::from_i16(1), Register::from_i16(0)),
+                Instruction::copy_imm32(Register::from_i16(1), 1.0_f32),
+                Instruction::branch_table(Register::from_i16(0), 3),
+                Instruction::branch(BranchOffset::from(3)),
+                Instruction::return_reg(1),
+                Instruction::branch(BranchOffset::from(1)),
+                Instruction::Trap(TrapCode::UnreachableCodeReached),
+            ]),
+        )
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_15_02_codegen() {
+    let wat = include_str!("fuzz_15_02.wat");
+    let wasm = wat2wasm(wat);
+    TranslationTest::new(wasm)
+        .expect_func(
+            // Note: The bug is that `copy2` overwrites `i32_wrap_i64` which is the `index` of the `br_table`.
+            ExpectedFunc::new([
+                Instruction::i32_wrap_i64(Register::from_i16(1), Register::from_i16(0)),
+                Instruction::copy2(
+                    RegisterSpan::new(Register::from_i16(1)),
+                    Register::from_i16(-1),
+                    Register::from_i16(-2),
+                ),
+                Instruction::branch_table(Register::from_i16(1), 3),
+                Instruction::branch(BranchOffset::from(3)),
+                Instruction::return_span(RegisterSpan::new(Register::from_i16(1)).iter_u16(2)),
+                Instruction::branch(BranchOffset::from(1)),
+                Instruction::Trap(TrapCode::UnreachableCodeReached),
+            ])
+            .consts([10.0_f32, 20.0_f32]),
         )
         .run()
 }
