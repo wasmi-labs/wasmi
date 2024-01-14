@@ -369,8 +369,8 @@ fn fuzz_regression_15_01() {
             //   stores its `index` result.
             ExpectedFunc::new([
                 Instruction::i32_wrap_i64(Register::from_i16(1), Register::from_i16(0)),
-                Instruction::copy_imm32(Register::from_i16(1), 1.0_f32),
                 Instruction::branch_table(Register::from_i16(0), 3),
+                Instruction::copy_imm32(Register::from_i16(1), 10.0_f32),
                 Instruction::branch(BranchOffset::from(3)),
                 Instruction::return_reg(1),
                 Instruction::branch(BranchOffset::from(1)),
