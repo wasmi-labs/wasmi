@@ -8,13 +8,11 @@ use crate::engine::bytecode::{
     ComparatorOffsetParam,
     Const16,
     Const32,
+    Instruction,
     Register,
 };
 use core::cmp;
 use wasmi_core::UntypedValue;
-
-#[cfg(doc)]
-use crate::engine::bytecode::Instruction;
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Branches and adjusts the value stack.
@@ -49,8 +47,45 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let max_index = u32::from(len_targets) - 1;
         // A normalized index will always yield a target without panicking.
         let normalized_index = cmp::min(index, max_index);
+        // Check if the next instruction is a copy instruction and execute it if so.
+        self.ip.add(1);
+        self.execute_optional_copy_instr();
         // Update `pc`:
-        self.ip.add(normalized_index as usize + 1);
+        self.ip.add(normalized_index as usize);
+    }
+
+    /// Executes an optional copy instruction at `ip`.
+    ///
+    /// Does nothing if there is no `copy` instruction at `ip`.
+    fn execute_optional_copy_instr(&mut self) {
+        match *self.ip.get() {
+            Instruction::Copy { result, value } => self.execute_copy(result, value),
+            Instruction::Copy2 { results, values } => self.execute_copy_2(results, values),
+            Instruction::CopyImm32 { result, value } => self.execute_copy_imm32(result, value),
+            Instruction::CopyI64Imm32 { result, value } => {
+                self.execute_copy_i64imm32(result, value)
+            }
+            Instruction::CopyF64Imm32 { result, value } => {
+                self.execute_copy_f64imm32(result, value)
+            }
+            Instruction::CopySpan {
+                results,
+                values,
+                len,
+            } => self.execute_copy_span(results, values, len),
+            Instruction::CopySpanNonOverlapping {
+                results,
+                values,
+                len,
+            } => self.execute_copy_span_non_overlapping(results, values, len),
+            Instruction::CopyMany { results, values } => self.execute_copy_many(results, values),
+            Instruction::CopyManyNonOverlapping { results, values } => {
+                self.execute_copy_many_non_overlapping(results, values)
+            }
+            _ => {
+                // Nothing to do if there is no `copy` instruction.
+            }
+        };
     }
 
     /// Executes a generic fused compare and branch instruction.
