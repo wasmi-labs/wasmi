@@ -865,12 +865,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Returns the [`Register`] value.
+    #[inline]
     fn get_register(&self, register: Register) -> UntypedValue {
         // Safety: TODO
         unsafe { self.sp.get(register) }
     }
 
     /// Returns the [`Register`] value.
+    #[inline]
     fn get_register_as<T>(&self, register: Register) -> T
     where
         T: From<UntypedValue>,
@@ -879,6 +881,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Sets the [`Register`] value to `value`.
+    #[inline]
     fn set_register(&mut self, register: Register, value: impl Into<UntypedValue>) {
         // Safety: TODO
         unsafe { self.sp.set(register, value.into()) };
