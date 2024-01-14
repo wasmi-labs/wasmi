@@ -2,7 +2,7 @@ use super::*;
 use crate::{
     core::TrapCode,
     engine::{
-        bytecode::{BranchOffset, BranchOffset16, RegisterSpan},
+        bytecode::{BranchOffset, BranchOffset16, GlobalIdx, RegisterSpan},
         CompiledFunc,
     },
 };
@@ -428,6 +428,65 @@ fn fuzz_regression_15_02() {
                 Instruction::Trap(TrapCode::UnreachableCodeReached),
             ])
             .consts([10.0_f32, 20.0_f32]),
+        )
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_15_03() {
+    let wat = include_str!("fuzz_15_03.wat");
+    let wasm = wat2wasm(wat);
+    TranslationTest::new(wasm)
+        .expect_func(
+            // Note: The bug is that `copy2` overwrites `i32_wrap_i64` which is the `index` of the `br_table`.
+            ExpectedFunc::new([
+                Instruction::global_get(Register::from_i16(1), GlobalIdx::from(0)),
+                Instruction::global_get(Register::from_i16(2), GlobalIdx::from(0)),
+                Instruction::i32_wrap_i64(Register::from_i16(3), Register::from_i16(0)),
+                Instruction::branch_table(Register::from_i16(3), 4),
+                Instruction::branch(BranchOffset::from(4)),
+                Instruction::branch(BranchOffset::from(5)),
+                Instruction::branch(BranchOffset::from(2)),
+                Instruction::branch(BranchOffset::from(5)),
+                Instruction::copy2(
+                    RegisterSpan::new(Register::from_i16(3)),
+                    Register::from_i16(-1),
+                    Register::from_i16(-2),
+                ),
+                Instruction::branch(BranchOffset::from(5)),
+                Instruction::copy2(
+                    RegisterSpan::new(Register::from_i16(2)),
+                    Register::from_i16(-1),
+                    Register::from_i16(-2),
+                ),
+                Instruction::branch(BranchOffset::from(5)),
+                Instruction::copy2(
+                    RegisterSpan::new(Register::from_i16(1)),
+                    Register::from_i16(-1),
+                    Register::from_i16(-2),
+                ),
+                Instruction::branch(BranchOffset::from(5)),
+                Instruction::i32_add(
+                    Register::from_i16(3),
+                    Register::from_i16(3),
+                    Register::from_i16(4),
+                ),
+                Instruction::return_reg(Register::from_i16(3)),
+                Instruction::i32_mul(
+                    Register::from_i16(2),
+                    Register::from_i16(2),
+                    Register::from_i16(3),
+                ),
+                Instruction::return_reg(Register::from_i16(2)),
+                Instruction::i32_xor(
+                    Register::from_i16(1),
+                    Register::from_i16(1),
+                    Register::from_i16(2),
+                ),
+                Instruction::return_reg(Register::from_i16(1)),
+            ])
+            .consts([10_i32, 20_i32]),
         )
         .run()
 }
