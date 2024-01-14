@@ -382,6 +382,32 @@ fn fuzz_regression_15_01() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
+fn fuzz_regression_15_01_execute() {
+    // Note: we can remove this test case once the bug is fixed
+    //       since this is a codegen bug and not an executor bug.
+    use crate::{Engine, Linker, Store};
+    let wat = include_str!("fuzz_15_01.wat");
+    let wasm = wat2wasm(wat);
+    let engine = Engine::default();
+    let mut store = <Store<()>>::new(&engine, ());
+    let linker = Linker::new(&engine);
+    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    let func = instance
+        .get_func(&store, "")
+        .unwrap()
+        .typed::<i64, F32>(&store)
+        .unwrap();
+    let result = func.call(&mut store, 1).unwrap();
+    assert_eq!(result, 10.0);
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
 fn fuzz_regression_15_02() {
     let wat = include_str!("fuzz_15_02.wat");
     let wasm = wat2wasm(wat);
