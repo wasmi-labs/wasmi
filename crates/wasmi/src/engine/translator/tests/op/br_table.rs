@@ -134,8 +134,8 @@ fn reg_params_1_return() {
     let result = Register::from_i16(2);
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy(result, value),
             Instruction::branch_table(index, 5),
+            Instruction::copy(result, value),
             Instruction::return_reg(result),
             Instruction::branch(BranchOffset::from(10)),
             Instruction::branch(BranchOffset::from(7)),
@@ -185,8 +185,8 @@ fn reg_params_1_pass() {
     let result = Register::from_i16(2);
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy(result, value),
             Instruction::branch_table(index, 3),
+            Instruction::copy(result, value),
             Instruction::branch(BranchOffset::from(7)),
             Instruction::branch(BranchOffset::from(4)),
             Instruction::branch(BranchOffset::from(1)),
@@ -229,8 +229,8 @@ fn reg_params_2_ops() {
     let result = Register::from_i16(3);
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2(RegisterSpan::new(result), lhs, lhs.next()),
             Instruction::branch_table(index, 3),
+            Instruction::copy2(RegisterSpan::new(result), lhs, lhs.next()),
             Instruction::branch(BranchOffset::from(7)),
             Instruction::branch(BranchOffset::from(4)),
             Instruction::branch(BranchOffset::from(1)),
@@ -274,8 +274,8 @@ fn reg_params_2_return() {
     TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::copy2(RegisterSpan::new(result), lhs, lhs.next()),
                 Instruction::branch_table(index, 4),
+                Instruction::copy2(RegisterSpan::new(result), lhs, lhs.next()),
                 Instruction::return_span(results),
                 Instruction::branch(BranchOffset::from(7)),
                 Instruction::branch(BranchOffset::from(4)),

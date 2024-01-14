@@ -65,12 +65,12 @@ fn fuzz_regression_3() {
                 RegisterSpan::new(Register::from_i16(3)),
                 CompiledFunc::from_u32(0),
             ),
+            Instruction::branch_table(Register::from_i16(5), 2),
             Instruction::copy_span_non_overlapping(
                 RegisterSpan::new(Register::from_i16(0)),
                 RegisterSpan::new(Register::from_i16(2)),
                 3,
             ),
-            Instruction::branch_table(Register::from_i16(5), 2),
             Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter_u16(3)),
             Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter_u16(3)),
         ])
@@ -369,7 +369,7 @@ fn fuzz_regression_15_01_codegen() {
             //   stores its `index` result.
             ExpectedFunc::new([
                 Instruction::i32_wrap_i64(Register::from_i16(1), Register::from_i16(0)),
-                Instruction::branch_table(Register::from_i16(0), 3),
+                Instruction::branch_table(Register::from_i16(1), 3),
                 Instruction::copy_imm32(Register::from_i16(1), 10.0_f32),
                 Instruction::branch(BranchOffset::from(3)),
                 Instruction::return_reg(1),
@@ -416,12 +416,12 @@ fn fuzz_regression_15_02() {
             // Note: The bug is that `copy2` overwrites `i32_wrap_i64` which is the `index` of the `br_table`.
             ExpectedFunc::new([
                 Instruction::i32_wrap_i64(Register::from_i16(1), Register::from_i16(0)),
+                Instruction::branch_table(Register::from_i16(1), 3),
                 Instruction::copy2(
                     RegisterSpan::new(Register::from_i16(1)),
                     Register::from_i16(-1),
                     Register::from_i16(-2),
                 ),
-                Instruction::branch_table(Register::from_i16(1), 3),
                 Instruction::branch(BranchOffset::from(3)),
                 Instruction::return_span(RegisterSpan::new(Register::from_i16(1)).iter_u16(2)),
                 Instruction::branch(BranchOffset::from(1)),
