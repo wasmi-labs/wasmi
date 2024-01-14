@@ -57,6 +57,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes an optional copy instruction at `ip`.
     ///
     /// Does nothing if there is no `copy` instruction at `ip`.
+    #[inline(never)]
     fn execute_optional_copy_instr(&mut self) {
         match *self.ip.get() {
             Instruction::Copy { result, value } => self.execute_copy(result, value),
