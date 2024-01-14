@@ -40,7 +40,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.branch_to(offset)
     }
 
-    #[inline(never)]
+    #[inline(always)]
     pub fn execute_branch_table(&mut self, index: Register, len_targets: Const32<u32>) {
         let index: u32 = self.get_register_as(index);
         // The index of the default target which is the last target of the slice.
@@ -57,7 +57,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes an optional copy instruction at `ip`.
     ///
     /// Does nothing if there is no `copy` instruction at `ip`.
-    #[inline(always)]
+    #[inline(never)]
     fn execute_optional_copy_instr(&mut self) {
         match *self.ip.get() {
             Instruction::Copy { result, value } => self.execute_copy(result, value),
