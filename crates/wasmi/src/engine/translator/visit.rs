@@ -511,14 +511,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 return self.visit_br(chosen_target);
             }
         };
-        // The Wasm specification mandates that all `br_table` targets have the same
-        // branch parameters so we calculate the branch parameters of the default target.
-        let default_branch_params = self
-            .alloc
-            .control_stack
-            .acquire_target(default_target)
-            .control_frame()
-            .branch_params(&engine);
         // Add `br_table` targets to `br_table_targets` buffer including default target.
         // This allows us to uniformely treat all `br_table` targets the same and only parse once.
         self.alloc.br_table_targets.clear();
@@ -526,9 +518,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             self.alloc.br_table_targets.push(target?);
         }
         self.alloc.br_table_targets.push(default_target);
-        // We check if branch parameters for all `br_table` targets are the same
-        // because this allows us to encode the `br_table` a bit more efficiently
-        // and is a relatively common case.
+        // We check if all `br_table` targets expect their results at the same
+        // registers which allows us to encode the `br_table` more efficiently
+        // by using a single copy instruction before branching instead of having
+        // to copy in each branch.
+        let default_branch_params = self
+            .alloc
+            .control_stack
+            .acquire_target(default_target)
+            .control_frame()
+            .branch_params(&engine);
         let same_branch_params = self.alloc.br_table_targets.iter().copied().all(|target| {
             match self.alloc.control_stack.acquire_target(target) {
                 AcquiredTarget::Return(_) => {
@@ -548,8 +547,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             // In both cases it is sufficient to copy values to the destination of
             // the default branch target and encode the `br_table` with a series of
             // simple direct branches without any further copy instructions.
-            self.translate_copy_branch_params(default_branch_params)?;
             self.push_base_instr(Instruction::branch_table(index, targets.len() + 1))?;
+            self.translate_copy_branch_params(default_branch_params)?;
             let return_instr = match default_branch_params.len() {
                 0 => Instruction::Return,
                 1 => Instruction::return_reg(default_branch_params.span().head()),

@@ -2,10 +2,11 @@ use super::*;
 use crate::{
     core::TrapCode,
     engine::{
-        bytecode::{BranchOffset, BranchOffset16, RegisterSpan},
+        bytecode::{BranchOffset, BranchOffset16, GlobalIdx, RegisterSpan},
         CompiledFunc,
     },
 };
+use wasmi_core::F32;
 
 #[test]
 #[cfg_attr(miri, ignore)]
@@ -64,12 +65,12 @@ fn fuzz_regression_3() {
                 RegisterSpan::new(Register::from_i16(3)),
                 CompiledFunc::from_u32(0),
             ),
+            Instruction::branch_table(Register::from_i16(5), 2),
             Instruction::copy_span_non_overlapping(
                 RegisterSpan::new(Register::from_i16(0)),
                 RegisterSpan::new(Register::from_i16(2)),
                 3,
             ),
-            Instruction::branch_table(Register::from_i16(5), 2),
             Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter_u16(3)),
             Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter_u16(3)),
         ])
@@ -350,6 +351,142 @@ fn fuzz_regression_14() {
                 Instruction::return_reg2(2, -1),
             ])
             .consts([0_i32]),
+        )
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_15_01_codegen() {
+    let wat = include_str!("fuzz_15_01.wat");
+    let wasm = wat2wasm(wat);
+    TranslationTest::new(wasm)
+        .expect_func(
+            // Note:
+            //
+            // - The bug is that `copy_imm32` overwrites `i32_wrap_i64` which is the `index` of the `br_table`.
+            // - Furthermore `br_table` somehow uses `reg(0)` for `index` instead of `reg(1)` where `i32_wrap_i64`
+            //   stores its `index` result.
+            ExpectedFunc::new([
+                Instruction::i32_wrap_i64(Register::from_i16(1), Register::from_i16(0)),
+                Instruction::branch_table(Register::from_i16(1), 3),
+                Instruction::copy_imm32(Register::from_i16(1), 10.0_f32),
+                Instruction::branch(BranchOffset::from(3)),
+                Instruction::return_reg(1),
+                Instruction::branch(BranchOffset::from(1)),
+                Instruction::Trap(TrapCode::UnreachableCodeReached),
+            ]),
+        )
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_15_01_execute() {
+    // Note: we can remove this test case once the bug is fixed
+    //       since this is a codegen bug and not an executor bug.
+    use crate::{Engine, Linker, Store};
+    let wat = include_str!("fuzz_15_01.wat");
+    let wasm = wat2wasm(wat);
+    let engine = Engine::default();
+    let mut store = <Store<()>>::new(&engine, ());
+    let linker = Linker::new(&engine);
+    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    let func = instance
+        .get_func(&store, "")
+        .unwrap()
+        .typed::<i64, F32>(&store)
+        .unwrap();
+    let result = func.call(&mut store, 1).unwrap();
+    assert_eq!(result, 10.0);
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_15_02() {
+    let wat = include_str!("fuzz_15_02.wat");
+    let wasm = wat2wasm(wat);
+    TranslationTest::new(wasm)
+        .expect_func(
+            // Note: The bug is that `copy2` overwrites `i32_wrap_i64` which is the `index` of the `br_table`.
+            ExpectedFunc::new([
+                Instruction::i32_wrap_i64(Register::from_i16(1), Register::from_i16(0)),
+                Instruction::branch_table(Register::from_i16(1), 3),
+                Instruction::copy2(
+                    RegisterSpan::new(Register::from_i16(1)),
+                    Register::from_i16(-1),
+                    Register::from_i16(-2),
+                ),
+                Instruction::branch(BranchOffset::from(3)),
+                Instruction::return_span(RegisterSpan::new(Register::from_i16(1)).iter_u16(2)),
+                Instruction::branch(BranchOffset::from(1)),
+                Instruction::Trap(TrapCode::UnreachableCodeReached),
+            ])
+            .consts([10.0_f32, 20.0_f32]),
+        )
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_15_03() {
+    let wat = include_str!("fuzz_15_03.wat");
+    let wasm = wat2wasm(wat);
+    TranslationTest::new(wasm)
+        .expect_func(
+            // Note: The bug is that `copy2` overwrites `i32_wrap_i64` which is the `index` of the `br_table`.
+            ExpectedFunc::new([
+                Instruction::global_get(Register::from_i16(1), GlobalIdx::from(0)),
+                Instruction::global_get(Register::from_i16(2), GlobalIdx::from(0)),
+                Instruction::i32_wrap_i64(Register::from_i16(3), Register::from_i16(0)),
+                Instruction::branch_table(Register::from_i16(3), 4),
+                Instruction::branch(BranchOffset::from(4)),
+                Instruction::branch(BranchOffset::from(5)),
+                Instruction::branch(BranchOffset::from(2)),
+                Instruction::branch(BranchOffset::from(5)),
+                Instruction::copy2(
+                    RegisterSpan::new(Register::from_i16(3)),
+                    Register::from_i16(-1),
+                    Register::from_i16(-2),
+                ),
+                Instruction::branch(BranchOffset::from(5)),
+                Instruction::copy2(
+                    RegisterSpan::new(Register::from_i16(2)),
+                    Register::from_i16(-1),
+                    Register::from_i16(-2),
+                ),
+                Instruction::branch(BranchOffset::from(5)),
+                Instruction::copy2(
+                    RegisterSpan::new(Register::from_i16(1)),
+                    Register::from_i16(-1),
+                    Register::from_i16(-2),
+                ),
+                Instruction::branch(BranchOffset::from(5)),
+                Instruction::i32_add(
+                    Register::from_i16(3),
+                    Register::from_i16(3),
+                    Register::from_i16(4),
+                ),
+                Instruction::return_reg(Register::from_i16(3)),
+                Instruction::i32_mul(
+                    Register::from_i16(2),
+                    Register::from_i16(2),
+                    Register::from_i16(3),
+                ),
+                Instruction::return_reg(Register::from_i16(2)),
+                Instruction::i32_xor(
+                    Register::from_i16(1),
+                    Register::from_i16(1),
+                    Register::from_i16(2),
+                ),
+                Instruction::return_reg(Register::from_i16(1)),
+            ])
+            .consts([10_i32, 20_i32]),
         )
         .run()
 }

@@ -638,7 +638,8 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// Must be followed `len_targets` times by any of
+    /// 1. May be followed by one of the copy instructions.
+    /// 1. Must be followed `len_targets` times by any of:
     ///
     /// - [`Instruction::Branch`]
     /// - [`Instruction::Return`]
