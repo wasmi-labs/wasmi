@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1705073731299,
+  "lastUpdate": 1705246259591,
   "repoUrl": "https://github.com/paritytech/wasmi",
   "entries": {
     "Wasmi criterion benchmark": [
@@ -26081,6 +26081,408 @@ window.BENCHMARK_DATA = {
             "name": "overhead/call/untyped/16",
             "value": 2518529,
             "range": "± 5165",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "robin.freyler@gmail.com",
+            "name": "Robin Freyler",
+            "username": "Robbepop"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a42f7141c55595efa770108219c9fe7a11a85480",
+          "message": "Fix codegen bug with Wasm `br_table` translation (#888)\n\n* add new regression tests\r\n\r\n* rename test cases\r\n\r\n* adjust test a bit\r\n\r\n* add execution regression test case\r\n\r\n* rename test case\r\n\r\n* add bigger test (not actually testing the same thing)\r\n\r\n* fix codegen bug in br_table\r\n\r\nWe fixed this by simply flipping copy and br_table in the faulty codegen case. This required us to implement handling for an optional copy instruction following the br_table.\r\n\r\n* adjust existing test cases for new br_table codegen\r\n\r\n* add #[inline(never)] to prevent performance regression\r\n\r\n* update BrTable docs\r\n\r\n* apply rustftm\r\n\r\n* change inline annotations\r\n\r\nBefore this change the Wasm performance regression was pretty big according to our benchmarks. So this is a trial to fix it.\r\n\r\n* Revert \"change inline annotations\"\r\n\r\nThis reverts commit de4f0d0f1bc480200a09775bd92935f9c234d17f.\r\n\r\n* move parameter bytecodes back\r\n\r\n* Revert \"move parameter bytecodes back\"\r\n\r\nThis reverts commit 94f316c6a404e094a8d87c3b85ca07ec5bfe0634.\r\n\r\n* add some #[inline] annotations\r\n\r\n* Revert \"add some #[inline] annotations\"\r\n\r\nThis reverts commit 43114fcba2b62aaa735ee47cf464d62820bccfd7.\r\n\r\n* add #[inline(never)] to some call instructions",
+          "timestamp": "2024-01-14T16:22:14+01:00",
+          "tree_id": "adb60f3b055a1f4a54bcb2114a651ab2ff2a5e8c",
+          "url": "https://github.com/paritytech/wasmi/commit/a42f7141c55595efa770108219c9fe7a11a85480"
+        },
+        "date": 1705246259568,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "translate/wasm_kernel/checked/eager/default",
+            "value": 5184397,
+            "range": "± 18950",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/checked/eager/fuel",
+            "value": 5338929,
+            "range": "± 43785",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/checked/lazy-translation/default",
+            "value": 2443953,
+            "range": "± 7626",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/checked/lazy/default",
+            "value": 427096,
+            "range": "± 2804",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/wasm_kernel/unchecked/eager/default",
+            "value": 4277811,
+            "range": "± 14521",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/checked/eager/default",
+            "value": 78747386,
+            "range": "± 787105",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/checked/eager/fuel",
+            "value": 83757010,
+            "range": "± 352138",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/checked/lazy-translation/default",
+            "value": 33173123,
+            "range": "± 183049",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/checked/lazy/default",
+            "value": 4124891,
+            "range": "± 57842",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/spidermonkey/unchecked/eager/default",
+            "value": 65619972,
+            "range": "± 97047",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/checked/eager/default",
+            "value": 3757700,
+            "range": "± 8359",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/checked/eager/fuel",
+            "value": 4019125,
+            "range": "± 9603",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/checked/lazy-translation/default",
+            "value": 1538067,
+            "range": "± 6445",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/checked/lazy/default",
+            "value": 234813,
+            "range": "± 4667",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/pulldown_cmark/unchecked/eager/default",
+            "value": 3170838,
+            "range": "± 7349",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/checked/eager/default",
+            "value": 1344498,
+            "range": "± 7876",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/checked/eager/fuel",
+            "value": 1450416,
+            "range": "± 5815",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/checked/lazy-translation/default",
+            "value": 547276,
+            "range": "± 2112",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/checked/lazy/default",
+            "value": 36669,
+            "range": "± 359",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/bz2/unchecked/eager/default",
+            "value": 1115112,
+            "range": "± 6136",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/checked/eager/default",
+            "value": 137139,
+            "range": "± 883",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/checked/eager/fuel",
+            "value": 143952,
+            "range": "± 778",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/checked/lazy-translation/default",
+            "value": 65114,
+            "range": "± 428",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/checked/lazy/default",
+            "value": 19064,
+            "range": "± 53",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc20/unchecked/eager/default",
+            "value": 114672,
+            "range": "± 1317",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/checked/eager/default",
+            "value": 195064,
+            "range": "± 503",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/checked/eager/fuel",
+            "value": 203750,
+            "range": "± 737",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/checked/lazy-translation/default",
+            "value": 90667,
+            "range": "± 277",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/checked/lazy/default",
+            "value": 22794,
+            "range": "± 232",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc721/unchecked/eager/default",
+            "value": 159878,
+            "range": "± 562",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/checked/eager/default",
+            "value": 281813,
+            "range": "± 1866",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/checked/eager/fuel",
+            "value": 300363,
+            "range": "± 1272",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/checked/lazy-translation/default",
+            "value": 127056,
+            "range": "± 531",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/checked/lazy/default",
+            "value": 26140,
+            "range": "± 190",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "translate/erc1155/unchecked/eager/default",
+            "value": 234882,
+            "range": "± 1535",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "instantiate/wasm_kernel",
+            "value": 55037,
+            "range": "± 901",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/tiny_keccak",
+            "value": 352516,
+            "range": "± 3181",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/rev_complement",
+            "value": 438602,
+            "range": "± 947",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/regex_redux",
+            "value": 583044,
+            "range": "± 4146",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/count_until",
+            "value": 5372069,
+            "range": "± 16751",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/br_table",
+            "value": 1588389,
+            "range": "± 9769",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/trunc_f2i",
+            "value": 642399,
+            "range": "± 1206",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global/bump",
+            "value": 1315531,
+            "range": "± 875",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/global/get_const",
+            "value": 480983,
+            "range": "± 1056",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial/rec",
+            "value": 695766,
+            "range": "± 1802",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/factorial/iter",
+            "value": 221425,
+            "range": "± 1434",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/call/rec",
+            "value": 167509,
+            "range": "± 1669",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_scan",
+            "value": 187813,
+            "range": "± 1046",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/recursive_trap",
+            "value": 16197,
+            "range": "± 34",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/call/host/1",
+            "value": 51851,
+            "range": "± 1065",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fuse",
+            "value": 7080688,
+            "range": "± 5871",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/divrem",
+            "value": 6226245,
+            "range": "± 12916",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/rec",
+            "value": 6240752,
+            "range": "± 10618",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/tail",
+            "value": 1329392,
+            "range": "± 2116",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/fibonacci/iter",
+            "value": 1334073,
+            "range": "± 834",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/is_even/rec",
+            "value": 1105315,
+            "range": "± 23682",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/sum_bytes",
+            "value": 1026373,
+            "range": "± 5653",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/fill_bytes",
+            "value": 1018163,
+            "range": "± 1328",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "execute/memory/vec_add",
+            "value": 2960878,
+            "range": "± 7223",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/typed/0",
+            "value": 1283556,
+            "range": "± 14215",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/typed/16",
+            "value": 1689931,
+            "range": "± 10165",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/untyped/0",
+            "value": 1723899,
+            "range": "± 15303",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "overhead/call/untyped/16",
+            "value": 2472378,
+            "range": "± 5931",
             "unit": "ns/iter"
           }
         ]
