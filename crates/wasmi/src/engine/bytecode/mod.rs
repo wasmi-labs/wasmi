@@ -637,7 +637,7 @@ pub enum Instruction {
     /// A Wasm `br_table` instruction.
     ///
     /// # Encoding
-    /// 
+    ///
     /// 1. May be followed by one of the copy instructions.
     /// 1. Must be followed `len_targets` times by any of:
     ///
