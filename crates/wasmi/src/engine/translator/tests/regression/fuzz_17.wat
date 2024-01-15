@@ -1,5 +1,5 @@
 (module
-  (func (result i32 f64 f64)
+  (func (export "") (result i32 f64 f64)
     (local i64 f32)
     i32.const -1
     local.get 0
@@ -12,5 +12,4 @@
     unreachable
   )
   (memory 10)
-  (export "" (func 0))
 )

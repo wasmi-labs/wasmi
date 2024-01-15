@@ -1,5 +1,5 @@
 (module
-  (func
+  (func (export "")
     (local f64)
     i32.const 0x7FFFFFFF
     local.get 0
@@ -12,5 +12,4 @@
   )
   (memory 0 10)
   (global (mut f64) f64.const 1.0)
-  (export "" (func 0))
 )
