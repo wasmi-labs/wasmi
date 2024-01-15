@@ -41,6 +41,33 @@ jobs:
       - name: Build (wasm32)
         run: cargo build --workspace --lib --no-default-features --target wasm32-unknown-unknown --exclude wasmi_cli --exclude wasmi_wasi
 
+  test-asan:
+    name: Test (Address Sanitizer)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+      - uses: dtolnay/rust-toolchain@nightly
+      - name: Set up Cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            ~/target/
+          key: ${{ runner.os }}-cargo-test-asan-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-test-asan-
+      - name: Checkout Submodules
+        run: git submodule update --init --recursive
+      - name: Show Toolchain
+        run: rustup show
+      - name: Test
+        env:
+          RUSTFLAGS: "--cfg debug_assertions -Zsanitizer=address"
+        run: cargo test --workspace --tests -Zbuild-std --target x86_64-unknown-linux-gnu
+
   test:
     name: Test
     strategy:
