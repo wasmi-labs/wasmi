@@ -7,7 +7,7 @@
     global.get 0
     local.tee 0
     global.set 0
-    i64.store ;; offender
+    i64.store
     unreachable
   )
   (memory 0 10)
