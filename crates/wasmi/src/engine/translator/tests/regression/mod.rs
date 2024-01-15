@@ -494,6 +494,9 @@ fn fuzz_regression_15_03() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_16() {
+    // The bug in this regression test was a forgotten adjustment
+    // for the preserved local value causing the `value` register
+    // of the `i64_store_at` instruction to be 32676 instead of 2.
     let wat = include_str!("fuzz_16.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
@@ -510,6 +513,9 @@ fn fuzz_regression_16() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_17() {
+    // The bug in this regression test was a forgotten adjustment
+    // for the preserved local value causing the `value` register
+    // of the `i64_store_at` instruction to be 32676 instead of 2.
     let wat = include_str!("fuzz_17.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
