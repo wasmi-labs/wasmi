@@ -490,3 +490,41 @@ fn fuzz_regression_15_03() {
         )
         .run()
 }
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_16() {
+    // The bug in this regression test was a forgotten adjustment
+    // for the preserved local value causing the `value` register
+    // of the `i64_store_at` instruction to be 32676 instead of 2.
+    let wat = include_str!("fuzz_16.wat");
+    let wasm = wat2wasm(wat);
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::copy(2, 0),
+            Instruction::global_get(Register::from_i16(0), GlobalIdx::from(0)),
+            Instruction::global_set(GlobalIdx::from(0), Register::from_i16(0)),
+            Instruction::i64_store_at(Const32::from(2147483647), Register::from_i16(2)),
+            Instruction::Trap(TrapCode::UnreachableCodeReached),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_regression_17() {
+    // The bug in this regression test was a forgotten adjustment
+    // for the preserved local value causing the `value` register
+    // of the `i64_store_at` instruction to be 32676 instead of 2.
+    let wat = include_str!("fuzz_17.wat");
+    let wasm = wat2wasm(wat);
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::copy(2, 0),
+            Instruction::copy_i64imm32(Register::from_i16(0), 2),
+            Instruction::copy_imm32(Register::from_i16(1), -1.0_f32),
+            Instruction::i64_store_at(Const32::from(4294967295), Register::from_i16(2)),
+            Instruction::Trap(TrapCode::UnreachableCodeReached),
+        ])
+        .run()
+}
