@@ -595,8 +595,8 @@ impl VisitInputRegisters for StoreInstr {
 }
 
 impl VisitInputRegisters for StoreAtInstr<Register> {
-    fn visit_input_registers(&mut self, _f: impl FnMut(&mut Register)) {
-        // Nothing to do.
+    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
+        f(&mut self.value);
     }
 }
 
