@@ -123,34 +123,15 @@ Refer to the [Wasmi crate docs](https://docs.rs/wasmi) to learn how to use the [
 
 ## Development
 
-### Building
+### Build & Test
 
-Clone Wasmi from our official repository and then build using the standard `cargo` procedure:
-
-```console
-git clone https://github.com/paritytech/wasmi.git
-cd wasmi
-cargo build
-```
-
-### Testing
-
-In order to test Wasmi you need to initialize and update the Git submodules using:
-
-```console
-git submodule update --init --recursive
-```
-
-Alternatively you can provide `--recursive` flag to `git clone` command while cloning the repository:
+Clone the Wasmi repository and build using `cargo`:
 
 ```console
 git clone https://github.com/paritytech/wasmi.git --recursive
-```
-
-After Git submodules have been initialized and updated you can test using:
-
-```console
-cargo test --workspace
+cd wasmi
+cargo build
+cargo test
 ```
 
 ### Benchmarks
@@ -161,15 +142,7 @@ In order to benchmark Wasmi use the following command:
 cargo bench
 ```
 
-You can filter which set of benchmarks to run:
-- `cargo bench translate`
-  - Only runs benchmarks concerned with WebAssembly module translation.
-
-- `cargo bench instantiate`
-  - Only runs benchmarks concerned with WebAssembly module instantiation.
-
-- `cargo bench execute`
-  - Only runs benchmarks concerned with executing WebAssembly functions.
+Use `translate`, `instantiate`, `execute` or `overhead` filters to only run benchmarks that test performance of Wasm translation, instantiation, execution or miscellaneous overhead respectively, e.g. `cargo bench execute`.
 
 We maintain a timeline for benchmarks of every commit to `master` that [can be viewed here](https://paritytech.github.io/wasmi/benchmarks/).
 
