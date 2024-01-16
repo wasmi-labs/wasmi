@@ -15,24 +15,17 @@
 [license-mit-badge]: https://img.shields.io/badge/license-MIT-blue.svg
 [license-apache-badge]: https://img.shields.io/badge/license-APACHE-orange.svg
 
-# Wasmi- WebAssembly (Wasm) Interpreter
+# Wasmi - WebAssembly (Wasm) Interpreter
 
 <p align="center">
   <img src="./resources/wasmi-logo.png" width="100" height="100">
 </p>
 
-Wasmi is an efficient WebAssembly interpreter with low-overhead and support
-for embedded environment such as WebAssembly itself.
+Wasmi is an efficient and lightweight WebAssembly interpreter for embedded systems.
 
-At Parity we are using Wasmi in [Substrate](https://github.com/paritytech/substrate)
-as the execution engine for our WebAssembly based smart contracts.
-Furthermore we run Wasmi within the Substrate runtime which is a WebAssembly
-environment itself and driven via [Wasmtime] at the time of this writing.
-As such Wasmi's implementation requires a high degree of correctness and
-Wasm specification conformance.
-
-Since Wasmi is relatively lightweight compared to other Wasm virtual machines
-such as Wasmtime it is also a decent option for initial prototyping.
+At Parity we use Wasmi in the [Polkadot SDK](https://github.com/paritytech/polkadot-sdk)
+as the execution engine that runs WebAssembly based smart contracts.
+Moreover, Wasmi is itself compiled to WebAssembly and executed inside of the [Wasmtime] sandbox for enhanced security.
 
 [Wasmtime]: https://github.com/bytecodealliance/wasmtime
 
@@ -40,13 +33,12 @@ such as Wasmtime it is also a decent option for initial prototyping.
 
 The following list states some of the distinct features of Wasmi.
 
-- Focus on simple, correct and deterministic WebAssembly execution.
-- Can itself run inside of WebAssembly.
-- Low-overhead and cross-platform WebAssembly runtime.
+- Simple, correct and deterministic execution of WebAssembly.
+- Low-overhead and cross-platform WebAssembly runtime for embedded environments.
+- JIT bomb resisting translation.
 - Loosely mirrors the [Wasmtime API](https://docs.rs/wasmtime/).
-- Resumable function calls.
+- 100% WebAssembly spec testsuite compliance.
 - Built-in support for fuel metering.
-- 100% official WebAssembly spec testsuite compliance.
 
 ## WebAssembly Proposals
 
@@ -68,6 +60,7 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 | [`multi-memory`] | 📅 | Planned but not yet implemented. [(#776)] |
 | [`threads`] | 📅 | Planned but not yet implemented. [(#777)] |
 | [`relaxed-simd`] | ❌ | Unlikely to be supported since `simd` is unlikely to be supported. |
+| [`component-model`] | 📅 | Planned but not yet implemented. [(#897)] |
 | | |
 | [WASI] | 👨‍🔬 | Experimental support via the [`wasmi_wasi` crate] or the Wasmi CLI application. |
 
@@ -85,6 +78,7 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 [`multi-memory`]: https://github.com/WebAssembly/multi-memory
 [`threads`]: https://github.com/WebAssembly/threads
 [`relaxed-simd`]: https://github.com/WebAssembly/relaxed-simd
+[`component-model`]: https://github.com/WebAssembly/component-model
 
 [WASI]: https://github.com/WebAssembly/WASI
 [`wasmi_wasi` crate]: ./crates/wasi
@@ -101,57 +95,36 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 [(#775)]: https://github.com/paritytech/wasmi/pull/775
 [(#776)]: https://github.com/paritytech/wasmi/pull/776
 [(#777)]: https://github.com/paritytech/wasmi/pull/777
+[(#897)]: https://github.com/paritytech/wasmi/pull/897
 
 ## Usage
 
 ### As CLI Application
 
-Install the newest Wasmi CLI version via:
+Install the newest Wasmi CLI version:
 ```console
 cargo install wasmi_cli
 ```
-Then run arbitrary `wasm32-unknown-unknown` Wasm blobs via:
+Run `wasm32-unknown-unknown` or `wasm32-wasi` Wasm binaries:
 ```console
-wasmi_cli <WASM_FILE> <FUNC_NAME> [<FUNC_ARGS>]*
+wasmi_cli <WASM_FILE> --invoke <FUNC_NAME> [<FUNC_ARGS>]*
 ```
 
 ### As Rust Library
 
-Any Rust crate can depend on the [Wasmi crate](https://crates.io/crates/wasmi)
-in order to integrate a WebAssembly intepreter into their stack.
-
-Refer to the [Wasmi crate docs](https://docs.rs/wasmi) to learn how to use the Wasmi crate as library.
+Refer to the [Wasmi crate docs](https://docs.rs/wasmi) to learn how to use the [Wasmi crate](https://crates.io/crates/wasmi) as library.
 
 ## Development
 
-### Building
+### Build & Test
 
-Clone Wasmi from our official repository and then build using the standard `cargo` procedure:
-
-```console
-git clone https://github.com/paritytech/wasmi.git
-cd wasmi
-cargo build
-```
-
-### Testing
-
-In order to test Wasmi you need to initialize and update the Git submodules using:
-
-```console
-git submodule update --init --recursive
-```
-
-Alternatively you can provide `--recursive` flag to `git clone` command while cloning the repository:
+Clone the Wasmi repository and build using `cargo`:
 
 ```console
 git clone https://github.com/paritytech/wasmi.git --recursive
-```
-
-After Git submodules have been initialized and updated you can test using:
-
-```console
-cargo test --workspace
+cd wasmi
+cargo build
+cargo test
 ```
 
 ### Benchmarks
@@ -162,28 +135,17 @@ In order to benchmark Wasmi use the following command:
 cargo bench
 ```
 
-You can filter which set of benchmarks to run:
-- `cargo bench translate`
-  - Only runs benchmarks concerned with WebAssembly module translation.
-
-- `cargo bench instantiate`
-  - Only runs benchmarks concerned with WebAssembly module instantiation.
-
-- `cargo bench execute`
-  - Only runs benchmarks concerned with executing WebAssembly functions.
+Use `translate`, `instantiate`, `execute` or `overhead` filters to only run benchmarks that test performance of Wasm translation, instantiation, execution or miscellaneous overhead respectively, e.g. `cargo bench execute`.
 
 We maintain a timeline for benchmarks of every commit to `master` that [can be viewed here](https://paritytech.github.io/wasmi/benchmarks/).
 
 ## Supported Platforms
 
-Supported platforms are primarily Linux, MacOS, Windows and WebAssembly.  
-Other platforms might be working but are not guaranteed to be so by the Wasmi maintainers.
+Wasmi supports a wide variety of architectures and platforms.
 
-Use the following command in order to produce a WebAssembly build:
-
-```console
-cargo build --no-default-features --target wasm32-unknown-unknown
-```
+- Fore more details see this [list of supported platforms for Rust](https://doc.rust-lang.org/stable/rustc/platform-support.html).
+- **Note:** Wasmi can be used in `no_std` embedded environments, thus not requiring the standard library (`std`).
+- Only some platforms are checked in CI and guaranteed to be fully working by the Wasmi maintainers.
 
 ## Production Builds
 
@@ -205,13 +167,13 @@ slightly smaller Wasm binaries.
 
 ## License
 
-Wasmi is primarily distributed under the terms of both the MIT
-license and the APACHE license (Version 2.0), at your choice.
+Licensed under either of
 
-See `LICENSE-APACHE` and `LICENSE-MIT` for details.
+  * Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or <http://www.apache.org/licenses/LICENSE-2.0>)
+  * MIT license ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
+
+at your option.
 
 ## Contribution
 
-Unless you explicitly state otherwise, any contribution intentionally submitted
-for inclusion in Wasmi by you, as defined in the APACHE 2.0 license, shall be
-dual licensed as above, without any additional terms or conditions.
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
