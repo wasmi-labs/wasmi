@@ -108,21 +108,18 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 
 ### As CLI Application
 
-Install the newest Wasmi CLI version via:
+Install the newest Wasmi CLI version:
 ```console
 cargo install wasmi_cli
 ```
-Then run arbitrary `wasm32-unknown-unknown` Wasm blobs via:
+Run `wasm32-unknown-unknown` or `wasm32-wasi` Wasm binaries:
 ```console
-wasmi_cli <WASM_FILE> <FUNC_NAME> [<FUNC_ARGS>]*
+wasmi_cli <WASM_FILE> --invoke <FUNC_NAME> [<FUNC_ARGS>]*
 ```
 
 ### As Rust Library
 
-Any Rust crate can depend on the [Wasmi crate](https://crates.io/crates/wasmi)
-in order to integrate a WebAssembly intepreter into their stack.
-
-Refer to the [Wasmi crate docs](https://docs.rs/wasmi) to learn how to use the Wasmi crate as library.
+Refer to the [Wasmi crate docs](https://docs.rs/wasmi) to learn how to use the [Wasmi crate](https://crates.io/crates/wasmi) as library.
 
 ## Development
 
