@@ -15,7 +15,7 @@
 [license-mit-badge]: https://img.shields.io/badge/license-MIT-blue.svg
 [license-apache-badge]: https://img.shields.io/badge/license-APACHE-orange.svg
 
-# Wasmi- WebAssembly (Wasm) Interpreter
+# Wasmi - WebAssembly (Wasm) Interpreter
 
 <p align="center">
   <img src="./resources/wasmi-logo.png" width="100" height="100">
