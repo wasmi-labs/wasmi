@@ -67,6 +67,7 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 | [`multi-memory`] | 📅 | Planned but not yet implemented. [(#776)] |
 | [`threads`] | 📅 | Planned but not yet implemented. [(#777)] |
 | [`relaxed-simd`] | ❌ | Unlikely to be supported since `simd` is unlikely to be supported. |
+| [`component-model`] | 📅 | Planned but not yet implemented. [(#897)] |
 | | |
 | [WASI] | 👨‍🔬 | Experimental support via the [`wasmi_wasi` crate] or the Wasmi CLI application. |
 
@@ -84,6 +85,7 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 [`multi-memory`]: https://github.com/WebAssembly/multi-memory
 [`threads`]: https://github.com/WebAssembly/threads
 [`relaxed-simd`]: https://github.com/WebAssembly/relaxed-simd
+[`component-model`]: https://github.com/WebAssembly/component-model
 
 [WASI]: https://github.com/WebAssembly/WASI
 [`wasmi_wasi` crate]: ./crates/wasi
@@ -100,6 +102,7 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 [(#775)]: https://github.com/paritytech/wasmi/pull/775
 [(#776)]: https://github.com/paritytech/wasmi/pull/776
 [(#777)]: https://github.com/paritytech/wasmi/pull/777
+[(#897)]: https://github.com/paritytech/wasmi/pull/897
 
 ## Usage
 
