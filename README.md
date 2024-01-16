@@ -21,18 +21,11 @@
   <img src="./resources/wasmi-logo.png" width="100" height="100">
 </p>
 
-Wasmi is an efficient WebAssembly interpreter with low-overhead and support
-for embedded environment such as WebAssembly itself.
+Wasmi is an efficient and lightweight WebAssembly interpreter for embedded systems.
 
-At Parity we are using Wasmi in [Substrate](https://github.com/paritytech/substrate)
-as the execution engine for our WebAssembly based smart contracts.
-Furthermore we run Wasmi within the Substrate runtime which is a WebAssembly
-environment itself and driven via [Wasmtime] at the time of this writing.
-As such Wasmi's implementation requires a high degree of correctness and
-Wasm specification conformance.
-
-Since Wasmi is relatively lightweight compared to other Wasm virtual machines
-such as Wasmtime it is also a decent option for initial prototyping.
+At Parity we use Wasmi in the [Polkadot SDK](https://github.com/paritytech/polkadot-sdk)
+as the execution engine that runs WebAssembly based smart contracts.
+Moreover, Wasmi is itself compiled to WebAssembly and executed inside of the [Wasmtime] sandbox for enhanced security.
 
 [Wasmtime]: https://github.com/bytecodealliance/wasmtime
 
