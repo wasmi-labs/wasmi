@@ -141,14 +141,11 @@ We maintain a timeline for benchmarks of every commit to `master` that [can be v
 
 ## Supported Platforms
 
-Supported platforms are primarily Linux, MacOS, Windows and WebAssembly.  
-Other platforms might be working but are not guaranteed to be so by the Wasmi maintainers.
+Wasmi supports a wide variety of architectures and platforms.
 
-Use the following command in order to produce a WebAssembly build:
-
-```console
-cargo build --no-default-features --target wasm32-unknown-unknown
-```
+- Fore more details see this [list of supported platforms for Rust](https://doc.rust-lang.org/stable/rustc/platform-support.html).
+- **Note:** Wasmi can be used in `no_std` embedded environments, thus not requiring the standard library (`std`).
+- Only some platforms are checked in CI and guaranteed to be fully working by the Wasmi maintainers.
 
 ## Production Builds
 
