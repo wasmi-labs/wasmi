@@ -40,13 +40,12 @@ such as Wasmtime it is also a decent option for initial prototyping.
 
 The following list states some of the distinct features of Wasmi.
 
-- Focus on simple, correct and deterministic WebAssembly execution.
-- Can itself run inside of WebAssembly.
-- Low-overhead and cross-platform WebAssembly runtime.
+- Simple, correct and deterministic execution of WebAssembly.
+- Low-overhead and cross-platform WebAssembly runtime for embedded environments.
+- JIT bomb resisting translation.
 - Loosely mirrors the [Wasmtime API](https://docs.rs/wasmtime/).
-- Resumable function calls.
+- 100% WebAssembly spec testsuite compliance.
 - Built-in support for fuel metering.
-- 100% official WebAssembly spec testsuite compliance.
 
 ## WebAssembly Proposals
 
