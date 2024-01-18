@@ -172,7 +172,7 @@ pub struct ModuleInstance {
     funcs: RefCell<Vec<FuncRef>>,
     memories: RefCell<Vec<MemoryRef>>,
     globals: RefCell<Vec<GlobalRef>>,
-    pub(crate) exports: RefCell<BTreeMap<String, ExternVal>>,
+    pub exports: RefCell<BTreeMap<String, ExternVal>>,
 }
 
 impl ModuleInstance {
