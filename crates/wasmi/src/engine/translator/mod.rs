@@ -1130,7 +1130,7 @@ impl FuncTranslator {
     ///
     /// # Note
     ///
-    /// - Returns `Ok(true)` is the optmization was applied.
+    /// - Returns `Ok(true)` is the optimization was applied.
     /// - Returns `Ok(false)` is the optimization could not be applied.
     /// - Returns `Err(_)` if a translation error occurred.
     fn try_push_binary_instr_imm16<T>(
@@ -1242,9 +1242,9 @@ impl FuncTranslator {
     ///
     /// - The `make_instr_opt` closure allows to implement custom optimization
     ///   logic for the case that both operands are registers.
-    /// - The `make_instr_reg_imm_opt` closure allows to implement custom optmization
+    /// - The `make_instr_reg_imm_opt` closure allows to implement custom optimization
     ///   logic for the case that the right-hand side operand is a constant value.
-    /// - The `make_instr_imm_reg_opt` closure allows to implement custom optmization
+    /// - The `make_instr_imm_reg_opt` closure allows to implement custom optimization
     ///   logic for the case that the left-hand side operand is a constant value.
     ///
     /// # Usage
@@ -1314,9 +1314,9 @@ impl FuncTranslator {
     ///
     /// - The `make_instr_opt` closure allows to implement custom optimization
     ///   logic for the case that both operands are registers.
-    /// - The `make_instr_reg_imm_opt` closure allows to implement custom optmization
+    /// - The `make_instr_reg_imm_opt` closure allows to implement custom optimization
     ///   logic for the case that the right-hand side operand is a constant value.
-    /// - The `make_instr_imm_reg_opt` closure allows to implement custom optmization
+    /// - The `make_instr_imm_reg_opt` closure allows to implement custom optimization
     ///   logic for the case that the left-hand side operand is a constant value.
     ///
     /// # Usage
@@ -1428,7 +1428,7 @@ impl FuncTranslator {
     ///
     /// - The `make_instr_opt` closure allows to implement custom optimization
     ///   logic for the case that both operands are registers.
-    /// - The `make_instr_imm_opt` closure allows to implement custom optmization
+    /// - The `make_instr_imm_opt` closure allows to implement custom optimization
     ///   logic for the case that one of the operands is a constant value.
     ///
     /// # Usage
@@ -1486,7 +1486,7 @@ impl FuncTranslator {
     ///
     /// - The `make_instr_opt` closure allows to implement custom optimization
     ///   logic for the case that both operands are registers.
-    /// - The `make_instr_imm_opt` closure allows to implement custom optmization
+    /// - The `make_instr_imm_opt` closure allows to implement custom optimization
     ///   logic for the case that one of the operands is a constant value.
     ///
     /// # Usage
@@ -1541,7 +1541,7 @@ impl FuncTranslator {
     /// - Its various function arguments allow it to be used for generic Wasm types.
     /// - Applies constant evaluation if both operands are constant values.
     ///
-    /// - The `make_instr_imm_reg_opt` closure allows to implement custom optmization
+    /// - The `make_instr_imm_reg_opt` closure allows to implement custom optimization
     ///   logic for the case the shifted value operand is a constant value.
     ///
     /// # Usage
@@ -1611,7 +1611,7 @@ impl FuncTranslator {
     /// - Its various function arguments allow it to be used for `i32` and `i64` types.
     /// - Applies constant evaluation if both operands are constant values.
     ///
-    /// - The `make_instr_reg_imm_opt` closure allows to implement custom optmization
+    /// - The `make_instr_reg_imm_opt` closure allows to implement custom optimization
     ///   logic for the case the right-hand side operand is a constant value.
     ///
     /// # Usage
