@@ -852,8 +852,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let content = global_type.content();
         if let (Mutability::Const, Some(init_expr)) = (global_type.mutability(), init_value) {
             if let Some(value) = init_expr.eval_const() {
-                // Optmization: Access to immutable internally defined global variables
-                //              can be replaced with their constant initialization value.
+                // Optimization: Access to immutable internally defined global variables
+                //               can be replaced with their constant initialization value.
                 self.alloc.stack.push_const(TypedValue::new(content, value));
                 self.alloc.instr_encoder.reset_last_instr();
                 return Ok(());

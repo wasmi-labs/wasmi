@@ -283,7 +283,7 @@ impl DifferentialTarget for Wasmtime {
         use wasmtime::{Config, Engine, Linker, Module, Store, StoreLimitsBuilder};
         let mut config = Config::default();
         // We disabled backtraces since they sometimes become so large
-        // that the entire output is obliberated by them. Generally we are
+        // that the entire output is obliterated by them. Generally we are
         // more interested what kind of error occurred and now how an error
         // occurred.
         config.wasm_backtrace(false);
