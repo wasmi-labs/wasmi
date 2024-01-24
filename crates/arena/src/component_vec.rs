@@ -16,7 +16,7 @@ pub struct ComponentVec<Idx, T> {
 unsafe impl<Idx, T> Send for ComponentVec<Idx, T> where T: Send {}
 
 /// [`ComponentVec`] does not store `Idx` therefore it is `Sync` without its bound.
-unsafe impl<Idx, T> Sync for ComponentVec<Idx, T> where T: Send {}
+unsafe impl<Idx, T> Sync for ComponentVec<Idx, T> where T: Sync {}
 
 impl<Idx, T> Debug for ComponentVec<Idx, T>
 where
