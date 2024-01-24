@@ -688,12 +688,11 @@ impl<T> Linker<T> {
                     .cloned()
                     .ok_or_else(invalid_type)?;
                 if &found_type != expected_type {
-                    return Err(LinkerError::func_type_mismatch(
+                    return Err(Error::from(LinkerError::func_type_mismatch(
                         import_name,
                         expected_type,
                         &found_type,
-                    ))
-                    .map_err(Into::into);
+                    )));
                 }
                 let func = resolved
                     .as_func(&mut context)
@@ -732,12 +731,11 @@ impl<T> Linker<T> {
                     .ok_or_else(invalid_type)?;
                 let found_type = global.ty(context);
                 if &found_type != expected_type {
-                    return Err(LinkerError::global_type_mismatch(
+                    return Err(Error::from(LinkerError::global_type_mismatch(
                         import_name,
                         expected_type,
                         &found_type,
-                    ))
-                    .map_err(Into::into);
+                    )));
                 }
                 Ok(Extern::Global(global))
             }

@@ -829,7 +829,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 panic!("missing signature for call_indirect at index: {func_type:?}")
             });
         if actual_signature != expected_signature {
-            return Err(TrapCode::BadSignature).map_err(Into::into);
+            return Err(TrapCode::BadSignature);
         }
         self.call_func(skip, func, kind)
     }
@@ -838,7 +838,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     fn visit_unreachable(&mut self) -> Result<(), TrapCode> {
-        Err(TrapCode::UnreachableCodeReached).map_err(Into::into)
+        Err(TrapCode::UnreachableCodeReached)
     }
 
     #[inline(always)]
