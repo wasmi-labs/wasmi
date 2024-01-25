@@ -272,13 +272,16 @@ fn assert_results(context: &TestContext, span: Span, results: &[Value], expected
             (Value::ExternRef(externref), WastRetCore::RefNull(Some(HeapType::Extern))) => {
                 assert!(externref.is_null());
             }
-            (Value::ExternRef(externref), WastRetCore::RefExtern(expected)) => {
+            (Value::ExternRef(externref), WastRetCore::RefExtern(Some(expected))) => {
                 let value = externref
                     .data(context.store())
                     .expect("unexpected null element")
                     .downcast_ref::<u32>()
                     .expect("unexpected non-u32 data");
                 assert_eq!(value, expected);
+            }
+            (Value::ExternRef(externref), WastRetCore::RefExtern(None)) => {
+                assert!(externref.is_null());
             }
             (result, expected) => panic!(
                 "{}: encountered mismatch in evaluation. expected {:?} but found {:?}",
