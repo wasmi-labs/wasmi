@@ -17,7 +17,7 @@ use wast::{
 };
 
 /// Runs the Wasm test spec identified by the given name.
-pub fn run_wasm_spec_test(name: &str, file: &str, config: Config) {
+pub fn run_wasm_spec_test(name: &'static str, file: &'static str, config: Config) {
     let test = TestDescriptor::new(name, file);
     let mut context = TestContext::new(&test, config);
 

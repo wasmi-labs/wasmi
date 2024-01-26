@@ -5,9 +5,9 @@ use wast::token::Span;
 #[derive(Debug)]
 pub struct TestDescriptor {
     /// The path of the Wasm spec test `.wast` file.
-    path: String,
+    path: &'static str,
     /// The contents of the Wasm spec test `.wast` file.
-    file: String,
+    file: &'static str,
 }
 
 impl TestDescriptor {
@@ -16,10 +16,10 @@ impl TestDescriptor {
     /// # Errors
     ///
     /// If the corresponding Wasm test spec file cannot properly be read.
-    pub fn new(path: &str, file: &str) -> Self {
+    pub fn new(path: &'static str, file: &'static str) -> Self {
         Self {
-            path: path.into(),
-            file: file.into(),
+            path,
+            file,
         }
     }
 
