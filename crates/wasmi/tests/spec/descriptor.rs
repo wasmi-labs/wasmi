@@ -17,10 +17,7 @@ impl TestDescriptor {
     ///
     /// If the corresponding Wasm test spec file cannot properly be read.
     pub fn new(path: &'static str, file: &'static str) -> Self {
-        Self {
-            path,
-            file,
-        }
+        Self { path, file }
     }
 
     /// Returns the path of the Wasm spec test `.wast` file.
