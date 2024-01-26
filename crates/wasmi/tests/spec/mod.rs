@@ -18,13 +18,15 @@ macro_rules! define_tests {
         let config = $get_config:expr;
         let runner = $runner_fn:path;
 
-        $( $(#[$attr:meta])* fn $test_name:ident($file_name:expr); )*
+        $( $(#[$attr:meta])* fn $test_name:ident($file_name:literal); )*
     ) => {
         $(
             #[test]
             $( #[$attr] )*
             fn $test_name() {
-                $runner_fn(&format!("{}/{}", $test_folder, $file_name), $get_config)
+                let name: &'static ::core::primitive::str = ::core::concat!($test_folder, "/", $file_name);
+                let file: &'static ::core::primitive::str = self::blobs::$test_name();
+                $runner_fn(name, file, $get_config)
             }
         )*
     };
@@ -35,7 +37,7 @@ macro_rules! define_spec_tests {
         let config = $get_config:expr;
         let runner = $runner_fn:path;
 
-        $( $(#[$attr:meta])* fn $test_name:ident($file_name:expr); )*
+        $( $(#[$attr:meta])* fn $test_name:ident($file_name:literal); )*
     ) => {
         define_tests! {
             let folder = "testsuite";
@@ -185,6 +187,31 @@ macro_rules! expand_tests {
             fn wasm_utf8_invalid_encoding("utf8-invalid-encoding");
         }
     };
+}
+
+macro_rules! include_wasm_blobs {
+    (
+        let folder = $test_folder:literal;
+
+        $( $(#[$attr:meta])* fn $test_name:ident($file_name:literal); )*
+    ) => {
+        $(
+            $( #[$attr] )*
+            pub fn $test_name() -> &'static str {
+                ::core::include_str!(
+                    ::core::concat!($test_folder, "/", $file_name, ".wast")
+                )
+            }
+        )*
+    };
+}
+
+mod blobs {
+    expand_tests! {
+        include_wasm_blobs,
+
+        let folder = "testsuite";
+    }
 }
 
 expand_tests! {
