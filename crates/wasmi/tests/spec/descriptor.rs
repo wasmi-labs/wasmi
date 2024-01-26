@@ -1,7 +1,4 @@
-use std::{
-    fmt::{self, Display},
-    fs,
-};
+use std::fmt::{self, Display};
 use wast::token::Span;
 
 /// The desciptor of a Wasm spec test suite run.
@@ -19,11 +16,11 @@ impl TestDescriptor {
     /// # Errors
     ///
     /// If the corresponding Wasm test spec file cannot properly be read.
-    pub fn new(name: &str) -> Self {
-        let path = format!("tests/spec/{name}.wast");
-        let file = fs::read_to_string(&path)
-            .unwrap_or_else(|error| panic!("{path}, failed to read `.wast` test file: {error}"));
-        Self { path, file }
+    pub fn new(path: &str, file: &str) -> Self {
+        Self {
+            path: path.into(),
+            file: file.into(),
+        }
     }
 
     /// Returns the path of the Wasm spec test `.wast` file.

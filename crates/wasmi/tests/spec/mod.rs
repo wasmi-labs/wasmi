@@ -18,13 +18,17 @@ macro_rules! define_tests {
         let config = $get_config:expr;
         let runner = $runner_fn:path;
 
-        $( $(#[$attr:meta])* fn $test_name:ident($file_name:expr); )*
+        $( $(#[$attr:meta])* fn $test_name:ident($file_name:literal); )*
     ) => {
         $(
             #[test]
             $( #[$attr] )*
             fn $test_name() {
-                $runner_fn(&format!("{}/{}", $test_folder, $file_name), $get_config)
+                let name: &'static ::core::primitive::str = ::core::concat!($test_folder, "/", $file_name);
+                let file: &'static ::core::primitive::str = ::core::include_str!(
+                    ::core::concat!($test_folder, "/", $file_name, ".wast")
+                );
+                $runner_fn(name, file, $get_config)
             }
         )*
     };
@@ -35,7 +39,7 @@ macro_rules! define_spec_tests {
         let config = $get_config:expr;
         let runner = $runner_fn:path;
 
-        $( $(#[$attr:meta])* fn $test_name:ident($file_name:expr); )*
+        $( $(#[$attr:meta])* fn $test_name:ident($file_name:literal); )*
     ) => {
         define_tests! {
             let folder = "testsuite";
