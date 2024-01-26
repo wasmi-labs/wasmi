@@ -25,9 +25,7 @@ macro_rules! define_tests {
             $( #[$attr] )*
             fn $test_name() {
                 let name: &'static ::core::primitive::str = ::core::concat!($test_folder, "/", $file_name);
-                let file: &'static ::core::primitive::str = ::core::include_str!(
-                    ::core::concat!($test_folder, "/", $file_name, ".wast")
-                );
+                let file: &'static ::core::primitive::str = self::blobs::$test_name();
                 $runner_fn(name, file, $get_config)
             }
         )*
@@ -189,6 +187,31 @@ macro_rules! expand_tests {
             fn wasm_utf8_invalid_encoding("utf8-invalid-encoding");
         }
     };
+}
+
+macro_rules! include_wasm_blobs {
+    (
+        let folder = $test_folder:literal;
+
+        $( $(#[$attr:meta])* fn $test_name:ident($file_name:literal); )*
+    ) => {
+        $(
+            $( #[$attr] )*
+            pub fn $test_name() -> &'static str {
+                ::core::include_str!(
+                    ::core::concat!($test_folder, "/", $file_name, ".wast")
+                )
+            }
+        )*
+    };
+}
+
+mod blobs {
+    expand_tests! {
+        include_wasm_blobs,
+
+        let folder = "testsuite";
+    }
 }
 
 expand_tests! {
