@@ -285,6 +285,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: miri
+          targets: x86_64-unknown-linux-gnu
       - name: Set up Cargo cache
         uses: actions/cache@v4
         continue-on-error: false
@@ -301,6 +302,11 @@ jobs:
         run: cargo miri test --lib --workspace
       - name: Miri (--doc)
         run: cargo miri test --doc --workspace
+      - name: Miri - Wasm Spec Testsuite (store)
+        # We just run the `store.wast` test since running the entire Wasm spec testsuite
+        # simply takes too long to do on every pull request commit. There exists an entire
+        # CRON job that runs the entire Wasm spec testsuite using miri every night.
+        run: cargo miri nextest run --test-threads 2 --target x86_64-unknown-linux-gnu ::wasm_store
 
   clippy:
     name: Clippy
