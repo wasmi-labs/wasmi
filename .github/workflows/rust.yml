@@ -298,6 +298,11 @@ jobs:
             ~/target/
           key: ${{ runner.os }}-cargo-miri-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-miri-
+      - name: Install cargo-nextest
+        run: |
+          # Note: We use `|| true` because cargo install returns an error
+          #       if cargo-nextest was already installed on the CI runner.
+          cargo install cargo-nextest || true
       - name: Miri (--lib)
         run: cargo miri test --lib --workspace
       - name: Miri (--doc)
