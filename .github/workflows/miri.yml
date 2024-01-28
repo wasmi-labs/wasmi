@@ -33,4 +33,4 @@ jobs:
             #       if cargo-nextest was already installed on the CI runner.
             cargo install cargo-nextest || true
         - name: Miri Testing - Wasm Spec Testsuite
-          run: cargo miri nextest run --test-threads 4 --target x86_64-unknown-linux-gnu --test spec_shim
+          run: cargo miri nextest run --test-threads "num-cpus" --target x86_64-unknown-linux-gnu --test spec_shim
