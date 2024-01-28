@@ -308,7 +308,7 @@ jobs:
       - name: Miri (--lib)
         run: cargo miri nextest run --test-threads "num-cpus" --target x86_64-unknown-linux-gnu --lib --workspace
       - name: Miri (--doc)
-        run: cargo miri test --doc --workspace
+        run: cargo miri test --doc --workspace --target x86_64-unknown-linux-gnu
       - name: Miri - Wasm Spec Testsuite (store)
         # We just run the `store.wast` test since running the entire Wasm spec testsuite
         # simply takes too long to do on every pull request commit. There exists an entire
