@@ -313,7 +313,7 @@ jobs:
         # We just run the `store.wast` test since running the entire Wasm spec testsuite
         # simply takes too long to do on every pull request commit. There exists an entire
         # CRON job that runs the entire Wasm spec testsuite using miri every night.
-        run: cargo miri nextest run --test-threads 2 --no-fail-fast --target x86_64-unknown-linux-gnu ::wasm_store
+        run: cargo miri nextest run --test-threads "num-cpus" --no-fail-fast --target x86_64-unknown-linux-gnu ::wasm_store
 
   clippy:
     name: Clippy
