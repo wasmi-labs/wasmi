@@ -298,6 +298,8 @@ jobs:
             ~/target/
           key: ${{ runner.os }}-cargo-miri-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-miri-
+      - name: Checkout Submodules
+        run: git submodule update --init --recursive
       - name: Install cargo-nextest
         run: |
           # Note: We use `|| true` because cargo install returns an error
