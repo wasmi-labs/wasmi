@@ -335,6 +335,8 @@ jobs:
             ~/target/
           key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-clippy-
+      - name: Checkout Submodules
+        run: git submodule update --init --recursive
       - name: Clippy (default features)
         run: cargo clippy --workspace -- -D warnings
       - name: Clippy (all features)
