@@ -22,12 +22,12 @@ impl TestDescriptor {
 
     /// Returns the path of the Wasm spec test `.wast` file.
     pub fn path(&self) -> &str {
-        &self.path
+        self.path
     }
 
     /// Returns the contents of the Wasm spec test `.wast` file.
     pub fn file(&self) -> &str {
-        &self.file
+        self.file
     }
 
     /// Creates a [`TestSpan`] which can be used to print the location within the `.wast` test file.
