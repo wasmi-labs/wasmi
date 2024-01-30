@@ -191,6 +191,7 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
                     )
                 }
             }
+            unsupported => panic!("encountered unsupported Wast directive: {unsupported:?}"),
         }
     }
     Ok(())
