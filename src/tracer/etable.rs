@@ -131,7 +131,7 @@ pub(crate) trait ETable {
         allocated_memory_pages: u32,
         last_jump_eid: u32,
         step_info: StepInfo,
-    ) -> EventTableEntry;
+    );
 }
 
 impl ETable for EventTable {
@@ -151,7 +151,7 @@ impl ETable for EventTable {
         allocated_memory_pages: u32,
         last_jump_eid: u32,
         step_info: StepInfo,
-    ) -> EventTableEntry {
+    ) {
         let sp = (DEFAULT_VALUE_STACK_LIMIT as u32)
             .checked_sub(sp)
             .unwrap()
@@ -168,8 +168,6 @@ impl ETable for EventTable {
             step_info,
         };
 
-        self.entries_mut().push(eentry.clone());
-
-        eentry
+        self.entries_mut().push(eentry);
     }
 }
