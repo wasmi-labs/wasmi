@@ -1,7 +1,7 @@
 [package]
 name = "wasmi-fuzz"
 version = "0.0.0"
-authors = ["Parity Technologies <admin@parity.io>", "Robin Freyler <robin.freyler@gmail.com>"]
+authors = ["Robin Freyler <robin.freyler@gmail.com>"]
 publish = false
 edition = "2021"
 
