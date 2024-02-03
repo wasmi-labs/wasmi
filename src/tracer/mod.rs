@@ -13,6 +13,7 @@ use specs::{
 };
 
 use crate::{
+    func::FuncInstanceInternal,
     runner::{from_value_internal_to_u64_with_typ, ValueInternal},
     FuncRef,
     GlobalRef,
@@ -347,7 +348,10 @@ impl Tracer {
     }
 
     pub fn lookup_function(&self, function: &FuncRef) -> u32 {
-        *self.function_lookup.get(function).unwrap()
+        match function.as_internal() {
+            FuncInstanceInternal::Internal { index, .. } => *index as u32,
+            FuncInstanceInternal::Host { .. } => *self.function_lookup.get(function).unwrap(),
+        }
     }
 
     pub fn push_phantom_function(&mut self, function: FuncRef) {
