@@ -255,7 +255,7 @@ impl VisitInputRegisters for Instruction {
             Instruction::GlobalSet { global: _, input } => f(input),
             Instruction::GlobalSetI32Imm16 { global: _, input: _ } |
             Instruction::GlobalSetI64Imm16 { global: _, input: _ } => {},
-            Instruction::I32AddImmIntoGlobal0 { lhs, rhs } => f(lhs),
+            Instruction::I32AddImmIntoGlobal0 { lhs, rhs: _ } => f(lhs),
             Instruction::I32AddImmFromGlobal0 { result: _, rhs: _ } |
             Instruction::I32AddImmInoutGlobal0 { result: _, rhs: _ } => {},
             Instruction::I32Load(instr) => instr.visit_input_registers(f),
