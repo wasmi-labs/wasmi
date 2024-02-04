@@ -18,7 +18,17 @@ fn reg_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm16() {
-    test_binary_reg_imm16::<i64>(WASM_OP, 100, Instruction::i64_sub_imm16)
+    let value = 100;
+    let rhs = <Const16<i64>>::from(-value);
+    test_binary_reg_imm_with::<i64, _>(
+        WASM_OP,
+        value as _,
+        [
+            Instruction::i64_add_imm16(Register::from_i16(1), Register::from_i16(0), rhs),
+            Instruction::return_reg(1),
+        ],
+    )
+    .run()
 }
 
 #[test]
