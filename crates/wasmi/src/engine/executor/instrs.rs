@@ -555,6 +555,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::GlobalSetI64Imm16 { global, input } => {
                     self.execute_global_set_i64imm16(global, input)
                 }
+                Instr::I32AddImmIntoGlobal0 { lhs, rhs } => todo!(),
+                Instr::I32AddImmFromGlobal0 { result, rhs } => todo!(),
+                Instr::I32AddImmInoutGlobal0 { result, rhs } => todo!(),
                 Instr::I32Load(instr) => self.execute_i32_load(instr)?,
                 Instr::I32LoadAt(instr) => self.execute_i32_load_at(instr)?,
                 Instr::I32LoadOffset16(instr) => self.execute_i32_load_offset16(instr)?,

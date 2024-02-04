@@ -1869,6 +1869,91 @@ pub enum Instruction {
         input: Const16<i64>,
     },
 
+    /// Fused instruction to add a register and constant `i32` value to the `global` variable at index 0.
+    ///
+    /// This instruction represents the following Wasm instruction sequence:
+    ///
+    /// ```wat
+    /// local.get $v
+    /// i32.const $n
+    /// i32.add
+    /// global.set 0
+    /// ```
+    ///
+    /// Where `$v` is a local variable index and `$n` is a `i32` literal.
+    ///
+    /// # Note
+    ///
+    /// - This is an instruction primarily intended to optimize Wasm instruction
+    ///   sequences that emulate the shadow stack pointer arithmetic.
+    /// - We operate on the global variable at index 0 because that is the index
+    ///   that LLVM tends to use for its shadow stack pointer. Other Wasm producers
+    ///   have not been checked and might differ.
+    I32AddImmIntoGlobal0 {
+        /// The `lhs` register for the addition.
+        lhs: Register,
+        /// The `rhs` constant value for the addition.
+        rhs: Const32<i32>,
+    },
+    /// Fused instruction to add a constant `i32` value to the `global` variable at index 0.
+    ///
+    /// This instruction represents the following Wasm instruction sequence:
+    ///
+    /// ```wat
+    /// global.get 0
+    /// i32.const $n
+    /// i32.add
+    /// ```
+    ///
+    /// Where `$n` is a `i32` literal.
+    ///
+    /// # Note
+    ///
+    /// - This is an instruction primarily intended to optimize Wasm instruction
+    ///   sequences that emulate the shadow stack pointer arithmetic.
+    /// - We operate on the global variable at index 0 because that is the index
+    ///   that LLVM tends to use for its shadow stack pointer. Other Wasm producers
+    ///   have not been checked and might differ.
+    I32AddImmFromGlobal0 {
+        /// The register storing the result of the instruction.
+        result: Register,
+        /// The `rhs` constant value for the addition.
+        rhs: Const32<i32>,
+    },
+    /// Fused instruction to add a constant `i32` value to the `global` variable at index 0.
+    ///
+    /// The result of this addition is stored both into
+    ///
+    /// - the `result` register
+    /// - the `global` variable at index 0.
+    ///
+    /// This instruction represents the following Wasm instruction sequence:
+    ///
+    /// ```wat
+    /// global.get 0
+    /// i32.const $n
+    /// i32.add
+    /// local.tee $v
+    /// global.set 0
+    /// ```
+    ///
+    /// Where `$v` is a local variable index and `$n` is a `i32` literal.
+    ///
+    /// # Note
+    ///
+    /// - This is a refinement variant of [`Instruction::I32AddGlobal0Imm`].
+    /// - This is an instruction primarily intended to optimize Wasm instruction
+    ///   sequences that emulate the shadow stack pointer arithmetic.
+    /// - We operate on the global variable at index 0 because that is the index
+    ///   that LLVM tends to use for its shadow stack pointer. Other Wasm producers
+    ///   have not been checked and might differ.
+    I32AddImmInoutGlobal0 {
+        /// The register storing the result of the instruction.
+        result: Register,
+        /// The `rhs` constant value for the addition.
+        rhs: Const32<i32>,
+    },
+
     /// Wasm `i32.load` equivalent Wasmi instruction.
     ///
     /// # Encoding
