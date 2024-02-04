@@ -1563,11 +1563,9 @@ impl Instruction {
         fn i64_add_imm16(binary_i64imm16) -> Self::I64AddImm16;
 
         fn i32_sub(binary) -> Self::I32Sub;
-        fn i32_sub_imm16(binary_i32imm16) -> Self::I32SubImm16;
         fn i32_sub_imm16_rev(binary_i32imm16_rev) -> Self::I32SubImm16Rev;
 
         fn i64_sub(binary) -> Self::I64Sub;
-        fn i64_sub_imm16(binary_i64imm16) -> Self::I64SubImm16;
         fn i64_sub_imm16_rev(binary_i64imm16_rev) -> Self::I64SubImm16Rev;
 
         fn i32_mul(binary) -> Self::I32Mul;

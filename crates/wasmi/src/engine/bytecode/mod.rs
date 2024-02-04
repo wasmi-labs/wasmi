@@ -2538,18 +2538,6 @@ pub enum Instruction {
     I32Sub(BinInstr),
     /// `i64` subtract instruction: `r0 = r1 - r2`
     I64Sub(BinInstr),
-    /// `i32` subtract immediate instruction: `r0 = r1 - c0`
-    ///
-    /// # Note
-    ///
-    /// Optimized variant of [`Instruction::I32Sub`] for 16-bit constant values.
-    I32SubImm16(BinInstrImm16<i32>),
-    /// `i64` subtract immediate instruction: `r0 = r1 - c0`
-    ///
-    /// # Note
-    ///
-    /// Optimized variant of [`Instruction::I64Sub`] for 16-bit constant values.
-    I64SubImm16(BinInstrImm16<i64>),
     /// `i32` subtract immediate instruction: `r0 = c0 - r1`
     ///
     /// # Note

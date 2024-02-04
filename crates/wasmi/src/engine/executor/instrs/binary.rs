@@ -83,7 +83,6 @@ macro_rules! impl_binary_imm16 {
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     impl_binary_imm16! {
         (i32, Instruction::I32AddImm16, execute_i32_add_imm16, UntypedValue::i32_add),
-        (i32, Instruction::I32SubImm16, execute_i32_sub_imm16, UntypedValue::i32_sub),
         (i32, Instruction::I32MulImm16, execute_i32_mul_imm16, UntypedValue::i32_mul),
         (i32, Instruction::I32AndImm16, execute_i32_and_imm16, UntypedValue::i32_and),
         (i32, Instruction::I32AndEqzImm16, execute_i32_and_eqz_imm16, UntypedValue::i32_and_eqz),
@@ -93,7 +92,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         (i32, Instruction::I32XorEqzImm16, execute_i32_xor_eqz_imm16, UntypedValue::i32_xor_eqz),
 
         (i64, Instruction::I64AddImm16, execute_i64_add_imm16, UntypedValue::i64_add),
-        (i64, Instruction::I64SubImm16, execute_i64_sub_imm16, UntypedValue::i64_sub),
         (i64, Instruction::I64MulImm16, execute_i64_mul_imm16, UntypedValue::i64_mul),
         (i64, Instruction::I64AndImm16, execute_i64_and_imm16, UntypedValue::i64_and),
         (i64, Instruction::I64OrImm16, execute_i64_or_imm16, UntypedValue::i64_or),

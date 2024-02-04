@@ -2196,7 +2196,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_sub(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i32_sub,
-            Instruction::i32_sub_imm16,
+            |_, _, _| unreachable!("`i32.sub r c` is translated as `i32.add r -c`"),
             Instruction::i32_sub_imm16_rev,
             TypedValue::i32_sub,
             |this, lhs: Register, rhs: Register| {
@@ -2211,6 +2211,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 if rhs == 0 {
                     // Optimization: `sub x - 0` is same as `x`
                     this.alloc.stack.push_register(lhs)?;
+                    return Ok(true);
+                }
+                if this.try_push_binary_instr_imm16(lhs, -rhs, Instruction::i32_add_imm16)? {
+                    // Simplification: Translate `i32.sub r c` as `i32.add r -c`
                     return Ok(true);
                 }
                 Ok(false)
@@ -2504,7 +2508,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_sub(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i64_sub,
-            Instruction::i64_sub_imm16,
+            |_, _, _| unreachable!("`i64.sub r c` is translated as `i64.add r -c`"),
             Instruction::i64_sub_imm16_rev,
             TypedValue::i64_sub,
             |this, lhs: Register, rhs: Register| {
@@ -2519,6 +2523,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 if rhs == 0 {
                     // Optimization: `sub x - 0` is same as `x`
                     this.alloc.stack.push_register(lhs)?;
+                    return Ok(true);
+                }
+                if this.try_push_binary_instr_imm16(lhs, -rhs, Instruction::i64_add_imm16)? {
+                    // Simplification: Translate `i64.sub r c` as `i64.add r -c`
                     return Ok(true);
                 }
                 Ok(false)

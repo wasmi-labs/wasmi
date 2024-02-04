@@ -347,7 +347,7 @@ fn reg_params_1_diff() {
                 Register::from_i16(3),
             ),
             Instruction::return_reg(result),
-            Instruction::i32_sub_imm16(result, result, 10),
+            Instruction::i32_add_imm16(result, result, -10),
             Instruction::return_reg(result),
             Instruction::i32_mul_imm16(result, result, 10),
             Instruction::return_reg(result),

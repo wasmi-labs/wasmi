@@ -444,7 +444,6 @@ impl Instruction {
             I::F64CopysignImm(instr) => relink_simple(instr, new_result, old_result),
 
             I::I32AddImm16(instr) |
-            I::I32SubImm16(instr) |
             I::I32SubImm16Rev(instr) |
             I::I32MulImm16(instr) => relink_simple(instr, new_result, old_result),
             I::I32DivSImm16(instr) => relink_simple(instr, new_result, old_result),
@@ -473,7 +472,6 @@ impl Instruction {
             I::I32RemUImm16Rev(instr) => relink_simple(instr, new_result, old_result),
 
             I::I64AddImm16(instr) |
-            I::I64SubImm16(instr) |
             I::I64SubImm16Rev(instr) |
             I::I64MulImm16(instr) => relink_simple(instr, new_result, old_result),
             I::I64DivSImm16(instr) => relink_simple(instr, new_result, old_result),
