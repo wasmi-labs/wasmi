@@ -22,7 +22,7 @@ fn reg_reg() {
 fn reg_imm16() {
     let value = 100;
     let rhs = <Const16<i32>>::from(-value);
-    test_binary_reg_imm_with::<i64, _>(
+    test_binary_reg_imm_with::<i32, _>(
         WASM_OP,
         value as _,
         [
