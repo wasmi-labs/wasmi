@@ -914,7 +914,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         if self
             .alloc
             .instr_encoder
-            .fuse_i32_add_global_set(input, &mut self.alloc.stack)
+            .fuse_i32_add_global_set(global_index, input, &mut self.alloc.stack)
         {
             return Ok(());
         }
