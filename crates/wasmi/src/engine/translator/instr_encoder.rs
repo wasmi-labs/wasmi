@@ -828,13 +828,18 @@ impl InstrEncoder {
     }
 
     /// Fuses an `i32.add r c` with a `global.set g` if possible.
-    /// 
+    ///
     /// Returns `true` if `Instruction` fusion was successful, `false` otherwise.
-    pub fn fuse_i32_add_global_set(&mut self, global_index: u32, top: Register, stack: &mut ValueStack) -> bool {
+    pub fn fuse_i32_add_global_set(
+        &mut self,
+        global_index: u32,
+        top: Register,
+        stack: &mut ValueStack,
+    ) -> bool {
         if global_index != 0 {
             // There only is an optimized instruction for a global index of 0.
             // This is because most Wasm producers use the global at index 0 for their shadow stack.
-            return false
+            return false;
         }
         let Some(last_instr) = self.last_instr else {
             // Without a last instruction there is no way to fuse.
