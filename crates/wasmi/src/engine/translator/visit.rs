@@ -878,11 +878,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_global_set(&mut self, global_index: u32) -> Self::Output {
         bail_unreachable!(self);
         let global = bytecode::GlobalIdx::from(global_index);
-        match self.alloc.stack.pop() {
-            TypedProvider::Register(input) => {
-                self.push_fueled_instr(Instruction::global_set(global, input), FuelCosts::entity)?;
-                Ok(())
-            }
+        let input = match self.alloc.stack.pop() {
+            TypedProvider::Register(input) => input,
             TypedProvider::Const(input) => {
                 let (global_type, _init_value) = self
                     .module
@@ -911,9 +908,18 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 };
                 let cref = self.alloc.stack.alloc_const(input)?;
                 self.push_fueled_instr(Instruction::global_set(global, cref), FuelCosts::entity)?;
-                Ok(())
+                return Ok(());
             }
+        };
+        if self
+            .alloc
+            .instr_encoder
+            .fuse_i32_add_global_set(input, &mut self.alloc.stack)
+        {
+            return Ok(());
         }
+        self.push_fueled_instr(Instruction::global_set(global, input), FuelCosts::entity)?;
+        Ok(())
     }
 
     fn visit_i32_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {

@@ -827,6 +827,36 @@ impl InstrEncoder {
         Ok(())
     }
 
+    /// Fuses an `i32.add r c` with a `global.set g` if possible.
+    /// 
+    /// Returns `true` if `Instruction` fusion was successful, `false` otherwise.
+    pub fn fuse_i32_add_global_set(&mut self, top: Register, stack: &mut ValueStack) -> bool {
+        let Some(last_instr) = self.last_instr else {
+            // Without a last instruction there is no way to fuse.
+            return false;
+        };
+        let Instruction::I32AddImm16(instr) = self.instrs.get(last_instr) else {
+            // It is only possible to fuse an `I32AddImm16` with a `GlobalSet` instruction.
+            return false;
+        };
+        if !matches!(
+            stack.get_register_space(instr.result),
+            RegisterSpace::Dynamic
+        ) {
+            // Due to observable state it is impossible to fuse `I32AddIm16` that has a non-`dynamic` result.
+            return false;
+        };
+        if instr.result != top {
+            // The `input` to `GlobalSet` must be the same as the result of `I32AddImm16`.
+            return false;
+        }
+        let lhs = instr.reg_in;
+        let rhs = <Const32<i32>>::from(i32::from(instr.imm_in));
+        let fused_instr = Instruction::i32_add_imm_into_global_0(lhs, rhs);
+        _ = mem::replace(self.instrs.get_mut(last_instr), fused_instr);
+        true
+    }
+
     /// Translates a Wasm `i32.eqz` instruction.
     ///
     /// Tries to fuse `i32.eqz` with a previous `i32.{and,or,xor}` instruction if possible.
