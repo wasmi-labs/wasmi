@@ -842,6 +842,9 @@ impl InstrEncoder {
         };
         let Instruction::I32AddImm16(instr) = self.instrs.get(last_instr) else {
             // It is only possible to fuse an `I32AddImm16` with a `GlobalSet` instruction.
+            //
+            // TODO: Technically it is also possible to fuse `I32Add` if `rhs` is a register that
+            //       refers to a function local constant with an `i32` value.
             return false;
         };
         if !matches!(
