@@ -1941,7 +1941,7 @@ pub enum Instruction {
     ///
     /// # Note
     ///
-    /// - This is a refinement variant of [`Instruction::I32AddGlobal0Imm`].
+    /// - This is a refinement variant of [`Instruction::I32AddImmFromGlobal0`].
     /// - This is an instruction primarily intended to optimize Wasm instruction
     ///   sequences that emulate the shadow stack pointer arithmetic.
     /// - We operate on the global variable at index 0 because that is the index
