@@ -2194,6 +2194,14 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     this.alloc.stack.push_register(reg)?;
                     return Ok(true);
                 }
+                if this.alloc.instr_encoder.fuse_global_get_i32_add_imm(
+                    reg,
+                    value,
+                    &mut this.alloc.stack,
+                )? {
+                    // Optimization: Fused `global.get 0` and `i32.add_imm`
+                    return Ok(true);
+                }
                 Ok(false)
             },
         )
@@ -2217,6 +2225,14 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 if rhs == 0 {
                     // Optimization: `sub x - 0` is same as `x`
                     this.alloc.stack.push_register(lhs)?;
+                    return Ok(true);
+                }
+                if this.alloc.instr_encoder.fuse_global_get_i32_add_imm(
+                    lhs,
+                    -rhs,
+                    &mut this.alloc.stack,
+                )? {
+                    // Optimization: Fused `global.get 0` and `i32.add_imm`
                     return Ok(true);
                 }
                 if this.try_push_binary_instr_imm16(lhs, -rhs, Instruction::i32_add_imm16)? {

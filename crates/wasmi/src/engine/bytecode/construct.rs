@@ -604,6 +604,11 @@ impl Instruction {
         Self::I32AddImmIntoGlobal0 { lhs, rhs }
     }
 
+    /// Creates a new [`Instruction::I32AddImmFromGlobal0`].
+    pub fn i32_add_imm_from_global_0(result: Register, rhs: Const32<i32>) -> Self {
+        Self::I32AddImmFromGlobal0 { result, rhs }
+    }
+
     /// Creates a new [`Instruction::F32CopysignImm`] instruction.
     pub fn f32_copysign_imm(result: Register, lhs: Register, rhs: Sign) -> Self {
         Self::F32CopysignImm(BinInstrImm::new(result, lhs, rhs))
