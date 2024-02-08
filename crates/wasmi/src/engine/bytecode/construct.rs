@@ -99,48 +99,6 @@ macro_rules! constructor_for {
             Self::$op_code(BinInstrImm16::new(result, rhs, lhs))
         }
     };
-    ( @impl fn $fn_name:ident(store) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(ptr: Register, offset: Const32<u32>) -> Self {
-            Self::$op_code(StoreInstr::new(ptr, offset))
-        }
-    };
-    ( @impl fn $fn_name:ident(store_at) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(address: Const32<u32>, value: Register) -> Self {
-            Self::$op_code(StoreAtInstr::new(address, value))
-        }
-    };
-    ( @impl fn $fn_name:ident(store_offset16) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(ptr: Register, offset: u16, value: Register) -> Self {
-            Self::$op_code(StoreOffset16Instr::new(ptr, offset.into(), value))
-        }
-    };
-    ( @impl fn $fn_name:ident(store_offset16_imm8) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(ptr: Register, offset: u16, value: i8) -> Self {
-            Self::$op_code(StoreOffset16Instr::new(ptr, offset.into(), value.into()))
-        }
-    };
-    ( @impl fn $fn_name:ident(store_offset16_imm16) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(ptr: Register, offset: u16, value: i16) -> Self {
-            Self::$op_code(StoreOffset16Instr::new(ptr, offset.into(), value.into()))
-        }
-    };
-    ( @impl fn $fn_name:ident(store_at_imm8) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(address: Const32<u32>, value: i8) -> Self {
-            Self::$op_code(StoreAtInstr::new(address, value.into()))
-        }
-    };
-    ( @impl fn $fn_name:ident(store_at_imm16) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(address: Const32<u32>, value: i16) -> Self {
-            Self::$op_code(StoreAtInstr::new(address, value.into()))
-        }
-    };
 }
 
 impl Instruction {
@@ -1298,58 +1256,6 @@ impl Instruction {
     }
 
     constructor_for! {
-        // Store
-
-        fn i32_store(store) -> Self::I32Store;
-        fn i32_store_offset16(store_offset16) -> Self::I32StoreOffset16;
-        fn i32_store_offset16_imm16(store_offset16_imm16) -> Self::I32StoreOffset16Imm16;
-        fn i32_store_at(store_at) -> Self::I32StoreAt;
-        fn i32_store_at_imm16(store_at_imm16) -> Self::I32StoreAtImm16;
-
-        fn i32_store8(store) -> Self::I32Store8;
-        fn i32_store8_offset16(store_offset16) -> Self::I32Store8Offset16;
-        fn i32_store8_offset16_imm(store_offset16_imm8) -> Self::I32Store8Offset16Imm;
-        fn i32_store8_at(store_at) -> Self::I32Store8At;
-        fn i32_store8_at_imm(store_at_imm8) -> Self::I32Store8AtImm;
-
-        fn i32_store16(store) -> Self::I32Store16;
-        fn i32_store16_offset16(store_offset16) -> Self::I32Store16Offset16;
-        fn i32_store16_offset16_imm(store_offset16_imm16) -> Self::I32Store16Offset16Imm;
-        fn i32_store16_at(store_at) -> Self::I32Store16At;
-        fn i32_store16_at_imm(store_at_imm16) -> Self::I32Store16AtImm;
-
-        fn i64_store(store) -> Self::I64Store;
-        fn i64_store_offset16(store_offset16) -> Self::I64StoreOffset16;
-        fn i64_store_offset16_imm16(store_offset16_imm16) -> Self::I64StoreOffset16Imm16;
-        fn i64_store_at(store_at) -> Self::I64StoreAt;
-        fn i64_store_at_imm16(store_at_imm16) -> Self::I64StoreAtImm16;
-
-        fn i64_store8(store) -> Self::I64Store8;
-        fn i64_store8_offset16(store_offset16) -> Self::I64Store8Offset16;
-        fn i64_store8_offset16_imm(store_offset16_imm8) -> Self::I64Store8Offset16Imm;
-        fn i64_store8_at(store_at) -> Self::I64Store8At;
-        fn i64_store8_at_imm(store_at_imm8) -> Self::I64Store8AtImm;
-
-        fn i64_store16(store) -> Self::I64Store16;
-        fn i64_store16_offset16(store_offset16) -> Self::I64Store16Offset16;
-        fn i64_store16_offset16_imm(store_offset16_imm16) -> Self::I64Store16Offset16Imm;
-        fn i64_store16_at(store_at) -> Self::I64Store16At;
-        fn i64_store16_at_imm(store_at_imm16) -> Self::I64Store16AtImm;
-
-        fn i64_store32(store) -> Self::I64Store32;
-        fn i64_store32_offset16(store_offset16) -> Self::I64Store32Offset16;
-        fn i64_store32_offset16_imm16(store_offset16_imm16) -> Self::I64Store32Offset16Imm16;
-        fn i64_store32_at(store_at) -> Self::I64Store32At;
-        fn i64_store32_at_imm16(store_at_imm16) -> Self::I64Store32AtImm16;
-
-        fn f32_store(store) -> Self::F32Store;
-        fn f32_store_offset16(store_offset16) -> Self::F32StoreOffset16;
-        fn f32_store_at(store_at) -> Self::F32StoreAt;
-
-        fn f64_store(store) -> Self::F64Store;
-        fn f64_store_offset16(store_offset16) -> Self::F64StoreOffset16;
-        fn f64_store_at(store_at) -> Self::F64StoreAt;
-
         // Float Arithmetic
 
         fn f32_add(binary) -> Self::F32Add;
@@ -1736,4 +1642,111 @@ constructor_for_load_instrs! {
     fn f64_load(load) -> Self::F64Load;
     fn f64_load_at(load_at) -> Self::F64LoadAt;
     fn f64_load_offset16(load_offset16) -> Self::F64LoadOffset16;
+}
+
+macro_rules! constructor_for_store_instrs {
+    (
+        $( fn $fn_name:ident($mode:ident) -> Self::$op_code:ident; )* $(,)?
+    ) => {
+        impl Instruction {
+            $(
+                constructor_for_store_instrs! {
+                    @impl fn $fn_name($mode) -> Self::$op_code
+                }
+            )*
+        }
+    };
+    ( @impl fn $fn_name:ident(store) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(ptr: Register, offset: Const32<u32>) -> Self {
+            Self::$op_code(StoreInstr::new(ptr, offset))
+        }
+    };
+    ( @impl fn $fn_name:ident(store_at) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(address: Const32<u32>, value: Register) -> Self {
+            Self::$op_code(StoreAtInstr::new(address, value))
+        }
+    };
+    ( @impl fn $fn_name:ident(store_offset16) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(ptr: Register, offset: u16, value: Register) -> Self {
+            Self::$op_code(StoreOffset16Instr::new(ptr, offset.into(), value))
+        }
+    };
+    ( @impl fn $fn_name:ident(store_offset16_imm8) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(ptr: Register, offset: u16, value: i8) -> Self {
+            Self::$op_code(StoreOffset16Instr::new(ptr, offset.into(), value.into()))
+        }
+    };
+    ( @impl fn $fn_name:ident(store_offset16_imm16) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(ptr: Register, offset: u16, value: i16) -> Self {
+            Self::$op_code(StoreOffset16Instr::new(ptr, offset.into(), value.into()))
+        }
+    };
+    ( @impl fn $fn_name:ident(store_at_imm8) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(address: Const32<u32>, value: i8) -> Self {
+            Self::$op_code(StoreAtInstr::new(address, value.into()))
+        }
+    };
+    ( @impl fn $fn_name:ident(store_at_imm16) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(address: Const32<u32>, value: i16) -> Self {
+            Self::$op_code(StoreAtInstr::new(address, value.into()))
+        }
+    };
+}
+constructor_for_store_instrs! {
+    fn i32_store(store) -> Self::I32Store;
+    fn i32_store_offset16(store_offset16) -> Self::I32StoreOffset16;
+    fn i32_store_offset16_imm16(store_offset16_imm16) -> Self::I32StoreOffset16Imm16;
+    fn i32_store_at(store_at) -> Self::I32StoreAt;
+    fn i32_store_at_imm16(store_at_imm16) -> Self::I32StoreAtImm16;
+
+    fn i32_store8(store) -> Self::I32Store8;
+    fn i32_store8_offset16(store_offset16) -> Self::I32Store8Offset16;
+    fn i32_store8_offset16_imm(store_offset16_imm8) -> Self::I32Store8Offset16Imm;
+    fn i32_store8_at(store_at) -> Self::I32Store8At;
+    fn i32_store8_at_imm(store_at_imm8) -> Self::I32Store8AtImm;
+
+    fn i32_store16(store) -> Self::I32Store16;
+    fn i32_store16_offset16(store_offset16) -> Self::I32Store16Offset16;
+    fn i32_store16_offset16_imm(store_offset16_imm16) -> Self::I32Store16Offset16Imm;
+    fn i32_store16_at(store_at) -> Self::I32Store16At;
+    fn i32_store16_at_imm(store_at_imm16) -> Self::I32Store16AtImm;
+
+    fn i64_store(store) -> Self::I64Store;
+    fn i64_store_offset16(store_offset16) -> Self::I64StoreOffset16;
+    fn i64_store_offset16_imm16(store_offset16_imm16) -> Self::I64StoreOffset16Imm16;
+    fn i64_store_at(store_at) -> Self::I64StoreAt;
+    fn i64_store_at_imm16(store_at_imm16) -> Self::I64StoreAtImm16;
+
+    fn i64_store8(store) -> Self::I64Store8;
+    fn i64_store8_offset16(store_offset16) -> Self::I64Store8Offset16;
+    fn i64_store8_offset16_imm(store_offset16_imm8) -> Self::I64Store8Offset16Imm;
+    fn i64_store8_at(store_at) -> Self::I64Store8At;
+    fn i64_store8_at_imm(store_at_imm8) -> Self::I64Store8AtImm;
+
+    fn i64_store16(store) -> Self::I64Store16;
+    fn i64_store16_offset16(store_offset16) -> Self::I64Store16Offset16;
+    fn i64_store16_offset16_imm(store_offset16_imm16) -> Self::I64Store16Offset16Imm;
+    fn i64_store16_at(store_at) -> Self::I64Store16At;
+    fn i64_store16_at_imm(store_at_imm16) -> Self::I64Store16AtImm;
+
+    fn i64_store32(store) -> Self::I64Store32;
+    fn i64_store32_offset16(store_offset16) -> Self::I64Store32Offset16;
+    fn i64_store32_offset16_imm16(store_offset16_imm16) -> Self::I64Store32Offset16Imm16;
+    fn i64_store32_at(store_at) -> Self::I64Store32At;
+    fn i64_store32_at_imm16(store_at_imm16) -> Self::I64Store32AtImm16;
+
+    fn f32_store(store) -> Self::F32Store;
+    fn f32_store_offset16(store_offset16) -> Self::F32StoreOffset16;
+    fn f32_store_at(store_at) -> Self::F32StoreAt;
+
+    fn f64_store(store) -> Self::F64Store;
+    fn f64_store_offset16(store_offset16) -> Self::F64StoreOffset16;
+    fn f64_store_at(store_at) -> Self::F64StoreAt;
 }
