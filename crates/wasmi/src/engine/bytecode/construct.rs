@@ -31,271 +31,6 @@ use super::{
 };
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
 
-macro_rules! constructor_for {
-    (
-        $(
-            fn $fn_name:ident($mode:ident) -> Self::$op_code:ident;
-        )* $(,)?
-    ) => {
-        $( constructor_for! { @impl fn $fn_name($mode) -> Self::$op_code } )*
-    };
-    ( @impl fn $fn_name:ident(unary) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, input: Register) -> Self {
-            Self::$op_code(UnaryInstr::new(result, input))
-        }
-    };
-    ( @impl fn $fn_name:ident(binary) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: Register, rhs: Register) -> Self {
-            Self::$op_code(BinInstr::new(result, lhs, rhs))
-        }
-    };
-    ( @impl fn $fn_name:ident(binary_imm) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: Register) -> Self {
-            Self::$op_code(UnaryInstr::new(result, lhs))
-        }
-    };
-    ( @impl fn $fn_name:ident(binary_i32imm16) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: Register, rhs: impl Into<Const16<i32>>) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
-        }
-    };
-    ( @impl fn $fn_name:ident(binary_u32imm16) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: Register, rhs: impl Into<Const16<u32>>) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
-        }
-    };
-    ( @impl fn $fn_name:ident(binary_i64imm16) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: Register, rhs: impl Into<Const16<i64>>) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
-        }
-    };
-    ( @impl fn $fn_name:ident(binary_u64imm16) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: Register, rhs: impl Into<Const16<u64>>) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
-        }
-    };
-    ( @impl fn $fn_name:ident(binary_i32imm16_rev) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: impl Into<Const16<i32>>, rhs: Register) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, rhs, lhs.into()))
-        }
-    };
-    ( @impl fn $fn_name:ident(binary_u32imm16_rev) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: impl Into<Const16<u32>>, rhs: Register) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, rhs, lhs.into()))
-        }
-    };
-    ( @impl fn $fn_name:ident(binary_i64imm16_rev) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: impl Into<Const16<i64>>, rhs: Register) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, rhs, lhs.into()))
-        }
-    };
-    ( @impl fn $fn_name:ident(binary_u64imm16_rev) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: Const16<u64>, rhs: Register) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, rhs, lhs))
-        }
-    };
-    ( @impl fn $fn_name:ident(load) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, ptr: Register) -> Self {
-            Self::$op_code(LoadInstr::new(result, ptr))
-        }
-    };
-    ( @impl fn $fn_name:ident(load_at) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, address: Const32<u32>) -> Self {
-            Self::$op_code(LoadAtInstr::new(result, address))
-        }
-    };
-    ( @impl fn $fn_name:ident(load_offset16) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, ptr: Register, offset: Const16<u32>) -> Self {
-            Self::$op_code(LoadOffset16Instr::new(result, ptr, offset))
-        }
-    };
-    ( @impl fn $fn_name:ident(store) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(ptr: Register, offset: Const32<u32>) -> Self {
-            Self::$op_code(StoreInstr::new(ptr, offset))
-        }
-    };
-    ( @impl fn $fn_name:ident(store_at) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(address: Const32<u32>, value: Register) -> Self {
-            Self::$op_code(StoreAtInstr::new(address, value))
-        }
-    };
-    ( @impl fn $fn_name:ident(store_offset16) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(ptr: Register, offset: u16, value: Register) -> Self {
-            Self::$op_code(StoreOffset16Instr::new(ptr, offset.into(), value))
-        }
-    };
-    ( @impl fn $fn_name:ident(store_offset16_imm8) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(ptr: Register, offset: u16, value: i8) -> Self {
-            Self::$op_code(StoreOffset16Instr::new(ptr, offset.into(), value.into()))
-        }
-    };
-    ( @impl fn $fn_name:ident(store_offset16_imm16) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(ptr: Register, offset: u16, value: i16) -> Self {
-            Self::$op_code(StoreOffset16Instr::new(ptr, offset.into(), value.into()))
-        }
-    };
-    ( @impl fn $fn_name:ident(store_at_imm8) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(address: Const32<u32>, value: i8) -> Self {
-            Self::$op_code(StoreAtInstr::new(address, value.into()))
-        }
-    };
-    ( @impl fn $fn_name:ident(store_at_imm16) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(address: Const32<u32>, value: i16) -> Self {
-            Self::$op_code(StoreAtInstr::new(address, value.into()))
-        }
-    };
-}
-
-impl Instruction {
-    /// Creates a new [`Instruction::BranchCmpFallback`].
-    pub fn branch_cmp_fallback(lhs: Register, rhs: Register, params: Register) -> Self {
-        Self::BranchCmpFallback { lhs, rhs, params }
-    }
-}
-
-macro_rules! constructor_for_branch_binop {
-    ( $( fn $name:ident() -> Self::$op_code:ident; )* ) => {
-        impl Instruction {
-            $(
-                #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-                pub fn $name(lhs: Register, rhs: Register, offset: BranchOffset16) -> Self {
-                    Self::$op_code(BranchBinOpInstr::new(lhs, rhs, offset))
-                }
-            )*
-        }
-    }
-}
-constructor_for_branch_binop! {
-    fn branch_i32_and() -> Self::BranchI32And;
-    fn branch_i32_or() -> Self::BranchI32Or;
-    fn branch_i32_xor() -> Self::BranchI32Xor;
-    fn branch_i32_and_eqz() -> Self::BranchI32AndEqz;
-    fn branch_i32_or_eqz() -> Self::BranchI32OrEqz;
-    fn branch_i32_xor_eqz() -> Self::BranchI32XorEqz;
-    fn branch_i32_eq() -> Self::BranchI32Eq;
-    fn branch_i32_ne() -> Self::BranchI32Ne;
-    fn branch_i32_lt_s() -> Self::BranchI32LtS;
-    fn branch_i32_lt_u() -> Self::BranchI32LtU;
-    fn branch_i32_le_s() -> Self::BranchI32LeS;
-    fn branch_i32_le_u() -> Self::BranchI32LeU;
-    fn branch_i32_gt_s() -> Self::BranchI32GtS;
-    fn branch_i32_gt_u() -> Self::BranchI32GtU;
-    fn branch_i32_ge_s() -> Self::BranchI32GeS;
-    fn branch_i32_ge_u() -> Self::BranchI32GeU;
-
-    fn branch_i64_eq() -> Self::BranchI64Eq;
-    fn branch_i64_ne() -> Self::BranchI64Ne;
-    fn branch_i64_lt_s() -> Self::BranchI64LtS;
-    fn branch_i64_lt_u() -> Self::BranchI64LtU;
-    fn branch_i64_le_s() -> Self::BranchI64LeS;
-    fn branch_i64_le_u() -> Self::BranchI64LeU;
-    fn branch_i64_gt_s() -> Self::BranchI64GtS;
-    fn branch_i64_gt_u() -> Self::BranchI64GtU;
-    fn branch_i64_ge_s() -> Self::BranchI64GeS;
-    fn branch_i64_ge_u() -> Self::BranchI64GeU;
-
-    fn branch_f32_eq() -> Self::BranchF32Eq;
-    fn branch_f32_ne() -> Self::BranchF32Ne;
-    fn branch_f32_lt() -> Self::BranchF32Lt;
-    fn branch_f32_le() -> Self::BranchF32Le;
-    fn branch_f32_gt() -> Self::BranchF32Gt;
-    fn branch_f32_ge() -> Self::BranchF32Ge;
-
-    fn branch_f64_eq() -> Self::BranchF64Eq;
-    fn branch_f64_ne() -> Self::BranchF64Ne;
-    fn branch_f64_lt() -> Self::BranchF64Lt;
-    fn branch_f64_le() -> Self::BranchF64Le;
-    fn branch_f64_gt() -> Self::BranchF64Gt;
-    fn branch_f64_ge() -> Self::BranchF64Ge;
-}
-
-macro_rules! constructor_for_branch_binop_imm {
-    ( $( fn $name:ident($ty:ty) -> Self::$op_code:ident; )* ) => {
-        impl Instruction {
-            $(
-                #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-                pub fn $name(lhs: Register, rhs: impl Into<Const16<$ty>>, offset: BranchOffset16) -> Self {
-                    Self::$op_code(BranchBinOpInstrImm16::new(lhs, rhs.into(), offset))
-                }
-            )*
-        }
-    }
-}
-constructor_for_branch_binop_imm! {
-    fn branch_i32_and_imm(i32) -> Self::BranchI32AndImm;
-    fn branch_i32_or_imm(i32) -> Self::BranchI32OrImm;
-    fn branch_i32_xor_imm(i32) -> Self::BranchI32XorImm;
-    fn branch_i32_and_eqz_imm(i32) -> Self::BranchI32AndEqzImm;
-    fn branch_i32_or_eqz_imm(i32) -> Self::BranchI32OrEqzImm;
-    fn branch_i32_xor_eqz_imm(i32) -> Self::BranchI32XorEqzImm;
-    fn branch_i32_eq_imm(i32) -> Self::BranchI32EqImm;
-    fn branch_i32_ne_imm(i32) -> Self::BranchI32NeImm;
-    fn branch_i32_lt_s_imm(i32) -> Self::BranchI32LtSImm;
-    fn branch_i32_lt_u_imm(u32) -> Self::BranchI32LtUImm;
-    fn branch_i32_le_s_imm(i32) -> Self::BranchI32LeSImm;
-    fn branch_i32_le_u_imm(u32) -> Self::BranchI32LeUImm;
-    fn branch_i32_gt_s_imm(i32) -> Self::BranchI32GtSImm;
-    fn branch_i32_gt_u_imm(u32) -> Self::BranchI32GtUImm;
-    fn branch_i32_ge_s_imm(i32) -> Self::BranchI32GeSImm;
-    fn branch_i32_ge_u_imm(u32) -> Self::BranchI32GeUImm;
-
-    fn branch_i64_eq_imm(i64) -> Self::BranchI64EqImm;
-    fn branch_i64_ne_imm(i64) -> Self::BranchI64NeImm;
-    fn branch_i64_lt_s_imm(i64) -> Self::BranchI64LtSImm;
-    fn branch_i64_lt_u_imm(u64) -> Self::BranchI64LtUImm;
-    fn branch_i64_le_s_imm(i64) -> Self::BranchI64LeSImm;
-    fn branch_i64_le_u_imm(u64) -> Self::BranchI64LeUImm;
-    fn branch_i64_gt_s_imm(i64) -> Self::BranchI64GtSImm;
-    fn branch_i64_gt_u_imm(u64) -> Self::BranchI64GtUImm;
-    fn branch_i64_ge_s_imm(i64) -> Self::BranchI64GeSImm;
-    fn branch_i64_ge_u_imm(u64) -> Self::BranchI64GeUImm;
-}
-
-macro_rules! constructor_for_branch_binop_imm {
-    ( $( fn $name:ident($ty:ty) -> Self::$op_code:ident; )* ) => {
-        impl Instruction {
-            $(
-                #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-                pub fn $name(result: Register, lhs: Register, rhs: impl Into<Const16<$ty>>) -> Self {
-                    Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
-                }
-            )*
-        }
-    }
-}
-constructor_for_branch_binop_imm! {
-    fn i32_div_s_imm16(NonZeroI32) -> Self::I32DivSImm16;
-    fn i32_div_u_imm16(NonZeroU32) -> Self::I32DivUImm16;
-    fn i32_rem_s_imm16(NonZeroI32) -> Self::I32RemSImm16;
-    fn i32_rem_u_imm16(NonZeroU32) -> Self::I32RemUImm16;
-
-    fn i64_div_s_imm16(NonZeroI64) -> Self::I64DivSImm16;
-    fn i64_div_u_imm16(NonZeroU64) -> Self::I64DivUImm16;
-    fn i64_rem_s_imm16(NonZeroI64) -> Self::I64RemSImm16;
-    fn i64_rem_u_imm16(NonZeroU64) -> Self::I64RemUImm16;
-}
-
 impl Instruction {
     /// Creates a new [`Instruction::Const32`] from the given `value`.
     pub fn const32(value: impl Into<AnyConst32>) -> Self {
@@ -1320,397 +1055,697 @@ impl Instruction {
             func_type: func_type.into(),
         }
     }
+}
+
+macro_rules! constructor_for_binary_instrs {
+    (
+        $(
+            fn $fn_name:ident($($mode:tt)?) -> Self::$op_code:ident;
+        )* $(,)?
+    ) => {
+        impl Instruction {
+            $(
+                constructor_for_binary_instrs! {
+                    @impl fn $fn_name($($mode)?) -> Self::$op_code
+                }
+            )*
+        }
+    };
+    ( @impl fn $fn_name:ident() -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Register, lhs: Register, rhs: Register) -> Self {
+            Self::$op_code(BinInstr::new(result, lhs, rhs))
+        }
+    };
+    ( @impl fn $fn_name:ident({i32.binary_imm<i16>}) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Register, lhs: Register, rhs: impl Into<Const16<i32>>) -> Self {
+            Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
+        }
+    };
+    ( @impl fn $fn_name:ident({i32.binary_imm<u16>}) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Register, lhs: Register, rhs: impl Into<Const16<u32>>) -> Self {
+            Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
+        }
+    };
+    ( @impl fn $fn_name:ident({i64.binary_imm<i16>}) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Register, lhs: Register, rhs: impl Into<Const16<i64>>) -> Self {
+            Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
+        }
+    };
+    ( @impl fn $fn_name:ident({i64.binary_imm<u16>}) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Register, lhs: Register, rhs: impl Into<Const16<u64>>) -> Self {
+            Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
+        }
+    };
+    ( @impl fn $fn_name:ident({i32.binary_imm_rev<i16>}) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Register, lhs: impl Into<Const16<i32>>, rhs: Register) -> Self {
+            Self::$op_code(BinInstrImm16::new(result, rhs, lhs.into()))
+        }
+    };
+    ( @impl fn $fn_name:ident({i32.binary_imm_rev<u16>}) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Register, lhs: impl Into<Const16<u32>>, rhs: Register) -> Self {
+            Self::$op_code(BinInstrImm16::new(result, rhs, lhs.into()))
+        }
+    };
+    ( @impl fn $fn_name:ident({i64.binary_imm_rev<i16>}) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Register, lhs: impl Into<Const16<i64>>, rhs: Register) -> Self {
+            Self::$op_code(BinInstrImm16::new(result, rhs, lhs.into()))
+        }
+    };
+    ( @impl fn $fn_name:ident({i64.binary_imm_rev<u16>}) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Register, lhs: Const16<u64>, rhs: Register) -> Self {
+            Self::$op_code(BinInstrImm16::new(result, rhs, lhs))
+        }
+    };
+}
+constructor_for_binary_instrs! {
+    // Float Arithmetic
+
+    fn f32_add() -> Self::F32Add;
+    fn f64_add() -> Self::F64Add;
+    fn f32_sub() -> Self::F32Sub;
+    fn f64_sub() -> Self::F64Sub;
+    fn f32_mul() -> Self::F32Mul;
+    fn f64_mul() -> Self::F64Mul;
+    fn f32_div() -> Self::F32Div;
+    fn f64_div() -> Self::F64Div;
+    fn f32_min() -> Self::F32Min;
+    fn f64_min() -> Self::F64Min;
+    fn f32_max() -> Self::F32Max;
+    fn f64_max() -> Self::F64Max;
+    fn f32_copysign() -> Self::F32Copysign;
+    fn f64_copysign() -> Self::F64Copysign;
+
+    // Integer Comparison
+
+    fn i32_eq() -> Self::I32Eq;
+    fn i32_eq_imm16({i32.binary_imm<i16>}) -> Self::I32EqImm16;
+
+    fn i64_eq() -> Self::I64Eq;
+    fn i64_eq_imm16({i64.binary_imm<i16>}) -> Self::I64EqImm16;
+
+    fn i32_ne() -> Self::I32Ne;
+    fn i32_ne_imm16({i32.binary_imm<i16>}) -> Self::I32NeImm16;
+
+    fn i64_ne() -> Self::I64Ne;
+    fn i64_ne_imm16({i64.binary_imm<i16>}) -> Self::I64NeImm16;
 
-    constructor_for! {
-        // Load
-
-        fn i32_load(load) -> Self::I32Load;
-        fn i32_load_at(load_at) -> Self::I32LoadAt;
-        fn i32_load_offset16(load_offset16) -> Self::I32LoadOffset16;
-
-        fn i32_load8_s(load) -> Self::I32Load8s;
-        fn i32_load8_s_at(load_at) -> Self::I32Load8sAt;
-        fn i32_load8_s_offset16(load_offset16) -> Self::I32Load8sOffset16;
-
-        fn i32_load8_u(load) -> Self::I32Load8u;
-        fn i32_load8_u_at(load_at) -> Self::I32Load8uAt;
-        fn i32_load8_u_offset16(load_offset16) -> Self::I32Load8uOffset16;
-
-        fn i32_load16_s(load) -> Self::I32Load16s;
-        fn i32_load16_s_at(load_at) -> Self::I32Load16sAt;
-        fn i32_load16_s_offset16(load_offset16) -> Self::I32Load16sOffset16;
-
-        fn i32_load16_u(load) -> Self::I32Load16u;
-        fn i32_load16_u_at(load_at) -> Self::I32Load16uAt;
-        fn i32_load16_u_offset16(load_offset16) -> Self::I32Load16uOffset16;
-
-        fn i64_load(load) -> Self::I64Load;
-        fn i64_load_at(load_at) -> Self::I64LoadAt;
-        fn i64_load_offset16(load_offset16) -> Self::I64LoadOffset16;
-
-        fn i64_load8_s(load) -> Self::I64Load8s;
-        fn i64_load8_s_at(load_at) -> Self::I64Load8sAt;
-        fn i64_load8_s_offset16(load_offset16) -> Self::I64Load8sOffset16;
-
-        fn i64_load8_u(load) -> Self::I64Load8u;
-        fn i64_load8_u_at(load_at) -> Self::I64Load8uAt;
-        fn i64_load8_u_offset16(load_offset16) -> Self::I64Load8uOffset16;
-
-        fn i64_load16_s(load) -> Self::I64Load16s;
-        fn i64_load16_s_at(load_at) -> Self::I64Load16sAt;
-        fn i64_load16_s_offset16(load_offset16) -> Self::I64Load16sOffset16;
-
-        fn i64_load16_u(load) -> Self::I64Load16u;
-        fn i64_load16_u_at(load_at) -> Self::I64Load16uAt;
-        fn i64_load16_u_offset16(load_offset16) -> Self::I64Load16uOffset16;
-
-        fn i64_load32_s(load) -> Self::I64Load32s;
-        fn i64_load32_s_at(load_at) -> Self::I64Load32sAt;
-        fn i64_load32_s_offset16(load_offset16) -> Self::I64Load32sOffset16;
-
-        fn i64_load32_u(load) -> Self::I64Load32u;
-        fn i64_load32_u_at(load_at) -> Self::I64Load32uAt;
-        fn i64_load32_u_offset16(load_offset16) -> Self::I64Load32uOffset16;
-
-        fn f32_load(load) -> Self::F32Load;
-        fn f32_load_at(load_at) -> Self::F32LoadAt;
-        fn f32_load_offset16(load_offset16) -> Self::F32LoadOffset16;
-
-        fn f64_load(load) -> Self::F64Load;
-        fn f64_load_at(load_at) -> Self::F64LoadAt;
-        fn f64_load_offset16(load_offset16) -> Self::F64LoadOffset16;
-
-        // Store
-
-        fn i32_store(store) -> Self::I32Store;
-        fn i32_store_offset16(store_offset16) -> Self::I32StoreOffset16;
-        fn i32_store_offset16_imm16(store_offset16_imm16) -> Self::I32StoreOffset16Imm16;
-        fn i32_store_at(store_at) -> Self::I32StoreAt;
-        fn i32_store_at_imm16(store_at_imm16) -> Self::I32StoreAtImm16;
-
-        fn i32_store8(store) -> Self::I32Store8;
-        fn i32_store8_offset16(store_offset16) -> Self::I32Store8Offset16;
-        fn i32_store8_offset16_imm(store_offset16_imm8) -> Self::I32Store8Offset16Imm;
-        fn i32_store8_at(store_at) -> Self::I32Store8At;
-        fn i32_store8_at_imm(store_at_imm8) -> Self::I32Store8AtImm;
-
-        fn i32_store16(store) -> Self::I32Store16;
-        fn i32_store16_offset16(store_offset16) -> Self::I32Store16Offset16;
-        fn i32_store16_offset16_imm(store_offset16_imm16) -> Self::I32Store16Offset16Imm;
-        fn i32_store16_at(store_at) -> Self::I32Store16At;
-        fn i32_store16_at_imm(store_at_imm16) -> Self::I32Store16AtImm;
-
-        fn i64_store(store) -> Self::I64Store;
-        fn i64_store_offset16(store_offset16) -> Self::I64StoreOffset16;
-        fn i64_store_offset16_imm16(store_offset16_imm16) -> Self::I64StoreOffset16Imm16;
-        fn i64_store_at(store_at) -> Self::I64StoreAt;
-        fn i64_store_at_imm16(store_at_imm16) -> Self::I64StoreAtImm16;
-
-        fn i64_store8(store) -> Self::I64Store8;
-        fn i64_store8_offset16(store_offset16) -> Self::I64Store8Offset16;
-        fn i64_store8_offset16_imm(store_offset16_imm8) -> Self::I64Store8Offset16Imm;
-        fn i64_store8_at(store_at) -> Self::I64Store8At;
-        fn i64_store8_at_imm(store_at_imm8) -> Self::I64Store8AtImm;
-
-        fn i64_store16(store) -> Self::I64Store16;
-        fn i64_store16_offset16(store_offset16) -> Self::I64Store16Offset16;
-        fn i64_store16_offset16_imm(store_offset16_imm16) -> Self::I64Store16Offset16Imm;
-        fn i64_store16_at(store_at) -> Self::I64Store16At;
-        fn i64_store16_at_imm(store_at_imm16) -> Self::I64Store16AtImm;
-
-        fn i64_store32(store) -> Self::I64Store32;
-        fn i64_store32_offset16(store_offset16) -> Self::I64Store32Offset16;
-        fn i64_store32_offset16_imm16(store_offset16_imm16) -> Self::I64Store32Offset16Imm16;
-        fn i64_store32_at(store_at) -> Self::I64Store32At;
-        fn i64_store32_at_imm16(store_at_imm16) -> Self::I64Store32AtImm16;
+    fn i32_lt_s() -> Self::I32LtS;
+    fn i32_lt_s_imm16({i32.binary_imm<i16>}) -> Self::I32LtSImm16;
 
-        fn f32_store(store) -> Self::F32Store;
-        fn f32_store_offset16(store_offset16) -> Self::F32StoreOffset16;
-        fn f32_store_at(store_at) -> Self::F32StoreAt;
+    fn i64_lt_s() -> Self::I64LtS;
+    fn i64_lt_s_imm16({i64.binary_imm<i16>}) -> Self::I64LtSImm16;
 
-        fn f64_store(store) -> Self::F64Store;
-        fn f64_store_offset16(store_offset16) -> Self::F64StoreOffset16;
-        fn f64_store_at(store_at) -> Self::F64StoreAt;
+    fn i32_lt_u() -> Self::I32LtU;
+    fn i32_lt_u_imm16({i32.binary_imm<u16>}) -> Self::I32LtUImm16;
 
-        // Integer Unary
+    fn i64_lt_u() -> Self::I64LtU;
+    fn i64_lt_u_imm16({i64.binary_imm<u16>}) -> Self::I64LtUImm16;
 
-        fn i32_clz(unary) -> Self::I32Clz;
-        fn i32_ctz(unary) -> Self::I32Ctz;
-        fn i32_popcnt(unary) -> Self::I32Popcnt;
+    fn i32_le_s() -> Self::I32LeS;
+    fn i32_le_s_imm16({i32.binary_imm<i16>}) -> Self::I32LeSImm16;
 
-        fn i64_clz(unary) -> Self::I64Clz;
-        fn i64_ctz(unary) -> Self::I64Ctz;
-        fn i64_popcnt(unary) -> Self::I64Popcnt;
+    fn i64_le_s() -> Self::I64LeS;
+    fn i64_le_s_imm16({i64.binary_imm<i16>}) -> Self::I64LeSImm16;
 
-        // Float Unary
+    fn i32_le_u() -> Self::I32LeU;
+    fn i32_le_u_imm16({i32.binary_imm<u16>}) -> Self::I32LeUImm16;
 
-        fn f32_abs(unary) -> Self::F32Abs;
-        fn f32_neg(unary) -> Self::F32Neg;
-        fn f32_ceil(unary) -> Self::F32Ceil;
-        fn f32_floor(unary) -> Self::F32Floor;
-        fn f32_trunc(unary) -> Self::F32Trunc;
-        fn f32_nearest(unary) -> Self::F32Nearest;
-        fn f32_sqrt(unary) -> Self::F32Sqrt;
+    fn i64_le_u() -> Self::I64LeU;
+    fn i64_le_u_imm16({i64.binary_imm<u16>}) -> Self::I64LeUImm16;
 
-        fn f64_abs(unary) -> Self::F64Abs;
-        fn f64_neg(unary) -> Self::F64Neg;
-        fn f64_ceil(unary) -> Self::F64Ceil;
-        fn f64_floor(unary) -> Self::F64Floor;
-        fn f64_trunc(unary) -> Self::F64Trunc;
-        fn f64_nearest(unary) -> Self::F64Nearest;
-        fn f64_sqrt(unary) -> Self::F64Sqrt;
+    fn i32_gt_s() -> Self::I32GtS;
+    fn i32_gt_s_imm16({i32.binary_imm<i16>}) -> Self::I32GtSImm16;
 
-        // Float Arithmetic
+    fn i64_gt_s() -> Self::I64GtS;
+    fn i64_gt_s_imm16({i64.binary_imm<i16>}) -> Self::I64GtSImm16;
 
-        fn f32_add(binary) -> Self::F32Add;
-        fn f64_add(binary) -> Self::F64Add;
-        fn f32_sub(binary) -> Self::F32Sub;
-        fn f64_sub(binary) -> Self::F64Sub;
-        fn f32_mul(binary) -> Self::F32Mul;
-        fn f64_mul(binary) -> Self::F64Mul;
-        fn f32_div(binary) -> Self::F32Div;
-        fn f64_div(binary) -> Self::F64Div;
-        fn f32_min(binary) -> Self::F32Min;
-        fn f64_min(binary) -> Self::F64Min;
-        fn f32_max(binary) -> Self::F32Max;
-        fn f64_max(binary) -> Self::F64Max;
-        fn f32_copysign(binary) -> Self::F32Copysign;
-        fn f64_copysign(binary) -> Self::F64Copysign;
+    fn i32_gt_u() -> Self::I32GtU;
+    fn i32_gt_u_imm16({i32.binary_imm<u16>}) -> Self::I32GtUImm16;
 
-        // Integer Comparison
+    fn i64_gt_u() -> Self::I64GtU;
+    fn i64_gt_u_imm16({i64.binary_imm<u16>}) -> Self::I64GtUImm16;
 
-        fn i32_eq(binary) -> Self::I32Eq;
-        fn i32_eq_imm16(binary_i32imm16) -> Self::I32EqImm16;
+    fn i32_ge_s() -> Self::I32GeS;
+    fn i32_ge_s_imm16({i32.binary_imm<i16>}) -> Self::I32GeSImm16;
 
-        fn i64_eq(binary) -> Self::I64Eq;
-        fn i64_eq_imm16(binary_i64imm16) -> Self::I64EqImm16;
+    fn i64_ge_s() -> Self::I64GeS;
+    fn i64_ge_s_imm16({i64.binary_imm<i16>}) -> Self::I64GeSImm16;
 
-        fn i32_ne(binary) -> Self::I32Ne;
-        fn i32_ne_imm16(binary_i32imm16) -> Self::I32NeImm16;
+    fn i32_ge_u() -> Self::I32GeU;
+    fn i32_ge_u_imm16({i32.binary_imm<u16>}) -> Self::I32GeUImm16;
 
-        fn i64_ne(binary) -> Self::I64Ne;
-        fn i64_ne_imm16(binary_i64imm16) -> Self::I64NeImm16;
+    fn i64_ge_u() -> Self::I64GeU;
+    fn i64_ge_u_imm16({i64.binary_imm<u16>}) -> Self::I64GeUImm16;
 
-        fn i32_lt_s(binary) -> Self::I32LtS;
-        fn i32_lt_s_imm16(binary_i32imm16) -> Self::I32LtSImm16;
+    // Float Comparison
 
-        fn i64_lt_s(binary) -> Self::I64LtS;
-        fn i64_lt_s_imm16(binary_i64imm16) -> Self::I64LtSImm16;
+    fn f32_eq() -> Self::F32Eq;
+    fn f64_eq() -> Self::F64Eq;
+    fn f32_ne() -> Self::F32Ne;
+    fn f64_ne() -> Self::F64Ne;
+    fn f32_lt() -> Self::F32Lt;
+    fn f64_lt() -> Self::F64Lt;
+    fn f32_le() -> Self::F32Le;
+    fn f64_le() -> Self::F64Le;
+    fn f32_gt() -> Self::F32Gt;
+    fn f64_gt() -> Self::F64Gt;
+    fn f32_ge() -> Self::F32Ge;
+    fn f64_ge() -> Self::F64Ge;
 
-        fn i32_lt_u(binary) -> Self::I32LtU;
-        fn i32_lt_u_imm16(binary_u32imm16) -> Self::I32LtUImm16;
+    // Integer Arithmetic
 
-        fn i64_lt_u(binary) -> Self::I64LtU;
-        fn i64_lt_u_imm16(binary_u64imm16) -> Self::I64LtUImm16;
+    fn i32_add() -> Self::I32Add;
+    fn i32_add_imm16({i32.binary_imm<i16>}) -> Self::I32AddImm16;
 
-        fn i32_le_s(binary) -> Self::I32LeS;
-        fn i32_le_s_imm16(binary_i32imm16) -> Self::I32LeSImm16;
+    fn i64_add() -> Self::I64Add;
+    fn i64_add_imm16({i64.binary_imm<i16>}) -> Self::I64AddImm16;
 
-        fn i64_le_s(binary) -> Self::I64LeS;
-        fn i64_le_s_imm16(binary_i64imm16) -> Self::I64LeSImm16;
+    fn i32_sub() -> Self::I32Sub;
+    fn i32_sub_imm16_rev({i32.binary_imm_rev<i16>}) -> Self::I32SubImm16Rev;
 
-        fn i32_le_u(binary) -> Self::I32LeU;
-        fn i32_le_u_imm16(binary_u32imm16) -> Self::I32LeUImm16;
+    fn i64_sub() -> Self::I64Sub;
+    fn i64_sub_imm16_rev({i64.binary_imm_rev<i16>}) -> Self::I64SubImm16Rev;
 
-        fn i64_le_u(binary) -> Self::I64LeU;
-        fn i64_le_u_imm16(binary_u64imm16) -> Self::I64LeUImm16;
+    fn i32_mul() -> Self::I32Mul;
+    fn i32_mul_imm16({i32.binary_imm<i16>}) -> Self::I32MulImm16;
 
-        fn i32_gt_s(binary) -> Self::I32GtS;
-        fn i32_gt_s_imm16(binary_i32imm16) -> Self::I32GtSImm16;
+    fn i64_mul() -> Self::I64Mul;
+    fn i64_mul_imm16({i64.binary_imm<i16>}) -> Self::I64MulImm16;
 
-        fn i64_gt_s(binary) -> Self::I64GtS;
-        fn i64_gt_s_imm16(binary_i64imm16) -> Self::I64GtSImm16;
+    // Integer Division & Remainder
 
-        fn i32_gt_u(binary) -> Self::I32GtU;
-        fn i32_gt_u_imm16(binary_u32imm16) -> Self::I32GtUImm16;
+    fn i32_div_u() -> Self::I32DivU;
+    fn i32_div_u_imm16_rev({i32.binary_imm_rev<u16>}) -> Self::I32DivUImm16Rev;
 
-        fn i64_gt_u(binary) -> Self::I64GtU;
-        fn i64_gt_u_imm16(binary_u64imm16) -> Self::I64GtUImm16;
+    fn i64_div_u() -> Self::I64DivU;
+    fn i64_div_u_imm16_rev({i64.binary_imm_rev<u16>}) -> Self::I64DivUImm16Rev;
 
-        fn i32_ge_s(binary) -> Self::I32GeS;
-        fn i32_ge_s_imm16(binary_i32imm16) -> Self::I32GeSImm16;
+    fn i32_div_s() -> Self::I32DivS;
+    fn i32_div_s_imm16_rev({i32.binary_imm_rev<i16>}) -> Self::I32DivSImm16Rev;
 
-        fn i64_ge_s(binary) -> Self::I64GeS;
-        fn i64_ge_s_imm16(binary_i64imm16) -> Self::I64GeSImm16;
+    fn i64_div_s() -> Self::I64DivS;
+    fn i64_div_s_imm16_rev({i64.binary_imm_rev<i16>}) -> Self::I64DivSImm16Rev;
 
-        fn i32_ge_u(binary) -> Self::I32GeU;
-        fn i32_ge_u_imm16(binary_u32imm16) -> Self::I32GeUImm16;
+    fn i32_rem_u() -> Self::I32RemU;
+    fn i32_rem_u_imm16_rev({i32.binary_imm_rev<u16>}) -> Self::I32RemUImm16Rev;
 
-        fn i64_ge_u(binary) -> Self::I64GeU;
-        fn i64_ge_u_imm16(binary_u64imm16) -> Self::I64GeUImm16;
+    fn i64_rem_u() -> Self::I64RemU;
+    fn i64_rem_u_imm16_rev({i64.binary_imm_rev<u16>}) -> Self::I64RemUImm16Rev;
 
-        // Float Comparison
+    fn i32_rem_s() -> Self::I32RemS;
+    fn i32_rem_s_imm16_rev({i32.binary_imm_rev<i16>}) -> Self::I32RemSImm16Rev;
 
-        fn f32_eq(binary) -> Self::F32Eq;
-        fn f64_eq(binary) -> Self::F64Eq;
-        fn f32_ne(binary) -> Self::F32Ne;
-        fn f64_ne(binary) -> Self::F64Ne;
-        fn f32_lt(binary) -> Self::F32Lt;
-        fn f64_lt(binary) -> Self::F64Lt;
-        fn f32_le(binary) -> Self::F32Le;
-        fn f64_le(binary) -> Self::F64Le;
-        fn f32_gt(binary) -> Self::F32Gt;
-        fn f64_gt(binary) -> Self::F64Gt;
-        fn f32_ge(binary) -> Self::F32Ge;
-        fn f64_ge(binary) -> Self::F64Ge;
+    fn i64_rem_s() -> Self::I64RemS;
+    fn i64_rem_s_imm16_rev({i64.binary_imm_rev<i16>}) -> Self::I64RemSImm16Rev;
 
-        // Integer Arithmetic
+    // Integer Bitwise Logic
 
-        fn i32_add(binary) -> Self::I32Add;
-        fn i32_add_imm16(binary_i32imm16) -> Self::I32AddImm16;
+    fn i32_and() -> Self::I32And;
+    fn i32_and_eqz() -> Self::I32AndEqz;
+    fn i32_and_eqz_imm16({i32.binary_imm<i16>}) -> Self::I32AndEqzImm16;
+    fn i32_and_imm16({i32.binary_imm<i16>}) -> Self::I32AndImm16;
 
-        fn i64_add(binary) -> Self::I64Add;
-        fn i64_add_imm16(binary_i64imm16) -> Self::I64AddImm16;
+    fn i64_and() -> Self::I64And;
+    fn i64_and_imm16({i64.binary_imm<i16>}) -> Self::I64AndImm16;
 
-        fn i32_sub(binary) -> Self::I32Sub;
-        fn i32_sub_imm16_rev(binary_i32imm16_rev) -> Self::I32SubImm16Rev;
+    fn i32_or() -> Self::I32Or;
+    fn i32_or_eqz() -> Self::I32OrEqz;
+    fn i32_or_eqz_imm16({i32.binary_imm<i16>}) -> Self::I32OrEqzImm16;
+    fn i32_or_imm16({i32.binary_imm<i16>}) -> Self::I32OrImm16;
 
-        fn i64_sub(binary) -> Self::I64Sub;
-        fn i64_sub_imm16_rev(binary_i64imm16_rev) -> Self::I64SubImm16Rev;
+    fn i64_or() -> Self::I64Or;
+    fn i64_or_imm16({i64.binary_imm<i16>}) -> Self::I64OrImm16;
 
-        fn i32_mul(binary) -> Self::I32Mul;
-        fn i32_mul_imm16(binary_i32imm16) -> Self::I32MulImm16;
+    fn i32_xor() -> Self::I32Xor;
+    fn i32_xor_eqz() -> Self::I32XorEqz;
+    fn i32_xor_eqz_imm16({i32.binary_imm<i16>}) -> Self::I32XorEqzImm16;
+    fn i32_xor_imm16({i32.binary_imm<i16>}) -> Self::I32XorImm16;
 
-        fn i64_mul(binary) -> Self::I64Mul;
-        fn i64_mul_imm16(binary_i64imm16) -> Self::I64MulImm16;
+    fn i64_xor() -> Self::I64Xor;
+    fn i64_xor_imm16({i64.binary_imm<i16>}) -> Self::I64XorImm16;
 
-        // Integer Division & Remainder
+    // Integer Shift & Rotate
 
-        fn i32_div_u(binary) -> Self::I32DivU;
-        fn i32_div_u_imm16_rev(binary_u32imm16_rev) -> Self::I32DivUImm16Rev;
+    fn i32_shl() -> Self::I32Shl;
+    fn i32_shl_imm({i32.binary_imm<i16>}) -> Self::I32ShlImm;
+    fn i32_shl_imm16_rev({i32.binary_imm_rev<i16>}) -> Self::I32ShlImm16Rev;
 
-        fn i64_div_u(binary) -> Self::I64DivU;
-        fn i64_div_u_imm16_rev(binary_u64imm16_rev) -> Self::I64DivUImm16Rev;
+    fn i64_shl() -> Self::I64Shl;
+    fn i64_shl_imm({i64.binary_imm<i16>}) -> Self::I64ShlImm;
+    fn i64_shl_imm16_rev({i64.binary_imm_rev<i16>}) -> Self::I64ShlImm16Rev;
 
-        fn i32_div_s(binary) -> Self::I32DivS;
-        fn i32_div_s_imm16_rev(binary_i32imm16_rev) -> Self::I32DivSImm16Rev;
+    fn i32_shr_u() -> Self::I32ShrU;
+    fn i32_shr_u_imm({i32.binary_imm<i16>}) -> Self::I32ShrUImm;
+    fn i32_shr_u_imm16_rev({i32.binary_imm_rev<i16>}) -> Self::I32ShrUImm16Rev;
 
-        fn i64_div_s(binary) -> Self::I64DivS;
-        fn i64_div_s_imm16_rev(binary_i64imm16_rev) -> Self::I64DivSImm16Rev;
+    fn i64_shr_u() -> Self::I64ShrU;
+    fn i64_shr_u_imm({i64.binary_imm<i16>}) -> Self::I64ShrUImm;
+    fn i64_shr_u_imm16_rev({i64.binary_imm_rev<i16>}) -> Self::I64ShrUImm16Rev;
 
-        fn i32_rem_u(binary) -> Self::I32RemU;
-        fn i32_rem_u_imm16_rev(binary_u32imm16_rev) -> Self::I32RemUImm16Rev;
+    fn i32_shr_s() -> Self::I32ShrS;
+    fn i32_shr_s_imm({i32.binary_imm<i16>}) -> Self::I32ShrSImm;
+    fn i32_shr_s_imm16_rev({i32.binary_imm_rev<i16>}) -> Self::I32ShrSImm16Rev;
 
-        fn i64_rem_u(binary) -> Self::I64RemU;
-        fn i64_rem_u_imm16_rev(binary_u64imm16_rev) -> Self::I64RemUImm16Rev;
+    fn i64_shr_s() -> Self::I64ShrS;
+    fn i64_shr_s_imm({i64.binary_imm<i16>}) -> Self::I64ShrSImm;
+    fn i64_shr_s_imm16_rev({i64.binary_imm_rev<i16>}) -> Self::I64ShrSImm16Rev;
 
-        fn i32_rem_s(binary) -> Self::I32RemS;
-        fn i32_rem_s_imm16_rev(binary_i32imm16_rev) -> Self::I32RemSImm16Rev;
+    fn i32_rotl() -> Self::I32Rotl;
+    fn i32_rotl_imm({i32.binary_imm<i16>}) -> Self::I32RotlImm;
+    fn i32_rotl_imm16_rev({i32.binary_imm_rev<i16>}) -> Self::I32RotlImm16Rev;
 
-        fn i64_rem_s(binary) -> Self::I64RemS;
-        fn i64_rem_s_imm16_rev(binary_i64imm16_rev) -> Self::I64RemSImm16Rev;
+    fn i64_rotl() -> Self::I64Rotl;
+    fn i64_rotl_imm({i64.binary_imm<i16>}) -> Self::I64RotlImm;
+    fn i64_rotl_imm16_rev({i64.binary_imm_rev<i16>}) -> Self::I64RotlImm16Rev;
 
-        // Integer Bitwise Logic
+    fn i32_rotr() -> Self::I32Rotr;
+    fn i32_rotr_imm({i32.binary_imm<i16>}) -> Self::I32RotrImm;
+    fn i32_rotr_imm16_rev({i32.binary_imm_rev<i16>}) -> Self::I32RotrImm16Rev;
 
-        fn i32_and(binary) -> Self::I32And;
-        fn i32_and_eqz(binary) -> Self::I32AndEqz;
-        fn i32_and_eqz_imm16(binary_i32imm16) -> Self::I32AndEqzImm16;
-        fn i32_and_imm16(binary_i32imm16) -> Self::I32AndImm16;
+    fn i64_rotr() -> Self::I64Rotr;
+    fn i64_rotr_imm({i64.binary_imm<i16>}) -> Self::I64RotrImm;
+    fn i64_rotr_imm16_rev({i64.binary_imm_rev<i16>}) -> Self::I64RotrImm16Rev;
+}
 
-        fn i64_and(binary) -> Self::I64And;
-        fn i64_and_imm16(binary_i64imm16) -> Self::I64AndImm16;
-
-        fn i32_or(binary) -> Self::I32Or;
-        fn i32_or_eqz(binary) -> Self::I32OrEqz;
-        fn i32_or_eqz_imm16(binary_i32imm16) -> Self::I32OrEqzImm16;
-        fn i32_or_imm16(binary_i32imm16) -> Self::I32OrImm16;
-
-        fn i64_or(binary) -> Self::I64Or;
-        fn i64_or_imm16(binary_i64imm16) -> Self::I64OrImm16;
-
-        fn i32_xor(binary) -> Self::I32Xor;
-        fn i32_xor_eqz(binary) -> Self::I32XorEqz;
-        fn i32_xor_eqz_imm16(binary_i32imm16) -> Self::I32XorEqzImm16;
-        fn i32_xor_imm16(binary_i32imm16) -> Self::I32XorImm16;
-
-        fn i64_xor(binary) -> Self::I64Xor;
-        fn i64_xor_imm16(binary_i64imm16) -> Self::I64XorImm16;
-
-        // Integer Shift & Rotate
-
-        fn i32_shl(binary) -> Self::I32Shl;
-        fn i32_shl_imm(binary_i32imm16) -> Self::I32ShlImm;
-        fn i32_shl_imm16_rev(binary_i32imm16_rev) -> Self::I32ShlImm16Rev;
-
-        fn i64_shl(binary) -> Self::I64Shl;
-        fn i64_shl_imm(binary_i64imm16) -> Self::I64ShlImm;
-        fn i64_shl_imm16_rev(binary_i64imm16_rev) -> Self::I64ShlImm16Rev;
-
-        fn i32_shr_u(binary) -> Self::I32ShrU;
-        fn i32_shr_u_imm(binary_i32imm16) -> Self::I32ShrUImm;
-        fn i32_shr_u_imm16_rev(binary_i32imm16_rev) -> Self::I32ShrUImm16Rev;
-
-        fn i64_shr_u(binary) -> Self::I64ShrU;
-        fn i64_shr_u_imm(binary_i64imm16) -> Self::I64ShrUImm;
-        fn i64_shr_u_imm16_rev(binary_i64imm16_rev) -> Self::I64ShrUImm16Rev;
-
-        fn i32_shr_s(binary) -> Self::I32ShrS;
-        fn i32_shr_s_imm(binary_i32imm16) -> Self::I32ShrSImm;
-        fn i32_shr_s_imm16_rev(binary_i32imm16_rev) -> Self::I32ShrSImm16Rev;
-
-        fn i64_shr_s(binary) -> Self::I64ShrS;
-        fn i64_shr_s_imm(binary_i64imm16) -> Self::I64ShrSImm;
-        fn i64_shr_s_imm16_rev(binary_i64imm16_rev) -> Self::I64ShrSImm16Rev;
-
-        fn i32_rotl(binary) -> Self::I32Rotl;
-        fn i32_rotl_imm(binary_i32imm16) -> Self::I32RotlImm;
-        fn i32_rotl_imm16_rev(binary_i32imm16_rev) -> Self::I32RotlImm16Rev;
-
-        fn i64_rotl(binary) -> Self::I64Rotl;
-        fn i64_rotl_imm(binary_i64imm16) -> Self::I64RotlImm;
-        fn i64_rotl_imm16_rev(binary_i64imm16_rev) -> Self::I64RotlImm16Rev;
-
-        fn i32_rotr(binary) -> Self::I32Rotr;
-        fn i32_rotr_imm(binary_i32imm16) -> Self::I32RotrImm;
-        fn i32_rotr_imm16_rev(binary_i32imm16_rev) -> Self::I32RotrImm16Rev;
-
-        fn i64_rotr(binary) -> Self::I64Rotr;
-        fn i64_rotr_imm(binary_i64imm16) -> Self::I64RotrImm;
-        fn i64_rotr_imm16_rev(binary_i64imm16_rev) -> Self::I64RotrImm16Rev;
-
-        // Conversions
-
-        fn i32_extend8_s(unary) -> Self::I32Extend8S;
-        fn i32_extend16_s(unary) -> Self::I32Extend16S;
-        fn i64_extend8_s(unary) -> Self::I64Extend8S;
-        fn i64_extend16_s(unary) -> Self::I64Extend16S;
-        fn i64_extend32_s(unary) -> Self::I64Extend32S;
-
-        fn i32_wrap_i64(unary) -> Self::I32WrapI64;
-        fn i64_extend_i32_s(unary) -> Self::I64ExtendI32S;
-        fn i64_extend_i32_u(unary) -> Self::I64ExtendI32U;
-
-        fn f32_demote_f64(unary) -> Self::F32DemoteF64;
-        fn f64_promote_f32(unary) -> Self::F64PromoteF32;
-
-        fn i32_trunc_f32_s(unary) -> Self::I32TruncF32S;
-        fn i32_trunc_f32_u(unary) -> Self::I32TruncF32U;
-        fn i32_trunc_f64_s(unary) -> Self::I32TruncF64S;
-        fn i32_trunc_f64_u(unary) -> Self::I32TruncF64U;
-
-        fn i64_trunc_f32_s(unary) -> Self::I64TruncF32S;
-        fn i64_trunc_f32_u(unary) -> Self::I64TruncF32U;
-        fn i64_trunc_f64_s(unary) -> Self::I64TruncF64S;
-        fn i64_trunc_f64_u(unary) -> Self::I64TruncF64U;
-
-        fn i32_trunc_sat_f32_s(unary) -> Self::I32TruncSatF32S;
-        fn i32_trunc_sat_f32_u(unary) -> Self::I32TruncSatF32U;
-        fn i32_trunc_sat_f64_s(unary) -> Self::I32TruncSatF64S;
-        fn i32_trunc_sat_f64_u(unary) -> Self::I32TruncSatF64U;
-
-        fn i64_trunc_sat_f32_s(unary) -> Self::I64TruncSatF32S;
-        fn i64_trunc_sat_f32_u(unary) -> Self::I64TruncSatF32U;
-        fn i64_trunc_sat_f64_s(unary) -> Self::I64TruncSatF64S;
-        fn i64_trunc_sat_f64_u(unary) -> Self::I64TruncSatF64U;
-
-        fn f32_convert_i32_s(unary) -> Self::F32ConvertI32S;
-        fn f32_convert_i32_u(unary) -> Self::F32ConvertI32U;
-        fn f32_convert_i64_s(unary) -> Self::F32ConvertI64S;
-        fn f32_convert_i64_u(unary) -> Self::F32ConvertI64U;
-
-        fn f64_convert_i32_s(unary) -> Self::F64ConvertI32S;
-        fn f64_convert_i32_u(unary) -> Self::F64ConvertI32U;
-        fn f64_convert_i64_s(unary) -> Self::F64ConvertI64S;
-        fn f64_convert_i64_u(unary) -> Self::F64ConvertI64U;
+macro_rules! constructor_for_unary_instrs {
+    ( $( fn $constructor_name:ident() -> Self::$instr_name:ident; )* ) => {
+        impl Instruction {
+            $(
+                #[doc = concat!("Creates a new [`Instruction::", stringify!($instr_name), "`].")]
+                pub fn $constructor_name(result: Register, input: Register) -> Self {
+                    Self::$instr_name(UnaryInstr::new(result, input))
+                }
+            )*
+        }
     }
+}
+constructor_for_unary_instrs! {
+    // Integer Unary
+
+    fn i32_clz() -> Self::I32Clz;
+    fn i32_ctz() -> Self::I32Ctz;
+    fn i32_popcnt() -> Self::I32Popcnt;
+
+    fn i64_clz() -> Self::I64Clz;
+    fn i64_ctz() -> Self::I64Ctz;
+    fn i64_popcnt() -> Self::I64Popcnt;
+
+    // Float Unary
+
+    fn f32_abs() -> Self::F32Abs;
+    fn f32_neg() -> Self::F32Neg;
+    fn f32_ceil() -> Self::F32Ceil;
+    fn f32_floor() -> Self::F32Floor;
+    fn f32_trunc() -> Self::F32Trunc;
+    fn f32_nearest() -> Self::F32Nearest;
+    fn f32_sqrt() -> Self::F32Sqrt;
+
+    fn f64_abs() -> Self::F64Abs;
+    fn f64_neg() -> Self::F64Neg;
+    fn f64_ceil() -> Self::F64Ceil;
+    fn f64_floor() -> Self::F64Floor;
+    fn f64_trunc() -> Self::F64Trunc;
+    fn f64_nearest() -> Self::F64Nearest;
+    fn f64_sqrt() -> Self::F64Sqrt;
+
+    // Conversion
+
+    fn i32_extend8_s() -> Self::I32Extend8S;
+    fn i32_extend16_s() -> Self::I32Extend16S;
+    fn i64_extend8_s() -> Self::I64Extend8S;
+    fn i64_extend16_s() -> Self::I64Extend16S;
+    fn i64_extend32_s() -> Self::I64Extend32S;
+
+    fn i32_wrap_i64() -> Self::I32WrapI64;
+    fn i64_extend_i32_s() -> Self::I64ExtendI32S;
+    fn i64_extend_i32_u() -> Self::I64ExtendI32U;
+
+    fn f32_demote_f64() -> Self::F32DemoteF64;
+    fn f64_promote_f32() -> Self::F64PromoteF32;
+
+    fn i32_trunc_f32_s() -> Self::I32TruncF32S;
+    fn i32_trunc_f32_u() -> Self::I32TruncF32U;
+    fn i32_trunc_f64_s() -> Self::I32TruncF64S;
+    fn i32_trunc_f64_u() -> Self::I32TruncF64U;
+
+    fn i64_trunc_f32_s() -> Self::I64TruncF32S;
+    fn i64_trunc_f32_u() -> Self::I64TruncF32U;
+    fn i64_trunc_f64_s() -> Self::I64TruncF64S;
+    fn i64_trunc_f64_u() -> Self::I64TruncF64U;
+
+    fn i32_trunc_sat_f32_s() -> Self::I32TruncSatF32S;
+    fn i32_trunc_sat_f32_u() -> Self::I32TruncSatF32U;
+    fn i32_trunc_sat_f64_s() -> Self::I32TruncSatF64S;
+    fn i32_trunc_sat_f64_u() -> Self::I32TruncSatF64U;
+
+    fn i64_trunc_sat_f32_s() -> Self::I64TruncSatF32S;
+    fn i64_trunc_sat_f32_u() -> Self::I64TruncSatF32U;
+    fn i64_trunc_sat_f64_s() -> Self::I64TruncSatF64S;
+    fn i64_trunc_sat_f64_u() -> Self::I64TruncSatF64U;
+
+    fn f32_convert_i32_s() -> Self::F32ConvertI32S;
+    fn f32_convert_i32_u() -> Self::F32ConvertI32U;
+    fn f32_convert_i64_s() -> Self::F32ConvertI64S;
+    fn f32_convert_i64_u() -> Self::F32ConvertI64U;
+
+    fn f64_convert_i32_s() -> Self::F64ConvertI32S;
+    fn f64_convert_i32_u() -> Self::F64ConvertI32U;
+    fn f64_convert_i64_s() -> Self::F64ConvertI64S;
+    fn f64_convert_i64_u() -> Self::F64ConvertI64U;
+}
+
+macro_rules! constructor_for_load_instrs {
+    (
+        $(
+            fn $fn_name:ident($($mode:ident)?) -> Self::$op_code:ident;
+        )* $(,)?
+    ) => {
+        impl Instruction {
+            $(
+                constructor_for_load_instrs! {
+                    @impl fn $fn_name($($mode)?) -> Self::$op_code
+                }
+            )*
+        }
+    };
+    ( @impl fn $fn_name:ident() -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Register, ptr: Register) -> Self {
+            Self::$op_code(LoadInstr::new(result, ptr))
+        }
+    };
+    ( @impl fn $fn_name:ident(at) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Register, address: Const32<u32>) -> Self {
+            Self::$op_code(LoadAtInstr::new(result, address))
+        }
+    };
+    ( @impl fn $fn_name:ident(offset16) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Register, ptr: Register, offset: Const16<u32>) -> Self {
+            Self::$op_code(LoadOffset16Instr::new(result, ptr, offset))
+        }
+    };
+}
+constructor_for_load_instrs! {
+    fn i32_load() -> Self::I32Load;
+    fn i32_load_at(at) -> Self::I32LoadAt;
+    fn i32_load_offset16(offset16) -> Self::I32LoadOffset16;
+
+    fn i32_load8_s() -> Self::I32Load8s;
+    fn i32_load8_s_at(at) -> Self::I32Load8sAt;
+    fn i32_load8_s_offset16(offset16) -> Self::I32Load8sOffset16;
+
+    fn i32_load8_u() -> Self::I32Load8u;
+    fn i32_load8_u_at(at) -> Self::I32Load8uAt;
+    fn i32_load8_u_offset16(offset16) -> Self::I32Load8uOffset16;
+
+    fn i32_load16_s() -> Self::I32Load16s;
+    fn i32_load16_s_at(at) -> Self::I32Load16sAt;
+    fn i32_load16_s_offset16(offset16) -> Self::I32Load16sOffset16;
+
+    fn i32_load16_u() -> Self::I32Load16u;
+    fn i32_load16_u_at(at) -> Self::I32Load16uAt;
+    fn i32_load16_u_offset16(offset16) -> Self::I32Load16uOffset16;
+
+    fn i64_load() -> Self::I64Load;
+    fn i64_load_at(at) -> Self::I64LoadAt;
+    fn i64_load_offset16(offset16) -> Self::I64LoadOffset16;
+
+    fn i64_load8_s() -> Self::I64Load8s;
+    fn i64_load8_s_at(at) -> Self::I64Load8sAt;
+    fn i64_load8_s_offset16(offset16) -> Self::I64Load8sOffset16;
+
+    fn i64_load8_u() -> Self::I64Load8u;
+    fn i64_load8_u_at(at) -> Self::I64Load8uAt;
+    fn i64_load8_u_offset16(offset16) -> Self::I64Load8uOffset16;
+
+    fn i64_load16_s() -> Self::I64Load16s;
+    fn i64_load16_s_at(at) -> Self::I64Load16sAt;
+    fn i64_load16_s_offset16(offset16) -> Self::I64Load16sOffset16;
+
+    fn i64_load16_u() -> Self::I64Load16u;
+    fn i64_load16_u_at(at) -> Self::I64Load16uAt;
+    fn i64_load16_u_offset16(offset16) -> Self::I64Load16uOffset16;
+
+    fn i64_load32_s() -> Self::I64Load32s;
+    fn i64_load32_s_at(at) -> Self::I64Load32sAt;
+    fn i64_load32_s_offset16(offset16) -> Self::I64Load32sOffset16;
+
+    fn i64_load32_u() -> Self::I64Load32u;
+    fn i64_load32_u_at(at) -> Self::I64Load32uAt;
+    fn i64_load32_u_offset16(offset16) -> Self::I64Load32uOffset16;
+
+    fn f32_load() -> Self::F32Load;
+    fn f32_load_at(at) -> Self::F32LoadAt;
+    fn f32_load_offset16(offset16) -> Self::F32LoadOffset16;
+
+    fn f64_load() -> Self::F64Load;
+    fn f64_load_at(at) -> Self::F64LoadAt;
+    fn f64_load_offset16(offset16) -> Self::F64LoadOffset16;
+}
+
+macro_rules! constructor_for_store_instrs {
+    (
+        $( fn $fn_name:ident($($mode:tt)?) -> Self::$op_code:ident; )* $(,)?
+    ) => {
+        impl Instruction {
+            $(
+                constructor_for_store_instrs! {
+                    @impl fn $fn_name($($mode)?) -> Self::$op_code
+                }
+            )*
+        }
+    };
+    ( @impl fn $fn_name:ident() -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(ptr: Register, offset: Const32<u32>) -> Self {
+            Self::$op_code(StoreInstr::new(ptr, offset))
+        }
+    };
+    ( @impl fn $fn_name:ident(at) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(address: Const32<u32>, value: Register) -> Self {
+            Self::$op_code(StoreAtInstr::new(address, value))
+        }
+    };
+    ( @impl fn $fn_name:ident(offset16) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(ptr: Register, offset: u16, value: Register) -> Self {
+            Self::$op_code(StoreOffset16Instr::new(ptr, offset.into(), value))
+        }
+    };
+    ( @impl fn $fn_name:ident({offset16_imm<i8>}) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(ptr: Register, offset: u16, value: i8) -> Self {
+            Self::$op_code(StoreOffset16Instr::new(ptr, offset.into(), value.into()))
+        }
+    };
+    ( @impl fn $fn_name:ident({offset16_imm<i16>}) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(ptr: Register, offset: u16, value: i16) -> Self {
+            Self::$op_code(StoreOffset16Instr::new(ptr, offset.into(), value.into()))
+        }
+    };
+    ( @impl fn $fn_name:ident({at_imm<i8>}) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(address: Const32<u32>, value: i8) -> Self {
+            Self::$op_code(StoreAtInstr::new(address, value.into()))
+        }
+    };
+    ( @impl fn $fn_name:ident({at_imm<i16>}) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(address: Const32<u32>, value: i16) -> Self {
+            Self::$op_code(StoreAtInstr::new(address, value.into()))
+        }
+    };
+}
+constructor_for_store_instrs! {
+    fn i32_store() -> Self::I32Store;
+    fn i32_store_offset16(offset16) -> Self::I32StoreOffset16;
+    fn i32_store_offset16_imm16({offset16_imm<i16>}) -> Self::I32StoreOffset16Imm16;
+    fn i32_store_at(at) -> Self::I32StoreAt;
+    fn i32_store_at_imm16({at_imm<i16>}) -> Self::I32StoreAtImm16;
+
+    fn i32_store8() -> Self::I32Store8;
+    fn i32_store8_offset16(offset16) -> Self::I32Store8Offset16;
+    fn i32_store8_offset16_imm({offset16_imm<i8>}) -> Self::I32Store8Offset16Imm;
+    fn i32_store8_at(at) -> Self::I32Store8At;
+    fn i32_store8_at_imm({at_imm<i8>}) -> Self::I32Store8AtImm;
+
+    fn i32_store16() -> Self::I32Store16;
+    fn i32_store16_offset16(offset16) -> Self::I32Store16Offset16;
+    fn i32_store16_offset16_imm({offset16_imm<i16>}) -> Self::I32Store16Offset16Imm;
+    fn i32_store16_at(at) -> Self::I32Store16At;
+    fn i32_store16_at_imm({at_imm<i16>}) -> Self::I32Store16AtImm;
+
+    fn i64_store() -> Self::I64Store;
+    fn i64_store_offset16(offset16) -> Self::I64StoreOffset16;
+    fn i64_store_offset16_imm16({offset16_imm<i16>}) -> Self::I64StoreOffset16Imm16;
+    fn i64_store_at(at) -> Self::I64StoreAt;
+    fn i64_store_at_imm16({at_imm<i16>}) -> Self::I64StoreAtImm16;
+
+    fn i64_store8() -> Self::I64Store8;
+    fn i64_store8_offset16(offset16) -> Self::I64Store8Offset16;
+    fn i64_store8_offset16_imm({offset16_imm<i8>}) -> Self::I64Store8Offset16Imm;
+    fn i64_store8_at(at) -> Self::I64Store8At;
+    fn i64_store8_at_imm({at_imm<i8>}) -> Self::I64Store8AtImm;
+
+    fn i64_store16() -> Self::I64Store16;
+    fn i64_store16_offset16(offset16) -> Self::I64Store16Offset16;
+    fn i64_store16_offset16_imm({offset16_imm<i16>}) -> Self::I64Store16Offset16Imm;
+    fn i64_store16_at(at) -> Self::I64Store16At;
+    fn i64_store16_at_imm({at_imm<i16>}) -> Self::I64Store16AtImm;
+
+    fn i64_store32() -> Self::I64Store32;
+    fn i64_store32_offset16(offset16) -> Self::I64Store32Offset16;
+    fn i64_store32_offset16_imm16({offset16_imm<i16>}) -> Self::I64Store32Offset16Imm16;
+    fn i64_store32_at(at) -> Self::I64Store32At;
+    fn i64_store32_at_imm16({at_imm<i16>}) -> Self::I64Store32AtImm16;
+
+    fn f32_store() -> Self::F32Store;
+    fn f32_store_offset16(offset16) -> Self::F32StoreOffset16;
+    fn f32_store_at(at) -> Self::F32StoreAt;
+
+    fn f64_store() -> Self::F64Store;
+    fn f64_store_offset16(offset16) -> Self::F64StoreOffset16;
+    fn f64_store_at(at) -> Self::F64StoreAt;
+}
+
+impl Instruction {
+    /// Creates a new [`Instruction::BranchCmpFallback`].
+    pub fn branch_cmp_fallback(lhs: Register, rhs: Register, params: Register) -> Self {
+        Self::BranchCmpFallback { lhs, rhs, params }
+    }
+}
+
+macro_rules! constructor_for_branch_cmp_instrs {
+    ( $( fn $name:ident() -> Self::$op_code:ident; )* ) => {
+        impl Instruction {
+            $(
+                #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+                pub fn $name(lhs: Register, rhs: Register, offset: BranchOffset16) -> Self {
+                    Self::$op_code(BranchBinOpInstr::new(lhs, rhs, offset))
+                }
+            )*
+        }
+    }
+}
+constructor_for_branch_cmp_instrs! {
+    fn branch_i32_and() -> Self::BranchI32And;
+    fn branch_i32_or() -> Self::BranchI32Or;
+    fn branch_i32_xor() -> Self::BranchI32Xor;
+    fn branch_i32_and_eqz() -> Self::BranchI32AndEqz;
+    fn branch_i32_or_eqz() -> Self::BranchI32OrEqz;
+    fn branch_i32_xor_eqz() -> Self::BranchI32XorEqz;
+    fn branch_i32_eq() -> Self::BranchI32Eq;
+    fn branch_i32_ne() -> Self::BranchI32Ne;
+    fn branch_i32_lt_s() -> Self::BranchI32LtS;
+    fn branch_i32_lt_u() -> Self::BranchI32LtU;
+    fn branch_i32_le_s() -> Self::BranchI32LeS;
+    fn branch_i32_le_u() -> Self::BranchI32LeU;
+    fn branch_i32_gt_s() -> Self::BranchI32GtS;
+    fn branch_i32_gt_u() -> Self::BranchI32GtU;
+    fn branch_i32_ge_s() -> Self::BranchI32GeS;
+    fn branch_i32_ge_u() -> Self::BranchI32GeU;
+
+    fn branch_i64_eq() -> Self::BranchI64Eq;
+    fn branch_i64_ne() -> Self::BranchI64Ne;
+    fn branch_i64_lt_s() -> Self::BranchI64LtS;
+    fn branch_i64_lt_u() -> Self::BranchI64LtU;
+    fn branch_i64_le_s() -> Self::BranchI64LeS;
+    fn branch_i64_le_u() -> Self::BranchI64LeU;
+    fn branch_i64_gt_s() -> Self::BranchI64GtS;
+    fn branch_i64_gt_u() -> Self::BranchI64GtU;
+    fn branch_i64_ge_s() -> Self::BranchI64GeS;
+    fn branch_i64_ge_u() -> Self::BranchI64GeU;
+
+    fn branch_f32_eq() -> Self::BranchF32Eq;
+    fn branch_f32_ne() -> Self::BranchF32Ne;
+    fn branch_f32_lt() -> Self::BranchF32Lt;
+    fn branch_f32_le() -> Self::BranchF32Le;
+    fn branch_f32_gt() -> Self::BranchF32Gt;
+    fn branch_f32_ge() -> Self::BranchF32Ge;
+
+    fn branch_f64_eq() -> Self::BranchF64Eq;
+    fn branch_f64_ne() -> Self::BranchF64Ne;
+    fn branch_f64_lt() -> Self::BranchF64Lt;
+    fn branch_f64_le() -> Self::BranchF64Le;
+    fn branch_f64_gt() -> Self::BranchF64Gt;
+    fn branch_f64_ge() -> Self::BranchF64Ge;
+}
+
+macro_rules! constructor_for_branch_cmp_imm_instrs {
+    ( $( fn $name:ident($ty:ty) -> Self::$op_code:ident; )* ) => {
+        impl Instruction {
+            $(
+                #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+                pub fn $name(lhs: Register, rhs: impl Into<Const16<$ty>>, offset: BranchOffset16) -> Self {
+                    Self::$op_code(BranchBinOpInstrImm16::new(lhs, rhs.into(), offset))
+                }
+            )*
+        }
+    }
+}
+constructor_for_branch_cmp_imm_instrs! {
+    fn branch_i32_and_imm(i32) -> Self::BranchI32AndImm;
+    fn branch_i32_or_imm(i32) -> Self::BranchI32OrImm;
+    fn branch_i32_xor_imm(i32) -> Self::BranchI32XorImm;
+    fn branch_i32_and_eqz_imm(i32) -> Self::BranchI32AndEqzImm;
+    fn branch_i32_or_eqz_imm(i32) -> Self::BranchI32OrEqzImm;
+    fn branch_i32_xor_eqz_imm(i32) -> Self::BranchI32XorEqzImm;
+    fn branch_i32_eq_imm(i32) -> Self::BranchI32EqImm;
+    fn branch_i32_ne_imm(i32) -> Self::BranchI32NeImm;
+    fn branch_i32_lt_s_imm(i32) -> Self::BranchI32LtSImm;
+    fn branch_i32_lt_u_imm(u32) -> Self::BranchI32LtUImm;
+    fn branch_i32_le_s_imm(i32) -> Self::BranchI32LeSImm;
+    fn branch_i32_le_u_imm(u32) -> Self::BranchI32LeUImm;
+    fn branch_i32_gt_s_imm(i32) -> Self::BranchI32GtSImm;
+    fn branch_i32_gt_u_imm(u32) -> Self::BranchI32GtUImm;
+    fn branch_i32_ge_s_imm(i32) -> Self::BranchI32GeSImm;
+    fn branch_i32_ge_u_imm(u32) -> Self::BranchI32GeUImm;
+
+    fn branch_i64_eq_imm(i64) -> Self::BranchI64EqImm;
+    fn branch_i64_ne_imm(i64) -> Self::BranchI64NeImm;
+    fn branch_i64_lt_s_imm(i64) -> Self::BranchI64LtSImm;
+    fn branch_i64_lt_u_imm(u64) -> Self::BranchI64LtUImm;
+    fn branch_i64_le_s_imm(i64) -> Self::BranchI64LeSImm;
+    fn branch_i64_le_u_imm(u64) -> Self::BranchI64LeUImm;
+    fn branch_i64_gt_s_imm(i64) -> Self::BranchI64GtSImm;
+    fn branch_i64_gt_u_imm(u64) -> Self::BranchI64GtUImm;
+    fn branch_i64_ge_s_imm(i64) -> Self::BranchI64GeSImm;
+    fn branch_i64_ge_u_imm(u64) -> Self::BranchI64GeUImm;
+}
+
+macro_rules! constructor_for_divrem_imm_instrs {
+    ( $( fn $name:ident($ty:ty) -> Self::$op_code:ident; )* ) => {
+        impl Instruction {
+            $(
+                #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+                pub fn $name(result: Register, lhs: Register, rhs: impl Into<Const16<$ty>>) -> Self {
+                    Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
+                }
+            )*
+        }
+    }
+}
+constructor_for_divrem_imm_instrs! {
+    fn i32_div_s_imm16(NonZeroI32) -> Self::I32DivSImm16;
+    fn i32_div_u_imm16(NonZeroU32) -> Self::I32DivUImm16;
+    fn i32_rem_s_imm16(NonZeroI32) -> Self::I32RemSImm16;
+    fn i32_rem_u_imm16(NonZeroU32) -> Self::I32RemUImm16;
+
+    fn i64_div_s_imm16(NonZeroI64) -> Self::I64DivSImm16;
+    fn i64_div_u_imm16(NonZeroU64) -> Self::I64DivUImm16;
+    fn i64_rem_s_imm16(NonZeroI64) -> Self::I64RemSImm16;
+    fn i64_rem_u_imm16(NonZeroU64) -> Self::I64RemUImm16;
 }
