@@ -31,30 +31,6 @@ use super::{
 };
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
 
-macro_rules! constructor_for_branch_binop_imm {
-    ( $( fn $name:ident($ty:ty) -> Self::$op_code:ident; )* ) => {
-        impl Instruction {
-            $(
-                #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-                pub fn $name(result: Register, lhs: Register, rhs: impl Into<Const16<$ty>>) -> Self {
-                    Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
-                }
-            )*
-        }
-    }
-}
-constructor_for_branch_binop_imm! {
-    fn i32_div_s_imm16(NonZeroI32) -> Self::I32DivSImm16;
-    fn i32_div_u_imm16(NonZeroU32) -> Self::I32DivUImm16;
-    fn i32_rem_s_imm16(NonZeroI32) -> Self::I32RemSImm16;
-    fn i32_rem_u_imm16(NonZeroU32) -> Self::I32RemUImm16;
-
-    fn i64_div_s_imm16(NonZeroI64) -> Self::I64DivSImm16;
-    fn i64_div_u_imm16(NonZeroU64) -> Self::I64DivUImm16;
-    fn i64_rem_s_imm16(NonZeroI64) -> Self::I64RemSImm16;
-    fn i64_rem_u_imm16(NonZeroU64) -> Self::I64RemUImm16;
-}
-
 impl Instruction {
     /// Creates a new [`Instruction::Const32`] from the given `value`.
     pub fn const32(value: impl Into<AnyConst32>) -> Self {
@@ -1748,4 +1724,28 @@ constructor_for_branch_cmp_imm_instrs! {
     fn branch_i64_gt_u_imm(u64) -> Self::BranchI64GtUImm;
     fn branch_i64_ge_s_imm(i64) -> Self::BranchI64GeSImm;
     fn branch_i64_ge_u_imm(u64) -> Self::BranchI64GeUImm;
+}
+
+macro_rules! constructor_for_divrem_imm_instrs {
+    ( $( fn $name:ident($ty:ty) -> Self::$op_code:ident; )* ) => {
+        impl Instruction {
+            $(
+                #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+                pub fn $name(result: Register, lhs: Register, rhs: impl Into<Const16<$ty>>) -> Self {
+                    Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
+                }
+            )*
+        }
+    }
+}
+constructor_for_divrem_imm_instrs! {
+    fn i32_div_s_imm16(NonZeroI32) -> Self::I32DivSImm16;
+    fn i32_div_u_imm16(NonZeroU32) -> Self::I32DivUImm16;
+    fn i32_rem_s_imm16(NonZeroI32) -> Self::I32RemSImm16;
+    fn i32_rem_u_imm16(NonZeroU32) -> Self::I32RemUImm16;
+
+    fn i64_div_s_imm16(NonZeroI64) -> Self::I64DivSImm16;
+    fn i64_div_u_imm16(NonZeroU64) -> Self::I64DivUImm16;
+    fn i64_rem_s_imm16(NonZeroI64) -> Self::I64RemSImm16;
+    fn i64_rem_u_imm16(NonZeroU64) -> Self::I64RemUImm16;
 }
