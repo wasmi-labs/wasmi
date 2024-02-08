@@ -39,12 +39,6 @@ macro_rules! constructor_for {
     ) => {
         $( constructor_for! { @impl fn $fn_name($mode) -> Self::$op_code } )*
     };
-    ( @impl fn $fn_name:ident(unary) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, input: Register) -> Self {
-            Self::$op_code(UnaryInstr::new(result, input))
-        }
-    };
     ( @impl fn $fn_name:ident(binary) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
         pub fn $fn_name(result: Register, lhs: Register, rhs: Register) -> Self {
@@ -1432,34 +1426,6 @@ impl Instruction {
         fn f64_store_offset16(store_offset16) -> Self::F64StoreOffset16;
         fn f64_store_at(store_at) -> Self::F64StoreAt;
 
-        // Integer Unary
-
-        fn i32_clz(unary) -> Self::I32Clz;
-        fn i32_ctz(unary) -> Self::I32Ctz;
-        fn i32_popcnt(unary) -> Self::I32Popcnt;
-
-        fn i64_clz(unary) -> Self::I64Clz;
-        fn i64_ctz(unary) -> Self::I64Ctz;
-        fn i64_popcnt(unary) -> Self::I64Popcnt;
-
-        // Float Unary
-
-        fn f32_abs(unary) -> Self::F32Abs;
-        fn f32_neg(unary) -> Self::F32Neg;
-        fn f32_ceil(unary) -> Self::F32Ceil;
-        fn f32_floor(unary) -> Self::F32Floor;
-        fn f32_trunc(unary) -> Self::F32Trunc;
-        fn f32_nearest(unary) -> Self::F32Nearest;
-        fn f32_sqrt(unary) -> Self::F32Sqrt;
-
-        fn f64_abs(unary) -> Self::F64Abs;
-        fn f64_neg(unary) -> Self::F64Neg;
-        fn f64_ceil(unary) -> Self::F64Ceil;
-        fn f64_floor(unary) -> Self::F64Floor;
-        fn f64_trunc(unary) -> Self::F64Trunc;
-        fn f64_nearest(unary) -> Self::F64Nearest;
-        fn f64_sqrt(unary) -> Self::F64Sqrt;
-
         // Float Arithmetic
 
         fn f32_add(binary) -> Self::F32Add;
@@ -1667,50 +1633,92 @@ impl Instruction {
         fn i64_rotr(binary) -> Self::I64Rotr;
         fn i64_rotr_imm(binary_i64imm16) -> Self::I64RotrImm;
         fn i64_rotr_imm16_rev(binary_i64imm16_rev) -> Self::I64RotrImm16Rev;
-
-        // Conversions
-
-        fn i32_extend8_s(unary) -> Self::I32Extend8S;
-        fn i32_extend16_s(unary) -> Self::I32Extend16S;
-        fn i64_extend8_s(unary) -> Self::I64Extend8S;
-        fn i64_extend16_s(unary) -> Self::I64Extend16S;
-        fn i64_extend32_s(unary) -> Self::I64Extend32S;
-
-        fn i32_wrap_i64(unary) -> Self::I32WrapI64;
-        fn i64_extend_i32_s(unary) -> Self::I64ExtendI32S;
-        fn i64_extend_i32_u(unary) -> Self::I64ExtendI32U;
-
-        fn f32_demote_f64(unary) -> Self::F32DemoteF64;
-        fn f64_promote_f32(unary) -> Self::F64PromoteF32;
-
-        fn i32_trunc_f32_s(unary) -> Self::I32TruncF32S;
-        fn i32_trunc_f32_u(unary) -> Self::I32TruncF32U;
-        fn i32_trunc_f64_s(unary) -> Self::I32TruncF64S;
-        fn i32_trunc_f64_u(unary) -> Self::I32TruncF64U;
-
-        fn i64_trunc_f32_s(unary) -> Self::I64TruncF32S;
-        fn i64_trunc_f32_u(unary) -> Self::I64TruncF32U;
-        fn i64_trunc_f64_s(unary) -> Self::I64TruncF64S;
-        fn i64_trunc_f64_u(unary) -> Self::I64TruncF64U;
-
-        fn i32_trunc_sat_f32_s(unary) -> Self::I32TruncSatF32S;
-        fn i32_trunc_sat_f32_u(unary) -> Self::I32TruncSatF32U;
-        fn i32_trunc_sat_f64_s(unary) -> Self::I32TruncSatF64S;
-        fn i32_trunc_sat_f64_u(unary) -> Self::I32TruncSatF64U;
-
-        fn i64_trunc_sat_f32_s(unary) -> Self::I64TruncSatF32S;
-        fn i64_trunc_sat_f32_u(unary) -> Self::I64TruncSatF32U;
-        fn i64_trunc_sat_f64_s(unary) -> Self::I64TruncSatF64S;
-        fn i64_trunc_sat_f64_u(unary) -> Self::I64TruncSatF64U;
-
-        fn f32_convert_i32_s(unary) -> Self::F32ConvertI32S;
-        fn f32_convert_i32_u(unary) -> Self::F32ConvertI32U;
-        fn f32_convert_i64_s(unary) -> Self::F32ConvertI64S;
-        fn f32_convert_i64_u(unary) -> Self::F32ConvertI64U;
-
-        fn f64_convert_i32_s(unary) -> Self::F64ConvertI32S;
-        fn f64_convert_i32_u(unary) -> Self::F64ConvertI32U;
-        fn f64_convert_i64_s(unary) -> Self::F64ConvertI64S;
-        fn f64_convert_i64_u(unary) -> Self::F64ConvertI64U;
     }
+}
+
+macro_rules! constructor_for_unary_instrs {
+    ( $( fn $constructor_name:ident() -> Self::$instr_name:ident; )* ) => {
+        impl Instruction {
+            $(
+                #[doc = concat!("Creates a new [`Instruction::", stringify!($instr_name), "`].")]
+                pub fn $constructor_name(result: Register, input: Register) -> Self {
+                    Self::$instr_name(UnaryInstr::new(result, input))
+                }
+            )*
+        }
+    }
+}
+constructor_for_unary_instrs! {
+    // Integer Unary
+
+    fn i32_clz() -> Self::I32Clz;
+    fn i32_ctz() -> Self::I32Ctz;
+    fn i32_popcnt() -> Self::I32Popcnt;
+
+    fn i64_clz() -> Self::I64Clz;
+    fn i64_ctz() -> Self::I64Ctz;
+    fn i64_popcnt() -> Self::I64Popcnt;
+
+    // Float Unary
+
+    fn f32_abs() -> Self::F32Abs;
+    fn f32_neg() -> Self::F32Neg;
+    fn f32_ceil() -> Self::F32Ceil;
+    fn f32_floor() -> Self::F32Floor;
+    fn f32_trunc() -> Self::F32Trunc;
+    fn f32_nearest() -> Self::F32Nearest;
+    fn f32_sqrt() -> Self::F32Sqrt;
+
+    fn f64_abs() -> Self::F64Abs;
+    fn f64_neg() -> Self::F64Neg;
+    fn f64_ceil() -> Self::F64Ceil;
+    fn f64_floor() -> Self::F64Floor;
+    fn f64_trunc() -> Self::F64Trunc;
+    fn f64_nearest() -> Self::F64Nearest;
+    fn f64_sqrt() -> Self::F64Sqrt;
+
+    // Conversion
+
+    fn i32_extend8_s() -> Self::I32Extend8S;
+    fn i32_extend16_s() -> Self::I32Extend16S;
+    fn i64_extend8_s() -> Self::I64Extend8S;
+    fn i64_extend16_s() -> Self::I64Extend16S;
+    fn i64_extend32_s() -> Self::I64Extend32S;
+
+    fn i32_wrap_i64() -> Self::I32WrapI64;
+    fn i64_extend_i32_s() -> Self::I64ExtendI32S;
+    fn i64_extend_i32_u() -> Self::I64ExtendI32U;
+
+    fn f32_demote_f64() -> Self::F32DemoteF64;
+    fn f64_promote_f32() -> Self::F64PromoteF32;
+
+    fn i32_trunc_f32_s() -> Self::I32TruncF32S;
+    fn i32_trunc_f32_u() -> Self::I32TruncF32U;
+    fn i32_trunc_f64_s() -> Self::I32TruncF64S;
+    fn i32_trunc_f64_u() -> Self::I32TruncF64U;
+
+    fn i64_trunc_f32_s() -> Self::I64TruncF32S;
+    fn i64_trunc_f32_u() -> Self::I64TruncF32U;
+    fn i64_trunc_f64_s() -> Self::I64TruncF64S;
+    fn i64_trunc_f64_u() -> Self::I64TruncF64U;
+
+    fn i32_trunc_sat_f32_s() -> Self::I32TruncSatF32S;
+    fn i32_trunc_sat_f32_u() -> Self::I32TruncSatF32U;
+    fn i32_trunc_sat_f64_s() -> Self::I32TruncSatF64S;
+    fn i32_trunc_sat_f64_u() -> Self::I32TruncSatF64U;
+
+    fn i64_trunc_sat_f32_s() -> Self::I64TruncSatF32S;
+    fn i64_trunc_sat_f32_u() -> Self::I64TruncSatF32U;
+    fn i64_trunc_sat_f64_s() -> Self::I64TruncSatF64S;
+    fn i64_trunc_sat_f64_u() -> Self::I64TruncSatF64U;
+
+    fn f32_convert_i32_s() -> Self::F32ConvertI32S;
+    fn f32_convert_i32_u() -> Self::F32ConvertI32U;
+    fn f32_convert_i64_s() -> Self::F32ConvertI64S;
+    fn f32_convert_i64_u() -> Self::F32ConvertI64U;
+
+    fn f64_convert_i32_s() -> Self::F64ConvertI32S;
+    fn f64_convert_i32_u() -> Self::F64ConvertI32U;
+    fn f64_convert_i64_s() -> Self::F64ConvertI64S;
+    fn f64_convert_i64_u() -> Self::F64ConvertI64U;
 }
