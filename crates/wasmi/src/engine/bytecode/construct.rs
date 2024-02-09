@@ -600,8 +600,11 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::I32AddImmIntoGlobal0`].
-    pub fn i32_add_imm_into_global_0(lhs: Register, rhs: Const32<i32>) -> Self {
-        Self::I32AddImmIntoGlobal0 { lhs, rhs }
+    pub fn i32_add_imm_into_global_0(lhs: Register, rhs: impl Into<Const32<i32>>) -> Self {
+        Self::I32AddImmIntoGlobal0 {
+            lhs,
+            rhs: rhs.into(),
+        }
     }
 
     /// Creates a new [`Instruction::I32AddImmFromGlobal0`].
