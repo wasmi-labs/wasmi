@@ -42,6 +42,7 @@ use super::code_map::CompiledFuncEntity;
 use crate::{
     engine::{
         bytecode::{
+            self,
             AnyConst32,
             Const16,
             Const32,
@@ -56,7 +57,7 @@ use crate::{
         BlockType,
         CompiledFunc,
     },
-    module::{FuncIdx, FuncTypeIdx, ModuleHeader},
+    module::{self, FuncIdx, FuncTypeIdx, ModuleHeader},
     Engine,
     Error,
     FuncType,
@@ -2466,5 +2467,42 @@ impl FuncTranslator {
             values,
             fuel_info,
         )
+    }
+
+    /// Translates a `global.set` with an immutable input.
+    fn translate_global_set_imm(
+        &mut self,
+        global: bytecode::GlobalIdx,
+        input: TypedValue,
+    ) -> Result<(), Error> {
+        let global_index = global.to_u32();
+        let (global_type, _init_value) = self
+            .module
+            .get_global(module::GlobalIdx::from(global_index));
+        debug_assert_eq!(global_type.content(), input.ty());
+        match global_type.content() {
+            ValueType::I32 => {
+                if let Ok(value) = Const16::try_from(i32::from(input)) {
+                    self.push_fueled_instr(
+                        Instruction::global_set_i32imm16(global, value),
+                        FuelCosts::entity,
+                    )?;
+                    return Ok(());
+                }
+            }
+            ValueType::I64 => {
+                if let Ok(value) = Const16::try_from(i64::from(input)) {
+                    self.push_fueled_instr(
+                        Instruction::global_set_i64imm16(global, value),
+                        FuelCosts::entity,
+                    )?;
+                    return Ok(());
+                }
+            }
+            _ => {}
+        };
+        let cref = self.alloc.stack.alloc_const(input)?;
+        self.push_fueled_instr(Instruction::global_set(global, cref), FuelCosts::entity)?;
+        Ok(())
     }
 }

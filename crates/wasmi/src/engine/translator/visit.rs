@@ -880,36 +880,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let global = bytecode::GlobalIdx::from(global_index);
         let input = match self.alloc.stack.pop() {
             TypedProvider::Register(input) => input,
-            TypedProvider::Const(input) => {
-                let (global_type, _init_value) = self
-                    .module
-                    .get_global(module::GlobalIdx::from(global_index));
-                debug_assert_eq!(global_type.content(), input.ty());
-                match global_type.content() {
-                    ValueType::I32 => {
-                        if let Ok(value) = Const16::try_from(i32::from(input)) {
-                            self.push_fueled_instr(
-                                Instruction::global_set_i32imm16(global, value),
-                                FuelCosts::entity,
-                            )?;
-                            return Ok(());
-                        }
-                    }
-                    ValueType::I64 => {
-                        if let Ok(value) = Const16::try_from(i64::from(input)) {
-                            self.push_fueled_instr(
-                                Instruction::global_set_i64imm16(global, value),
-                                FuelCosts::entity,
-                            )?;
-                            return Ok(());
-                        }
-                    }
-                    _ => {}
-                };
-                let cref = self.alloc.stack.alloc_const(input)?;
-                self.push_fueled_instr(Instruction::global_set(global, cref), FuelCosts::entity)?;
-                return Ok(());
-            }
+            TypedProvider::Const(input) => return self.translate_global_set_imm(global, input),
         };
         if self.alloc.instr_encoder.fuse_i32_add_global_set(
             global_index,
