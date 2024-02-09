@@ -4,10 +4,7 @@ exclude = []
 resolver = "2"
 
 [workspace.package]
-authors = [
-    "Parity Technologies <admin@parity.io>",
-    "Robin Freyler <robin.freyler@gmail.com>",
-]
+authors = ["Robin Freyler <robin.freyler@gmail.com>"]
 repository = "https://github.com/paritytech/wasmi"
 edition = "2021"
 readme = "README.md"

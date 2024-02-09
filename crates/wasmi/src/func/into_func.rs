@@ -328,6 +328,7 @@ mod tests {
         marker: core::marker::PhantomData<fn() -> T>,
     }
     /// Utility trait for the fallback case of the `implements_wasm_results` macro.
+    #[allow(dead_code)] // TODO: somehow the tests work without this which is strange.
     pub trait ImplementsWasmRetFallback {
         const VALUE: bool = false;
     }
@@ -356,6 +357,8 @@ mod tests {
 
     #[test]
     fn into_func_trait_impls() {
+        assert!(!implements_wasm_results!(String));
+        assert!(!implements_wasm_results!(Option<i32>));
         assert!(implements_wasm_results!(()));
         assert!(implements_wasm_results!(i32));
         assert!(implements_wasm_results!((i32,)));

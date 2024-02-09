@@ -1,6 +1,6 @@
 [package]
 name = "wasmi_cli"
-version = "0.32.0-beta.5"
+version = "0.32.0-beta.6"
 documentation = "https://docs.rs/wasmi/"
 description = "WebAssembly interpreter"
 authors.workspace = true
@@ -14,8 +14,8 @@ categories.workspace = true
 [dependencies]
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
-wasmi = { version = "0.32.0-beta.5", path = "../wasmi" }
-wasmi_wasi = { version = "0.32.0-beta.5", path = "../wasi" }
+wasmi = { version = "0.32.0-beta.6", path = "../wasmi" }
+wasmi_wasi = { version = "0.32.0-beta.6", path = "../wasi" }
 wat = "1"
 
 [dev-dependencies]
