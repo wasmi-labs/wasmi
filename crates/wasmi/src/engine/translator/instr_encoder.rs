@@ -914,11 +914,18 @@ impl InstrEncoder {
     pub fn fuse_i32_eqz(&mut self, stack: &mut ValueStack) -> bool {
         /// Fuse a `i32.{and,or,xor}` instruction with `i32.eqz`.
         macro_rules! fuse {
-            ($instr:ident, $stack:ident, $make_fuse:expr) => {{
+            ($instr:ident, $stack:ident, $input:ident, $make_fuse:expr) => {{
                 if matches!(
                     $stack.get_register_space($instr.result),
                     RegisterSpace::Local
                 ) {
+                    // The instruction stores its result into a local variable which
+                    // is an observable side effect which we are not allowed to mutate.
+                    return false;
+                }
+                if $instr.result != $input {
+                    // The result of the instruction and the current input are not equal
+                    // thus indicating that we cannot fuse the instructions.
                     return false;
                 }
                 $make_fuse($instr.result, $instr.lhs, $instr.rhs)
@@ -927,34 +934,42 @@ impl InstrEncoder {
 
         /// Fuse a `i32.{and,or,xor}` instruction with 16-bit encoded immediate parameter with `i32.eqz`.
         macro_rules! fuse_imm16 {
-            ($instr:ident, $stack:ident, $make_fuse:expr) => {{
+            ($instr:ident, $stack:ident, $input:ident, $make_fuse:expr) => {{
                 if matches!(
                     $stack.get_register_space($instr.result),
                     RegisterSpace::Local
                 ) {
-                    // Must not fuse instruction that store to local registers since
-                    // this behavior is observable and would not be semantics preserving.
+                    // The instruction stores its result into a local variable which
+                    // is an observable side effect which we are not allowed to mutate.
+                    return false;
+                }
+                if $instr.result != $input {
+                    // The result of the instruction and the current input are not equal
+                    // thus indicating that we cannot fuse the instructions.
                     return false;
                 }
                 $make_fuse($instr.result, $instr.reg_in, $instr.imm_in)
             }};
         }
 
+        let Provider::Register(input) = stack.peek() else {
+            return false;
+        };
         let Some(last_instr) = self.last_instr else {
             return false;
         };
         let fused_instr = match self.instrs.get(last_instr) {
-            Instruction::I32And(instr) => fuse!(instr, stack, Instruction::i32_and_eqz),
+            Instruction::I32And(instr) => fuse!(instr, stack, input, Instruction::i32_and_eqz),
             Instruction::I32AndImm16(instr) => {
-                fuse_imm16!(instr, stack, Instruction::i32_and_eqz_imm16)
+                fuse_imm16!(instr, stack, input, Instruction::i32_and_eqz_imm16)
             }
-            Instruction::I32Or(instr) => fuse!(instr, stack, Instruction::i32_or_eqz),
+            Instruction::I32Or(instr) => fuse!(instr, stack, input, Instruction::i32_or_eqz),
             Instruction::I32OrImm16(instr) => {
-                fuse_imm16!(instr, stack, Instruction::i32_or_eqz_imm16)
+                fuse_imm16!(instr, stack, input, Instruction::i32_or_eqz_imm16)
             }
-            Instruction::I32Xor(instr) => fuse!(instr, stack, Instruction::i32_xor_eqz),
+            Instruction::I32Xor(instr) => fuse!(instr, stack, input, Instruction::i32_xor_eqz),
             Instruction::I32XorImm16(instr) => {
-                fuse_imm16!(instr, stack, Instruction::i32_xor_eqz_imm16)
+                fuse_imm16!(instr, stack, input, Instruction::i32_xor_eqz_imm16)
             }
             _ => return false,
         };
