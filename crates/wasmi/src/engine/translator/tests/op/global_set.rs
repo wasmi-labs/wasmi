@@ -152,3 +152,83 @@ fn i64imm16() {
     test_i64imm16(i64::from(i16::MAX));
     test_i64imm16(i64::from(i16::MIN));
 }
+
+#[test]
+// #[cfg_attr(miri, ignore)]
+fn shadow_stack_in_v0() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (global $__shadow_stack (mut i32) (i32.const 1000))
+            (func
+                (local $v i32)
+                global.get $__shadow_stack
+                i32.const 4
+                i32.sub
+                local.tee $v
+                global.set $__shadow_stack
+            )
+        )
+    "#,
+    );
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::global_get(Register::from_i16(1), GlobalIdx::from(0)),
+            Instruction::i32_add_imm16(Register::from_i16(0), Register::from_i16(1), -4),
+            Instruction::global_set(GlobalIdx::from(0), Register::from_i16(0)),
+            Instruction::Return,
+        ])
+        .run()
+}
+
+#[test]
+// #[cfg_attr(miri, ignore)]
+fn shadow_stack_in_v1() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (global $__shadow_stack (mut i32) (i32.const 1000))
+            (func
+                (local $v i32)
+                global.get $__shadow_stack
+                i32.const -64
+                i32.add
+                local.tee $v
+                global.set $__shadow_stack
+            )
+        )
+    "#,
+    );
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::global_get(Register::from_i16(1), GlobalIdx::from(0)),
+            Instruction::i32_add_imm16(Register::from_i16(0), Register::from_i16(1), -64),
+            Instruction::global_set(GlobalIdx::from(0), Register::from_i16(0)),
+            Instruction::Return,
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn shadow_stack_out() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (global $__shadow_stack (mut i32) (i32.const 1000))
+            (func (param $v i32)
+                local.get $v
+                i32.const 4
+                i32.add
+                global.set $__shadow_stack
+            )
+        )
+    "#,
+    );
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::i32_add_imm_into_global_0(Register::from_i16(0), 4),
+            Instruction::Return,
+        ])
+        .run()
+}
