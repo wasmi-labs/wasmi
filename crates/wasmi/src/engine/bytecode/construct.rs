@@ -608,8 +608,11 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::I32AddImmFromGlobal0`].
-    pub fn i32_add_imm_from_global_0(result: Register, rhs: Const32<i32>) -> Self {
-        Self::I32AddImmFromGlobal0 { result, rhs }
+    pub fn i32_add_imm_from_global_0(result: Register, rhs: impl Into<Const32<i32>>) -> Self {
+        Self::I32AddImmFromGlobal0 {
+            result,
+            rhs: rhs.into(),
+        }
     }
 
     /// Creates a new [`Instruction::F32CopysignImm`] instruction.
