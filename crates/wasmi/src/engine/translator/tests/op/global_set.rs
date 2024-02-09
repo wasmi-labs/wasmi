@@ -154,7 +154,7 @@ fn i64imm16() {
 }
 
 #[test]
-// #[cfg_attr(miri, ignore)]
+#[cfg_attr(miri, ignore)]
 fn shadow_stack_in_v0() {
     let wasm = wat2wasm(
         r#"
@@ -173,15 +173,14 @@ fn shadow_stack_in_v0() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::i32_add_imm_from_global_0(Register::from_i16(0), -4),
-            Instruction::global_set(GlobalIdx::from(0), Register::from_i16(0)),
+            Instruction::i32_add_imm_inout_global_0(Register::from_i16(0), -4),
             Instruction::Return,
         ])
         .run()
 }
 
 #[test]
-// #[cfg_attr(miri, ignore)]
+#[cfg_attr(miri, ignore)]
 fn shadow_stack_in_v1() {
     let wasm = wat2wasm(
         r#"
@@ -200,8 +199,7 @@ fn shadow_stack_in_v1() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::i32_add_imm_from_global_0(Register::from_i16(0), -64),
-            Instruction::global_set(GlobalIdx::from(0), Register::from_i16(0)),
+            Instruction::i32_add_imm_inout_global_0(Register::from_i16(0), -64),
             Instruction::Return,
         ])
         .run()
