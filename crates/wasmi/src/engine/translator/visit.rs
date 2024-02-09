@@ -881,11 +881,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             TypedProvider::Register(input) => input,
             TypedProvider::Const(input) => return self.translate_global_set_imm(global, input),
         };
-        if self.alloc.instr_encoder.fuse_i32_add_global_set(
-            global_index,
-            input,
-            &mut self.alloc.stack,
-        ) {
+        if self
+            .alloc
+            .instr_encoder
+            .fuse_global_set(global_index, input, &mut self.alloc.stack)
+        {
             return Ok(());
         }
         self.push_fueled_instr(Instruction::global_set(global, input), FuelCosts::entity)?;

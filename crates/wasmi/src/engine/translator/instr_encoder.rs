@@ -864,13 +864,13 @@ impl InstrEncoder {
         Ok(true)
     }
 
-    /// Fuses an `i32.add r c` with a `global.set g` if possible.
+    /// Fuses the `global.set` instruction with its previous instruction if possible.
     ///
     /// Returns `true` if `Instruction` fusion was successful, `false` otherwise.
-    pub fn fuse_i32_add_global_set(
+    pub fn fuse_global_set(
         &mut self,
         global_index: u32,
-        top: Register,
+        input: Register,
         stack: &mut ValueStack,
     ) -> bool {
         if global_index != 0 {
@@ -882,27 +882,32 @@ impl InstrEncoder {
             // Without a last instruction there is no way to fuse.
             return false;
         };
-        let Instruction::I32AddImm16(instr) = self.instrs.get(last_instr) else {
-            // It is only possible to fuse an `I32AddImm16` with a `GlobalSet` instruction.
-            //
-            // TODO: Technically it is also possible to fuse `I32Add` if `rhs` is a register that
-            //       refers to a function local constant with an `i32` value.
-            return false;
+        let fused_instr = match self.instrs.get(last_instr) {
+            Instruction::I32AddImm16(instr) => {
+                if !matches!(
+                    stack.get_register_space(instr.result),
+                    RegisterSpace::Dynamic
+                ) {
+                    // Due to observable state it is impossible to fuse `I32AddIm16` that has a non-`dynamic` result.
+                    return false;
+                };
+                if instr.result != input {
+                    // The `input` to `GlobalSet` must be the same as the result of `I32AddImm16`.
+                    return false;
+                }
+                let lhs = instr.reg_in;
+                let rhs = <Const32<i32>>::from(i32::from(instr.imm_in));
+                Instruction::i32_add_imm_into_global_0(lhs, rhs)
+            }
+            &Instruction::I32AddImmFromGlobal0 { result, rhs } => {
+                if result != input {
+                    // The `input` to `GlobalSet` must be the same as the result of `I32AddImmFromGlobal0`.
+                    return false;
+                }
+                Instruction::i32_add_imm_inout_global_0(result, rhs)
+            }
+            _ => return false,
         };
-        if !matches!(
-            stack.get_register_space(instr.result),
-            RegisterSpace::Dynamic
-        ) {
-            // Due to observable state it is impossible to fuse `I32AddIm16` that has a non-`dynamic` result.
-            return false;
-        };
-        if instr.result != top {
-            // The `input` to `GlobalSet` must be the same as the result of `I32AddImm16`.
-            return false;
-        }
-        let lhs = instr.reg_in;
-        let rhs = <Const32<i32>>::from(i32::from(instr.imm_in));
-        let fused_instr = Instruction::i32_add_imm_into_global_0(lhs, rhs);
         _ = mem::replace(self.instrs.get_mut(last_instr), fused_instr);
         true
     }
