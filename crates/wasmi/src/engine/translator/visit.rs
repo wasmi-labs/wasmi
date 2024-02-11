@@ -2194,7 +2194,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 }
                 if this.alloc.instr_encoder.fuse_global_get_i32_add_imm(
                     lhs,
-                    -rhs,
+                    rhs.wrapping_neg(),
                     &mut this.alloc.stack,
                 )? {
                     // Optimization: Fused `global.get 0` and `i32.add_imm`
