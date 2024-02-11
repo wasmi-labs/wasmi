@@ -207,7 +207,7 @@ fn shadow_stack_in_v1() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn shadow_stack_out() {
+fn shadow_stack_out_v0() {
     let wasm = wat2wasm(
         r#"
         (module
@@ -216,6 +216,30 @@ fn shadow_stack_out() {
                 local.get $v
                 i32.const 4
                 i32.add
+                global.set $__shadow_stack
+            )
+        )
+    "#,
+    );
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::i32_add_imm_into_global_0(Register::from_i16(0), 4),
+            Instruction::Return,
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn shadow_stack_out_v1() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (global $__shadow_stack (mut i32) (i32.const 1000))
+            (func (param $v i32)
+                local.get $v
+                i32.const -4
+                i32.sub
                 global.set $__shadow_stack
             )
         )
