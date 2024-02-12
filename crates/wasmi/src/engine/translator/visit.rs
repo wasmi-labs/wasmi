@@ -2532,14 +2532,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     // Simplification: Translate `i64.sub r c` as `i64.add r -c`
                     return Ok(true);
                 }
-                if this.try_push_binary_instr_imm16(
-                    lhs,
-                    rhs.wrapping_neg(),
-                    Instruction::i64_add_imm16,
-                )? {
-                    // Simplification: Translate `i64.sub r c` as `i64.add r -c`
-                    return Ok(true);
-                }
                 this.push_binary_instr_imm(lhs, rhs.wrapping_neg(), Instruction::i64_add)?;
                 Ok(true)
             },
