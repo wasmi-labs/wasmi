@@ -42,7 +42,28 @@ fn reg_imm16_rev() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm() {
-    test_binary_reg_imm32(WASM_OP, i32::MAX, Instruction::i32_sub)
+    test_reg_imm(i32::MAX);
+    test_reg_imm(i32::MAX - 1);
+    test_reg_imm(i32::MIN);
+    test_reg_imm(i32::MIN + 1);
+    test_reg_imm(i32::from(i16::MIN));
+    test_reg_imm(i32::from(i16::MAX) + 2);
+}
+
+fn test_reg_imm(value: i32) {
+    let mut testcase = testcase_binary_reg_imm(WASM_OP, value);
+    testcase.expect_func(
+        ExpectedFunc::new([
+            Instruction::i32_add(
+                Register::from_i16(1),
+                Register::from_i16(0),
+                Register::from_i16(-1),
+            ),
+            Instruction::return_reg(Register::from_i16(1)),
+        ])
+        .consts([value.wrapping_neg()]),
+    );
+    testcase.run()
 }
 
 #[test]

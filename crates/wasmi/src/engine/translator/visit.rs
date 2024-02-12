@@ -2207,11 +2207,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     this.alloc.stack.push_register(lhs)?;
                     return Ok(true);
                 }
-                if this.try_push_binary_instr_imm16(lhs, -rhs, Instruction::i32_add_imm16)? {
+                if this.try_push_binary_instr_imm16(
+                    lhs,
+                    rhs.wrapping_neg(),
+                    Instruction::i32_add_imm16,
+                )? {
                     // Simplification: Translate `i32.sub r c` as `i32.add r -c`
                     return Ok(true);
                 }
-                Ok(false)
+                this.push_binary_instr_imm(lhs, rhs.wrapping_neg(), Instruction::i32_add)?;
+                Ok(true)
             },
             Self::no_custom_opt,
         )
@@ -2519,11 +2524,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     this.alloc.stack.push_register(lhs)?;
                     return Ok(true);
                 }
-                if this.try_push_binary_instr_imm16(lhs, -rhs, Instruction::i64_add_imm16)? {
+                if this.try_push_binary_instr_imm16(
+                    lhs,
+                    rhs.wrapping_neg(),
+                    Instruction::i64_add_imm16,
+                )? {
                     // Simplification: Translate `i64.sub r c` as `i64.add r -c`
                     return Ok(true);
                 }
-                Ok(false)
+                this.push_binary_instr_imm(lhs, rhs.wrapping_neg(), Instruction::i64_add)?;
+                Ok(true)
             },
             Self::no_custom_opt,
         )
