@@ -46,8 +46,8 @@ fn reg_imm() {
     test_reg_imm(i32::MAX - 1);
     test_reg_imm(i32::MIN);
     test_reg_imm(i32::MIN + 1);
-    test_reg_imm(i16::MIN as i32);
-    test_reg_imm(i16::MAX as i32 + 2);
+    test_reg_imm(i32::from(i16::MIN));
+    test_reg_imm(i32::from(i16::MAX) + 2);
 }
 
 fn test_reg_imm(value: i32) {
