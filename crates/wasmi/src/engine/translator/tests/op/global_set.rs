@@ -182,10 +182,10 @@ fn test_shadow_stack_in_v0(value: i32) {
 fn shadow_stack_in_v0() {
     test_shadow_stack_in_v0(-4);
     test_shadow_stack_in_v0(4);
-    test_shadow_stack_in_v0(i16::MIN as i32);
-    test_shadow_stack_in_v0(i16::MIN as i32 - 1);
-    test_shadow_stack_in_v0(i16::MAX as i32);
-    test_shadow_stack_in_v0(i16::MAX as i32 + 1);
+    test_shadow_stack_in_v0(i32::from(i16::MIN));
+    test_shadow_stack_in_v0(i32::from(i16::MIN) - 1);
+    test_shadow_stack_in_v0(i32::from(i16::MAX));
+    test_shadow_stack_in_v0(i32::from(i16::MAX) + 1);
     test_shadow_stack_in_v0(i32::MIN);
     test_shadow_stack_in_v0(i32::MIN + 1);
     test_shadow_stack_in_v0(i32::MAX);
@@ -221,10 +221,10 @@ fn test_shadow_stack_in_v1(value: i32) {
 fn shadow_stack_in_v1() {
     test_shadow_stack_in_v1(-4);
     test_shadow_stack_in_v1(4);
-    test_shadow_stack_in_v1(i16::MIN as i32);
-    test_shadow_stack_in_v1(i16::MIN as i32 - 1);
-    test_shadow_stack_in_v1(i16::MAX as i32);
-    test_shadow_stack_in_v1(i16::MAX as i32 + 1);
+    test_shadow_stack_in_v1(i32::from(i16::MIN));
+    test_shadow_stack_in_v1(i32::from(i16::MIN) - 1);
+    test_shadow_stack_in_v1(i32::from(i16::MAX));
+    test_shadow_stack_in_v1(i32::from(i16::MAX) + 1);
     test_shadow_stack_in_v1(i32::MIN);
     test_shadow_stack_in_v1(i32::MIN + 1);
     test_shadow_stack_in_v1(i32::MAX);
@@ -258,10 +258,10 @@ fn test_shadow_stack_out_v0(value: i32) {
 fn shadow_stack_out_v0() {
     test_shadow_stack_out_v0(-4);
     test_shadow_stack_out_v0(4);
-    test_shadow_stack_out_v0(i16::MIN as i32);
-    test_shadow_stack_out_v0(i16::MIN as i32 + 1);
-    test_shadow_stack_out_v0(i16::MAX as i32 - 1);
-    test_shadow_stack_out_v0(i16::MAX as i32);
+    test_shadow_stack_out_v0(i32::from(i16::MIN));
+    test_shadow_stack_out_v0(i32::from(i16::MIN) + 1);
+    test_shadow_stack_out_v0(i32::from(i16::MAX) - 1);
+    test_shadow_stack_out_v0(i32::from(i16::MAX));
 }
 
 fn test_shadow_stack_out_v0_big(value: i32) {
@@ -292,8 +292,8 @@ fn test_shadow_stack_out_v0_big(value: i32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn shadow_stack_out_v0_big() {
-    test_shadow_stack_out_v0_big(i16::MIN as i32 - 1);
-    test_shadow_stack_out_v0_big(i16::MAX as i32 + 1);
+    test_shadow_stack_out_v0_big(i32::from(i16::MIN) - 1);
+    test_shadow_stack_out_v0_big(i32::from(i16::MAX) + 1);
     test_shadow_stack_out_v0_big(i32::MIN);
     test_shadow_stack_out_v0_big(i32::MIN + 1);
     test_shadow_stack_out_v0_big(i32::MAX);
@@ -327,11 +327,10 @@ fn test_shadow_stack_out_v1(value: i32) {
 fn shadow_stack_out_v1() {
     test_shadow_stack_out_v1(-4);
     test_shadow_stack_out_v1(4);
-    // test_shadow_stack_out_v1(i16::MIN as i32);
-    test_shadow_stack_out_v1(i16::MIN as i32 + 1);
-    test_shadow_stack_out_v1(i16::MAX as i32 - 1);
-    test_shadow_stack_out_v1(i16::MAX as i32);
-    test_shadow_stack_out_v1(i16::MAX as i32 + 1);
+    test_shadow_stack_out_v1(i32::from(i16::MIN) + 1);
+    test_shadow_stack_out_v1(i32::from(i16::MAX) - 1);
+    test_shadow_stack_out_v1(i32::from(i16::MAX));
+    test_shadow_stack_out_v1(i32::from(i16::MAX) + 1);
 }
 
 fn test_shadow_stack_out_v1_big(value: i32) {
@@ -362,8 +361,8 @@ fn test_shadow_stack_out_v1_big(value: i32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn shadow_stack_out_v1_big() {
-    test_shadow_stack_out_v1_big(i16::MIN as i32);
-    test_shadow_stack_out_v1_big(i16::MAX as i32 + 2);
+    test_shadow_stack_out_v1_big(i32::from(i16::MIN));
+    test_shadow_stack_out_v1_big(i32::from(i16::MAX) + 2);
     test_shadow_stack_out_v1_big(i32::MIN);
     test_shadow_stack_out_v1_big(i32::MIN + 1);
     test_shadow_stack_out_v1_big(i32::MAX - 1);
