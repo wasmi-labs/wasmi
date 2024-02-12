@@ -218,7 +218,7 @@ fn test_shadow_stack_in_v1(value: i32) {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn shadow_stack_in_v11() {
+fn shadow_stack_in_v1() {
     test_shadow_stack_in_v1(-4);
     test_shadow_stack_in_v1(4);
     test_shadow_stack_in_v1(i16::MIN as i32);
