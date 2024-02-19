@@ -944,10 +944,6 @@ impl<T> Store<T> {
     ///
     /// Returns the remaining amount of fuel after this operation.
     ///
-    /// # Panics
-    ///
-    /// If this overflows the consumed fuel counter.
-    ///
     /// # Errors
     ///
     /// - If fuel metering is disabled.
