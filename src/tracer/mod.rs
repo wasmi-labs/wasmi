@@ -289,6 +289,11 @@ impl Tracer {
             }
         }
 
+        // make dry_run ignore itable
+        if self.dry_run() {
+            return;
+        }
+
         {
             let mut func_index = 0;
 

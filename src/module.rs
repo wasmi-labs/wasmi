@@ -509,15 +509,17 @@ impl ModuleInstance {
                     .expect("Due to validation funcs from element segments should exists");
 
                 if let Some(tracer) = tracer.clone() {
-                    let func_idx = tracer.borrow().lookup_function(&func);
-                    let type_idx = tracer.borrow().lookup_type_of_func_ref(&func);
+                    if !tracer.borrow().dry_run() {
+                        let func_idx = tracer.borrow().lookup_function(&func);
+                        let type_idx = tracer.borrow().lookup_type_of_func_ref(&func);
 
-                    tracer.borrow_mut().push_elem(
-                        DEFAULT_TABLE_INDEX,
-                        offset_val + j as u32,
-                        func_idx as u32,
-                        type_idx as u32,
-                    );
+                        tracer.borrow_mut().push_elem(
+                            DEFAULT_TABLE_INDEX,
+                            offset_val + j as u32,
+                            func_idx as u32,
+                            type_idx as u32,
+                        );
+                    }
                 }
 
                 table_inst.set(offset_val + j as u32, Some(func))?;
@@ -543,12 +545,14 @@ impl ModuleInstance {
         if let Some(tracer) = tracer {
             let mut tracer = tracer.borrow_mut();
 
-            for (globalidx, globalref) in module_ref.globals().iter().enumerate() {
-                tracer.push_global(globalidx as u32, globalref);
-            }
+            if !tracer.dry_run() {
+                for (globalidx, globalref) in module_ref.globals().iter().enumerate() {
+                    tracer.push_global(globalidx as u32, globalref);
+                }
 
-            if let Some(memory_ref) = module_ref.memory_by_index(DEFAULT_MEMORY_INDEX) {
-                tracer.push_init_memory(memory_ref)
+                if let Some(memory_ref) = module_ref.memory_by_index(DEFAULT_MEMORY_INDEX) {
+                    tracer.push_init_memory(memory_ref)
+                }
             }
         }
 
