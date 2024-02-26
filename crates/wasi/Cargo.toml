@@ -12,8 +12,8 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
-wasi-common = "17.0"
-wasi-cap-std-sync = "17.0"
+wasi-common = { version = "17.0", default-features = false, features = ["wiggle_metadata", "trace_log"] }
+wasi-cap-std-sync = {version = "17.0", default-features = false }
 wiggle = { version = "17.0", default-features = false, features = ["wiggle_metadata"] }
 wasmi = { version = "0.32.0-beta.6", path = "../wasmi" }
 
