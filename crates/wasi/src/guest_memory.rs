@@ -1,4 +1,6 @@
 use wiggle::{borrow::BorrowChecker, BorrowHandle, GuestError, GuestMemory, Region};
+use std::slice;
+use std::cell::UnsafeCell;
 
 /// Lightweight `wasmi::Memory` wrapper so we can implement the
 /// `wiggle::GuestMemory` trait on it.
@@ -23,8 +25,10 @@ impl<'a> WasmiGuestMemory<'a> {
 }
 
 unsafe impl GuestMemory for WasmiGuestMemory<'_> {
-    fn base(&self) -> (*mut u8, u32) {
-        (self.mem.as_ptr() as *mut u8, self.mem.len() as u32)
+    fn base(&self) -> &[UnsafeCell<u8>] {
+        unsafe {
+            slice::from_raw_parts(self.mem.as_ptr() as *mut u8 as *const UnsafeCell<u8>, self.mem.len())
+        }
     }
     fn has_outstanding_borrows(&self) -> bool {
         self.bc.has_outstanding_borrows()

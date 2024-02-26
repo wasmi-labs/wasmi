@@ -12,9 +12,9 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
-wasi-common = "2.0"
-wasi-cap-std-sync = "2.0"
-wiggle = { version = "2.0", default-features = false, features = ["wiggle_metadata"] }
+wasi-common = "12.0"
+wasi-cap-std-sync = "12.0"
+wiggle = { version = "12.0", default-features = false, features = ["wiggle_metadata"] }
 wasmi = { version = "0.32.0-beta.6", path = "../wasmi" }
 
 [dev-dependencies]
