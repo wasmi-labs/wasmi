@@ -3,7 +3,7 @@ use crate::engine::bytecode::BranchOffset16;
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn simple() {
+fn simple_block() {
     let wasm = wat2wasm(
         r#"
         (module
@@ -29,7 +29,7 @@ fn simple() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn nested() {
+fn nested_block() {
     let wasm = wat2wasm(
         r#"
         (module
