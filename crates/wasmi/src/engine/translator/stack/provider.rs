@@ -66,13 +66,7 @@ impl ProviderStack {
         preserve_index: u32,
         reg_alloc: &mut RegisterAlloc,
     ) -> Result<Option<Register>, Error> {
-        /// Maximum provider stack height before switching to attack-immune
-        /// [`LocalRefs`] implementation for `local.get` preservation.
-        const THRESHOLD: usize = 16;
-
-        if !self.use_locals && self.providers.len() >= THRESHOLD {
-            self.sync_local_refs()
-        }
+        self.sync_local_refs();
         let local = i16::try_from(preserve_index)
             .map(Register::from_i16)
             .unwrap_or_else(|_| {
@@ -88,6 +82,13 @@ impl ProviderStack {
     ///
     /// This is required to initialize usage of the attack-immune [`LocalRefs`] before first use.
     fn sync_local_refs(&mut self) {
+        /// Maximum provider stack height before switching to attack-immune
+        /// [`LocalRefs`] implementation for `local.get` preservation.
+        const PRESERVE_THRESHOLD: usize = 16;
+
+        if self.use_locals || self.providers.len() < PRESERVE_THRESHOLD {
+            return
+        }
         self.use_locals = true;
         for (index, provider) in self.providers.iter().enumerate() {
             let TaggedProvider::Local(local) = provider else {
