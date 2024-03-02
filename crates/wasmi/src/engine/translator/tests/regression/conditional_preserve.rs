@@ -19,17 +19,10 @@ fn simple_block() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            // What Wasmi incorrectly produces:
-            Instruction::branch_i32_ne_imm(Register::from_i16(1), 0, BranchOffset16::from(3)),
             Instruction::copy(2, 0),
+            Instruction::branch_i32_ne_imm(Register::from_i16(1), 0, BranchOffset16::from(2)),
             Instruction::copy_imm32(Register::from_i16(0), 10_i32),
             Instruction::return_reg(2),
-
-            // // What Wasmi should ideally produce:
-            // Instruction::copy(2, 0),
-            // Instruction::branch_i32_ne_imm(Register::from_i16(1), 0, BranchOffset16::from(2)),
-            // Instruction::copy_imm32(Register::from_i16(0), 10_i32),
-            // Instruction::return_reg(2),
         ])
         .run()
 }
@@ -57,23 +50,13 @@ fn nested_block() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            // What Wasmi incorrectly produces:
-            Instruction::branch_i32_ne_imm(Register::from_i16(2), 0, BranchOffset16::from(6)),
             Instruction::copy(5, 0),
-            Instruction::copy_imm32(Register::from_i16(0), 10_i32),
-            Instruction::branch_i32_ne_imm(Register::from_i16(3), 0, BranchOffset16::from(3)),
             Instruction::copy(4, 1),
+            Instruction::branch_i32_ne_imm(Register::from_i16(2), 0, BranchOffset16::from(4)),
+            Instruction::copy_imm32(Register::from_i16(0), 10_i32),
+            Instruction::branch_i32_ne_imm(Register::from_i16(3), 0, BranchOffset16::from(2)),
             Instruction::copy_imm32(Register::from_i16(1), 20_i32),
             Instruction::return_reg2(5, 4),
-
-            // // What Wasmi should ideally produce:
-            // Instruction::copy(5, 0),
-            // Instruction::copy(4, 1),
-            // Instruction::branch_i32_ne_imm(Register::from_i16(2), 0, BranchOffset16::from(4)),
-            // Instruction::copy_imm32(Register::from_i16(0), 10_i32),
-            // Instruction::branch_i32_ne_imm(Register::from_i16(3), 0, BranchOffset16::from(2)),
-            // Instruction::copy_imm32(Register::from_i16(1), 20_i32),
-            // Instruction::return_reg2(5, 4),
         ])
         .run()
 }
@@ -102,25 +85,18 @@ fn expr_block() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            // What Wasmi incorrectly produces:
+            Instruction::copy(3, 1),
             Instruction::branch_i32_eq_imm(Register::from_i16(0), 0, BranchOffset16::from(3)),
             Instruction::copy_imm32(Register::from_i16(2), 10_i32),
-            Instruction::branch(BranchOffset::from(4)),
-            Instruction::copy(3, 1),
+            Instruction::branch(BranchOffset::from(3)),
             Instruction::copy_imm32(Register::from_i16(1), 20_i32),
             Instruction::copy_imm32(Register::from_i16(2), 30_i32),
-            Instruction::i32_add(Register::from_i16(2), Register::from_i16(3), Register::from_i16(2)),
+            Instruction::i32_add(
+                Register::from_i16(2),
+                Register::from_i16(3),
+                Register::from_i16(2),
+            ),
             Instruction::return_reg(2),
-
-            // // What Wasmi should ideally produce:
-            // Instruction::copy(3, 1),
-            // Instruction::branch_i32_eq_imm(Register::from_i16(0), 0, BranchOffset16::from(3)),
-            // Instruction::copy_imm32(Register::from_i16(2), 10_i32),
-            // Instruction::branch(BranchOffset::from(3)),
-            // Instruction::copy_imm32(Register::from_i16(1), 20_i32),
-            // Instruction::copy_imm32(Register::from_i16(2), 30_i32),
-            // Instruction::i32_add(Register::from_i16(2), Register::from_i16(3), Register::from_i16(2)),
-            // Instruction::return_reg(2),
         ])
         .run()
 }
