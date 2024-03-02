@@ -739,6 +739,44 @@ impl FuncTranslator {
         self.push_fueled_instr(instr, FuelCosts::base)
     }
 
+    /// Preserve all locals that are currently on the emulated stack.
+    ///
+    /// # Note
+    ///
+    /// This is required for correctness upon entering the compilation
+    /// of a Wasm control flow structure such as a Wasm `block`, `if` or `loop`.
+    /// Locals on the stack might be manipulated conditionally witihn the
+    /// control flow structure and therefore need to be preserved before
+    /// this might happen.
+    /// For efficiency reasons all locals are preserved independent of their
+    /// actual use in the entered control flow structure since the analysis
+    /// of their uses would be too costly.
+    fn preserve_locals(&mut self) -> Result<(), Error> {
+        let mut preserved = Vec::new();
+        self.alloc
+            .stack
+            .preserve_all_locals(|local_index, preserved_register| {
+                let local_register = Register::from_i16(local_index as i16);
+                preserved.push((local_register, preserved_register));
+                Ok(())
+            })?;
+        let fuel_info = self.fuel_info();
+        for (local_register, preserved_register) in preserved {
+            let instr = self
+                .alloc
+                .instr_encoder
+                .encode_copy(
+                    &mut self.alloc.stack,
+                    preserved_register,
+                    TypedProvider::Register(local_register),
+                    fuel_info,
+                )?
+                .expect("must have preserved copy");
+            self.alloc.instr_encoder.notify_preserved_register(instr);
+        }
+        Ok(())
+    }
+
     /// Convenience function to copy the parameters when branching to a control frame.
     fn translate_copy_branch_params(
         &mut self,

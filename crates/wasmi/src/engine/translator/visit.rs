@@ -121,6 +121,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 ));
             return Ok(());
         }
+        self.preserve_locals()?;
         // Inherit [`Instruction::ConsumeFuel`] from parent control frame.
         //
         // # Note
@@ -155,6 +156,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 ));
             return Ok(());
         }
+        self.preserve_locals()?;
         // Copy `loop` parameters over to where it expects its branch parameters.
         let len_block_params = block_type.len_params(self.engine()) as usize;
         self.alloc
@@ -206,6 +208,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         }
         let condition = self.alloc.stack.pop();
         let stack_height = BlockHeight::new(self.engine(), self.alloc.stack.height(), block_type)?;
+        self.preserve_locals()?;
         let end_label = self.alloc.instr_encoder.new_label();
         let len_block_params = block_type.len_params(self.engine()) as usize;
         let len_branch_params = block_type.len_results(self.engine()) as usize;

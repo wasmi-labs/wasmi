@@ -2,7 +2,10 @@ use ::core::iter;
 
 use super::{RegisterAlloc, TypedValue};
 use crate::{engine::bytecode::Register, Error};
-use alloc::vec::Vec;
+use alloc::{
+    collections::{btree_map, BTreeMap},
+    vec::Vec,
+};
 use smallvec::SmallVec;
 
 #[cfg(doc)]
@@ -78,6 +81,26 @@ impl ProviderStack {
         }
     }
 
+    /// Preserves all locals on the [`ProviderStack`] by shifting them to the preservation space.
+    ///
+    /// # Note
+    ///
+    /// - Calls `f(local_index, preserved_register)` for each local preserved this way with its `local_index`
+    ///   and the newly allocated `preserved_register` on the presevation register space.
+    /// - If the same local appears multiple  times on the provider stack `f` is only called once
+    ///   representing all of them.
+    pub fn preserve_all_locals(
+        &mut self,
+        reg_alloc: &mut RegisterAlloc,
+        f: impl FnMut(u32, Register) -> Result<(), Error>,
+    ) -> Result<(), Error> {
+        self.sync_local_refs();
+        match self.use_locals {
+            false => self.preserve_all_locals_inplace(reg_alloc, f),
+            true => self.preserve_all_locals_extern(reg_alloc, f),
+        }
+    }
+
     /// Synchronizes [`LocalRefs`] with the current state of the `providers` stack.
     ///
     /// This is required to initialize usage of the attack-immune [`LocalRefs`] before first use.
@@ -87,7 +110,7 @@ impl ProviderStack {
         const PRESERVE_THRESHOLD: usize = 16;
 
         if self.use_locals || self.providers.len() < PRESERVE_THRESHOLD {
-            return
+            return;
         }
         self.use_locals = true;
         for (index, provider) in self.providers.iter().enumerate() {
@@ -137,6 +160,56 @@ impl ProviderStack {
         Ok(preserved)
     }
 
+    /// Preserves all locals on the [`ProviderStack`] by shifting them to the preservation space.
+    ///
+    /// # Note
+    ///
+    /// - Calls `f(local_index, preserved_register)` for each local preserved this way with its `local_index`
+    ///   and the newly allocated `preserved_register` on the presevation register space.
+    /// - If the same local appears multiple  times on the provider stack `f` is only called once
+    ///   representing all of them.
+    ///
+    /// # Dev. Note
+    ///
+    /// - This is the efficient case which is susceptible to malicious inputs
+    ///   since it needs to iterate over the entire provider stack and might be
+    ///   called roughly once per Wasm instruction in the worst-case.
+    /// - Therefore we only use it behind a safety guard to remove the attack surface.
+    fn preserve_all_locals_inplace(
+        &mut self,
+        reg_alloc: &mut RegisterAlloc,
+        mut f: impl FnMut(u32, Register) -> Result<(), Error>,
+    ) -> Result<(), Error> {
+        debug_assert!(!self.use_locals);
+        let mut preserved = <BTreeMap<Register, Register>>::new();
+        for provider in &mut self.providers {
+            let TaggedProvider::Local(register) = *provider else {
+                continue;
+            };
+            if !reg_alloc.is_local(register) {
+                continue;
+            }
+            let local_index = register.to_i16() as u32;
+            let (preserved_register, is_new) = match preserved.entry(register) {
+                btree_map::Entry::Vacant(entry) => {
+                    let preserved_register = reg_alloc.push_preserved()?;
+                    entry.insert(preserved_register);
+                    (preserved_register, true)
+                }
+                btree_map::Entry::Occupied(entry) => {
+                    let preserved_register = *entry.get();
+                    reg_alloc.bump_preserved(preserved_register);
+                    (preserved_register, false)
+                }
+            };
+            *provider = TaggedProvider::Preserved(preserved_register);
+            if is_new {
+                f(local_index, preserved_register)?;
+            }
+        }
+        Ok(())
+    }
+
     /// Preserves the `local` [`Register`] on the provider stack out-of-place.
     ///
     /// # Note
@@ -169,6 +242,43 @@ impl ProviderStack {
             *provider = TaggedProvider::Preserved(preserved_register);
         }
         Ok(preserved)
+    }
+
+    /// Preserves all locals on the [`ProviderStack`] by shifting them to the preservation space.
+    ///
+    /// # Note
+    ///
+    /// - Calls `f(local_index, preserved_register)` for each local preserved this way with its `local_index`
+    ///   and the newly allocated `preserved_register` on the presevation register space.
+    /// - If the same local appears multiple  times on the provider stack `f` is only called once
+    ///   representing all of them.
+    ///
+    /// # Dev. Note
+    ///
+    /// - This is the inefficient case which is immune to malicious inputs
+    ///   since it only iterates over the locals required for preservation
+    ///   which are stored out-of-place of the provider stack.
+    /// - Since this is slower we only use it when necessary.
+    fn preserve_all_locals_extern(
+        &mut self,
+        reg_alloc: &mut RegisterAlloc,
+        mut f: impl FnMut(u32, Register) -> Result<(), Error>,
+    ) -> Result<(), Error> {
+        debug_assert!(self.use_locals);
+        let mut local_index = 0;
+        loop {
+            let local_register = Register::from_i16(local_index);
+            if !reg_alloc.is_local(local_register) {
+                break;
+            }
+            if let Some(preserved_register) =
+                self.preserve_locals_extern(local_register, reg_alloc)?
+            {
+                f(local_index as u32, preserved_register)?;
+            }
+            local_index += 1;
+        }
+        Ok(())
     }
 
     /// Registers an `amount` of function inputs or local variables.
