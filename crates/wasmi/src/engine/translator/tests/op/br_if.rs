@@ -1,11 +1,7 @@
 use super::*;
 use crate::engine::{
     bytecode::{BranchOffset, BranchOffset16, RegisterSpan},
-    translator::tests::{
-        display_wasm::DisplayValueType,
-        driver::ExpectedFunc,
-        wasm_type::WasmType,
-    },
+    translator::tests::wasm_type::WasmType,
 };
 use core::fmt::Display;
 use std::vec::Vec;

@@ -194,7 +194,6 @@ mod f32_trunc {
 
 mod f32_nearest {
     use super::*;
-    use wasmi_core::UntypedValue;
 
     const OP_NAME: &str = "nearest";
 
@@ -343,7 +342,6 @@ mod f64_trunc {
 
 mod f64_nearest {
     use super::*;
-    use wasmi_core::UntypedValue;
 
     const OP_NAME: &str = "nearest";
 

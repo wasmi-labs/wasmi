@@ -1404,7 +1404,7 @@ impl Instruction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::engine::{bytecode::RegisterSpan, translator::typed_value::TypedValue};
+    use crate::engine::translator::typed_value::TypedValue;
 
     #[test]
     fn has_overlapping_copies_works() {
