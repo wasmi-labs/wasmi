@@ -1,5 +1,4 @@
 use super::*;
-use crate::engine::bytecode::BranchOffset16;
 
 #[test]
 #[cfg_attr(miri, ignore)]
