@@ -78,7 +78,8 @@
 )]
 #![recursion_limit = "750"]
 
-extern crate alloc;
+#[cfg(not(feature = "std"))]
+extern crate alloc as std;
 
 #[cfg(feature = "std")]
 extern crate std;

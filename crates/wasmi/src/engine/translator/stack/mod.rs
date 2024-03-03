@@ -16,7 +16,7 @@ use crate::{
     Error,
     FuncType,
 };
-use alloc::vec::Vec;
+use std::vec::Vec;
 use wasmi_core::UntypedValue;
 
 /// Typed inputs to Wasmi bytecode instructions.

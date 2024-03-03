@@ -3,7 +3,7 @@ use crate::{
     engine::bytecode::{Provider, ProviderSliceStack},
     Error,
 };
-use alloc::vec::{Drain, Vec};
+use std::vec::{Drain, Vec};
 
 /// An acquired branch target.
 #[derive(Debug)]

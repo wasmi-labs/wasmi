@@ -1,6 +1,6 @@
 use super::{Arena, ArenaIndex, Iter, IterMut};
-use alloc::collections::BTreeMap;
 use core::ops::{Index, IndexMut};
+use std::collections::BTreeMap;
 
 /// A deduplicating arena allocator with a given index and entity type.
 ///

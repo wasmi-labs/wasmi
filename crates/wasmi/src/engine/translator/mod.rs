@@ -61,8 +61,8 @@ use crate::{
     Error,
     FuncType,
 };
-use alloc::vec::Vec;
 use core::fmt;
+use std::vec::Vec;
 use wasmi_core::{TrapCode, UntypedValue, ValueType};
 use wasmparser::{
     BinaryReaderError,

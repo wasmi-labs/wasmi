@@ -24,7 +24,7 @@ use crate::{
     MemoryType,
     TableType,
 };
-use alloc::{boxed::Box, collections::BTreeMap, sync::Arc, vec::Vec};
+use std::{boxed::Box, collections::BTreeMap, sync::Arc, vec::Vec};
 
 /// A builder for a WebAssembly [`Module`].
 #[derive(Debug)]

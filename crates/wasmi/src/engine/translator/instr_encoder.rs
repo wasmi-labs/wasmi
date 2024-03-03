@@ -28,8 +28,8 @@ use crate::{
     module::ModuleHeader,
     Error,
 };
-use alloc::vec::{Drain, Vec};
 use core::mem;
+use std::vec::{Drain, Vec};
 use wasmi_core::{UntypedValue, ValueType, F32};
 
 /// A reference to an instruction of the partially

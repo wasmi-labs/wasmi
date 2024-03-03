@@ -1,10 +1,10 @@
 use super::Instr;
 use crate::{engine::bytecode::BranchOffset, Error};
-use alloc::vec::Vec;
 use core::{
     fmt::{self, Display},
     slice::Iter as SliceIter,
 };
+use std::vec::Vec;
 
 /// A label during the Wasmi compilation process.
 #[derive(Debug, Copy, Clone)]

@@ -17,7 +17,8 @@
     clippy::items_after_statements
 )]
 
-extern crate alloc;
+#[cfg(not(feature = "std"))]
+extern crate alloc as std;
 
 #[cfg(feature = "std")]
 extern crate std;
@@ -30,13 +31,13 @@ mod guarded;
 mod tests;
 
 pub use self::{component_vec::ComponentVec, dedup::DedupArena, guarded::GuardedEntity};
-use alloc::vec::Vec;
 use core::{
     iter::Enumerate,
     marker::PhantomData,
     ops::{Index, IndexMut},
     slice,
 };
+use std::vec::Vec;
 
 /// Types that can be used as indices for arenas.
 pub trait ArenaIndex: Copy {

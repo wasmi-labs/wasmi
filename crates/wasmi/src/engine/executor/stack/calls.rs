@@ -3,7 +3,7 @@ use crate::{
     engine::{bytecode::RegisterSpan, code_map::InstructionPtr},
     Instance,
 };
-use alloc::vec::Vec;
+use std::vec::Vec;
 use wasmi_core::TrapCode;
 
 #[cfg(doc)]
