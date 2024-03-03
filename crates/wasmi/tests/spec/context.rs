@@ -205,7 +205,7 @@ impl TestContext<'_> {
 
     /// Registers the given [`Instance`] with the given `name` and sets it as the last instance.
     pub fn register_instance(&mut self, name: &str, instance: Instance) {
-        if self.instances.get(name).is_some() {
+        if self.instances.contains_key(name) {
             // Already registered the instance.
             return;
         }

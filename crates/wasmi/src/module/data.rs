@@ -1,5 +1,5 @@
 use super::{ConstExpr, MemoryIdx};
-use alloc::sync::Arc;
+use std::sync::Arc;
 
 /// A Wasm [`Module`] data segment.
 ///

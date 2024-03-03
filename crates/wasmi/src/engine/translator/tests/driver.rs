@@ -6,7 +6,7 @@ use crate::{
     Module,
 };
 use core::sync::atomic::Ordering;
-use std::sync::atomic::AtomicBool;
+use std::{boxed::Box, sync::atomic::AtomicBool, vec::Vec};
 use wasmi_core::UntypedValue;
 
 /// A test driver for translation tests.

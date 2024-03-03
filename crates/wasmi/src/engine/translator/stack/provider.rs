@@ -2,7 +2,7 @@ use ::core::iter;
 
 use super::{RegisterAlloc, TypedValue};
 use crate::{engine::bytecode::Register, Error};
-use alloc::{
+use std::{
     collections::{btree_map, BTreeMap},
     vec::Vec,
 };

@@ -1,4 +1,4 @@
-#![cfg_attr(not(feature = "std"), no_std)]
+#![no_std]
 #![warn(
     clippy::cast_lossless,
     clippy::missing_errors_doc,
@@ -19,10 +19,10 @@ mod untyped;
 mod value;
 
 #[cfg(not(feature = "std"))]
-extern crate alloc;
+extern crate alloc as std;
 
 #[cfg(feature = "std")]
-extern crate std as alloc;
+extern crate std;
 
 use self::value::{
     ArithmeticOps,

@@ -54,12 +54,12 @@ use crate::{
     FuncType,
     StoreContextMut,
 };
-use alloc::{
+use core::sync::atomic::{AtomicU32, Ordering};
+use spin::{Mutex, RwLock};
+use std::{
     sync::{Arc, Weak},
     vec::Vec,
 };
-use core::sync::atomic::{AtomicU32, Ordering};
-use spin::{Mutex, RwLock};
 use wasmi_arena::{ArenaIndex, GuardedEntity};
 use wasmparser::{FuncToValidate, FuncValidatorAllocations, ValidatorResources};
 

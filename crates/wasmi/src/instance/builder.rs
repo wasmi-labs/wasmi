@@ -12,7 +12,7 @@ use crate::{
     Module,
     Table,
 };
-use alloc::{boxed::Box, collections::BTreeMap, sync::Arc, vec::Vec};
+use std::{boxed::Box, collections::BTreeMap, sync::Arc, vec::Vec};
 
 /// A module instance entity builder.
 #[derive(Debug)]

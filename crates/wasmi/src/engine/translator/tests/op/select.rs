@@ -1,12 +1,5 @@
 use super::*;
-use crate::{
-    core::ValueType,
-    engine::translator::tests::{
-        display_wasm::DisplayValueType,
-        driver::ExpectedFunc,
-        wasm_type::WasmType,
-    },
-};
+use crate::{core::ValueType, engine::translator::tests::wasm_type::WasmType};
 use core::{fmt, fmt::Display};
 
 /// Tells which kind of `select` instruction to test.

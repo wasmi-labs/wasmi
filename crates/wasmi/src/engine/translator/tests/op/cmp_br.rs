@@ -1,10 +1,7 @@
 use super::{wasm_type::WasmType, *};
 use crate::{
     core::ValueType,
-    engine::{
-        bytecode::{BranchOffset, BranchOffset16, GlobalIdx},
-        translator::tests::display_wasm::DisplayValueType,
-    },
+    engine::bytecode::{BranchOffset, BranchOffset16, GlobalIdx},
 };
 use std::fmt::{Debug, Display};
 

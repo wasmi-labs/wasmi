@@ -8,9 +8,9 @@
 
 use super::FuncIdx;
 use crate::{ExternRef, FuncRef, Value};
-use alloc::boxed::Box;
 use core::fmt;
 use smallvec::SmallVec;
+use std::boxed::Box;
 use wasmi_core::{UntypedValue, F32, F64};
 
 /// Types that allow evluation given an evaluation context.

@@ -1,6 +1,6 @@
 use super::{AnyConst32, Register};
 use crate::{engine::translator::TranslationError, Error};
-use alloc::vec::{Drain, Vec};
+use std::vec::{Drain, Vec};
 use wasmi_core::UntypedValue;
 
 #[cfg(doc)]

@@ -1,10 +1,10 @@
 use crate::ArenaIndex;
-use alloc::vec::Vec;
 use core::{
     fmt::{self, Debug},
     marker::PhantomData,
     ops::{Index, IndexMut},
 };
+use std::vec::Vec;
 
 /// Stores components for entities backed by a [`Vec`].
 pub struct ComponentVec<Idx, T> {
@@ -153,6 +153,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::{format, string::String};
 
     /// Add `n` components and perform checks along the way.
     fn add_components(vec: &mut ComponentVec<usize, String>, n: usize) {
