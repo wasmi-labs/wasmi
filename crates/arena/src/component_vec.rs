@@ -153,6 +153,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::{format, string::String};
 
     /// Add `n` components and perform checks along the way.
     fn add_components(vec: &mut ComponentVec<usize, String>, n: usize) {

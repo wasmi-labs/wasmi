@@ -8,6 +8,7 @@ use crate::engine::{
     },
 };
 use core::fmt::Display;
+use std::vec::Vec;
 use wasmi_core::UntypedValue;
 
 #[test]

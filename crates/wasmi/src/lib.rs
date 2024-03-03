@@ -65,7 +65,7 @@
 //! }
 //! ```
 
-#![cfg_attr(not(feature = "std"), no_std)]
+#![no_std]
 #![warn(
     clippy::cast_lossless,
     clippy::missing_errors_doc,
@@ -78,11 +78,10 @@
 )]
 #![recursion_limit = "750"]
 
-#[cfg(not(feature = "std"))]
-#[macro_use]
 extern crate alloc;
+
 #[cfg(feature = "std")]
-extern crate std as alloc;
+extern crate std;
 
 #[macro_use]
 mod foreach_tuple;

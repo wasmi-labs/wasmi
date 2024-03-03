@@ -5,7 +5,7 @@ mod op;
 
 use super::*;
 use crate::engine::translator::tests::driver::{ExpectedFunc, TranslationTest};
-use std::fmt::Display;
+use std::{fmt::Display, vec::Vec};
 use wasm_type::WasmType;
 use wasmi_core::{TrapCode, UntypedValue};
 
