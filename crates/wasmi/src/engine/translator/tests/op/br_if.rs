@@ -247,9 +247,10 @@ fn consteval_branch_always() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy(Register::from_i16(2), Register::from_i16(0)),
+            Instruction::copy(3, 0),
+            Instruction::copy(2, 3),
             Instruction::branch(BranchOffset::from(1)),
-            Instruction::return_reg(Register::from_i16(2)),
+            Instruction::return_reg(2),
         ])
         .run()
 }
@@ -272,7 +273,10 @@ fn consteval_branch_never() {
         )",
     );
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_reg(Register::from_i16(1))])
+        .expect_func_instrs([
+            Instruction::copy(3, 0),
+            Instruction::return_reg(Register::from_i16(1)),
+        ])
         .run()
 }
 
@@ -842,7 +846,8 @@ fn branch_if_results_0() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_nez(Register::from_i16(0), BranchOffset16::from(1)),
+            Instruction::copy(1, 0),
+            Instruction::branch_i32_nez(Register::from_i16(1), BranchOffset16::from(1)),
             Instruction::Return,
         ])
         .run()
@@ -865,11 +870,13 @@ fn branch_if_results_1() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_eqz(Register::from_i16(1), BranchOffset16::from(3)),
-            Instruction::copy(Register::from_i16(2), Register::from_i16(0)),
+            Instruction::copy(4, 0),
+            Instruction::copy(3, 1),
+            Instruction::branch_i32_eqz(Register::from_i16(3), BranchOffset16::from(3)),
+            Instruction::copy(2, 4),
             Instruction::branch(BranchOffset::from(2)),
-            Instruction::copy(Register::from_i16(2), Register::from_i16(0)),
-            Instruction::return_reg(Register::from_i16(2)),
+            Instruction::copy(2, 4),
+            Instruction::return_reg(2),
         ])
         .run()
 }
@@ -925,16 +932,19 @@ fn branch_if_results_2() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_eqz(Register::from_i16(2), BranchOffset16::from(3)),
-            Instruction::copy2(RegisterSpan::new(Register::from_i16(3)), 0, 1),
+            Instruction::copy(7, 0),
+            Instruction::copy(6, 1),
+            Instruction::copy(5, 2),
+            Instruction::branch_i32_eqz(Register::from_i16(5), BranchOffset16::from(3)),
+            Instruction::copy2(RegisterSpan::new(Register::from_i16(3)), 7, 6),
             Instruction::branch(BranchOffset::from(2)),
-            Instruction::copy2(RegisterSpan::new(Register::from_i16(3)), 0, 1),
+            Instruction::copy2(RegisterSpan::new(Register::from_i16(3)), 7, 6),
             Instruction::i32_add(
                 Register::from_i16(3),
                 Register::from_i16(3),
                 Register::from_i16(4),
             ),
-            Instruction::return_reg(Register::from_i16(3)),
+            Instruction::return_reg(3),
         ])
         .run()
 }

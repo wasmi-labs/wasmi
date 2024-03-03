@@ -45,6 +45,7 @@ fn fuzz_regression_2() {
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func_instrs([
+            Instruction::copy(1, 0),
             Instruction::branch_i32_eq_imm(Register::from_i16(0), 0, BranchOffset16::from(2)),
             Instruction::branch(BranchOffset::from(1)),
             Instruction::Return,
@@ -128,11 +129,12 @@ fn fuzz_regression_6() {
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func_instrs([
+            Instruction::copy(2, 0),
             Instruction::branch_i32_eq_imm(Register::from_i16(0), 0, BranchOffset16::from(4)),
             Instruction::branch_i32_eq_imm(Register::from_i16(0), 0, BranchOffset16::from(1)),
-            Instruction::copy(1, 0),
+            Instruction::copy(1, 2),
             Instruction::branch(BranchOffset::from(2)),
-            Instruction::copy(1, 0),
+            Instruction::copy(1, 2),
             Instruction::Trap(TrapCode::UnreachableCodeReached),
         ])
         .run()
