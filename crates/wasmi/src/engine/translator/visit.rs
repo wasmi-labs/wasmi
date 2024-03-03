@@ -156,13 +156,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 ));
             return Ok(());
         }
-        self.preserve_locals()?;
         // Copy `loop` parameters over to where it expects its branch parameters.
         let len_block_params = block_type.len_params(self.engine()) as usize;
         self.alloc
             .stack
             .pop_n(len_block_params, &mut self.alloc.buffer);
         let branch_params = self.alloc.stack.push_dynamic_n(len_block_params)?;
+        self.preserve_locals()?;
         let fuel_info = self.fuel_info();
         self.alloc.instr_encoder.encode_copies(
             &mut self.alloc.stack,
