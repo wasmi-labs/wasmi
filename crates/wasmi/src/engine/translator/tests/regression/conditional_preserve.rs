@@ -9,10 +9,10 @@ fn simple_block() {
         (module
             (func (param i32 i32) (result i32)
                 local.get 0
-                block
+                (block
                     (br_if 0 (local.get 1))
                     (local.set 0 (i32.const 10)) ;; overwrites (local 0) conditionally
-                end
+                )
             )
         )
     "#,
@@ -36,14 +36,14 @@ fn nested_block() {
             (func (param i32 i32) (param $c0 i32) (param $c1 i32) (result i32 i32)
                 local.get 0 ;; 1st return value
                 local.get 1 ;; 2nd return value
-                block
+                (block
                     (br_if 0 (local.get $c0))
                     (local.set 0 (i32.const 10)) ;; conditionally overwrites (local 0) on stack
-                    block
+                    (block
                         (br_if 1 (local.get $c1))
                         (local.set 1 (i32.const 20)) ;; conditionally overwrites (local 1) on stack
-                    end
-                end
+                    )
+                )
             )
         )
     "#,
