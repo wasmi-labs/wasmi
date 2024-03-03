@@ -2,11 +2,11 @@ use ::core::iter;
 
 use super::{RegisterAlloc, TypedValue};
 use crate::{engine::bytecode::Register, Error};
+use smallvec::SmallVec;
 use std::{
     collections::{btree_map, BTreeMap},
     vec::Vec,
 };
-use smallvec::SmallVec;
 
 #[cfg(doc)]
 use wasmi_core::UntypedValue;
