@@ -13,7 +13,6 @@ use crate::{
     store::{Fuel, FuelError},
     Error,
 };
-use alloc::boxed::Box;
 use core::{
     cell::UnsafeCell,
     fmt,
@@ -23,6 +22,7 @@ use core::{
     slice,
     sync::atomic::{AtomicU8, Ordering},
 };
+use std::boxed::Box;
 use wasmi_arena::{Arena, ArenaIndex};
 use wasmi_core::TrapCode;
 use wasmparser::{FuncToValidate, ValidatorResources};

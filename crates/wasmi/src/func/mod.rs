@@ -23,8 +23,8 @@ use super::{
     Stored,
 };
 use crate::{engine::ResumableCall, Engine, Error, Value};
-use alloc::{boxed::Box, sync::Arc};
 use core::{fmt, fmt::Debug, num::NonZeroU32};
+use std::{boxed::Box, sync::Arc};
 use wasmi_arena::ArenaIndex;
 
 /// A raw index to a function entity.

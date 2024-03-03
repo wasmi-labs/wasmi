@@ -4,7 +4,7 @@
 //! These allocators mainly serve as the backbone for an efficient Wasm store
 //! implementation.
 
-#![cfg_attr(not(feature = "std"), no_std)]
+#![no_std]
 #![warn(
     clippy::cast_lossless,
     clippy::missing_errors_doc,
@@ -16,10 +16,12 @@
     clippy::map_unwrap_or,
     clippy::items_after_statements
 )]
+
 #[cfg(not(feature = "std"))]
-extern crate alloc;
+extern crate alloc as std;
+
 #[cfg(feature = "std")]
-extern crate std as alloc;
+extern crate std;
 
 mod component_vec;
 mod dedup;
@@ -29,13 +31,13 @@ mod guarded;
 mod tests;
 
 pub use self::{component_vec::ComponentVec, dedup::DedupArena, guarded::GuardedEntity};
-use alloc::vec::Vec;
 use core::{
-    iter::{DoubleEndedIterator, Enumerate, ExactSizeIterator},
+    iter::Enumerate,
     marker::PhantomData,
     ops::{Index, IndexMut},
     slice,
 };
+use std::vec::Vec;
 
 /// Types that can be used as indices for arenas.
 pub trait ArenaIndex: Copy {

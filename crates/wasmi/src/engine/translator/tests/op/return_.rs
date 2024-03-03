@@ -1,12 +1,5 @@
 use super::*;
-use crate::engine::{
-    bytecode::RegisterSpan,
-    translator::tests::{
-        display_wasm::DisplayValueType,
-        driver::ExpectedFunc,
-        wasm_type::WasmType,
-    },
-};
+use crate::engine::{bytecode::RegisterSpan, translator::tests::wasm_type::WasmType};
 use core::fmt::Display;
 
 #[test]

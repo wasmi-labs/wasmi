@@ -29,11 +29,11 @@ use crate::{
     TableEntity,
     TableIdx,
 };
-use alloc::boxed::Box;
 use core::{
     fmt::{self, Debug},
     sync::atomic::{AtomicU32, Ordering},
 };
+use std::boxed::Box;
 use wasmi_arena::{Arena, ArenaIndex, GuardedEntity};
 use wasmi_core::TrapCode;
 

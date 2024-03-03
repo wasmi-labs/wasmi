@@ -12,8 +12,8 @@ use super::{
     Read,
 };
 use crate::{engine::CompiledFunc, Engine, Error, FuncType, MemoryType, TableType};
-use alloc::{boxed::Box, vec::Vec};
 use core::ops::Range;
+use std::{boxed::Box, vec::Vec};
 use wasmparser::{
     Chunk,
     DataSectionReader,

@@ -1,14 +1,7 @@
 use super::*;
 use crate::{
     core::UntypedValue,
-    engine::{
-        bytecode::BranchOffset,
-        translator::tests::{
-            display_wasm::DisplayValueType,
-            driver::ExpectedFunc,
-            wasm_type::WasmType,
-        },
-    },
+    engine::{bytecode::BranchOffset, translator::tests::wasm_type::WasmType},
 };
 use core::fmt::Display;
 

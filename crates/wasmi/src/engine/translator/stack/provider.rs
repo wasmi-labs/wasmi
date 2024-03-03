@@ -2,8 +2,8 @@ use ::core::iter;
 
 use super::{RegisterAlloc, TypedValue};
 use crate::{engine::bytecode::Register, Error};
-use alloc::vec::Vec;
 use smallvec::SmallVec;
+use std::vec::Vec;
 
 #[cfg(doc)]
 use wasmi_core::UntypedValue;

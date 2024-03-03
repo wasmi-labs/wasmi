@@ -29,8 +29,8 @@ use crate::{
     FuncRef,
     Mutability,
 };
-use alloc::collections::BTreeMap;
 use core::num::{NonZeroU32, NonZeroU64};
+use std::collections::BTreeMap;
 use wasmi_core::{TrapCode, ValueType, F32, F64};
 use wasmparser::VisitOperator;
 

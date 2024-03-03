@@ -1,4 +1,4 @@
-use alloc::{vec, vec::Vec};
+use std::{vec, vec::Vec};
 
 /// A `Vec`-based byte buffer implementation.
 ///

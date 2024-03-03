@@ -1,5 +1,5 @@
 use crate::{module, store::Stored, AsContextMut};
-use alloc::sync::Arc;
+use std::sync::Arc;
 use wasmi_arena::ArenaIndex;
 
 /// A raw index to a data segment entity.

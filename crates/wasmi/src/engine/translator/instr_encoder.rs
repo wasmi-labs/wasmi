@@ -28,8 +28,8 @@ use crate::{
     module::ModuleHeader,
     Error,
 };
-use alloc::vec::{Drain, Vec};
 use core::mem;
+use std::vec::{Drain, Vec};
 use wasmi_core::{UntypedValue, ValueType, F32};
 
 /// A reference to an instruction of the partially
@@ -1404,7 +1404,7 @@ impl Instruction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::engine::{bytecode::RegisterSpan, translator::typed_value::TypedValue};
+    use crate::engine::translator::typed_value::TypedValue;
 
     #[test]
     fn has_overlapping_copies_works() {

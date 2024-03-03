@@ -1,6 +1,6 @@
 use crate::{reftype::Transposer, store::Stored, AsContextMut, StoreContext};
-use alloc::boxed::Box;
 use core::{any::Any, num::NonZeroU32};
+use std::boxed::Box;
 use wasmi_arena::ArenaIndex;
 use wasmi_core::UntypedValue;
 
