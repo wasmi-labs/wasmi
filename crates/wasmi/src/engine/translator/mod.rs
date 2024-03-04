@@ -93,12 +93,29 @@ pub struct TranslationBuffers {
     providers: Vec<TypedProvider>,
     /// Buffer to temporarily hold `br_table` target depths.
     br_table_targets: Vec<u32>,
+    /// Buffer to temporarily hold a bunch of preserved [`Register`] locals.
+    preserved: Vec<PreservedLocal>,
+}
+
+/// A pair of local [`Register`] and its preserved [`Register`].
+#[derive(Debug, Copy, Clone)]
+pub struct PreservedLocal {
+    local: Register,
+    preserved: Register,
+}
+
+impl PreservedLocal {
+    /// Creates a new [`PreservedLocal`].
+    pub fn new(local: Register, preserved: Register) -> Self {
+        Self { local, preserved }
+    }
 }
 
 impl TranslationBuffers {
     fn reset(&mut self) {
         self.providers.clear();
         self.br_table_targets.clear();
+        self.preserved.clear();
     }
 }
 
@@ -765,22 +782,20 @@ impl FuncTranslator {
     /// actual use in the entered control flow structure since the analysis
     /// of their uses would be too costly.
     fn preserve_locals(&mut self) -> Result<(), Error> {
-        let mut preserved = Vec::new();
-        self.alloc
-            .stack
-            .preserve_all_locals(|local_register, preserved_register| {
-                preserved.push((local_register, preserved_register));
-                Ok(())
-            })?;
         let fuel_info = self.fuel_info();
-        for (local_register, preserved_register) in preserved {
+        let preserved = &mut self.alloc.buffer.preserved;
+        self.alloc.stack.preserve_all_locals(|preserved_local| {
+            preserved.push(preserved_local);
+            Ok(())
+        })?;
+        for preserved_local in preserved.drain(..) {
             let instr = self
                 .alloc
                 .instr_encoder
                 .encode_copy(
                     &mut self.alloc.stack,
-                    preserved_register,
-                    TypedProvider::Register(local_register),
+                    preserved_local.preserved,
+                    TypedProvider::Register(preserved_local.local),
                     fuel_info,
                 )?
                 .expect("must have preserved copy");

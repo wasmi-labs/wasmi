@@ -1,7 +1,10 @@
 use ::core::iter;
 
 use super::{RegisterAlloc, TypedValue};
-use crate::{engine::bytecode::Register, Error};
+use crate::{
+    engine::{bytecode::Register, translator::PreservedLocal},
+    Error,
+};
 use smallvec::SmallVec;
 use std::{
     collections::{btree_map, BTreeMap},
@@ -92,7 +95,7 @@ impl ProviderStack {
     pub fn preserve_all_locals(
         &mut self,
         reg_alloc: &mut RegisterAlloc,
-        f: impl FnMut(Register, Register) -> Result<(), Error>,
+        f: impl FnMut(PreservedLocal) -> Result<(), Error>,
     ) -> Result<(), Error> {
         self.sync_local_refs();
         match self.use_locals {
@@ -178,7 +181,7 @@ impl ProviderStack {
     fn preserve_all_locals_inplace(
         &mut self,
         reg_alloc: &mut RegisterAlloc,
-        mut f: impl FnMut(Register, Register) -> Result<(), Error>,
+        mut f: impl FnMut(PreservedLocal) -> Result<(), Error>,
     ) -> Result<(), Error> {
         debug_assert!(!self.use_locals);
         let mut preserved = <BTreeMap<Register, Register>>::new();
@@ -203,7 +206,7 @@ impl ProviderStack {
             };
             *provider = TaggedProvider::Preserved(preserved_register);
             if is_new {
-                f(local_register, preserved_register)?;
+                f(PreservedLocal::new(local_register, preserved_register))?;
             }
         }
         Ok(())
@@ -261,7 +264,7 @@ impl ProviderStack {
     fn preserve_all_locals_extern(
         &mut self,
         reg_alloc: &mut RegisterAlloc,
-        mut f: impl FnMut(Register, Register) -> Result<(), Error>,
+        mut f: impl FnMut(PreservedLocal) -> Result<(), Error>,
     ) -> Result<(), Error> {
         debug_assert!(self.use_locals);
         let mut local_index = 0;
@@ -273,7 +276,7 @@ impl ProviderStack {
             if let Some(preserved_register) =
                 self.preserve_locals_extern(local_register, reg_alloc)?
             {
-                f(local_register, preserved_register)?;
+                f(PreservedLocal::new(local_register, preserved_register))?;
             }
             local_index += 1;
         }

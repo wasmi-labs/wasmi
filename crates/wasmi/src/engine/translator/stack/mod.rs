@@ -7,7 +7,7 @@ pub use self::{
     provider::{ProviderStack, TaggedProvider},
     register_alloc::{RegisterAlloc, RegisterSpace},
 };
-use super::TypedValue;
+use super::{PreservedLocal, TypedValue};
 use crate::{
     engine::{
         bytecode::{Provider, Register, RegisterSpan, UntypedProvider},
@@ -123,7 +123,7 @@ impl ValueStack {
     /// newly allocated `preserved_register` on the presevation register space.
     pub fn preserve_all_locals(
         &mut self,
-        f: impl FnMut(Register, Register) -> Result<(), Error>,
+        f: impl FnMut(PreservedLocal) -> Result<(), Error>,
     ) -> Result<(), Error> {
         self.providers.preserve_all_locals(&mut self.reg_alloc, f)
     }
