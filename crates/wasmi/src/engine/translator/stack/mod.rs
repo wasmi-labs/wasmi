@@ -119,11 +119,11 @@ impl ValueStack {
 
     /// Preserves all locals on the [`ProviderStack`] by shifting them to the preservation space.
     ///
-    /// Calls `f(index, register)` for each local preserved this way with its local `index` and the
-    /// newly allocated `register` on the presevation register space.
+    /// Calls `f(local_register, preserved_register)` for each `local_register` preserved this way with its
+    /// newly allocated `preserved_register` on the presevation register space.
     pub fn preserve_all_locals(
         &mut self,
-        f: impl FnMut(u32, Register) -> Result<(), Error>,
+        f: impl FnMut(Register, Register) -> Result<(), Error>,
     ) -> Result<(), Error> {
         self.providers.preserve_all_locals(&mut self.reg_alloc, f)
     }

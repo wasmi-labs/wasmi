@@ -92,7 +92,7 @@ impl ProviderStack {
     pub fn preserve_all_locals(
         &mut self,
         reg_alloc: &mut RegisterAlloc,
-        f: impl FnMut(u32, Register) -> Result<(), Error>,
+        f: impl FnMut(Register, Register) -> Result<(), Error>,
     ) -> Result<(), Error> {
         self.sync_local_refs();
         match self.use_locals {
@@ -178,19 +178,18 @@ impl ProviderStack {
     fn preserve_all_locals_inplace(
         &mut self,
         reg_alloc: &mut RegisterAlloc,
-        mut f: impl FnMut(u32, Register) -> Result<(), Error>,
+        mut f: impl FnMut(Register, Register) -> Result<(), Error>,
     ) -> Result<(), Error> {
         debug_assert!(!self.use_locals);
         let mut preserved = <BTreeMap<Register, Register>>::new();
         for provider in &mut self.providers {
-            let TaggedProvider::Local(register) = *provider else {
+            let TaggedProvider::Local(local_register) = *provider else {
                 continue;
             };
-            if !reg_alloc.is_local(register) {
+            if !reg_alloc.is_local(local_register) {
                 continue;
             }
-            let local_index = register.to_i16() as u32;
-            let (preserved_register, is_new) = match preserved.entry(register) {
+            let (preserved_register, is_new) = match preserved.entry(local_register) {
                 btree_map::Entry::Vacant(entry) => {
                     let preserved_register = reg_alloc.push_preserved()?;
                     entry.insert(preserved_register);
@@ -204,7 +203,7 @@ impl ProviderStack {
             };
             *provider = TaggedProvider::Preserved(preserved_register);
             if is_new {
-                f(local_index, preserved_register)?;
+                f(local_register, preserved_register)?;
             }
         }
         Ok(())
@@ -262,7 +261,7 @@ impl ProviderStack {
     fn preserve_all_locals_extern(
         &mut self,
         reg_alloc: &mut RegisterAlloc,
-        mut f: impl FnMut(u32, Register) -> Result<(), Error>,
+        mut f: impl FnMut(Register, Register) -> Result<(), Error>,
     ) -> Result<(), Error> {
         debug_assert!(self.use_locals);
         let mut local_index = 0;
@@ -274,7 +273,7 @@ impl ProviderStack {
             if let Some(preserved_register) =
                 self.preserve_locals_extern(local_register, reg_alloc)?
             {
-                f(local_index as u32, preserved_register)?;
+                f(local_register, preserved_register)?;
             }
             local_index += 1;
         }

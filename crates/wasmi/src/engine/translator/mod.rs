@@ -755,8 +755,7 @@ impl FuncTranslator {
         let mut preserved = Vec::new();
         self.alloc
             .stack
-            .preserve_all_locals(|local_index, preserved_register| {
-                let local_register = Register::from_i16(local_index as i16);
+            .preserve_all_locals(|local_register, preserved_register| {
                 preserved.push((local_register, preserved_register));
                 Ok(())
             })?;
