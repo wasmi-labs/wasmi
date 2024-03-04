@@ -784,6 +784,7 @@ impl FuncTranslator {
     fn preserve_locals(&mut self) -> Result<(), Error> {
         let fuel_info = self.fuel_info();
         let preserved = &mut self.alloc.buffer.preserved;
+        preserved.clear();
         self.alloc.stack.preserve_all_locals(|preserved_local| {
             preserved.push(preserved_local);
             Ok(())
