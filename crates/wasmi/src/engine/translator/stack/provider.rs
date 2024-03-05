@@ -40,6 +40,13 @@ pub enum TaggedProvider {
 pub struct ProviderStack {
     /// The internal stack of providers.
     providers: Vec<TaggedProvider>,
+    /// The number of locals on the `providers` stack.
+    ///
+    /// # Note
+    ///
+    /// This is used to act as fast bailout for local preservation in the common
+    /// case that no locals are on the stack.
+    len_locals: usize,
     /// Indicates whether to use `locals` to store `locals` on the provider stack.
     ///
     /// # Note
@@ -60,6 +67,7 @@ impl ProviderStack {
         self.providers.clear();
         self.use_locals = false;
         self.locals.reset();
+        self.len_locals = 0;
     }
 
     /// Synchronizes [`LocalRefs`] with the current state of the `providers` stack.
@@ -93,6 +101,9 @@ impl ProviderStack {
         preserve_index: u32,
         reg_alloc: &mut RegisterAlloc,
     ) -> Result<Option<Register>, Error> {
+        if self.len_locals == 0 {
+            return Ok(None);
+        }
         self.sync_local_refs();
         let local = i16::try_from(preserve_index)
             .map(Register::from_i16)
@@ -118,6 +129,9 @@ impl ProviderStack {
         reg_alloc: &mut RegisterAlloc,
         f: impl FnMut(PreservedLocal) -> Result<(), Error>,
     ) -> Result<(), Error> {
+        if self.len_locals == 0 {
+            return Ok(());
+        }
         self.sync_local_refs();
         match self.use_locals {
             false => self.preserve_all_locals_inplace(reg_alloc, f),
@@ -141,10 +155,11 @@ impl ProviderStack {
         debug_assert!(!self.use_locals);
         let mut preserved = None;
         for provider in &mut self.providers {
-            let TaggedProvider::Local(register) = provider else {
+            let TaggedProvider::Local(register) = *provider else {
                 continue;
             };
-            if *register != local {
+            debug_assert!(reg_alloc.is_local(register));
+            if register != local {
                 continue;
             }
             let preserved_register = match preserved {
@@ -159,6 +174,10 @@ impl ProviderStack {
                 }
             };
             *provider = TaggedProvider::Preserved(preserved_register);
+            self.len_locals -= 1;
+            if self.len_locals == 0 {
+                break;
+            }
         }
         Ok(preserved)
     }
@@ -184,14 +203,13 @@ impl ProviderStack {
         mut f: impl FnMut(PreservedLocal) -> Result<(), Error>,
     ) -> Result<(), Error> {
         debug_assert!(!self.use_locals);
+        // TODO: replace `BTreeMap` with ArrayVec and linear or binary_search
         let mut preserved = <BTreeMap<Register, Register>>::new();
         for provider in &mut self.providers {
             let TaggedProvider::Local(local_register) = *provider else {
                 continue;
             };
-            if !reg_alloc.is_local(local_register) {
-                continue;
-            }
+            debug_assert!(reg_alloc.is_local(local_register));
             let (preserved_register, is_new) = match preserved.entry(local_register) {
                 btree_map::Entry::Vacant(entry) => {
                     let preserved_register = reg_alloc.push_preserved()?;
@@ -205,10 +223,15 @@ impl ProviderStack {
                 }
             };
             *provider = TaggedProvider::Preserved(preserved_register);
+            self.len_locals -= 1;
             if is_new {
                 f(PreservedLocal::new(local_register, preserved_register))?;
             }
+            if self.len_locals == 0 {
+                break;
+            }
         }
+        debug_assert_eq!(self.len_locals, 0);
         Ok(())
     }
 
@@ -242,6 +265,7 @@ impl ProviderStack {
                 }
             };
             *provider = TaggedProvider::Preserved(preserved_register);
+            self.len_locals -= 1;
         }
         Ok(preserved)
     }
@@ -280,6 +304,7 @@ impl ProviderStack {
             }
             local_index += 1;
         }
+        debug_assert_eq!(self.len_locals, 0);
         Ok(())
     }
 
@@ -298,19 +323,22 @@ impl ProviderStack {
     }
 
     /// Pushes a provider to the [`ProviderStack`].
-    fn push(&mut self, provider: TaggedProvider) -> usize {
+    #[inline(always)]
+    fn push(&mut self, provider: TaggedProvider) {
         let index = self.providers.len();
         self.providers.push(provider);
-        index
+        if let TaggedProvider::Local(reg) = provider {
+            self.len_locals += 1;
+            if self.use_locals {
+                self.locals.push_at(reg, index);
+            }
+        }
     }
 
     /// Pushes a [`Register`] to the [`ProviderStack`] referring to a function parameter or local variable.
     pub fn push_local(&mut self, reg: Register) {
         debug_assert!(!reg.is_const());
-        let index = self.push(TaggedProvider::Local(reg));
-        if self.use_locals {
-            self.locals.push_at(reg, index);
-        }
+        self.push(TaggedProvider::Local(reg));
     }
 
     /// Pushes a dynamically allocated [`Register`] to the [`ProviderStack`].
@@ -362,6 +390,7 @@ impl ProviderStack {
             .pop()
             .unwrap_or_else(|| panic!("tried to pop provider from empty provider stack"));
         if let TaggedProvider::Local(register) = popped {
+            self.len_locals -= 1;
             if self.use_locals {
                 // If a `local.get` was popped from the provider stack we
                 // also need to pop it from the `local.get` indices stack.
