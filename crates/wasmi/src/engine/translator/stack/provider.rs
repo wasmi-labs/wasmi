@@ -62,6 +62,27 @@ impl ProviderStack {
         self.locals.reset();
     }
 
+    /// Synchronizes [`LocalRefs`] with the current state of the `providers` stack.
+    ///
+    /// This is required to initialize usage of the attack-immune [`LocalRefs`] before first use.
+    fn sync_local_refs(&mut self) {
+        /// Maximum provider stack height before switching to attack-immune
+        /// [`LocalRefs`] implementation for `local.get` preservation.
+        const PRESERVE_THRESHOLD: usize = 16;
+
+        if self.use_locals || self.providers.len() < PRESERVE_THRESHOLD {
+            return;
+        }
+        self.use_locals = true;
+        for (index, provider) in self.providers.iter().enumerate() {
+            let TaggedProvider::Local(local) = provider else {
+                continue;
+            };
+            self.locals.push_at(*local, index);
+        }
+        self.use_locals = true;
+    }
+
     /// Preserves `local.get` on the [`ProviderStack`] by shifting to the preservation space.
     ///
     /// In case there are `local.get n` with `n == preserve_index` on the [`ProviderStack`]
@@ -102,27 +123,6 @@ impl ProviderStack {
             false => self.preserve_all_locals_inplace(reg_alloc, f),
             true => self.preserve_all_locals_extern(reg_alloc, f),
         }
-    }
-
-    /// Synchronizes [`LocalRefs`] with the current state of the `providers` stack.
-    ///
-    /// This is required to initialize usage of the attack-immune [`LocalRefs`] before first use.
-    fn sync_local_refs(&mut self) {
-        /// Maximum provider stack height before switching to attack-immune
-        /// [`LocalRefs`] implementation for `local.get` preservation.
-        const PRESERVE_THRESHOLD: usize = 16;
-
-        if self.use_locals || self.providers.len() < PRESERVE_THRESHOLD {
-            return;
-        }
-        self.use_locals = true;
-        for (index, provider) in self.providers.iter().enumerate() {
-            let TaggedProvider::Local(local) = provider else {
-                continue;
-            };
-            self.locals.push_at(*local, index);
-        }
-        self.use_locals = true;
     }
 
     /// Preserves the `local` [`Register`] on the provider stack in-place.
