@@ -168,14 +168,19 @@ impl VisitInputRegisters for Instruction {
             Instruction::CopySpan { results: _, values, len: _ } => {
                 values.visit_input_registers(f);
             }
-            Instruction::CopySpanNonOverlapping { results: _, values, len: _ } => {
+            Instruction::CopySpanNonOverlapping { results, values, len: _ } => {
+                // Note: we need to visit the results of the `CopySpanNonOverlapping` instruction
+                //       as well since it might have been generated while preserving locals
+                //       on the compilation stack when entering a control flow `block`
+                //       or `if`.
+                f(results.head_mut());
                 values.visit_input_registers(f);
             }
             Instruction::CopyMany { results: _, values } => {
                 values.visit_input_registers(f);
             }
             Instruction::CopyManyNonOverlapping { results, values } => {
-                // Note: we need to visit the results of the `CopyMany` instruction
+                // Note: we need to visit the results of the `CopyManyNonOverlapping` instruction
                 //       as well since it might have been generated while preserving locals
                 //       on the compilation stack when entering a control flow `block`
                 //       or `if`.

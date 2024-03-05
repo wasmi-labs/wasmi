@@ -810,6 +810,7 @@ impl InstrEncoder {
                     preserved,
                     Instruction::Copy { .. }
                         | Instruction::Copy2 { .. }
+                        | Instruction::CopySpanNonOverlapping { .. }
                         | Instruction::CopyManyNonOverlapping { .. }
                 ),
                 "a preserve instruction is always a register copy instruction but found: {:?}",
