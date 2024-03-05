@@ -147,17 +147,19 @@ impl VisitInputRegisters for Instruction {
             Instruction::BranchF64Ge(instr) => instr.visit_input_registers(f),
 
             Instruction::Copy { result, value } => {
-                // Note: for copy instruction unlike all other instructions
+                // Note: for copy instructions unlike all other instructions
                 //       we need to also visit the result register since
                 //       encoding of `local.set` or `local.tee` might actually
                 //       result in a `copy` instruction with a `result` register
                 //       allocated in the storage-space.
                 visit_registers!(f, result, value)
             }
-            Instruction::Copy2 { results: _, values } => {
-                // Note: no need to visit `result` as in `Instruction::Copy` since
-                //       this is mainly about updating registers in the reserve space
-                //       due to optimizations of `local.set`.
+            Instruction::Copy2 { results, values } => {
+                // Note: we need to visit the results of the `Copy2` instruction
+                //       as well since it might have been generated while preserving locals
+                //       on the compilation stack when entering a control flow `block`
+                //       or `if`.
+                f(results.head_mut());
                 values.visit_input_registers(f);
             }
             Instruction::CopyImm32 { result: _, value: _ } |
@@ -172,7 +174,12 @@ impl VisitInputRegisters for Instruction {
             Instruction::CopyMany { results: _, values } => {
                 values.visit_input_registers(f);
             }
-            Instruction::CopyManyNonOverlapping { results: _, values } => {
+            Instruction::CopyManyNonOverlapping { results, values } => {
+                // Note: we need to visit the results of the `CopyMany` instruction
+                //       as well since it might have been generated while preserving locals
+                //       on the compilation stack when entering a control flow `block`
+                //       or `if`.
+                f(results.head_mut());
                 values.visit_input_registers(f);
             }
             Instruction::CallIndirectParams(params) => f(&mut params.index),

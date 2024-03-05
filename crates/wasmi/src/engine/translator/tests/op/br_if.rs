@@ -870,8 +870,7 @@ fn branch_if_results_1() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy(4, 0),
-            Instruction::copy(3, 1),
+            Instruction::copy2(RegisterSpan::new(Register::from_i16(3)), 1, 0),
             Instruction::branch_i32_eqz(Register::from_i16(3), BranchOffset16::from(3)),
             Instruction::copy(2, 4),
             Instruction::branch(BranchOffset::from(2)),
@@ -932,9 +931,8 @@ fn branch_if_results_2() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy(7, 0),
-            Instruction::copy(6, 1),
-            Instruction::copy(5, 2),
+            Instruction::copy_many_non_overlapping(RegisterSpan::new(Register::from_i16(5)), 2, 1),
+            Instruction::register(0),
             Instruction::branch_i32_eqz(Register::from_i16(5), BranchOffset16::from(3)),
             Instruction::copy2(RegisterSpan::new(Register::from_i16(3)), 7, 6),
             Instruction::branch(BranchOffset::from(2)),

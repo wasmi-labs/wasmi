@@ -62,6 +62,7 @@ use crate::{
     FuncType,
 };
 use core::fmt;
+use slice_group_by::GroupBy as _;
 use std::vec::Vec;
 use wasmi_core::{TrapCode, UntypedValue, ValueType};
 use wasmparser::{
@@ -789,18 +790,37 @@ impl FuncTranslator {
             preserved.push(preserved_local);
             Ok(())
         })?;
-        for preserved_local in preserved.drain(..) {
-            let instr = self
-                .alloc
-                .instr_encoder
-                .encode_copy(
-                    &mut self.alloc.stack,
-                    preserved_local.preserved,
-                    TypedProvider::Register(preserved_local.local),
-                    fuel_info,
-                )?
-                .expect("must have preserved copy");
-            self.alloc.instr_encoder.notify_preserved_register(instr);
+        preserved.reverse();
+        let copy_groups = preserved.linear_group_by(|a, b| {
+            // Note: we group copies into groups with continuous result register indices
+            //       because this is what allows us to fuse single `Copy` instructions into
+            //       more efficient `Copy2` or `CopyManyNonOverlapping` instructions.
+            //
+            // At the time of this writing the author was not sure if all result registers
+            // of all preserved locals are always continuous so this can be understood as
+            // a safety guard.
+            (b.preserved.to_i16() - a.preserved.to_i16()) == 1
+        });
+        for copy_group in copy_groups {
+            let len = copy_group.len();
+            let results = RegisterSpan::new(copy_group[0].preserved).iter(len);
+            let providers = &mut self.alloc.buffer.providers;
+            providers.clear();
+            providers.extend(
+                copy_group
+                    .iter()
+                    .map(|p| p.local)
+                    .map(TypedProvider::Register),
+            );
+            let instr = self.alloc.instr_encoder.encode_copies(
+                &mut self.alloc.stack,
+                results,
+                &providers[..],
+                fuel_info,
+            )?;
+            if let Some(instr) = instr {
+                self.alloc.instr_encoder.notify_preserved_register(instr)
+            }
         }
         Ok(())
     }

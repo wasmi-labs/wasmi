@@ -76,8 +76,7 @@ fn nested_block() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy(5, 0),
-            Instruction::copy(4, 1),
+            Instruction::copy2(RegisterSpan::new(Register::from_i16(4)), 1, 0),
             Instruction::branch_i32_ne_imm(Register::from_i16(2), 0, BranchOffset16::from(4)),
             Instruction::copy_imm32(Register::from_i16(0), 10_i32),
             Instruction::branch_i32_ne_imm(Register::from_i16(3), 0, BranchOffset16::from(2)),
@@ -112,8 +111,7 @@ fn nested_if() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy(5, 0),
-            Instruction::copy(4, 1),
+            Instruction::copy2(RegisterSpan::new(Register::from_i16(4)), 1, 0),
             Instruction::branch_i32_eq_imm(Register::from_i16(2), 0, BranchOffset16::from(4)),
             Instruction::copy_imm32(Register::from_i16(0), 10_i32),
             Instruction::branch_i32_eq_imm(Register::from_i16(3), 0, BranchOffset16::from(2)),

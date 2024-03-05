@@ -279,8 +279,7 @@ fn if_then_else_with_params() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy(5, 1),
-            Instruction::copy(4, 2),
+            Instruction::copy2(RegisterSpan::new(Register::from_i16(4)), 2, 1),
             Instruction::branch_i32_eqz(Register::from_i16(0), BranchOffset16::from(3)),
             Instruction::i32_add(
                 Register::from_i16(3),
