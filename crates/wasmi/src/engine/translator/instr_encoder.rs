@@ -803,10 +803,19 @@ impl InstrEncoder {
     ///
     /// This will ignore any preservation notifications after the first one.
     pub fn notify_preserved_register(&mut self, preserve_instr: Instr) {
-        debug_assert!(
-            matches!(self.instrs.get(preserve_instr), Instruction::Copy { .. }),
-            "a preserve instruction is always a register copy instruction"
-        );
+        {
+            let preserved = self.instrs.get(preserve_instr);
+            debug_assert!(
+                matches!(
+                    preserved,
+                    Instruction::Copy { .. }
+                        | Instruction::Copy2 { .. }
+                        | Instruction::CopyManyNonOverlapping { .. }
+                ),
+                "a preserve instruction is always a register copy instruction but found: {:?}",
+                preserved,
+            );
+        }
         if self.notified_preservation.is_none() {
             self.notified_preservation = Some(preserve_instr);
         }
