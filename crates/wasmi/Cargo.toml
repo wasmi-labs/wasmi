@@ -25,7 +25,7 @@ smallvec = { version = "1.13.1", features = ["union"] }
 multi-stash = { version = "0.2.0" }
 num-traits = { version = "0.2", default-features = false }
 num-derive = "0.4"
-slice-group-by = "0.3"
+slice-group-by = { version = "0.3", default-features = false }
 
 [dev-dependencies]
 wat = "1"
@@ -36,7 +36,7 @@ criterion = { version = "0.5", default-features = false }
 
 [features]
 default = ["std"]
-std = ["wasmi_core/std", "wasmi_arena/std", "wasmparser/std", "spin/std", "num-traits/std"]
+std = ["wasmi_core/std", "wasmi_arena/std", "wasmparser/std", "spin/std", "num-traits/std", "slice-group-by/std"]
 
 [[bench]]
 name = "benches"
