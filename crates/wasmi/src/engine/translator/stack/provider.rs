@@ -5,11 +5,9 @@ use crate::{
     engine::{bytecode::Register, translator::PreservedLocal},
     Error,
 };
+use arrayvec::ArrayVec;
 use smallvec::SmallVec;
-use std::{
-    collections::{btree_map, BTreeMap},
-    vec::Vec,
-};
+use std::vec::Vec;
 
 #[cfg(doc)]
 use wasmi_core::UntypedValue;
@@ -70,15 +68,15 @@ impl ProviderStack {
         self.len_locals = 0;
     }
 
+    /// Maximum provider stack height before switching to attack-immune
+    /// [`LocalRefs`] implementation for `local.get` preservation.
+    const PRESERVE_THRESHOLD: usize = 16;
+
     /// Synchronizes [`LocalRefs`] with the current state of the `providers` stack.
     ///
     /// This is required to initialize usage of the attack-immune [`LocalRefs`] before first use.
     fn sync_local_refs(&mut self) {
-        /// Maximum provider stack height before switching to attack-immune
-        /// [`LocalRefs`] implementation for `local.get` preservation.
-        const PRESERVE_THRESHOLD: usize = 16;
-
-        if self.use_locals || self.providers.len() < PRESERVE_THRESHOLD {
+        if self.use_locals || self.providers.len() < Self::PRESERVE_THRESHOLD {
             return;
         }
         self.use_locals = true;
@@ -203,25 +201,26 @@ impl ProviderStack {
         mut f: impl FnMut(PreservedLocal) -> Result<(), Error>,
     ) -> Result<(), Error> {
         debug_assert!(!self.use_locals);
-        // TODO: replace `BTreeMap` with ArrayVec and linear or binary_search
-        let mut preserved = <BTreeMap<Register, Register>>::new();
+        let mut preserved = <ArrayVec<PreservedLocal, { Self::PRESERVE_THRESHOLD }>>::new();
         for provider in &mut self.providers {
             let TaggedProvider::Local(local_register) = *provider else {
                 continue;
             };
             debug_assert!(reg_alloc.is_local(local_register));
-            let (preserved_register, is_new) = match preserved.entry(local_register) {
-                btree_map::Entry::Vacant(entry) => {
-                    let preserved_register = reg_alloc.push_preserved()?;
-                    entry.insert(preserved_register);
-                    (preserved_register, true)
-                }
-                btree_map::Entry::Occupied(entry) => {
-                    let preserved_register = *entry.get();
-                    reg_alloc.bump_preserved(preserved_register);
-                    (preserved_register, false)
-                }
-            };
+            let (preserved_register, is_new) =
+                // Note: linear search is fine since we operate only on very small sets of data.
+                match preserved.iter().find(|p| p.local == local_register) {
+                    Some(preserved_local) => {
+                        let preserved_register = preserved_local.preserved;
+                        reg_alloc.bump_preserved(preserved_register);
+                        (preserved_register, false)
+                    }
+                    None => {
+                        let preserved_register = reg_alloc.push_preserved()?;
+                        preserved.push(PreservedLocal::new(local_register, preserved_register));
+                        (preserved_register, true)
+                    }
+                };
             *provider = TaggedProvider::Preserved(preserved_register);
             self.len_locals -= 1;
             if is_new {
