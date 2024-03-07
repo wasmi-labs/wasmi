@@ -202,7 +202,7 @@ impl ProviderStack {
     ) -> Result<(), Error> {
         debug_assert!(!self.use_locals);
         let mut preserved = <ArrayVec<PreservedLocal, { Self::PRESERVE_THRESHOLD }>>::new();
-        for provider in &mut self.providers {
+        for provider in self.providers.iter_mut().rev() {
             let TaggedProvider::Local(local_register) = *provider else {
                 continue;
             };

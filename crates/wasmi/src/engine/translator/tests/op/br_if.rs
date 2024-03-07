@@ -870,11 +870,11 @@ fn branch_if_results_1() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2(RegisterSpan::new(Register::from_i16(3)), 1, 0),
-            Instruction::branch_i32_eqz(Register::from_i16(3), BranchOffset16::from(3)),
-            Instruction::copy(2, 4),
+            Instruction::copy2(RegisterSpan::new(Register::from_i16(3)), 0, 1),
+            Instruction::branch_i32_eqz(Register::from_i16(4), BranchOffset16::from(3)),
+            Instruction::copy(2, 3),
             Instruction::branch(BranchOffset::from(2)),
-            Instruction::copy(2, 4),
+            Instruction::copy(2, 3),
             Instruction::return_reg(2),
         ])
         .run()
@@ -931,12 +931,15 @@ fn branch_if_results_2() {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy_many_non_overlapping(RegisterSpan::new(Register::from_i16(5)), 2, 1),
-            Instruction::register(0),
-            Instruction::branch_i32_eqz(Register::from_i16(5), BranchOffset16::from(3)),
-            Instruction::copy2(RegisterSpan::new(Register::from_i16(3)), 7, 6),
+            Instruction::copy_span_non_overlapping(
+                RegisterSpan::new(Register::from_i16(5)),
+                RegisterSpan::new(Register::from_i16(0)),
+                3,
+            ),
+            Instruction::branch_i32_eqz(Register::from_i16(7), BranchOffset16::from(3)),
+            Instruction::copy2(RegisterSpan::new(Register::from_i16(3)), 5, 6),
             Instruction::branch(BranchOffset::from(2)),
-            Instruction::copy2(RegisterSpan::new(Register::from_i16(3)), 7, 6),
+            Instruction::copy2(RegisterSpan::new(Register::from_i16(3)), 5, 6),
             Instruction::i32_add(
                 Register::from_i16(3),
                 Register::from_i16(3),
