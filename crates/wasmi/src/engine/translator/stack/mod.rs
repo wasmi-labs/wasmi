@@ -1,9 +1,11 @@
 mod consts;
+mod locals;
 mod provider;
 mod register_alloc;
 
 pub use self::{
     consts::{FuncLocalConsts, FuncLocalConstsIter},
+    locals::LocalRefs,
     provider::{ProviderStack, TaggedProvider},
     register_alloc::{RegisterAlloc, RegisterSpace},
 };

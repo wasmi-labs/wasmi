@@ -1,12 +1,9 @@
-use ::core::iter;
-
-use super::{RegisterAlloc, TypedValue};
+use super::{LocalRefs, RegisterAlloc, TypedValue};
 use crate::{
     engine::{bytecode::Register, translator::PreservedLocal},
     Error,
 };
 use arrayvec::ArrayVec;
-use smallvec::SmallVec;
 use std::vec::Vec;
 
 #[cfg(doc)]
@@ -249,7 +246,7 @@ impl ProviderStack {
     ) -> Result<Option<Register>, Error> {
         debug_assert!(self.use_locals);
         let mut preserved = None;
-        for provider_index in self.locals.drain_at(local) {
+        self.locals.drain_at(local, |provider_index| {
             let provider = &mut self.providers[provider_index];
             debug_assert!(matches!(provider, TaggedProvider::Local(_)));
             let preserved_register = match preserved {
@@ -265,7 +262,8 @@ impl ProviderStack {
             };
             *provider = TaggedProvider::Preserved(preserved_register);
             self.len_locals -= 1;
-        }
+            Ok(())
+        })?;
         Ok(preserved)
     }
 
@@ -290,19 +288,24 @@ impl ProviderStack {
         mut f: impl FnMut(PreservedLocal) -> Result<(), Error>,
     ) -> Result<(), Error> {
         debug_assert!(self.use_locals);
-        let mut local_index = 0;
-        loop {
-            let local_register = Register::from_i16(local_index);
-            if !reg_alloc.is_local(local_register) {
-                break;
-            }
-            if let Some(preserved_register) =
-                self.preserve_locals_extern(local_register, reg_alloc)?
-            {
-                f(PreservedLocal::new(local_register, preserved_register))?;
-            }
-            local_index += 1;
-        }
+        let mut group = None;
+        self.locals.drain_all(|local, index| {
+            let preserved = match group {
+                Some((group, preserved)) if group == local => {
+                    reg_alloc.bump_preserved(preserved);
+                    preserved
+                }
+                _ => {
+                    let preserved = reg_alloc.push_preserved()?;
+                    group = Some((local, preserved));
+                    f(PreservedLocal::new(local, preserved))?;
+                    preserved
+                }
+            };
+            self.providers[index] = TaggedProvider::Preserved(preserved);
+            self.len_locals -= 1;
+            Ok(())
+        })?;
         debug_assert_eq!(self.len_locals, 0);
         Ok(())
     }
@@ -421,71 +424,5 @@ impl<'a> IntoIterator for &'a mut ProviderStack {
 
     fn into_iter(self) -> Self::IntoIter {
         self.providers.iter_mut()
-    }
-}
-
-/// The index of a `local.get` on the [`ProviderStack`].
-type StackIndex = usize;
-
-#[derive(Debug, Default)]
-pub struct LocalRefs {
-    /// The indices of all `local.get` on the [`ProviderStack`] of all local variables.
-    locals: Vec<SmallVec<[StackIndex; 2]>>,
-}
-
-impl LocalRefs {
-    /// Resets the [`LocalRefs`].
-    pub fn reset(&mut self) {
-        self.locals.clear()
-    }
-
-    /// Registers an `amount` of function inputs or local variables.
-    ///
-    /// # Errors
-    ///
-    /// If too many registers have been registered.
-    pub fn register_locals(&mut self, amount: u32) {
-        self.locals
-            .extend(iter::repeat_with(SmallVec::default).take(amount as StackIndex));
-    }
-
-    /// Returns the [`ProviderStack`] `local.get` indices of the `local` variable.
-    ///
-    /// # Panics
-    ///
-    /// If the `local` index is out of bounds.
-    fn get_indices_mut(&mut self, local: Register) -> &mut SmallVec<[StackIndex; 2]> {
-        debug_assert!(!local.is_const());
-        &mut self.locals[local.to_i16().unsigned_abs() as usize]
-    }
-
-    /// Pushes the stack index of a `local.get` on the [`ProviderStack`].
-    ///
-    /// # Panics
-    ///
-    /// If the `local` index is out of bounds.
-    pub fn push_at(&mut self, local: Register, stack_index: StackIndex) {
-        self.get_indices_mut(local).push(stack_index);
-    }
-
-    /// Pops the stack index of a `local.get` on the [`ProviderStack`].
-    ///
-    /// # Panics
-    ///
-    /// - If the `local` index is out of bounds.
-    /// - If there is no `local.get` stack index on the stack.
-    pub fn pop_at(&mut self, local: Register) -> StackIndex {
-        self.get_indices_mut(local).pop().unwrap_or_else(|| {
-            panic!("missing stack index for local on the provider stack: {local:?}")
-        })
-    }
-
-    /// Drains all `local.get` indices of the `local` variable on the [`ProviderStack`].
-    ///
-    /// # Panics
-    ///
-    /// If the `local` index is out of bounds.
-    pub fn drain_at(&mut self, local: Register) -> smallvec::Drain<[StackIndex; 2]> {
-        self.get_indices_mut(local).drain(..)
     }
 }
