@@ -5,6 +5,9 @@ use std::{
     vec::Vec,
 };
 
+#[cfg(doc)]
+use super::ProviderStack;
+
 /// The index of a `local.get` on the [`ProviderStack`].
 pub type StackIndex = usize;
 
@@ -111,7 +114,7 @@ impl LocalRefsEntries {
 #[derive(Debug, Copy, Clone)]
 enum LocalRefEntry {
     Vacant {
-        /// The next free slot of the [`LocalsRef`] data structure.
+        /// The next free slot of the [`LocalRefs`] data structure.
         next_free: Option<EntryIndex>,
     },
     Occupied {
