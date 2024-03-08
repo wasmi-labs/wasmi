@@ -169,6 +169,66 @@ fn simple_block_4_params_2() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
+fn simple_block_30() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32 i32 i32 i32)
+                ;; Push 30 locals on the compilation stack.
+                (local.get  0) (local.get  1) (local.get  2) (local.get  3) (local.get  4)
+                (local.get  5) (local.get  6) (local.get  7) (local.get  8) (local.get  9)
+                (local.get  0) (local.get  1) (local.get  2) (local.get  3) (local.get  4)
+                (local.get  5) (local.get  6) (local.get  7) (local.get  8) (local.get  9)
+                (local.get  0) (local.get  1) (local.get  2) (local.get  3) (local.get  4)
+                (local.get  5) (local.get  6) (local.get  7) (local.get  8) (local.get  9)
+                ;; Now all those previously pushed locals need to be preserved.
+                (block
+                    (br_if 0 (local.get 10))
+                    (local.set 0 (i32.const  10)) ;; overwrites (local 0) conditionally
+                    (local.set 1 (i32.const  20)) ;; overwrites (local 1) conditionally
+                    (local.set 2 (i32.const  30)) ;; overwrites (local 2) conditionally
+                    (local.set 3 (i32.const  40)) ;; overwrites (local 3) conditionally
+                    (local.set 4 (i32.const  50)) ;; overwrites (local 4) conditionally
+                    (local.set 5 (i32.const  60)) ;; overwrites (local 5) conditionally
+                    (local.set 6 (i32.const  70)) ;; overwrites (local 6) conditionally
+                    (local.set 7 (i32.const  80)) ;; overwrites (local 7) conditionally
+                    (local.set 8 (i32.const  90)) ;; overwrites (local 8) conditionally
+                    (local.set 9 (i32.const 100)) ;; overwrites (local 9) conditionally
+                )
+                ;; Drop 20 out of the 30 return values which still returns every local once.
+                (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
+                (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
+            )
+        )
+    "#,
+    );
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::copy_many_non_overlapping(RegisterSpan::new(Register::from_i16(11)), 9, 8),
+            Instruction::register_list(7, 6, 5),
+            Instruction::register_list(4, 3, 2),
+            Instruction::register2(1, 0),
+            Instruction::branch_i32_ne_imm(Register::from_i16(10), 0, BranchOffset16::from(11)),
+            Instruction::copy_imm32(Register::from_i16(0), 10_i32),
+            Instruction::copy_imm32(Register::from_i16(1), 20_i32),
+            Instruction::copy_imm32(Register::from_i16(2), 30_i32),
+            Instruction::copy_imm32(Register::from_i16(3), 40_i32),
+            Instruction::copy_imm32(Register::from_i16(4), 50_i32),
+            Instruction::copy_imm32(Register::from_i16(5), 60_i32),
+            Instruction::copy_imm32(Register::from_i16(6), 70_i32),
+            Instruction::copy_imm32(Register::from_i16(7), 80_i32),
+            Instruction::copy_imm32(Register::from_i16(8), 90_i32),
+            Instruction::copy_imm32(Register::from_i16(9), 100_i32),
+            Instruction::return_many(20, 19, 18),
+            Instruction::register_list(17, 16, 15),
+            Instruction::register_list(14, 13, 12),
+            Instruction::register(11),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
 fn simple_if_1() {
     let wasm = wat2wasm(
         r#"
