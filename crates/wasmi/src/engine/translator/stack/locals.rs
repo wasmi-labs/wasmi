@@ -224,6 +224,7 @@ impl LocalRefs {
             return Ok(());
         };
         self.drain_list_at(last, f)?;
+        self.reset_if_empty();
         Ok(())
     }
 
@@ -243,6 +244,7 @@ impl LocalRefs {
         }
         self.locals_last = local_last;
         self.locals_last.clear();
+        self.entries.reset();
         Ok(())
     }
 
@@ -259,7 +261,6 @@ impl LocalRefs {
             last = prev;
             f(slot)?;
         }
-        self.reset_if_empty();
         Ok(())
     }
 }
