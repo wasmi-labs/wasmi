@@ -3,10 +3,10 @@
 |:----------------------:|:--------------------:|:----------------:|:--------------------:|
 | [![ci][1]][2]          | [![codecov][3]][4]   | [![docs][5]][6] | [![crates][7]][8]  |
 
-[1]: https://github.com/paritytech/wasmi/workflows/Rust%20-%20Continuous%20Integration/badge.svg?branch=master
-[2]: https://github.com/paritytech/wasmi/actions?query=workflow%3A%22Rust+-+Continuous+Integration%22+branch%3Amaster
-[3]: https://codecov.io/gh/paritytech/wasmi/branch/master/graph/badge.svg
-[4]: https://codecov.io/gh/paritytech/wasmi/branch/master
+[1]: https://github.com/wasmi-labs/wasmi/workflows/Rust%20-%20Continuous%20Integration/badge.svg?branch=master
+[2]: https://github.com/wasmi-labs/wasmi/actions?query=workflow%3A%22Rust+-+Continuous+Integration%22+branch%3Amaster
+[3]: https://codecov.io/gh/wasmi-labs/wasmi/branch/master/graph/badge.svg
+[4]: https://codecov.io/gh/wasmi-labs/wasmi/branch/master
 [5]: https://docs.rs/wasmi/badge.svg
 [6]: https://docs.rs/wasmi
 [7]: https://img.shields.io/crates/v/wasmi.svg
@@ -86,19 +86,19 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 [WASI]: https://github.com/WebAssembly/WASI
 [`wasmi_wasi` crate]: ./crates/wasi
 
-[(#363)]: https://github.com/paritytech/wasmi/issues/363
-[(#364)]: https://github.com/paritytech/wasmi/issues/364
-[(#496)]: https://github.com/paritytech/wasmi/issues/496
-[(#628)]: https://github.com/paritytech/wasmi/pull/628
-[(#635)]: https://github.com/paritytech/wasmi/pull/635
-[(#638)]: https://github.com/paritytech/wasmi/pull/638
-[(#683)]: https://github.com/paritytech/wasmi/pull/683
-[(#707)]: https://github.com/paritytech/wasmi/pull/707
-[(#774)]: https://github.com/paritytech/wasmi/pull/774
-[(#775)]: https://github.com/paritytech/wasmi/pull/775
-[(#776)]: https://github.com/paritytech/wasmi/pull/776
-[(#777)]: https://github.com/paritytech/wasmi/pull/777
-[(#897)]: https://github.com/paritytech/wasmi/pull/897
+[(#363)]: https://github.com/wasmi-labs/wasmi/issues/363
+[(#364)]: https://github.com/wasmi-labs/wasmi/issues/364
+[(#496)]: https://github.com/wasmi-labs/wasmi/issues/496
+[(#628)]: https://github.com/wasmi-labs/wasmi/pull/628
+[(#635)]: https://github.com/wasmi-labs/wasmi/pull/635
+[(#638)]: https://github.com/wasmi-labs/wasmi/pull/638
+[(#683)]: https://github.com/wasmi-labs/wasmi/pull/683
+[(#707)]: https://github.com/wasmi-labs/wasmi/pull/707
+[(#774)]: https://github.com/wasmi-labs/wasmi/pull/774
+[(#775)]: https://github.com/wasmi-labs/wasmi/pull/775
+[(#776)]: https://github.com/wasmi-labs/wasmi/pull/776
+[(#777)]: https://github.com/wasmi-labs/wasmi/pull/777
+[(#897)]: https://github.com/wasmi-labs/wasmi/pull/897
 
 ## Usage
 
@@ -124,7 +124,7 @@ Refer to the [Wasmi crate docs](https://docs.rs/wasmi) to learn how to use the [
 Clone the Wasmi repository and build using `cargo`:
 
 ```console
-git clone https://github.com/paritytech/wasmi.git --recursive
+git clone https://github.com/wasmi-labs/wasmi.git --recursive
 cd wasmi
 cargo build
 cargo test
@@ -140,7 +140,7 @@ cargo bench
 
 Use `translate`, `instantiate`, `execute` or `overhead` filters to only run benchmarks that test performance of Wasm translation, instantiation, execution or miscellaneous overhead respectively, e.g. `cargo bench execute`.
 
-We maintain a timeline for benchmarks of every commit to `master` that [can be viewed here](https://paritytech.github.io/wasmi/benchmarks/).
+We maintain a timeline for benchmarks of every commit to `master` that [can be viewed here](https://wasmi-labs.github.io/wasmi/benchmarks/).
 
 ## Supported Platforms
 

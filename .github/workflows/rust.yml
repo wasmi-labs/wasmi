@@ -75,7 +75,7 @@ jobs:
     strategy:
       matrix:
         # windows-latest was pinned to windows-2019
-        # because of https://github.com/paritytech/wasmi/runs/5021520759
+        # because of https://github.com/wasmi-labs/wasmi/runs/5021520759
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:

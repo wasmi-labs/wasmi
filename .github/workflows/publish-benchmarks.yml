@@ -59,4 +59,4 @@ jobs:
           git add benchmarks/
           git commit -m "remove output files"
           echo "git push"
-          git push 'https://${{ secrets.GITHUB_TOKEN }}@github.com/paritytech/wasmi.git' gh-pages:gh-pages
+          git push 'https://${{ secrets.GITHUB_TOKEN }}@github.com/wasmi-labs/wasmi.git' gh-pages:gh-pages
