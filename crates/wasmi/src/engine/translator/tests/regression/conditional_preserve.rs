@@ -547,3 +547,74 @@ fn expr_if() {
         ])
         .run()
 }
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn invalid_preservation_slot_reuse_1() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func (param i32 i32)
+                (local.get 1) ;; preserved after (local.tee 1)
+                (local.get 0) ;; preserved after (local.tee 0)
+                (local.tee 0 (i32.popcnt (local.get 0)))
+                (i32.add)
+                (local.set 1)
+                (drop)
+            )
+          )
+    "#,
+    );
+    TranslationTest::new(wasm)
+        .expect_func_instrs([
+            Instruction::copy(3, 0),
+            Instruction::i32_popcnt(Register::from_i16(0), Register::from_i16(0)),
+            Instruction::i32_add(
+                Register::from_i16(2),
+                Register::from_i16(3),
+                Register::from_i16(0),
+            ),
+            Instruction::copy(3, 1),
+            Instruction::copy(1, 2),
+            Instruction::Return,
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn invalid_preservation_slot_reuse_2() {
+    let wasm = wat2wasm(
+        r#"
+        (module
+            (func $f (param i32 i32 i32) (result i32)
+                (i32.const 20)
+            )
+            (func (param i32 i32)
+                (local.get 1) ;; preserved after (local.tee 1)
+                (local.get 1) ;; ^
+                (local.get 0) ;; preserved after (local.tee 0)
+                (local.tee 0 (i32.popcnt (local.get 0)))
+                (call $f)
+                (local.set 1)
+                (drop)
+            )
+          )
+    "#,
+    );
+    TranslationTest::new(wasm)
+        .expect_func(ExpectedFunc::new([Instruction::return_imm32(20_i32)]))
+        .expect_func(ExpectedFunc::new([
+            Instruction::copy(3, 0),
+            Instruction::i32_popcnt(Register::from_i16(0), Register::from_i16(0)),
+            Instruction::call_internal(
+                RegisterSpan::new(Register::from_i16(2)),
+                CompiledFunc::from_u32(0),
+            ),
+            Instruction::register3(1, 3, 0),
+            Instruction::copy(3, 1),
+            Instruction::copy(1, 2),
+            Instruction::Return,
+        ]))
+        .run()
+}
