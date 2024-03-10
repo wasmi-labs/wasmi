@@ -17,14 +17,14 @@ For technical questions about Wasmi feel free to contact
 us via one of the following communication channels:
 
 - GitHub Discussions
-    - Write a [**new GitHub Discussions post**](https://github.com/paritytech/wasmi/discussions/new).
+    - Write a [**new GitHub Discussions post**](https://github.com/wasmi-labs/wasmi/discussions/new).
     - For simple questions around usage or development of Wasmi.
 - Polkadot Forums
     - Write a new post in the [**Polkadot Forum**](https://forum.polkadot.network/).
     - For public Pokadot, smart contract, ink! or `pallet-contracts`
       related Wasmi questions.
 - GitHub Issue
-    - Write a [**new GitHub issue**](https://github.com/paritytech/wasmi/issues/new).
+    - Write a [**new GitHub issue**](https://github.com/wasmi-labs/wasmi/issues/new).
     - To initiate a technical (design) discussion or debate.
 - Element Chat
     - Server: `matrix.parity.io`

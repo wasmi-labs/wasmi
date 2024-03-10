@@ -24,14 +24,14 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Added
 
-- Added a new execution engine based on register-machine bytecode. (https://github.com/paritytech/wasmi/pull/729)
+- Added a new execution engine based on register-machine bytecode. (https://github.com/wasmi-labs/wasmi/pull/729)
     - The register-machine Wasmi `Engine` executes roughly 80-100% faster and
       compiles roughly 30% slower according to benchmarks conducted so far.
-- Added `Module::new_unchecked` API. (https://github.com/paritytech/wasmi/pull/829)
+- Added `Module::new_unchecked` API. (https://github.com/wasmi-labs/wasmi/pull/829)
     - This allows to compile a Wasm module without Wasm validation which can be useful
       when users know that their inputs are valid Wasm binaries.
     - This improves Wasm compilation performance for faster startup times by roughly 10-20%.
-- Added Wasm compilation modes. (https://github.com/paritytech/wasmi/pull/844)
+- Added Wasm compilation modes. (https://github.com/wasmi-labs/wasmi/pull/844)
     - When using `Module::new` Wasmi eagerly compiles Wasm bytecode into Wasmi bytecode
       which is optimized for efficient execution. However, this compilation can become very
       costly especially for large Wasm binaries.
@@ -52,27 +52,27 @@ Dates in this file are formattes as `YYYY-MM-DD`.
       ```
     - When `CompilationMode::Lazy` or `CompilationMode::LazyTranslation` and fuel metering is enabled
       the first function access that triggers compilation (and validation) will charge fuel respective
-      to the number of bytes of the Wasm function body. (https://github.com/paritytech/wasmi/pull/876) 
-- Added `Module::validate` API. (https://github.com/paritytech/wasmi/pull/840)
+      to the number of bytes of the Wasm function body. (https://github.com/wasmi-labs/wasmi/pull/876) 
+- Added `Module::validate` API. (https://github.com/wasmi-labs/wasmi/pull/840)
     - This allows to quickly check if a Wasm binary is valid according to a Wasmi `Engine` config.
     - Note that this does not translate the Wasm and thus `Module::new` or `Module::new_unchecked`
       might still fail due to translation errors.
-- CLI: Added `--compilation-mode` argument to enable lazy Wasm compilation. (https://github.com/paritytech/wasmi/pull/849)
+- CLI: Added `--compilation-mode` argument to enable lazy Wasm compilation. (https://github.com/wasmi-labs/wasmi/pull/849)
 
 ### Changed
 
-- CLI: Enabled Wasm `tail-calls` and `extend-const` proposals by default. (https://github.com/paritytech/wasmi/pull/849)
+- CLI: Enabled Wasm `tail-calls` and `extend-const` proposals by default. (https://github.com/wasmi-labs/wasmi/pull/849)
     - We expect those Wasm proposals to be stabilized very soon so we feel safe to enable them by default already.
 - Improve `Debug` and `Display` impls for NaNs of Wasm `f32` and `f64` values.
   - They now show `nan:0x{bytes}` where `{bytes}` is their respective raw bytes.
-- Implement `Sync` for `ResumableInvocation` and `TypedResumableInvocation`. (https://github.com/paritytech/wasmi/pull/870)
+- Implement `Sync` for `ResumableInvocation` and `TypedResumableInvocation`. (https://github.com/wasmi-labs/wasmi/pull/870)
 
 ### Removed
 
-- Removed the stack-machine bytecode based Wasmi `Engine` backend. (https://github.com/paritytech/wasmi/pull/818)
+- Removed the stack-machine bytecode based Wasmi `Engine` backend. (https://github.com/wasmi-labs/wasmi/pull/818)
     - The new register-machine bytecode based Wasmi `Engine` is more promising
       and the Wasmi team does not want to maintain two different engine backends.
-- Remove `FuelConsumptionMode` from `Config`. (https://github.com/paritytech/wasmi/pull/877)
+- Remove `FuelConsumptionMode` from `Config`. (https://github.com/wasmi-labs/wasmi/pull/877)
     - `FuelConsumptionMode` was required to differentiate between lazy and eager fuel consumption.
       This was necessary due to how lazy fuel consumption was implemented in that it would pre-charge
       for instruction execution were the exact amount of required fuel was not possible to determine
@@ -83,31 +83,31 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 ### Dev. Note
 
 - Added execution fuzzing and differential fuzzing.
-    - PRs: https://github.com/paritytech/wasmi/pull/832, https://github.com/paritytech/wasmi/pull/833
+    - PRs: https://github.com/wasmi-labs/wasmi/pull/832, https://github.com/wasmi-labs/wasmi/pull/833
     - Both fuzzing strategies are applied on each commit in our CI pipeline.
-- Updated CI jobs to use `dtolnay/rust-toolchain` instead of `actions-rs` because the latter was deprecated. (https://github.com/paritytech/wasmi/pull/842)
+- Updated CI jobs to use `dtolnay/rust-toolchain` instead of `actions-rs` because the latter was deprecated. (https://github.com/wasmi-labs/wasmi/pull/842)
 
 ## [`0.31.0`] - 2023-07-31
 
 ### Added
 
-- Added `ResourceLimiter` API known from Wasmtime. (https://github.com/paritytech/wasmi/pull/737)
+- Added `ResourceLimiter` API known from Wasmtime. (https://github.com/wasmi-labs/wasmi/pull/737)
   - This API allows to limit growable Wasm resources such as Wasm tables and linear memories.
   - Special thanks to [Graydon Hoare](https://github.com/graydon) for contributing this feature!
 
 ### Fixes
 
-- Fixed a bug were `Module::len_globals` internal API returned length of linear memories instead. (https://github.com/paritytech/wasmi/pull/741)
+- Fixed a bug were `Module::len_globals` internal API returned length of linear memories instead. (https://github.com/wasmi-labs/wasmi/pull/741)
 
 ### Changed
 
-- Removed `intx` crate dependency. (https://github.com/paritytech/wasmi/pull/727)
+- Removed `intx` crate dependency. (https://github.com/wasmi-labs/wasmi/pull/727)
   - The dependence on the `intx` crate was accidental and not really required at any time.
-- Optimized `f64.const` instructions for `f64` constant values that can losslessly be encoded as 32-bit `f32` value. (https://github.com/paritytech/wasmi/pull/746)
+- Optimized `f64.const` instructions for `f64` constant values that can losslessly be encoded as 32-bit `f32` value. (https://github.com/wasmi-labs/wasmi/pull/746)
 
 ### Dev. Note
 
-- We now publish and record graphs of benchmarks over time. (https://github.com/paritytech/wasmi/pull/740)
+- We now publish and record graphs of benchmarks over time. (https://github.com/wasmi-labs/wasmi/pull/740)
   - This allows Wasmi developers to better inspect performance changes over longer periods of time.
 - Updated dev. dependencies:
   - `criterion 0.4.0` -> `0.5.0`
@@ -117,7 +117,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Changed
 
-- Optimized Wasmi bytecode memory consumption. (https://github.com/paritytech/wasmi/pull/718)
+- Optimized Wasmi bytecode memory consumption. (https://github.com/wasmi-labs/wasmi/pull/718)
   - This reduced the memory consumption of Wasmi bytecode by organizing the instructions
     into so-called instruction words, effectively reducing the amount of bytes required per
     Wasmi instruction 16 bytes to 8 bytes.
@@ -125,7 +125,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     word was the sweetspot for Wasmi execution and translation performance.
   - This did not affect execution performance too much but we saw performance improvements
     for translation from Wasm to Wasmi bytecode by roughly 15-20%.
-- Optimized `call` and `return_call` for Wasm module internal calls. (https://github.com/paritytech/wasmi/pull/724)
+- Optimized `call` and `return_call` for Wasm module internal calls. (https://github.com/wasmi-labs/wasmi/pull/724)
   - Wasmi bytecode now differentiates between calls to Wasm module internal functions
     and imported functions which allows the Wasmi bytecode executor to perform the common
     internal calls more efficiently.
@@ -136,8 +136,8 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Added
 
-- Added support for `extended-const` Wasm proposal. (https://github.com/paritytech/wasmi/pull/707)
-- Added fuel consumption modes. (https://github.com/paritytech/wasmi/pull/706)
+- Added support for `extended-const` Wasm proposal. (https://github.com/wasmi-labs/wasmi/pull/707)
+- Added fuel consumption modes. (https://github.com/wasmi-labs/wasmi/pull/706)
   - This allows eager and lazy fuel consumption modes to be used which
     mainly affects bulk operations such as `table.copy` and `memory.grow`.
     Eager fuel consumption always consumes fuel before a bulk operation for the
@@ -146,7 +146,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Changed
 
-- Normalize fuel costs of all instructions. (https://github.com/paritytech/wasmi/pull/705)
+- Normalize fuel costs of all instructions. (https://github.com/wasmi-labs/wasmi/pull/705)
   - With this change most instructions cost roughly 1 fuel upon execution.
     This is more similar to how Wasmtime deals with fuel metered instruction costs.
     Before this change Wasmi tried to have fuel costs that more closely mirror
@@ -156,58 +156,58 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Added
 
-- Added support for the `tail-call` Wasm proposal. (https://github.com/paritytech/wasmi/pull/683)
-- Added support for `Linker` defined host functions. (https://github.com/paritytech/wasmi/pull/692)
+- Added support for the `tail-call` Wasm proposal. (https://github.com/wasmi-labs/wasmi/pull/683)
+- Added support for `Linker` defined host functions. (https://github.com/wasmi-labs/wasmi/pull/692)
   - Apparently this PR introduced some performance wins for the Wasm target according to our tests.
     This information shall be taken with a grain of salt since we are not sure why those performance
     improvement occured since the PR's functionality is orthogonal to Wasm engine performance.
-  - Required precursor refactoring PR: https://github.com/paritytech/wasmi/pull/681
+  - Required precursor refactoring PR: https://github.com/wasmi-labs/wasmi/pull/681
 
 [`tail-call`]: https://github.com/WebAssembly/tail-call
 
 ### Changed
 
-- The `wasmi_wasi` crate now more closely mirrors the `wasmtime_wasi` crate API. (https://github.com/paritytech/wasmi/pull/700)
+- The `wasmi_wasi` crate now more closely mirrors the `wasmtime_wasi` crate API. (https://github.com/wasmi-labs/wasmi/pull/700)
 
 ### Internal
 
 - Refactor the Wasmi Wasm engine to handle Wasm calls and returns in its core. [(#694)]
   - This improved performance of Wasm function calls significantly at the cost of host function call performance.
   - Also this seemed to have impacts Wasm target performance quite positively, too.
-- The `Store` now handles Wasm functions and host functions separately. (https://github.com/paritytech/wasmi/pull/686)
+- The `Store` now handles Wasm functions and host functions separately. (https://github.com/wasmi-labs/wasmi/pull/686)
   - This allows to store Wasm functions into the `StoreInner` type which was an important
     step towards the major refactoring in [(#694)]
   - It was expected that host function call performance would degrade by this PR but our tests
     actually showed that the opposite was true and Wasm target performance was improved overall.
-- Introduce `ValueStackPtr` abstraction for the Wasmi engine core. (https://github.com/paritytech/wasmi/pull/688)
+- Introduce `ValueStackPtr` abstraction for the Wasmi engine core. (https://github.com/wasmi-labs/wasmi/pull/688)
   - This change significantly improved performance especially on the Wasm target according to our tests.
-- Optimize `memory.{load,store}` when reading or writing single bytes. (https://github.com/paritytech/wasmi/pull/689)
+- Optimize `memory.{load,store}` when reading or writing single bytes. (https://github.com/wasmi-labs/wasmi/pull/689)
   - The performance wins were more modest than we hoped but still measurable.
-- Use `StoreContextMut<T>` instead of `impl AsContextMut` in the Wasmi engine core. (https://github.com/paritytech/wasmi/pull/685)
+- Use `StoreContextMut<T>` instead of `impl AsContextMut` in the Wasmi engine core. (https://github.com/wasmi-labs/wasmi/pull/685)
   - This is a simple refactoring with the goal to make the Rust compiler have a simpler job at
     optimizing certain functions in the engine's inner workings since `StoreContextMut` provides
     more information to the compiler.
 
-[(#694)]: https://github.com/paritytech/wasmi/pull/694
+[(#694)]: https://github.com/wasmi-labs/wasmi/pull/694
 
 ## [`0.27.0`] - 2023-02-14
 
 ### Added
 
-- Added support for fuel metering in the Wasmi CLI. (https://github.com/paritytech/wasmi/pull/679)
+- Added support for fuel metering in the Wasmi CLI. (https://github.com/wasmi-labs/wasmi/pull/679)
   - Users can now specify an amount of fuel via `--fuel N` to commit for the execution.
     Upon success the Wasmi CLI will display the total amount of consumed and remaining fuel.
 
 ### Fixed
 
-- Fixed a bug that Wasmi CLI did not preserve the WASI exit status. (https://github.com/paritytech/wasmi/pull/677)
+- Fixed a bug that Wasmi CLI did not preserve the WASI exit status. (https://github.com/wasmi-labs/wasmi/pull/677)
   - Thanks to [YAMAMOTO Takashi @yamt](https://github.com/yamt) for reporting the issue.
-- The Wasmi CLI now properly displays exported functions if `--invoke x` was provided and `x` was not found. (https://github.com/paritytech/wasmi/pull/678)
-- Applied minor fixes to `Config` docs. (https://github.com/paritytech/wasmi/pull/673)
+- The Wasmi CLI now properly displays exported functions if `--invoke x` was provided and `x` was not found. (https://github.com/wasmi-labs/wasmi/pull/678)
+- Applied minor fixes to `Config` docs. (https://github.com/wasmi-labs/wasmi/pull/673)
 
 ### Changed
 
-- Defer charging fuel for costly bulk `memory` and bulk `table` operations. (https://github.com/paritytech/wasmi/pull/676)
+- Defer charging fuel for costly bulk `memory` and bulk `table` operations. (https://github.com/wasmi-labs/wasmi/pull/676)
   - Note that the check to assert that enough fuel is provided for these costly
     operation is still happening before the actual computation and only the charging
     is deferred to after a successful run. The reason behind this is that all the affected
@@ -218,40 +218,40 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 ### Fixed
 
 - Fixed a bug where resuming a resumable function from a host function with more outputs than
-  inputs could lead to incorrect behavior or runtime panics. (https://github.com/paritytech/wasmi/pull/671)
+  inputs could lead to incorrect behavior or runtime panics. (https://github.com/wasmi-labs/wasmi/pull/671)
     - Thanks to [Pierre Krieger (tomaka)](https://github.com/tomaka) for reporting and crafting an initial minimal test case.
 
 ## [`0.26.0`] - 2023-02-11
 
 ### Added
 
-- Wasmi CLI: Add WASI support. (https://github.com/paritytech/wasmi/pull/597)
+- Wasmi CLI: Add WASI support. (https://github.com/wasmi-labs/wasmi/pull/597)
   - Big shoutout to [Onigbinde Oluwamuyiwa Elijah](https://github.com/OLUWAMUYIWA) for contributing this to Wasmi!
-- Add built-in support for fuel metering. (https://github.com/paritytech/wasmi/pull/653)
+- Add built-in support for fuel metering. (https://github.com/wasmi-labs/wasmi/pull/653)
   - This allows to control the runtime of Wasm executions in a deterministic fasion
     effectively avoiding the halting problem by charging for executed instructions.
     Not using the feature will not affect the execution efficiency of Wasmi for users.
-- Add `Pages::checked_sub` method. (https://github.com/paritytech/wasmi/pull/660)
-- Add `Func::new` constructor. (https://github.com/paritytech/wasmi/pull/662)
+- Add `Pages::checked_sub` method. (https://github.com/wasmi-labs/wasmi/pull/660)
+- Add `Func::new` constructor. (https://github.com/wasmi-labs/wasmi/pull/662)
   - This allows to create `Func` instances from closures without statically known types.
 
 ### Changed
 
-- Update to `wasmparser-nostd` version `0.100.1`. (https://github.com/paritytech/wasmi/pull/666)
+- Update to `wasmparser-nostd` version `0.100.1`. (https://github.com/wasmi-labs/wasmi/pull/666)
 
 ### Internal
 
-- Clean up and reorganization of the `wasmi_cli` crate. (https://github.com/paritytech/wasmi/pull/655)
-- Refactoring of internal host call API. (https://github.com/paritytech/wasmi/pull/664)
+- Clean up and reorganization of the `wasmi_cli` crate. (https://github.com/wasmi-labs/wasmi/pull/655)
+- Refactoring of internal host call API. (https://github.com/wasmi-labs/wasmi/pull/664)
 
 ## [`0.25.0`] - 2023-02-04
 
 ### Added
 
 - Added `Config::floats` option to enable or disable Wasm float operators during Wasm validation.
-- `Trap::downcast_mut` and `Trap::downcast` methods. (https://github.com/paritytech/wasmi/pull/650)
+- `Trap::downcast_mut` and `Trap::downcast` methods. (https://github.com/wasmi-labs/wasmi/pull/650)
   - This helps users to downcast into `T: HostError`.
-- Added `WasmType` impls for `FuncRef` and `ExternRef` types. (https://github.com/paritytech/wasmi/pull/642)
+- Added `WasmType` impls for `FuncRef` and `ExternRef` types. (https://github.com/wasmi-labs/wasmi/pull/642)
   - This allows `FuncRef` and `ExternRef` instances to be used in `TypedFunc` parameters and results.
 
 ### Removed
@@ -261,21 +261,21 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Changed
 
-- Update the `wasmparser-nostd` dependency from version `0.91.0` to `0.99.0`. (https://github.com/paritytech/wasmi/pull/640)
-- The `Trap` type is no longer `Clone`. (https://github.com/paritytech/wasmi/pull/650)
+- Update the `wasmparser-nostd` dependency from version `0.91.0` to `0.99.0`. (https://github.com/wasmi-labs/wasmi/pull/640)
+- The `Trap` type is no longer `Clone`. (https://github.com/wasmi-labs/wasmi/pull/650)
 
 ### Internal
 
 - Resolved plenty of technical debt and improved structure of the Wasmi crate.
-  - PRs: https://github.com/paritytech/wasmi/pull/648, https://github.com/paritytech/wasmi/pull/647, https://github.com/paritytech/wasmi/pull/646, https://github.com/paritytech/wasmi/pull/645, https://github.com/paritytech/wasmi/pull/644, https://github.com/paritytech/wasmi/pull/641
+  - PRs: https://github.com/wasmi-labs/wasmi/pull/648, https://github.com/wasmi-labs/wasmi/pull/647, https://github.com/wasmi-labs/wasmi/pull/646, https://github.com/wasmi-labs/wasmi/pull/645, https://github.com/wasmi-labs/wasmi/pull/644, https://github.com/wasmi-labs/wasmi/pull/641
 
 ## [`0.24.0`] - 2023-01-31
 
 ### Added
 
-- Added support for the [`bulk-memory`] Wasm proposal. (https://github.com/paritytech/wasmi/pull/628)
-- Added support for the [`reference-types`] Wasm proposal. (https://github.com/paritytech/wasmi/pull/635)
-- Added `ValueType::{is_ref, is_num`} methods. (https://github.com/paritytech/wasmi/pull/635)
+- Added support for the [`bulk-memory`] Wasm proposal. (https://github.com/wasmi-labs/wasmi/pull/628)
+- Added support for the [`reference-types`] Wasm proposal. (https://github.com/wasmi-labs/wasmi/pull/635)
+- Added `ValueType::{is_ref, is_num`} methods. (https://github.com/wasmi-labs/wasmi/pull/635)
 - Added `Value::{i32, i64, f32, f64, externref, funcref}` accessor methods to `Value`.
 
 [`bulk-memory`]: https://github.com/WebAssembly/bulk-memory-operations
@@ -283,16 +283,16 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Fixed
 
-- Fix a bug with `Table` and `Memory` imports not respecting the current size. (https://github.com/paritytech/wasmi/pull/635)
+- Fix a bug with `Table` and `Memory` imports not respecting the current size. (https://github.com/wasmi-labs/wasmi/pull/635)
   - This sometimes led to the problem that valid `Table` and `Memory` imports
     could incorrectly be rejected for having an invalid size for the subtype check.
   - This has been fixed as part of the [`reference-types`] Wasm proposal implementation.
 
 ### Changed
 
-- Use more references in places to provide the compiler with more optimization opportunities. (https://github.com/paritytech/wasmi/pull/634)
+- Use more references in places to provide the compiler with more optimization opportunities. (https://github.com/wasmi-labs/wasmi/pull/634)
   - This led to a speed-up across the board for Wasm targets of about 15-20%.
-- Move the `Value` type from `wasmi_core` to Wasmi. (https://github.com/paritytech/wasmi/pull/636)
+- Move the `Value` type from `wasmi_core` to Wasmi. (https://github.com/wasmi-labs/wasmi/pull/636)
   - This change was necessary in order to support the [`reference-types`] Wasm proposal.
 - There has been some consequences from implementing the [`reference-types`] Wasm proposal which are listed below:
   - The `Value` type no longer implements `Copy` and `PartialEq`.
@@ -304,7 +304,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Internal
 
-- Update `wast` dependency from version `0.44` to `0.52`. (https://github.com/paritytech/wasmi/pull/632)
+- Update `wast` dependency from version `0.44` to `0.52`. (https://github.com/wasmi-labs/wasmi/pull/632)
 - Update the Wasm spec testsuite to the most recent commit: `3a04b2cf9`
 - Improve error reporting for the internal Wasm spec testsuite runner.
   - It will now show proper span information in many more cases.
@@ -315,15 +315,15 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Added
 
-- Add `Module::get_export` method. (https://github.com/paritytech/wasmi/pull/617)
+- Add `Module::get_export` method. (https://github.com/wasmi-labs/wasmi/pull/617)
 
 ### Changed
 
-- Removed `ModuleError` export from crate root. (https://github.com/paritytech/wasmi/pull/618)
+- Removed `ModuleError` export from crate root. (https://github.com/wasmi-labs/wasmi/pull/618)
   - Now `ModuleError` is exported from `crate::errors` just like all the other error types.
-- Refactor and cleanup traits underlying to `IntoFunc`. (https://github.com/paritytech/wasmi/pull/620)
+- Refactor and cleanup traits underlying to `IntoFunc`. (https://github.com/wasmi-labs/wasmi/pull/620)
   - This is only the first step in moving closer to the Wasmtime API traits.
-- Mirror Wasmtime API more closely. (https://github.com/paritytech/wasmi/pull/615, https://github.com/paritytech/wasmi/pull/616)
+- Mirror Wasmtime API more closely. (https://github.com/wasmi-labs/wasmi/pull/615, https://github.com/wasmi-labs/wasmi/pull/616)
   - Renamed `Caller::host_data` method to `Caller::data`.
   - Renamed `Caller::host_data_mut` method to `Caller::data_mut`.
   - Add `Extern::ty` method and the `ExternType` type.
@@ -364,7 +364,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Added
 
-- Add missing `TypedFunc::call_resumable` API. (https://github.com/paritytech/wasmi/pull/605)
+- Add missing `TypedFunc::call_resumable` API. (https://github.com/wasmi-labs/wasmi/pull/605)
   - So far resumable calls were only available for the `Func` type.
     However, there was no technical reason why it was not implemented
     for `TypedFunc` so this mirrored API now exists.
@@ -372,12 +372,12 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Changed
 
-- Clean up the `wasmi_core` crate API. (https://github.com/paritytech/wasmi/pull/607, https://github.com/paritytech/wasmi/pull/608, https://github.com/paritytech/wasmi/pull/609)
+- Clean up the `wasmi_core` crate API. (https://github.com/wasmi-labs/wasmi/pull/607, https://github.com/wasmi-labs/wasmi/pull/608, https://github.com/wasmi-labs/wasmi/pull/609)
   - This removes plenty of traits from the public interface of the crate
     which greatly simplifies the API surface for users.
   - The `UntypedValue` type gained some new methods to replace functionality
     that was provided in parts by the removed traits.
-- The Wasmi crate now follows the Wasmtime API a bit more closely. (https://github.com/paritytech/wasmi/pull/613)
+- The Wasmi crate now follows the Wasmtime API a bit more closely. (https://github.com/wasmi-labs/wasmi/pull/613)
   - `StoreContext` new methods:
     - `fn engine(&self) -> &Engine`
     - `fn data(&self) -> &T` 
@@ -390,7 +390,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - Renamed `Store::into_state` method to `Store::into_data`.
 ### Internal
 
-- The `Store` and `Engine` types are better decoupled from their generic parts. (https://github.com/paritytech/wasmi/pull/610, https://github.com/paritytech/wasmi/pull/611)
+- The `Store` and `Engine` types are better decoupled from their generic parts. (https://github.com/wasmi-labs/wasmi/pull/610, https://github.com/wasmi-labs/wasmi/pull/611)
   - This might reduce binary bloat and may have positive effects on the performance.
     In fact we measured significant performance improvements on the Wasm target.
 
@@ -398,97 +398,97 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Added
 
-- Add support for resumable function calls. (https://github.com/paritytech/wasmi/pull/598)
+- Add support for resumable function calls. (https://github.com/wasmi-labs/wasmi/pull/598)
   - This feature allows to resume a function call upon encountering a host trap.
 - Add support for concurrently running function executions using a single Wasmi engine.
-  - This feature also allows to call Wasm functions from host functions. (https://github.com/paritytech/wasmi/pull/590)
-- Add initial naive WASI support for Wasmi using the new `wasmi_wasi` crate. (https://github.com/paritytech/wasmi/pull/557)
+  - This feature also allows to call Wasm functions from host functions. (https://github.com/wasmi-labs/wasmi/pull/590)
+- Add initial naive WASI support for Wasmi using the new `wasmi_wasi` crate. (https://github.com/wasmi-labs/wasmi/pull/557)
   - Special thanks to [Onigbinde Oluwamuyiwa Elijah](https://github.com/OLUWAMUYIWA) for carrying the WASI support efforts!
-  - Also thanks to [Yuyi Wang](https://github.com/Berrysoft) for testing and improving initial WASI support. (https://github.com/paritytech/wasmi/pull/592, https://github.com/paritytech/wasmi/pull/571, https://github.com/paritytech/wasmi/pull/568)
+  - Also thanks to [Yuyi Wang](https://github.com/Berrysoft) for testing and improving initial WASI support. (https://github.com/wasmi-labs/wasmi/pull/592, https://github.com/wasmi-labs/wasmi/pull/571, https://github.com/wasmi-labs/wasmi/pull/568)
   - **Note:** There is ongoing work to integrate WASI support in `wasmi_cli` so that the Wasmi CLI will then
               be able to execute arbitrary `wasm-wasi` files out of the box in the future.
-- Add `Module::imports` that allows to query Wasm module imports. (https://github.com/paritytech/wasmi/pull/573, https://github.com/paritytech/wasmi/pull/583)
+- Add `Module::imports` that allows to query Wasm module imports. (https://github.com/wasmi-labs/wasmi/pull/573, https://github.com/wasmi-labs/wasmi/pull/583)
 
 ### Fixed
 
-- Fix a bug that imported linear memories and tables were initialized twice upon instantiation. (https://github.com/paritytech/wasmi/pull/593)
-- The Wasmi CLI now properly hints for file path arguments. (https://github.com/paritytech/wasmi/pull/596)
+- Fix a bug that imported linear memories and tables were initialized twice upon instantiation. (https://github.com/wasmi-labs/wasmi/pull/593)
+- The Wasmi CLI now properly hints for file path arguments. (https://github.com/wasmi-labs/wasmi/pull/596)
 
 ### Changed
 
-- The `wasmi::Trap` type is now more similar to Wasmtime's `Trap` type. (https://github.com/paritytech/wasmi/pull/559)
-- The `wasmi::Store` type is now `Send` and `Sync` as intended. (https://github.com/paritytech/wasmi/pull/566)
-- The Wasmi CLI now prints exported functions names if the function name CLI argument is missing. (https://github.com/paritytech/wasmi/pull/579)
-- Improve feedback when running a Wasm module without exported function using Wasmi CLI. (https://github.com/paritytech/wasmi/pull/584)
+- The `wasmi::Trap` type is now more similar to Wasmtime's `Trap` type. (https://github.com/wasmi-labs/wasmi/pull/559)
+- The `wasmi::Store` type is now `Send` and `Sync` as intended. (https://github.com/wasmi-labs/wasmi/pull/566)
+- The Wasmi CLI now prints exported functions names if the function name CLI argument is missing. (https://github.com/wasmi-labs/wasmi/pull/579)
+- Improve feedback when running a Wasm module without exported function using Wasmi CLI. (https://github.com/wasmi-labs/wasmi/pull/584)
 
 ## [`0.20.0`] - 2022-11-04
 
 ### Added
 
-- Contribution documentation about fuzz testing. (https://github.com/paritytech/wasmi/pull/529)
+- Contribution documentation about fuzz testing. (https://github.com/wasmi-labs/wasmi/pull/529)
 
 ### Removed
 
-- Removed some deprecated functions in the `wasmi_core` crate. (https://github.com/paritytech/wasmi/pull/545)
+- Removed some deprecated functions in the `wasmi_core` crate. (https://github.com/wasmi-labs/wasmi/pull/545)
 
 ### Fixed
 
-- Fixed a critical performance regression introduced in Rust 1.65. (https://github.com/paritytech/wasmi/pull/518)
+- Fixed a critical performance regression introduced in Rust 1.65. (https://github.com/wasmi-labs/wasmi/pull/518)
   - While the PR's main job was to clean up some code it was found out that it
     also fixes a critical performance regression introduced in Rust 1.65.
   - You can read more about this performance regression [in this thread](https://github.com/rust-lang/rust/issues/102952).
 
 ### Changed
 
-- Fixed handling of edge cases with respect to Wasm linear memory. (https://github.com/paritytech/wasmi/pull/449)
+- Fixed handling of edge cases with respect to Wasm linear memory. (https://github.com/wasmi-labs/wasmi/pull/449)
   - This allows for Wasmi to properly setup and use linear memory instances of up to 4GB.
-- Optimize and improve Wasm instantiation. (https://github.com/paritytech/wasmi/pull/531)
-- Optimize `global.get` of immutable non-imported globals. (https://github.com/paritytech/wasmi/pull/533)
-  - Also added a benchmark test for this. (https://github.com/paritytech/wasmi/pull/532)
+- Optimize and improve Wasm instantiation. (https://github.com/wasmi-labs/wasmi/pull/531)
+- Optimize `global.get` of immutable non-imported globals. (https://github.com/wasmi-labs/wasmi/pull/533)
+  - Also added a benchmark test for this. (https://github.com/wasmi-labs/wasmi/pull/532)
 
 ### Internal
 
 - Implemented miscellaneous improvements to our CI system.
-  - https://github.com/paritytech/wasmi/pull/539 (and more)
+  - https://github.com/wasmi-labs/wasmi/pull/539 (and more)
 - Miscellaneous clean ups in `wasmi_core` and Wasmi's executor.
-  - https://github.com/paritytech/wasmi/pull/542 https://github.com/paritytech/wasmi/pull/541
-  https://github.com/paritytech/wasmi/pull/508 https://github.com/paritytech/wasmi/pull/543
+  - https://github.com/wasmi-labs/wasmi/pull/542 https://github.com/wasmi-labs/wasmi/pull/541
+  https://github.com/wasmi-labs/wasmi/pull/508 https://github.com/wasmi-labs/wasmi/pull/543
 
 ## [`0.19.0`] - 2022-10-20
 
 ### Fixed
 
 - Fixed a potential undefined behavior as reported by the `miri` tool
-  with respect to its experimental stacked borrows. (https://github.com/paritytech/wasmi/pull/524)
+  with respect to its experimental stacked borrows. (https://github.com/wasmi-labs/wasmi/pull/524)
 
 ### Changed
 
 - Optimized Wasm to Wasmi translation phase by removing unnecessary Wasm
-  validation type checks. (https://github.com/paritytech/wasmi/pull/527)
+  validation type checks. (https://github.com/wasmi-labs/wasmi/pull/527)
     - Speedups were in the range of 15%.
-- `Linker::instantiate` now takes `&self` instead of `&mut self`. (https://github.com/paritytech/wasmi/pull/512)
+- `Linker::instantiate` now takes `&self` instead of `&mut self`. (https://github.com/wasmi-labs/wasmi/pull/512)
   - This allows users to easily predefine a linker and reused its definitions
     as shared resource.
-- Fixed a bug were `Caller::new` was public. (https://github.com/paritytech/wasmi/pull/514)
+- Fixed a bug were `Caller::new` was public. (https://github.com/wasmi-labs/wasmi/pull/514)
   - It is now a private method as it was meant to be.
-- Optimized `TypedFunc::call` at slight cost of `Func::call`. (https://github.com/paritytech/wasmi/pull/522)
+- Optimized `TypedFunc::call` at slight cost of `Func::call`. (https://github.com/wasmi-labs/wasmi/pull/522)
   - For many parameters and return values the measured improvements are in the range of 25%.
     Note that this is only significant for a large amount of host to Wasm calls of small functions.
 
 ### Internal
 
 - Added new benchmarks and cleaned up benchmarking code in general.
-  - https://github.com/paritytech/wasmi/pull/525
-  https://github.com/paritytech/wasmi/pull/526
-  https://github.com/paritytech/wasmi/pull/521
-- Add `miri` testing to Wasmi CI (https://github.com/paritytech/wasmi/pull/523)
+  - https://github.com/wasmi-labs/wasmi/pull/525
+  https://github.com/wasmi-labs/wasmi/pull/526
+  https://github.com/wasmi-labs/wasmi/pull/521
+- Add `miri` testing to Wasmi CI (https://github.com/wasmi-labs/wasmi/pull/523)
 
 ## [`0.18.1`] - 2022-10-13
 
 ### Changed
 
 - Optimize for common cases for branch and return instructions.
-  (https://github.com/paritytech/wasmi/pull/493)
+  (https://github.com/wasmi-labs/wasmi/pull/493)
     - This led to up to 10% performance improvement according to our benchmarks
       in some cases.
 - Removed extraneous `S: impl AsContext` generic parameter from `Func::typed` method.
@@ -501,22 +501,22 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 ### Internal
 
 - Added `wasmi_arena` crate which defines all internally used arena data structures.
-  (https://github.com/paritytech/wasmi/pull/502)
-- Update to `clap 4.0` in `wasmi_cli`. (https://github.com/paritytech/wasmi/pull/498)
+  (https://github.com/wasmi-labs/wasmi/pull/502)
+- Update to `clap 4.0` in `wasmi_cli`. (https://github.com/wasmi-labs/wasmi/pull/498)
 - Many more improvements to our internal benchmarking CI.
-  (https://github.com/paritytech/wasmi/pull/494, https://github.com/paritytech/wasmi/pull/501,
-  https://github.com/paritytech/wasmi/pull/506, https://github.com/paritytech/wasmi/pull/509)
+  (https://github.com/wasmi-labs/wasmi/pull/494, https://github.com/wasmi-labs/wasmi/pull/501,
+  https://github.com/wasmi-labs/wasmi/pull/506, https://github.com/wasmi-labs/wasmi/pull/509)
 
 ## [`0.18.0`] - 2022-10-02
 
 ### Added
 
-- Added Contibution Guidelines and Code of Conduct to the repository. (https://github.com/paritytech/wasmi/pull/485)
+- Added Contibution Guidelines and Code of Conduct to the repository. (https://github.com/wasmi-labs/wasmi/pull/485)
 
 ### Changed
 
 - Optimized instruction dispatch in the Wasmi interpreter.
-  (https://github.com/paritytech/wasmi/pull/478, https://github.com/paritytech/wasmi/pull/482)
+  (https://github.com/wasmi-labs/wasmi/pull/478, https://github.com/wasmi-labs/wasmi/pull/482)
   - This yielded combined speed-ups of ~20% across the board.
   - As a side effect we also refactored the way we compute branching offsets
     at Wasm module compilation time which improved performance of Wasm module
@@ -525,54 +525,54 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 ### Internal
 
 - Our CI now also benchmarks Wasmi when ran inside Wasmtime as Wasm.
-  (https://github.com/paritytech/wasmi/pull/483, https://github.com/paritytech/wasmi/pull/487)
+  (https://github.com/wasmi-labs/wasmi/pull/483, https://github.com/wasmi-labs/wasmi/pull/487)
   - This allows us to optimize Wasmi towards Wasm performance more easily in the future.
 
 ## [`0.17.0`] - 2022-09-23
 
 ### Added
 
-- Added `Memory::data_and_store_mut` API inspired by Wasmtime's API. (https://github.com/paritytech/wasmi/pull/448)
+- Added `Memory::data_and_store_mut` API inspired by Wasmtime's API. (https://github.com/wasmi-labs/wasmi/pull/448)
 
 ### Changed
 
 - Updated `wasmparser-nostd` dependency from `0.90.0` to `0.91.0`.
     - This improved performance of Wasm module compilation by ~10%.
 - Updated `wasmi_core` from `0.3.0` to `0.4.0`.
-- Optimized execution of several Wasm float to int conversion instructions. (https://github.com/paritytech/wasmi/pull/439)
+- Optimized execution of several Wasm float to int conversion instructions. (https://github.com/wasmi-labs/wasmi/pull/439)
     - We measured a performance improvement of 6000% or in other words those
       instructions are now 60 times faster than before.
     - This allowed us to remove the big `num-rational` dependency from `wasmi_core`
       for some nice speed-ups in compilation time of Wasmi itself.
-- Optimized `global.get` and `global.set` Wasm instruction execution. (https://github.com/paritytech/wasmi/pull/427)
+- Optimized `global.get` and `global.set` Wasm instruction execution. (https://github.com/wasmi-labs/wasmi/pull/427)
     - This improved performance of those instructions by up to 17%.
-- Optimized Wasm value stack emulation. (https://github.com/paritytech/wasmi/pull/459)
+- Optimized Wasm value stack emulation. (https://github.com/wasmi-labs/wasmi/pull/459)
     - This improved performance of compute intense workloads by up to 23%.
 
 ### Internal
 
-- Added automated continuous benchmarking to Wasmi. (https://github.com/paritytech/wasmi/pull/422)
+- Added automated continuous benchmarking to Wasmi. (https://github.com/wasmi-labs/wasmi/pull/422)
     - This allows us to have a more consistent overview over the performance of Wasmi.
 - Updated `criterion` benchmarking framework to version `0.4.0`.
 - Reuse allocations during Wasm validation and translation:
-     - Wasm validation and translation combined. (https://github.com/paritytech/wasmi/pull/462)
-     - Wasm `br_table` translations. (https://github.com/paritytech/wasmi/pull/440)
-- Enabled more useful `clippy` lints for Wasmi and `wasmi_core`. (https://github.com/paritytech/wasmi/pull/438)
-- Reorganized the Wasmi workspace. (https://github.com/paritytech/wasmi/pull/466)
+     - Wasm validation and translation combined. (https://github.com/wasmi-labs/wasmi/pull/462)
+     - Wasm `br_table` translations. (https://github.com/wasmi-labs/wasmi/pull/440)
+- Enabled more useful `clippy` lints for Wasmi and `wasmi_core`. (https://github.com/wasmi-labs/wasmi/pull/438)
+- Reorganized the Wasmi workspace. (https://github.com/wasmi-labs/wasmi/pull/466)
 
 ## [`0.16.0`] - 2022-08-30
 
 ### Changed
 
 - Update `wasmparser-nostd` dependency from version `0.83.0` -> `0.90.0`.
-  [**Link:**](https://github.com/paritytech/wasmi/commit/e9b0463817e277cd9daccca7e66e52e4fd147d8e)
+  [**Link:**](https://github.com/wasmi-labs/wasmi/commit/e9b0463817e277cd9daccca7e66e52e4fd147d8e)
     - This significantly improved Wasmi's Wasm parsing, validation and
       Wasm to Wasmi bytecode translation performance.
 
 ### Internal
 
 - Transition to the new `wasmparser::VisitOperator` API.
-  [**Link**](https://github.com/paritytech/wasmi/commit/225c8224729661ea091e650e3278c4980bd1d405)
+  [**Link**](https://github.com/wasmi-labs/wasmi/commit/225c8224729661ea091e650e3278c4980bd1d405)
     - This again significantly improved Wasmi's Wasm parsing, validation and
       Wasm to Wasmi bytecode translation performance by avoiding many
       unnecessary unpredictable branches in the process.
@@ -582,9 +582,9 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 ### Fixed
 
 - Fixed bugs found during fuzzing the translation phase of Wasmi.
-  [**Link**](https://github.com/paritytech/wasmi/commit/43d7037745a266ece2baccd9e78f7d983dacbb93)
+  [**Link**](https://github.com/wasmi-labs/wasmi/commit/43d7037745a266ece2baccd9e78f7d983dacbb93)
 - Fix `Read` trait implementation for `no_std` compilations.
-  [**Link**](https://github.com/paritytech/wasmi/commit/baab359de955240fbb9c89ebbc369d7a6e6d8569)
+  [**Link**](https://github.com/wasmi-labs/wasmi/commit/baab359de955240fbb9c89ebbc369d7a6e6d8569)
 
 ### Changed
 
@@ -593,7 +593,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   `wasmtime::Config`.
 - Refactor `Trap` type to be of pointer size which resulted in significant
   performance wins across the board especially for call intense work loads.
-  [**Link**](https://github.com/paritytech/wasmi/commit/4a5d113a11a0f0020491c2cc08dd195a184256f0)
+  [**Link**](https://github.com/wasmi-labs/wasmi/commit/4a5d113a11a0f0020491c2cc08dd195a184256f0)
 
 ### Removed
 
@@ -601,29 +601,29 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   We decided to remove support since benchmarks showed that our current
   implementation actually regresses performance compared to our naive
   `Vec` based implementation.
-  [**Link**](https://github.com/paritytech/wasmi/commit/10f8780a49b8cc8d8719e2b74089bf6848b8f982)
+  [**Link**](https://github.com/wasmi-labs/wasmi/commit/10f8780a49b8cc8d8719e2b74089bf6848b8f982)
 
 ### Internal
 
 - The `wasmi::Engine` now caches the bytes of the default linear memory for
   performance wins in `memory.store` and `memory.load` intense work loads.
-  [**Link**](https://github.com/paritytech/wasmi/commit/c0df344e970bcdd4c6ce25f64265c854a1239220)
+  [**Link**](https://github.com/wasmi-labs/wasmi/commit/c0df344e970bcdd4c6ce25f64265c854a1239220)
 - The Wasmi engine internals have been reorganized and modernised to improve
   performance on function call intense work loads. This resulted in performance
   improvements across the board.
-  [**Link**](https://github.com/paritytech/wasmi/commit/d789570b51effb3a0c397c2d4ea1dc03c5d76918)
+  [**Link**](https://github.com/wasmi-labs/wasmi/commit/d789570b51effb3a0c397c2d4ea1dc03c5d76918)
 - The Wasm to Wasmi bytecode translation now properly reuses heap allocations
   across function translation units which improved translation performance by
   roughly 10%.
-  [**Link**](https://github.com/paritytech/wasmi/commit/71a913fc508841b3b7f799c8e4406e1e48feb046)
+  [**Link**](https://github.com/wasmi-labs/wasmi/commit/71a913fc508841b3b7f799c8e4406e1e48feb046)
 - Optimized the Wasmi engine Wasm value stack implementation for significant
   performance wins across the board.
-  [**Link**](https://github.com/paritytech/wasmi/commit/3886d9190e89d44a701ad5cbbda0c7457feba510)
+  [**Link**](https://github.com/wasmi-labs/wasmi/commit/3886d9190e89d44a701ad5cbbda0c7457feba510)
 - Shrunk size of some internal identifier types for minor performance wins.
-  [**Link**](https://github.com/paritytech/wasmi/commit/3d544b82a5089ae4331024b1e6762dcb48a02898)
+  [**Link**](https://github.com/wasmi-labs/wasmi/commit/3d544b82a5089ae4331024b1e6762dcb48a02898)
 - Added initial naive fuzz testing for Wasm parsing, validation and Wasm to
   Wasmi bytecode translation.
-  [**Link**](https://github.com/paritytech/wasmi/commit/4d1f2ad6cbf07e61656185101bbd0bd5a941335f)
+  [**Link**](https://github.com/wasmi-labs/wasmi/commit/4d1f2ad6cbf07e61656185101bbd0bd5a941335f)
 
 ## [`0.14.0`] - 2022-07-26
 
@@ -664,21 +664,21 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
   If you do not use these profile settings you might risk regressing
   performance of Wasmi by up to 400%. You can read more about this
-  issue [here](https://github.com/paritytech/wasmi/issues/339).
+  issue [here](https://github.com/wasmi-labs/wasmi/issues/339).
 
 ### Removed
 
 - Removed support for resuming function execution.
   We may consider to add this feature back into the new engine.
   If you are a user of Wasmi and want this feature please feel
-  free to [open an issue](https://github.com/paritytech/wasmi/issues)
+  free to [open an issue](https://github.com/wasmi-labs/wasmi/issues)
   and provide us with your use case.
 
 ## [`0.13.2`] - 2022-09-20
 
 ### Fixed
 
-- Support allocating 4GB of memory (https://github.com/paritytech/wasmi/pull/452)
+- Support allocating 4GB of memory (https://github.com/wasmi-labs/wasmi/pull/452)
 
 ## [`0.13.1`] - 2022-09-20
 
@@ -705,7 +705,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     - **Reason**: These methods expose details about the `F32` and `F64` types.
                   The `RuntimeValue` type provides `from_bits` methods for similar purposes.
     - **Replacement:** Replace those deprecated methods with `F{32,64}::from_bits().into()` respectively.
-- Refactor traps in Wasmi: [PR](https://github.com/paritytech/wasmi/commit/cd59462bc946a52a7e3e4db491ac6675e3a2f53f)
+- Refactor traps in Wasmi: [PR](https://github.com/wasmi-labs/wasmi/commit/cd59462bc946a52a7e3e4db491ac6675e3a2f53f)
     - This change also renames `TrapKind` to `TrapCode`.
     - The Wasmi crate now properly reuses the `TrapCode` definitions from the `wasmi_core` crate.
 - Updated dependency:
@@ -725,22 +725,22 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Fixed
 
-- Make Wasmi traps more conformant with the Wasm specification. (https://github.com/paritytech/wasmi/pull/300)
-- Fixed a bug in `{f32, f64}_copysign` implementations. (https://github.com/paritytech/wasmi/pull/293)
-- Fixed a bug in `{f32, f64}_{min, max}` implementations. (https://github.com/paritytech/wasmi/pull/295)
+- Make Wasmi traps more conformant with the Wasm specification. (https://github.com/wasmi-labs/wasmi/pull/300)
+- Fixed a bug in `{f32, f64}_copysign` implementations. (https://github.com/wasmi-labs/wasmi/pull/293)
+- Fixed a bug in `{f32, f64}_{min, max}` implementations. (https://github.com/wasmi-labs/wasmi/pull/295)
 
 ### Changed
 
-- Optimized Wasm to host calls. (https://github.com/paritytech/wasmi/pull/291)
+- Optimized Wasm to host calls. (https://github.com/wasmi-labs/wasmi/pull/291)
     - In some artificial benchmarks we saw improvements of up to 42%!
-- Introduce a more efficient `LittleEndianConvert` trait. (https://github.com/paritytech/wasmi/pull/290)
+- Introduce a more efficient `LittleEndianConvert` trait. (https://github.com/wasmi-labs/wasmi/pull/290)
 
 ### Internal
 
 - Refactor and clean up benchmarking code and added more benchmarks.
-    - https://github.com/paritytech/wasmi/pull/299
-    - https://github.com/paritytech/wasmi/pull/298
-- Apply some clippy suggestions with respect ot `#[must_use]`. (https://github.com/paritytech/wasmi/pull/288)
+    - https://github.com/wasmi-labs/wasmi/pull/299
+    - https://github.com/wasmi-labs/wasmi/pull/298
+- Apply some clippy suggestions with respect ot `#[must_use]`. (https://github.com/wasmi-labs/wasmi/pull/288)
 - Improve Rust code formatting of imports.
 - Improve debug impl of `ValueStack` so that only the live parts are printed.
 
