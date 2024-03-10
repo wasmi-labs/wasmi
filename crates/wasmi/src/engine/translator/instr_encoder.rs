@@ -768,6 +768,21 @@ impl InstrEncoder {
             // Thankfully most instructions are small enough.
             return fallback_case(self, stack, local, value, preserved, fuel_info);
         }
+        if let Some(preserved) = preserved {
+            let mut last_instr_uses_preserved = false;
+            for instr in self.instrs.get_slice_at_mut(last_instr).iter_mut() {
+                instr.visit_input_registers(|input| {
+                    if *input == preserved {
+                        last_instr_uses_preserved = true;
+                    }
+                });
+            }
+            if last_instr_uses_preserved {
+                // Note: we cannot apply the local.set preservation optimization since this would
+                //       siltently overwrite inputs of the last encoded instruction.
+                return fallback_case(self, stack, local, value, Some(preserved), fuel_info);
+            }
+        }
         if !self
             .instrs
             .get_mut(last_instr)
