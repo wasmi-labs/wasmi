@@ -29,11 +29,11 @@ use crate::{
     TableEntity,
     TableIdx,
 };
-use alloc::boxed::Box;
 use core::{
     fmt::{self, Debug},
     sync::atomic::{AtomicU32, Ordering},
 };
+use std::boxed::Box;
 use wasmi_arena::{Arena, ArenaIndex, GuardedEntity};
 use wasmi_core::TrapCode;
 
@@ -943,10 +943,6 @@ impl<T> Store<T> {
     /// Synthetically consumes an amount of fuel for the [`Store`].
     ///
     /// Returns the remaining amount of fuel after this operation.
-    ///
-    /// # Panics
-    ///
-    /// If this overflows the consumed fuel counter.
     ///
     /// # Errors
     ///

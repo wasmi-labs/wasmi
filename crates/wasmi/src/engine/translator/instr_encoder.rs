@@ -28,8 +28,8 @@ use crate::{
     module::ModuleHeader,
     Error,
 };
-use alloc::vec::{Drain, Vec};
 use core::mem;
+use std::vec::{Drain, Vec};
 use wasmi_core::{UntypedValue, ValueType, F32};
 
 /// A reference to an instruction of the partially
@@ -385,7 +385,7 @@ impl InstrEncoder {
         mut results: RegisterSpanIter,
         values: &[TypedProvider],
         fuel_info: FuelInfo,
-    ) -> Result<(), Error> {
+    ) -> Result<Option<Instr>, Error> {
         assert_eq!(results.len(), values.len());
         if let Some((TypedProvider::Register(value), rest)) = values.split_first() {
             if results.span().head() == *value {
@@ -400,24 +400,20 @@ impl InstrEncoder {
         match values {
             [] => {
                 // The copy sequence is empty, nothing to encode in this case.
-                Ok(())
+                Ok(None)
             }
-            [v0] => {
-                self.encode_copy(stack, result, *v0, fuel_info)?;
-                Ok(())
-            }
+            [v0] => self.encode_copy(stack, result, *v0, fuel_info),
             [v0, v1] => {
                 if TypedProvider::Register(result.next()) == *v1 {
                     // Case: the second of the 2 copies is a no-op which we can avoid
                     // Note: we already asserted that the first copy is not a no-op
-                    self.encode_copy(stack, result, *v0, fuel_info)?;
-                    return Ok(());
+                    return self.encode_copy(stack, result, *v0, fuel_info);
                 }
                 let reg0 = Self::provider2reg(stack, v0)?;
                 let reg1 = Self::provider2reg(stack, v1)?;
                 self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
-                self.push_instr(Instruction::copy2(results.span(), reg0, reg1))?;
-                Ok(())
+                let instr = self.push_instr(Instruction::copy2(results.span(), reg0, reg1))?;
+                Ok(Some(instr))
             }
             [v0, v1, rest @ ..] => {
                 debug_assert!(!rest.is_empty());
@@ -437,12 +433,12 @@ impl InstrEncoder {
                         true => Instruction::copy_span,
                         false => Instruction::copy_span_non_overlapping,
                     };
-                    self.push_instr(make_instr(
+                    let instr = self.push_instr(make_instr(
                         results.span(),
                         values.span(),
                         values.len_as_u16(),
                     ))?;
-                    return Ok(());
+                    return Ok(Some(instr));
                 }
                 let make_instr = match Self::has_overlapping_copies(results, values) {
                     true => Instruction::copy_many,
@@ -450,9 +446,9 @@ impl InstrEncoder {
                 };
                 let reg0 = Self::provider2reg(stack, v0)?;
                 let reg1 = Self::provider2reg(stack, v1)?;
-                self.push_instr(make_instr(results.span(), reg0, reg1))?;
+                let instr = self.push_instr(make_instr(results.span(), reg0, reg1))?;
                 self.encode_register_list(stack, rest)?;
-                Ok(())
+                Ok(Some(instr))
             }
         }
     }
@@ -772,6 +768,21 @@ impl InstrEncoder {
             // Thankfully most instructions are small enough.
             return fallback_case(self, stack, local, value, preserved, fuel_info);
         }
+        if let Some(preserved) = preserved {
+            let mut last_instr_uses_preserved = false;
+            for instr in self.instrs.get_slice_at_mut(last_instr).iter_mut() {
+                instr.visit_input_registers(|input| {
+                    if *input == preserved {
+                        last_instr_uses_preserved = true;
+                    }
+                });
+            }
+            if last_instr_uses_preserved {
+                // Note: we cannot apply the local.set preservation optimization since this would
+                //       siltently overwrite inputs of the last encoded instruction.
+                return fallback_case(self, stack, local, value, Some(preserved), fuel_info);
+            }
+        }
         if !self
             .instrs
             .get_mut(last_instr)
@@ -807,10 +818,20 @@ impl InstrEncoder {
     ///
     /// This will ignore any preservation notifications after the first one.
     pub fn notify_preserved_register(&mut self, preserve_instr: Instr) {
-        debug_assert!(
-            matches!(self.instrs.get(preserve_instr), Instruction::Copy { .. }),
-            "a preserve instruction is always a register copy instruction"
-        );
+        {
+            let preserved = self.instrs.get(preserve_instr);
+            debug_assert!(
+                matches!(
+                    preserved,
+                    Instruction::Copy { .. }
+                        | Instruction::Copy2 { .. }
+                        | Instruction::CopySpanNonOverlapping { .. }
+                        | Instruction::CopyManyNonOverlapping { .. }
+                ),
+                "a preserve instruction is always a register copy instruction but found: {:?}",
+                preserved,
+            );
+        }
         if self.notified_preservation.is_none() {
             self.notified_preservation = Some(preserve_instr);
         }
@@ -1520,7 +1541,7 @@ impl Instruction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::engine::{bytecode::RegisterSpan, translator::typed_value::TypedValue};
+    use crate::engine::translator::typed_value::TypedValue;
 
     #[test]
     fn has_overlapping_copies_works() {

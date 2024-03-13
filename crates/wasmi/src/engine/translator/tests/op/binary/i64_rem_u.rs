@@ -1,5 +1,4 @@
 use super::*;
-use core::num::NonZeroU64;
 use wasmi_core::TrapCode;
 
 const WASM_OP: WasmOp = WasmOp::binary(WasmType::I64, "rem_u");

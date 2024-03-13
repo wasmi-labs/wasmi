@@ -14,4 +14,4 @@ Finally I want to thank [Parity Technologies] for their past involvement and sup
 
 [Robin Freyler]: https://github.com/Robbepop
 [Parity Technologies]: https://github.com/paritytech/
-[discussions board]: https://github.com/paritytech/wasmi/discussions
+[discussions board]: https://github.com/wasmi-labs/wasmi/discussions

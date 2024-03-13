@@ -50,6 +50,7 @@ use super::{
     WasmOp,
     WasmType,
 };
+use std::format;
 
 /// Creates an [`Const32<i32>`] from the given `i32` value.
 ///

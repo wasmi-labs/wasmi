@@ -1,9 +1,10 @@
-use ::core::iter;
-
-use super::{RegisterAlloc, TypedValue};
-use crate::{engine::bytecode::Register, Error};
-use alloc::vec::Vec;
-use smallvec::SmallVec;
+use super::{LocalRefs, RegisterAlloc, TypedValue};
+use crate::{
+    engine::{bytecode::Register, translator::PreservedLocal},
+    Error,
+};
+use arrayvec::ArrayVec;
+use std::vec::Vec;
 
 #[cfg(doc)]
 use wasmi_core::UntypedValue;
@@ -34,6 +35,13 @@ pub enum TaggedProvider {
 pub struct ProviderStack {
     /// The internal stack of providers.
     providers: Vec<TaggedProvider>,
+    /// The number of locals on the `providers` stack.
+    ///
+    /// # Note
+    ///
+    /// This is used to act as fast bailout for local preservation in the common
+    /// case that no locals are on the stack.
+    len_locals: usize,
     /// Indicates whether to use `locals` to store `locals` on the provider stack.
     ///
     /// # Note
@@ -54,6 +62,28 @@ impl ProviderStack {
         self.providers.clear();
         self.use_locals = false;
         self.locals.reset();
+        self.len_locals = 0;
+    }
+
+    /// Maximum provider stack height before switching to attack-immune
+    /// [`LocalRefs`] implementation for `local.get` preservation.
+    const PRESERVE_THRESHOLD: usize = 16;
+
+    /// Synchronizes [`LocalRefs`] with the current state of the `providers` stack.
+    ///
+    /// This is required to initialize usage of the attack-immune [`LocalRefs`] before first use.
+    fn sync_local_refs(&mut self) {
+        if self.use_locals || self.providers.len() < Self::PRESERVE_THRESHOLD {
+            return;
+        }
+        self.use_locals = true;
+        for (index, provider) in self.providers.iter().enumerate() {
+            let TaggedProvider::Local(local) = provider else {
+                continue;
+            };
+            self.locals.push_at(*local, index);
+        }
+        self.use_locals = true;
     }
 
     /// Preserves `local.get` on the [`ProviderStack`] by shifting to the preservation space.
@@ -66,13 +96,10 @@ impl ProviderStack {
         preserve_index: u32,
         reg_alloc: &mut RegisterAlloc,
     ) -> Result<Option<Register>, Error> {
-        /// Maximum provider stack height before switching to attack-immune
-        /// [`LocalRefs`] implementation for `local.get` preservation.
-        const THRESHOLD: usize = 16;
-
-        if !self.use_locals && self.providers.len() >= THRESHOLD {
-            self.sync_local_refs()
+        if self.len_locals == 0 {
+            return Ok(None);
         }
+        self.sync_local_refs();
         let local = i16::try_from(preserve_index)
             .map(Register::from_i16)
             .unwrap_or_else(|_| {
@@ -84,18 +111,27 @@ impl ProviderStack {
         }
     }
 
-    /// Synchronizes [`LocalRefs`] with the current state of the `providers` stack.
+    /// Preserves all locals on the [`ProviderStack`] by shifting them to the preservation space.
     ///
-    /// This is required to initialize usage of the attack-immune [`LocalRefs`] before first use.
-    fn sync_local_refs(&mut self) {
-        self.use_locals = true;
-        for (index, provider) in self.providers.iter().enumerate() {
-            let TaggedProvider::Local(local) = provider else {
-                continue;
-            };
-            self.locals.push_at(*local, index);
+    /// # Note
+    ///
+    /// - Calls `f(local_index, preserved_register)` for each local preserved this way with its `local_index`
+    ///   and the newly allocated `preserved_register` on the presevation register space.
+    /// - If the same local appears multiple  times on the provider stack `f` is only called once
+    ///   representing all of them.
+    pub fn preserve_all_locals(
+        &mut self,
+        reg_alloc: &mut RegisterAlloc,
+        f: impl FnMut(PreservedLocal) -> Result<(), Error>,
+    ) -> Result<(), Error> {
+        if self.len_locals == 0 {
+            return Ok(());
         }
-        self.use_locals = true;
+        self.sync_local_refs();
+        match self.use_locals {
+            false => self.preserve_all_locals_inplace(reg_alloc, f),
+            true => self.preserve_all_locals_extern(reg_alloc, f),
+        }
     }
 
     /// Preserves the `local` [`Register`] on the provider stack in-place.
@@ -114,10 +150,11 @@ impl ProviderStack {
         debug_assert!(!self.use_locals);
         let mut preserved = None;
         for provider in &mut self.providers {
-            let TaggedProvider::Local(register) = provider else {
+            let TaggedProvider::Local(register) = *provider else {
                 continue;
             };
-            if *register != local {
+            debug_assert!(reg_alloc.is_local(register));
+            if register != local {
                 continue;
             }
             let preserved_register = match preserved {
@@ -132,8 +169,66 @@ impl ProviderStack {
                 }
             };
             *provider = TaggedProvider::Preserved(preserved_register);
+            self.len_locals -= 1;
+            if self.len_locals == 0 {
+                break;
+            }
         }
         Ok(preserved)
+    }
+
+    /// Preserves all locals on the [`ProviderStack`] by shifting them to the preservation space.
+    ///
+    /// # Note
+    ///
+    /// - Calls `f(local_index, preserved_register)` for each local preserved this way with its `local_index`
+    ///   and the newly allocated `preserved_register` on the presevation register space.
+    /// - If the same local appears multiple  times on the provider stack `f` is only called once
+    ///   representing all of them.
+    ///
+    /// # Dev. Note
+    ///
+    /// - This is the efficient case which is susceptible to malicious inputs
+    ///   since it needs to iterate over the entire provider stack and might be
+    ///   called roughly once per Wasm instruction in the worst-case.
+    /// - Therefore we only use it behind a safety guard to remove the attack surface.
+    fn preserve_all_locals_inplace(
+        &mut self,
+        reg_alloc: &mut RegisterAlloc,
+        mut f: impl FnMut(PreservedLocal) -> Result<(), Error>,
+    ) -> Result<(), Error> {
+        debug_assert!(!self.use_locals);
+        let mut preserved = <ArrayVec<PreservedLocal, { Self::PRESERVE_THRESHOLD }>>::new();
+        for provider in self.providers.iter_mut().rev() {
+            let TaggedProvider::Local(local_register) = *provider else {
+                continue;
+            };
+            debug_assert!(reg_alloc.is_local(local_register));
+            let (preserved_register, is_new) =
+                // Note: linear search is fine since we operate only on very small sets of data.
+                match preserved.iter().find(|p| p.local == local_register) {
+                    Some(preserved_local) => {
+                        let preserved_register = preserved_local.preserved;
+                        reg_alloc.bump_preserved(preserved_register);
+                        (preserved_register, false)
+                    }
+                    None => {
+                        let preserved_register = reg_alloc.push_preserved()?;
+                        preserved.push(PreservedLocal::new(local_register, preserved_register));
+                        (preserved_register, true)
+                    }
+                };
+            *provider = TaggedProvider::Preserved(preserved_register);
+            self.len_locals -= 1;
+            if is_new {
+                f(PreservedLocal::new(local_register, preserved_register))?;
+            }
+            if self.len_locals == 0 {
+                break;
+            }
+        }
+        debug_assert_eq!(self.len_locals, 0);
+        Ok(())
     }
 
     /// Preserves the `local` [`Register`] on the provider stack out-of-place.
@@ -151,7 +246,7 @@ impl ProviderStack {
     ) -> Result<Option<Register>, Error> {
         debug_assert!(self.use_locals);
         let mut preserved = None;
-        for provider_index in self.locals.drain_at(local) {
+        self.locals.drain_at(local, |provider_index| {
             let provider = &mut self.providers[provider_index];
             debug_assert!(matches!(provider, TaggedProvider::Local(_)));
             let preserved_register = match preserved {
@@ -166,8 +261,53 @@ impl ProviderStack {
                 }
             };
             *provider = TaggedProvider::Preserved(preserved_register);
-        }
+            self.len_locals -= 1;
+            Ok(())
+        })?;
         Ok(preserved)
+    }
+
+    /// Preserves all locals on the [`ProviderStack`] by shifting them to the preservation space.
+    ///
+    /// # Note
+    ///
+    /// - Calls `f(local_index, preserved_register)` for each local preserved this way with its `local_index`
+    ///   and the newly allocated `preserved_register` on the presevation register space.
+    /// - If the same local appears multiple  times on the provider stack `f` is only called once
+    ///   representing all of them.
+    ///
+    /// # Dev. Note
+    ///
+    /// - This is the inefficient case which is immune to malicious inputs
+    ///   since it only iterates over the locals required for preservation
+    ///   which are stored out-of-place of the provider stack.
+    /// - Since this is slower we only use it when necessary.
+    fn preserve_all_locals_extern(
+        &mut self,
+        reg_alloc: &mut RegisterAlloc,
+        mut f: impl FnMut(PreservedLocal) -> Result<(), Error>,
+    ) -> Result<(), Error> {
+        debug_assert!(self.use_locals);
+        let mut group = None;
+        self.locals.drain_all(|local, index| {
+            let preserved = match group {
+                Some((group, preserved)) if group == local => {
+                    reg_alloc.bump_preserved(preserved);
+                    preserved
+                }
+                _ => {
+                    let preserved = reg_alloc.push_preserved()?;
+                    group = Some((local, preserved));
+                    f(PreservedLocal::new(local, preserved))?;
+                    preserved
+                }
+            };
+            self.providers[index] = TaggedProvider::Preserved(preserved);
+            self.len_locals -= 1;
+            Ok(())
+        })?;
+        debug_assert_eq!(self.len_locals, 0);
+        Ok(())
     }
 
     /// Registers an `amount` of function inputs or local variables.
@@ -185,19 +325,22 @@ impl ProviderStack {
     }
 
     /// Pushes a provider to the [`ProviderStack`].
-    fn push(&mut self, provider: TaggedProvider) -> usize {
+    #[inline(always)]
+    fn push(&mut self, provider: TaggedProvider) {
         let index = self.providers.len();
         self.providers.push(provider);
-        index
+        if let TaggedProvider::Local(reg) = provider {
+            self.len_locals += 1;
+            if self.use_locals {
+                self.locals.push_at(reg, index);
+            }
+        }
     }
 
     /// Pushes a [`Register`] to the [`ProviderStack`] referring to a function parameter or local variable.
     pub fn push_local(&mut self, reg: Register) {
         debug_assert!(!reg.is_const());
-        let index = self.push(TaggedProvider::Local(reg));
-        if self.use_locals {
-            self.locals.push_at(reg, index);
-        }
+        self.push(TaggedProvider::Local(reg));
     }
 
     /// Pushes a dynamically allocated [`Register`] to the [`ProviderStack`].
@@ -249,6 +392,7 @@ impl ProviderStack {
             .pop()
             .unwrap_or_else(|| panic!("tried to pop provider from empty provider stack"));
         if let TaggedProvider::Local(register) = popped {
+            self.len_locals -= 1;
             if self.use_locals {
                 // If a `local.get` was popped from the provider stack we
                 // also need to pop it from the `local.get` indices stack.
@@ -280,71 +424,5 @@ impl<'a> IntoIterator for &'a mut ProviderStack {
 
     fn into_iter(self) -> Self::IntoIter {
         self.providers.iter_mut()
-    }
-}
-
-/// The index of a `local.get` on the [`ProviderStack`].
-type StackIndex = usize;
-
-#[derive(Debug, Default)]
-pub struct LocalRefs {
-    /// The indices of all `local.get` on the [`ProviderStack`] of all local variables.
-    locals: Vec<SmallVec<[StackIndex; 2]>>,
-}
-
-impl LocalRefs {
-    /// Resets the [`LocalRefs`].
-    pub fn reset(&mut self) {
-        self.locals.clear()
-    }
-
-    /// Registers an `amount` of function inputs or local variables.
-    ///
-    /// # Errors
-    ///
-    /// If too many registers have been registered.
-    pub fn register_locals(&mut self, amount: u32) {
-        self.locals
-            .extend(iter::repeat_with(SmallVec::default).take(amount as StackIndex));
-    }
-
-    /// Returns the [`ProviderStack`] `local.get` indices of the `local` variable.
-    ///
-    /// # Panics
-    ///
-    /// If the `local` index is out of bounds.
-    fn get_indices_mut(&mut self, local: Register) -> &mut SmallVec<[StackIndex; 2]> {
-        debug_assert!(!local.is_const());
-        &mut self.locals[local.to_i16().unsigned_abs() as usize]
-    }
-
-    /// Pushes the stack index of a `local.get` on the [`ProviderStack`].
-    ///
-    /// # Panics
-    ///
-    /// If the `local` index is out of bounds.
-    pub fn push_at(&mut self, local: Register, stack_index: StackIndex) {
-        self.get_indices_mut(local).push(stack_index);
-    }
-
-    /// Pops the stack index of a `local.get` on the [`ProviderStack`].
-    ///
-    /// # Panics
-    ///
-    /// - If the `local` index is out of bounds.
-    /// - If there is no `local.get` stack index on the stack.
-    pub fn pop_at(&mut self, local: Register) -> StackIndex {
-        self.get_indices_mut(local).pop().unwrap_or_else(|| {
-            panic!("missing stack index for local on the provider stack: {local:?}")
-        })
-    }
-
-    /// Drains all `local.get` indices of the `local` variable on the [`ProviderStack`].
-    ///
-    /// # Panics
-    ///
-    /// If the `local` index is out of bounds.
-    pub fn drain_at(&mut self, local: Register) -> smallvec::Drain<[StackIndex; 2]> {
-        self.get_indices_mut(local).drain(..)
     }
 }

@@ -62,8 +62,9 @@ use crate::{
     Error,
     FuncType,
 };
-use alloc::vec::Vec;
 use core::fmt;
+use slice_group_by::GroupBy as _;
+use std::vec::Vec;
 use wasmi_core::{TrapCode, UntypedValue, ValueType};
 use wasmparser::{
     BinaryReaderError,
@@ -83,10 +84,41 @@ pub struct FuncTranslatorAllocations {
     instr_encoder: InstrEncoder,
     /// The control stack.
     control_stack: ControlStack,
-    /// Buffer to store providers when popped from the [`ValueStack`] in bulk.
-    buffer: Vec<TypedProvider>,
-    /// Buffer to temporarily store `br_table` target depths.
+    /// Some reusable buffers for translation purposes.
+    buffer: TranslationBuffers,
+}
+
+/// Reusable allocations for utility buffers.
+#[derive(Debug, Default)]
+pub struct TranslationBuffers {
+    /// Buffer to temporarily hold a bunch of [`TypedProvider`] when bulk-popped from the [`ValueStack`].
+    providers: Vec<TypedProvider>,
+    /// Buffer to temporarily hold `br_table` target depths.
     br_table_targets: Vec<u32>,
+    /// Buffer to temporarily hold a bunch of preserved [`Register`] locals.
+    preserved: Vec<PreservedLocal>,
+}
+
+/// A pair of local [`Register`] and its preserved [`Register`].
+#[derive(Debug, Copy, Clone)]
+pub struct PreservedLocal {
+    local: Register,
+    preserved: Register,
+}
+
+impl PreservedLocal {
+    /// Creates a new [`PreservedLocal`].
+    pub fn new(local: Register, preserved: Register) -> Self {
+        Self { local, preserved }
+    }
+}
+
+impl TranslationBuffers {
+    fn reset(&mut self) {
+        self.providers.clear();
+        self.br_table_targets.clear();
+        self.preserved.clear();
+    }
 }
 
 impl FuncTranslatorAllocations {
@@ -95,8 +127,7 @@ impl FuncTranslatorAllocations {
         self.stack.reset();
         self.instr_encoder.reset();
         self.control_stack.reset();
-        self.buffer.clear();
-        self.br_table_targets.clear();
+        self.buffer.reset();
     }
 }
 
@@ -740,6 +771,61 @@ impl FuncTranslator {
         self.push_fueled_instr(instr, FuelCosts::base)
     }
 
+    /// Preserve all locals that are currently on the emulated stack.
+    ///
+    /// # Note
+    ///
+    /// This is required for correctness upon entering the compilation
+    /// of a Wasm control flow structure such as a Wasm `block`, `if` or `loop`.
+    /// Locals on the stack might be manipulated conditionally witihn the
+    /// control flow structure and therefore need to be preserved before
+    /// this might happen.
+    /// For efficiency reasons all locals are preserved independent of their
+    /// actual use in the entered control flow structure since the analysis
+    /// of their uses would be too costly.
+    fn preserve_locals(&mut self) -> Result<(), Error> {
+        let fuel_info = self.fuel_info();
+        let preserved = &mut self.alloc.buffer.preserved;
+        preserved.clear();
+        self.alloc.stack.preserve_all_locals(|preserved_local| {
+            preserved.push(preserved_local);
+            Ok(())
+        })?;
+        preserved.reverse();
+        let copy_groups = preserved.linear_group_by(|a, b| {
+            // Note: we group copies into groups with continuous result register indices
+            //       because this is what allows us to fuse single `Copy` instructions into
+            //       more efficient `Copy2` or `CopyManyNonOverlapping` instructions.
+            //
+            // At the time of this writing the author was not sure if all result registers
+            // of all preserved locals are always continuous so this can be understood as
+            // a safety guard.
+            (b.preserved.to_i16() - a.preserved.to_i16()) == 1
+        });
+        for copy_group in copy_groups {
+            let len = copy_group.len();
+            let results = RegisterSpan::new(copy_group[0].preserved).iter(len);
+            let providers = &mut self.alloc.buffer.providers;
+            providers.clear();
+            providers.extend(
+                copy_group
+                    .iter()
+                    .map(|p| p.local)
+                    .map(TypedProvider::Register),
+            );
+            let instr = self.alloc.instr_encoder.encode_copies(
+                &mut self.alloc.stack,
+                results,
+                &providers[..],
+                fuel_info,
+            )?;
+            if let Some(instr) = instr {
+                self.alloc.instr_encoder.notify_preserved_register(instr)
+            }
+        }
+        Ok(())
+    }
+
     /// Convenience function to copy the parameters when branching to a control frame.
     fn translate_copy_branch_params(
         &mut self,
@@ -750,12 +836,12 @@ impl FuncTranslator {
             return Ok(());
         }
         let fuel_info = self.fuel_info();
-        let params = &mut self.alloc.buffer;
+        let params = &mut self.alloc.buffer.providers;
         self.alloc.stack.pop_n(branch_params.len(), params);
         self.alloc.instr_encoder.encode_copies(
             &mut self.alloc.stack,
             branch_params,
-            &self.alloc.buffer[..],
+            &self.alloc.buffer.providers[..],
             fuel_info,
         )?;
         Ok(())
@@ -1104,7 +1190,7 @@ impl FuncTranslator {
         len_block_params: usize,
         len_branch_params: usize,
     ) -> Result<RegisterSpan, Error> {
-        let params = &mut self.alloc.buffer;
+        let params = &mut self.alloc.buffer.providers;
         // Pop the block parameters off the stack.
         self.alloc.stack.pop_n(len_block_params, params);
         // Peek the branch parameter registers which are going to be returned.
@@ -2445,7 +2531,7 @@ impl FuncTranslator {
     fn translate_return_with(&mut self, fuel_info: FuelInfo) -> Result<(), Error> {
         let func_type = self.func_type();
         let results = func_type.results();
-        let values = &mut self.alloc.buffer;
+        let values = &mut self.alloc.buffer.providers;
         self.alloc.stack.pop_n(results.len(), values);
         self.alloc
             .instr_encoder
@@ -2459,7 +2545,7 @@ impl FuncTranslator {
         bail_unreachable!(self);
         let len_results = self.func_type().results().len();
         let fuel_info = self.fuel_info();
-        let values = &mut self.alloc.buffer;
+        let values = &mut self.alloc.buffer.providers;
         self.alloc.stack.peek_n(len_results, values);
         self.alloc.instr_encoder.encode_return_nez(
             &mut self.alloc.stack,

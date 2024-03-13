@@ -1,10 +1,10 @@
 use super::Register;
 use crate::{core::UntypedValue, engine::TranslationError, Error};
-use alloc::{
+use core::{iter::Rev, slice::Iter as SliceIter};
+use std::{
     collections::{btree_map, BTreeMap},
     vec::Vec,
 };
-use core::{iter::Rev, slice::Iter as SliceIter};
 
 /// A pool of deduplicated function local constant values.
 ///

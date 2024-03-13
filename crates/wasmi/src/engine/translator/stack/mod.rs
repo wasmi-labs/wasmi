@@ -1,13 +1,15 @@
 mod consts;
+mod locals;
 mod provider;
 mod register_alloc;
 
 pub use self::{
     consts::{FuncLocalConsts, FuncLocalConstsIter},
+    locals::LocalRefs,
     provider::{ProviderStack, TaggedProvider},
     register_alloc::{RegisterAlloc, RegisterSpace},
 };
-use super::TypedValue;
+use super::{PreservedLocal, TypedValue};
 use crate::{
     engine::{
         bytecode::{Provider, Register, RegisterSpan, UntypedProvider},
@@ -16,7 +18,7 @@ use crate::{
     Error,
     FuncType,
 };
-use alloc::vec::Vec;
+use std::vec::Vec;
 use wasmi_core::UntypedValue;
 
 /// Typed inputs to Wasmi bytecode instructions.
@@ -107,7 +109,7 @@ impl ValueStack {
         Ok(results)
     }
 
-    /// Preserves `local.get` on the [`ProviderStack`] by shifting to storage space.
+    /// Preserves `local.get` on the [`ProviderStack`] by shifting to the preservation space.
     ///
     /// In case there are `local.get n` with `n == preserve_index` on the [`ProviderStack`]
     /// there is a [`Register`] on the storage space allocated for them. The [`Register`]
@@ -115,6 +117,17 @@ impl ValueStack {
     pub fn preserve_locals(&mut self, preserve_index: u32) -> Result<Option<Register>, Error> {
         self.providers
             .preserve_locals(preserve_index, &mut self.reg_alloc)
+    }
+
+    /// Preserves all locals on the [`ProviderStack`] by shifting them to the preservation space.
+    ///
+    /// Calls `f(local_register, preserved_register)` for each `local_register` preserved this way with its
+    /// newly allocated `preserved_register` on the presevation register space.
+    pub fn preserve_all_locals(
+        &mut self,
+        f: impl FnMut(PreservedLocal) -> Result<(), Error>,
+    ) -> Result<(), Error> {
+        self.providers.preserve_all_locals(&mut self.reg_alloc, f)
     }
 
     /// Returns the number of [`Provider`] on the [`ValueStack`].

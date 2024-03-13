@@ -1,6 +1,6 @@
 use crate::{core::ValueType, func::FuncError, Value};
-use alloc::{sync::Arc, vec::Vec};
 use core::fmt;
+use std::{sync::Arc, vec::Vec};
 
 /// A function type representing a function's parameter and result types.
 ///

@@ -18,16 +18,16 @@ use crate::{
     TableType,
     Value,
 };
-use alloc::{
-    collections::{btree_map::Entry, BTreeMap},
-    sync::Arc,
-    vec::Vec,
-};
 use core::{
     fmt,
     fmt::{Debug, Display},
     num::NonZeroUsize,
     ops::Deref,
+};
+use std::{
+    collections::{btree_map::Entry, BTreeMap},
+    sync::Arc,
+    vec::Vec,
 };
 
 /// An error that may occur upon operating with [`Linker`] instances.

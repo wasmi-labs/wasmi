@@ -1,9 +1,8 @@
 [package]
 name = "wasmi"
-version = "0.32.0-beta.6"
+version.workspace = true
 documentation = "https://docs.rs/wasmi/"
 description = "WebAssembly interpreter"
-exclude = ["tests/*", "benches/*"]
 authors.workspace = true
 repository.workspace = true
 edition.workspace = true
@@ -11,11 +10,12 @@ readme.workspace = true
 license.workspace = true
 keywords.workspace = true
 categories.workspace = true
+exclude.workspace = true
 
 [dependencies]
 wasmparser = { version = "0.100.1", package = "wasmparser-nostd", default-features = false }
-wasmi_core = { version = "0.15", path = "../core", default-features = false }
-wasmi_arena = { version = "0.4", path = "../arena", default-features = false }
+wasmi_core = { workspace = true }
+wasmi_arena = { workspace = true }
 spin = { version = "0.9", default-features = false, features = [
     "mutex",
     "spin_mutex",
@@ -23,8 +23,10 @@ spin = { version = "0.9", default-features = false, features = [
 ] }
 smallvec = { version = "1.13.1", features = ["union"] }
 multi-stash = { version = "0.2.0" }
-num-traits = { version = "0.2", default-features = false }
+num-traits = { workspace = true }
 num-derive = "0.4"
+slice-group-by = { version = "0.3", default-features = false }
+arrayvec = { version = "0.7.4", default-features = false }
 
 [dev-dependencies]
 wat = "1"
@@ -35,7 +37,15 @@ criterion = { version = "0.5", default-features = false }
 
 [features]
 default = ["std"]
-std = ["wasmi_core/std", "wasmi_arena/std", "wasmparser/std", "spin/std", "num-traits/std"]
+std = [
+    "wasmi_core/std",
+    "wasmi_arena/std",
+    "wasmparser/std",
+    "spin/std",
+    "num-traits/std",
+    "slice-group-by/std",
+    "arrayvec/std",
+]
 
 [[bench]]
 name = "benches"

@@ -20,7 +20,7 @@ use crate::{
     WasmParams,
     WasmResults,
 };
-use alloc::{boxed::Box, collections::BTreeMap, sync::Arc};
+use std::{boxed::Box, collections::BTreeMap, sync::Arc};
 use wasmi_arena::ArenaIndex;
 
 mod builder;

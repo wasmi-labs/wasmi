@@ -29,8 +29,8 @@ use crate::{
     FuncRef,
     Mutability,
 };
-use alloc::collections::BTreeMap;
 use core::num::{NonZeroU32, NonZeroU64};
+use std::collections::BTreeMap;
 use wasmi_core::{TrapCode, ValueType, F32, F64};
 use wasmparser::VisitOperator;
 
@@ -121,6 +121,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 ));
             return Ok(());
         }
+        self.preserve_locals()?;
         // Inherit [`Instruction::ConsumeFuel`] from parent control frame.
         //
         // # Note
@@ -159,13 +160,14 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let len_block_params = block_type.len_params(self.engine()) as usize;
         self.alloc
             .stack
-            .pop_n(len_block_params, &mut self.alloc.buffer);
+            .pop_n(len_block_params, &mut self.alloc.buffer.providers);
         let branch_params = self.alloc.stack.push_dynamic_n(len_block_params)?;
+        // self.preserve_locals()?; // TODO: find a case where local preservation before loops is necessary
         let fuel_info = self.fuel_info();
         self.alloc.instr_encoder.encode_copies(
             &mut self.alloc.stack,
             branch_params.iter(len_block_params),
-            &self.alloc.buffer[..],
+            &self.alloc.buffer.providers[..],
             fuel_info,
         )?;
         // Create loop header label and immediately pin it.
@@ -206,6 +208,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         }
         let condition = self.alloc.stack.pop();
         let stack_height = BlockHeight::new(self.engine(), self.alloc.stack.height(), block_type)?;
+        self.preserve_locals()?;
         let end_label = self.alloc.instr_encoder.new_label();
         let len_block_params = block_type.len_params(self.engine()) as usize;
         let len_branch_params = block_type.len_results(self.engine()) as usize;
@@ -238,10 +241,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 // later use in case we eventually visit the `else` branch.
                 self.alloc
                     .stack
-                    .peek_n(len_block_params, &mut self.alloc.buffer);
+                    .peek_n(len_block_params, &mut self.alloc.buffer.providers);
                 self.alloc
                     .control_stack
-                    .push_else_providers(self.alloc.buffer.iter().copied())?;
+                    .push_else_providers(self.alloc.buffer.providers.iter().copied())?;
                 // Note: We increase preservation register usage of else providers
                 //       so that they cannot be invalidated in the `then` block before
                 //       arriving at the `else` block of an `if`.
@@ -249,6 +252,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 //       end of the `else`, or `if` in case `else` is missing.
                 self.alloc
                     .buffer
+                    .providers
                     .iter()
                     .copied()
                     .filter_map(TypedProvider::into_register)
@@ -429,10 +433,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                         }
                         self.alloc
                             .stack
-                            .peek_n(branch_params.len(), &mut self.alloc.buffer);
+                            .peek_n(branch_params.len(), &mut self.alloc.buffer.providers);
                         if self
                             .alloc
                             .buffer
+                            .providers
                             .iter()
                             .copied()
                             .eq(branch_params.map(TypedProvider::Register))
@@ -467,7 +472,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                         self.alloc.instr_encoder.encode_copies(
                             &mut self.alloc.stack,
                             branch_params,
-                            &self.alloc.buffer[..],
+                            &self.alloc.buffer.providers[..],
                             fuel_info,
                         )?;
                         let branch_offset =
@@ -513,11 +518,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         };
         // Add `br_table` targets to `br_table_targets` buffer including default target.
         // This allows us to uniformely treat all `br_table` targets the same and only parse once.
-        self.alloc.br_table_targets.clear();
+        self.alloc.buffer.br_table_targets.clear();
         for target in targets.targets() {
-            self.alloc.br_table_targets.push(target?);
+            self.alloc.buffer.br_table_targets.push(target?);
         }
-        self.alloc.br_table_targets.push(default_target);
+        self.alloc.buffer.br_table_targets.push(default_target);
         // We check if all `br_table` targets expect their results at the same
         // registers which allows us to encode the `br_table` more efficiently
         // by using a single copy instruction before branching instead of having
@@ -528,18 +533,24 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             .acquire_target(default_target)
             .control_frame()
             .branch_params(&engine);
-        let same_branch_params = self.alloc.br_table_targets.iter().copied().all(|target| {
-            match self.alloc.control_stack.acquire_target(target) {
-                AcquiredTarget::Return(_) => {
-                    // Return instructions never need to copy anything and
-                    // thus we can simply ignore them for this conditional.
-                    true
+        let same_branch_params = self
+            .alloc
+            .buffer
+            .br_table_targets
+            .iter()
+            .copied()
+            .all(|target| {
+                match self.alloc.control_stack.acquire_target(target) {
+                    AcquiredTarget::Return(_) => {
+                        // Return instructions never need to copy anything and
+                        // thus we can simply ignore them for this conditional.
+                        true
+                    }
+                    AcquiredTarget::Branch(frame) => {
+                        default_branch_params == frame.branch_params(&engine)
+                    }
                 }
-                AcquiredTarget::Branch(frame) => {
-                    default_branch_params == frame.branch_params(&engine)
-                }
-            }
-        });
+            });
         if default_branch_params.is_empty() || same_branch_params {
             // Case 1: No `br_target` target requires values to be copied around.
             // Case 2: All `br_target` targets use the same branch parameter registers.
@@ -554,7 +565,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 1 => Instruction::return_reg(default_branch_params.span().head()),
                 _ => Instruction::return_span(default_branch_params),
             };
-            for target in self.alloc.br_table_targets.iter().copied() {
+            for target in self.alloc.buffer.br_table_targets.iter().copied() {
                 match self.alloc.control_stack.acquire_target(target) {
                     AcquiredTarget::Return(_) => {
                         self.alloc.instr_encoder.append_instr(return_instr)?;
@@ -582,7 +593,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         // share codegen for `br_table` arms that have the same branch target.
         self.push_base_instr(Instruction::branch_table(index, targets.len() + 1))?;
         let mut shared_targets = <BTreeMap<u32, LabelRef>>::new();
-        for target in self.alloc.br_table_targets.iter().copied() {
+        for target in self.alloc.buffer.br_table_targets.iter().copied() {
             let shared_label = *shared_targets
                 .entry(target)
                 .or_insert_with(|| self.alloc.instr_encoder.new_label());
@@ -591,7 +602,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 .instr_encoder
                 .append_instr(Instruction::branch(branch_offset))?;
         }
-        let values = &mut self.alloc.buffer;
+        let values = &mut self.alloc.buffer.providers;
         self.alloc.stack.pop_n(default_branch_params.len(), values);
         for (depth, label) in shared_targets {
             self.alloc.instr_encoder.pin_label(label);
@@ -639,7 +650,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let func_idx = FuncIdx::from(function_index);
         let func_type = self.func_type_of(func_idx);
         let (params, results) = func_type.params_results();
-        let provider_params = &mut self.alloc.buffer;
+        let provider_params = &mut self.alloc.buffer.providers;
         self.alloc.stack.pop_n(params.len(), provider_params);
         let results = self.alloc.stack.push_dynamic_n(results.len())?;
         let instr = match self.module.get_compiled_func(func_idx) {
@@ -679,7 +690,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let func_type = self.func_type_at(type_index);
         let (params, results) = func_type.params_results();
         let index = self.alloc.stack.pop();
-        let provider_params = &mut self.alloc.buffer;
+        let provider_params = &mut self.alloc.buffer.providers;
         self.alloc.stack.pop_n(params.len(), provider_params);
         let table_params = match index {
             TypedProvider::Const(index) => match <Const16<u32>>::try_from(u32::from(index)).ok() {
@@ -716,7 +727,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let func_idx = FuncIdx::from(function_index);
         let func_type = self.func_type_of(func_idx);
         let params = func_type.params();
-        let provider_params = &mut self.alloc.buffer;
+        let provider_params = &mut self.alloc.buffer.providers;
         self.alloc.stack.pop_n(params.len(), provider_params);
         let instr = match self.module.get_compiled_func(func_idx) {
             Some(compiled_func) => {
@@ -751,7 +762,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let func_type = self.func_type_at(type_index);
         let params = func_type.params();
         let index = self.alloc.stack.pop();
-        let provider_params = &mut self.alloc.buffer;
+        let provider_params = &mut self.alloc.buffer.providers;
         self.alloc.stack.pop_n(params.len(), provider_params);
         let table_params = match index {
             TypedProvider::Const(index) => match <Const16<u32>>::try_from(u32::from(index)).ok() {

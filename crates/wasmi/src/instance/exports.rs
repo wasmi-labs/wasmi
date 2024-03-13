@@ -1,6 +1,6 @@
 use crate::{AsContext, Func, FuncType, Global, GlobalType, Memory, MemoryType, Table, TableType};
-use alloc::{boxed::Box, collections::btree_map};
 use core::iter::FusedIterator;
+use std::{boxed::Box, collections::btree_map};
 
 /// An external item to a WebAssembly module.
 ///

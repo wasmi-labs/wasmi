@@ -4,7 +4,6 @@ use super::{
 };
 use crate::{
     core::{ValueType, F32, F64},
-    foreach_tuple::for_each_tuple,
     Caller,
     Error,
     ExternRef,
@@ -321,7 +320,7 @@ for_each_tuple!(impl_wasm_type_list);
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::{F32, F64};
+    use std::string::String;
 
     /// Utility struct helper for the `implements_wasm_results` macro.
     pub struct ImplementsWasmRet<T> {

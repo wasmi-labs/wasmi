@@ -1,9 +1,6 @@
 use super::*;
 
-use crate::engine::{
-    bytecode::GlobalIdx,
-    translator::tests::{display_wasm::DisplayValueType, driver::ExpectedFunc},
-};
+use crate::engine::bytecode::GlobalIdx;
 use core::fmt::Display;
 use wasm_type::WasmType;
 use wasmi_core::ValueType;

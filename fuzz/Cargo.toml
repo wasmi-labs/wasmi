@@ -1,9 +1,11 @@
 [package]
-name = "wasmi-fuzz"
+name = "wasmi_fuzz"
 version = "0.0.0"
-authors = ["Robin Freyler <robin.freyler@gmail.com>"]
+authors.workspace = true
+readme.workspace = true
+license.workspace = true
 publish = false
-edition = "2021"
+edition.workspace = true
 
 [package.metadata]
 cargo-fuzz = true
@@ -12,15 +14,9 @@ cargo-fuzz = true
 libfuzzer-sys = "0.4.7"
 wasm-smith = "=0.13.1"
 arbitrary = { version = "=1.3.2", features = ["derive"] }
-wasmi-stack = { package = "wasmi", version = "0.31.1" }
-wasmtime = "15.0.0"
-
-[dependencies.wasmi]
-path = "../crates/wasmi"
-
-# Prevent this from interfering with workspaces
-[workspace]
-members = ["."]
+wasmi-stack = { package = "wasmi", version = "0.31.2" }
+wasmtime = "18.0.3"
+wasmi = { workspace = true, features = ["std"] }
 
 [[bin]]
 name = "translate"

@@ -1,6 +1,6 @@
 [package]
 name = "wasmi_core"
-version = "0.15.0"
+version = "0.16.0"
 documentation = "https://docs.rs/wasmi_core"
 description = "Core primitives for the wasmi WebAssembly interpreter"
 authors.workspace = true
@@ -10,10 +10,11 @@ readme.workspace = true
 license.workspace = true
 keywords.workspace = true
 categories.workspace = true
+exclude.workspace = true
 
 [dependencies]
 libm = "0.2.1"
-num-traits = { version = "0.2.8", default-features = false }
+num-traits = { workspace = true }
 downcast-rs = { version = "1.2", default-features = false }
 paste = "1"
 

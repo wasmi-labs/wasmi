@@ -17,7 +17,7 @@ use crate::{
     Engine,
     Module,
 };
-use std::fmt::Display;
+use std::{fmt::Display, format, vec::Vec};
 
 /// Converts the `wat` string source into `wasm` encoded byte.
 fn wat2wasm(wat: &str) -> Vec<u8> {
