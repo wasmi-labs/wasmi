@@ -16,7 +16,7 @@ exclude.workspace = true
 wasi-common = "2.0"
 wasi-cap-std-sync = "2.0"
 wiggle = { version = "2.0", default-features = false, features = ["wiggle_metadata"] }
-wasmi = { workspace = true }
+wasmi = { workspace = true, features = ["std"]}
 
 [dev-dependencies]
 wat = "1.0.50"
