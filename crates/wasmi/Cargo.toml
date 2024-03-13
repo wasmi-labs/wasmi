@@ -23,7 +23,7 @@ spin = { version = "0.9", default-features = false, features = [
 ] }
 smallvec = { version = "1.13.1", features = ["union"] }
 multi-stash = { version = "0.2.0" }
-num-traits = { version = "0.2", default-features = false }
+num-traits = { workspace = true }
 num-derive = "0.4"
 slice-group-by = { version = "0.3", default-features = false }
 arrayvec = { version = "0.7.4", default-features = false }
