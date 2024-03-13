@@ -3,7 +3,6 @@ name = "wasmi"
 version.workspace = true
 documentation = "https://docs.rs/wasmi/"
 description = "WebAssembly interpreter"
-exclude = ["tests/*", "benches/*"]
 authors.workspace = true
 repository.workspace = true
 edition.workspace = true
@@ -11,6 +10,7 @@ readme.workspace = true
 license.workspace = true
 keywords.workspace = true
 categories.workspace = true
+exclude.workspace = true
 
 [dependencies]
 wasmparser = { version = "0.100.1", package = "wasmparser-nostd", default-features = false }
