@@ -10,10 +10,11 @@ readme.workspace = true
 license.workspace = true
 keywords.workspace = true
 categories.workspace = true
+exclude.workspace = true
 
 [dependencies]
 libm = "0.2.1"
-num-traits = { version = "0.2.8", default-features = false }
+num-traits = { workspace = true }
 downcast-rs = { version = "1.2", default-features = false }
 paste = "1"
 
