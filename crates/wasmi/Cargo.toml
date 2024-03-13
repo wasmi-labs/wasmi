@@ -14,8 +14,8 @@ categories.workspace = true
 
 [dependencies]
 wasmparser = { version = "0.100.1", package = "wasmparser-nostd", default-features = false }
-wasmi_core = { version = "0.16", path = "../core", default-features = false }
-wasmi_arena = { version = "0.5", path = "../arena", default-features = false }
+wasmi_core = { workspace = true }
+wasmi_arena = { workspace = true }
 spin = { version = "0.9", default-features = false, features = [
     "mutex",
     "spin_mutex",
