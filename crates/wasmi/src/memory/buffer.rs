@@ -46,7 +46,7 @@ impl ByteBuffer {
     /// - If the initial length exceeds the maximum supported limit.
     pub fn new_static(buf: &'static mut [u8], initial_len: usize) -> Self {
         assert!(initial_len <= buf.len());
-        buf.fill(0);
+        buf[..initial_len].fill(0x00_u8);
         Self {
             ptr: buf.as_mut_ptr(),
             len: initial_len,
@@ -67,7 +67,9 @@ impl ByteBuffer {
             if self.capacity < new_size {
                 panic!("Cannot grow static byte buffer more then it's capacity")
             }
+            let len = self.len();
             self.len = new_size;
+            self.data_mut()[len..new_size].fill(0x00_u8);
         } else {
             // Safety: those parts have been obtained from `Vec`.
             let vec = unsafe { Vec::from_raw_parts(self.ptr, self.len, self.capacity) };
