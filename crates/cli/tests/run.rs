@@ -27,7 +27,16 @@ where
 fn test_proc_exit() {
     let mut cmd = get_cmd();
     let assert = cmd.arg(get_bin_path("proc_exit")).assert();
+    assert!(assert.get_output().stdout.is_empty());
     assert.failure().code(1);
+}
+
+#[test]
+fn test_verbose() {
+    let mut cmd = get_cmd();
+    let assert = cmd.arg(get_bin_path("proc_exit")).arg("--verbose").assert();
+    let stdout = &assert.get_output().stdout;
+    assert!(contains_slice(stdout, b"proc_exit.wat\")::()"));
 }
 
 /// UTILS
