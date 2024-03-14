@@ -63,10 +63,9 @@ fn vec_into_raw_parts(vec: Vec<u8>) -> (*mut u8, usize, usize) {
 impl ByteBuffer {
     /// Creates a new byte buffer with the given initial length.
     ///
-    /// # Errors
+    /// # Panics
     ///
-    /// - If the initial length is 0.
-    /// - If the initial length exceeds the maximum supported limit.
+    /// If there is not enough memory to initialize `initial_len` bytes.
     pub fn new(initial_len: usize) -> Self {
         let vec = vec![0x00_u8; initial_len];
         let (ptr, len, capacity) = vec_into_raw_parts(vec);
@@ -80,22 +79,25 @@ impl ByteBuffer {
 
     /// Creates a new byte buffer with the given initial length.
     ///
-    /// # Errors
+    /// This will zero all the bytes in `buffer[0..initial_len`].
     ///
-    /// - If the initial length is 0.
-    /// - If the initial length exceeds the maximum supported limit.
-    pub fn new_static(buf: &'static mut [u8], initial_len: usize) -> Self {
-        assert!(initial_len <= buf.len());
-        buf[..initial_len].fill(0x00_u8);
+    /// # Panics
+    ///
+    /// If `initial_len` is greater than the length of `buffer`.
+    pub fn new_static(buffer: &'static mut [u8], initial_len: usize) -> Self {
+        assert!(initial_len <= buffer.len());
+        buffer[..initial_len].fill(0x00_u8);
         Self {
-            ptr: buf.as_mut_ptr(),
+            ptr: buffer.as_mut_ptr(),
             len: initial_len,
-            capacity: buf.len(),
+            capacity: buffer.len(),
             is_static: true,
         }
     }
 
     /// Grows the byte buffer to the given `new_size`.
+    ///
+    /// The newly added bytes will be zero initialized.
     ///
     /// # Panics
     ///
