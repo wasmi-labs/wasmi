@@ -92,13 +92,13 @@ pub struct Args {
     #[clap(long = "fuel", value_name = "N")]
     fuel: Option<u64>,
 
-    /// Arguments given to the Wasm module or the invoked function.
-    #[clap(value_name = "ARGS")]
-    func_args: Vec<String>,
-
     /// Enable informational messages beyond warnings or errors.
     #[clap(long = "verbose")]
     verbose: bool,
+
+    /// Arguments given to the Wasm module or the invoked function.
+    #[clap(value_name = "ARGS")]
+    func_args: Vec<String>,
 }
 
 /// The chosen Wasmi compilation mode.
