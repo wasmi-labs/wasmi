@@ -22,6 +22,8 @@ pub enum MemoryError {
     },
     /// Tried to create too many memories
     TooManyMemories,
+    /// Tried to create memory with invalid static buffer size
+    InvalidStaticBufferSize,
 }
 
 impl Display for MemoryError {
@@ -44,6 +46,9 @@ impl Display for MemoryError {
             }
             Self::TooManyMemories => {
                 write!(f, "too many memories")
+            }
+            Self::InvalidStaticBufferSize => {
+                write!(f, "tried to use too small static buffer")
             }
         }
     }

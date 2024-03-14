@@ -165,6 +165,45 @@ impl MemoryEntity {
         }
     }
 
+    /// Creates a new memory entity with the given memory type.
+    pub fn new_static(
+        memory_type: MemoryType,
+        limiter: &mut ResourceLimiterRef<'_>,
+        buf: &'static mut [u8],
+    ) -> Result<Self, MemoryError> {
+        let initial_pages = memory_type.initial_pages();
+        let initial_len = initial_pages.to_bytes();
+        let maximum_pages = memory_type.maximum_pages().unwrap_or_else(Pages::max);
+        let maximum_len = maximum_pages.to_bytes();
+
+        if let Some(limiter) = limiter.as_resource_limiter() {
+            if !limiter.memory_growing(0, initial_len.unwrap_or(usize::MAX), maximum_len)? {
+                // Here there's no meaningful way to map Ok(false) to
+                // INVALID_GROWTH_ERRCODE, so we just translate it to an
+                // appropriate Err(...)
+                return Err(MemoryError::OutOfBoundsAllocation);
+            }
+        }
+
+        if let Some(initial_len) = initial_len {
+            if buf.len() < initial_len {
+                return Err(MemoryError::InvalidStaticBufferSize);
+            }
+            let memory = Self {
+                bytes: ByteBuffer::new_static(buf, initial_len),
+                memory_type,
+                current_pages: initial_pages,
+            };
+            Ok(memory)
+        } else {
+            let err = MemoryError::OutOfBoundsAllocation;
+            if let Some(limiter) = limiter.as_resource_limiter() {
+                limiter.memory_grow_failed(&err)
+            }
+            Err(err)
+        }
+    }
+
     /// Returns the memory type of the linear memory.
     pub fn ty(&self) -> MemoryType {
         self.memory_type
@@ -335,6 +374,27 @@ impl Memory {
             .store_inner_and_resource_limiter_ref();
 
         let entity = MemoryEntity::new(ty, &mut resource_limiter)?;
+        let memory = inner.alloc_memory(entity);
+        Ok(memory)
+    }
+
+    /// Creates a new linear memory to the store.
+    ///
+    /// # Errors
+    ///
+    /// If more than [`u32::MAX`] much linear memory is allocated.
+    /// - If static buffer is invalid
+    pub fn new_static(
+        mut ctx: impl AsContextMut,
+        ty: MemoryType,
+        buf: &'static mut [u8],
+    ) -> Result<Self, MemoryError> {
+        let (inner, mut resource_limiter) = ctx
+            .as_context_mut()
+            .store
+            .store_inner_and_resource_limiter_ref();
+
+        let entity = MemoryEntity::new_static(ty, &mut resource_limiter, buf)?;
         let memory = inner.alloc_memory(entity);
         Ok(memory)
     }
