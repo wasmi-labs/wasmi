@@ -95,6 +95,10 @@ pub struct Args {
     /// Arguments given to the Wasm module or the invoked function.
     #[clap(value_name = "ARGS")]
     func_args: Vec<String>,
+
+    /// Enable informational messages beyond warnings or errors.
+    #[clap(long = "verbose")]
+    verbose: bool,
 }
 
 /// The chosen Wasmi compilation mode.
@@ -140,6 +144,11 @@ impl Args {
     /// Returns `true` if lazy Wasm compilation is enabled.
     pub fn compilation_mode(&self) -> wasmi::CompilationMode {
         self.compilation_mode.into()
+    }
+
+    /// Returns `true` if verbose messaging is enabled.
+    pub fn verbose(&self) -> bool {
+        self.verbose
     }
 
     /// Pre-opens all directories given in `--dir` and returns them for use by the [`WasiCtx`].
