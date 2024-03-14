@@ -1,5 +1,4 @@
-use core::mem::ManuallyDrop;
-use std::{vec, vec::Vec};
+use std::{mem::ManuallyDrop, slice, vec, vec::Vec};
 
 /// A byte buffer implementation.
 ///
@@ -10,15 +9,55 @@ use std::{vec, vec::Vec};
 /// solution fitting any platform.
 #[derive(Debug)]
 pub struct ByteBuffer {
+    /// The pointer to the underlying byte buffer.
     ptr: *mut u8,
+    /// The current length of the byte buffer.
+    ///
+    /// # Note
+    ///
+    /// - **Vec:** `vec.len()`
+    /// - **Static:** The accessible subslice of the entire underlying static byte buffer.
     len: usize,
+    /// The capacity of the current allocation.
+    ///
+    /// # Note
+    ///
+    /// - **Vec**: `vec.capacity()`
+    /// - **Static:** The total length of the underlying static byte buffer.
     capacity: usize,
+    /// Whether the [`ByteBuffer`] was initialized from a `&'static [u8]` or a `Vec<u8>`.
     is_static: bool,
 }
 
-// Safety: `ByteBuffer` is essentially an enum of `Vec<u8>` or `&'static mut [u8]`.
-// They both are `Send` so this is sound.
+// # Safety
+//
+// `ByteBuffer` is essentially an `enum`` of `Vec<u8>` or `&'static mut [u8]`.
+// Both of them are `Send` so this is sound.
 unsafe impl Send for ByteBuffer {}
+
+/// Decomposes the `Vec<u8>` into its raw components.
+///
+/// Returns the raw pointer to the underlying data, the length of
+/// the vector (in bytes), and the allocated capacity of the
+/// data (in bytes). These are the same arguments in the same
+/// order as the arguments to [`Vec::from_raw_parts`].
+///
+/// # Safety
+///
+/// After calling this function, the caller is responsible for the
+/// memory previously managed by the `Vec`. The only way to do
+/// this is to convert the raw pointer, length, and capacity back
+/// into a `Vec` with the [`Vec::from_raw_parts`] function, allowing
+/// the destructor to perform the cleanup.
+///
+/// # Note
+///
+/// This utility method is required since [`Vec::into_raw_parts`] is
+/// not yet stable unfortunately. (Date: 2024-03-14)
+fn vec_into_raw_parts(vec: Vec<u8>) -> (*mut u8, usize, usize) {
+    let mut vec = ManuallyDrop::new(vec);
+    (vec.as_mut_ptr(), vec.len(), vec.capacity())
+}
 
 impl ByteBuffer {
     /// Creates a new byte buffer with the given initial length.
@@ -28,8 +67,8 @@ impl ByteBuffer {
     /// - If the initial length is 0.
     /// - If the initial length exceeds the maximum supported limit.
     pub fn new(initial_len: usize) -> Self {
-        let mut vec = ManuallyDrop::new(vec![0x00_u8; initial_len]);
-        let (ptr, len, capacity) = (vec.as_mut_ptr(), vec.len(), vec.capacity());
+        let vec = vec![0x00_u8; initial_len];
+        let (ptr, len, capacity) = vec_into_raw_parts(vec);
         Self {
             ptr,
             len,
@@ -63,22 +102,24 @@ impl ByteBuffer {
     /// - If backed by static buffer and `new_size` is larger than it's capacity.
     pub fn grow(&mut self, new_size: usize) {
         assert!(new_size >= self.len());
-        if self.is_static {
-            if self.capacity < new_size {
-                panic!("Cannot grow static byte buffer more then it's capacity")
+        match self.get_vec() {
+            Some(mut vec) => {
+                // Case: the byte buffer is backed by a `Vec<u8>`.
+                vec.resize(new_size, 0x00_u8);
+                let (ptr, len, capacity) = vec_into_raw_parts(vec);
+                self.ptr = ptr;
+                self.len = len;
+                self.capacity = capacity;
             }
-            let len = self.len();
-            self.len = new_size;
-            self.data_mut()[len..new_size].fill(0x00_u8);
-        } else {
-            // Safety: those parts have been obtained from `Vec`.
-            let vec = unsafe { Vec::from_raw_parts(self.ptr, self.len, self.capacity) };
-            let mut vec = ManuallyDrop::new(vec);
-            vec.resize(new_size, 0x00_u8);
-            let (ptr, len, capacity) = (vec.as_mut_ptr(), vec.len(), vec.capacity());
-            self.ptr = ptr;
-            self.len = len;
-            self.capacity = capacity;
+            None => {
+                // Case: the byte buffer is backed by a `&'static [u8]`.
+                if self.capacity < new_size {
+                    panic!("cannot grow a byte buffer backed by `&'static mut [u8]` beyond its capacity")
+                }
+                let len = self.len();
+                self.len = new_size;
+                self.data_mut()[len..new_size].fill(0x00_u8);
+            }
         }
     }
 
@@ -89,23 +130,44 @@ impl ByteBuffer {
 
     /// Returns a shared slice to the bytes underlying to the byte buffer.
     pub fn data(&self) -> &[u8] {
-        // Safety: either is backed by a `Vec` or a static buffer, ptr[0..len] is valid.
-        unsafe { core::slice::from_raw_parts(self.ptr, self.len) }
+        // # Safety
+        //
+        // The byte buffer is either backed by a `Vec<u8>` or a &'static [u8]`
+        // which are both valid byte slices in the range `self.ptr[0..self.len]`.
+        unsafe { slice::from_raw_parts(self.ptr, self.len) }
     }
 
     /// Returns an exclusive slice to the bytes underlying to the byte buffer.
     pub fn data_mut(&mut self) -> &mut [u8] {
-        // Safety: either is backed by a `Vec` or a static buffer, ptr[0..len] is valid.
-        unsafe { core::slice::from_raw_parts_mut(self.ptr, self.len) }
+        // # Safety
+        //
+        // The byte buffer is either backed by a `Vec<u8>` or a &'static [u8]`
+        // which are both valid byte slices in the range `self.ptr[0..self.len]`.
+        unsafe { slice::from_raw_parts_mut(self.ptr, self.len) }
+    }
+
+    /// Returns the underlying `Vec<u8>` if the byte buffer is not backed by a static buffer.
+    ///
+    /// Otherwise returns `None`.
+    ///
+    /// # Note
+    ///
+    /// The returned `Vec` will free its memory and thus the memory of the [`ByteBuffer`] if dropped.
+    fn get_vec(&mut self) -> Option<Vec<u8>> {
+        if self.is_static {
+            return None;
+        }
+        // Safety
+        //
+        // - At this point we are guaranteed that the byte buffer is backed by a `Vec`
+        //   so it is safe to reconstruct the `Vec` by its raw parts.
+        Some(unsafe { Vec::from_raw_parts(self.ptr, self.len, self.capacity) })
     }
 }
 
 impl Drop for ByteBuffer {
     fn drop(&mut self) {
-        if !self.is_static {
-            // Safety: those parts have been obtained from `Vec`.
-            unsafe { Vec::from_raw_parts(self.ptr, self.len, self.capacity) };
-        }
+        self.get_vec();
     }
 }
 
