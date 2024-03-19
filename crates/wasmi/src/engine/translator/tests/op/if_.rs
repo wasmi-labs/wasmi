@@ -8,17 +8,15 @@ use wasmi_core::{TrapCode, UntypedValue};
 #[test]
 #[cfg_attr(miri, ignore)]
 fn simple_if_then() {
-    let wasm = wat2wasm(
-        r"
+    let wasm = r"
         (module
             (func (param i32)
                 (if (local.get 0)
                     (then)
                 )
             )
-        )",
-    );
-    TranslationTest::new(wasm)
+        )";
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_i32_eqz(Register::from_i16(0), BranchOffset16::from(1)),
             Instruction::Return,
@@ -29,8 +27,7 @@ fn simple_if_then() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn simple_if_then_nested() {
-    let wasm = wat2wasm(
-        r"
+    let wasm = r"
         (module
             (func (param i32 i32)
                 (if (local.get 0)
@@ -41,9 +38,8 @@ fn simple_if_then_nested() {
                     )
                 )
             )
-        )",
-    );
-    TranslationTest::new(wasm)
+        )";
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_i32_eqz(Register::from_i16(0), BranchOffset16::from(2)),
             Instruction::branch_i32_eqz(Register::from_i16(1), BranchOffset16::from(1)),
@@ -55,8 +51,7 @@ fn simple_if_then_nested() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn if_then_global_set() {
-    let wasm = wat2wasm(
-        r"
+    let wasm = r"
         (module
             (global $g (mut i32) (i32.const 0))
             (func (param i32 i32) (result i32)
@@ -67,9 +62,8 @@ fn if_then_global_set() {
                 )
                 (i32.const 10)
             )
-        )",
-    );
-    TranslationTest::new(wasm)
+        )";
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_i32_eqz(Register::from_i16(0), BranchOffset16::from(2)),
             Instruction::global_set(GlobalIdx::from(0), Register::from_i16(1)),
@@ -81,8 +75,7 @@ fn if_then_global_set() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn if_then_return() {
-    let wasm = wat2wasm(
-        r"
+    let wasm = r"
         (module
             (func (param i32 i32 i32) (result i32)
                 (if (local.get 0)
@@ -97,9 +90,8 @@ fn if_then_return() {
                 )
                 (i32.const 0)
             )
-        )",
-    );
-    TranslationTest::new(wasm)
+        )";
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_i32_eqz(Register::from_i16(0), BranchOffset16::from(3)),
             Instruction::i32_add(
@@ -116,8 +108,7 @@ fn if_then_return() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn if_then_else_return() {
-    let wasm = wat2wasm(
-        r"
+    let wasm = r"
         (module
             (func (param i32) (result i32)
                 (if (local.get 0)
@@ -130,9 +121,8 @@ fn if_then_else_return() {
                 )
                 (i32.const 30)
             )
-        )",
-    );
-    TranslationTest::new(wasm)
+        )";
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_i32_eqz(Register::from_i16(0), BranchOffset16::from(2)),
             Instruction::return_imm32(AnyConst32::from(10_i32)),
@@ -144,8 +134,7 @@ fn if_then_else_return() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn if_then_br_else() {
-    let wasm = wat2wasm(
-        r"
+    let wasm = r"
         (module
             (func (param i32) (result i32)
                 (if (local.get 0)
@@ -158,9 +147,8 @@ fn if_then_br_else() {
                 )
                 (i32.const 20)
             )
-        )",
-    );
-    TranslationTest::new(wasm)
+        )";
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_i32_eqz(Register::from_i16(0), BranchOffset16::from(2)),
             Instruction::branch(BranchOffset::from(2)),
@@ -173,8 +161,7 @@ fn if_then_br_else() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn if_then_else_br() {
-    let wasm = wat2wasm(
-        r"
+    let wasm = r"
         (module
             (func (param i32) (result i32)
                 (if (local.get 0)
@@ -187,9 +174,8 @@ fn if_then_else_br() {
                 )
                 (i32.const 20)
             )
-        )",
-    );
-    TranslationTest::new(wasm)
+        )";
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_i32_eqz(Register::from_i16(0), BranchOffset16::from(2)),
             Instruction::return_imm32(AnyConst32::from(10_i32)),
@@ -202,8 +188,7 @@ fn if_then_else_br() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn simple_if_then_else() {
-    let wasm = wat2wasm(
-        r"
+    let wasm = r"
         (module
             (func (param i32)
                 (if (local.get 0)
@@ -213,9 +198,8 @@ fn simple_if_then_else() {
                     )
                 )
             )
-        )",
-    );
-    TranslationTest::new(wasm)
+        )";
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_i32_eqz(Register::from_i16(0), BranchOffset16::from(2)),
             Instruction::branch(BranchOffset::from(1)),
@@ -227,8 +211,7 @@ fn simple_if_then_else() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn simple_if_then_else_nested() {
-    let wasm = wat2wasm(
-        r"
+    let wasm = r"
         (module
             (func (param i32 i32)
                 (if (local.get 0)
@@ -246,9 +229,8 @@ fn simple_if_then_else_nested() {
                     )
                 )
             )
-        )",
-    );
-    TranslationTest::new(wasm)
+        )";
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_i32_eqz(Register::from_i16(0), BranchOffset16::from(4)),
             Instruction::branch_i32_eqz(Register::from_i16(1), BranchOffset16::from(2)),
@@ -264,8 +246,7 @@ fn simple_if_then_else_nested() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn if_then_else_with_params() {
-    let wasm = wat2wasm(
-        r"
+    let wasm = r"
         (module
             (func (param i32 i32 i32) (result i32)
                 (local.get 1)
@@ -275,9 +256,8 @@ fn if_then_else_with_params() {
                     (else (i32.mul))
                 )
             )
-        )",
-    );
-    TranslationTest::new(wasm)
+        )";
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy2(RegisterSpan::new(Register::from_i16(4)), 1, 2),
             Instruction::branch_i32_eqz(Register::from_i16(0), BranchOffset16::from(3)),
@@ -308,7 +288,7 @@ fn const_condition() {
             false => false_value,
         };
         let condition = i32::from(condition);
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r"
             (module
                 (func (result i32)
@@ -319,8 +299,8 @@ fn const_condition() {
                     )
                 )
             )",
-        ));
-        TranslationTest::new(wasm)
+        );
+        TranslationTest::from_wat(&wasm)
             .expect_func_instrs([Instruction::return_imm32(AnyConst32::from(expected))])
             .run()
     }
@@ -336,7 +316,7 @@ fn const_condition_trap_then() {
         I: IntoIterator<Item = Instruction>,
     {
         let condition = i32::from(condition);
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r"
             (module
                 (func (param i32 i32) (result i32)
@@ -353,8 +333,10 @@ fn const_condition_trap_then() {
                     (i32.add)
                 )
             )",
-        ));
-        TranslationTest::new(wasm).expect_func_instrs(instrs).run()
+        );
+        TranslationTest::from_wat(&wasm)
+            .expect_func_instrs(instrs)
+            .run()
     }
     test_for(true, [Instruction::Trap(TrapCode::UnreachableCodeReached)]);
     test_for(
@@ -378,7 +360,7 @@ fn const_condition_trap_else() {
         I: IntoIterator<Item = Instruction>,
     {
         let condition = i32::from(condition);
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r"
             (module
                 (func (param i32 i32) (result i32)
@@ -395,8 +377,10 @@ fn const_condition_trap_else() {
                     (i32.add)
                 )
             )",
-        ));
-        TranslationTest::new(wasm).expect_func_instrs(instrs).run()
+        );
+        TranslationTest::from_wat(&wasm)
+            .expect_func_instrs(instrs)
+            .run()
     }
     test_for(
         true,
@@ -420,7 +404,7 @@ fn const_condition_br_if_then() {
         I: IntoIterator<Item = Instruction>,
     {
         let condition = i32::from(condition);
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r"
             (module
                 (func (param i32) (result i32)
@@ -438,8 +422,10 @@ fn const_condition_br_if_then() {
                     (i32.const 1)
                 )
             )",
-        ));
-        TranslationTest::new(wasm).expect_func_instrs(instrs).run()
+        );
+        TranslationTest::from_wat(&wasm)
+            .expect_func_instrs(instrs)
+            .run()
     }
     test_for(true, [Instruction::Trap(TrapCode::UnreachableCodeReached)]);
     test_for(
@@ -460,7 +446,7 @@ fn const_condition_br_if_else() {
         I: IntoIterator<Item = Instruction>,
     {
         let condition = i32::from(condition);
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r"
             (module
                 (func (param i32) (result i32)
@@ -478,8 +464,10 @@ fn const_condition_br_if_else() {
                     (i32.const 1)
                 )
             )",
-        ));
-        TranslationTest::new(wasm).expect_func_instrs(instrs).run()
+        );
+        TranslationTest::from_wat(&wasm)
+            .expect_func_instrs(instrs)
+            .run()
     }
     test_for(
         true,
@@ -495,8 +483,7 @@ fn const_condition_br_if_else() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn test_if_false_without_else_block_0() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (func
                 (if
@@ -507,9 +494,8 @@ fn test_if_false_without_else_block_0() {
                 )
             )
         )
-        "#,
-    );
-    TranslationTest::new(wasm)
+        "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::Return])
         .run()
 }
@@ -517,8 +503,7 @@ fn test_if_false_without_else_block_0() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn test_if_false_without_else_block_1() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (func (result i32)
                 (if
@@ -530,9 +515,8 @@ fn test_if_false_without_else_block_1() {
                 (i32.const 1)
             )
         )
-        "#,
-    );
-    TranslationTest::new(wasm)
+        "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_imm32(1)])
         .run()
 }
@@ -540,8 +524,7 @@ fn test_if_false_without_else_block_1() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn test_if_without_else_has_result() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (func $f (result i64 i32)
                 (i64.const 1)
@@ -557,9 +540,8 @@ fn test_if_without_else_has_result() {
                 )
             )
         )
-        "#,
-    );
-    TranslationTest::new(wasm)
+        "#;
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([Instruction::return_reg2(-1, -2)])
                 .consts([UntypedValue::from(1_i64), UntypedValue::from(0_i32)]),

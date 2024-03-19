@@ -4,8 +4,7 @@ use crate::engine::bytecode::{BranchOffset, GlobalIdx, RegisterSpan};
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_len_targets_1() {
-    let wasm = wat2wasm(
-        r"
+    let wasm = r"
         (module
             (func (param $index i32) (result i32)
                 (block
@@ -13,9 +12,8 @@ fn reg_len_targets_1() {
                 )
                 (return (i32.const 10))
             )
-        )",
-    );
-    TranslationTest::new(wasm)
+        )";
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch(BranchOffset::from(1)),
             Instruction::return_imm32(10_i32),
@@ -26,8 +24,7 @@ fn reg_len_targets_1() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_params_0() {
-    let wasm = wat2wasm(
-        r"
+    let wasm = r"
         (module
             (func (param $index i32) (result i32)
                 (block
@@ -44,9 +41,8 @@ fn reg_params_0() {
                 )
                 (return (i32.const 40))
             )
-        )",
-    );
-    TranslationTest::new(wasm)
+        )";
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_table(Register::from_i16(0), 4),
             Instruction::branch(BranchOffset::from(7)),
@@ -64,8 +60,7 @@ fn reg_params_0() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_params_0_return() {
-    let wasm = wat2wasm(
-        r"
+    let wasm = r"
         (module
             (global $g (mut i32) (i32.const 0))
             (func (param $index i32)
@@ -83,9 +78,8 @@ fn reg_params_0_return() {
                 )
                 (return (global.set $g (i32.const 40)))
             )
-        )",
-    );
-    TranslationTest::new(wasm)
+        )";
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_table(Register::from_i16(0), 5),
             Instruction::Return,
@@ -108,8 +102,7 @@ fn reg_params_0_return() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_params_1_return() {
-    let wasm = wat2wasm(
-        r"
+    let wasm = r"
         (module
             (func (param $index i32) (param $value i32) (result i32)
                 (block (result i32)
@@ -127,12 +120,11 @@ fn reg_params_1_return() {
                 )
                 (return (i32.add (i32.const 40)))
             )
-        )",
-    );
+        )";
     let index = Register::from_i16(0);
     let value = Register::from_i16(1);
     let result = Register::from_i16(2);
-    TranslationTest::new(wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_table(index, 5),
             Instruction::copy(result, value),
@@ -156,8 +148,7 @@ fn reg_params_1_return() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_params_1_pass() {
-    let wasm = wat2wasm(
-        r"
+    let wasm = r"
         (module
             (func (param $index i32) (param $value i32) (result i32)
                 (block (result i32 i32)
@@ -178,12 +169,11 @@ fn reg_params_1_pass() {
                 )
                 (i32.add)
             )
-        )",
-    );
+        )";
     let index = Register::from_i16(0);
     let value = Register::from_i16(1);
     let result = Register::from_i16(2);
-    TranslationTest::new(wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_table(index, 3),
             Instruction::copy(result, value),
@@ -205,8 +195,7 @@ fn reg_params_1_pass() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_params_2_ops() {
-    let wasm = wat2wasm(
-        r"
+    let wasm = r"
         (module
             (func (param $index i32) (param $lhs i32) (param $rhs i32) (result i32)
                 (block (result i32 i32)
@@ -222,12 +211,11 @@ fn reg_params_2_ops() {
                 )
                 (return (i32.mul))
             )
-        )",
-    );
+        )";
     let index = Register::from_i16(0);
     let lhs = Register::from_i16(1);
     let result = Register::from_i16(3);
-    TranslationTest::new(wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_table(index, 3),
             Instruction::copy2(RegisterSpan::new(result), lhs, lhs.next()),
@@ -247,8 +235,7 @@ fn reg_params_2_ops() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_params_2_return() {
-    let wasm = wat2wasm(
-        r"
+    let wasm = r"
         (module
             (func (param $index i32) (param $lhs i32) (param $rhs i32) (result i32 i32)
                 (block (result i32 i32)
@@ -264,14 +251,13 @@ fn reg_params_2_return() {
                 )
                 (return (i32.mul) (i32.const 2))
             )
-        )",
-    );
+        )";
     let index = Register::from_i16(0);
     let lhs = Register::from_i16(1);
     let result = Register::from_i16(3);
     let result2 = result.next();
     let results = RegisterSpan::new(result).iter(2);
-    TranslationTest::new(wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::branch_table(index, 4),
@@ -300,8 +286,7 @@ fn reg_params_1_diff() {
     // dynamic register allocations via `global.get`.
     //
     // This way the translator is forced to generated less optimized bytecode.
-    let wasm = wat2wasm(
-        r"
+    let wasm = r"
         (module
             (global $g (mut i32) (i32.const 0))
             (func (param $index i32) (param $input i32) (result i32)
@@ -318,12 +303,11 @@ fn reg_params_1_diff() {
                 )
                 (return (i32.mul (i32.const 10)))
             )
-        )",
-    );
+        )";
     let index = Register::from_i16(0);
     let input = Register::from_i16(1);
     let result = Register::from_i16(2);
-    TranslationTest::new(wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::global_get(result, GlobalIdx::from(0)),
             Instruction::branch_table(index, 7),
@@ -363,8 +347,7 @@ fn reg_params_2_diff() {
     // dynamic register allocations via `global.get`.
     //
     // This way the translator is forced to generated less optimized bytecode.
-    let wasm = wat2wasm(
-        r"
+    let wasm = r"
         (module
             (global $g (mut i32) (i32.const 0))
             (func (param $index i32) (param $lhs i32) (param $rhs i32) (result i32)
@@ -384,12 +367,11 @@ fn reg_params_2_diff() {
                 )
                 (return (i32.mul))
             )
-        )",
-    );
+        )";
     let index = Register::from_i16(0);
     let lhs = Register::from_i16(1);
     let result = Register::from_i16(3);
-    TranslationTest::new(wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::global_get(result, GlobalIdx::from(0)),
             Instruction::branch_table(index, 5),
@@ -425,7 +407,7 @@ fn imm_params_0() {
         let targets: [i32; 3] = [30, 20, 10];
         let clamped_index = (index as usize).min(targets.len() - 1);
         let chosen = targets[clamped_index];
-        let wasm = wat2wasm(&format!(
+        let wasm = &format!(
             r"
             (module
                 (func (result i32)
@@ -441,8 +423,8 @@ fn imm_params_0() {
                     (return (i32.const 30))
                 )
             )",
-        ));
-        TranslationTest::new(wasm)
+        );
+        TranslationTest::from_wat(wasm)
             .expect_func_instrs([
                 Instruction::branch(BranchOffset::from(1)),
                 Instruction::return_imm32(chosen),

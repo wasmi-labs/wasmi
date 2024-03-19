@@ -11,6 +11,7 @@ mod global_set;
 mod i32_eqz;
 mod if_;
 mod load;
+mod local_preserve;
 mod local_set;
 mod loop_;
 mod memory;
@@ -39,7 +40,6 @@ use super::{
     testcase_binary_imm_reg,
     testcase_binary_reg_imm,
     wasm_type,
-    wat2wasm,
     AnyConst32,
     Const16,
     Const32,

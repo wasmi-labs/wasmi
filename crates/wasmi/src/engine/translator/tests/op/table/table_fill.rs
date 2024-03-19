@@ -3,7 +3,7 @@ use crate::core::ValueType;
 
 fn test_fill(ty: ValueType) {
     let display_ty = DisplayValueType::from(ty);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r"
         (module
             (table $t 10 {display_ty})
@@ -14,8 +14,8 @@ fn test_fill(ty: ValueType) {
                 (table.fill $t)
             )
         )",
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::table_fill(
                 Register::from_i16(0),
@@ -37,7 +37,7 @@ fn fill() {
 
 fn testcase_fill_exact(ty: ValueType, len: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r"
         (module
             (table $t 10 {display_ty})
@@ -48,8 +48,8 @@ fn testcase_fill_exact(ty: ValueType, len: u32) -> TranslationTest {
                 (table.fill $t)
             )
         )",
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
 }
 
 fn test_fill_exact16(ty: ValueType, len: u32) {
@@ -109,7 +109,7 @@ fn fill_exact() {
 
 fn testcase_fill_at(ty: ValueType, dst: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r"
         (module
             (table $t 10 {display_ty})
@@ -120,8 +120,8 @@ fn testcase_fill_at(ty: ValueType, dst: u32) -> TranslationTest {
                 (table.fill $t)
             )
         )",
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
 }
 
 fn test_fill_at16(ty: ValueType, dst: u32) {
@@ -175,7 +175,7 @@ fn fill_at() {
 
 fn testcase_fill_at_exact(ty: ValueType, dst: u32, len: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r"
         (module
             (table $t 10 {display_ty})
@@ -186,8 +186,8 @@ fn testcase_fill_at_exact(ty: ValueType, dst: u32, len: u32) -> TranslationTest 
                 (table.fill $t)
             )
         )",
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
 }
 
 fn test_fill_at_exact16(ty: ValueType, dst: u32, len: u32) {
@@ -261,7 +261,7 @@ fn testcase_fill_at_exact_imm(ty: ValueType, dst: u32, len: u32) -> TranslationT
         ValueType::ExternRef => "extern",
         _ => panic!("invalid Wasm reftype"),
     };
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r"
         (module
             (table $t 10 {display_ty})
@@ -272,8 +272,8 @@ fn testcase_fill_at_exact_imm(ty: ValueType, dst: u32, len: u32) -> TranslationT
                 (table.fill $t)
             )
         )",
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
 }
 
 fn test_fill_at_exact_imm(ty: ValueType, dst: u32, len: u32) {

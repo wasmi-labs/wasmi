@@ -1,10 +1,13 @@
 use super::*;
+use crate::engine::{
+    bytecode::{BranchOffset, BranchOffset16, RegisterSpan},
+    CompiledFunc,
+};
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn simple_block_1() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (func (param i32 i32) (result i32)
                 local.get 0
@@ -14,9 +17,8 @@ fn simple_block_1() {
                 )
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy(2, 0),
             Instruction::branch_i32_ne_imm(Register::from_i16(1), 0, BranchOffset16::from(2)),
@@ -29,8 +31,7 @@ fn simple_block_1() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn simple_block_2() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (func (param i32 i32 i32) (result i32 i32)
                 local.get 0
@@ -42,9 +43,8 @@ fn simple_block_2() {
                 )
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy2(RegisterSpan::new(Register::from_i16(3)), 0, 1),
             Instruction::branch_i32_ne_imm(Register::from_i16(2), 0, BranchOffset16::from(3)),
@@ -58,8 +58,7 @@ fn simple_block_2() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn simple_block_3_span() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (func (param i32 i32 i32 i32) (result i32 i32 i32)
                 local.get 0
@@ -73,9 +72,8 @@ fn simple_block_3_span() {
                 )
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy_span_non_overlapping(
                 RegisterSpan::new(Register::from_i16(4)),
@@ -94,8 +92,7 @@ fn simple_block_3_span() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn simple_block_3_many() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (func (param i32 i32 i32 i32) (result i32 i32 i32)
                 local.get 2
@@ -109,9 +106,8 @@ fn simple_block_3_many() {
                 )
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy_many_non_overlapping(RegisterSpan::new(Register::from_i16(4)), 2, 1),
             Instruction::register(0),
@@ -127,8 +123,7 @@ fn simple_block_3_many() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn simple_block_4_params_2() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (func (param i32 i32 i32 i32 i32) (result i32 i32 i32 i32)
                 local.get 0
@@ -144,9 +139,8 @@ fn simple_block_4_params_2() {
                 )
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy_span_non_overlapping(
                 RegisterSpan::new(Register::from_i16(7)),
@@ -170,8 +164,7 @@ fn simple_block_4_params_2() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn simple_block_30() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (func (param i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32 i32 i32 i32)
                 ;; Push 30 locals on the compilation stack.
@@ -200,9 +193,8 @@ fn simple_block_30() {
                 (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy_many_non_overlapping(RegisterSpan::new(Register::from_i16(11)), 9, 8),
             Instruction::register_list(7, 6, 5),
@@ -230,8 +222,7 @@ fn simple_block_30() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn simple_if_1() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (func (param i32 i32) (result i32)
                 local.get 0
@@ -242,9 +233,8 @@ fn simple_if_1() {
                 )
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy(2, 0),
             Instruction::branch_i32_eq_imm(Register::from_i16(1), 0, BranchOffset16::from(2)),
@@ -257,8 +247,7 @@ fn simple_if_1() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn simple_if_2() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (func (param i32 i32 i32) (result i32 i32)
                 local.get 0
@@ -271,9 +260,8 @@ fn simple_if_2() {
                 )
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy2(RegisterSpan::new(Register::from_i16(3)), 0, 1),
             Instruction::branch_i32_eq_imm(Register::from_i16(2), 0, BranchOffset16::from(3)),
@@ -287,8 +275,7 @@ fn simple_if_2() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn simple_if_3_span() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (func (param i32 i32 i32 i32) (result i32 i32 i32)
                 local.get 0
@@ -303,9 +290,8 @@ fn simple_if_3_span() {
                 )
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy_span_non_overlapping(
                 RegisterSpan::new(Register::from_i16(4)),
@@ -324,8 +310,7 @@ fn simple_if_3_span() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn simple_if_3_many() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (func (param i32 i32 i32 i32) (result i32 i32 i32)
                 local.get 2
@@ -340,9 +325,8 @@ fn simple_if_3_many() {
                 )
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy_many_non_overlapping(RegisterSpan::new(Register::from_i16(4)), 2, 1),
             Instruction::register(0),
@@ -358,8 +342,7 @@ fn simple_if_3_many() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn simple_if_4_params_2() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (func (param i32 i32 i32 i32 i32) (result i32 i32 i32 i32)
                 local.get 0
@@ -376,9 +359,8 @@ fn simple_if_4_params_2() {
                 )
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy_span_non_overlapping(
                 RegisterSpan::new(Register::from_i16(7)),
@@ -402,8 +384,7 @@ fn simple_if_4_params_2() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn nested_block() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (func (param i32 i32) (param $c0 i32) (param $c1 i32) (result i32 i32)
                 local.get 0 ;; 1st return value
@@ -418,9 +399,8 @@ fn nested_block() {
                 )
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy2(RegisterSpan::new(Register::from_i16(4)), 0, 1),
             Instruction::branch_i32_ne_imm(Register::from_i16(2), 0, BranchOffset16::from(4)),
@@ -435,8 +415,7 @@ fn nested_block() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn nested_if() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (func (param i32 i32 i32 i32) (result i32 i32)
                 local.get 0 ;; 1st return value
@@ -453,9 +432,8 @@ fn nested_if() {
                 )
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy2(RegisterSpan::new(Register::from_i16(4)), 0, 1),
             Instruction::branch_i32_eq_imm(Register::from_i16(2), 0, BranchOffset16::from(4)),
@@ -470,8 +448,7 @@ fn nested_if() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn expr_block() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (func (param i32 i32) (result i32)
                 (i32.add
@@ -487,9 +464,8 @@ fn expr_block() {
                 )
             )
         )
-        "#,
-    );
-    TranslationTest::new(wasm)
+        "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy(3, 1),
             Instruction::branch_i32_eq_imm(Register::from_i16(0), 0, BranchOffset16::from(3)),
@@ -510,8 +486,7 @@ fn expr_block() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn expr_if() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (func (param i32 i32 i32) (result i32)
                 (i32.add
@@ -528,9 +503,8 @@ fn expr_if() {
                 )
             )
         )
-        "#,
-    );
-    TranslationTest::new(wasm)
+        "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy(4, 0),
             Instruction::branch_i32_eq_imm(Register::from_i16(1), 0, BranchOffset16::from(4)),
@@ -551,8 +525,7 @@ fn expr_if() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn invalid_preservation_slot_reuse_1() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (func (param i32 i32)
                 (local.get 1) ;; preserved after (local.tee 1)
@@ -563,9 +536,8 @@ fn invalid_preservation_slot_reuse_1() {
                 (drop)
             )
           )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy(3, 0),
             Instruction::i32_popcnt(Register::from_i16(0), Register::from_i16(0)),
@@ -584,8 +556,7 @@ fn invalid_preservation_slot_reuse_1() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn invalid_preservation_slot_reuse_2() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (func $f (param i32 i32 i32) (result i32)
                 (i32.const 20)
@@ -600,9 +571,8 @@ fn invalid_preservation_slot_reuse_2() {
                 (drop)
             )
           )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func(ExpectedFunc::new([Instruction::return_imm32(20_i32)]))
         .expect_func(ExpectedFunc::new([
             Instruction::copy(3, 0),
