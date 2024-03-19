@@ -170,7 +170,7 @@ impl TranslationTest {
     ///
     /// If the WebAssembly `bytes` is not valid WebAssembly.
     #[must_use]
-    pub fn new(bytes: impl AsRef<[u8]>) -> Self {
+    fn new(bytes: impl AsRef<[u8]>) -> Self {
         let config = {
             let mut cfg = Config::default();
             cfg.wasm_tail_call(true);
