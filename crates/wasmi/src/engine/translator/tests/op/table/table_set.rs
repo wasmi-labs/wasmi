@@ -3,7 +3,7 @@ use crate::core::ValueType;
 
 fn test_reg(ty: ValueType) {
     let display_ty = DisplayValueType::from(ty);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r"
         (module
             (table $t 10 {display_ty})
@@ -13,8 +13,8 @@ fn test_reg(ty: ValueType) {
                 (table.set $t)
             )
         )",
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::table_set(Register::from_i16(0), Register::from_i16(1)),
             Instruction::table_idx(0),
@@ -33,7 +33,7 @@ fn reg() {
 fn test_reg_at(index: u32, value_type: ValueType) {
     let display_ty = DisplayValueType::from(value_type);
     let display_index = DisplayWasm::from(index);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r"
         (module
             (table $t 10 {display_ty})
@@ -43,8 +43,8 @@ fn test_reg_at(index: u32, value_type: ValueType) {
                 (table.set $t)
             )
         )",
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::table_set_at(index, Register::from_i16(0)),
             Instruction::table_idx(0),
@@ -67,17 +67,15 @@ fn reg_at() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn imm_funcref() {
-    let wasm = wat2wasm(
-        r"
+    let wasm = r"
         (module
             (table $t 10 funcref)
             (elem declare func $f)
             (func $f (param $index i32)
                 (table.set $t (local.get $index) (ref.func $f))
             )
-        )",
-    );
-    TranslationTest::new(wasm)
+        )";
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::ref_func(Register::from_i16(1), 0),
             Instruction::table_set(Register::from_i16(0), Register::from_i16(1)),
@@ -88,7 +86,7 @@ fn imm_funcref() {
 }
 
 fn test_at_imm_funcref(index: u32) {
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r"
         (module
             (table $t 10 funcref)
@@ -97,8 +95,8 @@ fn test_at_imm_funcref(index: u32) {
                 (table.set $t (i32.const {index}) (ref.func $f))
             )
         )",
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::ref_func(Register::from_i16(0), 0),
             Instruction::table_set_at(index, Register::from_i16(0)),
@@ -122,7 +120,7 @@ fn test_imm_null(value_type: ValueType) {
         ValueType::ExternRef => "extern",
         _ => panic!("invalid Wasm reftype"),
     };
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r"
         (module
             (table $t 10 {display_ty})
@@ -130,8 +128,8 @@ fn test_imm_null(value_type: ValueType) {
                 (table.set $t (local.get $index) (ref.null {ref_id}))
             )
         )",
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::table_set(Register::from_i16(0), Register::from_i16(-1)),
@@ -157,7 +155,7 @@ fn test_at_imm_null(index: u32, value_type: ValueType) {
         ValueType::ExternRef => "extern",
         _ => panic!("invalid Wasm reftype"),
     };
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r"
         (module
             (table $t 10 {display_ty})
@@ -165,8 +163,8 @@ fn test_at_imm_null(index: u32, value_type: ValueType) {
                 (table.set $t (i32.const {index}) (ref.null {ref_id}))
             )
         )",
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::table_set_at(index, Register::from_i16(-1)),

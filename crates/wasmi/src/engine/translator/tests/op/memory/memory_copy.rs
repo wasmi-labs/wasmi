@@ -3,8 +3,7 @@ use super::*;
 #[test]
 #[cfg_attr(miri, ignore)]
 fn copy() {
-    let wasm = wat2wasm(
-        r"
+    let wasm = r"
         (module
             (memory $m1 10)
             (func (param $dst i32) (param $src i32) (param $len i32)
@@ -13,9 +12,8 @@ fn copy() {
                 (local.get $len)
                 (memory.copy)
             )
-        )",
-    );
-    TranslationTest::new(wasm)
+        )";
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::memory_copy(
                 Register::from_i16(0),
@@ -28,7 +26,7 @@ fn copy() {
 }
 
 fn testcase_copy_exact(len: u32) -> TranslationTest {
-    let wasm = wat2wasm(&format!(
+    let wasm = &format!(
         r"
         (module
             (memory $m1 10)
@@ -39,8 +37,8 @@ fn testcase_copy_exact(len: u32) -> TranslationTest {
                 (memory.copy)
             )
         )",
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
 }
 
 fn test_copy_exact16(len: u32) {
@@ -89,7 +87,7 @@ fn copy_exact() {
 }
 
 fn testcase_copy_from(src: u32) -> TranslationTest {
-    let wasm = wat2wasm(&format!(
+    let wasm = &format!(
         r"
         (module
             (memory $m1 10)
@@ -100,8 +98,8 @@ fn testcase_copy_from(src: u32) -> TranslationTest {
                 (memory.copy)
             )
         )",
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
 }
 
 fn test_copy_from16(src: u32) {
@@ -148,7 +146,7 @@ fn copy_from() {
 }
 
 fn testcase_copy_to(dst: u32) -> TranslationTest {
-    let wasm = wat2wasm(&format!(
+    let wasm = &format!(
         r"
         (module
             (memory $m1 10)
@@ -159,8 +157,8 @@ fn testcase_copy_to(dst: u32) -> TranslationTest {
                 (memory.copy)
             )
         )",
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
 }
 
 fn test_copy_to16(dst: u32) {
@@ -207,7 +205,7 @@ fn copy_to() {
 }
 
 fn testcase_copy_from_to(dst: u32, src: u32) -> TranslationTest {
-    let wasm = wat2wasm(&format!(
+    let wasm = &format!(
         r"
         (module
             (memory $m1 10)
@@ -218,8 +216,8 @@ fn testcase_copy_from_to(dst: u32, src: u32) -> TranslationTest {
                 (memory.copy)
             )
         )",
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
 }
 
 fn test_copy_from_to16(dst: u32, src: u32) {
@@ -277,7 +275,7 @@ fn copy_from_to() {
 }
 
 fn testcase_copy_to_exact(dst: u32, len: u32) -> TranslationTest {
-    let wasm = wat2wasm(&format!(
+    let wasm = &format!(
         r"
         (module
             (memory $m1 10)
@@ -288,8 +286,8 @@ fn testcase_copy_to_exact(dst: u32, len: u32) -> TranslationTest {
                 (memory.copy)
             )
         )",
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
 }
 
 fn test_copy_to_exact16(dst: u32, len: u32) {
@@ -347,7 +345,7 @@ fn copy_to_exact() {
 }
 
 fn testcase_copy_from_exact(src: u32, len: u32) -> TranslationTest {
-    let wasm = wat2wasm(&format!(
+    let wasm = &format!(
         r"
         (module
             (memory $m1 10)
@@ -358,8 +356,8 @@ fn testcase_copy_from_exact(src: u32, len: u32) -> TranslationTest {
                 (memory.copy)
             )
         )",
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
 }
 
 fn test_copy_from_exact16(src: u32, len: u32) {
@@ -421,7 +419,7 @@ fn copy_from_exact() {
 }
 
 fn testcase_copy_from_to_exact(dst: u32, src: u32, len: u32) -> TranslationTest {
-    let wasm = wat2wasm(&format!(
+    let wasm = &format!(
         r"
         (module
             (memory $m1 10)
@@ -432,8 +430,8 @@ fn testcase_copy_from_to_exact(dst: u32, src: u32, len: u32) -> TranslationTest 
                 (memory.copy)
             )
         )",
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
 }
 
 fn test_copy_from_to_exact16(dst: u32, src: u32, len: u32) {

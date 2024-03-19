@@ -44,7 +44,7 @@ fn reg() {
     fn test_reg(kind: SelectKind, result_ty: ValueType) {
         let display_ty = DisplayValueType::from(result_ty);
         let display_select = DisplaySelect::new(kind, result_ty);
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r#"
             (module
                 (func (param $condition i32)
@@ -58,12 +58,12 @@ fn reg() {
                 )
             )
         "#,
-        ));
+        );
         let condition = Register::from_i16(0);
         let lhs = Register::from_i16(1);
         let rhs = Register::from_i16(2);
         let result = Register::from_i16(3);
-        TranslationTest::new(wasm)
+        TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
                 Instruction::select(result, condition, lhs),
                 Instruction::Register(rhs),
@@ -89,7 +89,7 @@ fn same_reg() {
     fn test_same_reg(kind: SelectKind, result_ty: ValueType) {
         let display_ty = DisplayValueType::from(result_ty);
         let display_select = DisplaySelect::new(kind, result_ty);
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r#"
             (module
                 (func (param $condition i32) (param $input {display_ty}) (result {display_ty})
@@ -100,8 +100,8 @@ fn same_reg() {
                 )
             )
         "#,
-        ));
-        TranslationTest::new(wasm)
+        );
+        TranslationTest::from_wat(&wasm)
             .expect_func_instrs([Instruction::return_reg(Register::from_i16(1))])
             .run();
     }
@@ -126,7 +126,7 @@ where
     let display_ty = DisplayValueType::from(ty);
     let display_input = DisplayWasm::from(input);
     let display_select = DisplaySelect::new(kind, ty);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (func (param $condition i32) (param $input {display_ty}) (result {display_ty})
@@ -137,8 +137,8 @@ where
             )
         )
     "#,
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
 }
 
 #[test]
@@ -271,7 +271,7 @@ where
     let display_ty = DisplayValueType::from(ty);
     let display_rhs = DisplayWasm::from(rhs);
     let display_select = DisplaySelect::new(kind, ty);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (func (param $condition i32) (param $lhs {display_ty}) (result {display_ty})
@@ -282,8 +282,8 @@ where
             )
         )
     "#,
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
 }
 
 #[test]
@@ -450,7 +450,7 @@ where
     let display_ty = DisplayValueType::from(ty);
     let display_lhs = DisplayWasm::from(lhs);
     let display_select = DisplaySelect::new(kind, ty);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (func (param $condition i32) (param $rhs {display_ty}) (result {display_ty})
@@ -461,8 +461,8 @@ where
             )
         )
     "#,
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
 }
 
 #[test]
@@ -630,7 +630,7 @@ where
     let display_lhs = DisplayWasm::from(lhs);
     let display_rhs = DisplayWasm::from(rhs);
     let display_select = DisplaySelect::new(kind, ty);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (func (param $condition i32) (result {display_ty})
@@ -641,8 +641,8 @@ where
             )
         )
     "#,
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
 }
 
 #[test]

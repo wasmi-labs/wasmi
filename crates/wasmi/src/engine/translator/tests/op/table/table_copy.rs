@@ -3,7 +3,7 @@ use crate::core::ValueType;
 
 fn test_copy(ty: ValueType) {
     let display_ty = DisplayValueType::from(ty);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r"
         (module
             (table $t1 10 {display_ty})
@@ -14,9 +14,9 @@ fn test_copy(ty: ValueType) {
                 (local.get $len)
                 (table.copy $t1 $t2)
             )
-        )",
-    ));
-    TranslationTest::new(wasm)
+        )"
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::table_copy(
                 Register::from_i16(0),
@@ -39,7 +39,7 @@ fn copy() {
 
 fn testcase_copy_exact(ty: ValueType, len: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r"
         (module
             (table $t1 10 {display_ty})
@@ -50,9 +50,9 @@ fn testcase_copy_exact(ty: ValueType, len: u32) -> TranslationTest {
                 (i32.const {len})
                 (table.copy $t1 $t2)
             )
-        )",
-    ));
-    TranslationTest::new(wasm)
+        )"
+    );
+    TranslationTest::from_wat(&wasm)
 }
 
 fn test_copy_exact16(ty: ValueType, len: u32) {
@@ -114,7 +114,7 @@ fn copy_exact() {
 
 fn testcase_copy_from(ty: ValueType, src: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r"
         (module
             (table $t1 10 {display_ty})
@@ -125,9 +125,9 @@ fn testcase_copy_from(ty: ValueType, src: u32) -> TranslationTest {
                 (local.get $len)
                 (table.copy $t1 $t2)
             )
-        )",
-    ));
-    TranslationTest::new(wasm)
+        )"
+    );
+    TranslationTest::from_wat(&wasm)
 }
 
 fn test_copy_from16(ty: ValueType, src: u32) {
@@ -187,7 +187,7 @@ fn copy_from() {
 
 fn testcase_copy_to(ty: ValueType, dst: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r"
         (module
             (table $t1 10 {display_ty})
@@ -198,9 +198,9 @@ fn testcase_copy_to(ty: ValueType, dst: u32) -> TranslationTest {
                 (local.get $len)
                 (table.copy $t1 $t2)
             )
-        )",
-    ));
-    TranslationTest::new(wasm)
+        )"
+    );
+    TranslationTest::from_wat(&wasm)
 }
 
 fn test_copy_to16(ty: ValueType, dst: u32) {
@@ -256,7 +256,7 @@ fn copy_to() {
 
 fn testcase_copy_from_to(ty: ValueType, dst: u32, src: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r"
         (module
             (table $t1 10 {display_ty})
@@ -267,9 +267,9 @@ fn testcase_copy_from_to(ty: ValueType, dst: u32, src: u32) -> TranslationTest {
                 (local.get $len)
                 (table.copy $t1 $t2)
             )
-        )",
-    ));
-    TranslationTest::new(wasm)
+        )"
+    );
+    TranslationTest::from_wat(&wasm)
 }
 
 fn test_copy_from_to16(ty: ValueType, dst: u32, src: u32) {
@@ -340,7 +340,7 @@ fn copy_from_to() {
 
 fn testcase_copy_to_exact(ty: ValueType, dst: u32, len: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r"
         (module
             (table $t1 10 {display_ty})
@@ -351,9 +351,9 @@ fn testcase_copy_to_exact(ty: ValueType, dst: u32, len: u32) -> TranslationTest 
                 (i32.const {len})
                 (table.copy $t1 $t2)
             )
-        )",
-    ));
-    TranslationTest::new(wasm)
+        )"
+    );
+    TranslationTest::from_wat(&wasm)
 }
 
 fn test_copy_to_exact16(ty: ValueType, dst: u32, len: u32) {
@@ -424,7 +424,7 @@ fn copy_to_exact() {
 
 fn testcase_copy_from_exact(ty: ValueType, src: u32, len: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r"
         (module
             (table $t1 10 {display_ty})
@@ -435,9 +435,9 @@ fn testcase_copy_from_exact(ty: ValueType, src: u32, len: u32) -> TranslationTes
                 (i32.const {len})
                 (table.copy $t1 $t2)
             )
-        )",
-    ));
-    TranslationTest::new(wasm)
+        )"
+    );
+    TranslationTest::from_wat(&wasm)
 }
 
 fn test_copy_from_exact16(ty: ValueType, src: u32, len: u32) {
@@ -508,7 +508,7 @@ fn copy_from_exact() {
 
 fn testcase_copy_from_to_exact(ty: ValueType, dst: u32, src: u32, len: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r"
         (module
             (table $t1 10 {display_ty})
@@ -519,9 +519,9 @@ fn testcase_copy_from_to_exact(ty: ValueType, dst: u32, src: u32, len: u32) -> T
                 (i32.const {len})
                 (table.copy $t1 $t2)
             )
-        )",
-    ));
-    TranslationTest::new(wasm)
+        )"
+    );
+    TranslationTest::from_wat(&wasm)
 }
 
 fn test_copy_from_to_exact16(ty: ValueType, dst: u32, src: u32, len: u32) {

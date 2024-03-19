@@ -4,17 +4,15 @@ use crate::engine::bytecode::FuncIdx;
 #[test]
 #[cfg_attr(miri, ignore)]
 fn no_params() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "env" "f" (func $f))
             (func
                 (return_call $f)
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([Instruction::return_call_imported_0(FuncIdx::from(0))])
         .run();
 }
@@ -22,17 +20,15 @@ fn no_params() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn one_param_reg() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "env" "f" (func $f (param i32) (result i32)))
             (func (param i32) (result i32)
                 (return_call $f (local.get 0))
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::return_call_imported(FuncIdx::from(0)),
             Instruction::register(0),
@@ -43,17 +39,15 @@ fn one_param_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn one_param_imm() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "env" "f" (func $f (param i32) (result i32)))
             (func (result i32)
                 (return_call $f (i32.const 10))
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(&wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_imported(FuncIdx::from(0)),
@@ -67,17 +61,15 @@ fn one_param_imm() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn two_params_reg() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "env" "f" (func $f (param i32 i32) (result i32 i32)))
             (func (param i32 i32) (result i32 i32)
                 (return_call $f (local.get 0) (local.get 1))
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::return_call_imported(FuncIdx::from(0)),
             Instruction::register2(0, 1),
@@ -88,17 +80,15 @@ fn two_params_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn two_params_reg_rev() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "env" "f" (func $f (param i32 i32) (result i32 i32)))
             (func (param i32 i32) (result i32 i32)
                 (return_call $f (local.get 1) (local.get 0))
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::return_call_imported(FuncIdx::from(0)),
             Instruction::register2(1, 0),
@@ -109,17 +99,15 @@ fn two_params_reg_rev() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn two_params_imm() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "env" "f" (func $f (param i32 i32) (result i32 i32)))
             (func (result i32 i32)
                 (return_call $f (i32.const 10) (i32.const 20))
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(&wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_imported(FuncIdx::from(0)),
@@ -133,17 +121,15 @@ fn two_params_imm() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn three_params_reg() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "env" "f" (func $f (param i32 i32 i32) (result i32 i32 i32)))
             (func (param i32 i32 i32) (result i32 i32 i32)
                 (return_call $f (local.get 0) (local.get 1) (local.get 2))
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::return_call_imported(FuncIdx::from(0)),
             Instruction::register3(0, 1, 2),
@@ -154,17 +140,15 @@ fn three_params_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn three_params_reg_rev() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "env" "f" (func $f (param i32 i32 i32) (result i32 i32 i32)))
             (func (param i32 i32 i32) (result i32 i32 i32)
                 (return_call $f (local.get 2) (local.get 1) (local.get 0))
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::return_call_imported(FuncIdx::from(0)),
             Instruction::register3(2, 1, 0),
@@ -175,17 +159,15 @@ fn three_params_reg_rev() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn three_params_imm() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "env" "f" (func $f (param i32 i32 i32) (result i32 i32 i32)))
             (func (result i32 i32 i32)
                 (return_call $f (i32.const 10) (i32.const 20) (i32.const 30))
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(&wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_imported(FuncIdx::from(0)),
@@ -199,8 +181,7 @@ fn three_params_imm() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn params7_reg() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "env" "f" (func $f (param i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32)))
             (func (param i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32)
@@ -215,9 +196,8 @@ fn params7_reg() {
                 )
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::return_call_imported(FuncIdx::from(0)),
             Instruction::register_list(0, 1, 2),
@@ -230,8 +210,7 @@ fn params7_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn params7_reg_rev() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "env" "f" (func $f (param i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32)))
             (func (param i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32)
@@ -246,9 +225,8 @@ fn params7_reg_rev() {
                 )
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::return_call_imported(FuncIdx::from(0)),
             Instruction::register_list(6, 5, 4),
@@ -261,8 +239,7 @@ fn params7_reg_rev() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn params7_imm() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "env" "f" (func $f (param i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32)))
             (func (result i32 i32 i32 i32 i32 i32 i32)
@@ -277,9 +254,8 @@ fn params7_imm() {
                 )
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(&wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_imported(FuncIdx::from(0)),
@@ -295,8 +271,7 @@ fn params7_imm() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn params8_reg() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "env" "f" (func $f (param i32 i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32 i32)))
             (func (param i32 i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32 i32)
@@ -312,9 +287,8 @@ fn params8_reg() {
                 )
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::return_call_imported(FuncIdx::from(0)),
             Instruction::register_list(0, 1, 2),
@@ -327,8 +301,7 @@ fn params8_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn params8_reg_rev() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "env" "f" (func $f (param i32 i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32 i32)))
             (func (param i32 i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32 i32)
@@ -344,9 +317,8 @@ fn params8_reg_rev() {
                 )
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::return_call_imported(FuncIdx::from(0)),
             Instruction::register_list(7, 6, 5),
@@ -359,8 +331,7 @@ fn params8_reg_rev() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn params8_imm() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "env" "f" (func $f (param i32 i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32 i32)))
             (func (result i32 i32 i32 i32 i32 i32 i32 i32)
@@ -376,9 +347,8 @@ fn params8_imm() {
                 )
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(&wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_imported(FuncIdx::from(0)),
@@ -394,8 +364,7 @@ fn params8_imm() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn params9_reg() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "env" "f" (func $f (param i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32 i32 i32)))
             (func (param i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32 i32 i32)
@@ -412,9 +381,8 @@ fn params9_reg() {
                 )
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::return_call_imported(FuncIdx::from(0)),
             Instruction::register_list(0, 1, 2),
@@ -427,8 +395,7 @@ fn params9_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn params9_reg_rev() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "env" "f" (func $f (param i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32 i32 i32)))
             (func (param i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32 i32 i32)
@@ -445,9 +412,8 @@ fn params9_reg_rev() {
                 )
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::return_call_imported(FuncIdx::from(0)),
             Instruction::register_list(8, 7, 6),
@@ -460,8 +426,7 @@ fn params9_reg_rev() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn params9_imm() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "env" "f" (func $f (param i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32 i32 i32)))
             (func (result i32 i32 i32 i32 i32 i32 i32 i32 i32)
@@ -478,9 +443,8 @@ fn params9_imm() {
                 )
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(&wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_imported(FuncIdx::from(0)),

@@ -40,7 +40,6 @@ use super::{
     testcase_binary_imm_reg,
     testcase_binary_reg_imm,
     wasm_type,
-    wat2wasm,
     AnyConst32,
     Const16,
     Const32,

@@ -14,7 +14,7 @@ fn loop_backward() {
         expect_instr: fn(Register, Register, BranchOffset16) -> Instruction,
     ) {
         let ty = DisplayValueType::from(ty);
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r"
             (module
                 (func (param {ty} {ty})
@@ -26,8 +26,8 @@ fn loop_backward() {
                     )
                 )
             )",
-        ));
-        TranslationTest::new(wasm)
+        );
+        TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
                 expect_instr(
                     Register::from_i16(0),
@@ -93,7 +93,7 @@ fn loop_backward_imm() {
     {
         let ty = T::NAME;
         let display_value = DisplayWasm::from(value);
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r"
             (module
                 (func (param {ty} {ty})
@@ -105,8 +105,8 @@ fn loop_backward_imm() {
                     )
                 )
             )",
-        ));
-        TranslationTest::new(wasm)
+        );
+        TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
                 expect_instr(
                     Register::from_i16(0),
@@ -148,7 +148,7 @@ fn loop_backward_imm() {
 #[cfg_attr(miri, ignore)]
 fn loop_backward_imm_eqz() {
     fn test_for(op: &str, expect_instr: fn(Register, BranchOffset16) -> Instruction) {
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r"
             (module
                 (func (param i32 i32)
@@ -160,8 +160,8 @@ fn loop_backward_imm_eqz() {
                     )
                 )
             )",
-        ));
-        TranslationTest::new(wasm)
+        );
+        TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
                 expect_instr(Register::from_i16(0), BranchOffset16::from(0_i16)),
                 Instruction::Return,
@@ -181,7 +181,7 @@ fn block_forward() {
         expect_instr: fn(Register, Register, BranchOffset16) -> Instruction,
     ) {
         let ty = DisplayValueType::from(ty);
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r"
             (module
                 (func (param {ty} {ty})
@@ -193,8 +193,8 @@ fn block_forward() {
                     )
                 )
             )",
-        ));
-        TranslationTest::new(wasm)
+        );
+        TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
                 expect_instr(
                     Register::from_i16(0),
@@ -255,7 +255,7 @@ fn block_forward_nop_copy() {
         expect_instr: fn(Register, Register, BranchOffset16) -> Instruction,
     ) {
         let ty = DisplayValueType::from(ty);
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r"
             (module
                 (global $g (mut {ty}) ({ty}.const 10))
@@ -271,8 +271,8 @@ fn block_forward_nop_copy() {
                     )
                 )
             )",
-        ));
-        TranslationTest::new(wasm)
+        );
+        TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
                 Instruction::global_get(Register::from_i16(2), GlobalIdx::from(0)),
                 expect_instr(
@@ -335,7 +335,7 @@ fn if_forward_multi_value() {
         expect_instr: fn(Register, Register, BranchOffset16) -> Instruction,
     ) {
         let ty = DisplayValueType::from(ty);
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r"
             (module
                 (func (param {ty} {ty}) (result {ty})
@@ -350,8 +350,8 @@ fn if_forward_multi_value() {
                     )
                 )
             )",
-        ));
-        TranslationTest::new(wasm)
+        );
+        TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
                 expect_instr(
                     Register::from_i16(0),
@@ -401,7 +401,7 @@ fn if_forward() {
         expect_instr: fn(Register, Register, BranchOffset16) -> Instruction,
     ) {
         let ty = DisplayValueType::from(ty);
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r"
             (module
                 (func (param {ty} {ty})
@@ -414,8 +414,8 @@ fn if_forward() {
                     )
                 )
             )",
-        ));
-        TranslationTest::new(wasm)
+        );
+        TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
                 expect_instr(
                     Register::from_i16(0),
@@ -457,7 +457,7 @@ fn if_forward() {
 #[cfg_attr(miri, ignore)]
 fn block_i32_eqz_fuse() {
     fn test_for(op: &str, expect_instr: fn(Register, Register, BranchOffset16) -> Instruction) {
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r"
             (module
                 (func (param i32 i32)
@@ -470,8 +470,8 @@ fn block_i32_eqz_fuse() {
                     )
                 )
             )",
-        ));
-        TranslationTest::new(wasm)
+        );
+        TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
                 expect_instr(
                     Register::from_i16(0),
@@ -492,7 +492,7 @@ fn block_i32_eqz_fuse() {
 #[cfg_attr(miri, ignore)]
 fn if_i32_eqz_fuse() {
     fn test_for(op: &str, expect_instr: fn(Register, Register, BranchOffset16) -> Instruction) {
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r"
             (module
                 (func (param i32 i32)
@@ -502,8 +502,8 @@ fn if_i32_eqz_fuse() {
                     )
                 )
             )",
-        ));
-        TranslationTest::new(wasm)
+        );
+        TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
                 expect_instr(
                     Register::from_i16(0),
@@ -523,7 +523,7 @@ fn if_i32_eqz_fuse() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn block_i64_eqz_fuse() {
-    let wasm = wat2wasm(
+    let wasm = format!(
         r"
         (module
             (func (param i64)
@@ -534,7 +534,7 @@ fn block_i64_eqz_fuse() {
             )
         )",
     );
-    TranslationTest::new(wasm)
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::branch_i64_eqz(Register::from_i16(0), BranchOffset16::from(1)),
             Instruction::Return,
@@ -545,7 +545,7 @@ fn block_i64_eqz_fuse() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn if_i64_eqz_fuse() {
-    let wasm = wat2wasm(
+    let wasm = format!(
         r"
         (module
             (func (param i64)
@@ -556,7 +556,7 @@ fn if_i64_eqz_fuse() {
             )
         )",
     );
-    TranslationTest::new(wasm)
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::branch_i64_nez(Register::from_i16(0), BranchOffset16::from(1)),
             Instruction::Return,
