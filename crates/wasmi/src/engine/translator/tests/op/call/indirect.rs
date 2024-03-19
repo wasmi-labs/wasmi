@@ -17,7 +17,7 @@ fn no_params_reg() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_indirect_0(
                 RegisterSpan::new(Register::from_i16(1)),
@@ -77,7 +77,7 @@ fn one_reg_param_reg() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_indirect(
                 RegisterSpan::new(Register::from_i16(2)),
@@ -178,7 +178,7 @@ fn one_imm_param_reg() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_indirect(
@@ -289,7 +289,7 @@ fn two_reg_params_reg() {
     let result_reg = Register::from_i16(3);
     let results = RegisterSpan::new(result_reg);
     let elem_index = Register::from_i16(0);
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_indirect(results, SignatureIdx::from(0)),
             Instruction::call_indirect_params(elem_index, TableIdx::from(0)),
@@ -317,7 +317,7 @@ fn two_reg_params_reg_rev() {
     let result_reg = Register::from_i16(3);
     let results = RegisterSpan::new(result_reg);
     let elem_index = Register::from_i16(0);
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_indirect(results, SignatureIdx::from(0)),
             Instruction::call_indirect_params(elem_index, TableIdx::from(0)),
@@ -345,7 +345,7 @@ fn two_imm_params_reg() {
     let result_reg = Register::from_i16(1);
     let results = RegisterSpan::new(result_reg);
     let elem_index = Register::from_i16(0);
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_indirect(results, SignatureIdx::from(0)),
@@ -491,7 +491,7 @@ fn three_reg_params_reg() {
     let result_reg = Register::from_i16(4);
     let results = RegisterSpan::new(result_reg);
     let elem_index = Register::from_i16(0);
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_indirect(results, SignatureIdx::from(0)),
             Instruction::call_indirect_params(elem_index, TableIdx::from(0)),
@@ -520,7 +520,7 @@ fn three_reg_params_reg_rev() {
     let result_reg = Register::from_i16(4);
     let results = RegisterSpan::new(result_reg);
     let elem_index = Register::from_i16(0);
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_indirect(results, SignatureIdx::from(0)),
             Instruction::call_indirect_params(elem_index, TableIdx::from(0)),
@@ -549,7 +549,7 @@ fn three_imm_params_reg() {
     let result_reg = Register::from_i16(1);
     let results = RegisterSpan::new(result_reg);
     let elem_index = Register::from_i16(0);
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_indirect(results, SignatureIdx::from(0)),
@@ -623,7 +623,7 @@ fn params7_reg_index_local() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_indirect(
                 RegisterSpan::new(Register::from_i16(8)),
@@ -658,7 +658,7 @@ fn params7_imm_index_local() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_indirect(
@@ -697,7 +697,7 @@ fn params8_reg_index_local() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_indirect(
                 RegisterSpan::new(Register::from_i16(9)),
@@ -733,7 +733,7 @@ fn params8_imm_index_local() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_indirect(
@@ -773,7 +773,7 @@ fn params9_reg_index_local() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_indirect(
                 RegisterSpan::new(Register::from_i16(10)),
@@ -810,7 +810,7 @@ fn params9_imm_index_local() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_indirect(
@@ -849,7 +849,7 @@ fn test_imm_params_dynamic_index() {
         "#;
     let result = Register::from_i16(0);
     let results = RegisterSpan::new(result);
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_imm32(0_i32)])
         .expect_func(
             ExpectedFunc::new([
@@ -886,7 +886,7 @@ fn regression_issue_768() {
         "#;
     let result = Register::from_i16(0);
     let results = RegisterSpan::new(result);
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_imm32(0_i32)])
         .expect_func(
             ExpectedFunc::new([

@@ -13,7 +13,7 @@ fn reg_len_targets_1() {
                 (return (i32.const 10))
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch(BranchOffset::from(1)),
             Instruction::return_imm32(10_i32),
@@ -42,7 +42,7 @@ fn reg_params_0() {
                 (return (i32.const 40))
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_table(Register::from_i16(0), 4),
             Instruction::branch(BranchOffset::from(7)),
@@ -79,7 +79,7 @@ fn reg_params_0_return() {
                 (return (global.set $g (i32.const 40)))
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_table(Register::from_i16(0), 5),
             Instruction::Return,
@@ -124,7 +124,7 @@ fn reg_params_1_return() {
     let index = Register::from_i16(0);
     let value = Register::from_i16(1);
     let result = Register::from_i16(2);
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_table(index, 5),
             Instruction::copy(result, value),
@@ -173,7 +173,7 @@ fn reg_params_1_pass() {
     let index = Register::from_i16(0);
     let value = Register::from_i16(1);
     let result = Register::from_i16(2);
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_table(index, 3),
             Instruction::copy(result, value),
@@ -215,7 +215,7 @@ fn reg_params_2_ops() {
     let index = Register::from_i16(0);
     let lhs = Register::from_i16(1);
     let result = Register::from_i16(3);
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_table(index, 3),
             Instruction::copy2(RegisterSpan::new(result), lhs, lhs.next()),
@@ -257,7 +257,7 @@ fn reg_params_2_return() {
     let result = Register::from_i16(3);
     let result2 = result.next();
     let results = RegisterSpan::new(result).iter(2);
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::branch_table(index, 4),
@@ -307,7 +307,7 @@ fn reg_params_1_diff() {
     let index = Register::from_i16(0);
     let input = Register::from_i16(1);
     let result = Register::from_i16(2);
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::global_get(result, GlobalIdx::from(0)),
             Instruction::branch_table(index, 7),
@@ -371,7 +371,7 @@ fn reg_params_2_diff() {
     let index = Register::from_i16(0);
     let lhs = Register::from_i16(1);
     let result = Register::from_i16(3);
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::global_get(result, GlobalIdx::from(0)),
             Instruction::branch_table(index, 5),
@@ -424,7 +424,7 @@ fn imm_params_0() {
                 )
             )",
         );
-        TranslationTest::from_wat(&wasm)
+        TranslationTest::from_wat(wasm)
             .expect_func_instrs([
                 Instruction::branch(BranchOffset::from(1)),
                 Instruction::return_imm32(chosen),

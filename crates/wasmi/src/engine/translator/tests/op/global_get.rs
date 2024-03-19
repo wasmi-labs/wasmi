@@ -187,7 +187,7 @@ fn test_global_get_as_return_values_0() {
             )
         )
         "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::global_get(Register::from_i16(0), GlobalIdx::from(0)),
@@ -212,7 +212,7 @@ fn test_global_get_as_return_values_1() {
             )
         )
         "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::global_get(Register::from_i16(0), GlobalIdx::from(0)),

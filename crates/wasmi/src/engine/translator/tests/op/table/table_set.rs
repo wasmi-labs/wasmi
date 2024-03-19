@@ -75,7 +75,7 @@ fn imm_funcref() {
                 (table.set $t (local.get $index) (ref.func $f))
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::ref_func(Register::from_i16(1), 0),
             Instruction::table_set(Register::from_i16(0), Register::from_i16(1)),

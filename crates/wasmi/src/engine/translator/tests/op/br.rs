@@ -14,7 +14,7 @@ fn as_return() {
                 (br 0)
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::Return])
         .run()
 }
@@ -29,7 +29,7 @@ fn as_return_1() {
                 (br 0)
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_reg(Register::from_i16(0))])
         .run()
 }
@@ -172,7 +172,7 @@ fn test_br_as_return_values() {
             )
         )
         "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::copy_i64imm32(Register::from_i16(0), 7),

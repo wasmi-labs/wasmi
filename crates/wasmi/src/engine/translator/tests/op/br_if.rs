@@ -242,7 +242,7 @@ fn consteval_branch_always() {
                 )
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy(3, 0),
             Instruction::copy(2, 3),
@@ -267,7 +267,7 @@ fn consteval_branch_never() {
                 )
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy(3, 0),
             Instruction::return_reg(Register::from_i16(1)),
@@ -285,7 +285,7 @@ fn return_if_results_0() {
                 (br_if 0)
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::return_nez(Register::from_i16(0)),
             Instruction::Return,
@@ -304,7 +304,7 @@ fn return_if_results_1() {
                 (br_if 0)
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::return_nez_reg(Register::from_i16(1), Register::from_i16(0)),
             Instruction::return_reg(Register::from_i16(0)),
@@ -475,7 +475,7 @@ fn return_if_results_2() {
                 )
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::return_nez_reg2(Register::from_i16(2), 0, 1),
             Instruction::return_reg2(0, 1),
@@ -496,7 +496,7 @@ fn return_if_results_2_rev() {
                 )
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::return_nez_reg2(Register::from_i16(2), 1, 0),
             Instruction::return_reg2(1, 0),
@@ -517,7 +517,7 @@ fn return_if_results_2_imm() {
                 )
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_nez_reg2(Register::from_i16(0), -1, -2),
@@ -542,7 +542,7 @@ fn return_if_results_3_span() {
                 )
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::return_nez_span(
                 Register::from_i16(3),
@@ -567,7 +567,7 @@ fn return_if_results_3() {
                 )
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::return_nez_many(Register::from_i16(2), 0, 1),
             Instruction::register(0),
@@ -590,7 +590,7 @@ fn return_if_results_3_imm() {
                 )
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_nez_many(Register::from_i16(0), -1, -2),
@@ -617,7 +617,7 @@ fn return_if_results_4_span() {
                 )
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::return_nez_span(
                 Register::from_i16(4),
@@ -643,7 +643,7 @@ fn return_if_results_4() {
                 )
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::return_nez_many(Register::from_i16(2), 0, 1),
             Instruction::register2(0, 1),
@@ -668,7 +668,7 @@ fn return_if_results_4_imm() {
                 )
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_nez_many(Register::from_i16(0), -1, -2),
@@ -697,7 +697,7 @@ fn return_if_results_5() {
                 )
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::return_nez_many(Register::from_i16(2), 0, 1),
             Instruction::register3(0, 1, 0),
@@ -723,7 +723,7 @@ fn return_if_results_5_imm() {
                 )
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_nez_many(Register::from_i16(0), -1, -2),
@@ -753,7 +753,7 @@ fn return_if_results_6() {
                 )
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::return_nez_many(Register::from_i16(2), 0, 1),
             Instruction::register_list(0, 1, 0),
@@ -781,7 +781,7 @@ fn return_if_results_6_imm() {
                 )
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_nez_many(Register::from_i16(0), -1, -2),
@@ -807,7 +807,7 @@ fn branch_if_results_0() {
                 )
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy(1, 0),
             Instruction::branch_i32_nez(Register::from_i16(1), BranchOffset16::from(1)),
@@ -829,7 +829,7 @@ fn branch_if_results_1() {
                 )
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy2(RegisterSpan::new(Register::from_i16(3)), 0, 1),
             Instruction::branch_i32_eqz(Register::from_i16(4), BranchOffset16::from(3)),
@@ -861,7 +861,7 @@ fn branch_if_results_1_avoid_copy() {
                 )
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::i32_clz(Register::from_i16(2), Register::from_i16(0)),
             Instruction::i32_ctz(Register::from_i16(3), Register::from_i16(1)),
@@ -886,7 +886,7 @@ fn branch_if_results_2() {
                 (i32.add)
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy_span_non_overlapping(
                 RegisterSpan::new(Register::from_i16(5)),
@@ -928,7 +928,7 @@ fn branch_if_results_2_avoid_copy() {
                 (i32.add)
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::i32_clz(Register::from_i16(3), Register::from_i16(0)),
             Instruction::i32_ctz(Register::from_i16(4), Register::from_i16(1)),
@@ -961,7 +961,7 @@ fn branch_if_results_4_mixed_1() {
                 )
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::branch_i32_eqz(Register::from_i16(2), BranchOffset16::from(4)),
@@ -1003,7 +1003,7 @@ fn branch_if_results_4_mixed_2() {
                 )
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_i32_eqz(Register::from_i16(2), BranchOffset16::from(4)),
             Instruction::copy_many_non_overlapping(RegisterSpan::new(Register::from_i16(3)), 0, 0),

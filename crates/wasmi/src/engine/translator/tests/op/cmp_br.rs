@@ -523,8 +523,7 @@ fn if_i32_eqz_fuse() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn block_i64_eqz_fuse() {
-    let wasm = format!(
-        r"
+    let wasm = r"
         (module
             (func (param i64)
                 (block
@@ -532,9 +531,8 @@ fn block_i64_eqz_fuse() {
                     (br_if 0)
                 )
             )
-        )",
-    );
-    TranslationTest::from_wat(&wasm)
+        )";
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_i64_eqz(Register::from_i16(0), BranchOffset16::from(1)),
             Instruction::Return,
@@ -545,8 +543,7 @@ fn block_i64_eqz_fuse() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn if_i64_eqz_fuse() {
-    let wasm = format!(
-        r"
+    let wasm = r"
         (module
             (func (param i64)
                 (if
@@ -554,9 +551,8 @@ fn if_i64_eqz_fuse() {
                     (then)
                 )
             )
-        )",
-    );
-    TranslationTest::from_wat(&wasm)
+        )";
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_i64_nez(Register::from_i16(0), BranchOffset16::from(1)),
             Instruction::Return,

@@ -13,7 +13,7 @@ fn fill() {
                 (memory.fill)
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::memory_fill(
                 Register::from_i16(0),
@@ -38,7 +38,7 @@ fn testcase_fill_exact(len: u32) -> TranslationTest {
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
 }
 
 fn test_fill_exact16(len: u32) {
@@ -99,7 +99,7 @@ fn testcase_fill_imm(value: u32) -> TranslationTest {
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
 }
 
 fn test_fill_imm(value: u32) {
@@ -135,7 +135,7 @@ fn testcase_fill_at(dst: u32) -> TranslationTest {
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
 }
 
 fn test_fill_at16(dst: u32) {
@@ -194,7 +194,7 @@ fn testcase_fill_at_imm(dst: u32, value: u32) -> TranslationTest {
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
 }
 
 fn test_fill_at16_imm(dst: u32, value: u32) {
@@ -274,7 +274,7 @@ fn testcase_fill_at_exact(dst: u32, len: u32) -> TranslationTest {
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
 }
 
 fn test_fill_at_exact16(dst: u32, len: u32) {
@@ -344,7 +344,7 @@ fn testcase_fill_imm_exact(value: u32, len: u32) -> TranslationTest {
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
 }
 
 fn test_fill_imm_exact16(value: u32, len: u32) {
@@ -424,7 +424,7 @@ fn testcase_fill_at_imm_exact(dst: u32, value: u32, len: u32) -> TranslationTest
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
 }
 
 fn test_fill_at_imm_exact16(dst: u32, value: u32, len: u32) {

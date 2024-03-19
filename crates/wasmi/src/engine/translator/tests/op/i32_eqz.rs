@@ -18,7 +18,7 @@ fn binop_i32_eqz() {
                 )
             )",
         );
-        TranslationTest::from_wat(&wasm)
+        TranslationTest::from_wat(wasm)
             .expect_func_instrs([
                 expect_instr(
                     Register::from_i16(2),
@@ -52,7 +52,7 @@ fn binop_imm_i32_eqz() {
                 )
             )",
         );
-        TranslationTest::from_wat(&wasm)
+        TranslationTest::from_wat(wasm)
             .expect_func_instrs([
                 expect_instr(
                     Register::from_i16(2),

@@ -12,7 +12,7 @@ fn no_params() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::Return])
         .expect_func_instrs([Instruction::return_call_internal_0(CompiledFunc::from_u32(
             0,
@@ -33,7 +33,7 @@ fn one_param_reg() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_reg(Register::from_i16(0))])
         .expect_func_instrs([
             Instruction::return_call_internal(CompiledFunc::from_u32(0)),
@@ -55,7 +55,7 @@ fn one_param_imm() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_reg(0)])
         .expect_func(
             ExpectedFunc::new([
@@ -81,7 +81,7 @@ fn two_params_reg() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_reg2(0, 1)])
         .expect_func_instrs([
             Instruction::return_call_internal(CompiledFunc::from_u32(0)),
@@ -104,7 +104,7 @@ fn two_params_reg_rev() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_reg2(0, 1)])
         .expect_func_instrs([
             Instruction::return_call_internal(CompiledFunc::from_u32(0)),
@@ -127,7 +127,7 @@ fn two_params_imm() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_reg2(0, 1)])
         .expect_func(
             ExpectedFunc::new([
@@ -154,7 +154,7 @@ fn three_params_reg() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_reg3(0, 1, 2)])
         .expect_func_instrs([
             Instruction::return_call_internal(CompiledFunc::from_u32(0)),
@@ -178,7 +178,7 @@ fn three_params_reg_rev() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_reg3(0, 1, 2)])
         .expect_func_instrs([
             Instruction::return_call_internal(CompiledFunc::from_u32(0)),
@@ -202,7 +202,7 @@ fn three_params_imm() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_reg3(0, 1, 2)])
         .expect_func(
             ExpectedFunc::new([
@@ -241,7 +241,7 @@ fn params7_reg() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_span(
             RegisterSpan::new(Register::from_i16(0)).iter(7),
         )])
@@ -281,7 +281,7 @@ fn params7_reg_rev() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_span(
             RegisterSpan::new(Register::from_i16(0)).iter(7),
         )])
@@ -321,7 +321,7 @@ fn params7_imm() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_span(
             RegisterSpan::new(Register::from_i16(0)).iter(7),
         )])
@@ -366,7 +366,7 @@ fn params8_reg() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_span(
             RegisterSpan::new(Register::from_i16(0)).iter(8),
         )])
@@ -408,7 +408,7 @@ fn params8_reg_rev() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_span(
             RegisterSpan::new(Register::from_i16(0)).iter(8),
         )])
@@ -450,7 +450,7 @@ fn params8_imm() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_span(
             RegisterSpan::new(Register::from_i16(0)).iter(8),
         )])
@@ -497,7 +497,7 @@ fn params9_reg() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_span(
             RegisterSpan::new(Register::from_i16(0)).iter(9),
         )])
@@ -541,7 +541,7 @@ fn params9_reg_rev() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_span(
             RegisterSpan::new(Register::from_i16(0)).iter(9),
         )])
@@ -585,7 +585,7 @@ fn params9_imm() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_span(
             RegisterSpan::new(Register::from_i16(0)).iter(9),
         )])

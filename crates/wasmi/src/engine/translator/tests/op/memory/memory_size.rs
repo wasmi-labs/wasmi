@@ -10,7 +10,7 @@ fn reg() {
                 (memory.size $m)
             )
         )";
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::memory_size(Register::from_i16(0)),
             Instruction::return_reg(Register::from_i16(0)),

@@ -18,7 +18,7 @@ fn simple_block_1() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy(2, 0),
             Instruction::branch_i32_ne_imm(Register::from_i16(1), 0, BranchOffset16::from(2)),
@@ -44,7 +44,7 @@ fn simple_block_2() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy2(RegisterSpan::new(Register::from_i16(3)), 0, 1),
             Instruction::branch_i32_ne_imm(Register::from_i16(2), 0, BranchOffset16::from(3)),
@@ -73,7 +73,7 @@ fn simple_block_3_span() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy_span_non_overlapping(
                 RegisterSpan::new(Register::from_i16(4)),
@@ -107,7 +107,7 @@ fn simple_block_3_many() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy_many_non_overlapping(RegisterSpan::new(Register::from_i16(4)), 2, 1),
             Instruction::register(0),
@@ -140,7 +140,7 @@ fn simple_block_4_params_2() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy_span_non_overlapping(
                 RegisterSpan::new(Register::from_i16(7)),
@@ -194,7 +194,7 @@ fn simple_block_30() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy_many_non_overlapping(RegisterSpan::new(Register::from_i16(11)), 9, 8),
             Instruction::register_list(7, 6, 5),
@@ -234,7 +234,7 @@ fn simple_if_1() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy(2, 0),
             Instruction::branch_i32_eq_imm(Register::from_i16(1), 0, BranchOffset16::from(2)),
@@ -261,7 +261,7 @@ fn simple_if_2() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy2(RegisterSpan::new(Register::from_i16(3)), 0, 1),
             Instruction::branch_i32_eq_imm(Register::from_i16(2), 0, BranchOffset16::from(3)),
@@ -291,7 +291,7 @@ fn simple_if_3_span() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy_span_non_overlapping(
                 RegisterSpan::new(Register::from_i16(4)),
@@ -326,7 +326,7 @@ fn simple_if_3_many() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy_many_non_overlapping(RegisterSpan::new(Register::from_i16(4)), 2, 1),
             Instruction::register(0),
@@ -360,7 +360,7 @@ fn simple_if_4_params_2() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy_span_non_overlapping(
                 RegisterSpan::new(Register::from_i16(7)),
@@ -400,7 +400,7 @@ fn nested_block() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy2(RegisterSpan::new(Register::from_i16(4)), 0, 1),
             Instruction::branch_i32_ne_imm(Register::from_i16(2), 0, BranchOffset16::from(4)),
@@ -433,7 +433,7 @@ fn nested_if() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy2(RegisterSpan::new(Register::from_i16(4)), 0, 1),
             Instruction::branch_i32_eq_imm(Register::from_i16(2), 0, BranchOffset16::from(4)),
@@ -465,7 +465,7 @@ fn expr_block() {
             )
         )
         "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy(3, 1),
             Instruction::branch_i32_eq_imm(Register::from_i16(0), 0, BranchOffset16::from(3)),
@@ -504,7 +504,7 @@ fn expr_if() {
             )
         )
         "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy(4, 0),
             Instruction::branch_i32_eq_imm(Register::from_i16(1), 0, BranchOffset16::from(4)),
@@ -537,7 +537,7 @@ fn invalid_preservation_slot_reuse_1() {
             )
           )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy(3, 0),
             Instruction::i32_popcnt(Register::from_i16(0), Register::from_i16(0)),
@@ -572,7 +572,7 @@ fn invalid_preservation_slot_reuse_2() {
             )
           )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func(ExpectedFunc::new([Instruction::return_imm32(20_i32)]))
         .expect_func(ExpectedFunc::new([
             Instruction::copy(3, 0),
