@@ -1,3 +1,5 @@
+//! This module contains translation test cases found via Wasmi fuzzing.
+
 use super::*;
 use crate::{
     core::TrapCode,
@@ -11,7 +13,7 @@ use wasmi_core::F32;
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_0() {
-    let wat = include_str!("fuzz_0.wat");
+    let wat = include_str!("wat/fuzz_0.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func_instrs([
@@ -25,7 +27,7 @@ fn fuzz_regression_0() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_1() {
-    let wat = include_str!("fuzz_1.wat");
+    let wat = include_str!("wat/fuzz_1.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func_instrs([
@@ -39,7 +41,7 @@ fn fuzz_regression_1() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_2() {
-    let wat = include_str!("fuzz_2.wat");
+    let wat = include_str!("wat/fuzz_2.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func_instrs([
@@ -54,7 +56,7 @@ fn fuzz_regression_2() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_3() {
-    let wat = include_str!("fuzz_3.wat");
+    let wat = include_str!("wat/fuzz_3.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func_instrs([
@@ -81,7 +83,7 @@ fn fuzz_regression_3() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_4() {
-    let wat = include_str!("fuzz_4.wat");
+    let wat = include_str!("wat/fuzz_4.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func_instrs([
@@ -97,7 +99,7 @@ fn fuzz_regression_4() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_5() {
-    let wat = include_str!("fuzz_5.wat");
+    let wat = include_str!("wat/fuzz_5.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func_instrs([
@@ -123,7 +125,7 @@ fn fuzz_regression_5() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_6() {
-    let wat = include_str!("fuzz_6.wat");
+    let wat = include_str!("wat/fuzz_6.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func_instrs([
@@ -141,7 +143,7 @@ fn fuzz_regression_6() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_7() {
-    let wat = include_str!("fuzz_7.wat");
+    let wat = include_str!("wat/fuzz_7.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func_instrs([
@@ -155,7 +157,7 @@ fn fuzz_regression_7() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_8() {
-    let wat = include_str!("fuzz_8.wat");
+    let wat = include_str!("wat/fuzz_8.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func_instrs([
@@ -172,7 +174,7 @@ fn fuzz_regression_8() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_9() {
-    let wat = include_str!("fuzz_9.wat");
+    let wat = include_str!("wat/fuzz_9.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func_instrs([
@@ -202,7 +204,7 @@ fn fuzz_regression_9() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_10() {
-    let wat = include_str!("fuzz_10.wat");
+    let wat = include_str!("wat/fuzz_10.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func_instrs([
@@ -218,7 +220,7 @@ fn fuzz_regression_10() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_11() {
-    let wat = include_str!("fuzz_11.wat");
+    let wat = include_str!("wat/fuzz_11.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func_instrs([
@@ -238,7 +240,7 @@ fn fuzz_regression_11() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_12_f32() {
-    let wat = include_str!("fuzz_12_f32.wat");
+    let wat = include_str!("wat/fuzz_12_f32.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func(ExpectedFunc::new([
@@ -267,7 +269,7 @@ fn fuzz_regression_12_f32() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_12_f64() {
-    let wat = include_str!("fuzz_12_f64.wat");
+    let wat = include_str!("wat/fuzz_12_f64.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func(
@@ -302,7 +304,7 @@ fn fuzz_regression_12_f64() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_13_codegen() {
-    let wat = include_str!("fuzz_13.wat");
+    let wat = include_str!("wat/fuzz_13.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func_instrs([
@@ -317,7 +319,7 @@ fn fuzz_regression_13_codegen() {
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_13_execute() {
     use crate::{Engine, Linker, Store};
-    let wat = include_str!("fuzz_13.wat");
+    let wat = include_str!("wat/fuzz_13.wat");
     let wasm = wat2wasm(wat);
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());
@@ -340,7 +342,7 @@ fn fuzz_regression_13_execute() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_14() {
-    let wat = include_str!("fuzz_14.wat");
+    let wat = include_str!("wat/fuzz_14.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func(
@@ -360,7 +362,7 @@ fn fuzz_regression_14() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_15_01_codegen() {
-    let wat = include_str!("fuzz_15_01.wat");
+    let wat = include_str!("wat/fuzz_15_01.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func(
@@ -388,7 +390,7 @@ fn fuzz_regression_15_01_execute() {
     // Note: we can remove this test case once the bug is fixed
     //       since this is a codegen bug and not an executor bug.
     use crate::{Engine, Linker, Store};
-    let wat = include_str!("fuzz_15_01.wat");
+    let wat = include_str!("wat/fuzz_15_01.wat");
     let wasm = wat2wasm(wat);
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());
@@ -411,7 +413,7 @@ fn fuzz_regression_15_01_execute() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_15_02() {
-    let wat = include_str!("fuzz_15_02.wat");
+    let wat = include_str!("wat/fuzz_15_02.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func(
@@ -437,7 +439,7 @@ fn fuzz_regression_15_02() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_15_03() {
-    let wat = include_str!("fuzz_15_03.wat");
+    let wat = include_str!("wat/fuzz_15_03.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func(
@@ -499,7 +501,7 @@ fn fuzz_regression_16() {
     // The bug in this regression test was a forgotten adjustment
     // for the preserved local value causing the `value` register
     // of the `i64_store_at` instruction to be 32676 instead of 2.
-    let wat = include_str!("fuzz_16.wat");
+    let wat = include_str!("wat/fuzz_16.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func_instrs([
@@ -518,7 +520,7 @@ fn fuzz_regression_17() {
     // The bug in this regression test was a forgotten adjustment
     // for the preserved local value causing the `value` register
     // of the `i64_store_at` instruction to be 32676 instead of 2.
-    let wat = include_str!("fuzz_17.wat");
+    let wat = include_str!("wat/fuzz_17.wat");
     let wasm = wat2wasm(wat);
     TranslationTest::new(wasm)
         .expect_func_instrs([
