@@ -1,4 +1,8 @@
 use super::*;
+use crate::engine::{
+    bytecode::{BranchOffset, BranchOffset16, RegisterSpan},
+    CompiledFunc,
+};
 
 #[test]
 #[cfg_attr(miri, ignore)]

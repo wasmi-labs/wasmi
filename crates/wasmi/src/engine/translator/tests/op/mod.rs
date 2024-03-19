@@ -11,6 +11,7 @@ mod global_set;
 mod i32_eqz;
 mod if_;
 mod load;
+mod local_preserve;
 mod local_set;
 mod loop_;
 mod memory;
