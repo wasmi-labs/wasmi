@@ -165,6 +165,10 @@ impl ExpectedFunc {
 
 impl TranslationTest {
     /// Creates a new [`TranslationTest`] for the given Webassembly `bytes`.
+    ///
+    /// # Panics
+    ///
+    /// If the WebAssembly `bytes` is not valid WebAssembly.
     #[must_use]
     pub fn new(bytes: impl AsRef<[u8]>) -> Self {
         let config = {
