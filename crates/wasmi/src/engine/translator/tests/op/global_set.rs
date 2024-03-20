@@ -151,7 +151,7 @@ fn i64imm16() {
 }
 
 fn test_shadow_stack_in_v0(value: i32) {
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (global $__shadow_stack (mut i32) (i32.const 1000))
@@ -165,8 +165,8 @@ fn test_shadow_stack_in_v0(value: i32) {
             )
         )
     "#,
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::i32_add_imm_inout_global_0(Register::from_i16(0), value.wrapping_neg()),
             Instruction::Return,
@@ -190,7 +190,7 @@ fn shadow_stack_in_v0() {
 }
 
 fn test_shadow_stack_in_v1(value: i32) {
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (global $__shadow_stack (mut i32) (i32.const 1000))
@@ -204,8 +204,8 @@ fn test_shadow_stack_in_v1(value: i32) {
             )
         )
     "#,
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::i32_add_imm_inout_global_0(Register::from_i16(0), value),
             Instruction::Return,
@@ -229,7 +229,7 @@ fn shadow_stack_in_v1() {
 }
 
 fn test_shadow_stack_out_v0(value: i32) {
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (global $__shadow_stack (mut i32) (i32.const 1000))
@@ -241,8 +241,8 @@ fn test_shadow_stack_out_v0(value: i32) {
             )
         )
     "#,
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::i32_add_imm_into_global_0(Register::from_i16(0), value),
             Instruction::Return,
@@ -262,7 +262,7 @@ fn shadow_stack_out_v0() {
 }
 
 fn test_shadow_stack_out_v0_big(value: i32) {
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (global $__shadow_stack (mut i32) (i32.const 1000))
@@ -274,8 +274,8 @@ fn test_shadow_stack_out_v0_big(value: i32) {
             )
         )
     "#,
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::i32_add_imm_into_global_0(Register::from_i16(0), value),
@@ -298,7 +298,7 @@ fn shadow_stack_out_v0_big() {
 }
 
 fn test_shadow_stack_out_v1(value: i32) {
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (global $__shadow_stack (mut i32) (i32.const 1000))
@@ -310,8 +310,8 @@ fn test_shadow_stack_out_v1(value: i32) {
             )
         )
     "#,
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::i32_add_imm_into_global_0(Register::from_i16(0), value.wrapping_neg()),
             Instruction::Return,
@@ -331,7 +331,7 @@ fn shadow_stack_out_v1() {
 }
 
 fn test_shadow_stack_out_v1_big(value: i32) {
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (global $__shadow_stack (mut i32) (i32.const 1000))
@@ -343,8 +343,8 @@ fn test_shadow_stack_out_v1_big(value: i32) {
             )
         )
     "#,
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::i32_add_imm_into_global_0(Register::from_i16(0), value.wrapping_neg()),
