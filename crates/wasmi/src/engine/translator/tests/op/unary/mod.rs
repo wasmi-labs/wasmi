@@ -4,7 +4,7 @@ mod conversion;
 mod op;
 
 use super::*;
-use std::{fmt::Display, vec::Vec};
+use std::fmt::Display;
 use wasm_type::WasmType;
 use wasmi_core::{TrapCode, UntypedValue};
 
@@ -17,7 +17,7 @@ where
 {
     let param_ty = <I as WasmType>::NAME;
     let result_ty = <O as WasmType>::NAME;
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (func (param {param_ty}) (result {result_ty})
@@ -26,8 +26,8 @@ where
             )
         )
     "#,
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs(expected)
         .run();
 }
@@ -65,7 +65,7 @@ where
     let param_ty = <I as WasmType>::NAME;
     let result_ty = <O as WasmType>::NAME;
     let wasm_input = DisplayWasm::from(input);
-    let wasm: Vec<u8> = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (func (result {result_ty})
@@ -74,10 +74,10 @@ where
             )
         )
     "#,
-    ));
+    );
     let result = eval(input);
     let instr = <O as WasmType>::return_imm_instr(&result);
-    let mut testcase = TranslationTest::new(wasm);
+    let mut testcase = TranslationTest::from_wat(&wasm);
     if let Instruction::ReturnReg { value } = &instr {
         assert!(value.is_const());
         testcase.expect_func(ExpectedFunc::new([instr]).consts([result]));
@@ -106,7 +106,7 @@ where
     let param_ty = <I as WasmType>::NAME;
     let result_ty = <O as WasmType>::NAME;
     let wasm_input = DisplayWasm::from(input);
-    let wasm: Vec<u8> = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (func (result {result_ty})
@@ -115,9 +115,9 @@ where
             )
         )
     "#,
-    ));
+    );
     let trap_code = eval(input);
-    TranslationTest::new(wasm)
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([Instruction::Trap(trap_code)])
         .run();
 }

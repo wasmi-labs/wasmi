@@ -26,7 +26,7 @@ fn test_store_for(
         "this test requires non-16 bit offsets but found {offset}"
     );
     let param_ty = wasm_op.param_ty();
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (memory 1)
@@ -36,9 +36,9 @@ fn test_store_for(
                 {wasm_op} offset={offset}
             )
         )
-    "#,
-    ));
-    TranslationTest::new(wasm)
+    "#
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             make_instr(Register::from_i16(0), Const32::from(offset)),
             Instruction::Register(Register::from_i16(1)),
@@ -59,7 +59,7 @@ fn test_store_offset16_for(
     make_instr: fn(ptr: Register, offset: u16, value: Register) -> Instruction,
 ) {
     let param_ty = wasm_op.param_ty();
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (memory 1)
@@ -69,9 +69,9 @@ fn test_store_offset16_for(
                 {wasm_op} offset={offset}
             )
         )
-    "#,
-    ));
-    TranslationTest::new(wasm)
+    "#
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             make_instr(Register::from_i16(0), offset, Register::from_i16(1)),
             Instruction::Return,
@@ -99,7 +99,7 @@ fn test_store_offset16_imm_for<T>(
 {
     let param_ty = wasm_op.param_ty();
     let display_value = DisplayWasm::from(value);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (memory 1)
@@ -109,9 +109,9 @@ fn test_store_offset16_imm_for<T>(
                 {wasm_op} offset={offset}
             )
         )
-    "#,
-    ));
-    TranslationTest::new(wasm)
+    "#
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func(
             ExpectedFunc::new([
                 make_instr(Register::from_i16(0), offset, Register::from_i16(-1)),
@@ -146,7 +146,7 @@ fn test_store_offset16_imm16_for<T>(
 {
     let param_ty = wasm_op.param_ty();
     let display_value = DisplayWasm::from(value);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (memory 1)
@@ -156,9 +156,9 @@ fn test_store_offset16_imm16_for<T>(
                 {wasm_op} offset={offset}
             )
         )
-    "#,
-    ));
-    TranslationTest::new(wasm)
+    "#
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             make_instr(Register::from_i16(0), offset, value),
             Instruction::Return,
@@ -194,7 +194,7 @@ fn test_store_imm_for<T>(
     );
     let param_ty = wasm_op.param_ty();
     let display_value = DisplayWasm::from(value);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (memory 1)
@@ -204,9 +204,9 @@ fn test_store_imm_for<T>(
                 {wasm_op} offset={offset}
             )
         )
-    "#,
-    ));
-    TranslationTest::new(wasm)
+    "#
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func(
             ExpectedFunc::new([
                 make_instr(Register::from_i16(0), Const32::from(offset)),
@@ -241,7 +241,7 @@ fn test_store_at_for(
         .checked_add(offset)
         .expect("testcase requires valid ptr+offset address");
     let param_ty = wasm_op.param_ty();
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (memory 1)
@@ -251,9 +251,9 @@ fn test_store_at_for(
                 {wasm_op} offset={offset}
             )
         )
-    "#,
-    ));
-    TranslationTest::new(wasm)
+    "#
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             make_instr(Const32::from(address), Register::from_i16(0)),
             Instruction::Return,
@@ -282,7 +282,7 @@ fn test_store_at_overflow_for(wasm_op: WasmOp, ptr: u32, offset: u32) {
         "testcase expects overflowing ptr+offset address"
     );
     let param_ty = wasm_op.param_ty();
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (memory 1)
@@ -292,9 +292,9 @@ fn test_store_at_overflow_for(wasm_op: WasmOp, ptr: u32, offset: u32) {
                 {wasm_op} offset={offset}
             )
         )
-    "#,
-    ));
-    TranslationTest::new(wasm)
+    "#
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([Instruction::Trap(TrapCode::MemoryOutOfBounds)])
         .run();
 }
@@ -320,7 +320,7 @@ fn test_store_at_imm_for<T>(
         .expect("testcase requires valid ptr+offset address");
     let display_value = DisplayWasm::from(value);
     let param_ty = wasm_op.param_ty();
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (memory 1)
@@ -330,9 +330,9 @@ fn test_store_at_imm_for<T>(
                 {wasm_op} offset={offset}
             )
         )
-    "#,
-    ));
-    TranslationTest::new(wasm)
+    "#
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func(
             ExpectedFunc::new([
                 make_instr(Const32::from(address), Register::from_i16(-1)),
@@ -373,7 +373,7 @@ where
     );
     let display_value = DisplayWasm::from(value);
     let param_ty = wasm_op.param_ty();
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (memory 1)
@@ -383,9 +383,9 @@ where
                 {wasm_op} offset={offset}
             )
         )
-    "#,
-    ));
-    TranslationTest::new(wasm)
+    "#
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([Instruction::Trap(TrapCode::MemoryOutOfBounds)])
         .run();
 }

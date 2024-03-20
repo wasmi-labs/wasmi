@@ -12,7 +12,7 @@ where
 {
     let ty = T::NAME;
     let display_value = DisplayWasm::from(T::default());
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (global $g (mut {ty}) ({ty}.const {display_value}))
@@ -22,8 +22,8 @@ where
             )
         )
     "#,
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::global_set(GlobalIdx::from(0), Register::from_i16(0)),
             Instruction::Return,
@@ -47,7 +47,7 @@ where
 {
     let display_ty = DisplayValueType::from(T::VALUE_TYPE);
     let display_value = DisplayWasm::from(value);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (global $g (mut {display_ty}) ({display_ty}.const {display_value}))
@@ -57,8 +57,8 @@ where
             )
         )
     "#,
-    ));
-    TranslationTest::new(wasm)
+    );
+    TranslationTest::from_wat(&wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::global_set(GlobalIdx::from(0), Register::from_i16(-1)),
@@ -85,7 +85,7 @@ fn imm() {
 fn test_i32imm16(value: i32) {
     let display_ty = DisplayValueType::from(ValueType::I32);
     let display_value = DisplayWasm::from(value);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (global $g (mut {display_ty}) ({display_ty}.const {display_value}))
@@ -95,10 +95,10 @@ fn test_i32imm16(value: i32) {
             )
         )
     "#,
-    ));
+    );
     let imm16 = <Const16<i32>>::try_from(value)
         .unwrap_or_else(|_| panic!("cannot convert `value` to 16-bit encoding: {value}"));
-    TranslationTest::new(wasm)
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::global_set_i32imm16(GlobalIdx::from(0), imm16),
             Instruction::Return,
@@ -119,7 +119,7 @@ fn i32imm16() {
 fn test_i64imm16(value: i64) {
     let display_ty = DisplayValueType::from(ValueType::I64);
     let display_value = DisplayWasm::from(value);
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (global $g (mut {display_ty}) ({display_ty}.const {display_value}))
@@ -129,10 +129,10 @@ fn test_i64imm16(value: i64) {
             )
         )
     "#,
-    ));
+    );
     let imm16 = <Const16<i64>>::try_from(value)
         .unwrap_or_else(|_| panic!("cannot convert `value` to 16-bit encoding: {value}"));
-    TranslationTest::new(wasm)
+    TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::global_set_i64imm16(GlobalIdx::from(0), imm16),
             Instruction::Return,

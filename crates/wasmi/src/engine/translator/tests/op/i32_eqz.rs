@@ -7,7 +7,7 @@ fn binop_i32_eqz() {
         op: &str,
         expect_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
     ) {
-        let wasm = wat2wasm(&format!(
+        let wasm = &format!(
             r"
             (module
                 (func (param i32 i32) (result i32)
@@ -17,8 +17,8 @@ fn binop_i32_eqz() {
                     (i32.eqz)
                 )
             )",
-        ));
-        TranslationTest::new(wasm)
+        );
+        TranslationTest::from_wat(wasm)
             .expect_func_instrs([
                 expect_instr(
                     Register::from_i16(2),
@@ -41,7 +41,7 @@ fn binop_imm_i32_eqz() {
         op: &str,
         expect_instr: fn(result: Register, lhs: Register, rhs: Const16<i32>) -> Instruction,
     ) {
-        let wasm = wat2wasm(&format!(
+        let wasm = &format!(
             r"
             (module
                 (func (param i32 i32) (result i32)
@@ -51,8 +51,8 @@ fn binop_imm_i32_eqz() {
                     (i32.eqz)
                 )
             )",
-        ));
-        TranslationTest::new(wasm)
+        );
+        TranslationTest::from_wat(wasm)
             .expect_func_instrs([
                 expect_instr(
                     Register::from_i16(2),

@@ -7,8 +7,7 @@ use crate::engine::{
 #[test]
 #[cfg_attr(miri, ignore)]
 fn no_params_reg() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
             (type $type (func))
@@ -17,9 +16,8 @@ fn no_params_reg() {
                 (call_indirect (type $type))
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_indirect_0(
                 RegisterSpan::new(Register::from_i16(1)),
@@ -35,7 +33,7 @@ fn no_params_reg() {
 #[cfg_attr(miri, ignore)]
 fn no_params_imm16() {
     fn test_with(index: u32) {
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r#"
             (module
                 (import "" "table" (table $table 10 funcref))
@@ -46,8 +44,8 @@ fn no_params_imm16() {
                 )
             )
         "#,
-        ));
-        TranslationTest::new(wasm)
+        );
+        TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
                 Instruction::call_indirect_0(
                     RegisterSpan::new(Register::from_i16(1)),
@@ -68,8 +66,7 @@ fn no_params_imm16() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn one_reg_param_reg() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
             (type $type (func (param i32) (result i32)))
@@ -79,9 +76,8 @@ fn one_reg_param_reg() {
                 (call_indirect (type $type))
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_indirect(
                 RegisterSpan::new(Register::from_i16(2)),
@@ -98,7 +94,7 @@ fn one_reg_param_reg() {
 #[cfg_attr(miri, ignore)]
 fn one_reg_param_imm16() {
     fn test_with(index: u32) {
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r#"
             (module
                 (import "" "table" (table $table 10 funcref))
@@ -110,8 +106,8 @@ fn one_reg_param_imm16() {
                 )
             )
         "#,
-        ));
-        TranslationTest::new(wasm)
+        );
+        TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
                 Instruction::call_indirect(
                     RegisterSpan::new(Register::from_i16(2)),
@@ -134,7 +130,7 @@ fn one_reg_param_imm16() {
 #[cfg_attr(miri, ignore)]
 fn one_reg_param_imm() {
     fn test_with(index: u32) {
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r#"
             (module
                 (import "" "table" (table $table 10 funcref))
@@ -146,8 +142,8 @@ fn one_reg_param_imm() {
                 )
             )
         "#,
-        ));
-        TranslationTest::new(wasm)
+        );
+        TranslationTest::from_wat(&wasm)
             .expect_func(
                 ExpectedFunc::new([
                     Instruction::call_indirect(
@@ -171,8 +167,7 @@ fn one_reg_param_imm() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn one_imm_param_reg() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
             (type $type (func (param i32) (result i32)))
@@ -182,9 +177,8 @@ fn one_imm_param_reg() {
                 (call_indirect (type $type))
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_indirect(
@@ -204,7 +198,7 @@ fn one_imm_param_reg() {
 #[cfg_attr(miri, ignore)]
 fn one_imm_param_imm16() {
     fn test_with(index: u32) {
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r#"
             (module
                 (import "" "table" (table $table 10 funcref))
@@ -216,8 +210,8 @@ fn one_imm_param_imm16() {
                 )
             )
         "#,
-        ));
-        TranslationTest::new(wasm)
+        );
+        TranslationTest::from_wat(&wasm)
             .expect_func(
                 ExpectedFunc::new([
                     Instruction::call_indirect(
@@ -243,7 +237,7 @@ fn one_imm_param_imm16() {
 #[cfg_attr(miri, ignore)]
 fn one_imm_param_imm() {
     fn test_with(index: u32) {
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r#"
             (module
                 (import "" "table" (table $table 10 funcref))
@@ -255,8 +249,8 @@ fn one_imm_param_imm() {
                 )
             )
         "#,
-        ));
-        TranslationTest::new(wasm)
+        );
+        TranslationTest::from_wat(&wasm)
             .expect_func(
                 ExpectedFunc::new([
                     Instruction::call_indirect(
@@ -280,8 +274,7 @@ fn one_imm_param_imm() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn two_reg_params_reg() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
             (type $type (func (param i32 i32) (result i32 i32)))
@@ -292,12 +285,11 @@ fn two_reg_params_reg() {
                 (call_indirect (type $type))
             )
         )
-    "#,
-    );
+    "#;
     let result_reg = Register::from_i16(3);
     let results = RegisterSpan::new(result_reg);
     let elem_index = Register::from_i16(0);
-    TranslationTest::new(wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_indirect(results, SignatureIdx::from(0)),
             Instruction::call_indirect_params(elem_index, TableIdx::from(0)),
@@ -310,8 +302,7 @@ fn two_reg_params_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn two_reg_params_reg_rev() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
             (type $type (func (param i32 i32) (result i32 i32)))
@@ -322,12 +313,11 @@ fn two_reg_params_reg_rev() {
                 (call_indirect (type $type))
             )
         )
-    "#,
-    );
+    "#;
     let result_reg = Register::from_i16(3);
     let results = RegisterSpan::new(result_reg);
     let elem_index = Register::from_i16(0);
-    TranslationTest::new(wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_indirect(results, SignatureIdx::from(0)),
             Instruction::call_indirect_params(elem_index, TableIdx::from(0)),
@@ -340,8 +330,7 @@ fn two_reg_params_reg_rev() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn two_imm_params_reg() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
             (type $type (func (param i32 i32) (result i32 i32)))
@@ -352,12 +341,11 @@ fn two_imm_params_reg() {
                 (call_indirect (type $type))
             )
         )
-    "#,
-    );
+    "#;
     let result_reg = Register::from_i16(1);
     let results = RegisterSpan::new(result_reg);
     let elem_index = Register::from_i16(0);
-    TranslationTest::new(wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_indirect(results, SignatureIdx::from(0)),
@@ -374,7 +362,7 @@ fn two_imm_params_reg() {
 #[cfg_attr(miri, ignore)]
 fn two_reg_params_imm16() {
     fn test_with(index: u32) {
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r#"
             (module
                 (import "" "table" (table $table 10 funcref))
@@ -387,11 +375,11 @@ fn two_reg_params_imm16() {
                 )
             )
         "#,
-        ));
+        );
         let result_reg = Register::from_i16(2);
         let results = RegisterSpan::new(result_reg);
         let elem_index = u32imm16(index);
-        TranslationTest::new(wasm)
+        TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
                 Instruction::call_indirect(results, SignatureIdx::from(0)),
                 Instruction::call_indirect_params_imm16(elem_index, TableIdx::from(0)),
@@ -411,7 +399,7 @@ fn two_reg_params_imm16() {
 #[cfg_attr(miri, ignore)]
 fn two_reg_params_rev_imm16() {
     fn test_with(index: u32) {
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r#"
             (module
                 (import "" "table" (table $table 10 funcref))
@@ -424,11 +412,11 @@ fn two_reg_params_rev_imm16() {
                 )
             )
         "#,
-        ));
+        );
         let result_reg = Register::from_i16(2);
         let results = RegisterSpan::new(result_reg);
         let elem_index = u32imm16(index);
-        TranslationTest::new(wasm)
+        TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
                 Instruction::call_indirect(results, SignatureIdx::from(0)),
                 Instruction::call_indirect_params_imm16(elem_index, TableIdx::from(0)),
@@ -448,7 +436,7 @@ fn two_reg_params_rev_imm16() {
 #[cfg_attr(miri, ignore)]
 fn two_imm_params_imm16() {
     fn test_with(index: u32) {
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r#"
             (module
                 (import "" "table" (table $table 10 funcref))
@@ -461,11 +449,11 @@ fn two_imm_params_imm16() {
                 )
             )
         "#,
-        ));
+        );
         let result_reg = Register::from_i16(0);
         let results = RegisterSpan::new(result_reg);
         let elem_index = u32imm16(index);
-        TranslationTest::new(wasm)
+        TranslationTest::from_wat(&wasm)
             .expect_func(
                 ExpectedFunc::new([
                     Instruction::call_indirect(results, SignatureIdx::from(0)),
@@ -487,8 +475,7 @@ fn two_imm_params_imm16() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn three_reg_params_reg() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
             (type $type (func (param i32 i32 i32) (result i32 i32 i32)))
@@ -500,12 +487,11 @@ fn three_reg_params_reg() {
                 (call_indirect (type $type))
             )
         )
-    "#,
-    );
+    "#;
     let result_reg = Register::from_i16(4);
     let results = RegisterSpan::new(result_reg);
     let elem_index = Register::from_i16(0);
-    TranslationTest::new(wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_indirect(results, SignatureIdx::from(0)),
             Instruction::call_indirect_params(elem_index, TableIdx::from(0)),
@@ -518,8 +504,7 @@ fn three_reg_params_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn three_reg_params_reg_rev() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
             (type $type (func (param i32 i32 i32) (result i32 i32 i32)))
@@ -531,12 +516,11 @@ fn three_reg_params_reg_rev() {
                 (call_indirect (type $type))
             )
         )
-    "#,
-    );
+    "#;
     let result_reg = Register::from_i16(4);
     let results = RegisterSpan::new(result_reg);
     let elem_index = Register::from_i16(0);
-    TranslationTest::new(wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_indirect(results, SignatureIdx::from(0)),
             Instruction::call_indirect_params(elem_index, TableIdx::from(0)),
@@ -549,8 +533,7 @@ fn three_reg_params_reg_rev() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn three_imm_params_reg() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
             (type $type (func (param i32 i32 i32) (result i32 i32 i32)))
@@ -562,12 +545,11 @@ fn three_imm_params_reg() {
                 (call_indirect (type $type))
             )
         )
-    "#,
-    );
+    "#;
     let result_reg = Register::from_i16(1);
     let results = RegisterSpan::new(result_reg);
     let elem_index = Register::from_i16(0);
-    TranslationTest::new(wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_indirect(results, SignatureIdx::from(0)),
@@ -584,7 +566,7 @@ fn three_imm_params_reg() {
 #[cfg_attr(miri, ignore)]
 fn three_imm_params_imm16() {
     fn test_with(index: u32) {
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r#"
             (module
                 (import "" "table" (table $table 10 funcref))
@@ -598,11 +580,11 @@ fn three_imm_params_imm16() {
                 )
             )
         "#,
-        ));
+        );
         let result_reg = Register::from_i16(0);
         let results = RegisterSpan::new(result_reg);
         let elem_index = u32imm16(index);
-        TranslationTest::new(wasm)
+        TranslationTest::from_wat(&wasm)
             .expect_func(
                 ExpectedFunc::new([
                     Instruction::call_indirect(results, SignatureIdx::from(0)),
@@ -624,8 +606,7 @@ fn three_imm_params_imm16() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn params7_reg_index_local() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
             (type $type (func (param i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32)))
@@ -641,9 +622,8 @@ fn params7_reg_index_local() {
                 (call_indirect (type $type))
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_indirect(
                 RegisterSpan::new(Register::from_i16(8)),
@@ -661,8 +641,7 @@ fn params7_reg_index_local() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn params7_imm_index_local() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
             (type $type (func (param i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32)))
@@ -678,9 +657,8 @@ fn params7_imm_index_local() {
                 (call_indirect (type $type))
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_indirect(
@@ -701,8 +679,7 @@ fn params7_imm_index_local() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn params8_reg_index_local() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
             (type $type (func (param i32 i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32 i32)))
@@ -719,9 +696,8 @@ fn params8_reg_index_local() {
                 (call_indirect (type $type))
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_indirect(
                 RegisterSpan::new(Register::from_i16(9)),
@@ -739,8 +715,7 @@ fn params8_reg_index_local() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn params8_imm_index_local() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
             (type $type (func (param i32 i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32 i32)))
@@ -757,9 +732,8 @@ fn params8_imm_index_local() {
                 (call_indirect (type $type))
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_indirect(
@@ -780,8 +754,7 @@ fn params8_imm_index_local() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn params9_reg_index_local() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
             (type $type (func (param i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32 i32 i32)))
@@ -799,9 +772,8 @@ fn params9_reg_index_local() {
                 (call_indirect (type $type))
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_indirect(
                 RegisterSpan::new(Register::from_i16(10)),
@@ -819,8 +791,7 @@ fn params9_reg_index_local() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn params9_imm_index_local() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
             (type $type (func (param i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32 i32 i32)))
@@ -838,9 +809,8 @@ fn params9_imm_index_local() {
                 (call_indirect (type $type))
             )
         )
-    "#,
-    );
-    TranslationTest::new(wasm)
+    "#;
+    TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_indirect(
@@ -861,8 +831,7 @@ fn params9_imm_index_local() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn test_imm_params_dynamic_index() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (type $sig (func (param i32 i32) (result i32)))
             (table funcref (elem $f))
@@ -877,11 +846,10 @@ fn test_imm_params_dynamic_index() {
                 )
             )
         )
-        "#,
-    );
+        "#;
     let result = Register::from_i16(0);
     let results = RegisterSpan::new(result);
-    TranslationTest::new(wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_imm32(0_i32)])
         .expect_func(
             ExpectedFunc::new([
@@ -899,8 +867,7 @@ fn test_imm_params_dynamic_index() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn regression_issue_768() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (type $sig (func (param i32 i32) (result i32)))
             (table funcref (elem $f))
@@ -916,11 +883,10 @@ fn regression_issue_768() {
                 )
             )
         )
-        "#,
-    );
+        "#;
     let result = Register::from_i16(0);
     let results = RegisterSpan::new(result);
-    TranslationTest::new(wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_imm32(0_i32)])
         .expect_func(
             ExpectedFunc::new([

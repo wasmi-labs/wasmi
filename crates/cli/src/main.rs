@@ -27,7 +27,9 @@ fn main() -> Result<()> {
     let mut func_results = utils::prepare_func_results(&ty);
     typecheck_args(&func_name, &ty, &func_args)?;
 
-    print_execution_start(args.wasm_file(), &func_name, &func_args);
+    if args.verbose() {
+        print_execution_start(args.wasm_file(), &func_name, &func_args);
+    }
     if args.invoked().is_some() && ty.params().len() != args.func_args().len() {
         bail!(
             "invalid amount of arguments given to function {}. expected {} but received {}",
