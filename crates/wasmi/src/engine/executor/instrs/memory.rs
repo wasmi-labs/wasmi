@@ -24,7 +24,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::DataDrop`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_data_drop(&mut self, segment_index: DataSegmentIdx) {
         let segment = self
             .cache
@@ -34,7 +34,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemorySize`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_size(&mut self, result: Register) {
         let memory = self.cache.default_memory(self.ctx);
         let size: u32 = self.ctx.resolve_memory(memory).current_pages().into();
@@ -43,7 +43,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryGrow`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_grow(
         &mut self,
         result: Register,
@@ -55,7 +55,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryGrowBy`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_grow_by(
         &mut self,
         result: Register,
@@ -107,7 +107,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryCopy`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_copy(
         &mut self,
         dst: Register,
@@ -121,7 +121,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryCopyTo`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_copy_to(
         &mut self,
         dst: Const16<u32>,
@@ -135,7 +135,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryCopyFrom`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_copy_from(
         &mut self,
         dst: Register,
@@ -149,7 +149,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryCopyFromTo`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_copy_from_to(
         &mut self,
         dst: Const16<u32>,
@@ -163,7 +163,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryCopyExact`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_copy_exact(
         &mut self,
         dst: Register,
@@ -177,7 +177,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryCopyToExact`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_copy_to_exact(
         &mut self,
         dst: Const16<u32>,
@@ -191,7 +191,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryCopyFromExact`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_copy_from_exact(
         &mut self,
         dst: Register,
@@ -205,7 +205,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryCopyFromToExact`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_copy_from_to_exact(
         &mut self,
         dst: Const16<u32>,
@@ -243,7 +243,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryFill`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_fill(
         &mut self,
         dst: Register,
@@ -257,7 +257,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryFillAt`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_fill_at(
         &mut self,
         dst: Const16<u32>,
@@ -271,7 +271,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryFillImm`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_fill_imm(
         &mut self,
         dst: Register,
@@ -284,7 +284,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryFillAtImm`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_fill_at_imm(
         &mut self,
         dst: Const16<u32>,
@@ -297,7 +297,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryFillExact`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_fill_exact(
         &mut self,
         dst: Register,
@@ -311,7 +311,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryFillAtExact`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_fill_at_exact(
         &mut self,
         dst: Const16<u32>,
@@ -325,7 +325,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryFillImmExact`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_fill_imm_exact(
         &mut self,
         dst: Register,
@@ -338,7 +338,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryFillAtImmExact`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_fill_at_imm_exact(
         &mut self,
         dst: Const16<u32>,
@@ -367,7 +367,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryInit`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_init(
         &mut self,
         dst: Register,
@@ -381,7 +381,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryInitTo`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_init_to(
         &mut self,
         dst: Const16<u32>,
@@ -395,7 +395,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryInitFrom`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_init_from(
         &mut self,
         dst: Register,
@@ -409,7 +409,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryInitFromTo`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_init_from_to(
         &mut self,
         dst: Const16<u32>,
@@ -423,7 +423,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryInitExact`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_init_exact(
         &mut self,
         dst: Register,
@@ -437,7 +437,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryInitToExact`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_init_to_exact(
         &mut self,
         dst: Const16<u32>,
@@ -451,7 +451,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryInitFromExact`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_init_from_exact(
         &mut self,
         dst: Register,
@@ -465,7 +465,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::MemoryInitFromToExact`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_memory_init_from_to_exact(
         &mut self,
         dst: Const16<u32>,

@@ -8,7 +8,7 @@ macro_rules! impl_conversion_impls {
     ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            #[inline(always)]
+            // #[inline(always)]
             pub fn $fn_name(&mut self, instr: UnaryInstr) {
                 self.execute_unary(instr, $op)
             }
@@ -20,7 +20,7 @@ macro_rules! impl_fallible_conversion_impls {
     ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            #[inline(always)]
+            // #[inline(always)]
             pub fn $fn_name(&mut self, instr: UnaryInstr) -> Result<(), Error> {
                 self.try_execute_unary(instr, $op)
             }

@@ -292,7 +292,7 @@ impl<'engine> EngineExecutor<'engine> {
     /// # Errors
     ///
     /// When encountering a Wasm or host trap during execution.
-    #[inline(never)]
+    // #[inline(never)]
     fn execute_func<T>(&mut self, mut ctx: StoreContextMut<T>) -> Result<(), TaggedTrap> {
         let mut cache = self
             .stack
@@ -488,7 +488,7 @@ impl<'engine> EngineExecutor<'engine> {
     /// # Errors
     ///
     /// If the Wasm execution traps.
-    #[inline(always)]
+    // #[inline(always)]
     fn execute_compiled_func<T>(
         &mut self,
         ctx: StoreContextMut<T>,
@@ -519,7 +519,7 @@ impl<'engine> EngineExecutor<'engine> {
     /// # Panics
     ///
     /// - If the `results` buffer length does not match the remaining amount of stack values.
-    #[inline]
+    // #[inline]
     fn write_results_back<Results>(&mut self, results: Results) -> <Results as CallResults>::Results
     where
         Results: CallResults,

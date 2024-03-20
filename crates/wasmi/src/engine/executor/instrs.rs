@@ -95,7 +95,7 @@ pub enum WasmOutcome {
 /// # Errors
 ///
 /// If the execution traps.
-#[inline(never)]
+// #[inline(never)]
 pub fn execute_instrs<'ctx, 'engine>(
     ctx: &'ctx mut StoreInner,
     cache: &'engine mut InstanceCache,
@@ -151,7 +151,7 @@ struct Executor<'ctx, 'engine> {
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Creates a new [`Executor`] for executing a Wasmi function frame.
-    #[inline(always)]
+    // #[inline(always)]
     pub fn new(
         ctx: &'ctx mut StoreInner,
         cache: &'engine mut InstanceCache,
@@ -181,7 +181,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes the function frame until it returns or traps.
-    #[inline(always)]
+    // #[inline(always)]
     fn execute(
         mut self,
         resource_limiter: &'ctx mut ResourceLimiterRef<'ctx>,
@@ -883,7 +883,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Shifts the instruction pointer to the next instruction.
-    #[inline(always)]
+    // #[inline(always)]
     fn next_instr(&mut self) {
         self.next_instr_at(1)
     }
@@ -897,7 +897,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// This is used by Wasmi instructions that have a fixed
     /// encoding size of two instruction words such as [`Instruction::Branch`].
-    #[inline(always)]
+    // #[inline(always)]
     fn next_instr_at(&mut self, skip: usize) {
         self.ip.add(skip)
     }
@@ -907,7 +907,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// # Note
     ///
     /// This is a convenience function for fallible instructions.
-    #[inline(always)]
+    // #[inline(always)]
     fn try_next_instr(&mut self) -> Result<(), Error> {
         self.try_next_instr_at(1)
     }
@@ -920,14 +920,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// # Note
     ///
     /// This is a convenience function for fallible instructions.
-    #[inline(always)]
+    // #[inline(always)]
     fn try_next_instr_at(&mut self, skip: usize) -> Result<(), Error> {
         self.next_instr_at(skip);
         Ok(())
     }
 
     /// Returns the [`FrameRegisters`] of the [`CallFrame`].
-    #[inline]
+    // #[inline]
     fn frame_stack_ptr(&mut self, frame: &CallFrame) -> FrameRegisters {
         Self::frame_stack_ptr_impl(self.value_stack, frame)
     }
@@ -1112,19 +1112,19 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// This includes [`Instruction`] variants such as [`Instruction::TableIdx`]
     /// that primarily carry parameters for actually executable [`Instruction`].
-    #[inline(always)]
+    // #[inline(always)]
     fn invalid_instruction_word(&mut self) -> Result<(), Error> {
         self.execute_trap(TrapCode::UnreachableCodeReached)
     }
 
     /// Executes a Wasm `unreachable` instruction.
-    #[inline(always)]
+    // #[inline(always)]
     fn execute_trap(&mut self, trap_code: TrapCode) -> Result<(), Error> {
         Err(Error::from(trap_code))
     }
 
     /// Executes an [`Instruction::ConsumeFuel`].
-    #[inline(always)]
+    // #[inline(always)]
     fn execute_consume_fuel(&mut self, block_fuel: BlockFuel) -> Result<(), Error> {
         // We do not have to check if fuel metering is enabled since
         // [`Instruction::ConsumeFuel`] are only generated if fuel metering
@@ -1136,7 +1136,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::RefFunc`].
-    #[inline(always)]
+    // #[inline(always)]
     fn execute_ref_func(&mut self, result: Register, func_index: FuncIdx) {
         let func = self.cache.get_func(self.ctx, func_index);
         let funcref = FuncRef::new(func);

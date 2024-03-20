@@ -20,7 +20,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// # Note
     ///
     /// Offsets the instruction pointer using the given [`BranchOffset`].
-    #[inline(always)]
+    // #[inline(always)]
     fn branch_to(&mut self, offset: BranchOffset) {
         self.ip.offset(offset.to_i32() as isize)
     }
@@ -30,17 +30,17 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// # Note
     ///
     /// Offsets the instruction pointer using the given [`BranchOffset`].
-    #[inline(always)]
+    // #[inline(always)]
     fn branch_to16(&mut self, offset: BranchOffset16) {
         self.ip.offset(offset.to_i16() as isize)
     }
 
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_branch(&mut self, offset: BranchOffset) {
         self.branch_to(offset)
     }
 
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_branch_table(&mut self, index: Register, len_targets: Const32<u32>) {
         let index: u32 = self.get_register_as(index);
         // The index of the default target which is the last target of the slice.
@@ -57,7 +57,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes an optional copy instruction at `ip`.
     ///
     /// Does nothing if there is no `copy` instruction at `ip`.
-    #[inline(never)]
+    // #[inline(never)]
     fn execute_optional_copy_instr(&mut self) {
         match *self.ip.get() {
             Instruction::Copy { result, value } => self.execute_copy(result, value),
@@ -200,7 +200,7 @@ macro_rules! impl_execute_branch_binop {
         impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             $(
                 #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
-                #[inline(always)]
+                // #[inline(always)]
                 pub fn $fn_name(&mut self, instr: BranchBinOpInstr) {
                     self.execute_branch_binop::<$ty>(instr, $op)
                 }
@@ -257,7 +257,7 @@ macro_rules! impl_execute_branch_binop_imm {
         impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             $(
                 #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
-                #[inline(always)]
+                // #[inline(always)]
                 pub fn $fn_name(&mut self, instr: BranchBinOpInstrImm16<$ty>) {
                     self.execute_branch_binop_imm::<$ty>(instr, $op)
                 }
