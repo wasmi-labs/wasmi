@@ -252,10 +252,6 @@ pub trait Float<T>: ArithmeticOps<T> {
     fn nearest(self) -> T;
     /// Takes the square root of a number.
     fn sqrt(self) -> T;
-    /// Returns `true` if the sign of the number is positive.
-    fn is_sign_positive(self) -> bool;
-    /// Returns `true` if the sign of the number is negative.
-    fn is_sign_negative(self) -> bool;
     /// Returns the division of the two numbers.
     fn div(self, other: T) -> T;
     /// Returns the minimum of the two numbers.
@@ -695,14 +691,6 @@ macro_rules! impl_float {
                 WasmFloatExt::sqrt(<$float_repr>::from(self)).into()
             }
             #[inline]
-            fn is_sign_positive(self) -> bool {
-                <$float_repr>::is_sign_positive(<$float_repr>::from(self)).into()
-            }
-            #[inline]
-            fn is_sign_negative(self) -> bool {
-                <$float_repr>::is_sign_negative(<$float_repr>::from(self)).into()
-            }
-            #[inline]
             fn div(self, other: Self) -> Self {
                 self / other
             }
@@ -715,7 +703,7 @@ macro_rules! impl_float {
                     (false, true) => other,
                     _ => {
                         // Case: Both values are NaN; OR both values are non-NaN.
-                        if other.is_sign_negative() {
+                        if <$float_repr>::is_sign_negative(<$float_repr>::from(other)) {
                             return other.min(self);
                         }
                         self.min(other)
@@ -731,7 +719,7 @@ macro_rules! impl_float {
                     (false, true) => other,
                     _ => {
                         // Case: Both values are NaN; OR both values are non-NaN.
-                        if other.is_sign_positive() {
+                        if <$float_repr>::is_sign_positive(<$float_repr>::from(other)) {
                             return other.max(self);
                         }
                         self.max(other)
