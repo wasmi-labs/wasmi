@@ -248,8 +248,6 @@ pub trait Float<T>: ArithmeticOps<T> {
     fn ceil(self) -> T;
     /// Returns the integer part of a number.
     fn trunc(self) -> T;
-    /// Returns the nearest integer to a number. Round half-way cases away from 0.0.
-    fn round(self) -> T;
     /// Returns the nearest integer to a number. Ties are round to even number.
     fn nearest(self) -> T;
     /// Takes the square root of a number.
@@ -660,76 +658,49 @@ macro_rules! impl_integer {
         }
     };
 }
-
 impl_integer!(i32);
 impl_integer!(u32);
 impl_integer!(i64);
 impl_integer!(u64);
 
-#[cfg(feature = "std")]
-mod fmath {
-    pub use f32;
-    pub use f64;
-}
-
-#[cfg(not(feature = "std"))]
-mod fmath {
-    pub use super::libm_adapters::{f32, f64};
-}
-
 // We cannot call the math functions directly, because they are not all available in `core`.
 // In no-std cases we instead rely on `libm`.
 // These wrappers handle that delegation.
 macro_rules! impl_float {
-    ($type:ident, $fXX:ident, $iXX:ident) => {
+    (type $type:ident { base: $float_repr:ident, repr: $repr_int:ident }) => {
         // In this particular instance we want to directly compare floating point numbers.
         impl Float<Self> for $type {
             #[inline]
             fn abs(self) -> Self {
-                fmath::$fXX::abs(<$fXX>::from(self)).into()
+                WasmFloatExt::abs(<$float_repr>::from(self)).into()
             }
             #[inline]
             fn floor(self) -> Self {
-                fmath::$fXX::floor(<$fXX>::from(self)).into()
+                WasmFloatExt::floor(<$float_repr>::from(self)).into()
             }
             #[inline]
             fn ceil(self) -> Self {
-                fmath::$fXX::ceil(<$fXX>::from(self)).into()
+                WasmFloatExt::ceil(<$float_repr>::from(self)).into()
             }
             #[inline]
             fn trunc(self) -> Self {
-                fmath::$fXX::trunc(<$fXX>::from(self)).into()
-            }
-            #[inline]
-            fn round(self) -> Self {
-                fmath::$fXX::round(<$fXX>::from(self)).into()
+                WasmFloatExt::trunc(<$float_repr>::from(self)).into()
             }
             #[inline]
             fn nearest(self) -> Self {
-                let round = self.round();
-                if fmath::$fXX::fract(<$fXX>::from(self)).abs() != 0.5 {
-                    return round;
-                }
-                let rem = ::core::ops::Rem::rem(round, 2.0);
-                if rem == 1.0 {
-                    self.floor()
-                } else if rem == -1.0 {
-                    self.ceil()
-                } else {
-                    round
-                }
+                WasmFloatExt::nearest(<$float_repr>::from(self)).into()
             }
             #[inline]
             fn sqrt(self) -> Self {
-                fmath::$fXX::sqrt(<$fXX>::from(self)).into()
+                WasmFloatExt::sqrt(<$float_repr>::from(self)).into()
             }
             #[inline]
             fn is_sign_positive(self) -> bool {
-                <$fXX>::is_sign_positive(<$fXX>::from(self)).into()
+                <$float_repr>::is_sign_positive(<$float_repr>::from(self)).into()
             }
             #[inline]
             fn is_sign_negative(self) -> bool {
-                <$fXX>::is_sign_negative(<$fXX>::from(self)).into()
+                <$float_repr>::is_sign_negative(<$float_repr>::from(self)).into()
             }
             #[inline]
             fn div(self, other: Self) -> Self {
@@ -770,9 +741,9 @@ macro_rules! impl_float {
             #[inline]
             fn copysign(self, other: Self) -> Self {
                 use core::mem::size_of;
-                let sign_mask: $iXX = 1 << ((size_of::<$iXX>() << 3) - 1);
-                let self_int: $iXX = self.transmute_into();
-                let other_int: $iXX = other.transmute_into();
+                let sign_mask: $repr_int = 1 << ((size_of::<$repr_int>() << 3) - 1);
+                let self_int: $repr_int = self.transmute_into();
+                let other_int: $repr_int = other.transmute_into();
                 let is_self_sign_set = (self_int & sign_mask) != 0;
                 let is_other_sign_set = (other_int & sign_mask) != 0;
                 if is_self_sign_set == is_other_sign_set {
@@ -786,122 +757,203 @@ macro_rules! impl_float {
         }
     };
 }
+impl_float!( type f32 { base: f32, repr: i32 } );
+impl_float!( type f64 { base: f64, repr: i64 } );
+impl_float!( type F32 { base: f32, repr: i32 } );
+impl_float!( type F64 { base: f64, repr: i64 } );
 
-#[test]
-fn wasm_float_min_regression_works() {
-    assert_eq!(
-        Float::min(F32::from(-0.0), F32::from(0.0)).to_bits(),
-        0x8000_0000,
-    );
-    assert_eq!(
-        Float::min(F32::from(0.0), F32::from(-0.0)).to_bits(),
-        0x8000_0000,
-    );
-}
-
-#[test]
-fn wasm_float_max_regression_works() {
-    assert_eq!(
-        Float::max(F32::from(-0.0), F32::from(0.0)).to_bits(),
-        0x0000_0000,
-    );
-    assert_eq!(
-        Float::max(F32::from(0.0), F32::from(-0.0)).to_bits(),
-        0x0000_0000,
-    );
-}
-
-impl_float!(f32, f32, i32);
-impl_float!(f64, f64, i64);
-impl_float!(F32, f32, i32);
-impl_float!(F64, f64, i64);
-
-#[test]
-fn copysign_regression_works() {
-    // This test has been directly extracted from a WebAssembly Specification assertion.
-    use Float as _;
-    assert!(F32::from_bits(0xFFC00000).is_nan());
-    assert_eq!(
-        F32::from_bits(0xFFC00000)
-            .copysign(F32::from_bits(0x0000_0000))
-            .to_bits(),
-        F32::from_bits(0x7FC00000).to_bits()
-    )
+/// Low-level Wasm float interface to support `no_std` environments.
+///
+/// # Dev. Note
+///
+/// The problem is that in `no_std` builds the Rust standard library
+/// does not specify all of the below methods for `f32` and `f64`.
+/// Thus this trait serves as an adapter to import this functionality
+/// via `libm`.
+trait WasmFloatExt {
+    /// Equivalent to the Wasm `{f32,f64}.abs` instructions.
+    fn abs(self) -> Self;
+    /// Equivalent to the Wasm `{f32,f64}.ceil` instructions.
+    fn ceil(self) -> Self;
+    /// Equivalent to the Wasm `{f32,f64}.floor` instructions.
+    fn floor(self) -> Self;
+    /// Equivalent to the Wasm `{f32,f64}.trunc` instructions.
+    fn trunc(self) -> Self;
+    /// Equivalent to the Wasm `{f32,f64}.sqrt` instructions.
+    fn sqrt(self) -> Self;
+    /// Equivalent to the Wasm `{f32,f64}.nearest` instructions.
+    fn nearest(self) -> Self;
 }
 
 #[cfg(not(feature = "std"))]
-mod libm_adapters {
-    pub mod f32 {
-        #[inline]
-        pub fn abs(v: f32) -> f32 {
-            libm::fabsf(v)
-        }
-
-        #[inline]
-        pub fn floor(v: f32) -> f32 {
-            libm::floorf(v)
-        }
-
-        #[inline]
-        pub fn ceil(v: f32) -> f32 {
-            libm::ceilf(v)
-        }
-
-        #[inline]
-        pub fn trunc(v: f32) -> f32 {
-            libm::truncf(v)
-        }
-
-        #[inline]
-        pub fn round(v: f32) -> f32 {
-            libm::roundf(v)
-        }
-
-        #[inline]
-        pub fn fract(v: f32) -> f32 {
-            v - trunc(v)
-        }
-
-        #[inline]
-        pub fn sqrt(v: f32) -> f32 {
-            libm::sqrtf(v)
-        }
+impl WasmFloatExt for f32 {
+    #[inline]
+    fn abs(self) -> Self {
+        libm::fabsf(self)
     }
 
-    pub mod f64 {
-        #[inline]
-        pub fn abs(v: f64) -> f64 {
-            libm::fabs(v)
-        }
+    #[inline]
+    fn ceil(self) -> Self {
+        libm::ceilf(self)
+    }
 
-        #[inline]
-        pub fn floor(v: f64) -> f64 {
-            libm::floor(v)
-        }
+    #[inline]
+    fn floor(self) -> Self {
+        libm::floorf(self)
+    }
 
-        #[inline]
-        pub fn ceil(v: f64) -> f64 {
-            libm::ceil(v)
-        }
+    #[inline]
+    fn trunc(self) -> Self {
+        libm::truncf(self)
+    }
 
-        #[inline]
-        pub fn trunc(v: f64) -> f64 {
-            libm::trunc(v)
-        }
+    #[inline]
+    fn sqrt(self) -> Self {
+        libm::sqrtf(self)
+    }
 
-        #[inline]
-        pub fn round(v: f64) -> f64 {
-            libm::round(v)
+    #[inline]
+    fn nearest(self) -> Self {
+        let round = libm::roundf(self);
+        if <Self as WasmFloatExt>::abs(self - <Self as WasmFloatExt>::trunc(self)) != 0.5 {
+            return round;
         }
+        let rem = round % 2.0;
+        if rem == 1.0 {
+            <Self as WasmFloatExt>::floor(self)
+        } else if rem == -1.0 {
+            <Self as WasmFloatExt>::ceil(self)
+        } else {
+            round
+        }
+    }
+}
 
-        #[inline]
-        pub fn fract(v: f64) -> f64 {
-            v - trunc(v)
-        }
+#[cfg(not(feature = "std"))]
+impl WasmFloatExt for f64 {
+    #[inline]
+    fn abs(self) -> Self {
+        libm::fabs(self)
+    }
 
-        #[inline]
-        pub fn sqrt(v: f64) -> f64 {
-            libm::sqrt(v)
+    #[inline]
+    fn ceil(self) -> Self {
+        libm::ceil(self)
+    }
+
+    #[inline]
+    fn floor(self) -> Self {
+        libm::floor(self)
+    }
+
+    #[inline]
+    fn trunc(self) -> Self {
+        libm::trunc(self)
+    }
+
+    #[inline]
+    fn sqrt(self) -> Self {
+        libm::sqrt(self)
+    }
+
+    #[inline]
+    fn nearest(self) -> Self {
+        let round = libm::round(self);
+        if <Self as WasmFloatExt>::abs(self - <Self as WasmFloatExt>::trunc(self)) != 0.5 {
+            return round;
         }
+        let rem = round % 2.0;
+        if rem == 1.0 {
+            <Self as WasmFloatExt>::floor(self)
+        } else if rem == -1.0 {
+            <Self as WasmFloatExt>::ceil(self)
+        } else {
+            round
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+macro_rules! impl_wasm_float {
+    ($ty:ty) => {
+        impl WasmFloatExt for $ty {
+            #[inline]
+            fn abs(self) -> Self {
+                self.abs()
+            }
+
+            #[inline]
+            fn ceil(self) -> Self {
+                self.ceil()
+            }
+
+            #[inline]
+            fn floor(self) -> Self {
+                self.floor()
+            }
+
+            #[inline]
+            fn trunc(self) -> Self {
+                self.trunc()
+            }
+
+            #[inline]
+            fn nearest(self) -> Self {
+                self.round_ties_even()
+            }
+
+            #[inline]
+            fn sqrt(self) -> Self {
+                self.sqrt()
+            }
+        }
+    };
+}
+
+#[cfg(feature = "std")]
+impl_wasm_float!(f32);
+
+#[cfg(feature = "std")]
+impl_wasm_float!(f64);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn wasm_float_min_regression_works() {
+        assert_eq!(
+            Float::min(F32::from(-0.0), F32::from(0.0)).to_bits(),
+            0x8000_0000,
+        );
+        assert_eq!(
+            Float::min(F32::from(0.0), F32::from(-0.0)).to_bits(),
+            0x8000_0000,
+        );
+    }
+
+    #[test]
+    fn wasm_float_max_regression_works() {
+        assert_eq!(
+            Float::max(F32::from(-0.0), F32::from(0.0)).to_bits(),
+            0x0000_0000,
+        );
+        assert_eq!(
+            Float::max(F32::from(0.0), F32::from(-0.0)).to_bits(),
+            0x0000_0000,
+        );
+    }
+
+    #[test]
+    fn copysign_regression_works() {
+        // This test has been directly extracted from a WebAssembly Specification assertion.
+        use Float as _;
+        assert!(F32::from_bits(0xFFC00000).is_nan());
+        assert_eq!(
+            F32::from_bits(0xFFC00000)
+                .copysign(F32::from_bits(0x0000_0000))
+                .to_bits(),
+            F32::from_bits(0x7FC00000).to_bits()
+        )
     }
 }
