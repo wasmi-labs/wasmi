@@ -69,89 +69,6 @@ use wasmi_core::TrapCode;
 /// - `cN`: Constant (immediate) value
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Instruction {
-    /// A [`TableIdx`] instruction parameter.
-    ///
-    /// # Note
-    ///
-    /// This [`Instruction`] only acts as a parameter to another
-    /// one and will never be executed itself directly.
-    TableIdx(TableIdx),
-    /// A [`DataSegmentIdx`] instruction parameter.
-    ///
-    /// # Note
-    ///
-    /// This [`Instruction`] only acts as a parameter to another
-    /// one and will never be executed itself directly.
-    DataSegmentIdx(DataSegmentIdx),
-    /// A [`ElementSegmentIdx`] instruction parameter.
-    ///
-    /// # Note
-    ///
-    /// This [`Instruction`] only acts as a parameter to another
-    /// one and will never be executed itself directly.
-    ElementSegmentIdx(ElementSegmentIdx),
-    /// A [`AnyConst32`] instruction parameter.
-    ///
-    /// # Note
-    ///
-    /// This [`Instruction`] only acts as a parameter to another
-    /// one and will never be executed itself directly.
-    Const32(AnyConst32),
-    /// A [`Const32<i64>`] instruction parameter.
-    ///
-    /// # Note
-    ///
-    /// This [`Instruction`] only acts as a parameter to another
-    /// one and will never be executed itself directly.
-    I64Const32(Const32<i64>),
-    /// A [`Const32<f64>`] instruction parameter.
-    ///
-    /// # Note
-    ///
-    /// This [`Instruction`] only acts as a parameter to another
-    /// one and will never be executed itself directly.
-    F64Const32(Const32<f64>),
-    /// A [`Register`] instruction parameter.
-    ///
-    /// # Note
-    ///
-    /// This [`Instruction`] only acts as a parameter to another
-    /// one and will never be executed itself directly.
-    Register(Register),
-    /// Two [`Register`] instruction parameters.
-    ///
-    /// # Note
-    ///
-    /// This [`Instruction`] only acts as a parameter to another
-    /// one and will never be executed itself directly.
-    Register2([Register; 2]),
-    /// Three [`Register`] instruction parameters.
-    ///
-    /// # Note
-    ///
-    /// This [`Instruction`] only acts as a parameter to another
-    /// one and will never be executed itself directly.
-    Register3([Register; 3]),
-    /// [`Register`] slice parameters.
-    ///
-    /// # Note
-    ///
-    /// This [`Instruction`] only acts as a parameter to another
-    /// one and will never be executed itself directly.
-    ///
-    /// # Encoding
-    ///
-    /// This must always be followed by one of
-    ///
-    /// - [`Instruction::Register`]
-    /// - [`Instruction::Register2`]
-    /// - [`Instruction::Register3`]
-    RegisterList([Register; 3]),
-    /// Auxiliary [`Instruction`] to encode table access information for indirect call instructions.
-    CallIndirectParams(CallIndirectParams<Register>),
-    /// Variant of [`Instruction::CallIndirectParams`] for 16-bit constant `index` parameter.
-    CallIndirectParamsImm16(CallIndirectParams<Const16<u32>>),
-
     /// Traps the execution with the given [`TrapCode`].
     ///
     /// # Note
@@ -3147,6 +3064,89 @@ pub enum Instruction {
         /// The number of initialized bytes.
         len: Const16<u32>,
     },
+
+    /// A [`TableIdx`] instruction parameter.
+    ///
+    /// # Note
+    ///
+    /// This [`Instruction`] only acts as a parameter to another
+    /// one and will never be executed itself directly.
+    TableIdx(TableIdx),
+    /// A [`DataSegmentIdx`] instruction parameter.
+    ///
+    /// # Note
+    ///
+    /// This [`Instruction`] only acts as a parameter to another
+    /// one and will never be executed itself directly.
+    DataSegmentIdx(DataSegmentIdx),
+    /// A [`ElementSegmentIdx`] instruction parameter.
+    ///
+    /// # Note
+    ///
+    /// This [`Instruction`] only acts as a parameter to another
+    /// one and will never be executed itself directly.
+    ElementSegmentIdx(ElementSegmentIdx),
+    /// A [`AnyConst32`] instruction parameter.
+    ///
+    /// # Note
+    ///
+    /// This [`Instruction`] only acts as a parameter to another
+    /// one and will never be executed itself directly.
+    Const32(AnyConst32),
+    /// A [`Const32<i64>`] instruction parameter.
+    ///
+    /// # Note
+    ///
+    /// This [`Instruction`] only acts as a parameter to another
+    /// one and will never be executed itself directly.
+    I64Const32(Const32<i64>),
+    /// A [`Const32<f64>`] instruction parameter.
+    ///
+    /// # Note
+    ///
+    /// This [`Instruction`] only acts as a parameter to another
+    /// one and will never be executed itself directly.
+    F64Const32(Const32<f64>),
+    /// A [`Register`] instruction parameter.
+    ///
+    /// # Note
+    ///
+    /// This [`Instruction`] only acts as a parameter to another
+    /// one and will never be executed itself directly.
+    Register(Register),
+    /// Two [`Register`] instruction parameters.
+    ///
+    /// # Note
+    ///
+    /// This [`Instruction`] only acts as a parameter to another
+    /// one and will never be executed itself directly.
+    Register2([Register; 2]),
+    /// Three [`Register`] instruction parameters.
+    ///
+    /// # Note
+    ///
+    /// This [`Instruction`] only acts as a parameter to another
+    /// one and will never be executed itself directly.
+    Register3([Register; 3]),
+    /// [`Register`] slice parameters.
+    ///
+    /// # Note
+    ///
+    /// This [`Instruction`] only acts as a parameter to another
+    /// one and will never be executed itself directly.
+    ///
+    /// # Encoding
+    ///
+    /// This must always be followed by one of
+    ///
+    /// - [`Instruction::Register`]
+    /// - [`Instruction::Register2`]
+    /// - [`Instruction::Register3`]
+    RegisterList([Register; 3]),
+    /// Auxiliary [`Instruction`] to encode table access information for indirect call instructions.
+    CallIndirectParams(CallIndirectParams<Register>),
+    /// Variant of [`Instruction::CallIndirectParams`] for 16-bit constant `index` parameter.
+    CallIndirectParamsImm16(CallIndirectParams<Const16<u32>>),
 }
 
 impl Instruction {

@@ -189,18 +189,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         use Instruction as Instr;
         loop {
             match *self.ip.get() {
-                Instr::TableIdx(_)
-                | Instr::DataSegmentIdx(_)
-                | Instr::ElementSegmentIdx(_)
-                | Instr::Const32(_)
-                | Instr::I64Const32(_)
-                | Instr::F64Const32(_)
-                | Instr::Register(_)
-                | Instr::Register2(_)
-                | Instr::Register3(_)
-                | Instr::RegisterList(_)
-                | Instr::CallIndirectParams(_)
-                | Instr::CallIndirectParamsImm16(_) => self.invalid_instruction_word()?,
                 Instr::Trap(trap_code) => self.execute_trap(trap_code)?,
                 Instr::ConsumeFuel(block_fuel) => self.execute_consume_fuel(block_fuel)?,
                 Instr::Return => {
@@ -858,6 +846,18 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::MemoryInitFromToExact { dst, src, len } => {
                     self.execute_memory_init_from_to_exact(dst, src, len)?
                 }
+                Instr::TableIdx(_)
+                | Instr::DataSegmentIdx(_)
+                | Instr::ElementSegmentIdx(_)
+                | Instr::Const32(_)
+                | Instr::I64Const32(_)
+                | Instr::F64Const32(_)
+                | Instr::Register(_)
+                | Instr::Register2(_)
+                | Instr::Register3(_)
+                | Instr::RegisterList(_)
+                | Instr::CallIndirectParams(_)
+                | Instr::CallIndirectParamsImm16(_) => self.invalid_instruction_word()?,
             }
         }
     }
