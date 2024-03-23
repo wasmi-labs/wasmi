@@ -2520,25 +2520,15 @@ pub enum Instruction {
 
     /// `i32` add instruction: `r0 = r1 + r2`
     I32Add(BinInstr),
-    /// `i64` add instruction: `r0 = r1 + r2`
-    I64Add(BinInstr),
     /// `i32` add (small) immediate instruction: `r0 = r1 + c0`
     ///
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I32Add`] for 16-bit constant values.
     I32AddImm16(BinInstrImm16<i32>),
-    /// `i64` add (small) immediate instruction: `r0 = r1 + c0`
-    ///
-    /// # Note
-    ///
-    /// Optimized variant of [`Instruction::I64Add`] for 16-bit constant values.
-    I64AddImm16(BinInstrImm16<i64>),
 
     /// `i32` subtract instruction: `r0 = r1 - r2`
     I32Sub(BinInstr),
-    /// `i64` subtract instruction: `r0 = r1 - r2`
-    I64Sub(BinInstr),
     /// `i32` subtract immediate instruction: `r0 = c0 - r1`
     ///
     /// # Note
@@ -2546,30 +2536,15 @@ pub enum Instruction {
     /// - Optimized variant of [`Instruction::I32Sub`] for 16-bit constant values.
     /// - Required instruction since subtraction is not commutative.
     I32SubImm16Rev(BinInstrImm16<i32>),
-    /// `i64` subtract immediate instruction: `r0 = c0 - r1`
-    ///
-    /// # Note
-    ///
-    /// - Optimized variant of [`Instruction::I64Sub`] for 16-bit constant values.
-    /// - Required instruction since subtraction is not commutative.
-    I64SubImm16Rev(BinInstrImm16<i64>),
 
     /// `i32` multiply instruction: `r0 = r1 * r2`
     I32Mul(BinInstr),
-    /// `i64` multiply instruction: `r0 = r1 * r2`
-    I64Mul(BinInstr),
     /// `i32` multiply immediate instruction: `r0 = r1 * c0`
     ///
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I32Mul`] for 16-bit constant values.
     I32MulImm16(BinInstrImm16<i32>),
-    /// `i64` multiply immediate instruction: `r0 = r1 * c0`
-    ///
-    /// # Note
-    ///
-    /// Optimized variant of [`Instruction::I64Mul`] for 16-bit constant values.
-    I64MulImm16(BinInstrImm16<i64>),
 
     /// `i32` singed-division instruction: `r0 = r1 / r2`
     I32DivS(BinInstr),
@@ -2716,6 +2691,34 @@ pub enum Instruction {
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Required instruction since unsigned-remainder is not commutative.
     I64RemUImm16Rev(BinInstrImm16<u64>),
+
+    /// `i64` add instruction: `r0 = r1 + r2`
+    I64Add(BinInstr),
+    /// `i64` add (small) immediate instruction: `r0 = r1 + c0`
+    ///
+    /// # Note
+    ///
+    /// Optimized variant of [`Instruction::I64Add`] for 16-bit constant values.
+    I64AddImm16(BinInstrImm16<i64>),
+
+    /// `i64` subtract instruction: `r0 = r1 - r2`
+    I64Sub(BinInstr),
+    /// `i64` subtract immediate instruction: `r0 = c0 - r1`
+    ///
+    /// # Note
+    ///
+    /// - Optimized variant of [`Instruction::I64Sub`] for 16-bit constant values.
+    /// - Required instruction since subtraction is not commutative.
+    I64SubImm16Rev(BinInstrImm16<i64>),
+
+    /// `i64` multiply instruction: `r0 = r1 * r2`
+    I64Mul(BinInstr),
+    /// `i64` multiply immediate instruction: `r0 = r1 * c0`
+    ///
+    /// # Note
+    ///
+    /// Optimized variant of [`Instruction::I64Mul`] for 16-bit constant values.
+    I64MulImm16(BinInstrImm16<i64>),
 
     /// `i32` bitwise-and instruction: `r0 = r1 & r2`
     I32And(BinInstr),
