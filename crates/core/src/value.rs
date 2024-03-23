@@ -603,8 +603,6 @@ macro_rules! impl_float {
         }
     };
 }
-impl_float!( type f32 as f32 );
-impl_float!( type f64 as f64 );
 impl_float!( type F32 as f32 );
 impl_float!( type F64 as f64 );
 
