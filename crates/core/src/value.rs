@@ -533,32 +533,32 @@ impl_integer!(u64);
 // In no-std cases we instead rely on `libm`.
 // These wrappers handle that delegation.
 macro_rules! impl_float {
-    (type $type:ident { base: $float_repr:ident, repr: $repr_int:ident }) => {
+    (type $type:ident as $repr:ty) => {
         // In this particular instance we want to directly compare floating point numbers.
         impl Float<Self> for $type {
             #[inline]
             fn abs(self) -> Self {
-                WasmFloatExt::abs(<$float_repr>::from(self)).into()
+                WasmFloatExt::abs(<$repr>::from(self)).into()
             }
             #[inline]
             fn floor(self) -> Self {
-                WasmFloatExt::floor(<$float_repr>::from(self)).into()
+                WasmFloatExt::floor(<$repr>::from(self)).into()
             }
             #[inline]
             fn ceil(self) -> Self {
-                WasmFloatExt::ceil(<$float_repr>::from(self)).into()
+                WasmFloatExt::ceil(<$repr>::from(self)).into()
             }
             #[inline]
             fn trunc(self) -> Self {
-                WasmFloatExt::trunc(<$float_repr>::from(self)).into()
+                WasmFloatExt::trunc(<$repr>::from(self)).into()
             }
             #[inline]
             fn nearest(self) -> Self {
-                WasmFloatExt::nearest(<$float_repr>::from(self)).into()
+                WasmFloatExt::nearest(<$repr>::from(self)).into()
             }
             #[inline]
             fn sqrt(self) -> Self {
-                WasmFloatExt::sqrt(<$float_repr>::from(self)).into()
+                WasmFloatExt::sqrt(<$repr>::from(self)).into()
             }
             #[inline]
             fn div(self, other: Self) -> Self {
@@ -566,47 +566,57 @@ macro_rules! impl_float {
             }
             #[inline]
             fn min(self, other: Self) -> Self {
-                // The implementation strictly adheres to the mandated behavior for the Wasm specification.
-                // Note: In other contexts this API is also known as: `nan_min`.
-                match (self.is_nan(), other.is_nan()) {
-                    (true, false) => self,
-                    (false, true) => other,
-                    _ => {
-                        // Case: Both values are NaN; OR both values are non-NaN.
-                        if <$float_repr>::is_sign_negative(<$float_repr>::from(other)) {
-                            return other.min(self);
-                        }
-                        self.min(other)
+                // Note: equal to the unstable `f32::minimum` method.
+                //
+                // Once `f32::minimum` is stable we can simply use it here.
+                if self < other {
+                    self
+                } else if other < self {
+                    other
+                } else if self == other {
+                    if <$repr>::is_sign_negative(<$repr>::from(self))
+                        && <$repr>::is_sign_positive(<$repr>::from(other))
+                    {
+                        self
+                    } else {
+                        other
                     }
+                } else {
+                    // At least one input is NaN. Use `+` to perform NaN propagation and quieting.
+                    self + other
                 }
             }
             #[inline]
             fn max(self, other: Self) -> Self {
-                // The implementation strictly adheres to the mandated behavior for the Wasm specification.
-                // Note: In other contexts this API is also known as: `nan_max`.
-                match (self.is_nan(), other.is_nan()) {
-                    (true, false) => self,
-                    (false, true) => other,
-                    _ => {
-                        // Case: Both values are NaN; OR both values are non-NaN.
-                        if <$float_repr>::is_sign_positive(<$float_repr>::from(other)) {
-                            return other.max(self);
-                        }
-                        self.max(other)
+                // Note: equal to the unstable `f32::maximum` method.
+                //
+                // Once `f32::maximum` is stable we can simply use it here.
+                if self > other {
+                    self
+                } else if other > self {
+                    other
+                } else if self == other {
+                    if <$repr>::is_sign_positive(<$repr>::from(self))
+                        && <$repr>::is_sign_negative(<$repr>::from(other))
+                    {
+                        self
+                    } else {
+                        other
                     }
+                } else {
+                    // At least one input is NaN. Use `+` to perform NaN propagation and quieting.
+                    self + other
                 }
             }
             #[inline]
             fn copysign(self, other: Self) -> Self {
-                WasmFloatExt::copysign(<$float_repr>::from(self), <$float_repr>::from(other)).into()
+                WasmFloatExt::copysign(<$repr>::from(self), <$repr>::from(other)).into()
             }
         }
     };
 }
-impl_float!( type f32 { base: f32, repr: i32 } );
-impl_float!( type f64 { base: f64, repr: i64 } );
-impl_float!( type F32 { base: f32, repr: i32 } );
-impl_float!( type F64 { base: f64, repr: i64 } );
+impl_float!( type F32 as f32 );
+impl_float!( type F64 as f64 );
 
 /// Low-level Wasm float interface to support `no_std` environments.
 ///
