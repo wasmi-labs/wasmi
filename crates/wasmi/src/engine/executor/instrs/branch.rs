@@ -297,6 +297,7 @@ impl_execute_branch_binop_imm! {
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes an [`Instruction::BranchCmpFallback`].
+    #[cold]
     pub fn execute_branch_cmp_fallback(&mut self, lhs: Register, rhs: Register, params: Register) {
         use BranchComparator as C;
         let params = self.get_register(params);

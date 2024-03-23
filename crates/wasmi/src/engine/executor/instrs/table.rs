@@ -108,6 +108,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableCopy`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_table_copy(
         &mut self,
         dst: Register,
@@ -122,6 +123,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableCopyTo`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_table_copy_to(
         &mut self,
         dst: Const16<u32>,
@@ -136,6 +138,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableCopyFrom`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_table_copy_from(
         &mut self,
         dst: Register,
@@ -150,6 +153,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableCopyFromTo`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_table_copy_from_to(
         &mut self,
         dst: Const16<u32>,
@@ -164,6 +168,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableCopyExact`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_table_copy_exact(
         &mut self,
         dst: Register,
@@ -178,6 +183,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableCopyToExact`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_table_copy_to_exact(
         &mut self,
         dst: Const16<u32>,
@@ -192,6 +198,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableCopyFromExact`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_table_copy_from_exact(
         &mut self,
         dst: Register,
@@ -206,6 +213,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableCopyFromToExact`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_table_copy_from_to_exact(
         &mut self,
         dst: Const16<u32>,
@@ -219,6 +227,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic `table.copy` instruction.
+    #[inline(never)]
     fn execute_table_copy_impl(
         &mut self,
         dst_index: u32,
@@ -246,6 +255,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableInit`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_table_init(
         &mut self,
         dst: Register,
@@ -260,6 +270,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableInitTo`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_table_init_to(
         &mut self,
         dst: Const16<u32>,
@@ -274,6 +285,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableInitFrom`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_table_init_from(
         &mut self,
         dst: Register,
@@ -288,6 +300,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableInitFromTo`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_table_init_from_to(
         &mut self,
         dst: Const16<u32>,
@@ -302,6 +315,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableInitExact`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_table_init_exact(
         &mut self,
         dst: Register,
@@ -316,6 +330,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableInitToExact`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_table_init_to_exact(
         &mut self,
         dst: Const16<u32>,
@@ -330,6 +345,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableInitFromExact`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_table_init_from_exact(
         &mut self,
         dst: Register,
@@ -344,6 +360,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableInitFromToExact`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_table_init_from_to_exact(
         &mut self,
         dst: Const16<u32>,
@@ -357,6 +374,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic `table.init` instruction.
+    #[inline(never)]
     fn execute_table_init_impl(
         &mut self,
         dst_index: u32,
@@ -385,6 +403,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableFill`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_table_fill(
         &mut self,
         dst: Register,
@@ -398,6 +417,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableFillAt`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_table_fill_at(
         &mut self,
         dst: Const16<u32>,
@@ -411,6 +431,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableFillExact`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_table_fill_exact(
         &mut self,
         dst: Register,
@@ -424,6 +445,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableFillAtExact`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_table_fill_at_exact(
         &mut self,
         dst: Const16<u32>,
@@ -436,6 +458,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic `table.fill` instruction.
+    #[inline(never)]
     fn execute_table_fill_impl(
         &mut self,
         dst: u32,
@@ -452,6 +475,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableGrow`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_table_grow(
         &mut self,
         result: Register,
@@ -465,6 +489,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::TableGrowImm`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_table_grow_imm(
         &mut self,
         result: Register,
@@ -477,6 +502,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic `table.grow` instruction.
+    #[inline(never)]
     fn execute_table_grow_impl(
         &mut self,
         result: Register,
@@ -505,6 +531,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::ElemDrop`].
     // #[inline(always)]
+    #[cold]
     pub fn execute_element_drop(&mut self, segment_index: ElementSegmentIdx) {
         let segment = self.cache.get_element_segment(self.ctx, segment_index);
         self.ctx.resolve_element_segment_mut(&segment).drop_items();
