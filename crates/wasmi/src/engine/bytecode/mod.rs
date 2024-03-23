@@ -2653,6 +2653,91 @@ pub enum Instruction {
     /// Optimized variant of [`Instruction::I32Xor`] for 16-bit constant values.
     I32XorImm16(BinInstrImm16<i32>),
 
+    /// `i32` logical shift-left instruction: `r0 = r1 << r2`
+    I32Shl(BinInstr),
+    /// `i32` logical shift-left immediate instruction: `r0 = r1 << c0`
+    ///
+    /// # Note
+    ///
+    /// It is possible to use [`BinInstrImm16`] since the shift amount must
+    /// always be smaller than the size of the source type in bits.
+    I32ShlImm(BinInstrImm16<i32>),
+    /// `i32` logical shift-left immediate instruction: `r0 = c0 << r1`
+    ///
+    /// # Note
+    ///
+    /// - Optimized variant of [`Instruction::I32Shl`] for 16-bit constant values.
+    /// - Required instruction since logical shift-left is not commutative.
+    I32ShlImm16Rev(BinInstrImm16<i32>),
+
+    /// `i32` logical shift-right instruction: `r0 = r1 >> r2`
+    I32ShrU(BinInstr),
+    /// `i32` logical shift-right immediate instruction: `r0 = r1 >> c0`
+    ///
+    /// # Note
+    ///
+    /// It is possible to use [`BinInstrImm16`] since the shift amount must
+    /// always be smaller than the size of the source type in bits.
+    I32ShrUImm(BinInstrImm16<i32>),
+    /// `i32` logical shift-right immediate instruction: `r0 = c0 >> r1`
+    ///
+    /// # Note
+    ///
+    /// - Optimized variant of [`Instruction::I32ShrU`] for 16-bit constant values.
+    /// - Required instruction since `i32` logical shift-right is not commutative.
+    I32ShrUImm16Rev(BinInstrImm16<i32>),
+
+    /// `i32` arithmetic shift-right instruction: `r0 = r1 >> r2`
+    I32ShrS(BinInstr),
+    /// `i32` logical shift-right immediate instruction: `r0 = r1 >> c0`
+    ///
+    /// # Note
+    ///
+    /// It is possible to use [`BinInstrImm16`] since the shift amount must
+    /// always be smaller than the size of the source type in bits.
+    I32ShrSImm(BinInstrImm16<i32>),
+    /// `i32` arithmetic shift-right immediate instruction: `r0 = c0 >> r1`
+    ///
+    /// # Note
+    ///
+    /// - Optimized variant of [`Instruction::I32ShrS`] for 16-bit constant values.
+    /// - Required instruction since `arithmetic shift-right is not commutative.
+    I32ShrSImm16Rev(BinInstrImm16<i32>),
+
+    /// `i32` rotate-left instruction: `r0 = rotate_left(r1, r2)`
+    I32Rotl(BinInstr),
+    /// `i32` rotate-left immediate instruction: `r0 = rotate_left(r1, c0)`
+    ///
+    /// # Note
+    ///
+    /// It is possible to use [`BinInstrImm16`] since the shift amount must
+    /// always be smaller than the size of the source type in bits.
+    I32RotlImm(BinInstrImm16<i32>),
+    /// `i32` rotate-left immediate instruction: `r0 = rotate_left(c0, r1)`
+    ///
+    /// # Note
+    ///
+    /// - Optimized variant of [`Instruction::I32Rotl`] for 16-bit constant values.
+    /// - Required instruction since `i32` rotate-left is not commutative.
+    I32RotlImm16Rev(BinInstrImm16<i32>),
+
+    /// `i32` rotate-right instruction: `r0 = rotate_right(r1, r2)`
+    I32Rotr(BinInstr),
+    /// `i32` rotate-right immediate instruction: `r0 = rotate_right(r1, c0)`
+    ///
+    /// # Note
+    ///
+    /// It is possible to use [`BinInstrImm16`] since the shift amount must
+    /// always be smaller than the size of the source type in bits.
+    I32RotrImm(BinInstrImm16<i32>),
+    /// `i32` rotate-right immediate instruction: `r0 = rotate_right(c0, r1)`
+    ///
+    /// # Note
+    ///
+    /// - Optimized variant of [`Instruction::I32Rotl`] for 16-bit constant values.
+    /// - Required instruction since rotate-right is not commutative.
+    I32RotrImm16Rev(BinInstrImm16<i32>),
+
     /// `i64` count-leading-zeros (clz) instruction.
     I64Clz(UnaryInstr),
     /// `i64` count-trailing-zeros (ctz) instruction.
@@ -2790,17 +2875,8 @@ pub enum Instruction {
     /// Optimized variant of [`Instruction::I64Xor`] for 16-bit constant values.
     I64XorImm16(BinInstrImm16<i64>),
 
-    /// `i32` logical shift-left instruction: `r0 = r1 << r2`
-    I32Shl(BinInstr),
     /// `i64` logical shift-left instruction: `r0 = r1 << r2`
     I64Shl(BinInstr),
-    /// `i32` logical shift-left immediate instruction: `r0 = r1 << c0`
-    ///
-    /// # Note
-    ///
-    /// It is possible to use [`BinInstrImm16`] since the shift amount must
-    /// always be smaller than the size of the source type in bits.
-    I32ShlImm(BinInstrImm16<i32>),
     /// `i64` logical shift-left immediate instruction: `r0 = r1 << c0`
     ///
     /// # Note
@@ -2808,13 +2884,6 @@ pub enum Instruction {
     /// It is possible to use [`BinInstrImm16`] since the shift amount must
     /// always be smaller than the size of the source type in bits.
     I64ShlImm(BinInstrImm16<i64>),
-    /// `i32` logical shift-left immediate instruction: `r0 = c0 << r1`
-    ///
-    /// # Note
-    ///
-    /// - Optimized variant of [`Instruction::I32Shl`] for 16-bit constant values.
-    /// - Required instruction since logical shift-left is not commutative.
-    I32ShlImm16Rev(BinInstrImm16<i32>),
     /// `i64` logical shift-left immediate instruction: `r0 = c0 << r1`
     ///
     /// # Note
@@ -2823,17 +2892,8 @@ pub enum Instruction {
     /// - Required instruction since logical shift-left is not commutative.
     I64ShlImm16Rev(BinInstrImm16<i64>),
 
-    /// `i32` logical shift-right instruction: `r0 = r1 >> r2`
-    I32ShrU(BinInstr),
     /// `i64` logical shift-right instruction: `r0 = r1 >> r2`
     I64ShrU(BinInstr),
-    /// `i32` logical shift-right immediate instruction: `r0 = r1 >> c0`
-    ///
-    /// # Note
-    ///
-    /// It is possible to use [`BinInstrImm16`] since the shift amount must
-    /// always be smaller than the size of the source type in bits.
-    I32ShrUImm(BinInstrImm16<i32>),
     /// `i64` logical shift-right immediate instruction: `r0 = r1 >> c0`
     ///
     /// # Note
@@ -2841,13 +2901,6 @@ pub enum Instruction {
     /// It is possible to use [`BinInstrImm16`] since the shift amount must
     /// always be smaller than the size of the source type in bits.
     I64ShrUImm(BinInstrImm16<i64>),
-    /// `i32` logical shift-right immediate instruction: `r0 = c0 >> r1`
-    ///
-    /// # Note
-    ///
-    /// - Optimized variant of [`Instruction::I32ShrU`] for 16-bit constant values.
-    /// - Required instruction since `i32` logical shift-right is not commutative.
-    I32ShrUImm16Rev(BinInstrImm16<i32>),
     /// `i64` logical shift-right immediate instruction: `r0 = c0 >> r1`
     ///
     /// # Note
@@ -2856,17 +2909,8 @@ pub enum Instruction {
     /// - Required instruction since logical shift-right is not commutative.
     I64ShrUImm16Rev(BinInstrImm16<i64>),
 
-    /// `i32` arithmetic shift-right instruction: `r0 = r1 >> r2`
-    I32ShrS(BinInstr),
     /// `i64` arithmetic shift-right instruction: `r0 = r1 >> r2`
     I64ShrS(BinInstr),
-    /// `i32` logical shift-right immediate instruction: `r0 = r1 >> c0`
-    ///
-    /// # Note
-    ///
-    /// It is possible to use [`BinInstrImm16`] since the shift amount must
-    /// always be smaller than the size of the source type in bits.
-    I32ShrSImm(BinInstrImm16<i32>),
     /// `i64` logical shift-right immediate instruction: `r0 = r1 >> c0`
     ///
     /// # Note
@@ -2874,13 +2918,6 @@ pub enum Instruction {
     /// It is possible to use [`BinInstrImm16`] since the shift amount must
     /// always be smaller than the size of the source type in bits.
     I64ShrSImm(BinInstrImm16<i64>),
-    /// `i32` arithmetic shift-right immediate instruction: `r0 = c0 >> r1`
-    ///
-    /// # Note
-    ///
-    /// - Optimized variant of [`Instruction::I32ShrS`] for 16-bit constant values.
-    /// - Required instruction since `arithmetic shift-right is not commutative.
-    I32ShrSImm16Rev(BinInstrImm16<i32>),
     /// `i64` arithmetic shift-right immediate instruction: `r0 = c0 >> r1`
     ///
     /// # Note
@@ -2889,17 +2926,8 @@ pub enum Instruction {
     /// - Required instruction since arithmetic shift-right is not commutative.
     I64ShrSImm16Rev(BinInstrImm16<i64>),
 
-    /// `i32` rotate-left instruction: `r0 = rotate_left(r1, r2)`
-    I32Rotl(BinInstr),
     /// `i64` rotate-left instruction: `r0 = rotate_left(r1, r2)`
     I64Rotl(BinInstr),
-    /// `i32` rotate-left immediate instruction: `r0 = rotate_left(r1, c0)`
-    ///
-    /// # Note
-    ///
-    /// It is possible to use [`BinInstrImm16`] since the shift amount must
-    /// always be smaller than the size of the source type in bits.
-    I32RotlImm(BinInstrImm16<i32>),
     /// `i64` rotate-left immediate instruction: `r0 = rotate_left(r1, c0)`
     ///
     /// # Note
@@ -2907,13 +2935,6 @@ pub enum Instruction {
     /// It is possible to use [`BinInstrImm16`] since the shift amount must
     /// always be smaller than the size of the source type in bits.
     I64RotlImm(BinInstrImm16<i64>),
-    /// `i32` rotate-left immediate instruction: `r0 = rotate_left(c0, r1)`
-    ///
-    /// # Note
-    ///
-    /// - Optimized variant of [`Instruction::I32Rotl`] for 16-bit constant values.
-    /// - Required instruction since `i32` rotate-left is not commutative.
-    I32RotlImm16Rev(BinInstrImm16<i32>),
     /// `i64` rotate-left immediate instruction: `r0 = rotate_left(c0, r1)`
     ///
     /// # Note
@@ -2922,17 +2943,8 @@ pub enum Instruction {
     /// - Required instruction since rotate-left is not commutative.
     I64RotlImm16Rev(BinInstrImm16<i64>),
 
-    /// `i32` rotate-right instruction: `r0 = rotate_right(r1, r2)`
-    I32Rotr(BinInstr),
     /// `i64` rotate-right instruction: `r0 = rotate_right(r1, r2)`
     I64Rotr(BinInstr),
-    /// `i32` rotate-right immediate instruction: `r0 = rotate_right(r1, c0)`
-    ///
-    /// # Note
-    ///
-    /// It is possible to use [`BinInstrImm16`] since the shift amount must
-    /// always be smaller than the size of the source type in bits.
-    I32RotrImm(BinInstrImm16<i32>),
     /// `i64` rotate-right immediate instruction: `r0 = rotate_right(r1, c0)`
     ///
     /// # Note
@@ -2940,13 +2952,6 @@ pub enum Instruction {
     /// It is possible to use [`BinInstrImm16`] since the shift amount must
     /// always be smaller than the size of the source type in bits.
     I64RotrImm(BinInstrImm16<i64>),
-    /// `i32` rotate-right immediate instruction: `r0 = rotate_right(c0, r1)`
-    ///
-    /// # Note
-    ///
-    /// - Optimized variant of [`Instruction::I32Rotl`] for 16-bit constant values.
-    /// - Required instruction since rotate-right is not commutative.
-    I32RotrImm16Rev(BinInstrImm16<i32>),
     /// `i64` rotate-right immediate instruction: `r0 = rotate_right(c0, r1)`
     ///
     /// # Note
