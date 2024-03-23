@@ -58,9 +58,15 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     - Note that this does not translate the Wasm and thus `Module::new` or `Module::new_unchecked`
       might still fail due to translation errors.
 - CLI: Added `--compilation-mode` argument to enable lazy Wasm compilation. (https://github.com/wasmi-labs/wasmi/pull/849)
+- Added `--verbose` mode to Wasmi CLI by @tjpalmer. (https://github.com/wasmi-labs/wasmi/pull/957)
+    - By default Wasmi CLI no longer prints messages during execution.
+- Added `Memory::new_static` constructor by @Ddystopia. (https://github.com/wasmi-labs/wasmi/pull/939)
+    - This allows to construct a Wasm `Memory` from a static byte array
+      which is especially handy for certain embedded use cases.
 
 ### Changed
 
+- Minimum Rust version set to 1.77. (https://github.com/wasmi-labs/wasmi/pull/961)
 - CLI: Enabled Wasm `tail-calls` and `extend-const` proposals by default. (https://github.com/wasmi-labs/wasmi/pull/849)
     - We expect those Wasm proposals to be stabilized very soon so we feel safe to enable them by default already.
 - Improve `Debug` and `Display` impls for NaNs of Wasm `f32` and `f64` values.
