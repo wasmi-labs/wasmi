@@ -2621,6 +2621,45 @@ pub enum Instruction {
     /// - Required instruction since unsigned-remainder is not commutative.
     I32RemUImm16Rev(BinInstrImm16<u32>),
 
+    /// `i32` bitwise-and instruction: `r0 = r1 & r2`
+    I32And(BinInstr),
+    /// Fused Wasm `i32.and` + `i32.eqz` [`Instruction`].
+    I32AndEqz(BinInstr),
+    /// Fused Wasm `i32.and` + `i32.eqz` [`Instruction`] with 16-bit encoded immediate.
+    I32AndEqzImm16(BinInstrImm16<i32>),
+    /// `i32` bitwise-and (small) immediate instruction: `r0 = r1 & c0`
+    ///
+    /// # Note
+    ///
+    /// Optimized variant of [`Instruction::I32And`] for 16-bit constant values.
+    I32AndImm16(BinInstrImm16<i32>),
+
+    /// `i32` bitwise-or instruction: `r0 = r1 & r2`
+    I32Or(BinInstr),
+    /// Fused Wasm `i32.or` + `i32.eqz` [`Instruction`].
+    I32OrEqz(BinInstr),
+    /// Fused Wasm `i32.or` + `i32.eqz` [`Instruction`] with 16-bit encoded immediate.
+    I32OrEqzImm16(BinInstrImm16<i32>),
+    /// `i32` bitwise-or (small) immediate instruction: `r0 = r1 & c0`
+    ///
+    /// # Note
+    ///
+    /// Optimized variant of [`Instruction::I32Or`] for 16-bit constant values.
+    I32OrImm16(BinInstrImm16<i32>),
+
+    /// `i32` bitwise-or instruction: `r0 = r1 ^ r2`
+    I32Xor(BinInstr),
+    /// Fused Wasm `i32.xor` + `i32.eqz` [`Instruction`].
+    I32XorEqz(BinInstr),
+    /// Fused Wasm `i32.xor` + `i32.eqz` [`Instruction`] with 16-bit encoded immediate.
+    I32XorEqzImm16(BinInstrImm16<i32>),
+    /// `i32` bitwise-or (small) immediate instruction: `r0 = r1 ^ c0`
+    ///
+    /// # Note
+    ///
+    /// Optimized variant of [`Instruction::I32Xor`] for 16-bit constant values.
+    I32XorImm16(BinInstrImm16<i32>),
+
     /// `i64` add instruction: `r0 = r1 + r2`
     I64Add(BinInstr),
     /// `i64` add (small) immediate instruction: `r0 = r1 + c0`
@@ -2724,19 +2763,6 @@ pub enum Instruction {
     /// - Required instruction since unsigned-remainder is not commutative.
     I64RemUImm16Rev(BinInstrImm16<u64>),
 
-    /// `i32` bitwise-and instruction: `r0 = r1 & r2`
-    I32And(BinInstr),
-    /// Fused Wasm `i32.and` + `i32.eqz` [`Instruction`].
-    I32AndEqz(BinInstr),
-    /// Fused Wasm `i32.and` + `i32.eqz` [`Instruction`] with 16-bit encoded immediate.
-    I32AndEqzImm16(BinInstrImm16<i32>),
-    /// `i32` bitwise-and (small) immediate instruction: `r0 = r1 & c0`
-    ///
-    /// # Note
-    ///
-    /// Optimized variant of [`Instruction::I32And`] for 16-bit constant values.
-    I32AndImm16(BinInstrImm16<i32>),
-
     /// `i64` bitwise-and instruction: `r0 = r1 & r2`
     I64And(BinInstr),
     /// `i64` bitwise-and (small) immediate instruction: `r0 = r1 & c0`
@@ -2746,19 +2772,6 @@ pub enum Instruction {
     /// Optimized variant of [`Instruction::I64And`] for 16-bit constant values.
     I64AndImm16(BinInstrImm16<i64>),
 
-    /// `i32` bitwise-or instruction: `r0 = r1 & r2`
-    I32Or(BinInstr),
-    /// Fused Wasm `i32.or` + `i32.eqz` [`Instruction`].
-    I32OrEqz(BinInstr),
-    /// Fused Wasm `i32.or` + `i32.eqz` [`Instruction`] with 16-bit encoded immediate.
-    I32OrEqzImm16(BinInstrImm16<i32>),
-    /// `i32` bitwise-or (small) immediate instruction: `r0 = r1 & c0`
-    ///
-    /// # Note
-    ///
-    /// Optimized variant of [`Instruction::I32Or`] for 16-bit constant values.
-    I32OrImm16(BinInstrImm16<i32>),
-
     /// `i64` bitwise-or instruction: `r0 = r1 & r2`
     I64Or(BinInstr),
     /// `i64` bitwise-or (small) immediate instruction: `r0 = r1 & c0`
@@ -2767,19 +2780,6 @@ pub enum Instruction {
     ///
     /// Optimized variant of [`Instruction::I64Or`] for 16-bit constant values.
     I64OrImm16(BinInstrImm16<i64>),
-
-    /// `i32` bitwise-or instruction: `r0 = r1 ^ r2`
-    I32Xor(BinInstr),
-    /// Fused Wasm `i32.xor` + `i32.eqz` [`Instruction`].
-    I32XorEqz(BinInstr),
-    /// Fused Wasm `i32.xor` + `i32.eqz` [`Instruction`] with 16-bit encoded immediate.
-    I32XorEqzImm16(BinInstrImm16<i32>),
-    /// `i32` bitwise-or (small) immediate instruction: `r0 = r1 ^ c0`
-    ///
-    /// # Note
-    ///
-    /// Optimized variant of [`Instruction::I32Xor`] for 16-bit constant values.
-    I32XorImm16(BinInstrImm16<i32>),
 
     /// `i64` bitwise-or instruction: `r0 = r1 ^ r2`
     I64Xor(BinInstr),
