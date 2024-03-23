@@ -1077,761 +1077,6 @@ pub enum Instruction {
         func: FuncIdx,
     },
 
-    /// A Wasm `table.get` instruction: `result = table[index]`
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
-    TableGet {
-        /// The register storing the result of the instruction.
-        result: Register,
-        /// The register storing the index of the table element to get.
-        index: Register,
-    },
-    /// Variant of [`Instruction::TableGet`] with constant `index` value.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
-    TableGetImm {
-        /// The register storing the result of the instruction.
-        result: Register,
-        /// The constant `index` value of the table element to get.
-        index: Const32<u32>,
-    },
-
-    /// A Wasm `table.size` instruction.
-    TableSize {
-        /// The register storing the result of the instruction.
-        result: Register,
-        /// The index identifying the table for the instruction.
-        table: TableIdx,
-    },
-
-    /// A Wasm `table.set` instruction: `table[index] = value`
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
-    TableSet {
-        /// The register holding the `index` of the instruction.
-        index: Register,
-        /// The register holding the `value` of the instruction.
-        value: Register,
-    },
-    /// Variant of [`Instruction::TableSet`] with constant `index` value.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
-    TableSetAt {
-        /// The constant `index` of the instruction.
-        index: Const32<u32>,
-        /// The register holding the `value` of the instruction.
-        value: Register,
-    },
-
-    /// Wasm `table.copy <dst> <src>` instruction.
-    ///
-    /// Copies elements from `table<src>[src..src+len]` to `table<dst>[dst..dst+len]`.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
-    TableCopy {
-        /// The start index of the `dst` table.
-        dst: Register,
-        /// The start index of the `src` table.
-        src: Register,
-        /// The number of copied elements.
-        len: Register,
-    },
-    /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `dst` index.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
-    TableCopyTo {
-        /// The start index of the `dst` table.
-        dst: Const16<u32>,
-        /// The start index of the `src` table.
-        src: Register,
-        /// The number of copied elements.
-        len: Register,
-    },
-    /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `src` index.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
-    TableCopyFrom {
-        /// The start index of the `dst` table.
-        dst: Register,
-        /// The start index of the `src` table.
-        src: Const16<u32>,
-        /// The number of copied elements.
-        len: Register,
-    },
-    /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `dst` and `src` indices.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
-    TableCopyFromTo {
-        /// The start index of the `dst` table.
-        dst: Const16<u32>,
-        /// The start index of the `src` table.
-        src: Const16<u32>,
-        /// The number of copied elements.
-        len: Register,
-    },
-    /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `len` field.
-    ///
-    /// # Note
-    ///
-    /// This instruction copies _exactly_ `len` elements between the tables.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
-    TableCopyExact {
-        /// The start index of the `dst` table.
-        dst: Register,
-        /// The start index of the `src` table.
-        src: Register,
-        /// The number of copied elements.
-        len: Const16<u32>,
-    },
-    /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `len` and `dst`.
-    ///
-    /// # Note
-    ///
-    /// This instruction copies _exactly_ `len` elements between the tables.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
-    TableCopyToExact {
-        /// The start index of the `dst` table.
-        dst: Const16<u32>,
-        /// The start index of the `src` table.
-        src: Register,
-        /// The number of copied elements.
-        len: Const16<u32>,
-    },
-    /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `len` and `src`.
-    ///
-    /// # Note
-    ///
-    /// This instruction copies _exactly_ `len` elements between the tables.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
-    TableCopyFromExact {
-        /// The start index of the `dst` table.
-        dst: Register,
-        /// The start index of the `src` table.
-        src: Const16<u32>,
-        /// The number of copied elements.
-        len: Const16<u32>,
-    },
-    /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `len` and `src`.
-    ///
-    /// # Note
-    ///
-    /// This instruction copies _exactly_ `len` elements between the tables.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
-    TableCopyFromToExact {
-        /// The start index of the `dst` table.
-        dst: Const16<u32>,
-        /// The start index of the `src` table.
-        src: Const16<u32>,
-        /// The number of copied elements.
-        len: Const16<u32>,
-    },
-
-    /// Wasm `table.init <table> <elem>` instruction.
-    ///
-    /// Copies elements from `table[src..src+len]` to `table[dst..dst+len]`.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
-    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
-    TableInit {
-        /// The start index of the `dst` table.
-        dst: Register,
-        /// The start index of the `src` table.
-        src: Register,
-        /// The number of copied elements.
-        len: Register,
-    },
-    /// Variant of [`Instruction::TableInit`] with a constant 16-bit `dst` index.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
-    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
-    TableInitTo {
-        /// The start index of the `dst` table.
-        dst: Const16<u32>,
-        /// The start index of the `src` table.
-        src: Register,
-        /// The number of copied elements.
-        len: Register,
-    },
-    /// Variant of [`Instruction::TableInit`] with a constant 16-bit `src` index.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
-    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
-    TableInitFrom {
-        /// The start index of the `dst` table.
-        dst: Register,
-        /// The start index of the `src` table.
-        src: Const16<u32>,
-        /// The number of copied elements.
-        len: Register,
-    },
-    /// Variant of [`Instruction::TableInit`] with a constant 16-bit `dst` and `src` indices.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
-    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
-    TableInitFromTo {
-        /// The start index of the `dst` table.
-        dst: Const16<u32>,
-        /// The start index of the `src` table.
-        src: Const16<u32>,
-        /// The number of copied elements.
-        len: Register,
-    },
-    /// Variant of [`Instruction::TableInit`] with a constant 16-bit `len` field.
-    ///
-    /// # Note
-    ///
-    /// This instruction copies _exactly_ `len` elements between the tables.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
-    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
-    TableInitExact {
-        /// The start index of the `dst` table.
-        dst: Register,
-        /// The start index of the `src` table.
-        src: Register,
-        /// The number of copied elements.
-        len: Const16<u32>,
-    },
-    /// Variant of [`Instruction::TableInit`] with a constant 16-bit `len` and `dst`.
-    ///
-    /// # Note
-    ///
-    /// This instruction copies _exactly_ `len` elements between the tables.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
-    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
-    TableInitToExact {
-        /// The start index of the `dst` table.
-        dst: Const16<u32>,
-        /// The start index of the `src` table.
-        src: Register,
-        /// The number of copied elements.
-        len: Const16<u32>,
-    },
-    /// Variant of [`Instruction::TableInit`] with a constant 16-bit `len` and `src`.
-    ///
-    /// # Note
-    ///
-    /// This instruction copies _exactly_ `len` elements between the tables.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
-    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
-    TableInitFromExact {
-        /// The start index of the `dst` table.
-        dst: Register,
-        /// The start index of the `src` table.
-        src: Const16<u32>,
-        /// The number of copied elements.
-        len: Const16<u32>,
-    },
-    /// Variant of [`Instruction::TableInit`] with a constant 16-bit `len` and `src`.
-    ///
-    /// # Note
-    ///
-    /// This instruction copies _exactly_ `len` elements between the tables.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
-    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
-    TableInitFromToExact {
-        /// The start index of the `dst` table.
-        dst: Const16<u32>,
-        /// The start index of the `src` table.
-        src: Const16<u32>,
-        /// The number of copied elements.
-        len: Const16<u32>,
-    },
-
-    /// Wasm `table.fill <table>` instruction: `table[dst..dst+len] = value`
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
-    TableFill {
-        /// The start index of the table to fill.
-        dst: Register,
-        /// The number of elements to fill.
-        len: Register,
-        /// The value of the filled elements.
-        value: Register,
-    },
-    /// Variant of [`Instruction::TableFill`] with 16-bit constant `dst` index.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
-    TableFillAt {
-        /// The start index of the table to fill.
-        dst: Const16<u32>,
-        /// The number of elements to fill.
-        len: Register,
-        /// The value of the filled elements.
-        value: Register,
-    },
-    /// Variant of [`Instruction::TableFill`] with 16-bit constant `len` index.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
-    TableFillExact {
-        /// The start index of the table to fill.
-        dst: Register,
-        /// The number of elements to fill.
-        len: Const16<u32>,
-        /// The value of the filled elements.
-        value: Register,
-    },
-    /// Variant of [`Instruction::TableFill`] with 16-bit constant `dst` and `len` fields.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
-    TableFillAtExact {
-        /// The start index of the table to fill.
-        dst: Const16<u32>,
-        /// The number of elements to fill.
-        len: Const16<u32>,
-        /// The value of the filled elements.
-        value: Register,
-    },
-
-    /// Wasm `table.grow <table>` instruction.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
-    TableGrow {
-        /// Register holding the result of the instruction.
-        result: Register,
-        /// The number of elements to add to the table.
-        delta: Register,
-        /// The value that is used to fill up the new cells.
-        value: Register,
-    },
-    /// Variant of [`Instruction::TableGrow`] with 16-bit constant `delta`.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
-    TableGrowImm {
-        /// Register holding the result of the instruction.
-        result: Register,
-        /// The number of elements to add to the table.
-        delta: Const16<u32>,
-        /// The value that is used to fill up the new cells.
-        value: Register,
-    },
-
-    /// A Wasm `elem.drop` equalivalent Wasmi instruction.
-    ElemDrop(ElementSegmentIdx),
-    /// A Wasm `data.drop` equalivalent Wasmi instruction.
-    DataDrop(DataSegmentIdx),
-
-    /// Wasm `memory.size` instruction.
-    MemorySize {
-        /// Register holding the result of the instruction.
-        result: Register,
-    },
-
-    /// Wasm `memory.grow` instruction.
-    MemoryGrow {
-        /// Register holding the result of the instruction.
-        result: Register,
-        /// The number of pages to add to the memory.
-        delta: Register,
-    },
-    /// Variant of [`Instruction::MemoryGrow`] with 16-bit constant `delta`.
-    MemoryGrowBy {
-        /// Register holding the result of the instruction.
-        result: Register,
-        /// The number of pages to add to the memory.
-        delta: Const16<u32>,
-    },
-
-    /// Wasm `memory.copy` instruction.
-    ///
-    /// Copies elements from `memory[src..src+len]` to `memory[dst..dst+len]`.
-    MemoryCopy {
-        /// The start index of the `dst` memory.
-        dst: Register,
-        /// The start index of the `src` memory.
-        src: Register,
-        /// The number of copied bytes.
-        len: Register,
-    },
-    /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `dst` index.
-    MemoryCopyTo {
-        /// The start index of the `dst` memory.
-        dst: Const16<u32>,
-        /// The start index of the `src` memory.
-        src: Register,
-        /// The number of copied bytes.
-        len: Register,
-    },
-    /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `src` index.
-    MemoryCopyFrom {
-        /// The start index of the `dst` memory.
-        dst: Register,
-        /// The start index of the `src` memory.
-        src: Const16<u32>,
-        /// The number of copied bytes.
-        len: Register,
-    },
-    /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `dst` and `src` indices.
-    MemoryCopyFromTo {
-        /// The start index of the `dst` memory.
-        dst: Const16<u32>,
-        /// The start index of the `src` memory.
-        src: Const16<u32>,
-        /// The number of copied bytes.
-        len: Register,
-    },
-    /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` field.
-    ///
-    /// # Note
-    ///
-    /// This instruction copies _exactly_ `len` elements between the memories.
-    MemoryCopyExact {
-        /// The start index of the `dst` memory.
-        dst: Register,
-        /// The start index of the `src` memory.
-        src: Register,
-        /// The number of copied bytes.
-        len: Const16<u32>,
-    },
-    /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` and `dst`.
-    ///
-    /// # Note
-    ///
-    /// This instruction copies _exactly_ `len` elements between the memories.
-    MemoryCopyToExact {
-        /// The start index of the `dst` memory.
-        dst: Const16<u32>,
-        /// The start index of the `src` memory.
-        src: Register,
-        /// The number of copied bytes.
-        len: Const16<u32>,
-    },
-    /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` and `src`.
-    ///
-    /// # Note
-    ///
-    /// This instruction copies _exactly_ `len` elements between the memories.
-    MemoryCopyFromExact {
-        /// The start index of the `dst` memory.
-        dst: Register,
-        /// The start index of the `src` memory.
-        src: Const16<u32>,
-        /// The number of copied bytes.
-        len: Const16<u32>,
-    },
-    /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` and `src`.
-    ///
-    /// # Note
-    ///
-    /// This instruction copies _exactly_ `len` elements between the memories.
-    MemoryCopyFromToExact {
-        /// The start index of the `dst` memory.
-        dst: Const16<u32>,
-        /// The start index of the `src` memory.
-        src: Const16<u32>,
-        /// The number of copied bytes.
-        len: Const16<u32>,
-    },
-
-    /// Wasm `memory.fill` instruction.
-    ///
-    /// Sets bytes of `memory[dst..dst+len]` to `value`.
-    MemoryFill {
-        /// The start index of the memory to fill.
-        dst: Register,
-        /// The byte value used to fill the memory.
-        value: Register,
-        /// The number of bytes to fill.
-        len: Register,
-    },
-    /// Variant of [`Instruction::MemoryFill`] with 16-bit constant `dst` index.
-    MemoryFillAt {
-        /// The start index of the memory to fill.
-        dst: Const16<u32>,
-        /// The byte value used to fill the memory.
-        value: Register,
-        /// The number of bytes to fill.
-        len: Register,
-    },
-    /// Variant of [`Instruction::MemoryFill`] with constant fill `value`.
-    MemoryFillImm {
-        /// The start index of the memory to fill.
-        dst: Register,
-        /// The byte value used to fill the memory.
-        value: u8,
-        /// The number of bytes to fill.
-        len: Register,
-    },
-    /// Variant of [`Instruction::MemoryFill`] with 16-bit constant `len` value.
-    MemoryFillExact {
-        /// The start index of the memory to fill.
-        dst: Register,
-        /// The byte value used to fill the memory.
-        value: Register,
-        /// The number of bytes to fill.
-        len: Const16<u32>,
-    },
-    /// Variant of [`Instruction::MemoryFill`] with constant `dst` index and `value`.
-    MemoryFillAtImm {
-        /// The start index of the memory to fill.
-        dst: Const16<u32>,
-        /// The byte value used to fill the memory.
-        value: u8,
-        /// The number of bytes to fill.
-        len: Register,
-    },
-    /// Variant of [`Instruction::MemoryFill`] with constant `dst` index and `len`.
-    MemoryFillAtExact {
-        /// The start index of the memory to fill.
-        dst: Const16<u32>,
-        /// The byte value used to fill the memory.
-        value: Register,
-        /// The number of bytes to fill.
-        len: Const16<u32>,
-    },
-    /// Variant of [`Instruction::MemoryFill`] with constant fill `value` and `len`.
-    MemoryFillImmExact {
-        /// The start index of the memory to fill.
-        dst: Register,
-        /// The byte value used to fill the memory.
-        value: u8,
-        /// The number of bytes to fill.
-        len: Const16<u32>,
-    },
-    /// Variant of [`Instruction::MemoryFill`] with constant `dst` index, fill `value` and `len`.
-    MemoryFillAtImmExact {
-        /// The start index of the memory to fill.
-        dst: Const16<u32>,
-        /// The byte value used to fill the memory.
-        value: u8,
-        /// The number of bytes to fill.
-        len: Const16<u32>,
-    },
-
-    /// Wasm `memory.init <data>` instruction.
-    ///
-    /// Initializes bytes of `memory[dst..dst+len]` from `data[src..src+len]`.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
-    MemoryInit {
-        /// The start index of the `dst` memory.
-        dst: Register,
-        /// The start index of the `src` data segment.
-        src: Register,
-        /// The number of bytes to initialize.
-        len: Register,
-    },
-    /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `dst` index.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
-    MemoryInitTo {
-        /// The start index of the `dst` memory.
-        dst: Const16<u32>,
-        /// The start index of the `src` data segment.
-        src: Register,
-        /// The number of initialized bytes.
-        len: Register,
-    },
-    /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `src` index.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
-    MemoryInitFrom {
-        /// The start index of the `dst` memory.
-        dst: Register,
-        /// The start index of the `src` data segment.
-        src: Const16<u32>,
-        /// The number of initialized bytes.
-        len: Register,
-    },
-    /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `dst` and `src` indices.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
-    MemoryInitFromTo {
-        /// The start index of the `dst` memory.
-        dst: Const16<u32>,
-        /// The start index of the `src` data segment.
-        src: Const16<u32>,
-        /// The number of initialized bytes.
-        len: Register,
-    },
-    /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` field.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
-    MemoryInitExact {
-        /// The start index of the `dst` memory.
-        dst: Register,
-        /// The start index of the `src` data segment.
-        src: Register,
-        /// The number of initialized bytes.
-        len: Const16<u32>,
-    },
-    /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` and `dst`.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
-    MemoryInitToExact {
-        /// The start index of the `dst` memory.
-        dst: Const16<u32>,
-        /// The start index of the `src` data segment.
-        src: Register,
-        /// The number of initialized bytes.
-        len: Const16<u32>,
-    },
-    /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` and `src`.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
-    MemoryInitFromExact {
-        /// The start index of the `dst` memory.
-        dst: Register,
-        /// The start index of the `src` data segment.
-        src: Const16<u32>,
-        /// The number of initialized bytes.
-        len: Const16<u32>,
-    },
-    /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` and `src`.
-    ///
-    /// # Encoding
-    ///
-    /// This [`Instruction`] must be followed by
-    ///
-    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
-    MemoryInitFromToExact {
-        /// The start index of the `dst` memory.
-        dst: Const16<u32>,
-        /// The start index of the `src` data segment.
-        src: Const16<u32>,
-        /// The number of initialized bytes.
-        len: Const16<u32>,
-    },
-
     /// Wasm `global.get` equivalent Wasmi instruction.
     GlobalGet {
         /// The register storing the result of the instruction.
@@ -3147,6 +2392,761 @@ pub enum Instruction {
     F64ConvertI64S(UnaryInstr),
     /// Wasm `f64.convert_i64_u` instruction.
     F64ConvertI64U(UnaryInstr),
+
+    /// A Wasm `table.get` instruction: `result = table[index]`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
+    TableGet {
+        /// The register storing the result of the instruction.
+        result: Register,
+        /// The register storing the index of the table element to get.
+        index: Register,
+    },
+    /// Variant of [`Instruction::TableGet`] with constant `index` value.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
+    TableGetImm {
+        /// The register storing the result of the instruction.
+        result: Register,
+        /// The constant `index` value of the table element to get.
+        index: Const32<u32>,
+    },
+
+    /// A Wasm `table.size` instruction.
+    TableSize {
+        /// The register storing the result of the instruction.
+        result: Register,
+        /// The index identifying the table for the instruction.
+        table: TableIdx,
+    },
+
+    /// A Wasm `table.set` instruction: `table[index] = value`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
+    TableSet {
+        /// The register holding the `index` of the instruction.
+        index: Register,
+        /// The register holding the `value` of the instruction.
+        value: Register,
+    },
+    /// Variant of [`Instruction::TableSet`] with constant `index` value.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
+    TableSetAt {
+        /// The constant `index` of the instruction.
+        index: Const32<u32>,
+        /// The register holding the `value` of the instruction.
+        value: Register,
+    },
+
+    /// Wasm `table.copy <dst> <src>` instruction.
+    ///
+    /// Copies elements from `table<src>[src..src+len]` to `table<dst>[dst..dst+len]`.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    TableCopy {
+        /// The start index of the `dst` table.
+        dst: Register,
+        /// The start index of the `src` table.
+        src: Register,
+        /// The number of copied elements.
+        len: Register,
+    },
+    /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `dst` index.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    TableCopyTo {
+        /// The start index of the `dst` table.
+        dst: Const16<u32>,
+        /// The start index of the `src` table.
+        src: Register,
+        /// The number of copied elements.
+        len: Register,
+    },
+    /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `src` index.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    TableCopyFrom {
+        /// The start index of the `dst` table.
+        dst: Register,
+        /// The start index of the `src` table.
+        src: Const16<u32>,
+        /// The number of copied elements.
+        len: Register,
+    },
+    /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `dst` and `src` indices.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    TableCopyFromTo {
+        /// The start index of the `dst` table.
+        dst: Const16<u32>,
+        /// The start index of the `src` table.
+        src: Const16<u32>,
+        /// The number of copied elements.
+        len: Register,
+    },
+    /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `len` field.
+    ///
+    /// # Note
+    ///
+    /// This instruction copies _exactly_ `len` elements between the tables.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    TableCopyExact {
+        /// The start index of the `dst` table.
+        dst: Register,
+        /// The start index of the `src` table.
+        src: Register,
+        /// The number of copied elements.
+        len: Const16<u32>,
+    },
+    /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `len` and `dst`.
+    ///
+    /// # Note
+    ///
+    /// This instruction copies _exactly_ `len` elements between the tables.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    TableCopyToExact {
+        /// The start index of the `dst` table.
+        dst: Const16<u32>,
+        /// The start index of the `src` table.
+        src: Register,
+        /// The number of copied elements.
+        len: Const16<u32>,
+    },
+    /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `len` and `src`.
+    ///
+    /// # Note
+    ///
+    /// This instruction copies _exactly_ `len` elements between the tables.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    TableCopyFromExact {
+        /// The start index of the `dst` table.
+        dst: Register,
+        /// The start index of the `src` table.
+        src: Const16<u32>,
+        /// The number of copied elements.
+        len: Const16<u32>,
+    },
+    /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `len` and `src`.
+    ///
+    /// # Note
+    ///
+    /// This instruction copies _exactly_ `len` elements between the tables.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
+    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    TableCopyFromToExact {
+        /// The start index of the `dst` table.
+        dst: Const16<u32>,
+        /// The start index of the `src` table.
+        src: Const16<u32>,
+        /// The number of copied elements.
+        len: Const16<u32>,
+    },
+
+    /// Wasm `table.init <table> <elem>` instruction.
+    ///
+    /// Copies elements from `table[src..src+len]` to `table[dst..dst+len]`.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
+    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
+    TableInit {
+        /// The start index of the `dst` table.
+        dst: Register,
+        /// The start index of the `src` table.
+        src: Register,
+        /// The number of copied elements.
+        len: Register,
+    },
+    /// Variant of [`Instruction::TableInit`] with a constant 16-bit `dst` index.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
+    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
+    TableInitTo {
+        /// The start index of the `dst` table.
+        dst: Const16<u32>,
+        /// The start index of the `src` table.
+        src: Register,
+        /// The number of copied elements.
+        len: Register,
+    },
+    /// Variant of [`Instruction::TableInit`] with a constant 16-bit `src` index.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
+    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
+    TableInitFrom {
+        /// The start index of the `dst` table.
+        dst: Register,
+        /// The start index of the `src` table.
+        src: Const16<u32>,
+        /// The number of copied elements.
+        len: Register,
+    },
+    /// Variant of [`Instruction::TableInit`] with a constant 16-bit `dst` and `src` indices.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
+    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
+    TableInitFromTo {
+        /// The start index of the `dst` table.
+        dst: Const16<u32>,
+        /// The start index of the `src` table.
+        src: Const16<u32>,
+        /// The number of copied elements.
+        len: Register,
+    },
+    /// Variant of [`Instruction::TableInit`] with a constant 16-bit `len` field.
+    ///
+    /// # Note
+    ///
+    /// This instruction copies _exactly_ `len` elements between the tables.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
+    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
+    TableInitExact {
+        /// The start index of the `dst` table.
+        dst: Register,
+        /// The start index of the `src` table.
+        src: Register,
+        /// The number of copied elements.
+        len: Const16<u32>,
+    },
+    /// Variant of [`Instruction::TableInit`] with a constant 16-bit `len` and `dst`.
+    ///
+    /// # Note
+    ///
+    /// This instruction copies _exactly_ `len` elements between the tables.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
+    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
+    TableInitToExact {
+        /// The start index of the `dst` table.
+        dst: Const16<u32>,
+        /// The start index of the `src` table.
+        src: Register,
+        /// The number of copied elements.
+        len: Const16<u32>,
+    },
+    /// Variant of [`Instruction::TableInit`] with a constant 16-bit `len` and `src`.
+    ///
+    /// # Note
+    ///
+    /// This instruction copies _exactly_ `len` elements between the tables.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
+    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
+    TableInitFromExact {
+        /// The start index of the `dst` table.
+        dst: Register,
+        /// The start index of the `src` table.
+        src: Const16<u32>,
+        /// The number of copied elements.
+        len: Const16<u32>,
+    },
+    /// Variant of [`Instruction::TableInit`] with a constant 16-bit `len` and `src`.
+    ///
+    /// # Note
+    ///
+    /// This instruction copies _exactly_ `len` elements between the tables.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
+    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
+    TableInitFromToExact {
+        /// The start index of the `dst` table.
+        dst: Const16<u32>,
+        /// The start index of the `src` table.
+        src: Const16<u32>,
+        /// The number of copied elements.
+        len: Const16<u32>,
+    },
+
+    /// Wasm `table.fill <table>` instruction: `table[dst..dst+len] = value`
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
+    TableFill {
+        /// The start index of the table to fill.
+        dst: Register,
+        /// The number of elements to fill.
+        len: Register,
+        /// The value of the filled elements.
+        value: Register,
+    },
+    /// Variant of [`Instruction::TableFill`] with 16-bit constant `dst` index.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
+    TableFillAt {
+        /// The start index of the table to fill.
+        dst: Const16<u32>,
+        /// The number of elements to fill.
+        len: Register,
+        /// The value of the filled elements.
+        value: Register,
+    },
+    /// Variant of [`Instruction::TableFill`] with 16-bit constant `len` index.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
+    TableFillExact {
+        /// The start index of the table to fill.
+        dst: Register,
+        /// The number of elements to fill.
+        len: Const16<u32>,
+        /// The value of the filled elements.
+        value: Register,
+    },
+    /// Variant of [`Instruction::TableFill`] with 16-bit constant `dst` and `len` fields.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
+    TableFillAtExact {
+        /// The start index of the table to fill.
+        dst: Const16<u32>,
+        /// The number of elements to fill.
+        len: Const16<u32>,
+        /// The value of the filled elements.
+        value: Register,
+    },
+
+    /// Wasm `table.grow <table>` instruction.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
+    TableGrow {
+        /// Register holding the result of the instruction.
+        result: Register,
+        /// The number of elements to add to the table.
+        delta: Register,
+        /// The value that is used to fill up the new cells.
+        value: Register,
+    },
+    /// Variant of [`Instruction::TableGrow`] with 16-bit constant `delta`.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
+    TableGrowImm {
+        /// Register holding the result of the instruction.
+        result: Register,
+        /// The number of elements to add to the table.
+        delta: Const16<u32>,
+        /// The value that is used to fill up the new cells.
+        value: Register,
+    },
+
+    /// A Wasm `elem.drop` equalivalent Wasmi instruction.
+    ElemDrop(ElementSegmentIdx),
+    /// A Wasm `data.drop` equalivalent Wasmi instruction.
+    DataDrop(DataSegmentIdx),
+
+    /// Wasm `memory.size` instruction.
+    MemorySize {
+        /// Register holding the result of the instruction.
+        result: Register,
+    },
+
+    /// Wasm `memory.grow` instruction.
+    MemoryGrow {
+        /// Register holding the result of the instruction.
+        result: Register,
+        /// The number of pages to add to the memory.
+        delta: Register,
+    },
+    /// Variant of [`Instruction::MemoryGrow`] with 16-bit constant `delta`.
+    MemoryGrowBy {
+        /// Register holding the result of the instruction.
+        result: Register,
+        /// The number of pages to add to the memory.
+        delta: Const16<u32>,
+    },
+
+    /// Wasm `memory.copy` instruction.
+    ///
+    /// Copies elements from `memory[src..src+len]` to `memory[dst..dst+len]`.
+    MemoryCopy {
+        /// The start index of the `dst` memory.
+        dst: Register,
+        /// The start index of the `src` memory.
+        src: Register,
+        /// The number of copied bytes.
+        len: Register,
+    },
+    /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `dst` index.
+    MemoryCopyTo {
+        /// The start index of the `dst` memory.
+        dst: Const16<u32>,
+        /// The start index of the `src` memory.
+        src: Register,
+        /// The number of copied bytes.
+        len: Register,
+    },
+    /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `src` index.
+    MemoryCopyFrom {
+        /// The start index of the `dst` memory.
+        dst: Register,
+        /// The start index of the `src` memory.
+        src: Const16<u32>,
+        /// The number of copied bytes.
+        len: Register,
+    },
+    /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `dst` and `src` indices.
+    MemoryCopyFromTo {
+        /// The start index of the `dst` memory.
+        dst: Const16<u32>,
+        /// The start index of the `src` memory.
+        src: Const16<u32>,
+        /// The number of copied bytes.
+        len: Register,
+    },
+    /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` field.
+    ///
+    /// # Note
+    ///
+    /// This instruction copies _exactly_ `len` elements between the memories.
+    MemoryCopyExact {
+        /// The start index of the `dst` memory.
+        dst: Register,
+        /// The start index of the `src` memory.
+        src: Register,
+        /// The number of copied bytes.
+        len: Const16<u32>,
+    },
+    /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` and `dst`.
+    ///
+    /// # Note
+    ///
+    /// This instruction copies _exactly_ `len` elements between the memories.
+    MemoryCopyToExact {
+        /// The start index of the `dst` memory.
+        dst: Const16<u32>,
+        /// The start index of the `src` memory.
+        src: Register,
+        /// The number of copied bytes.
+        len: Const16<u32>,
+    },
+    /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` and `src`.
+    ///
+    /// # Note
+    ///
+    /// This instruction copies _exactly_ `len` elements between the memories.
+    MemoryCopyFromExact {
+        /// The start index of the `dst` memory.
+        dst: Register,
+        /// The start index of the `src` memory.
+        src: Const16<u32>,
+        /// The number of copied bytes.
+        len: Const16<u32>,
+    },
+    /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` and `src`.
+    ///
+    /// # Note
+    ///
+    /// This instruction copies _exactly_ `len` elements between the memories.
+    MemoryCopyFromToExact {
+        /// The start index of the `dst` memory.
+        dst: Const16<u32>,
+        /// The start index of the `src` memory.
+        src: Const16<u32>,
+        /// The number of copied bytes.
+        len: Const16<u32>,
+    },
+
+    /// Wasm `memory.fill` instruction.
+    ///
+    /// Sets bytes of `memory[dst..dst+len]` to `value`.
+    MemoryFill {
+        /// The start index of the memory to fill.
+        dst: Register,
+        /// The byte value used to fill the memory.
+        value: Register,
+        /// The number of bytes to fill.
+        len: Register,
+    },
+    /// Variant of [`Instruction::MemoryFill`] with 16-bit constant `dst` index.
+    MemoryFillAt {
+        /// The start index of the memory to fill.
+        dst: Const16<u32>,
+        /// The byte value used to fill the memory.
+        value: Register,
+        /// The number of bytes to fill.
+        len: Register,
+    },
+    /// Variant of [`Instruction::MemoryFill`] with constant fill `value`.
+    MemoryFillImm {
+        /// The start index of the memory to fill.
+        dst: Register,
+        /// The byte value used to fill the memory.
+        value: u8,
+        /// The number of bytes to fill.
+        len: Register,
+    },
+    /// Variant of [`Instruction::MemoryFill`] with 16-bit constant `len` value.
+    MemoryFillExact {
+        /// The start index of the memory to fill.
+        dst: Register,
+        /// The byte value used to fill the memory.
+        value: Register,
+        /// The number of bytes to fill.
+        len: Const16<u32>,
+    },
+    /// Variant of [`Instruction::MemoryFill`] with constant `dst` index and `value`.
+    MemoryFillAtImm {
+        /// The start index of the memory to fill.
+        dst: Const16<u32>,
+        /// The byte value used to fill the memory.
+        value: u8,
+        /// The number of bytes to fill.
+        len: Register,
+    },
+    /// Variant of [`Instruction::MemoryFill`] with constant `dst` index and `len`.
+    MemoryFillAtExact {
+        /// The start index of the memory to fill.
+        dst: Const16<u32>,
+        /// The byte value used to fill the memory.
+        value: Register,
+        /// The number of bytes to fill.
+        len: Const16<u32>,
+    },
+    /// Variant of [`Instruction::MemoryFill`] with constant fill `value` and `len`.
+    MemoryFillImmExact {
+        /// The start index of the memory to fill.
+        dst: Register,
+        /// The byte value used to fill the memory.
+        value: u8,
+        /// The number of bytes to fill.
+        len: Const16<u32>,
+    },
+    /// Variant of [`Instruction::MemoryFill`] with constant `dst` index, fill `value` and `len`.
+    MemoryFillAtImmExact {
+        /// The start index of the memory to fill.
+        dst: Const16<u32>,
+        /// The byte value used to fill the memory.
+        value: u8,
+        /// The number of bytes to fill.
+        len: Const16<u32>,
+    },
+
+    /// Wasm `memory.init <data>` instruction.
+    ///
+    /// Initializes bytes of `memory[dst..dst+len]` from `data[src..src+len]`.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    MemoryInit {
+        /// The start index of the `dst` memory.
+        dst: Register,
+        /// The start index of the `src` data segment.
+        src: Register,
+        /// The number of bytes to initialize.
+        len: Register,
+    },
+    /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `dst` index.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    MemoryInitTo {
+        /// The start index of the `dst` memory.
+        dst: Const16<u32>,
+        /// The start index of the `src` data segment.
+        src: Register,
+        /// The number of initialized bytes.
+        len: Register,
+    },
+    /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `src` index.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    MemoryInitFrom {
+        /// The start index of the `dst` memory.
+        dst: Register,
+        /// The start index of the `src` data segment.
+        src: Const16<u32>,
+        /// The number of initialized bytes.
+        len: Register,
+    },
+    /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `dst` and `src` indices.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    MemoryInitFromTo {
+        /// The start index of the `dst` memory.
+        dst: Const16<u32>,
+        /// The start index of the `src` data segment.
+        src: Const16<u32>,
+        /// The number of initialized bytes.
+        len: Register,
+    },
+    /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` field.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    MemoryInitExact {
+        /// The start index of the `dst` memory.
+        dst: Register,
+        /// The start index of the `src` data segment.
+        src: Register,
+        /// The number of initialized bytes.
+        len: Const16<u32>,
+    },
+    /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` and `dst`.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    MemoryInitToExact {
+        /// The start index of the `dst` memory.
+        dst: Const16<u32>,
+        /// The start index of the `src` data segment.
+        src: Register,
+        /// The number of initialized bytes.
+        len: Const16<u32>,
+    },
+    /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` and `src`.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    MemoryInitFromExact {
+        /// The start index of the `dst` memory.
+        dst: Register,
+        /// The start index of the `src` data segment.
+        src: Const16<u32>,
+        /// The number of initialized bytes.
+        len: Const16<u32>,
+    },
+    /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` and `src`.
+    ///
+    /// # Encoding
+    ///
+    /// This [`Instruction`] must be followed by
+    ///
+    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    MemoryInitFromToExact {
+        /// The start index of the `dst` memory.
+        dst: Const16<u32>,
+        /// The start index of the `src` data segment.
+        src: Const16<u32>,
+        /// The number of initialized bytes.
+        len: Const16<u32>,
+    },
 }
 
 impl Instruction {
