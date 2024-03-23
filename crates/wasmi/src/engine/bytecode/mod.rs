@@ -2286,16 +2286,6 @@ pub enum Instruction {
     /// for 16-bit right-hand side constant values.
     I32EqImm16(BinInstrImm16<i32>),
 
-    /// `i64` equality comparison instruction: `r0 = r1 == r2`
-    I64Eq(BinInstr),
-    /// `i64` equality comparison instruction with immediate: `r0 = r1 == c0`
-    ///
-    /// # Note
-    ///
-    /// This is an optimization of [`Instruction::I64Eq`]
-    /// for 16-bit right-hand side constant values.
-    I64EqImm16(BinInstrImm16<i64>),
-
     /// `i32` inequality comparison instruction: `r0 = r1 != r2`
     I32Ne(BinInstr),
     /// `i32` inequality comparison instruction with immediate: `r0 = r1 != c0`
@@ -2305,16 +2295,6 @@ pub enum Instruction {
     /// This is an optimization of [`Instruction::I32Ne`]
     /// for 16-bit right-hand side constant values.
     I32NeImm16(BinInstrImm16<i32>),
-
-    /// `i64` inequality comparison instruction: `r0 = r1 != r2`
-    I64Ne(BinInstr),
-    /// `i64` inequality comparison instruction with immediate: `r0 = r1 != c0`
-    ///
-    /// # Note
-    ///
-    /// This is an optimization of [`Instruction::I64Ne`]
-    /// for 16-bit right-hand side constant values.
-    I64NeImm16(BinInstrImm16<i64>),
 
     /// `i32` signed less-than comparison instruction: `r0 = r1 < r2`
     I32LtS(BinInstr),
@@ -2335,25 +2315,6 @@ pub enum Instruction {
     /// for small right-hand side constant values.
     I32LtUImm16(BinInstrImm16<u32>),
 
-    /// `i64` signed less-than comparison instruction: `r0 = r1 < r2`
-    I64LtS(BinInstr),
-    /// `i64` unsigned less-than comparison instruction: `r0 = r1 < r2`
-    I64LtU(BinInstr),
-    /// `i64` signed less-than comparison instruction with immediate: `r0 = r1 < c0`
-    ///
-    /// # Note
-    ///
-    /// This is an optimization of [`Instruction::I64LtS`]
-    /// for small right-hand side constant values.
-    I64LtSImm16(BinInstrImm16<i64>),
-    /// `i64` unsigned less-than comparison instruction with immediate: `r0 = r1 < c0`
-    ///
-    /// # Note
-    ///
-    /// This is an optimization of [`Instruction::I64LtU`]
-    /// for small right-hand side constant values.
-    I64LtUImm16(BinInstrImm16<u64>),
-
     /// `i32` signed greater-than comparison instruction: `r0 = r1 > r2`
     I32GtS(BinInstr),
     /// `i32` unsigned greater-than comparison instruction: `r0 = r1 > r2`
@@ -2372,25 +2333,6 @@ pub enum Instruction {
     /// This is an optimization of [`Instruction::I32GtU`]
     /// for small right-hand side constant values.
     I32GtUImm16(BinInstrImm16<u32>),
-
-    /// `i64` signed greater-than comparison instruction: `r0 = r1 > r2`
-    I64GtS(BinInstr),
-    /// `i64` unsigned greater-than comparison instruction: `r0 = r1 > r2`
-    I64GtU(BinInstr),
-    /// `i64` signed greater-than comparison instruction with immediate: `r0 = r1 > c0`
-    ///
-    /// # Note
-    ///
-    /// This is an optimization of [`Instruction::I64GtS`]
-    /// for small right-hand side constant values.
-    I64GtSImm16(BinInstrImm16<i64>),
-    /// `i64` unsigned greater-than comparison instruction with immediate: `r0 = r1 > c0`
-    ///
-    /// # Note
-    ///
-    /// This is an optimization of [`Instruction::I64GtU`]
-    /// for small right-hand side constant values.
-    I64GtUImm16(BinInstrImm16<u64>),
 
     /// `i32` signed less-than or equals comparison instruction: `r0 = r1 <= r2`
     I32LeS(BinInstr),
@@ -2411,25 +2353,6 @@ pub enum Instruction {
     /// for small right-hand side constant values.
     I32LeUImm16(BinInstrImm16<u32>),
 
-    /// `i64` signed less-than or equals comparison instruction: `r0 = r1 <= r2`
-    I64LeS(BinInstr),
-    /// `i64` unsigned less-than or equals comparison instruction: `r0 = r1 <= r2`
-    I64LeU(BinInstr),
-    /// `i64` signed less-than or equals comparison instruction with immediate: `r0 = r1 <= c0`
-    ///
-    /// # Note
-    ///
-    /// This is an optimization of [`Instruction::I64LeS`]
-    /// for small right-hand side constant values.
-    I64LeSImm16(BinInstrImm16<i64>),
-    /// `i64` unsigned less-than or equals comparison instruction with immediate: `r0 = r1 <= c0`
-    ///
-    /// # Note
-    ///
-    /// This is an optimization of [`Instruction::I64LeU`]
-    /// for small right-hand side constant values.
-    I64LeUImm16(BinInstrImm16<u64>),
-
     /// `i32` signed greater-than or equals comparison instruction: `r0 = r1 >= r2`
     I32GeS(BinInstr),
     /// `i32` unsigned greater-than or equals comparison instruction: `r0 = r1 >= r2`
@@ -2449,10 +2372,88 @@ pub enum Instruction {
     /// for small right-hand side constant values.
     I32GeUImm16(BinInstrImm16<u32>),
 
+    /// `i64` equality comparison instruction: `r0 = r1 == r2`
+    I64Eq(BinInstr),
+    /// `i64` equality comparison instruction with immediate: `r0 = r1 == c0`
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I64Eq`]
+    /// for 16-bit right-hand side constant values.
+    I64EqImm16(BinInstrImm16<i64>),
+
+    /// `i64` inequality comparison instruction: `r0 = r1 != r2`
+    I64Ne(BinInstr),
+    /// `i64` inequality comparison instruction with immediate: `r0 = r1 != c0`
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I64Ne`]
+    /// for 16-bit right-hand side constant values.
+    I64NeImm16(BinInstrImm16<i64>),
+
+    /// `i64` signed less-than comparison instruction: `r0 = r1 < r2`
+    I64LtS(BinInstr),
+    /// `i64` signed less-than comparison instruction with immediate: `r0 = r1 < c0`
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I64LtS`]
+    /// for small right-hand side constant values.
+    I64LtSImm16(BinInstrImm16<i64>),
+
+    /// `i64` unsigned less-than comparison instruction: `r0 = r1 < r2`
+    I64LtU(BinInstr),
+    /// `i64` unsigned less-than comparison instruction with immediate: `r0 = r1 < c0`
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I64LtU`]
+    /// for small right-hand side constant values.
+    I64LtUImm16(BinInstrImm16<u64>),
+
+    /// `i64` signed greater-than comparison instruction: `r0 = r1 > r2`
+    I64GtS(BinInstr),
+    /// `i64` signed greater-than comparison instruction with immediate: `r0 = r1 > c0`
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I64GtS`]
+    /// for small right-hand side constant values.
+    I64GtSImm16(BinInstrImm16<i64>),
+
+    /// `i64` unsigned greater-than comparison instruction: `r0 = r1 > r2`
+    I64GtU(BinInstr),
+    /// `i64` unsigned greater-than comparison instruction with immediate: `r0 = r1 > c0`
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I64GtU`]
+    /// for small right-hand side constant values.
+    I64GtUImm16(BinInstrImm16<u64>),
+
+    /// `i64` signed less-than or equals comparison instruction: `r0 = r1 <= r2`
+    I64LeS(BinInstr),
+    /// `i64` signed less-than or equals comparison instruction with immediate: `r0 = r1 <= c0`
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I64LeS`]
+    /// for small right-hand side constant values.
+    I64LeSImm16(BinInstrImm16<i64>),
+
+    /// `i64` unsigned less-than or equals comparison instruction: `r0 = r1 <= r2`
+    I64LeU(BinInstr),
+    /// `i64` unsigned less-than or equals comparison instruction with immediate: `r0 = r1 <= c0`
+    ///
+    /// # Note
+    ///
+    /// This is an optimization of [`Instruction::I64LeU`]
+    /// for small right-hand side constant values.
+    I64LeUImm16(BinInstrImm16<u64>),
+
     /// `i64` signed greater-than or equals comparison instruction: `r0 = r1 >= r2`
     I64GeS(BinInstr),
-    /// `i64` unsigned greater-than or equals comparison instruction: `r0 = r1 >= r2`
-    I64GeU(BinInstr),
     /// `i64` signed greater-than or equals comparison instruction with immediate: `r0 = r1 >= c0`
     ///
     /// # Note
@@ -2460,6 +2461,9 @@ pub enum Instruction {
     /// This is an optimization of [`Instruction::I64GeS`]
     /// for small right-hand side constant values.
     I64GeSImm16(BinInstrImm16<i64>),
+
+    /// `i64` unsigned greater-than or equals comparison instruction: `r0 = r1 >= r2`
+    I64GeU(BinInstr),
     /// `i64` unsigned greater-than or equals comparison instruction with immediate: `r0 = r1 >= c0`
     ///
     /// # Note
@@ -2470,37 +2474,27 @@ pub enum Instruction {
 
     /// `f32` equality comparison instruction: `r0 = r1 == r2`
     F32Eq(BinInstr),
-
-    /// `f64` equality comparison instruction: `r0 = r1 == r2`
-    F64Eq(BinInstr),
-
     /// `f32` inequality comparison instruction: `r0 = r1 != r2`
     F32Ne(BinInstr),
-
-    /// `f64` inequality comparison instruction: `r0 = r1 != r2`
-    F64Ne(BinInstr),
-
     /// `f32` less-than comparison instruction: `r0 = r1 < r2`
     F32Lt(BinInstr),
-
-    /// `f64` less-than comparison instruction: `r0 = r1 < r2`
-    F64Lt(BinInstr),
-
     /// `f32` less-than or equals comparison instruction: `r0 = r1 <= r2`
     F32Le(BinInstr),
-
-    /// `f64` less-than or equals comparison instruction: `r0 = r1 <= r2`
-    F64Le(BinInstr),
-
     /// `f32` greater-than comparison instruction: `r0 = r1 > r2`
     F32Gt(BinInstr),
-
-    /// `f64` greater-than comparison instruction: `r0 = r1 > r2`
-    F64Gt(BinInstr),
-
     /// `f32` greater-than or equals comparison instruction: `r0 = r1 >= r2`
     F32Ge(BinInstr),
 
+    /// `f64` equality comparison instruction: `r0 = r1 == r2`
+    F64Eq(BinInstr),
+    /// `f64` inequality comparison instruction: `r0 = r1 != r2`
+    F64Ne(BinInstr),
+    /// `f64` less-than comparison instruction: `r0 = r1 < r2`
+    F64Lt(BinInstr),
+    /// `f64` less-than or equals comparison instruction: `r0 = r1 <= r2`
+    F64Le(BinInstr),
+    /// `f64` greater-than comparison instruction: `r0 = r1 > r2`
+    F64Gt(BinInstr),
     /// `f64` greater-than or equals comparison instruction: `r0 = r1 >= r2`
     F64Ge(BinInstr),
 
