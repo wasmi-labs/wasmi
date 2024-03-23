@@ -62,7 +62,6 @@ use crate::{
     FuncType,
 };
 use core::fmt;
-use slice_group_by::GroupBy as _;
 use std::vec::Vec;
 use wasmi_core::{TrapCode, UntypedValue, ValueType};
 use wasmparser::{
@@ -791,7 +790,7 @@ impl FuncTranslator {
             Ok(())
         })?;
         preserved.reverse();
-        let copy_groups = preserved.linear_group_by(|a, b| {
+        let copy_groups = preserved.chunk_by(|a, b| {
             // Note: we group copies into groups with continuous result register indices
             //       because this is what allows us to fuse single `Copy` instructions into
             //       more efficient `Copy2` or `CopyManyNonOverlapping` instructions.

@@ -1,6 +1,7 @@
 [package]
 name = "wasmi_cli"
 version.workspace = true
+rust-version.workspace = true
 documentation = "https://docs.rs/wasmi/"
 description = "WebAssembly interpreter"
 authors.workspace = true
