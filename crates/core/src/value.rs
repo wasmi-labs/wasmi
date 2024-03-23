@@ -566,34 +566,46 @@ macro_rules! impl_float {
             }
             #[inline]
             fn min(self, other: Self) -> Self {
-                // The implementation strictly adheres to the mandated behavior for the Wasm specification.
-                // Note: In other contexts this API is also known as: `nan_min`.
-                match (self.is_nan(), other.is_nan()) {
-                    (true, false) => self,
-                    (false, true) => other,
-                    _ => {
-                        // Case: Both values are NaN; OR both values are non-NaN.
-                        if <$repr>::is_sign_negative(<$repr>::from(other)) {
-                            return other.min(self);
-                        }
-                        self.min(other)
+                // Note: equal to the unstable `f32::minimum` method.
+                //
+                // Once `f32::minimum` is stable we can simply use it here.
+                if self < other {
+                    self
+                } else if other < self {
+                    other
+                } else if self == other {
+                    if <$repr>::is_sign_negative(<$repr>::from(self))
+                        && <$repr>::is_sign_positive(<$repr>::from(other))
+                    {
+                        self
+                    } else {
+                        other
                     }
+                } else {
+                    // At least one input is NaN. Use `+` to perform NaN propagation and quieting.
+                    self + other
                 }
             }
             #[inline]
             fn max(self, other: Self) -> Self {
-                // The implementation strictly adheres to the mandated behavior for the Wasm specification.
-                // Note: In other contexts this API is also known as: `nan_max`.
-                match (self.is_nan(), other.is_nan()) {
-                    (true, false) => self,
-                    (false, true) => other,
-                    _ => {
-                        // Case: Both values are NaN; OR both values are non-NaN.
-                        if <$repr>::is_sign_positive(<$repr>::from(other)) {
-                            return other.max(self);
-                        }
-                        self.max(other)
+                // Note: equal to the unstable `f32::maximum` method.
+                //
+                // Once `f32::maximum` is stable we can simply use it here.
+                if self > other {
+                    self
+                } else if other > self {
+                    other
+                } else if self == other {
+                    if <$repr>::is_sign_positive(<$repr>::from(self))
+                        && <$repr>::is_sign_negative(<$repr>::from(other))
+                    {
+                        self
+                    } else {
+                        other
                     }
+                } else {
+                    // At least one input is NaN. Use `+` to perform NaN propagation and quieting.
+                    self + other
                 }
             }
             #[inline]
