@@ -2511,13 +2511,6 @@ pub enum Instruction {
     /// `i32` pop-count instruction.
     I32Popcnt(UnaryInstr),
 
-    /// `i64` count-leading-zeros (clz) instruction.
-    I64Clz(UnaryInstr),
-    /// `i64` count-trailing-zeros (ctz) instruction.
-    I64Ctz(UnaryInstr),
-    /// `i64` pop-count instruction.
-    I64Popcnt(UnaryInstr),
-
     /// `i32` add instruction: `r0 = r1 + r2`
     I32Add(BinInstr),
     /// `i32` add (small) immediate instruction: `r0 = r1 + c0`
@@ -2659,6 +2652,13 @@ pub enum Instruction {
     ///
     /// Optimized variant of [`Instruction::I32Xor`] for 16-bit constant values.
     I32XorImm16(BinInstrImm16<i32>),
+
+    /// `i64` count-leading-zeros (clz) instruction.
+    I64Clz(UnaryInstr),
+    /// `i64` count-trailing-zeros (ctz) instruction.
+    I64Ctz(UnaryInstr),
+    /// `i64` pop-count instruction.
+    I64Popcnt(UnaryInstr),
 
     /// `i64` add instruction: `r0 = r1 + r2`
     I64Add(BinInstr),
