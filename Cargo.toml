@@ -13,7 +13,7 @@ resolver = "2"
 [workspace.package]
 authors = ["Robin Freyler <robin.freyler@gmail.com>"]
 repository = "https://github.com/wasmi-labs/wasmi"
-version = "0.32.0-beta.7"
+version = "0.32.0-beta.8"
 rust-version = "1.77"
 edition = "2021"
 readme = "README.md"
@@ -23,8 +23,8 @@ categories = ["wasm", "no-std", "virtualization"]
 exclude = ["tests"]
 
 [workspace.dependencies]
-wasmi = { version = "0.32.0-beta.7", path = "crates/wasmi", default-features = false }
-wasmi_wasi = { version = "0.32.0-beta.7", path = "crates/wasi", default-features = false }
+wasmi = { version = "0.32.0-beta.8", path = "crates/wasmi", default-features = false }
+wasmi_wasi = { version = "0.32.0-beta.8", path = "crates/wasi", default-features = false }
 wasmi_core = { version = "0.16.0", path = "crates/core", default-features = false }
 wasmi_arena = { version = "0.5.0", path = "crates/arena", default-features = false }
 num-traits = { version = "0.2.8", default-features = false }
