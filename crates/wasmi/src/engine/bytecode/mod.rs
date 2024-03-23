@@ -2548,8 +2548,6 @@ pub enum Instruction {
 
     /// `i32` singed-division instruction: `r0 = r1 / r2`
     I32DivS(BinInstr),
-    /// `i64` singed-division instruction: `r0 = r1 / r2`
-    I64DivS(BinInstr),
     /// `i32` singed-division immediate instruction: `r0 = r1 / c0`
     ///
     /// # Note
@@ -2557,13 +2555,6 @@ pub enum Instruction {
     /// - Optimized variant of [`Instruction::I32DivS`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
     I32DivSImm16(BinInstrImm16<NonZeroI32>),
-    /// `i64` singed-division immediate instruction: `r0 = r1 / c0`
-    ///
-    /// # Note
-    ///
-    /// - Optimized variant of [`Instruction::I64DivS`] for 16-bit constant values.
-    /// - Guarantees that the right-hand side operand is not zero.
-    I64DivSImm16(BinInstrImm16<NonZeroI64>),
     /// `i32` singed-division immediate instruction: `r0 = c0 / r1`
     ///
     /// # Note
@@ -2572,19 +2563,9 @@ pub enum Instruction {
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Required instruction since signed-division is not commutative.
     I32DivSImm16Rev(BinInstrImm16<i32>),
-    /// `i32` singed-division immediate instruction: `r0 = c0 / r1`
-    ///
-    /// # Note
-    ///
-    /// - Guarantees that the right-hand side operand is not zero.
-    /// - Required instruction since signed-division is not commutative.
-    /// - Optimized variant of [`Instruction::I64DivU`] for 16-bit constant values.
-    I64DivSImm16Rev(BinInstrImm16<i64>),
 
     /// `i32` unsinged-division instruction: `r0 = r1 / r2`
     I32DivU(BinInstr),
-    /// `i64` unsinged-division instruction: `r0 = r1 / r2`
-    I64DivU(BinInstr),
     /// `i32` unsinged-division immediate instruction: `r0 = r1 / c0`
     ///
     /// # Note
@@ -2595,16 +2576,6 @@ pub enum Instruction {
     ///
     /// Optimized variant of [`Instruction::I32DivU`] for 16-bit constant values.
     I32DivUImm16(BinInstrImm16<NonZeroU32>),
-    /// `i64` unsinged-division immediate instruction: `r0 = r1 / c0`
-    ///
-    /// # Note
-    ///
-    /// Guarantees that the right-hand side operand is not zero.
-    ///
-    /// # Encoding
-    ///
-    /// Optimized variant of [`Instruction::I64DivU`] for 16-bit constant values.
-    I64DivUImm16(BinInstrImm16<NonZeroU64>),
     /// `i32` unsinged-division immediate instruction: `r0 = c0 / r1`
     ///
     /// # Note
@@ -2613,19 +2584,9 @@ pub enum Instruction {
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Required instruction since `i32` unsigned-division is not commutative.
     I32DivUImm16Rev(BinInstrImm16<u32>),
-    /// `i64` unsinged-division immediate instruction: `r0 = c0 / r1`
-    ///
-    /// # Note
-    ///
-    /// - Optimized variant of [`Instruction::I64DivU`] for 16-bit constant values.
-    /// - Guarantees that the right-hand side operand is not zero.
-    /// - Required instruction since unsigned-division is not commutative.
-    I64DivUImm16Rev(BinInstrImm16<u64>),
 
     /// `i32` singed-remainder instruction: `r0 = r1 % r2`
     I32RemS(BinInstr),
-    /// `i64` singed-remainder instruction: `r0 = r1 % r2`
-    I64RemS(BinInstr),
     /// `i32` singed-remainder immediate instruction: `r0 = r1 % c0`
     ///
     /// # Note
@@ -2633,13 +2594,6 @@ pub enum Instruction {
     /// - Optimized variant of [`Instruction::I32RemS`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
     I32RemSImm16(BinInstrImm16<NonZeroI32>),
-    /// `i64` singed-remainder immediate instruction: `r0 = r1 % c0`
-    ///
-    /// # Note
-    ///
-    /// - Optimized variant of [`Instruction::I64RemS`] for 16-bit constant values.
-    /// - Guarantees that the right-hand side operand is not zero.
-    I64RemSImm16(BinInstrImm16<NonZeroI64>),
     /// `i32` singed-remainder immediate instruction: `r0 = c0 % r1`
     ///
     /// # Note
@@ -2648,19 +2602,9 @@ pub enum Instruction {
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Required instruction since `i32` signed-remainder is not commutative.
     I32RemSImm16Rev(BinInstrImm16<i32>),
-    /// `i64` singed-remainder immediate instruction: `r0 = c0 % r1`
-    ///
-    /// # Note
-    ///
-    /// - Optimized variant of [`Instruction::I64RemS`] for 16-bit constant values.
-    /// - Guarantees that the right-hand side operand is not zero.
-    /// - Required instruction since signed-remainder is not commutative.
-    I64RemSImm16Rev(BinInstrImm16<i64>),
 
     /// `i32` unsigned-remainder instruction: `r0 = r1 % r2`
     I32RemU(BinInstr),
-    /// `i64` unsigned-remainder instruction: `r0 = r1 % r2`
-    I64RemU(BinInstr),
     /// `i32` singed-remainder immediate instruction: `r0 = r1 % c0`
     ///
     /// # Note
@@ -2668,13 +2612,6 @@ pub enum Instruction {
     /// - Optimized variant of [`Instruction::I32RemU`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
     I32RemUImm16(BinInstrImm16<NonZeroU32>),
-    /// `i64` singed-remainder immediate instruction: `r0 = r1 % c0`
-    ///
-    /// # Note
-    ///
-    /// - Optimized variant of [`Instruction::I64RemU`] for 16-bit constant values.
-    /// - Guarantees that the right-hand side operand is not zero.
-    I64RemUImm16(BinInstrImm16<NonZeroU64>),
     /// `i32` unsigned-remainder immediate instruction: `r0 = c0 % r1`
     ///
     /// # Note
@@ -2683,14 +2620,6 @@ pub enum Instruction {
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Required instruction since unsigned-remainder is not commutative.
     I32RemUImm16Rev(BinInstrImm16<u32>),
-    /// `i64` unsigned-remainder immediate instruction: `r0 = c0 % r1`
-    ///
-    /// # Note
-    ///
-    /// - Optimized variant of [`Instruction::I64RemU`] for 16-bit constant values.
-    /// - Guarantees that the right-hand side operand is not zero.
-    /// - Required instruction since unsigned-remainder is not commutative.
-    I64RemUImm16Rev(BinInstrImm16<u64>),
 
     /// `i64` add instruction: `r0 = r1 + r2`
     I64Add(BinInstr),
@@ -2719,6 +2648,81 @@ pub enum Instruction {
     ///
     /// Optimized variant of [`Instruction::I64Mul`] for 16-bit constant values.
     I64MulImm16(BinInstrImm16<i64>),
+
+    /// `i64` singed-division instruction: `r0 = r1 / r2`
+    I64DivS(BinInstr),
+    /// `i64` singed-division immediate instruction: `r0 = r1 / c0`
+    ///
+    /// # Note
+    ///
+    /// - Optimized variant of [`Instruction::I64DivS`] for 16-bit constant values.
+    /// - Guarantees that the right-hand side operand is not zero.
+    I64DivSImm16(BinInstrImm16<NonZeroI64>),
+    /// `i32` singed-division immediate instruction: `r0 = c0 / r1`
+    ///
+    /// # Note
+    ///
+    /// - Guarantees that the right-hand side operand is not zero.
+    /// - Required instruction since signed-division is not commutative.
+    /// - Optimized variant of [`Instruction::I64DivU`] for 16-bit constant values.
+    I64DivSImm16Rev(BinInstrImm16<i64>),
+
+    /// `i64` unsinged-division instruction: `r0 = r1 / r2`
+    I64DivU(BinInstr),
+    /// `i64` unsinged-division immediate instruction: `r0 = r1 / c0`
+    ///
+    /// # Note
+    ///
+    /// Guarantees that the right-hand side operand is not zero.
+    ///
+    /// # Encoding
+    ///
+    /// Optimized variant of [`Instruction::I64DivU`] for 16-bit constant values.
+    I64DivUImm16(BinInstrImm16<NonZeroU64>),
+    /// `i64` unsinged-division immediate instruction: `r0 = c0 / r1`
+    ///
+    /// # Note
+    ///
+    /// - Optimized variant of [`Instruction::I64DivU`] for 16-bit constant values.
+    /// - Guarantees that the right-hand side operand is not zero.
+    /// - Required instruction since unsigned-division is not commutative.
+    I64DivUImm16Rev(BinInstrImm16<u64>),
+
+    /// `i64` singed-remainder instruction: `r0 = r1 % r2`
+    I64RemS(BinInstr),
+    /// `i64` singed-remainder immediate instruction: `r0 = r1 % c0`
+    ///
+    /// # Note
+    ///
+    /// - Optimized variant of [`Instruction::I64RemS`] for 16-bit constant values.
+    /// - Guarantees that the right-hand side operand is not zero.
+    I64RemSImm16(BinInstrImm16<NonZeroI64>),
+    /// `i64` singed-remainder immediate instruction: `r0 = c0 % r1`
+    ///
+    /// # Note
+    ///
+    /// - Optimized variant of [`Instruction::I64RemS`] for 16-bit constant values.
+    /// - Guarantees that the right-hand side operand is not zero.
+    /// - Required instruction since signed-remainder is not commutative.
+    I64RemSImm16Rev(BinInstrImm16<i64>),
+
+    /// `i64` unsigned-remainder instruction: `r0 = r1 % r2`
+    I64RemU(BinInstr),
+    /// `i64` singed-remainder immediate instruction: `r0 = r1 % c0`
+    ///
+    /// # Note
+    ///
+    /// - Optimized variant of [`Instruction::I64RemU`] for 16-bit constant values.
+    /// - Guarantees that the right-hand side operand is not zero.
+    I64RemUImm16(BinInstrImm16<NonZeroU64>),
+    /// `i64` unsigned-remainder immediate instruction: `r0 = c0 % r1`
+    ///
+    /// # Note
+    ///
+    /// - Optimized variant of [`Instruction::I64RemU`] for 16-bit constant values.
+    /// - Guarantees that the right-hand side operand is not zero.
+    /// - Required instruction since unsigned-remainder is not commutative.
+    I64RemUImm16Rev(BinInstrImm16<u64>),
 
     /// `i32` bitwise-and instruction: `r0 = r1 & r2`
     I32And(BinInstr),
