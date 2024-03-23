@@ -1,6 +1,7 @@
 [package]
 name = "wasmi_wasi"
 version.workspace = true
+rust-version.workspace = true
 documentation = "https://docs.rs/wasmi_wasi"
 description = "WASI library support for the wasmi interpreter"
 authors.workspace = true
