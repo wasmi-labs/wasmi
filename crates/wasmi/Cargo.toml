@@ -1,6 +1,7 @@
 [package]
 name = "wasmi"
 version.workspace = true
+rust-version.workspace = true
 documentation = "https://docs.rs/wasmi/"
 description = "WebAssembly interpreter"
 authors.workspace = true
@@ -25,7 +26,6 @@ smallvec = { version = "1.13.1", features = ["union"] }
 multi-stash = { version = "0.2.0" }
 num-traits = { workspace = true }
 num-derive = "0.4"
-slice-group-by = { version = "0.3", default-features = false }
 arrayvec = { version = "0.7.4", default-features = false }
 
 [dev-dependencies]
@@ -43,7 +43,6 @@ std = [
     "wasmparser/std",
     "spin/std",
     "num-traits/std",
-    "slice-group-by/std",
     "arrayvec/std",
 ]
 

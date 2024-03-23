@@ -523,18 +523,12 @@ impl core::fmt::Debug for ReusableAllocationStack {
 impl ReusableAllocationStack {
     /// Returns reusable [`FuncTranslatorAllocations`] from the [`Engine`].
     pub fn get_translation_allocs(&mut self) -> FuncTranslatorAllocations {
-        match self.translation.pop() {
-            Some(allocs) => allocs,
-            None => FuncTranslatorAllocations::default(),
-        }
+        self.translation.pop().unwrap_or_default()
     }
 
     /// Returns reusable [`FuncValidatorAllocations`] from the [`Engine`].
     pub fn get_validation_allocs(&mut self) -> FuncValidatorAllocations {
-        match self.validation.pop() {
-            Some(allocs) => allocs,
-            None => FuncValidatorAllocations::default(),
-        }
+        self.validation.pop().unwrap_or_default()
     }
 
     /// Recycles the given [`FuncTranslatorAllocations`] in the [`Engine`].
