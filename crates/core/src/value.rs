@@ -634,101 +634,56 @@ trait WasmFloatExt {
 }
 
 #[cfg(not(feature = "std"))]
-impl WasmFloatExt for f32 {
-    #[inline]
-    fn abs(self) -> Self {
-        libm::fabsf(self)
-    }
+macro_rules! impl_wasm_float {
+    ($ty:ty) => {
+        impl WasmFloatExt for $ty {
+            #[inline]
+            fn abs(self) -> Self {
+                <libm::Libm<Self>>::fabs(self)
+            }
 
-    #[inline]
-    fn ceil(self) -> Self {
-        libm::ceilf(self)
-    }
+            #[inline]
+            fn ceil(self) -> Self {
+                <libm::Libm<Self>>::ceil(self)
+            }
 
-    #[inline]
-    fn floor(self) -> Self {
-        libm::floorf(self)
-    }
+            #[inline]
+            fn floor(self) -> Self {
+                <libm::Libm<Self>>::floor(self)
+            }
 
-    #[inline]
-    fn trunc(self) -> Self {
-        libm::truncf(self)
-    }
+            #[inline]
+            fn trunc(self) -> Self {
+                <libm::Libm<Self>>::trunc(self)
+            }
 
-    #[inline]
-    fn sqrt(self) -> Self {
-        libm::sqrtf(self)
-    }
+            #[inline]
+            fn nearest(self) -> Self {
+                let round = <libm::Libm<Self>>::round(self);
+                if <Self as WasmFloatExt>::abs(self - <Self as WasmFloatExt>::trunc(self)) != 0.5 {
+                    return round;
+                }
+                let rem = round % 2.0;
+                if rem == 1.0 {
+                    <Self as WasmFloatExt>::floor(self)
+                } else if rem == -1.0 {
+                    <Self as WasmFloatExt>::ceil(self)
+                } else {
+                    round
+                }
+            }
 
-    #[inline]
-    fn nearest(self) -> Self {
-        let round = libm::roundf(self);
-        if <Self as WasmFloatExt>::abs(self - <Self as WasmFloatExt>::trunc(self)) != 0.5 {
-            return round;
+            #[inline]
+            fn sqrt(self) -> Self {
+                <libm::Libm<Self>>::sqrt(self)
+            }
+
+            #[inline]
+            fn copysign(self, other: Self) -> Self {
+                <libm::Libm<Self>>::copysign(self, other)
+            }
         }
-        let rem = round % 2.0;
-        if rem == 1.0 {
-            <Self as WasmFloatExt>::floor(self)
-        } else if rem == -1.0 {
-            <Self as WasmFloatExt>::ceil(self)
-        } else {
-            round
-        }
-    }
-
-    #[inline]
-    fn copysign(self, other: Self) -> Self {
-        libm::copysignf(self, other)
-    }
-}
-
-#[cfg(not(feature = "std"))]
-impl WasmFloatExt for f64 {
-    #[inline]
-    fn abs(self) -> Self {
-        libm::fabs(self)
-    }
-
-    #[inline]
-    fn ceil(self) -> Self {
-        libm::ceil(self)
-    }
-
-    #[inline]
-    fn floor(self) -> Self {
-        libm::floor(self)
-    }
-
-    #[inline]
-    fn trunc(self) -> Self {
-        libm::trunc(self)
-    }
-
-    #[inline]
-    fn sqrt(self) -> Self {
-        libm::sqrt(self)
-    }
-
-    #[inline]
-    fn nearest(self) -> Self {
-        let round = libm::round(self);
-        if <Self as WasmFloatExt>::abs(self - <Self as WasmFloatExt>::trunc(self)) != 0.5 {
-            return round;
-        }
-        let rem = round % 2.0;
-        if rem == 1.0 {
-            <Self as WasmFloatExt>::floor(self)
-        } else if rem == -1.0 {
-            <Self as WasmFloatExt>::ceil(self)
-        } else {
-            round
-        }
-    }
-
-    #[inline]
-    fn copysign(self, other: Self) -> Self {
-        libm::copysign(self, other)
-    }
+    };
 }
 
 #[cfg(feature = "std")]
@@ -773,10 +728,7 @@ macro_rules! impl_wasm_float {
     };
 }
 
-#[cfg(feature = "std")]
 impl_wasm_float!(f32);
-
-#[cfg(feature = "std")]
 impl_wasm_float!(f64);
 
 #[cfg(test)]
