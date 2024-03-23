@@ -728,19 +728,7 @@ macro_rules! impl_float {
             }
             #[inline]
             fn copysign(self, other: Self) -> Self {
-                use core::mem::size_of;
-                let sign_mask: $repr_int = 1 << ((size_of::<$repr_int>() << 3) - 1);
-                let self_int: $repr_int = self.transmute_into();
-                let other_int: $repr_int = other.transmute_into();
-                let is_self_sign_set = (self_int & sign_mask) != 0;
-                let is_other_sign_set = (other_int & sign_mask) != 0;
-                if is_self_sign_set == is_other_sign_set {
-                    self
-                } else if is_other_sign_set {
-                    (self_int | sign_mask).transmute_into()
-                } else {
-                    (self_int & !sign_mask).transmute_into()
-                }
+                WasmFloatExt::copysign(<$float_repr>::from(self), <$float_repr>::from(other)).into()
             }
         }
     };
@@ -771,6 +759,8 @@ trait WasmFloatExt {
     fn sqrt(self) -> Self;
     /// Equivalent to the Wasm `{f32,f64}.nearest` instructions.
     fn nearest(self) -> Self;
+    /// Equivalent to the Wasm `{f32,f64}.copysign` instructions.
+    fn copysign(self, other: Self) -> Self;
 }
 
 #[cfg(not(feature = "std"))]
@@ -814,6 +804,11 @@ impl WasmFloatExt for f32 {
         } else {
             round
         }
+    }
+
+    #[inline]
+    fn copysign(self, other: Self) -> Self {
+        libm::copysignf(self, other)
     }
 }
 
@@ -859,6 +854,11 @@ impl WasmFloatExt for f64 {
             round
         }
     }
+
+    #[inline]
+    fn copysign(self, other: Self) -> Self {
+        libm::copysign(self, other)
+    }
 }
 
 #[cfg(feature = "std")]
@@ -893,6 +893,11 @@ macro_rules! impl_wasm_float {
             #[inline]
             fn sqrt(self) -> Self {
                 self.sqrt()
+            }
+
+            #[inline]
+            fn copysign(self, other: Self) -> Self {
+                self.copysign(other)
             }
         }
     };
