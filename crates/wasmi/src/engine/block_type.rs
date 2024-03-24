@@ -17,7 +17,7 @@ pub enum BlockTypeInner {
     /// A block type with no parameters and no results.
     Empty,
     /// A block type with no parameters and exactly one result.
-    Returns(ValueType),
+    Returns,
     /// A general block type with parameters and results.
     FuncType(DedupFuncType),
 }
@@ -53,8 +53,8 @@ impl BlockType {
     }
 
     /// Creates a [`BlockType`] with no parameters and a single result type.
-    fn returns(return_type: ValueType) -> Self {
-        Self::from_inner(BlockTypeInner::Returns(return_type))
+    fn returns(_return_type: ValueType) -> Self {
+        Self::from_inner(BlockTypeInner::Returns)
     }
 
     /// Creates a [`BlockType`] with parameters and results.
@@ -63,22 +63,22 @@ impl BlockType {
     }
 
     /// Returns the number of parameters of the [`BlockType`].
-    pub fn len_params(&self, engine: &Engine) -> u32 {
+    pub fn len_params(&self, engine: &Engine) -> usize {
         match &self.inner {
-            BlockTypeInner::Empty | BlockTypeInner::Returns(_) => 0,
+            BlockTypeInner::Empty | BlockTypeInner::Returns => 0,
             BlockTypeInner::FuncType(func_type) => {
-                engine.resolve_func_type(func_type, |func_type| func_type.params().len() as u32)
+                engine.resolve_func_type(func_type, |func_type| func_type.params().len())
             }
         }
     }
 
     /// Returns the number of results of the [`BlockType`].
-    pub fn len_results(&self, engine: &Engine) -> u32 {
+    pub fn len_results(&self, engine: &Engine) -> usize {
         match &self.inner {
             BlockTypeInner::Empty => 0,
-            BlockTypeInner::Returns(_) => 1,
+            BlockTypeInner::Returns => 1,
             BlockTypeInner::FuncType(func_type) => {
-                engine.resolve_func_type(func_type, |func_type| func_type.results().len() as u32)
+                engine.resolve_func_type(func_type, |func_type| func_type.results().len())
             }
         }
     }
