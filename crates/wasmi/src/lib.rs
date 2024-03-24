@@ -159,6 +159,7 @@ pub use self::{
         ModuleExportsIter,
         ModuleImportsIter,
         Read,
+        ReadError,
     },
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
