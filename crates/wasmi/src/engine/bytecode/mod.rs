@@ -2118,69 +2118,63 @@ pub enum Instruction {
 
     /// Wasm `f32.abs` instruction.
     F32Abs(UnaryInstr),
-    /// Wasm `f64.abs` instruction.
-    F64Abs(UnaryInstr),
     /// Wasm `f32.neg` instruction.
     F32Neg(UnaryInstr),
-    /// Wasm `f64.neg` instruction.
-    F64Neg(UnaryInstr),
     /// Wasm `f32.ceil` instruction.
     F32Ceil(UnaryInstr),
-    /// Wasm `f64.ceil` instruction.
-    F64Ceil(UnaryInstr),
     /// Wasm `f32.floor` instruction.
     F32Floor(UnaryInstr),
-    /// Wasm `f64.floor` instruction.
-    F64Floor(UnaryInstr),
     /// Wasm `f32.trunc` instruction.
     F32Trunc(UnaryInstr),
-    /// Wasm `f64.trunc` instruction.
-    F64Trunc(UnaryInstr),
     /// Wasm `f32.nearest` instruction.
     F32Nearest(UnaryInstr),
-    /// Wasm `f64.nearest` instruction.
-    F64Nearest(UnaryInstr),
     /// Wasm `f32.sqrt` instruction.
     F32Sqrt(UnaryInstr),
-    /// Wasm `f64.sqrt` instruction.
-    F64Sqrt(UnaryInstr),
-
     /// Wasm `f32.add` instruction: `r0 = r1 + r2`
     F32Add(BinInstr),
-    /// Wasm `f64.add` instruction: `r0 = r1 + r2`
-    F64Add(BinInstr),
-
     /// Wasm `f32.sub` instruction: `r0 = r1 - r2`
     F32Sub(BinInstr),
-    /// Wasm `f64.sub` instruction: `r0 = r1 - r2`
-    F64Sub(BinInstr),
-
     /// Wasm `f32.mul` instruction: `r0 = r1 * r2`
     F32Mul(BinInstr),
-    /// Wasm `f64.mul` instruction: `r0 = r1 * r2`
-    F64Mul(BinInstr),
-
     /// Wasm `f32.div` instruction: `r0 = r1 / r2`
     F32Div(BinInstr),
-    /// Wasm `f64.div` instruction: `r0 = r1 / r2`
-    F64Div(BinInstr),
-
     /// Wasm `f32.min` instruction: `r0 = min(r1, r2)`
     F32Min(BinInstr),
-    /// Wasm `f64.min` instruction: `r0 = min(r1, r2)`
-    F64Min(BinInstr),
-
     /// Wasm `f32.max` instruction: `r0 = max(r1, r2)`
     F32Max(BinInstr),
-    /// Wasm `f64.max` instruction: `r0 = max(r1, r2)`
-    F64Max(BinInstr),
-
     /// Wasm `f32.copysign` instruction: `r0 = copysign(r1, r2)`
     F32Copysign(BinInstr),
-    /// Wasm `f64.copysign` instruction: `r0 = copysign(r1, r2)`
-    F64Copysign(BinInstr),
     /// Wasm `f32.copysign` instruction with immediate: `r0 = copysign(r1, c0)`
     F32CopysignImm(BinInstrImm<Sign>),
+
+    /// Wasm `f64.abs` instruction.
+    F64Abs(UnaryInstr),
+    /// Wasm `f64.neg` instruction.
+    F64Neg(UnaryInstr),
+    /// Wasm `f64.ceil` instruction.
+    F64Ceil(UnaryInstr),
+    /// Wasm `f64.floor` instruction.
+    F64Floor(UnaryInstr),
+    /// Wasm `f64.trunc` instruction.
+    F64Trunc(UnaryInstr),
+    /// Wasm `f64.nearest` instruction.
+    F64Nearest(UnaryInstr),
+    /// Wasm `f64.sqrt` instruction.
+    F64Sqrt(UnaryInstr),
+    /// Wasm `f64.add` instruction: `r0 = r1 + r2`
+    F64Add(BinInstr),
+    /// Wasm `f64.sub` instruction: `r0 = r1 - r2`
+    F64Sub(BinInstr),
+    /// Wasm `f64.mul` instruction: `r0 = r1 * r2`
+    F64Mul(BinInstr),
+    /// Wasm `f64.div` instruction: `r0 = r1 / r2`
+    F64Div(BinInstr),
+    /// Wasm `f64.min` instruction: `r0 = min(r1, r2)`
+    F64Min(BinInstr),
+    /// Wasm `f64.max` instruction: `r0 = max(r1, r2)`
+    F64Max(BinInstr),
+    /// Wasm `f64.copysign` instruction: `r0 = copysign(r1, r2)`
+    F64Copysign(BinInstr),
     /// Wasm `f64.copysign` instruction with immediate: `r0 = copysign(r1, c0)`
     F64CopysignImm(BinInstrImm<Sign>),
 
