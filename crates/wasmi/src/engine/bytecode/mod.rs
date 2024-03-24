@@ -2116,6 +2116,44 @@ pub enum Instruction {
     /// - Required instruction since rotate-right is not commutative.
     I64RotrImm16Rev(BinInstrImm16<i64>),
 
+    /// Wasm `i32.wrap_i64` instruction.
+    I32WrapI64(UnaryInstr),
+    /// Wasm `i64.extend_i32_s` instruction.
+    I64ExtendI32S(UnaryInstr),
+    /// Wasm `i64.extend_i32_u` instruction.
+    I64ExtendI32U(UnaryInstr),
+
+    /// Wasm `i32.extend8_s` instruction.
+    ///
+    /// # Note
+    ///
+    /// Instruction from the Wasm `sign-extension` proposal.
+    I32Extend8S(UnaryInstr),
+    /// Wasm `i32.extend16_s` instruction.
+    ///
+    /// # Note
+    ///
+    /// Instruction from the Wasm `sign-extension` proposal.
+    I32Extend16S(UnaryInstr),
+    /// Wasm `i64.extend8_s` instruction.
+    ///
+    /// # Note
+    ///
+    /// Instruction from the Wasm `sign-extension` proposal.
+    I64Extend8S(UnaryInstr),
+    /// Wasm(UnaryInstr) `i64.extend16_s` instruction.
+    ///
+    /// # Note
+    ///
+    /// Instruction from the Wasm `sign-extension` proposal.
+    I64Extend16S(UnaryInstr),
+    /// Wasm `i64.extend32_s` instruction.
+    ///
+    /// # Note
+    ///
+    /// Instruction from the Wasm `sign-extension` proposal.
+    I64Extend32S(UnaryInstr),
+
     /// Wasm `f32.abs` instruction.
     F32Abs(UnaryInstr),
     /// Wasm `f32.neg` instruction.
@@ -2177,13 +2215,6 @@ pub enum Instruction {
     F64Copysign(BinInstr),
     /// Wasm `f64.copysign` instruction with immediate: `r0 = copysign(r1, c0)`
     F64CopysignImm(BinInstrImm<Sign>),
-
-    /// Wasm `i32.wrap_i64` instruction.
-    I32WrapI64(UnaryInstr),
-    /// Wasm `i64.extend_i32_s` instruction.
-    I64ExtendI32S(UnaryInstr),
-    /// Wasm `i64.extend_i32_u` instruction.
-    I64ExtendI32U(UnaryInstr),
 
     /// Wasm `i32.trunc_f32_s` instruction.
     I32TruncF32S(UnaryInstr),
@@ -2250,37 +2281,6 @@ pub enum Instruction {
     ///
     /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
     I64TruncSatF64U(UnaryInstr),
-
-    /// Wasm `i32.extend8_s` instruction.
-    ///
-    /// # Note
-    ///
-    /// Instruction from the Wasm `sign-extension` proposal.
-    I32Extend8S(UnaryInstr),
-    /// Wasm `i32.extend16_s` instruction.
-    ///
-    /// # Note
-    ///
-    /// Instruction from the Wasm `sign-extension` proposal.
-    I32Extend16S(UnaryInstr),
-    /// Wasm `i64.extend8_s` instruction.
-    ///
-    /// # Note
-    ///
-    /// Instruction from the Wasm `sign-extension` proposal.
-    I64Extend8S(UnaryInstr),
-    /// Wasm(UnaryInstr) `i64.extend16_s` instruction.
-    ///
-    /// # Note
-    ///
-    /// Instruction from the Wasm `sign-extension` proposal.
-    I64Extend16S(UnaryInstr),
-    /// Wasm `i64.extend32_s` instruction.
-    ///
-    /// # Note
-    ///
-    /// Instruction from the Wasm `sign-extension` proposal.
-    I64Extend32S(UnaryInstr),
 
     /// Wasm `f32.demote_f64` instruction.
     F32DemoteF64(UnaryInstr),
