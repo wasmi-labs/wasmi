@@ -11,6 +11,7 @@
     clippy::items_after_statements
 )]
 
+pub mod hint;
 mod host_error;
 mod nan_preserving_float;
 mod trap;
