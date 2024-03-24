@@ -131,8 +131,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let fuel_instr = self.fuel_instr();
         let stack_height = BlockHeight::new(self.engine(), self.alloc.stack.height(), block_type)?;
         let end_label = self.alloc.instr_encoder.new_label();
-        let len_block_params = block_type.len_params(self.engine()) as usize;
-        let len_branch_params = block_type.len_results(self.engine()) as usize;
+        let len_block_params = block_type.len_params(self.engine());
+        let len_branch_params = block_type.len_results(self.engine());
         let branch_params = self.alloc_branch_params(len_block_params, len_branch_params)?;
         self.alloc.control_stack.push_frame(BlockControlFrame::new(
             block_type,
@@ -157,7 +157,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             return Ok(());
         }
         // Copy `loop` parameters over to where it expects its branch parameters.
-        let len_block_params = block_type.len_params(self.engine()) as usize;
+        let len_block_params = block_type.len_params(self.engine());
         self.alloc
             .stack
             .pop_n(len_block_params, &mut self.alloc.buffer.providers);
@@ -210,8 +210,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let stack_height = BlockHeight::new(self.engine(), self.alloc.stack.height(), block_type)?;
         self.preserve_locals()?;
         let end_label = self.alloc.instr_encoder.new_label();
-        let len_block_params = block_type.len_params(self.engine()) as usize;
-        let len_branch_params = block_type.len_results(self.engine()) as usize;
+        let len_block_params = block_type.len_params(self.engine());
+        let len_branch_params = block_type.len_results(self.engine());
         let branch_params = self.alloc_branch_params(len_block_params, len_branch_params)?;
         let (reachability, fuel_instr) = match condition {
             TypedProvider::Const(condition) => {
