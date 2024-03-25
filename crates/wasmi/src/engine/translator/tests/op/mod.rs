@@ -6,6 +6,7 @@ mod br_table;
 mod call;
 mod cmp;
 mod cmp_br;
+mod copy;
 mod global_get;
 mod global_set;
 mod i32_eqz;

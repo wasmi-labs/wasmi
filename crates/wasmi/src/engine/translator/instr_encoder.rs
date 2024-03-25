@@ -323,6 +323,44 @@ impl InstrEncoder {
         self.instrs.push(instr)
     }
 
+    /// Tries to merge `copy(result, value)` if the last instruction is a matching copy instruction.
+    ///
+    /// - Returns `None` if merging of the copy instruction was not possible.
+    /// - Returns the `Instr` of the merged `copy2` instruction if merging was successful.
+    fn merge_copy_instrs(&mut self, result: Register, value: TypedProvider) -> Option<Instr> {
+        let TypedProvider::Register(value) = value else {
+            // Case: cannot merge copies with immediate values at the moment.
+            //
+            // Note: we could implement this but it would require us to allocate
+            //       function local constants which we want to avoid generally.
+            return None;
+        };
+        let Some(last_instr) = self.last_instr else {
+            // There is no last instruction, e.g. when ending a `block`.
+            return None;
+        };
+        let Instruction::Copy {
+            result: last_result,
+            value: last_value,
+        } = *self.instrs.get(last_instr)
+        else {
+            // Case: last instruction was not a copy instruction, so we cannot merge anything.
+            return None;
+        };
+        if !(result == last_result.next() || result == last_result.prev()) {
+            // Case: cannot merge copy instructions as `copy2` since result registers are not contiguous.
+            return None;
+        }
+        let (merged_result, value0, value1) = if last_result < result {
+            (last_result, last_value, value)
+        } else {
+            (result, value, last_value)
+        };
+        let merged_copy = Instruction::copy2(RegisterSpan::new(merged_result), value0, value1);
+        *self.instrs.get_mut(last_instr) = merged_copy;
+        Some(last_instr)
+    }
+
     /// Encode a `copy result <- value` instruction.
     ///
     /// # Note
@@ -344,6 +382,9 @@ impl InstrEncoder {
         ) -> Result<Instruction, Error> {
             let cref = stack.alloc_const(value.into())?;
             Ok(Instruction::copy(result, cref))
+        }
+        if let Some(merged_instr) = self.merge_copy_instrs(result, value) {
+            return Ok(Some(merged_instr));
         }
         let instr = match value {
             TypedProvider::Register(value) => {
