@@ -189,18 +189,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         use Instruction as Instr;
         loop {
             match *self.ip.get() {
-                Instr::TableIdx(_)
-                | Instr::DataSegmentIdx(_)
-                | Instr::ElementSegmentIdx(_)
-                | Instr::Const32(_)
-                | Instr::I64Const32(_)
-                | Instr::F64Const32(_)
-                | Instr::Register(_)
-                | Instr::Register2(_)
-                | Instr::Register3(_)
-                | Instr::RegisterList(_)
-                | Instr::CallIndirectParams(_)
-                | Instr::CallIndirectParamsImm16(_) => self.invalid_instruction_word()?,
                 Instr::Trap(trap_code) => self.execute_trap(trap_code)?,
                 Instr::ConsumeFuel(block_fuel) => self.execute_consume_fuel(block_fuel)?,
                 Instr::Return => {
@@ -399,154 +387,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     lhs_or_rhs,
                 } => self.execute_select_f64imm32(result_or_condition, lhs_or_rhs),
                 Instr::RefFunc { result, func } => self.execute_ref_func(result, func),
-                Instr::TableGet { result, index } => self.execute_table_get(result, index)?,
-                Instr::TableGetImm { result, index } => {
-                    self.execute_table_get_imm(result, index)?
-                }
-                Instr::TableSize { result, table } => self.execute_table_size(result, table),
-                Instr::TableSet { index, value } => self.execute_table_set(index, value)?,
-                Instr::TableSetAt { index, value } => self.execute_table_set_at(index, value)?,
-                Instr::TableCopy { dst, src, len } => self.execute_table_copy(dst, src, len)?,
-                Instr::TableCopyTo { dst, src, len } => {
-                    self.execute_table_copy_to(dst, src, len)?
-                }
-                Instr::TableCopyFrom { dst, src, len } => {
-                    self.execute_table_copy_from(dst, src, len)?
-                }
-                Instr::TableCopyFromTo { dst, src, len } => {
-                    self.execute_table_copy_from_to(dst, src, len)?
-                }
-                Instr::TableCopyExact { dst, src, len } => {
-                    self.execute_table_copy_exact(dst, src, len)?
-                }
-                Instr::TableCopyToExact { dst, src, len } => {
-                    self.execute_table_copy_to_exact(dst, src, len)?
-                }
-                Instr::TableCopyFromExact { dst, src, len } => {
-                    self.execute_table_copy_from_exact(dst, src, len)?
-                }
-                Instr::TableCopyFromToExact { dst, src, len } => {
-                    self.execute_table_copy_from_to_exact(dst, src, len)?
-                }
-                Instr::TableInit { dst, src, len } => self.execute_table_init(dst, src, len)?,
-                Instr::TableInitTo { dst, src, len } => {
-                    self.execute_table_init_to(dst, src, len)?
-                }
-                Instr::TableInitFrom { dst, src, len } => {
-                    self.execute_table_init_from(dst, src, len)?
-                }
-                Instr::TableInitFromTo { dst, src, len } => {
-                    self.execute_table_init_from_to(dst, src, len)?
-                }
-                Instr::TableInitExact { dst, src, len } => {
-                    self.execute_table_init_exact(dst, src, len)?
-                }
-                Instr::TableInitToExact { dst, src, len } => {
-                    self.execute_table_init_to_exact(dst, src, len)?
-                }
-                Instr::TableInitFromExact { dst, src, len } => {
-                    self.execute_table_init_from_exact(dst, src, len)?
-                }
-                Instr::TableInitFromToExact { dst, src, len } => {
-                    self.execute_table_init_from_to_exact(dst, src, len)?
-                }
-                Instr::TableFill { dst, len, value } => self.execute_table_fill(dst, len, value)?,
-                Instr::TableFillAt { dst, len, value } => {
-                    self.execute_table_fill_at(dst, len, value)?
-                }
-                Instr::TableFillExact { dst, len, value } => {
-                    self.execute_table_fill_exact(dst, len, value)?
-                }
-                Instr::TableFillAtExact { dst, len, value } => {
-                    self.execute_table_fill_at_exact(dst, len, value)?
-                }
-                Instr::TableGrow {
-                    result,
-                    delta,
-                    value,
-                } => self.execute_table_grow(result, delta, value, &mut *resource_limiter)?,
-                Instr::TableGrowImm {
-                    result,
-                    delta,
-                    value,
-                } => self.execute_table_grow_imm(result, delta, value, &mut *resource_limiter)?,
-                Instr::ElemDrop(element_index) => self.execute_element_drop(element_index),
-                Instr::DataDrop(data_index) => self.execute_data_drop(data_index),
-                Instr::MemorySize { result } => self.execute_memory_size(result),
-                Instr::MemoryGrow { result, delta } => {
-                    self.execute_memory_grow(result, delta, &mut *resource_limiter)?
-                }
-                Instr::MemoryGrowBy { result, delta } => {
-                    self.execute_memory_grow_by(result, delta, &mut *resource_limiter)?
-                }
-                Instr::MemoryCopy { dst, src, len } => self.execute_memory_copy(dst, src, len)?,
-                Instr::MemoryCopyTo { dst, src, len } => {
-                    self.execute_memory_copy_to(dst, src, len)?
-                }
-                Instr::MemoryCopyFrom { dst, src, len } => {
-                    self.execute_memory_copy_from(dst, src, len)?
-                }
-                Instr::MemoryCopyFromTo { dst, src, len } => {
-                    self.execute_memory_copy_from_to(dst, src, len)?
-                }
-                Instr::MemoryCopyExact { dst, src, len } => {
-                    self.execute_memory_copy_exact(dst, src, len)?
-                }
-                Instr::MemoryCopyToExact { dst, src, len } => {
-                    self.execute_memory_copy_to_exact(dst, src, len)?
-                }
-                Instr::MemoryCopyFromExact { dst, src, len } => {
-                    self.execute_memory_copy_from_exact(dst, src, len)?
-                }
-                Instr::MemoryCopyFromToExact { dst, src, len } => {
-                    self.execute_memory_copy_from_to_exact(dst, src, len)?
-                }
-                Instr::MemoryFill { dst, value, len } => {
-                    self.execute_memory_fill(dst, value, len)?
-                }
-                Instr::MemoryFillAt { dst, value, len } => {
-                    self.execute_memory_fill_at(dst, value, len)?
-                }
-                Instr::MemoryFillImm { dst, value, len } => {
-                    self.execute_memory_fill_imm(dst, value, len)?
-                }
-                Instr::MemoryFillExact { dst, value, len } => {
-                    self.execute_memory_fill_exact(dst, value, len)?
-                }
-                Instr::MemoryFillAtImm { dst, value, len } => {
-                    self.execute_memory_fill_at_imm(dst, value, len)?
-                }
-                Instr::MemoryFillAtExact { dst, value, len } => {
-                    self.execute_memory_fill_at_exact(dst, value, len)?
-                }
-                Instr::MemoryFillImmExact { dst, value, len } => {
-                    self.execute_memory_fill_imm_exact(dst, value, len)?
-                }
-                Instr::MemoryFillAtImmExact { dst, value, len } => {
-                    self.execute_memory_fill_at_imm_exact(dst, value, len)?
-                }
-                Instr::MemoryInit { dst, src, len } => self.execute_memory_init(dst, src, len)?,
-                Instr::MemoryInitTo { dst, src, len } => {
-                    self.execute_memory_init_to(dst, src, len)?
-                }
-                Instr::MemoryInitFrom { dst, src, len } => {
-                    self.execute_memory_init_from(dst, src, len)?
-                }
-                Instr::MemoryInitFromTo { dst, src, len } => {
-                    self.execute_memory_init_from_to(dst, src, len)?
-                }
-                Instr::MemoryInitExact { dst, src, len } => {
-                    self.execute_memory_init_exact(dst, src, len)?
-                }
-                Instr::MemoryInitToExact { dst, src, len } => {
-                    self.execute_memory_init_to_exact(dst, src, len)?
-                }
-                Instr::MemoryInitFromExact { dst, src, len } => {
-                    self.execute_memory_init_from_exact(dst, src, len)?
-                }
-                Instr::MemoryInitFromToExact { dst, src, len } => {
-                    self.execute_memory_init_from_to_exact(dst, src, len)?
-                }
                 Instr::GlobalGet { result, global } => self.execute_global_get(result, global),
                 Instr::GlobalSet { global, input } => self.execute_global_set(global, input),
                 Instr::GlobalSetI32Imm16 { global, input } => {
@@ -714,11 +554,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::F64Gt(instr) => self.execute_f64_gt(instr),
                 Instr::F64Ge(instr) => self.execute_f64_ge(instr),
                 Instr::I32Clz(instr) => self.execute_i32_clz(instr),
-                Instr::I64Clz(instr) => self.execute_i64_clz(instr),
                 Instr::I32Ctz(instr) => self.execute_i32_ctz(instr),
-                Instr::I64Ctz(instr) => self.execute_i64_ctz(instr),
                 Instr::I32Popcnt(instr) => self.execute_i32_popcnt(instr),
-                Instr::I64Popcnt(instr) => self.execute_i64_popcnt(instr),
                 Instr::I32Add(instr) => self.execute_i32_add(instr),
                 Instr::I32AddImm16(instr) => self.execute_i32_add_imm16(instr),
                 Instr::I32Sub(instr) => self.execute_i32_sub(instr),
@@ -764,6 +601,9 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::I32Rotr(instr) => self.execute_i32_rotr(instr),
                 Instr::I32RotrImm(instr) => self.execute_i32_rotr_imm(instr),
                 Instr::I32RotrImm16Rev(instr) => self.execute_i32_rotr_imm16_rev(instr),
+                Instr::I64Clz(instr) => self.execute_i64_clz(instr),
+                Instr::I64Ctz(instr) => self.execute_i64_ctz(instr),
+                Instr::I64Popcnt(instr) => self.execute_i64_popcnt(instr),
                 Instr::I64Add(instr) => self.execute_i64_add(instr),
                 Instr::I64AddImm16(instr) => self.execute_i64_add_imm16(instr),
                 Instr::I64Sub(instr) => self.execute_i64_sub(instr),
@@ -803,6 +643,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::I64Rotr(instr) => self.execute_i64_rotr(instr),
                 Instr::I64RotrImm(instr) => self.execute_i64_rotr_imm(instr),
                 Instr::I64RotrImm16Rev(instr) => self.execute_i64_rotr_imm16_rev(instr),
+                Instr::I32WrapI64(instr) => self.execute_i32_wrap_i64(instr),
+                Instr::I64ExtendI32S(instr) => self.execute_i64_extend_i32_s(instr),
+                Instr::I64ExtendI32U(instr) => self.execute_i64_extend_i32_u(instr),
+                Instr::I32Extend8S(instr) => self.execute_i32_extend8_s(instr),
+                Instr::I32Extend16S(instr) => self.execute_i32_extend16_s(instr),
+                Instr::I64Extend8S(instr) => self.execute_i64_extend8_s(instr),
+                Instr::I64Extend16S(instr) => self.execute_i64_extend16_s(instr),
+                Instr::I64Extend32S(instr) => self.execute_i64_extend32_s(instr),
                 Instr::F32Abs(instr) => self.execute_f32_abs(instr),
                 Instr::F32Neg(instr) => self.execute_f32_neg(instr),
                 Instr::F32Ceil(instr) => self.execute_f32_ceil(instr),
@@ -810,13 +658,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::F32Trunc(instr) => self.execute_f32_trunc(instr),
                 Instr::F32Nearest(instr) => self.execute_f32_nearest(instr),
                 Instr::F32Sqrt(instr) => self.execute_f32_sqrt(instr),
-                Instr::F64Abs(instr) => self.execute_f64_abs(instr),
-                Instr::F64Neg(instr) => self.execute_f64_neg(instr),
-                Instr::F64Ceil(instr) => self.execute_f64_ceil(instr),
-                Instr::F64Floor(instr) => self.execute_f64_floor(instr),
-                Instr::F64Trunc(instr) => self.execute_f64_trunc(instr),
-                Instr::F64Nearest(instr) => self.execute_f64_nearest(instr),
-                Instr::F64Sqrt(instr) => self.execute_f64_sqrt(instr),
                 Instr::F32Add(instr) => self.execute_f32_add(instr),
                 Instr::F32Sub(instr) => self.execute_f32_sub(instr),
                 Instr::F32Mul(instr) => self.execute_f32_mul(instr),
@@ -825,6 +666,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::F32Max(instr) => self.execute_f32_max(instr),
                 Instr::F32Copysign(instr) => self.execute_f32_copysign(instr),
                 Instr::F32CopysignImm(instr) => self.execute_f32_copysign_imm(instr),
+                Instr::F64Abs(instr) => self.execute_f64_abs(instr),
+                Instr::F64Neg(instr) => self.execute_f64_neg(instr),
+                Instr::F64Ceil(instr) => self.execute_f64_ceil(instr),
+                Instr::F64Floor(instr) => self.execute_f64_floor(instr),
+                Instr::F64Trunc(instr) => self.execute_f64_trunc(instr),
+                Instr::F64Nearest(instr) => self.execute_f64_nearest(instr),
+                Instr::F64Sqrt(instr) => self.execute_f64_sqrt(instr),
                 Instr::F64Add(instr) => self.execute_f64_add(instr),
                 Instr::F64Sub(instr) => self.execute_f64_sub(instr),
                 Instr::F64Mul(instr) => self.execute_f64_mul(instr),
@@ -833,9 +681,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::F64Max(instr) => self.execute_f64_max(instr),
                 Instr::F64Copysign(instr) => self.execute_f64_copysign(instr),
                 Instr::F64CopysignImm(instr) => self.execute_f64_copysign_imm(instr),
-                Instr::I32WrapI64(instr) => self.execute_i32_wrap_i64(instr),
-                Instr::I64ExtendI32S(instr) => self.execute_i64_extend_i32_s(instr),
-                Instr::I64ExtendI32U(instr) => self.execute_i64_extend_i32_u(instr),
                 Instr::I32TruncF32S(instr) => self.execute_i32_trunc_f32_s(instr)?,
                 Instr::I32TruncF32U(instr) => self.execute_i32_trunc_f32_u(instr)?,
                 Instr::I32TruncF64S(instr) => self.execute_i32_trunc_f64_s(instr)?,
@@ -852,11 +697,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::I64TruncSatF32U(instr) => self.execute_i64_trunc_sat_f32_u(instr),
                 Instr::I64TruncSatF64S(instr) => self.execute_i64_trunc_sat_f64_s(instr),
                 Instr::I64TruncSatF64U(instr) => self.execute_i64_trunc_sat_f64_u(instr),
-                Instr::I32Extend8S(instr) => self.execute_i32_extend8_s(instr),
-                Instr::I32Extend16S(instr) => self.execute_i32_extend16_s(instr),
-                Instr::I64Extend8S(instr) => self.execute_i64_extend8_s(instr),
-                Instr::I64Extend16S(instr) => self.execute_i64_extend16_s(instr),
-                Instr::I64Extend32S(instr) => self.execute_i64_extend32_s(instr),
                 Instr::F32DemoteF64(instr) => self.execute_f32_demote_f64(instr),
                 Instr::F64PromoteF32(instr) => self.execute_f64_promote_f32(instr),
                 Instr::F32ConvertI32S(instr) => self.execute_f32_convert_i32_s(instr),
@@ -867,6 +707,166 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::F64ConvertI32U(instr) => self.execute_f64_convert_i32_u(instr),
                 Instr::F64ConvertI64S(instr) => self.execute_f64_convert_i64_s(instr),
                 Instr::F64ConvertI64U(instr) => self.execute_f64_convert_i64_u(instr),
+                Instr::TableGet { result, index } => self.execute_table_get(result, index)?,
+                Instr::TableGetImm { result, index } => {
+                    self.execute_table_get_imm(result, index)?
+                }
+                Instr::TableSize { result, table } => self.execute_table_size(result, table),
+                Instr::TableSet { index, value } => self.execute_table_set(index, value)?,
+                Instr::TableSetAt { index, value } => self.execute_table_set_at(index, value)?,
+                Instr::TableCopy { dst, src, len } => self.execute_table_copy(dst, src, len)?,
+                Instr::TableCopyTo { dst, src, len } => {
+                    self.execute_table_copy_to(dst, src, len)?
+                }
+                Instr::TableCopyFrom { dst, src, len } => {
+                    self.execute_table_copy_from(dst, src, len)?
+                }
+                Instr::TableCopyFromTo { dst, src, len } => {
+                    self.execute_table_copy_from_to(dst, src, len)?
+                }
+                Instr::TableCopyExact { dst, src, len } => {
+                    self.execute_table_copy_exact(dst, src, len)?
+                }
+                Instr::TableCopyToExact { dst, src, len } => {
+                    self.execute_table_copy_to_exact(dst, src, len)?
+                }
+                Instr::TableCopyFromExact { dst, src, len } => {
+                    self.execute_table_copy_from_exact(dst, src, len)?
+                }
+                Instr::TableCopyFromToExact { dst, src, len } => {
+                    self.execute_table_copy_from_to_exact(dst, src, len)?
+                }
+                Instr::TableInit { dst, src, len } => self.execute_table_init(dst, src, len)?,
+                Instr::TableInitTo { dst, src, len } => {
+                    self.execute_table_init_to(dst, src, len)?
+                }
+                Instr::TableInitFrom { dst, src, len } => {
+                    self.execute_table_init_from(dst, src, len)?
+                }
+                Instr::TableInitFromTo { dst, src, len } => {
+                    self.execute_table_init_from_to(dst, src, len)?
+                }
+                Instr::TableInitExact { dst, src, len } => {
+                    self.execute_table_init_exact(dst, src, len)?
+                }
+                Instr::TableInitToExact { dst, src, len } => {
+                    self.execute_table_init_to_exact(dst, src, len)?
+                }
+                Instr::TableInitFromExact { dst, src, len } => {
+                    self.execute_table_init_from_exact(dst, src, len)?
+                }
+                Instr::TableInitFromToExact { dst, src, len } => {
+                    self.execute_table_init_from_to_exact(dst, src, len)?
+                }
+                Instr::TableFill { dst, len, value } => self.execute_table_fill(dst, len, value)?,
+                Instr::TableFillAt { dst, len, value } => {
+                    self.execute_table_fill_at(dst, len, value)?
+                }
+                Instr::TableFillExact { dst, len, value } => {
+                    self.execute_table_fill_exact(dst, len, value)?
+                }
+                Instr::TableFillAtExact { dst, len, value } => {
+                    self.execute_table_fill_at_exact(dst, len, value)?
+                }
+                Instr::TableGrow {
+                    result,
+                    delta,
+                    value,
+                } => self.execute_table_grow(result, delta, value, &mut *resource_limiter)?,
+                Instr::TableGrowImm {
+                    result,
+                    delta,
+                    value,
+                } => self.execute_table_grow_imm(result, delta, value, &mut *resource_limiter)?,
+                Instr::ElemDrop(element_index) => self.execute_element_drop(element_index),
+                Instr::DataDrop(data_index) => self.execute_data_drop(data_index),
+                Instr::MemorySize { result } => self.execute_memory_size(result),
+                Instr::MemoryGrow { result, delta } => {
+                    self.execute_memory_grow(result, delta, &mut *resource_limiter)?
+                }
+                Instr::MemoryGrowBy { result, delta } => {
+                    self.execute_memory_grow_by(result, delta, &mut *resource_limiter)?
+                }
+                Instr::MemoryCopy { dst, src, len } => self.execute_memory_copy(dst, src, len)?,
+                Instr::MemoryCopyTo { dst, src, len } => {
+                    self.execute_memory_copy_to(dst, src, len)?
+                }
+                Instr::MemoryCopyFrom { dst, src, len } => {
+                    self.execute_memory_copy_from(dst, src, len)?
+                }
+                Instr::MemoryCopyFromTo { dst, src, len } => {
+                    self.execute_memory_copy_from_to(dst, src, len)?
+                }
+                Instr::MemoryCopyExact { dst, src, len } => {
+                    self.execute_memory_copy_exact(dst, src, len)?
+                }
+                Instr::MemoryCopyToExact { dst, src, len } => {
+                    self.execute_memory_copy_to_exact(dst, src, len)?
+                }
+                Instr::MemoryCopyFromExact { dst, src, len } => {
+                    self.execute_memory_copy_from_exact(dst, src, len)?
+                }
+                Instr::MemoryCopyFromToExact { dst, src, len } => {
+                    self.execute_memory_copy_from_to_exact(dst, src, len)?
+                }
+                Instr::MemoryFill { dst, value, len } => {
+                    self.execute_memory_fill(dst, value, len)?
+                }
+                Instr::MemoryFillAt { dst, value, len } => {
+                    self.execute_memory_fill_at(dst, value, len)?
+                }
+                Instr::MemoryFillImm { dst, value, len } => {
+                    self.execute_memory_fill_imm(dst, value, len)?
+                }
+                Instr::MemoryFillExact { dst, value, len } => {
+                    self.execute_memory_fill_exact(dst, value, len)?
+                }
+                Instr::MemoryFillAtImm { dst, value, len } => {
+                    self.execute_memory_fill_at_imm(dst, value, len)?
+                }
+                Instr::MemoryFillAtExact { dst, value, len } => {
+                    self.execute_memory_fill_at_exact(dst, value, len)?
+                }
+                Instr::MemoryFillImmExact { dst, value, len } => {
+                    self.execute_memory_fill_imm_exact(dst, value, len)?
+                }
+                Instr::MemoryFillAtImmExact { dst, value, len } => {
+                    self.execute_memory_fill_at_imm_exact(dst, value, len)?
+                }
+                Instr::MemoryInit { dst, src, len } => self.execute_memory_init(dst, src, len)?,
+                Instr::MemoryInitTo { dst, src, len } => {
+                    self.execute_memory_init_to(dst, src, len)?
+                }
+                Instr::MemoryInitFrom { dst, src, len } => {
+                    self.execute_memory_init_from(dst, src, len)?
+                }
+                Instr::MemoryInitFromTo { dst, src, len } => {
+                    self.execute_memory_init_from_to(dst, src, len)?
+                }
+                Instr::MemoryInitExact { dst, src, len } => {
+                    self.execute_memory_init_exact(dst, src, len)?
+                }
+                Instr::MemoryInitToExact { dst, src, len } => {
+                    self.execute_memory_init_to_exact(dst, src, len)?
+                }
+                Instr::MemoryInitFromExact { dst, src, len } => {
+                    self.execute_memory_init_from_exact(dst, src, len)?
+                }
+                Instr::MemoryInitFromToExact { dst, src, len } => {
+                    self.execute_memory_init_from_to_exact(dst, src, len)?
+                }
+                Instr::TableIdx(_)
+                | Instr::DataSegmentIdx(_)
+                | Instr::ElementSegmentIdx(_)
+                | Instr::Const32(_)
+                | Instr::I64Const32(_)
+                | Instr::F64Const32(_)
+                | Instr::Register(_)
+                | Instr::Register2(_)
+                | Instr::Register3(_)
+                | Instr::RegisterList(_)
+                | Instr::CallIndirectParams(_)
+                | Instr::CallIndirectParamsImm16(_) => self.invalid_instruction_word()?,
             }
         }
     }

@@ -1,4 +1,5 @@
 use crate::{
+    hint::unlikely,
     nan_preserving_float::{F32, F64},
     TrapCode,
 };
@@ -506,17 +507,18 @@ macro_rules! impl_integer {
             }
             #[inline]
             fn div(self, other: Self) -> Result<Self, TrapCode> {
-                if other == 0 {
+                if unlikely(other == 0) {
                     return Err(TrapCode::IntegerDivisionByZero);
                 }
-                match self.overflowing_div(other) {
-                    (result, false) => Ok(result),
-                    _ => Err(TrapCode::IntegerOverflow),
+                let (result, overflow) = self.overflowing_div(other);
+                if unlikely(overflow) {
+                    return Err(TrapCode::IntegerOverflow);
                 }
+                Ok(result)
             }
             #[inline]
             fn rem(self, other: Self) -> Result<Self, TrapCode> {
-                if other == 0 {
+                if unlikely(other == 0) {
                     return Err(TrapCode::IntegerDivisionByZero);
                 }
                 Ok(self.wrapping_rem(other))
