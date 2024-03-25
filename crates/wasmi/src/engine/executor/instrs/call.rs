@@ -57,7 +57,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// # Note
     ///
     /// The `offset` denotes how many [`Instruction`] words make up the call instruction.
-    #[inline]
+    // #[inline]
     fn update_instr_ptr_at(&mut self, offset: usize) {
         // Note: we explicitly do not mutate `self.ip` since that would make
         // other parts of the code more fragile with respect to instruction ordering.
@@ -101,7 +101,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Creates a [`CallFrame`] for calling the [`CompiledFunc`].
-    #[inline(always)]
+    // #[inline(always)]
     fn dispatch_compiled_func(
         &mut self,
         results: RegisterSpan,
@@ -127,7 +127,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// This will also adjust the instruction pointer to point to the
     /// last call parameter [`Instruction`] if any.
-    #[inline(always)]
+    // #[inline(always)]
     #[must_use]
     fn copy_call_params(&mut self, mut callee_regs: FrameRegisters) -> InstructionPtr {
         let mut dst = Register::from_i16(0);
@@ -164,7 +164,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Prepares a [`CompiledFunc`] call with optional [`CallParams`].
-    #[inline(always)]
+    // #[inline(always)]
     fn prepare_compiled_func_call(
         &mut self,
         results: RegisterSpan,
@@ -203,13 +203,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::ReturnCallInternal0`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_return_call_internal_0(&mut self, func: CompiledFunc) -> Result<(), Error> {
         self.execute_return_call_internal_impl(func, CallParams::None)
     }
 
     /// Executes an [`Instruction::ReturnCallInternal`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_return_call_internal(&mut self, func: CompiledFunc) -> Result<(), Error> {
         self.execute_return_call_internal_impl(func, CallParams::Some)
     }
@@ -240,7 +240,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::CallInternal0`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_call_internal_0(
         &mut self,
         results: RegisterSpan,
@@ -250,7 +250,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::CallInternal`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_call_internal(
         &mut self,
         results: RegisterSpan,
@@ -260,13 +260,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::ReturnCallImported0`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_return_call_imported_0(&mut self, func: FuncIdx) -> Result<CallOutcome, Error> {
         self.execute_return_call_imported_impl(func, CallParams::None)
     }
 
     /// Executes an [`Instruction::ReturnCallImported`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_return_call_imported(&mut self, func: FuncIdx) -> Result<CallOutcome, Error> {
         self.execute_return_call_imported_impl(func, CallParams::Some)
     }
@@ -283,7 +283,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::CallImported0`].
-    #[inline(never)]
+    // #[inline(never)]
     pub fn execute_call_imported_0(
         &mut self,
         results: RegisterSpan,
@@ -294,7 +294,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::CallImported`].
-    #[inline(never)]
+    // #[inline(never)]
     pub fn execute_call_imported(
         &mut self,
         results: RegisterSpan,
@@ -358,7 +358,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
-    #[inline(never)]
+    // #[inline(never)]
     pub fn execute_return_call_indirect_0(
         &mut self,
         func_type: SignatureIdx,
@@ -376,7 +376,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
-    #[inline(never)]
+    // #[inline(never)]
     pub fn execute_return_call_indirect(
         &mut self,
         func_type: SignatureIdx,
@@ -394,7 +394,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
-    #[inline(never)]
+    // #[inline(never)]
     pub fn execute_call_indirect_0(
         &mut self,
         results: RegisterSpan,
@@ -412,7 +412,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::CallIndirect`].
-    #[inline(never)]
+    // #[inline(never)]
     pub fn execute_call_indirect(
         &mut self,
         results: RegisterSpan,

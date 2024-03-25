@@ -13,7 +13,7 @@ macro_rules! impl_binary {
     ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            #[inline(always)]
+            // #[inline(always)]
             pub fn $fn_name(&mut self, instr: BinInstr) {
                 self.execute_binary(instr, $op)
             }
@@ -73,7 +73,7 @@ macro_rules! impl_binary_imm16 {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            #[inline(always)]
+            // #[inline(always)]
             pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) {
                 self.execute_binary_imm16(instr, $op)
             }
@@ -116,7 +116,7 @@ macro_rules! impl_binary_imm16_rev {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            #[inline(always)]
+            // #[inline(always)]
             pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) {
                 self.execute_binary_imm16_rev(instr, $op)
             }
@@ -146,7 +146,7 @@ macro_rules! impl_fallible_binary {
     ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            #[inline(always)]
+            // #[inline(always)]
             pub fn $fn_name(&mut self, instr: BinInstr) -> Result<(), Error> {
                 self.try_execute_binary(instr, $op).map_err(Into::into)
             }
@@ -238,7 +238,7 @@ macro_rules! impl_divrem_s_imm16 {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            #[inline(always)]
+            // #[inline(always)]
             pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) -> Result<(), Error> {
                 self.try_execute_divrem_imm16(instr, $op)
             }
@@ -259,7 +259,7 @@ macro_rules! impl_divrem_u_imm16 {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            #[inline(always)]
+            // #[inline(always)]
             pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) {
                 self.execute_divrem_imm16(instr, $op)
             }
@@ -280,7 +280,7 @@ macro_rules! impl_fallible_binary_imm16_rev {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            #[inline(always)]
+            // #[inline(always)]
             pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) -> Result<(), Error> {
                 self.try_execute_binary_imm16_rev(instr, $op).map_err(Into::into)
             }
@@ -303,7 +303,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes an [`Instruction::F32CopysignImm`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_f32_copysign_imm(&mut self, instr: BinInstrImm<Sign>) {
         let lhs = self.get_register(instr.reg_in);
         let rhs = instr.imm_in.to_f32();
@@ -312,7 +312,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::F64CopysignImm`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_f64_copysign_imm(&mut self, instr: BinInstrImm<Sign>) {
         let lhs = self.get_register(instr.reg_in);
         let rhs = instr.imm_in.to_f64();

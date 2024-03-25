@@ -7,7 +7,7 @@ use crate::engine::bytecode::Instruction;
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes an [`Instruction::GlobalGet`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_global_get(&mut self, result: Register, global: GlobalIdx) {
         let value = self.cache.get_global(self.ctx, global);
         self.set_register(result, value);
@@ -15,21 +15,21 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes an [`Instruction::GlobalSet`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_global_set(&mut self, global: GlobalIdx, input: Register) {
         let input = self.get_register(input);
         self.execute_global_set_impl(global, input)
     }
 
     /// Executes an [`Instruction::GlobalSetI32Imm16`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_global_set_i32imm16(&mut self, global: GlobalIdx, input: Const16<i32>) {
         let input = i32::from(input).into();
         self.execute_global_set_impl(global, input)
     }
 
     /// Executes an [`Instruction::GlobalSetI64Imm16`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_global_set_i64imm16(&mut self, global: GlobalIdx, input: Const16<i64>) {
         let input = i64::from(input).into();
         self.execute_global_set_impl(global, input)

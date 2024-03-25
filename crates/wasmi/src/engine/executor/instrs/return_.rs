@@ -22,7 +22,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// Any return values are expected to already have been transferred
     /// from the returning callee to the caller.
-    #[inline(always)]
+    // #[inline(always)]
     fn return_impl(&mut self) -> ReturnOutcome {
         let returned = self
             .call_stack
@@ -45,7 +45,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Execute an [`Instruction::Return`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_return(&mut self) -> ReturnOutcome {
         self.return_impl()
     }
@@ -100,19 +100,19 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Execute an [`Instruction::ReturnReg`] returning a single [`Register`] value.
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_return_reg(&mut self, value: Register) -> ReturnOutcome {
         self.execute_return_value(value, Self::get_register)
     }
 
     /// Execute an [`Instruction::ReturnReg2`] returning two [`Register`] values.
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_return_reg2(&mut self, values: [Register; 2]) -> ReturnOutcome {
         self.execute_return_reg_n_impl::<2>(values)
     }
 
     /// Execute an [`Instruction::ReturnReg3`] returning three [`Register`] values.
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_return_reg3(&mut self, values: [Register; 3]) -> ReturnOutcome {
         self.execute_return_reg_n_impl::<3>(values)
     }
@@ -136,25 +136,25 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Execute an [`Instruction::ReturnImm32`] returning a single 32-bit value.
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_return_imm32(&mut self, value: AnyConst32) -> ReturnOutcome {
         self.execute_return_value(value, |_, value| u32::from(value).into())
     }
 
     /// Execute an [`Instruction::ReturnI64Imm32`] returning a single 32-bit encoded `i64` value.
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_return_i64imm32(&mut self, value: Const32<i64>) -> ReturnOutcome {
         self.execute_return_value(value, |_, value| i64::from(value).into())
     }
 
     /// Execute an [`Instruction::ReturnF64Imm32`] returning a single 32-bit encoded `f64` value.
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_return_f64imm32(&mut self, value: Const32<f64>) -> ReturnOutcome {
         self.execute_return_value(value, |_, value| f64::from(value).into())
     }
 
     /// Execute an [`Instruction::ReturnSpan`] returning many values.
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_return_span(&mut self, values: RegisterSpanIter) -> ReturnOutcome {
         let (mut caller_sp, results) = self.return_caller_results();
         let results = results.iter(values.len());
@@ -170,7 +170,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Execute an [`Instruction::ReturnMany`] returning many values.
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_return_many(&mut self, values: [Register; 3]) -> ReturnOutcome {
         self.execute_return_many_impl(&values)
     }
@@ -225,13 +225,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Execute an [`Instruction::Return`].
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_return_nez(&mut self, condition: Register) -> ReturnOutcome {
         self.execute_return_nez_impl(condition, (), |this, _| this.execute_return())
     }
 
     /// Execute an [`Instruction::ReturnNezReg`] returning a single [`Register`] value.
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_return_nez_reg(
         &mut self,
         condition: Register,
@@ -241,7 +241,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Execute an [`Instruction::ReturnNezReg`] returning a single [`Register`] value.
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_return_nez_reg2(
         &mut self,
         condition: Register,
@@ -251,7 +251,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Execute an [`Instruction::ReturnNezImm32`] returning a single 32-bit constant value.
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_return_nez_imm32(
         &mut self,
         condition: Register,
@@ -261,7 +261,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Execute an [`Instruction::ReturnNezI64Imm32`] returning a single 32-bit encoded constant `i64` value.
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_return_nez_i64imm32(
         &mut self,
         condition: Register,
@@ -271,7 +271,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Execute an [`Instruction::ReturnNezF64Imm32`] returning a single 32-bit encoded constant `f64` value.
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_return_nez_f64imm32(
         &mut self,
         condition: Register,
@@ -281,7 +281,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Execute an [`Instruction::ReturnNezSpan`] returning many values.
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_return_nez_span(
         &mut self,
         condition: Register,
@@ -291,7 +291,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Execute an [`Instruction::ReturnNezMany`] returning many values.
-    #[inline(always)]
+    // #[inline(always)]
     pub fn execute_return_nez_many(
         &mut self,
         condition: Register,
