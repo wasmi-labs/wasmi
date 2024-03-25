@@ -170,6 +170,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             &self.alloc.buffer.providers[..],
             fuel_info,
         )?;
+        self.alloc.instr_encoder.reset_last_instr();
         // Create loop header label and immediately pin it.
         let stack_height = BlockHeight::new(self.engine(), self.alloc.stack.height(), block_type)?;
         let header = self.alloc.instr_encoder.new_label();
