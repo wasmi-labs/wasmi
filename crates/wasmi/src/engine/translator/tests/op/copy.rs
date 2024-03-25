@@ -13,7 +13,11 @@ fn merge_copy_0() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::copy2(RegisterSpan::new(Register::from_i16(0)), Register::from_i16(2), Register::from_i16(4)),
+            Instruction::copy2(
+                RegisterSpan::new(Register::from_i16(0)),
+                Register::from_i16(2),
+                Register::from_i16(4),
+            ),
             Instruction::Return,
         ])
         .run()
@@ -31,7 +35,11 @@ fn merge_copy_1() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::copy2(RegisterSpan::new(Register::from_i16(0)), Register::from_i16(4), Register::from_i16(2)),
+            Instruction::copy2(
+                RegisterSpan::new(Register::from_i16(0)),
+                Register::from_i16(4),
+                Register::from_i16(2),
+            ),
             Instruction::Return,
         ])
         .run()
@@ -49,7 +57,11 @@ fn merge_copy_2() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::copy2(RegisterSpan::new(Register::from_i16(0)), Register::from_i16(2), Register::from_i16(4)),
+            Instruction::copy2(
+                RegisterSpan::new(Register::from_i16(0)),
+                Register::from_i16(2),
+                Register::from_i16(4),
+            ),
             Instruction::Return,
         ])
         .run()
