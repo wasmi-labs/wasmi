@@ -848,6 +848,122 @@ impl InstrEncoder {
         Ok(())
     }
 
+    /// Fuses a `global.get 0` and an `i32.add_imm` if possible.
+    ///
+    /// Returns `true` if `Instruction` fusion was successful, `false` otherwise.
+    pub fn fuse_global_get_i32_add_imm(
+        &mut self,
+        lhs: Register,
+        rhs: i32,
+        stack: &mut ValueStack,
+    ) -> Result<bool, Error> {
+        let Some(last_instr) = self.last_instr else {
+            // Without a last instruction there is no way to fuse.
+            return Ok(false);
+        };
+        let &Instruction::GlobalGet { result, global } = self.instrs.get(last_instr) else {
+            // It is only possible to fuse an `GlobalGet` with a `I32AddImm` instruction.
+            return Ok(false);
+        };
+        if global.to_u32() != 0 {
+            // There only is an optimized instruction for a global index of 0.
+            // This is because most Wasm producers use the global at index 0 for their shadow stack.
+            return Ok(false);
+        }
+        if !matches!(stack.get_register_space(result), RegisterSpace::Dynamic) {
+            // Due to observable state it is impossible to fuse `GlobalGet` that has a non-`dynamic` result.
+            return Ok(false);
+        };
+        if result != lhs {
+            // The `input` to `I32AddImm` must be the same as the result of `GetGlobal`.
+            return Ok(false);
+        }
+        let rhs = <Const32<i32>>::from(rhs);
+        let fused_instr = Instruction::i32_add_imm_from_global_0(result, rhs);
+        _ = mem::replace(self.instrs.get_mut(last_instr), fused_instr);
+        stack.push_register(result)?;
+        Ok(true)
+    }
+
+    /// Fuses the `global.set` instruction with its previous instruction if possible.
+    ///
+    /// Returns `true` if `Instruction` fusion was successful, `false` otherwise.
+    pub fn fuse_global_set(
+        &mut self,
+        global_index: u32,
+        input: Register,
+        stack: &mut ValueStack,
+    ) -> bool {
+        /// Returns `true` if the previous [`Instruction`] and
+        /// its `result` can be fused with the `global.set` and its `input`.
+        fn is_fusable(stack: &mut ValueStack, result: Register, input: Register) -> bool {
+            if !matches!(stack.get_register_space(result), RegisterSpace::Dynamic) {
+                // Due to observable state it is impossible to fuse an instruction that has a non-`dynamic` result.
+                return false;
+            };
+            if result != input {
+                // It is only possible to fuse the instructions if the `input` of `global.set`
+                // matches the `result` of the previous to-be-fused instruction.
+                return false;
+            }
+            true
+        }
+
+        if global_index != 0 {
+            // There only is an optimized instruction for a global index of 0.
+            // This is because most Wasm producers use the global at index 0 for their shadow stack.
+            return false;
+        }
+        let Some(last_instr) = self.last_instr else {
+            // Without a last instruction there is no way to fuse.
+            return false;
+        };
+        let fused_instr = match self.instrs.get(last_instr) {
+            Instruction::I32Add(instr) => {
+                if !is_fusable(stack, instr.result, input) {
+                    return false;
+                }
+                let Some(value) = stack.resolve_func_local_const(instr.rhs).map(i32::from) else {
+                    // It is only possiblet o fuse `I32Add` if its `rhs` is a function local constant.
+                    return false;
+                };
+                let lhs = instr.lhs;
+                let rhs = <Const32<i32>>::from(value);
+                Instruction::i32_add_imm_into_global_0(lhs, rhs)
+            }
+            Instruction::I32Sub(instr) => {
+                if !is_fusable(stack, instr.result, input) {
+                    return false;
+                }
+                let Some(value) = stack.resolve_func_local_const(instr.rhs).map(i32::from) else {
+                    // It is only possiblet o fuse `I32Add` if its `rhs` is a function local constant.
+                    return false;
+                };
+                let lhs = instr.lhs;
+                let rhs = <Const32<i32>>::from(-value);
+                Instruction::i32_add_imm_into_global_0(lhs, rhs)
+            }
+            Instruction::I32AddImm16(instr) => {
+                if !is_fusable(stack, instr.result, input) {
+                    return false;
+                }
+                let lhs = instr.reg_in;
+                let rhs = <Const32<i32>>::from(i32::from(instr.imm_in));
+                Instruction::i32_add_imm_into_global_0(lhs, rhs)
+            }
+            &Instruction::I32AddImmFromGlobal0 { result, rhs } => {
+                if result != input {
+                    // The `input` to `GlobalSet` must be the same as the result of `I32AddImmFromGlobal0`.
+                    return false;
+                }
+                Instruction::i32_add_imm_inout_global_0(result, rhs)
+            }
+            _ => return false,
+        };
+        _ = mem::replace(self.instrs.get_mut(last_instr), fused_instr);
+        true
+    }
+
     /// Translates a Wasm `i32.eqz` instruction.
     ///
     /// Tries to fuse `i32.eqz` with a previous `i32.{and,or,xor}` instruction if possible.

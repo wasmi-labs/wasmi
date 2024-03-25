@@ -888,42 +888,19 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_global_set(&mut self, global_index: u32) -> Self::Output {
         bail_unreachable!(self);
         let global = bytecode::GlobalIdx::from(global_index);
-        match self.alloc.stack.pop() {
-            TypedProvider::Register(input) => {
-                self.push_fueled_instr(Instruction::global_set(global, input), FuelCosts::entity)?;
-                Ok(())
-            }
-            TypedProvider::Const(input) => {
-                let (global_type, _init_value) = self
-                    .module
-                    .get_global(module::GlobalIdx::from(global_index));
-                debug_assert_eq!(global_type.content(), input.ty());
-                match global_type.content() {
-                    ValueType::I32 => {
-                        if let Ok(value) = Const16::try_from(i32::from(input)) {
-                            self.push_fueled_instr(
-                                Instruction::global_set_i32imm16(global, value),
-                                FuelCosts::entity,
-                            )?;
-                            return Ok(());
-                        }
-                    }
-                    ValueType::I64 => {
-                        if let Ok(value) = Const16::try_from(i64::from(input)) {
-                            self.push_fueled_instr(
-                                Instruction::global_set_i64imm16(global, value),
-                                FuelCosts::entity,
-                            )?;
-                            return Ok(());
-                        }
-                    }
-                    _ => {}
-                };
-                let cref = self.alloc.stack.alloc_const(input)?;
-                self.push_fueled_instr(Instruction::global_set(global, cref), FuelCosts::entity)?;
-                Ok(())
-            }
+        let input = match self.alloc.stack.pop() {
+            TypedProvider::Register(input) => input,
+            TypedProvider::Const(input) => return self.translate_global_set_imm(global, input),
+        };
+        if self
+            .alloc
+            .instr_encoder
+            .fuse_global_set(global_index, input, &mut self.alloc.stack)
+        {
+            return Ok(());
         }
+        self.push_fueled_instr(Instruction::global_set(global, input), FuelCosts::entity)?;
+        Ok(())
     }
 
     fn visit_i32_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
@@ -2193,6 +2170,14 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     this.alloc.stack.push_register(reg)?;
                     return Ok(true);
                 }
+                if this.alloc.instr_encoder.fuse_global_get_i32_add_imm(
+                    reg,
+                    value,
+                    &mut this.alloc.stack,
+                )? {
+                    // Optimization: Fused `global.get 0` and `i32.add_imm`
+                    return Ok(true);
+                }
                 Ok(false)
             },
         )
@@ -2216,6 +2201,14 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 if rhs == 0 {
                     // Optimization: `sub x - 0` is same as `x`
                     this.alloc.stack.push_register(lhs)?;
+                    return Ok(true);
+                }
+                if this.alloc.instr_encoder.fuse_global_get_i32_add_imm(
+                    lhs,
+                    rhs.wrapping_neg(),
+                    &mut this.alloc.stack,
+                )? {
+                    // Optimization: Fused `global.get 0` and `i32.add_imm`
                     return Ok(true);
                 }
                 if this.try_push_binary_instr_imm16(

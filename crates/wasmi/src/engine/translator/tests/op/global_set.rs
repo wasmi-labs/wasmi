@@ -149,3 +149,219 @@ fn i64imm16() {
     test_i64imm16(i64::from(i16::MAX));
     test_i64imm16(i64::from(i16::MIN));
 }
+
+fn test_shadow_stack_in_v0(value: i32) {
+    let wasm = format!(
+        r#"
+        (module
+            (global $__shadow_stack (mut i32) (i32.const 1000))
+            (func
+                (local $v i32)
+                global.get $__shadow_stack
+                i32.const {value}
+                i32.sub
+                local.tee $v
+                global.set $__shadow_stack
+            )
+        )
+    "#,
+    );
+    TranslationTest::from_wat(&wasm)
+        .expect_func_instrs([
+            Instruction::i32_add_imm_inout_global_0(Register::from_i16(0), value.wrapping_neg()),
+            Instruction::Return,
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn shadow_stack_in_v0() {
+    test_shadow_stack_in_v0(-4);
+    test_shadow_stack_in_v0(4);
+    test_shadow_stack_in_v0(i32::from(i16::MIN));
+    test_shadow_stack_in_v0(i32::from(i16::MIN) - 1);
+    test_shadow_stack_in_v0(i32::from(i16::MAX));
+    test_shadow_stack_in_v0(i32::from(i16::MAX) + 1);
+    test_shadow_stack_in_v0(i32::MIN);
+    test_shadow_stack_in_v0(i32::MIN + 1);
+    test_shadow_stack_in_v0(i32::MAX);
+    test_shadow_stack_in_v0(i32::MAX - 1);
+}
+
+fn test_shadow_stack_in_v1(value: i32) {
+    let wasm = format!(
+        r#"
+        (module
+            (global $__shadow_stack (mut i32) (i32.const 1000))
+            (func
+                (local $v i32)
+                global.get $__shadow_stack
+                i32.const {value}
+                i32.add
+                local.tee $v
+                global.set $__shadow_stack
+            )
+        )
+    "#,
+    );
+    TranslationTest::from_wat(&wasm)
+        .expect_func_instrs([
+            Instruction::i32_add_imm_inout_global_0(Register::from_i16(0), value),
+            Instruction::Return,
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn shadow_stack_in_v1() {
+    test_shadow_stack_in_v1(-4);
+    test_shadow_stack_in_v1(4);
+    test_shadow_stack_in_v1(i32::from(i16::MIN));
+    test_shadow_stack_in_v1(i32::from(i16::MIN) - 1);
+    test_shadow_stack_in_v1(i32::from(i16::MAX));
+    test_shadow_stack_in_v1(i32::from(i16::MAX) + 1);
+    test_shadow_stack_in_v1(i32::MIN);
+    test_shadow_stack_in_v1(i32::MIN + 1);
+    test_shadow_stack_in_v1(i32::MAX);
+    test_shadow_stack_in_v1(i32::MAX - 1);
+}
+
+fn test_shadow_stack_out_v0(value: i32) {
+    let wasm = format!(
+        r#"
+        (module
+            (global $__shadow_stack (mut i32) (i32.const 1000))
+            (func (param $v i32)
+                local.get $v
+                i32.const {value}
+                i32.add
+                global.set $__shadow_stack
+            )
+        )
+    "#,
+    );
+    TranslationTest::from_wat(&wasm)
+        .expect_func_instrs([
+            Instruction::i32_add_imm_into_global_0(Register::from_i16(0), value),
+            Instruction::Return,
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn shadow_stack_out_v0() {
+    test_shadow_stack_out_v0(-4);
+    test_shadow_stack_out_v0(4);
+    test_shadow_stack_out_v0(i32::from(i16::MIN));
+    test_shadow_stack_out_v0(i32::from(i16::MIN) + 1);
+    test_shadow_stack_out_v0(i32::from(i16::MAX) - 1);
+    test_shadow_stack_out_v0(i32::from(i16::MAX));
+}
+
+fn test_shadow_stack_out_v0_big(value: i32) {
+    let wasm = format!(
+        r#"
+        (module
+            (global $__shadow_stack (mut i32) (i32.const 1000))
+            (func (param $v i32)
+                local.get $v
+                i32.const {value}
+                i32.add
+                global.set $__shadow_stack
+            )
+        )
+    "#,
+    );
+    TranslationTest::from_wat(&wasm)
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::i32_add_imm_into_global_0(Register::from_i16(0), value),
+                Instruction::Return,
+            ])
+            .consts([value]),
+        )
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn shadow_stack_out_v0_big() {
+    test_shadow_stack_out_v0_big(i32::from(i16::MIN) - 1);
+    test_shadow_stack_out_v0_big(i32::from(i16::MAX) + 1);
+    test_shadow_stack_out_v0_big(i32::MIN);
+    test_shadow_stack_out_v0_big(i32::MIN + 1);
+    test_shadow_stack_out_v0_big(i32::MAX);
+    test_shadow_stack_out_v0_big(i32::MAX - 1);
+}
+
+fn test_shadow_stack_out_v1(value: i32) {
+    let wasm = format!(
+        r#"
+        (module
+            (global $__shadow_stack (mut i32) (i32.const 1000))
+            (func (param $v i32)
+                local.get $v
+                i32.const {value}
+                i32.sub
+                global.set $__shadow_stack
+            )
+        )
+    "#,
+    );
+    TranslationTest::from_wat(&wasm)
+        .expect_func_instrs([
+            Instruction::i32_add_imm_into_global_0(Register::from_i16(0), value.wrapping_neg()),
+            Instruction::Return,
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn shadow_stack_out_v1() {
+    test_shadow_stack_out_v1(-4);
+    test_shadow_stack_out_v1(4);
+    test_shadow_stack_out_v1(i32::from(i16::MIN) + 1);
+    test_shadow_stack_out_v1(i32::from(i16::MAX) - 1);
+    test_shadow_stack_out_v1(i32::from(i16::MAX));
+    test_shadow_stack_out_v1(i32::from(i16::MAX) + 1);
+}
+
+fn test_shadow_stack_out_v1_big(value: i32) {
+    let wasm = format!(
+        r#"
+        (module
+            (global $__shadow_stack (mut i32) (i32.const 1000))
+            (func (param $v i32)
+                local.get $v
+                i32.const {value}
+                i32.sub
+                global.set $__shadow_stack
+            )
+        )
+    "#,
+    );
+    TranslationTest::from_wat(&wasm)
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::i32_add_imm_into_global_0(Register::from_i16(0), value.wrapping_neg()),
+                Instruction::Return,
+            ])
+            .consts([value.wrapping_neg()]),
+        )
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn shadow_stack_out_v1_big() {
+    test_shadow_stack_out_v1_big(i32::from(i16::MIN));
+    test_shadow_stack_out_v1_big(i32::from(i16::MAX) + 2);
+    test_shadow_stack_out_v1_big(i32::MIN);
+    test_shadow_stack_out_v1_big(i32::MIN + 1);
+    test_shadow_stack_out_v1_big(i32::MAX - 1);
+    test_shadow_stack_out_v1_big(i32::MAX);
+}
