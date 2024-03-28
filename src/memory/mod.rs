@@ -12,6 +12,7 @@ use core::{
     u32,
 };
 use parity_wasm::elements::ResizableLimits;
+use std::collections::HashMap;
 
 #[cfg(all(feature = "virtual_memory", target_pointer_width = "64"))]
 #[path = "mmap_bytebuf.rs"]
@@ -65,6 +66,8 @@ pub struct MemoryInstance {
     limits: ResizableLimits,
     /// Linear memory buffer with lazy allocation.
     buffer: RefCell<ByteBuf>,
+    /// Origin memory size at phantom entry, and a hashmap to track the modified memory.
+    pub buffer_cache: RefCell<Option<(Pages, HashMap<usize, u8>)>>,
     initial: Pages,
     current_size: Cell<usize>,
     maximum: Option<Pages>,
@@ -149,6 +152,7 @@ impl MemoryInstance {
         Ok(MemoryInstance {
             limits,
             buffer: RefCell::new(ByteBuf::new(initial_size.0).map_err(Error::Memory)?),
+            buffer_cache: RefCell::new(None),
             initial,
             current_size: Cell::new(initial_size.0),
             maximum,
@@ -215,7 +219,21 @@ impl MemoryInstance {
         let mut buffer = self.buffer.borrow_mut();
         let region = self.checked_region(&mut buffer, offset as usize, size)?;
 
-        Ok(buffer.as_slice_mut()[region.range()].to_vec())
+        let mut buffer = buffer.as_slice_mut()[region.range()].to_vec();
+
+        let buf_cache = self.buffer_cache.borrow();
+        if buf_cache.is_some() {
+            let mut index = 0;
+
+            for offset in region.range() {
+                if let Some(value) = buf_cache.as_ref().unwrap().1.get(&offset) {
+                    buffer[index] = *value;
+                }
+                index += 1;
+            }
+        }
+
+        Ok(buffer)
     }
 
     /// Copy data from given offset in the memory into `target` slice.
@@ -229,6 +247,18 @@ impl MemoryInstance {
 
         target.copy_from_slice(&buffer.as_slice_mut()[region.range()]);
 
+        let buf_cache = self.buffer_cache.borrow();
+        if buf_cache.is_some() {
+            let mut index = 0;
+
+            for offset in region.range() {
+                if let Some(value) = buf_cache.as_ref().unwrap().1.get(&offset) {
+                    target[index] = *value;
+                }
+                index += 1;
+            }
+        }
+
         Ok(())
     }
 
@@ -239,7 +269,18 @@ impl MemoryInstance {
             .checked_region(&mut buffer, offset as usize, value.len())?
             .range();
 
-        buffer.as_slice_mut()[range].copy_from_slice(value);
+        let mut buf_cache = self.buffer_cache.borrow_mut();
+        if buf_cache.is_some() {
+            let mut index = 0;
+
+            for offset in range {
+                buf_cache.as_mut().unwrap().1.insert(offset, value[index]);
+
+                index += 1;
+            }
+        } else {
+            buffer.as_slice_mut()[range].copy_from_slice(value);
+        }
 
         Ok(())
     }
@@ -289,6 +330,20 @@ impl MemoryInstance {
         self.current_size.set(new_buffer_length.0);
 
         Ok(size_before_grow)
+    }
+
+    pub fn shrink(&self, origin: Pages) -> Result<(), Error> {
+        let new_size: Pages = origin;
+
+        let new_buffer_length: Bytes = new_size.into();
+        self.buffer
+            .borrow_mut()
+            .realloc(new_buffer_length.0)
+            .map_err(Error::Memory)?;
+
+        self.current_size.set(new_buffer_length.0);
+
+        Ok(())
     }
 
     fn checked_region(
