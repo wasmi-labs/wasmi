@@ -23,8 +23,8 @@ use core::{fmt, marker::PhantomData, mem::replace, ops::Deref};
 pub(crate) enum ResumableCallBase<T> {
     /// The resumable call has finished properly and returned a result.
     Finished(T),
-    /// The resumable call encountered a host error and can be resumed.
-    Resumable(ResumableInvocation),
+    // /// The resumable call encountered a host error and can be resumed.
+    // Resumable(ResumableInvocation),
 }
 
 /// Returned by calling a [`Func`] in a resumable way.
@@ -41,7 +41,7 @@ impl ResumableCall {
     pub(crate) fn new(call: ResumableCallBase<()>) -> Self {
         match call {
             ResumableCallBase::Finished(()) => Self::Finished,
-            ResumableCallBase::Resumable(invocation) => Self::Resumable(invocation),
+            // ResumableCallBase::Resumable(invocation) => Self::Resumable(invocation),
         }
     }
 }
@@ -117,45 +117,45 @@ pub struct ResumableInvocation {
 unsafe impl Sync for ResumableInvocation {}
 
 impl ResumableInvocation {
-    /// Creates a new [`ResumableInvocation`].
-    pub(super) fn new(
-        engine: Engine,
-        func: Func,
-        host_func: Func,
-        host_error: Error,
-        caller_results: RegisterSpan,
-        stack: Stack,
-    ) -> Self {
-        Self {
-            engine,
-            func,
-            host_func,
-            host_error,
-            caller_results,
-            stack,
-        }
-    }
+    // /// Creates a new [`ResumableInvocation`].
+    // pub(super) fn new(
+    //     engine: Engine,
+    //     func: Func,
+    //     host_func: Func,
+    //     host_error: Error,
+    //     caller_results: RegisterSpan,
+    //     stack: Stack,
+    // ) -> Self {
+    //     Self {
+    //         engine,
+    //         func,
+    //         host_func,
+    //         host_error,
+    //         caller_results,
+    //         stack,
+    //     }
+    // }
 
     /// Replaces the internal stack with an empty one that has no heap allocations.
     pub(super) fn take_stack(&mut self) -> Stack {
         replace(&mut self.stack, Stack::empty())
     }
 
-    /// Updates the [`ResumableInvocation`] with the new `host_func`, `host_error` and `caller_results`.
-    ///
-    /// # Note
-    ///
-    /// This should only be called from the register-machine Wasmi engine backend.
-    pub(super) fn update(
-        &mut self,
-        host_func: Func,
-        host_error: Error,
-        caller_results: RegisterSpan,
-    ) {
-        self.host_func = host_func;
-        self.host_error = host_error;
-        self.caller_results = caller_results;
-    }
+    // /// Updates the [`ResumableInvocation`] with the new `host_func`, `host_error` and `caller_results`.
+    // ///
+    // /// # Note
+    // ///
+    // /// This should only be called from the register-machine Wasmi engine backend.
+    // pub(super) fn update(
+    //     &mut self,
+    //     host_func: Func,
+    //     host_error: Error,
+    //     caller_results: RegisterSpan,
+    // ) {
+    //     self.host_func = host_func;
+    //     self.host_error = host_error;
+    //     self.caller_results = caller_results;
+    // }
 }
 
 impl Drop for ResumableInvocation {
@@ -251,9 +251,9 @@ impl<Results> TypedResumableCall<Results> {
     pub(crate) fn new(call: ResumableCallBase<Results>) -> Self {
         match call {
             ResumableCallBase::Finished(results) => Self::Finished(results),
-            ResumableCallBase::Resumable(invocation) => {
-                Self::Resumable(TypedResumableInvocation::new(invocation))
-            }
+            // ResumableCallBase::Resumable(invocation) => {
+            //     Self::Resumable(TypedResumableInvocation::new(invocation))
+            // }
         }
     }
 }
@@ -268,13 +268,13 @@ pub struct TypedResumableInvocation<Results> {
 }
 
 impl<Results> TypedResumableInvocation<Results> {
-    /// Creates a [`TypedResumableInvocation`] wrapper for the given [`ResumableInvocation`].
-    pub(crate) fn new(invocation: ResumableInvocation) -> Self {
-        Self {
-            invocation,
-            results: PhantomData,
-        }
-    }
+    // /// Creates a [`TypedResumableInvocation`] wrapper for the given [`ResumableInvocation`].
+    // pub(crate) fn new(invocation: ResumableInvocation) -> Self {
+    //     Self {
+    //         invocation,
+    //         results: PhantomData,
+    //     }
+    // }
 
     /// Resumes the call to the [`TypedFunc`] with the given inputs.
     ///

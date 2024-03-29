@@ -1,9 +1,5 @@
 pub(crate) use self::stack::Stack;
-use self::{
-    instrs::{execute_instrs, CallKind, WasmOutcome},
-    stack::CallFrame,
-    trap::TaggedTrap,
-};
+use self::{instrs::execute_instrs, stack::CallFrame, trap::TaggedTrap};
 use crate::{
     engine::{
         bytecode::{Register, RegisterSpan},
@@ -94,19 +90,18 @@ impl EngineInner {
             Err(TaggedTrap::Wasm(error)) => {
                 self.stacks.lock().recycle(stack);
                 Err(error)
-            }
-            Err(TaggedTrap::Host {
-                host_func,
-                host_error,
-                caller_results,
-            }) => Ok(ResumableCallBase::Resumable(ResumableInvocation::new(
-                ctx.as_context().store.engine().clone(),
-                *func,
-                host_func,
-                host_error,
-                caller_results,
-                stack,
-            ))),
+            } // Err(TaggedTrap::Host {
+              //     host_func,
+              //     host_error,
+              //     caller_results,
+              // }) => Ok(ResumableCallBase::Resumable(ResumableInvocation::new(
+              //     ctx.as_context().store.engine().clone(),
+              //     *func,
+              //     host_func,
+              //     host_error,
+              //     caller_results,
+              //     stack,
+              // ))),
         }
     }
 
@@ -145,15 +140,14 @@ impl EngineInner {
             Err(TaggedTrap::Wasm(error)) => {
                 self.stacks.lock().recycle(invocation.take_stack());
                 Err(error)
-            }
-            Err(TaggedTrap::Host {
-                host_func,
-                host_error,
-                caller_results,
-            }) => {
-                invocation.update(host_func, host_error, caller_results);
-                Ok(ResumableCallBase::Resumable(invocation))
-            }
+            } // Err(TaggedTrap::Host {
+              //     host_func,
+              //     host_error,
+              //     caller_results,
+              // }) => {
+              //     invocation.update(host_func, host_error, caller_results);
+              //     Ok(ResumableCallBase::Resumable(invocation))
+              // }
         }
     }
 }
@@ -301,95 +295,75 @@ impl<'engine> EngineExecutor<'engine> {
             .map(CallFrame::instance)
             .map(InstanceCache::from)
             .expect("must have frame on the call stack");
-        loop {
-            match self.execute_compiled_func(ctx.as_context_mut(), &mut cache)? {
-                WasmOutcome::Return => {
-                    // In this case the root function has returned.
-                    // Therefore we can return from the entire execution.
-                    return Ok(());
-                }
-                WasmOutcome::Call {
-                    results,
-                    ref host_func,
-                    call_kind,
-                } => {
-                    let instance = *self
-                        .stack
-                        .calls
-                        .peek()
-                        .expect("caller must be on the stack")
-                        .instance();
-                    self.execute_host_func(&mut ctx, results, host_func, &instance, call_kind)?;
-                }
-            }
-        }
+        self.execute_compiled_func(ctx.as_context_mut(), &mut cache)
+            .map_err(Into::into)
     }
 
-    fn execute_host_func<T>(
-        &mut self,
-        ctx: &mut StoreContextMut<'_, T>,
-        results: RegisterSpan,
-        func: &Func,
-        instance: &Instance,
-        call_kind: CallKind,
-    ) -> Result<(), TaggedTrap> {
-        let func_entity = match ctx.as_context().store.inner.resolve_func(func) {
-            FuncEntity::Wasm(wasm_func) => {
-                unreachable!("expected a host function but found: {wasm_func:?}")
-            }
-            FuncEntity::Host(host_func) => *host_func,
-        };
-        let result = self.dispatch_host_func(
-            ctx.as_context_mut(),
-            func_entity,
-            HostFuncCaller::wasm(results, instance),
-        );
-        if matches!(call_kind, CallKind::Tail) {
-            self.stack.calls.pop();
-        }
-        if self.stack.calls.peek().is_some() {
-            // Case: There is a frame on the call stack.
-            //
-            // This is the default case and we can easily make host function
-            // errors return a resumable call handle.
-            result.map_err(|error| TaggedTrap::host(*func, error, results))?;
-        } else {
-            // Case: No frame is on the call stack. (edge case)
-            //
-            // This can happen if the host function was called by a tail call.
-            // In this case we treat host function errors the same as if we called
-            // the host function as root and do not allow to resume the call.
-            result.map_err(TaggedTrap::Wasm)?;
-        }
-        Ok(())
-    }
+    // fn execute_host_func<T>(
+    //     &mut self,
+    //     ctx: &mut StoreContextMut<'_, T>,
+    //     results: RegisterSpan,
+    //     func: &Func,
+    //     instance: &Instance,
+    //     call_kind: CallKind,
+    // ) -> Result<(), TaggedTrap> {
+    //     let func_entity = match ctx.as_context().store.inner.resolve_func(func) {
+    //         FuncEntity::Wasm(wasm_func) => {
+    //             unreachable!("expected a host function but found: {wasm_func:?}")
+    //         }
+    //         FuncEntity::Host(host_func) => *host_func,
+    //     };
+    //     let result = self.dispatch_host_func(
+    //         ctx.as_context_mut(),
+    //         func_entity,
+    //         HostFuncCaller::wasm(results, instance),
+    //     );
+    //     if matches!(call_kind, CallKind::Tail) {
+    //         self.stack.calls.pop();
+    //     }
+    //     if self.stack.calls.peek().is_some() {
+    //         // Case: There is a frame on the call stack.
+    //         //
+    //         // This is the default case and we can easily make host function
+    //         // errors return a resumable call handle.
+    //         result.map_err(|error| TaggedTrap::host(*func, error, results))?;
+    //     } else {
+    //         // Case: No frame is on the call stack. (edge case)
+    //         //
+    //         // This can happen if the host function was called by a tail call.
+    //         // In this case we treat host function errors the same as if we called
+    //         // the host function as root and do not allow to resume the call.
+    //         result.map_err(TaggedTrap::Wasm)?;
+    //     }
+    //     Ok(())
+    // }
 }
 
 /// The caller of a host function call.
 #[derive(Debug, Copy, Clone)]
-enum HostFuncCaller<'a> {
+enum HostFuncCaller {
     /// The host-side is itself the caller of the host function.
     Root,
-    /// A compiled Wasm function is the caller of the host function.
-    Wasm {
-        /// The registers were the caller expects the results of the call.
-        results: RegisterSpan,
-        /// The instance to be used throughout the host function call.
-        instance: &'a Instance,
-    },
+    // /// A compiled Wasm function is the caller of the host function.
+    // Wasm {
+    //     /// The registers were the caller expects the results of the call.
+    //     results: RegisterSpan,
+    //     /// The instance to be used throughout the host function call.
+    //     instance: &'a Instance,
+    // },
 }
 
-impl<'a> HostFuncCaller<'a> {
-    /// Creates a [`HostFuncCaller::Wasm`].
-    pub fn wasm(results: RegisterSpan, instance: &'a Instance) -> Self {
-        Self::Wasm { results, instance }
-    }
+impl HostFuncCaller {
+    // /// Creates a [`HostFuncCaller::Wasm`].
+    // pub fn wasm(results: RegisterSpan, instance: &'a Instance) -> Self {
+    //     Self::Wasm { results, instance }
+    // }
 
     /// Returns the [`RegisterSpan`] if `self` is a Wasm caller, otherwise returns `None`.
     pub fn results(&self) -> Option<RegisterSpan> {
         match *self {
             HostFuncCaller::Root => None,
-            HostFuncCaller::Wasm { results, .. } => Some(results),
+            // HostFuncCaller::Wasm { results, .. } => Some(results),
         }
     }
 
@@ -397,7 +371,7 @@ impl<'a> HostFuncCaller<'a> {
     pub fn instance(&self) -> Option<&Instance> {
         match self {
             HostFuncCaller::Root => None,
-            HostFuncCaller::Wasm { instance, .. } => Some(instance),
+            // HostFuncCaller::Wasm { instance, .. } => Some(instance),
         }
     }
 }
@@ -493,7 +467,7 @@ impl<'engine> EngineExecutor<'engine> {
         &mut self,
         ctx: StoreContextMut<T>,
         cache: &mut InstanceCache,
-    ) -> Result<WasmOutcome, Error> {
+    ) -> Result<(), Error> {
         let (store_inner, mut resource_limiter) = ctx.store.store_inner_and_resource_limiter_ref();
         let value_stack = &mut self.stack.values;
         let call_stack = &mut self.stack.calls;

@@ -220,22 +220,22 @@ impl InstanceCache {
         self.last_global = None;
     }
 
-    /// Clears the cached default memory instance and global variable.
-    ///
-    /// # Note
-    ///
-    /// - This is required for host function calls for reasons explained
-    ///   in [`InstanceCache::reset_default_memory_bytes`].
-    /// - Furthermore a called host function could introduce new global
-    ///   variables to the [`Store`] and thus might invalidate cached
-    ///   global variables. So we need to reset them as well.
-    ///
-    /// [`Store`]: crate::Store
-    #[inline]
-    pub fn reset(&mut self) {
-        self.reset_default_memory_bytes();
-        self.last_global = None;
-    }
+    // /// Clears the cached default memory instance and global variable.
+    // ///
+    // /// # Note
+    // ///
+    // /// - This is required for host function calls for reasons explained
+    // ///   in [`InstanceCache::reset_default_memory_bytes`].
+    // /// - Furthermore a called host function could introduce new global
+    // ///   variables to the [`Store`] and thus might invalidate cached
+    // ///   global variables. So we need to reset them as well.
+    // ///
+    // /// [`Store`]: crate::Store
+    // #[inline]
+    // pub fn reset(&mut self) {
+    //     self.reset_default_memory_bytes();
+    //     self.last_global = None;
+    // }
 
     /// Returns the [`Table`] at the `index` of the currently used [`Instance`].
     ///

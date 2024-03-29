@@ -1,5 +1,4 @@
-pub use self::call::CallKind;
-use self::{call::CallOutcome, return_::ReturnOutcome};
+use self::return_::ReturnOutcome;
 use crate::{
     core::{TrapCode, UntypedValue},
     engine::{
@@ -12,7 +11,6 @@ use crate::{
             FuncIdx,
             Instruction,
             Register,
-            RegisterSpan,
             UnaryInstr,
         },
         cache::InstanceCache,
@@ -23,7 +21,6 @@ use crate::{
     },
     store::ResourceLimiterRef,
     Error,
-    Func,
     FuncRef,
     StoreInner,
 };
@@ -45,45 +42,16 @@ mod unary;
 
 macro_rules! forward_call {
     ($expr:expr) => {{
-        if let CallOutcome::Call {
-            results,
-            host_func,
-            call_kind,
-        } = $expr?
-        {
-            return Ok(WasmOutcome::Call {
-                results,
-                host_func,
-                call_kind,
-            });
-        }
+        $expr?
     }};
 }
 
 macro_rules! forward_return {
     ($expr:expr) => {{
         if let ReturnOutcome::Host = $expr {
-            return Ok(WasmOutcome::Return);
+            return Ok(());
         }
     }};
-}
-
-/// The outcome of a Wasm execution.
-///
-/// # Note
-///
-/// A Wasm execution includes everything but host calls.
-/// In other words: Everything in between host calls is a Wasm execution.
-#[derive(Debug, Copy, Clone)]
-pub enum WasmOutcome {
-    /// The Wasm execution has ended and returns to the host side.
-    Return,
-    /// The Wasm execution calls a host function.
-    Call {
-        results: RegisterSpan,
-        host_func: Func,
-        call_kind: CallKind,
-    },
 }
 
 /// Executes compiled function instructions until either
@@ -104,7 +72,7 @@ pub fn execute_instrs<'ctx, 'engine>(
     code_map: &'engine CodeMap,
     func_types: &'engine FuncTypeRegistry,
     resource_limiter: &'ctx mut ResourceLimiterRef<'ctx>,
-) -> Result<WasmOutcome, Error> {
+) -> Result<(), Error> {
     Executor::new(ctx, cache, value_stack, call_stack, code_map, func_types)
         .execute(resource_limiter)
 }
@@ -146,19 +114,20 @@ struct Executor<'ctx, 'engine> {
     /// # Note
     ///
     /// This is used to lookup Wasm function information.
-    func_types: &'engine FuncTypeRegistry,
+    _func_types: &'engine FuncTypeRegistry,
 }
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Creates a new [`Executor`] for executing a Wasmi function frame.
     #[inline(always)]
+    #[allow(clippy::used_underscore_binding)]
     pub fn new(
         ctx: &'ctx mut StoreInner,
         cache: &'engine mut InstanceCache,
         value_stack: &'engine mut ValueStack,
         call_stack: &'engine mut CallStack,
         code_map: &'engine CodeMap,
-        func_types: &'engine FuncTypeRegistry,
+        _func_types: &'engine FuncTypeRegistry,
     ) -> Self {
         let frame = call_stack
             .peek()
@@ -176,7 +145,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             value_stack,
             call_stack,
             code_map,
-            func_types,
+            _func_types,
         }
     }
 
@@ -185,7 +154,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn execute(
         mut self,
         resource_limiter: &'ctx mut ResourceLimiterRef<'ctx>,
-    ) -> Result<WasmOutcome, Error> {
+    ) -> Result<(), Error> {
         use Instruction as Instr;
         loop {
             match *self.ip.get() {

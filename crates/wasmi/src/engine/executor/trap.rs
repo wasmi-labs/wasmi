@@ -1,33 +1,33 @@
-use crate::{core::TrapCode, engine::bytecode::RegisterSpan, Error, Func};
+use crate::{core::TrapCode, Error};
 
 /// Either a Wasm trap or a host trap with its originating host [`Func`].
 #[derive(Debug)]
 pub enum TaggedTrap {
     /// The trap is originating from Wasm.
     Wasm(Error),
-    /// The trap is originating from a host function.
-    Host {
-        host_error: Error,
-        host_func: Func,
-        caller_results: RegisterSpan,
-    },
+    // /// The trap is originating from a host function.
+    // Host {
+    //     host_error: Error,
+    //     host_func: Func,
+    //     caller_results: RegisterSpan,
+    // },
 }
 
 impl TaggedTrap {
-    /// Creates a [`TaggedTrap`] from a host error.
-    pub fn host(host_func: Func, host_error: Error, caller_results: RegisterSpan) -> Self {
-        Self::Host {
-            host_func,
-            host_error,
-            caller_results,
-        }
-    }
+    // /// Creates a [`TaggedTrap`] from a host error.
+    // pub fn host(host_func: Func, host_error: Error, caller_results: RegisterSpan) -> Self {
+    //     Self::Host {
+    //         host_func,
+    //         host_error,
+    //         caller_results,
+    //     }
+    // }
 
     /// Returns the [`Error`] of the [`TaggedTrap`].
     pub fn into_error(self) -> Error {
         match self {
             TaggedTrap::Wasm(error) => error,
-            TaggedTrap::Host { host_error, .. } => host_error,
+            // TaggedTrap::Host { host_error, .. } => host_error,
         }
     }
 }

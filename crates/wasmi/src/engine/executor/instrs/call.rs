@@ -24,24 +24,6 @@ pub enum CallParams {
     Some,
 }
 
-/// The outcome of a Wasm execution.
-///
-/// # Note
-///
-/// A Wasm execution includes everything but host calls.
-/// In other words: Everything in between host calls is a Wasm execution.
-#[derive(Debug, Copy, Clone)]
-pub enum CallOutcome {
-    /// The Wasm execution continues in Wasm.
-    Continue,
-    /// The Wasm execution calls a host function.
-    Call {
-        results: RegisterSpan,
-        host_func: Func,
-        call_kind: CallKind,
-    },
-}
-
 /// The kind of a function call.
 #[derive(Debug, Copy, Clone)]
 pub enum CallKind {
@@ -261,13 +243,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::ReturnCallImported0`].
     #[inline(always)]
-    pub fn execute_return_call_imported_0(&mut self, func: FuncIdx) -> Result<CallOutcome, Error> {
+    pub fn execute_return_call_imported_0(&mut self, func: FuncIdx) -> Result<(), Error> {
         self.execute_return_call_imported_impl(func, CallParams::None)
     }
 
     /// Executes an [`Instruction::ReturnCallImported`].
     #[inline(always)]
-    pub fn execute_return_call_imported(&mut self, func: FuncIdx) -> Result<CallOutcome, Error> {
+    pub fn execute_return_call_imported(&mut self, func: FuncIdx) -> Result<(), Error> {
         self.execute_return_call_imported_impl(func, CallParams::Some)
     }
 
@@ -276,7 +258,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         func: FuncIdx,
         params: CallParams,
-    ) -> Result<CallOutcome, Error> {
+    ) -> Result<(), Error> {
         let func = self.cache.get_func(self.ctx, func);
         let results = self.caller_results();
         self.execute_call_imported_impl(results, &func, params, CallKind::Tail)
@@ -288,7 +270,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         results: RegisterSpan,
         func: FuncIdx,
-    ) -> Result<CallOutcome, Error> {
+    ) -> Result<(), Error> {
         let func = self.cache.get_func(self.ctx, func);
         self.execute_call_imported_impl(results, &func, CallParams::None, CallKind::Nested)
     }
@@ -299,7 +281,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         results: RegisterSpan,
         func: FuncIdx,
-    ) -> Result<CallOutcome, Error> {
+    ) -> Result<(), Error> {
         let func = self.cache.get_func(self.ctx, func);
         self.execute_call_imported_impl(results, &func, CallParams::Some, CallKind::Nested)
     }
@@ -311,58 +293,56 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func: &Func,
         params: CallParams,
         call_kind: CallKind,
-    ) -> Result<CallOutcome, Error> {
+    ) -> Result<(), Error> {
         match self.ctx.resolve_func(func) {
             FuncEntity::Wasm(func) => {
                 let instance = *func.instance();
                 self.prepare_compiled_func_call(results, func.func_body(), params, call_kind)?;
                 self.cache.update_instance(&instance);
-                Ok(CallOutcome::Continue)
+                Ok(())
             }
-            FuncEntity::Host(host_func) => {
-                let (input_types, output_types) = self
-                    .func_types
-                    .resolve_func_type(host_func.ty_dedup())
-                    .params_results();
-                let len_params = input_types.len();
-                let len_results = output_types.len();
-                let max_inout = len_params.max(len_results);
-                self.value_stack.reserve(max_inout)?;
-                // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
-                // [`ValueStack::reserve`] which might invalidate all live [`FrameRegisters`].
-                let caller = self
-                    .call_stack
-                    .peek()
-                    .expect("need to have a caller on the call stack");
-                // Safety: We use the base offset of a live call frame on the call stack.
-                self.sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
-                let offset = self.value_stack.extend_zeros(max_inout);
-                let offset_sp = unsafe { self.value_stack.stack_ptr_at(offset) };
-                if matches!(params, CallParams::Some) {
-                    let new_ip = self.copy_call_params(offset_sp);
-                    if matches!(call_kind, CallKind::Nested) {
-                        self.ip = new_ip;
-                    }
-                }
-                if matches!(call_kind, CallKind::Nested) {
-                    self.update_instr_ptr_at(1);
-                }
-                self.cache.reset();
-                Ok(CallOutcome::Call {
-                    results,
-                    host_func: *func,
-                    call_kind,
-                })
+            FuncEntity::Host(_host_func) => {
+                // let (input_types, output_types) = self
+                //     ._func_types
+                //     .resolve_func_type(host_func.ty_dedup())
+                //     .params_results();
+                // let len_params = input_types.len();
+                // let len_results = output_types.len();
+                // let max_inout = len_params.max(len_results);
+                // self.value_stack.reserve(max_inout)?;
+                // // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
+                // // [`ValueStack::reserve`] which might invalidate all live [`FrameRegisters`].
+                // let caller = self
+                //     .call_stack
+                //     .peek()
+                //     .expect("need to have a caller on the call stack");
+                // // Safety: We use the base offset of a live call frame on the call stack.
+                // self.sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
+                // let offset = self.value_stack.extend_zeros(max_inout);
+                // let offset_sp = unsafe { self.value_stack.stack_ptr_at(offset) };
+                // if matches!(params, CallParams::Some) {
+                //     let new_ip = self.copy_call_params(offset_sp);
+                //     if matches!(call_kind, CallKind::Nested) {
+                //         self.ip = new_ip;
+                //     }
+                // }
+                // if matches!(call_kind, CallKind::Nested) {
+                //     self.update_instr_ptr_at(1);
+                // }
+                // self.cache.reset();
+                // Ok(CallOutcome::Call {
+                //     results,
+                //     host_func: *func,
+                //     call_kind,
+                // })
+                todo!()
             }
         }
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
     #[inline(never)]
-    pub fn execute_return_call_indirect_0(
-        &mut self,
-        func_type: SignatureIdx,
-    ) -> Result<CallOutcome, Error> {
+    pub fn execute_return_call_indirect_0(&mut self, func_type: SignatureIdx) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
         let results = self.caller_results();
         self.execute_call_indirect_impl(
@@ -377,10 +357,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::CallIndirect0`].
     #[inline(never)]
-    pub fn execute_return_call_indirect(
-        &mut self,
-        func_type: SignatureIdx,
-    ) -> Result<CallOutcome, Error> {
+    pub fn execute_return_call_indirect(&mut self, func_type: SignatureIdx) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
         let results = self.caller_results();
         self.execute_call_indirect_impl(
@@ -399,7 +376,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         results: RegisterSpan,
         func_type: SignatureIdx,
-    ) -> Result<CallOutcome, Error> {
+    ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
         self.execute_call_indirect_impl(
             results,
@@ -417,7 +394,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         results: RegisterSpan,
         func_type: SignatureIdx,
-    ) -> Result<CallOutcome, Error> {
+    ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
         self.execute_call_indirect_impl(
             results,
@@ -438,7 +415,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         table: TableIdx,
         params: CallParams,
         call_kind: CallKind,
-    ) -> Result<CallOutcome, Error> {
+    ) -> Result<(), Error> {
         let table = self.cache.get_table(self.ctx, table);
         let funcref = self
             .ctx
