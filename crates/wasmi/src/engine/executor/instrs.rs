@@ -1082,12 +1082,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// This includes [`Instruction`] variants such as [`Instruction::TableIdx`]
     /// that primarily carry parameters for actually executable [`Instruction`].
     #[inline(always)]
+    #[cold]
     fn invalid_instruction_word(&mut self) -> Result<(), Error> {
         self.execute_trap(TrapCode::UnreachableCodeReached)
     }
 
     /// Executes a Wasm `unreachable` instruction.
     #[inline(always)]
+    #[cold]
     fn execute_trap(&mut self, trap_code: TrapCode) -> Result<(), Error> {
         Err(Error::from(trap_code))
     }
