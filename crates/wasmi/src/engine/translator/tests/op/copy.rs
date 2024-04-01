@@ -3,7 +3,7 @@ use crate::engine::bytecode::RegisterSpan;
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn merge_copy_0() {
+fn merge_2_copy_instrs_0() {
     let wasm = r"
         (module
             (func (param i32 i32 i32 i32 i32)
@@ -25,7 +25,7 @@ fn merge_copy_0() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn merge_copy_1() {
+fn merge_2_copy_instrs_1() {
     let wasm = r"
         (module
             (func (param i32 i32 i32 i32 i32)
@@ -47,7 +47,7 @@ fn merge_copy_1() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn merge_copy_2() {
+fn merge_2_copy_instrs_2() {
     let wasm = r"
         (module
             (func (param i32 i32 i32 i32 i32)
