@@ -42,14 +42,14 @@ fn generate_profiling_type(data_enum: &syn::DataEnum) -> TokenStream2 {
         let span = variant.span();
         let snake_ident = to_snake_case_ident(&variant.ident);
         quote_spanned!(span=>
-            self.#snake_ident.total_time()
+            ::wasmi_profiling::InstrTracker::total_time(&self.#snake_ident)
         )
     });
     let count_impl = data_enum.variants.iter().map(|variant| {
         let span = variant.span();
         let snake_ident = to_snake_case_ident(&variant.ident);
         quote_spanned!(span=>
-            self.#snake_ident.count()
+            ::wasmi_profiling::InstrTracker::count(&self.#snake_ident)
         )
     });
     quote! {
