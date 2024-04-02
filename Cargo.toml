@@ -32,6 +32,7 @@ wasmi_arena = { version = "0.5.0", path = "crates/arena", default-features = fal
 wasmi_profiling = { version = "0.32.0-beta.8", path = "crates/profiling" }
 wasmi_profiling_macro = { version = "0.32.0-beta.8", path = "crates/profiling/macro" }
 num-traits = { version = "0.2.8", default-features = false }
+serde = { version = "1" }
 
 [profile.bench]
 lto = "fat"

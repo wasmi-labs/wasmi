@@ -15,4 +15,4 @@ exclude.workspace = true
 
 [dependencies]
 wasmi_profiling_macro = { workspace = true }
-serde = { version = "1", features = ["derive"] }
+serde = { workspace = true, features = ["derive"] }
