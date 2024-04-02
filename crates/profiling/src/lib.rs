@@ -93,6 +93,16 @@ impl InstrTracker {
     pub fn total_time(&self) -> Duration {
         self.watch.total()
     }
+
+    /// Returns `true` if the associated Wasmi instruction has never been called.
+    ///
+    /// # Note
+    ///
+    /// This is primarily used by `serde` to filter out instructions during
+    /// serialization that have never been used during execution profiling.
+    pub fn is_never_called(&self) -> bool {
+        self.count() == 0
+    }
 }
 
 #[derive(Debug, Default, Copy, Clone, Serialize)]

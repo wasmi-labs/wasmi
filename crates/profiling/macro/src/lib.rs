@@ -35,6 +35,7 @@ fn generate_profiling_type(data_enum: &syn::DataEnum) -> TokenStream2 {
         let span = variant.span();
         let snake_ident = to_snake_case_ident(&variant.ident);
         quote_spanned!(span=>
+            #[serde(skip_serializing_if = "::wasmi_profiling::InstrTracker::is_never_called")]
             pub #snake_ident: ::wasmi_profiling::InstrTracker
         )
     });
