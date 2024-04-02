@@ -18,7 +18,7 @@ pub trait InstrsCount {
 }
 
 /// Derived and implemented by the Wasmi instruction type to track profiling data during execution.
-pub trait Profiling {
+pub trait WasmiProfiling {
     /// The profiling struct holding all relevant data.
     type InstrData: Debug + Default + Copy + Clone + Serialize + InstrsCount + InstrsTotalTime;
 

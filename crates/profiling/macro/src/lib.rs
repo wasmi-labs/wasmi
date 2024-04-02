@@ -18,7 +18,7 @@ pub fn wasmi_profiling(input: TokenStream) -> TokenStream {
         const _: () = {
             #profiling_type
 
-            impl ::wasmi_profiling::Profiling for #ident {
+            impl ::wasmi_profiling::WasmiProfiling for #ident {
                 type InstrData = InstrData;
 
                 fn new() -> ::wasmi_profiling::ProfilingData<Self::InstrData> {
