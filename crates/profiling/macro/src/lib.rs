@@ -1,3 +1,6 @@
+mod utils;
+
+use crate::utils::{to_snake_case_ident, AttributeExt as _};
 use proc_macro::TokenStream;
 use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::{quote, quote_spanned};
@@ -37,7 +40,9 @@ fn generate_data_type(span: Span, data_enum: &syn::DataEnum) -> TokenStream2 {
     let select_instr = data_enum.variants.iter().map(|variant| {
         let span = variant.span();
         let snake_ident = to_snake_case_ident(&variant.ident);
+        let docs = variant.attrs.iter().filter(|attr| attr.is_doc());
         quote_spanned!(span=>
+            #( #docs )*
             #[inline]
             pub fn #snake_ident(self) -> ::wasmi_profiling::SelectedInstr<'a> {
                 ::wasmi_profiling::SelectedInstr::new(
@@ -97,8 +102,10 @@ fn generate_instr_data_type(span: Span, data_enum: &syn::DataEnum) -> TokenStrea
     let fields = data_enum.variants.iter().map(|variant| {
         let span = variant.span();
         let snake_ident = to_snake_case_ident(&variant.ident);
+        let docs = variant.attrs.iter().filter(|attr| attr.is_doc());
         quote_spanned!(span=>
             #[serde(skip_serializing_if = "::wasmi_profiling::InstrTracker::is_never_called")]
+            #( #docs )*
             pub #snake_ident: ::wasmi_profiling::InstrTracker
         )
     });
@@ -140,10 +147,4 @@ fn generate_instr_data_type(span: Span, data_enum: &syn::DataEnum) -> TokenStrea
             }
         }
     )
-}
-
-fn to_snake_case_ident(ident: &syn::Ident) -> syn::Ident {
-    let span = ident.span();
-    let snake_name = heck::AsSnakeCase(ident.to_string()).to_string();
-    syn::Ident::new_raw(&snake_name, span)
 }
