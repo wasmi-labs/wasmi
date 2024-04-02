@@ -80,6 +80,7 @@ fn generate_profiling_type(data_enum: &syn::DataEnum) -> TokenStream2 {
 }
 
 fn to_snake_case_ident(ident: &syn::Ident) -> syn::Ident {
+    let span = ident.span();
     let snake_name = heck::AsSnakeCase(ident.to_string()).to_string();
-    quote::format_ident!("{}", &snake_name)
+    syn::Ident::new_raw(&snake_name, span)
 }
