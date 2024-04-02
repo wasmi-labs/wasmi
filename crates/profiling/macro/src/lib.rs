@@ -5,7 +5,6 @@ use syn::{parse_macro_input, spanned::Spanned, DeriveInput};
 
 #[proc_macro_derive(WasmiProfiling)]
 pub fn my_macro(input: TokenStream) -> TokenStream {
-    // Parse the input tokens into a syntax tree
     let input = parse_macro_input!(input as DeriveInput);
     let syn::Data::Enum(data_enum) = &input.data else {
         panic!(
@@ -15,7 +14,6 @@ pub fn my_macro(input: TokenStream) -> TokenStream {
     };
     let ident = &input.ident;
     let profiling_type = generate_profiling_type(data_enum);
-    // Build the output, possibly using quasi-quotation
     let expanded = quote! {
         const _: () = {
             #profiling_type
