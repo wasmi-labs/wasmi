@@ -10,7 +10,7 @@ impl AttributeExt for syn::Attribute {
     }
 }
 
-/// Converts the `ident` to a snake-case raw [`Ident`].
+/// Converts the `ident` to a snake-case raw [`struct@syn::Ident`].
 pub fn to_snake_case_ident(ident: &syn::Ident) -> syn::Ident {
     let span = ident.span();
     let snake_name = heck::AsSnakeCase(ident.to_string()).to_string();
