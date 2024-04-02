@@ -58,7 +58,7 @@ fn generate_profiling_type(data_enum: &syn::DataEnum) -> TokenStream2 {
             ::core::default::Default,
             ::core::marker::Copy,
             ::core::clone::Clone,
-            ::wasmi_profiling::Serialize,
+            ::wasmi_profiling::serde::Serialize,
         )]
         pub struct InstrData {
             #( #fields ),*
