@@ -21,3 +21,7 @@ quote = "1"
 syn = { version = "2", features = ["extra-traits"] }
 proc-macro2 = "1"
 heck = "0.5"
+
+[dev-dependencies]
+wasmi_profiling = { workspace = true }
+serde = { workspace = true }
