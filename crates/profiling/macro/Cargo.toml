@@ -1,0 +1,23 @@
+[package]
+name = "wasmi_profiling_macro"
+version.workspace = true
+rust-version.workspace = true
+documentation = "https://docs.rs/wasmi/"
+description = "WebAssembly interpreter profiling infrastructure proc. macro"
+authors.workspace = true
+repository.workspace = true
+edition.workspace = true
+readme.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+exclude.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "1"
+syn = { version = "1", features = ["extra-traits"] }
+proc-macro2 = "1"
+heck = "0.5"

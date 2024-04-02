@@ -1,0 +1,18 @@
+[package]
+name = "wasmi_profiling"
+version.workspace = true
+rust-version.workspace = true
+documentation = "https://docs.rs/wasmi/"
+description = "WebAssembly interpreter profiling infrastructure"
+authors.workspace = true
+repository.workspace = true
+edition.workspace = true
+readme.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+exclude.workspace = true
+
+[dependencies]
+wasmi_profiling_macro = { workspace = true }
+serde = { version = "1", features = ["derive"] }
