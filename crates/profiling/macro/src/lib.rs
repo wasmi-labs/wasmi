@@ -72,7 +72,7 @@ fn generate_profiling_type(data_enum: &syn::DataEnum) -> TokenStream2 {
         }
 
         impl ::wasmi_profiling::InstrsCount for InstrData {
-            fn instrs_total_time(&self) -> ::core::primitive::u64 {
+            fn instrs_count(&self) -> ::core::primitive::u64 {
                 #( #count_impl )+*
             }
         }
