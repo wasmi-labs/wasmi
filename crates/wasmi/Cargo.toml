@@ -17,6 +17,7 @@ exclude.workspace = true
 wasmparser = { version = "0.100.1", package = "wasmparser-nostd", default-features = false }
 wasmi_core = { workspace = true }
 wasmi_arena = { workspace = true }
+wasmi_profiling = { workspace = true, optional = true }
 spin = { version = "0.9", default-features = false, features = [
     "mutex",
     "spin_mutex",
@@ -27,6 +28,7 @@ multi-stash = { version = "0.2.0" }
 num-traits = { workspace = true }
 num-derive = "0.4"
 arrayvec = { version = "0.7.4", default-features = false }
+serde = { workspace = true, optional = true }
 
 [dev-dependencies]
 wat = "1"
@@ -45,6 +47,7 @@ std = [
     "num-traits/std",
     "arrayvec/std",
 ]
+profiling = ["std", "wasmi_profiling", "serde"]
 
 [[bench]]
 name = "benches"

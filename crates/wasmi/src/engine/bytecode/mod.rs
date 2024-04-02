@@ -68,6 +68,7 @@ use wasmi_core::TrapCode;
 /// - `rN`: Register
 /// - `cN`: Constant (immediate) value
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "profiling", derive(wasmi_profiling::WasmiProfiling))]
 pub enum Instruction {
     /// Traps the execution with the given [`TrapCode`].
     ///
