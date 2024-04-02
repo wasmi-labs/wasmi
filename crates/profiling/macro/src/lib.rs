@@ -1,5 +1,5 @@
 use proc_macro::TokenStream;
-use proc_macro2::TokenStream as TokenStream2;
+use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::{quote, quote_spanned};
 use syn::{parse_macro_input, spanned::Spanned, DeriveInput};
 
@@ -12,17 +12,20 @@ pub fn wasmi_profiling(input: TokenStream) -> TokenStream {
             &input.data
         );
     };
+    let span = input.span();
     let ident = &input.ident;
-    let profiling_type = generate_profiling_type(data_enum);
+    let data_type = generate_data_type(span, data_enum);
+    let instr_data_type = generate_instr_data_type(span, data_enum);
     let expanded = quote! {
         const _: () = {
-            #profiling_type
+            #data_type
+            #instr_data_type
 
             impl ::wasmi_profiling::WasmiProfiling for #ident {
-                type InstrData = InstrData;
+                type Data = Data;
 
-                fn new() -> ::wasmi_profiling::ProfilingData<Self::InstrData> {
-                    <::wasmi_profiling::ProfilingData<Self::InstrData> as ::core::default::Default>::default()
+                fn data() -> Self::Data {
+                    <Self::Data>::default()
                 }
             }
         };
@@ -30,7 +33,67 @@ pub fn wasmi_profiling(input: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
-fn generate_profiling_type(data_enum: &syn::DataEnum) -> TokenStream2 {
+fn generate_data_type(span: Span, data_enum: &syn::DataEnum) -> TokenStream2 {
+    let select_instr = data_enum.variants.iter().map(|variant| {
+        let span = variant.span();
+        let snake_ident = to_snake_case_ident(&variant.ident);
+        quote_spanned!(span=>
+            #[inline]
+            pub fn #snake_ident(self) -> ::wasmi_profiling::SelectedInstr<'a> {
+                ::wasmi_profiling::SelectedInstr::new(
+                    &mut self.data.dispatch,
+                    &mut self.data.ticker,
+                    &mut self.data.instr.#snake_ident,
+                )
+            }
+        )
+    });
+    quote_spanned!(span=>
+        #[derive(
+            ::core::fmt::Debug,
+            ::core::default::Default,
+            ::core::marker::Copy,
+            ::core::clone::Clone,
+            ::wasmi_profiling::serde::Serialize,
+        )]
+        #[repr(transparent)]
+        pub struct Data {
+            data: ::wasmi_profiling::ProfilingData<InstrData>,
+        }
+
+        impl Data {
+            /// Start profiling a Wasmi execution run.
+            ///
+            /// # Note
+            ///
+            /// This should be invoked right before the first instruction dispatch.
+            pub fn start(&mut self) {
+                self.data.start();
+            }
+        }
+
+        impl ::wasmi_profiling::SelectInstr for Data {
+            type Selector<'a> = InstrSelector<'a>;
+
+            #[inline]
+            fn instr(&mut self) -> Self::Selector<'_> {
+                Self::Selector { data: &mut self.data }
+            }
+        }
+
+        #[derive(Debug)]
+        #[repr(transparent)]
+        pub struct InstrSelector<'a> {
+            data: &'a mut ::wasmi_profiling::ProfilingData<InstrData>,
+        }
+
+        impl<'a> InstrSelector<'a> {
+            #( #select_instr )*
+        }
+    )
+}
+
+fn generate_instr_data_type(span: Span, data_enum: &syn::DataEnum) -> TokenStream2 {
     let fields = data_enum.variants.iter().map(|variant| {
         let span = variant.span();
         let snake_ident = to_snake_case_ident(&variant.ident);
@@ -43,17 +106,17 @@ fn generate_profiling_type(data_enum: &syn::DataEnum) -> TokenStream2 {
         let span = variant.span();
         let snake_ident = to_snake_case_ident(&variant.ident);
         quote_spanned!(span=>
-            ::wasmi_profiling::InstrTracker::total_time(&self.#snake_ident)
+            self.#snake_ident.total_time
         )
     });
     let count_impl = data_enum.variants.iter().map(|variant| {
         let span = variant.span();
         let snake_ident = to_snake_case_ident(&variant.ident);
         quote_spanned!(span=>
-            ::wasmi_profiling::InstrTracker::count(&self.#snake_ident)
+            self.#snake_ident.count
         )
     });
-    quote! {
+    quote_spanned!(span=>
         #[derive(
             ::core::fmt::Debug,
             ::core::default::Default,
@@ -76,7 +139,7 @@ fn generate_profiling_type(data_enum: &syn::DataEnum) -> TokenStream2 {
                 #( #count_impl )+*
             }
         }
-    }
+    )
 }
 
 fn to_snake_case_ident(ident: &syn::Ident) -> syn::Ident {
