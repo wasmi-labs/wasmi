@@ -4,7 +4,7 @@ use quote::{quote, quote_spanned};
 use syn::{parse_macro_input, spanned::Spanned, DeriveInput};
 
 #[proc_macro_derive(WasmiProfiling)]
-pub fn my_macro(input: TokenStream) -> TokenStream {
+pub fn wasmi_profiling(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let syn::Data::Enum(data_enum) = &input.data else {
         panic!(
