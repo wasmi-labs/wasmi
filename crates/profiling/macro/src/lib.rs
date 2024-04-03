@@ -7,14 +7,14 @@ use quote::{quote, quote_spanned};
 use syn::{parse_macro_input, spanned::Spanned, DeriveInput};
 
 /// Applied on the Wasmi bytecode `enum` to generate a `struct` to collect profiling data.
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```rust
 /// use wasmi_profiling::{WasmiProfiling, SelectInstr};
-/// 
+///
 /// type Register = u16;
-/// 
+///
 /// #[derive(WasmiProfiling)]
 /// enum Instruction {
 ///     Trap(u32),
@@ -25,7 +25,7 @@ use syn::{parse_macro_input, spanned::Spanned, DeriveInput};
 ///         rhs: Register,
 ///     },
 /// }
-/// 
+///
 /// fn main() {
 ///     let mut data = <Instruction as WasmiProfiling>::data();
 ///     // The generated profiling data type should be used in the following way.
