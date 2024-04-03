@@ -26,21 +26,19 @@ use syn::{parse_macro_input, spanned::Spanned, DeriveInput};
 ///     },
 /// }
 ///
-/// fn main() {
-///     let mut data = <Instruction as WasmiProfiling>::data();
-///     // The generated profiling data type should be used in the following way.
-///     //
-///     // - The `start` method must be called right before the first instruction dispatch.
-///     // - Right before executing an instruction, their associated `start` method must be called.
-///     // - Right after executing an instruction, their associated `stop` method must be called.
-///     data.start();
-///     data.instr().trap().start();
-///     data.instr().trap().stop();
-///     data.instr().r#return().start();
-///     data.instr().r#return().stop();
-///     data.instr().i32_add().start();
-///     data.instr().i32_add().stop();
-/// }
+/// let mut data = <Instruction as WasmiProfiling>::data();
+/// // The generated profiling data type should be used in the following way.
+/// //
+/// // - The `start` method must be called right before the first instruction dispatch.
+/// // - Right before executing an instruction, their associated `start` method must be called.
+/// // - Right after executing an instruction, their associated `stop` method must be called.
+/// data.start();
+/// data.instr().trap().start();
+/// data.instr().trap().stop();
+/// data.instr().r#return().start();
+/// data.instr().r#return().stop();
+/// data.instr().i32_add().start();
+/// data.instr().i32_add().stop();
 /// ```
 #[proc_macro_derive(WasmiProfiling)]
 pub fn wasmi_profiling(input: TokenStream) -> TokenStream {
