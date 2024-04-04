@@ -1,6 +1,6 @@
 use specs::{host_function::HostPlugin, step::StepInfo, types::ValueType};
 
-use super::{etable::ETable, Tracer};
+use super::Tracer;
 use crate::{
     func::FuncRef,
     isa::{DropKeep, Instruction, Keep},

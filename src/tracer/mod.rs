@@ -4,12 +4,12 @@ use regex::Regex;
 use specs::{
     brtable::{ElemEntry, ElemTable},
     configure_table::ConfigureTable,
-    etable::EventTable,
     host_function::HostFunctionDesc,
     itable::InstructionTableInternal,
     jtable::{JumpTable, StaticFrameEntry},
     mtable::VarType,
     types::FunctionType,
+    TraceBackend,
 };
 
 use crate::{
@@ -40,11 +40,10 @@ pub struct Observer {
     pub is_in_phantom: bool,
 }
 
-#[derive(Debug)]
 pub struct Tracer {
     pub itable: InstructionTableInternal,
     pub imtable: IMTable,
-    pub etable: EventTable,
+    pub etable: ETable,
     pub jtable: JumpTable,
     pub elem_table: ElemTable,
     pub configure_table: ConfigureTable,
@@ -71,11 +70,13 @@ impl Tracer {
         host_plugin_lookup: HashMap<usize, HostFunctionDesc>,
         phantom_functions: &Vec<String>,
         dry_run: bool,
+        backend: TraceBackend,
+        capacity: u32,
     ) -> Self {
         Tracer {
             itable: InstructionTableInternal::default(),
             imtable: IMTable::default(),
-            etable: EventTable::default(),
+            etable: ETable::new(capacity, backend),
             last_jump_eid: vec![],
             jtable: JumpTable::default(),
             elem_table: ElemTable::default(),
@@ -100,7 +101,7 @@ impl Tracer {
     }
 
     pub fn push_frame(&mut self) {
-        self.last_jump_eid.push(self.etable.get_latest_eid());
+        self.last_jump_eid.push(self.etable.eid);
     }
 
     pub fn pop_frame(&mut self) {
@@ -109,10 +110,6 @@ impl Tracer {
 
     pub fn last_jump_eid(&self) -> u32 {
         *self.last_jump_eid.last().unwrap()
-    }
-
-    pub fn eid(&self) -> u32 {
-        self.etable.get_latest_eid()
     }
 
     fn lookup_host_plugin(&self, function_index: usize) -> HostFunctionDesc {

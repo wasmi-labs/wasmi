@@ -8,10 +8,7 @@ use crate::{
     memory_units::Pages,
     module::ModuleRef,
     nan_preserving_float::{F32, F64},
-    tracer::{
-        etable::{ETable, RunInstructionTracePre},
-        Tracer,
-    },
+    tracer::{etable::RunInstructionTracePre, Tracer},
     value::{
         ArithmeticOps,
         ExtendInto,
@@ -380,13 +377,13 @@ impl Interpreter {
                                 let mut tracer = tracer.borrow_mut();
                                 let callee_fid = tracer.lookup_function(&nested_func);
 
-                                let eid = tracer.eid();
+                                let frame_id = tracer.etable.eid;
                                 let last_jump_eid = tracer.last_jump_eid();
                                 let fid = tracer.lookup_function(&function_context.function);
                                 let iid = function_context.position;
 
                                 tracer.jtable.push(JumpTableEntry {
-                                    eid,
+                                    eid: frame_id,
                                     last_jump_eid,
                                     callee_fid,
                                     fid,
@@ -450,7 +447,7 @@ impl Interpreter {
                                 if let Some(tracer) = self.get_tracer_if_active() {
                                     let mut tracer = (*tracer).borrow_mut();
 
-                                    let entry = tracer.etable.get_last_entry_mut().unwrap();
+                                    let entry = tracer.etable.entries_mut().last_mut().unwrap();
 
                                     match &entry.step_info {
                                         StepInfo::CallHost {
