@@ -1,10 +1,10 @@
 use super::{Const16, Const32};
 use crate::{
+    core::{UntypedValue, ValueType},
     engine::{Instr, TranslationError},
     Error,
 };
 use num_derive::FromPrimitive;
-use wasmi_core::UntypedValue;
 
 #[cfg(doc)]
 use super::Instruction;
@@ -871,6 +871,52 @@ pub enum BranchComparator {
     F64Le = 35,
     F64Gt = 36,
     F64Ge = 37,
+}
+
+impl BranchComparator {
+    /// Returns the [`ValueType`] of the compared values.
+    pub fn value_type(self) -> ValueType {
+        match self {
+            BranchComparator::I32Eq
+            | BranchComparator::I32Ne
+            | BranchComparator::I32LtS
+            | BranchComparator::I32LtU
+            | BranchComparator::I32LeS
+            | BranchComparator::I32LeU
+            | BranchComparator::I32GtS
+            | BranchComparator::I32GtU
+            | BranchComparator::I32GeS
+            | BranchComparator::I32GeU
+            | BranchComparator::I32And
+            | BranchComparator::I32Or
+            | BranchComparator::I32Xor
+            | BranchComparator::I32AndEqz
+            | BranchComparator::I32OrEqz
+            | BranchComparator::I32XorEqz => ValueType::I32,
+            BranchComparator::I64Eq
+            | BranchComparator::I64Ne
+            | BranchComparator::I64LtS
+            | BranchComparator::I64LtU
+            | BranchComparator::I64LeS
+            | BranchComparator::I64LeU
+            | BranchComparator::I64GtS
+            | BranchComparator::I64GtU
+            | BranchComparator::I64GeS
+            | BranchComparator::I64GeU => ValueType::I64,
+            BranchComparator::F32Eq
+            | BranchComparator::F32Ne
+            | BranchComparator::F32Lt
+            | BranchComparator::F32Le
+            | BranchComparator::F32Gt
+            | BranchComparator::F32Ge => ValueType::F32,
+            BranchComparator::F64Eq
+            | BranchComparator::F64Ne
+            | BranchComparator::F64Lt
+            | BranchComparator::F64Le
+            | BranchComparator::F64Gt
+            | BranchComparator::F64Ge => ValueType::F64,
+        }
+    }
 }
 
 /// Encodes the conditional branch comparator and 32-bit offset of the [`Instruction::BranchCmpFallback`].
