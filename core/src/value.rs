@@ -76,6 +76,16 @@ pub enum Value {
     F64(F64),
 }
 
+impl Into<u64> for Value {
+    fn into(self) -> u64 {
+        match self {
+            Value::I32(val) => val as u32 as u64,
+            Value::I64(val) => val as u64,
+            _ => unreachable!(),
+        }
+    }
+}
+
 /// Trait for creating value from a [`Value`].
 ///
 /// Typically each implementation can create a value from the specific type.

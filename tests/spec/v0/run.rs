@@ -283,7 +283,7 @@ fn try_load_module(wasm: &[u8]) -> Result<Module, Error> {
 
 fn try_load(wasm: &[u8], spec_driver: &mut SpecDriver) -> Result<(), Error> {
     let module = try_load_module(wasm)?;
-    let instance = ModuleInstance::new(&module, &ImportsBuilder::default(), None)?;
+    let instance = ModuleInstance::new(&module, &ImportsBuilder::default())?;
     instance
         .run_start(spec_driver.spec_module())
         .map_err(Error::Start)?;
@@ -296,7 +296,7 @@ fn load_module(
     spec_driver: &mut SpecDriver,
 ) -> Result<ModuleRef, Error> {
     let module = try_load_module(wasm)?;
-    let instance = ModuleInstance::new(&module, spec_driver, None)
+    let instance = ModuleInstance::new(&module, spec_driver)
         .map_err(|e| Error::Load(e.to_string()))?
         .run_start(spec_driver.spec_module())
         .map_err(Error::Start)?;

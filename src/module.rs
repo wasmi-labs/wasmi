@@ -5,10 +5,10 @@ use crate::{
     imports::ImportResolver,
     memory::MemoryRef,
     memory_units::Pages,
+    monitor::Monitor,
     nan_preserving_float::{F32, F64},
     runner::StackRecycler,
     table::TableRef,
-    tracer::Tracer,
     types::{GlobalDescriptor, MemoryDescriptor, TableDescriptor},
     Error,
     MemoryInstance,
@@ -30,7 +30,7 @@ use core::{
     fmt,
 };
 use parity_wasm::elements::{External, InitExpr, Instruction, Internal, ResizableLimits, Type};
-use specs::configure_table::ConfigureTable;
+use std::collections::HashMap;
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 
 /// Reference to a [`ModuleInstance`].
@@ -173,6 +173,8 @@ pub struct ModuleInstance {
     memories: RefCell<Vec<MemoryRef>>,
     globals: RefCell<Vec<GlobalRef>>,
     pub exports: RefCell<BTreeMap<String, ExternVal>>,
+
+    funcs_index: RefCell<HashMap<FuncRef, u32>>,
 }
 
 impl ModuleInstance {
@@ -184,23 +186,29 @@ impl ModuleInstance {
             memories: RefCell::new(Vec::new()),
             globals: RefCell::new(Vec::new()),
             exports: RefCell::new(BTreeMap::new()),
+
+            funcs_index: RefCell::new(HashMap::new()),
         }
     }
 
-    pub(crate) fn memory_by_index(&self, idx: u32) -> Option<MemoryRef> {
+    pub fn memory_by_index(&self, idx: u32) -> Option<MemoryRef> {
         self.memories.borrow_mut().get(idx as usize).cloned()
     }
 
-    pub(crate) fn table_by_index(&self, idx: u32) -> Option<TableRef> {
+    pub fn table_by_index(&self, idx: u32) -> Option<TableRef> {
         self.tables.borrow_mut().get(idx as usize).cloned()
     }
 
-    pub(crate) fn global_by_index(&self, idx: u32) -> Option<GlobalRef> {
+    pub fn global_by_index(&self, idx: u32) -> Option<GlobalRef> {
         self.globals.borrow_mut().get(idx as usize).cloned()
     }
 
-    pub(crate) fn func_by_index(&self, idx: u32) -> Option<FuncRef> {
+    pub fn func_by_index(&self, idx: u32) -> Option<FuncRef> {
         self.funcs.borrow().get(idx as usize).cloned()
+    }
+
+    pub fn func_index_by_func_ref(&self, func: &FuncRef) -> u32 {
+        *self.funcs_index.borrow().get(func).unwrap()
     }
 
     pub(crate) fn signature_by_index(&self, idx: u32) -> Option<Rc<Signature>> {
@@ -212,6 +220,9 @@ impl ModuleInstance {
     }
 
     fn push_func(&self, func: FuncRef) {
+        let index = self.funcs().borrow().len() as u32;
+
+        self.funcs_index.borrow_mut().insert(func.clone(), index);
         self.funcs.borrow_mut().push(func);
     }
 
@@ -244,7 +255,7 @@ impl ModuleInstance {
     fn alloc_module<'i, I: Iterator<Item = &'i ExternVal>>(
         loaded_module: &Module,
         extern_vals: I,
-        tracer: Option<Rc<RefCell<Tracer>>>,
+        //tracer: Option<Rc<RefCell<Tracer>>>,
     ) -> Result<ModuleRef, Error> {
         let module = loaded_module.module();
 
@@ -291,11 +302,6 @@ impl ModuleInstance {
 							)));
                         }
 
-                        if import.field() == "wasm_input" {
-                            if let Some(tracer) = tracer.as_ref() {
-                                tracer.borrow_mut().wasm_input_func_ref = Some(func.clone());
-                            }
-                        }
                         instance.push_func(func.clone())
                     }
                     (&External::Table(ref tt), &ExternVal::Table(ref table)) => {
@@ -356,12 +362,6 @@ impl ModuleInstance {
                     instance.funcs().borrow().len(),
                 );
 
-                if let Some(tracer) = tracer.as_ref() {
-                    tracer
-                        .borrow_mut()
-                        .push_type_of_func_ref(func_instance.clone(), ty.type_ref())
-                }
-
                 instance.push_func(func_instance);
             }
         }
@@ -383,15 +383,6 @@ impl ModuleInstance {
             let memory = MemoryInstance::alloc(initial, maximum)
                 .expect("Due to validation `initial` and `maximum` should be valid");
             instance.push_memory(memory);
-
-            if let Some(tracer) = tracer.clone() {
-                let mut tracer = tracer.borrow_mut();
-
-                tracer.configure_table = ConfigureTable {
-                    init_memory_pages: memory_type.limits().initial(),
-                    maximal_memory_pages: memory_type.limits().maximum().unwrap_or(65536),
-                };
-            }
         }
 
         for global_entry in module
@@ -439,20 +430,6 @@ impl ModuleInstance {
             instance.insert_export(field, extern_val);
         }
 
-        if let Some(tracer) = tracer {
-            if let Some(name_section) = module.names_section() {
-                let mut tracer = tracer.borrow_mut();
-
-                name_section.functions().map(|function_names| {
-                    for (function_index, name) in function_names.names().iter() {
-                        tracer
-                            .function_lookup_name
-                            .insert(function_index, name.to_string());
-                    }
-                });
-            }
-        }
-
         Ok(instance)
     }
 
@@ -465,15 +442,10 @@ impl ModuleInstance {
     pub fn with_externvals<'a, 'i, I: Iterator<Item = &'i ExternVal>>(
         loaded_module: &'a Module,
         extern_vals: I,
-        tracer: Option<Rc<RefCell<Tracer>>>,
     ) -> Result<NotStartedModuleRef<'a>, Error> {
         let module = loaded_module.module();
 
-        let module_ref = ModuleInstance::alloc_module(loaded_module, extern_vals, tracer.clone())?;
-
-        if let Some(tracer) = tracer.clone() {
-            tracer.borrow_mut().register_module_instance(&module_ref);
-        }
+        let module_ref = ModuleInstance::alloc_module(loaded_module, extern_vals)?;
 
         for element_segment in module
             .elements_section()
@@ -508,20 +480,6 @@ impl ModuleInstance {
                     .func_by_index(*func_idx)
                     .expect("Due to validation funcs from element segments should exists");
 
-                if let Some(tracer) = tracer.clone() {
-                    if !tracer.borrow().dry_run() {
-                        let func_idx = tracer.borrow().lookup_function(&func);
-                        let type_idx = tracer.borrow().lookup_type_of_func_ref(&func);
-
-                        tracer.borrow_mut().push_elem(
-                            DEFAULT_TABLE_INDEX,
-                            offset_val + j as u32,
-                            func_idx as u32,
-                            type_idx as u32,
-                        );
-                    }
-                }
-
                 table_inst.set(offset_val + j as u32, Some(func))?;
             }
         }
@@ -540,20 +498,6 @@ impl ModuleInstance {
                 .memory_by_index(DEFAULT_MEMORY_INDEX)
                 .expect("Due to validation default memory should exists");
             memory_inst.set(offset_val, data_segment.value())?;
-        }
-
-        if let Some(tracer) = tracer {
-            let mut tracer = tracer.borrow_mut();
-
-            if !tracer.dry_run() {
-                for (globalidx, globalref) in module_ref.globals().iter().enumerate() {
-                    tracer.push_global(globalidx as u32, globalref);
-                }
-
-                if let Some(memory_ref) = module_ref.memory_by_index(DEFAULT_MEMORY_INDEX) {
-                    tracer.push_init_memory(memory_ref)
-                }
-            }
         }
 
         Ok(NotStartedModuleRef {
@@ -625,7 +569,6 @@ impl ModuleInstance {
     pub fn new<'m, I: ImportResolver>(
         loaded_module: &'m Module,
         imports: &I,
-        tracer: Option<Rc<RefCell<Tracer>>>,
     ) -> Result<NotStartedModuleRef<'m>, Error> {
         let module = loaded_module.module();
 
@@ -665,7 +608,7 @@ impl ModuleInstance {
             extern_vals.push(extern_val);
         }
 
-        let module_ref = Self::with_externvals(loaded_module, extern_vals.iter(), tracer.clone());
+        let module_ref = Self::with_externvals(loaded_module, extern_vals.iter());
 
         module_ref
     }
@@ -733,17 +676,15 @@ impl ModuleInstance {
         func_name: &str,
         args: &[RuntimeValue],
         externals: &mut E,
-        tracer: Rc<RefCell<Tracer>>,
+        monitor: &mut dyn Monitor,
     ) -> Result<Option<RuntimeValue>, Error> {
-        let func_instance = self.func_by_name(func_name)?;
-
         {
-            let mut tracer = tracer.borrow_mut();
-
-            tracer.last_jump_eid.push(0);
+            monitor.invoke_exported_function_pre_hook();
         }
 
-        FuncInstance::invoke_trace(&func_instance, args, externals, tracer).map_err(Error::Trap)
+        let func_instance = self.func_by_name(func_name)?;
+
+        FuncInstance::invoke_trace(&func_instance, args, externals, monitor).map_err(Error::Trap)
     }
 
     /// Invoke exported function by a name using recycled stacks.
@@ -807,8 +748,8 @@ impl ModuleInstance {
 /// [`assert_no_start`]: #method.assert_no_start
 /// [`not_started_instance`]: #method.not_started_instance
 pub struct NotStartedModuleRef<'a> {
-    loaded_module: &'a Module,
-    instance: ModuleRef,
+    pub loaded_module: &'a Module,
+    pub instance: ModuleRef,
 }
 
 impl<'a> NotStartedModuleRef<'a> {
@@ -849,10 +790,10 @@ impl<'a> NotStartedModuleRef<'a> {
     pub fn run_start_tracer<E: Externals>(
         self,
         state: &mut E,
-        tracer: Rc<RefCell<Tracer>>,
+        monitor: &mut dyn Monitor,
     ) -> Result<ModuleRef, Trap> {
         {
-            tracer.borrow_mut().last_jump_eid.push(0);
+            monitor.invoke_exported_function_pre_hook();
         }
 
         if let Some(start_fn_idx) = self.loaded_module.module().start_section() {
@@ -860,7 +801,7 @@ impl<'a> NotStartedModuleRef<'a> {
                 .instance
                 .func_by_index(start_fn_idx)
                 .expect("Due to validation start function should exists");
-            FuncInstance::invoke_trace(&start_func, &[], state, tracer)?;
+            FuncInstance::invoke_trace(&start_func, &[], state, monitor)?;
         }
         Ok(self.instance)
     }
@@ -904,15 +845,9 @@ impl<'a> NotStartedModuleRef<'a> {
     pub fn has_start(&self) -> bool {
         self.loaded_module.module().start_section().is_some()
     }
-
-    pub fn lookup_function_by_name(&self, tracer: Rc<RefCell<Tracer>>, func_name: &str) -> u32 {
-        let func_ref = self.instance.func_by_name(func_name).unwrap();
-
-        tracer.borrow().lookup_function(&func_ref)
-    }
 }
 
-fn eval_init_expr(init_expr: &InitExpr, module: &ModuleInstance) -> RuntimeValue {
+pub fn eval_init_expr(init_expr: &InitExpr, module: &ModuleInstance) -> RuntimeValue {
     let code = init_expr.code();
     debug_assert!(
         code.len() == 2,
@@ -991,8 +926,7 @@ mod tests {
 				(start $f))
 			"#,
         );
-        let module =
-            ModuleInstance::new(&module_with_start, &ImportsBuilder::default(), None).unwrap();
+        let module = ModuleInstance::new(&module_with_start, &ImportsBuilder::default()).unwrap();
         assert!(!module.has_start());
         module.assert_no_start();
     }
@@ -1014,7 +948,6 @@ mod tests {
                 0
             ),)]
             .iter(),
-            None,
         )
         .is_ok());
 
@@ -1025,15 +958,12 @@ mod tests {
                 ExternVal::Func(FuncInstance::alloc_host(Signature::new(&[][..], None), 0)),
                 ExternVal::Func(FuncInstance::alloc_host(Signature::new(&[][..], None), 1)),
             ]
-            .iter(),
-            None,
+            .iter()
         )
         .is_err());
 
         // externval vector is shorter than import count.
-        assert!(
-            ModuleInstance::with_externvals(&module_with_single_import, [].iter(), None).is_err()
-        );
+        assert!(ModuleInstance::with_externvals(&module_with_single_import, [].iter(),).is_err());
 
         // externval vector has an unexpected type.
         assert!(ModuleInstance::with_externvals(
@@ -1043,7 +973,6 @@ mod tests {
                 0
             ),)]
             .iter(),
-            None,
         )
         .is_err());
     }

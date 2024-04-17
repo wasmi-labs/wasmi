@@ -258,18 +258,19 @@ impl From<validation::Error> for Error {
     }
 }
 
-mod func;
+pub mod func;
 mod global;
 mod host;
 mod imports;
-mod isa;
 mod memory;
-mod module;
+pub mod module;
 mod prepare;
-mod runner;
+pub mod runner;
 mod table;
 mod types;
 
+pub mod isa;
+pub mod monitor;
 /// Tracer lib for zkWasm
 pub mod tracer;
 

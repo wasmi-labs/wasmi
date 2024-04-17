@@ -1,9 +1,9 @@
 use crate::{
     host::Externals,
-    isa::{self},
+    isa,
     module::ModuleInstance,
+    monitor::Monitor,
     runner::{check_function_args, Interpreter, InterpreterState, StackRecycler},
-    tracer::Tracer,
     RuntimeValue,
     Signature,
     Trap,
@@ -14,7 +14,7 @@ use alloc::{
     rc::{Rc, Weak},
     vec::Vec,
 };
-use core::{cell::RefCell, fmt, hash::Hash};
+use core::{fmt, hash::Hash};
 use parity_wasm::elements::Local;
 
 /// Reference to a function (See [`FuncInstance`] for details).
@@ -50,7 +50,7 @@ impl ::core::ops::Deref for FuncRef {
 pub struct FuncInstance(FuncInstanceInternal);
 
 #[derive(Clone)]
-pub(crate) enum FuncInstanceInternal {
+pub enum FuncInstanceInternal {
     Internal {
         signature: Rc<Signature>,
         module: Weak<ModuleInstance>,
@@ -155,7 +155,7 @@ impl FuncInstance {
         }
     }
 
-    pub(crate) fn as_internal(&self) -> &FuncInstanceInternal {
+    pub fn as_internal(&self) -> &FuncInstanceInternal {
         &self.0
     }
 
@@ -174,7 +174,7 @@ impl FuncInstance {
         FuncRef(Rc::new(FuncInstance(func)))
     }
 
-    pub(crate) fn body(&self) -> Option<Rc<FuncBody>> {
+    pub fn body(&self) -> Option<Rc<FuncBody>> {
         match *self.as_internal() {
             FuncInstanceInternal::Internal { ref body, .. } => Some(Rc::clone(body)),
             FuncInstanceInternal::Host { .. } => None,
@@ -212,13 +212,13 @@ impl FuncInstance {
         func: &FuncRef,
         args: &[RuntimeValue],
         externals: &mut E,
-        tracer: Rc<RefCell<Tracer>>,
+        monitor: &mut dyn Monitor,
     ) -> Result<Option<RuntimeValue>, Trap> {
         check_function_args(func.signature(), args)?;
         match *func.as_internal() {
             FuncInstanceInternal::Internal { .. } => {
                 let mut interpreter = Interpreter::new(func, args, None)?;
-                interpreter.tracer = Some(tracer);
+                interpreter.monitor = Some(monitor);
                 interpreter.start_execution(externals)
             }
             FuncInstanceInternal::Host { .. } => unreachable!(),
@@ -267,10 +267,10 @@ impl FuncInstance {
     /// [`Trap`]: #enum.Trap.html
     /// [`start_execution`]: struct.FuncInvocation.html#method.start_execution
     /// [`resume_execution`]: struct.FuncInvocation.html#method.resume_execution
-    pub fn invoke_resumable<'args>(
+    pub fn invoke_resumable<'a, 'args>(
         func: &FuncRef,
         args: impl Into<Cow<'args, [RuntimeValue]>>,
-    ) -> Result<FuncInvocation<'args>, Trap> {
+    ) -> Result<FuncInvocation<'a, 'args>, Trap> {
         let args = args.into();
         check_function_args(func.signature(), &args)?;
         match *func.as_internal() {
@@ -325,12 +325,12 @@ impl From<Trap> for ResumableError {
 }
 
 /// A resumable invocation handle. This struct is returned by `FuncInstance::invoke_resumable`.
-pub struct FuncInvocation<'args> {
-    kind: FuncInvocationKind<'args>,
+pub struct FuncInvocation<'a, 'args> {
+    kind: FuncInvocationKind<'a, 'args>,
 }
 
-enum FuncInvocationKind<'args> {
-    Internal(Interpreter),
+enum FuncInvocationKind<'a, 'args> {
+    Internal(Interpreter<'a>),
     Host {
         args: Cow<'args, [RuntimeValue]>,
         host_func_index: usize,
@@ -338,7 +338,7 @@ enum FuncInvocationKind<'args> {
     },
 }
 
-impl<'args> FuncInvocation<'args> {
+impl<'a, 'args> FuncInvocation<'a, 'args> {
     /// Whether this invocation is currently resumable.
     pub fn is_resumable(&self) -> bool {
         match &self.kind {
