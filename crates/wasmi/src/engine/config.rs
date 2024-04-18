@@ -658,6 +658,13 @@ impl Config {
         self
     }
 
+    /// Returns the [`CompilationMode`] used for the [`Engine`].
+    ///
+    /// [`Engine`]: crate::Engine
+    pub(super) fn get_compilation_mode(&self) -> CompilationMode {
+        self.compilation_mode
+    }
+
     /// Sets the [`EngineLimits`] enforced by the [`Engine`] for Wasm module parsing and compilation.
     ///
     /// By default no limits are enforced.
@@ -666,13 +673,6 @@ impl Config {
     pub fn engine_limits(&mut self, limits: EngineLimits) -> &mut Self {
         self.limits = limits;
         self
-    }
-
-    /// Returns the [`CompilationMode`] used for the [`Engine`].
-    ///
-    /// [`Engine`]: crate::Engine
-    pub(super) fn get_compilation_mode(&self) -> CompilationMode {
-        self.compilation_mode
     }
 
     /// Returns the [`WasmFeatures`] represented by the [`Config`].
