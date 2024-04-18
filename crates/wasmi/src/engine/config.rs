@@ -90,7 +90,7 @@ impl Display for EngineLimitsError {
 /// [`Engine`]: crate::Engine
 #[derive(Debug, Default, Copy, Clone)]
 pub struct EngineLimits {
-    /// Number of global variables a single Wasm module can have.
+    /// Number of global variables a single Wasm module can have at most.
     ///
     /// # Note
     ///
@@ -109,7 +109,7 @@ pub struct EngineLimits {
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
     max_tables: Option<usize>,
-    /// Number of functions a single Wasm module can have.
+    /// Number of table element segments a single Wasm module can have at most.
     ///
     /// # Note
     ///
