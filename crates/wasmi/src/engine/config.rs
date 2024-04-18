@@ -678,7 +678,7 @@ impl Config {
     /// Returns the [`EngineLimits`] used for the [`Engine`].
     ///
     /// [`Engine`]: crate::Engine
-    pub(super) fn get_engine_limits(&self) -> &EngineLimits {
+    pub(crate) fn get_engine_limits(&self) -> &EngineLimits {
         &self.limits
     }
 
