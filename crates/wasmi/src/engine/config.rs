@@ -132,6 +132,17 @@ pub struct EngineLimits {
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
     max_element_segments: Option<usize>,
+    /// Limit of total items for all table segments a single Wasm module can have.
+    ///
+    /// # Note
+    ///
+    /// - This is checked in [`Module::new`] or [`Module::new_unchecked`].
+    /// - This is only relevant if the Wasm `reference-types` proposal is enabled.
+    /// - `None` means the limit is not enforced.
+    ///
+    /// [`Module::new`]: crate::Module::new
+    /// [`Module::new_unchecked`]: crate::Module::new_unchecked
+    max_element_items: Option<usize>,
     /// Number of linear memories a single Wasm module can have.
     ///
     /// # Note
@@ -155,6 +166,17 @@ pub struct EngineLimits {
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
     max_data_segments: Option<usize>,
+    /// Limit of total bytes for all linear memory data segments a single Wasm module can have.
+    ///
+    /// # Note
+    ///
+    /// - This is checked in [`Module::new`] or [`Module::new_unchecked`].
+    /// - This is only relevant if the Wasm `reference-types` proposal is enabled.
+    /// - `None` means the limit is not enforced.
+    ///
+    /// [`Module::new`]: crate::Module::new
+    /// [`Module::new_unchecked`]: crate::Module::new_unchecked
+    max_data_bytes: Option<usize>,
     /// Limits the number of parameter of all functions stored in the [`Engine`].
     ///
     /// # Note
@@ -241,8 +263,10 @@ impl EngineLimits {
             max_functions: Some(10_000),
             max_tables: Some(1000),
             max_element_segments: Some(1000),
+            max_element_items: Some(1000),
             max_memories: Some(1),
             max_data_segments: Some(1000),
+            max_data_bytes: Some(10_000),
             max_func_params: Some(32),
             max_func_results: Some(32),
             max_control_params: Some(32),
