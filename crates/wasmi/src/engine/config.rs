@@ -208,9 +208,9 @@ impl EngineLimits {
     /// compilation procedures.
     pub fn strict() -> Self {
         Self {
-            max_globals: None,
-            max_tables: None,
-            max_functions: None,
+            max_globals: Some(1000),
+            max_functions: Some(10_000),
+            max_tables: Some(1000),
             max_memories: Some(1),
             max_func_params: Some(32),
             max_func_results: Some(32),
@@ -221,9 +221,9 @@ impl EngineLimits {
                 // the average bytes per function body limit is enforced.
                 req_funcs_bytes: 1000,
                 // Compiled and optimized Wasm modules usually average out on 100-2500
-                // bytes per Wasm function. Thus 35 is way below this threshold and should
-                // not be exceeded for non-malicous Wasm modules.
-                min_avg_bytes_per_function: 35,
+                // bytes per Wasm function. Thus the chosen limit is way below this threshold
+                // and should not be exceeded for non-malicous Wasm modules.
+                min_avg_bytes_per_function: 40,
             }),
         }
     }
