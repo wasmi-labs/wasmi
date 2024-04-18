@@ -84,9 +84,9 @@ impl Display for EngineLimitsError {
 }
 
 /// Stores customizable limits for the [`Engine`] when parsing or compiling Wasm modules.
-/// 
+///
 /// By default no limits are enforced.
-/// 
+///
 /// [`Engine`]: crate::Engine
 #[derive(Debug, Default, Copy, Clone)]
 pub struct EngineLimits {
@@ -216,11 +216,11 @@ pub struct EngineLimits {
 #[derive(Debug, Copy, Clone)]
 pub struct AvgBytesPerFunctionLimit {
     /// The number of Wasm module bytes at which the limit is actually enforced.
-    /// 
+    ///
     /// This represents the total number of bytes of all Wasm function bodies in the Wasm module combined.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// - A `req_funcs_bytes` of 0 always enforces the `min_avg_bytes_per_function` limit.
     /// - The `req_funcs_bytes` field exists to filter out small Wasm modules
     ///   that cannot seriously be used to attack the Wasmi compilation.
@@ -231,7 +231,7 @@ pub struct AvgBytesPerFunctionLimit {
 
 impl EngineLimits {
     /// A strict set of limits that makes use of Wasmi implementation details.
-    /// 
+    ///
     /// This set of strict enforced rules can be used by Wasmi users in order
     /// to safeguard themselves against malicious actors trying to attack the Wasmi
     /// compilation procedures.
@@ -571,7 +571,7 @@ impl Config {
     }
 
     /// Sets the [`CompilationMode`] used for the [`Engine`].
-    /// 
+    ///
     /// By default [`CompilationMode::Eager`] is used.
     ///
     /// [`Engine`]: crate::Engine
@@ -581,7 +581,7 @@ impl Config {
     }
 
     /// Sets the [`EngineLimits`] enforced by the [`Engine`] for Wasm module parsing and compilation.
-    /// 
+    ///
     /// By default no limits are enforced.
     ///
     /// [`Engine`]: crate::Engine

@@ -1,4 +1,5 @@
 use super::errors::{
+    EngineLimitsError,
     FuelError,
     FuncError,
     GlobalError,
@@ -6,7 +7,6 @@ use super::errors::{
     LinkerError,
     MemoryError,
     TableError,
-    EngineLimitsError,
 };
 use crate::{
     core::{HostError, TrapCode},
