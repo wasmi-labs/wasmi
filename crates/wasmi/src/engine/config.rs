@@ -64,13 +64,9 @@ pub enum EngineLimitsError {
     /// When a Wasm module exceeds the active data segment bytes limit.
     TooManyDataSegmentBytes { limit: usize },
     /// When a Wasm module exceeds the function parameter limit.
-    TooManyFunctionParameters { limit: usize, func_index: u32 },
+    TooManyParameters { limit: usize },
     /// When a Wasm module exceeds the function results limit.
-    TooManyFunctionResults { limit: usize, func_index: u32 },
-    /// When a Wasm module exceeds the control structure parameters limit.
-    TooManyControlParameters { limit: usize, func_index: u32 },
-    /// When a Wasm module exceeds the control structure results limit.
-    TooManyControlResults { limit: usize, func_index: u32 },
+    TooManyResults { limit: usize },
     /// When a Wasm module exceeds the average bytes per function limit.
     MinAvgBytesPerFunction { limit: usize, avg: usize },
 }
@@ -110,23 +106,13 @@ impl Display for EngineLimitsError {
                 f,
                 "the Wasm module exceeds the limit of {limit} active data segment bytes in total",
             ),
-            Self::TooManyFunctionParameters { limit, func_index } => write!(
+            Self::TooManyParameters { limit } => write!(
                 f,
-                "the Wasm function (index={func_index}) exceeds the limit of {limit} parameters",
+                "a function type exceeds the limit of {limit} parameters",
             ),
-            Self::TooManyFunctionResults { limit, func_index } => write!(
+            Self::TooManyResults { limit } => write!(
                 f,
-                "the Wasm function (index={func_index}) exceeds the limit of {limit} results",
-            ),
-            Self::TooManyControlParameters { limit, func_index } => write!(
-                f,
-                "a control structure in the Wasm function (index={func_index}) \
-                exceeds the limit of {limit} parameters"
-            ),
-            Self::TooManyControlResults { limit, func_index } => write!(
-                f,
-                "a control structure in the Wasm function (index={func_index}) \
-                exceeds the limit of {limit} results"
+                "a function type exceeds the limit of {limit} results",
             ),
             Self::MinAvgBytesPerFunction { limit, avg } => write!(
                 f,
@@ -231,7 +217,7 @@ pub struct EngineLimits {
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
     max_data_bytes: Option<usize>,
-    /// Limits the number of parameter of all functions stored in the [`Engine`].
+    /// Limits the number of parameter of all functions and control structures.
     ///
     /// # Note
     ///
@@ -241,8 +227,8 @@ pub struct EngineLimits {
     /// [`Engine`]: crate::Engine
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    max_func_params: Option<usize>,
-    /// Limits the number of results of all functions stored in the [`Engine`].
+    max_params: Option<usize>,
+    /// Limits the number of results of all functions and control structures.
     ///
     /// # Note
     ///
@@ -253,27 +239,7 @@ pub struct EngineLimits {
     /// [`Engine`]: crate::Engine
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    max_func_results: Option<usize>,
-    /// Maximum number of parameters for control structures.
-    ///
-    /// # Note
-    ///
-    /// - This is only relevant if the Wasm `multi-value` proposal is enabled.
-    /// - This is checked upon compiling the Wasm function in the [`Engine`].
-    /// - `None` means the limit is not enforced.
-    ///
-    /// [`Engine`]: crate::Engine
-    max_control_params: Option<usize>,
-    /// Maximum number of results for control structures.
-    ///
-    /// # Note
-    ///
-    /// - This is only relevant if the Wasm `multi-value` proposal is enabled.
-    /// - This is checked upon compiling the Wasm function in the [`Engine`].
-    /// - `None` means the limit is not enforced.
-    ///
-    /// [`Engine`]: crate::Engine
-    max_control_results: Option<usize>,
+    max_results: Option<usize>,
     /// Minimum number of bytes a function must have on average.
     ///
     /// # Note
@@ -315,16 +281,14 @@ impl EngineLimits {
         Self {
             max_globals: Some(1000),
             max_functions: Some(10_000),
-            max_tables: Some(1000),
+            max_tables: Some(100),
             max_element_segments: Some(1000),
             max_element_items: Some(1000),
             max_memories: Some(1),
             max_data_segments: Some(1000),
             max_data_bytes: Some(10_000),
-            max_func_params: Some(32),
-            max_func_results: Some(32),
-            max_control_params: Some(32),
-            max_control_results: Some(32),
+            max_params: Some(32),
+            max_results: Some(32),
             min_avg_bytes_per_function: Some(AvgBytesPerFunctionLimit {
                 // If all function bodies combined use a total of at least 1000 bytes
                 // the average bytes per function body limit is enforced.
