@@ -78,15 +78,22 @@ pub enum EngineLimitsError {
 impl Display for EngineLimitsError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::TooManyGlobals => write!(f, "the Wasm module exceeds the limit for global variables"),
-            Self::TooManyTables => write!(f, "the Wasm module exceeds the limit for tables"),
-            Self::TooManyFunctions => write!(f, "the Wasm modules exceeds the limit for functions"),
-            Self::TooManyMemories => write!(f, "the Wasm module exceeds the limit for memories"),
-            Self::TooManyFunctionParameters { func_index } => write!(f, "the Wasm function (index={func_index}) exceeds the parameter limit"),
-            Self::TooManyFunctionResults { func_index } => write!(f, "the Wasm function (index={func_index}) exceeds the results limit"),
-            Self::TooManyControlParameters { func_index } => write!(f, "a control structure in the Wasm function (index={func_index}) exceeds the parameter limit"),
-            Self::TooManyControlResults { func_index } => write!(f, "a control structure in the Wasm function (index={func_index}) exceeds the results limit"),
-            Self::MinAvgBytesPerFunction { avg } => write!(f, "the Wasm module exceeds the average bytes per function: avg={avg}"),
+            Self::TooManyGlobals => write!(
+                f,
+                "the Wasm module exceeds the limit for global variables"
+            ),
+            Self::TooManyTables => write!(
+                f,
+                "the Wasm module exceeds the limit for tables"
+            ),
+            Self::TooManyFunctions => write!(
+                f,
+                "the Wasm modules exceeds the limit for functions"
+            ),
+            Self::TooManyMemories => write!(
+                f,
+                "the Wasm module exceeds the limit for memories"
+            ),
             Self::TooManyElementSegments => write!(
                 f,
                 "the Wasm module exceeds the limit for active element segments"
@@ -104,6 +111,26 @@ impl Display for EngineLimitsError {
                 f,
                 "the Wasm module exceeds the limit for the total number \
                 of bytes of all active data segments"
+            ),
+            Self::TooManyFunctionParameters { func_index } => write!(
+                f,
+                "the Wasm function (index={func_index}) exceeds the parameter limit"
+            ),
+            Self::TooManyFunctionResults { func_index } => write!(
+                f,
+                "the Wasm function (index={func_index}) exceeds the results limit"
+            ),
+            Self::TooManyControlParameters { func_index } => write!(
+                f,
+                "a control structure in the Wasm function (index={func_index}) exceeds the parameter limit"
+            ),
+            Self::TooManyControlResults { func_index } => write!(
+                f,
+                "a control structure in the Wasm function (index={func_index}) exceeds the results limit"
+            ),
+            Self::MinAvgBytesPerFunction { avg } => write!(
+                f,
+                "the Wasm module exceeds the average bytes per function: avg={avg}"
             ),
         }
     }
