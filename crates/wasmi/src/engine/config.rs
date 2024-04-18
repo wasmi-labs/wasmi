@@ -99,7 +99,16 @@ pub struct EngineLimits {
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
     max_globals: Option<usize>,
-    /// Number of tables a single Wasm module can have.
+    /// Number of functions a single Wasm module can have at most.
+    ///
+    /// # Note
+    ///
+    /// This is checked in [`Module::new`] or [`Module::new_unchecked`].
+    ///
+    /// [`Module::new`]: crate::Module::new
+    /// [`Module::new_unchecked`]: crate::Module::new_unchecked
+    max_functions: Option<usize>,
+    /// Number of tables a single Wasm module can have at most.
     ///
     /// # Note
     ///
@@ -113,11 +122,12 @@ pub struct EngineLimits {
     ///
     /// # Note
     ///
-    /// This is checked in [`Module::new`] or [`Module::new_unchecked`].
+    /// - This is checked in [`Module::new`] or [`Module::new_unchecked`].
+    /// - This is only relevant if the Wasm `reference-types` proposal is enabled.
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    max_functions: Option<usize>,
+    max_element_segments: Option<usize>,
     /// Number of linear memories a single Wasm module can have.
     ///
     /// # Note
@@ -129,6 +139,16 @@ pub struct EngineLimits {
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
     max_memories: Option<usize>,
+    /// Number of linear memory data segments a single Wasm module can have at most.
+    ///
+    /// # Note
+    ///
+    /// - This is checked in [`Module::new`] or [`Module::new_unchecked`].
+    /// - This is only relevant if the Wasm `reference-types` proposal is enabled.
+    ///
+    /// [`Module::new`]: crate::Module::new
+    /// [`Module::new_unchecked`]: crate::Module::new_unchecked
+    max_data_segments: Option<usize>,
     /// Limits the number of parameter of all functions stored in the [`Engine`].
     ///
     /// # Note
@@ -211,7 +231,9 @@ impl EngineLimits {
             max_globals: Some(1000),
             max_functions: Some(10_000),
             max_tables: Some(1000),
+            max_element_segments: Some(1000),
             max_memories: Some(1),
+            max_data_segments: Some(1000),
             max_func_params: Some(32),
             max_func_results: Some(32),
             max_control_params: Some(32),
