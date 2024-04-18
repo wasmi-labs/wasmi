@@ -139,7 +139,7 @@ pub struct EngineLimits {
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    max_globals: Option<usize>,
+    pub(crate) max_globals: Option<usize>,
     /// Number of functions a single Wasm module can have at most.
     ///
     /// # Note
@@ -149,7 +149,7 @@ pub struct EngineLimits {
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    max_functions: Option<usize>,
+    pub(crate) max_functions: Option<usize>,
     /// Number of tables a single Wasm module can have at most.
     ///
     /// # Note
@@ -160,7 +160,7 @@ pub struct EngineLimits {
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    max_tables: Option<usize>,
+    pub(crate) max_tables: Option<usize>,
     /// Number of table element segments a single Wasm module can have at most.
     ///
     /// # Note
@@ -171,7 +171,7 @@ pub struct EngineLimits {
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    max_element_segments: Option<usize>,
+    pub(crate) max_element_segments: Option<usize>,
     /// Limit of total items for all table segments a single Wasm module can have.
     ///
     /// # Note
@@ -182,7 +182,7 @@ pub struct EngineLimits {
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    max_element_items: Option<usize>,
+    pub(crate) max_element_items: Option<usize>,
     /// Number of linear memories a single Wasm module can have.
     ///
     /// # Note
@@ -194,7 +194,7 @@ pub struct EngineLimits {
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    max_memories: Option<usize>,
+    pub(crate) max_memories: Option<usize>,
     /// Number of linear memory data segments a single Wasm module can have at most.
     ///
     /// # Note
@@ -205,7 +205,7 @@ pub struct EngineLimits {
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    max_data_segments: Option<usize>,
+    pub(crate) max_data_segments: Option<usize>,
     /// Limit of total bytes for all linear memory data segments a single Wasm module can have.
     ///
     /// # Note
@@ -216,7 +216,7 @@ pub struct EngineLimits {
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    max_data_bytes: Option<usize>,
+    pub(crate) max_data_bytes: Option<usize>,
     /// Limits the number of parameter of all functions and control structures.
     ///
     /// # Note
@@ -227,7 +227,7 @@ pub struct EngineLimits {
     /// [`Engine`]: crate::Engine
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    max_params: Option<usize>,
+    pub(crate) max_params: Option<usize>,
     /// Limits the number of results of all functions and control structures.
     ///
     /// # Note
@@ -239,7 +239,7 @@ pub struct EngineLimits {
     /// [`Engine`]: crate::Engine
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    max_results: Option<usize>,
+    pub(crate) max_results: Option<usize>,
     /// Minimum number of bytes a function must have on average.
     ///
     /// # Note
@@ -251,7 +251,7 @@ pub struct EngineLimits {
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    min_avg_bytes_per_function: Option<AvgBytesPerFunctionLimit>,
+    pub(crate) min_avg_bytes_per_function: Option<AvgBytesPerFunctionLimit>,
 }
 
 /// The limit for average bytes per function limit and the threshold at which it is enforced.
