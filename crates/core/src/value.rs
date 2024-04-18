@@ -3,7 +3,6 @@ use crate::{
     nan_preserving_float::{F32, F64},
     TrapCode,
 };
-use core::{f32, i32, i64, u32, u64};
 
 /// Type of a value.
 ///
