@@ -264,6 +264,7 @@ impl_from! {
     impl From<ReadError> for Error::Read;
     impl From<FuelError> for Error::Fuel;
     impl From<FuncError> for Error::Func;
+    impl From<EngineLimitsError> for Error::Limits;
 }
 
 /// An error that can occur upon `memory.grow` or `table.grow`.
