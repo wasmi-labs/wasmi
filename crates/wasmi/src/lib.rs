@@ -117,6 +117,7 @@ pub mod errors {
         module::InstantiationError,
         store::FuelError,
         table::TableError,
+        engine::EngineLimitsError,
     };
 }
 
@@ -130,6 +131,7 @@ pub use self::{
         StackLimits,
         TypedResumableCall,
         TypedResumableInvocation,
+        EngineLimits,
     },
     error::Error,
     externref::ExternRef,

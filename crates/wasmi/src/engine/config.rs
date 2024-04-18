@@ -1,5 +1,6 @@
 use super::StackLimits;
 use core::{mem::size_of, num::NonZeroU64};
+use std::fmt::{self, Display};
 use wasmi_core::UntypedValue;
 use wasmparser::WasmFeatures;
 
@@ -39,6 +40,193 @@ pub struct Config {
     fuel_costs: FuelCosts,
     /// The mode of Wasm to Wasmi bytecode compilation.
     compilation_mode: CompilationMode,
+    /// Enforced limits for Wasm module parsing and compilation.
+    limits: EngineLimits,
+}
+
+/// An error that can occur upon parsing or compiling a Wasm module when [`EngineLimits`] are set.
+#[derive(Debug, Copy, Clone)]
+pub enum EngineLimitsError {
+    /// When a Wasm module exceeds the global variable limit.
+    TooManyGlobals,
+    /// When a Wasm module exceeds the table limit.
+    TooManyTables,
+    /// When a Wasm module exceeds the function limit.
+    TooManyFunctions,
+    /// When a Wasm module exceeds the linear memory limit.
+    TooManyMemories,
+    /// When a Wasm module exceeds the function parameter limit.
+    TooManyFunctionParameters { func_index: u32 },
+    /// When a Wasm module exceeds the function results limit.
+    TooManyFunctionResults { func_index: u32 },
+    /// When a Wasm module exceeds the control structure parameters limit.
+    TooManyControlParameters { func_index: u32 },
+    /// When a Wasm module exceeds the control structure results limit.
+    TooManyControlResults { func_index: u32 },
+    /// When a Wasm module exceeds the average bytes per function limit.
+    MinAvgBytesPerFunction { avg: u32 },
+}
+
+impl Display for EngineLimitsError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::TooManyGlobals => write!(f, "the Wasm module exceeds the limit for global variables"),
+            Self::TooManyTables => write!(f, "the Wasm module exceeds the limit for tables"),
+            Self::TooManyFunctions => write!(f, "the Wasm modules exceeds the limit for functions"),
+            Self::TooManyMemories => write!(f, "the Wasm module exceeds the limit for memories"),
+            Self::TooManyFunctionParameters { func_index } => write!(f, "the Wasm function (index={func_index}) exceeds the parameter limit"),
+            Self::TooManyFunctionResults { func_index } => write!(f, "the Wasm function (index={func_index}) exceeds the results limit"),
+            Self::TooManyControlParameters { func_index } => write!(f, "a control structure in the Wasm function (index={func_index}) exceeds the parameter limit"),
+            Self::TooManyControlResults { func_index } => write!(f, "a control structure in the Wasm function (index={func_index}) exceeds the results limit"),
+            Self::MinAvgBytesPerFunction { avg } => write!(f, "the Wasm module exceeds the average bytes per function: avg={avg}"),
+        }
+    }
+}
+
+/// Stores customizable limits for the [`Engine`] when parsing or compiling Wasm modules.
+/// 
+/// By default no limits are enforced.
+/// 
+/// [`Engine`]: crate::Engine
+#[derive(Debug, Default, Copy, Clone)]
+pub struct EngineLimits {
+    /// Number of global variables a single Wasm module can have.
+    ///
+    /// # Note
+    ///
+    /// This is checked in [`Module::new`] or [`Module::new_unchecked`].
+    ///
+    /// [`Module::new`]: crate::Module::new
+    /// [`Module::new_unchecked`]: crate::Module::new_unchecked
+    max_globals: Option<usize>,
+    /// Number of tables a single Wasm module can have.
+    ///
+    /// # Note
+    ///
+    /// - This is checked in [`Module::new`] or [`Module::new_unchecked`].
+    /// - This is only relevant if the Wasm `reference-types` proposal is enabled.
+    ///
+    /// [`Module::new`]: crate::Module::new
+    /// [`Module::new_unchecked`]: crate::Module::new_unchecked
+    max_tables: Option<usize>,
+    /// Number of functions a single Wasm module can have.
+    ///
+    /// # Note
+    ///
+    /// This is checked in [`Module::new`] or [`Module::new_unchecked`].
+    ///
+    /// [`Module::new`]: crate::Module::new
+    /// [`Module::new_unchecked`]: crate::Module::new_unchecked
+    max_functions: Option<usize>,
+    /// Number of linear memories a single Wasm module can have.
+    ///
+    /// # Note
+    ///
+    /// - This is checked in [`Module::new`] or [`Module::new_unchecked`].
+    /// - This is only relevant if the Wasm `multi-memories` proposal is enabled
+    ///   which is not supported in Wasmi at the time of writing this comment.
+    ///
+    /// [`Module::new`]: crate::Module::new
+    /// [`Module::new_unchecked`]: crate::Module::new_unchecked
+    max_memories: Option<usize>,
+    /// Limits the number of parameter of all functions stored in the [`Engine`].
+    ///
+    /// # Note
+    ///
+    /// This is checked in [`Module::new`] or [`Module::new_unchecked`].
+    ///
+    ///
+    /// [`Engine`]: crate::Engine
+    /// [`Module::new`]: crate::Module::new
+    /// [`Module::new_unchecked`]: crate::Module::new_unchecked
+    max_func_params: Option<usize>,
+    /// Limits the number of results of all functions stored in the [`Engine`].
+    ///
+    /// # Note
+    ///
+    /// - This is only relevant if the Wasm `multi-value` proposal is enabled.
+    /// - This is checked in [`Module::new`] or [`Module::new_unchecked`].
+    ///
+    ///
+    /// [`Engine`]: crate::Engine
+    /// [`Module::new`]: crate::Module::new
+    /// [`Module::new_unchecked`]: crate::Module::new_unchecked
+    max_func_results: Option<usize>,
+    /// Maximum number of parameters for control structures.
+    ///
+    /// # Note
+    ///
+    /// - This is only relevant if the Wasm `multi-value` proposal is enabled.
+    /// - This is checked upon compiling the Wasm function in the [`Engine`].
+    ///
+    /// [`Engine`]: crate::Engine
+    max_control_params: Option<usize>,
+    /// Maximum number of results for control structures.
+    ///
+    /// # Note
+    ///
+    /// - This is only relevant if the Wasm `multi-value` proposal is enabled.
+    /// - This is checked upon compiling the Wasm function in the [`Engine`].
+    ///
+    /// [`Engine`]: crate::Engine
+    max_control_results: Option<usize>,
+    /// Minimum number of bytes a function must have on average.
+    ///
+    /// # Note
+    ///
+    /// - This is checked in [`Module::new`] or [`Module::new_unchecked`].
+    /// - This limitation might seem arbitrary but is important to defend against
+    ///   malicious inputs targeting lazy compilation.
+    ///
+    /// [`Module::new`]: crate::Module::new
+    /// [`Module::new_unchecked`]: crate::Module::new_unchecked
+    min_avg_bytes_per_function: Option<AvgBytesPerFunctionLimit>,
+}
+
+/// The limit for average bytes per function limit and the threshold at which it is enforced.
+#[derive(Debug, Copy, Clone)]
+pub struct AvgBytesPerFunctionLimit {
+    /// The number of Wasm module bytes at which the limit is actually enforced.
+    /// 
+    /// This represents the total number of bytes of all Wasm function bodies in the Wasm module combined.
+    /// 
+    /// # Note
+    /// 
+    /// - A `req_funcs_bytes` of 0 always enforces the `min_avg_bytes_per_function` limit.
+    /// - The `req_funcs_bytes` field exists to filter out small Wasm modules
+    ///   that cannot seriously be used to attack the Wasmi compilation.
+    pub req_funcs_bytes: usize,
+    /// The minimum number of bytes a function must have on average.
+    pub min_avg_bytes_per_function: usize,
+}
+
+impl EngineLimits {
+    /// A strict set of limits that makes use of Wasmi implementation details.
+    /// 
+    /// This set of strict enforced rules can be used by Wasmi users in order
+    /// to safeguard themselves against malicious actors trying to attack the Wasmi
+    /// compilation procedures.
+    pub fn strict() -> Self {
+        Self {
+            max_globals: None,
+            max_tables: None,
+            max_functions: None,
+            max_memories: Some(1),
+            max_func_params: Some(32),
+            max_func_results: Some(32),
+            max_control_params: Some(32),
+            max_control_results: Some(32),
+            min_avg_bytes_per_function: Some(AvgBytesPerFunctionLimit {
+                // If all function bodies combined use a total of at least 1000 bytes
+                // the average bytes per function body limit is enforced.
+                req_funcs_bytes: 1000,
+                // Compiled and optimized Wasm modules usually average out on 100-2500
+                // bytes per Wasm function. Thus 35 is way below this threshold and should
+                // not be exceeded for non-malicous Wasm modules.
+                min_avg_bytes_per_function: 35,
+            }),
+        }
+    }
 }
 
 /// Type storing all kinds of fuel costs of instructions.
@@ -180,6 +368,7 @@ impl Default for Config {
             consume_fuel: false,
             fuel_costs: FuelCosts::default(),
             compilation_mode: CompilationMode::default(),
+            limits: EngineLimits::default(),
         }
     }
 }
@@ -357,6 +546,16 @@ impl Config {
     /// [`Engine`]: crate::Engine
     pub fn compilation_mode(&mut self, mode: CompilationMode) -> &mut Self {
         self.compilation_mode = mode;
+        self
+    }
+
+    /// Sets the [`EngineLimits`] enforced by the [`Engine`] for Wasm module parsing and compilation.
+    /// 
+    /// By default no limits are enforced.
+    ///
+    /// [`Engine`]: crate::Engine
+    pub fn engine_limits(&mut self, limits: EngineLimits) -> &mut Self {
+        self.limits = limits;
         self
     }
 

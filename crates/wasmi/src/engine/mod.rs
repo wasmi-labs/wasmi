@@ -36,7 +36,7 @@ pub(crate) use self::{
 };
 pub use self::{
     code_map::CompiledFunc,
-    config::{CompilationMode, Config},
+    config::{CompilationMode, Config, EngineLimitsError, EngineLimits},
     limits::StackLimits,
     resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
     traits::{CallParams, CallResults},

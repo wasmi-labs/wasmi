@@ -6,6 +6,7 @@ use super::errors::{
     LinkerError,
     MemoryError,
     TableError,
+    EngineLimitsError,
 };
 use crate::{
     core::{HostError, TrapCode},
@@ -167,6 +168,8 @@ pub enum ErrorKind {
     Wasm(WasmError),
     /// Encountered when there is a Wasm to Wasmi translation error.
     Translation(TranslationError),
+    /// Encountered when an enforced limit is exceeded.
+    Limits(EngineLimitsError),
 }
 
 impl ErrorKind {
@@ -231,6 +234,7 @@ impl Display for ErrorKind {
             Self::Read(error) => Display::fmt(error, f),
             Self::Wasm(error) => Display::fmt(error, f),
             Self::Translation(error) => Display::fmt(error, f),
+            Self::Limits(error) => Display::fmt(error, f),
         }
     }
 }
