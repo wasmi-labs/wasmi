@@ -94,7 +94,8 @@ pub struct EngineLimits {
     ///
     /// # Note
     ///
-    /// This is checked in [`Module::new`] or [`Module::new_unchecked`].
+    /// - This is checked in [`Module::new`] or [`Module::new_unchecked`].
+    /// - `None` means the limit is not enforced.
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
@@ -103,7 +104,8 @@ pub struct EngineLimits {
     ///
     /// # Note
     ///
-    /// This is checked in [`Module::new`] or [`Module::new_unchecked`].
+    /// - This is checked in [`Module::new`] or [`Module::new_unchecked`].
+    /// - `None` means the limit is not enforced.
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
@@ -114,6 +116,7 @@ pub struct EngineLimits {
     ///
     /// - This is checked in [`Module::new`] or [`Module::new_unchecked`].
     /// - This is only relevant if the Wasm `reference-types` proposal is enabled.
+    /// - `None` means the limit is not enforced.
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
@@ -124,6 +127,7 @@ pub struct EngineLimits {
     ///
     /// - This is checked in [`Module::new`] or [`Module::new_unchecked`].
     /// - This is only relevant if the Wasm `reference-types` proposal is enabled.
+    /// - `None` means the limit is not enforced.
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
@@ -135,6 +139,7 @@ pub struct EngineLimits {
     /// - This is checked in [`Module::new`] or [`Module::new_unchecked`].
     /// - This is only relevant if the Wasm `multi-memories` proposal is enabled
     ///   which is not supported in Wasmi at the time of writing this comment.
+    /// - `None` means the limit is not enforced.
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
@@ -145,6 +150,7 @@ pub struct EngineLimits {
     ///
     /// - This is checked in [`Module::new`] or [`Module::new_unchecked`].
     /// - This is only relevant if the Wasm `reference-types` proposal is enabled.
+    /// - `None` means the limit is not enforced.
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
@@ -153,8 +159,8 @@ pub struct EngineLimits {
     ///
     /// # Note
     ///
-    /// This is checked in [`Module::new`] or [`Module::new_unchecked`].
-    ///
+    /// - This is checked in [`Module::new`] or [`Module::new_unchecked`].
+    /// - `None` means the limit is not enforced.
     ///
     /// [`Engine`]: crate::Engine
     /// [`Module::new`]: crate::Module::new
@@ -166,7 +172,7 @@ pub struct EngineLimits {
     ///
     /// - This is only relevant if the Wasm `multi-value` proposal is enabled.
     /// - This is checked in [`Module::new`] or [`Module::new_unchecked`].
-    ///
+    /// - `None` means the limit is not enforced.
     ///
     /// [`Engine`]: crate::Engine
     /// [`Module::new`]: crate::Module::new
@@ -178,6 +184,7 @@ pub struct EngineLimits {
     ///
     /// - This is only relevant if the Wasm `multi-value` proposal is enabled.
     /// - This is checked upon compiling the Wasm function in the [`Engine`].
+    /// - `None` means the limit is not enforced.
     ///
     /// [`Engine`]: crate::Engine
     max_control_params: Option<usize>,
@@ -187,6 +194,7 @@ pub struct EngineLimits {
     ///
     /// - This is only relevant if the Wasm `multi-value` proposal is enabled.
     /// - This is checked upon compiling the Wasm function in the [`Engine`].
+    /// - `None` means the limit is not enforced.
     ///
     /// [`Engine`]: crate::Engine
     max_control_results: Option<usize>,
@@ -197,6 +205,7 @@ pub struct EngineLimits {
     /// - This is checked in [`Module::new`] or [`Module::new_unchecked`].
     /// - This limitation might seem arbitrary but is important to defend against
     ///   malicious inputs targeting lazy compilation.
+    /// - `None` means the limit is not enforced.
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
