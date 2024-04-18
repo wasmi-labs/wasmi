@@ -55,6 +55,14 @@ pub enum EngineLimitsError {
     TooManyFunctions,
     /// When a Wasm module exceeds the linear memory limit.
     TooManyMemories,
+    /// When a Wasm module exceeds the active element segment limit.
+    TooManyElementSegments,
+    /// When a Wasm module exceeds the active element segment items limit.
+    TooManyElementSegmentItems,
+    /// When a Wasm module exceeds the active data segment limit.
+    TooManyDataSegments,
+    /// When a Wasm module exceeds the active data segment bytes limit.
+    TooManyDataSegmentBytes,
     /// When a Wasm module exceeds the function parameter limit.
     TooManyFunctionParameters { func_index: u32 },
     /// When a Wasm module exceeds the function results limit.
@@ -79,6 +87,24 @@ impl Display for EngineLimitsError {
             Self::TooManyControlParameters { func_index } => write!(f, "a control structure in the Wasm function (index={func_index}) exceeds the parameter limit"),
             Self::TooManyControlResults { func_index } => write!(f, "a control structure in the Wasm function (index={func_index}) exceeds the results limit"),
             Self::MinAvgBytesPerFunction { avg } => write!(f, "the Wasm module exceeds the average bytes per function: avg={avg}"),
+            Self::TooManyElementSegments => write!(
+                f,
+                "the Wasm module exceeds the limit for active element segments"
+            ),
+            Self::TooManyElementSegmentItems => write!(
+                f,
+                "the Wasm module exceeds the limit for total number \
+                of items of all active element segments"
+            ),
+            Self::TooManyDataSegments => write!(
+                f,
+                "the Wasm module exceeds the limit for active data segments",
+            ),
+            Self::TooManyDataSegmentBytes => write!(
+                f,
+                "the Wasm module exceeds the limit for the total number \
+                of bytes of all active data segments"
+            ),
         }
     }
 }
