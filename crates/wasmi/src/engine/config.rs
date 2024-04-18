@@ -130,7 +130,7 @@ impl Display for EngineLimitsError {
             ),
             Self::MinAvgBytesPerFunction { limit, avg } => write!(
                 f,
-                "the Wasm module exceeds the average bytes per function limit of {limit}: \
+                "the Wasm module failed to meet the minumum average bytes per function of {limit}: \
                 avg={avg}"
             ),
         }
