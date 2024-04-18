@@ -675,6 +675,13 @@ impl Config {
         self
     }
 
+    /// Returns the [`EngineLimits`] used for the [`Engine`].
+    ///
+    /// [`Engine`]: crate::Engine
+    pub(super) fn get_engine_limits(&self) -> &EngineLimits {
+        &self.limits
+    }
+
     /// Returns the [`WasmFeatures`] represented by the [`Config`].
     pub(crate) fn wasm_features(&self) -> WasmFeatures {
         WasmFeatures {
