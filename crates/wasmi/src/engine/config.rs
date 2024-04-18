@@ -351,6 +351,8 @@ impl Config {
     }
 
     /// Sets the [`CompilationMode`] used for the [`Engine`].
+    /// 
+    /// By default [`CompilationMode::Eager`] is used.
     ///
     /// [`Engine`]: crate::Engine
     pub fn compilation_mode(&mut self, mode: CompilationMode) -> &mut Self {
