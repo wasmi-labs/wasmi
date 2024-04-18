@@ -11,7 +11,12 @@ readme.workspace = true
 license.workspace = true
 keywords.workspace = true
 categories.workspace = true
-exclude.workspace = true
+exclude = [
+    "benches/wat",
+    "benches/wasm",
+    "tests/spec/testsuite",
+    "**.wast",
+]
 
 [dependencies]
 wasmparser = { version = "0.100.1", package = "wasmparser-nostd", default-features = false }
