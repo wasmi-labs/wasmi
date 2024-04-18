@@ -11,7 +11,14 @@ use super::{
     ModuleHeader,
     Read,
 };
-use crate::{engine::CompiledFunc, Engine, Error, FuncType, MemoryType, TableType};
+use crate::{
+    engine::{CompiledFunc, EngineLimitsError},
+    Engine,
+    Error,
+    FuncType,
+    MemoryType,
+    TableType,
+};
 use core::ops::Range;
 use std::{boxed::Box, vec::Vec};
 use wasmparser::{
@@ -355,8 +362,20 @@ impl ModuleParser {
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
         self.validator.type_section(&section)?;
-        let func_types = section.into_iter().map(|result| match result? {
-            wasmparser::Type::Func(ty) => Ok(FuncType::from_wasmparser(ty)),
+        let limits = self.engine.config().get_engine_limits();
+        let func_types = section.into_iter().map(|result| {
+            let wasmparser::Type::Func(ty) = result?;
+            if let Some(limit) = limits.max_params {
+                if ty.params().len() > limit {
+                    return Err(Error::from(EngineLimitsError::TooManyParameters { limit }));
+                }
+            }
+            if let Some(limit) = limits.max_results {
+                if ty.results().len() > limit {
+                    return Err(Error::from(EngineLimitsError::TooManyResults { limit }));
+                }
+            }
+            Ok(FuncType::from_wasmparser(ty))
         });
         header.push_func_types(func_types)?;
         Ok(())
