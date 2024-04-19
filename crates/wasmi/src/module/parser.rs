@@ -433,6 +433,11 @@ impl ModuleParser {
         section: FunctionSectionReader,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
+        if let Some(limit) = self.engine.config().get_engine_limits().max_functions {
+            if section.count() > limit {
+                return Err(Error::from(EngineLimitsError::TooManyFunctions { limit }))
+            }
+        }
         self.validator.function_section(&section)?;
         let funcs = section
             .into_iter()
@@ -455,6 +460,11 @@ impl ModuleParser {
         section: TableSectionReader,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
+        if let Some(limit) = self.engine.config().get_engine_limits().max_tables {
+            if section.count() > limit {
+                return Err(Error::from(EngineLimitsError::TooManyTables { limit }))
+            }
+        }
         self.validator.table_section(&section)?;
         let tables = section
             .into_iter()
@@ -477,6 +487,11 @@ impl ModuleParser {
         section: MemorySectionReader,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
+        if let Some(limit) = self.engine.config().get_engine_limits().max_memories {
+            if section.count() > limit {
+                return Err(Error::from(EngineLimitsError::TooManyMemories { limit }))
+            }
+        }
         self.validator.memory_section(&section)?;
         let memories = section
             .into_iter()
@@ -509,6 +524,11 @@ impl ModuleParser {
         section: GlobalSectionReader,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
+        if let Some(limit) = self.engine.config().get_engine_limits().max_globals {
+            if section.count() > limit {
+                return Err(Error::from(EngineLimitsError::TooManyGlobals { limit }))
+            }
+        }
         self.validator.global_section(&section)?;
         let globals = section
             .into_iter()
@@ -576,6 +596,11 @@ impl ModuleParser {
         section: ElementSectionReader,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
+        if let Some(limit) = self.engine.config().get_engine_limits().max_element_segments {
+            if section.count() > limit {
+                return Err(Error::from(EngineLimitsError::TooManyElementSegments { limit }))
+            }
+        }
         self.validator.element_section(&section)?;
         let segments = section
             .into_iter()
@@ -591,6 +616,11 @@ impl ModuleParser {
     /// This is part of the bulk memory operations Wasm proposal and not yet supported
     /// by Wasmi.
     fn process_data_count(&mut self, count: u32, range: Range<usize>) -> Result<(), Error> {
+        if let Some(limit) = self.engine.config().get_engine_limits().max_data_segments {
+            if count > limit {
+                return Err(Error::from(EngineLimitsError::TooManyDataSegments { limit }))
+            }
+        }
         self.validator
             .data_count_section(count, &range)
             .map_err(Into::into)
@@ -610,6 +640,11 @@ impl ModuleParser {
         section: DataSectionReader,
         builder: &mut ModuleBuilder,
     ) -> Result<(), Error> {
+        if let Some(limit) = self.engine.config().get_engine_limits().max_data_segments {
+            if section.count() > limit {
+                return Err(Error::from(EngineLimitsError::TooManyDataSegments { limit }))
+            }
+        }
         self.validator.data_section(&section)?;
         let segments = section
             .into_iter()
@@ -630,6 +665,11 @@ impl ModuleParser {
     ///
     /// If the code start section fails to validate.
     fn process_code_start(&mut self, count: u32, range: Range<usize>) -> Result<(), Error> {
+        if let Some(limit) = self.engine.config().get_engine_limits().max_functions {
+            if count > limit {
+                return Err(Error::from(EngineLimitsError::TooManyFunctions { limit }))
+            }
+        }
         self.validator.code_section_start(count, &range)?;
         Ok(())
     }
