@@ -16,7 +16,7 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown, thumbv7em-none-eabi
@@ -45,7 +45,7 @@ jobs:
     name: Test (Address Sanitizer)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f
       - uses: dtolnay/rust-toolchain@nightly
       - name: Set up Cargo cache
         uses: actions/cache@v4
@@ -79,7 +79,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f
       - uses: dtolnay/rust-toolchain@stable
       - name: Set up Cargo cache
         uses: actions/cache@v4
@@ -108,7 +108,7 @@ jobs:
     name: Formatting
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt
@@ -121,7 +121,7 @@ jobs:
     name: Documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rust-docs, rust-src
@@ -146,7 +146,7 @@ jobs:
     name: Audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f
       - uses: dtolnay/rust-toolchain@stable
       - name: Install cargo-audit
         run: |
@@ -160,7 +160,7 @@ jobs:
     name: uDeps
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f
       - uses: dtolnay/rust-toolchain@nightly
       - name: Set up Cargo cache
         uses: actions/cache@v4
@@ -188,7 +188,7 @@ jobs:
     name: Fuzz (Translation)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f
       - uses: dtolnay/rust-toolchain@nightly
       - name: Set up Cargo cache
         uses: actions/cache@v4
@@ -221,7 +221,7 @@ jobs:
     name: Fuzz (Execution)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f
       - uses: dtolnay/rust-toolchain@nightly
       - name: Set up Cargo cache
         uses: actions/cache@v4
@@ -251,7 +251,7 @@ jobs:
     name: Fuzz (Differential)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f
       - uses: dtolnay/rust-toolchain@nightly
       - name: Set up Cargo cache
         uses: actions/cache@v4
@@ -281,7 +281,7 @@ jobs:
     name: Miri
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: miri
@@ -319,7 +319,7 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: clippy
@@ -353,7 +353,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+        uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f
         with:
           fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
