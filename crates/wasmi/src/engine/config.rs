@@ -48,19 +48,19 @@ pub struct Config {
 #[derive(Debug, Copy, Clone)]
 pub enum EngineLimitsError {
     /// When a Wasm module exceeds the global variable limit.
-    TooManyGlobals { limit: usize },
+    TooManyGlobals { limit: u32 },
     /// When a Wasm module exceeds the table limit.
-    TooManyTables { limit: usize },
+    TooManyTables { limit: u32 },
     /// When a Wasm module exceeds the function limit.
-    TooManyFunctions { limit: usize },
+    TooManyFunctions { limit: u32 },
     /// When a Wasm module exceeds the linear memory limit.
-    TooManyMemories { limit: usize },
+    TooManyMemories { limit: u32 },
     /// When a Wasm module exceeds the active element segment limit.
-    TooManyElementSegments { limit: usize },
+    TooManyElementSegments { limit: u32 },
     /// When a Wasm module exceeds the active element segment items limit.
     TooManyElementSegmentItems { limit: usize },
     /// When a Wasm module exceeds the active data segment limit.
-    TooManyDataSegments { limit: usize },
+    TooManyDataSegments { limit: u32 },
     /// When a Wasm module exceeds the active data segment bytes limit.
     TooManyDataSegmentBytes { limit: usize },
     /// When a Wasm module exceeds the function parameter limit.
@@ -139,7 +139,7 @@ pub struct EngineLimits {
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    pub(crate) max_globals: Option<usize>,
+    pub(crate) max_globals: Option<u32>,
     /// Number of functions a single Wasm module can have at most.
     ///
     /// # Note
@@ -149,7 +149,7 @@ pub struct EngineLimits {
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    pub(crate) max_functions: Option<usize>,
+    pub(crate) max_functions: Option<u32>,
     /// Number of tables a single Wasm module can have at most.
     ///
     /// # Note
@@ -160,7 +160,7 @@ pub struct EngineLimits {
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    pub(crate) max_tables: Option<usize>,
+    pub(crate) max_tables: Option<u32>,
     /// Number of table element segments a single Wasm module can have at most.
     ///
     /// # Note
@@ -171,7 +171,7 @@ pub struct EngineLimits {
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    pub(crate) max_element_segments: Option<usize>,
+    pub(crate) max_element_segments: Option<u32>,
     /// Limit of total items for all table segments a single Wasm module can have.
     ///
     /// # Note
@@ -182,7 +182,7 @@ pub struct EngineLimits {
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    pub(crate) max_element_items: Option<usize>,
+    pub(crate) max_element_items: Option<u32>,
     /// Number of linear memories a single Wasm module can have.
     ///
     /// # Note
@@ -194,7 +194,7 @@ pub struct EngineLimits {
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    pub(crate) max_memories: Option<usize>,
+    pub(crate) max_memories: Option<u32>,
     /// Number of linear memory data segments a single Wasm module can have at most.
     ///
     /// # Note
@@ -205,7 +205,7 @@ pub struct EngineLimits {
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    pub(crate) max_data_segments: Option<usize>,
+    pub(crate) max_data_segments: Option<u32>,
     /// Limit of total bytes for all linear memory data segments a single Wasm module can have.
     ///
     /// # Note
@@ -216,7 +216,7 @@ pub struct EngineLimits {
     ///
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    pub(crate) max_data_bytes: Option<usize>,
+    pub(crate) max_data_bytes: Option<u32>,
     /// Limits the number of parameter of all functions and control structures.
     ///
     /// # Note
