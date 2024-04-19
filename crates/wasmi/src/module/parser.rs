@@ -435,7 +435,7 @@ impl ModuleParser {
     ) -> Result<(), Error> {
         if let Some(limit) = self.engine.config().get_engine_limits().max_functions {
             if section.count() > limit {
-                return Err(Error::from(EngineLimitsError::TooManyFunctions { limit }))
+                return Err(Error::from(EngineLimitsError::TooManyFunctions { limit }));
             }
         }
         self.validator.function_section(&section)?;
@@ -462,7 +462,7 @@ impl ModuleParser {
     ) -> Result<(), Error> {
         if let Some(limit) = self.engine.config().get_engine_limits().max_tables {
             if section.count() > limit {
-                return Err(Error::from(EngineLimitsError::TooManyTables { limit }))
+                return Err(Error::from(EngineLimitsError::TooManyTables { limit }));
             }
         }
         self.validator.table_section(&section)?;
@@ -489,7 +489,7 @@ impl ModuleParser {
     ) -> Result<(), Error> {
         if let Some(limit) = self.engine.config().get_engine_limits().max_memories {
             if section.count() > limit {
-                return Err(Error::from(EngineLimitsError::TooManyMemories { limit }))
+                return Err(Error::from(EngineLimitsError::TooManyMemories { limit }));
             }
         }
         self.validator.memory_section(&section)?;
@@ -526,7 +526,7 @@ impl ModuleParser {
     ) -> Result<(), Error> {
         if let Some(limit) = self.engine.config().get_engine_limits().max_globals {
             if section.count() > limit {
-                return Err(Error::from(EngineLimitsError::TooManyGlobals { limit }))
+                return Err(Error::from(EngineLimitsError::TooManyGlobals { limit }));
             }
         }
         self.validator.global_section(&section)?;
@@ -596,9 +596,16 @@ impl ModuleParser {
         section: ElementSectionReader,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
-        if let Some(limit) = self.engine.config().get_engine_limits().max_element_segments {
+        if let Some(limit) = self
+            .engine
+            .config()
+            .get_engine_limits()
+            .max_element_segments
+        {
             if section.count() > limit {
-                return Err(Error::from(EngineLimitsError::TooManyElementSegments { limit }))
+                return Err(Error::from(EngineLimitsError::TooManyElementSegments {
+                    limit,
+                }));
             }
         }
         self.validator.element_section(&section)?;
@@ -618,7 +625,9 @@ impl ModuleParser {
     fn process_data_count(&mut self, count: u32, range: Range<usize>) -> Result<(), Error> {
         if let Some(limit) = self.engine.config().get_engine_limits().max_data_segments {
             if count > limit {
-                return Err(Error::from(EngineLimitsError::TooManyDataSegments { limit }))
+                return Err(Error::from(EngineLimitsError::TooManyDataSegments {
+                    limit,
+                }));
             }
         }
         self.validator
@@ -642,7 +651,9 @@ impl ModuleParser {
     ) -> Result<(), Error> {
         if let Some(limit) = self.engine.config().get_engine_limits().max_data_segments {
             if section.count() > limit {
-                return Err(Error::from(EngineLimitsError::TooManyDataSegments { limit }))
+                return Err(Error::from(EngineLimitsError::TooManyDataSegments {
+                    limit,
+                }));
             }
         }
         self.validator.data_section(&section)?;
@@ -667,7 +678,7 @@ impl ModuleParser {
     fn process_code_start(&mut self, count: u32, range: Range<usize>) -> Result<(), Error> {
         if let Some(limit) = self.engine.config().get_engine_limits().max_functions {
             if count > limit {
-                return Err(Error::from(EngineLimitsError::TooManyFunctions { limit }))
+                return Err(Error::from(EngineLimitsError::TooManyFunctions { limit }));
             }
         }
         self.validator.code_section_start(count, &range)?;
