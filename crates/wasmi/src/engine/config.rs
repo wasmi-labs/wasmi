@@ -55,14 +55,10 @@ pub enum EngineLimitsError {
     TooManyFunctions { limit: u32 },
     /// When a Wasm module exceeds the linear memory limit.
     TooManyMemories { limit: u32 },
-    /// When a Wasm module exceeds the active element segment limit.
+    /// When a Wasm module exceeds the element segment limit.
     TooManyElementSegments { limit: u32 },
-    /// When a Wasm module exceeds the active element segment items limit.
-    TooManyElementSegmentItems { limit: usize },
-    /// When a Wasm module exceeds the active data segment limit.
+    /// When a Wasm module exceeds the data segment limit.
     TooManyDataSegments { limit: u32 },
-    /// When a Wasm module exceeds the active data segment bytes limit.
-    TooManyDataSegmentBytes { limit: usize },
     /// When a Wasm module exceeds the function parameter limit.
     TooManyParameters { limit: usize },
     /// When a Wasm module exceeds the function results limit.
@@ -78,42 +74,29 @@ impl Display for EngineLimitsError {
                 f,
                 "the Wasm module exceeds the limit of {limit} global variables"
             ),
-            Self::TooManyTables { limit } => write!(
-                f,
-                "the Wasm module exceeds the limit of {limit} tables"
-            ),
-            Self::TooManyFunctions { limit } => write!(
-                f,
-                "the Wasm modules exceeds the limit of {limit} functions"
-            ),
-            Self::TooManyMemories { limit } => write!(
-                f,
-                "the Wasm module exceeds the limit of {limit} memories"
-            ),
+            Self::TooManyTables { limit } => {
+                write!(f, "the Wasm module exceeds the limit of {limit} tables")
+            }
+            Self::TooManyFunctions { limit } => {
+                write!(f, "the Wasm modules exceeds the limit of {limit} functions")
+            }
+            Self::TooManyMemories { limit } => {
+                write!(f, "the Wasm module exceeds the limit of {limit} memories")
+            }
             Self::TooManyElementSegments { limit } => write!(
                 f,
                 "the Wasm module exceeds the limit of {limit} active element segments"
-            ),
-            Self::TooManyElementSegmentItems { limit } => write!(
-                f,
-                "the Wasm module exceeds the limit of {limit} active element segment items in total",
             ),
             Self::TooManyDataSegments { limit } => write!(
                 f,
                 "the Wasm module exceeds the limit of {limit} active data segments",
             ),
-            Self::TooManyDataSegmentBytes { limit } => write!(
-                f,
-                "the Wasm module exceeds the limit of {limit} active data segment bytes in total",
-            ),
-            Self::TooManyParameters { limit } => write!(
-                f,
-                "a function type exceeds the limit of {limit} parameters",
-            ),
-            Self::TooManyResults { limit } => write!(
-                f,
-                "a function type exceeds the limit of {limit} results",
-            ),
+            Self::TooManyParameters { limit } => {
+                write!(f, "a function type exceeds the limit of {limit} parameters",)
+            }
+            Self::TooManyResults { limit } => {
+                write!(f, "a function type exceeds the limit of {limit} results",)
+            }
             Self::MinAvgBytesPerFunction { limit, avg } => write!(
                 f,
                 "the Wasm module failed to meet the minumum average bytes per function of {limit}: \
@@ -172,17 +155,6 @@ pub struct EngineLimits {
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
     pub(crate) max_element_segments: Option<u32>,
-    /// Limit of total items for all table segments a single Wasm module can have.
-    ///
-    /// # Note
-    ///
-    /// - This is checked in [`Module::new`] or [`Module::new_unchecked`].
-    /// - This is only relevant if the Wasm `reference-types` proposal is enabled.
-    /// - `None` means the limit is not enforced.
-    ///
-    /// [`Module::new`]: crate::Module::new
-    /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    pub(crate) max_element_items: Option<u32>,
     /// Number of linear memories a single Wasm module can have.
     ///
     /// # Note
@@ -206,17 +178,6 @@ pub struct EngineLimits {
     /// [`Module::new`]: crate::Module::new
     /// [`Module::new_unchecked`]: crate::Module::new_unchecked
     pub(crate) max_data_segments: Option<u32>,
-    /// Limit of total bytes for all linear memory data segments a single Wasm module can have.
-    ///
-    /// # Note
-    ///
-    /// - This is checked in [`Module::new`] or [`Module::new_unchecked`].
-    /// - This is only relevant if the Wasm `reference-types` proposal is enabled.
-    /// - `None` means the limit is not enforced.
-    ///
-    /// [`Module::new`]: crate::Module::new
-    /// [`Module::new_unchecked`]: crate::Module::new_unchecked
-    pub(crate) max_data_bytes: Option<u32>,
     /// Limits the number of parameter of all functions and control structures.
     ///
     /// # Note
@@ -283,10 +244,8 @@ impl EngineLimits {
             max_functions: Some(10_000),
             max_tables: Some(100),
             max_element_segments: Some(1000),
-            max_element_items: Some(1000),
             max_memories: Some(1),
             max_data_segments: Some(1000),
-            max_data_bytes: Some(10_000),
             max_params: Some(32),
             max_results: Some(32),
             min_avg_bytes_per_function: Some(AvgBytesPerFunctionLimit {
