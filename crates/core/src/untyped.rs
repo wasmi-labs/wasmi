@@ -73,6 +73,7 @@ macro_rules! impl_from_unsigned_prim {
     ( $( $prim:ty ),* $(,)? ) => {
         $(
             impl From<$prim> for UntypedValue {
+                #[allow(clippy::cast_lossless)]
                 fn from(value: $prim) -> Self {
                     Self { bits: value as _ }
                 }
@@ -89,8 +90,9 @@ macro_rules! impl_from_signed_prim {
     ( $( $prim:ty as $base:ty ),* $(,)? ) => {
         $(
             impl From<$prim> for UntypedValue {
+                #[allow(clippy::cast_lossless)]
                 fn from(value: $prim) -> Self {
-                    Self { bits: value as $base as _ }
+                    Self { bits: u64::from(value as $base) }
                 }
             }
         )*
@@ -110,7 +112,7 @@ macro_rules! impl_from_float {
             impl From<$float> for UntypedValue {
                 fn from(value: $float) -> Self {
                     Self {
-                        bits: value.to_bits() as _,
+                        bits: u64::from(value.to_bits()),
                     }
                 }
             }
