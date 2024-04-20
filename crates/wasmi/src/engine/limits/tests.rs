@@ -477,3 +477,27 @@ fn min_avg_code_bytes_err() {
         ErrorKind::Limits(EngineLimitsError::MinAvgBytesPerFunction { limit: 6, avg: 5 }),
     ))
 }
+
+#[test]
+fn min_avg_code_bytes_ok_threshold() {
+    let wasm = "
+        (module
+            (func
+                (nop)
+                (nop)
+            )
+            (func
+                (nop)
+                (nop)
+            )
+        )
+    ";
+    let limits = EngineLimits {
+        min_avg_bytes_per_function: Some(AvgBytesPerFunctionLimit {
+            req_funcs_bytes: 12,
+            min_avg_bytes_per_function: 6,
+        }),
+        ..EngineLimits::default()
+    };
+    parse_with(wasm, limits).unwrap();
+}
