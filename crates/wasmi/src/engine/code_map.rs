@@ -5,7 +5,13 @@
 //! This is the data structure specialized to handle compiled
 //! register machine based bytecode functions.
 
-use super::{FuncTranslationDriver, FuncTranslator, TranslationError, ValidatingFuncTranslator};
+use super::{
+    FuelCosts,
+    FuncTranslationDriver,
+    FuncTranslator,
+    TranslationError,
+    ValidatingFuncTranslator,
+};
 use crate::{
     core::UntypedValue,
     engine::bytecode::Instruction,
@@ -106,15 +112,16 @@ impl InternalFuncEntity {
         let func_idx = uncompiled.func_idx;
         let bytes = mem::take(&mut uncompiled.bytes);
         let needs_validation = uncompiled.func_to_validate.is_some();
+        let compilation_fuel = |_costs: &FuelCosts| {
+            let len_bytes = bytes.as_slice().len() as u64;
+            let compile_factor = match needs_validation {
+                false => 7,
+                true => 9,
+            };
+            len_bytes.saturating_mul(compile_factor)
+        };
         if let Some(fuel) = fuel {
-            match fuel.consume_fuel(|_costs| {
-                let len_bytes = bytes.as_slice().len() as u64;
-                let compile_factor = match needs_validation {
-                    false => 7,
-                    true => 9,
-                };
-                len_bytes.saturating_mul(compile_factor)
-            }) {
+            match fuel.consume_fuel(compilation_fuel) {
                 Err(FuelError::OutOfFuel) => return Err(Error::from(TrapCode::OutOfFuel)),
                 Ok(_) | Err(FuelError::FuelMeteringDisabled) => {}
             }
