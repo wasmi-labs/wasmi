@@ -110,8 +110,8 @@ impl InternalFuncEntity {
             match fuel.consume_fuel(|_costs| {
                 let len_bytes = bytes.as_slice().len() as u64;
                 let compile_factor = match needs_validation {
-                    false => 15,
-                    true => 20,
+                    false => 10,
+                    true => 15,
                 };
                 len_bytes.saturating_mul(compile_factor)
             }) {
