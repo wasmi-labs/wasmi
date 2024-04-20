@@ -1,4 +1,5 @@
 use super::errors::{
+    EngineLimitsError,
     FuelError,
     FuncError,
     GlobalError,
@@ -167,6 +168,8 @@ pub enum ErrorKind {
     Wasm(WasmError),
     /// Encountered when there is a Wasm to Wasmi translation error.
     Translation(TranslationError),
+    /// Encountered when an enforced limit is exceeded.
+    Limits(EngineLimitsError),
 }
 
 impl ErrorKind {
@@ -231,6 +234,7 @@ impl Display for ErrorKind {
             Self::Read(error) => Display::fmt(error, f),
             Self::Wasm(error) => Display::fmt(error, f),
             Self::Translation(error) => Display::fmt(error, f),
+            Self::Limits(error) => Display::fmt(error, f),
         }
     }
 }
@@ -260,6 +264,7 @@ impl_from! {
     impl From<ReadError> for Error::Read;
     impl From<FuelError> for Error::Fuel;
     impl From<FuncError> for Error::Func;
+    impl From<EngineLimitsError> for Error::Limits;
 }
 
 /// An error that can occur upon `memory.grow` or `table.grow`.

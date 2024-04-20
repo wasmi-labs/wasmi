@@ -11,7 +11,14 @@ use super::{
     ModuleHeader,
     Read,
 };
-use crate::{engine::CompiledFunc, Engine, Error, FuncType, MemoryType, TableType};
+use crate::{
+    engine::{CompiledFunc, EngineLimitsError},
+    Engine,
+    Error,
+    FuncType,
+    MemoryType,
+    TableType,
+};
 use core::ops::Range;
 use std::{boxed::Box, vec::Vec};
 use wasmparser::{
@@ -194,8 +201,8 @@ impl ModuleParser {
                         Payload::DataCountSection { count, range } => {
                             self.process_data_count(count, range)
                         }
-                        Payload::CodeSectionStart { count, range, .. } => {
-                            self.process_code_start(count, range)?;
+                        Payload::CodeSectionStart { count, range, size } => {
+                            self.process_code_start(count, range, size)?;
                             buffer.drain(..consumed);
                             break;
                         }
@@ -355,8 +362,20 @@ impl ModuleParser {
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
         self.validator.type_section(&section)?;
-        let func_types = section.into_iter().map(|result| match result? {
-            wasmparser::Type::Func(ty) => Ok(FuncType::from_wasmparser(ty)),
+        let limits = self.engine.config().get_engine_limits();
+        let func_types = section.into_iter().map(|result| {
+            let wasmparser::Type::Func(ty) = result?;
+            if let Some(limit) = limits.max_params {
+                if ty.params().len() > limit {
+                    return Err(Error::from(EngineLimitsError::TooManyParameters { limit }));
+                }
+            }
+            if let Some(limit) = limits.max_results {
+                if ty.results().len() > limit {
+                    return Err(Error::from(EngineLimitsError::TooManyResults { limit }));
+                }
+            }
+            Ok(FuncType::from_wasmparser(ty))
         });
         header.push_func_types(func_types)?;
         Ok(())
@@ -414,6 +433,11 @@ impl ModuleParser {
         section: FunctionSectionReader,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
+        if let Some(limit) = self.engine.config().get_engine_limits().max_functions {
+            if section.count() > limit {
+                return Err(Error::from(EngineLimitsError::TooManyFunctions { limit }));
+            }
+        }
         self.validator.function_section(&section)?;
         let funcs = section
             .into_iter()
@@ -436,6 +460,11 @@ impl ModuleParser {
         section: TableSectionReader,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
+        if let Some(limit) = self.engine.config().get_engine_limits().max_tables {
+            if section.count() > limit {
+                return Err(Error::from(EngineLimitsError::TooManyTables { limit }));
+            }
+        }
         self.validator.table_section(&section)?;
         let tables = section
             .into_iter()
@@ -458,6 +487,11 @@ impl ModuleParser {
         section: MemorySectionReader,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
+        if let Some(limit) = self.engine.config().get_engine_limits().max_memories {
+            if section.count() > limit {
+                return Err(Error::from(EngineLimitsError::TooManyMemories { limit }));
+            }
+        }
         self.validator.memory_section(&section)?;
         let memories = section
             .into_iter()
@@ -490,6 +524,11 @@ impl ModuleParser {
         section: GlobalSectionReader,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
+        if let Some(limit) = self.engine.config().get_engine_limits().max_globals {
+            if section.count() > limit {
+                return Err(Error::from(EngineLimitsError::TooManyGlobals { limit }));
+            }
+        }
         self.validator.global_section(&section)?;
         let globals = section
             .into_iter()
@@ -557,6 +596,18 @@ impl ModuleParser {
         section: ElementSectionReader,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
+        if let Some(limit) = self
+            .engine
+            .config()
+            .get_engine_limits()
+            .max_element_segments
+        {
+            if section.count() > limit {
+                return Err(Error::from(EngineLimitsError::TooManyElementSegments {
+                    limit,
+                }));
+            }
+        }
         self.validator.element_section(&section)?;
         let segments = section
             .into_iter()
@@ -572,6 +623,13 @@ impl ModuleParser {
     /// This is part of the bulk memory operations Wasm proposal and not yet supported
     /// by Wasmi.
     fn process_data_count(&mut self, count: u32, range: Range<usize>) -> Result<(), Error> {
+        if let Some(limit) = self.engine.config().get_engine_limits().max_data_segments {
+            if count > limit {
+                return Err(Error::from(EngineLimitsError::TooManyDataSegments {
+                    limit,
+                }));
+            }
+        }
         self.validator
             .data_count_section(count, &range)
             .map_err(Into::into)
@@ -591,6 +649,13 @@ impl ModuleParser {
         section: DataSectionReader,
         builder: &mut ModuleBuilder,
     ) -> Result<(), Error> {
+        if let Some(limit) = self.engine.config().get_engine_limits().max_data_segments {
+            if section.count() > limit {
+                return Err(Error::from(EngineLimitsError::TooManyDataSegments {
+                    limit,
+                }));
+            }
+        }
         self.validator.data_section(&section)?;
         let segments = section
             .into_iter()
@@ -610,7 +675,30 @@ impl ModuleParser {
     /// # Errors
     ///
     /// If the code start section fails to validate.
-    fn process_code_start(&mut self, count: u32, range: Range<usize>) -> Result<(), Error> {
+    fn process_code_start(
+        &mut self,
+        count: u32,
+        range: Range<usize>,
+        size: u32,
+    ) -> Result<(), Error> {
+        let engine_limits = self.engine.config().get_engine_limits();
+        if let Some(limit) = engine_limits.max_functions {
+            if count > limit {
+                return Err(Error::from(EngineLimitsError::TooManyFunctions { limit }));
+            }
+        }
+        if let Some(limit) = engine_limits.min_avg_bytes_per_function {
+            if size >= limit.req_funcs_bytes {
+                let limit = limit.min_avg_bytes_per_function;
+                let avg = size / count;
+                if avg < limit {
+                    return Err(Error::from(EngineLimitsError::MinAvgBytesPerFunction {
+                        limit,
+                        avg,
+                    }));
+                }
+            }
+        }
         self.validator.code_section_start(count, &range)?;
         Ok(())
     }
