@@ -688,10 +688,10 @@ impl ModuleParser {
             }
         }
         if let Some(limit) = engine_limits.min_avg_bytes_per_function {
-            if limit.req_funcs_bytes >= size {
+            if size >= limit.req_funcs_bytes {
                 let limit = limit.min_avg_bytes_per_function;
                 let avg = size / count;
-                if avg > limit {
+                if avg < limit {
                     return Err(Error::from(EngineLimitsError::MinAvgBytesPerFunction {
                         limit,
                         avg,
