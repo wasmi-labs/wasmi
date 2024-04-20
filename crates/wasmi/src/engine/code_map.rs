@@ -105,8 +105,16 @@ impl InternalFuncEntity {
         };
         let func_idx = uncompiled.func_idx;
         let bytes = mem::take(&mut uncompiled.bytes);
+        let needs_validation = uncompiled.func_to_validate.is_some();
         if let Some(fuel) = fuel {
-            match fuel.consume_fuel(|costs| costs.fuel_for_bytes(bytes.as_slice().len() as u64)) {
+            match fuel.consume_fuel(|_costs| {
+                let len_bytes = bytes.as_slice().len() as u64;
+                let compile_factor = match needs_validation {
+                    false => 15,
+                    true => 20,
+                };
+                len_bytes.saturating_mul(compile_factor)
+            }) {
                 Err(FuelError::OutOfFuel) => return Err(Error::from(TrapCode::OutOfFuel)),
                 Ok(_) | Err(FuelError::FuelMeteringDisabled) => {}
             }
