@@ -259,8 +259,8 @@ fn bench_instantiate_wasm_kernel(c: &mut Criterion) {
 fn bench_linker_setup_same(c: &mut Criterion) {
     let len_funcs = 50;
     let bench_id = format!("linker/setup/same/{len_funcs}");
-    let func_names: Vec<String> = (0..len_funcs).into_iter().map(|i| i.to_string()).collect();
     c.bench_function(&bench_id, |b| {
+        let func_names: Vec<String> = (0..len_funcs).into_iter().map(|i| i.to_string()).collect();
         b.iter(|| {
             let engine = Engine::default();
             let mut linker = <Linker<()>>::new(&engine);
@@ -274,32 +274,32 @@ fn bench_linker_setup_same(c: &mut Criterion) {
 fn bench_linker_setup_unique(c: &mut Criterion) {
     let len_funcs = 50;
     let bench_id = format!("linker/setup/unique/{len_funcs}");
-    let types = [
-        ValueType::I32,
-        ValueType::I64,
-        ValueType::F32,
-        ValueType::F64,
-        ValueType::FuncRef,
-        ValueType::ExternRef,
-    ];
-    let funcs: Vec<(String, FuncType)> = (0..len_funcs)
-        .into_iter()
-        .map(|i| {
-            let func_name = i.to_string();
-            let (len_params, len_results) = if i % 2 == 0 {
-                ((i / (types.len() * 2)) + 1, 0)
-            } else {
-                (0, (i / (types.len() * 2)) + 1)
-            };
-            let chosen_type = types[i % 4];
-            let func_type = FuncType::new(
-                vec![chosen_type; len_params],
-                vec![chosen_type; len_results],
-            );
-            (func_name, func_type)
-        })
-        .collect();
     c.bench_function(&bench_id, |b| {
+        let types = [
+            ValueType::I32,
+            ValueType::I64,
+            ValueType::F32,
+            ValueType::F64,
+            ValueType::FuncRef,
+            ValueType::ExternRef,
+        ];
+        let funcs: Vec<(String, FuncType)> = (0..len_funcs)
+            .into_iter()
+            .map(|i| {
+                let func_name = i.to_string();
+                let (len_params, len_results) = if i % 2 == 0 {
+                    ((i / (types.len() * 2)) + 1, 0)
+                } else {
+                    (0, (i / (types.len() * 2)) + 1)
+                };
+                let chosen_type = types[i % 4];
+                let func_type = FuncType::new(
+                    vec![chosen_type; len_params],
+                    vec![chosen_type; len_results],
+                );
+                (func_name, func_type)
+            })
+            .collect();
         b.iter(|| {
             let engine = Engine::default();
             let mut linker = <Linker<()>>::new(&engine);
