@@ -109,7 +109,7 @@ pub use wasmi_core as core;
 /// Defines some errors that may occur upon interaction with Wasmi.
 pub mod errors {
     pub use super::{
-        engine::{EngineLimitsError, LimitsError},
+        engine::EngineLimitsError,
         error::ErrorKind,
         func::FuncError,
         global::GlobalError,
