@@ -64,7 +64,7 @@ pub enum EngineLimitsError {
     /// When a Wasm module exceeds the function results limit.
     TooManyResults { limit: usize },
     /// When a Wasm module exceeds the average bytes per function limit.
-    MinAvgBytesPerFunction { limit: usize, avg: usize },
+    MinAvgBytesPerFunction { limit: u32, avg: u32 },
 }
 
 impl Display for EngineLimitsError {
@@ -227,9 +227,9 @@ pub struct AvgBytesPerFunctionLimit {
     /// - A `req_funcs_bytes` of 0 always enforces the `min_avg_bytes_per_function` limit.
     /// - The `req_funcs_bytes` field exists to filter out small Wasm modules
     ///   that cannot seriously be used to attack the Wasmi compilation.
-    pub req_funcs_bytes: usize,
+    pub req_funcs_bytes: u32,
     /// The minimum number of bytes a function must have on average.
-    pub min_avg_bytes_per_function: usize,
+    pub min_avg_bytes_per_function: u32,
 }
 
 impl EngineLimits {

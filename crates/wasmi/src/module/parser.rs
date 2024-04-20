@@ -201,8 +201,8 @@ impl ModuleParser {
                         Payload::DataCountSection { count, range } => {
                             self.process_data_count(count, range)
                         }
-                        Payload::CodeSectionStart { count, range, .. } => {
-                            self.process_code_start(count, range)?;
+                        Payload::CodeSectionStart { count, range, size } => {
+                            self.process_code_start(count, range, size)?;
                             buffer.drain(..consumed);
                             break;
                         }
@@ -675,10 +675,28 @@ impl ModuleParser {
     /// # Errors
     ///
     /// If the code start section fails to validate.
-    fn process_code_start(&mut self, count: u32, range: Range<usize>) -> Result<(), Error> {
-        if let Some(limit) = self.engine.config().get_engine_limits().max_functions {
+    fn process_code_start(
+        &mut self,
+        count: u32,
+        range: Range<usize>,
+        size: u32,
+    ) -> Result<(), Error> {
+        let engine_limits = self.engine.config().get_engine_limits();
+        if let Some(limit) = engine_limits.max_functions {
             if count > limit {
                 return Err(Error::from(EngineLimitsError::TooManyFunctions { limit }));
+            }
+        }
+        if let Some(limit) = engine_limits.min_avg_bytes_per_function {
+            if limit.req_funcs_bytes >= size {
+                let limit = limit.min_avg_bytes_per_function;
+                let avg = size / count;
+                if avg > limit {
+                    return Err(Error::from(EngineLimitsError::MinAvgBytesPerFunction {
+                        limit,
+                        avg,
+                    }));
+                }
             }
         }
         self.validator.code_section_start(count, &range)?;
