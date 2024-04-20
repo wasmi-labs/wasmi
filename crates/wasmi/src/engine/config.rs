@@ -1,4 +1,4 @@
-use super::{StackLimits, EngineLimits};
+use super::{EngineLimits, StackLimits};
 use core::{mem::size_of, num::NonZeroU64};
 use wasmi_core::UntypedValue;
 use wasmparser::WasmFeatures;
