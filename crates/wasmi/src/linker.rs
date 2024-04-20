@@ -19,8 +19,10 @@ use crate::{
     Value,
 };
 use core::{
-    fmt,
-    fmt::{Debug, Display},
+    borrow::Borrow,
+    cmp::Ordering,
+    fmt::{self, Debug, Display},
+    mem,
     num::NonZeroUsize,
     ops::Deref,
 };
@@ -245,12 +247,87 @@ impl Symbol {
     }
 }
 
+/// An `Arc<str>` that defines its own (more efficient) [`Ord`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct LenOrder(Arc<str>);
+
+impl Ord for LenOrder {
+    #[inline]
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.as_str().cmp(other.as_str())
+    }
+}
+
+impl PartialOrd for LenOrder {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl LenOrder {
+    pub fn as_str(&self) -> &LenOrderStr {
+        (&*self.0).into()
+    }
+}
+
+/// A `str` that defines its own (more efficient) [`Ord`].
+#[derive(Debug, Eq, PartialEq)]
+#[repr(transparent)]
+pub struct LenOrderStr(str);
+
+impl<'a> From<&'a str> for &'a LenOrderStr {
+    #[inline]
+    fn from(value: &'a str) -> Self {
+        // Safety: This operation is safe because
+        //
+        // - we preserve the lifetime `'a`
+        // - the `LenOrderStr` type is a `str` newtype wrapper and `#[repr(transparent)`
+        unsafe { mem::transmute(value) }
+    }
+}
+
+impl Borrow<LenOrderStr> for LenOrder {
+    #[inline]
+    fn borrow(&self) -> &LenOrderStr {
+        (&*self.0).into()
+    }
+}
+
+impl PartialOrd for LenOrderStr {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for LenOrderStr {
+    #[inline]
+    fn cmp(&self, other: &Self) -> Ordering {
+        let lhs = self.0.as_bytes();
+        let rhs = other.0.as_bytes();
+        match lhs.len().cmp(&rhs.len()) {
+            Ordering::Equal => {
+                for (l, r) in lhs.iter().zip(rhs) {
+                    match l.cmp(r) {
+                        Ordering::Equal => (),
+                        ordering => return ordering,
+                    }
+                }
+                Ordering::Equal
+            }
+            ordering => ordering,
+        }
+    }
+}
+
 /// A string interner.
 ///
 /// Efficiently interns strings and distributes symbols.
 #[derive(Debug, Default, Clone)]
 pub struct StringInterner {
-    string2idx: BTreeMap<Arc<str>, Symbol>,
+    string2idx: BTreeMap<LenOrder, Symbol>,
     strings: Vec<Arc<str>>,
 }
 
@@ -262,12 +339,12 @@ impl StringInterner {
 
     /// Returns the symbol of the string and interns it if necessary.
     pub fn get_or_intern(&mut self, string: &str) -> Symbol {
-        match self.string2idx.get(string) {
+        match self.string2idx.get(<&LenOrderStr>::from(string)) {
             Some(symbol) => *symbol,
             None => {
                 let symbol = self.next_symbol();
                 let rc_string: Arc<str> = Arc::from(string);
-                self.string2idx.insert(rc_string.clone(), symbol);
+                self.string2idx.insert(LenOrder(rc_string.clone()), symbol);
                 self.strings.push(rc_string);
                 symbol
             }
@@ -276,7 +353,7 @@ impl StringInterner {
 
     /// Returns the symbol for the string if interned.
     pub fn get(&self, string: &str) -> Option<Symbol> {
-        self.string2idx.get(string).copied()
+        self.string2idx.get(<&LenOrderStr>::from(string)).copied()
     }
 
     /// Resolves the symbol to the underlying string.
