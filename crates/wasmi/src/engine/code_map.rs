@@ -103,7 +103,7 @@ impl InternalFuncEntity {
     ///
     /// - If function translation failed.
     /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
-    fn compile(&mut self, fuel: Option<&mut Fuel>) -> Result<(), Error> {
+    fn compile(&mut self, fuel: Option<&mut Fuel>, features: &WasmFeatures) -> Result<(), Error> {
         let uncompiled = match self {
             InternalFuncEntity::Uncompiled(func) => func,
             InternalFuncEntity::Compiled(func) => {
@@ -135,9 +135,15 @@ impl InternalFuncEntity {
             )
         };
         match uncompiled.validation.take() {
-            Some(func_to_validate) => {
+            Some((type_index, resources)) => {
                 let allocs = engine.get_allocs();
                 let translator = FuncTranslator::new(func_idx, module, allocs.0)?;
+                let func_to_validate = FuncToValidate {
+                    resources,
+                    index: func_idx.into_u32(),
+                    ty: type_index.0,
+                    features: *features,
+                };
                 let validator = func_to_validate.into_validator(allocs.1);
                 let translator = ValidatingFuncTranslator::new(validator, translator)?;
                 let allocs = FuncTranslationDriver::new(0, &bytes[..], translator)?.translate(
@@ -176,22 +182,37 @@ pub struct UncompiledFuncEntity {
     /// Optional Wasm validation information.
     ///
     /// This is `Some` if the [`UncompiledFuncEntity`] is to be validated upon compilation.
-    validation: Option<FuncToValidate<ValidatorResources>>,
+    validation: Option<(TypeIndex, ValidatorResources)>,
 }
+
+/// A function type index into the Wasm module.
+#[derive(Debug, Copy, Clone)]
+#[repr(transparent)]
+pub struct TypeIndex(u32);
 
 impl UncompiledFuncEntity {
     /// Creates a new [`UncompiledFuncEntity`].
     pub fn new(
-        func_idx: FuncIdx,
+        func_index: FuncIdx,
         bytes: impl Into<SmallByteSlice>,
         module: ModuleHeader,
         func_to_validate: impl Into<Option<FuncToValidate<ValidatorResources>>>,
     ) -> Self {
+        let validation = func_to_validate.into().map(|func_to_validate| {
+            assert_eq!(
+                func_to_validate.index,
+                func_index.into_u32(),
+                "Wasmi function index ({}) does not match with Wasm validation function index ({})",
+                func_to_validate.index,
+                func_index.into_u32(),
+            );
+            (TypeIndex(func_to_validate.ty), func_to_validate.resources)
+        });
         Self {
-            func_index: func_idx,
+            func_index,
             bytes: bytes.into(),
             module,
-            validation: func_to_validate.into(),
+            validation,
         }
     }
 }
@@ -641,6 +662,7 @@ impl FuncEntity {
     pub fn compile_and_get(
         &self,
         mut fuel: Option<&mut Fuel>,
+        features: &WasmFeatures,
     ) -> Result<&CompiledFuncEntity, Error> {
         loop {
             if let Some(func) = self.get_compiled() {
@@ -663,7 +685,7 @@ impl FuncEntity {
             // Note: We need to use `take` because Rust doesn't know that this part of
             //       the loop is only executed once.
             let fuel = fuel.take();
-            match func.compile(fuel) {
+            match func.compile(fuel, features) {
                 Ok(()) => {
                     self.phase
                         .set_compiled()
@@ -749,7 +771,7 @@ impl CodeMap {
         };
         match func.get_compiled() {
             Some(func) => Ok(func),
-            None => func.compile_and_get(fuel),
+            None => func.compile_and_get(fuel, &self.features),
         }
     }
 }
