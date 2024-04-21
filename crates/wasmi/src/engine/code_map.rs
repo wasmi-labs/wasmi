@@ -111,7 +111,7 @@ impl InternalFuncEntity {
         };
         let func_idx = uncompiled.func_index;
         let bytes = mem::take(&mut uncompiled.bytes);
-        let needs_validation = uncompiled.func_to_validate.is_some();
+        let needs_validation = uncompiled.validation.is_some();
         let compilation_fuel = |_costs: &FuelCosts| {
             let len_bytes = bytes.as_slice().len() as u64;
             let compile_factor = match needs_validation {
@@ -133,7 +133,7 @@ impl InternalFuncEntity {
                 module.engine()
             )
         };
-        match uncompiled.func_to_validate.take() {
+        match uncompiled.validation.take() {
             Some(func_to_validate) => {
                 let allocs = engine.get_allocs();
                 let translator = FuncTranslator::new(func_idx, module, allocs.0)?;
@@ -175,7 +175,7 @@ pub struct UncompiledFuncEntity {
     /// Optional Wasm validation information.
     ///
     /// This is `Some` if the [`UncompiledFuncEntity`] is to be validated upon compilation.
-    func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+    validation: Option<FuncToValidate<ValidatorResources>>,
 }
 
 impl UncompiledFuncEntity {
@@ -190,7 +190,7 @@ impl UncompiledFuncEntity {
             func_index: func_idx,
             bytes: bytes.into(),
             module,
-            func_to_validate: func_to_validate.into(),
+            validation: func_to_validate.into(),
         }
     }
 }
@@ -201,7 +201,7 @@ impl fmt::Debug for UncompiledFuncEntity {
             .field("func_idx", &self.func_index)
             .field("bytes", &self.bytes)
             .field("module", &self.module)
-            .field("validate", &self.func_to_validate.is_some())
+            .field("validate", &self.validation.is_some())
             .finish()
     }
 }
