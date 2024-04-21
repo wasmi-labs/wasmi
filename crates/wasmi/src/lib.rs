@@ -115,7 +115,7 @@ pub mod errors {
         global::GlobalError,
         linker::LinkerError,
         memory::MemoryError,
-        module::InstantiationError,
+        module::{InstantiationError, ReadError},
         store::FuelError,
         table::TableError,
     };
@@ -161,7 +161,6 @@ pub use self::{
         ModuleExportsIter,
         ModuleImportsIter,
         Read,
-        ReadError,
     },
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
