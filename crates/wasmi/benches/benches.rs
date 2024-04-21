@@ -260,7 +260,7 @@ fn bench_linker_setup_same(c: &mut Criterion) {
     let len_funcs = 50;
     let bench_id = format!("linker/setup/same/{len_funcs}");
     c.bench_function(&bench_id, |b| {
-        let func_names: Vec<String> = (0..len_funcs).into_iter().map(|i| i.to_string()).collect();
+        let func_names: Vec<String> = (0..len_funcs).map(|i| format!("{i}")).collect();
         b.iter(|| {
             let engine = Engine::default();
             let mut linker = <Linker<()>>::new(&engine);
@@ -284,9 +284,8 @@ fn bench_linker_setup_unique(c: &mut Criterion) {
             ValueType::ExternRef,
         ];
         let funcs: Vec<(String, FuncType)> = (0..len_funcs)
-            .into_iter()
             .map(|i| {
-                let func_name = i.to_string();
+                let func_name = format!("{i}");
                 let (len_params, len_results) = if i % 2 == 0 {
                     ((i / (types.len() * 2)) + 1, 0)
                 } else {
