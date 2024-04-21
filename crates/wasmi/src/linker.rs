@@ -23,7 +23,6 @@ use core::{
     cmp::Ordering,
     fmt::{self, Debug, Display},
     mem,
-    num::NonZeroU32,
     ops::Deref,
 };
 use std::{
@@ -219,15 +218,9 @@ impl Display for LinkerError {
 /// Comparing symbols for equality is equal to comparing their respective
 /// interned strings for equality given that both symbol are coming from
 /// the same string interner instance.
-///
-/// # Dev. Note
-///
-/// Internally we use [`NonZeroU32`] so that `Option<Symbol>` can
-/// be space optimized easily by the compiler. This is important since
-/// in [`ImportKey`] we are making extensive use of `Option<Symbol>`.
 #[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct Symbol(NonZeroU32);
+pub struct Symbol(u32);
 
 impl Symbol {
     /// Creates a new symbol.
@@ -235,18 +228,24 @@ impl Symbol {
     /// # Panics
     ///
     /// If the `value` is equal to `usize::MAX`.
+    #[inline]
     pub fn from_usize(value: usize) -> Self {
         let Ok(value) = u32::try_from(value) else {
-            panic!("encountered invalid symvol value: {value}");
+            panic!("encountered invalid symbol value: {value}");
         };
-        NonZeroU32::new(value.wrapping_add(1))
-            .map(Symbol)
-            .expect("encountered invalid symbol value")
+        Self(value)
     }
 
     /// Returns the underlying `usize` value of the [`Symbol`].
+    #[inline]
     pub fn into_usize(self) -> usize {
-        self.0.get().wrapping_sub(1) as usize
+        self.0 as usize
+    }
+
+    /// Returns the underlying `u32` value of the [`Symbol`].
+    #[inline]
+    pub fn into_u32(self) -> u32 {
+        self.0
     }
 }
 
@@ -370,12 +369,43 @@ impl StringInterner {
 }
 
 /// Wasm import keys.
-#[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq)]
+#[repr(transparent)]
 struct ImportKey {
-    /// The name of the module for the definition.
-    module: Symbol,
-    /// The name of the definition within the module scope.
-    name: Symbol,
+    /// Merged module and name symbols.
+    ///
+    /// Merging allows for a faster `Ord` implementation.
+    module_and_name: u64,
+}
+
+impl Debug for ImportKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ImportKey")
+            .field("module", &self.module())
+            .field("name", &self.name())
+            .finish()
+    }
+}
+
+impl ImportKey {
+    /// Creates a new [`ImportKey`] from the given `module` and `name` symbols.
+    #[inline]
+    pub fn new(module: Symbol, name: Symbol) -> Self {
+        let module_and_name = u64::from(module.into_u32()) << 32 | u64::from(name.into_u32());
+        Self { module_and_name }
+    }
+
+    /// Returns the `module` [`Symbol`] of the [`ImportKey`].
+    #[inline]
+    pub fn module(&self) -> Symbol {
+        Symbol((self.module_and_name >> 32) as u32)
+    }
+
+    /// Returns the `name` [`Symbol`] of the [`ImportKey`].
+    #[inline]
+    pub fn name(&self) -> Symbol {
+        Symbol(self.module_and_name as u32)
+    }
 }
 
 /// A [`Linker`] definition.
@@ -641,16 +671,16 @@ impl<T> Linker<T> {
 
     /// Returns the import key for the module name and item name.
     fn import_key(&mut self, module: &str, name: &str) -> ImportKey {
-        ImportKey {
-            module: self.strings.get_or_intern(module),
-            name: self.strings.get_or_intern(name),
-        }
+        ImportKey::new(
+            self.strings.get_or_intern(module),
+            self.strings.get_or_intern(name),
+        )
     }
 
     /// Resolves the module and item name of the import key if any.
     fn resolve_import_key(&self, key: ImportKey) -> Option<(&str, &str)> {
-        let module_name = self.strings.resolve(key.module)?;
-        let item_name = self.strings.resolve(key.name)?;
+        let module_name = self.strings.resolve(key.module())?;
+        let item_name = self.strings.resolve(key.name())?;
         Some((module_name, item_name))
     }
 
@@ -712,10 +742,7 @@ impl<T> Linker<T> {
             context.as_context().store.engine(),
             self.engine()
         ));
-        let key = ImportKey {
-            module: self.strings.get(module)?,
-            name: self.strings.get(name)?,
-        };
+        let key = ImportKey::new(self.strings.get(module)?, self.strings.get(name)?);
         self.definitions.get(&key)
     }
 
