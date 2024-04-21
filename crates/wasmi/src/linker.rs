@@ -309,13 +309,17 @@ impl Ord for LenOrderStr {
         let rhs = other.0.as_bytes();
         match lhs.len().cmp(&rhs.len()) {
             Ordering::Equal => {
-                for (l, r) in lhs.iter().zip(rhs) {
-                    match l.cmp(r) {
-                        Ordering::Equal => (),
-                        ordering => return ordering,
+                if lhs.len() < 8 {
+                    for (l, r) in lhs.iter().zip(rhs) {
+                        match l.cmp(r) {
+                            Ordering::Equal => (),
+                            ordering => return ordering,
+                        }
                     }
+                    Ordering::Equal
+                } else {
+                    lhs.cmp(rhs)
                 }
-                Ordering::Equal
             }
             ordering => ordering,
         }
