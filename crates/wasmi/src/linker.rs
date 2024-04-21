@@ -409,6 +409,7 @@ impl ImportKey {
 }
 
 /// A [`Linker`] definition.
+#[derive(Debug)]
 enum Definition<T> {
     /// An external item from an [`Instance`](crate::Instance).
     Extern(Extern),
@@ -440,14 +441,7 @@ impl<T> Definition<T> {
     pub fn ty(&self, ctx: impl AsContext) -> ExternType {
         match self {
             Definition::Extern(item) => item.ty(ctx),
-            Definition::HostFunc(host_func) => {
-                let func_type = ctx
-                    .as_context()
-                    .store
-                    .engine()
-                    .resolve_func_type(host_func.ty_dedup(), FuncType::clone);
-                ExternType::Func(func_type)
-            }
+            Definition::HostFunc(host_func) => ExternType::Func(host_func.func_type().clone()),
         }
     }
 
@@ -469,8 +463,11 @@ impl<T> Definition<T> {
                     .as_context_mut()
                     .store
                     .alloc_trampoline(host_func.trampoline().clone());
-                let ty_dedup = host_func.ty_dedup();
-                let entity = HostFuncEntity::new(*ty_dedup, trampoline);
+                let ty_dedup = ctx
+                    .as_context()
+                    .engine()
+                    .alloc_func_type(host_func.func_type().clone());
+                let entity = HostFuncEntity::new(ty_dedup, trampoline);
                 let func = ctx
                     .as_context_mut()
                     .store
@@ -483,66 +480,8 @@ impl<T> Definition<T> {
     }
 }
 
-/// [`Debug`]-wrapper for the definitions of a [`Linker`].
-pub struct DebugDefinitions<'a, T> {
-    /// The [`Engine`] of the [`Linker`].
-    engine: &'a Engine,
-    /// The definitions of the [`Linker`].
-    definitions: &'a BTreeMap<ImportKey, Definition<T>>,
-}
-
-impl<'a, T> DebugDefinitions<'a, T> {
-    /// Create a new [`Debug`]-wrapper for the [`Linker`] definitions.
-    fn new(linker: &'a Linker<T>) -> Self {
-        Self {
-            engine: linker.engine(),
-            definitions: &linker.definitions,
-        }
-    }
-}
-
-impl<'a, T> Debug for DebugDefinitions<'a, T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut map = f.debug_map();
-        for (name, definition) in self.definitions {
-            match definition {
-                Definition::Extern(definition) => {
-                    map.entry(name, definition);
-                }
-                Definition::HostFunc(definition) => {
-                    map.entry(name, &DebugHostFuncEntity::new(self.engine, definition));
-                }
-            }
-        }
-        map.finish()
-    }
-}
-
-/// [`Debug`]-wrapper for [`HostFuncTrampolineEntity`] in the [`Linker`].
-pub struct DebugHostFuncEntity<'a, T> {
-    /// The [`Engine`] of the [`Linker`].
-    engine: &'a Engine,
-    /// The host function to be [`Debug`] formatted.
-    host_func: &'a HostFuncTrampolineEntity<T>,
-}
-
-impl<'a, T> DebugHostFuncEntity<'a, T> {
-    /// Create a new [`Debug`]-wrapper for the [`HostFuncTrampolineEntity`].
-    fn new(engine: &'a Engine, host_func: &'a HostFuncTrampolineEntity<T>) -> Self {
-        Self { engine, host_func }
-    }
-}
-
-impl<'a, T> Debug for DebugHostFuncEntity<'a, T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.engine
-            .resolve_func_type(self.host_func.ty_dedup(), |func_type| {
-                f.debug_struct("HostFunc").field("ty", func_type).finish()
-            })
-    }
-}
-
 /// A linker used to define module imports and instantiate module instances.
+#[derive(Debug)]
 pub struct Linker<T> {
     /// The underlying [`Engine`] for the [`Linker`].
     ///
@@ -555,15 +494,6 @@ pub struct Linker<T> {
     strings: StringInterner,
     /// Stores the definitions given their names.
     definitions: BTreeMap<ImportKey, Definition<T>>,
-}
-
-impl<T> Debug for Linker<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Linker")
-            .field("strings", &self.strings)
-            .field("definitions", &DebugDefinitions::new(self))
-            .finish()
-    }
 }
 
 impl<T> Clone for Linker<T> {
@@ -630,7 +560,7 @@ impl<T> Linker<T> {
             + Sync
             + 'static,
     ) -> Result<&mut Self, LinkerError> {
-        let func = HostFuncTrampolineEntity::new(&self.engine, ty, func);
+        let func = HostFuncTrampolineEntity::new(ty, func);
         let key = self.import_key(module, name);
         self.insert(key, Definition::HostFunc(func))?;
         Ok(self)
@@ -663,7 +593,7 @@ impl<T> Linker<T> {
         name: &str,
         func: impl IntoFunc<T, Params, Args>,
     ) -> Result<&mut Self, LinkerError> {
-        let func = HostFuncTrampolineEntity::wrap(&self.engine, func);
+        let func = HostFuncTrampolineEntity::wrap(func);
         let key = self.import_key(module, name);
         self.insert(key, Definition::HostFunc(func))?;
         Ok(self)
