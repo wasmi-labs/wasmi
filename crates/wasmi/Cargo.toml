@@ -19,7 +19,7 @@ exclude = [
 ]
 
 [dependencies]
-wasmparser = { version = "0.100.1", package = "wasmparser-nostd", default-features = false }
+wasmparser = { version = "0.100.2", package = "wasmparser-nostd", default-features = false }
 wasmi_core = { workspace = true }
 wasmi_arena = { workspace = true }
 spin = { version = "0.9", default-features = false, features = [
