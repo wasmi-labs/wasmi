@@ -17,6 +17,7 @@ use crate::{
     engine::bytecode::Instruction,
     module::{FuncIdx, ModuleHeader},
     store::{Fuel, FuelError},
+    Config,
     Error,
 };
 use core::{
@@ -31,7 +32,7 @@ use core::{
 use std::boxed::Box;
 use wasmi_arena::{Arena, ArenaIndex};
 use wasmi_core::TrapCode;
-use wasmparser::{FuncToValidate, ValidatorResources};
+use wasmparser::{FuncToValidate, ValidatorResources, WasmFeatures};
 
 /// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`](crate::Engine).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -353,9 +354,10 @@ impl CompiledFuncEntity {
 }
 
 /// Datastructure to efficiently store information about compiled functions.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct CodeMap {
     funcs: Arena<CompiledFunc, FuncEntity>,
+    features: WasmFeatures,
 }
 
 /// Atomicly accessible [`CompilationPhase`].
@@ -679,6 +681,14 @@ impl FuncEntity {
 }
 
 impl CodeMap {
+    /// Creates a new [`CodeMap`].
+    pub fn new(config: &Config) -> Self {
+        Self {
+            funcs: Arena::default(),
+            features: config.wasm_features(),
+        }
+    }
+
     /// Allocates a new uninitialized [`CompiledFunc`] to the [`CodeMap`].
     ///
     /// # Note
