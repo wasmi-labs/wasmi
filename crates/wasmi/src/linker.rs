@@ -23,7 +23,7 @@ use core::{
     cmp::Ordering,
     fmt::{self, Debug, Display},
     mem,
-    num::NonZeroUsize,
+    num::NonZeroU32,
     ops::Deref,
 };
 use std::{
@@ -222,12 +222,12 @@ impl Display for LinkerError {
 ///
 /// # Dev. Note
 ///
-/// Internally we use [`NonZeroUsize`] so that `Option<Symbol>` can
+/// Internally we use [`NonZeroU32`] so that `Option<Symbol>` can
 /// be space optimized easily by the compiler. This is important since
 /// in [`ImportKey`] we are making extensive use of `Option<Symbol>`.
 #[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct Symbol(NonZeroUsize);
+pub struct Symbol(NonZeroU32);
 
 impl Symbol {
     /// Creates a new symbol.
@@ -236,14 +236,17 @@ impl Symbol {
     ///
     /// If the `value` is equal to `usize::MAX`.
     pub fn from_usize(value: usize) -> Self {
-        NonZeroUsize::new(value.wrapping_add(1))
+        let Ok(value) = u32::try_from(value) else {
+            panic!("encountered invalid symvol value: {value}");
+        };
+        NonZeroU32::new(value.wrapping_add(1))
             .map(Symbol)
             .expect("encountered invalid symbol value")
     }
 
     /// Returns the underlying `usize` value of the [`Symbol`].
     pub fn into_usize(self) -> usize {
-        self.0.get().wrapping_sub(1)
+        self.0.get().wrapping_sub(1) as usize
     }
 }
 
