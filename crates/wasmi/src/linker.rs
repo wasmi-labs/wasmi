@@ -753,7 +753,7 @@ impl<T> Linker<T> {
 }
 
 /// A linker used to define module imports and instantiate module instances.
-/// 
+///
 /// Create this type via the [`Linker::build`] method.
 #[derive(Debug)]
 pub struct LinkerBuilder<T> {
