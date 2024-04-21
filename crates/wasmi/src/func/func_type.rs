@@ -27,7 +27,9 @@ pub enum FuncTypeInner {
     },
     /// Stores the value types of the parameters and results on the heap.
     Big {
+        /// The number of parameters.
         len_params: u32,
+        /// Combined parameter and result types allocated on the heap.
         params_results: Arc<[ValueType]>,
     },
 }
