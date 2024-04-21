@@ -39,7 +39,7 @@ impl FuncTypeInner {
     ///
     /// # Note
     ///
-    /// On 64-bit platforms we target a `size_of<FuncTypeInner>()` of 16 bytes.
+    /// On 32-bit platforms we target a `size_of<FuncTypeInner>()` of 16 bytes.
     #[cfg(target_pointer_width = "32")]
     const INLINE_SIZE: usize = 14;
 
@@ -47,7 +47,6 @@ impl FuncTypeInner {
     ///
     /// # Note
     ///
-    /// On 64-bit platforms we target a `size_of<FuncTypeInner>()` of 16 bytes.
     /// On 64-bit platforms we target a `size_of<FuncTypeInner>()` of 24 bytes.
     #[cfg(target_pointer_width = "64")]
     const INLINE_SIZE: usize = 21;
