@@ -16,6 +16,7 @@ use wasmi::{
     Engine,
     Extern,
     Func,
+    FuncType,
     Linker,
     Memory,
     Module,
@@ -63,6 +64,20 @@ criterion_group!(
         bench_overhead_call_untyped_0,
         bench_overhead_call_untyped_16,
 );
+criterion_group!(
+    name = bench_linker;
+    config = Criterion::default()
+        .sample_size(10)
+        .measurement_time(Duration::from_millis(1000))
+        .warm_up_time(Duration::from_millis(1000));
+    targets =
+        bench_linker_setup_same,
+        bench_linker_build_finish_same,
+        bench_linker_build_construct_same,
+        bench_linker_setup_unique,
+        bench_linker_build_finish_unique,
+        bench_linker_build_construct_unique,
+);
 criterion_group! {
     name = bench_execute;
     config = Criterion::default()
@@ -96,7 +111,8 @@ criterion_main!(
     bench_translate,
     bench_instantiate,
     bench_execute,
-    bench_overhead
+    bench_overhead,
+    bench_linker,
 );
 
 const WASM_KERNEL: &str =
@@ -240,6 +256,145 @@ fn bench_instantiate_wasm_kernel(c: &mut Criterion) {
         b.iter(|| {
             let mut store = Store::new(module.engine(), ());
             let _instance = linker.instantiate(&mut store, &module).unwrap();
+        })
+    });
+}
+
+fn bench_linker_build_finish_same(c: &mut Criterion) {
+    let len_funcs = 50;
+    let bench_id = format!("linker/build/finish/same/{len_funcs}");
+    c.bench_function(&bench_id, |b| {
+        let func_names: Vec<String> = (0..len_funcs).map(|i| format!("{i}")).collect();
+        let mut builder = <Linker<()>>::build();
+        for func_name in &func_names {
+            builder.func_wrap("env", func_name, || ()).unwrap();
+        }
+        b.iter(|| {
+            let engine = Engine::default();
+            _ = builder.finish(&engine);
+        })
+    });
+}
+
+fn bench_linker_build_construct_same(c: &mut Criterion) {
+    let len_funcs = 50;
+    let bench_id = format!("linker/build/construct/same/{len_funcs}");
+    c.bench_function(&bench_id, |b| {
+        let func_names: Vec<String> = (0..len_funcs).map(|i| format!("{i}")).collect();
+        b.iter(|| {
+            let mut builder = <Linker<()>>::build();
+            for func_name in &func_names {
+                builder.func_wrap("env", func_name, || ()).unwrap();
+            }
+        })
+    });
+}
+
+fn bench_linker_setup_same(c: &mut Criterion) {
+    let len_funcs = 50;
+    let bench_id = format!("linker/setup/same/{len_funcs}");
+    c.bench_function(&bench_id, |b| {
+        let func_names: Vec<String> = (0..len_funcs).map(|i| format!("{i}")).collect();
+        b.iter(|| {
+            let engine = Engine::default();
+            let mut linker = <Linker<()>>::new(&engine);
+            for func_name in &func_names {
+                linker.func_wrap("env", func_name, || ()).unwrap();
+            }
+        })
+    });
+}
+
+/// Generates `count` host functions with different signatures.
+fn generate_unique_host_functions(count: usize) -> Vec<(String, FuncType)> {
+    let types = [
+        ValueType::I32,
+        ValueType::I64,
+        ValueType::F32,
+        ValueType::F64,
+        ValueType::FuncRef,
+        ValueType::ExternRef,
+    ];
+    (0..count)
+        .map(|i| {
+            let func_name = format!("{i}");
+            let (len_params, len_results) = if i % 2 == 0 {
+                ((i / (types.len() * 2)) + 1, 0)
+            } else {
+                (0, (i / (types.len() * 2)) + 1)
+            };
+            let chosen_type = types[i % 4];
+            let func_type = FuncType::new(
+                vec![chosen_type; len_params],
+                vec![chosen_type; len_results],
+            );
+            (func_name, func_type)
+        })
+        .collect()
+}
+
+fn bench_linker_setup_unique(c: &mut Criterion) {
+    let len_funcs = 50;
+    let bench_id = format!("linker/setup/unique/{len_funcs}");
+    c.bench_function(&bench_id, |b| {
+        let funcs = generate_unique_host_functions(len_funcs);
+        b.iter(|| {
+            let engine = Engine::default();
+            let mut linker = <Linker<()>>::new(&engine);
+            for (func_name, func_type) in &funcs {
+                linker
+                    .func_new(
+                        "env",
+                        func_name,
+                        func_type.clone(),
+                        move |_caller, _params, _results| Ok(()),
+                    )
+                    .unwrap();
+            }
+        })
+    });
+}
+
+fn bench_linker_build_finish_unique(c: &mut Criterion) {
+    let len_funcs = 50;
+    let bench_id = format!("linker/build/finish/unique/{len_funcs}");
+    c.bench_function(&bench_id, |b| {
+        let funcs = generate_unique_host_functions(len_funcs);
+        let mut builder = <Linker<()>>::build();
+        for (func_name, func_type) in &funcs {
+            builder
+                .func_new(
+                    "env",
+                    func_name,
+                    func_type.clone(),
+                    move |_caller, _params, _results| Ok(()),
+                )
+                .unwrap();
+        }
+        b.iter(|| {
+            let engine = Engine::default();
+            _ = builder.finish(&engine);
+        })
+    });
+}
+
+fn bench_linker_build_construct_unique(c: &mut Criterion) {
+    let len_funcs = 50;
+    let bench_id = format!("linker/build/construct/unique/{len_funcs}");
+    c.bench_function(&bench_id, |b| {
+        let funcs = generate_unique_host_functions(len_funcs);
+        b.iter(|| {
+            let mut builder = <Linker<()>>::build();
+            for (func_name, func_type) in &funcs {
+                builder
+                    .func_new(
+                        "env",
+                        func_name,
+                        func_type.clone(),
+                        move |_caller, _params, _results| Ok(()),
+                    )
+                    .unwrap();
+            }
         })
     });
 }

@@ -19,9 +19,10 @@ use crate::{
     Value,
 };
 use core::{
-    fmt,
-    fmt::{Debug, Display},
-    num::NonZeroUsize,
+    borrow::Borrow,
+    cmp::Ordering,
+    fmt::{self, Debug, Display},
+    mem,
     ops::Deref,
 };
 use std::{
@@ -217,15 +218,9 @@ impl Display for LinkerError {
 /// Comparing symbols for equality is equal to comparing their respective
 /// interned strings for equality given that both symbol are coming from
 /// the same string interner instance.
-///
-/// # Dev. Note
-///
-/// Internally we use [`NonZeroUsize`] so that `Option<Symbol>` can
-/// be space optimized easily by the compiler. This is important since
-/// in [`ImportKey`] we are making extensive use of `Option<Symbol>`.
 #[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct Symbol(NonZeroUsize);
+pub struct Symbol(u32);
 
 impl Symbol {
     /// Creates a new symbol.
@@ -233,15 +228,103 @@ impl Symbol {
     /// # Panics
     ///
     /// If the `value` is equal to `usize::MAX`.
+    #[inline]
     pub fn from_usize(value: usize) -> Self {
-        NonZeroUsize::new(value.wrapping_add(1))
-            .map(Symbol)
-            .expect("encountered invalid symbol value")
+        let Ok(value) = u32::try_from(value) else {
+            panic!("encountered invalid symbol value: {value}");
+        };
+        Self(value)
     }
 
     /// Returns the underlying `usize` value of the [`Symbol`].
+    #[inline]
     pub fn into_usize(self) -> usize {
-        self.0.get().wrapping_sub(1)
+        self.0 as usize
+    }
+
+    /// Returns the underlying `u32` value of the [`Symbol`].
+    #[inline]
+    pub fn into_u32(self) -> u32 {
+        self.0
+    }
+}
+
+/// An `Arc<str>` that defines its own (more efficient) [`Ord`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct LenOrder(Arc<str>);
+
+impl Ord for LenOrder {
+    #[inline]
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.as_str().cmp(other.as_str())
+    }
+}
+
+impl PartialOrd for LenOrder {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl LenOrder {
+    pub fn as_str(&self) -> &LenOrderStr {
+        (&*self.0).into()
+    }
+}
+
+/// A `str` that defines its own (more efficient) [`Ord`].
+#[derive(Debug, Eq, PartialEq)]
+#[repr(transparent)]
+pub struct LenOrderStr(str);
+
+impl<'a> From<&'a str> for &'a LenOrderStr {
+    #[inline]
+    fn from(value: &'a str) -> Self {
+        // Safety: This operation is safe because
+        //
+        // - we preserve the lifetime `'a`
+        // - the `LenOrderStr` type is a `str` newtype wrapper and `#[repr(transparent)`
+        unsafe { mem::transmute(value) }
+    }
+}
+
+impl Borrow<LenOrderStr> for LenOrder {
+    #[inline]
+    fn borrow(&self) -> &LenOrderStr {
+        (&*self.0).into()
+    }
+}
+
+impl PartialOrd for LenOrderStr {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for LenOrderStr {
+    #[inline]
+    fn cmp(&self, other: &Self) -> Ordering {
+        let lhs = self.0.as_bytes();
+        let rhs = other.0.as_bytes();
+        match lhs.len().cmp(&rhs.len()) {
+            Ordering::Equal => {
+                if lhs.len() < 8 {
+                    for (l, r) in lhs.iter().zip(rhs) {
+                        match l.cmp(r) {
+                            Ordering::Equal => (),
+                            ordering => return ordering,
+                        }
+                    }
+                    Ordering::Equal
+                } else {
+                    lhs.cmp(rhs)
+                }
+            }
+            ordering => ordering,
+        }
     }
 }
 
@@ -250,7 +333,7 @@ impl Symbol {
 /// Efficiently interns strings and distributes symbols.
 #[derive(Debug, Default, Clone)]
 pub struct StringInterner {
-    string2idx: BTreeMap<Arc<str>, Symbol>,
+    string2idx: BTreeMap<LenOrder, Symbol>,
     strings: Vec<Arc<str>>,
 }
 
@@ -262,12 +345,12 @@ impl StringInterner {
 
     /// Returns the symbol of the string and interns it if necessary.
     pub fn get_or_intern(&mut self, string: &str) -> Symbol {
-        match self.string2idx.get(string) {
+        match self.string2idx.get(<&LenOrderStr>::from(string)) {
             Some(symbol) => *symbol,
             None => {
                 let symbol = self.next_symbol();
                 let rc_string: Arc<str> = Arc::from(string);
-                self.string2idx.insert(rc_string.clone(), symbol);
+                self.string2idx.insert(LenOrder(rc_string.clone()), symbol);
                 self.strings.push(rc_string);
                 symbol
             }
@@ -276,7 +359,7 @@ impl StringInterner {
 
     /// Returns the symbol for the string if interned.
     pub fn get(&self, string: &str) -> Option<Symbol> {
-        self.string2idx.get(string).copied()
+        self.string2idx.get(<&LenOrderStr>::from(string)).copied()
     }
 
     /// Resolves the symbol to the underlying string.
@@ -286,15 +369,47 @@ impl StringInterner {
 }
 
 /// Wasm import keys.
-#[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq)]
+#[repr(transparent)]
 struct ImportKey {
-    /// The name of the module for the definition.
-    module: Symbol,
-    /// The name of the definition within the module scope.
-    name: Symbol,
+    /// Merged module and name symbols.
+    ///
+    /// Merging allows for a faster `Ord` implementation.
+    module_and_name: u64,
+}
+
+impl Debug for ImportKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ImportKey")
+            .field("module", &self.module())
+            .field("name", &self.name())
+            .finish()
+    }
+}
+
+impl ImportKey {
+    /// Creates a new [`ImportKey`] from the given `module` and `name` symbols.
+    #[inline]
+    pub fn new(module: Symbol, name: Symbol) -> Self {
+        let module_and_name = u64::from(module.into_u32()) << 32 | u64::from(name.into_u32());
+        Self { module_and_name }
+    }
+
+    /// Returns the `module` [`Symbol`] of the [`ImportKey`].
+    #[inline]
+    pub fn module(&self) -> Symbol {
+        Symbol((self.module_and_name >> 32) as u32)
+    }
+
+    /// Returns the `name` [`Symbol`] of the [`ImportKey`].
+    #[inline]
+    pub fn name(&self) -> Symbol {
+        Symbol(self.module_and_name as u32)
+    }
 }
 
 /// A [`Linker`] definition.
+#[derive(Debug)]
 enum Definition<T> {
     /// An external item from an [`Instance`](crate::Instance).
     Extern(Extern),
@@ -326,14 +441,7 @@ impl<T> Definition<T> {
     pub fn ty(&self, ctx: impl AsContext) -> ExternType {
         match self {
             Definition::Extern(item) => item.ty(ctx),
-            Definition::HostFunc(host_func) => {
-                let func_type = ctx
-                    .as_context()
-                    .store
-                    .engine()
-                    .resolve_func_type(host_func.ty_dedup(), FuncType::clone);
-                ExternType::Func(func_type)
-            }
+            Definition::HostFunc(host_func) => ExternType::Func(host_func.func_type().clone()),
         }
     }
 
@@ -355,8 +463,11 @@ impl<T> Definition<T> {
                     .as_context_mut()
                     .store
                     .alloc_trampoline(host_func.trampoline().clone());
-                let ty_dedup = host_func.ty_dedup();
-                let entity = HostFuncEntity::new(*ty_dedup, trampoline);
+                let ty_dedup = ctx
+                    .as_context()
+                    .engine()
+                    .alloc_func_type(host_func.func_type().clone());
+                let entity = HostFuncEntity::new(ty_dedup, trampoline);
                 let func = ctx
                     .as_context_mut()
                     .store
@@ -369,66 +480,8 @@ impl<T> Definition<T> {
     }
 }
 
-/// [`Debug`]-wrapper for the definitions of a [`Linker`].
-pub struct DebugDefinitions<'a, T> {
-    /// The [`Engine`] of the [`Linker`].
-    engine: &'a Engine,
-    /// The definitions of the [`Linker`].
-    definitions: &'a BTreeMap<ImportKey, Definition<T>>,
-}
-
-impl<'a, T> DebugDefinitions<'a, T> {
-    /// Create a new [`Debug`]-wrapper for the [`Linker`] definitions.
-    fn new(linker: &'a Linker<T>) -> Self {
-        Self {
-            engine: linker.engine(),
-            definitions: &linker.definitions,
-        }
-    }
-}
-
-impl<'a, T> Debug for DebugDefinitions<'a, T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut map = f.debug_map();
-        for (name, definition) in self.definitions {
-            match definition {
-                Definition::Extern(definition) => {
-                    map.entry(name, definition);
-                }
-                Definition::HostFunc(definition) => {
-                    map.entry(name, &DebugHostFuncEntity::new(self.engine, definition));
-                }
-            }
-        }
-        map.finish()
-    }
-}
-
-/// [`Debug`]-wrapper for [`HostFuncTrampolineEntity`] in the [`Linker`].
-pub struct DebugHostFuncEntity<'a, T> {
-    /// The [`Engine`] of the [`Linker`].
-    engine: &'a Engine,
-    /// The host function to be [`Debug`] formatted.
-    host_func: &'a HostFuncTrampolineEntity<T>,
-}
-
-impl<'a, T> DebugHostFuncEntity<'a, T> {
-    /// Create a new [`Debug`]-wrapper for the [`HostFuncTrampolineEntity`].
-    fn new(engine: &'a Engine, host_func: &'a HostFuncTrampolineEntity<T>) -> Self {
-        Self { engine, host_func }
-    }
-}
-
-impl<'a, T> Debug for DebugHostFuncEntity<'a, T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.engine
-            .resolve_func_type(self.host_func.ty_dedup(), |func_type| {
-                f.debug_struct("HostFunc").field("ty", func_type).finish()
-            })
-    }
-}
-
 /// A linker used to define module imports and instantiate module instances.
+#[derive(Debug)]
 pub struct Linker<T> {
     /// The underlying [`Engine`] for the [`Linker`].
     ///
@@ -437,27 +490,15 @@ pub struct Linker<T> {
     /// Primarily required to define [`Linker`] owned host functions
     //  using [`Linker::func_wrap`] and [`Linker::func_new`]. TODO: implement methods
     engine: Engine,
-    /// Allows to efficiently store strings and deduplicate them..
-    strings: StringInterner,
-    /// Stores the definitions given their names.
-    definitions: BTreeMap<ImportKey, Definition<T>>,
-}
-
-impl<T> Debug for Linker<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Linker")
-            .field("strings", &self.strings)
-            .field("definitions", &DebugDefinitions::new(self))
-            .finish()
-    }
+    /// Inner linker implementation details.
+    inner: LinkerInner<T>,
 }
 
 impl<T> Clone for Linker<T> {
     fn clone(&self) -> Linker<T> {
         Self {
             engine: self.engine.clone(),
-            strings: self.strings.clone(),
-            definitions: self.definitions.clone(),
+            inner: self.inner.clone(),
         }
     }
 }
@@ -469,12 +510,18 @@ impl<T> Default for Linker<T> {
 }
 
 impl<T> Linker<T> {
-    /// Creates a new linker.
+    /// Creates a new [`Linker`].
     pub fn new(engine: &Engine) -> Self {
         Self {
             engine: engine.clone(),
-            strings: StringInterner::default(),
-            definitions: BTreeMap::default(),
+            inner: LinkerInner::default(),
+        }
+    }
+
+    /// Creates a new [`LinkerBuilder`] to construct a [`Linker`].
+    pub fn build() -> LinkerBuilder<T> {
+        LinkerBuilder {
+            inner: LinkerInner::default(),
         }
     }
 
@@ -494,8 +541,8 @@ impl<T> Linker<T> {
         name: &str,
         item: impl Into<Extern>,
     ) -> Result<&mut Self, LinkerError> {
-        let key = self.import_key(module, name);
-        self.insert(key, Definition::Extern(item.into()))?;
+        let key = self.inner.import_key(module, name);
+        self.inner.insert(key, Definition::Extern(item.into()))?;
         Ok(self)
     }
 
@@ -516,9 +563,9 @@ impl<T> Linker<T> {
             + Sync
             + 'static,
     ) -> Result<&mut Self, LinkerError> {
-        let func = HostFuncTrampolineEntity::new(&self.engine, ty, func);
-        let key = self.import_key(module, name);
-        self.insert(key, Definition::HostFunc(func))?;
+        let func = HostFuncTrampolineEntity::new(ty, func);
+        let key = self.inner.import_key(module, name);
+        self.inner.insert(key, Definition::HostFunc(func))?;
         Ok(self)
     }
 
@@ -549,46 +596,10 @@ impl<T> Linker<T> {
         name: &str,
         func: impl IntoFunc<T, Params, Args>,
     ) -> Result<&mut Self, LinkerError> {
-        let func = HostFuncTrampolineEntity::wrap(&self.engine, func);
-        let key = self.import_key(module, name);
-        self.insert(key, Definition::HostFunc(func))?;
+        let func = HostFuncTrampolineEntity::wrap(func);
+        let key = self.inner.import_key(module, name);
+        self.inner.insert(key, Definition::HostFunc(func))?;
         Ok(self)
-    }
-
-    /// Returns the import key for the module name and item name.
-    fn import_key(&mut self, module: &str, name: &str) -> ImportKey {
-        ImportKey {
-            module: self.strings.get_or_intern(module),
-            name: self.strings.get_or_intern(name),
-        }
-    }
-
-    /// Resolves the module and item name of the import key if any.
-    fn resolve_import_key(&self, key: ImportKey) -> Option<(&str, &str)> {
-        let module_name = self.strings.resolve(key.module)?;
-        let item_name = self.strings.resolve(key.name)?;
-        Some((module_name, item_name))
-    }
-
-    /// Inserts the extern item under the import key.
-    ///
-    /// # Errors
-    ///
-    /// If there already is a definition for the import key for this [`Linker`].
-    fn insert(&mut self, key: ImportKey, item: Definition<T>) -> Result<(), LinkerError> {
-        match self.definitions.entry(key) {
-            Entry::Occupied(_) => {
-                let (module_name, field_name) = self
-                    .resolve_import_key(key)
-                    .unwrap_or_else(|| panic!("encountered missing import names for key {key:?}"));
-                let import_name = ImportName::new(module_name, field_name);
-                return Err(LinkerError::DuplicateDefinition { import_name });
-            }
-            Entry::Vacant(v) => {
-                v.insert(item);
-            }
-        }
-        Ok(())
     }
 
     /// Looks up a defined [`Extern`] by name in this [`Linker`].
@@ -628,11 +639,7 @@ impl<T> Linker<T> {
             context.as_context().store.engine(),
             self.engine()
         ));
-        let key = ImportKey {
-            module: self.strings.get(module)?,
-            name: self.strings.get(name)?,
-        };
-        self.definitions.get(&key)
+        self.inner.get_definition(module, name)
     }
 
     /// Instantiates the given [`Module`] using the definitions in the [`Linker`].
@@ -742,6 +749,216 @@ impl<T> Linker<T> {
                 Ok(Extern::Global(global))
             }
         }
+    }
+}
+
+/// A linker used to define module imports and instantiate module instances.
+#[derive(Debug)]
+pub struct LinkerBuilder<T> {
+    /// Internal linker implementation details.
+    inner: LinkerInner<T>,
+}
+
+impl<T> Clone for LinkerBuilder<T> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+        }
+    }
+}
+
+impl<T> LinkerBuilder<T> {
+    /// Finishes construction of the [`Linker`] by attaching an [`Engine`].
+    pub fn finish(&self, engine: &Engine) -> Linker<T> {
+        Linker {
+            engine: engine.clone(),
+            inner: self.inner.clone(),
+        }
+    }
+
+    /// Creates a new named [`Func::new`]-style host [`Func`] for this [`Linker`].
+    ///
+    /// For more information see [`Linker::func_wrap`].
+    ///
+    /// # Errors
+    ///
+    /// If there already is a definition under the same name for this [`Linker`].
+    pub fn func_new(
+        &mut self,
+        module: &str,
+        name: &str,
+        ty: FuncType,
+        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Error>
+            + Send
+            + Sync
+            + 'static,
+    ) -> Result<&mut Self, LinkerError> {
+        self.inner.func_new(module, name, ty, func)?;
+        Ok(self)
+    }
+
+    /// Creates a new named [`Func::new`]-style host [`Func`] for this [`Linker`].
+    ///
+    /// For information how to use this API see [`Func::wrap`].
+    ///
+    /// This method creates a host function for this [`Linker`] under the given name.
+    /// It is distinct in its ability to create a [`Store`] independent
+    /// host function. Host functions defined this way can be used to instantiate
+    /// instances in multiple different [`Store`] entities.
+    ///
+    /// The same applies to other [`Linker`] methods to define new [`Func`] instances
+    /// such as [`Linker::func_new`].
+    ///
+    /// In a concurrently running program, this means that these host functions
+    /// could be called concurrently if different [`Store`] entities are executing on
+    /// different threads.
+    ///
+    /// # Errors
+    ///
+    /// If there already is a definition under the same name for this [`Linker`].
+    ///
+    /// [`Store`]: crate::Store
+    pub fn func_wrap<Params, Args>(
+        &mut self,
+        module: &str,
+        name: &str,
+        func: impl IntoFunc<T, Params, Args>,
+    ) -> Result<&mut Self, LinkerError> {
+        self.inner.func_wrap(module, name, func)?;
+        Ok(self)
+    }
+}
+
+/// Internal [`Linker`] implementation.
+#[derive(Debug)]
+pub struct LinkerInner<T> {
+    /// Allows to efficiently store strings and deduplicate them..
+    strings: StringInterner,
+    /// Stores the definitions given their names.
+    definitions: BTreeMap<ImportKey, Definition<T>>,
+}
+
+impl<T> Default for LinkerInner<T> {
+    fn default() -> Self {
+        Self {
+            strings: StringInterner::default(),
+            definitions: BTreeMap::default(),
+        }
+    }
+}
+
+impl<T> Clone for LinkerInner<T> {
+    fn clone(&self) -> Self {
+        Self {
+            strings: self.strings.clone(),
+            definitions: self.definitions.clone(),
+        }
+    }
+}
+
+impl<T> LinkerInner<T> {
+    /// Returns the import key for the module name and item name.
+    fn import_key(&mut self, module: &str, name: &str) -> ImportKey {
+        ImportKey::new(
+            self.strings.get_or_intern(module),
+            self.strings.get_or_intern(name),
+        )
+    }
+
+    /// Resolves the module and item name of the import key if any.
+    fn resolve_import_key(&self, key: ImportKey) -> Option<(&str, &str)> {
+        let module_name = self.strings.resolve(key.module())?;
+        let item_name = self.strings.resolve(key.name())?;
+        Some((module_name, item_name))
+    }
+
+    /// Inserts the extern item under the import key.
+    ///
+    /// # Errors
+    ///
+    /// If there already is a definition for the import key for this [`Linker`].
+    fn insert(&mut self, key: ImportKey, item: Definition<T>) -> Result<(), LinkerError> {
+        match self.definitions.entry(key) {
+            Entry::Occupied(_) => {
+                let (module_name, field_name) = self
+                    .resolve_import_key(key)
+                    .unwrap_or_else(|| panic!("encountered missing import names for key {key:?}"));
+                let import_name = ImportName::new(module_name, field_name);
+                return Err(LinkerError::DuplicateDefinition { import_name });
+            }
+            Entry::Vacant(v) => {
+                v.insert(item);
+            }
+        }
+        Ok(())
+    }
+
+    /// Creates a new named [`Func::new`]-style host [`Func`] for this [`Linker`].
+    ///
+    /// For more information see [`Linker::func_wrap`].
+    ///
+    /// # Errors
+    ///
+    /// If there already is a definition under the same name for this [`Linker`].
+    pub fn func_new(
+        &mut self,
+        module: &str,
+        name: &str,
+        ty: FuncType,
+        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Error>
+            + Send
+            + Sync
+            + 'static,
+    ) -> Result<&mut Self, LinkerError> {
+        let func = HostFuncTrampolineEntity::new(ty, func);
+        let key = self.import_key(module, name);
+        self.insert(key, Definition::HostFunc(func))?;
+        Ok(self)
+    }
+
+    /// Creates a new named [`Func::new`]-style host [`Func`] for this [`Linker`].
+    ///
+    /// For information how to use this API see [`Func::wrap`].
+    ///
+    /// This method creates a host function for this [`Linker`] under the given name.
+    /// It is distinct in its ability to create a [`Store`] independent
+    /// host function. Host functions defined this way can be used to instantiate
+    /// instances in multiple different [`Store`] entities.
+    ///
+    /// The same applies to other [`Linker`] methods to define new [`Func`] instances
+    /// such as [`Linker::func_new`].
+    ///
+    /// In a concurrently running program, this means that these host functions
+    /// could be called concurrently if different [`Store`] entities are executing on
+    /// different threads.
+    ///
+    /// # Errors
+    ///
+    /// If there already is a definition under the same name for this [`Linker`].
+    ///
+    /// [`Store`]: crate::Store
+    pub fn func_wrap<Params, Args>(
+        &mut self,
+        module: &str,
+        name: &str,
+        func: impl IntoFunc<T, Params, Args>,
+    ) -> Result<&mut Self, LinkerError> {
+        let func = HostFuncTrampolineEntity::wrap(func);
+        let key = self.import_key(module, name);
+        self.insert(key, Definition::HostFunc(func))?;
+        Ok(self)
+    }
+
+    /// Looks up a [`Definition`] by name in this [`Linker`].
+    ///
+    /// Returns `None` if this name was not previously defined in this [`Linker`].
+    ///
+    /// # Panics
+    ///
+    /// If the [`Engine`] of this [`Linker`] and the [`Engine`] of `context` are not the same.
+    fn get_definition(&self, module: &str, name: &str) -> Option<&Definition<T>> {
+        let key = ImportKey::new(self.strings.get(module)?, self.strings.get(name)?);
+        self.definitions.get(&key)
     }
 }
 
