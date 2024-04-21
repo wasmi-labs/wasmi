@@ -513,10 +513,18 @@ impl<T> Default for Linker<T> {
 }
 
 impl<T> Linker<T> {
-    /// Creates a new linker.
+    /// Creates a new [`Linker`].
     pub fn new(engine: &Engine) -> Self {
         Self {
             engine: engine.clone(),
+            strings: StringInterner::default(),
+            definitions: BTreeMap::default(),
+        }
+    }
+
+    /// Creates a new [`LinkerBuilder`] to construct a [`Linker`].
+    pub fn build() -> LinkerBuilder<T> {
+        LinkerBuilder {
             strings: StringInterner::default(),
             definitions: BTreeMap::default(),
         }
@@ -891,5 +899,126 @@ mod tests {
         assert_eq!(wasm_get_b.call(&mut store, ()).unwrap(), b_init);
         wasm_set_b.call(&mut store, 200).unwrap();
         assert_eq!(wasm_get_b.call(&mut store, ()).unwrap(), 200);
+    }
+}
+
+/// A linker used to define module imports and instantiate module instances.
+#[derive(Debug)]
+pub struct LinkerBuilder<T> {
+    /// Allows to efficiently store strings and deduplicate them..
+    strings: StringInterner,
+    /// Stores the definitions given their names.
+    definitions: BTreeMap<ImportKey, Definition<T>>,
+}
+
+impl<T> Clone for LinkerBuilder<T> {
+    fn clone(&self) -> Self {
+        Self {
+            strings: self.strings.clone(),
+            definitions: self.definitions.clone(),
+        }
+    }
+}
+
+impl<T> LinkerBuilder<T> {
+    /// Finishes construction of the [`Linker`] by attaching an [`Engine`].
+    pub fn finish(&self, engine: &Engine) -> Linker<T> {
+        Linker {
+            engine: engine.clone(),
+            strings: self.strings.clone(),
+            definitions: self.definitions.clone(),
+        }
+    }
+
+    /// Returns the import key for the module name and item name.
+    fn import_key(&mut self, module: &str, name: &str) -> ImportKey {
+        ImportKey::new(
+            self.strings.get_or_intern(module),
+            self.strings.get_or_intern(name),
+        )
+    }
+
+    /// Resolves the module and item name of the import key if any.
+    fn resolve_import_key(&self, key: ImportKey) -> Option<(&str, &str)> {
+        let module_name = self.strings.resolve(key.module())?;
+        let item_name = self.strings.resolve(key.name())?;
+        Some((module_name, item_name))
+    }
+
+    /// Inserts the extern item under the import key.
+    ///
+    /// # Errors
+    ///
+    /// If there already is a definition for the import key for this [`Linker`].
+    fn insert(&mut self, key: ImportKey, item: Definition<T>) -> Result<(), LinkerError> {
+        match self.definitions.entry(key) {
+            Entry::Occupied(_) => {
+                let (module_name, field_name) = self
+                    .resolve_import_key(key)
+                    .unwrap_or_else(|| panic!("encountered missing import names for key {key:?}"));
+                let import_name = ImportName::new(module_name, field_name);
+                return Err(LinkerError::DuplicateDefinition { import_name });
+            }
+            Entry::Vacant(v) => {
+                v.insert(item);
+            }
+        }
+        Ok(())
+    }
+
+    /// Creates a new named [`Func::new`]-style host [`Func`] for this [`Linker`].
+    ///
+    /// For more information see [`Linker::func_wrap`].
+    ///
+    /// # Errors
+    ///
+    /// If there already is a definition under the same name for this [`Linker`].
+    pub fn func_new(
+        &mut self,
+        module: &str,
+        name: &str,
+        ty: FuncType,
+        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Error>
+            + Send
+            + Sync
+            + 'static,
+    ) -> Result<&mut Self, LinkerError> {
+        let func = HostFuncTrampolineEntity::new(ty, func);
+        let key = self.import_key(module, name);
+        self.insert(key, Definition::HostFunc(func))?;
+        Ok(self)
+    }
+
+    /// Creates a new named [`Func::new`]-style host [`Func`] for this [`Linker`].
+    ///
+    /// For information how to use this API see [`Func::wrap`].
+    ///
+    /// This method creates a host function for this [`Linker`] under the given name.
+    /// It is distinct in its ability to create a [`Store`] independent
+    /// host function. Host functions defined this way can be used to instantiate
+    /// instances in multiple different [`Store`] entities.
+    ///
+    /// The same applies to other [`Linker`] methods to define new [`Func`] instances
+    /// such as [`Linker::func_new`].
+    ///
+    /// In a concurrently running program, this means that these host functions
+    /// could be called concurrently if different [`Store`] entities are executing on
+    /// different threads.
+    ///
+    /// # Errors
+    ///
+    /// If there already is a definition under the same name for this [`Linker`].
+    ///
+    /// [`Store`]: crate::Store
+    pub fn func_wrap<Params, Args>(
+        &mut self,
+        module: &str,
+        name: &str,
+        func: impl IntoFunc<T, Params, Args>,
+    ) -> Result<&mut Self, LinkerError> {
+        let func = HostFuncTrampolineEntity::wrap(func);
+        let key = self.import_key(module, name);
+        self.insert(key, Definition::HostFunc(func))?;
+        Ok(self)
     }
 }
