@@ -109,7 +109,7 @@ impl InternalFuncEntity {
                 unreachable!("expected func to be uncompiled: {func:?}")
             }
         };
-        let func_idx = uncompiled.func_idx;
+        let func_idx = uncompiled.func_index;
         let bytes = mem::take(&mut uncompiled.bytes);
         let needs_validation = uncompiled.func_to_validate.is_some();
         let compilation_fuel = |_costs: &FuelCosts| {
@@ -163,8 +163,8 @@ impl InternalFuncEntity {
 
 /// An internal uncompiled function entity.
 pub struct UncompiledFuncEntity {
-    /// The index of the function within the `module`.
-    func_idx: FuncIdx,
+    /// The index of the function within the Wasm module.
+    func_index: FuncIdx,
     /// The Wasm binary bytes.
     bytes: SmallByteSlice,
     /// The Wasm module of the Wasm function.
@@ -187,7 +187,7 @@ impl UncompiledFuncEntity {
         func_to_validate: impl Into<Option<FuncToValidate<ValidatorResources>>>,
     ) -> Self {
         Self {
-            func_idx,
+            func_index: func_idx,
             bytes: bytes.into(),
             module,
             func_to_validate: func_to_validate.into(),
@@ -198,7 +198,7 @@ impl UncompiledFuncEntity {
 impl fmt::Debug for UncompiledFuncEntity {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("UncompiledFuncEntity")
-            .field("func_idx", &self.func_idx)
+            .field("func_idx", &self.func_index)
             .field("bytes", &self.bytes)
             .field("module", &self.module)
             .field("validate", &self.func_to_validate.is_some())
