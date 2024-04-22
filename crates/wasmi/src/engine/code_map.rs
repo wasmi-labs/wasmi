@@ -5,12 +5,19 @@
 //! This is the data structure specialized to handle compiled
 //! register machine based bytecode functions.
 
-use super::{FuncTranslationDriver, FuncTranslator, TranslationError, ValidatingFuncTranslator};
+use super::{
+    FuelCosts,
+    FuncTranslationDriver,
+    FuncTranslator,
+    TranslationError,
+    ValidatingFuncTranslator,
+};
 use crate::{
     core::UntypedValue,
     engine::bytecode::Instruction,
     module::{FuncIdx, ModuleHeader},
     store::{Fuel, FuelError},
+    Config,
     Error,
 };
 use core::{
@@ -25,7 +32,7 @@ use core::{
 use std::boxed::Box;
 use wasmi_arena::{Arena, ArenaIndex};
 use wasmi_core::TrapCode;
-use wasmparser::{FuncToValidate, ValidatorResources};
+use wasmparser::{FuncToValidate, ValidatorResources, WasmFeatures};
 
 /// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`](crate::Engine).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -96,17 +103,26 @@ impl InternalFuncEntity {
     ///
     /// - If function translation failed.
     /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
-    fn compile(&mut self, fuel: Option<&mut Fuel>) -> Result<(), Error> {
+    fn compile(&mut self, fuel: Option<&mut Fuel>, features: &WasmFeatures) -> Result<(), Error> {
         let uncompiled = match self {
             InternalFuncEntity::Uncompiled(func) => func,
             InternalFuncEntity::Compiled(func) => {
                 unreachable!("expected func to be uncompiled: {func:?}")
             }
         };
-        let func_idx = uncompiled.func_idx;
+        let func_idx = uncompiled.func_index;
         let bytes = mem::take(&mut uncompiled.bytes);
+        let needs_validation = uncompiled.validation.is_some();
+        let compilation_fuel = |_costs: &FuelCosts| {
+            let len_bytes = bytes.as_slice().len() as u64;
+            let compile_factor = match needs_validation {
+                false => 7,
+                true => 9,
+            };
+            len_bytes.saturating_mul(compile_factor)
+        };
         if let Some(fuel) = fuel {
-            match fuel.consume_fuel(|costs| costs.fuel_for_bytes(bytes.as_slice().len() as u64)) {
+            match fuel.consume_fuel(compilation_fuel) {
                 Err(FuelError::OutOfFuel) => return Err(Error::from(TrapCode::OutOfFuel)),
                 Ok(_) | Err(FuelError::FuelMeteringDisabled) => {}
             }
@@ -118,10 +134,16 @@ impl InternalFuncEntity {
                 module.engine()
             )
         };
-        match uncompiled.func_to_validate.take() {
-            Some(func_to_validate) => {
+        match uncompiled.validation.take() {
+            Some((type_index, resources)) => {
                 let allocs = engine.get_allocs();
                 let translator = FuncTranslator::new(func_idx, module, allocs.0)?;
+                let func_to_validate = FuncToValidate {
+                    resources,
+                    index: func_idx.into_u32(),
+                    ty: type_index.0,
+                    features: *features,
+                };
                 let validator = func_to_validate.into_validator(allocs.1);
                 let translator = ValidatingFuncTranslator::new(validator, translator)?;
                 let allocs = FuncTranslationDriver::new(0, &bytes[..], translator)?.translate(
@@ -148,8 +170,8 @@ impl InternalFuncEntity {
 
 /// An internal uncompiled function entity.
 pub struct UncompiledFuncEntity {
-    /// The index of the function within the `module`.
-    func_idx: FuncIdx,
+    /// The index of the function within the Wasm module.
+    func_index: FuncIdx,
     /// The Wasm binary bytes.
     bytes: SmallByteSlice,
     /// The Wasm module of the Wasm function.
@@ -160,22 +182,37 @@ pub struct UncompiledFuncEntity {
     /// Optional Wasm validation information.
     ///
     /// This is `Some` if the [`UncompiledFuncEntity`] is to be validated upon compilation.
-    func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+    validation: Option<(TypeIndex, ValidatorResources)>,
 }
+
+/// A function type index into the Wasm module.
+#[derive(Debug, Copy, Clone)]
+#[repr(transparent)]
+pub struct TypeIndex(u32);
 
 impl UncompiledFuncEntity {
     /// Creates a new [`UncompiledFuncEntity`].
     pub fn new(
-        func_idx: FuncIdx,
+        func_index: FuncIdx,
         bytes: impl Into<SmallByteSlice>,
         module: ModuleHeader,
         func_to_validate: impl Into<Option<FuncToValidate<ValidatorResources>>>,
     ) -> Self {
+        let validation = func_to_validate.into().map(|func_to_validate| {
+            assert_eq!(
+                func_to_validate.index,
+                func_index.into_u32(),
+                "Wasmi function index ({}) does not match with Wasm validation function index ({})",
+                func_to_validate.index,
+                func_index.into_u32(),
+            );
+            (TypeIndex(func_to_validate.ty), func_to_validate.resources)
+        });
         Self {
-            func_idx,
+            func_index,
             bytes: bytes.into(),
             module,
-            func_to_validate: func_to_validate.into(),
+            validation,
         }
     }
 }
@@ -183,10 +220,10 @@ impl UncompiledFuncEntity {
 impl fmt::Debug for UncompiledFuncEntity {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("UncompiledFuncEntity")
-            .field("func_idx", &self.func_idx)
+            .field("func_idx", &self.func_index)
             .field("bytes", &self.bytes)
             .field("module", &self.module)
-            .field("validate", &self.func_to_validate.is_some())
+            .field("validate", &self.validation.is_some())
             .finish()
     }
 }
@@ -218,7 +255,7 @@ impl Default for SmallByteSlice {
 
 impl SmallByteSlice {
     /// The maximum amount of bytes that can be stored inline.
-    const MAX_INLINE_SIZE: usize = 30;
+    const MAX_INLINE_SIZE: usize = 22;
 
     /// Returns the underlying slice of bytes.
     #[inline]
@@ -338,9 +375,10 @@ impl CompiledFuncEntity {
 }
 
 /// Datastructure to efficiently store information about compiled functions.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct CodeMap {
     funcs: Arena<CompiledFunc, FuncEntity>,
+    features: WasmFeatures,
 }
 
 /// Atomicly accessible [`CompilationPhase`].
@@ -624,6 +662,7 @@ impl FuncEntity {
     pub fn compile_and_get(
         &self,
         mut fuel: Option<&mut Fuel>,
+        features: &WasmFeatures,
     ) -> Result<&CompiledFuncEntity, Error> {
         loop {
             if let Some(func) = self.get_compiled() {
@@ -646,7 +685,7 @@ impl FuncEntity {
             // Note: We need to use `take` because Rust doesn't know that this part of
             //       the loop is only executed once.
             let fuel = fuel.take();
-            match func.compile(fuel) {
+            match func.compile(fuel, features) {
                 Ok(()) => {
                     self.phase
                         .set_compiled()
@@ -664,6 +703,14 @@ impl FuncEntity {
 }
 
 impl CodeMap {
+    /// Creates a new [`CodeMap`].
+    pub fn new(config: &Config) -> Self {
+        Self {
+            funcs: Arena::default(),
+            features: config.wasm_features(),
+        }
+    }
+
     /// Allocates a new uninitialized [`CompiledFunc`] to the [`CodeMap`].
     ///
     /// # Note
@@ -724,7 +771,7 @@ impl CodeMap {
         };
         match func.get_compiled() {
             Some(func) => Ok(func),
-            None => func.compile_and_get(fuel),
+            None => func.compile_and_get(fuel, &self.features),
         }
     }
 }

@@ -9,18 +9,187 @@ use std::{sync::Arc, vec::Vec};
 /// Can be cloned cheaply.
 #[derive(Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub struct FuncType {
-    /// The number of function parameters.
-    len_params: usize,
-    /// The ordered and merged parameter and result types of the function type.
+    /// The inner function type internals.
+    inner: FuncTypeInner,
+}
+
+/// Internal details of [`FuncType`].
+#[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
+pub enum FuncTypeInner {
+    /// Stores the value types of the parameters and results inline.
+    Inline {
+        /// The number of parameters.
+        len_params: u8,
+        /// The number of results.
+        len_results: u8,
+        /// The parameter types, followed by the result types, followed by unspecified elements.
+        params_results: [ValueType; Self::INLINE_SIZE],
+    },
+    /// Stores the value types of the parameters and results on the heap.
+    Big {
+        /// The number of parameters.
+        len_params: u32,
+        /// Combined parameter and result types allocated on the heap.
+        params_results: Arc<[ValueType]>,
+    },
+}
+
+impl FuncTypeInner {
+    /// The inline buffer size on 32-bit platforms.
     ///
     /// # Note
     ///
-    /// The parameters and results are ordered and merged in a single
-    /// vector starting with parameters in their order and followed
-    /// by results in their order.
-    /// The `len_params` field denotes how many parameters there are in
-    /// the head of the vector before the results.
-    params_results: Arc<[ValueType]>,
+    /// On 32-bit platforms we target a `size_of<FuncTypeInner>()` of 16 bytes.
+    #[cfg(target_pointer_width = "32")]
+    const INLINE_SIZE: usize = 14;
+
+    /// The inline buffer size on 64-bit platforms.
+    ///
+    /// # Note
+    ///
+    /// On 64-bit platforms we target a `size_of<FuncTypeInner>()` of 24 bytes.
+    #[cfg(target_pointer_width = "64")]
+    const INLINE_SIZE: usize = 21;
+
+    /// Creates a new [`FuncTypeInner`].
+    ///
+    /// # Panics
+    ///
+    /// If an out of bounds number of parameters or results are given.
+    pub fn new<P, R>(params: P, results: R) -> Self
+    where
+        P: IntoIterator,
+        R: IntoIterator,
+        <P as IntoIterator>::IntoIter: Iterator<Item = ValueType> + ExactSizeIterator,
+        <R as IntoIterator>::IntoIter: Iterator<Item = ValueType> + ExactSizeIterator,
+    {
+        let mut params = params.into_iter();
+        let mut results = results.into_iter();
+        let len_params = params.len();
+        let len_results = results.len();
+        if let Some(small) = Self::try_new_small(&mut params, &mut results) {
+            return small;
+        }
+        let mut params_results = params.collect::<Vec<_>>();
+        let len_params = u32::try_from(params_results.len()).unwrap_or_else(|_| {
+            panic!("out of bounds parameters (={len_params}) and results (={len_results}) for FuncType")
+        });
+        params_results.extend(results);
+        Self::Big {
+            params_results: params_results.into(),
+            len_params,
+        }
+    }
+
+    /// Tries to create a [`FuncTypeInner::Inline`] variant from the given inputs.
+    ///
+    /// # Note
+    ///
+    /// - Returns `None` if creation was not possible.
+    /// - Does not mutate `params` or `results` if this method returns `None`.
+    pub fn try_new_small<P, R>(params: &mut P, results: &mut R) -> Option<Self>
+    where
+        P: Iterator<Item = ValueType> + ExactSizeIterator,
+        R: Iterator<Item = ValueType> + ExactSizeIterator,
+    {
+        let params = params.into_iter();
+        let results = results.into_iter();
+        let len_params = u8::try_from(params.len()).ok()?;
+        let len_results = u8::try_from(results.len()).ok()?;
+        let len = len_params.checked_add(len_results)?;
+        if usize::from(len) > Self::INLINE_SIZE {
+            return None;
+        }
+        let mut params_results = [ValueType::I32; Self::INLINE_SIZE];
+        params_results
+            .iter_mut()
+            .zip(params.chain(results))
+            .for_each(|(cell, param_or_result)| {
+                *cell = param_or_result;
+            });
+        Some(Self::Inline {
+            len_params,
+            len_results,
+            params_results,
+        })
+    }
+
+    /// Returns the parameter types of the function type.
+    pub fn params(&self) -> &[ValueType] {
+        match self {
+            FuncTypeInner::Inline {
+                len_params,
+                params_results,
+                ..
+            } => &params_results[..usize::from(*len_params)],
+            FuncTypeInner::Big {
+                len_params,
+                params_results,
+            } => &params_results[..(*len_params as usize)],
+        }
+    }
+
+    /// Returns the result types of the function type.
+    pub fn results(&self) -> &[ValueType] {
+        match self {
+            FuncTypeInner::Inline {
+                len_params,
+                len_results,
+                params_results,
+                ..
+            } => {
+                let start_results = usize::from(*len_params);
+                let end_results = start_results + usize::from(*len_results);
+                &params_results[start_results..end_results]
+            }
+            FuncTypeInner::Big {
+                len_params,
+                params_results,
+            } => &params_results[(*len_params as usize)..],
+        }
+    }
+
+    /// Returns the number of result types of the function type.
+    pub fn len_results(&self) -> usize {
+        match self {
+            FuncTypeInner::Inline { len_results, .. } => usize::from(*len_results),
+            FuncTypeInner::Big {
+                len_params,
+                params_results,
+            } => {
+                let len_buffer = params_results.len();
+                let len_params = *len_params as usize;
+                len_buffer - len_params
+            }
+        }
+    }
+
+    /// Returns the pair of parameter and result types of the function type.
+    pub(crate) fn params_results(&self) -> (&[ValueType], &[ValueType]) {
+        match self {
+            FuncTypeInner::Inline {
+                len_params,
+                len_results,
+                params_results,
+            } => {
+                let len_params = usize::from(*len_params);
+                let len_results = usize::from(*len_results);
+                params_results[..len_params + len_results].split_at(len_params)
+            }
+            FuncTypeInner::Big {
+                len_params,
+                params_results,
+            } => params_results.split_at(*len_params as usize),
+        }
+    }
+}
+
+#[test]
+fn size_of_func_type() {
+    #[cfg(target_pointer_width = "32")]
+    assert!(core::mem::size_of::<FuncTypeInner>() <= 16);
+    #[cfg(target_pointer_width = "64")]
+    assert!(core::mem::size_of::<FuncTypeInner>() <= 24);
 }
 
 impl fmt::Debug for FuncType {
@@ -36,36 +205,34 @@ impl FuncType {
     /// Creates a new [`FuncType`].
     pub fn new<P, R>(params: P, results: R) -> Self
     where
-        P: IntoIterator<Item = ValueType>,
-        R: IntoIterator<Item = ValueType>,
+        P: IntoIterator,
+        R: IntoIterator,
+        <P as IntoIterator>::IntoIter: Iterator<Item = ValueType> + ExactSizeIterator,
+        <R as IntoIterator>::IntoIter: Iterator<Item = ValueType> + ExactSizeIterator,
     {
-        let mut params_results = params.into_iter().collect::<Vec<_>>();
-        let len_params = params_results.len();
-        params_results.extend(results);
         Self {
-            params_results: params_results.into(),
-            len_params,
+            inner: FuncTypeInner::new(params, results),
         }
     }
 
     /// Returns the parameter types of the function type.
     pub fn params(&self) -> &[ValueType] {
-        &self.params_results[..self.len_params]
+        self.inner.params()
     }
 
     /// Returns the result types of the function type.
     pub fn results(&self) -> &[ValueType] {
-        &self.params_results[self.len_params..]
+        self.inner.results()
     }
 
     /// Returns the number of result types of the function type.
     pub fn len_results(&self) -> usize {
-        self.results().len()
+        self.inner.len_results()
     }
 
     /// Returns the pair of parameter and result types of the function type.
     pub(crate) fn params_results(&self) -> (&[ValueType], &[ValueType]) {
-        self.params_results.split_at(self.len_params)
+        self.inner.params_results()
     }
 
     /// Returns `Ok` if the number and types of items in `params` matches as expected by the [`FuncType`].

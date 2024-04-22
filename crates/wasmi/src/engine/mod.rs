@@ -37,7 +37,7 @@ pub(crate) use self::{
 pub use self::{
     code_map::CompiledFunc,
     config::{CompilationMode, Config},
-    limits::StackLimits,
+    limits::{EngineLimits, EngineLimitsError, StackLimits},
     resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
     traits::{CallParams, CallResults},
     translator::{Instr, TranslationError},
@@ -594,7 +594,7 @@ impl EngineInner {
     fn new(config: &Config) -> Self {
         Self {
             config: *config,
-            res: RwLock::new(EngineResources::new()),
+            res: RwLock::new(EngineResources::new(config)),
             allocs: Mutex::new(ReusableAllocationStack::default()),
             stacks: Mutex::new(EngineStacks::new(config)),
         }
@@ -804,10 +804,10 @@ pub struct EngineResources {
 
 impl EngineResources {
     /// Creates a new [`EngineResources`].
-    fn new() -> Self {
+    fn new(config: &Config) -> Self {
         let engine_idx = EngineIdx::new();
         Self {
-            code_map: CodeMap::default(),
+            code_map: CodeMap::new(config),
             func_types: FuncTypeRegistry::new(engine_idx),
         }
     }

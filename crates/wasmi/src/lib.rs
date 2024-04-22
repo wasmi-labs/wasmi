@@ -109,12 +109,13 @@ pub use wasmi_core as core;
 /// Defines some errors that may occur upon interaction with Wasmi.
 pub mod errors {
     pub use super::{
+        engine::EngineLimitsError,
         error::ErrorKind,
         func::FuncError,
         global::GlobalError,
         linker::LinkerError,
         memory::MemoryError,
-        module::InstantiationError,
+        module::{InstantiationError, ReadError},
         store::FuelError,
         table::TableError,
     };
@@ -125,6 +126,7 @@ pub use self::{
         CompilationMode,
         Config,
         Engine,
+        EngineLimits,
         ResumableCall,
         ResumableInvocation,
         StackLimits,
@@ -149,7 +151,7 @@ pub use self::{
     global::{Global, GlobalType, Mutability},
     instance::{Export, ExportsIter, Extern, ExternType, Instance},
     limits::{ResourceLimiter, StoreLimits, StoreLimitsBuilder},
-    linker::Linker,
+    linker::{Linker, LinkerBuilder},
     memory::{Memory, MemoryType},
     module::{
         ExportType,
@@ -159,7 +161,6 @@ pub use self::{
         ModuleExportsIter,
         ModuleImportsIter,
         Read,
-        ReadError,
     },
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
