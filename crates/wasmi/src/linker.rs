@@ -401,6 +401,7 @@ impl StringInterner {
     }
 
     /// Returns the symbol for the string if interned.
+    #[inline]
     pub fn get(&self, string: &str) -> Option<Symbol> {
         self.string2symbol
             .get(<&LenOrderStr>::from(string))
@@ -408,6 +409,7 @@ impl StringInterner {
     }
 
     /// Resolves the symbol to the underlying string.
+    #[inline]
     pub fn resolve(&self, symbol: Symbol) -> Option<&str> {
         self.strings.get(symbol.into_usize()).map(Deref::deref)
     }
