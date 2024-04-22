@@ -874,7 +874,7 @@ impl<T> LinkerBuilder<T> {
     /// # Panics
     ///
     /// If the [`LinkerBuilder`] has already created a [`Linker`] using [`LinkerBuilder::finish`].
-    pub fn inner_mut(&mut self) -> &mut LinkerInner<T> {
+    fn inner_mut(&mut self) -> &mut LinkerInner<T> {
         Arc::get_mut(&mut self.inner).unwrap_or_else(|| {
             panic!("tried to define host function in LinkerBuilder after Linker creation")
         })
