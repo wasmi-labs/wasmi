@@ -386,19 +386,29 @@ impl StringInterner {
     ///
     /// - Optimized for `string` to already be contained in [`StringInterner`] before this operation.
     /// - Queries the position within `strings2symbol` twice in case `string` already existed.
+    #[inline]
     fn get_or_intern_hint_existing(&mut self, string: &str) -> Symbol {
         match self.string2symbol.get(<&LenOrderStr>::from(string)) {
             Some(symbol) => *symbol,
-            None => {
-                hint::cold();
-                let symbol = Symbol::from_usize(self.strings.len());
-                let rc_string: Arc<str> = Arc::from(string);
-                self.string2symbol
-                    .insert(LenOrder(rc_string.clone()), symbol);
-                self.strings.push(rc_string);
-                symbol
-            }
+            None => self.intern(string),
         }
+    }
+
+    /// Interns the `string` into the [`StringInterner`].
+    ///
+    /// # Panics
+    ///
+    /// If the `string` already exists.
+    #[cold]
+    fn intern(&mut self, string: &str) -> Symbol {
+        let symbol = Symbol::from_usize(self.strings.len());
+        let rc_string: Arc<str> = Arc::from(string);
+        let old = self
+            .string2symbol
+            .insert(LenOrder(rc_string.clone()), symbol);
+        assert!(old.is_none());
+        self.strings.push(rc_string);
+        symbol
     }
 
     /// Returns the symbol for the string if interned.
