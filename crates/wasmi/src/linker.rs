@@ -333,7 +333,7 @@ impl Ord for LenOrderStr {
 /// Efficiently interns strings and distributes symbols.
 #[derive(Debug, Default, Clone)]
 pub struct StringInterner {
-    string2idx: BTreeMap<LenOrder, Symbol>,
+    string2symbol: BTreeMap<LenOrder, Symbol>,
     strings: Vec<Arc<str>>,
 }
 
@@ -345,12 +345,12 @@ impl StringInterner {
 
     /// Returns the symbol of the string and interns it if necessary.
     pub fn get_or_intern(&mut self, string: &str) -> Symbol {
-        match self.string2idx.get(<&LenOrderStr>::from(string)) {
+        match self.string2symbol.get(<&LenOrderStr>::from(string)) {
             Some(symbol) => *symbol,
             None => {
                 let symbol = self.next_symbol();
                 let rc_string: Arc<str> = Arc::from(string);
-                self.string2idx.insert(LenOrder(rc_string.clone()), symbol);
+                self.string2symbol.insert(LenOrder(rc_string.clone()), symbol);
                 self.strings.push(rc_string);
                 symbol
             }
@@ -359,7 +359,7 @@ impl StringInterner {
 
     /// Returns the symbol for the string if interned.
     pub fn get(&self, string: &str) -> Option<Symbol> {
-        self.string2idx.get(<&LenOrderStr>::from(string)).copied()
+        self.string2symbol.get(<&LenOrderStr>::from(string)).copied()
     }
 
     /// Resolves the symbol to the underlying string.
