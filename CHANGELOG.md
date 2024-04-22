@@ -8,7 +8,7 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
-## [`0.32.0-beta.7`] - 2024-03-10
+## [`0.32.0-beta.10`] - 2024-04-22
 
 **Note:**
 
