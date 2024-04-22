@@ -869,7 +869,7 @@ impl<T> LinkerBuilder<T> {
         }
     }
 
-    /// Returns an exclusive reference to the underlying [`LinkerInner`] if no [`Linker`] has been built, yet.
+    /// Returns an exclusive reference to the underlying [`Linker`] internals if no [`Linker`] has been built, yet.
     ///
     /// # Panics
     ///
