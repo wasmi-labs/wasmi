@@ -337,9 +337,33 @@ pub struct StringInterner {
     strings: Vec<Arc<str>>,
 }
 
+#[derive(Debug, Copy, Clone)]
+pub enum InternHint {
+    /// Hint that the string to be interned likely already exists.
+    LikelyExists,
+    /// Hint that the string to be interned likely does not yet exist.
+    LikelyNew,
+}
+
 impl StringInterner {
     /// Returns the symbol of the string and interns it if necessary.
-    pub fn get_or_intern(&mut self, string: &str) -> Symbol {
+    ///
+    /// Optimized for `string` not to be contained in [`StringInterner`] before this operation.
+    #[inline]
+    pub fn get_or_intern(&mut self, string: &str, hint: InternHint) -> Symbol {
+        match hint {
+            InternHint::LikelyExists => self.get_or_intern_hint_existing(string),
+            InternHint::LikelyNew => self.get_or_intern_hint_new(string),
+        }
+    }
+
+    /// Returns the symbol of the string and interns it if necessary.
+    ///
+    /// # Note
+    ///
+    /// - Optimized for `string` not to be contained in [`StringInterner`] before this operation.
+    /// - Allocates `string` twice on the heap if it already existed prior to this operation.
+    fn get_or_intern_hint_new(&mut self, string: &str) -> Symbol {
         match self.string2symbol.entry(LenOrder(string.into())) {
             Entry::Vacant(entry) => {
                 let symbol = Symbol::from_usize(self.strings.len());
@@ -347,15 +371,35 @@ impl StringInterner {
                 entry.insert(symbol);
                 symbol
             }
-            Entry::Occupied(entry) => {
-                *entry.get()
+            Entry::Occupied(entry) => *entry.get(),
+        }
+    }
+
+    /// Returns the symbol of the string and interns it if necessary.
+    ///
+    /// # Note
+    ///
+    /// - Optimized for `string` to already be contained in [`StringInterner`] before this operation.
+    /// - Queries the position within `strings2symbol` twice in case `string` already existed.
+    fn get_or_intern_hint_existing(&mut self, string: &str) -> Symbol {
+        match self.string2symbol.get(<&LenOrderStr>::from(string)) {
+            Some(symbol) => *symbol,
+            None => {
+                let symbol = Symbol::from_usize(self.strings.len());
+                let rc_string: Arc<str> = Arc::from(string);
+                self.string2symbol
+                    .insert(LenOrder(rc_string.clone()), symbol);
+                self.strings.push(rc_string);
+                symbol
             }
         }
     }
 
     /// Returns the symbol for the string if interned.
     pub fn get(&self, string: &str) -> Option<Symbol> {
-        self.string2symbol.get(<&LenOrderStr>::from(string)).copied()
+        self.string2symbol
+            .get(<&LenOrderStr>::from(string))
+            .copied()
     }
 
     /// Resolves the symbol to the underlying string.
@@ -858,8 +902,8 @@ impl<T> LinkerInner<T> {
     /// Returns the import key for the module name and item name.
     fn import_key(&mut self, module: &str, name: &str) -> ImportKey {
         ImportKey::new(
-            self.strings.get_or_intern(module),
-            self.strings.get_or_intern(name),
+            self.strings.get_or_intern(module, InternHint::LikelyExists),
+            self.strings.get_or_intern(name, InternHint::LikelyNew),
         )
     }
 
