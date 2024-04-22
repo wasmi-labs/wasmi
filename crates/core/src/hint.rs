@@ -1,7 +1,7 @@
 /// Indicates that the calling scope is unlikely to be executed.
 #[cold]
 #[inline]
-fn cold() {}
+pub fn cold() {}
 
 /// Indicates that the condition is likely `true`.
 #[inline]

@@ -1,4 +1,5 @@
 use crate::{
+    core::hint,
     func::{FuncEntity, HostFuncEntity, HostFuncTrampolineEntity},
     module::{ImportName, ImportType},
     AsContext,
@@ -371,7 +372,10 @@ impl StringInterner {
                 entry.insert(symbol);
                 symbol
             }
-            Entry::Occupied(entry) => *entry.get(),
+            Entry::Occupied(entry) => {
+                hint::cold();
+                *entry.get()
+            }
         }
     }
 
@@ -385,6 +389,7 @@ impl StringInterner {
         match self.string2symbol.get(<&LenOrderStr>::from(string)) {
             Some(symbol) => *symbol,
             None => {
+                hint::cold();
                 let symbol = Symbol::from_usize(self.strings.len());
                 let rc_string: Arc<str> = Arc::from(string);
                 self.string2symbol
