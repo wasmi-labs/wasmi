@@ -22,7 +22,7 @@ use super::{
     StoreContext,
     Stored,
 };
-use crate::{engine::ResumableCall, Engine, Error, Value};
+use crate::{engine::ResumableCall, Error, Value};
 use core::{fmt, fmt::Debug, num::NonZeroU32};
 use std::{boxed::Box, sync::Arc};
 use wasmi_arena::ArenaIndex;
@@ -175,7 +175,7 @@ impl WasmFuncEntity {
 /// A host function instance.
 pub struct HostFuncTrampolineEntity<T> {
     /// The type of the associated host function.
-    ty: DedupFuncType,
+    ty: FuncType,
     /// The trampoline of the associated host function.
     trampoline: TrampolineEntity<T>,
 }
@@ -183,7 +183,7 @@ pub struct HostFuncTrampolineEntity<T> {
 impl<T> Clone for HostFuncTrampolineEntity<T> {
     fn clone(&self) -> Self {
         Self {
-            ty: self.ty,
+            ty: self.ty.clone(),
             trampoline: self.trampoline.clone(),
         }
     }
@@ -198,7 +198,7 @@ impl<T> Debug for HostFuncTrampolineEntity<T> {
 impl<T> HostFuncTrampolineEntity<T> {
     /// Creates a new host function trampoline from the given dynamically typed closure.
     pub fn new(
-        engine: &Engine,
+        // engine: &Engine,
         ty: FuncType,
         func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Error>
             + Send
@@ -224,19 +224,19 @@ impl<T> HostFuncTrampolineEntity<T> {
             func(caller, params, results)?;
             Ok(func_results.encode_results_from_slice(results).unwrap())
         });
-        let ty = engine.alloc_func_type(ty.clone());
+        // let ty = engine.alloc_func_type(ty.clone());
         Self { ty, trampoline }
     }
 
     /// Creates a new host function trampoline from the given statically typed closure.
-    pub fn wrap<Params, Results>(engine: &Engine, func: impl IntoFunc<T, Params, Results>) -> Self {
-        let (signature, trampoline) = func.into_func();
-        let ty = engine.alloc_func_type(signature);
+    pub fn wrap<Params, Results>(func: impl IntoFunc<T, Params, Results>) -> Self {
+        let (ty, trampoline) = func.into_func();
+        // let ty = engine.alloc_func_type(signature);
         Self { ty, trampoline }
     }
 
-    /// Returns the signature of the host function.
-    pub fn ty_dedup(&self) -> &DedupFuncType {
+    /// Returns the [`FuncType`] of the host function.
+    pub fn func_type(&self) -> &FuncType {
         &self.ty
     }
 
@@ -340,8 +340,8 @@ impl Func {
             + 'static,
     ) -> Self {
         let engine = ctx.as_context().store.engine();
-        let host_func = HostFuncTrampolineEntity::new(engine, ty, func);
-        let ty_dedup = *host_func.ty_dedup();
+        let host_func = HostFuncTrampolineEntity::new(ty, func);
+        let ty_dedup = engine.alloc_func_type(host_func.func_type().clone());
         let trampoline = host_func.trampoline().clone();
         let func = ctx.as_context_mut().store.alloc_trampoline(trampoline);
         ctx.as_context_mut()
@@ -356,8 +356,8 @@ impl Func {
         func: impl IntoFunc<T, Params, Results>,
     ) -> Self {
         let engine = ctx.as_context().store.engine();
-        let host_func = HostFuncTrampolineEntity::wrap(engine, func);
-        let ty_dedup = *host_func.ty_dedup();
+        let host_func = HostFuncTrampolineEntity::wrap(func);
+        let ty_dedup = engine.alloc_func_type(host_func.func_type().clone());
         let trampoline = host_func.trampoline().clone();
         let func = ctx.as_context_mut().store.alloc_trampoline(trampoline);
         ctx.as_context_mut()

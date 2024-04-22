@@ -3,7 +3,6 @@ use crate::{
     nan_preserving_float::{F32, F64},
     TrapCode,
 };
-use core::{f32, i32, i64, u32, u64};
 
 /// Type of a value.
 ///
@@ -366,6 +365,7 @@ macro_rules! impl_extend_into {
     ($from:ident, $into:ident) => {
         impl ExtendInto<$into> for $from {
             #[inline]
+            #[allow(clippy::cast_lossless)]
             fn extend_into(self) -> $into {
                 self as $into
             }
@@ -374,6 +374,7 @@ macro_rules! impl_extend_into {
     ($from:ident, $intermediate:ident, $into:ident) => {
         impl ExtendInto<$into> for $from {
             #[inline]
+            #[allow(clippy::cast_lossless)]
             fn extend_into(self) -> $into {
                 $into::from(self as $intermediate)
             }
@@ -419,6 +420,7 @@ macro_rules! impl_sign_extend_from {
         $(
             impl SignExtendFrom<$from_type> for $for_type {
                 #[inline]
+                #[allow(clippy::cast_lossless)]
                 fn sign_extend_from(self) -> Self {
                     (self as $from_type) as Self
                 }
@@ -486,14 +488,17 @@ macro_rules! impl_integer {
     ($type:ty) => {
         impl Integer<Self> for $type {
             #[inline]
+            #[allow(clippy::cast_lossless)]
             fn leading_zeros(self) -> Self {
                 self.leading_zeros() as _
             }
             #[inline]
+            #[allow(clippy::cast_lossless)]
             fn trailing_zeros(self) -> Self {
                 self.trailing_zeros() as _
             }
             #[inline]
+            #[allow(clippy::cast_lossless)]
             fn count_ones(self) -> Self {
                 self.count_ones() as _
             }
