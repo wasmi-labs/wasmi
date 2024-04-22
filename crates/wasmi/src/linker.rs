@@ -270,6 +270,7 @@ impl PartialOrd for LenOrder {
 }
 
 impl LenOrder {
+    #[inline]
     pub fn as_str(&self) -> &LenOrderStr {
         (&*self.0).into()
     }
