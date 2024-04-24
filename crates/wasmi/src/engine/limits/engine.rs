@@ -1,6 +1,6 @@
 use core::fmt::{self, Display};
 
-/// An error that can occur upon parsing or compiling a Wasm module when [`EngineLimits`] are set.
+/// An error that can occur upon parsing or compiling a Wasm module when [`EnforcedLimits`] are set.
 #[derive(Debug, Copy, Clone)]
 pub enum EnforcedLimitsError {
     /// When a Wasm module exceeds the global variable limit.
