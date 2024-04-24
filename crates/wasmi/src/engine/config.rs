@@ -1,4 +1,4 @@
-use super::{EngineLimits, StackLimits};
+use super::{EnforcedLimits, StackLimits};
 use core::{mem::size_of, num::NonZeroU64};
 use wasmi_core::UntypedValue;
 use wasmparser::WasmFeatures;
@@ -40,7 +40,7 @@ pub struct Config {
     /// The mode of Wasm to Wasmi bytecode compilation.
     compilation_mode: CompilationMode,
     /// Enforced limits for Wasm module parsing and compilation.
-    limits: EngineLimits,
+    limits: EnforcedLimits,
 }
 
 /// Type storing all kinds of fuel costs of instructions.
@@ -182,7 +182,7 @@ impl Default for Config {
             consume_fuel: false,
             fuel_costs: FuelCosts::default(),
             compilation_mode: CompilationMode::default(),
-            limits: EngineLimits::default(),
+            limits: EnforcedLimits::default(),
         }
     }
 }
@@ -370,20 +370,20 @@ impl Config {
         self.compilation_mode
     }
 
-    /// Sets the [`EngineLimits`] enforced by the [`Engine`] for Wasm module parsing and compilation.
+    /// Sets the [`EnforcedLimits`] enforced by the [`Engine`] for Wasm module parsing and compilation.
     ///
     /// By default no limits are enforced.
     ///
     /// [`Engine`]: crate::Engine
-    pub fn engine_limits(&mut self, limits: EngineLimits) -> &mut Self {
+    pub fn engine_limits(&mut self, limits: EnforcedLimits) -> &mut Self {
         self.limits = limits;
         self
     }
 
-    /// Returns the [`EngineLimits`] used for the [`Engine`].
+    /// Returns the [`EnforcedLimits`] used for the [`Engine`].
     ///
     /// [`Engine`]: crate::Engine
-    pub(crate) fn get_engine_limits(&self) -> &EngineLimits {
+    pub(crate) fn get_engine_limits(&self) -> &EnforcedLimits {
         &self.limits
     }
 
