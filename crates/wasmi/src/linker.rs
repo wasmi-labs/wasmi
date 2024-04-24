@@ -1225,4 +1225,28 @@ mod tests {
         wasm_set_b.call(&mut store, 200).unwrap();
         assert_eq!(wasm_get_b.call(&mut store, ()).unwrap(), 200);
     }
+
+    #[test]
+    fn build_linker() {
+        let mut builder = <Linker<()>>::build();
+        builder
+            .func_wrap("env", "foo", || std::println!("called foo"))
+            .unwrap();
+        builder
+            .func_new(
+                "env",
+                "bar",
+                FuncType::new([], []),
+                |_caller, _params, _results| {
+                    std::println!("called bar");
+                    Ok(())
+                },
+            )
+            .unwrap();
+        let builder = builder.finish();
+        for _ in 0..3 {
+            let engine = Engine::default();
+            let _ = builder.create(&engine);
+        }
+    }
 }
