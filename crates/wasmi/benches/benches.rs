@@ -269,9 +269,10 @@ fn bench_linker_build_finish_same(c: &mut Criterion) {
         for func_name in &func_names {
             builder.func_wrap("env", func_name, || ()).unwrap();
         }
+        let builder = builder.finish();
         b.iter(|| {
             let engine = Engine::default();
-            _ = builder.finish(&engine);
+            _ = builder.create(&engine);
         })
     });
 }
@@ -371,9 +372,10 @@ fn bench_linker_build_finish_unique(c: &mut Criterion) {
                 )
                 .unwrap();
         }
+        let builder = builder.finish();
         b.iter(|| {
             let engine = Engine::default();
-            _ = builder.finish(&engine);
+            _ = builder.create(&engine);
         })
     });
 }
