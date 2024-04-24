@@ -49,36 +49,26 @@ impl<'a, T> Caller<'a, T> {
         self.ctx.store.engine()
     }
 
-    /// Adds `delta` quantity of fuel to the remaining fuel.
+    /// Returns the remaining fuel of the [`Store`](crate::Store) if fuel metering is enabled.
     ///
-    /// # Panics
-    ///
-    /// If this overflows the remaining fuel counter.
+    /// For more information see [`Store::get_fuel`](crate::Store::get_fuel).
     ///
     /// # Errors
     ///
     /// If fuel metering is disabled.
-    pub fn add_fuel(&mut self, delta: u64) -> Result<(), FuelError> {
-        self.ctx.store.add_fuel(delta)
+    pub fn get_fuel(&self) -> Result<u64, FuelError> {
+        self.ctx.store.get_fuel()
     }
 
-    /// Returns the amount of fuel consumed by executions of the [`Store`](crate::Store) so far.
+    /// Sets the remaining fuel of the [`Store`](crate::Store) to `value` if fuel metering is enabled.
     ///
-    /// Returns `None` if fuel metering is disabled.
-    pub fn fuel_consumed(&self) -> Option<u64> {
-        self.ctx.store.fuel_consumed()
-    }
-
-    /// Synthetically consumes an amount of fuel for the [`Store`](crate::Store).
-    ///
-    /// Returns the remaining amount of fuel after this operation.
+    /// For more information see [`Store::get_fuel`](crate::Store::set_fuel).
     ///
     /// # Errors
     ///
-    /// - If fuel metering is disabled.
-    /// - If more fuel is consumed than available.
-    pub fn consume_fuel(&mut self, delta: u64) -> Result<u64, FuelError> {
-        self.ctx.store.consume_fuel(delta)
+    /// If fuel metering is disabled.
+    pub fn set_fuel(&mut self, fuel: u64) -> Result<(), FuelError> {
+        self.ctx.store.set_fuel(fuel)
     }
 }
 

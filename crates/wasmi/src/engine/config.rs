@@ -328,9 +328,9 @@ impl Config {
     /// a [`TrapCode::OutOfFuel`](crate::core::TrapCode::OutOfFuel) trap is raised.
     /// This way users can deterministically halt or yield the execution of WebAssembly code.
     ///
-    /// - Use [`Store::add_fuel`](crate::Store::add_fuel) to pour some fuel into the [`Store`] before
+    /// - Use [`Store::set_fuel`](crate::Store::set_fuel) to set the remaining fuel of the [`Store`] before
     ///   executing some code as the [`Store`] start with no fuel.
-    /// - Use [`Caller::consume_fuel`](crate::Caller::consume_fuel) to charge costs for executed host functions.
+    /// - Use [`Caller::set_fuel`](crate::Caller::set_fuel) to update the remaining fuel when executing host functions.
     ///
     /// Disabled by default.
     ///

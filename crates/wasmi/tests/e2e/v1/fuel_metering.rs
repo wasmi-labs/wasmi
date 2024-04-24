@@ -82,13 +82,13 @@ fn metered_i32_add() {
     let func = func.typed::<(i32, i32), i32>(&store).unwrap();
     // No fuel -> no success.
     assert_out_of_fuel(func.call(&mut store, (1, 2)));
-    assert_eq!(store.fuel_consumed(), Some(0));
-    // Now add too little fuel for a start, so still no success.
-    store.add_fuel(1).unwrap();
+    assert_eq!(store.get_fuel().ok(), Some(0));
+    // Now set too little fuel for a start, so still no success.
+    store.set_fuel(1).unwrap();
     assert_out_of_fuel(func.call(&mut store, (1, 2)));
-    assert_eq!(store.fuel_consumed(), Some(0));
+    assert_eq!(store.get_fuel().ok(), Some(1));
     // Now add enough fuel, so execution should succeed.
-    store.add_fuel(10).unwrap();
+    store.set_fuel(10).unwrap();
     assert_success(func.call(&mut store, (1, 2)));
-    assert_eq!(store.fuel_consumed(), Some(3));
+    assert_eq!(store.get_fuel().ok(), Some(7));
 }

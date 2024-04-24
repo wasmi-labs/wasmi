@@ -86,6 +86,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Improve `Debug` and `Display` impls for NaNs of Wasm `f32` and `f64` values.
   - They now show `nan:0x{bytes}` where `{bytes}` is their respective raw bytes.
 - Implement `Sync` for `ResumableInvocation` and `TypedResumableInvocation`. (https://github.com/wasmi-labs/wasmi/pull/870)
+- Properly mirror Wasmtime's fuel API. (https://github.com/wasmi-labs/wasmi/pull/1002)
 
 ### Removed
 
