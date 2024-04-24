@@ -28,6 +28,7 @@ use core::{
 };
 use std::{
     collections::{btree_map::Entry, BTreeMap},
+    marker::PhantomData,
     sync::Arc,
     vec::Vec,
 };
@@ -583,9 +584,10 @@ impl<T> Linker<T> {
     }
 
     /// Creates a new [`LinkerBuilder`] to construct a [`Linker`].
-    pub fn build() -> LinkerBuilder<T> {
+    pub fn build() -> LinkerBuilder<state::Constructing, T> {
         LinkerBuilder {
             inner: Arc::new(LinkerInner::default()),
+            marker: PhantomData,
         }
     }
 
@@ -842,30 +844,57 @@ impl<T> Linker<T> {
     }
 }
 
+/// Contains type states for the [`LinkerBuilder`] construction process.
+pub mod state {
+    /// Signals that the [`LinkerBuilder`] is itself under construction.
+    ///
+    /// [`LinkerBuilder`]: super::LinkerBuilder
+    pub enum Constructing {}
+
+    /// Signals that the [`LinkerBuilder`] is ready to create new [`Linker`] instances.
+    ///
+    /// [`Linker`]: super::Linker
+    /// [`LinkerBuilder`]: super::LinkerBuilder
+    pub enum Ready {}
+}
+
 /// A linker used to define module imports and instantiate module instances.
 ///
 /// Create this type via the [`Linker::build`] method.
 #[derive(Debug)]
-pub struct LinkerBuilder<T> {
+pub struct LinkerBuilder<State, T> {
     /// Internal linker implementation details.
     inner: Arc<LinkerInner<T>>,
+    /// The [`LinkerBuilder`] type state.
+    marker: PhantomData<fn() -> State>,
 }
 
-impl<T> Clone for LinkerBuilder<T> {
+impl<T> Clone for LinkerBuilder<state::Ready, T> {
     fn clone(&self) -> Self {
         Self {
             inner: self.inner.clone(),
+            marker: PhantomData,
         }
     }
 }
 
-impl<T> LinkerBuilder<T> {
+impl<T> LinkerBuilder<state::Ready, T> {
     /// Finishes construction of the [`Linker`] by attaching an [`Engine`].
-    pub fn finish(&self, engine: &Engine) -> Linker<T> {
+    pub fn create(&self, engine: &Engine) -> Linker<T> {
         Linker {
             engine: engine.clone(),
             shared: self.inner.clone().into(),
             inner: <LinkerInner<T>>::default(),
+        }
+    }
+}
+
+impl<T> LinkerBuilder<state::Constructing, T> {
+    /// Signals that the [`LinkerBuilder`] is now ready to create new [`Linker`] instances.
+    pub fn finish(self) -> LinkerBuilder<state::Ready, T> {
+        LinkerBuilder {
+            inner: self.inner,
+            marker: PhantomData,
         }
     }
 
@@ -876,7 +905,7 @@ impl<T> LinkerBuilder<T> {
     /// If the [`LinkerBuilder`] has already created a [`Linker`] using [`LinkerBuilder::finish`].
     fn inner_mut(&mut self) -> &mut LinkerInner<T> {
         Arc::get_mut(&mut self.inner).unwrap_or_else(|| {
-            panic!("tried to define host function in LinkerBuilder after Linker creation")
+            unreachable!("tried to define host function in LinkerBuilder after Linker creation")
         })
     }
 
