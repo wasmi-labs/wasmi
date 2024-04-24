@@ -23,6 +23,7 @@ use core::{
     borrow::Borrow,
     cmp::Ordering,
     fmt::{self, Debug, Display},
+    marker::PhantomData,
     mem,
     ops::Deref,
 };
@@ -31,7 +32,6 @@ use std::{
     sync::Arc,
     vec::Vec,
 };
-use core::marker::PhantomData;
 
 /// An error that may occur upon operating with [`Linker`] instances.
 #[derive(Debug)]
