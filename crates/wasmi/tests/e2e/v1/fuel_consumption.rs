@@ -75,9 +75,9 @@ fn check_fuel_consumption(given_fuel: u64, consumed_fuel: u64) {
     let (mut store, func) = default_test_setup(&wasm);
     let func = func.typed::<(), i32>(&store).unwrap();
     // Now add enough fuel, so execution should succeed.
-    store.add_fuel(given_fuel).unwrap(); // this is just enough fuel for a successful `memory.grow`
+    store.set_fuel(given_fuel).unwrap(); // this is just enough fuel for a successful `memory.grow`
     assert_success(func.call(&mut store, ()));
-    assert_eq!(store.fuel_consumed(), Some(consumed_fuel));
+    assert_eq!(given_fuel - store.get_fuel().unwrap(), consumed_fuel);
 }
 
 #[test]
