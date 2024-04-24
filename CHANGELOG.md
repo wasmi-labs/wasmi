@@ -77,6 +77,8 @@ Dates in this file are formattes as `YYYY-MM-DD`.
       config.engine_limits(wasmi::EnforcedLimits::strict());
       ```
       In future updates we might relax this to make `EnforcedLimits` fully customizable.
+- Added `EngineWeak` constructed via `Engine::weak`. (https://github.com/wasmi-labs/wasmi/pull/1003)
+     - This properly mirrors the Wasmtime API and allows users to store weak references to the `Engine`.
 
 ### Changed
 

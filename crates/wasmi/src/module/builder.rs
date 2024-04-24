@@ -75,7 +75,7 @@ impl ModuleHeaderBuilder {
     pub fn finish(self) -> ModuleHeader {
         ModuleHeader {
             inner: Arc::new(ModuleHeaderInner {
-                engine: self.engine.downgrade(),
+                engine: self.engine.weak(),
                 func_types: self.func_types.into(),
                 imports: self.imports.finish(),
                 funcs: self.funcs.into(),
