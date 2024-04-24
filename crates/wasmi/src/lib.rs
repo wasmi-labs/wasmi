@@ -127,6 +127,7 @@ pub use self::{
         Config,
         EnforcedLimits,
         Engine,
+        EngineWeak,
         ResumableCall,
         ResumableInvocation,
         StackLimits,

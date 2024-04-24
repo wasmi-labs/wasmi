@@ -119,17 +119,15 @@ pub struct Engine {
 }
 
 /// A weak reference to an [`Engine`].
-///
-/// # Note
-///
-/// This was required to break a reference cycle between [`Engine`] and [`ModuleHeader`].
 #[derive(Debug, Clone)]
 pub struct EngineWeak {
     inner: Weak<EngineInner>,
 }
 
 impl EngineWeak {
-    /// Upgrades the [`EngineWeak`] to an [`Engine`] if the [`Engine`] does still exist.
+    /// Upgrades the [`EngineWeak`] to an [`Engine`].
+    ///
+    /// Returns `None` if strong references (the [`Engine`] itself) no longer exist.
     pub fn upgrade(&self) -> Option<Engine> {
         let inner = self.inner.upgrade()?;
         Some(Engine { inner })
@@ -155,7 +153,7 @@ impl Engine {
     }
 
     /// Creates an [`EngineWeak`] from the given [`Engine`].
-    pub(crate) fn downgrade(&self) -> EngineWeak {
+    pub fn weak(&self) -> EngineWeak {
         EngineWeak {
             inner: Arc::downgrade(&self.inner),
         }
