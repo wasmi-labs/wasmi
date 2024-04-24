@@ -5,6 +5,7 @@ use crate::{
     memory::{DataSegment, MemoryError},
     module::InstantiationError,
     table::TableError,
+    Config,
     DataSegmentEntity,
     DataSegmentIdx,
     ElementSegment,
@@ -219,8 +220,7 @@ pub struct Fuel {
 
 impl Fuel {
     /// Creates a new [`Fuel`] for the [`Engine`].
-    pub fn new(engine: &Engine) -> Self {
-        let config = engine.config();
+    pub fn new(config: &Config) -> Self {
         let enabled = config.get_consume_fuel();
         let costs = *config.fuel_costs();
         Self {
@@ -333,7 +333,7 @@ impl Fuel {
 impl StoreInner {
     /// Creates a new [`StoreInner`] for the given [`Engine`].
     pub fn new(engine: &Engine) -> Self {
-        let fuel = Fuel::new(engine);
+        let fuel = Fuel::new(engine.config());
         StoreInner {
             engine: engine.clone(),
             store_idx: StoreIdx::new(),
