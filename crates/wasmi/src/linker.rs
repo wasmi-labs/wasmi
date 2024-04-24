@@ -28,10 +28,10 @@ use core::{
 };
 use std::{
     collections::{btree_map::Entry, BTreeMap},
-    marker::PhantomData,
     sync::Arc,
     vec::Vec,
 };
+use core::marker::PhantomData;
 
 /// An error that may occur upon operating with [`Linker`] instances.
 #[derive(Debug)]
