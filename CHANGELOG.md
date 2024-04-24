@@ -67,16 +67,16 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     - Using `LinkerBuilder` to create new `Linker`s with the same set of host functions is a lot more
       efficient than creating those `Linker`s the original way. However, the initial `LinkerBuilder`
       construction will be as inefficient as building up a `Linker` previously.
-- Added `EngineLimits` configuration option to `Config`. (https://github.com/wasmi-labs/wasmi/pull/985)
+- Added `EnforcedLimits` configuration option to `Config`. (https://github.com/wasmi-labs/wasmi/pull/985)
     - Some users want to run Wasm binaries in a specially restricted or limited mode.
       For example this mode limits the amount of functions, globals, tables etc. can be defined
       in a single Wasm module.
       With this change they can enable this new strict mode using
       ```rust
       let mut config = wasmi::Config::default();
-      config.engine_limits(wasmi::EngineLimits::strict());
+      config.engine_limits(wasmi::EnforcedLimits::strict());
       ```
-      In future updates we might relax this to make `EngineLimits` fully customizable.
+      In future updates we might relax this to make `EnforcedLimits` fully customizable.
 
 ### Changed
 
