@@ -8,8 +8,8 @@ fn wat2wasm(wat: &str) -> Vec<u8> {
     wat::parse_str(wat).unwrap()
 }
 
-/// Parses and returns the Wasm module `wasm` with the given [`EngineLimits`] `limits`.
-fn parse_with(wasm: &str, limits: EngineLimits) -> Result<Module, Error> {
+/// Parses and returns the Wasm module `wasm` with the given [`EnforcedLimits`] `limits`.
+fn parse_with(wasm: &str, limits: EnforcedLimits) -> Result<Module, Error> {
     let wasm = wat2wasm(wasm);
     let mut config = Config::default();
     config.engine_limits(limits);
@@ -27,9 +27,9 @@ fn max_globals_ok() {
     ";
     parse_with(
         wasm,
-        EngineLimits {
+        EnforcedLimits {
             max_globals: Some(2),
-            ..EngineLimits::default()
+            ..EnforcedLimits::default()
         },
     )
     .unwrap();
@@ -44,13 +44,13 @@ fn max_globals_err() {
             (global i32 (i32.const 3))
         )
     ";
-    let limits = EngineLimits {
+    let limits = EnforcedLimits {
         max_globals: Some(2),
-        ..EngineLimits::default()
+        ..EnforcedLimits::default()
     };
     assert!(matches!(
         parse_with(wasm, limits).unwrap_err().kind(),
-        ErrorKind::Limits(EngineLimitsError::TooManyGlobals { limit: 2 }),
+        ErrorKind::Limits(EnforcedLimitsError::TooManyGlobals { limit: 2 }),
     ))
 }
 
@@ -64,9 +64,9 @@ fn max_functions_ok() {
     ";
     parse_with(
         wasm,
-        EngineLimits {
+        EnforcedLimits {
             max_functions: Some(2),
-            ..EngineLimits::default()
+            ..EnforcedLimits::default()
         },
     )
     .unwrap();
@@ -81,13 +81,13 @@ fn max_functions_err() {
             (func)
         )
     ";
-    let limits = EngineLimits {
+    let limits = EnforcedLimits {
         max_functions: Some(2),
-        ..EngineLimits::default()
+        ..EnforcedLimits::default()
     };
     assert!(matches!(
         parse_with(wasm, limits).unwrap_err().kind(),
-        ErrorKind::Limits(EngineLimitsError::TooManyFunctions { limit: 2 }),
+        ErrorKind::Limits(EnforcedLimitsError::TooManyFunctions { limit: 2 }),
     ))
 }
 
@@ -101,9 +101,9 @@ fn max_tables_ok() {
     ";
     parse_with(
         wasm,
-        EngineLimits {
+        EnforcedLimits {
             max_tables: Some(2),
-            ..EngineLimits::default()
+            ..EnforcedLimits::default()
         },
     )
     .unwrap();
@@ -118,13 +118,13 @@ fn max_tables_err() {
             (table 0 funcref)
         )
     ";
-    let limits = EngineLimits {
+    let limits = EnforcedLimits {
         max_tables: Some(2),
-        ..EngineLimits::default()
+        ..EnforcedLimits::default()
     };
     assert!(matches!(
         parse_with(wasm, limits).unwrap_err().kind(),
-        ErrorKind::Limits(EngineLimitsError::TooManyTables { limit: 2 }),
+        ErrorKind::Limits(EnforcedLimitsError::TooManyTables { limit: 2 }),
     ))
 }
 
@@ -139,9 +139,9 @@ fn max_memories_ok() {
     ";
     parse_with(
         wasm,
-        EngineLimits {
+        EnforcedLimits {
             max_memories: Some(2),
-            ..EngineLimits::default()
+            ..EnforcedLimits::default()
         },
     )
     .unwrap();
@@ -157,13 +157,13 @@ fn max_memories_err() {
             (memory 0)
         )
     ";
-    let limits = EngineLimits {
+    let limits = EnforcedLimits {
         max_memories: Some(2),
-        ..EngineLimits::default()
+        ..EnforcedLimits::default()
     };
     assert!(matches!(
         parse_with(wasm, limits).unwrap_err().kind(),
-        ErrorKind::Limits(EngineLimitsError::TooManyMemories { limit: 2 }),
+        ErrorKind::Limits(EnforcedLimitsError::TooManyMemories { limit: 2 }),
     ))
 }
 
@@ -179,9 +179,9 @@ fn max_element_segments_ok() {
     ";
     parse_with(
         wasm,
-        EngineLimits {
+        EnforcedLimits {
             max_element_segments: Some(2),
-            ..EngineLimits::default()
+            ..EnforcedLimits::default()
         },
     )
     .unwrap();
@@ -198,13 +198,13 @@ fn max_element_segments_err() {
             (elem (table $t) (i32.const 2) funcref (ref.func $f) (ref.null func))
         )
     ";
-    let limits = EngineLimits {
+    let limits = EnforcedLimits {
         max_element_segments: Some(2),
-        ..EngineLimits::default()
+        ..EnforcedLimits::default()
     };
     assert!(matches!(
         parse_with(wasm, limits).unwrap_err().kind(),
-        ErrorKind::Limits(EngineLimitsError::TooManyElementSegments { limit: 2 }),
+        ErrorKind::Limits(EnforcedLimitsError::TooManyElementSegments { limit: 2 }),
     ))
 }
 
@@ -219,9 +219,9 @@ fn max_data_segments_ok() {
     ";
     parse_with(
         wasm,
-        EngineLimits {
+        EnforcedLimits {
             max_data_segments: Some(2),
-            ..EngineLimits::default()
+            ..EnforcedLimits::default()
         },
     )
     .unwrap();
@@ -237,13 +237,13 @@ fn max_data_segments_err() {
             (data (memory $m) (i32.const 2) \"abc\")
         )
     ";
-    let limits = EngineLimits {
+    let limits = EnforcedLimits {
         max_data_segments: Some(2),
-        ..EngineLimits::default()
+        ..EnforcedLimits::default()
     };
     assert!(matches!(
         parse_with(wasm, limits).unwrap_err().kind(),
-        ErrorKind::Limits(EngineLimitsError::TooManyDataSegments { limit: 2 }),
+        ErrorKind::Limits(EnforcedLimitsError::TooManyDataSegments { limit: 2 }),
     ))
 }
 
@@ -256,9 +256,9 @@ fn max_params_func_ok() {
     ";
     parse_with(
         wasm,
-        EngineLimits {
+        EnforcedLimits {
             max_params: Some(2),
-            ..EngineLimits::default()
+            ..EnforcedLimits::default()
         },
     )
     .unwrap();
@@ -271,13 +271,13 @@ fn max_params_func_err() {
             (func (param i32 i32 i32))
         )
     ";
-    let limits = EngineLimits {
+    let limits = EnforcedLimits {
         max_params: Some(2),
-        ..EngineLimits::default()
+        ..EnforcedLimits::default()
     };
     assert!(matches!(
         parse_with(wasm, limits).unwrap_err().kind(),
-        ErrorKind::Limits(EngineLimitsError::TooManyParameters { limit: 2 }),
+        ErrorKind::Limits(EnforcedLimitsError::TooManyParameters { limit: 2 }),
     ))
 }
 
@@ -297,9 +297,9 @@ fn max_params_control_ok() {
     ";
     parse_with(
         wasm,
-        EngineLimits {
+        EnforcedLimits {
             max_params: Some(2),
-            ..EngineLimits::default()
+            ..EnforcedLimits::default()
         },
     )
     .unwrap();
@@ -320,13 +320,13 @@ fn max_params_control_err() {
             )
         )
     ";
-    let limits = EngineLimits {
+    let limits = EnforcedLimits {
         max_params: Some(2),
-        ..EngineLimits::default()
+        ..EnforcedLimits::default()
     };
     assert!(matches!(
         parse_with(wasm, limits).unwrap_err().kind(),
-        ErrorKind::Limits(EngineLimitsError::TooManyParameters { limit: 2 }),
+        ErrorKind::Limits(EnforcedLimitsError::TooManyParameters { limit: 2 }),
     ))
 }
 
@@ -342,9 +342,9 @@ fn max_results_func_ok() {
     ";
     parse_with(
         wasm,
-        EngineLimits {
+        EnforcedLimits {
             max_results: Some(2),
-            ..EngineLimits::default()
+            ..EnforcedLimits::default()
         },
     )
     .unwrap();
@@ -361,13 +361,13 @@ fn max_results_func_err() {
             )
         )
     ";
-    let limits = EngineLimits {
+    let limits = EnforcedLimits {
         max_results: Some(2),
-        ..EngineLimits::default()
+        ..EnforcedLimits::default()
     };
     assert!(matches!(
         parse_with(wasm, limits).unwrap_err().kind(),
-        ErrorKind::Limits(EngineLimitsError::TooManyResults { limit: 2 }),
+        ErrorKind::Limits(EnforcedLimitsError::TooManyResults { limit: 2 }),
     ))
 }
 
@@ -387,9 +387,9 @@ fn max_results_control_ok() {
     ";
     parse_with(
         wasm,
-        EngineLimits {
+        EnforcedLimits {
             max_results: Some(2),
-            ..EngineLimits::default()
+            ..EnforcedLimits::default()
         },
     )
     .unwrap();
@@ -411,13 +411,13 @@ fn max_results_control_err() {
             )
         )
     ";
-    let limits = EngineLimits {
+    let limits = EnforcedLimits {
         max_results: Some(2),
-        ..EngineLimits::default()
+        ..EnforcedLimits::default()
     };
     assert!(matches!(
         parse_with(wasm, limits).unwrap_err().kind(),
-        ErrorKind::Limits(EngineLimitsError::TooManyResults { limit: 2 }),
+        ErrorKind::Limits(EnforcedLimitsError::TooManyResults { limit: 2 }),
     ))
 }
 
@@ -439,12 +439,12 @@ fn min_avg_code_bytes_ok() {
     ";
     parse_with(
         wasm,
-        EngineLimits {
+        EnforcedLimits {
             min_avg_bytes_per_function: Some(AvgBytesPerFunctionLimit {
                 req_funcs_bytes: 0,
                 min_avg_bytes_per_function: 6,
             }),
-            ..EngineLimits::default()
+            ..EnforcedLimits::default()
         },
     )
     .unwrap();
@@ -464,17 +464,17 @@ fn min_avg_code_bytes_err() {
             )
         )
     ";
-    let limits = EngineLimits {
+    let limits = EnforcedLimits {
         min_avg_bytes_per_function: Some(AvgBytesPerFunctionLimit {
             req_funcs_bytes: 0,
             min_avg_bytes_per_function: 6,
         }),
-        ..EngineLimits::default()
+        ..EnforcedLimits::default()
     };
     std::println!("{:?}", parse_with(wasm, limits).unwrap_err());
     assert!(matches!(
         parse_with(wasm, limits).unwrap_err().kind(),
-        ErrorKind::Limits(EngineLimitsError::MinAvgBytesPerFunction { limit: 6, avg: 5 }),
+        ErrorKind::Limits(EnforcedLimitsError::MinAvgBytesPerFunction { limit: 6, avg: 5 }),
     ))
 }
 
@@ -492,12 +492,12 @@ fn min_avg_code_bytes_ok_threshold() {
             )
         )
     ";
-    let limits = EngineLimits {
+    let limits = EnforcedLimits {
         min_avg_bytes_per_function: Some(AvgBytesPerFunctionLimit {
             req_funcs_bytes: 12,
             min_avg_bytes_per_function: 6,
         }),
-        ..EngineLimits::default()
+        ..EnforcedLimits::default()
     };
     parse_with(wasm, limits).unwrap();
 }

@@ -8,7 +8,7 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
-## [`0.32.0-beta.10`] - 2024-04-22
+## [`0.32.0-beta.11`] - 2024-04-22
 
 **Note:**
 
@@ -67,16 +67,18 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     - Using `LinkerBuilder` to create new `Linker`s with the same set of host functions is a lot more
       efficient than creating those `Linker`s the original way. However, the initial `LinkerBuilder`
       construction will be as inefficient as building up a `Linker` previously.
-- Added `EngineLimits` configuration option to `Config`. (https://github.com/wasmi-labs/wasmi/pull/985)
+- Added `EnforcedLimits` configuration option to `Config`. (https://github.com/wasmi-labs/wasmi/pull/985)
     - Some users want to run Wasm binaries in a specially restricted or limited mode.
       For example this mode limits the amount of functions, globals, tables etc. can be defined
       in a single Wasm module.
       With this change they can enable this new strict mode using
       ```rust
       let mut config = wasmi::Config::default();
-      config.engine_limits(wasmi::EngineLimits::strict());
+      config.engine_limits(wasmi::EnforcedLimits::strict());
       ```
-      In future updates we might relax this to make `EngineLimits` fully customizable.
+      In future updates we might relax this to make `EnforcedLimits` fully customizable.
+- Added `EngineWeak` constructed via `Engine::weak`. (https://github.com/wasmi-labs/wasmi/pull/1003)
+     - This properly mirrors the Wasmtime API and allows users to store weak references to the `Engine`.
 
 ### Changed
 
@@ -86,6 +88,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Improve `Debug` and `Display` impls for NaNs of Wasm `f32` and `f64` values.
   - They now show `nan:0x{bytes}` where `{bytes}` is their respective raw bytes.
 - Implement `Sync` for `ResumableInvocation` and `TypedResumableInvocation`. (https://github.com/wasmi-labs/wasmi/pull/870)
+- Properly mirror Wasmtime's fuel API. (https://github.com/wasmi-labs/wasmi/pull/1002)
 
 ### Removed
 

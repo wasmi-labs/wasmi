@@ -12,7 +12,7 @@ use super::{
     Read,
 };
 use crate::{
-    engine::{CompiledFunc, EngineLimitsError},
+    engine::{CompiledFunc, EnforcedLimitsError},
     Engine,
     Error,
     FuncType,
@@ -367,12 +367,14 @@ impl ModuleParser {
             let wasmparser::Type::Func(ty) = result?;
             if let Some(limit) = limits.max_params {
                 if ty.params().len() > limit {
-                    return Err(Error::from(EngineLimitsError::TooManyParameters { limit }));
+                    return Err(Error::from(EnforcedLimitsError::TooManyParameters {
+                        limit,
+                    }));
                 }
             }
             if let Some(limit) = limits.max_results {
                 if ty.results().len() > limit {
-                    return Err(Error::from(EngineLimitsError::TooManyResults { limit }));
+                    return Err(Error::from(EnforcedLimitsError::TooManyResults { limit }));
                 }
             }
             Ok(FuncType::from_wasmparser(ty))
@@ -435,7 +437,7 @@ impl ModuleParser {
     ) -> Result<(), Error> {
         if let Some(limit) = self.engine.config().get_engine_limits().max_functions {
             if section.count() > limit {
-                return Err(Error::from(EngineLimitsError::TooManyFunctions { limit }));
+                return Err(Error::from(EnforcedLimitsError::TooManyFunctions { limit }));
             }
         }
         self.validator.function_section(&section)?;
@@ -462,7 +464,7 @@ impl ModuleParser {
     ) -> Result<(), Error> {
         if let Some(limit) = self.engine.config().get_engine_limits().max_tables {
             if section.count() > limit {
-                return Err(Error::from(EngineLimitsError::TooManyTables { limit }));
+                return Err(Error::from(EnforcedLimitsError::TooManyTables { limit }));
             }
         }
         self.validator.table_section(&section)?;
@@ -489,7 +491,7 @@ impl ModuleParser {
     ) -> Result<(), Error> {
         if let Some(limit) = self.engine.config().get_engine_limits().max_memories {
             if section.count() > limit {
-                return Err(Error::from(EngineLimitsError::TooManyMemories { limit }));
+                return Err(Error::from(EnforcedLimitsError::TooManyMemories { limit }));
             }
         }
         self.validator.memory_section(&section)?;
@@ -526,7 +528,7 @@ impl ModuleParser {
     ) -> Result<(), Error> {
         if let Some(limit) = self.engine.config().get_engine_limits().max_globals {
             if section.count() > limit {
-                return Err(Error::from(EngineLimitsError::TooManyGlobals { limit }));
+                return Err(Error::from(EnforcedLimitsError::TooManyGlobals { limit }));
             }
         }
         self.validator.global_section(&section)?;
@@ -603,7 +605,7 @@ impl ModuleParser {
             .max_element_segments
         {
             if section.count() > limit {
-                return Err(Error::from(EngineLimitsError::TooManyElementSegments {
+                return Err(Error::from(EnforcedLimitsError::TooManyElementSegments {
                     limit,
                 }));
             }
@@ -625,7 +627,7 @@ impl ModuleParser {
     fn process_data_count(&mut self, count: u32, range: Range<usize>) -> Result<(), Error> {
         if let Some(limit) = self.engine.config().get_engine_limits().max_data_segments {
             if count > limit {
-                return Err(Error::from(EngineLimitsError::TooManyDataSegments {
+                return Err(Error::from(EnforcedLimitsError::TooManyDataSegments {
                     limit,
                 }));
             }
@@ -651,7 +653,7 @@ impl ModuleParser {
     ) -> Result<(), Error> {
         if let Some(limit) = self.engine.config().get_engine_limits().max_data_segments {
             if section.count() > limit {
-                return Err(Error::from(EngineLimitsError::TooManyDataSegments {
+                return Err(Error::from(EnforcedLimitsError::TooManyDataSegments {
                     limit,
                 }));
             }
@@ -684,7 +686,7 @@ impl ModuleParser {
         let engine_limits = self.engine.config().get_engine_limits();
         if let Some(limit) = engine_limits.max_functions {
             if count > limit {
-                return Err(Error::from(EngineLimitsError::TooManyFunctions { limit }));
+                return Err(Error::from(EnforcedLimitsError::TooManyFunctions { limit }));
             }
         }
         if let Some(limit) = engine_limits.min_avg_bytes_per_function {
@@ -692,7 +694,7 @@ impl ModuleParser {
                 let limit = limit.min_avg_bytes_per_function;
                 let avg = size / count;
                 if avg < limit {
-                    return Err(Error::from(EngineLimitsError::MinAvgBytesPerFunction {
+                    return Err(Error::from(EnforcedLimitsError::MinAvgBytesPerFunction {
                         limit,
                         avg,
                     }));
