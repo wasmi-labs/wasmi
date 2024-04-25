@@ -42,8 +42,8 @@ criterion_group!(
         bench_translate_erc1155,
         bench_translate_case_memcpy_memset,
         bench_translate_case_best,
-        bench_translate_case_worst_stackbomb_16,
-        bench_translate_case_worst_stackbomb_1000,
+        bench_translate_case_worst_stackbomb_small,
+        bench_translate_case_worst_stackbomb_big,
 );
 criterion_group!(
     name = bench_instantiate;
@@ -256,7 +256,7 @@ fn bench_translate_erc1155(c: &mut Criterion) {
 
 fn bench_translate_case_memcpy_memset(c: &mut Criterion) {
     c.bench_function("translate/case/memcpy_memset", |b| {
-        let len = 8_000_000;
+        let len = 10_000_000;
         let src = vec![0xFF; len];
         let mut dst = vec![0x00; len];
         b.iter(|| {
@@ -341,11 +341,13 @@ impl Display for WasmCompileStackBomb {
     }
 }
 
-fn bench_translate_case_worst_stackbomb_16(c: &mut Criterion) {
-    c.bench_function("translate/case/worst/stackbomb/16", |b| {
+fn bench_translate_case_worst_stackbomb_small(c: &mut Criterion) {
+    let locals = 16;
+    let id = format!("translate/case/worst/stackbomb/{locals}");
+    c.bench_function(&id, |b| {
         let gen = WasmCompileStackBomb {
-            locals: 16,
-            repetitions: 1_000_000,
+            locals,
+            repetitions: 2_500_000,
         };
         let wat = format!(
             "\
@@ -364,11 +366,13 @@ fn bench_translate_case_worst_stackbomb_16(c: &mut Criterion) {
     });
 }
 
-fn bench_translate_case_worst_stackbomb_1000(c: &mut Criterion) {
-    c.bench_function("translate/case/worst/stackbomb/1000", |b| {
+fn bench_translate_case_worst_stackbomb_big(c: &mut Criterion) {
+    let locals = 10_000;
+    let id = format!("translate/case/worst/stackbomb/{locals}");
+    c.bench_function(&id, |b| {
         let gen = WasmCompileStackBomb {
-            locals: 10_000,
-            repetitions: 1_000_000,
+            locals,
+            repetitions: 2_000_000,
         };
         let wat = format!(
             "\
