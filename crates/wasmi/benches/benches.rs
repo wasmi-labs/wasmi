@@ -10,7 +10,10 @@ use self::bench::{
 use bench::bench_config;
 use core::{slice, time::Duration};
 use criterion::{criterion_group, criterion_main, Bencher, Criterion};
-use std::fmt::{self, Display};
+use std::{
+    fmt::{self, Display},
+    sync::OnceLock,
+};
 use wasmi::{
     core::TrapCode,
     CompilationMode,
@@ -288,26 +291,31 @@ fn bench_translate_case_best(c: &mut Criterion) {
         }
     }
     c.bench_function("translate/case/best", |b| {
-        let gen = Generator(1_000_000);
-        let wat = format!(
-            "\
-            (module
-                (func (export \"test\") (result i64)
-                    (local $a i64)
-                    (local $b i64)
-                    (local $c i64)
-                    (local $d i64)
-                    (local.set $a (i64.const 1))
-                    (local.set $b (i64.const 2))
-                    (local.set $c (i64.const 3))
-                    (local.set $d (i64.const 4))
-                    {gen}
-                    (local.get $a)
+        static WASM: OnceLock<Vec<u8>> = OnceLock::new();
+        let wasm = WASM.get_or_init(|| {
+            let gen = Generator(1_000_000);
+            let wat = format!(
+                "\
+                (module
+                    (func (export \"test\") (result i64)
+                        (local $a i64)
+                        (local $b i64)
+                        (local $c i64)
+                        (local $d i64)
+                        (local.set $a (i64.const 1))
+                        (local.set $b (i64.const 2))
+                        (local.set $c (i64.const 3))
+                        (local.set $d (i64.const 4))
+                        {gen}
+                        (local.get $a)
+                    )
                 )
-            )
-        "
-        );
-        let wasm = wat2wasm(wat.as_bytes());
+            "
+            );
+            let wasm = wat2wasm(wat.as_bytes());
+            assert_eq!(wasm.len(), 10_000_085);
+            wasm
+        });
         b.iter_with_large_drop(|| {
             let engine = Engine::default();
             let _ = Module::new(&engine, &wasm[..]).unwrap();
@@ -345,20 +353,25 @@ fn bench_translate_case_worst_stackbomb_small(c: &mut Criterion) {
     let locals = 16;
     let id = format!("translate/case/worst/stackbomb/{locals}");
     c.bench_function(&id, |b| {
-        let gen = WasmCompileStackBomb {
-            locals,
-            repetitions: 2_500_000,
-        };
-        let wat = format!(
-            "\
-            (module
-                (func (export \"test\")
-                    {gen}
+        static WASM: OnceLock<Vec<u8>> = OnceLock::new();
+        let wasm = WASM.get_or_init(|| {
+            let gen = WasmCompileStackBomb {
+                locals,
+                repetitions: 2_500_000,
+            };
+            let wat = format!(
+                "\
+                (module
+                    (func (export \"test\")
+                        {gen}
+                    )
                 )
-            )
-        "
-        );
-        let wasm = wat2wasm(wat.as_bytes());
+            "
+            );
+            let wasm = wat2wasm(wat.as_bytes());
+            assert_eq!(wasm.len(), 10_000_090);
+            wasm
+        });
         b.iter_with_large_drop(|| {
             let engine = Engine::default();
             let _ = Module::new(&engine, &wasm[..]).unwrap();
@@ -370,20 +383,25 @@ fn bench_translate_case_worst_stackbomb_big(c: &mut Criterion) {
     let locals = 10_000;
     let id = format!("translate/case/worst/stackbomb/{locals}");
     c.bench_function(&id, |b| {
-        let gen = WasmCompileStackBomb {
-            locals,
-            repetitions: 2_000_000,
-        };
-        let wat = format!(
-            "\
-            (module
-                (func (export \"test\")
-                    {gen}
+        static WASM: OnceLock<Vec<u8>> = OnceLock::new();
+        let wasm = WASM.get_or_init(|| {
+            let gen = WasmCompileStackBomb {
+                locals,
+                repetitions: 2_000_000,
+            };
+            let wat = format!(
+                "\
+                (module
+                    (func (export \"test\")
+                        {gen}
+                    )
                 )
-            )
-        "
-        );
-        let wasm = wat2wasm(wat.as_bytes());
+            "
+            );
+            let wasm = wat2wasm(wat.as_bytes());
+            assert_eq!(wasm.len(), 11_988_715);
+            wasm
+        });
         b.iter_with_large_drop(|| {
             let engine = Engine::default();
             let _ = Module::new(&engine, &wasm[..]).unwrap();
