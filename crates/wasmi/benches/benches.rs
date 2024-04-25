@@ -10,6 +10,10 @@ use self::bench::{
 use bench::bench_config;
 use core::{slice, time::Duration};
 use criterion::{criterion_group, criterion_main, Bencher, Criterion};
+use std::{
+    fmt::{self, Display},
+    sync::OnceLock,
+};
 use wasmi::{
     core::TrapCode,
     CompilationMode,
@@ -39,6 +43,10 @@ criterion_group!(
         bench_translate_erc20,
         bench_translate_erc721,
         bench_translate_erc1155,
+        bench_translate_case_memcpy_memset,
+        bench_translate_case_best,
+        bench_translate_case_worst_stackbomb_small,
+        bench_translate_case_worst_stackbomb_big,
 );
 criterion_group!(
     name = bench_instantiate;
@@ -247,6 +255,158 @@ fn bench_translate_erc721(c: &mut Criterion) {
 
 fn bench_translate_erc1155(c: &mut Criterion) {
     bench_translate_for_all(c, "erc1155", "benches/wasm/erc1155.wasm");
+}
+
+fn bench_translate_case_memcpy_memset(c: &mut Criterion) {
+    c.bench_function("translate/case/memcpy_memset", |b| {
+        let len = 10_000_000;
+        let src = vec![0xFF; len];
+        let mut dst = vec![0x00; len];
+        b.iter(|| {
+            dst.copy_from_slice(&src);
+            dst.fill(0x00);
+        })
+    });
+}
+
+fn bench_translate_case_best(c: &mut Criterion) {
+    pub struct Generator(usize);
+    impl Display for Generator {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            for _ in 0..self.0 {
+                // a = b + (c * d)
+                writeln!(
+                    f,
+                    "(local.set $a \
+                        (i64.add \
+                            (local.get $b) \
+                            (i64.mul \
+                                (local.get $c) (local.get $d)\
+                            )\
+                        )\
+                    )",
+                )?;
+            }
+            Ok(())
+        }
+    }
+    c.bench_function("translate/case/best", |b| {
+        static WASM: OnceLock<Vec<u8>> = OnceLock::new();
+        let wasm = WASM.get_or_init(|| {
+            let gen = Generator(1_000_000);
+            let wat = format!(
+                "\
+                (module
+                    (func (export \"test\") (result i64)
+                        (local $a i64)
+                        (local $b i64)
+                        (local $c i64)
+                        (local $d i64)
+                        (local.set $a (i64.const 1))
+                        (local.set $b (i64.const 2))
+                        (local.set $c (i64.const 3))
+                        (local.set $d (i64.const 4))
+                        {gen}
+                        (local.get $a)
+                    )
+                )
+            "
+            );
+            let wasm = wat2wasm(wat.as_bytes());
+            assert_eq!(wasm.len(), 10_000_085);
+            wasm
+        });
+        b.iter_with_large_drop(|| {
+            let engine = Engine::default();
+            let _ = Module::new(&engine, &wasm[..]).unwrap();
+        })
+    });
+}
+
+pub struct WasmCompileStackBomb {
+    locals: usize,
+    repetitions: usize,
+}
+impl Display for WasmCompileStackBomb {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "(local")?;
+        for _ in 0..self.locals {
+            write!(f, " i64")?;
+        }
+        writeln!(f, ")")?;
+        for i in 0..self.locals {
+            writeln!(f, "(local.get {})", i)?;
+        }
+        for i in 0..self.repetitions {
+            let src = i % self.locals;
+            let dst = (i + 1) % self.locals;
+            writeln!(f, "(local.set {dst} (local.get {src}))")?;
+        }
+        for _ in 0..self.locals {
+            writeln!(f, "(drop)")?;
+        }
+        Ok(())
+    }
+}
+
+fn bench_translate_case_worst_stackbomb_small(c: &mut Criterion) {
+    let locals = 16;
+    let id = format!("translate/case/worst/stackbomb/{locals}");
+    c.bench_function(&id, |b| {
+        static WASM: OnceLock<Vec<u8>> = OnceLock::new();
+        let wasm = WASM.get_or_init(|| {
+            let gen = WasmCompileStackBomb {
+                locals,
+                repetitions: 2_500_000,
+            };
+            let wat = format!(
+                "\
+                (module
+                    (func (export \"test\")
+                        {gen}
+                    )
+                )
+            "
+            );
+            let wasm = wat2wasm(wat.as_bytes());
+            assert_eq!(wasm.len(), 10_000_090);
+            wasm
+        });
+        b.iter_with_large_drop(|| {
+            let engine = Engine::default();
+            let _ = Module::new(&engine, &wasm[..]).unwrap();
+        })
+    });
+}
+
+fn bench_translate_case_worst_stackbomb_big(c: &mut Criterion) {
+    let locals = 10_000;
+    let id = format!("translate/case/worst/stackbomb/{locals}");
+    c.bench_function(&id, |b| {
+        static WASM: OnceLock<Vec<u8>> = OnceLock::new();
+        let wasm = WASM.get_or_init(|| {
+            let gen = WasmCompileStackBomb {
+                locals,
+                repetitions: 2_000_000,
+            };
+            let wat = format!(
+                "\
+                (module
+                    (func (export \"test\")
+                        {gen}
+                    )
+                )
+            "
+            );
+            let wasm = wat2wasm(wat.as_bytes());
+            assert_eq!(wasm.len(), 11_988_715);
+            wasm
+        });
+        b.iter_with_large_drop(|| {
+            let engine = Engine::default();
+            let _ = Module::new(&engine, &wasm[..]).unwrap();
+        })
+    });
 }
 
 fn bench_instantiate_wasm_kernel(c: &mut Criterion) {
