@@ -308,7 +308,7 @@ fn bench_translate_case_best(c: &mut Criterion) {
         "
         );
         let wasm = wat2wasm(wat.as_bytes());
-        b.iter(|| {
+        b.iter_with_large_drop(|| {
             let engine = Engine::default();
             let _ = Module::new(&engine, &wasm[..]).unwrap();
         })
@@ -359,7 +359,7 @@ fn bench_translate_case_worst_stackbomb_small(c: &mut Criterion) {
         "
         );
         let wasm = wat2wasm(wat.as_bytes());
-        b.iter(|| {
+        b.iter_with_large_drop(|| {
             let engine = Engine::default();
             let _ = Module::new(&engine, &wasm[..]).unwrap();
         })
@@ -384,7 +384,7 @@ fn bench_translate_case_worst_stackbomb_big(c: &mut Criterion) {
         "
         );
         let wasm = wat2wasm(wat.as_bytes());
-        b.iter(|| {
+        b.iter_with_large_drop(|| {
             let engine = Engine::default();
             let _ = Module::new(&engine, &wasm[..]).unwrap();
         })
