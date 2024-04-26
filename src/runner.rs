@@ -320,7 +320,6 @@ impl<'m> Interpreter<'m> {
                     match *nested_func.as_internal() {
                         FuncInstanceInternal::Internal { .. } => {
                             let nested_context = FunctionContext::new(nested_func.clone());
-
                             self.call_stack.push(function_context);
                             self.call_stack.push(nested_context);
                         }

@@ -319,7 +319,6 @@ impl Compiler {
                     `drop_keep_return` can't fail;
                     qed",
                 );
-
                 self.sink.emit(isa::InstructionInternal::Return(drop_keep));
             }
             Call(index) => {

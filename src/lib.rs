@@ -271,8 +271,6 @@ mod types;
 
 pub mod isa;
 pub mod monitor;
-/// Tracer lib for zkWasm
-pub mod tracer;
 
 pub use self::{
     func::{FuncInstance, FuncInvocation, FuncRef, ResumableError},

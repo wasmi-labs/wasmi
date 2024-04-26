@@ -418,7 +418,7 @@ impl<'a, 'args> FuncInvocation<'a, 'args> {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct FuncBody {
     pub locals: Vec<Local>,
     pub code: isa::Instructions,

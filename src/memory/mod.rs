@@ -37,7 +37,7 @@ pub const LINEAR_MEMORY_PAGE_SIZE: Bytes = Bytes(65536);
 ///
 /// [`MemoryInstance`]: struct.MemoryInstance.html
 ///
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct MemoryRef(Rc<MemoryInstance>);
 
 impl ::core::ops::Deref for MemoryRef {
@@ -60,7 +60,6 @@ impl ::core::ops::Deref for MemoryRef {
 /// At the moment, wasm doesn't provide any way to shrink the memory.
 ///
 /// [`LINEAR_MEMORY_PAGE_SIZE`]: constant.LINEAR_MEMORY_PAGE_SIZE.html
-#[derive(PartialEq)]
 pub struct MemoryInstance {
     /// Memory limits.
     limits: ResizableLimits,

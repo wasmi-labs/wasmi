@@ -46,7 +46,7 @@ use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 /// should be retained.
 ///
 /// [`ModuleInstance`]: struct.ModuleInstance.html
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct ModuleRef(pub(crate) Rc<ModuleInstance>);
 
 impl ::core::ops::Deref for ModuleRef {
@@ -58,7 +58,6 @@ impl ::core::ops::Deref for ModuleRef {
 
 /// An external value is the runtime representation of an entity
 /// that can be imported or exported.
-#[derive(PartialEq)]
 pub enum ExternVal {
     /// [Function][`FuncInstance`].
     ///
@@ -165,7 +164,7 @@ impl ExternVal {
 /// [`TableInstance`]: struct.TableInstance.html
 /// [`GlobalInstance`]: struct.GlobalInstance.html
 /// [`invoke_export`]: #method.invoke_export
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub struct ModuleInstance {
     pub(crate) signatures: RefCell<Vec<Rc<Signature>>>,
     tables: RefCell<Vec<TableRef>>,
@@ -255,10 +254,8 @@ impl ModuleInstance {
     fn alloc_module<'i, I: Iterator<Item = &'i ExternVal>>(
         loaded_module: &Module,
         extern_vals: I,
-        //tracer: Option<Rc<RefCell<Tracer>>>,
     ) -> Result<ModuleRef, Error> {
         let module = loaded_module.module();
-
         let instance = ModuleRef(Rc::new(ModuleInstance::default()));
 
         for &Type::Function(ref ty) in module.type_section().map(|ts| ts.types()).unwrap_or(&[]) {
@@ -608,9 +605,7 @@ impl ModuleInstance {
             extern_vals.push(extern_val);
         }
 
-        let module_ref = Self::with_externvals(loaded_module, extern_vals.iter());
-
-        module_ref
+        Self::with_externvals(loaded_module, extern_vals.iter())
     }
 
     /// Invoke exported function by a name.
