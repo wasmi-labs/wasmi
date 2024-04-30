@@ -4,9 +4,9 @@
 mod detail {
     use super::{GetOrInternWithHint, Sym};
     use crate::hash;
-    use string_interner::{backend::StringBackend, StringInterner, Symbol};
+    use string_interner::{backend::BufferBackend, StringInterner, Symbol};
 
-    pub type StringInternerImpl = StringInterner<StringBackend<Sym>, hash::RandomState>;
+    pub type StringInternerImpl = StringInterner<BufferBackend<Sym>, hash::RandomState>;
 
     impl GetOrInternWithHint for StringInternerImpl {
         #[inline]
