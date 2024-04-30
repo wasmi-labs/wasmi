@@ -27,3 +27,6 @@ pub mod arena;
 
 #[cfg(test)]
 mod tests;
+
+#[doc(inline)]
+pub use self::arena::{Arena, ComponentVec, DedupArena};
