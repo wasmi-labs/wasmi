@@ -15,10 +15,11 @@ exclude.workspace = true
 
 [dependencies]
 hashbrown = { version = "0.14", default-features = false, features = ["ahash", "inline-more"] }
+string-interner = { version = "0.15", default-features = false, features = ["inline-more", "backends"] }
 
 [features]
 default = ["std"]
-std = []
+std = ["string-interner/std"]
 # Tells the `wasmi_collections` crate to avoid using hash based maps and sets.
 # 
 # Some embedded environments cannot provide a random source which is required

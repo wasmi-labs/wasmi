@@ -27,6 +27,7 @@ pub mod arena;
 pub mod hash;
 pub mod map;
 pub mod set;
+pub mod string_interner;
 
 #[cfg(test)]
 mod tests;
@@ -36,4 +37,5 @@ pub use self::{
     arena::{Arena, ComponentVec, DedupArena},
     map::Map,
     set::Set,
+    string_interner::StringInterner,
 };
