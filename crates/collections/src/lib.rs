@@ -25,9 +25,15 @@ extern crate std;
 
 pub mod arena;
 pub mod hash;
+pub mod map;
+pub mod set;
 
 #[cfg(test)]
 mod tests;
 
 #[doc(inline)]
-pub use self::arena::{Arena, ComponentVec, DedupArena};
+pub use self::{
+    arena::{Arena, ComponentVec, DedupArena},
+    map::Map,
+    set::Set,
+};
