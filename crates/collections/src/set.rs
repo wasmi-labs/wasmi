@@ -5,17 +5,20 @@ use core::{borrow::Borrow, hash::Hash, iter::FusedIterator};
 #[cfg(not(feature = "no-hash-maps"))]
 mod detail {
     use crate::hash;
+    use hashbrown::hash_set;
 
-    pub type SetImpl<T> = hashbrown::HashSet<T, hash::RandomState>;
-    pub type IterImpl<'a, T> = hashbrown::hash_set::Iter<'a, T>;
-    pub type IntoIterImpl<T> = hashbrown::hash_set::IntoIter<T>;
+    pub type SetImpl<T> = hash_set::HashSet<T, hash::RandomState>;
+    pub type IterImpl<'a, T> = hash_set::Iter<'a, T>;
+    pub type IntoIterImpl<T> = hash_set::IntoIter<T>;
 }
 
 #[cfg(feature = "no-hash-maps")]
 mod detail {
-    pub type SetImpl<T> = std::collections::BTreeSet<T>;
-    pub type IterImpl<'a, T> = std::collections::btree_set::Iter<'a, T>;
-    pub type IntoIterImpl<T> = std::collections::btree_set::IntoIter<T>;
+    use std::collections::btree_set;
+
+    pub type SetImpl<T> = btree_set::BTreeSet<T>;
+    pub type IterImpl<'a, T> = btree_set::Iter<'a, T>;
+    pub type IntoIterImpl<T> = btree_set::IntoIter<T>;
 }
 
 /// A default set of values.

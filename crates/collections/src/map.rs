@@ -6,9 +6,9 @@ use std::fmt::Debug;
 #[cfg(not(feature = "no-hash-maps"))]
 mod detail {
     use crate::hash;
-    use hashbrown::{hash_map, HashMap};
+    use hashbrown::hash_map;
 
-    pub type MapImpl<K, V> = HashMap<K, V, hash::RandomState>;
+    pub type MapImpl<K, V> = hash_map::HashMap<K, V, hash::RandomState>;
     pub type EntryImpl<'a, K, V> = hash_map::Entry<'a, K, V, hash::RandomState>;
     pub type OccupiedEntryImpl<'a, K, V> = hash_map::OccupiedEntry<'a, K, V, hash::RandomState>;
     pub type VacantEntryImpl<'a, K, V> = hash_map::VacantEntry<'a, K, V, hash::RandomState>;
@@ -24,9 +24,9 @@ mod detail {
 
 #[cfg(feature = "no-hash-maps")]
 mod detail {
-    use std::collections::{btree_map, BTreeMap};
+    use std::collections::btree_map;
 
-    pub type MapImpl<K, V> = BTreeMap<K, V>;
+    pub type MapImpl<K, V> = btree_map::BTreeMap<K, V>;
     pub type EntryImpl<'a, K, V> = btree_map::Entry<'a, K, V>;
     pub type OccupiedEntryImpl<'a, K, V> = btree_map::OccupiedEntry<'a, K, V>;
     pub type VacantEntryImpl<'a, K, V> = btree_map::VacantEntry<'a, K, V>;
