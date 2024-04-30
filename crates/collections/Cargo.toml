@@ -16,3 +16,12 @@ exclude.workspace = true
 [features]
 default = ["std"]
 std = []
+
+# Tells the `wasmi_collections` crate to avoid using hash based maps and sets.
+# 
+# Some embedded environments cannot provide a random source which is required
+# to properly initialize hashmap based data structures for resilience against
+# malious actors that control their inputs.
+#
+# An example of such an environment is `wasm32-unknown-unknown`.
+no-hash-maps = []
