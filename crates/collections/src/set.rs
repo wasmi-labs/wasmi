@@ -1,6 +1,12 @@
 //! Type definitions for a default set.
 
-use core::{borrow::Borrow, hash::Hash, iter::FusedIterator};
+use core::{
+    borrow::Borrow,
+    fmt::{self, Debug},
+    hash::Hash,
+    iter::FusedIterator,
+    ops::{BitAnd, BitOr, BitXor, Sub},
+};
 
 #[cfg(not(feature = "no-hash-maps"))]
 mod detail {
@@ -10,6 +16,11 @@ mod detail {
     pub type SetImpl<T> = hash_set::HashSet<T, hash::RandomState>;
     pub type IterImpl<'a, T> = hash_set::Iter<'a, T>;
     pub type IntoIterImpl<T> = hash_set::IntoIter<T>;
+    pub type DifferenceImpl<'a, T> = hash_set::Difference<'a, T, hash::RandomState>;
+    pub type IntersectionImpl<'a, T> = hash_set::Intersection<'a, T, hash::RandomState>;
+    pub type SymmetricDifferenceImpl<'a, T> =
+        hash_set::SymmetricDifference<'a, T, hash::RandomState>;
+    pub type UnionImpl<'a, T> = hash_set::Union<'a, T, hash::RandomState>;
 }
 
 #[cfg(feature = "no-hash-maps")]
@@ -19,6 +30,10 @@ mod detail {
     pub type SetImpl<T> = btree_set::BTreeSet<T>;
     pub type IterImpl<'a, T> = btree_set::Iter<'a, T>;
     pub type IntoIterImpl<T> = btree_set::IntoIter<T>;
+    pub type DifferenceImpl<'a, T> = btree_set::Difference<'a, T>;
+    pub type IntersectionImpl<'a, T> = btree_set::Intersection<'a, T>;
+    pub type SymmetricDifferenceImpl<'a, T> = btree_set::SymmetricDifference<'a, T>;
+    pub type UnionImpl<'a, T> = btree_set::Union<'a, T>;
 }
 
 /// A default set of values.
@@ -45,6 +60,18 @@ impl<T> Set<T> {
     /// Clears the [`Set`], removing all elements.
     pub fn clear(&mut self) {
         self.inner.clear()
+    }
+
+    /// Retains only the elements specified by the predicate.
+    ///
+    /// In other words, remove all elements `e` for which `f(&e)` returns `false`.
+    /// The elements are visited in unsorted (and unspecified) order.
+    pub fn retain<F>(&mut self, f: F)
+    where
+        T: Ord,
+        F: FnMut(&T) -> bool,
+    {
+        self.inner.retain(f)
     }
 
     /// Returns the number of elements in the [`Set`].
@@ -116,6 +143,20 @@ where
         self.inner.remove(value)
     }
 
+    /// Removes and returns the element in the [`Set`], if any, that is equal to
+    /// the value.
+    ///
+    /// The value may be any borrowed form of the set's element type,
+    /// but the ordering on the borrowed form *must* match the
+    /// ordering on the element type.
+    pub fn take<Q>(&mut self, value: &Q) -> Option<T>
+    where
+        T: Borrow<Q>,
+        Q: ?Sized + Hash + Ord,
+    {
+        self.inner.take(value)
+    }
+
     /// Adds a value to the [`Set`], replacing the existing value, if any, that is equal to the given
     /// one. Returns the replaced value.
     pub fn replace(&mut self, value: T) -> Option<T> {
@@ -138,6 +179,44 @@ where
     /// i.e., `self` contains at least all the values in `other`.
     pub fn is_superset(&self, other: &Self) -> bool {
         self.inner.is_superset(&other.inner)
+    }
+
+    /// Visits the values representing the difference,
+    /// i.e., the values that are in `self` but not in `other`.
+    pub fn difference<'a>(&'a self, other: &'a Self) -> Difference<'a, T> {
+        Difference {
+            inner: self.inner.difference(&other.inner),
+        }
+    }
+
+    /// Visits the values representing the symmetric difference,
+    /// i.e., the values that are in `self` or in `other` but not in both.
+    pub fn symmetric_difference<'a>(&'a self, other: &'a Self) -> SymmetricDifference<'a, T> {
+        SymmetricDifference {
+            inner: self.inner.symmetric_difference(&other.inner),
+        }
+    }
+
+    /// Visits the values representing the intersection,
+    /// i.e., the values that are both in `self` and `other`.
+    ///
+    /// When an equal element is present in `self` and `other`
+    /// then the resulting `Intersection` may yield references to
+    /// one or the other. This can be relevant if `T` contains fields which
+    /// are not compared by its `Eq` implementation, and may hold different
+    /// value between the two equal copies of `T` in the two sets.
+    pub fn intersection<'a>(&'a self, other: &'a Self) -> Intersection<'a, T> {
+        Intersection {
+            inner: self.inner.intersection(&other.inner),
+        }
+    }
+
+    /// Visits the values representing the union,
+    /// i.e., all the values in `self` or `other`, without duplicates.
+    pub fn union<'a>(&'a self, other: &'a Self) -> Union<'a, T> {
+        Union {
+            inner: self.inner.union(&other.inner),
+        }
     }
 }
 
@@ -175,12 +254,73 @@ impl<'a, T> IntoIterator for &'a Set<T> {
     }
 }
 
+impl<'a, T> Extend<&'a T> for Set<T>
+where
+    T: Hash + Eq + Ord + Copy + 'a,
+{
+    fn extend<Iter: IntoIterator<Item = &'a T>>(&mut self, iter: Iter) {
+        self.inner.extend(iter)
+    }
+}
+
 impl<T> Extend<T> for Set<T>
 where
     T: Hash + Eq + Ord,
 {
     fn extend<Iter: IntoIterator<Item = T>>(&mut self, iter: Iter) {
         self.inner.extend(iter)
+    }
+}
+
+impl<'a, T> BitAnd<Self> for &'a Set<T>
+where
+    T: Eq + Hash + Ord + Clone + 'a,
+{
+    type Output = Set<T>;
+
+    fn bitand(self, rhs: Self) -> Set<T> {
+        Set {
+            inner: BitAnd::bitand(&self.inner, &rhs.inner),
+        }
+    }
+}
+
+impl<'a, T> BitOr<Self> for &'a Set<T>
+where
+    T: Eq + Hash + Ord + Clone + 'a,
+{
+    type Output = Set<T>;
+
+    fn bitor(self, rhs: Self) -> Set<T> {
+        Set {
+            inner: BitOr::bitor(&self.inner, &rhs.inner),
+        }
+    }
+}
+
+impl<'a, T> BitXor<Self> for &'a Set<T>
+where
+    T: Eq + Hash + Ord + Clone + 'a,
+{
+    type Output = Set<T>;
+
+    fn bitxor(self, rhs: Self) -> Set<T> {
+        Set {
+            inner: BitXor::bitxor(&self.inner, &rhs.inner),
+        }
+    }
+}
+
+impl<'a, T> Sub<Self> for &'a Set<T>
+where
+    T: Eq + Hash + Ord + Clone + 'a,
+{
+    type Output = Set<T>;
+
+    fn sub(self, rhs: Self) -> Set<T> {
+        Set {
+            inner: Sub::sub(&self.inner, &rhs.inner),
+        }
     }
 }
 
@@ -238,3 +378,163 @@ impl<T> ExactSizeIterator for IntoIter<T> {
 }
 
 impl<T> FusedIterator for IntoIter<T> {}
+
+/// A lazy iterator producing elements in the difference of [`Set`]s.
+///
+/// This `struct` is created by the [`difference`] method on [`Set`].
+/// See its documentation for more.
+///
+/// [`difference`]: Set::difference
+pub struct Difference<'a, T: 'a> {
+    inner: detail::DifferenceImpl<'a, T>,
+}
+
+impl<T> Debug for Difference<'_, T>
+where
+    T: Debug + Hash + Eq,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.inner.fmt(f)
+    }
+}
+
+impl<T> Clone for Difference<'_, T> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+        }
+    }
+}
+
+impl<'a, T> Iterator for Difference<'a, T>
+where
+    T: Hash + Eq + Ord,
+{
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next()
+    }
+}
+
+impl<T> FusedIterator for Difference<'_, T> where T: Hash + Eq + Ord {}
+
+/// A lazy iterator producing elements in the intersection of [`Set`]s.
+///
+/// This `struct` is created by the [`intersection`] method on [`Set`].
+/// See its documentation for more.
+///
+/// [`intersection`]: Set::intersection
+pub struct Intersection<'a, T: 'a> {
+    inner: detail::IntersectionImpl<'a, T>,
+}
+
+impl<T> Debug for Intersection<'_, T>
+where
+    T: Debug + Hash + Eq,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.inner.fmt(f)
+    }
+}
+
+impl<T> Clone for Intersection<'_, T> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+        }
+    }
+}
+
+impl<'a, T> Iterator for Intersection<'a, T>
+where
+    T: Hash + Eq + Ord,
+{
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next()
+    }
+}
+
+impl<T> FusedIterator for Intersection<'_, T> where T: Hash + Eq + Ord {}
+
+/// A lazy iterator producing elements in the symmetric difference of [`Set`]s.
+///
+/// This `struct` is created by the [`symmetric_difference`] method on
+/// [`Set`]. See its documentation for more.
+///
+/// [`symmetric_difference`]: Set::symmetric_difference
+pub struct SymmetricDifference<'a, T: 'a> {
+    inner: detail::SymmetricDifferenceImpl<'a, T>,
+}
+
+impl<T> Debug for SymmetricDifference<'_, T>
+where
+    T: Debug + Hash + Eq,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.inner.fmt(f)
+    }
+}
+
+impl<T> Clone for SymmetricDifference<'_, T> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+        }
+    }
+}
+
+impl<'a, T> Iterator for SymmetricDifference<'a, T>
+where
+    T: Hash + Eq + Ord,
+{
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next()
+    }
+}
+
+impl<T> FusedIterator for SymmetricDifference<'_, T> where T: Hash + Eq + Ord {}
+
+/// A lazy iterator producing elements in the union of [`Set`]s.
+///
+/// This `struct` is created by the [`union`] method on
+/// [`Set`]. See its documentation for more.
+///
+/// [`union`]: Set::union
+pub struct Union<'a, T: 'a> {
+    inner: detail::UnionImpl<'a, T>,
+}
+
+impl<T> Debug for Union<'_, T>
+where
+    T: Debug + Hash + Eq,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.inner.fmt(f)
+    }
+}
+
+impl<T> Clone for Union<'_, T> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+        }
+    }
+}
+
+impl<'a, T> Iterator for Union<'a, T>
+where
+    T: Hash + Eq + Ord,
+{
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next()
+    }
+}
+
+impl<T> FusedIterator for Union<'_, T> where T: Hash + Eq + Ord {}
