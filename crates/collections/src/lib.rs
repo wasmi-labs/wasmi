@@ -24,6 +24,7 @@ extern crate alloc as std;
 extern crate std;
 
 pub mod arena;
+pub mod hash;
 
 #[cfg(test)]
 mod tests;
