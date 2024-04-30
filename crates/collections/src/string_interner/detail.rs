@@ -42,16 +42,19 @@ impl GetOrInternWithHint for StringInterner {
 
 impl StringInterner {
     /// Creates a new empty [`StringInterner`].
+    #[inline]
     pub fn new() -> Self {
         Self::default()
     }
 
     /// Returns the number of interned strings.
+    #[inline]
     pub fn len(&self) -> usize {
         self.string2symbol.len()
     }
 
     /// Returns `true` if the [`StringInterner`] is empty.
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }

@@ -50,6 +50,7 @@ where
 }
 
 impl<Idx, T> Default for ComponentVec<Idx, T> {
+    #[inline]
     fn default() -> Self {
         Self::new()
     }
@@ -59,6 +60,7 @@ impl<Idx, T> PartialEq for ComponentVec<Idx, T>
 where
     T: PartialEq,
 {
+    #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.components.eq(&other.components)
     }
@@ -68,6 +70,7 @@ impl<Idx, T> Eq for ComponentVec<Idx, T> where T: Eq {}
 
 impl<Idx, T> ComponentVec<Idx, T> {
     /// Creates a new empty [`ComponentVec`].
+    #[inline]
     pub fn new() -> Self {
         Self {
             components: Vec::new(),
@@ -76,6 +79,7 @@ impl<Idx, T> ComponentVec<Idx, T> {
     }
 
     /// Clears all components from the [`ComponentVec`].
+    #[inline]
     pub fn clear(&mut self) {
         self.components.clear();
     }
@@ -99,6 +103,7 @@ where
     }
 
     /// Unsets the component for the entity at `index` and returns it if any.
+    #[inline]
     pub fn unset(&mut self, index: Idx) -> Option<T> {
         self.components
             .get_mut(index.into_usize())

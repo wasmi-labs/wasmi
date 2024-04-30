@@ -9,6 +9,7 @@ mod detail {
     pub type StringInternerImpl = StringInterner<StringBackend<Sym>, hash::RandomState>;
 
     impl GetOrInternWithHint for StringInternerImpl {
+        #[inline]
         fn get_or_intern_with_hint<T>(&mut self, string: T, _hint: super::InternHint) -> Sym
         where
             T: AsRef<str>,
@@ -18,10 +19,12 @@ mod detail {
     }
 
     impl Symbol for Sym {
+        #[inline]
         fn try_from_usize(index: usize) -> Option<Self> {
             Some(Self(index))
         }
 
+        #[inline]
         fn to_usize(self) -> usize {
             self.0
         }
@@ -53,6 +56,7 @@ pub struct StringInterner {
 }
 
 impl Default for StringInterner {
+    #[inline]
     fn default() -> Self {
         Self::new()
     }
@@ -60,6 +64,7 @@ impl Default for StringInterner {
 
 impl StringInterner {
     /// Creates a new empty [`StringInterner`].
+    #[inline]
     pub fn new() -> Self {
         Self {
             inner: detail::StringInternerImpl::new(),
@@ -67,11 +72,13 @@ impl StringInterner {
     }
 
     /// Returns the number of strings interned by the [`StringInterner`].
+    #[inline]
     pub fn len(&self) -> usize {
         self.inner.len()
     }
 
     /// Returns `true` if the [`StringInterner`] has no interned strings.
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
@@ -79,6 +86,7 @@ impl StringInterner {
     /// Returns the symbol for the given string if any.
     ///
     /// Can be used to query if a string has already been interned without interning.
+    #[inline]
     pub fn get<T>(&self, string: T) -> Option<Sym>
     where
         T: AsRef<str>,
@@ -94,6 +102,7 @@ impl StringInterner {
     ///
     /// If the interner already interns the maximum number of strings possible
     /// by the chosen symbol type.
+    #[inline]
     pub fn get_or_intern<T>(&mut self, string: T) -> Sym
     where
         T: AsRef<str>,
@@ -109,6 +118,7 @@ impl StringInterner {
     ///
     /// If the interner already interns the maximum number of strings possible
     /// by the chosen symbol type.
+    #[inline]
     pub fn get_or_intern_with_hint<T>(&mut self, string: T, hint: InternHint) -> Sym
     where
         T: AsRef<str>,
@@ -117,6 +127,7 @@ impl StringInterner {
     }
 
     /// Returns the string for the given symbol if any.
+    #[inline]
     pub fn resolve(&self, symbol: Sym) -> Option<&str> {
         self.inner.resolve(symbol)
     }
