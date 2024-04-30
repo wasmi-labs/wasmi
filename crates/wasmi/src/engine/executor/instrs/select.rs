@@ -1,9 +1,11 @@
 use super::Executor;
-use crate::engine::{
-    bytecode::{AnyConst32, Const32, Instruction, Register},
-    code_map::InstructionPtr,
+use crate::{
+    core::UntypedValue,
+    engine::{
+        bytecode::{AnyConst32, Const32, Instruction, Register},
+        code_map::InstructionPtr,
+    },
 };
-use wasmi_core::UntypedValue;
 
 /// Fetches the parameters for a `select` instruction with immutable `lhs` and `rhs`.
 macro_rules! fetch_select_imm_param {

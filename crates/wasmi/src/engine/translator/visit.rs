@@ -17,6 +17,7 @@ use super::{
     TypedValue,
 };
 use crate::{
+    core::{TrapCode, ValueType, F32, F64},
     engine::{
         bytecode::{self, Const16, Instruction, Provider, Register, SignatureIdx},
         translator::AcquiredTarget,
@@ -31,7 +32,6 @@ use crate::{
 };
 use core::num::{NonZeroU32, NonZeroU64};
 use std::collections::BTreeMap;
-use wasmi_core::{TrapCode, ValueType, F32, F64};
 use wasmparser::VisitOperator;
 
 /// Used to swap operands of a `rev` variant [`Instruction`] constructor.

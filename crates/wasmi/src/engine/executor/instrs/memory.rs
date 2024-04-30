@@ -1,4 +1,4 @@
-use wasmi_core::Pages;
+use crate::core::Pages;
 
 use super::Executor;
 use crate::{

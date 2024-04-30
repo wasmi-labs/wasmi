@@ -1,5 +1,9 @@
-use crate::{ExternRef, Func, FuncRef};
-use wasmi_core::{UntypedValue, ValueType, F32, F64};
+use crate::{
+    core::{UntypedValue, ValueType, F32, F64},
+    ExternRef,
+    Func,
+    FuncRef,
+};
 
 /// Untyped instances that allow to be typed.
 pub trait WithType {

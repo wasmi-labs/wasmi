@@ -7,7 +7,7 @@ use arrayvec::ArrayVec;
 use std::vec::Vec;
 
 #[cfg(doc)]
-use wasmi_core::UntypedValue;
+use crate::core::UntypedValue;
 
 /// Tagged providers are inputs to Wasmi bytecode instructions.
 ///

@@ -1,18 +1,20 @@
 use super::Executor;
-use crate::engine::bytecode::{
-    BranchBinOpInstr,
-    BranchBinOpInstrImm16,
-    BranchComparator,
-    BranchOffset,
-    BranchOffset16,
-    ComparatorOffsetParam,
-    Const16,
-    Const32,
-    Instruction,
-    Register,
+use crate::{
+    core::UntypedValue,
+    engine::bytecode::{
+        BranchBinOpInstr,
+        BranchBinOpInstrImm16,
+        BranchComparator,
+        BranchOffset,
+        BranchOffset16,
+        ComparatorOffsetParam,
+        Const16,
+        Const32,
+        Instruction,
+        Register,
+    },
 };
 use core::cmp;
-use wasmi_core::UntypedValue;
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Branches and adjusts the value stack.

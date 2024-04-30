@@ -7,11 +7,15 @@
 //! [`s1vm`]: https://github.com/Neopallium/s1vm
 
 use super::FuncIdx;
-use crate::{ExternRef, FuncRef, Value};
+use crate::{
+    core::{UntypedValue, F32, F64},
+    ExternRef,
+    FuncRef,
+    Value,
+};
 use core::fmt;
 use smallvec::SmallVec;
 use std::boxed::Box;
-use wasmi_core::{UntypedValue, F32, F64};
 
 /// Types that allow evluation given an evaluation context.
 pub trait Eval {

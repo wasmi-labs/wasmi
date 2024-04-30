@@ -1,10 +1,10 @@
 use super::{Const16, Const32};
 use crate::{
+    core::UntypedValue,
     engine::{Instr, TranslationError},
     Error,
 };
 use num_derive::FromPrimitive;
-use wasmi_core::UntypedValue;
 
 #[cfg(doc)]
 use super::Instruction;

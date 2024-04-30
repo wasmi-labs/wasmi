@@ -1,9 +1,11 @@
 use super::*;
-use crate::engine::{
-    bytecode::{BranchOffset, BranchOffset16, GlobalIdx, RegisterSpan},
-    CompiledFunc,
+use crate::{
+    core::{TrapCode, UntypedValue},
+    engine::{
+        bytecode::{BranchOffset, BranchOffset16, GlobalIdx, RegisterSpan},
+        CompiledFunc,
+    },
 };
-use wasmi_core::{TrapCode, UntypedValue};
 
 #[test]
 #[cfg_attr(miri, ignore)]

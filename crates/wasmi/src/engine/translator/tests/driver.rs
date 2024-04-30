@@ -1,5 +1,6 @@
 use super::create_module;
 use crate::{
+    core::UntypedValue,
     engine::{bytecode::Instruction, CompiledFunc, DedupFuncType},
     Config,
     Engine,
@@ -7,7 +8,6 @@ use crate::{
 };
 use core::sync::atomic::Ordering;
 use std::{boxed::Box, sync::atomic::AtomicBool, vec::Vec};
-use wasmi_core::UntypedValue;
 
 /// A test driver for translation tests.
 #[derive(Debug)]

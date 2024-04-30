@@ -1,6 +1,8 @@
 use super::Executor;
-use crate::engine::bytecode::{Const16, GlobalIdx, Register};
-use wasmi_core::UntypedValue;
+use crate::{
+    core::UntypedValue,
+    engine::bytecode::{Const16, GlobalIdx, Register},
+};
 
 #[cfg(doc)]
 use crate::engine::bytecode::Instruction;

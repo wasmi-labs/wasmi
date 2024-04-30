@@ -67,7 +67,7 @@ use wasmparser::{FuncToValidate, FuncValidatorAllocations, ValidatorResources};
 use self::bytecode::Instruction;
 
 #[cfg(test)]
-use wasmi_core::UntypedValue;
+use crate::core::UntypedValue;
 
 #[cfg(doc)]
 use crate::Store;

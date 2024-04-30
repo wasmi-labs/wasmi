@@ -1,10 +1,10 @@
 use super::{err_stack_overflow, BaseValueStackOffset, FrameValueStackOffset};
 use crate::{
+    core::TrapCode,
     engine::{bytecode::RegisterSpan, code_map::InstructionPtr},
     Instance,
 };
 use std::vec::Vec;
-use wasmi_core::TrapCode;
 
 #[cfg(doc)]
 use crate::{

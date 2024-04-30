@@ -15,7 +15,7 @@ use std::{
     sync::OnceLock,
 };
 use wasmi::{
-    core::TrapCode,
+    core::{Pages, TrapCode, ValueType, F32, F64},
     CompilationMode,
     Engine,
     Extern,
@@ -27,7 +27,6 @@ use wasmi::{
     Store,
     Value,
 };
-use wasmi_core::{Pages, ValueType, F32, F64};
 
 criterion_group!(
     name = bench_translate;

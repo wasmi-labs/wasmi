@@ -1,9 +1,8 @@
 use super::*;
 
-use crate::engine::bytecode::GlobalIdx;
+use crate::{core::ValueType, engine::bytecode::GlobalIdx};
 use core::fmt::Display;
 use wasm_type::WasmType;
-use wasmi_core::ValueType;
 
 fn test_reg<T>()
 where

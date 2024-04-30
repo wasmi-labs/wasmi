@@ -7,6 +7,7 @@ mod tests;
 pub use self::{error::InstantiationError, pre::InstancePre};
 use super::{element::ElementSegmentKind, export, ConstExpr, DataSegmentKind, Module};
 use crate::{
+    core::UntypedValue,
     func::WasmFuncEntity,
     memory::{DataSegment, MemoryError},
     value::WithType,
@@ -26,7 +27,6 @@ use crate::{
     Table,
     Value,
 };
-use wasmi_core::UntypedValue;
 
 impl Module {
     /// Instantiates a new [`Instance`] from the given compiled [`Module`].

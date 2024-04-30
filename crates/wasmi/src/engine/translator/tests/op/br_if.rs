@@ -1,10 +1,12 @@
 use super::*;
-use crate::engine::{
-    bytecode::{BranchOffset, BranchOffset16, RegisterSpan},
-    translator::tests::wasm_type::WasmType,
+use crate::{
+    core::UntypedValue,
+    engine::{
+        bytecode::{BranchOffset, BranchOffset16, RegisterSpan},
+        translator::tests::wasm_type::WasmType,
+    },
 };
 use core::fmt::Display;
-use wasmi_core::UntypedValue;
 
 #[test]
 #[cfg_attr(miri, ignore)]

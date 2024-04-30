@@ -5,6 +5,7 @@ pub use self::{
 use super::{AsContext, AsContextMut, Stored};
 use crate::{
     collections::arena::ArenaIndex,
+    core::{TrapCode, UntypedValue, ValueType},
     error::EntityGrowError,
     module::FuncIdx,
     store::{Fuel, FuelError, ResourceLimiterRef},
@@ -15,7 +16,6 @@ use crate::{
 };
 use core::cmp::max;
 use std::{vec, vec::Vec};
-use wasmi_core::{TrapCode, UntypedValue, ValueType};
 
 mod element;
 mod error;
