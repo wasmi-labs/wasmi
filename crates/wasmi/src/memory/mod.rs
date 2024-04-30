@@ -12,10 +12,10 @@ pub use self::{
 };
 use super::{AsContext, AsContextMut, StoreContext, StoreContextMut, Stored};
 use crate::{
+    collections::arena::ArenaIndex,
     error::EntityGrowError,
     store::{Fuel, ResourceLimiterRef},
 };
-use wasmi_collections::arena::ArenaIndex;
 use wasmi_core::{Pages, TrapCode};
 
 /// A raw index to a linear memory entity.

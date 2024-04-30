@@ -1,4 +1,5 @@
 use crate::{
+    collections::arena::{Arena, ArenaIndex, GuardedEntity},
     engine::{DedupFuncType, FuelCosts},
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
     func::{Trampoline, TrampolineEntity, TrampolineIdx},
@@ -35,7 +36,6 @@ use core::{
     sync::atomic::{AtomicU32, Ordering},
 };
 use std::boxed::Box;
-use wasmi_collections::arena::{Arena, ArenaIndex, GuardedEntity};
 use wasmi_core::TrapCode;
 
 /// A unique store index.

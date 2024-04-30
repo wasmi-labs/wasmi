@@ -13,6 +13,7 @@ use super::{
     ValidatingFuncTranslator,
 };
 use crate::{
+    collections::arena::{Arena, ArenaIndex},
     core::UntypedValue,
     engine::bytecode::Instruction,
     module::{FuncIdx, ModuleHeader},
@@ -30,7 +31,6 @@ use core::{
     sync::atomic::{AtomicU8, Ordering},
 };
 use std::boxed::Box;
-use wasmi_collections::arena::{Arena, ArenaIndex};
 use wasmi_core::TrapCode;
 use wasmparser::{FuncToValidate, ValidatorResources, WasmFeatures};
 

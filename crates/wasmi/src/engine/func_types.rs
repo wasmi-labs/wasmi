@@ -1,6 +1,8 @@
 use super::{EngineIdx, Guarded};
-use crate::FuncType;
-use wasmi_collections::arena::{ArenaIndex, DedupArena, GuardedEntity};
+use crate::{
+    collections::arena::{ArenaIndex, DedupArena, GuardedEntity},
+    FuncType,
+};
 
 /// A raw index to a function signature entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

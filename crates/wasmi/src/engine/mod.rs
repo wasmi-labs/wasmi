@@ -48,6 +48,7 @@ use self::{
     resumable::ResumableCallBase,
 };
 use crate::{
+    collections::arena::{ArenaIndex, GuardedEntity},
     module::{FuncIdx, ModuleHeader},
     Error,
     Func,
@@ -60,7 +61,6 @@ use std::{
     sync::{Arc, Weak},
     vec::Vec,
 };
-use wasmi_collections::arena::{ArenaIndex, GuardedEntity};
 use wasmparser::{FuncToValidate, FuncValidatorAllocations, ValidatorResources};
 
 #[cfg(test)]

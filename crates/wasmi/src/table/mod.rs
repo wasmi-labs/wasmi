@@ -4,6 +4,7 @@ pub use self::{
 };
 use super::{AsContext, AsContextMut, Stored};
 use crate::{
+    collections::arena::ArenaIndex,
     error::EntityGrowError,
     module::FuncIdx,
     store::{Fuel, FuelError, ResourceLimiterRef},
@@ -14,7 +15,6 @@ use crate::{
 };
 use core::cmp::max;
 use std::{vec, vec::Vec};
-use wasmi_collections::arena::ArenaIndex;
 use wasmi_core::{TrapCode, UntypedValue, ValueType};
 
 mod element;

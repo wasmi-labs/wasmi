@@ -1,11 +1,11 @@
 use crate::{
+    collections::arena::ArenaIndex,
     module,
     module::{ConstExpr, ElementSegmentItems},
     store::Stored,
     AsContext,
     AsContextMut,
 };
-use wasmi_collections::arena::ArenaIndex;
 use wasmi_core::ValueType;
 
 /// A raw index to a element segment entity.

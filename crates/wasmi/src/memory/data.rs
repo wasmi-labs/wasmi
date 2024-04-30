@@ -1,6 +1,5 @@
-use crate::{module, store::Stored, AsContextMut};
+use crate::{collections::arena::ArenaIndex, module, store::Stored, AsContextMut};
 use std::sync::Arc;
-use wasmi_collections::arena::ArenaIndex;
 
 /// A raw index to a data segment entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
