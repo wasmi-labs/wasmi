@@ -1,6 +1,6 @@
 use super::{EnforcedLimits, StackLimits};
+use crate::core::UntypedValue;
 use core::{mem::size_of, num::NonZeroU64};
-use wasmi_core::UntypedValue;
 use wasmparser::WasmFeatures;
 
 /// The default amount of stacks kept in the cache at most.

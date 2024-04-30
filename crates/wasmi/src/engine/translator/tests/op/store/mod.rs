@@ -13,8 +13,8 @@ mod i64_store16;
 mod i64_store32;
 mod i64_store8;
 
+use crate::core::TrapCode;
 use core::fmt::Display;
-use wasmi_core::TrapCode;
 
 fn test_store_for(
     wasm_op: WasmOp,

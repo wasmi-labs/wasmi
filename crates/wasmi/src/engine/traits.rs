@@ -1,6 +1,5 @@
-use crate::{value::WithType, Value};
+use crate::{core::UntypedValue, value::WithType, Value};
 use core::{iter, slice};
-use wasmi_core::UntypedValue;
 
 /// Types implementing this trait may be used as parameters for function execution.
 ///

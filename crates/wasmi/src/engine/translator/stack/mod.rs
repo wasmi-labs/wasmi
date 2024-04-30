@@ -11,6 +11,7 @@ pub use self::{
 };
 use super::{PreservedLocal, TypedValue};
 use crate::{
+    core::UntypedValue,
     engine::{
         bytecode::{Provider, Register, RegisterSpan, UntypedProvider},
         TranslationError,
@@ -19,7 +20,6 @@ use crate::{
     FuncType,
 };
 use std::vec::Vec;
-use wasmi_core::UntypedValue;
 
 /// Typed inputs to Wasmi bytecode instructions.
 ///

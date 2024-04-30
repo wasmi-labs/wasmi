@@ -1,8 +1,13 @@
-use crate::{reftype::Transposer, store::Stored, AsContextMut, StoreContext};
+use crate::{
+    collections::arena::ArenaIndex,
+    core::UntypedValue,
+    reftype::Transposer,
+    store::Stored,
+    AsContextMut,
+    StoreContext,
+};
 use core::{any::Any, num::NonZeroU32};
 use std::boxed::Box;
-use wasmi_arena::ArenaIndex;
-use wasmi_core::UntypedValue;
 
 /// A raw index to a function entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

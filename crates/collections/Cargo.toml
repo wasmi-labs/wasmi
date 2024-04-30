@@ -1,0 +1,31 @@
+[package]
+name = "wasmi_collections"
+version = "0.1.0"
+rust-version.workspace = true
+documentation = "https://docs.rs/wasmi_collections/"
+description = "Specialized data structures for the Wasmi interpreter"
+authors.workspace = true
+repository.workspace = true
+edition.workspace = true
+readme.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+exclude.workspace = true
+
+[dependencies]
+hashbrown = { version = "0.14", default-features = false, features = ["ahash", "inline-more"] }
+string-interner = { version = "0.15", default-features = false, features = ["inline-more", "backends"] }
+ahash = { version = "0.8.11", default-features = false }
+
+[features]
+default = ["std"]
+std = ["string-interner/std"]
+# Tells the `wasmi_collections` crate to avoid using hash based maps and sets.
+# 
+# Some embedded environments cannot provide a random source which is required
+# to properly initialize hashmap based data structures for resilience against
+# malious actors that control their inputs.
+#
+# An example of such an environment is `wasm32-unknown-unknown`.
+no-hash-maps = []

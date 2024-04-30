@@ -12,6 +12,7 @@ use super::{
     Table,
 };
 use crate::{
+    collections::arena::ArenaIndex,
     func::FuncError,
     memory::DataSegment,
     ElementSegment,
@@ -21,7 +22,6 @@ use crate::{
     WasmResults,
 };
 use std::{boxed::Box, collections::BTreeMap, sync::Arc};
-use wasmi_arena::ArenaIndex;
 
 mod builder;
 mod exports;

@@ -4,9 +4,9 @@ mod conversion;
 mod op;
 
 use super::*;
+use crate::core::{TrapCode, UntypedValue};
 use std::fmt::Display;
 use wasm_type::WasmType;
-use wasmi_core::{TrapCode, UntypedValue};
 
 /// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary Wasmi instruction.
 fn conversion_reg_with<I, O, E>(wasm_op: &str, expected: E)

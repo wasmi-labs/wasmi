@@ -1,34 +1,12 @@
-//! Fast arena allocators for different usage purposes.
+//! Fast arena data structures specialized for usage in the Wasmi interpreter.
 //!
 //! They cannot deallocate single allocated entities for extra efficiency.
-//! These allocators mainly serve as the backbone for an efficient Wasm store
-//! implementation.
-
-#![no_std]
-#![warn(
-    clippy::cast_lossless,
-    clippy::missing_errors_doc,
-    clippy::used_underscore_binding,
-    clippy::redundant_closure_for_method_calls,
-    clippy::type_repetition_in_bounds,
-    clippy::inconsistent_struct_constructor,
-    clippy::default_trait_access,
-    clippy::map_unwrap_or,
-    clippy::items_after_statements
-)]
-
-#[cfg(not(feature = "std"))]
-extern crate alloc as std;
-
-#[cfg(feature = "std")]
-extern crate std;
+//! These data structures mainly serve as the backbone for an efficient WebAssembly
+//! store, module, instance and engine implementation.
 
 mod component_vec;
 mod dedup;
 mod guarded;
-
-#[cfg(test)]
-mod tests;
 
 pub use self::{component_vec::ComponentVec, dedup::DedupArena, guarded::GuardedEntity};
 use core::{
@@ -56,10 +34,10 @@ pub struct Arena<Idx, T> {
     marker: PhantomData<Idx>,
 }
 
-/// `Arena` does not store `Idx` therefore it is `Send` without its bound.
+/// [`Arena`] does not store `Idx` therefore it is `Send` without its bound.
 unsafe impl<Idx, T> Send for Arena<Idx, T> where T: Send {}
 
-/// `Arena` does not store `Idx` therefore it is `Sync` without its bound.
+/// [`Arena`] does not store `Idx` therefore it is `Sync` without its bound.
 unsafe impl<Idx, T> Sync for Arena<Idx, T> where T: Send {}
 
 impl<Idx, T> Default for Arena<Idx, T> {
@@ -80,7 +58,7 @@ where
 impl<Idx, T> Eq for Arena<Idx, T> where T: Eq {}
 
 impl<Idx, T> Arena<Idx, T> {
-    /// Creates a new empty entity arena.
+    /// Creates a new empty entity [`Arena`].
     pub fn new() -> Self {
         Self {
             entities: Vec::new(),

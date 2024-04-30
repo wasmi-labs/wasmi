@@ -3,7 +3,7 @@ use super::{
     TrampolineEntity,
 };
 use crate::{
-    core::{ValueType, F32, F64},
+    core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedValue, ValueType, F32, F64},
     Caller,
     Error,
     ExternRef,
@@ -11,7 +11,6 @@ use crate::{
     FuncType,
 };
 use core::{array, iter::FusedIterator};
-use wasmi_core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedValue};
 
 /// Closures and functions that can be used as host functions.
 pub trait IntoFunc<T, Params, Results>: Send + Sync + 'static {

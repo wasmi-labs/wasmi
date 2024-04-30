@@ -21,7 +21,7 @@ exclude = [
 [dependencies]
 wasmparser = { version = "0.100.2", package = "wasmparser-nostd", default-features = false }
 wasmi_core = { workspace = true }
-wasmi_arena = { workspace = true }
+wasmi_collections = { workspace = true }
 spin = { version = "0.9", default-features = false, features = [
     "mutex",
     "spin_mutex",
@@ -44,12 +44,20 @@ criterion = { version = "0.5", default-features = false }
 default = ["std"]
 std = [
     "wasmi_core/std",
-    "wasmi_arena/std",
+    "wasmi_collections/std",
     "wasmparser/std",
     "spin/std",
     "num-traits/std",
     "arrayvec/std",
 ]
+# Tells the `wasmi_collections` crate to avoid using hash based maps and sets.
+# 
+# Some embedded environments cannot provide a random source which is required
+# to properly initialize hashmap based data structures for resilience against
+# malious actors that control their inputs.
+#
+# An example of such an environment is `wasm32-unknown-unknown`.
+no-hash-maps = ["wasmi_collections/no-hash-maps"]
 
 [[bench]]
 name = "benches"

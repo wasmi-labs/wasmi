@@ -1,7 +1,6 @@
 use super::{ConstExpr, TableIdx};
-use crate::module::utils::WasmiValueType;
+use crate::{core::ValueType, module::utils::WasmiValueType};
 use std::sync::Arc;
-use wasmi_core::ValueType;
 
 /// A table element segment within a [`Module`].
 ///

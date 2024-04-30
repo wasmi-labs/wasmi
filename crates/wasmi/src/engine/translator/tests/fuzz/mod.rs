@@ -2,13 +2,12 @@
 
 use super::*;
 use crate::{
-    core::TrapCode,
+    core::{TrapCode, F32},
     engine::{
         bytecode::{BranchOffset, BranchOffset16, GlobalIdx, RegisterSpan},
         CompiledFunc,
     },
 };
-use wasmi_core::F32;
 
 #[test]
 #[cfg_attr(miri, ignore)]

@@ -48,6 +48,7 @@ use self::{
     resumable::ResumableCallBase,
 };
 use crate::{
+    collections::arena::{ArenaIndex, GuardedEntity},
     module::{FuncIdx, ModuleHeader},
     Error,
     Func,
@@ -60,14 +61,13 @@ use std::{
     sync::{Arc, Weak},
     vec::Vec,
 };
-use wasmi_arena::{ArenaIndex, GuardedEntity};
 use wasmparser::{FuncToValidate, FuncValidatorAllocations, ValidatorResources};
 
 #[cfg(test)]
 use self::bytecode::Instruction;
 
 #[cfg(test)]
-use wasmi_core::UntypedValue;
+use crate::core::UntypedValue;
 
 #[cfg(doc)]
 use crate::Store;
@@ -77,7 +77,7 @@ use crate::Store;
 /// # Note
 ///
 /// Used to protect against invalid entity indices.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct EngineIdx(u32);
 
 impl ArenaIndex for EngineIdx {

@@ -6,6 +6,7 @@ use super::{
     TypedProvider,
 };
 use crate::{
+    core::{UntypedValue, ValueType, F32},
     engine::{
         bytecode::{
             BinInstr,
@@ -30,7 +31,6 @@ use crate::{
 };
 use core::mem;
 use std::vec::{Drain, Vec};
-use wasmi_core::{UntypedValue, ValueType, F32};
 
 /// A reference to an instruction of the partially
 /// constructed function body of the [`InstrEncoder`].

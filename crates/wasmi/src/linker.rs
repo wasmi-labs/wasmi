@@ -1121,7 +1121,7 @@ impl<T> LinkerInner<T> {
 
 #[cfg(test)]
 mod tests {
-    use wasmi_core::ValueType;
+    use crate::core::ValueType;
 
     use super::*;
     use crate::Store;

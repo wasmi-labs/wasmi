@@ -1,4 +1,4 @@
-use wasmi_core::ValueType;
+use crate::core::ValueType;
 
 use crate::{
     core::{UntypedValue, F32},

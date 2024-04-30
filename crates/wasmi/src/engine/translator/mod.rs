@@ -40,6 +40,7 @@ pub use self::{
 };
 use super::code_map::CompiledFuncEntity;
 use crate::{
+    core::{TrapCode, UntypedValue, ValueType},
     engine::{
         bytecode::{
             AnyConst32,
@@ -63,7 +64,6 @@ use crate::{
 };
 use core::fmt;
 use std::vec::Vec;
-use wasmi_core::{TrapCode, UntypedValue, ValueType};
 use wasmparser::{
     BinaryReaderError,
     FuncToValidate,

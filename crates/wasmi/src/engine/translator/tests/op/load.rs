@@ -1,7 +1,7 @@
 //! Translation tests for all Wasm `load` instructions.
 
 use super::*;
-use wasmi_core::TrapCode;
+use crate::core::TrapCode;
 
 fn test_load(
     wasm_op: WasmOp,

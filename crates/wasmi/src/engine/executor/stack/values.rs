@@ -1,11 +1,10 @@
 use super::err_stack_overflow;
 use crate::{
-    core::UntypedValue,
+    core::{TrapCode, UntypedValue},
     engine::{bytecode::Register, CompiledFuncEntity},
 };
 use core::{fmt, fmt::Debug, iter, mem, ptr};
 use std::{vec, vec::Vec};
-use wasmi_core::TrapCode;
 
 #[cfg(doc)]
 use super::calls::CallFrame;

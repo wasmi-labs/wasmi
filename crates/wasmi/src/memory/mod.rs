@@ -12,11 +12,11 @@ pub use self::{
 };
 use super::{AsContext, AsContextMut, StoreContext, StoreContextMut, Stored};
 use crate::{
+    collections::arena::ArenaIndex,
+    core::{Pages, TrapCode},
     error::EntityGrowError,
     store::{Fuel, ResourceLimiterRef},
 };
-use wasmi_arena::ArenaIndex;
-use wasmi_core::{Pages, TrapCode};
 
 /// A raw index to a linear memory entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

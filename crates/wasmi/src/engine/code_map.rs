@@ -13,7 +13,8 @@ use super::{
     ValidatingFuncTranslator,
 };
 use crate::{
-    core::UntypedValue,
+    collections::arena::{Arena, ArenaIndex},
+    core::{TrapCode, UntypedValue},
     engine::bytecode::Instruction,
     module::{FuncIdx, ModuleHeader},
     store::{Fuel, FuelError},
@@ -30,8 +31,6 @@ use core::{
     sync::atomic::{AtomicU8, Ordering},
 };
 use std::boxed::Box;
-use wasmi_arena::{Arena, ArenaIndex};
-use wasmi_core::TrapCode;
 use wasmparser::{FuncToValidate, ValidatorResources, WasmFeatures};
 
 /// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`](crate::Engine).
