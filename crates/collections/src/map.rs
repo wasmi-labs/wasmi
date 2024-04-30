@@ -52,6 +52,7 @@ pub struct Map<K, V> {
 }
 
 impl<K, V> Default for Map<K, V> {
+    #[inline]
     fn default() -> Self {
         Self {
             inner: detail::MapImpl::default(),
@@ -61,26 +62,31 @@ impl<K, V> Default for Map<K, V> {
 
 impl<K, V> Map<K, V> {
     /// Creates a new empty [`Map`].
+    #[inline]
     pub fn new() -> Self {
         Self::default()
     }
 
     /// Clears the [`Map`], removing all elements.
+    #[inline]
     pub fn clear(&mut self) {
         self.inner.clear()
     }
 
     /// Returns the number of elements in the [`Map`].
+    #[inline]
     pub fn len(&self) -> usize {
         self.inner.len()
     }
 
     /// Returns `true` if the [`Map`] contains no elements.
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
 
     /// Returns an iterator that yields the items in the [`Map`].
+    #[inline]
     pub fn iter(&self) -> Iter<'_, K, V> {
         Iter {
             inner: self.inner.iter(),
@@ -88,6 +94,7 @@ impl<K, V> Map<K, V> {
     }
 
     /// Returns a mutable iterator that yields the items in the [`Map`].
+    #[inline]
     pub fn iter_mut(&mut self) -> IterMut<'_, K, V> {
         IterMut {
             inner: self.inner.iter_mut(),
@@ -95,6 +102,7 @@ impl<K, V> Map<K, V> {
     }
 
     /// Returns an iterator that yields the keys in the [`Map`].
+    #[inline]
     pub fn keys(&self) -> Keys<'_, K, V> {
         Keys {
             inner: self.inner.keys(),
@@ -105,6 +113,7 @@ impl<K, V> Map<K, V> {
     ///
     /// The [`Map`] cannot be used after calling this.
     /// The iterator element type is `K`.
+    #[inline]
     pub fn into_keys(self) -> IntoKeys<K, V> {
         IntoKeys {
             inner: self.inner.into_keys(),
@@ -112,6 +121,7 @@ impl<K, V> Map<K, V> {
     }
 
     /// Returns an iterator that yields the values in the [`Map`].
+    #[inline]
     pub fn values(&self) -> Values<'_, K, V> {
         Values {
             inner: self.inner.values(),
@@ -122,6 +132,7 @@ impl<K, V> Map<K, V> {
     ///
     /// The [`Map`] cannot be used after calling this.
     /// The iterator element type is `V`.
+    #[inline]
     pub fn into_values(self) -> IntoValues<K, V> {
         IntoValues {
             inner: self.inner.into_values(),
@@ -129,6 +140,7 @@ impl<K, V> Map<K, V> {
     }
 
     /// Returns a mutable iterator that yields the values in the [`Map`].
+    #[inline]
     pub fn values_mut(&mut self) -> ValuesMut<'_, K, V> {
         ValuesMut {
             inner: self.inner.values_mut(),
@@ -141,6 +153,7 @@ where
     K: Hash + Eq + Ord,
 {
     /// Reserves capacity for at least `additional` more elements to be inserted in the [`Map`].
+    #[inline]
     pub fn reserve(&mut self, additional: usize) {
         #[cfg(not(feature = "no-hash-maps"))]
         self.inner.reserve(additional);
@@ -149,6 +162,7 @@ where
     }
 
     /// Returns true if `key` is contains in the [`Map`].
+    #[inline]
     pub fn contains_key<Q>(&self, key: &Q) -> bool
     where
         K: Borrow<Q>,
@@ -158,6 +172,7 @@ where
     }
 
     /// Returns a reference to the value corresponding to the `key`.
+    #[inline]
     pub fn get<Q>(&self, key: &Q) -> Option<&V>
     where
         K: Borrow<Q>,
@@ -170,6 +185,7 @@ where
     ///
     /// The supplied key may be any borrowed form of the map's key type, but the ordering
     /// on the borrowed form *must* match the ordering on the key type.
+    #[inline]
     pub fn get_key_value<Q>(&self, key: &Q) -> Option<(&K, &V)>
     where
         K: Borrow<Q>,
@@ -179,6 +195,7 @@ where
     }
 
     /// Returns a mutable reference to the value corresponding to the key.
+    #[inline]
     pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut V>
     where
         K: Borrow<Q>,
@@ -194,11 +211,13 @@ where
     /// If the map did have this key present, the value is updated, and the old
     /// value is returned. The key is not updated, though; this matters for
     /// types that can be `==` without being identical.
+    #[inline]
     pub fn insert(&mut self, key: K, value: V) -> Option<V> {
         self.inner.insert(key, value)
     }
 
     /// Removes a key from the [`Map`], returning the value at the key if the key was previously in the map.
+    #[inline]
     pub fn remove<Q>(&mut self, key: &Q) -> Option<V>
     where
         K: Borrow<Q>,
@@ -212,6 +231,7 @@ where
     ///
     /// The key may be any borrowed form of the map's key type, but the ordering
     /// on the borrowed form *must* match the ordering on the key type.
+    #[inline]
     pub fn remove_entry<Q>(&mut self, key: &Q) -> Option<(K, V)>
     where
         K: Borrow<Q>,
@@ -221,6 +241,7 @@ where
     }
 
     /// Gets the given key's corresponding entry in the [`Map`] for in-place manipulation.
+    #[inline]
     pub fn entry(&mut self, key: K) -> Entry<'_, K, V> {
         match self.inner.entry(key) {
             detail::EntryImpl::Occupied(entry) => Entry::Occupied(OccupiedEntry { inner: entry }),
@@ -232,6 +253,7 @@ where
     ///
     /// In other words, remove all pairs `(k, v)` for which `f(&k, &mut v)` returns `false`.
     /// The elements are visited in ascending key order.
+    #[inline]
     pub fn retain<F>(&mut self, f: F)
     where
         F: FnMut(&K, &mut V) -> bool,
@@ -245,6 +267,7 @@ where
     K: Eq + Hash,
     V: Eq,
 {
+    #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.inner == other.inner
     }
@@ -264,6 +287,7 @@ where
 {
     type Output = V;
 
+    #[inline]
     fn index(&self, key: &Q) -> &V {
         &self.inner[key]
     }
@@ -274,6 +298,7 @@ where
     K: Eq + Hash + Ord + Copy,
     V: Copy,
 {
+    #[inline]
     fn extend<Iter: IntoIterator<Item = (&'a K, &'a V)>>(&mut self, iter: Iter) {
         self.inner.extend(iter)
     }
@@ -283,6 +308,7 @@ impl<K, V> Extend<(K, V)> for Map<K, V>
 where
     K: Eq + Hash + Ord,
 {
+    #[inline]
     fn extend<Iter: IntoIterator<Item = (K, V)>>(&mut self, iter: Iter) {
         self.inner.extend(iter)
     }
@@ -305,6 +331,7 @@ where
 {
     /// Ensures a value is in the entry by inserting the default if empty, and returns
     /// a mutable reference to the value in the entry.
+    #[inline]
     pub fn or_insert(self, default: V) -> &'a mut V {
         match self {
             Self::Occupied(entry) => entry.into_mut(),
@@ -314,6 +341,7 @@ where
 
     /// Ensures a value is in the [`Entry`] by inserting the result of the default function if empty,
     /// and returns a mutable reference to the value in the entry.
+    #[inline]
     pub fn or_insert_with<F: FnOnce() -> V>(self, default: F) -> &'a mut V {
         match self {
             Self::Occupied(entry) => entry.into_mut(),
@@ -339,6 +367,7 @@ where
     }
 
     /// Returns a reference to this [`Entry`]'s key.
+    #[inline]
     pub fn key(&self) -> &K {
         match *self {
             Self::Occupied(ref entry) => entry.key(),
@@ -348,6 +377,7 @@ where
 
     /// Provides in-place mutable access to an occupied [`Entry`] before any
     /// potential inserts into the map.
+    #[inline]
     pub fn and_modify<F>(self, f: F) -> Self
     where
         F: FnOnce(&mut V),
@@ -369,6 +399,7 @@ where
 {
     /// Ensures a value is in the [`Entry`] by inserting the default value if empty,
     /// and returns a mutable reference to the value in the entry.
+    #[inline]
     pub fn or_default(self) -> &'a mut V {
         match self {
             Self::Occupied(entry) => entry.into_mut(),
@@ -400,37 +431,44 @@ where
     V: 'a,
 {
     /// Gets a reference to the key in the entry.
+    #[inline]
     pub fn key(&self) -> &K {
         self.inner.key()
     }
 
     /// Gets a reference to the value in the entry.
+    #[inline]
     pub fn get(&self) -> &V {
         self.inner.get()
     }
 
     /// Gets a mutable reference to the value in the entry.
+    #[inline]
     pub fn get_mut(&mut self) -> &mut V {
         self.inner.get_mut()
     }
 
     /// Sets the value of the entry with the [`OccupiedEntry`]'s key, and returns the entry's old value.
+    #[inline]
     pub fn insert(&mut self, value: V) -> V {
         self.inner.insert(value)
     }
 
     /// Converts the [`OccupiedEntry`] into a mutable reference to the value in the entry
     /// with a lifetime bound to the map itself.
+    #[inline]
     pub fn into_mut(self) -> &'a mut V {
         self.inner.into_mut()
     }
 
     /// Take ownership of the key and value from the [`Map`].
+    #[inline]
     pub fn remove_entry(self) -> (K, V) {
         self.inner.remove_entry()
     }
 
     /// Takes the value of the entry out of the [`Map`], and returns it.
+    #[inline]
     pub fn remove(self) -> V {
         self.inner.remove()
     }
@@ -459,16 +497,19 @@ where
     V: 'a,
 {
     /// Gets a reference to the key in the entry.
+    #[inline]
     pub fn key(&self) -> &K {
         self.inner.key()
     }
 
     /// Take ownership of the key.
+    #[inline]
     pub fn into_key(self) -> K {
         self.inner.into_key()
     }
 
     /// Sets the value of the entry with the [`VacantEntry`]'s key, and returns a mutable reference to it.
+    #[inline]
     pub fn insert(self, value: V) -> &'a mut V
     where
         K: Hash,
@@ -495,6 +536,7 @@ impl<'a, K, V> IntoIterator for &'a Map<K, V> {
     type Item = (&'a K, &'a V);
     type IntoIter = Iter<'a, K, V>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
@@ -509,12 +551,19 @@ pub struct Iter<'a, K, V> {
 impl<'a, K: 'a, V: 'a> Iterator for Iter<'a, K, V> {
     type Item = (&'a K, &'a V);
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
     }
 }
 
 impl<'a, K: 'a, V: 'a> ExactSizeIterator for Iter<'a, K, V> {
+    #[inline]
     fn len(&self) -> usize {
         self.inner.len()
     }
@@ -526,6 +575,7 @@ impl<'a, K: 'a, V: 'a> IntoIterator for &'a mut Map<K, V> {
     type Item = (&'a K, &'a mut V);
     type IntoIter = IterMut<'a, K, V>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.iter_mut()
     }
@@ -540,12 +590,19 @@ pub struct IterMut<'a, K, V> {
 impl<'a, K: 'a, V: 'a> Iterator for IterMut<'a, K, V> {
     type Item = (&'a K, &'a mut V);
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
     }
 }
 
 impl<'a, K: 'a, V: 'a> ExactSizeIterator for IterMut<'a, K, V> {
+    #[inline]
     fn len(&self) -> usize {
         self.inner.len()
     }
@@ -557,6 +614,7 @@ impl<K, V> IntoIterator for Map<K, V> {
     type Item = (K, V);
     type IntoIter = IntoIter<K, V>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         IntoIter {
             inner: self.inner.into_iter(),
@@ -573,12 +631,19 @@ pub struct IntoIter<K, V> {
 impl<K, V> Iterator for IntoIter<K, V> {
     type Item = (K, V);
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
     }
 }
 
 impl<K, V> ExactSizeIterator for IntoIter<K, V> {
+    #[inline]
     fn len(&self) -> usize {
         self.inner.len()
     }
@@ -595,12 +660,19 @@ pub struct Keys<'a, K, V> {
 impl<'a, K: 'a, V> Iterator for Keys<'a, K, V> {
     type Item = &'a K;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
     }
 }
 
 impl<'a, K: 'a, V> ExactSizeIterator for Keys<'a, K, V> {
+    #[inline]
     fn len(&self) -> usize {
         self.inner.len()
     }
@@ -617,12 +689,19 @@ pub struct Values<'a, K, V> {
 impl<'a, K, V: 'a> Iterator for Values<'a, K, V> {
     type Item = &'a V;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
     }
 }
 
 impl<'a, K, V: 'a> ExactSizeIterator for Values<'a, K, V> {
+    #[inline]
     fn len(&self) -> usize {
         self.inner.len()
     }
@@ -639,12 +718,19 @@ pub struct ValuesMut<'a, K, V> {
 impl<'a, K, V: 'a> Iterator for ValuesMut<'a, K, V> {
     type Item = &'a mut V;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
     }
 }
 
 impl<'a, K, V: 'a> ExactSizeIterator for ValuesMut<'a, K, V> {
+    #[inline]
     fn len(&self) -> usize {
         self.inner.len()
     }
@@ -661,12 +747,19 @@ pub struct IntoKeys<K, V> {
 impl<K, V> Iterator for IntoKeys<K, V> {
     type Item = K;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
     }
 }
 
 impl<K, V> ExactSizeIterator for IntoKeys<K, V> {
+    #[inline]
     fn len(&self) -> usize {
         self.inner.len()
     }
@@ -683,12 +776,19 @@ pub struct IntoValues<K, V> {
 impl<K, V> Iterator for IntoValues<K, V> {
     type Item = V;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
     }
 }
 
 impl<K, V> ExactSizeIterator for IntoValues<K, V> {
+    #[inline]
     fn len(&self) -> usize {
         self.inner.len()
     }

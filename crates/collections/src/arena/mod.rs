@@ -79,11 +79,13 @@ impl<Idx, T> Arena<Idx, T> {
     }
 
     /// Clears all entities from the arena.
+    #[inline]
     pub fn clear(&mut self) {
         self.entities.clear();
     }
 
     /// Returns an iterator over the shared reference of the arena entities.
+    #[inline]
     pub fn iter(&self) -> Iter<Idx, T> {
         Iter {
             iter: self.entities.iter().enumerate(),
@@ -92,6 +94,7 @@ impl<Idx, T> Arena<Idx, T> {
     }
 
     /// Returns an iterator over the exclusive reference of the arena entities.
+    #[inline]
     pub fn iter_mut(&mut self) -> IterMut<Idx, T> {
         IterMut {
             iter: self.entities.iter_mut().enumerate(),
@@ -153,6 +156,7 @@ where
 }
 
 impl<Idx, T> FromIterator<T> for Arena<Idx, T> {
+    #[inline]
     fn from_iter<I>(iter: I) -> Self
     where
         I: IntoIterator<Item = T>,
@@ -171,6 +175,7 @@ where
     type Item = (Idx, &'a T);
     type IntoIter = Iter<'a, Idx, T>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
@@ -183,6 +188,7 @@ where
     type Item = (Idx, &'a mut T);
     type IntoIter = IterMut<'a, Idx, T>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.iter_mut()
     }
@@ -230,6 +236,7 @@ impl<'a, Idx, T> ExactSizeIterator for Iter<'a, Idx, T>
 where
     Idx: ArenaIndex,
 {
+    #[inline]
     fn len(&self) -> usize {
         self.iter.len()
     }

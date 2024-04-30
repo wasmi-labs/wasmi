@@ -15,6 +15,7 @@ pub struct DedupArena<Idx, T> {
 }
 
 impl<Idx, T> Default for DedupArena<Idx, T> {
+    #[inline]
     fn default() -> Self {
         Self::new()
     }
@@ -24,6 +25,7 @@ impl<Idx, T> PartialEq for DedupArena<Idx, T>
 where
     T: PartialEq,
 {
+    #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.entities.eq(&other.entities)
     }
@@ -33,6 +35,7 @@ impl<Idx, T> Eq for DedupArena<Idx, T> where T: Eq {}
 
 impl<Idx, T> DedupArena<Idx, T> {
     /// Creates a new empty deduplicating entity arena.
+    #[inline]
     pub fn new() -> Self {
         Self {
             entity2idx: Map::new(),
@@ -53,17 +56,20 @@ impl<Idx, T> DedupArena<Idx, T> {
     }
 
     /// Clears all entities from the arena.
+    #[inline]
     pub fn clear(&mut self) {
         self.entity2idx.clear();
         self.entities.clear();
     }
 
     /// Returns an iterator over the shared reference of the [`Arena`] entities.
+    #[inline]
     pub fn iter(&self) -> Iter<Idx, T> {
         self.entities.iter()
     }
 
     /// Returns an iterator over the exclusive reference of the [`Arena`] entities.
+    #[inline]
     pub fn iter_mut(&mut self) -> IterMut<Idx, T> {
         self.entities.iter_mut()
     }
@@ -137,6 +143,7 @@ where
     type Item = (Idx, &'a T);
     type IntoIter = Iter<'a, Idx, T>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
@@ -149,6 +156,7 @@ where
     type Item = (Idx, &'a mut T);
     type IntoIter = IterMut<'a, Idx, T>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.iter_mut()
     }
