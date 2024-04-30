@@ -1,5 +1,5 @@
 //! Utilities for hashmap initialization based on random sources.
-//! 
+//!
 //! Inspired by [`wasmparser`](https://crates.io/crates/wasmparser)'s `collections` module.
 
 use core::hash::{BuildHasher, Hasher};

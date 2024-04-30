@@ -16,7 +16,6 @@ exclude.workspace = true
 [features]
 default = ["std"]
 std = []
-
 # Tells the `wasmi_collections` crate to avoid using hash based maps and sets.
 # 
 # Some embedded environments cannot provide a random source which is required
