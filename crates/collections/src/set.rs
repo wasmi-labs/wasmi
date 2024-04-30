@@ -366,6 +366,11 @@ impl<'a, T: 'a> Iterator for Iter<'a, T> {
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
     }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
 }
 
 impl<'a, T: 'a> ExactSizeIterator for Iter<'a, T> {
@@ -401,6 +406,11 @@ impl<T> Iterator for IntoIter<T> {
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
     }
 }
 
@@ -452,6 +462,11 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
     }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
 }
 
 impl<T> FusedIterator for Difference<'_, T> where T: Hash + Eq + Ord {}
@@ -494,6 +509,11 @@ where
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
     }
 }
 
@@ -538,6 +558,11 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
     }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
 }
 
 impl<T> FusedIterator for SymmetricDifference<'_, T> where T: Hash + Eq + Ord {}
@@ -580,6 +605,11 @@ where
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
     }
 }
 

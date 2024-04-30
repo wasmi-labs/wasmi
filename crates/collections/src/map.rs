@@ -555,6 +555,11 @@ impl<'a, K: 'a, V: 'a> Iterator for Iter<'a, K, V> {
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
     }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
 }
 
 impl<'a, K: 'a, V: 'a> ExactSizeIterator for Iter<'a, K, V> {
@@ -588,6 +593,11 @@ impl<'a, K: 'a, V: 'a> Iterator for IterMut<'a, K, V> {
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
     }
 }
 
@@ -625,6 +635,11 @@ impl<K, V> Iterator for IntoIter<K, V> {
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
     }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
 }
 
 impl<K, V> ExactSizeIterator for IntoIter<K, V> {
@@ -648,6 +663,11 @@ impl<'a, K: 'a, V> Iterator for Keys<'a, K, V> {
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
     }
 }
 
@@ -673,6 +693,11 @@ impl<'a, K, V: 'a> Iterator for Values<'a, K, V> {
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
     }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
 }
 
 impl<'a, K, V: 'a> ExactSizeIterator for Values<'a, K, V> {
@@ -696,6 +721,11 @@ impl<'a, K, V: 'a> Iterator for ValuesMut<'a, K, V> {
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
     }
 }
 
@@ -721,6 +751,11 @@ impl<K, V> Iterator for IntoKeys<K, V> {
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
     }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
 }
 
 impl<K, V> ExactSizeIterator for IntoKeys<K, V> {
@@ -744,6 +779,11 @@ impl<K, V> Iterator for IntoValues<K, V> {
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
     }
 }
 
