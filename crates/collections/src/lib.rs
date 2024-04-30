@@ -1,8 +1,21 @@
-//! Fast arena allocators for different usage purposes.
-//!
-//! They cannot deallocate single allocated entities for extra efficiency.
-//! These allocators mainly serve as the backbone for an efficient Wasm store
-//! implementation.
+//! Data structures specialized for usage in the Wasmi interpreter.
+//! 
+//! All data structures provide an API that can be backed by both [`HashMap`] and [`BTreeMap`].
+//! Users can choose which kind of backend to operate on via the `no-hash-maps` crate feature.
+//! 
+//! # Provided Data Structures
+//! 
+//! - [`Arena`]: typed arena for fast allocations and accesses
+//! - [`DedupArena`]: typed arena that also deduplicates, based on either [`HashMap`] or [`BTreeMap`]
+//! - [`ComponentVec`]: useful to add properties to entities stored in an [`Arena`] or [`DedupArena`]
+//! - [`Map`]: generic set of values, based on either [`HashMap`] or [`BTreeMap`]
+//! - [`Set`]: generic key-value mapping, based on either [`HashSet`] or [`BTreeSet`]
+//! - [`StringInterner`]: stores and deduplicates strings efficiently, based on either [`HashSet`] or [`BTreeSet`]
+//! 
+//! [`HashSet`]: hashbrown::HashSet
+//! [`HashMap`]: hashbrown::HashMap
+//! [`BTreeSet`]: std::collections::BTreeSet
+//! [`BTreeMap`]: std::collections::BTreeMap
 
 #![no_std]
 #![warn(
