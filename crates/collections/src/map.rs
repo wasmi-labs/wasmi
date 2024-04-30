@@ -18,6 +18,8 @@ mod detail {
     pub type KeysImpl<'a, K, V> = hash_map::Keys<'a, K, V>;
     pub type ValuesImpl<'a, K, V> = hash_map::Values<'a, K, V>;
     pub type ValuesMutImpl<'a, K, V> = hash_map::ValuesMut<'a, K, V>;
+    pub type IntoKeysImpl<K, V> = hash_map::IntoKeys<K, V>;
+    pub type IntoValuesImpl<K, V> = hash_map::IntoValues<K, V>;
 }
 
 #[cfg(feature = "no-hash-maps")]
@@ -34,6 +36,8 @@ mod detail {
     pub type KeysImpl<'a, K, V> = btree_map::Keys<'a, K, V>;
     pub type ValuesImpl<'a, K, V> = btree_map::Values<'a, K, V>;
     pub type ValuesMutImpl<'a, K, V> = btree_map::ValuesMut<'a, K, V>;
+    pub type IntoKeysImpl<K, V> = btree_map::IntoKeys<K, V>;
+    pub type IntoValuesImpl<K, V> = btree_map::IntoValues<K, V>;
 }
 
 /// A default key-value mapping.
@@ -97,10 +101,30 @@ impl<K, V> Map<K, V> {
         }
     }
 
+    /// Creates a consuming iterator visiting all the keys in arbitrary order.
+    ///
+    /// The [`Map`] cannot be used after calling this.
+    /// The iterator element type is `K`.
+    pub fn into_keys(self) -> IntoKeys<K, V> {
+        IntoKeys {
+            inner: self.inner.into_keys(),
+        }
+    }
+
     /// Returns an iterator that yields the values in the [`Map`].
     pub fn values(&self) -> Values<'_, K, V> {
         Values {
             inner: self.inner.values(),
+        }
+    }
+
+    /// Creates a consuming iterator visiting all the values in arbitrary order.
+    ///
+    /// The [`Map`] cannot be used after calling this.
+    /// The iterator element type is `V`.
+    pub fn into_values(self) -> IntoValues<K, V> {
+        IntoValues {
+            inner: self.inner.into_values(),
         }
     }
 
@@ -142,6 +166,18 @@ where
         self.inner.get(key)
     }
 
+    /// Returns the key-value pair corresponding to the supplied key.
+    ///
+    /// The supplied key may be any borrowed form of the map's key type, but the ordering
+    /// on the borrowed form *must* match the ordering on the key type.
+    pub fn get_key_value<Q>(&self, key: &Q) -> Option<(&K, &V)>
+    where
+        K: Borrow<Q>,
+        Q: ?Sized + Hash + Eq + Ord,
+    {
+        self.inner.get_key_value(key)
+    }
+
     /// Returns a mutable reference to the value corresponding to the key.
     pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut V>
     where
@@ -171,12 +207,36 @@ where
         self.inner.remove(key)
     }
 
+    /// Removes a key from the [`Map`], returning the stored key and value if the key
+    /// was previously in the map.
+    ///
+    /// The key may be any borrowed form of the map's key type, but the ordering
+    /// on the borrowed form *must* match the ordering on the key type.
+    pub fn remove_entry<Q>(&mut self, key: &Q) -> Option<(K, V)>
+    where
+        K: Borrow<Q>,
+        Q: ?Sized + Hash + Ord,
+    {
+        self.inner.remove_entry(key)
+    }
+
     /// Gets the given key's corresponding entry in the [`Map`] for in-place manipulation.
     pub fn entry(&mut self, key: K) -> Entry<'_, K, V> {
         match self.inner.entry(key) {
             detail::EntryImpl::Occupied(entry) => Entry::Occupied(OccupiedEntry { inner: entry }),
             detail::EntryImpl::Vacant(entry) => Entry::Vacant(VacantEntry { inner: entry }),
         }
+    }
+
+    /// Retains only the elements specified by the predicate.
+    ///
+    /// In other words, remove all pairs `(k, v)` for which `f(&k, &mut v)` returns `false`.
+    /// The elements are visited in ascending key order.
+    pub fn retain<F>(&mut self, f: F)
+    where
+        F: FnMut(&K, &mut V) -> bool,
+    {
+        self.inner.retain(f)
     }
 }
 
@@ -206,6 +266,16 @@ where
 
     fn index(&self, key: &Q) -> &V {
         &self.inner[key]
+    }
+}
+
+impl<'a, K, V> Extend<(&'a K, &'a V)> for Map<K, V>
+where
+    K: Eq + Hash + Ord + Copy,
+    V: Copy,
+{
+    fn extend<Iter: IntoIterator<Item = (&'a K, &'a V)>>(&mut self, iter: Iter) {
+        self.inner.extend(iter)
     }
 }
 
@@ -581,3 +651,47 @@ impl<'a, K, V: 'a> ExactSizeIterator for ValuesMut<'a, K, V> {
 }
 
 impl<'a, K, V: 'a> FusedIterator for ValuesMut<'a, K, V> {}
+
+/// An iterator over the owned keys of a [`Map`].
+#[derive(Debug)]
+pub struct IntoKeys<K, V> {
+    inner: detail::IntoKeysImpl<K, V>,
+}
+
+impl<K, V> Iterator for IntoKeys<K, V> {
+    type Item = K;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next()
+    }
+}
+
+impl<K, V> ExactSizeIterator for IntoKeys<K, V> {
+    fn len(&self) -> usize {
+        self.inner.len()
+    }
+}
+
+impl<K, V> FusedIterator for IntoKeys<K, V> {}
+
+/// An iterator over the owned values of a [`Map`].
+#[derive(Debug)]
+pub struct IntoValues<K, V> {
+    inner: detail::IntoValuesImpl<K, V>,
+}
+
+impl<K, V> Iterator for IntoValues<K, V> {
+    type Item = V;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next()
+    }
+}
+
+impl<K, V> ExactSizeIterator for IntoValues<K, V> {
+    fn len(&self) -> usize {
+        self.inner.len()
+    }
+}
+
+impl<K, V> FusedIterator for IntoValues<K, V> {}
