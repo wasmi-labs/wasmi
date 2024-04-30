@@ -214,13 +214,78 @@ pub enum Entry<'a, K: Ord, V> {
 
 impl<'a, K, V> Entry<'a, K, V>
 where
-    K: Ord,
+    K: Hash + Ord,
 {
-    /// Returns a reference to this entry's key.
+    /// Ensures a value is in the entry by inserting the default if empty, and returns
+    /// a mutable reference to the value in the entry.
+    pub fn or_insert(self, default: V) -> &'a mut V {
+        match self {
+            Self::Occupied(entry) => entry.into_mut(),
+            Self::Vacant(entry) => entry.insert(default),
+        }
+    }
+
+    /// Ensures a value is in the [`Entry`] by inserting the result of the default function if empty,
+    /// and returns a mutable reference to the value in the entry.
+    pub fn or_insert_with<F: FnOnce() -> V>(self, default: F) -> &'a mut V {
+        match self {
+            Self::Occupied(entry) => entry.into_mut(),
+            Self::Vacant(entry) => entry.insert(default()),
+        }
+    }
+
+    /// Ensures a value is in the [`Entry`] by inserting, if empty, the result of the default function.
+    /// This method allows for generating key-derived values for insertion by providing the default
+    /// function a reference to the key that was moved during the `.entry(key)` method call.
+    ///
+    /// The reference to the moved key is provided so that cloning or copying the key is
+    /// unnecessary, unlike with `.or_insert_with(|| ... )`.
+    #[inline]
+    pub fn or_insert_with_key<F: FnOnce(&K) -> V>(self, default: F) -> &'a mut V {
+        match self {
+            Self::Occupied(entry) => entry.into_mut(),
+            Self::Vacant(entry) => {
+                let value = default(entry.key());
+                entry.insert(value)
+            }
+        }
+    }
+
+    /// Returns a reference to this [`Entry`]'s key.
     pub fn key(&self) -> &K {
         match *self {
             Self::Occupied(ref entry) => entry.key(),
             Self::Vacant(ref entry) => entry.key(),
+        }
+    }
+
+    /// Provides in-place mutable access to an occupied [`Entry`] before any
+    /// potential inserts into the map.
+    pub fn and_modify<F>(self, f: F) -> Self
+    where
+        F: FnOnce(&mut V),
+    {
+        match self {
+            Self::Occupied(mut entry) => {
+                f(entry.get_mut());
+                Self::Occupied(entry)
+            }
+            Self::Vacant(entry) => Self::Vacant(entry),
+        }
+    }
+}
+
+impl<'a, K, V> Entry<'a, K, V>
+where
+    K: Hash + Ord,
+    V: Default,
+{
+    /// Ensures a value is in the [`Entry`] by inserting the default value if empty,
+    /// and returns a mutable reference to the value in the entry.
+    pub fn or_default(self) -> &'a mut V {
+        match self {
+            Self::Occupied(entry) => entry.into_mut(),
+            Self::Vacant(entry) => entry.insert(Default::default()),
         }
     }
 }
@@ -271,6 +336,16 @@ where
     /// with a lifetime bound to the map itself.
     pub fn into_mut(self) -> &'a mut V {
         self.inner.into_mut()
+    }
+
+    /// Take ownership of the key and value from the [`Map`].
+    pub fn remove_entry(self) -> (K, V) {
+        self.inner.remove_entry()
+    }
+
+    /// Takes the value of the entry out of the [`Map`], and returns it.
+    pub fn remove(self) -> V {
+        self.inner.remove()
     }
 }
 
