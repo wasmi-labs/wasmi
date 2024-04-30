@@ -5,7 +5,7 @@ use crate::{
 };
 
 /// A raw index to a function signature entity.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct DedupFuncTypeIdx(u32);
 
 impl ArenaIndex for DedupFuncTypeIdx {
@@ -36,7 +36,7 @@ impl ArenaIndex for DedupFuncTypeIdx {
 ///
 /// - Requires another indirection to acquire information such as parameter
 ///   or result types of the underlying [`FuncType`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[repr(transparent)]
 pub struct DedupFuncType(GuardedEntity<EngineIdx, DedupFuncTypeIdx>);
 

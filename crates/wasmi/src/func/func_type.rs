@@ -7,14 +7,14 @@ use std::{sync::Arc, vec::Vec};
 /// # Note
 ///
 /// Can be cloned cheaply.
-#[derive(Clone, PartialOrd, Ord, PartialEq, Eq)]
+#[derive(Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct FuncType {
     /// The inner function type internals.
     inner: FuncTypeInner,
 }
 
 /// Internal details of [`FuncType`].
-#[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub enum FuncTypeInner {
     /// Stores the value types of the parameters and results inline.
     Inline {

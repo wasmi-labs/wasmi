@@ -1,13 +1,16 @@
 use super::{Arena, ArenaIndex, Iter, IterMut};
-use core::ops::{Index, IndexMut};
-use std::collections::BTreeMap;
+use crate::Map;
+use core::{
+    hash::Hash,
+    ops::{Index, IndexMut},
+};
 
 /// A deduplicating arena allocator with a given index and entity type.
 ///
 /// For performance reasons the arena cannot deallocate single entities.
 #[derive(Debug)]
 pub struct DedupArena<Idx, T> {
-    entity2idx: BTreeMap<T, Idx>,
+    entity2idx: Map<T, Idx>,
     entities: Arena<Idx, T>,
 }
 
@@ -32,7 +35,7 @@ impl<Idx, T> DedupArena<Idx, T> {
     /// Creates a new empty deduplicating entity arena.
     pub fn new() -> Self {
         Self {
-            entity2idx: BTreeMap::new(),
+            entity2idx: Map::new(),
             entities: Arena::new(),
         }
     }
@@ -69,7 +72,7 @@ impl<Idx, T> DedupArena<Idx, T> {
 impl<Idx, T> DedupArena<Idx, T>
 where
     Idx: ArenaIndex,
-    T: Ord + Clone,
+    T: Hash + Ord + Clone,
 {
     /// Returns the next entity index.
     fn next_index(&self) -> Idx {
@@ -109,7 +112,7 @@ where
 impl<Idx, T> FromIterator<T> for DedupArena<Idx, T>
 where
     Idx: ArenaIndex,
-    T: Clone + Ord,
+    T: Hash + Clone + Ord,
 {
     fn from_iter<I>(iter: I) -> Self
     where
@@ -119,7 +122,7 @@ where
         let entity2idx = entities
             .iter()
             .map(|(idx, entity)| (entity.clone(), idx))
-            .collect::<BTreeMap<_, _>>();
+            .collect::<Map<_, _>>();
         Self {
             entity2idx,
             entities,

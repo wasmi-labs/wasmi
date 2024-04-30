@@ -9,7 +9,7 @@ use crate::{
 /// See [`Value`] for details.
 ///
 /// [`Value`]: enum.Value.html
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ValueType {
     /// 32-bit signed or unsigned integer.
     I32,

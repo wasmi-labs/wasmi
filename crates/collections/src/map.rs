@@ -56,7 +56,12 @@ impl<K, V> Default for Map<K, V> {
 }
 
 impl<K, V> Map<K, V> {
-    /// Clears the map, removing all elements.
+    /// Creates a new empty [`Map`].
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Clears the [`Map`], removing all elements.
     pub fn clear(&mut self) {
         self.inner.clear()
     }
@@ -157,7 +162,7 @@ where
         self.inner.insert(key, value)
     }
 
-    /// Removes a key from the map, returning the value at the key if the key was previously in the map.
+    /// Removes a key from the [`Map`], returning the value at the key if the key was previously in the map.
     pub fn remove<Q>(&mut self, key: &Q) -> Option<V>
     where
         K: Borrow<Q>,
@@ -166,7 +171,7 @@ where
         self.inner.remove(key)
     }
 
-    /// Gets the given key's corresponding entry in the map for in-place manipulation.
+    /// Gets the given key's corresponding entry in the [`Map`] for in-place manipulation.
     pub fn entry(&mut self, key: K) -> Entry<'_, K, V> {
         match self.inner.entry(key) {
             detail::EntryImpl::Occupied(entry) => Entry::Occupied(OccupiedEntry { inner: entry }),
