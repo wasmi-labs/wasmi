@@ -180,6 +180,23 @@ where
     }
 }
 
+impl<K, V> PartialEq for Map<K, V>
+where
+    K: Eq + Hash,
+    V: Eq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.inner == other.inner
+    }
+}
+
+impl<K, V> Eq for Map<K, V>
+where
+    K: Eq + Hash,
+    V: Eq,
+{
+}
+
 impl<K, Q, V> Index<&Q> for Map<K, V>
 where
     K: Borrow<Q> + Hash + Eq + Ord,

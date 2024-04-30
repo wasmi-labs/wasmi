@@ -138,6 +138,17 @@ where
     }
 }
 
+impl<T> PartialEq for Set<T>
+where
+    T: Eq + Hash,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.inner == other.inner
+    }
+}
+
+impl<T> Eq for Set<T> where T: Eq + Hash {}
+
 impl<T> FromIterator<T> for Set<T>
 where
     T: Hash + Eq + Ord,
