@@ -58,9 +58,23 @@ impl Sym {
         Self(value)
     }
 
+    /// Creates a new [`Sym`] from the `usize` value.
+    ///
+    /// # Panics
+    ///
+    /// If the `usize` value is out of bounds for [`Sym`].
+    pub fn from_usize(value: usize) -> Self {
+        u32::try_from(value).map_or_else(|_| panic!("out of bounds symbol index: {value}"), Self)
+    }
+
     /// Returns the `u32` value of the [`Sym`].
     pub fn into_u32(self) -> u32 {
         self.0
+    }
+
+    /// Returns the value of the [`Sym`] as `usize`.
+    pub fn into_usize(self) -> usize {
+        self.0 as usize
     }
 }
 
