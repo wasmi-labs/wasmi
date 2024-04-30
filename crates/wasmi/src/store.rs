@@ -35,7 +35,7 @@ use core::{
     sync::atomic::{AtomicU32, Ordering},
 };
 use std::boxed::Box;
-use wasmi_arena::{Arena, ArenaIndex, GuardedEntity};
+use wasmi_collections::arena::{Arena, ArenaIndex, GuardedEntity};
 use wasmi_core::TrapCode;
 
 /// A unique store index.

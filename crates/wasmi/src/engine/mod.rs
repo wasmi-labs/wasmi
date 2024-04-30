@@ -60,7 +60,7 @@ use std::{
     sync::{Arc, Weak},
     vec::Vec,
 };
-use wasmi_arena::{ArenaIndex, GuardedEntity};
+use wasmi_collections::arena::{ArenaIndex, GuardedEntity};
 use wasmparser::{FuncToValidate, FuncValidatorAllocations, ValidatorResources};
 
 #[cfg(test)]

@@ -25,7 +25,7 @@ use super::{
 use crate::{engine::ResumableCall, Error, Value};
 use core::{fmt, fmt::Debug, num::NonZeroU32};
 use std::{boxed::Box, sync::Arc};
-use wasmi_arena::ArenaIndex;
+use wasmi_collections::arena::ArenaIndex;
 
 /// A raw index to a function entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

@@ -5,7 +5,7 @@ use crate::{
     AsContext,
     AsContextMut,
 };
-use wasmi_arena::ArenaIndex;
+use wasmi_collections::arena::ArenaIndex;
 use wasmi_core::ValueType;
 
 /// A raw index to a element segment entity.

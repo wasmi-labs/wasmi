@@ -21,7 +21,7 @@ use crate::{
     WasmResults,
 };
 use std::{boxed::Box, collections::BTreeMap, sync::Arc};
-use wasmi_arena::ArenaIndex;
+use wasmi_collections::arena::ArenaIndex;
 
 mod builder;
 mod exports;

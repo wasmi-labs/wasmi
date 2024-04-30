@@ -14,7 +14,7 @@ use crate::{
 };
 use core::cmp::max;
 use std::{vec, vec::Vec};
-use wasmi_arena::ArenaIndex;
+use wasmi_collections::arena::ArenaIndex;
 use wasmi_core::{TrapCode, UntypedValue, ValueType};
 
 mod element;

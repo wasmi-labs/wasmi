@@ -1,4 +1,4 @@
-use crate::ArenaIndex;
+use crate::arena::ArenaIndex;
 use core::{
     fmt::{self, Debug},
     marker::PhantomData,

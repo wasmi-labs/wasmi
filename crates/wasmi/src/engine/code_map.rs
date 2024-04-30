@@ -30,7 +30,7 @@ use core::{
     sync::atomic::{AtomicU8, Ordering},
 };
 use std::boxed::Box;
-use wasmi_arena::{Arena, ArenaIndex};
+use wasmi_collections::arena::{Arena, ArenaIndex};
 use wasmi_core::TrapCode;
 use wasmparser::{FuncToValidate, ValidatorResources, WasmFeatures};
 
