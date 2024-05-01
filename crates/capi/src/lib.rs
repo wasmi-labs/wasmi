@@ -1,5 +1,5 @@
 //! Implements C-API support for the Wasmi WebAssembly interpreter.
-//! 
+//!
 //! Namely implements the Wasm C-API proposal found here: <https://github.com/WebAssembly/wasm-c-api/>
 
 #![no_std]
