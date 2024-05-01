@@ -7,7 +7,7 @@ use wasmi::{CompilationMode, Config, EnforcedLimits};
 #[repr(C)]
 #[derive(Clone)]
 pub struct wasm_config_t {
-    inner: Config,
+    pub(crate) inner: Config,
 }
 
 /// Creates a new default initialized [`wasm_config_t`].
