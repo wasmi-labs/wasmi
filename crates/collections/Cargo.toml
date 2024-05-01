@@ -15,7 +15,7 @@ exclude.workspace = true
 
 [dependencies]
 hashbrown = { version = "0.14", default-features = false, features = ["ahash", "inline-more"] }
-string-interner = { version = "0.16", default-features = false, features = ["inline-more", "backends"] }
+string-interner = { version = "0.17", default-features = false, features = ["inline-more", "backends"] }
 ahash = { version = "0.8.11", default-features = false }
 
 [features]
