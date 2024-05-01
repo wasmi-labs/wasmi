@@ -1,12 +1,18 @@
 use alloc::boxed::Box;
 use wasmi::{CompilationMode, Config, EnforcedLimits};
 
+/// The Wasm configuration.
+/// 
+/// Wraps [`wasmi::Config`]
 #[repr(C)]
 #[derive(Clone)]
 pub struct wasm_config_t {
     inner: Config,
 }
 
+/// Creates a new default initialized [`wasm_config_t`].
+/// 
+/// Wraps [wasmi::Config::default].
 #[no_mangle]
 pub extern "C" fn wasm_config_new() -> Box<wasm_config_t> {
     Box::new(wasm_config_t {
@@ -14,9 +20,11 @@ pub extern "C" fn wasm_config_new() -> Box<wasm_config_t> {
     })
 }
 
+/// Releases resources allocated for [`wasm_config_t`].
 #[no_mangle]
 pub extern "C" fn wasm_config_delete(_: Box<wasm_config_t>) {}
 
+/// Wasm proposals supported by Wasmi.
 #[repr(u8)]
 #[derive(Clone)]
 pub enum wasmi_proposal_t {
@@ -30,6 +38,7 @@ pub enum wasmi_proposal_t {
     WASMI_PROPOSAL_EXTENDED_CONST,
 }
 
+/// Enables or disables the `proposal` for the config.
 #[no_mangle]
 pub extern "C" fn wasmi_config_set_proposal(
     config: &mut wasm_config_t,
@@ -54,16 +63,25 @@ pub extern "C" fn wasmi_config_set_proposal(
     };
 }
 
+/// Enables or disables support for floating point numbers for the config.
+/// 
+/// Wraps [wasmi::Config::floats]
 #[no_mangle]
 pub extern "C" fn wasmi_config_set_floats(config: &mut wasm_config_t, enable: bool) {
     config.inner.floats(enable);
 }
 
+/// Enables or disables fuel consumption for the config.
+/// 
+/// Wraps [wasmi::Config::consume_fuel]
 #[no_mangle]
 pub extern "C" fn wasmi_config_set_consume_fuel(config: &mut wasm_config_t, enable: bool) {
     config.inner.consume_fuel(enable);
 }
 
+/// Compilation modes supported by the Wasmi execution engine.
+/// 
+/// Wraps [`wasmi::CompilationMode`]
 #[repr(u8)]
 #[derive(Clone)]
 pub enum wasmi_compilation_mode_t {
@@ -72,6 +90,9 @@ pub enum wasmi_compilation_mode_t {
     WASMI_COMPILATION_MODE_LAZY,
 }
 
+/// Sets the compilation mode for the config.
+/// 
+/// Wraps [wasmi::Config::compilation_mode]
 #[no_mangle]
 pub extern "C" fn wasmi_config_set_compilation_mode(
     config: &mut wasm_config_t,
@@ -87,12 +108,18 @@ pub extern "C" fn wasmi_config_set_compilation_mode(
     config.inner.compilation_mode(chosen_mode);
 }
 
+/// Limits that the Wasmi interpreter enforces on Wasm inputs.
+/// 
+/// Wraps [`wasmi::EnforcedLimits`]
 #[repr(C)]
 #[derive(Clone)]
 pub struct wasmi_enforced_limits_t {
     inner: EnforcedLimits,
 }
 
+/// Creates a new default initialized [`wasmi_enforced_limits_t`].
+/// 
+/// Wraps [wasmi::EnforcedLimits::strict].
 #[no_mangle]
 pub extern "C" fn wasmi_enforced_limits_new_strict() -> Box<wasmi_enforced_limits_t> {
     Box::new(wasmi_enforced_limits_t {
@@ -100,9 +127,13 @@ pub extern "C" fn wasmi_enforced_limits_new_strict() -> Box<wasmi_enforced_limit
     })
 }
 
+/// Releases resources allocated for [`wasm_config_t`].
 #[no_mangle]
 pub extern "C" fn wasmi_enforced_limits_delete(_: Box<wasmi_enforced_limits_t>) {}
 
+/// Sets the [`wasmi_enforced_limits_t`] for the config.
+/// 
+/// Wraps [`wasmi::Config::engine_limits`]
 #[no_mangle]
 pub extern "C" fn wasmi_config_set_enforced_limits(
     config: &mut wasm_config_t,
