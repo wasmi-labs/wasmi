@@ -1,0 +1,20 @@
+[package]
+name = "wasmi_capi"
+version.workspace = true
+rust-version.workspace = true
+documentation = "https://docs.rs/wasmi_capi"
+description = "C bindings for the Wasmi WebAssembly interpreter"
+authors.workspace = true
+repository.workspace = true
+edition.workspace = true
+readme.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+exclude.workspace = true
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+wasmi = { workspace = true }
