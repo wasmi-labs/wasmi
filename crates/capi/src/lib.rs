@@ -7,6 +7,8 @@
 
 extern crate alloc;
 
+pub use wasmi;
+
 mod config;
 mod engine;
 
