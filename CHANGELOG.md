@@ -89,7 +89,6 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - They now show `nan:0x{bytes}` where `{bytes}` is their respective raw bytes.
 - Implement `Sync` for `ResumableInvocation` and `TypedResumableInvocation`. (https://github.com/wasmi-labs/wasmi/pull/870)
 - Properly mirror Wasmtime's fuel API. (https://github.com/wasmi-labs/wasmi/pull/1002)
-- Renamed some Wasmi items to improve its Wasmtime mirroring: (https://github.com/wasmi-labs/wasmi/pull/1011)
 
 ### Removed
 
