@@ -28,15 +28,15 @@ pub enum ValType {
 impl ValType {
     /// Returns `true` if [`ValType`] is a Wasm numeric type.
     ///
-    /// This is `true` for [`ValueType::I32`], [`ValueType::I64`],
-    /// [`ValueType::F32`] and [`ValueType::F64`].
+    /// This is `true` for [`ValType::I32`], [`ValType::I64`],
+    /// [`ValType::F32`] and [`ValType::F64`].
     pub fn is_num(&self) -> bool {
         matches!(self, Self::I32 | Self::I64 | Self::F32 | Self::F64)
     }
 
     /// Returns `true` if [`ValType`] is a Wasm reference type.
     ///
-    /// This is `true` for [`ValueType::FuncRef`] and [`ValueType::ExternRef`].
+    /// This is `true` for [`ValType::FuncRef`] and [`ValType::ExternRef`].
     pub fn is_ref(&self) -> bool {
         matches!(self, Self::ExternRef | Self::FuncRef)
     }
