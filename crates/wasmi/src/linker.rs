@@ -17,7 +17,7 @@ use crate::{
     MemoryType,
     Module,
     TableType,
-    Value,
+    Val,
 };
 use core::{
     borrow::Borrow,
@@ -643,10 +643,7 @@ impl<T> Linker<T> {
         module: &str,
         name: &str,
         ty: FuncType,
-        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Error>
-            + Send
-            + Sync
-            + 'static,
+        func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<(), Error> + Send + Sync + 'static,
     ) -> Result<&mut Self, LinkerError> {
         self.ensure_undefined(module, name)?;
         let func = HostFuncTrampolineEntity::new(ty, func);
@@ -925,10 +922,7 @@ impl<T> LinkerBuilder<state::Constructing, T> {
         module: &str,
         name: &str,
         ty: FuncType,
-        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Error>
-            + Send
-            + Sync
-            + 'static,
+        func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<(), Error> + Send + Sync + 'static,
     ) -> Result<&mut Self, LinkerError> {
         self.inner_mut().func_new(module, name, ty, func)?;
         Ok(self)
@@ -1054,10 +1048,7 @@ impl<T> LinkerInner<T> {
         module: &str,
         name: &str,
         ty: FuncType,
-        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Error>
-            + Send
-            + Sync
-            + 'static,
+        func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<(), Error> + Send + Sync + 'static,
     ) -> Result<&mut Self, LinkerError> {
         let func = HostFuncTrampolineEntity::new(ty, func);
         let key = self.new_import_key(module, name);
@@ -1121,7 +1112,7 @@ impl<T> LinkerInner<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::ValueType;
+    use crate::core::ValType;
 
     use super::*;
     use crate::Store;
@@ -1139,9 +1130,9 @@ mod tests {
             .func_new(
                 "host",
                 "get_a",
-                FuncType::new([], [ValueType::I32]),
-                |ctx: Caller<HostState>, _params: &[Value], results: &mut [Value]| {
-                    results[0] = Value::from(ctx.data().a);
+                FuncType::new([], [ValType::I32]),
+                |ctx: Caller<HostState>, _params: &[Val], results: &mut [Val]| {
+                    results[0] = Val::from(ctx.data().a);
                     Ok(())
                 },
             )
@@ -1150,8 +1141,8 @@ mod tests {
             .func_new(
                 "host",
                 "set_a",
-                FuncType::new([ValueType::I32], []),
-                |mut ctx: Caller<HostState>, params: &[Value], _results: &mut [Value]| {
+                FuncType::new([ValType::I32], []),
+                |mut ctx: Caller<HostState>, params: &[Val], _results: &mut [Val]| {
                     ctx.data_mut().a = params[0].i32().unwrap();
                     Ok(())
                 },

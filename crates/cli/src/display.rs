@@ -1,12 +1,12 @@
 use crate::context::Context;
 use std::fmt::{self, Display};
-use wasmi::{core::ValueType, FuncType, Value};
+use wasmi::{core::ValType, FuncType, Val};
 
-/// [`Display`]-wrapper type for [`ValueType`].
-pub struct DisplayValueType<'a>(&'a ValueType);
+/// [`Display`]-wrapper type for [`ValType`].
+pub struct DisplayValueType<'a>(&'a ValType);
 
-impl<'a> From<&'a ValueType> for DisplayValueType<'a> {
-    fn from(value_type: &'a ValueType) -> Self {
+impl<'a> From<&'a ValType> for DisplayValueType<'a> {
+    fn from(value_type: &'a ValType) -> Self {
         Self(value_type)
     }
 }
@@ -14,21 +14,21 @@ impl<'a> From<&'a ValueType> for DisplayValueType<'a> {
 impl Display for DisplayValueType<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.0 {
-            ValueType::I32 => write!(f, "i32"),
-            ValueType::I64 => write!(f, "i64"),
-            ValueType::F32 => write!(f, "f32"),
-            ValueType::F64 => write!(f, "f64"),
-            ValueType::FuncRef => write!(f, "funcref"),
-            ValueType::ExternRef => write!(f, "externref"),
+            ValType::I32 => write!(f, "i32"),
+            ValType::I64 => write!(f, "i64"),
+            ValType::F32 => write!(f, "f32"),
+            ValType::F64 => write!(f, "f64"),
+            ValType::FuncRef => write!(f, "funcref"),
+            ValType::ExternRef => write!(f, "externref"),
         }
     }
 }
 
-/// [`Display`]-wrapper type for [`Value`].
-pub struct DisplayValue<'a>(&'a Value);
+/// [`Display`]-wrapper type for [`Val`].
+pub struct DisplayValue<'a>(&'a Val);
 
-impl<'a> From<&'a Value> for DisplayValue<'a> {
-    fn from(value: &'a Value) -> Self {
+impl<'a> From<&'a Val> for DisplayValue<'a> {
+    fn from(value: &'a Val) -> Self {
         Self(value)
     }
 }
@@ -36,12 +36,12 @@ impl<'a> From<&'a Value> for DisplayValue<'a> {
 impl<'a> fmt::Display for DisplayValue<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.0 {
-            Value::I32(value) => write!(f, "{value}"),
-            Value::I64(value) => write!(f, "{value}"),
-            Value::F32(value) => write!(f, "{value}"),
-            Value::F64(value) => write!(f, "{value}"),
-            Value::FuncRef(value) => panic!("cannot display funcref values but found {value:?}"),
-            Value::ExternRef(value) => {
+            Val::I32(value) => write!(f, "{value}"),
+            Val::I64(value) => write!(f, "{value}"),
+            Val::F32(value) => write!(f, "{value}"),
+            Val::F64(value) => write!(f, "{value}"),
+            Val::FuncRef(value) => panic!("cannot display funcref values but found {value:?}"),
+            Val::ExternRef(value) => {
                 panic!("cannot display externref values but found {value:?}")
             }
         }

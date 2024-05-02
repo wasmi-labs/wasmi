@@ -3,7 +3,7 @@ use super::{
     TrampolineEntity,
 };
 use crate::{
-    core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedValue, ValueType, F32, F64},
+    core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedValue, ValType, F32, F64},
     Caller,
     Error,
     ExternRef,
@@ -158,7 +158,7 @@ for_each_tuple!(impl_wasm_return_type);
 pub trait WasmType: From<UntypedValue> + Into<UntypedValue> + Send {
     /// Returns the value type of the Wasm type.
     #[doc(hidden)]
-    fn ty() -> ValueType;
+    fn ty() -> ValType;
 }
 
 macro_rules! impl_wasm_type {
@@ -166,8 +166,8 @@ macro_rules! impl_wasm_type {
         $(
             impl WasmType for $rust_type {
                 #[inline]
-                fn ty() -> ValueType {
-                    ValueType::$wasmi_type
+                fn ty() -> ValType {
+                    ValType::$wasmi_type
                 }
             }
         )*
@@ -199,17 +199,17 @@ pub trait WasmTypeList: DecodeUntypedSlice + EncodeUntypedSlice + Sized + Send {
     #[doc(hidden)]
     const LEN: usize;
 
-    /// The [`ValueType`] sequence as array.
+    /// The [`ValType`] sequence as array.
     #[doc(hidden)]
-    type Types: IntoIterator<IntoIter = Self::TypesIter, Item = ValueType>
-        + AsRef<[ValueType]>
-        + AsMut<[ValueType]>
+    type Types: IntoIterator<IntoIter = Self::TypesIter, Item = ValType>
+        + AsRef<[ValType]>
+        + AsMut<[ValType]>
         + Copy
         + Clone;
 
-    /// The iterator type of the sequence of [`ValueType`].
+    /// The iterator type of the sequence of [`ValType`].
     #[doc(hidden)]
-    type TypesIter: ExactSizeIterator<Item = ValueType> + DoubleEndedIterator + FusedIterator;
+    type TypesIter: ExactSizeIterator<Item = ValType> + DoubleEndedIterator + FusedIterator;
 
     /// The [`UntypedValue`] sequence as array.
     #[doc(hidden)]
@@ -219,13 +219,13 @@ pub trait WasmTypeList: DecodeUntypedSlice + EncodeUntypedSlice + Sized + Send {
         + Copy
         + Clone;
 
-    /// The iterator type of the sequence of [`Value`].
+    /// The iterator type of the sequence of [`Val`].
     ///
-    /// [`Value`]: [`crate::core::Value`]
+    /// [`Val`]: [`crate::core::Value`]
     #[doc(hidden)]
     type ValuesIter: ExactSizeIterator<Item = UntypedValue> + DoubleEndedIterator + FusedIterator;
 
-    /// Returns an array representing the [`ValueType`] sequence of `Self`.
+    /// Returns an array representing the [`ValType`] sequence of `Self`.
     #[doc(hidden)]
     fn types() -> Self::Types;
 
@@ -246,8 +246,8 @@ where
 {
     const LEN: usize = 1;
 
-    type Types = [ValueType; 1];
-    type TypesIter = array::IntoIter<ValueType, 1>;
+    type Types = [ValType; 1];
+    type TypesIter = array::IntoIter<ValType, 1>;
     type Values = [UntypedValue; 1];
     type ValuesIter = array::IntoIter<UntypedValue, 1>;
 
@@ -280,8 +280,8 @@ macro_rules! impl_wasm_type_list {
         {
             const LEN: usize = $n;
 
-            type Types = [ValueType; $n];
-            type TypesIter = array::IntoIter<ValueType, $n>;
+            type Types = [ValType; $n];
+            type TypesIter = array::IntoIter<ValType, $n>;
             type Values = [UntypedValue; $n];
             type ValuesIter = array::IntoIter<UntypedValue, $n>;
 

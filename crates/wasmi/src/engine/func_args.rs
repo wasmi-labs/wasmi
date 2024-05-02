@@ -3,7 +3,7 @@
 use crate::{
     core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedError, UntypedValue},
     value::WithType,
-    Value,
+    Val,
 };
 use core::cmp;
 
@@ -55,7 +55,7 @@ impl<'a> FuncResults<'a> {
     /// # Panics
     ///
     /// If the number of expected results does not match the length of `values`.
-    pub fn encode_results_from_slice(self, values: &[Value]) -> Result<FuncFinished, UntypedError> {
+    pub fn encode_results_from_slice(self, values: &[Val]) -> Result<FuncFinished, UntypedError> {
         assert_eq!(self.results.len(), values.len());
         self.results.iter_mut().zip(values).for_each(|(dst, src)| {
             *dst = src.clone().into();
@@ -121,7 +121,7 @@ impl<'a> FuncParams<'a> {
     /// If the number of host function parameters and items in `values` does not match.
     pub fn decode_params_into_slice(
         self,
-        values: &mut [Value],
+        values: &mut [Val],
     ) -> Result<FuncResults<'a>, UntypedError> {
         assert_eq!(self.params().len(), values.len());
         self.params().iter().zip(values).for_each(|(src, dst)| {

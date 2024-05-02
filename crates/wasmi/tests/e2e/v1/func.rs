@@ -9,9 +9,9 @@ use wasmi::{
     Func,
     FuncType,
     Store,
-    Value,
+    Val,
 };
-use wasmi_core::{ValueType, F32, F64};
+use wasmi_core::{ValType, F32, F64};
 
 fn test_setup() -> Store<()> {
     let engine = Engine::default();
@@ -37,8 +37,8 @@ fn setup_add2() -> (Store<()>, Func, Func) {
     let add2 = Func::wrap(&mut store, |lhs: i32, rhs: i32| lhs + rhs);
     let add2_dyn = Func::new(
         &mut store,
-        FuncType::new([ValueType::I32, ValueType::I32], [ValueType::I32]),
-        |_caller, inputs: &[Value], results: &mut [Value]| {
+        FuncType::new([ValType::I32, ValType::I32], [ValType::I32]),
+        |_caller, inputs: &[Val], results: &mut [Val]| {
             assert_eq!(inputs.len(), 2);
             assert_eq!(results.len(), 1);
             let lhs = &inputs[0].i32().unwrap();
@@ -55,14 +55,14 @@ fn dynamic_add2_works() {
     let (mut store, add2, add2_dyn) = setup_add2();
     for a in 0..10 {
         for b in 0..10 {
-            let params = [Value::I32(a), Value::I32(b)];
+            let params = [Val::I32(a), Val::I32(b)];
             let expected = a + b;
-            let mut result = Value::I32(0);
+            let mut result = Val::I32(0);
             // Call to Func with statically typed closure.
             add2.call(&mut store, &params, slice::from_mut(&mut result))
                 .unwrap();
             // Reset result before execution.
-            result = Value::I32(0);
+            result = Val::I32(0);
             // Call to Func with dynamically typed closure.
             add2_dyn
                 .call(&mut store, &params, slice::from_mut(&mut result))
@@ -92,11 +92,8 @@ fn setup_add3() -> (Store<()>, Func, Func) {
     let add3 = Func::wrap(&mut store, |v0: i32, v1: i32, v2: i32| v0 + v1 + v2);
     let add3_dyn = Func::new(
         &mut store,
-        FuncType::new(
-            [ValueType::I32, ValueType::I32, ValueType::I32],
-            [ValueType::I32],
-        ),
-        |_caller, inputs: &[Value], results: &mut [Value]| {
+        FuncType::new([ValType::I32, ValType::I32, ValType::I32], [ValType::I32]),
+        |_caller, inputs: &[Val], results: &mut [Val]| {
             assert_eq!(inputs.len(), 3);
             assert_eq!(results.len(), 1);
             let a = &inputs[0].i32().unwrap();
@@ -115,15 +112,15 @@ fn dynamic_add3_works() {
     for a in 0..5 {
         for b in 0..5 {
             for c in 0..5 {
-                let params = [Value::I32(a), Value::I32(b), Value::I32(c)];
+                let params = [Val::I32(a), Val::I32(b), Val::I32(c)];
                 let expected = a + b + c;
-                let mut result = Value::I32(0);
+                let mut result = Val::I32(0);
                 // Call to Func with statically typed closure.
                 add3.call(&mut store, &params, slice::from_mut(&mut result))
                     .unwrap();
                 assert_eq!(result.i32(), Some(expected));
                 // Reset result before execution.
-                result = Value::I32(0);
+                result = Val::I32(0);
                 // Call to Func with dynamically typed closure.
                 add3_dyn
                     .call(&mut store, &params, slice::from_mut(&mut result))
@@ -156,8 +153,8 @@ fn setup_duplicate() -> (Store<()>, Func, Func) {
     let duplicate = Func::wrap(&mut store, |value: i32| (value, value));
     let duplicate_dyn = Func::new(
         &mut store,
-        FuncType::new([ValueType::I32], [ValueType::I32, ValueType::I32]),
-        |_caller, inputs: &[Value], results: &mut [Value]| {
+        FuncType::new([ValType::I32], [ValType::I32, ValType::I32]),
+        |_caller, inputs: &[Val], results: &mut [Val]| {
             assert_eq!(inputs.len(), 1);
             assert_eq!(results.len(), 2);
             let input = inputs[0].i32().unwrap();
@@ -173,15 +170,15 @@ fn setup_duplicate() -> (Store<()>, Func, Func) {
 fn dynamic_duplicate_works() {
     let (mut store, duplicate, duplicate_dyn) = setup_duplicate();
     for input in 0..10 {
-        let params = [Value::I32(input)];
-        let expected = [Value::I32(input), Value::I32(input)];
-        let mut results = [Value::I32(0), Value::I32(0)];
+        let params = [Val::I32(input)];
+        let expected = [Val::I32(input), Val::I32(input)];
+        let mut results = [Val::I32(0), Val::I32(0)];
         // Call to Func with statically typed closure.
         duplicate.call(&mut store, &params, &mut results).unwrap();
         assert_eq!(results[0].i32(), expected[0].i32());
         assert_eq!(results[1].i32(), expected[1].i32());
         // Reset result before execution.
-        results = [Value::I32(0), Value::I32(0)];
+        results = [Val::I32(0), Val::I32(0)];
         // Call to Func with dynamically typed closure.
         duplicate_dyn
             .call(&mut store, &params, &mut results)
@@ -262,22 +259,22 @@ fn dynamic_many_params_works() {
     func.call(
         &mut store,
         &[
-            Value::I32(0),
-            Value::I32(1),
-            Value::I32(2),
-            Value::I32(3),
-            Value::I32(4),
-            Value::I32(5),
-            Value::I32(6),
-            Value::I32(7),
-            Value::I32(8),
-            Value::I32(9),
-            Value::I32(10),
-            Value::I32(11),
-            Value::I32(12),
-            Value::I32(13),
-            Value::I32(14),
-            Value::I32(15),
+            Val::I32(0),
+            Val::I32(1),
+            Val::I32(2),
+            Val::I32(3),
+            Val::I32(4),
+            Val::I32(5),
+            Val::I32(6),
+            Val::I32(7),
+            Val::I32(8),
+            Val::I32(9),
+            Val::I32(10),
+            Val::I32(11),
+            Val::I32(12),
+            Val::I32(13),
+            Val::I32(14),
+            Val::I32(15),
         ],
         &mut [],
     )
@@ -303,11 +300,11 @@ fn setup_many_results() -> (Store<()>, Func) {
 #[test]
 fn dynamic_many_results_works() {
     let (mut store, func) = setup_many_results();
-    let mut results = [0; 16].map(Value::I32);
+    let mut results = [0; 16].map(Val::I32);
     func.call(&mut store, &[], &mut results).unwrap();
     let mut i = 0;
     let expected = [0; 16].map(|_| {
-        let value = Value::I32(i as _);
+        let value = Val::I32(i as _);
         i += 1;
         value
     });
@@ -358,8 +355,8 @@ fn setup_many_params_many_results() -> (Store<()>, Func) {
 #[test]
 fn dynamic_many_params_many_results_works() {
     let (mut store, func) = setup_many_params_many_results();
-    let mut results = [0; 16].map(Value::I32);
-    let inputs = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(Value::I32);
+    let mut results = [0; 16].map(Val::I32);
+    let inputs = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(Val::I32);
     func.call(&mut store, &inputs, &mut results).unwrap();
     assert_eq!(
         results.map(|result| result.i32().unwrap()),
@@ -384,14 +381,14 @@ fn dynamic_many_types_works() {
         &mut store,
         |v0: i32, v1: u32, v2: i64, v3: u64, v4: F32, v5: F64| (v0, v1, v2, v3, v4, v5),
     );
-    let mut results = [0; 6].map(Value::I32);
+    let mut results = [0; 6].map(Val::I32);
     let inputs = [
-        Value::I32(0),
-        Value::I32(1),
-        Value::I64(2),
-        Value::I64(3),
-        Value::F32(4.0.into()),
-        Value::F64(5.0.into()),
+        Val::I32(0),
+        Val::I32(1),
+        Val::I64(2),
+        Val::I64(3),
+        Val::F32(4.0.into()),
+        Val::F64(5.0.into()),
     ];
     func.call(&mut store, &inputs, &mut results).unwrap();
     assert_eq!(results[0].i32(), Some(0));
@@ -422,7 +419,7 @@ fn static_many_types_works() {
 fn dynamic_type_check_works() {
     let mut store = test_setup();
     let identity = Func::wrap(&mut store, |value: i32| value);
-    let mut result = Value::I32(0);
+    let mut result = Val::I32(0);
     // Case: Too few inputs given to function.
     assert_matches!(
         identity
@@ -436,7 +433,7 @@ fn dynamic_type_check_works() {
         identity
             .call(
                 &mut store,
-                &[Value::I32(0), Value::I32(1)],
+                &[Val::I32(0), Val::I32(1)],
                 core::slice::from_mut(&mut result)
             )
             .unwrap_err()
@@ -446,7 +443,7 @@ fn dynamic_type_check_works() {
     // Case: Too few outputs given to function.
     assert_matches!(
         identity
-            .call(&mut store, &[Value::I32(0)], &mut [],)
+            .call(&mut store, &[Val::I32(0)], &mut [],)
             .unwrap_err()
             .kind(),
         ErrorKind::Func(FuncError::MismatchingResultLen)
@@ -454,21 +451,13 @@ fn dynamic_type_check_works() {
     // Case: Too many outputs given to function.
     assert_matches!(
         identity
-            .call(
-                &mut store,
-                &[Value::I32(0)],
-                &mut [Value::I32(0), Value::I32(1)],
-            )
+            .call(&mut store, &[Val::I32(0)], &mut [Val::I32(0), Val::I32(1)],)
             .unwrap_err()
             .kind(),
         ErrorKind::Func(FuncError::MismatchingResultLen)
     );
     // Case: Mismatching type given as input to function.
-    for input in &[
-        Value::I64(0),
-        Value::F32(0.0.into()),
-        Value::F64(0.0.into()),
-    ] {
+    for input in &[Val::I64(0), Val::F32(0.0.into()), Val::F64(0.0.into())] {
         assert_matches!(
             identity
                 .call(
@@ -485,7 +474,7 @@ fn dynamic_type_check_works() {
     //
     // The result type will be overwritten anyways.
     assert_matches!(
-        identity.call(&mut store, &[Value::I32(0)], &mut [Value::I64(0)]),
+        identity.call(&mut store, &[Val::I32(0)], &mut [Val::I64(0)]),
         Ok(_)
     );
 }

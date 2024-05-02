@@ -169,7 +169,7 @@ pub use self::{
     },
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
-    value::Value,
+    value::Val,
 };
 use self::{
     func::{FuncEntity, FuncIdx},

@@ -22,7 +22,7 @@ use super::{
     StoreContext,
     Stored,
 };
-use crate::{collections::arena::ArenaIndex, engine::ResumableCall, Error, Value};
+use crate::{collections::arena::ArenaIndex, engine::ResumableCall, Error, Val};
 use core::{fmt, fmt::Debug, num::NonZeroU32};
 use std::{boxed::Box, sync::Arc};
 
@@ -199,19 +199,16 @@ impl<T> HostFuncTrampolineEntity<T> {
     pub fn new(
         // engine: &Engine,
         ty: FuncType,
-        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Error>
-            + Send
-            + Sync
-            + 'static,
+        func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<(), Error> + Send + Sync + 'static,
     ) -> Self {
         // Preprocess parameters and results buffers so that we can reuse those
         // computations within the closure implementation. We put both parameters
         // and results into a single buffer which we can split to minimize the
         // amount of allocations per trampoline invokation.
-        let params_iter = ty.params().iter().copied().map(Value::default);
-        let results_iter = ty.results().iter().copied().map(Value::default);
+        let params_iter = ty.params().iter().copied().map(Val::default);
+        let results_iter = ty.results().iter().copied().map(Val::default);
         let len_params = ty.params().len();
-        let params_results: Box<[Value]> = params_iter.chain(results_iter).collect();
+        let params_results: Box<[Val]> = params_iter.chain(results_iter).collect();
         let trampoline = <TrampolineEntity<T>>::new(move |caller, args| {
             // We are required to clone the buffer because we are operating within a `Fn`.
             // This way the trampoline closure only has to own a single slice buffer.
@@ -333,10 +330,7 @@ impl Func {
     pub fn new<T>(
         mut ctx: impl AsContextMut<UserState = T>,
         ty: FuncType,
-        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Error>
-            + Send
-            + Sync
-            + 'static,
+        func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<(), Error> + Send + Sync + 'static,
     ) -> Self {
         let engine = ctx.as_context().store.engine();
         let host_func = HostFuncTrampolineEntity::new(ty, func);
@@ -397,8 +391,8 @@ impl Func {
     pub fn call<T>(
         &self,
         mut ctx: impl AsContextMut<UserState = T>,
-        inputs: &[Value],
-        outputs: &mut [Value],
+        inputs: &[Val],
+        outputs: &mut [Val],
     ) -> Result<(), Error> {
         self.verify_and_prepare_inputs_outputs(ctx.as_context(), inputs, outputs)?;
         // Note: Cloning an [`Engine`] is intentionally a cheap operation.
@@ -437,8 +431,8 @@ impl Func {
     pub fn call_resumable<T>(
         &self,
         mut ctx: impl AsContextMut<UserState = T>,
-        inputs: &[Value],
-        outputs: &mut [Value],
+        inputs: &[Val],
+        outputs: &mut [Val],
     ) -> Result<ResumableCall, Error> {
         self.verify_and_prepare_inputs_outputs(ctx.as_context(), inputs, outputs)?;
         // Note: Cloning an [`Engine`] is intentionally a cheap operation.
@@ -467,8 +461,8 @@ impl Func {
     fn verify_and_prepare_inputs_outputs(
         &self,
         ctx: impl AsContext,
-        inputs: &[Value],
-        outputs: &mut [Value],
+        inputs: &[Val],
+        outputs: &mut [Val],
     ) -> Result<(), FuncError> {
         let fn_type = self.ty_dedup(ctx.as_context());
         ctx.as_context()

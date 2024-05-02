@@ -25,7 +25,7 @@ use crate::{
     InstanceEntityBuilder,
     Memory,
     Table,
-    Value,
+    Val,
 };
 
 impl Module {
@@ -196,7 +196,7 @@ impl Module {
             .store
             .check_new_tables_limit(self.len_tables())?;
         for table_type in self.internal_tables().copied() {
-            let init = Value::default(table_type.element());
+            let init = Val::default(table_type.element());
             let table = Table::new(context.as_context_mut(), table_type, init)?;
             builder.push_table(table);
         }

@@ -1,5 +1,5 @@
 use super::*;
-use crate::{core::ValueType, engine::translator::tests::wasm_type::WasmType};
+use crate::{core::ValType, engine::translator::tests::wasm_type::WasmType};
 use core::{fmt, fmt::Display};
 
 /// Tells which kind of `select` instruction to test.
@@ -17,12 +17,12 @@ struct DisplaySelect {
     /// The kind of the `select` instruction.
     kind: SelectKind,
     /// The `result` type of the `select` instruction.
-    ty: ValueType,
+    ty: ValType,
 }
 
 impl DisplaySelect {
     /// Creates a new [`DisplaySelect`].
-    fn new(kind: SelectKind, ty: ValueType) -> Self {
+    fn new(kind: SelectKind, ty: ValType) -> Self {
         Self { kind, ty }
     }
 }
@@ -41,7 +41,7 @@ impl Display for DisplaySelect {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg() {
-    fn test_reg(kind: SelectKind, result_ty: ValueType) {
+    fn test_reg(kind: SelectKind, result_ty: ValType) {
         let display_ty = DisplayValueType::from(result_ty);
         let display_select = DisplaySelect::new(kind, result_ty);
         let wasm = format!(
@@ -72,21 +72,21 @@ fn reg() {
             .run();
     }
     fn test_for(kind: SelectKind) {
-        test_reg(kind, ValueType::I32);
-        test_reg(kind, ValueType::I64);
-        test_reg(kind, ValueType::F32);
-        test_reg(kind, ValueType::F64);
+        test_reg(kind, ValType::I32);
+        test_reg(kind, ValType::I64);
+        test_reg(kind, ValType::F32);
+        test_reg(kind, ValType::F64);
     }
     test_for(SelectKind::Select);
     test_for(SelectKind::TypedSelect);
-    test_reg(SelectKind::TypedSelect, ValueType::FuncRef);
-    test_reg(SelectKind::TypedSelect, ValueType::ExternRef);
+    test_reg(SelectKind::TypedSelect, ValType::FuncRef);
+    test_reg(SelectKind::TypedSelect, ValType::ExternRef);
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn same_reg() {
-    fn test_same_reg(kind: SelectKind, result_ty: ValueType) {
+    fn test_same_reg(kind: SelectKind, result_ty: ValType) {
         let display_ty = DisplayValueType::from(result_ty);
         let display_select = DisplaySelect::new(kind, result_ty);
         let wasm = format!(
@@ -106,15 +106,15 @@ fn same_reg() {
             .run();
     }
     fn test_for(kind: SelectKind) {
-        test_same_reg(kind, ValueType::I32);
-        test_same_reg(kind, ValueType::I64);
-        test_same_reg(kind, ValueType::F32);
-        test_same_reg(kind, ValueType::F64);
+        test_same_reg(kind, ValType::I32);
+        test_same_reg(kind, ValType::I64);
+        test_same_reg(kind, ValType::F32);
+        test_same_reg(kind, ValType::F64);
     }
     test_for(SelectKind::Select);
     test_for(SelectKind::TypedSelect);
-    test_same_reg(SelectKind::TypedSelect, ValueType::FuncRef);
-    test_same_reg(SelectKind::TypedSelect, ValueType::ExternRef);
+    test_same_reg(SelectKind::TypedSelect, ValType::FuncRef);
+    test_same_reg(SelectKind::TypedSelect, ValType::ExternRef);
 }
 
 fn test_same_imm<T>(kind: SelectKind, input: T) -> TranslationTest

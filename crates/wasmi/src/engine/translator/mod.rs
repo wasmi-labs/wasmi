@@ -40,7 +40,7 @@ pub use self::{
 };
 use super::code_map::CompiledFuncEntity;
 use crate::{
-    core::{TrapCode, UntypedValue, ValueType},
+    core::{TrapCode, UntypedValue, ValType},
     engine::{
         bytecode::{
             AnyConst32,
@@ -2100,7 +2100,7 @@ impl FuncTranslator {
     /// - If both `lhs` and `rhs` are equal registers or constant values `lhs` is forwarded.
     /// - Properly chooses the correct `select` instruction encoding and optimizes for
     ///   cases with 32-bit constant values.
-    fn translate_select(&mut self, type_hint: Option<ValueType>) -> Result<(), Error> {
+    fn translate_select(&mut self, type_hint: Option<ValType>) -> Result<(), Error> {
         /// Convenience function to encode a `select` instruction.
         ///
         /// # Note
@@ -2234,7 +2234,7 @@ impl FuncTranslator {
                         }
                         let result = self.alloc.stack.push_dynamic()?;
                         match rhs.ty() {
-                            ValueType::I32 => encode_select_imm32(
+                            ValType::I32 => encode_select_imm32(
                                 self,
                                 result,
                                 condition,
@@ -2242,7 +2242,7 @@ impl FuncTranslator {
                                 i32::from(rhs),
                                 Instruction::select,
                             ),
-                            ValueType::F32 => encode_select_imm32(
+                            ValType::F32 => encode_select_imm32(
                                 self,
                                 result,
                                 condition,
@@ -2250,7 +2250,7 @@ impl FuncTranslator {
                                 f32::from(rhs),
                                 Instruction::select,
                             ),
-                            ValueType::I64 => encode_select_imm64(
+                            ValType::I64 => encode_select_imm64(
                                 self,
                                 result,
                                 condition,
@@ -2259,7 +2259,7 @@ impl FuncTranslator {
                                 Instruction::select,
                                 Instruction::i64const32,
                             ),
-                            ValueType::F64 => encode_select_imm64(
+                            ValType::F64 => encode_select_imm64(
                                 self,
                                 result,
                                 condition,
@@ -2268,7 +2268,7 @@ impl FuncTranslator {
                                 Instruction::select,
                                 Instruction::f64const32,
                             ),
-                            ValueType::FuncRef | ValueType::ExternRef => encode_select_imm(
+                            ValType::FuncRef | ValType::ExternRef => encode_select_imm(
                                 self,
                                 result,
                                 condition,
@@ -2284,7 +2284,7 @@ impl FuncTranslator {
                         }
                         let result = self.alloc.stack.push_dynamic()?;
                         match lhs.ty() {
-                            ValueType::I32 => encode_select_imm32(
+                            ValType::I32 => encode_select_imm32(
                                 self,
                                 result,
                                 condition,
@@ -2292,7 +2292,7 @@ impl FuncTranslator {
                                 i32::from(lhs),
                                 Instruction::select_rev,
                             ),
-                            ValueType::F32 => encode_select_imm32(
+                            ValType::F32 => encode_select_imm32(
                                 self,
                                 result,
                                 condition,
@@ -2300,7 +2300,7 @@ impl FuncTranslator {
                                 f32::from(lhs),
                                 Instruction::select_rev,
                             ),
-                            ValueType::I64 => encode_select_imm64(
+                            ValType::I64 => encode_select_imm64(
                                 self,
                                 result,
                                 condition,
@@ -2309,7 +2309,7 @@ impl FuncTranslator {
                                 Instruction::select_rev,
                                 Instruction::i64const32,
                             ),
-                            ValueType::F64 => encode_select_imm64(
+                            ValType::F64 => encode_select_imm64(
                                 self,
                                 result,
                                 condition,
@@ -2318,7 +2318,7 @@ impl FuncTranslator {
                                 Instruction::select_rev,
                                 Instruction::f64const32,
                             ),
-                            ValueType::FuncRef | ValueType::ExternRef => encode_select_imm(
+                            ValType::FuncRef | ValType::ExternRef => encode_select_imm(
                                 self,
                                 result,
                                 condition,
@@ -2453,7 +2453,7 @@ impl FuncTranslator {
                         }
                         let result = self.alloc.stack.push_dynamic()?;
                         match lhs.ty() {
-                            ValueType::I32 => {
+                            ValType::I32 => {
                                 encode_select_imm32(
                                     self,
                                     result,
@@ -2463,7 +2463,7 @@ impl FuncTranslator {
                                 )?;
                                 Ok(())
                             }
-                            ValueType::F32 => {
+                            ValType::F32 => {
                                 encode_select_imm32(
                                     self,
                                     result,
@@ -2473,7 +2473,7 @@ impl FuncTranslator {
                                 )?;
                                 Ok(())
                             }
-                            ValueType::I64 => encode_select_imm64(
+                            ValType::I64 => encode_select_imm64(
                                 self,
                                 result,
                                 condition,
@@ -2482,7 +2482,7 @@ impl FuncTranslator {
                                 Instruction::select_i64imm32,
                                 Instruction::i64const32,
                             ),
-                            ValueType::F64 => encode_select_imm64(
+                            ValType::F64 => encode_select_imm64(
                                 self,
                                 result,
                                 condition,
@@ -2491,7 +2491,7 @@ impl FuncTranslator {
                                 Instruction::select_f64imm32,
                                 Instruction::f64const32,
                             ),
-                            ValueType::FuncRef | ValueType::ExternRef => {
+                            ValType::FuncRef | ValType::ExternRef => {
                                 encode_select_imm(self, result, condition, lhs, rhs)
                             }
                         }
@@ -2502,7 +2502,7 @@ impl FuncTranslator {
     }
 
     /// Translates a Wasm `reinterpret` instruction.
-    fn translate_reinterpret(&mut self, ty: ValueType) -> Result<(), Error> {
+    fn translate_reinterpret(&mut self, ty: ValType) -> Result<(), Error> {
         bail_unreachable!(self);
         if let TypedProvider::Register(_) = self.alloc.stack.peek() {
             // Nothing to do.

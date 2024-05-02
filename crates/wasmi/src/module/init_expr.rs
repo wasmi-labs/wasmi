@@ -11,7 +11,7 @@ use crate::{
     core::{UntypedValue, F32, F64},
     ExternRef,
     FuncRef,
-    Value,
+    Val,
 };
 use core::fmt;
 use smallvec::SmallVec;
@@ -27,8 +27,8 @@ pub trait Eval {
 ///
 /// Required for evaluating a [`ConstExpr`].
 pub trait EvalContext {
-    /// Returns the [`Value`] of the global value at `index` if any.
-    fn get_global(&self, index: u32) -> Option<Value>;
+    /// Returns the [`Val`] of the global value at `index` if any.
+    fn get_global(&self, index: u32) -> Option<Val>;
     /// Returns the [`FuncRef`] of the function at `index` if any.
     fn get_func(&self, index: u32) -> Option<FuncRef>;
 }
@@ -37,7 +37,7 @@ pub trait EvalContext {
 pub struct EmptyEvalContext;
 
 impl EvalContext for EmptyEvalContext {
-    fn get_global(&self, _index: u32) -> Option<Value> {
+    fn get_global(&self, _index: u32) -> Option<Val> {
         None
     }
 
@@ -140,7 +140,7 @@ impl Op {
     /// Creates a new constant operator for the given `value`.
     pub fn constant<T>(value: T) -> Self
     where
-        T: Into<Value>,
+        T: Into<Val>,
     {
         Self::Const(ConstOp {
             value: value.into().into(),
@@ -272,8 +272,8 @@ impl ConstExpr {
                 }
                 wasmparser::Operator::RefNull { ty } => {
                     let value = match ty {
-                        wasmparser::ValType::FuncRef => Value::from(FuncRef::null()),
-                        wasmparser::ValType::ExternRef => Value::from(ExternRef::null()),
+                        wasmparser::ValType::FuncRef => Val::from(FuncRef::null()),
+                        wasmparser::ValType::ExternRef => Val::from(ExternRef::null()),
                         ty => panic!("encountered invalid value type for RefNull: {ty:?}"),
                     };
                     stack.push(Op::constant(value));
@@ -345,7 +345,7 @@ impl ConstExpr {
     /// This is useful for evaluation of [`ConstExpr`] during bytecode execution.
     pub fn eval_with_context<G, F>(&self, global_get: G, func_get: F) -> Option<UntypedValue>
     where
-        G: Fn(u32) -> Value,
+        G: Fn(u32) -> Val,
         F: Fn(u32) -> FuncRef,
     {
         /// Context that wraps closures representing partial evaluation contexts.
@@ -357,10 +357,10 @@ impl ConstExpr {
         }
         impl<G, F> EvalContext for WrappedEvalContext<G, F>
         where
-            G: Fn(u32) -> Value,
+            G: Fn(u32) -> Val,
             F: Fn(u32) -> FuncRef,
         {
-            fn get_global(&self, index: u32) -> Option<Value> {
+            fn get_global(&self, index: u32) -> Option<Val> {
                 Some((self.global_get)(index))
             }
 

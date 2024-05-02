@@ -1,5 +1,5 @@
 use arbitrary::Arbitrary;
-use wasmi::{core::ValueType, Value};
+use wasmi::{core::ValType, Val};
 
 /// The configuration used to produce Wasmi compatible fuzzing Wasm modules.
 #[derive(Debug, Arbitrary)]
@@ -59,19 +59,19 @@ impl wasm_smith::Config for ExecConfig {
     }
 }
 
-/// Converts a [`ValueType`] into a [`Value`] with default initialization of 1.
+/// Converts a [`ValType`] into a [`Val`] with default initialization of 1.
 ///
 /// # ToDo
 ///
 /// We actually want the bytes buffer given by the `Arbitrary` crate to influence
-/// the values chosen for the resulting [`Value`]. Also we ideally want to produce
+/// the values chosen for the resulting [`Val`]. Also we ideally want to produce
 /// zeroed, positive, negative and NaN values for their respective types.
-pub fn ty_to_val(ty: &ValueType) -> Value {
+pub fn ty_to_val(ty: &ValType) -> Val {
     match ty {
-        ValueType::I32 => Value::I32(1),
-        ValueType::I64 => Value::I64(1),
-        ValueType::F32 => Value::F32(1.0.into()),
-        ValueType::F64 => Value::F64(1.0.into()),
+        ValType::I32 => Val::I32(1),
+        ValType::I64 => Val::I64(1),
+        ValType::F32 => Val::F32(1.0.into()),
+        ValType::F64 => Val::F64(1.0.into()),
         unsupported => panic!(
             "execution fuzzing does not support reference types, yet but found: {unsupported:?}"
         ),

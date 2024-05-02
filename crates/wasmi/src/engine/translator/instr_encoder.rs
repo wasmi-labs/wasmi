@@ -6,7 +6,7 @@ use super::{
     TypedProvider,
 };
 use crate::{
-    core::{UntypedValue, ValueType, F32},
+    core::{UntypedValue, ValType, F32},
     engine::{
         bytecode::{
             BinInstr,
@@ -395,18 +395,18 @@ impl InstrEncoder {
                 Instruction::copy(result, value)
             }
             TypedProvider::Const(value) => match value.ty() {
-                ValueType::I32 => Instruction::copy_imm32(result, i32::from(value)),
-                ValueType::F32 => Instruction::copy_imm32(result, f32::from(value)),
-                ValueType::I64 => match <Const32<i64>>::try_from(i64::from(value)).ok() {
+                ValType::I32 => Instruction::copy_imm32(result, i32::from(value)),
+                ValType::F32 => Instruction::copy_imm32(result, f32::from(value)),
+                ValType::I64 => match <Const32<i64>>::try_from(i64::from(value)).ok() {
                     Some(value) => Instruction::copy_i64imm32(result, value),
                     None => copy_imm(stack, result, value)?,
                 },
-                ValueType::F64 => match <Const32<f64>>::try_from(f64::from(value)).ok() {
+                ValType::F64 => match <Const32<f64>>::try_from(f64::from(value)).ok() {
                     Some(value) => Instruction::copy_f64imm32(result, value),
                     None => copy_imm(stack, result, value)?,
                 },
-                ValueType::FuncRef => copy_imm(stack, result, value)?,
-                ValueType::ExternRef => copy_imm(stack, result, value)?,
+                ValType::FuncRef => copy_imm(stack, result, value)?,
+                ValType::ExternRef => copy_imm(stack, result, value)?,
             },
         };
         self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
@@ -567,17 +567,17 @@ impl InstrEncoder {
             [] => Instruction::Return,
             [TypedProvider::Register(reg)] => Instruction::return_reg(*reg),
             [TypedProvider::Const(value)] => match value.ty() {
-                ValueType::I32 => Instruction::return_imm32(i32::from(*value)),
-                ValueType::I64 => match <Const32<i64>>::try_from(i64::from(*value)).ok() {
+                ValType::I32 => Instruction::return_imm32(i32::from(*value)),
+                ValType::I64 => match <Const32<i64>>::try_from(i64::from(*value)).ok() {
                     Some(value) => Instruction::return_i64imm32(value),
                     None => Instruction::return_reg(stack.alloc_const(*value)?),
                 },
-                ValueType::F32 => Instruction::return_imm32(F32::from(*value)),
-                ValueType::F64 => match <Const32<f64>>::try_from(f64::from(*value)).ok() {
+                ValType::F32 => Instruction::return_imm32(F32::from(*value)),
+                ValType::F64 => match <Const32<f64>>::try_from(f64::from(*value)).ok() {
                     Some(value) => Instruction::return_f64imm32(value),
                     None => Instruction::return_reg(stack.alloc_const(*value)?),
                 },
-                ValueType::FuncRef | ValueType::ExternRef => {
+                ValType::FuncRef | ValType::ExternRef => {
                     Instruction::return_reg(stack.alloc_const(*value)?)
                 }
             },
@@ -635,17 +635,17 @@ impl InstrEncoder {
             [] => Instruction::return_nez(condition),
             [TypedProvider::Register(reg)] => Instruction::return_nez_reg(condition, *reg),
             [TypedProvider::Const(value)] => match value.ty() {
-                ValueType::I32 => Instruction::return_nez_imm32(condition, i32::from(*value)),
-                ValueType::I64 => match <Const32<i64>>::try_from(i64::from(*value)).ok() {
+                ValType::I32 => Instruction::return_nez_imm32(condition, i32::from(*value)),
+                ValType::I64 => match <Const32<i64>>::try_from(i64::from(*value)).ok() {
                     Some(value) => Instruction::return_nez_i64imm32(condition, value),
                     None => Instruction::return_nez_reg(condition, stack.alloc_const(*value)?),
                 },
-                ValueType::F32 => Instruction::return_nez_imm32(condition, F32::from(*value)),
-                ValueType::F64 => match <Const32<f64>>::try_from(f64::from(*value)).ok() {
+                ValType::F32 => Instruction::return_nez_imm32(condition, F32::from(*value)),
+                ValType::F64 => match <Const32<f64>>::try_from(f64::from(*value)).ok() {
                     Some(value) => Instruction::return_nez_f64imm32(condition, value),
                     None => Instruction::return_nez_reg(condition, stack.alloc_const(*value)?),
                 },
-                ValueType::FuncRef | ValueType::ExternRef => {
+                ValType::FuncRef | ValType::ExternRef => {
                     Instruction::return_nez_reg(condition, stack.alloc_const(*value)?)
                 }
             },

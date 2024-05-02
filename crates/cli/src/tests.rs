@@ -1,6 +1,6 @@
 use super::*;
 use core::borrow::Borrow;
-use wasmi::core::ValueType;
+use wasmi::core::ValType;
 
 fn assert_display(func_type: impl Borrow<FuncType>, expected: &str) {
     assert_eq!(
@@ -16,18 +16,18 @@ fn display_0in_0out() {
 
 #[test]
 fn display_1in_0out() {
-    assert_display(FuncType::new([ValueType::I32], []), "fn(i32)");
+    assert_display(FuncType::new([ValType::I32], []), "fn(i32)");
 }
 
 #[test]
 fn display_0in_1out() {
-    assert_display(FuncType::new([], [ValueType::I32]), "fn() -> i32");
+    assert_display(FuncType::new([], [ValType::I32]), "fn() -> i32");
 }
 
 #[test]
 fn display_1in_1out() {
     assert_display(
-        FuncType::new([ValueType::I32], [ValueType::I32]),
+        FuncType::new([ValType::I32], [ValType::I32]),
         "fn(i32) -> i32",
     );
 }
@@ -35,15 +35,7 @@ fn display_1in_1out() {
 #[test]
 fn display_4in_0out() {
     assert_display(
-        FuncType::new(
-            [
-                ValueType::I32,
-                ValueType::I64,
-                ValueType::F32,
-                ValueType::F64,
-            ],
-            [],
-        ),
+        FuncType::new([ValType::I32, ValType::I64, ValType::F32, ValType::F64], []),
         "fn(i32, i64, f32, f64)",
     );
 }
@@ -51,15 +43,7 @@ fn display_4in_0out() {
 #[test]
 fn display_0in_4out() {
     assert_display(
-        FuncType::new(
-            [],
-            [
-                ValueType::I32,
-                ValueType::I64,
-                ValueType::F32,
-                ValueType::F64,
-            ],
-        ),
+        FuncType::new([], [ValType::I32, ValType::I64, ValType::F32, ValType::F64]),
         "fn() -> (i32, i64, f32, f64)",
     );
 }
@@ -68,18 +52,8 @@ fn display_0in_4out() {
 fn display_4in_4out() {
     assert_display(
         FuncType::new(
-            [
-                ValueType::I32,
-                ValueType::I64,
-                ValueType::F32,
-                ValueType::F64,
-            ],
-            [
-                ValueType::I32,
-                ValueType::I64,
-                ValueType::F32,
-                ValueType::F64,
-            ],
+            [ValType::I32, ValType::I64, ValType::F32, ValType::F64],
+            [ValType::I32, ValType::I64, ValType::F32, ValType::F64],
         ),
         "fn(i32, i64, f32, f64) -> (i32, i64, f32, f64)",
     );

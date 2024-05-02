@@ -1,5 +1,5 @@
 use crate::{
-    core::{TrapCode, UntypedValue, ValueType, F32, F64},
+    core::{TrapCode, UntypedValue, ValType, F32, F64},
     ExternRef,
     FuncRef,
 };
@@ -7,29 +7,29 @@ use crate::{
 /// Types that are associated to a static Wasm type.
 pub trait Typed {
     /// The static associated Wasm type.
-    const TY: ValueType;
+    const TY: ValType;
 }
 macro_rules! impl_typed_for {
     ( $( $ty:ty => $value_ty:expr );* $(;)? ) => {
         $(
             impl Typed for $ty {
-                const TY: ValueType = $value_ty;
+                const TY: ValType = $value_ty;
             }
         )*
     };
 }
 impl_typed_for! {
-    bool => ValueType::I32;
-    i32 => ValueType::I32;
-    u32 => ValueType::I32;
-    i64 => ValueType::I64;
-    u64 => ValueType::I64;
-    f32 => ValueType::F32;
-    f64 => ValueType::F64;
-    F32 => ValueType::F32;
-    F64 => ValueType::F64;
-    FuncRef => ValueType::FuncRef;
-    ExternRef => ValueType::ExternRef;
+    bool => ValType::I32;
+    i32 => ValType::I32;
+    u32 => ValType::I32;
+    i64 => ValType::I64;
+    u64 => ValType::I64;
+    f32 => ValType::F32;
+    f64 => ValType::F64;
+    F32 => ValType::F32;
+    F64 => ValType::F64;
+    FuncRef => ValType::FuncRef;
+    ExternRef => ValType::ExternRef;
 }
 
 impl From<TypedValue> for UntypedValue {
@@ -38,42 +38,42 @@ impl From<TypedValue> for UntypedValue {
     }
 }
 
-/// An [`UntypedValue`] with its assumed [`ValueType`].
+/// An [`UntypedValue`] with its assumed [`ValType`].
 ///
 /// # Note
 ///
-/// We explicitly do not make use of the existing [`Value`]
-/// abstraction since [`Value`] is optimized towards being a
+/// We explicitly do not make use of the existing [`Val`]
+/// abstraction since [`Val`] is optimized towards being a
 /// user facing type whereas [`TypedValue`] is focusing on
 /// performance and efficiency in computations.
 ///
-/// [`Value`]: [`crate::core::Value`]
+/// [`Val`]: [`crate::core::Value`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct TypedValue {
     /// The type of the value.
-    ty: ValueType,
+    ty: ValType,
     /// The underlying raw value.
     value: UntypedValue,
 }
 
 impl TypedValue {
     /// Create a new [`TypedValue`].
-    pub fn new(ty: ValueType, value: UntypedValue) -> Self {
+    pub fn new(ty: ValType, value: UntypedValue) -> Self {
         Self { ty, value }
     }
 
-    /// Returns the [`ValueType`] of the [`TypedValue`].
-    pub fn ty(&self) -> ValueType {
+    /// Returns the [`ValType`] of the [`TypedValue`].
+    pub fn ty(&self) -> ValType {
         self.ty
     }
 
-    /// Changes the [`ValueType`] of `self` to `ty`.
+    /// Changes the [`ValType`] of `self` to `ty`.
     ///
     /// # Note
     ///
     /// This acts similar to a Wasm reinterpret cast and
     /// the underlying `value` bits are unchanged.
-    pub fn reinterpret(self, ty: ValueType) -> Self {
+    pub fn reinterpret(self, ty: ValType) -> Self {
         Self { ty, ..self }
     }
 }

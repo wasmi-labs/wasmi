@@ -17,7 +17,7 @@ use super::{
     TypedValue,
 };
 use crate::{
-    core::{TrapCode, ValueType, F32, F64},
+    core::{TrapCode, ValType, F32, F64},
     engine::{
         bytecode::{self, Const16, Instruction, Provider, Register, SignatureIdx},
         translator::AcquiredTarget,
@@ -899,7 +899,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     .get_global(module::GlobalIdx::from(global_index));
                 debug_assert_eq!(global_type.content(), input.ty());
                 match global_type.content() {
-                    ValueType::I32 => {
+                    ValType::I32 => {
                         if let Ok(value) = Const16::try_from(i32::from(input)) {
                             self.push_fueled_instr(
                                 Instruction::global_set_i32imm16(global, value),
@@ -908,7 +908,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                             return Ok(());
                         }
                     }
-                    ValueType::I64 => {
+                    ValType::I64 => {
                         if let Ok(value) = Const16::try_from(i64::from(input)) {
                             self.push_fueled_instr(
                                 Instruction::global_set_i64imm16(global, value),
@@ -1207,8 +1207,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         let type_hint = WasmiValueType::from(ty).into_inner();
         let null = match type_hint {
-            ValueType::FuncRef => TypedValue::from(FuncRef::null()),
-            ValueType::ExternRef => TypedValue::from(ExternRef::null()),
+            ValType::FuncRef => TypedValue::from(FuncRef::null()),
+            ValType::ExternRef => TypedValue::from(ExternRef::null()),
             _ => panic!("must be a Wasm reftype"),
         };
         self.alloc.stack.push_const(null);
@@ -3136,19 +3136,19 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_reinterpret_f32(&mut self) -> Self::Output {
-        self.translate_reinterpret(ValueType::I32)
+        self.translate_reinterpret(ValType::I32)
     }
 
     fn visit_i64_reinterpret_f64(&mut self) -> Self::Output {
-        self.translate_reinterpret(ValueType::I64)
+        self.translate_reinterpret(ValType::I64)
     }
 
     fn visit_f32_reinterpret_i32(&mut self) -> Self::Output {
-        self.translate_reinterpret(ValueType::F32)
+        self.translate_reinterpret(ValType::F32)
     }
 
     fn visit_f64_reinterpret_i64(&mut self) -> Self::Output {
-        self.translate_reinterpret(ValueType::F64)
+        self.translate_reinterpret(ValType::F64)
     }
 
     fn visit_i32_extend8_s(&mut self) -> Self::Output {

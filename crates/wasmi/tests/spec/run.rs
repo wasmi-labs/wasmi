@@ -1,6 +1,6 @@
 use super::{error::TestError, TestContext, TestDescriptor};
 use anyhow::Result;
-use wasmi::{Config, ExternRef, FuncRef, Instance, Value};
+use wasmi::{Config, ExternRef, FuncRef, Instance, Val};
 use wasmi_core::{F32, F64};
 use wast::{
     core::{HeapType, NanPattern, WastRetCore},
@@ -226,7 +226,7 @@ fn assert_trap(test_context: &TestContext, span: Span, error: TestError, message
 }
 
 /// Asserts that `results` match the `expected` values.
-fn assert_results(context: &TestContext, span: Span, results: &[Value], expected: &[WastRet]) {
+fn assert_results(context: &TestContext, span: Span, results: &[Val], expected: &[WastRet]) {
     assert_eq!(results.len(), expected.len());
     let expected = expected.iter().map(|expected| match expected {
         WastRet::Core(expected) => expected,
@@ -237,13 +237,13 @@ fn assert_results(context: &TestContext, span: Span, results: &[Value], expected
     });
     for (result, expected) in results.iter().zip(expected) {
         match (result, expected) {
-            (Value::I32(result), WastRetCore::I32(expected)) => {
+            (Val::I32(result), WastRetCore::I32(expected)) => {
                 assert_eq!(result, expected, "in {}", context.spanned(span))
             }
-            (Value::I64(result), WastRetCore::I64(expected)) => {
+            (Val::I64(result), WastRetCore::I64(expected)) => {
                 assert_eq!(result, expected, "in {}", context.spanned(span))
             }
-            (Value::F32(result), WastRetCore::F32(expected)) => match expected {
+            (Val::F32(result), WastRetCore::F32(expected)) => match expected {
                 NanPattern::CanonicalNan | NanPattern::ArithmeticNan => assert!(result.is_nan()),
                 NanPattern::Value(expected) => {
                     assert_eq!(
@@ -254,7 +254,7 @@ fn assert_results(context: &TestContext, span: Span, results: &[Value], expected
                     );
                 }
             },
-            (Value::F64(result), WastRetCore::F64(expected)) => match expected {
+            (Val::F64(result), WastRetCore::F64(expected)) => match expected {
                 NanPattern::CanonicalNan | NanPattern::ArithmeticNan => {
                     assert!(result.is_nan(), "in {}", context.spanned(span))
                 }
@@ -267,13 +267,13 @@ fn assert_results(context: &TestContext, span: Span, results: &[Value], expected
                     );
                 }
             },
-            (Value::FuncRef(funcref), WastRetCore::RefNull(Some(HeapType::Func))) => {
+            (Val::FuncRef(funcref), WastRetCore::RefNull(Some(HeapType::Func))) => {
                 assert!(funcref.is_null());
             }
-            (Value::ExternRef(externref), WastRetCore::RefNull(Some(HeapType::Extern))) => {
+            (Val::ExternRef(externref), WastRetCore::RefNull(Some(HeapType::Extern))) => {
                 assert!(externref.is_null());
             }
-            (Value::ExternRef(externref), WastRetCore::RefExtern(Some(expected))) => {
+            (Val::ExternRef(externref), WastRetCore::RefExtern(Some(expected))) => {
                 let value = externref
                     .data(context.store())
                     .expect("unexpected null element")
@@ -281,7 +281,7 @@ fn assert_results(context: &TestContext, span: Span, results: &[Value], expected
                     .expect("unexpected non-u32 data");
                 assert_eq!(value, expected);
             }
-            (Value::ExternRef(externref), WastRetCore::RefExtern(None)) => {
+            (Val::ExternRef(externref), WastRetCore::RefExtern(None)) => {
                 assert!(externref.is_null());
             }
             (result, expected) => panic!(
@@ -344,7 +344,7 @@ fn execute_wast_execute(
     context: &mut TestContext,
     span: Span,
     execute: WastExecute,
-) -> Result<Vec<Value>, TestError> {
+) -> Result<Vec<Val>, TestError> {
     match execute {
         WastExecute::Invoke(invoke) => {
             execute_wast_invoke(context, span, invoke).map_err(Into::into)
@@ -366,10 +366,10 @@ fn execute_wast_invoke(
     context: &mut TestContext,
     span: Span,
     invoke: WastInvoke,
-) -> Result<Vec<Value>, TestError> {
+) -> Result<Vec<Val>, TestError> {
     let module_name = invoke.module.map(|id| id.name());
     let field_name = invoke.name;
-    let mut args = <Vec<Value>>::new();
+    let mut args = <Vec<Val>>::new();
     for arg in invoke.args {
         let value = match arg {
             wast::WastArg::Core(arg) => value(context.store_mut(), &arg).unwrap_or_else(|| {
@@ -391,15 +391,15 @@ fn execute_wast_invoke(
 }
 
 /// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Value`] if possible.
-fn value(ctx: &mut wasmi::Store<()>, value: &wast::core::WastArgCore) -> Option<Value> {
+fn value(ctx: &mut wasmi::Store<()>, value: &wast::core::WastArgCore) -> Option<Val> {
     Some(match value {
-        wast::core::WastArgCore::I32(arg) => Value::I32(*arg),
-        wast::core::WastArgCore::I64(arg) => Value::I64(*arg),
-        wast::core::WastArgCore::F32(arg) => Value::F32(F32::from_bits(arg.bits)),
-        wast::core::WastArgCore::F64(arg) => Value::F64(F64::from_bits(arg.bits)),
-        wast::core::WastArgCore::RefNull(HeapType::Func) => Value::FuncRef(FuncRef::null()),
-        wast::core::WastArgCore::RefNull(HeapType::Extern) => Value::ExternRef(ExternRef::null()),
-        wast::core::WastArgCore::RefExtern(value) => Value::ExternRef(ExternRef::new(ctx, *value)),
+        wast::core::WastArgCore::I32(arg) => Val::I32(*arg),
+        wast::core::WastArgCore::I64(arg) => Val::I64(*arg),
+        wast::core::WastArgCore::F32(arg) => Val::F32(F32::from_bits(arg.bits)),
+        wast::core::WastArgCore::F64(arg) => Val::F64(F64::from_bits(arg.bits)),
+        wast::core::WastArgCore::RefNull(HeapType::Func) => Val::FuncRef(FuncRef::null()),
+        wast::core::WastArgCore::RefNull(HeapType::Extern) => Val::ExternRef(ExternRef::null()),
+        wast::core::WastArgCore::RefExtern(value) => Val::ExternRef(ExternRef::new(ctx, *value)),
         _ => return None,
     })
 }
