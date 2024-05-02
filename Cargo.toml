@@ -25,7 +25,7 @@ exclude = ["tests"]
 [workspace.dependencies]
 wasmi = { version = "0.32.0-beta.13", path = "crates/wasmi", default-features = false }
 wasmi_wasi = { version = "0.32.0-beta.13", path = "crates/wasi", default-features = false }
-wasmi_core = { version = "0.19.0", path = "crates/core", default-features = false }
+wasmi_core = { version = "0.20.0", path = "crates/core", default-features = false }
 wasmi_collections = { version = "0.1.0", path = "crates/collections", default-features = false }
 num-traits = { version = "0.2.8", default-features = false }
 
