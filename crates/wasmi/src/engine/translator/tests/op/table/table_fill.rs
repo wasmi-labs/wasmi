@@ -1,7 +1,7 @@
 use super::*;
-use crate::core::ValueType;
+use crate::core::ValType;
 
-fn test_fill(ty: ValueType) {
+fn test_fill(ty: ValType) {
     let display_ty = DisplayValueType::from(ty);
     let wasm = format!(
         r"
@@ -31,11 +31,11 @@ fn test_fill(ty: ValueType) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fill() {
-    test_fill(ValueType::FuncRef);
-    test_fill(ValueType::ExternRef);
+    test_fill(ValType::FuncRef);
+    test_fill(ValType::ExternRef);
 }
 
-fn testcase_fill_exact(ty: ValueType, len: u32) -> TranslationTest {
+fn testcase_fill_exact(ty: ValType, len: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
     let wasm = format!(
         r"
@@ -52,7 +52,7 @@ fn testcase_fill_exact(ty: ValueType, len: u32) -> TranslationTest {
     TranslationTest::from_wat(&wasm)
 }
 
-fn test_fill_exact16(ty: ValueType, len: u32) {
+fn test_fill_exact16(ty: ValType, len: u32) {
     testcase_fill_exact(ty, len)
         .expect_func_instrs([
             Instruction::table_fill_exact(
@@ -70,8 +70,8 @@ fn test_fill_exact16(ty: ValueType, len: u32) {
 #[cfg_attr(miri, ignore)]
 fn fill_exact16() {
     fn test_for(len: u32) {
-        test_fill_exact16(ValueType::FuncRef, len);
-        test_fill_exact16(ValueType::ExternRef, len);
+        test_fill_exact16(ValType::FuncRef, len);
+        test_fill_exact16(ValType::ExternRef, len);
     }
     test_for(0);
     test_for(1);
@@ -79,7 +79,7 @@ fn fill_exact16() {
     test_for(u32::from(u16::MAX));
 }
 
-fn test_fill_exact(ty: ValueType, len: u32) {
+fn test_fill_exact(ty: ValType, len: u32) {
     testcase_fill_exact(ty, len)
         .expect_func(
             ExpectedFunc::new([
@@ -100,14 +100,14 @@ fn test_fill_exact(ty: ValueType, len: u32) {
 #[cfg_attr(miri, ignore)]
 fn fill_exact() {
     fn test_for(len: u32) {
-        test_fill_exact(ValueType::FuncRef, len);
-        test_fill_exact(ValueType::ExternRef, len);
+        test_fill_exact(ValType::FuncRef, len);
+        test_fill_exact(ValType::ExternRef, len);
     }
     test_for(u32::from(u16::MAX) + 1);
     test_for(u32::MAX);
 }
 
-fn testcase_fill_at(ty: ValueType, dst: u32) -> TranslationTest {
+fn testcase_fill_at(ty: ValType, dst: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
     let wasm = format!(
         r"
@@ -124,7 +124,7 @@ fn testcase_fill_at(ty: ValueType, dst: u32) -> TranslationTest {
     TranslationTest::from_wat(&wasm)
 }
 
-fn test_fill_at16(ty: ValueType, dst: u32) {
+fn test_fill_at16(ty: ValType, dst: u32) {
     testcase_fill_at(ty, dst)
         .expect_func_instrs([
             Instruction::table_fill_at(u32imm16(dst), Register::from_i16(1), Register::from_i16(0)),
@@ -138,14 +138,14 @@ fn test_fill_at16(ty: ValueType, dst: u32) {
 #[cfg_attr(miri, ignore)]
 fn fill_at16() {
     fn test_for(dst: u32) {
-        test_fill_at16(ValueType::FuncRef, dst);
-        test_fill_at16(ValueType::ExternRef, dst);
+        test_fill_at16(ValType::FuncRef, dst);
+        test_fill_at16(ValType::ExternRef, dst);
     }
     test_for(0);
     test_for(u32::from(u16::MAX));
 }
 
-fn test_fill_at(ty: ValueType, dst: u32) {
+fn test_fill_at(ty: ValType, dst: u32) {
     testcase_fill_at(ty, dst)
         .expect_func(
             ExpectedFunc::new([
@@ -166,14 +166,14 @@ fn test_fill_at(ty: ValueType, dst: u32) {
 #[cfg_attr(miri, ignore)]
 fn fill_at() {
     fn test_for(dst: u32) {
-        test_fill_at(ValueType::FuncRef, dst);
-        test_fill_at(ValueType::ExternRef, dst);
+        test_fill_at(ValType::FuncRef, dst);
+        test_fill_at(ValType::ExternRef, dst);
     }
     test_for(u32::from(u16::MAX) + 1);
     test_for(u32::MAX);
 }
 
-fn testcase_fill_at_exact(ty: ValueType, dst: u32, len: u32) -> TranslationTest {
+fn testcase_fill_at_exact(ty: ValType, dst: u32, len: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
     let wasm = format!(
         r"
@@ -190,7 +190,7 @@ fn testcase_fill_at_exact(ty: ValueType, dst: u32, len: u32) -> TranslationTest 
     TranslationTest::from_wat(&wasm)
 }
 
-fn test_fill_at_exact16(ty: ValueType, dst: u32, len: u32) {
+fn test_fill_at_exact16(ty: ValType, dst: u32, len: u32) {
     testcase_fill_at_exact(ty, dst, len)
         .expect_func_instrs([
             Instruction::table_fill_at_exact(u32imm16(dst), u32imm16(len), Register::from_i16(0)),
@@ -204,8 +204,8 @@ fn test_fill_at_exact16(ty: ValueType, dst: u32, len: u32) {
 #[cfg_attr(miri, ignore)]
 fn fill_at_exact16() {
     fn test_for(dst: u32, len: u32) {
-        test_fill_at_exact16(ValueType::FuncRef, dst, len);
-        test_fill_at_exact16(ValueType::ExternRef, dst, len);
+        test_fill_at_exact16(ValType::FuncRef, dst, len);
+        test_fill_at_exact16(ValType::ExternRef, dst, len);
     }
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
@@ -215,7 +215,7 @@ fn fill_at_exact16() {
     }
 }
 
-fn test_fill_at_exact(ty: ValueType, dst: u32, len: u32) {
+fn test_fill_at_exact(ty: ValType, dst: u32, len: u32) {
     testcase_fill_at_exact(ty, dst, len)
         .expect_func(
             ExpectedFunc::new([
@@ -236,8 +236,8 @@ fn test_fill_at_exact(ty: ValueType, dst: u32, len: u32) {
 #[cfg_attr(miri, ignore)]
 fn fill_at_exact() {
     fn test_for(dst: u32, len: u32) {
-        test_fill_at_exact(ValueType::FuncRef, dst, len);
-        test_fill_at_exact(ValueType::ExternRef, dst, len);
+        test_fill_at_exact(ValType::FuncRef, dst, len);
+        test_fill_at_exact(ValType::ExternRef, dst, len);
     }
     let values = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
     for dst in values {
@@ -254,11 +254,11 @@ fn fill_at_exact() {
     }
 }
 
-fn testcase_fill_at_exact_imm(ty: ValueType, dst: u32, len: u32) -> TranslationTest {
+fn testcase_fill_at_exact_imm(ty: ValType, dst: u32, len: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
     let ref_ty = match ty {
-        ValueType::FuncRef => "func",
-        ValueType::ExternRef => "extern",
+        ValType::FuncRef => "func",
+        ValType::ExternRef => "extern",
         _ => panic!("invalid Wasm reftype"),
     };
     let wasm = format!(
@@ -276,7 +276,7 @@ fn testcase_fill_at_exact_imm(ty: ValueType, dst: u32, len: u32) -> TranslationT
     TranslationTest::from_wat(&wasm)
 }
 
-fn test_fill_at_exact_imm(ty: ValueType, dst: u32, len: u32) {
+fn test_fill_at_exact_imm(ty: ValType, dst: u32, len: u32) {
     testcase_fill_at_exact_imm(ty, dst, len)
         .expect_func(
             ExpectedFunc::new([
@@ -297,8 +297,8 @@ fn test_fill_at_exact_imm(ty: ValueType, dst: u32, len: u32) {
 #[cfg_attr(miri, ignore)]
 fn fill_at_exact_exact() {
     fn test_for(dst: u32, len: u32) {
-        test_fill_at_exact_imm(ValueType::FuncRef, dst, len);
-        test_fill_at_exact_imm(ValueType::ExternRef, dst, len);
+        test_fill_at_exact_imm(ValType::FuncRef, dst, len);
+        test_fill_at_exact_imm(ValType::ExternRef, dst, len);
     }
     let values = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
     for dst in values {

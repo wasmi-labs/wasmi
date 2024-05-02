@@ -1,7 +1,7 @@
 use super::*;
 use crate::{
-    core::UntypedValue,
-    engine::{bytecode::BranchOffset, translator::tests::wasm_type::WasmType},
+    core::UntypedVal,
+    engine::{bytecode::BranchOffset, translator::tests::wasm_type::WasmTy},
 };
 use core::fmt::Display;
 
@@ -39,10 +39,10 @@ fn as_return_1() {
 fn as_return_1_imm() {
     fn test_for<T>(value: T)
     where
-        T: WasmType,
+        T: WasmTy,
         DisplayWasm<T>: Display,
     {
-        let display_ty = DisplayValueType::from(<T as WasmType>::VALUE_TYPE);
+        let display_ty = DisplayValueType::from(<T as WasmTy>::VALUE_TYPE);
         let display_value = DisplayWasm::from(value);
         let wasm = format!(
             r"
@@ -76,10 +76,10 @@ fn as_return_1_imm() {
 fn as_return_1_imm32() {
     fn test_for<T>(value: T)
     where
-        T: WasmType + Into<AnyConst32>,
+        T: WasmTy + Into<AnyConst32>,
         DisplayWasm<T>: Display,
     {
-        let display_ty = DisplayValueType::from(<T as WasmType>::VALUE_TYPE);
+        let display_ty = DisplayValueType::from(<T as WasmTy>::VALUE_TYPE);
         let display_value = DisplayWasm::from(value);
         let wasm = format!(
             r"
@@ -179,7 +179,7 @@ fn test_br_as_return_values() {
                 Instruction::branch(BranchOffset::from(1)),
                 Instruction::return_reg2(-1, 0),
             ])
-            .consts([UntypedValue::from(2_i32)]),
+            .consts([UntypedVal::from(2_i32)]),
         )
         .run()
 }

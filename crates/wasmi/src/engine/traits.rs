@@ -1,4 +1,4 @@
-use crate::{core::UntypedValue, value::WithType, Value};
+use crate::{core::UntypedVal, value::WithType, Val};
 use core::{iter, slice};
 
 /// Types implementing this trait may be used as parameters for function execution.
@@ -12,13 +12,13 @@ use core::{iter, slice};
 /// [`Engine`]: [`crate::Engine`]
 pub trait CallParams {
     /// The iterator over the parameter values.
-    type Params: ExactSizeIterator<Item = UntypedValue>;
+    type Params: ExactSizeIterator<Item = UntypedVal>;
 
     /// Feeds the parameter values from the caller.
     fn call_params(self) -> Self::Params;
 }
 
-impl<'a> CallParams for &'a [Value] {
+impl<'a> CallParams for &'a [Val] {
     type Params = CallParamsValueIter<'a>;
 
     #[inline]
@@ -29,18 +29,18 @@ impl<'a> CallParams for &'a [Value] {
     }
 }
 
-/// An iterator over the [`UntypedValue`] call parameters.
+/// An iterator over the [`UntypedVal`] call parameters.
 #[derive(Debug)]
 pub struct CallParamsValueIter<'a> {
-    iter: iter::Cloned<slice::Iter<'a, Value>>,
+    iter: iter::Cloned<slice::Iter<'a, Val>>,
 }
 
 impl<'a> Iterator for CallParamsValueIter<'a> {
-    type Item = UntypedValue;
+    type Item = UntypedVal;
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(UntypedValue::from)
+        self.iter.next().map(UntypedVal::from)
     }
 
     #[inline]
@@ -73,17 +73,17 @@ pub trait CallResults {
     /// # Panics
     ///
     /// If the given `results` do not match the expected amount.
-    fn call_results(self, results: &[UntypedValue]) -> Self::Results;
+    fn call_results(self, results: &[UntypedVal]) -> Self::Results;
 }
 
-impl<'a> CallResults for &'a mut [Value] {
+impl<'a> CallResults for &'a mut [Val] {
     type Results = ();
 
     fn len_results(&self) -> usize {
         self.len()
     }
 
-    fn call_results(self, results: &[UntypedValue]) -> Self::Results {
+    fn call_results(self, results: &[UntypedVal]) -> Self::Results {
         assert_eq!(self.len(), results.len());
         self.iter_mut().zip(results).for_each(|(dst, src)| {
             *dst = src.with_type(dst.ty());

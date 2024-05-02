@@ -17,7 +17,7 @@ impl<'a, T> Caller<'a, T> {
     /// Creates a new [`Caller`] from the given store context and [`Instance`] handle.
     pub(crate) fn new<C>(ctx: &'a mut C, instance: Option<&Instance>) -> Self
     where
-        C: AsContextMut<UserState = T>,
+        C: AsContextMut<Data = T>,
     {
         Self {
             ctx: ctx.as_context_mut(),
@@ -73,22 +73,22 @@ impl<'a, T> Caller<'a, T> {
 }
 
 impl<T> AsContext for Caller<'_, T> {
-    type UserState = T;
+    type Data = T;
 
     #[inline]
-    fn as_context(&self) -> StoreContext<'_, Self::UserState> {
+    fn as_context(&self) -> StoreContext<'_, Self::Data> {
         self.ctx.as_context()
     }
 }
 
 impl<T> AsContextMut for Caller<'_, T> {
     #[inline]
-    fn as_context_mut(&mut self) -> StoreContextMut<'_, Self::UserState> {
+    fn as_context_mut(&mut self) -> StoreContextMut<'_, Self::Data> {
         self.ctx.as_context_mut()
     }
 }
 
-impl<'a, T: AsContextMut> From<&'a mut T> for Caller<'a, T::UserState> {
+impl<'a, T: AsContextMut> From<&'a mut T> for Caller<'a, T::Data> {
     #[inline]
     fn from(ctx: &'a mut T) -> Self {
         Self {

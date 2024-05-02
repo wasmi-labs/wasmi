@@ -1,6 +1,6 @@
 use super::Executor;
 use crate::{
-    core::{TrapCode, UntypedValue},
+    core::{TrapCode, UntypedVal},
     engine::bytecode::{LoadAtInstr, LoadInstr, LoadOffset16Instr, Register},
     Error,
 };
@@ -10,7 +10,7 @@ use crate::engine::bytecode::Instruction;
 
 /// The function signature of Wasm load operations.
 type WasmLoadOp =
-    fn(memory: &[u8], address: UntypedValue, offset: u32) -> Result<UntypedValue, TrapCode>;
+    fn(memory: &[u8], address: UntypedVal, offset: u32) -> Result<UntypedVal, TrapCode>;
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes a generic Wasm `store[N_{s|u}]` operation.
@@ -30,7 +30,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn execute_load_extend(
         &mut self,
         result: Register,
-        address: UntypedValue,
+        address: UntypedVal,
         offset: u32,
         load_extend: WasmLoadOp,
     ) -> Result<(), Error> {
@@ -59,7 +59,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         load_extend: WasmLoadOp,
     ) -> Result<(), Error> {
         let offset = u32::from(instr.address);
-        self.execute_load_extend(instr.result, UntypedValue::from(0u32), offset, load_extend)?;
+        self.execute_load_extend(instr.result, UntypedVal::from(0u32), offset, load_extend)?;
         self.try_next_instr()
     }
 
@@ -113,87 +113,87 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             (Instruction::I32Load, execute_i32_load),
             (Instruction::I32LoadAt, execute_i32_load_at),
             (Instruction::I32LoadOffset16, execute_i32_load_offset16),
-            UntypedValue::i32_load,
+            UntypedVal::i32_load,
         ),
         (
             (Instruction::I64Load, execute_i64_load),
             (Instruction::I64LoadAt, execute_i64_load_at),
             (Instruction::I64LoadOffset16, execute_i64_load_offset16),
-            UntypedValue::i64_load,
+            UntypedVal::i64_load,
         ),
         (
             (Instruction::F32Load, execute_f32_load),
             (Instruction::F32LoadAt, execute_f32_load_at),
             (Instruction::F32LoadOffset16, execute_f32_load_offset16),
-            UntypedValue::f32_load,
+            UntypedVal::f32_load,
         ),
         (
             (Instruction::F64Load, execute_f64_load),
             (Instruction::F64LoadAt, execute_f64_load_at),
             (Instruction::F64LoadOffset16, execute_f64_load_offset16),
-            UntypedValue::f64_load,
+            UntypedVal::f64_load,
         ),
 
         (
             (Instruction::I32Load8s, execute_i32_load8_s),
             (Instruction::I32Load8sAt, execute_i32_load8_s_at),
             (Instruction::I32Load8sOffset16, execute_i32_load8_s_offset16),
-            UntypedValue::i32_load8_s,
+            UntypedVal::i32_load8_s,
         ),
         (
             (Instruction::I32Load8u, execute_i32_load8_u),
             (Instruction::I32Load8uAt, execute_i32_load8_u_at),
             (Instruction::I32Load8uOffset16, execute_i32_load8_u_offset16),
-            UntypedValue::i32_load8_u,
+            UntypedVal::i32_load8_u,
         ),
         (
             (Instruction::I32Load16s, execute_i32_load16_s),
             (Instruction::I32Load16sAt, execute_i32_load16_s_at),
             (Instruction::I32Load16sOffset16, execute_i32_load16_s_offset16),
-            UntypedValue::i32_load16_s,
+            UntypedVal::i32_load16_s,
         ),
         (
             (Instruction::I32Load16u, execute_i32_load16_u),
             (Instruction::I32Load16uAt, execute_i32_load16_u_at),
             (Instruction::I32Load16uOffset16, execute_i32_load16_u_offset16),
-            UntypedValue::i32_load16_u,
+            UntypedVal::i32_load16_u,
         ),
 
         (
             (Instruction::I64Load8s, execute_i64_load8_s),
             (Instruction::I64Load8sAt, execute_i64_load8_s_at),
             (Instruction::I64Load8sOffset16, execute_i64_load8_s_offset16),
-            UntypedValue::i64_load8_s,
+            UntypedVal::i64_load8_s,
         ),
         (
             (Instruction::I64Load8u, execute_i64_load8_u),
             (Instruction::I64Load8uAt, execute_i64_load8_u_at),
             (Instruction::I64Load8uOffset16, execute_i64_load8_u_offset16),
-            UntypedValue::i64_load8_u,
+            UntypedVal::i64_load8_u,
         ),
         (
             (Instruction::I64Load16s, execute_i64_load16_s),
             (Instruction::I64Load16sAt, execute_i64_load16_s_at),
             (Instruction::I64Load16sOffset16, execute_i64_load16_s_offset16),
-            UntypedValue::i64_load16_s,
+            UntypedVal::i64_load16_s,
         ),
         (
             (Instruction::I64Load16u, execute_i64_load16_u),
             (Instruction::I64Load16uAt, execute_i64_load16_u_at),
             (Instruction::I64Load16uOffset16, execute_i64_load16_u_offset16),
-            UntypedValue::i64_load16_u,
+            UntypedVal::i64_load16_u,
         ),
         (
             (Instruction::I64Load32s, execute_i64_load32_s),
             (Instruction::I64Load32sAt, execute_i64_load32_s_at),
             (Instruction::I64Load32sOffset16, execute_i64_load32_s_offset16),
-            UntypedValue::i64_load32_s,
+            UntypedVal::i64_load32_s,
         ),
         (
             (Instruction::I64Load32u, execute_i64_load32_u),
             (Instruction::I64Load32uAt, execute_i64_load32_u_at),
             (Instruction::I64Load32uOffset16, execute_i64_load32_u_offset16),
-            UntypedValue::i64_load32_u,
+            UntypedVal::i64_load32_u,
         ),
     }
 }

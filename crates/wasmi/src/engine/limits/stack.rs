@@ -1,4 +1,4 @@
-use crate::core::UntypedValue;
+use crate::core::UntypedVal;
 use core::{
     fmt::{self, Display},
     mem::size_of,
@@ -65,7 +65,7 @@ impl StackLimits {
 
 impl Default for StackLimits {
     fn default() -> Self {
-        let register_len = size_of::<UntypedValue>();
+        let register_len = size_of::<UntypedVal>();
         let initial_value_stack_height = DEFAULT_MIN_VALUE_STACK_HEIGHT / register_len;
         let maximum_value_stack_height = DEFAULT_MAX_VALUE_STACK_HEIGHT / register_len;
         Self {

@@ -1,9 +1,9 @@
 //! API using the Rust type system to guide host function trampoline execution.
 
 use crate::{
-    core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedError, UntypedValue},
+    core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedError, UntypedVal},
     value::WithType,
-    Value,
+    Val,
 };
 use core::cmp;
 
@@ -17,7 +17,7 @@ pub struct FuncParams<'a> {
     /// Therefore the length of the slice must be large enough
     /// to hold all parameters and all results but not both at
     /// the same time.
-    params_results: &'a mut [UntypedValue],
+    params_results: &'a mut [UntypedVal],
     /// The length of the expected parameters of the function invocation.
     len_params: usize,
     /// The length of the expected results of the function invocation.
@@ -27,12 +27,12 @@ pub struct FuncParams<'a> {
 /// Used to encode host function results.
 #[derive(Debug)]
 pub struct FuncResults<'a> {
-    results: &'a mut [UntypedValue],
+    results: &'a mut [UntypedVal],
 }
 
 impl<'a> FuncResults<'a> {
     /// Create new [`FuncResults`] from the given `results` slice.
-    fn new(results: &'a mut [UntypedValue]) -> Self {
+    fn new(results: &'a mut [UntypedVal]) -> Self {
         Self { results }
     }
 
@@ -45,7 +45,7 @@ impl<'a> FuncResults<'a> {
     where
         T: EncodeUntypedSlice,
     {
-        UntypedValue::encode_slice::<T>(self.results, values)
+        UntypedVal::encode_slice::<T>(self.results, values)
             .unwrap_or_else(|error| panic!("encountered unexpected invalid tuple length: {error}"));
         FuncFinished {}
     }
@@ -55,7 +55,7 @@ impl<'a> FuncResults<'a> {
     /// # Panics
     ///
     /// If the number of expected results does not match the length of `values`.
-    pub fn encode_results_from_slice(self, values: &[Value]) -> Result<FuncFinished, UntypedError> {
+    pub fn encode_results_from_slice(self, values: &[Val]) -> Result<FuncFinished, UntypedError> {
         assert_eq!(self.results.len(), values.len());
         self.results.iter_mut().zip(values).for_each(|(dst, src)| {
             *dst = src.clone().into();
@@ -82,7 +82,7 @@ impl<'a> FuncParams<'a> {
     /// If the length of hte `params_results` slice does not match the maximum
     /// of the `len_params` and `Len_results`.
     pub(super) fn new(
-        params_results: &'a mut [UntypedValue],
+        params_results: &'a mut [UntypedVal],
         len_params: usize,
         len_results: usize,
     ) -> Self {
@@ -95,7 +95,7 @@ impl<'a> FuncParams<'a> {
     }
 
     /// Returns a slice over the untyped function parameters.
-    fn params(&self) -> &[UntypedValue] {
+    fn params(&self) -> &[UntypedVal] {
         &self.params_results[..self.len_params]
     }
 
@@ -108,7 +108,7 @@ impl<'a> FuncParams<'a> {
     where
         T: DecodeUntypedSlice,
     {
-        let decoded = UntypedValue::decode_slice::<T>(self.params())
+        let decoded = UntypedVal::decode_slice::<T>(self.params())
             .unwrap_or_else(|error| panic!("encountered unexpected invalid tuple length: {error}"));
         let results = self.into_func_results();
         (decoded, results)
@@ -121,7 +121,7 @@ impl<'a> FuncParams<'a> {
     /// If the number of host function parameters and items in `values` does not match.
     pub fn decode_params_into_slice(
         self,
-        values: &mut [Value],
+        values: &mut [Val],
     ) -> Result<FuncResults<'a>, UntypedError> {
         assert_eq!(self.params().len(), values.len());
         self.params().iter().zip(values).for_each(|(src, dst)| {

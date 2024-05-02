@@ -1,7 +1,7 @@
 use super::*;
 use crate::engine::{
     bytecode::{BranchOffset, BranchOffset16, RegisterSpan},
-    translator::tests::wasm_type::WasmType,
+    translator::tests::wasm_type::WasmTy,
 };
 use std::fmt::Display;
 
@@ -146,7 +146,7 @@ fn branched_block_1() {
 
 fn testcase_branched_block_1_imm<T>(value: T) -> TranslationTest
 where
-    T: Copy + WasmType,
+    T: Copy + WasmTy,
     DisplayWasm<T>: Display,
 {
     let display_type = DisplayValueType::from(T::VALUE_TYPE);

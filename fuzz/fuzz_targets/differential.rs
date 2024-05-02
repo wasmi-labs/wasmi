@@ -47,8 +47,8 @@ trait DifferentialTarget: Sized {
 struct WasmiRegister {
     store: wasmi_reg::Store<wasmi_reg::StoreLimits>,
     instance: wasmi_reg::Instance,
-    params: Vec<wasmi_reg::Value>,
-    results: Vec<wasmi_reg::Value>,
+    params: Vec<wasmi_reg::Val>,
+    results: Vec<wasmi_reg::Val>,
 }
 
 impl WasmiRegister {
@@ -68,7 +68,7 @@ impl WasmiRegister {
         exports
     }
 
-    fn type_to_value(ty: &wasmi_reg::core::ValueType) -> wasmi_reg::Value {
+    fn type_to_value(ty: &wasmi_reg::core::ValType) -> wasmi_reg::Val {
         ty_to_val(ty)
     }
 }
@@ -669,13 +669,13 @@ impl PartialEq for FuzzValue {
     }
 }
 
-impl<'a> From<&'a wasmi_reg::Value> for FuzzValue {
-    fn from(value: &wasmi_reg::Value) -> Self {
+impl<'a> From<&'a wasmi_reg::Val> for FuzzValue {
+    fn from(value: &wasmi_reg::Val) -> Self {
         match value {
-            wasmi_reg::Value::I32(value) => Self::I32(*value),
-            wasmi_reg::Value::I64(value) => Self::I64(*value),
-            wasmi_reg::Value::F32(value) => Self::F32(*value),
-            wasmi_reg::Value::F64(value) => Self::F64(*value),
+            wasmi_reg::Val::I32(value) => Self::I32(*value),
+            wasmi_reg::Val::I64(value) => Self::I64(*value),
+            wasmi_reg::Val::F32(value) => Self::F32(*value),
+            wasmi_reg::Val::F64(value) => Self::F64(*value),
             _ => panic!("unsupported value type"),
         }
     }

@@ -1,7 +1,7 @@
 use super::*;
-use crate::core::ValueType;
+use crate::core::ValType;
 
-fn test_copy(ty: ValueType) {
+fn test_copy(ty: ValType) {
     let display_ty = DisplayValueType::from(ty);
     let wasm = format!(
         r"
@@ -33,11 +33,11 @@ fn test_copy(ty: ValueType) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn copy() {
-    test_copy(ValueType::FuncRef);
-    test_copy(ValueType::ExternRef);
+    test_copy(ValType::FuncRef);
+    test_copy(ValType::ExternRef);
 }
 
-fn testcase_copy_exact(ty: ValueType, len: u32) -> TranslationTest {
+fn testcase_copy_exact(ty: ValType, len: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
     let wasm = format!(
         r"
@@ -55,7 +55,7 @@ fn testcase_copy_exact(ty: ValueType, len: u32) -> TranslationTest {
     TranslationTest::from_wat(&wasm)
 }
 
-fn test_copy_exact16(ty: ValueType, len: u32) {
+fn test_copy_exact16(ty: ValType, len: u32) {
     testcase_copy_exact(ty, len)
         .expect_func_instrs([
             Instruction::table_copy_exact(
@@ -74,8 +74,8 @@ fn test_copy_exact16(ty: ValueType, len: u32) {
 #[cfg_attr(miri, ignore)]
 fn copy_exact16() {
     fn test_for(len: u32) {
-        test_copy_exact16(ValueType::FuncRef, len);
-        test_copy_exact16(ValueType::ExternRef, len);
+        test_copy_exact16(ValType::FuncRef, len);
+        test_copy_exact16(ValType::ExternRef, len);
     }
     test_for(0);
     test_for(1);
@@ -83,7 +83,7 @@ fn copy_exact16() {
     test_for(u32::from(u16::MAX));
 }
 
-fn test_copy_exact(ty: ValueType, len: u32) {
+fn test_copy_exact(ty: ValType, len: u32) {
     testcase_copy_exact(ty, len)
         .expect_func(
             ExpectedFunc::new([
@@ -105,14 +105,14 @@ fn test_copy_exact(ty: ValueType, len: u32) {
 #[cfg_attr(miri, ignore)]
 fn copy_exact() {
     fn test_for(len: u32) {
-        test_copy_exact(ValueType::FuncRef, len);
-        test_copy_exact(ValueType::ExternRef, len);
+        test_copy_exact(ValType::FuncRef, len);
+        test_copy_exact(ValType::ExternRef, len);
     }
     test_for(u32::from(u16::MAX) + 1);
     test_for(u32::MAX);
 }
 
-fn testcase_copy_from(ty: ValueType, src: u32) -> TranslationTest {
+fn testcase_copy_from(ty: ValType, src: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
     let wasm = format!(
         r"
@@ -130,7 +130,7 @@ fn testcase_copy_from(ty: ValueType, src: u32) -> TranslationTest {
     TranslationTest::from_wat(&wasm)
 }
 
-fn test_copy_from16(ty: ValueType, src: u32) {
+fn test_copy_from16(ty: ValType, src: u32) {
     testcase_copy_from(ty, src)
         .expect_func_instrs([
             Instruction::table_copy_from(
@@ -149,14 +149,14 @@ fn test_copy_from16(ty: ValueType, src: u32) {
 #[cfg_attr(miri, ignore)]
 fn copy_from16() {
     fn test_for(src: u32) {
-        test_copy_from16(ValueType::FuncRef, src);
-        test_copy_from16(ValueType::ExternRef, src);
+        test_copy_from16(ValType::FuncRef, src);
+        test_copy_from16(ValType::ExternRef, src);
     }
     test_for(0);
     test_for(u32::from(u16::MAX));
 }
 
-fn test_copy_from(ty: ValueType, src: u32) {
+fn test_copy_from(ty: ValType, src: u32) {
     testcase_copy_from(ty, src)
         .expect_func(
             ExpectedFunc::new([
@@ -178,14 +178,14 @@ fn test_copy_from(ty: ValueType, src: u32) {
 #[cfg_attr(miri, ignore)]
 fn copy_from() {
     fn test_for(src: u32) {
-        test_copy_from(ValueType::FuncRef, src);
-        test_copy_from(ValueType::ExternRef, src);
+        test_copy_from(ValType::FuncRef, src);
+        test_copy_from(ValType::ExternRef, src);
     }
     test_for(u32::from(u16::MAX) + 1);
     test_for(u32::MAX);
 }
 
-fn testcase_copy_to(ty: ValueType, dst: u32) -> TranslationTest {
+fn testcase_copy_to(ty: ValType, dst: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
     let wasm = format!(
         r"
@@ -203,7 +203,7 @@ fn testcase_copy_to(ty: ValueType, dst: u32) -> TranslationTest {
     TranslationTest::from_wat(&wasm)
 }
 
-fn test_copy_to16(ty: ValueType, dst: u32) {
+fn test_copy_to16(ty: ValType, dst: u32) {
     testcase_copy_to(ty, dst)
         .expect_func_instrs([
             Instruction::table_copy_to(u32imm16(dst), Register::from_i16(0), Register::from_i16(1)),
@@ -218,14 +218,14 @@ fn test_copy_to16(ty: ValueType, dst: u32) {
 #[cfg_attr(miri, ignore)]
 fn copy_to16() {
     fn test_for(dst: u32) {
-        test_copy_to16(ValueType::FuncRef, dst);
-        test_copy_to16(ValueType::ExternRef, dst);
+        test_copy_to16(ValType::FuncRef, dst);
+        test_copy_to16(ValType::ExternRef, dst);
     }
     test_for(0);
     test_for(u32::from(u16::MAX));
 }
 
-fn test_copy_to(ty: ValueType, dst: u32) {
+fn test_copy_to(ty: ValType, dst: u32) {
     testcase_copy_to(ty, dst)
         .expect_func(
             ExpectedFunc::new([
@@ -247,14 +247,14 @@ fn test_copy_to(ty: ValueType, dst: u32) {
 #[cfg_attr(miri, ignore)]
 fn copy_to() {
     fn test_for(dst: u32) {
-        test_copy_to(ValueType::FuncRef, dst);
-        test_copy_to(ValueType::ExternRef, dst);
+        test_copy_to(ValType::FuncRef, dst);
+        test_copy_to(ValType::ExternRef, dst);
     }
     test_for(u32::from(u16::MAX) + 1);
     test_for(u32::MAX);
 }
 
-fn testcase_copy_from_to(ty: ValueType, dst: u32, src: u32) -> TranslationTest {
+fn testcase_copy_from_to(ty: ValType, dst: u32, src: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
     let wasm = format!(
         r"
@@ -272,7 +272,7 @@ fn testcase_copy_from_to(ty: ValueType, dst: u32, src: u32) -> TranslationTest {
     TranslationTest::from_wat(&wasm)
 }
 
-fn test_copy_from_to16(ty: ValueType, dst: u32, src: u32) {
+fn test_copy_from_to16(ty: ValType, dst: u32, src: u32) {
     testcase_copy_from_to(ty, dst, src)
         .expect_func_instrs([
             Instruction::table_copy_from_to(u32imm16(dst), u32imm16(src), Register::from_i16(0)),
@@ -287,8 +287,8 @@ fn test_copy_from_to16(ty: ValueType, dst: u32, src: u32) {
 #[cfg_attr(miri, ignore)]
 fn copy_from_to16() {
     fn test_for(dst: u32, src: u32) {
-        test_copy_from_to16(ValueType::FuncRef, dst, src);
-        test_copy_from_to16(ValueType::ExternRef, dst, src);
+        test_copy_from_to16(ValType::FuncRef, dst, src);
+        test_copy_from_to16(ValType::ExternRef, dst, src);
     }
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
@@ -298,7 +298,7 @@ fn copy_from_to16() {
     }
 }
 
-fn test_copy_from_to(ty: ValueType, dst: u32, src: u32) {
+fn test_copy_from_to(ty: ValType, dst: u32, src: u32) {
     testcase_copy_from_to(ty, dst, src)
         .expect_func(
             ExpectedFunc::new([
@@ -320,8 +320,8 @@ fn test_copy_from_to(ty: ValueType, dst: u32, src: u32) {
 #[cfg_attr(miri, ignore)]
 fn copy_from_to() {
     fn test_for(dst: u32, src: u32) {
-        test_copy_from_to(ValueType::FuncRef, dst, src);
-        test_copy_from_to(ValueType::ExternRef, dst, src);
+        test_copy_from_to(ValType::FuncRef, dst, src);
+        test_copy_from_to(ValType::ExternRef, dst, src);
     }
     let values = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
     for dst in values {
@@ -338,7 +338,7 @@ fn copy_from_to() {
     }
 }
 
-fn testcase_copy_to_exact(ty: ValueType, dst: u32, len: u32) -> TranslationTest {
+fn testcase_copy_to_exact(ty: ValType, dst: u32, len: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
     let wasm = format!(
         r"
@@ -356,7 +356,7 @@ fn testcase_copy_to_exact(ty: ValueType, dst: u32, len: u32) -> TranslationTest 
     TranslationTest::from_wat(&wasm)
 }
 
-fn test_copy_to_exact16(ty: ValueType, dst: u32, len: u32) {
+fn test_copy_to_exact16(ty: ValType, dst: u32, len: u32) {
     testcase_copy_to_exact(ty, dst, len)
         .expect_func_instrs([
             Instruction::table_copy_to_exact(u32imm16(dst), Register::from_i16(0), u32imm16(len)),
@@ -371,8 +371,8 @@ fn test_copy_to_exact16(ty: ValueType, dst: u32, len: u32) {
 #[cfg_attr(miri, ignore)]
 fn copy_to_exact16() {
     fn test_for(dst: u32, len: u32) {
-        test_copy_to_exact16(ValueType::FuncRef, dst, len);
-        test_copy_to_exact16(ValueType::ExternRef, dst, len);
+        test_copy_to_exact16(ValType::FuncRef, dst, len);
+        test_copy_to_exact16(ValType::ExternRef, dst, len);
     }
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
@@ -382,7 +382,7 @@ fn copy_to_exact16() {
     }
 }
 
-fn test_copy_to_exact(ty: ValueType, dst: u32, len: u32) {
+fn test_copy_to_exact(ty: ValType, dst: u32, len: u32) {
     testcase_copy_to_exact(ty, dst, len)
         .expect_func(
             ExpectedFunc::new([
@@ -404,8 +404,8 @@ fn test_copy_to_exact(ty: ValueType, dst: u32, len: u32) {
 #[cfg_attr(miri, ignore)]
 fn copy_to_exact() {
     fn test_for(dst: u32, len: u32) {
-        test_copy_to_exact(ValueType::FuncRef, dst, len);
-        test_copy_to_exact(ValueType::ExternRef, dst, len);
+        test_copy_to_exact(ValType::FuncRef, dst, len);
+        test_copy_to_exact(ValType::ExternRef, dst, len);
     }
     let values = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
     for dst in values {
@@ -422,7 +422,7 @@ fn copy_to_exact() {
     }
 }
 
-fn testcase_copy_from_exact(ty: ValueType, src: u32, len: u32) -> TranslationTest {
+fn testcase_copy_from_exact(ty: ValType, src: u32, len: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
     let wasm = format!(
         r"
@@ -440,7 +440,7 @@ fn testcase_copy_from_exact(ty: ValueType, src: u32, len: u32) -> TranslationTes
     TranslationTest::from_wat(&wasm)
 }
 
-fn test_copy_from_exact16(ty: ValueType, src: u32, len: u32) {
+fn test_copy_from_exact16(ty: ValType, src: u32, len: u32) {
     testcase_copy_from_exact(ty, src, len)
         .expect_func_instrs([
             Instruction::table_copy_from_exact(Register::from_i16(0), u32imm16(src), u32imm16(len)),
@@ -455,8 +455,8 @@ fn test_copy_from_exact16(ty: ValueType, src: u32, len: u32) {
 #[cfg_attr(miri, ignore)]
 fn copy_from_exact16() {
     fn test_for(dst: u32, len: u32) {
-        test_copy_from_exact16(ValueType::FuncRef, dst, len);
-        test_copy_from_exact16(ValueType::ExternRef, dst, len);
+        test_copy_from_exact16(ValType::FuncRef, dst, len);
+        test_copy_from_exact16(ValType::ExternRef, dst, len);
     }
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
@@ -466,7 +466,7 @@ fn copy_from_exact16() {
     }
 }
 
-fn test_copy_from_exact(ty: ValueType, src: u32, len: u32) {
+fn test_copy_from_exact(ty: ValType, src: u32, len: u32) {
     testcase_copy_from_exact(ty, src, len)
         .expect_func(
             ExpectedFunc::new([
@@ -488,8 +488,8 @@ fn test_copy_from_exact(ty: ValueType, src: u32, len: u32) {
 #[cfg_attr(miri, ignore)]
 fn copy_from_exact() {
     fn test_for(src: u32, len: u32) {
-        test_copy_from_exact(ValueType::FuncRef, src, len);
-        test_copy_from_exact(ValueType::ExternRef, src, len);
+        test_copy_from_exact(ValType::FuncRef, src, len);
+        test_copy_from_exact(ValType::ExternRef, src, len);
     }
     let values = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
     for dst in values {
@@ -506,7 +506,7 @@ fn copy_from_exact() {
     }
 }
 
-fn testcase_copy_from_to_exact(ty: ValueType, dst: u32, src: u32, len: u32) -> TranslationTest {
+fn testcase_copy_from_to_exact(ty: ValType, dst: u32, src: u32, len: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
     let wasm = format!(
         r"
@@ -524,7 +524,7 @@ fn testcase_copy_from_to_exact(ty: ValueType, dst: u32, src: u32, len: u32) -> T
     TranslationTest::from_wat(&wasm)
 }
 
-fn test_copy_from_to_exact16(ty: ValueType, dst: u32, src: u32, len: u32) {
+fn test_copy_from_to_exact16(ty: ValType, dst: u32, src: u32, len: u32) {
     testcase_copy_from_to_exact(ty, dst, src, len)
         .expect_func_instrs([
             Instruction::table_copy_from_to_exact(u32imm16(dst), u32imm16(src), u32imm16(len)),
@@ -539,8 +539,8 @@ fn test_copy_from_to_exact16(ty: ValueType, dst: u32, src: u32, len: u32) {
 #[cfg_attr(miri, ignore)]
 fn copy_from_to_exact16() {
     fn test_for(dst: u32, src: u32, len: u32) {
-        test_copy_from_to_exact16(ValueType::FuncRef, dst, src, len);
-        test_copy_from_to_exact16(ValueType::ExternRef, dst, src, len);
+        test_copy_from_to_exact16(ValType::FuncRef, dst, src, len);
+        test_copy_from_to_exact16(ValType::ExternRef, dst, src, len);
     }
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
@@ -552,7 +552,7 @@ fn copy_from_to_exact16() {
     }
 }
 
-fn test_copy_from_to_exact(ty: ValueType, dst: u32, src: u32, len: u32) {
+fn test_copy_from_to_exact(ty: ValType, dst: u32, src: u32, len: u32) {
     testcase_copy_from_to_exact(ty, dst, src, len)
         .expect_func(
             ExpectedFunc::new([
@@ -574,8 +574,8 @@ fn test_copy_from_to_exact(ty: ValueType, dst: u32, src: u32, len: u32) {
 #[cfg_attr(miri, ignore)]
 fn copy_from_to_exact() {
     fn test_for(dst: u32, src: u32, len: u32) {
-        test_copy_from_to_exact(ValueType::FuncRef, dst, src, len);
-        test_copy_from_to_exact(ValueType::ExternRef, dst, src, len);
+        test_copy_from_to_exact(ValType::FuncRef, dst, src, len);
+        test_copy_from_to_exact(ValType::ExternRef, dst, src, len);
     }
     let values = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
     for dst in values {

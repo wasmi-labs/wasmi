@@ -94,7 +94,7 @@ macro_rules! signed_trunc_tests {
                 #[test] #[cfg_attr(miri, ignore)]
                 fn imm_ok() {
                     fn consteval_ok(input: $input_ty) -> $output_ty {
-                        <$output_ty>::from(UntypedValue::from(input).$name().expect("testcase expects Ok result"))
+                        <$output_ty>::from(UntypedVal::from(input).$name().expect("testcase expects Ok result"))
                     }
 
                     conversion_imm::<$input_ty, $output_ty>(OP, 0.0, consteval_ok);
@@ -106,7 +106,7 @@ macro_rules! signed_trunc_tests {
                 #[test] #[cfg_attr(miri, ignore)]
                 fn imm_err() {
                     fn consteval_err(input: $input_ty) -> TrapCode {
-                        UntypedValue::from(input).$name().expect_err("testcase expects Err result")
+                        UntypedVal::from(input).$name().expect_err("testcase expects Err result")
                     }
 
                     fallible_conversion_imm_err::<$input_ty, $output_ty>(OP, <$input_ty>::NAN, consteval_err);
@@ -143,7 +143,7 @@ macro_rules! unsigned_trunc_tests {
                 #[test] #[cfg_attr(miri, ignore)]
                 fn imm_ok() {
                     fn consteval_ok(input: $input_ty) -> $output_ty {
-                        <$output_ty>::from(UntypedValue::from(input).$name().expect("testcase expects Ok result"))
+                        <$output_ty>::from(UntypedVal::from(input).$name().expect("testcase expects Ok result"))
                     }
 
                     conversion_imm::<$input_ty, $output_ty>(OP, 0.0, consteval_ok);
@@ -154,7 +154,7 @@ macro_rules! unsigned_trunc_tests {
                 #[test] #[cfg_attr(miri, ignore)]
                 fn imm_err() {
                     fn consteval_err(input: $input_ty) -> TrapCode {
-                        UntypedValue::from(input).$name().expect_err("testcase expects Err result")
+                        UntypedVal::from(input).$name().expect_err("testcase expects Err result")
                     }
 
                     fallible_conversion_imm_err::<$input_ty, $output_ty>(OP, -42.5, consteval_err);
@@ -192,7 +192,7 @@ macro_rules! trunc_sat_tests {
                 #[test] #[cfg_attr(miri, ignore)]
                 fn imm() {
                     fn consteval(input: $input_ty) -> $output_ty {
-                        <$output_ty>::from(UntypedValue::$name(input.into()))
+                        <$output_ty>::from(UntypedVal::$name(input.into()))
                     }
 
                     conversion_imm::<$input_ty, $output_ty>(OP, 0.0, consteval);
@@ -236,7 +236,7 @@ macro_rules! convert_tests {
                 #[test] #[cfg_attr(miri, ignore)]
                 fn imm() {
                     fn consteval(input: $input_ty) -> $output_ty {
-                        <$output_ty>::from(UntypedValue::$name(input.into()))
+                        <$output_ty>::from(UntypedVal::$name(input.into()))
                     }
 
                     conversion_imm::<$input_ty, $output_ty>(OP, 0, consteval);
@@ -274,7 +274,7 @@ mod f32_demote_f64 {
     #[cfg_attr(miri, ignore)]
     fn imm() {
         fn consteval(input: f64) -> f32 {
-            f32::from(UntypedValue::from(input).f32_demote_f64())
+            f32::from(UntypedVal::from(input).f32_demote_f64())
         }
 
         conversion_imm::<f64, f32>(OP, 0.0, consteval);
@@ -300,7 +300,7 @@ mod f64_promote_f32 {
     #[cfg_attr(miri, ignore)]
     fn imm() {
         fn consteval(input: f32) -> f64 {
-            f64::from(UntypedValue::from(input).f64_promote_f32())
+            f64::from(UntypedVal::from(input).f64_promote_f32())
         }
 
         conversion_imm::<f32, f64>(OP, 0.0, consteval);
@@ -327,7 +327,7 @@ macro_rules! iN_reinterpret_fN_tests {
                 #[test] #[cfg_attr(miri, ignore)]
                 fn imm() {
                     fn consteval(input: $input_ty) -> $output_ty {
-                        <$output_ty>::from(UntypedValue::from(input))
+                        <$output_ty>::from(UntypedVal::from(input))
                     }
 
                     conversion_imm::<$input_ty, $output_ty>(OP, 0.0, consteval);
@@ -361,7 +361,7 @@ macro_rules! fN_reinterpret_iN_tests {
                 #[test] #[cfg_attr(miri, ignore)]
                 fn imm() {
                     fn consteval(input: $input_ty) -> $output_ty {
-                        <$output_ty>::from(UntypedValue::from(input))
+                        <$output_ty>::from(UntypedVal::from(input))
                     }
 
                     conversion_imm::<$input_ty, $output_ty>(OP, 0, consteval);

@@ -1,4 +1,4 @@
-use crate::{core::ValueType, Value};
+use crate::{core::ValType, Val};
 use core::{
     fmt,
     fmt::Display,
@@ -67,11 +67,11 @@ macro_rules! impl_display_for_float {
 impl_display_for_float!(f32);
 impl_display_for_float!(f64);
 
-/// Wasm [`Display`] wrapper for [`ValueType`].
-pub struct DisplayValueType(ValueType);
+/// Wasm [`Display`] wrapper for [`ValType`].
+pub struct DisplayValueType(ValType);
 
-impl From<ValueType> for DisplayValueType {
-    fn from(ty: ValueType) -> Self {
+impl From<ValType> for DisplayValueType {
+    fn from(ty: ValType) -> Self {
         Self(ty)
     }
 }
@@ -79,21 +79,21 @@ impl From<ValueType> for DisplayValueType {
 impl Display for DisplayValueType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.0 {
-            ValueType::I64 => write!(f, "i64"),
-            ValueType::I32 => write!(f, "i32"),
-            ValueType::F32 => write!(f, "f32"),
-            ValueType::F64 => write!(f, "f64"),
-            ValueType::FuncRef => write!(f, "funcref"),
-            ValueType::ExternRef => write!(f, "externref"),
+            ValType::I64 => write!(f, "i64"),
+            ValType::I32 => write!(f, "i32"),
+            ValType::F32 => write!(f, "f32"),
+            ValType::F64 => write!(f, "f64"),
+            ValType::FuncRef => write!(f, "funcref"),
+            ValType::ExternRef => write!(f, "externref"),
         }
     }
 }
 
-/// Wasm [`Display`] wrapper for [`Value`].
-pub struct DisplayValue(Value);
+/// Wasm [`Display`] wrapper for [`Val`].
+pub struct DisplayValue(Val);
 
-impl From<Value> for DisplayValue {
-    fn from(ty: Value) -> Self {
+impl From<Val> for DisplayValue {
+    fn from(ty: Val) -> Self {
         Self(ty)
     }
 }
@@ -101,17 +101,17 @@ impl From<Value> for DisplayValue {
 impl Display for DisplayValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.0 {
-            Value::I64(value) => write!(f, "{value}"),
-            Value::I32(value) => write!(f, "{value}"),
-            Value::F32(value) => write!(f, "{}", DisplayWasm::from(f32::from(value))),
-            Value::F64(value) => write!(f, "{}", DisplayWasm::from(f64::from(value))),
-            Value::FuncRef(value) => {
+            Val::I64(value) => write!(f, "{value}"),
+            Val::I32(value) => write!(f, "{value}"),
+            Val::F32(value) => write!(f, "{}", DisplayWasm::from(f32::from(value))),
+            Val::F64(value) => write!(f, "{}", DisplayWasm::from(f64::from(value))),
+            Val::FuncRef(value) => {
                 if value.is_null() {
                     return write!(f, "null");
                 }
                 unimplemented!("wasm funcref types other than null cannot be displayed")
             }
-            Value::ExternRef(value) => {
+            Val::ExternRef(value) => {
                 if value.is_null() {
                     return write!(f, "null");
                 }

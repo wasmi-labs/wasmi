@@ -1,4 +1,4 @@
-use crate::{Engine, Func, Linker, Module, Store, Value};
+use crate::{Engine, Func, Linker, Module, Store, Val};
 use std::vec::Vec;
 
 /// Converts the given `.wat` into `.wasm`.
@@ -26,7 +26,7 @@ fn setup_test(wat: &str) -> (Store<()>, Func) {
 fn many_params() {
     let wat = include_str!("wat/many_params.wat");
     let (mut store, func) = setup_test(wat);
-    func.call(&mut store, &[0; 150].map(Value::I32), &mut [])
+    func.call(&mut store, &[0; 150].map(Val::I32), &mut [])
         .unwrap();
 }
 
@@ -34,10 +34,10 @@ fn many_params() {
 fn many_results() {
     let wat = include_str!("wat/many_results.wat");
     let (mut store, func) = setup_test(wat);
-    let mut results = [0; 150].map(Value::I32);
+    let mut results = [0; 150].map(Val::I32);
     func.call(&mut store, &[], &mut results).unwrap();
     for (i, result) in results.iter().enumerate() {
-        let &Value::I32(result) = result else {
+        let &Val::I32(result) = result else {
             panic!("unexpected result type at index {i}: {result:?}");
         };
         assert!(result as usize == i % 10);
