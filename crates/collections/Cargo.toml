@@ -1,6 +1,6 @@
 [package]
 name = "wasmi_collections"
-version = "0.1.0"
+version.workspace = true
 rust-version.workspace = true
 documentation = "https://docs.rs/wasmi_collections/"
 description = "Specialized data structures for the Wasmi interpreter"
