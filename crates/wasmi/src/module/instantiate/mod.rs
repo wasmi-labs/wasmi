@@ -7,7 +7,7 @@ mod tests;
 pub use self::{error::InstantiationError, pre::InstancePre};
 use super::{element::ElementSegmentKind, export, ConstExpr, DataSegmentKind, Module};
 use crate::{
-    core::UntypedValue,
+    core::UntypedVal,
     func::WasmFuncEntity,
     memory::{DataSegment, MemoryError},
     value::WithType,
@@ -25,7 +25,7 @@ use crate::{
     InstanceEntityBuilder,
     Memory,
     Table,
-    Value,
+    Val,
 };
 
 impl Module {
@@ -196,7 +196,7 @@ impl Module {
             .store
             .check_new_tables_limit(self.len_tables())?;
         for table_type in self.internal_tables().copied() {
-            let init = Value::default(table_type.element());
+            let init = Val::default(table_type.element());
             let table = Table::new(context.as_context_mut(), table_type, init)?;
             builder.push_table(table);
         }
@@ -252,7 +252,7 @@ impl Module {
         context: impl AsContext,
         builder: &InstanceEntityBuilder,
         init_expr: &ConstExpr,
-    ) -> UntypedValue {
+    ) -> UntypedVal {
         init_expr
             .eval_with_context(
                 |global_index| builder.get_global(global_index).get(&context),

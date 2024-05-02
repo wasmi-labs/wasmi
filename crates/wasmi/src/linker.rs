@@ -17,7 +17,7 @@ use crate::{
     MemoryType,
     Module,
     TableType,
-    Value,
+    Val,
 };
 use core::{
     borrow::Borrow,
@@ -514,7 +514,7 @@ impl<T> Definition<T> {
     ///   defined host function.
     /// - This unifies handling of [`Definition::Extern(Extern::Func)`] and
     ///   [`Definition::HostFunc`].
-    pub fn as_func(&self, mut ctx: impl AsContextMut<UserState = T>) -> Option<Func> {
+    pub fn as_func(&self, mut ctx: impl AsContextMut<Data = T>) -> Option<Func> {
         match self {
             Definition::Extern(Extern::Func(func)) => Some(*func),
             Definition::HostFunc(host_func) => {
@@ -643,10 +643,7 @@ impl<T> Linker<T> {
         module: &str,
         name: &str,
         ty: FuncType,
-        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Error>
-            + Send
-            + Sync
-            + 'static,
+        func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<(), Error> + Send + Sync + 'static,
     ) -> Result<&mut Self, LinkerError> {
         self.ensure_undefined(module, name)?;
         let func = HostFuncTrampolineEntity::new(ty, func);
@@ -699,7 +696,7 @@ impl<T> Linker<T> {
     /// If the [`Engine`] of this [`Linker`] and the [`Engine`] of `context` are not the same.
     pub fn get(
         &self,
-        context: impl AsContext<UserState = T>,
+        context: impl AsContext<Data = T>,
         module: &str,
         name: &str,
     ) -> Option<Extern> {
@@ -718,7 +715,7 @@ impl<T> Linker<T> {
     /// If the [`Engine`] of this [`Linker`] and the [`Engine`] of `context` are not the same.
     fn get_definition(
         &self,
-        context: impl AsContext<UserState = T>,
+        context: impl AsContext<Data = T>,
         module: &str,
         name: &str,
     ) -> Option<&Definition<T>> {
@@ -746,7 +743,7 @@ impl<T> Linker<T> {
     /// - If any imported item does not satisfy its type requirements.
     pub fn instantiate(
         &self,
-        mut context: impl AsContextMut<UserState = T>,
+        mut context: impl AsContextMut<Data = T>,
         module: &Module,
     ) -> Result<InstancePre, Error> {
         assert!(Engine::same(self.engine(), context.as_context().engine()));
@@ -770,7 +767,7 @@ impl<T> Linker<T> {
     /// If the imported item does not satisfy constraints set by the [`Module`].
     fn process_import(
         &self,
-        mut context: impl AsContextMut<UserState = T>,
+        mut context: impl AsContextMut<Data = T>,
         import: ImportType,
     ) -> Result<Extern, Error> {
         assert!(Engine::same(self.engine(), context.as_context().engine()));
@@ -925,10 +922,7 @@ impl<T> LinkerBuilder<state::Constructing, T> {
         module: &str,
         name: &str,
         ty: FuncType,
-        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Error>
-            + Send
-            + Sync
-            + 'static,
+        func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<(), Error> + Send + Sync + 'static,
     ) -> Result<&mut Self, LinkerError> {
         self.inner_mut().func_new(module, name, ty, func)?;
         Ok(self)
@@ -1054,10 +1048,7 @@ impl<T> LinkerInner<T> {
         module: &str,
         name: &str,
         ty: FuncType,
-        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Error>
-            + Send
-            + Sync
-            + 'static,
+        func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<(), Error> + Send + Sync + 'static,
     ) -> Result<&mut Self, LinkerError> {
         let func = HostFuncTrampolineEntity::new(ty, func);
         let key = self.new_import_key(module, name);
@@ -1121,7 +1112,7 @@ impl<T> LinkerInner<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::ValueType;
+    use crate::core::ValType;
 
     use super::*;
     use crate::Store;
@@ -1139,9 +1130,9 @@ mod tests {
             .func_new(
                 "host",
                 "get_a",
-                FuncType::new([], [ValueType::I32]),
-                |ctx: Caller<HostState>, _params: &[Value], results: &mut [Value]| {
-                    results[0] = Value::from(ctx.data().a);
+                FuncType::new([], [ValType::I32]),
+                |ctx: Caller<HostState>, _params: &[Val], results: &mut [Val]| {
+                    results[0] = Val::from(ctx.data().a);
                     Ok(())
                 },
             )
@@ -1150,8 +1141,8 @@ mod tests {
             .func_new(
                 "host",
                 "set_a",
-                FuncType::new([ValueType::I32], []),
-                |mut ctx: Caller<HostState>, params: &[Value], _results: &mut [Value]| {
+                FuncType::new([ValType::I32], []),
+                |mut ctx: Caller<HostState>, params: &[Val], _results: &mut [Val]| {
                     ctx.data_mut().a = params[0].i32().unwrap();
                     Ok(())
                 },

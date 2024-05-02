@@ -1,7 +1,7 @@
 pub use self::call::CallKind;
 use self::{call::CallOutcome, return_::ReturnOutcome};
 use crate::{
-    core::{TrapCode, UntypedValue},
+    core::{TrapCode, UntypedVal},
     engine::{
         bytecode::{
             AnyConst32,
@@ -863,7 +863,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Returns the [`Register`] value.
-    fn get_register(&self, register: Register) -> UntypedValue {
+    fn get_register(&self, register: Register) -> UntypedVal {
         // Safety: TODO
         unsafe { self.sp.get(register) }
     }
@@ -871,13 +871,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Returns the [`Register`] value.
     fn get_register_as<T>(&self, register: Register) -> T
     where
-        T: From<UntypedValue>,
+        T: From<UntypedVal>,
     {
         T::from(self.get_register(register))
     }
 
     /// Sets the [`Register`] value to `value`.
-    fn set_register(&mut self, register: Register, value: impl Into<UntypedValue>) {
+    fn set_register(&mut self, register: Register, value: impl Into<UntypedVal>) {
         // Safety: TODO
         unsafe { self.sp.set(register, value.into()) };
     }
@@ -988,7 +988,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic unary [`Instruction`].
-    fn execute_unary(&mut self, instr: UnaryInstr, op: fn(UntypedValue) -> UntypedValue) {
+    fn execute_unary(&mut self, instr: UnaryInstr, op: fn(UntypedVal) -> UntypedVal) {
         let value = self.get_register(instr.input);
         self.set_register(instr.result, op(value));
         self.next_instr();
@@ -998,7 +998,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn try_execute_unary(
         &mut self,
         instr: UnaryInstr,
-        op: fn(UntypedValue) -> Result<UntypedValue, TrapCode>,
+        op: fn(UntypedVal) -> Result<UntypedVal, TrapCode>,
     ) -> Result<(), Error> {
         let value = self.get_register(instr.input);
         self.set_register(instr.result, op(value)?);
@@ -1006,11 +1006,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic binary [`Instruction`].
-    fn execute_binary(
-        &mut self,
-        instr: BinInstr,
-        op: fn(UntypedValue, UntypedValue) -> UntypedValue,
-    ) {
+    fn execute_binary(&mut self, instr: BinInstr, op: fn(UntypedVal, UntypedVal) -> UntypedVal) {
         let lhs = self.get_register(instr.lhs);
         let rhs = self.get_register(instr.rhs);
         self.set_register(instr.result, op(lhs, rhs));
@@ -1021,13 +1017,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn execute_binary_imm16<T>(
         &mut self,
         instr: BinInstrImm16<T>,
-        op: fn(UntypedValue, UntypedValue) -> UntypedValue,
+        op: fn(UntypedVal, UntypedVal) -> UntypedVal,
     ) where
         T: From<Const16<T>>,
-        UntypedValue: From<T>,
+        UntypedVal: From<T>,
     {
         let lhs = self.get_register(instr.reg_in);
-        let rhs = UntypedValue::from(<T>::from(instr.imm_in));
+        let rhs = UntypedVal::from(<T>::from(instr.imm_in));
         self.set_register(instr.result, op(lhs, rhs));
         self.next_instr();
     }
@@ -1036,12 +1032,12 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn execute_binary_imm16_rev<T>(
         &mut self,
         instr: BinInstrImm16<T>,
-        op: fn(UntypedValue, UntypedValue) -> UntypedValue,
+        op: fn(UntypedVal, UntypedVal) -> UntypedVal,
     ) where
         T: From<Const16<T>>,
-        UntypedValue: From<T>,
+        UntypedVal: From<T>,
     {
-        let lhs = UntypedValue::from(<T>::from(instr.imm_in));
+        let lhs = UntypedVal::from(<T>::from(instr.imm_in));
         let rhs = self.get_register(instr.reg_in);
         self.set_register(instr.result, op(lhs, rhs));
         self.next_instr();
@@ -1051,7 +1047,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn try_execute_binary(
         &mut self,
         instr: BinInstr,
-        op: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
+        op: fn(UntypedVal, UntypedVal) -> Result<UntypedVal, TrapCode>,
     ) -> Result<(), Error> {
         let lhs = self.get_register(instr.lhs);
         let rhs = self.get_register(instr.rhs);
@@ -1063,7 +1059,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn try_execute_divrem_imm16<NonZeroT>(
         &mut self,
         instr: BinInstrImm16<NonZeroT>,
-        op: fn(UntypedValue, NonZeroT) -> Result<UntypedValue, Error>,
+        op: fn(UntypedVal, NonZeroT) -> Result<UntypedVal, Error>,
     ) -> Result<(), Error>
     where
         NonZeroT: From<Const16<NonZeroT>>,
@@ -1078,7 +1074,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn execute_divrem_imm16<NonZeroT>(
         &mut self,
         instr: BinInstrImm16<NonZeroT>,
-        op: fn(UntypedValue, NonZeroT) -> UntypedValue,
+        op: fn(UntypedVal, NonZeroT) -> UntypedVal,
     ) where
         NonZeroT: From<Const16<NonZeroT>>,
     {
@@ -1092,13 +1088,13 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn try_execute_binary_imm16_rev<T>(
         &mut self,
         instr: BinInstrImm16<T>,
-        op: fn(UntypedValue, UntypedValue) -> Result<UntypedValue, TrapCode>,
+        op: fn(UntypedVal, UntypedVal) -> Result<UntypedVal, TrapCode>,
     ) -> Result<(), Error>
     where
         T: From<Const16<T>>,
-        UntypedValue: From<T>,
+        UntypedVal: From<T>,
     {
-        let lhs = UntypedValue::from(<T>::from(instr.imm_in));
+        let lhs = UntypedVal::from(<T>::from(instr.imm_in));
         let rhs = self.get_register(instr.reg_in);
         self.set_register(instr.result, op(lhs, rhs)?);
         self.try_next_instr()
@@ -1145,28 +1141,28 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 }
 
-/// Extension method for [`UntypedValue`] required by the [`Executor`].
+/// Extension method for [`UntypedVal`] required by the [`Executor`].
 trait UntypedValueExt {
     /// Executes a fused `i32.and` + `i32.eqz` instruction.
-    fn i32_and_eqz(x: UntypedValue, y: UntypedValue) -> UntypedValue;
+    fn i32_and_eqz(x: UntypedVal, y: UntypedVal) -> UntypedVal;
 
     /// Executes a fused `i32.or` + `i32.eqz` instruction.
-    fn i32_or_eqz(x: UntypedValue, y: UntypedValue) -> UntypedValue;
+    fn i32_or_eqz(x: UntypedVal, y: UntypedVal) -> UntypedVal;
 
     /// Executes a fused `i32.xor` + `i32.eqz` instruction.
-    fn i32_xor_eqz(x: UntypedValue, y: UntypedValue) -> UntypedValue;
+    fn i32_xor_eqz(x: UntypedVal, y: UntypedVal) -> UntypedVal;
 }
 
-impl UntypedValueExt for UntypedValue {
-    fn i32_and_eqz(x: UntypedValue, y: UntypedValue) -> UntypedValue {
-        (i32::from(UntypedValue::i32_and(x, y)) == 0).into()
+impl UntypedValueExt for UntypedVal {
+    fn i32_and_eqz(x: UntypedVal, y: UntypedVal) -> UntypedVal {
+        (i32::from(UntypedVal::i32_and(x, y)) == 0).into()
     }
 
-    fn i32_or_eqz(x: UntypedValue, y: UntypedValue) -> UntypedValue {
-        (i32::from(UntypedValue::i32_or(x, y)) == 0).into()
+    fn i32_or_eqz(x: UntypedVal, y: UntypedVal) -> UntypedVal {
+        (i32::from(UntypedVal::i32_or(x, y)) == 0).into()
     }
 
-    fn i32_xor_eqz(x: UntypedValue, y: UntypedValue) -> UntypedValue {
-        (i32::from(UntypedValue::i32_xor(x, y)) == 0).into()
+    fn i32_xor_eqz(x: UntypedVal, y: UntypedVal) -> UntypedVal {
+        (i32::from(UntypedVal::i32_xor(x, y)) == 0).into()
     }
 }

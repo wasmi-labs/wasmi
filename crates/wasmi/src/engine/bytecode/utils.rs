@@ -1,6 +1,6 @@
 use super::{Const16, Const32};
 use crate::{
-    core::UntypedValue,
+    core::UntypedVal,
     engine::{Instr, TranslationError},
     Error,
 };
@@ -904,10 +904,10 @@ impl ComparatorOffsetParam {
         Some(Self { cmp, offset })
     }
 
-    /// Creates a new [`ComparatorOffsetParam`] from the given [`UntypedValue`].
+    /// Creates a new [`ComparatorOffsetParam`] from the given [`UntypedVal`].
     ///
-    /// Returns `None` if the [`UntypedValue`] has an invalid encoding.
-    pub fn from_untyped(value: UntypedValue) -> Option<Self> {
+    /// Returns `None` if the [`UntypedVal`] has an invalid encoding.
+    pub fn from_untyped(value: UntypedVal) -> Option<Self> {
         Self::from_u64(u64::from(value))
     }
 
@@ -919,7 +919,7 @@ impl ComparatorOffsetParam {
     }
 }
 
-impl From<ComparatorOffsetParam> for UntypedValue {
+impl From<ComparatorOffsetParam> for UntypedVal {
     fn from(params: ComparatorOffsetParam) -> Self {
         Self::from(params.as_u64())
     }

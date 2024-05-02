@@ -1,6 +1,6 @@
 use super::Executor;
 use crate::{
-    core::UntypedValue,
+    core::UntypedVal,
     engine::{
         bytecode::{AnyConst32, Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
         executor::stack::FrameRegisters,
@@ -87,7 +87,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     fn execute_return_value<T>(
         &mut self,
         value: T,
-        f: fn(&Self, T) -> UntypedValue,
+        f: fn(&Self, T) -> UntypedVal,
     ) -> ReturnOutcome {
         let (mut caller_sp, results) = self.return_caller_results();
         let value = f(self, value);

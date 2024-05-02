@@ -1,9 +1,9 @@
 use super::{AsContext, AsContextMut, Stored};
 use crate::{
     collections::arena::ArenaIndex,
-    core::{UntypedValue, ValueType},
+    core::{UntypedVal, ValType},
     value::WithType,
-    Value,
+    Val,
 };
 use core::{fmt, fmt::Display, ptr::NonNull};
 
@@ -33,9 +33,9 @@ pub enum GlobalError {
     /// Occurs when trying writing a value with mismatching type to a global variable.
     TypeMismatch {
         /// The type of the global variable.
-        expected: ValueType,
+        expected: ValType,
         /// The type of the new value that mismatches the type of the global variable.
-        encountered: ValueType,
+        encountered: ValType,
     },
     /// Occurs when a global type does not satisfy the constraints of another.
     UnsatisfyingGlobalType {
@@ -99,22 +99,22 @@ impl Mutability {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct GlobalType {
     /// The value type of the global variable.
-    content: ValueType,
+    content: ValType,
     /// The mutability of the global variable.
     mutability: Mutability,
 }
 
 impl GlobalType {
-    /// Creates a new [`GlobalType`] from the given [`ValueType`] and [`Mutability`].
-    pub fn new(content: ValueType, mutability: Mutability) -> Self {
+    /// Creates a new [`GlobalType`] from the given [`ValType`] and [`Mutability`].
+    pub fn new(content: ValType, mutability: Mutability) -> Self {
         Self {
             content,
             mutability,
         }
     }
 
-    /// Returns the [`ValueType`] of the global variable.
-    pub fn content(&self) -> ValueType {
+    /// Returns the [`ValType`] of the global variable.
+    pub fn content(&self) -> ValType {
         self.content
     }
 
@@ -144,14 +144,14 @@ impl GlobalType {
 #[derive(Debug)]
 pub struct GlobalEntity {
     /// The current value of the global variable.
-    value: UntypedValue,
+    value: UntypedVal,
     /// The type of the global variable.
     ty: GlobalType,
 }
 
 impl GlobalEntity {
     /// Creates a new global entity with the given initial value and mutability.
-    pub fn new(initial_value: Value, mutability: Mutability) -> Self {
+    pub fn new(initial_value: Val, mutability: Mutability) -> Self {
         Self {
             ty: GlobalType::new(initial_value.ty(), mutability),
             value: initial_value.into(),
@@ -169,7 +169,7 @@ impl GlobalEntity {
     ///
     /// - If the global variable is immutable.
     /// - If there is a type mismatch between the global variable and the new value.
-    pub fn set(&mut self, new_value: Value) -> Result<(), GlobalError> {
+    pub fn set(&mut self, new_value: Val) -> Result<(), GlobalError> {
         if !self.ty().mutability().is_mut() {
             return Err(GlobalError::ImmutableWrite);
         }
@@ -191,22 +191,22 @@ impl GlobalEntity {
     /// for efficient `global.set` through the interpreter which is
     /// safe since the interpreter only handles validated Wasm code
     /// where the checks in [`Global::set`] cannot fail.
-    pub(crate) fn set_untyped(&mut self, new_value: UntypedValue) {
+    pub(crate) fn set_untyped(&mut self, new_value: UntypedVal) {
         self.value = new_value;
     }
 
     /// Returns the current value of the global variable.
-    pub fn get(&self) -> Value {
+    pub fn get(&self) -> Val {
         self.get_untyped().with_type(self.ty().content())
     }
 
     /// Returns the current untyped value of the global variable.
-    pub(crate) fn get_untyped(&self) -> UntypedValue {
+    pub(crate) fn get_untyped(&self) -> UntypedVal {
         self.value
     }
 
     /// Returns a pointer to the untyped value of the global variable.
-    pub(crate) fn get_untyped_ptr(&mut self) -> NonNull<UntypedValue> {
+    pub(crate) fn get_untyped_ptr(&mut self) -> NonNull<UntypedVal> {
         NonNull::from(&mut self.value)
     }
 }
@@ -234,7 +234,7 @@ impl Global {
     }
 
     /// Creates a new global variable to the store.
-    pub fn new(mut ctx: impl AsContextMut, initial_value: Value, mutability: Mutability) -> Self {
+    pub fn new(mut ctx: impl AsContextMut, initial_value: Val, mutability: Mutability) -> Self {
         ctx.as_context_mut()
             .store
             .inner
@@ -256,7 +256,7 @@ impl Global {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Global`].
-    pub fn set(&self, mut ctx: impl AsContextMut, new_value: Value) -> Result<(), GlobalError> {
+    pub fn set(&self, mut ctx: impl AsContextMut, new_value: Val) -> Result<(), GlobalError> {
         ctx.as_context_mut()
             .store
             .inner
@@ -269,7 +269,7 @@ impl Global {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Global`].
-    pub fn get(&self, ctx: impl AsContext) -> Value {
+    pub fn get(&self, ctx: impl AsContext) -> Val {
         ctx.as_context().store.inner.resolve_global(self).get()
     }
 }

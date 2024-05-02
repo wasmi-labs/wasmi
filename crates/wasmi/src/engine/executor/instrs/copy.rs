@@ -1,6 +1,6 @@
 use super::Executor;
 use crate::{
-    core::UntypedValue,
+    core::UntypedVal,
     engine::bytecode::{AnyConst32, Const32, Instruction, Register, RegisterSpan},
 };
 use core::slice;
@@ -12,7 +12,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         &mut self,
         result: Register,
         value: T,
-        f: fn(&mut Self, T) -> UntypedValue,
+        f: fn(&mut Self, T) -> UntypedVal,
     ) {
         let value = f(self, value);
         self.set_register(result, value);
@@ -40,25 +40,19 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes an [`Instruction::CopyImm32`].
     #[inline(always)]
     pub fn execute_copy_imm32(&mut self, result: Register, value: AnyConst32) {
-        self.execute_copy_impl(result, value, |_, value| {
-            UntypedValue::from(u32::from(value))
-        })
+        self.execute_copy_impl(result, value, |_, value| UntypedVal::from(u32::from(value)))
     }
 
     /// Executes an [`Instruction::CopyI64Imm32`].
     #[inline(always)]
     pub fn execute_copy_i64imm32(&mut self, result: Register, value: Const32<i64>) {
-        self.execute_copy_impl(result, value, |_, value| {
-            UntypedValue::from(i64::from(value))
-        })
+        self.execute_copy_impl(result, value, |_, value| UntypedVal::from(i64::from(value)))
     }
 
     /// Executes an [`Instruction::CopyF64Imm32`].
     #[inline(always)]
     pub fn execute_copy_f64imm32(&mut self, result: Register, value: Const32<f64>) {
-        self.execute_copy_impl(result, value, |_, value| {
-            UntypedValue::from(f64::from(value))
-        })
+        self.execute_copy_impl(result, value, |_, value| UntypedVal::from(f64::from(value)))
     }
 
     /// Executes an [`Instruction::CopySpan`].
@@ -73,7 +67,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     pub fn execute_copy_span(&mut self, results: RegisterSpan, values: RegisterSpan, len: u16) {
         let results = results.iter_u16(len);
         let values = values.iter_u16(len);
-        let mut tmp = <SmallVec<[UntypedValue; 8]>>::default();
+        let mut tmp = <SmallVec<[UntypedVal; 8]>>::default();
         tmp.extend(values.into_iter().map(|value| self.get_register(value)));
         for (result, value) in results.into_iter().zip(tmp) {
             self.set_register(result, value);
@@ -108,7 +102,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     pub fn execute_copy_many(&mut self, results: RegisterSpan, values: [Register; 2]) {
         // We need `tmp` since `values[n]` might be overwritten by previous copies.
-        let mut tmp = <SmallVec<[UntypedValue; 8]>>::default();
+        let mut tmp = <SmallVec<[UntypedVal; 8]>>::default();
         let mut ip = self.ip;
         tmp.extend(values.into_iter().map(|value| self.get_register(value)));
         ip.add(1);

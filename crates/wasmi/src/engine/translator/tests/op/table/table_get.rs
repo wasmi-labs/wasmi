@@ -1,7 +1,7 @@
 use super::*;
-use crate::core::ValueType;
+use crate::core::ValType;
 
-fn test_reg(ty: ValueType) {
+fn test_reg(ty: ValType) {
     let display_ty = DisplayValueType::from(ty);
     let wasm = format!(
         r"
@@ -25,11 +25,11 @@ fn test_reg(ty: ValueType) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg() {
-    test_reg(ValueType::FuncRef);
-    test_reg(ValueType::ExternRef);
+    test_reg(ValType::FuncRef);
+    test_reg(ValType::ExternRef);
 }
 
-fn test_imm(ty: ValueType, index: u32) {
+fn test_imm(ty: ValType, index: u32) {
     let display_ty = DisplayValueType::from(ty);
     let display_index = DisplayWasm::from(index);
     let wasm = format!(
@@ -55,8 +55,8 @@ fn test_imm(ty: ValueType, index: u32) {
 #[cfg_attr(miri, ignore)]
 fn imm() {
     fn test_for(index: u32) {
-        test_imm(ValueType::FuncRef, index);
-        test_imm(ValueType::ExternRef, index);
+        test_imm(ValType::FuncRef, index);
+        test_imm(ValType::ExternRef, index);
     }
     test_for(0);
     test_for(1);

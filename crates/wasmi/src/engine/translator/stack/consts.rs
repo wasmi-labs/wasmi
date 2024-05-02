@@ -1,5 +1,5 @@
 use super::Register;
-use crate::{core::UntypedValue, engine::TranslationError, Error};
+use crate::{core::UntypedVal, engine::TranslationError, Error};
 use core::{iter::Rev, slice::Iter as SliceIter};
 use std::{
     collections::{btree_map, BTreeMap},
@@ -16,10 +16,10 @@ use std::{
 ///   underlying constant values.
 #[derive(Debug, Default)]
 pub struct FuncLocalConsts {
-    /// Mapping from constant [`UntypedValue`] values to [`Register`] indices.
-    const2idx: BTreeMap<UntypedValue, Register>,
-    /// Mapping from [`Register`] indices to constant [`UntypedValue`] values.
-    idx2const: Vec<UntypedValue>,
+    /// Mapping from constant [`UntypedVal`] values to [`Register`] indices.
+    const2idx: BTreeMap<UntypedVal, Register>,
+    /// Mapping from [`Register`] indices to constant [`UntypedVal`] values.
+    idx2const: Vec<UntypedVal>,
     /// The [`Register`] index for the next allocated function local constant value.
     next_idx: i16,
 }
@@ -68,7 +68,7 @@ impl FuncLocalConsts {
     /// # Errors
     ///
     /// If too many constant values have been allocated for this [`FuncLocalConsts`].
-    pub fn alloc(&mut self, value: UntypedValue) -> Result<Register, Error> {
+    pub fn alloc(&mut self, value: UntypedVal) -> Result<Register, Error> {
         if self.next_idx == Self::last_index() {
             return Err(Error::from(TranslationError::TooManyFuncLocalConstValues));
         }
@@ -84,8 +84,8 @@ impl FuncLocalConsts {
         }
     }
 
-    /// Returns the function local constant [`UntypedValue`] of the [`Register`] if any.
-    pub fn get(&self, register: Register) -> Option<UntypedValue> {
+    /// Returns the function local constant [`UntypedVal`] of the [`Register`] if any.
+    pub fn get(&self, register: Register) -> Option<UntypedVal> {
         if !register.is_const() {
             return None;
         }
@@ -106,11 +106,11 @@ impl FuncLocalConsts {
 /// Iterator yielding all allocated function local constant values.
 pub struct FuncLocalConstsIter<'a> {
     /// The underlying iterator.
-    iter: Rev<SliceIter<'a, UntypedValue>>,
+    iter: Rev<SliceIter<'a, UntypedVal>>,
 }
 
 impl<'a> FuncLocalConstsIter<'a> {
-    /// Creates a new [`FuncLocalConstsIter`] from the given slice of [`UntypedValue`].
+    /// Creates a new [`FuncLocalConstsIter`] from the given slice of [`UntypedVal`].
     pub fn new(consts: &'a FuncLocalConsts) -> Self {
         // Note: we need to revert the iteration since we allocate new
         //       function local constants in reverse order of their absolute
@@ -122,7 +122,7 @@ impl<'a> FuncLocalConstsIter<'a> {
 }
 
 impl<'a> Iterator for FuncLocalConstsIter<'a> {
-    type Item = UntypedValue;
+    type Item = UntypedVal;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.iter.next().copied()

@@ -1,9 +1,9 @@
 use super::*;
 use crate::{
-    core::UntypedValue,
+    core::UntypedVal,
     engine::{
         bytecode::{BranchOffset, BranchOffset16, RegisterSpan},
-        translator::tests::wasm_type::WasmType,
+        translator::tests::wasm_type::WasmTy,
     },
 };
 use core::fmt::Display;
@@ -64,15 +64,15 @@ fn consteval_return_1() {
 fn consteval_return_1_imm() {
     fn test_for<T>(condition: bool, if_true: T, if_false: T)
     where
-        T: WasmType,
+        T: WasmTy,
         DisplayWasm<T>: Display,
     {
-        let expected: UntypedValue = match condition {
+        let expected: UntypedVal = match condition {
             true => if_true.into(),
             false => if_false.into(),
         };
         let condition = DisplayWasm::from(i32::from(condition));
-        let display_ty = DisplayValueType::from(<T as WasmType>::VALUE_TYPE);
+        let display_ty = DisplayValueType::from(<T as WasmTy>::VALUE_TYPE);
         let display_if_true = DisplayWasm::from(if_true);
         let display_if_false = DisplayWasm::from(if_false);
         let wasm = format!(
@@ -97,7 +97,7 @@ fn consteval_return_1_imm() {
     /// Run the test for both sign polarities of the `br_if` condition.
     fn test_for_both<T>(if_true: T, if_false: T)
     where
-        T: WasmType,
+        T: WasmTy,
         DisplayWasm<T>: Display,
     {
         test_for::<T>(true, if_true, if_false);
@@ -114,7 +114,7 @@ fn consteval_return_1_imm() {
 fn consteval_return_1_imm32() {
     fn test_for<T>(condition: bool, if_true: T, if_false: T)
     where
-        T: WasmType + Into<AnyConst32>,
+        T: WasmTy + Into<AnyConst32>,
         DisplayWasm<T>: Display,
     {
         let expected: AnyConst32 = match condition {
@@ -122,7 +122,7 @@ fn consteval_return_1_imm32() {
             false => if_false.into(),
         };
         let condition = DisplayWasm::from(i32::from(condition));
-        let display_ty = DisplayValueType::from(<T as WasmType>::VALUE_TYPE);
+        let display_ty = DisplayValueType::from(<T as WasmTy>::VALUE_TYPE);
         let display_if_true = DisplayWasm::from(if_true);
         let display_if_false = DisplayWasm::from(if_false);
         let wasm = format!(
@@ -144,7 +144,7 @@ fn consteval_return_1_imm32() {
     /// Run the test for both sign polarities of the `br_if` condition.
     fn test_for_both<T>(if_true: T, if_false: T)
     where
-        T: WasmType + Into<AnyConst32>,
+        T: WasmTy + Into<AnyConst32>,
         DisplayWasm<T>: Display,
     {
         test_for::<T>(true, if_true, if_false);
@@ -319,10 +319,10 @@ fn return_if_results_1() {
 fn return_if_results_1_imm() {
     fn test_for<T>(returned_value: T)
     where
-        T: WasmType,
+        T: WasmTy,
         DisplayWasm<T>: Display,
     {
-        let display_ty = DisplayValueType::from(<T as WasmType>::VALUE_TYPE);
+        let display_ty = DisplayValueType::from(<T as WasmTy>::VALUE_TYPE);
         let display_value = DisplayWasm::from(returned_value);
         let wasm = format!(
             r"
@@ -363,10 +363,10 @@ fn return_if_results_1_imm() {
 fn return_if_results_1_imm32() {
     fn test_for<T>(returned_value: T)
     where
-        T: WasmType + Into<AnyConst32>,
+        T: WasmTy + Into<AnyConst32>,
         DisplayWasm<T>: Display,
     {
-        let display_ty = DisplayValueType::from(<T as WasmType>::VALUE_TYPE);
+        let display_ty = DisplayValueType::from(<T as WasmTy>::VALUE_TYPE);
         let display_value = DisplayWasm::from(returned_value);
         let wasm = format!(
             r"

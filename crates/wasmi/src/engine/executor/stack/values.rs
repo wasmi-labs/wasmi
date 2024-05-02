@@ -1,6 +1,6 @@
 use super::err_stack_overflow;
 use crate::{
-    core::{TrapCode, UntypedValue},
+    core::{TrapCode, UntypedVal},
     engine::{bytecode::Register, CompiledFuncEntity},
 };
 use core::{fmt, fmt::Debug, iter, mem, ptr};
@@ -13,7 +13,7 @@ use crate::engine::CompiledFunc;
 
 pub struct ValueStack {
     /// The values on the [`ValueStack`].
-    values: Vec<UntypedValue>,
+    values: Vec<UntypedVal>,
     /// Index of the first free value in the `values` buffer.
     sp: usize,
     /// Maximal possible `sp` value.
@@ -50,7 +50,7 @@ impl Eq for ValueStack {}
 
 impl Default for ValueStack {
     fn default() -> Self {
-        const REGISTER_SIZE: usize = mem::size_of::<UntypedValue>();
+        const REGISTER_SIZE: usize = mem::size_of::<UntypedVal>();
         Self::new(
             Self::DEFAULT_MIN_HEIGHT / REGISTER_SIZE,
             Self::DEFAULT_MAX_HEIGHT / REGISTER_SIZE,
@@ -75,7 +75,7 @@ impl ValueStack {
             "initial value stack length is greater than maximum value stack length",
         );
         Self {
-            values: vec![UntypedValue::default(); initial_len],
+            values: vec![UntypedVal::default(); initial_len],
             sp: 0,
             max_sp: maximum_len,
         }
@@ -163,7 +163,7 @@ impl ValueStack {
             // the current value stack length and add the additional flat amount
             // on top. This avoids too many frequent reallocations.
             self.values
-                .extend(iter::repeat(UntypedValue::default()).take(new_len));
+                .extend(iter::repeat(UntypedVal::default()).take(new_len));
         }
         Ok(())
     }
@@ -186,7 +186,7 @@ impl ValueStack {
             .get_mut(self.sp..)
             .and_then(|slice| slice.get_mut(..amount))
             .unwrap_or_else(|| panic!("did not reserve enough value stack space"));
-        cells.fill(UntypedValue::default());
+        cells.fill(UntypedVal::default());
         self.sp += amount;
         ValueStackOffset(old_sp)
     }
@@ -199,7 +199,7 @@ impl ValueStack {
     /// # Panics
     ///
     /// If the value stack cannot fit `additional` stack values.
-    pub fn extend_slice(&mut self, values: &[UntypedValue]) -> ValueStackOffset {
+    pub fn extend_slice(&mut self, values: &[UntypedVal]) -> ValueStackOffset {
         if values.is_empty() {
             return ValueStackOffset(self.sp);
         }
@@ -270,7 +270,7 @@ impl ValueStack {
     /// `values` required to be stored on the [`ValueStack`].
     pub unsafe fn fill_at<I>(&mut self, offset: impl Into<ValueStackOffset>, values: I)
     where
-        I: IntoIterator<Item = UntypedValue>,
+        I: IntoIterator<Item = UntypedVal>,
     {
         let offset = offset.into().0;
         let mut values = values.into_iter();
@@ -287,17 +287,17 @@ impl ValueStack {
 
     /// Returns a shared slice over the values of the [`ValueStack`].
     #[inline]
-    pub fn as_slice(&self) -> &[UntypedValue] {
+    pub fn as_slice(&self) -> &[UntypedVal] {
         &self.values[0..self.sp]
     }
 
     /// Returns an exclusive slice over the values of the [`ValueStack`].
     #[inline]
-    pub fn as_slice_mut(&mut self) -> &mut [UntypedValue] {
+    pub fn as_slice_mut(&mut self) -> &mut [UntypedVal] {
         &mut self.values[0..self.sp]
     }
 
-    /// Removes the slice `from..to` of [`UntypedValue`] cells from the [`ValueStack`].
+    /// Removes the slice `from..to` of [`UntypedVal`] cells from the [`ValueStack`].
     ///
     /// Returns the number of drained [`ValueStack`] cells.
     ///
@@ -393,7 +393,7 @@ impl From<BaseValueStackOffset> for usize {
 /// [`CallStack`]: [`super::CallStack`]
 pub struct FrameRegisters {
     /// The underlying raw pointer to a [`CallFrame`] on the [`ValueStack`].
-    ptr: *mut UntypedValue,
+    ptr: *mut UntypedVal,
 }
 
 impl Debug for FrameRegisters {
@@ -404,17 +404,17 @@ impl Debug for FrameRegisters {
 
 impl FrameRegisters {
     /// Creates a new [`FrameRegisters`].
-    fn new(ptr: *mut UntypedValue) -> Self {
+    fn new(ptr: *mut UntypedVal) -> Self {
         Self { ptr }
     }
 
-    /// Returns the [`UntypedValue`] at the given [`Register`].
+    /// Returns the [`UntypedVal`] at the given [`Register`].
     ///
     /// # Safety
     ///
     /// It is the callers responsibility to provide a [`Register`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn get(&self, register: Register) -> UntypedValue {
+    pub unsafe fn get(&self, register: Register) -> UntypedVal {
         ptr::read(self.register_offset(register))
     }
 
@@ -424,12 +424,12 @@ impl FrameRegisters {
     ///
     /// It is the callers responsibility to provide a [`Register`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn set(&mut self, register: Register, value: UntypedValue) {
+    pub unsafe fn set(&mut self, register: Register, value: UntypedVal) {
         ptr::write(self.register_offset(register), value)
     }
 
     /// Returns the underlying pointer offset by the [`Register`] index.
-    unsafe fn register_offset(&self, register: Register) -> *mut UntypedValue {
+    unsafe fn register_offset(&self, register: Register) -> *mut UntypedVal {
         unsafe { self.ptr.offset(register.to_i16() as isize) }
     }
 }

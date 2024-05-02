@@ -1,5 +1,5 @@
 use crate::{
-    core::{TrapCode, UntypedValue, ValueType, F32, F64},
+    core::{TrapCode, UntypedVal, ValType, F32, F64},
     ExternRef,
     FuncRef,
 };
@@ -7,80 +7,80 @@ use crate::{
 /// Types that are associated to a static Wasm type.
 pub trait Typed {
     /// The static associated Wasm type.
-    const TY: ValueType;
+    const TY: ValType;
 }
 macro_rules! impl_typed_for {
     ( $( $ty:ty => $value_ty:expr );* $(;)? ) => {
         $(
             impl Typed for $ty {
-                const TY: ValueType = $value_ty;
+                const TY: ValType = $value_ty;
             }
         )*
     };
 }
 impl_typed_for! {
-    bool => ValueType::I32;
-    i32 => ValueType::I32;
-    u32 => ValueType::I32;
-    i64 => ValueType::I64;
-    u64 => ValueType::I64;
-    f32 => ValueType::F32;
-    f64 => ValueType::F64;
-    F32 => ValueType::F32;
-    F64 => ValueType::F64;
-    FuncRef => ValueType::FuncRef;
-    ExternRef => ValueType::ExternRef;
+    bool => ValType::I32;
+    i32 => ValType::I32;
+    u32 => ValType::I32;
+    i64 => ValType::I64;
+    u64 => ValType::I64;
+    f32 => ValType::F32;
+    f64 => ValType::F64;
+    F32 => ValType::F32;
+    F64 => ValType::F64;
+    FuncRef => ValType::FuncRef;
+    ExternRef => ValType::ExternRef;
 }
 
-impl From<TypedValue> for UntypedValue {
-    fn from(typed_value: TypedValue) -> Self {
+impl From<TypedVal> for UntypedVal {
+    fn from(typed_value: TypedVal) -> Self {
         typed_value.value
     }
 }
 
-/// An [`UntypedValue`] with its assumed [`ValueType`].
+/// An [`UntypedVal`] with its assumed [`ValType`].
 ///
 /// # Note
 ///
-/// We explicitly do not make use of the existing [`Value`]
-/// abstraction since [`Value`] is optimized towards being a
-/// user facing type whereas [`TypedValue`] is focusing on
+/// We explicitly do not make use of the existing [`Val`]
+/// abstraction since [`Val`] is optimized towards being a
+/// user facing type whereas [`TypedVal`] is focusing on
 /// performance and efficiency in computations.
 ///
-/// [`Value`]: [`crate::core::Value`]
+/// [`Val`]: [`crate::core::Value`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct TypedValue {
+pub struct TypedVal {
     /// The type of the value.
-    ty: ValueType,
+    ty: ValType,
     /// The underlying raw value.
-    value: UntypedValue,
+    value: UntypedVal,
 }
 
-impl TypedValue {
-    /// Create a new [`TypedValue`].
-    pub fn new(ty: ValueType, value: UntypedValue) -> Self {
+impl TypedVal {
+    /// Create a new [`TypedVal`].
+    pub fn new(ty: ValType, value: UntypedVal) -> Self {
         Self { ty, value }
     }
 
-    /// Returns the [`ValueType`] of the [`TypedValue`].
-    pub fn ty(&self) -> ValueType {
+    /// Returns the [`ValType`] of the [`TypedVal`].
+    pub fn ty(&self) -> ValType {
         self.ty
     }
 
-    /// Changes the [`ValueType`] of `self` to `ty`.
+    /// Changes the [`ValType`] of `self` to `ty`.
     ///
     /// # Note
     ///
     /// This acts similar to a Wasm reinterpret cast and
     /// the underlying `value` bits are unchanged.
-    pub fn reinterpret(self, ty: ValueType) -> Self {
+    pub fn reinterpret(self, ty: ValType) -> Self {
         Self { ty, ..self }
     }
 }
 
-impl<T> From<T> for TypedValue
+impl<T> From<T> for TypedVal
 where
-    T: Typed + Into<UntypedValue>,
+    T: Typed + Into<UntypedVal>,
 {
     fn from(value: T) -> Self {
         Self::new(<T as Typed>::TY, value.into())
@@ -102,8 +102,8 @@ impl<T, E> ResultType for Result<T, E> {
 macro_rules! impl_from_typed_value_for {
     ( $( impl From<TypedValue> for $ty:ty );* $(;)? ) => {
         $(
-            impl From<TypedValue> for $ty {
-                fn from(typed_value: TypedValue) -> Self {
+            impl From<TypedVal> for $ty {
+                fn from(typed_value: TypedVal) -> Self {
                     // # Note
                     //
                     // We only use a `debug_assert` here instead of a proper `assert`
@@ -143,7 +143,7 @@ macro_rules! impl_forwarding {
             debug_assert!(matches!(other.ty(), <$rhs_ty as Typed>::TY));
             Ok(Self::new(
                 <<$result_ty as ResultType>::Ok as Typed>::TY,
-                UntypedValue::$name(UntypedValue::from(self), UntypedValue::from(other))?,
+                UntypedVal::$name(UntypedVal::from(self), UntypedVal::from(other))?,
             ))
         }
     };
@@ -153,7 +153,7 @@ macro_rules! impl_forwarding {
             debug_assert!(matches!(other.ty(), <$rhs_ty as Typed>::TY));
             Self::new(
                 <$result_ty as Typed>::TY,
-                UntypedValue::$name(UntypedValue::from(self), UntypedValue::from(other)),
+                UntypedVal::$name(UntypedVal::from(self), UntypedVal::from(other)),
             )
         }
     };
@@ -162,7 +162,7 @@ macro_rules! impl_forwarding {
             debug_assert!(matches!(self.ty(), <$input_ty as Typed>::TY));
             Ok(Self::new(
                 <<$result_ty as ResultType>::Ok as Typed>::TY,
-                UntypedValue::$name(UntypedValue::from(self))?,
+                UntypedVal::$name(UntypedVal::from(self))?,
             ))
         }
     };
@@ -171,12 +171,12 @@ macro_rules! impl_forwarding {
             debug_assert!(matches!(self.ty(), <$input_ty as Typed>::TY));
             Self::new(
                 <$result_ty as Typed>::TY,
-                UntypedValue::$name(UntypedValue::from(self)),
+                UntypedVal::$name(UntypedVal::from(self)),
             )
         }
     };
 }
-impl TypedValue {
+impl TypedVal {
     impl_forwarding! {
         // Comparison Instructions
 

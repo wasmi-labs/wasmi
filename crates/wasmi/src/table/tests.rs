@@ -1,10 +1,10 @@
 use super::*;
 
-fn table_type(element: ValueType, minimum: u32, maximum: impl Into<Option<u32>>) -> TableType {
+fn table_type(element: ValType, minimum: u32, maximum: impl Into<Option<u32>>) -> TableType {
     TableType::new(element, minimum, maximum.into())
 }
 
-use ValueType::{F64, I32};
+use ValType::{F64, I32};
 
 #[test]
 fn subtyping_works() {
