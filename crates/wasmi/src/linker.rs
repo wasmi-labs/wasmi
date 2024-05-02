@@ -760,7 +760,7 @@ pub struct LinkerInner<T> {
     ///
     /// Benchmarks show that [`BTreeMap`] performs better than [`HashMap`]
     /// which is why we do not use [`wasmi_collections::Map`] here.
-    /// 
+    ///
     /// [`HashMap`]: std::collections::HashMap
     definitions: BTreeMap<ImportKey, Definition<T>>,
 }
