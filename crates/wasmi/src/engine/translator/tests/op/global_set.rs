@@ -2,11 +2,11 @@ use super::*;
 
 use crate::{core::ValType, engine::bytecode::GlobalIdx};
 use core::fmt::Display;
-use wasm_type::WasmType;
+use wasm_type::WasmTy;
 
 fn test_reg<T>()
 where
-    T: WasmType + Default,
+    T: WasmTy + Default,
     DisplayWasm<T>: Display,
 {
     let ty = T::NAME;
@@ -41,7 +41,7 @@ fn reg() {
 
 fn test_imm<T>(value: T)
 where
-    T: WasmType + Default,
+    T: WasmTy + Default,
     DisplayWasm<T>: Display,
 {
     let display_ty = DisplayValueType::from(T::VALUE_TYPE);

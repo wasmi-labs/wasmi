@@ -1,4 +1,4 @@
-use super::{wasm_type::WasmType, *};
+use super::{wasm_type::WasmTy, *};
 use crate::{
     core::ValType,
     engine::bytecode::{BranchOffset, BranchOffset16, GlobalIdx},
@@ -87,7 +87,7 @@ fn loop_backward_imm() {
         value: T,
         expect_instr: fn(Register, Const16<T>, BranchOffset16) -> Instruction,
     ) where
-        T: WasmType,
+        T: WasmTy,
         Const16<T>: TryFrom<T> + Debug,
         DisplayWasm<T>: Display,
     {

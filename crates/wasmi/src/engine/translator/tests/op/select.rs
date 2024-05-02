@@ -1,5 +1,5 @@
 use super::*;
-use crate::{core::ValType, engine::translator::tests::wasm_type::WasmType};
+use crate::{core::ValType, engine::translator::tests::wasm_type::WasmTy};
 use core::{fmt, fmt::Display};
 
 /// Tells which kind of `select` instruction to test.
@@ -119,7 +119,7 @@ fn same_reg() {
 
 fn test_same_imm<T>(kind: SelectKind, input: T) -> TranslationTest
 where
-    T: WasmType,
+    T: WasmTy,
     DisplayWasm<T>: Display,
 {
     let ty = T::VALUE_TYPE;
@@ -146,7 +146,7 @@ where
 fn same_imm32() {
     fn test_for_kind<T>(kind: SelectKind, value: T)
     where
-        T: WasmType,
+        T: WasmTy,
         DisplayWasm<T>: Display,
         AnyConst32: From<T>,
     {
@@ -158,7 +158,7 @@ fn same_imm32() {
 
     fn test_for<T>(value: T)
     where
-        T: WasmType,
+        T: WasmTy,
         DisplayWasm<T>: Display,
         AnyConst32: From<T>,
     {
@@ -234,7 +234,7 @@ fn same_f64imm32() {
 fn same_imm() {
     fn test_for<T>(value: T)
     where
-        T: WasmType,
+        T: WasmTy,
         DisplayWasm<T>: Display,
     {
         let instrs = [Instruction::return_reg(Register::from_i16(-1))];
@@ -264,7 +264,7 @@ fn same_imm() {
 
 fn test_reg_imm<T>(kind: SelectKind, rhs: T) -> TranslationTest
 where
-    T: WasmType,
+    T: WasmTy,
     DisplayWasm<T>: Display,
 {
     let ty = T::VALUE_TYPE;
@@ -291,7 +291,7 @@ where
 fn reg_imm32() {
     fn test_for_kind<T>(kind: SelectKind, value: T)
     where
-        T: WasmType,
+        T: WasmTy,
         DisplayWasm<T>: Display,
         AnyConst32: From<T>,
     {
@@ -308,7 +308,7 @@ fn reg_imm32() {
 
     fn test_for<T>(value: T)
     where
-        T: WasmType,
+        T: WasmTy,
         DisplayWasm<T>: Display,
         AnyConst32: From<T>,
     {
@@ -342,7 +342,7 @@ fn reg_imm32() {
 fn reg_imm() {
     fn test_for_kind<T>(kind: SelectKind, value: T)
     where
-        T: WasmType,
+        T: WasmTy,
         DisplayWasm<T>: Display,
     {
         let result = Register::from_i16(2);
@@ -359,7 +359,7 @@ fn reg_imm() {
 
     fn test_for<T>(value: T)
     where
-        T: WasmType,
+        T: WasmTy,
         DisplayWasm<T>: Display,
     {
         test_for_kind(SelectKind::Select, value);
@@ -443,7 +443,7 @@ fn reg_f64imm32() {
 
 fn test_imm_reg<T>(kind: SelectKind, lhs: T) -> TranslationTest
 where
-    T: WasmType,
+    T: WasmTy,
     DisplayWasm<T>: Display,
 {
     let ty = T::VALUE_TYPE;
@@ -470,7 +470,7 @@ where
 fn imm32_reg() {
     fn test_for_kind<T>(kind: SelectKind, value: T)
     where
-        T: WasmType,
+        T: WasmTy,
         DisplayWasm<T>: Display,
         AnyConst32: From<T>,
     {
@@ -487,7 +487,7 @@ fn imm32_reg() {
 
     fn test_for<T>(value: T)
     where
-        T: WasmType,
+        T: WasmTy,
         DisplayWasm<T>: Display,
         AnyConst32: From<T>,
     {
@@ -521,7 +521,7 @@ fn imm32_reg() {
 fn imm_reg() {
     fn test_for_kind<T>(kind: SelectKind, value: T)
     where
-        T: WasmType,
+        T: WasmTy,
         DisplayWasm<T>: Display,
     {
         let result = Register::from_i16(2);
@@ -538,7 +538,7 @@ fn imm_reg() {
 
     fn test_for<T>(value: T)
     where
-        T: WasmType,
+        T: WasmTy,
         DisplayWasm<T>: Display,
     {
         test_for_kind(SelectKind::Select, value);
@@ -622,7 +622,7 @@ fn f64imm32_reg() {
 
 fn test_both_imm<T>(kind: SelectKind, lhs: T, rhs: T) -> TranslationTest
 where
-    T: WasmType,
+    T: WasmTy,
     DisplayWasm<T>: Display,
 {
     let ty = T::VALUE_TYPE;
@@ -650,7 +650,7 @@ where
 fn both_imm32() {
     fn test_for_kind<T>(kind: SelectKind, lhs: T, rhs: T)
     where
-        T: WasmType,
+        T: WasmTy,
         DisplayWasm<T>: Display,
         AnyConst32: From<T>,
     {
@@ -670,7 +670,7 @@ fn both_imm32() {
 
     fn test_for<T>(lhs: T, rhs: T)
     where
-        T: WasmType,
+        T: WasmTy,
         DisplayWasm<T>: Display,
         AnyConst32: From<T>,
     {
@@ -696,7 +696,7 @@ fn both_imm32() {
 fn both_imm() {
     fn test_for_kind<T>(kind: SelectKind, lhs: T, rhs: T)
     where
-        T: WasmType,
+        T: WasmTy,
         DisplayWasm<T>: Display,
     {
         let result = Register::from_i16(1);
@@ -715,7 +715,7 @@ fn both_imm() {
 
     fn test_for<T>(lhs: T, rhs: T)
     where
-        T: WasmType,
+        T: WasmTy,
         DisplayWasm<T>: Display,
     {
         test_for_kind(SelectKind::Select, lhs, rhs);

@@ -6,17 +6,17 @@ mod op;
 use super::*;
 use crate::core::{TrapCode, UntypedVal};
 use std::fmt::Display;
-use wasm_type::WasmType;
+use wasm_type::WasmTy;
 
 /// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary Wasmi instruction.
 fn conversion_reg_with<I, O, E>(wasm_op: &str, expected: E)
 where
-    I: WasmType,
-    O: WasmType,
+    I: WasmTy,
+    O: WasmTy,
     E: IntoIterator<Item = Instruction>,
 {
-    let param_ty = <I as WasmType>::NAME;
-    let result_ty = <O as WasmType>::NAME;
+    let param_ty = <I as WasmTy>::NAME;
+    let result_ty = <O as WasmTy>::NAME;
     let wasm = format!(
         r#"
         (module
@@ -37,8 +37,8 @@ fn conversion_reg<I, O>(
     wasm_op: &str,
     make_instr: fn(result: Register, input: Register) -> Instruction,
 ) where
-    I: WasmType,
-    O: WasmType,
+    I: WasmTy,
+    O: WasmTy,
 {
     let expected = [
         make_instr(Register::from_i16(1), Register::from_i16(0)),
@@ -50,7 +50,7 @@ fn conversion_reg<I, O>(
 /// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary Wasmi instruction.
 fn unary_reg<T>(wasm_op: &str, make_instr: fn(result: Register, input: Register) -> Instruction)
 where
-    T: WasmType,
+    T: WasmTy,
 {
     conversion_reg::<T, T>(wasm_op, make_instr)
 }
@@ -58,12 +58,12 @@ where
 /// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary Wasmi instruction.
 fn conversion_imm<I, O>(wasm_op: &str, input: I, eval: fn(input: I) -> O)
 where
-    I: WasmType,
-    O: WasmType,
+    I: WasmTy,
+    O: WasmTy,
     DisplayWasm<I>: Display,
 {
-    let param_ty = <I as WasmType>::NAME;
-    let result_ty = <O as WasmType>::NAME;
+    let param_ty = <I as WasmTy>::NAME;
+    let result_ty = <O as WasmTy>::NAME;
     let wasm_input = DisplayWasm::from(input);
     let wasm = format!(
         r#"
@@ -76,7 +76,7 @@ where
     "#,
     );
     let result = eval(input);
-    let instr = <O as WasmType>::return_imm_instr(&result);
+    let instr = <O as WasmTy>::return_imm_instr(&result);
     let mut testcase = TranslationTest::from_wat(&wasm);
     if let Instruction::ReturnReg { value } = &instr {
         assert!(value.is_const());
@@ -90,7 +90,7 @@ where
 /// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary Wasmi instruction.
 fn unary_imm<T>(wasm_op: &str, input: T, eval: fn(input: T) -> T)
 where
-    T: WasmType,
+    T: WasmTy,
     DisplayWasm<T>: Display,
 {
     conversion_imm::<T, T>(wasm_op, input, eval)
@@ -99,12 +99,12 @@ where
 /// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary Wasmi instruction.
 fn fallible_conversion_imm_err<I, O>(wasm_op: &str, input: I, eval: fn(input: I) -> TrapCode)
 where
-    I: WasmType,
-    O: WasmType,
+    I: WasmTy,
+    O: WasmTy,
     DisplayWasm<I>: Display,
 {
-    let param_ty = <I as WasmType>::NAME;
-    let result_ty = <O as WasmType>::NAME;
+    let param_ty = <I as WasmTy>::NAME;
+    let result_ty = <O as WasmTy>::NAME;
     let wasm_input = DisplayWasm::from(input);
     let wasm = format!(
         r#"

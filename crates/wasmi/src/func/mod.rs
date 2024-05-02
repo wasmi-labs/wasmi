@@ -11,7 +11,7 @@ pub use self::{
     error::FuncError,
     func_type::FuncType,
     funcref::FuncRef,
-    into_func::{IntoFunc, WasmRet, WasmType, WasmTypeList},
+    into_func::{IntoFunc, WasmRet, WasmTy, WasmTyList},
     typed_func::{TypedFunc, WasmParams, WasmResults},
 };
 use super::{

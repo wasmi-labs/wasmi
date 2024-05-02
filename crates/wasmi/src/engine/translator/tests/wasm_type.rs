@@ -6,14 +6,14 @@ use crate::{
 };
 use core::fmt::Display;
 
-pub trait WasmType: Copy + Display + Into<UntypedVal> + From<UntypedVal> {
+pub trait WasmTy: Copy + Display + Into<UntypedVal> + From<UntypedVal> {
     const NAME: &'static str;
     const VALUE_TYPE: ValType;
 
     fn return_imm_instr(&self) -> Instruction;
 }
 
-impl WasmType for u32 {
+impl WasmTy for u32 {
     const NAME: &'static str = "i32";
     const VALUE_TYPE: ValType = ValType::I32;
 
@@ -22,7 +22,7 @@ impl WasmType for u32 {
     }
 }
 
-impl WasmType for i32 {
+impl WasmTy for i32 {
     const NAME: &'static str = "i32";
     const VALUE_TYPE: ValType = ValType::I32;
 
@@ -31,7 +31,7 @@ impl WasmType for i32 {
     }
 }
 
-impl WasmType for u64 {
+impl WasmTy for u64 {
     const NAME: &'static str = "i64";
     const VALUE_TYPE: ValType = ValType::I64;
 
@@ -43,7 +43,7 @@ impl WasmType for u64 {
     }
 }
 
-impl WasmType for i64 {
+impl WasmTy for i64 {
     const NAME: &'static str = "i64";
     const VALUE_TYPE: ValType = ValType::I64;
 
@@ -55,7 +55,7 @@ impl WasmType for i64 {
     }
 }
 
-impl WasmType for f32 {
+impl WasmTy for f32 {
     const NAME: &'static str = "f32";
     const VALUE_TYPE: ValType = ValType::F32;
 
@@ -64,7 +64,7 @@ impl WasmType for f32 {
     }
 }
 
-impl WasmType for f64 {
+impl WasmTy for f64 {
     const NAME: &'static str = "f64";
     const VALUE_TYPE: ValType = ValType::F64;
 

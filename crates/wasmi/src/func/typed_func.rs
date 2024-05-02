@@ -1,4 +1,4 @@
-use super::{into_func::WasmTypeList, Func};
+use super::{into_func::WasmTyList, Func};
 use crate::{
     core::UntypedVal,
     engine::{CallParams, CallResults},
@@ -68,8 +68,8 @@ where
     pub(crate) fn new(ctx: impl AsContext, func: Func) -> Result<Self, Error> {
         let func_type = func.ty(&ctx);
         let (actual_params, actual_results) = (
-            <Params as WasmTypeList>::types(),
-            <Results as WasmTypeList>::types(),
+            <Params as WasmTyList>::types(),
+            <Results as WasmTyList>::types(),
         );
         func_type.match_params(actual_params.as_ref())?;
         func_type.match_results(actual_results.as_ref(), true)?;
@@ -142,11 +142,11 @@ impl<Params> CallParams for Params
 where
     Params: WasmParams,
 {
-    type Params = <Params as WasmTypeList>::ValuesIter;
+    type Params = <Params as WasmTyList>::ValuesIter;
 
     #[inline]
     fn call_params(self) -> Self::Params {
-        <Params as WasmTypeList>::values(self).into_iter()
+        <Params as WasmTyList>::values(self).into_iter()
     }
 }
 
@@ -184,19 +184,19 @@ where
     type Results = Results;
 
     fn len_results(&self) -> usize {
-        <Results as WasmTypeList>::LEN
+        <Results as WasmTyList>::LEN
     }
 
     fn call_results(self, results: &[UntypedVal]) -> Self::Results {
-        <Results as WasmTypeList>::from_values(results)
+        <Results as WasmTyList>::from_values(results)
             .expect("unable to construct typed results from call results")
     }
 }
 
 /// The typed parameters of a [`TypedFunc`].
-pub trait WasmParams: WasmTypeList {}
-impl<T> WasmParams for T where T: WasmTypeList {}
+pub trait WasmParams: WasmTyList {}
+impl<T> WasmParams for T where T: WasmTyList {}
 
 /// The typed results of a [`TypedFunc`].
-pub trait WasmResults: WasmTypeList {}
-impl<T> WasmResults for T where T: WasmTypeList {}
+pub trait WasmResults: WasmTyList {}
+impl<T> WasmResults for T where T: WasmTyList {}
