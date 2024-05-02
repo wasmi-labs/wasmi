@@ -16,6 +16,7 @@ use super::{
     ModuleImports,
 };
 use crate::{
+    collections::Map,
     engine::{CompiledFunc, DedupFuncType},
     Engine,
     Error,
@@ -44,7 +45,7 @@ pub struct ModuleHeaderBuilder {
     pub memories: Vec<MemoryType>,
     pub globals: Vec<GlobalType>,
     pub globals_init: Vec<ConstExpr>,
-    pub exports: BTreeMap<Box<str>, ExternIdx>,
+    pub exports: Map<Box<str>, ExternIdx>,
     pub start: Option<FuncIdx>,
     pub compiled_funcs: Vec<CompiledFunc>,
     pub compiled_funcs_idx: BTreeMap<CompiledFunc, FuncIdx>,
@@ -63,7 +64,7 @@ impl ModuleHeaderBuilder {
             memories: Vec::new(),
             globals: Vec::new(),
             globals_init: Vec::new(),
-            exports: BTreeMap::new(),
+            exports: Map::new(),
             start: None,
             compiled_funcs: Vec::new(),
             compiled_funcs_idx: BTreeMap::new(),
@@ -330,7 +331,7 @@ impl ModuleHeaderBuilder {
             self.exports.is_empty(),
             "tried to initialize module export declarations twice"
         );
-        self.exports = exports.into_iter().collect::<Result<BTreeMap<_, _>, _>>()?;
+        self.exports = exports.into_iter().collect::<Result<Map<_, _>, _>>()?;
         Ok(())
     }
 

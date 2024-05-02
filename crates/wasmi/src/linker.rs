@@ -755,9 +755,9 @@ pub struct LinkerInner<T> {
     /// Allows to efficiently store strings and deduplicate them..
     strings: StringInterner,
     /// Stores the definitions given their names.
-    /// 
+    ///
     /// # Dev. Note
-    /// 
+    ///
     /// Benchmarks show that [`BTreeMap`] performs better than [`HashMap`]
     /// which is why we do not use [`wasmi_collections::Map`] here.
     definitions: BTreeMap<ImportKey, Definition<T>>,

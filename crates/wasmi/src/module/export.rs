@@ -1,6 +1,6 @@
 use super::GlobalIdx;
-use crate::{Error, ExternType, Module};
-use std::{boxed::Box, collections::btree_map::Iter as BTreeIter};
+use crate::{collections::map::Iter as MapIter, Error, ExternType, Module};
+use std::boxed::Box;
 
 /// The index of a function declaration within a [`Module`].
 ///
@@ -106,7 +106,7 @@ impl ExternIdx {
 /// [`Module`]: [`super::Module`]
 #[derive(Debug)]
 pub struct ModuleExportsIter<'module> {
-    exports: BTreeIter<'module, Box<str>, ExternIdx>,
+    exports: MapIter<'module, Box<str>, ExternIdx>,
     module: &'module Module,
 }
 
