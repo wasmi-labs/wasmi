@@ -1,12 +1,12 @@
 use crate::core::ValType;
 
 use crate::{
-    core::{UntypedValue, F32},
+    core::{UntypedVal, F32},
     engine::bytecode::{Const32, Instruction, Register},
 };
 use core::fmt::Display;
 
-pub trait WasmType: Copy + Display + Into<UntypedValue> + From<UntypedValue> {
+pub trait WasmType: Copy + Display + Into<UntypedVal> + From<UntypedVal> {
     const NAME: &'static str;
     const VALUE_TYPE: ValType;
 

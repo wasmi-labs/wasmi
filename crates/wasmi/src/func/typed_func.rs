@@ -1,6 +1,6 @@
 use super::{into_func::WasmTypeList, Func};
 use crate::{
-    core::UntypedValue,
+    core::UntypedVal,
     engine::{CallParams, CallResults},
     AsContext,
     AsContextMut,
@@ -187,7 +187,7 @@ where
         <Results as WasmTypeList>::LEN
     }
 
-    fn call_results(self, results: &[UntypedValue]) -> Self::Results {
+    fn call_results(self, results: &[UntypedVal]) -> Self::Results {
         <Results as WasmTypeList>::from_values(results)
             .expect("unable to construct typed results from call results")
     }

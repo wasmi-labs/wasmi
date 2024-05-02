@@ -1,6 +1,6 @@
 use super::*;
 use crate::{
-    core::UntypedValue,
+    core::UntypedVal,
     engine::{
         bytecode::{BranchOffset, BranchOffset16, RegisterSpan},
         translator::tests::wasm_type::WasmType,
@@ -67,7 +67,7 @@ fn consteval_return_1_imm() {
         T: WasmType,
         DisplayWasm<T>: Display,
     {
-        let expected: UntypedValue = match condition {
+        let expected: UntypedVal = match condition {
             true => if_true.into(),
             false => if_false.into(),
         };

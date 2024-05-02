@@ -1,5 +1,5 @@
 use crate::{
-    core::{TrapCode, UntypedValue, ValType, F32, F64},
+    core::{TrapCode, UntypedVal, ValType, F32, F64},
     ExternRef,
     FuncRef,
 };
@@ -32,13 +32,13 @@ impl_typed_for! {
     ExternRef => ValType::ExternRef;
 }
 
-impl From<TypedValue> for UntypedValue {
+impl From<TypedValue> for UntypedVal {
     fn from(typed_value: TypedValue) -> Self {
         typed_value.value
     }
 }
 
-/// An [`UntypedValue`] with its assumed [`ValType`].
+/// An [`UntypedVal`] with its assumed [`ValType`].
 ///
 /// # Note
 ///
@@ -53,12 +53,12 @@ pub struct TypedValue {
     /// The type of the value.
     ty: ValType,
     /// The underlying raw value.
-    value: UntypedValue,
+    value: UntypedVal,
 }
 
 impl TypedValue {
     /// Create a new [`TypedValue`].
-    pub fn new(ty: ValType, value: UntypedValue) -> Self {
+    pub fn new(ty: ValType, value: UntypedVal) -> Self {
         Self { ty, value }
     }
 
@@ -80,7 +80,7 @@ impl TypedValue {
 
 impl<T> From<T> for TypedValue
 where
-    T: Typed + Into<UntypedValue>,
+    T: Typed + Into<UntypedVal>,
 {
     fn from(value: T) -> Self {
         Self::new(<T as Typed>::TY, value.into())
@@ -143,7 +143,7 @@ macro_rules! impl_forwarding {
             debug_assert!(matches!(other.ty(), <$rhs_ty as Typed>::TY));
             Ok(Self::new(
                 <<$result_ty as ResultType>::Ok as Typed>::TY,
-                UntypedValue::$name(UntypedValue::from(self), UntypedValue::from(other))?,
+                UntypedVal::$name(UntypedVal::from(self), UntypedVal::from(other))?,
             ))
         }
     };
@@ -153,7 +153,7 @@ macro_rules! impl_forwarding {
             debug_assert!(matches!(other.ty(), <$rhs_ty as Typed>::TY));
             Self::new(
                 <$result_ty as Typed>::TY,
-                UntypedValue::$name(UntypedValue::from(self), UntypedValue::from(other)),
+                UntypedVal::$name(UntypedVal::from(self), UntypedVal::from(other)),
             )
         }
     };
@@ -162,7 +162,7 @@ macro_rules! impl_forwarding {
             debug_assert!(matches!(self.ty(), <$input_ty as Typed>::TY));
             Ok(Self::new(
                 <<$result_ty as ResultType>::Ok as Typed>::TY,
-                UntypedValue::$name(UntypedValue::from(self))?,
+                UntypedVal::$name(UntypedVal::from(self))?,
             ))
         }
     };
@@ -171,7 +171,7 @@ macro_rules! impl_forwarding {
             debug_assert!(matches!(self.ty(), <$input_ty as Typed>::TY));
             Self::new(
                 <$result_ty as Typed>::TY,
-                UntypedValue::$name(UntypedValue::from(self)),
+                UntypedVal::$name(UntypedVal::from(self)),
             )
         }
     };

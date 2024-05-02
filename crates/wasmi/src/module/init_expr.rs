@@ -8,7 +8,7 @@
 
 use super::FuncIdx;
 use crate::{
-    core::{UntypedValue, F32, F64},
+    core::{UntypedVal, F32, F64},
     ExternRef,
     FuncRef,
     Val,
@@ -20,7 +20,7 @@ use std::boxed::Box;
 /// Types that allow evluation given an evaluation context.
 pub trait Eval {
     /// Evaluates `self` given an [`EvalContext`].
-    fn eval(&self, ctx: &dyn EvalContext) -> Option<UntypedValue>;
+    fn eval(&self, ctx: &dyn EvalContext) -> Option<UntypedVal>;
 }
 
 /// A [`ConstExpr`] evaluation context.
@@ -71,11 +71,11 @@ pub enum Op {
 #[derive(Debug)]
 pub struct ConstOp {
     /// The underlying precomputed untyped value.
-    value: UntypedValue,
+    value: UntypedVal,
 }
 
 impl Eval for ConstOp {
-    fn eval(&self, _ctx: &dyn EvalContext) -> Option<UntypedValue> {
+    fn eval(&self, _ctx: &dyn EvalContext) -> Option<UntypedVal> {
         Some(self.value)
     }
 }
@@ -89,8 +89,8 @@ pub struct GlobalOp {
 }
 
 impl Eval for GlobalOp {
-    fn eval(&self, ctx: &dyn EvalContext) -> Option<UntypedValue> {
-        ctx.get_global(self.global_index).map(UntypedValue::from)
+    fn eval(&self, ctx: &dyn EvalContext) -> Option<UntypedVal> {
+        ctx.get_global(self.global_index).map(UntypedVal::from)
     }
 }
 
@@ -103,8 +103,8 @@ pub struct FuncRefOp {
 }
 
 impl Eval for FuncRefOp {
-    fn eval(&self, ctx: &dyn EvalContext) -> Option<UntypedValue> {
-        ctx.get_func(self.function_index).map(UntypedValue::from)
+    fn eval(&self, ctx: &dyn EvalContext) -> Option<UntypedVal> {
+        ctx.get_func(self.function_index).map(UntypedVal::from)
     }
 }
 
@@ -121,7 +121,7 @@ impl Eval for FuncRefOp {
 #[allow(clippy::type_complexity)]
 pub struct ExprOp {
     /// The underlying closure that implements the expression.
-    expr: Box<dyn Fn(&dyn EvalContext) -> Option<UntypedValue> + Send + Sync>,
+    expr: Box<dyn Fn(&dyn EvalContext) -> Option<UntypedVal> + Send + Sync>,
 }
 
 impl fmt::Debug for ExprOp {
@@ -131,7 +131,7 @@ impl fmt::Debug for ExprOp {
 }
 
 impl Eval for ExprOp {
-    fn eval(&self, ctx: &dyn EvalContext) -> Option<UntypedValue> {
+    fn eval(&self, ctx: &dyn EvalContext) -> Option<UntypedVal> {
         (self.expr)(ctx)
     }
 }
@@ -160,7 +160,7 @@ impl Op {
     /// Creates a new expression operator for the given `expr`.
     pub fn expr<T>(expr: T) -> Self
     where
-        T: Fn(&dyn EvalContext) -> Option<UntypedValue> + Send + Sync + 'static,
+        T: Fn(&dyn EvalContext) -> Option<UntypedVal> + Send + Sync + 'static,
     {
         Self::Expr(ExprOp {
             expr: Box::new(expr),
@@ -169,7 +169,7 @@ impl Op {
 }
 
 impl Eval for Op {
-    fn eval(&self, ctx: &dyn EvalContext) -> Option<UntypedValue> {
+    fn eval(&self, ctx: &dyn EvalContext) -> Option<UntypedVal> {
         match self {
             Op::Const(op) => op.eval(ctx),
             Op::Global(op) => op.eval(ctx),
@@ -191,14 +191,14 @@ pub struct ConstExpr {
 }
 
 impl Eval for ConstExpr {
-    fn eval(&self, ctx: &dyn EvalContext) -> Option<UntypedValue> {
+    fn eval(&self, ctx: &dyn EvalContext) -> Option<UntypedVal> {
         self.op.eval(ctx)
     }
 }
 
 macro_rules! def_expr {
     ($lhs:ident, $rhs:ident, $expr:expr) => {{
-        Op::expr(move |ctx: &dyn EvalContext| -> Option<UntypedValue> {
+        Op::expr(move |ctx: &dyn EvalContext| -> Option<UntypedVal> {
             let lhs = $lhs.eval(ctx)?;
             let rhs = $rhs.eval(ctx)?;
             Some($expr(lhs, rhs))
@@ -217,10 +217,7 @@ impl ConstExpr {
         /// A buffer required for translation of Wasm const expressions.
         type TranslationBuffer = SmallVec<[Op; 3]>;
         /// Convenience function to create the various expression operators.
-        fn expr_op(
-            stack: &mut TranslationBuffer,
-            expr: fn(UntypedValue, UntypedValue) -> UntypedValue,
-        ) {
+        fn expr_op(stack: &mut TranslationBuffer, expr: fn(UntypedVal, UntypedVal) -> UntypedVal) {
             let rhs = stack
                 .pop()
                 .expect("must have rhs operator on the stack due to Wasm validation");
@@ -281,12 +278,12 @@ impl ConstExpr {
                 wasmparser::Operator::RefFunc { function_index } => {
                     stack.push(Op::funcref(function_index));
                 }
-                wasmparser::Operator::I32Add => expr_op(&mut stack, UntypedValue::i32_add),
-                wasmparser::Operator::I32Sub => expr_op(&mut stack, UntypedValue::i32_sub),
-                wasmparser::Operator::I32Mul => expr_op(&mut stack, UntypedValue::i32_mul),
-                wasmparser::Operator::I64Add => expr_op(&mut stack, UntypedValue::i64_add),
-                wasmparser::Operator::I64Sub => expr_op(&mut stack, UntypedValue::i64_sub),
-                wasmparser::Operator::I64Mul => expr_op(&mut stack, UntypedValue::i64_mul),
+                wasmparser::Operator::I32Add => expr_op(&mut stack, UntypedVal::i32_add),
+                wasmparser::Operator::I32Sub => expr_op(&mut stack, UntypedVal::i32_sub),
+                wasmparser::Operator::I32Mul => expr_op(&mut stack, UntypedVal::i32_mul),
+                wasmparser::Operator::I64Add => expr_op(&mut stack, UntypedVal::i64_add),
+                wasmparser::Operator::I64Sub => expr_op(&mut stack, UntypedVal::i64_sub),
+                wasmparser::Operator::I64Mul => expr_op(&mut stack, UntypedVal::i64_mul),
                 wasmparser::Operator::End => break,
                 op => panic!("encountered invalid Wasm const expression operator: {op:?}"),
             };
@@ -331,7 +328,7 @@ impl ConstExpr {
     ///
     /// This is useful for evaluations during Wasm translation to
     /// perform optimizations on the translated bytecode.
-    pub fn eval_const(&self) -> Option<UntypedValue> {
+    pub fn eval_const(&self) -> Option<UntypedVal> {
         self.eval(&EmptyEvalContext)
     }
 
@@ -343,7 +340,7 @@ impl ConstExpr {
     /// # Note
     ///
     /// This is useful for evaluation of [`ConstExpr`] during bytecode execution.
-    pub fn eval_with_context<G, F>(&self, global_get: G, func_get: F) -> Option<UntypedValue>
+    pub fn eval_with_context<G, F>(&self, global_get: G, func_get: F) -> Option<UntypedVal>
     where
         G: Fn(u32) -> Val,
         F: Fn(u32) -> FuncRef,

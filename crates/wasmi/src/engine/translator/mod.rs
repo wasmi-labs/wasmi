@@ -40,7 +40,7 @@ pub use self::{
 };
 use super::code_map::CompiledFuncEntity;
 use crate::{
-    core::{TrapCode, UntypedValue, ValType},
+    core::{TrapCode, UntypedVal, ValType},
     engine::{
         bytecode::{
             AnyConst32,
@@ -1279,7 +1279,7 @@ impl FuncTranslator {
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
     ) -> Result<(), Error>
     where
-        T: Into<UntypedValue>,
+        T: Into<UntypedVal>,
     {
         let result = self.alloc.stack.push_dynamic()?;
         let rhs = self.alloc.stack.alloc_const(rhs)?;
@@ -1300,7 +1300,7 @@ impl FuncTranslator {
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
     ) -> Result<(), Error>
     where
-        T: Into<UntypedValue>,
+        T: Into<UntypedVal>,
     {
         let result = self.alloc.stack.push_dynamic()?;
         let lhs = self.alloc.stack.alloc_const(lhs)?;
@@ -2112,7 +2112,7 @@ impl FuncTranslator {
             result: Register,
             condition: Register,
             reg_in: Register,
-            imm_in: impl Into<UntypedValue>,
+            imm_in: impl Into<UntypedVal>,
             make_instr: fn(
                 result: Register,
                 condition: Register,
@@ -2172,7 +2172,7 @@ impl FuncTranslator {
             make_instr_param: fn(Const32<T>) -> Instruction,
         ) -> Result<(), Error>
         where
-            T: Copy + Into<UntypedValue>,
+            T: Copy + Into<UntypedVal>,
             Const32<T>: TryFrom<T>,
         {
             match <Const32<T>>::try_from(imm_in) {
@@ -2371,7 +2371,7 @@ impl FuncTranslator {
                             make_param: fn(Const32<T>) -> Instruction,
                         ) -> Result<(), Error>
                         where
-                            T: Copy + Into<UntypedValue>,
+                            T: Copy + Into<UntypedVal>,
                             Const32<T>: TryFrom<T>,
                         {
                             let lhs32 = <Const32<T>>::try_from(lhs).ok();
@@ -2425,7 +2425,7 @@ impl FuncTranslator {
                             rhs: T,
                         ) -> Result<(), Error>
                         where
-                            T: Into<UntypedValue>,
+                            T: Into<UntypedVal>,
                         {
                             let lhs = this.alloc.stack.alloc_const(lhs)?;
                             let rhs = this.alloc.stack.alloc_const(rhs)?;

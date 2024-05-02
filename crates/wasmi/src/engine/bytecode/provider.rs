@@ -1,5 +1,5 @@
 use super::{AnyConst32, Register};
-use crate::{core::UntypedValue, engine::translator::TranslationError, Error};
+use crate::{core::UntypedVal, engine::translator::TranslationError, Error};
 use std::vec::{Drain, Vec};
 
 #[cfg(doc)]
@@ -52,7 +52,7 @@ impl<T> Provider<T> {
 ///
 /// The [`UntypedProvider`] is primarily used for execution of
 /// Wasmi bytecode where typing usually no longer plays a role.
-pub type UntypedProvider = Provider<UntypedValue>;
+pub type UntypedProvider = Provider<UntypedVal>;
 
 impl From<Register> for UntypedProvider {
     fn from(register: Register) -> Self {
@@ -60,15 +60,15 @@ impl From<Register> for UntypedProvider {
     }
 }
 
-impl From<UntypedValue> for UntypedProvider {
-    fn from(register: UntypedValue) -> Self {
+impl From<UntypedVal> for UntypedProvider {
+    fn from(register: UntypedVal) -> Self {
         Self::Const(register)
     }
 }
 
 impl UntypedProvider {
     /// Creates a new immediate value [`UntypedProvider`].
-    pub fn immediate(value: impl Into<UntypedValue>) -> Self {
+    pub fn immediate(value: impl Into<UntypedVal>) -> Self {
         Self::from(value.into())
     }
 }

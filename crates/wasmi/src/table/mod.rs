@@ -5,7 +5,7 @@ pub use self::{
 use super::{AsContext, AsContextMut, Stored};
 use crate::{
     collections::arena::ArenaIndex,
-    core::{TrapCode, UntypedValue, ValType},
+    core::{TrapCode, UntypedVal, ValType},
     error::EntityGrowError,
     module::FuncIdx,
     store::{Fuel, FuelError, ResourceLimiterRef},
@@ -144,7 +144,7 @@ impl TableType {
 #[derive(Debug)]
 pub struct TableEntity {
     ty: TableType,
-    elements: Vec<UntypedValue>,
+    elements: Vec<UntypedVal>,
 }
 
 impl TableEntity {
@@ -238,7 +238,7 @@ impl TableEntity {
     pub fn grow_untyped(
         &mut self,
         delta: u32,
-        init: UntypedValue,
+        init: UntypedVal,
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u32, EntityGrowError> {
@@ -283,8 +283,8 @@ impl TableEntity {
         Ok(current)
     }
 
-    /// Converts the internal [`UntypedValue`] into a [`Val`] for this [`Table`] element type.
-    fn make_typed(&self, untyped: UntypedValue) -> Val {
+    /// Converts the internal [`UntypedVal`] into a [`Val`] for this [`Table`] element type.
+    fn make_typed(&self, untyped: UntypedVal) -> Val {
         untyped.with_type(self.ty().element())
     }
 
@@ -304,7 +304,7 @@ impl TableEntity {
     ///
     /// This is a more efficient version of [`Table::get`] for
     /// internal use only.
-    pub fn get_untyped(&self, index: u32) -> Option<UntypedValue> {
+    pub fn get_untyped(&self, index: u32) -> Option<UntypedVal> {
         self.elements.get(index as usize).copied()
     }
 
@@ -319,12 +319,12 @@ impl TableEntity {
         self.set_untyped(index, value.into())
     }
 
-    /// Returns the [`UntypedValue`] of the [`Table`] at `index`.
+    /// Returns the [`UntypedVal`] of the [`Table`] at `index`.
     ///
     /// # Errors
     ///
     /// If `index` is out of bounds.
-    pub fn set_untyped(&mut self, index: u32, value: UntypedValue) -> Result<(), TableError> {
+    pub fn set_untyped(&mut self, index: u32, value: UntypedVal) -> Result<(), TableError> {
         let current = self.size();
         let untyped =
             self.elements
@@ -526,7 +526,7 @@ impl TableEntity {
     pub fn fill_untyped(
         &mut self,
         dst: u32,
-        val: UntypedValue,
+        val: UntypedVal,
         len: u32,
         fuel: Option<&mut Fuel>,
     ) -> Result<(), TrapCode> {

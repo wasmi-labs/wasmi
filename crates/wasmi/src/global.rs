@@ -1,7 +1,7 @@
 use super::{AsContext, AsContextMut, Stored};
 use crate::{
     collections::arena::ArenaIndex,
-    core::{UntypedValue, ValType},
+    core::{UntypedVal, ValType},
     value::WithType,
     Val,
 };
@@ -144,7 +144,7 @@ impl GlobalType {
 #[derive(Debug)]
 pub struct GlobalEntity {
     /// The current value of the global variable.
-    value: UntypedValue,
+    value: UntypedVal,
     /// The type of the global variable.
     ty: GlobalType,
 }
@@ -191,7 +191,7 @@ impl GlobalEntity {
     /// for efficient `global.set` through the interpreter which is
     /// safe since the interpreter only handles validated Wasm code
     /// where the checks in [`Global::set`] cannot fail.
-    pub(crate) fn set_untyped(&mut self, new_value: UntypedValue) {
+    pub(crate) fn set_untyped(&mut self, new_value: UntypedVal) {
         self.value = new_value;
     }
 
@@ -201,12 +201,12 @@ impl GlobalEntity {
     }
 
     /// Returns the current untyped value of the global variable.
-    pub(crate) fn get_untyped(&self) -> UntypedValue {
+    pub(crate) fn get_untyped(&self) -> UntypedVal {
         self.value
     }
 
     /// Returns a pointer to the untyped value of the global variable.
-    pub(crate) fn get_untyped_ptr(&mut self) -> NonNull<UntypedValue> {
+    pub(crate) fn get_untyped_ptr(&mut self) -> NonNull<UntypedVal> {
         NonNull::from(&mut self.value)
     }
 }

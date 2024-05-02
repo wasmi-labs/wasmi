@@ -11,7 +11,7 @@ use self::{
     driver::{ExpectedFunc, TranslationTest},
 };
 use crate::{
-    core::UntypedValue,
+    core::UntypedVal,
     engine::bytecode::{AnyConst32, Const16, Const32, Instruction, Register},
     Config,
     Engine,
@@ -287,7 +287,7 @@ fn test_binary_reg_imm32<T>(
     value: T,
     make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
 ) where
-    T: Copy + Into<UntypedValue>,
+    T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
 {
     let expected = [
@@ -309,7 +309,7 @@ fn test_binary_reg_imm32_rev<T>(
     value: T,
     make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
 ) where
-    T: Copy + Into<UntypedValue>,
+    T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
 {
     let expected = [
@@ -331,7 +331,7 @@ fn test_binary_reg_imm32_rev_commutative<T>(
     value: T,
     make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
 ) where
-    T: Copy + Into<UntypedValue>,
+    T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
 {
     let expected = [

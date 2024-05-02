@@ -1,5 +1,5 @@
 use super::{EnforcedLimits, StackLimits};
-use crate::core::UntypedValue;
+use crate::core::UntypedVal;
 use core::{mem::size_of, num::NonZeroU64};
 use wasmparser::WasmFeatures;
 
@@ -136,7 +136,7 @@ impl FuelCosts {
 impl Default for FuelCosts {
     fn default() -> Self {
         let bytes_per_fuel = 64;
-        let bytes_per_register = size_of::<UntypedValue>() as u64;
+        let bytes_per_register = size_of::<UntypedVal>() as u64;
         let registers_per_fuel = bytes_per_fuel / bytes_per_register;
         Self {
             base: 1,

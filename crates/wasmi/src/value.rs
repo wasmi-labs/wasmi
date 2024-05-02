@@ -1,5 +1,5 @@
 use crate::{
-    core::{UntypedValue, ValType, F32, F64},
+    core::{UntypedVal, ValType, F32, F64},
     ExternRef,
     Func,
     FuncRef,
@@ -14,7 +14,7 @@ pub trait WithType {
     fn with_type(self, ty: ValType) -> Self::Output;
 }
 
-impl WithType for UntypedValue {
+impl WithType for UntypedVal {
     type Output = Val;
 
     fn with_type(self, ty: ValType) -> Self::Output {
@@ -29,7 +29,7 @@ impl WithType for UntypedValue {
     }
 }
 
-impl From<Val> for UntypedValue {
+impl From<Val> for UntypedVal {
     fn from(value: Val) -> Self {
         match value {
             Val::I32(value) => value.into(),

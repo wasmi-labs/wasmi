@@ -6,7 +6,7 @@ use super::{
     TypedProvider,
 };
 use crate::{
-    core::{UntypedValue, ValType, F32},
+    core::{UntypedVal, ValType, F32},
     engine::{
         bytecode::{
             BinInstr,
@@ -378,7 +378,7 @@ impl InstrEncoder {
         fn copy_imm(
             stack: &mut ValueStack,
             result: Register,
-            value: impl Into<UntypedValue>,
+            value: impl Into<UntypedVal>,
         ) -> Result<Instruction, Error> {
             let cref = stack.alloc_const(value.into())?;
             Ok(Instruction::copy(result, cref))
@@ -1056,7 +1056,7 @@ impl InstrEncoder {
             make_instr: BranchCmpImmConstructor<T>,
         ) -> Result<Option<Instruction>, Error>
         where
-            T: From<Const16<T>> + Into<UntypedValue>,
+            T: From<Const16<T>> + Into<UntypedVal>,
         {
             if matches!(stack.get_register_space(instr.result), RegisterSpace::Local) {
                 // We need to filter out instructions that store their result
@@ -1249,7 +1249,7 @@ impl InstrEncoder {
             make_instr: BranchCmpImmConstructor<T>,
         ) -> Result<Option<Instruction>, Error>
         where
-            T: From<Const16<T>> + Into<UntypedValue>,
+            T: From<Const16<T>> + Into<UntypedVal>,
         {
             if matches!(stack.get_register_space(instr.result), RegisterSpace::Local) {
                 // We need to filter out instructions that store their result

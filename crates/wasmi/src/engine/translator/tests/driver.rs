@@ -1,6 +1,6 @@
 use super::create_module;
 use crate::{
-    core::UntypedValue,
+    core::UntypedVal,
     engine::{bytecode::Instruction, CompiledFunc, DedupFuncType},
     Config,
     Engine,
@@ -36,7 +36,7 @@ pub struct ExpectedFunc {
     /// The instructions of the expected function.
     instrs: Vec<Instruction>,
     /// The function local constant values.
-    consts: Vec<UntypedValue>,
+    consts: Vec<UntypedVal>,
 }
 
 impl ExpectedFunc {
@@ -70,7 +70,7 @@ impl ExpectedFunc {
     pub fn consts<I, T>(mut self, consts: I) -> Self
     where
         I: IntoIterator<Item = T>,
-        T: Into<UntypedValue>,
+        T: Into<UntypedVal>,
     {
         assert!(
             self.expected_consts().is_empty(),
@@ -90,7 +90,7 @@ impl ExpectedFunc {
     }
 
     /// Returns the expected function local constant values of the [`ExpectedFunc`] as slice.
-    fn expected_consts(&self) -> &[UntypedValue] {
+    fn expected_consts(&self) -> &[UntypedVal] {
         &self.consts
     }
 

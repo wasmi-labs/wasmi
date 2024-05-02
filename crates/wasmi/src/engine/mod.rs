@@ -67,7 +67,7 @@ use wasmparser::{FuncToValidate, FuncValidatorAllocations, ValidatorResources};
 use self::bytecode::Instruction;
 
 #[cfg(test)]
-use crate::core::UntypedValue;
+use crate::core::UntypedVal;
 
 #[cfg(doc)]
 use crate::Store;
@@ -353,7 +353,7 @@ impl Engine {
         &self,
         func: CompiledFunc,
         index: usize,
-    ) -> Result<Option<UntypedValue>, Error> {
+    ) -> Result<Option<UntypedVal>, Error> {
         self.inner.get_func_const(func, index)
     }
 
@@ -771,7 +771,7 @@ impl EngineInner {
         &self,
         func: CompiledFunc,
         index: usize,
-    ) -> Result<Option<UntypedValue>, Error> {
+    ) -> Result<Option<UntypedVal>, Error> {
         // Function local constants are stored in reverse order of their indices since
         // they are allocated in reverse order to their absolute indices during function
         // translation. That is why we need to access them in reverse order.

@@ -7,7 +7,7 @@ mod tests;
 pub use self::{error::InstantiationError, pre::InstancePre};
 use super::{element::ElementSegmentKind, export, ConstExpr, DataSegmentKind, Module};
 use crate::{
-    core::UntypedValue,
+    core::UntypedVal,
     func::WasmFuncEntity,
     memory::{DataSegment, MemoryError},
     value::WithType,
@@ -252,7 +252,7 @@ impl Module {
         context: impl AsContext,
         builder: &InstanceEntityBuilder,
         init_expr: &ConstExpr,
-    ) -> UntypedValue {
+    ) -> UntypedVal {
         init_expr
             .eval_with_context(
                 |global_index| builder.get_global(global_index).get(&context),

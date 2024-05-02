@@ -1,6 +1,6 @@
 use super::*;
 use crate::{
-    core::UntypedValue,
+    core::UntypedVal,
     engine::{bytecode::BranchOffset, translator::tests::wasm_type::WasmType},
 };
 use core::fmt::Display;
@@ -179,7 +179,7 @@ fn test_br_as_return_values() {
                 Instruction::branch(BranchOffset::from(1)),
                 Instruction::return_reg2(-1, 0),
             ])
-            .consts([UntypedValue::from(2_i32)]),
+            .consts([UntypedVal::from(2_i32)]),
         )
         .run()
 }

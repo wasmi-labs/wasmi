@@ -11,7 +11,7 @@ pub use self::{
 };
 use super::{PreservedLocal, TypedValue};
 use crate::{
-    core::UntypedValue,
+    core::UntypedVal,
     engine::{
         bytecode::{Provider, Register, RegisterSpan, UntypedProvider},
         TranslationError,
@@ -23,7 +23,7 @@ use std::vec::Vec;
 
 /// Typed inputs to Wasmi bytecode instructions.
 ///
-/// Either a [`Register`] or a constant [`UntypedValue`].
+/// Either a [`Register`] or a constant [`UntypedVal`].
 ///
 /// # Note
 ///
@@ -36,7 +36,7 @@ impl TypedProvider {
     pub fn into_untyped(self) -> UntypedProvider {
         match self {
             Self::Register(register) => UntypedProvider::Register(register),
-            Self::Const(value) => UntypedProvider::Const(UntypedValue::from(value)),
+            Self::Const(value) => UntypedProvider::Const(UntypedVal::from(value)),
         }
     }
 
@@ -177,7 +177,7 @@ impl ValueStack {
     /// Constant values allocated this way are deduplicated and return shared [`Register`].
     pub fn alloc_const<T>(&mut self, value: T) -> Result<Register, Error>
     where
-        T: Into<UntypedValue>,
+        T: Into<UntypedVal>,
     {
         self.consts.alloc(value.into())
     }

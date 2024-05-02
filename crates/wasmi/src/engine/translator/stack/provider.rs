@@ -7,11 +7,11 @@ use arrayvec::ArrayVec;
 use std::vec::Vec;
 
 #[cfg(doc)]
-use crate::core::UntypedValue;
+use crate::core::UntypedVal;
 
 /// Tagged providers are inputs to Wasmi bytecode instructions.
 ///
-/// Either a [`Register`] or a constant [`UntypedValue`].
+/// Either a [`Register`] or a constant [`UntypedVal`].
 #[derive(Debug, Copy, Clone)]
 pub enum TaggedProvider {
     /// A register referring to a function local constant value.

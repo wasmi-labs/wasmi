@@ -3,7 +3,7 @@ use super::{
     TrampolineEntity,
 };
 use crate::{
-    core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedValue, ValType, F32, F64},
+    core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedVal, ValType, F32, F64},
     Caller,
     Error,
     ExternRef,
@@ -155,7 +155,7 @@ macro_rules! impl_wasm_return_type {
 for_each_tuple!(impl_wasm_return_type);
 
 /// Types that can be used as parameters or results of host functions.
-pub trait WasmType: From<UntypedValue> + Into<UntypedValue> + Send {
+pub trait WasmType: From<UntypedVal> + Into<UntypedVal> + Send {
     /// Returns the value type of the Wasm type.
     #[doc(hidden)]
     fn ty() -> ValType;
@@ -211,11 +211,11 @@ pub trait WasmTypeList: DecodeUntypedSlice + EncodeUntypedSlice + Sized + Send {
     #[doc(hidden)]
     type TypesIter: ExactSizeIterator<Item = ValType> + DoubleEndedIterator + FusedIterator;
 
-    /// The [`UntypedValue`] sequence as array.
+    /// The [`UntypedVal`] sequence as array.
     #[doc(hidden)]
-    type Values: IntoIterator<IntoIter = Self::ValuesIter, Item = UntypedValue>
-        + AsRef<[UntypedValue]>
-        + AsMut<[UntypedValue]>
+    type Values: IntoIterator<IntoIter = Self::ValuesIter, Item = UntypedVal>
+        + AsRef<[UntypedVal]>
+        + AsMut<[UntypedVal]>
         + Copy
         + Clone;
 
@@ -223,21 +223,21 @@ pub trait WasmTypeList: DecodeUntypedSlice + EncodeUntypedSlice + Sized + Send {
     ///
     /// [`Val`]: [`crate::core::Value`]
     #[doc(hidden)]
-    type ValuesIter: ExactSizeIterator<Item = UntypedValue> + DoubleEndedIterator + FusedIterator;
+    type ValuesIter: ExactSizeIterator<Item = UntypedVal> + DoubleEndedIterator + FusedIterator;
 
     /// Returns an array representing the [`ValType`] sequence of `Self`.
     #[doc(hidden)]
     fn types() -> Self::Types;
 
-    /// Returns an array representing the [`UntypedValue`] sequence of `self`.
+    /// Returns an array representing the [`UntypedVal`] sequence of `self`.
     #[doc(hidden)]
     fn values(self) -> Self::Values;
 
-    /// Consumes the [`UntypedValue`] iterator and creates `Self` if possible.
+    /// Consumes the [`UntypedVal`] iterator and creates `Self` if possible.
     ///
     /// Returns `None` if construction of `Self` is impossible.
     #[doc(hidden)]
-    fn from_values(values: &[UntypedValue]) -> Option<Self>;
+    fn from_values(values: &[UntypedVal]) -> Option<Self>;
 }
 
 impl<T1> WasmTypeList for T1
@@ -248,8 +248,8 @@ where
 
     type Types = [ValType; 1];
     type TypesIter = array::IntoIter<ValType, 1>;
-    type Values = [UntypedValue; 1];
-    type ValuesIter = array::IntoIter<UntypedValue, 1>;
+    type Values = [UntypedVal; 1];
+    type ValuesIter = array::IntoIter<UntypedVal, 1>;
 
     #[inline]
     fn types() -> Self::Types {
@@ -258,11 +258,11 @@ where
 
     #[inline]
     fn values(self) -> Self::Values {
-        [<T1 as Into<UntypedValue>>::into(self)]
+        [<T1 as Into<UntypedVal>>::into(self)]
     }
 
     #[inline]
-    fn from_values(values: &[UntypedValue]) -> Option<Self> {
+    fn from_values(values: &[UntypedVal]) -> Option<Self> {
         if let [value] = *values {
             return Some(value.into());
         }
@@ -282,8 +282,8 @@ macro_rules! impl_wasm_type_list {
 
             type Types = [ValType; $n];
             type TypesIter = array::IntoIter<ValType, $n>;
-            type Values = [UntypedValue; $n];
-            type ValuesIter = array::IntoIter<UntypedValue, $n>;
+            type Values = [UntypedVal; $n];
+            type ValuesIter = array::IntoIter<UntypedVal, $n>;
 
             #[inline]
             fn types() -> Self::Types {
@@ -297,13 +297,13 @@ macro_rules! impl_wasm_type_list {
             fn values(self) -> Self::Values {
                 let ($($tuple,)*) = self;
                 [$(
-                    <$tuple as Into<UntypedValue>>::into($tuple)
+                    <$tuple as Into<UntypedVal>>::into($tuple)
                 ),*]
             }
 
             #[inline]
             #[allow(non_snake_case)]
-            fn from_values(values: &[UntypedValue]) -> Option<Self> {
+            fn from_values(values: &[UntypedVal]) -> Option<Self> {
                 if let [$($tuple),*] = *values {
                     return Some(
                         ( $( Into::into($tuple), )* )

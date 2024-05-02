@@ -1,6 +1,6 @@
 use super::Executor;
 use crate::{
-    core::UntypedValue,
+    core::UntypedVal,
     engine::bytecode::{
         BranchBinOpInstr,
         BranchBinOpInstrImm16,
@@ -94,7 +94,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes a generic fused compare and branch instruction.
     fn execute_branch_binop<T>(&mut self, instr: BranchBinOpInstr, f: fn(T, T) -> bool)
     where
-        T: From<UntypedValue>,
+        T: From<UntypedVal>,
     {
         self.execute_branch_binop_raw::<T>(instr.lhs, instr.rhs, instr.offset, f)
     }
@@ -107,7 +107,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         offset: impl Into<BranchOffset>,
         f: fn(T, T) -> bool,
     ) where
-        T: From<UntypedValue>,
+        T: From<UntypedVal>,
     {
         let lhs: T = self.get_register_as(lhs);
         let rhs: T = self.get_register_as(rhs);
@@ -120,7 +120,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes a generic fused compare and branch instruction with immediate `rhs` operand.
     fn execute_branch_binop_imm<T>(&mut self, instr: BranchBinOpInstrImm16<T>, f: fn(T, T) -> bool)
     where
-        T: From<UntypedValue> + From<Const16<T>>,
+        T: From<UntypedVal> + From<Const16<T>>,
     {
         let lhs: T = self.get_register_as(instr.lhs);
         let rhs = T::from(instr.rhs);

@@ -14,7 +14,7 @@ use super::{
 };
 use crate::{
     collections::arena::{Arena, ArenaIndex},
-    core::{TrapCode, UntypedValue},
+    core::{TrapCode, UntypedVal},
     engine::bytecode::Instruction,
     module::{FuncIdx, ModuleHeader},
     store::{Fuel, FuelError},
@@ -303,7 +303,7 @@ pub struct CompiledFuncEntity {
     /// function parameters, function locals and dynamically used registers.
     len_registers: u16,
     /// The constant values local to the [`CompiledFunc`].
-    consts: Box<[UntypedValue]>,
+    consts: Box<[UntypedVal]>,
 }
 
 impl CompiledFuncEntity {
@@ -316,10 +316,10 @@ impl CompiledFuncEntity {
     pub fn new<I, C>(len_registers: u16, instrs: I, consts: C) -> Self
     where
         I: IntoIterator<Item = Instruction>,
-        C: IntoIterator<Item = UntypedValue>,
+        C: IntoIterator<Item = UntypedVal>,
     {
         let instrs: Box<[Instruction]> = instrs.into_iter().collect();
-        let consts: Box<[UntypedValue]> = consts.into_iter().collect();
+        let consts: Box<[UntypedVal]> = consts.into_iter().collect();
         assert!(
             !instrs.is_empty(),
             "compiled functions must have at least one instruction"
@@ -368,7 +368,7 @@ impl CompiledFuncEntity {
     }
 
     /// Returns the function local constant values of the [`CompiledFunc`].
-    pub fn consts(&self) -> &[UntypedValue] {
+    pub fn consts(&self) -> &[UntypedVal] {
         &self.consts
     }
 }

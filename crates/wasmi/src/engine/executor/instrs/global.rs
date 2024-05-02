@@ -1,6 +1,6 @@
 use super::Executor;
 use crate::{
-    core::UntypedValue,
+    core::UntypedVal,
     engine::bytecode::{Const16, GlobalIdx, Register},
 };
 
@@ -38,7 +38,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic `global.set` instruction.
-    fn execute_global_set_impl(&mut self, global: GlobalIdx, new_value: UntypedValue) {
+    fn execute_global_set_impl(&mut self, global: GlobalIdx, new_value: UntypedVal) {
         self.cache.set_global(self.ctx, global, new_value);
         self.next_instr()
     }
