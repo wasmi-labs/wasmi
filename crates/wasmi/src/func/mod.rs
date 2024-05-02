@@ -271,7 +271,7 @@ impl<T> TrampolineEntity<T> {
     /// The result is written back into the `outputs` buffer.
     pub fn call(
         &self,
-        mut ctx: impl AsContextMut<UserState = T>,
+        mut ctx: impl AsContextMut<Data = T>,
         instance: Option<&Instance>,
         params: FuncParams,
     ) -> Result<FuncFinished, Error> {
@@ -328,7 +328,7 @@ impl Func {
     ///   created using this constructor have runtime overhead for every invocation that
     ///   can be avoided by using [`Func::wrap`].
     pub fn new<T>(
-        mut ctx: impl AsContextMut<UserState = T>,
+        mut ctx: impl AsContextMut<Data = T>,
         ty: FuncType,
         func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<(), Error> + Send + Sync + 'static,
     ) -> Self {
@@ -345,7 +345,7 @@ impl Func {
 
     /// Creates a new host function from the given closure.
     pub fn wrap<T, Params, Results>(
-        mut ctx: impl AsContextMut<UserState = T>,
+        mut ctx: impl AsContextMut<Data = T>,
         func: impl IntoFunc<T, Params, Results>,
     ) -> Self {
         let engine = ctx.as_context().store.engine();
@@ -390,7 +390,7 @@ impl Func {
     ///   outputs required by the function signature of `self`.
     pub fn call<T>(
         &self,
-        mut ctx: impl AsContextMut<UserState = T>,
+        mut ctx: impl AsContextMut<Data = T>,
         inputs: &[Val],
         outputs: &mut [Val],
     ) -> Result<(), Error> {
@@ -430,7 +430,7 @@ impl Func {
     ///   outputs required by the function signature of `self`.
     pub fn call_resumable<T>(
         &self,
-        mut ctx: impl AsContextMut<UserState = T>,
+        mut ctx: impl AsContextMut<Data = T>,
         inputs: &[Val],
         outputs: &mut [Val],
     ) -> Result<ResumableCall, Error> {

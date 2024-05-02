@@ -205,7 +205,7 @@ impl ResumableInvocation {
     ///   outputs required by the called function.
     pub fn resume<T>(
         self,
-        mut ctx: impl AsContextMut<UserState = T>,
+        mut ctx: impl AsContextMut<Data = T>,
         inputs: &[Val],
         outputs: &mut [Val],
     ) -> Result<ResumableCall, Error> {
@@ -283,7 +283,7 @@ impl<Results> TypedResumableInvocation<Results> {
     /// [`TypedFunc`]: [`crate::TypedFunc`]
     pub fn resume<T>(
         self,
-        mut ctx: impl AsContextMut<UserState = T>,
+        mut ctx: impl AsContextMut<Data = T>,
         inputs: &[Val],
     ) -> Result<TypedResumableCall<Results>, Error>
     where

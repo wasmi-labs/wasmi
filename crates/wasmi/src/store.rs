@@ -980,16 +980,16 @@ impl<T> Store<T> {
 /// A trait used to get shared access to a [`Store`] in Wasmi.
 pub trait AsContext {
     /// The user state associated with the [`Store`], aka the `T` in `Store<T>`.
-    type UserState;
+    type Data;
 
     /// Returns the store context that this type provides access to.
-    fn as_context(&self) -> StoreContext<Self::UserState>;
+    fn as_context(&self) -> StoreContext<Self::Data>;
 }
 
 /// A trait used to get exclusive access to a [`Store`] in Wasmi.
 pub trait AsContextMut: AsContext {
     /// Returns the store context that this type provides access to.
-    fn as_context_mut(&mut self) -> StoreContextMut<Self::UserState>;
+    fn as_context_mut(&mut self) -> StoreContextMut<Self::Data>;
 }
 
 /// A temporary handle to a [`&Store<T>`][`Store`].
@@ -1027,21 +1027,21 @@ impl<'a, T> StoreContext<'a, T> {
     }
 }
 
-impl<'a, T: AsContext> From<&'a T> for StoreContext<'a, T::UserState> {
+impl<'a, T: AsContext> From<&'a T> for StoreContext<'a, T::Data> {
     #[inline]
     fn from(ctx: &'a T) -> Self {
         ctx.as_context()
     }
 }
 
-impl<'a, T: AsContext> From<&'a mut T> for StoreContext<'a, T::UserState> {
+impl<'a, T: AsContext> From<&'a mut T> for StoreContext<'a, T::Data> {
     #[inline]
     fn from(ctx: &'a mut T) -> Self {
         T::as_context(ctx)
     }
 }
 
-impl<'a, T: AsContextMut> From<&'a mut T> for StoreContextMut<'a, T::UserState> {
+impl<'a, T: AsContextMut> From<&'a mut T> for StoreContextMut<'a, T::Data> {
     #[inline]
     fn from(ctx: &'a mut T) -> Self {
         ctx.as_context_mut()
@@ -1105,10 +1105,10 @@ impl<T> AsContext for &'_ T
 where
     T: AsContext,
 {
-    type UserState = T::UserState;
+    type Data = T::Data;
 
     #[inline]
-    fn as_context(&self) -> StoreContext<'_, T::UserState> {
+    fn as_context(&self) -> StoreContext<'_, T::Data> {
         T::as_context(*self)
     }
 }
@@ -1117,10 +1117,10 @@ impl<T> AsContext for &'_ mut T
 where
     T: AsContext,
 {
-    type UserState = T::UserState;
+    type Data = T::Data;
 
     #[inline]
-    fn as_context(&self) -> StoreContext<'_, T::UserState> {
+    fn as_context(&self) -> StoreContext<'_, T::Data> {
         T::as_context(*self)
     }
 }
@@ -1130,32 +1130,32 @@ where
     T: AsContextMut,
 {
     #[inline]
-    fn as_context_mut(&mut self) -> StoreContextMut<'_, T::UserState> {
+    fn as_context_mut(&mut self) -> StoreContextMut<'_, T::Data> {
         T::as_context_mut(*self)
     }
 }
 
 impl<T> AsContext for StoreContext<'_, T> {
-    type UserState = T;
+    type Data = T;
 
     #[inline]
-    fn as_context(&self) -> StoreContext<'_, Self::UserState> {
+    fn as_context(&self) -> StoreContext<'_, Self::Data> {
         StoreContext { store: self.store }
     }
 }
 
 impl<T> AsContext for StoreContextMut<'_, T> {
-    type UserState = T;
+    type Data = T;
 
     #[inline]
-    fn as_context(&self) -> StoreContext<'_, Self::UserState> {
+    fn as_context(&self) -> StoreContext<'_, Self::Data> {
         StoreContext { store: self.store }
     }
 }
 
 impl<T> AsContextMut for StoreContextMut<'_, T> {
     #[inline]
-    fn as_context_mut(&mut self) -> StoreContextMut<'_, Self::UserState> {
+    fn as_context_mut(&mut self) -> StoreContextMut<'_, Self::Data> {
         StoreContextMut {
             store: &mut *self.store,
         }
@@ -1163,17 +1163,17 @@ impl<T> AsContextMut for StoreContextMut<'_, T> {
 }
 
 impl<T> AsContext for Store<T> {
-    type UserState = T;
+    type Data = T;
 
     #[inline]
-    fn as_context(&self) -> StoreContext<'_, Self::UserState> {
+    fn as_context(&self) -> StoreContext<'_, Self::Data> {
         StoreContext { store: self }
     }
 }
 
 impl<T> AsContextMut for Store<T> {
     #[inline]
-    fn as_context_mut(&mut self) -> StoreContextMut<'_, Self::UserState> {
+    fn as_context_mut(&mut self) -> StoreContextMut<'_, Self::Data> {
         StoreContextMut { store: self }
     }
 }

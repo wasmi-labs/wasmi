@@ -514,7 +514,7 @@ impl<T> Definition<T> {
     ///   defined host function.
     /// - This unifies handling of [`Definition::Extern(Extern::Func)`] and
     ///   [`Definition::HostFunc`].
-    pub fn as_func(&self, mut ctx: impl AsContextMut<UserState = T>) -> Option<Func> {
+    pub fn as_func(&self, mut ctx: impl AsContextMut<Data = T>) -> Option<Func> {
         match self {
             Definition::Extern(Extern::Func(func)) => Some(*func),
             Definition::HostFunc(host_func) => {
@@ -696,7 +696,7 @@ impl<T> Linker<T> {
     /// If the [`Engine`] of this [`Linker`] and the [`Engine`] of `context` are not the same.
     pub fn get(
         &self,
-        context: impl AsContext<UserState = T>,
+        context: impl AsContext<Data = T>,
         module: &str,
         name: &str,
     ) -> Option<Extern> {
@@ -715,7 +715,7 @@ impl<T> Linker<T> {
     /// If the [`Engine`] of this [`Linker`] and the [`Engine`] of `context` are not the same.
     fn get_definition(
         &self,
-        context: impl AsContext<UserState = T>,
+        context: impl AsContext<Data = T>,
         module: &str,
         name: &str,
     ) -> Option<&Definition<T>> {
@@ -743,7 +743,7 @@ impl<T> Linker<T> {
     /// - If any imported item does not satisfy its type requirements.
     pub fn instantiate(
         &self,
-        mut context: impl AsContextMut<UserState = T>,
+        mut context: impl AsContextMut<Data = T>,
         module: &Module,
     ) -> Result<InstancePre, Error> {
         assert!(Engine::same(self.engine(), context.as_context().engine()));
@@ -767,7 +767,7 @@ impl<T> Linker<T> {
     /// If the imported item does not satisfy constraints set by the [`Module`].
     fn process_import(
         &self,
-        mut context: impl AsContextMut<UserState = T>,
+        mut context: impl AsContextMut<Data = T>,
         import: ImportType,
     ) -> Result<Extern, Error> {
         assert!(Engine::same(self.engine(), context.as_context().engine()));
