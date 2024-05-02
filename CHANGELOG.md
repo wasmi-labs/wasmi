@@ -95,7 +95,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
   - `ValueType` enum -> `ValType`
   - `UntypedValue` struct -> `UntypedVal`
   - `WasmType` trait -> `WasmTy`
-  - `AsContext::UserData` assoc. type -> `Data`
+  - `AsContext::UserState` assoc. type -> `Data`
 
 ### Removed
 
