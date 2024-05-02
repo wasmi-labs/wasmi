@@ -78,7 +78,13 @@ Dates in this file are formattes as `YYYY-MM-DD`.
       ```
       In future updates we might relax this to make `EnforcedLimits` fully customizable.
 - Added `EngineWeak` constructed via `Engine::weak`. (https://github.com/wasmi-labs/wasmi/pull/1003)
-     - This properly mirrors the Wasmtime API and allows users to store weak references to the `Engine`.
+    - This properly mirrors the Wasmtime API and allows users to store weak references to the `Engine`.
+- Added `no-hash-maps` crate feature to the `wasmi` crate. (https://github.com/wasmi-labs/wasmi/pull/1007)
+    - This tells the `wasmi` crate to avoid using hash based data structures which can be beneficial for
+      running Wasmi in some embedded environments such as `wasm32-unknown-unknown` that do not support
+      random sources and thus are incapable to spawn hash maps that are resilient to malicious actors.
+    - Note that Wasmi has always avoided using hash map based data structures prior to this change so
+      not enabling this new crate feature kind of acts as an optimization.
 
 ### Changed
 
