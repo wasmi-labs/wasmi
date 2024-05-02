@@ -31,6 +31,7 @@ pub use self::{
     read::{Read, ReadError},
 };
 use crate::{
+    collections::Map,
     engine::{CompiledFunc, DedupFuncType, EngineWeak},
     Engine,
     Error,
@@ -68,7 +69,7 @@ struct ModuleHeaderInner {
     memories: Box<[MemoryType]>,
     globals: Box<[GlobalType]>,
     globals_init: Box<[ConstExpr]>,
-    exports: BTreeMap<Box<str>, ExternIdx>,
+    exports: Map<Box<str>, ExternIdx>,
     start: Option<FuncIdx>,
     compiled_funcs: Box<[CompiledFunc]>,
     compiled_funcs_idx: BTreeMap<CompiledFunc, FuncIdx>,

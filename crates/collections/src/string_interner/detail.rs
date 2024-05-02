@@ -68,7 +68,7 @@ impl StringInterner {
     fn get_or_intern_hint_new(&mut self, string: &str) -> Sym {
         match self.string2symbol.entry(LenOrder(string.into())) {
             Entry::Vacant(entry) => {
-                let symbol = Sym(self.strings.len());
+                let symbol = Sym::from_usize(self.strings.len());
                 self.strings.push(entry.key().clone().0);
                 entry.insert(symbol);
                 symbol
@@ -105,7 +105,7 @@ impl StringInterner {
         T: AsRef<str>,
     {
         let string = string.as_ref();
-        let symbol = Sym(self.strings.len());
+        let symbol = Sym::from_usize(self.strings.len());
         let rc_string: Arc<str> = Arc::from(string);
         let old = self
             .string2symbol
@@ -129,7 +129,7 @@ impl StringInterner {
     /// Resolves the symbol to the underlying string.
     #[inline]
     pub fn resolve(&self, symbol: Sym) -> Option<&str> {
-        self.strings.get(symbol.0).map(Deref::deref)
+        self.strings.get(symbol.into_usize()).map(Deref::deref)
     }
 }
 

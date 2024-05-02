@@ -1,6 +1,17 @@
-use crate::{AsContext, Func, FuncType, Global, GlobalType, Memory, MemoryType, Table, TableType};
+use crate::{
+    collections::map::Iter as MapIter,
+    AsContext,
+    Func,
+    FuncType,
+    Global,
+    GlobalType,
+    Memory,
+    MemoryType,
+    Table,
+    TableType,
+};
 use core::iter::FusedIterator;
-use std::{boxed::Box, collections::btree_map};
+use std::boxed::Box;
 
 /// An external item to a WebAssembly module.
 ///
@@ -234,12 +245,12 @@ impl<'instance> Export<'instance> {
 /// An iterator over the [`Extern`] declarations of an [`Instance`](crate::Instance).
 #[derive(Debug)]
 pub struct ExportsIter<'instance> {
-    iter: btree_map::Iter<'instance, Box<str>, Extern>,
+    iter: MapIter<'instance, Box<str>, Extern>,
 }
 
 impl<'instance> ExportsIter<'instance> {
     /// Creates a new [`ExportsIter`].
-    pub(super) fn new(iter: btree_map::Iter<'instance, Box<str>, Extern>) -> Self {
+    pub(super) fn new(iter: MapIter<'instance, Box<str>, Extern>) -> Self {
         Self { iter }
     }
 
@@ -259,12 +270,6 @@ impl<'instance> Iterator for ExportsIter<'instance> {
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter.size_hint()
-    }
-}
-
-impl DoubleEndedIterator for ExportsIter<'_> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.next_back().map(Self::convert_item)
     }
 }
 
