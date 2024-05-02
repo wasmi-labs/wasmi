@@ -12,7 +12,7 @@ fn wat2wasm(wat: &str) -> Vec<u8> {
 fn parse_with(wasm: &str, limits: EnforcedLimits) -> Result<Module, Error> {
     let wasm = wat2wasm(wasm);
     let mut config = Config::default();
-    config.engine_limits(limits);
+    config.enforced_limits(limits);
     let engine = Engine::new(&config);
     Module::new(&engine, &wasm[..])
 }

@@ -375,7 +375,7 @@ impl Config {
     /// By default no limits are enforced.
     ///
     /// [`Engine`]: crate::Engine
-    pub fn engine_limits(&mut self, limits: EnforcedLimits) -> &mut Self {
+    pub fn enforced_limits(&mut self, limits: EnforcedLimits) -> &mut Self {
         self.limits = limits;
         self
     }
