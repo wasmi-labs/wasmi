@@ -9,7 +9,7 @@ pub use self::{
     provider::{ProviderStack, TaggedProvider},
     register_alloc::{RegisterAlloc, RegisterSpace},
 };
-use super::{PreservedLocal, TypedValue};
+use super::{PreservedLocal, TypedVal};
 use crate::{
     core::UntypedVal,
     engine::{
@@ -29,7 +29,7 @@ use std::vec::Vec;
 ///
 /// The [`TypedProvider`] is used primarily during translation of a Wasmi
 /// function where types of constant values play an important role.
-pub type TypedProvider = Provider<TypedValue>;
+pub type TypedProvider = Provider<TypedVal>;
 
 impl TypedProvider {
     /// Converts the [`TypedProvider`] to a resolved [`UntypedProvider`].
@@ -211,7 +211,7 @@ impl ValueStack {
     /// Pushes a constant value to the [`ProviderStack`].
     pub fn push_const<T>(&mut self, value: T)
     where
-        T: Into<TypedValue>,
+        T: Into<TypedVal>,
     {
         self.providers.push_const_value(value)
     }

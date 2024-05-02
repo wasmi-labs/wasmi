@@ -1466,7 +1466,7 @@ impl Instruction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::engine::translator::typed_value::TypedValue;
+    use crate::engine::translator::typed_value::TypedVal;
 
     #[test]
     fn has_overlapping_copies_works() {
@@ -1481,14 +1481,14 @@ mod tests {
         assert!(!InstrEncoder::has_overlapping_copies(
             RegisterSpan::new(Register::from_i16(0)).iter(2),
             &[
-                TypedProvider::Const(TypedValue::from(10_i32)),
-                TypedProvider::Const(TypedValue::from(20_i32)),
+                TypedProvider::Const(TypedVal::from(10_i32)),
+                TypedProvider::Const(TypedVal::from(20_i32)),
             ],
         ));
         assert!(InstrEncoder::has_overlapping_copies(
             RegisterSpan::new(Register::from_i16(0)).iter(2),
             &[
-                TypedProvider::Const(TypedValue::from(10_i32)),
+                TypedProvider::Const(TypedVal::from(10_i32)),
                 TypedProvider::register(0),
             ],
         ));

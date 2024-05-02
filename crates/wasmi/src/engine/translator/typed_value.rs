@@ -32,8 +32,8 @@ impl_typed_for! {
     ExternRef => ValType::ExternRef;
 }
 
-impl From<TypedValue> for UntypedVal {
-    fn from(typed_value: TypedValue) -> Self {
+impl From<TypedVal> for UntypedVal {
+    fn from(typed_value: TypedVal) -> Self {
         typed_value.value
     }
 }
@@ -44,25 +44,25 @@ impl From<TypedValue> for UntypedVal {
 ///
 /// We explicitly do not make use of the existing [`Val`]
 /// abstraction since [`Val`] is optimized towards being a
-/// user facing type whereas [`TypedValue`] is focusing on
+/// user facing type whereas [`TypedVal`] is focusing on
 /// performance and efficiency in computations.
 ///
 /// [`Val`]: [`crate::core::Value`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct TypedValue {
+pub struct TypedVal {
     /// The type of the value.
     ty: ValType,
     /// The underlying raw value.
     value: UntypedVal,
 }
 
-impl TypedValue {
-    /// Create a new [`TypedValue`].
+impl TypedVal {
+    /// Create a new [`TypedVal`].
     pub fn new(ty: ValType, value: UntypedVal) -> Self {
         Self { ty, value }
     }
 
-    /// Returns the [`ValType`] of the [`TypedValue`].
+    /// Returns the [`ValType`] of the [`TypedVal`].
     pub fn ty(&self) -> ValType {
         self.ty
     }
@@ -78,7 +78,7 @@ impl TypedValue {
     }
 }
 
-impl<T> From<T> for TypedValue
+impl<T> From<T> for TypedVal
 where
     T: Typed + Into<UntypedVal>,
 {
@@ -102,8 +102,8 @@ impl<T, E> ResultType for Result<T, E> {
 macro_rules! impl_from_typed_value_for {
     ( $( impl From<TypedValue> for $ty:ty );* $(;)? ) => {
         $(
-            impl From<TypedValue> for $ty {
-                fn from(typed_value: TypedValue) -> Self {
+            impl From<TypedVal> for $ty {
+                fn from(typed_value: TypedVal) -> Self {
                     // # Note
                     //
                     // We only use a `debug_assert` here instead of a proper `assert`
@@ -176,7 +176,7 @@ macro_rules! impl_forwarding {
         }
     };
 }
-impl TypedValue {
+impl TypedVal {
     impl_forwarding! {
         // Comparison Instructions
 

@@ -27,7 +27,7 @@ use self::{
     control_stack::AcquiredTarget,
     labels::{LabelRef, LabelRegistry},
     stack::ValueStack,
-    typed_value::TypedValue,
+    typed_value::TypedVal,
     utils::{WasmFloat, WasmInteger},
 };
 pub use self::{
@@ -1258,9 +1258,9 @@ impl FuncTranslator {
     /// Evaluates the constants and pushes the proper result to the value stack.
     fn push_binary_consteval(
         &mut self,
-        lhs: TypedValue,
-        rhs: TypedValue,
-        consteval: fn(TypedValue, TypedValue) -> TypedValue,
+        lhs: TypedVal,
+        rhs: TypedVal,
+        consteval: fn(TypedVal, TypedVal) -> TypedVal,
     ) -> Result<(), Error> {
         self.alloc.stack.push_const(consteval(lhs, rhs));
         Ok(())
@@ -1343,13 +1343,13 @@ impl FuncTranslator {
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
         make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
         make_instr_imm16_rev: fn(result: Register, lhs: Const16<T>, rhs: Register) -> Instruction,
-        consteval: fn(TypedValue, TypedValue) -> TypedValue,
+        consteval: fn(TypedVal, TypedVal) -> TypedVal,
         make_instr_opt: fn(&mut Self, lhs: Register, rhs: Register) -> Result<bool, Error>,
         make_instr_reg_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, Error>,
         make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Register) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
-        T: Copy + From<TypedValue> + Into<TypedValue> + TryInto<Const16<T>>,
+        T: Copy + From<TypedVal> + Into<TypedVal> + TryInto<Const16<T>>,
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
@@ -1413,7 +1413,7 @@ impl FuncTranslator {
     fn translate_fbinary<T>(
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        consteval: fn(TypedValue, TypedValue) -> TypedValue,
+        consteval: fn(TypedVal, TypedVal) -> TypedVal,
         make_instr_opt: fn(&mut Self, lhs: Register, rhs: Register) -> Result<bool, Error>,
         make_instr_reg_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, Error>,
         make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Register) -> Result<bool, Error>,
@@ -1470,7 +1470,7 @@ impl FuncTranslator {
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
         make_instr_imm: fn(result: Register, lhs: Register, rhs: Sign) -> Instruction,
-        consteval: fn(TypedValue, TypedValue) -> TypedValue,
+        consteval: fn(TypedVal, TypedVal) -> TypedVal,
     ) -> Result<(), Error>
     where
         T: WasmFloat,
@@ -1526,12 +1526,12 @@ impl FuncTranslator {
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
         make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
-        consteval: fn(TypedValue, TypedValue) -> TypedValue,
+        consteval: fn(TypedVal, TypedVal) -> TypedVal,
         make_instr_opt: fn(&mut Self, lhs: Register, rhs: Register) -> Result<bool, Error>,
         make_instr_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
-        T: Copy + From<TypedValue> + TryInto<Const16<T>>,
+        T: Copy + From<TypedVal> + TryInto<Const16<T>>,
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
@@ -1583,7 +1583,7 @@ impl FuncTranslator {
     fn translate_fbinary_commutative<T>(
         &mut self,
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        consteval: fn(TypedValue, TypedValue) -> TypedValue,
+        consteval: fn(TypedVal, TypedVal) -> TypedVal,
         make_instr_opt: fn(&mut Self, lhs: Register, rhs: Register) -> Result<bool, Error>,
         make_instr_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, Error>,
     ) -> Result<(), Error>
@@ -1640,7 +1640,7 @@ impl FuncTranslator {
         make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
         make_instr_imm: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
         make_instr_imm16_rev: fn(result: Register, lhs: Const16<T>, rhs: Register) -> Instruction,
-        consteval: fn(TypedValue, TypedValue) -> TypedValue,
+        consteval: fn(TypedVal, TypedVal) -> TypedVal,
         make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Register) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
@@ -1714,7 +1714,7 @@ impl FuncTranslator {
             rhs: Const16<NonZeroT>,
         ) -> Instruction,
         make_instr_imm16_rev: fn(result: Register, lhs: Const16<T>, rhs: Register) -> Instruction,
-        consteval: fn(TypedValue, TypedValue) -> Result<TypedValue, TrapCode>,
+        consteval: fn(TypedVal, TypedVal) -> Result<TypedVal, TrapCode>,
         make_instr_opt: fn(&mut Self, lhs: Register, rhs: Register) -> Result<bool, Error>,
         make_instr_reg_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, Error>,
     ) -> Result<(), Error>
@@ -1773,7 +1773,7 @@ impl FuncTranslator {
     fn translate_unary(
         &mut self,
         make_instr: fn(result: Register, input: Register) -> Instruction,
-        consteval: fn(input: TypedValue) -> TypedValue,
+        consteval: fn(input: TypedVal) -> TypedVal,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         match self.alloc.stack.pop() {
@@ -1793,7 +1793,7 @@ impl FuncTranslator {
     fn translate_unary_fallible(
         &mut self,
         make_instr: fn(result: Register, input: Register) -> Instruction,
-        consteval: fn(input: TypedValue) -> Result<TypedValue, TrapCode>,
+        consteval: fn(input: TypedVal) -> Result<TypedVal, TrapCode>,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         match self.alloc.stack.pop() {
@@ -1831,7 +1831,7 @@ impl FuncTranslator {
     /// Encodes a [`TrapCode::MemoryOutOfBounds`] trap instruction if the effective address is invalid.
     fn effective_address_and(
         &mut self,
-        ptr: TypedValue,
+        ptr: TypedVal,
         offset: u32,
         f: impl FnOnce(&mut Self, u32) -> Result<(), Error>,
     ) -> Result<(), Error> {
@@ -1920,7 +1920,7 @@ impl FuncTranslator {
         make_instr_at_imm: fn(address: Const32<u32>, value: U) -> Instruction,
     ) -> Result<(), Error>
     where
-        T: Copy + From<TypedValue>,
+        T: Copy + From<TypedVal>,
         U: TryFrom<T>,
     {
         bail_unreachable!(self);
