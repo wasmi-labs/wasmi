@@ -1,3 +1,5 @@
+use core::array;
+
 use super::Executor;
 use crate::{
     core::TrapCode,
@@ -13,7 +15,6 @@ use crate::{
     Func,
     FuncRef,
 };
-use core::slice;
 
 /// Describes whether a `call` instruction has at least one parameter or none.
 #[derive(Debug, Copy, Clone)]
@@ -123,44 +124,66 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         Ok(frame)
     }
 
-    /// Copies the parameters from `src` for the called [`CallFrame`].
+    /// Copies the parameters from caller for the callee [`CallFrame`].
     ///
     /// This will also adjust the instruction pointer to point to the
     /// last call parameter [`Instruction`] if any.
     #[inline(always)]
-    #[must_use]
-    fn copy_call_params(&mut self, mut callee_regs: FrameRegisters) -> InstructionPtr {
+    fn copy_call_params(&mut self, mut callee_regs: FrameRegisters) {
         let mut dst = Register::from_i16(0);
-        let mut ip = self.ip;
-        let mut copy_params = |values: &[Register]| {
-            for value in values {
-                let value = self.get_register(*value);
-                // Safety: The `callee.results()` always refer to a span of valid
-                //         registers of the `caller` that does not overlap with the
-                //         registers of the callee since they reside in different
-                //         call frames. Therefore this access is safe.
-                unsafe { callee_regs.set(dst, value) }
-                dst = dst.next();
-            }
-        };
-        ip.add(1);
-        while let Instruction::RegisterList(values) = ip.get() {
-            copy_params(values);
-            ip.add(1);
+        self.ip.add(1);
+        if let Instruction::RegisterList(_) = self.ip.get() {
+            self.copy_call_params_list(&mut dst, &mut callee_regs);
         }
-        let values = match ip.get() {
-            Instruction::Register(value) => slice::from_ref(value),
-            Instruction::Register2(values) => values,
-            Instruction::Register3(values) => values,
+        match self.ip.get() {
+            Instruction::Register(value) => {
+                self.copy_regs(&mut dst, &mut callee_regs, array::from_ref(value));
+            }
+            Instruction::Register2(values) => {
+                self.copy_regs(&mut dst, &mut callee_regs, values);
+            }
+            Instruction::Register3(values) => {
+                self.copy_regs(&mut dst, &mut callee_regs, values);
+            }
             unexpected => {
                 unreachable!(
                     "unexpected Instruction found while copying call parameters: {unexpected:?}"
                 )
             }
-        };
-        copy_params(values);
-        // Finally return the instruction pointer to the last call parameter [`Instruction`] if any.
-        ip
+        }
+    }
+
+    /// Copies an array of [`Register`] to the `dst` [`Register`] span.
+    #[inline(always)]
+    fn copy_regs<const N: usize>(
+        &self,
+        dst: &mut Register,
+        callee_regs: &mut FrameRegisters,
+        regs: &[Register; N],
+    ) {
+        for value in regs {
+            let value = self.get_register(*value);
+            // Safety: The `callee.results()` always refer to a span of valid
+            //         registers of the `caller` that does not overlap with the
+            //         registers of the callee since they reside in different
+            //         call frames. Therefore this access is safe.
+            unsafe { callee_regs.set(*dst, value) }
+            *dst = dst.next();
+        }
+    }
+
+    /// Copies a list of [`Instruction::RegisterList`] to the `dst` [`Register`] span.
+    /// Copies the parameters from `src` for the called [`CallFrame`].
+    ///
+    /// This will make the [`InstructionPtr`] point to the [`Instruction`] following the
+    /// last [`Instruction::RegisterList`] if any.
+    #[inline]
+    #[cold]
+    fn copy_call_params_list(&mut self, dst: &mut Register, callee_regs: &mut FrameRegisters) {
+        while let Instruction::RegisterList(values) = self.ip.get() {
+            self.copy_regs(dst, callee_regs, values);
+            self.ip.add(1);
+        }
     }
 
     /// Prepares a [`CompiledFunc`] call with optional [`CallParams`].
@@ -176,7 +199,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let mut called = self.dispatch_compiled_func(results, func)?;
         if let CallParams::Some = params {
             let called_sp = self.frame_stack_ptr(&called);
-            self.ip = self.copy_call_params(called_sp);
+            self.copy_call_params(called_sp);
         }
         match call_kind {
             CallKind::Nested => {
@@ -339,10 +362,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 let offset = self.value_stack.extend_zeros(max_inout);
                 let offset_sp = unsafe { self.value_stack.stack_ptr_at(offset) };
                 if matches!(params, CallParams::Some) {
-                    let new_ip = self.copy_call_params(offset_sp);
-                    if matches!(call_kind, CallKind::Nested) {
-                        self.ip = new_ip;
-                    }
+                    self.copy_call_params(offset_sp);
                 }
                 if matches!(call_kind, CallKind::Nested) {
                     self.update_instr_ptr_at(1);
