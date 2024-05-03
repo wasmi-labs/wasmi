@@ -213,7 +213,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         }
     }
 
-    /// Prepares a [`CompiledFunc`] call with optional [`CallParams`].
+    /// Prepares a [`CompiledFunc`] call with optional call parameters.
     #[inline(always)]
     fn prepare_compiled_func_call<C: CallContext>(
         &mut self,
