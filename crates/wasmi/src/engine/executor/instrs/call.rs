@@ -1,3 +1,5 @@
+use core::array;
+
 use super::Executor;
 use crate::{
     core::TrapCode,
@@ -13,16 +15,6 @@ use crate::{
     Func,
     FuncRef,
 };
-use core::slice;
-
-/// Describes whether a `call` instruction has at least one parameter or none.
-#[derive(Debug, Copy, Clone)]
-pub enum CallParams {
-    /// The function call has no parameters.
-    None,
-    /// The function call has at least one parameter.
-    Some,
-}
 
 /// The outcome of a Wasm execution.
 ///
@@ -49,6 +41,42 @@ pub enum CallKind {
     Nested,
     /// A tailing function call.
     Tail,
+}
+
+trait CallContext {
+    const KIND: CallKind;
+    const HAS_PARAMS: bool;
+}
+trait ReturnCallContext: CallContext {}
+
+mod marker {
+    use super::{CallContext, CallKind, ReturnCallContext};
+
+    pub enum ReturnCall0 {}
+    impl CallContext for ReturnCall0 {
+        const KIND: CallKind = CallKind::Tail;
+        const HAS_PARAMS: bool = false;
+    }
+    impl ReturnCallContext for ReturnCall0 {}
+
+    pub enum ReturnCall {}
+    impl CallContext for ReturnCall {
+        const KIND: CallKind = CallKind::Tail;
+        const HAS_PARAMS: bool = true;
+    }
+    impl ReturnCallContext for ReturnCall {}
+
+    pub enum NestedCall0 {}
+    impl CallContext for NestedCall0 {
+        const KIND: CallKind = CallKind::Nested;
+        const HAS_PARAMS: bool = false;
+    }
+
+    pub enum NestedCall {}
+    impl CallContext for NestedCall {
+        const KIND: CallKind = CallKind::Nested;
+        const HAS_PARAMS: bool = true;
+    }
 }
 
 impl<'ctx, 'engine> Executor<'ctx, 'engine> {
@@ -123,62 +151,82 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         Ok(frame)
     }
 
-    /// Copies the parameters from `src` for the called [`CallFrame`].
+    /// Copies the parameters from caller for the callee [`CallFrame`].
     ///
     /// This will also adjust the instruction pointer to point to the
     /// last call parameter [`Instruction`] if any.
     #[inline(always)]
-    #[must_use]
-    fn copy_call_params(&mut self, mut callee_regs: FrameRegisters) -> InstructionPtr {
+    fn copy_call_params(&mut self, mut callee_regs: FrameRegisters) {
         let mut dst = Register::from_i16(0);
-        let mut ip = self.ip;
-        let mut copy_params = |values: &[Register]| {
-            for value in values {
-                let value = self.get_register(*value);
-                // Safety: The `callee.results()` always refer to a span of valid
-                //         registers of the `caller` that does not overlap with the
-                //         registers of the callee since they reside in different
-                //         call frames. Therefore this access is safe.
-                unsafe { callee_regs.set(dst, value) }
-                dst = dst.next();
-            }
-        };
-        ip.add(1);
-        while let Instruction::RegisterList(values) = ip.get() {
-            copy_params(values);
-            ip.add(1);
+        self.ip.add(1);
+        if let Instruction::RegisterList(_) = self.ip.get() {
+            self.copy_call_params_list(&mut dst, &mut callee_regs);
         }
-        let values = match ip.get() {
-            Instruction::Register(value) => slice::from_ref(value),
-            Instruction::Register2(values) => values,
-            Instruction::Register3(values) => values,
+        match self.ip.get() {
+            Instruction::Register(value) => {
+                self.copy_regs(&mut dst, &mut callee_regs, array::from_ref(value));
+            }
+            Instruction::Register2(values) => {
+                self.copy_regs(&mut dst, &mut callee_regs, values);
+            }
+            Instruction::Register3(values) => {
+                self.copy_regs(&mut dst, &mut callee_regs, values);
+            }
             unexpected => {
                 unreachable!(
                     "unexpected Instruction found while copying call parameters: {unexpected:?}"
                 )
             }
-        };
-        copy_params(values);
-        // Finally return the instruction pointer to the last call parameter [`Instruction`] if any.
-        ip
+        }
     }
 
-    /// Prepares a [`CompiledFunc`] call with optional [`CallParams`].
+    /// Copies an array of [`Register`] to the `dst` [`Register`] span.
     #[inline(always)]
-    fn prepare_compiled_func_call(
+    fn copy_regs<const N: usize>(
+        &self,
+        dst: &mut Register,
+        callee_regs: &mut FrameRegisters,
+        regs: &[Register; N],
+    ) {
+        for value in regs {
+            let value = self.get_register(*value);
+            // Safety: The `callee.results()` always refer to a span of valid
+            //         registers of the `caller` that does not overlap with the
+            //         registers of the callee since they reside in different
+            //         call frames. Therefore this access is safe.
+            unsafe { callee_regs.set(*dst, value) }
+            *dst = dst.next();
+        }
+    }
+
+    /// Copies a list of [`Instruction::RegisterList`] to the `dst` [`Register`] span.
+    /// Copies the parameters from `src` for the called [`CallFrame`].
+    ///
+    /// This will make the [`InstructionPtr`] point to the [`Instruction`] following the
+    /// last [`Instruction::RegisterList`] if any.
+    #[inline]
+    #[cold]
+    fn copy_call_params_list(&mut self, dst: &mut Register, callee_regs: &mut FrameRegisters) {
+        while let Instruction::RegisterList(values) = self.ip.get() {
+            self.copy_regs(dst, callee_regs, values);
+            self.ip.add(1);
+        }
+    }
+
+    /// Prepares a [`CompiledFunc`] call with optional call parameters.
+    #[inline(always)]
+    fn prepare_compiled_func_call<C: CallContext>(
         &mut self,
         results: RegisterSpan,
         func: CompiledFunc,
-        params: CallParams,
-        call_kind: CallKind,
     ) -> Result<(), Error> {
         let func = self.code_map.get(Some(self.ctx.fuel_mut()), func)?;
         let mut called = self.dispatch_compiled_func(results, func)?;
-        if let CallParams::Some = params {
+        if <C as CallContext>::HAS_PARAMS {
             let called_sp = self.frame_stack_ptr(&called);
-            self.ip = self.copy_call_params(called_sp);
+            self.copy_call_params(called_sp);
         }
-        match call_kind {
+        match <C as CallContext>::KIND {
             CallKind::Nested => {
                 // We need to update the instruction pointer of the caller call frame.
                 self.update_instr_ptr_at(1);
@@ -205,23 +253,22 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes an [`Instruction::ReturnCallInternal0`].
     #[inline(always)]
     pub fn execute_return_call_internal_0(&mut self, func: CompiledFunc) -> Result<(), Error> {
-        self.execute_return_call_internal_impl(func, CallParams::None)
+        self.execute_return_call_internal_impl::<marker::ReturnCall0>(func)
     }
 
     /// Executes an [`Instruction::ReturnCallInternal`].
     #[inline(always)]
     pub fn execute_return_call_internal(&mut self, func: CompiledFunc) -> Result<(), Error> {
-        self.execute_return_call_internal_impl(func, CallParams::Some)
+        self.execute_return_call_internal_impl::<marker::ReturnCall>(func)
     }
 
     /// Executes an [`Instruction::ReturnCallInternal`] or [`Instruction::ReturnCallInternal0`].
-    fn execute_return_call_internal_impl(
+    fn execute_return_call_internal_impl<C: CallContext>(
         &mut self,
         func: CompiledFunc,
-        params: CallParams,
     ) -> Result<(), Error> {
         let results = self.caller_results();
-        self.prepare_compiled_func_call(results, func, params, CallKind::Tail)
+        self.prepare_compiled_func_call::<C>(results, func)
     }
 
     /// Returns the `results` [`RegisterSpan`] of the top-most [`CallFrame`] on the [`CallStack`].
@@ -246,7 +293,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         results: RegisterSpan,
         func: CompiledFunc,
     ) -> Result<(), Error> {
-        self.prepare_compiled_func_call(results, func, CallParams::None, CallKind::Nested)
+        self.prepare_compiled_func_call::<marker::NestedCall0>(results, func)
     }
 
     /// Executes an [`Instruction::CallInternal`].
@@ -256,30 +303,29 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         results: RegisterSpan,
         func: CompiledFunc,
     ) -> Result<(), Error> {
-        self.prepare_compiled_func_call(results, func, CallParams::Some, CallKind::Nested)
+        self.prepare_compiled_func_call::<marker::NestedCall>(results, func)
     }
 
     /// Executes an [`Instruction::ReturnCallImported0`].
     #[inline(always)]
     pub fn execute_return_call_imported_0(&mut self, func: FuncIdx) -> Result<CallOutcome, Error> {
-        self.execute_return_call_imported_impl(func, CallParams::None)
+        self.execute_return_call_imported_impl::<marker::ReturnCall0>(func)
     }
 
     /// Executes an [`Instruction::ReturnCallImported`].
     #[inline(always)]
     pub fn execute_return_call_imported(&mut self, func: FuncIdx) -> Result<CallOutcome, Error> {
-        self.execute_return_call_imported_impl(func, CallParams::Some)
+        self.execute_return_call_imported_impl::<marker::ReturnCall>(func)
     }
 
     /// Executes an [`Instruction::ReturnCallImported`] or [`Instruction::ReturnCallImported0`].
-    fn execute_return_call_imported_impl(
+    fn execute_return_call_imported_impl<C: ReturnCallContext>(
         &mut self,
         func: FuncIdx,
-        params: CallParams,
     ) -> Result<CallOutcome, Error> {
         let func = self.cache.get_func(self.ctx, func);
         let results = self.caller_results();
-        self.execute_call_imported_impl(results, &func, params, CallKind::Tail)
+        self.execute_call_imported_impl::<C>(results, &func)
     }
 
     /// Executes an [`Instruction::CallImported0`].
@@ -290,7 +336,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func: FuncIdx,
     ) -> Result<CallOutcome, Error> {
         let func = self.cache.get_func(self.ctx, func);
-        self.execute_call_imported_impl(results, &func, CallParams::None, CallKind::Nested)
+        self.execute_call_imported_impl::<marker::NestedCall0>(results, &func)
     }
 
     /// Executes an [`Instruction::CallImported`].
@@ -301,21 +347,19 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func: FuncIdx,
     ) -> Result<CallOutcome, Error> {
         let func = self.cache.get_func(self.ctx, func);
-        self.execute_call_imported_impl(results, &func, CallParams::Some, CallKind::Nested)
+        self.execute_call_imported_impl::<marker::NestedCall>(results, &func)
     }
 
     /// Executes an imported or indirect (tail) call instruction.
-    fn execute_call_imported_impl(
+    fn execute_call_imported_impl<C: CallContext>(
         &mut self,
         results: RegisterSpan,
         func: &Func,
-        params: CallParams,
-        call_kind: CallKind,
     ) -> Result<CallOutcome, Error> {
         match self.ctx.resolve_func(func) {
             FuncEntity::Wasm(func) => {
                 let instance = *func.instance();
-                self.prepare_compiled_func_call(results, func.func_body(), params, call_kind)?;
+                self.prepare_compiled_func_call::<C>(results, func.func_body())?;
                 self.cache.update_instance(&instance);
                 Ok(CallOutcome::Continue)
             }
@@ -338,20 +382,17 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 self.sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
                 let offset = self.value_stack.extend_zeros(max_inout);
                 let offset_sp = unsafe { self.value_stack.stack_ptr_at(offset) };
-                if matches!(params, CallParams::Some) {
-                    let new_ip = self.copy_call_params(offset_sp);
-                    if matches!(call_kind, CallKind::Nested) {
-                        self.ip = new_ip;
-                    }
+                if <C as CallContext>::HAS_PARAMS {
+                    self.copy_call_params(offset_sp);
                 }
-                if matches!(call_kind, CallKind::Nested) {
+                if matches!(<C as CallContext>::KIND, CallKind::Nested) {
                     self.update_instr_ptr_at(1);
                 }
                 self.cache.reset();
                 Ok(CallOutcome::Call {
                     results,
                     host_func: *func,
-                    call_kind,
+                    call_kind: <C as CallContext>::KIND,
                 })
             }
         }
@@ -365,14 +406,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ) -> Result<CallOutcome, Error> {
         let (index, table) = self.pull_call_indirect_params();
         let results = self.caller_results();
-        self.execute_call_indirect_impl(
-            results,
-            func_type,
-            index,
-            table,
-            CallParams::None,
-            CallKind::Tail,
-        )
+        self.execute_call_indirect_impl::<marker::ReturnCall0>(results, func_type, index, table)
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
@@ -383,14 +417,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ) -> Result<CallOutcome, Error> {
         let (index, table) = self.pull_call_indirect_params();
         let results = self.caller_results();
-        self.execute_call_indirect_impl(
-            results,
-            func_type,
-            index,
-            table,
-            CallParams::Some,
-            CallKind::Tail,
-        )
+        self.execute_call_indirect_impl::<marker::ReturnCall>(results, func_type, index, table)
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
@@ -401,14 +428,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, Error> {
         let (index, table) = self.pull_call_indirect_params();
-        self.execute_call_indirect_impl(
-            results,
-            func_type,
-            index,
-            table,
-            CallParams::None,
-            CallKind::Nested,
-        )
+        self.execute_call_indirect_impl::<marker::NestedCall0>(results, func_type, index, table)
     }
 
     /// Executes an [`Instruction::CallIndirect`].
@@ -419,25 +439,16 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, Error> {
         let (index, table) = self.pull_call_indirect_params();
-        self.execute_call_indirect_impl(
-            results,
-            func_type,
-            index,
-            table,
-            CallParams::Some,
-            CallKind::Nested,
-        )
+        self.execute_call_indirect_impl::<marker::NestedCall>(results, func_type, index, table)
     }
 
     /// Executes an [`Instruction::CallIndirect`] and [`Instruction::CallIndirect0`].
-    fn execute_call_indirect_impl(
+    fn execute_call_indirect_impl<C: CallContext>(
         &mut self,
         results: RegisterSpan,
         func_type: SignatureIdx,
         index: u32,
         table: TableIdx,
-        params: CallParams,
-        call_kind: CallKind,
     ) -> Result<CallOutcome, Error> {
         let table = self.cache.get_table(self.ctx, table);
         let funcref = self
@@ -458,6 +469,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         if actual_signature != expected_signature {
             return Err(Error::from(TrapCode::BadSignature));
         }
-        self.execute_call_imported_impl(results, func, params, call_kind)
+        self.execute_call_imported_impl::<C>(results, func)
     }
 }

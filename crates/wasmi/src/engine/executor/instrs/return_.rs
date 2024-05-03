@@ -31,13 +31,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.value_stack.truncate(returned.frame_offset());
         match self.call_stack.peek() {
             Some(caller) => {
-                Self::init_call_frame_impl(
-                    self.value_stack,
-                    &mut self.sp,
-                    &mut self.ip,
-                    self.cache,
-                    caller,
-                );
+                Self::init_call_frame_impl(self.value_stack, &mut self.sp, &mut self.ip, caller);
+                self.cache.update_instance(caller.instance());
                 ReturnOutcome::Wasm
             }
             None => ReturnOutcome::Host,

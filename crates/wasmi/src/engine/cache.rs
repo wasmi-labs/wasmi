@@ -69,10 +69,9 @@ impl InstanceCache {
     /// Updates the currently used instance resetting all cached entities.
     #[inline]
     pub fn update_instance(&mut self, instance: &Instance) {
-        if instance == self.instance() {
-            return;
+        if instance != self.instance() {
+            self.set_instance(instance);
         }
-        self.set_instance(instance);
     }
 
     /// Loads the [`DataSegment`] at `index` of the currently used [`Instance`].
