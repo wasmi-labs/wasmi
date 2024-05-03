@@ -946,13 +946,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// The initialization of the [`Executor`] allows for efficient execution.
     fn init_call_frame(&mut self, frame: &CallFrame) {
-        Self::init_call_frame_impl(
-            self.value_stack,
-            &mut self.sp,
-            &mut self.ip,
-            self.cache,
-            frame,
-        )
+        Self::init_call_frame_impl(self.value_stack, &mut self.sp, &mut self.ip, frame)
     }
 
     /// Initializes the [`Executor`] state for the [`CallFrame`].
@@ -964,12 +958,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         value_stack: &mut ValueStack,
         sp: &mut FrameRegisters,
         ip: &mut InstructionPtr,
-        cache: &mut InstanceCache,
         frame: &CallFrame,
     ) {
         *sp = Self::frame_stack_ptr_impl(value_stack, frame);
         *ip = frame.instr_ptr();
-        cache.update_instance(frame.instance());
     }
 
     /// Returns the [`Instruction::Const32`] parameter for an [`Instruction`].
