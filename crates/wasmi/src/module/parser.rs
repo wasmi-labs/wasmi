@@ -105,7 +105,8 @@ impl ParseBuffer {
         // Note that the buffer management here is not ideal,
         // but it's compact enough to fit in an example!
         let len = self.len();
-        self.extend((0..hint).map(|_| 0u8));
+        let new_len = len + hint as usize;
+        self.resize(new_len, 0x0_u8);
         let read_bytes = stream.read(&mut self[len..])?;
         self.truncate(len + read_bytes);
         let reached_end = read_bytes == 0;
