@@ -77,6 +77,58 @@ pub struct ModuleParser {
     eof: bool,
 }
 
+/// A buffer for holding parsed payloads in bytes.
+#[derive(Debug, Default, Clone)]
+pub struct ParseBuffer {
+    buffer: Vec<u8>,
+}
+
+impl ParseBuffer {
+    /// Drops the first `amount` bytes from the [`ParseBuffer`] as they have been consumed.
+    #[inline]
+    pub fn consume(&mut self, amount: usize) {
+        self.buffer.drain(..amount);
+    }
+
+    /// Pulls more bytes from the `stream` in order to produce Wasm payload.
+    ///
+    /// Returns `true` if the parser reached the end of the stream.
+    ///
+    /// # Note
+    ///
+    /// Uses `hint` to efficiently preallocate enough space for the next payload.
+    #[inline]
+    pub fn pull_bytes(&mut self, hint: u64, stream: &mut impl Read) -> Result<bool, Error> {
+        // Use the hint to preallocate more space, then read
+        // some more data into the buffer.
+        //
+        // Note that the buffer management here is not ideal,
+        // but it's compact enough to fit in an example!
+        let len = self.len();
+        self.extend((0..hint).map(|_| 0u8));
+        let read_bytes = stream.read(&mut self[len..])?;
+        self.truncate(len + read_bytes);
+        let reached_end = read_bytes == 0;
+        Ok(reached_end)
+    }
+}
+
+impl std::ops::Deref for ParseBuffer {
+    type Target = Vec<u8>;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &self.buffer
+    }
+}
+
+impl std::ops::DerefMut for ParseBuffer {
+    #[inline]
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.buffer
+    }
+}
+
 /// The mode of Wasm validation when parsing a Wasm module.
 #[derive(Debug, Copy, Clone)]
 pub enum ValidationMode {
@@ -134,7 +186,7 @@ impl ModuleParser {
         validation_mode: ValidationMode,
         mut stream: impl Read,
     ) -> Result<Module, Error> {
-        let mut buffer = Vec::new();
+        let mut buffer = ParseBuffer::default();
         let header = Self::parse_header(&mut self, &mut stream, &mut buffer)?;
         let builder =
             Self::parse_code(&mut self, validation_mode, &mut stream, &mut buffer, header)?;
@@ -155,13 +207,13 @@ impl ModuleParser {
     fn parse_header(
         &mut self,
         stream: &mut impl Read,
-        buffer: &mut Vec<u8>,
+        buffer: &mut ParseBuffer,
     ) -> Result<ModuleHeader, Error> {
         let mut header = ModuleHeaderBuilder::new(&self.engine);
         loop {
             match self.parser.parse(&buffer[..], self.eof)? {
                 Chunk::NeedMoreData(hint) => {
-                    self.eof = Self::pull_bytes(buffer, hint, stream)?;
+                    self.eof = buffer.pull_bytes(hint, stream)?;
                     if self.eof {
                         break;
                     }
@@ -203,7 +255,7 @@ impl ModuleParser {
                         }
                         Payload::CodeSectionStart { count, range, size } => {
                             self.process_code_start(count, range, size)?;
-                            buffer.drain(..consumed);
+                            buffer.consume(consumed);
                             break;
                         }
                         Payload::DataSection(_) => break,
@@ -217,7 +269,7 @@ impl ModuleParser {
                         }
                     }?;
                     // Cut away the parts from the intermediate buffer that have already been parsed.
-                    buffer.drain(..consumed);
+                    buffer.consume(consumed);
                 }
             }
         }
@@ -237,13 +289,13 @@ impl ModuleParser {
         &mut self,
         validation_mode: ValidationMode,
         stream: &mut impl Read,
-        buffer: &mut Vec<u8>,
+        buffer: &mut ParseBuffer,
         header: ModuleHeader,
     ) -> Result<ModuleBuilder, Error> {
         loop {
             match self.parser.parse(&buffer[..], self.eof)? {
                 Chunk::NeedMoreData(hint) => {
-                    self.eof = Self::pull_bytes(buffer, hint, stream)?;
+                    self.eof = buffer.pull_bytes(hint, stream)?;
                 }
                 Chunk::Parsed { consumed, payload } => {
                     match payload {
@@ -264,7 +316,7 @@ impl ModuleParser {
                         _ => break,
                     }
                     // Cut away the parts from the intermediate buffer that have already been parsed.
-                    buffer.drain(..consumed);
+                    buffer.consume(consumed);
                 }
             }
         }
@@ -274,13 +326,13 @@ impl ModuleParser {
     fn parse_data(
         &mut self,
         stream: &mut impl Read,
-        buffer: &mut Vec<u8>,
+        buffer: &mut ParseBuffer,
         mut builder: ModuleBuilder,
     ) -> Result<Module, Error> {
         loop {
             match self.parser.parse(&buffer[..], self.eof)? {
                 Chunk::NeedMoreData(hint) => {
-                    self.eof = Self::pull_bytes(buffer, hint, stream)?;
+                    self.eof = buffer.pull_bytes(hint, stream)?;
                 }
                 Chunk::Parsed { consumed, payload } => {
                     match payload {
@@ -289,7 +341,7 @@ impl ModuleParser {
                         }
                         Payload::End(offset) => {
                             self.process_end(offset)?;
-                            buffer.drain(..consumed);
+                            buffer.consume(consumed);
                             break;
                         }
                         Payload::CustomSection { .. } => {}
@@ -301,32 +353,11 @@ impl ModuleParser {
                         }
                     }
                     // Cut away the parts from the intermediate buffer that have already been parsed.
-                    buffer.drain(..consumed);
+                    buffer.consume(consumed);
                 }
             }
         }
         Ok(builder.finish(&self.engine))
-    }
-
-    /// Pulls more bytes from the `stream` in order to produce Wasm payload.
-    ///
-    /// Returns `true` if the parser reached the end of the stream.
-    ///
-    /// # Note
-    ///
-    /// Uses `hint` to efficiently preallocate enough space for the next payload.
-    fn pull_bytes(buffer: &mut Vec<u8>, hint: u64, stream: &mut impl Read) -> Result<bool, Error> {
-        // Use the hint to preallocate more space, then read
-        // some more data into the buffer.
-        //
-        // Note that the buffer management here is not ideal,
-        // but it's compact enough to fit in an example!
-        let len = buffer.len();
-        buffer.extend((0..hint).map(|_| 0u8));
-        let read_bytes = stream.read(&mut buffer[len..])?;
-        buffer.truncate(len + read_bytes);
-        let reached_end = read_bytes == 0;
-        Ok(reached_end)
     }
 
     /// Processes the end of the Wasm binary.
