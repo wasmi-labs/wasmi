@@ -200,7 +200,8 @@ impl<'engine> EngineExecutor<'engine> {
                 // We reserve space on the stack to write the results of the root function execution.
                 let len_results = results.len_results();
                 self.stack.values.reserve(len_results)?;
-                self.stack.values.extend_zeros(len_results);
+                // SAFETY: we just called reserve to fit all new values.
+                unsafe { self.stack.values.extend_zeros(len_results) };
                 let instance = *wasm_func.instance();
                 let compiled_func = wasm_func.func_body();
                 let ctx = ctx.as_context_mut();
@@ -238,7 +239,8 @@ impl<'engine> EngineExecutor<'engine> {
                 let len_results = output_types.len();
                 let max_inout = len_params.max(len_results);
                 self.stack.values.reserve(max_inout)?;
-                self.stack.values.extend_zeros(max_inout);
+                // SAFETY: we just called reserve to fit all new values.
+                unsafe { self.stack.values.extend_zeros(max_inout) };
                 let values = &mut self.stack.values.as_slice_mut()[..len_params];
                 for (value, param) in values.iter_mut().zip(params.call_params()) {
                     *value = param;

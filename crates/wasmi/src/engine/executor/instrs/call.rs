@@ -378,9 +378,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     .call_stack
                     .peek()
                     .expect("need to have a caller on the call stack");
-                // Safety: We use the base offset of a live call frame on the call stack.
+                // Safety: we use the base offset of a live call frame on the call stack.
                 self.sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
-                let offset = self.value_stack.extend_zeros(max_inout);
+                // Safety: we just called reserve to fit the new values.
+                let offset = unsafe { self.value_stack.extend_zeros(max_inout) };
                 let offset_sp = unsafe { self.value_stack.stack_ptr_at(offset) };
                 if <C as CallContext>::HAS_PARAMS {
                     self.copy_call_params(offset_sp);

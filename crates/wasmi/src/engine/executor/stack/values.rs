@@ -172,10 +172,10 @@ impl ValueStack {
     /// Returns the [`ValueStackOffset`] before this operation.
     /// Use [`ValueStack::truncate`] to undo the [`ValueStack`] state change.
     ///
-    /// # Panics
+    /// # Safety
     ///
-    /// If the value stack cannot fit `additional` stack values.
-    pub fn extend_zeros(&mut self, amount: usize) -> ValueStackOffset {
+    /// The caller is responsible to make sure enough space is reserved for `amount` new values.
+    pub unsafe fn extend_zeros(&mut self, amount: usize) -> ValueStackOffset {
         if amount == 0 {
             return ValueStackOffset(self.len());
         }
@@ -192,10 +192,10 @@ impl ValueStack {
     /// Returns the [`ValueStackOffset`] before this operation.
     /// Use [`ValueStack::truncate`] to undo the [`ValueStack`] state change.
     ///
-    /// # Panics
+    /// # Safety
     ///
-    /// If the value stack cannot fit `additional` stack values.
-    pub fn extend_slice(&mut self, values: &[UntypedVal]) -> ValueStackOffset {
+    /// The caller is responsible to make sure enough space is reserved for `values.len()` new values.
+    pub unsafe fn extend_slice(&mut self, values: &[UntypedVal]) -> ValueStackOffset {
         if values.is_empty() {
             return ValueStackOffset(self.len());
         }
@@ -252,9 +252,17 @@ impl ValueStack {
     ) -> Result<(BaseValueStackOffset, FrameValueStackOffset), TrapCode> {
         let len_registers = func.len_registers();
         self.reserve(len_registers as usize)?;
-        let frame_offset = FrameValueStackOffset(self.extend_slice(func.consts()));
-        let base_offset = BaseValueStackOffset(self.extend_zeros(func.len_cells() as usize));
-        Ok((base_offset, frame_offset))
+        // SAFETY: We just called reserve to fit all new values.
+        let (frame_offset, base_offset) = unsafe {
+            (
+                self.extend_slice(func.consts()),
+                self.extend_zeros(func.len_cells() as usize),
+            )
+        };
+        Ok((
+            BaseValueStackOffset(base_offset),
+            FrameValueStackOffset(frame_offset),
+        ))
     }
 
     /// Fills the [`ValueStack`] cells at `offset` with `values`.
