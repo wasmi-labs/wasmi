@@ -1036,6 +1036,35 @@ mod tests {
     }
 
     #[test]
+    fn linker_builder_uses() {
+        use crate::{Engine, Linker, Module, Store};
+        let wasm = wat::parse_str(
+            r#"
+            (module
+                (import "host" "func.0" (func $host_func.0))
+                (import "host" "func.1" (func $host_func.1))
+                (func (export "hello")
+                    (call $host_func.0)
+                    (call $host_func.1)
+                )
+            )"#,
+        )
+        .unwrap();
+        let engine = Engine::default();
+        let mut builder = <Linker<()>>::build();
+        builder
+            .func_wrap("host", "func.0", |_caller: Caller<()>| unimplemented!())
+            .unwrap();
+        builder
+            .func_wrap("host", "func.1", |_caller: Caller<()>| unimplemented!())
+            .unwrap();
+        let linker = builder.finish().create(&engine);
+        let mut store = Store::new(&engine, ());
+        let module = Module::new(&engine, &wasm[..]).unwrap();
+        linker.instantiate(&mut store, &module).unwrap();
+    }
+
+    #[test]
     fn linker_builder_and_linker_uses() {
         use crate::{Engine, Linker, Module, Store};
         let wasm = wat::parse_str(
@@ -1080,5 +1109,36 @@ mod tests {
         linker
             .func_wrap("host", "func.0", |_caller: Caller<()>| unimplemented!())
             .unwrap_err();
+    }
+
+    #[test]
+    fn smoldot_regression() {
+        use crate::{Engine, Func, Linker, Memory, MemoryType, Module, Store};
+        let wasm = wat::parse_str(
+            r#"
+            (module
+                (import "host" "hello" (func $host_hello (param i32) (result i32)))
+                (import "env" "memory" (memory $mem 0 4096))
+                (func (export "hello") (result i32)
+                    (call $host_hello (i32.const 3))
+                    (i32.const 2)
+                    i32.add
+                )
+            )"#,
+        )
+        .unwrap();
+        let engine = Engine::default();
+        let mut linker = <Linker<()>>::new(&engine);
+        let mut store = Store::new(&engine, ());
+        let memory = Memory::new(&mut store, MemoryType::new(1, Some(4096)).unwrap()).unwrap();
+        let module = Module::new(&engine, &wasm[..]).unwrap();
+        linker.define("env", "memory", memory).unwrap();
+        let func = Func::new(
+            &mut store,
+            FuncType::new([ValType::I32], [ValType::I32]),
+            |_caller, _params, _results| todo!(),
+        );
+        linker.define("host", "hello", func).unwrap();
+        linker.instantiate(&mut store, &module).unwrap();
     }
 }
