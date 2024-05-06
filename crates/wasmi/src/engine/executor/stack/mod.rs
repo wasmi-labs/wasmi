@@ -73,6 +73,11 @@ impl Stack {
         self.values.is_empty()
     }
 
+    /// Returns the capacity of the [`Stack`].
+    pub fn capacity(&self) -> usize {
+        self.values.capacity()
+    }
+
     /// Merge the two top-most [`CallFrame`] with respect to a tail call.
     ///
     /// # Panics (Debug)
