@@ -1034,4 +1034,51 @@ mod tests {
             let _ = builder.create(&engine);
         }
     }
+
+    #[test]
+    fn linker_builder_and_linker_uses() {
+        use crate::{Engine, Linker, Module, Store};
+        let wasm = wat::parse_str(
+            r#"
+            (module
+                (import "host" "func.0" (func $host_func.0))
+                (import "host" "func.1" (func $host_func.1))
+                (func (export "hello")
+                    (call $host_func.0)
+                    (call $host_func.1)
+                )
+            )"#,
+        )
+        .unwrap();
+        let engine = Engine::default();
+        let mut builder = <Linker<()>>::build();
+        builder
+            .func_wrap("host", "func.0", |_caller: Caller<()>| unimplemented!())
+            .unwrap();
+        let mut linker = builder.finish().create(&engine);
+        linker
+            .func_wrap("host", "func.1", |_caller: Caller<()>| unimplemented!())
+            .unwrap();
+        let mut store = Store::new(&engine, ());
+        let module = Module::new(&engine, &wasm[..]).unwrap();
+        linker.instantiate(&mut store, &module).unwrap();
+    }
+
+    #[test]
+    fn linker_builder_no_overwrite() {
+        use crate::{Engine, Linker};
+        let engine = Engine::default();
+        let mut builder = <Linker<()>>::build();
+        builder
+            .func_wrap("host", "func.0", |_caller: Caller<()>| unimplemented!())
+            .unwrap();
+        let mut linker = builder.finish().create(&engine);
+        linker
+            .func_wrap("host", "func.1", |_caller: Caller<()>| unimplemented!())
+            .unwrap();
+        // The following definition won't shadow the previous 'host/func.0' func and errors instead:
+        linker
+            .func_wrap("host", "func.0", |_caller: Caller<()>| unimplemented!())
+            .unwrap_err();
+    }
 }
