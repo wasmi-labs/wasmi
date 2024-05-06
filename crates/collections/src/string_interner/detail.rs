@@ -1,10 +1,8 @@
 use super::{GetOrInternWithHint, InternHint, Sym};
+use core::{cmp::Ordering, mem, ops::Deref};
 use std::{
     borrow::Borrow,
-    cmp::Ordering,
     collections::{btree_map::Entry, BTreeMap},
-    mem,
-    ops::Deref,
     sync::Arc,
     vec::Vec,
 };
