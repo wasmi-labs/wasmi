@@ -131,7 +131,7 @@ impl ValueStack {
     }
 
     /// Returns the capacity of the [`ValueStack`].
-    fn capacity(&self) -> usize {
+    pub fn capacity(&self) -> usize {
         self.values.len()
     }
 
