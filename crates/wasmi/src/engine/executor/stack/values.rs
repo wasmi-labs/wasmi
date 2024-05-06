@@ -217,7 +217,8 @@ impl ValueStack {
     /// If `amount` is greater than the [`ValueStack`] height.
     #[inline]
     pub fn drop(&mut self, amount: usize) {
-        debug_assert!(self.len() >= amount);
+        assert!(self.len() >= amount);
+        // Safety: we just asserted that the current length is large enough to not underflow.
         unsafe { self.values.set_len(self.len() - amount) };
     }
 
@@ -229,7 +230,8 @@ impl ValueStack {
     #[inline]
     pub fn truncate(&mut self, new_len: impl Into<ValueStackOffset>) {
         let new_len = new_len.into().0;
-        debug_assert!(new_len <= self.len());
+        assert!(new_len <= self.len());
+        // Safety: we just asserted that the new length is valid.
         unsafe { self.values.set_len(new_len) };
     }
 
