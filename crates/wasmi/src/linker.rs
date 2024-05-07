@@ -1112,7 +1112,7 @@ mod tests {
     }
 
     #[test]
-    fn smoldot_regression() {
+    fn populate_via_imports() {
         use crate::{Engine, Func, Linker, Memory, MemoryType, Module, Store};
         let wasm = wat::parse_str(
             r#"
