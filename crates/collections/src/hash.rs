@@ -98,7 +98,9 @@ use std::collections::hash_map::RandomState as RandomStateImpl;
 // which relies on ASLR by default for randomness.
 #[derive(Default, Clone, Debug)]
 #[cfg(not(feature = "std"))]
-struct RandomStateImpl;
+struct RandomStateImpl {
+    state: ahash::RandomState,
+}
 
 #[cfg(not(feature = "std"))]
 impl BuildHasher for RandomStateImpl {
@@ -106,6 +108,6 @@ impl BuildHasher for RandomStateImpl {
 
     #[inline]
     fn build_hasher(&self) -> ahash::AHasher {
-        ahash::RandomState::new().build_hasher()
+        self.state.build_hasher()
     }
 }
