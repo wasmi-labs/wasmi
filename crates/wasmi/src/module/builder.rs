@@ -1,8 +1,9 @@
 use super::{
+    data::DataSegmentsBuilder,
     export::ExternIdx,
     import::FuncTypeIdx,
     ConstExpr,
-    DataSegment,
+    DataSegments,
     ElementSegment,
     ExternTypeIdx,
     FuncIdx,
@@ -31,7 +32,7 @@ use std::{boxed::Box, collections::BTreeMap, sync::Arc, vec::Vec};
 #[derive(Debug)]
 pub struct ModuleBuilder {
     pub header: ModuleHeader,
-    pub data_segments: Vec<DataSegment>,
+    pub data_segments: DataSegmentsBuilder,
 }
 
 /// A builder for a WebAssembly [`Module`] header.
@@ -134,7 +135,7 @@ impl ModuleBuilder {
     pub fn new(header: ModuleHeader) -> Self {
         Self {
             header,
-            data_segments: Vec::new(),
+            data_segments: DataSegments::build(),
         }
     }
 }
@@ -370,25 +371,12 @@ impl ModuleHeaderBuilder {
 }
 
 impl ModuleBuilder {
-    /// Pushes the given linear memory data segments to the [`Module`] under construction.
-    ///
-    /// # Errors
-    ///
-    /// If any of the linear memory data segments fail to validate.
-    ///
-    /// # Panics
-    ///
-    /// If this function has already been called on the same [`ModuleBuilder`].
-    pub fn push_data_segments<T>(&mut self, data: T) -> Result<(), Error>
-    where
-        T: IntoIterator<Item = Result<DataSegment, Error>>,
-    {
-        assert!(
-            self.data_segments.is_empty(),
-            "tried to initialize module linear memory data segments twice"
-        );
-        self.data_segments = data.into_iter().collect::<Result<Vec<_>, _>>()?;
-        Ok(())
+    pub fn reserve_data_segments(&mut self, count: usize) {
+        self.data_segments.reserve(count);
+    }
+
+    pub fn push_data_segment(&mut self, data: wasmparser::Data) -> Result<(), Error> {
+        self.data_segments.push_data_segment(data)
     }
 
     /// Finishes construction of the WebAssembly [`Module`].
@@ -396,7 +384,7 @@ impl ModuleBuilder {
         Module {
             engine: engine.clone(),
             header: self.header,
-            data_segments: self.data_segments.into(),
+            data_segments: self.data_segments.finish(),
         }
     }
 }

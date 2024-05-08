@@ -1,3 +1,4 @@
+use core::convert::AsRef;
 use crate::{
     collections::arena::ArenaIndex,
     module::{self, PassiveDataSegmentBytes},
@@ -38,14 +39,28 @@ impl DataSegment {
         &self.0
     }
 
-    /// Allocates a new [`DataSegment`] on the store.
+    /// Allocates a new active [`DataSegment`] on the store.
     ///
     /// # Errors
     ///
     /// If more than [`u32::MAX`] much linear memory is allocated.
-    pub fn new(mut ctx: impl AsContextMut, segment: &module::DataSegment) -> Self {
-        let entity = DataSegmentEntity::from(segment);
-        ctx.as_context_mut().store.inner.alloc_data_segment(entity)
+    pub fn new_active(mut ctx: impl AsContextMut) -> Self {
+        ctx.as_context_mut()
+            .store
+            .inner
+            .alloc_data_segment(DataSegmentEntity::active())
+    }
+
+    /// Allocates a new passive [`DataSegment`] on the store.
+    ///
+    /// # Errors
+    ///
+    /// If more than [`u32::MAX`] much linear memory is allocated.
+    pub fn new_passive(mut ctx: impl AsContextMut, bytes: PassiveDataSegmentBytes) -> Self {
+        ctx.as_context_mut()
+            .store
+            .inner
+            .alloc_data_segment(DataSegmentEntity::passive(bytes))
     }
 }
 
@@ -68,6 +83,16 @@ pub struct DataSegmentEntity {
     bytes: Option<PassiveDataSegmentBytes>,
 }
 
+impl DataSegmentEntity {
+    pub fn active() -> Self {
+        Self { bytes: None }
+    }
+
+    pub fn passive(bytes: PassiveDataSegmentBytes) -> Self {
+        Self { bytes: Some(bytes) }
+    }
+}
+
 impl From<&'_ module::DataSegment> for DataSegmentEntity {
     fn from(segment: &'_ module::DataSegment) -> Self {
         Self {
@@ -81,7 +106,7 @@ impl DataSegmentEntity {
     pub fn bytes(&self) -> &[u8] {
         self.bytes
             .as_ref()
-            .map(|bytes| bytes.as_ref())
+            .map(AsRef::as_ref)
             .unwrap_or_else(|| &[])
     }
 
