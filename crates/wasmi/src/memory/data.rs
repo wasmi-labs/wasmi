@@ -1,5 +1,9 @@
-use crate::{collections::arena::ArenaIndex, module, store::Stored, AsContextMut};
-use std::sync::Arc;
+use crate::{
+    collections::arena::ArenaIndex,
+    module::{self, PassiveDataSegmentBytes},
+    store::Stored,
+    AsContextMut,
+};
 
 /// A raw index to a data segment entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -61,31 +65,23 @@ pub struct DataSegmentEntity {
     /// These bytes are just readable after instantiation.
     /// Using Wasm `data.drop` simply replaces the instance
     /// with an empty one.
-    bytes: Option<Arc<[u8]>>,
+    bytes: Option<PassiveDataSegmentBytes>,
 }
 
 impl From<&'_ module::DataSegment> for DataSegmentEntity {
     fn from(segment: &'_ module::DataSegment) -> Self {
-        match segment.kind() {
-            module::DataSegmentKind::Passive => Self {
-                bytes: Some(segment.clone_bytes()),
-            },
-            module::DataSegmentKind::Active(_) => Self::empty(),
+        Self {
+            bytes: segment.clone_bytes(),
         }
     }
 }
 
 impl DataSegmentEntity {
-    /// Create an empty [`DataSegmentEntity`] representing dropped data segments.
-    fn empty() -> Self {
-        Self { bytes: None }
-    }
-
     /// Returns the bytes of the [`DataSegmentEntity`].
     pub fn bytes(&self) -> &[u8] {
         self.bytes
             .as_ref()
-            .map(|bytes| &bytes[..])
+            .map(|bytes| bytes.as_ref())
             .unwrap_or_else(|| &[])
     }
 

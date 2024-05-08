@@ -1,33 +1,53 @@
 use super::{ConstExpr, MemoryIdx};
-use std::sync::Arc;
+use std::{boxed::Box, sync::Arc};
 
 /// A Wasm [`Module`] data segment.
 ///
 /// [`Module`]: [`super::Module`]
 #[derive(Debug)]
 pub struct DataSegment {
-    /// The kind of the data segment.
-    kind: DataSegmentKind,
-    /// The bytes of the data segment.
-    bytes: Arc<[u8]>,
+    inner: DataSegmentInner,
 }
 
-/// The kind of a Wasm module [`DataSegment`].
+/// The inner structure of a [`DataSegment`].
 #[derive(Debug)]
-pub enum DataSegmentKind {
-    /// A passive data segment from the `bulk-memory` Wasm proposal.
-    Passive,
-    /// An active data segment that is initialized upon module instantiation.
+pub enum DataSegmentInner {
+    /// An active data segment that is initialized upon Wasm module instantiation.
     Active(ActiveDataSegment),
+    /// A passive data segment that can be used by some Wasm bulk instructions.
+    Passive {
+        /// The bytes of the passive data segment.
+        bytes: PassiveDataSegmentBytes,
+    },
 }
 
-/// An active data segment.
+/// An active data segment that is initialized upon Wasm module instantiation.
 #[derive(Debug)]
 pub struct ActiveDataSegment {
     /// The linear memory that is to be initialized with this active segment.
     memory_index: MemoryIdx,
     /// The offset at which the data segment is initialized.
     offset: ConstExpr,
+    /// The bytes of the active data segment.
+    bytes: Box<[u8]>,
+}
+
+/// The bytes of the passive data segment.
+#[derive(Debug, Clone)]
+pub struct PassiveDataSegmentBytes {
+    bytes: Arc<[u8]>,
+}
+
+impl AsRef<[u8]> for PassiveDataSegmentBytes {
+    fn as_ref(&self) -> &[u8] {
+        &self.bytes[..]
+    }
+}
+
+#[test]
+fn size_of_data_segment() {
+    assert_eq!(core::mem::size_of::<DataSegment>(), 48);
+    assert_eq!(core::mem::size_of::<DataSegmentInner>(), 48);
 }
 
 impl ActiveDataSegment {
@@ -40,48 +60,63 @@ impl ActiveDataSegment {
     pub fn offset(&self) -> &ConstExpr {
         &self.offset
     }
+
+    /// Returns the bytes of the active data segment.
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes[..]
+    }
 }
 
-impl From<wasmparser::DataKind<'_>> for DataSegmentKind {
-    fn from(data_kind: wasmparser::DataKind<'_>) -> Self {
-        match data_kind {
+impl From<wasmparser::Data<'_>> for DataSegment {
+    fn from(data: wasmparser::Data<'_>) -> Self {
+        match data.kind {
+            wasmparser::DataKind::Passive => Self {
+                inner: DataSegmentInner::Passive {
+                    bytes: PassiveDataSegmentBytes {
+                        bytes: data.data.into(),
+                    },
+                },
+            },
             wasmparser::DataKind::Active {
                 memory_index,
                 offset_expr,
             } => {
                 let memory_index = MemoryIdx::from(memory_index);
                 let offset = ConstExpr::new(offset_expr);
-                Self::Active(ActiveDataSegment {
-                    memory_index,
-                    offset,
-                })
+                Self {
+                    inner: DataSegmentInner::Active(ActiveDataSegment {
+                        memory_index,
+                        offset,
+                        bytes: data.data.into(),
+                    }),
+                }
             }
-            wasmparser::DataKind::Passive => Self::Passive,
         }
     }
 }
 
-impl From<wasmparser::Data<'_>> for DataSegment {
-    fn from(data: wasmparser::Data<'_>) -> Self {
-        let kind = DataSegmentKind::from(data.kind);
-        let bytes = data.data.into();
-        Self { kind, bytes }
-    }
-}
-
 impl DataSegment {
-    /// Returns the [`DataSegmentKind`] of the [`DataSegment`].
-    pub fn kind(&self) -> &DataSegmentKind {
-        &self.kind
+    /// Returns the [`ActiveDataSegment`] if this [`DataSegment`] is active.
+    pub fn get_active(&self) -> Option<&ActiveDataSegment> {
+        match &self.inner {
+            DataSegmentInner::Active(segment) => Some(segment),
+            DataSegmentInner::Passive { .. } => None,
+        }
     }
 
     /// Returns the bytes of the [`DataSegment`].
     pub fn bytes(&self) -> &[u8] {
-        &self.bytes[..]
+        match &self.inner {
+            DataSegmentInner::Active(segment) => segment.bytes(),
+            DataSegmentInner::Passive { bytes } => bytes.as_ref(),
+        }
     }
 
     /// Clone the underlying bytes of the [`DataSegment`].
-    pub fn clone_bytes(&self) -> Arc<[u8]> {
-        self.bytes.clone()
+    pub fn clone_bytes(&self) -> Option<PassiveDataSegmentBytes> {
+        match &self.inner {
+            DataSegmentInner::Active { .. } => None,
+            DataSegmentInner::Passive { bytes } => Some(bytes.clone()),
+        }
     }
 }

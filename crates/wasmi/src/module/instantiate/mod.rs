@@ -5,7 +5,7 @@ mod pre;
 mod tests;
 
 pub use self::{error::InstantiationError, pre::InstancePre};
-use super::{element::ElementSegmentKind, export, ConstExpr, DataSegmentKind, Module};
+use super::{element::ElementSegmentKind, export, ConstExpr, Module};
 use crate::{
     core::UntypedVal,
     func::WasmFuncEntity,
@@ -352,7 +352,7 @@ impl Module {
     ) -> Result<(), Error> {
         for segment in &self.data_segments[..] {
             let bytes = segment.bytes();
-            if let DataSegmentKind::Active(segment) = segment.kind() {
+            if let Some(segment) = segment.get_active() {
                 let offset_expr = segment.offset();
                 let offset =
                     u32::from(Self::eval_init_expr(&mut *context, builder, offset_expr)) as usize;

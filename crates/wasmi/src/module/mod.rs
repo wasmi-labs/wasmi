@@ -18,7 +18,7 @@ use self::{
     parser::{parse, parse_unchecked},
 };
 pub(crate) use self::{
-    data::{DataSegment, DataSegmentKind},
+    data::{DataSegment, PassiveDataSegmentBytes},
     element::{ElementSegment, ElementSegmentItems, ElementSegmentKind},
     init_expr::ConstExpr,
     utils::WasmiValueType,
