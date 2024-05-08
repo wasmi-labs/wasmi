@@ -71,7 +71,7 @@ pub struct DataSegmentEntity {
 impl From<&'_ module::DataSegment> for DataSegmentEntity {
     fn from(segment: &'_ module::DataSegment) -> Self {
         Self {
-            bytes: segment.clone_bytes(),
+            bytes: segment.passive_data_segment_bytes(),
         }
     }
 }

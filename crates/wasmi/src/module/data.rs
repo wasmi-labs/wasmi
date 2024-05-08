@@ -112,8 +112,8 @@ impl DataSegment {
         }
     }
 
-    /// Clone the underlying bytes of the [`DataSegment`].
-    pub fn clone_bytes(&self) -> Option<PassiveDataSegmentBytes> {
+    /// Returns the bytes of the [`DataSegment`] if passive, otherwise returns `None`.
+    pub fn passive_data_segment_bytes(&self) -> Option<PassiveDataSegmentBytes> {
         match &self.inner {
             DataSegmentInner::Active { .. } => None,
             DataSegmentInner::Passive { bytes } => Some(bytes.clone()),
