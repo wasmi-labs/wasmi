@@ -137,7 +137,13 @@ impl ModuleParser {
         let header = Self::parse_header(&mut self, &mut stream, &mut buffer)?;
         let builder =
             Self::parse_code(&mut self, validation_mode, &mut stream, &mut buffer, header)?;
-        let module = Self::parse_data(&mut self, &mut stream, &mut buffer, builder)?;
+        let module = Self::parse_data(
+            &mut self,
+            validation_mode,
+            &mut stream,
+            &mut buffer,
+            builder,
+        )?;
         Ok(module)
     }
 
@@ -272,6 +278,7 @@ impl ModuleParser {
 
     fn parse_data(
         &mut self,
+        validation_mode: ValidationMode,
         stream: &mut impl Read,
         buffer: &mut Vec<u8>,
         mut builder: ModuleBuilder,
@@ -284,7 +291,7 @@ impl ModuleParser {
                 Chunk::Parsed { consumed, payload } => {
                     match payload {
                         Payload::DataSection(section) => {
-                            self.process_data(section, &mut builder)?;
+                            self.process_data(validation_mode, section, &mut builder)?;
                         }
                         Payload::End(offset) => {
                             self.process_end(offset)?;
@@ -647,6 +654,7 @@ impl ModuleParser {
     /// If any of the table elements fail to validate.
     fn process_data(
         &mut self,
+        validation_mode: ValidationMode,
         section: DataSectionReader,
         builder: &mut ModuleBuilder,
     ) -> Result<(), Error> {
@@ -657,7 +665,12 @@ impl ModuleParser {
                 }));
             }
         }
-        self.validator.data_section(&section)?;
+        if matches!(validation_mode, ValidationMode::All) {
+            // Note: data section does not belong to the Wasm module header.
+            //
+            // Also benchmarks show that validation of the data section can be very costly.
+            self.validator.data_section(&section)?;
+        }
         builder.reserve_data_segments(section.count() as usize);
         for segment in section {
             builder.push_data_segment(segment?)?;
