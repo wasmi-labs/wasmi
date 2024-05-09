@@ -371,10 +371,12 @@ impl ModuleHeaderBuilder {
 }
 
 impl ModuleBuilder {
-    pub fn reserve_data_segments(&mut self, count: usize) {
-        self.data_segments.reserve(count);
+    /// Reserve space for at least `additional` new data segments.
+    pub fn reserve_data_segments(&mut self, additional: usize) {
+        self.data_segments.reserve(additional);
     }
 
+    /// Push another parsed data segment to the [`ModuleBuilder`].
     pub fn push_data_segment(&mut self, data: wasmparser::Data) -> Result<(), Error> {
         self.data_segments.push_data_segment(data)
     }
