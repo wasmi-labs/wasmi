@@ -85,9 +85,9 @@ pub struct DataSegments {
     /// All data segments.
     segments: Box<[DataSegment]>,
     /// All bytes from all active data segments.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// We deliberately do not use `Box<[u8]>` here because it is not possible
     /// to properly pre-reserve space for the bytes and thus finishing construction
     /// of the [`DataSegments`] would highly likely reallocate and mass-copy
