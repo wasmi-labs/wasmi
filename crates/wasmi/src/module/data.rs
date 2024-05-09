@@ -205,6 +205,8 @@ impl<'a> Iterator for InitDataSegmentIter<'a> {
 }
 
 /// Iterated-over [`DataSegment`] when instantiating a [`Module`].
+/// 
+/// [`Module`]: crate::Module
 pub enum InitDataSegment<'a> {
     Active {
         /// The linear memory that is to be initialized with this active segment.
