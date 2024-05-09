@@ -49,52 +49,19 @@ impl ActiveDataSegment {
 /// The bytes of the passive data segment.
 #[derive(Debug, Clone)]
 pub struct PassiveDataSegmentBytes {
-    inner: PassiveDataSegmentBytesInner,
-}
-
-#[derive(Debug, Clone)]
-enum PassiveDataSegmentBytesInner {
-    Small {
-        len: u8,
-        bytes: [u8; Self::INLINE_SIZE],
-    },
-    Large {
-        bytes: Arc<[u8]>,
-    },
-}
-
-impl PassiveDataSegmentBytesInner {
-    const INLINE_SIZE: usize = if cfg!(target_pointer_width = "64") { 30 } else { 18 };
-}
-
-impl<'a> From<&'a [u8]> for PassiveDataSegmentBytes {
-    fn from(bytes: &'a [u8]) -> Self {
-        let inner = if bytes.len() <= PassiveDataSegmentBytesInner::INLINE_SIZE {
-            let len = bytes.len();
-            let mut buffer = [0x0; PassiveDataSegmentBytesInner::INLINE_SIZE];
-            buffer[..len].copy_from_slice(bytes);
-            PassiveDataSegmentBytesInner::Small { len: len as u8, bytes: buffer }
-        } else {
-            PassiveDataSegmentBytesInner::Large { bytes: bytes.into() }
-        };
-        Self { inner }
-    }
+    bytes: Arc<[u8]>,
 }
 
 impl AsRef<[u8]> for PassiveDataSegmentBytes {
     fn as_ref(&self) -> &[u8] {
-        match &self.inner {
-            PassiveDataSegmentBytesInner::Small { len, bytes } => &bytes[..*len as usize],
-            PassiveDataSegmentBytesInner::Large { bytes } => &bytes[..],
-        }
+        &self.bytes[..]
     }
 }
 
 #[test]
 fn size_of_data_segment() {
-    assert!(core::mem::size_of::<DataSegment>() <= 40);
-    assert!(core::mem::size_of::<DataSegmentInner>() <= 40);
-    assert!(core::mem::size_of::<PassiveDataSegmentBytes>() <= 40);
+    assert_eq!(core::mem::size_of::<DataSegment>(), 40);
+    assert_eq!(core::mem::size_of::<DataSegmentInner>(), 40);
 }
 
 impl DataSegment {
@@ -145,7 +112,9 @@ impl DataSegmentsBuilder {
             wasmparser::DataKind::Passive => {
                 self.segments.push(DataSegment {
                     inner: DataSegmentInner::Passive {
-                        bytes: PassiveDataSegmentBytes::from(segment.data)
+                        bytes: PassiveDataSegmentBytes {
+                            bytes: segment.data.into(),
+                        },
                     },
                 });
             }
