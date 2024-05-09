@@ -1,5 +1,10 @@
-use crate::{collections::arena::ArenaIndex, module, store::Stored, AsContextMut};
-use std::sync::Arc;
+use crate::{
+    collections::arena::ArenaIndex,
+    module::{self, PassiveDataSegmentBytes},
+    store::Stored,
+    AsContextMut,
+};
+use core::convert::AsRef;
 
 /// A raw index to a data segment entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -34,14 +39,28 @@ impl DataSegment {
         &self.0
     }
 
-    /// Allocates a new [`DataSegment`] on the store.
+    /// Allocates a new active [`DataSegment`] on the store.
     ///
     /// # Errors
     ///
     /// If more than [`u32::MAX`] much linear memory is allocated.
-    pub fn new(mut ctx: impl AsContextMut, segment: &module::DataSegment) -> Self {
-        let entity = DataSegmentEntity::from(segment);
-        ctx.as_context_mut().store.inner.alloc_data_segment(entity)
+    pub fn new_active(mut ctx: impl AsContextMut) -> Self {
+        ctx.as_context_mut()
+            .store
+            .inner
+            .alloc_data_segment(DataSegmentEntity::active())
+    }
+
+    /// Allocates a new passive [`DataSegment`] on the store.
+    ///
+    /// # Errors
+    ///
+    /// If more than [`u32::MAX`] much linear memory is allocated.
+    pub fn new_passive(mut ctx: impl AsContextMut, bytes: PassiveDataSegmentBytes) -> Self {
+        ctx.as_context_mut()
+            .store
+            .inner
+            .alloc_data_segment(DataSegmentEntity::passive(bytes))
     }
 }
 
@@ -61,31 +80,35 @@ pub struct DataSegmentEntity {
     /// These bytes are just readable after instantiation.
     /// Using Wasm `data.drop` simply replaces the instance
     /// with an empty one.
-    bytes: Option<Arc<[u8]>>,
+    bytes: Option<PassiveDataSegmentBytes>,
+}
+
+impl DataSegmentEntity {
+    /// Creates a new active [`DataSegmentEntity`].
+    pub fn active() -> Self {
+        Self { bytes: None }
+    }
+
+    /// Creates a new passive [`DataSegmentEntity`] with its `bytes`.
+    pub fn passive(bytes: PassiveDataSegmentBytes) -> Self {
+        Self { bytes: Some(bytes) }
+    }
 }
 
 impl From<&'_ module::DataSegment> for DataSegmentEntity {
     fn from(segment: &'_ module::DataSegment) -> Self {
-        match segment.kind() {
-            module::DataSegmentKind::Passive => Self {
-                bytes: Some(segment.clone_bytes()),
-            },
-            module::DataSegmentKind::Active(_) => Self::empty(),
+        Self {
+            bytes: segment.passive_data_segment_bytes(),
         }
     }
 }
 
 impl DataSegmentEntity {
-    /// Create an empty [`DataSegmentEntity`] representing dropped data segments.
-    fn empty() -> Self {
-        Self { bytes: None }
-    }
-
     /// Returns the bytes of the [`DataSegmentEntity`].
     pub fn bytes(&self) -> &[u8] {
         self.bytes
             .as_ref()
-            .map(|bytes| &bytes[..])
+            .map(AsRef::as_ref)
             .unwrap_or_else(|| &[])
     }
 

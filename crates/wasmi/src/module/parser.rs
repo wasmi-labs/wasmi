@@ -3,7 +3,6 @@ use super::{
     export::ExternIdx,
     global::Global,
     import::{FuncTypeIdx, Import},
-    DataSegment,
     ElementSegment,
     FuncIdx,
     Module,
@@ -659,10 +658,10 @@ impl ModuleParser {
             }
         }
         self.validator.data_section(&section)?;
-        let segments = section
-            .into_iter()
-            .map(|segment| segment.map(DataSegment::from).map_err(Error::from));
-        builder.push_data_segments(segments)?;
+        builder.reserve_data_segments(section.count() as usize);
+        for segment in section {
+            builder.push_data_segment(segment?)?;
+        }
         Ok(())
     }
 

@@ -18,7 +18,7 @@ use self::{
     parser::{parse, parse_unchecked},
 };
 pub(crate) use self::{
-    data::{DataSegment, DataSegmentKind},
+    data::{DataSegment, DataSegments, InitDataSegment, PassiveDataSegmentBytes},
     element::{ElementSegment, ElementSegmentItems, ElementSegmentKind},
     init_expr::ConstExpr,
     utils::WasmiValueType,
@@ -50,7 +50,7 @@ use wasmparser::{FuncValidatorAllocations, Parser, ValidPayload, Validator};
 pub struct Module {
     engine: Engine,
     header: ModuleHeader,
-    data_segments: Box<[DataSegment]>,
+    data_segments: DataSegments,
 }
 
 /// A parsed and validated WebAssembly module header.
