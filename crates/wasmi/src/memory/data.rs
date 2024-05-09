@@ -84,10 +84,12 @@ pub struct DataSegmentEntity {
 }
 
 impl DataSegmentEntity {
+    /// Creates a new active [`DataSegmentEntity`].
     pub fn active() -> Self {
         Self { bytes: None }
     }
 
+    /// Creates a new passive [`DataSegmentEntity`] with its `bytes`.
     pub fn passive(bytes: PassiveDataSegmentBytes) -> Self {
         Self { bytes: Some(bytes) }
     }
