@@ -65,8 +65,8 @@ impl AsRef<[u8]> for PassiveDataSegmentBytes {
 
 #[test]
 fn size_of_data_segment() {
-    assert_eq!(core::mem::size_of::<DataSegment>(), 40);
-    assert_eq!(core::mem::size_of::<DataSegmentInner>(), 40);
+    assert!(core::mem::size_of::<DataSegment>() <= 32);
+    assert!(core::mem::size_of::<DataSegmentInner>() <= 32);
 }
 
 impl DataSegment {
