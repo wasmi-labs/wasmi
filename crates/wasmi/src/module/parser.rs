@@ -294,7 +294,7 @@ impl ModuleParser {
                             self.process_data(validation_mode, section, &mut builder)?;
                         }
                         Payload::End(offset) => {
-                            self.process_end(offset)?;
+                            self.process_end(validation_mode, offset)?;
                             buffer.drain(..consumed);
                             break;
                         }
@@ -336,8 +336,13 @@ impl ModuleParser {
     }
 
     /// Processes the end of the Wasm binary.
-    fn process_end(&mut self, offset: usize) -> Result<(), Error> {
-        self.validator.end(offset)?;
+    fn process_end(&mut self, validation_mode: ValidationMode, offset: usize) -> Result<(), Error> {
+        if matches!(validation_mode, ValidationMode::All) {
+            // This only checks if the number of code section entries and data segments match
+            // their expected numbers thus we must avoid this check in header-only mode because
+            // otherwise we will receive errors for unmatched data section entries.
+            self.validator.end(offset)?;
+        }
         Ok(())
     }
 
