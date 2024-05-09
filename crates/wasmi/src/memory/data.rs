@@ -1,10 +1,10 @@
-use core::convert::AsRef;
 use crate::{
     collections::arena::ArenaIndex,
     module::{self, PassiveDataSegmentBytes},
     store::Stored,
     AsContextMut,
 };
+use core::convert::AsRef;
 
 /// A raw index to a data segment entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

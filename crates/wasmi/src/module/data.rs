@@ -1,5 +1,5 @@
-use crate::Error;
 use super::{ConstExpr, MemoryIdx};
+use crate::Error;
 use core::slice;
 use std::{boxed::Box, sync::Arc, vec::Vec};
 
@@ -30,8 +30,8 @@ pub struct ActiveDataSegment {
     memory_index: MemoryIdx,
     /// The offset at which the data segment is initialized.
     offset: ConstExpr,
-    /// End-index of the data segments bytes buffer.
-    end: usize,
+    /// Number of bytes of the active data segment.
+    len: u32,
 }
 
 impl ActiveDataSegment {
@@ -43,6 +43,11 @@ impl ActiveDataSegment {
     /// Returns the offset expression of the [`ActiveDataSegment`].
     pub fn offset(&self) -> &ConstExpr {
         &self.offset
+    }
+
+    /// Returns the number of bytes of the [`ActiveDataSegment`] as `usize`.
+    pub fn len(&self) -> usize {
+        self.len as usize
     }
 }
 
@@ -84,6 +89,7 @@ pub struct DataSegments {
 }
 
 impl DataSegments {
+    /// Creates a new [`DataSegmentsBuilder`].
     pub fn build() -> DataSegmentsBuilder {
         DataSegmentsBuilder {
             segments: Vec::new(),
@@ -92,13 +98,17 @@ impl DataSegments {
     }
 }
 
+/// Builds up a [`DataSegments`] instance.
 #[derive(Debug)]
 pub struct DataSegmentsBuilder {
+    /// All active or passive data segments built-up so far.
     segments: Vec<DataSegment>,
+    /// The bytes of all active data segments.
     bytes: Vec<u8>,
 }
 
 impl DataSegmentsBuilder {
+    /// Reserves space for at least `additional` new [`DataSegments`].
     pub fn reserve(&mut self, count: usize) {
         assert!(
             self.segments.capacity() == 0,
@@ -107,6 +117,11 @@ impl DataSegmentsBuilder {
         self.segments.reserve(count);
     }
 
+    /// Pushes another [`DataSegment`] to the [`DataSegmentsBuilder`].
+    ///
+    /// # Panics
+    ///
+    /// If an active data segment has too many bytes.
     pub fn push_data_segment(&mut self, segment: wasmparser::Data) -> Result<(), Error> {
         match segment.kind {
             wasmparser::DataKind::Passive => {
@@ -124,13 +139,15 @@ impl DataSegmentsBuilder {
             } => {
                 let memory_index = MemoryIdx::from(memory_index);
                 let offset = ConstExpr::new(offset_expr);
+                let len = u32::try_from(segment.data.len()).unwrap_or_else(|_x| {
+                    panic!("data segment has too many bytes: {}", segment.data.len())
+                });
                 self.bytes.extend_from_slice(segment.data);
-                let end = self.bytes.len();
                 self.segments.push(DataSegment {
                     inner: DataSegmentInner::Active(ActiveDataSegment {
                         memory_index,
                         offset,
-                        end,
+                        len,
                     }),
                 });
             }
@@ -154,16 +171,15 @@ impl<'a> IntoIterator for &'a DataSegments {
         InitDataSegmentIter {
             segments: self.segments.iter(),
             bytes: &self.bytes[..],
-            start: 0,
         }
     }
 }
 
+/// Iterator over the [`DataSegment`]s and their associated bytes.
 #[derive(Debug)]
 pub struct InitDataSegmentIter<'a> {
     segments: slice::Iter<'a, DataSegment>,
     bytes: &'a [u8],
-    start: usize,
 }
 
 impl<'a> Iterator for InitDataSegmentIter<'a> {
@@ -173,9 +189,8 @@ impl<'a> Iterator for InitDataSegmentIter<'a> {
         let segment = self.segments.next()?;
         match &segment.inner {
             DataSegmentInner::Active(segment) => {
-                let end = segment.end;
-                let bytes = &self.bytes[self.start..end];
-                self.start = end;
+                let (bytes, rest) = self.bytes.split_at(segment.len());
+                self.bytes = rest;
                 Some(InitDataSegment::Active {
                     memory_index: segment.memory_index(),
                     offset: segment.offset(),
