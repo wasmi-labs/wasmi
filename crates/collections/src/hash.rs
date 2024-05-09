@@ -105,7 +105,9 @@ struct RandomStateImpl {
 #[cfg(not(feature = "std"))]
 impl Default for RandomStateImpl {
     fn default() -> Self {
-        Self { state: ahash::RandomState::new() }
+        Self {
+            state: ahash::RandomState::new(),
+        }
     }
 }
 
