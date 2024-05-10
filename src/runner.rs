@@ -38,7 +38,7 @@ use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 pub const DEFAULT_VALUE_STACK_LIMIT: usize = 4096;
 
 /// Maximum number of levels on the call stack.
-pub const DEFAULT_CALL_STACK_LIMIT: usize = 128 * 1024;
+pub const DEFAULT_CALL_STACK_LIMIT: usize = 4096;
 
 /// This is a wrapper around u64 to allow us to treat runtime values as a tag-free `u64`
 /// (where if the runtime value is <64 bits the upper bits are 0). This is safe, since
