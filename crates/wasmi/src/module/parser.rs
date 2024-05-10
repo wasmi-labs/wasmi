@@ -99,28 +99,44 @@ impl ModuleParser {
     pub fn parse(mut self, stream: impl Read) -> Result<Module, Error> {
         let features = self.engine.config().wasm_features();
         self.validator = Some(Validator::new_with_features(features));
-        self.parse_impl(stream)
+        // SAFETY: we just pre-populated the Wasm module parser with a validator
+        //         thus calling this method is safe.
+        unsafe { self.parse_impl(stream) }
     }
 
     /// Starts parsing and validating the Wasm bytecode stream.
     ///
     /// Returns the compiled and validated Wasm [`Module`] upon success.
+    ///
+    /// # Safety
+    ///
+    /// The caller is responsible to make sure that the provided
+    /// `stream` yields valid WebAssembly bytecode.
     ///
     /// # Errors
     ///
     /// If the Wasm bytecode stream fails to validate.
     pub unsafe fn parse_unchecked(self, stream: impl Read) -> Result<Module, Error> {
-        self.parse_impl(stream)
+        unsafe { self.parse_impl(stream) }
     }
 
     /// Starts parsing and validating the Wasm bytecode stream.
     ///
     /// Returns the compiled and validated Wasm [`Module`] upon success.
     ///
+    /// # Safety
+    ///
+    /// The caller is responsible to either
+    ///
+    /// 1) Populate the [`ModuleParser`] with a [`Validator`] prior to calling this method, OR;
+    /// 2) Make sure that the provided `stream` yields valid WebAssembly bytecode.
+    ///
+    /// Otherwise this method has undefined behavior.
+    ///
     /// # Errors
     ///
     /// If the Wasm bytecode stream fails to validate.
-    fn parse_impl(mut self, mut stream: impl Read) -> Result<Module, Error> {
+    unsafe fn parse_impl(mut self, mut stream: impl Read) -> Result<Module, Error> {
         let mut buffer = Vec::new();
         let header = Self::parse_header(&mut self, &mut stream, &mut buffer)?;
         let builder = Self::parse_code(&mut self, &mut stream, &mut buffer, header)?;
