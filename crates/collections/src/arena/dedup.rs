@@ -87,9 +87,7 @@ where
     /// Only allocates if the entity does not already exist in the [`DedupArena`].
     pub fn alloc(&mut self, entity: T) -> Idx {
         match self.entity2idx.entry(entity.clone()) {
-            map::Entry::Occupied(entry) => {
-                *entry.get()
-            }
+            map::Entry::Occupied(entry) => *entry.get(),
             map::Entry::Vacant(entry) => {
                 let index = self.entities.next_index();
                 self.entities.alloc(entity);
