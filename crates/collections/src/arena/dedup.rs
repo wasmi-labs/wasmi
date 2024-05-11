@@ -1,5 +1,5 @@
 use super::{Arena, ArenaIndex, Iter, IterMut};
-use crate::Map;
+use crate::{map, Map};
 use core::{
     hash::Hash,
     ops::{Index, IndexMut},
@@ -80,23 +80,20 @@ where
     Idx: ArenaIndex,
     T: Hash + Ord + Clone,
 {
-    /// Returns the next entity index.
-    fn next_index(&self) -> Idx {
-        self.entities.next_index()
-    }
-
     /// Allocates a new entity and returns its index.
     ///
     /// # Note
     ///
     /// Only allocates if the entity does not already exist in the [`DedupArena`].
     pub fn alloc(&mut self, entity: T) -> Idx {
-        match self.entity2idx.get(&entity) {
-            Some(index) => *index,
-            None => {
-                let index = self.next_index();
-                self.entity2idx.insert(entity.clone(), index);
+        match self.entity2idx.entry(entity.clone()) {
+            map::Entry::Occupied(entry) => {
+                *entry.get()
+            }
+            map::Entry::Vacant(entry) => {
+                let index = self.entities.next_index();
                 self.entities.alloc(entity);
+                entry.insert(index);
                 index
             }
         }
