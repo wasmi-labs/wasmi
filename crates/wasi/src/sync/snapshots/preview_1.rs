@@ -1,9 +1,13 @@
+use super::AddWasi;
 use crate::WasmiGuestMemory;
 use std::{
     pin::Pin,
     task::{Context, RawWaker, RawWakerVTable, Waker},
 };
-use wasi_common::Error;
+use wasi_common::{
+    snapshots::preview_1::wasi_snapshot_preview1::{UserErrorConversion, WasiSnapshotPreview1},
+    Error,
+};
 use wasmi::{Caller, Extern, Linker};
 
 // Creates a dummy `RawWaker`. We can only create Wakers from `RawWaker`s
@@ -31,6 +35,29 @@ fn run_in_dummy_executor<F: std::future::Future>(f: F) -> Result<F::Output, wasm
     }
 }
 
+/// Adds the entire WASI API to the Wasmi [`Linker`].
+///
+/// Once linked, users can make use of all the low-level functionalities that `WASI` provides.
+///
+/// You could call them `syscall`s and you'd be correct, because they mirror
+/// what a non-os-dependent set of syscalls would look like.
+/// You now have access to resources such as files, directories, random number generators,
+/// and certain parts of the networking stack.
+///
+/// # Note
+///
+/// `WASI` is versioned in snapshots. It's still a WIP. Currently, this crate supports `preview_1`
+/// Look [here](https://github.com/WebAssembly/WASI/blob/main/phases/snapshot/docs.md) for more details.
+pub fn add_wasi_snapshot_preview1_to_linker<T, U>(
+    linker: &mut Linker<T>,
+    wasi_ctx: impl Fn(&mut T) -> &mut U + Send + Sync + Copy + 'static,
+) -> Result<(), Error>
+where
+    U: WasiSnapshotPreview1 + UserErrorConversion,
+{
+    <Linker<T> as AddWasi<T>>::add_wasi(linker, wasi_ctx)
+}
+
 // Creates the function item `add_wasi_snapshot_preview1_to_wasmi_linker` which when called adds all
 // `wasi preview_1` functions to the linker
 macro_rules! impl_add_to_linker_for_funcs {
@@ -40,51 +67,40 @@ macro_rules! impl_add_to_linker_for_funcs {
             fn $fname:ident ($( $arg:ident : $typ:ty ),* $(,)? ) -> $ret:tt
         );+ $(;)?
     ) => {
-        /// Adds the entire `WASI API` to the [`Linker`].
-        ///
-        /// Once linked, users can make use of all the low-level functionalities that `WASI` provides.
-        ///
-        /// You could call them `syscall`s and you'd be correct, because they mirror
-        /// what a non-os-dependent set of syscalls would look like.
-        /// You now have access to resources such as files, directories, random number generators,
-        /// and certain parts of the networking stack.
-        ///
-        /// # Note
-        ///
-        /// `WASI` is versioned in snapshots. It's still a WIP. Currently, this crate supports `preview_1`
-        /// Look [here](https://github.com/WebAssembly/WASI/blob/main/phases/snapshot/docs.md) for more details.
-        pub fn add_wasi_snapshot_preview1_to_linker<T, U>(
-            linker: &mut Linker<T>,
-            wasi_ctx: impl Fn(&mut T) -> &mut U + Send + Sync + Copy + 'static,
-        ) -> Result<(), Error>
-        where U: wasi_common::snapshots::preview_1::wasi_snapshot_preview1::WasiSnapshotPreview1 +
-                 wasi_common::snapshots::preview_1::wasi_snapshot_preview1::UserErrorConversion
-        {
-            $(
-                // $(#[$docs])* // TODO: find place for docs
-                linker.func_wrap(
-                    "wasi_snapshot_preview1",
-                    stringify!($fname),
-                    move |mut caller: Caller<'_, T>, $($arg : $typ,)*| -> Result<$ret, wasmi::Error> {
-                        let result = async {
-                            let memory = match caller.get_export("memory") {
-                                Some(Extern::Memory(m)) => m,
-                                _ => return Err(wasmi::Error::new(String::from("missing required WASI memory export"))),
+        impl<T> AddWasi<T> for Linker<T> {
+            fn add_wasi<U>(
+                &mut self,
+                wasi_ctx: impl Fn(&mut T) -> &mut U + Send + Sync + Copy + 'static,
+            ) -> Result<(), Error>
+            where
+                U: WasiSnapshotPreview1 + UserErrorConversion,
+            {
+                $(
+                    // $(#[$docs])* // TODO: find place for docs
+                    self.func_wrap(
+                        "wasi_snapshot_preview1",
+                        stringify!($fname),
+                        move |mut caller: Caller<'_, T>, $($arg : $typ,)*| -> Result<$ret, wasmi::Error> {
+                            let result = async {
+                                let memory = match caller.get_export("memory") {
+                                    Some(Extern::Memory(m)) => m,
+                                    _ => return Err(wasmi::Error::new(String::from("missing required WASI memory export"))),
+                                };
+                                let(memory, ctx) = memory.data_and_store_mut(&mut caller);
+                                let ctx = wasi_ctx(ctx);
+                                let memory = WasmiGuestMemory::new(memory);
+                                match wasi_common::snapshots::preview_1::wasi_snapshot_preview1::$fname(ctx, &memory, $($arg,)*).await {
+                                    Ok(r) => Ok(<$ret>::from(r)),
+                                    Err(wiggle::Trap::String(err)) => Err(wasmi::Error::new(err)),
+                                    Err(wiggle::Trap::I32Exit(i)) => Err(wasmi::Error::i32_exit(i)),
+                                }
                             };
-                            let(memory, ctx) = memory.data_and_store_mut(&mut caller);
-                            let ctx = wasi_ctx(ctx);
-                            let memory = WasmiGuestMemory::new(memory);
-                            match wasi_common::snapshots::preview_1::wasi_snapshot_preview1::$fname(ctx, &memory, $($arg,)*).await {
-                                Ok(r) => Ok(<$ret>::from(r)),
-                                Err(wiggle::Trap::String(err)) => Err(wasmi::Error::new(err)),
-                                Err(wiggle::Trap::I32Exit(i)) => Err(wasmi::Error::i32_exit(i)),
-                            }
-                        };
-                        run_in_dummy_executor(result)?
-                    }
-                )?;
-            )*
-            Ok(())
+                            run_in_dummy_executor(result)?
+                        }
+                    )?;
+                )*
+                Ok(())
+            }
         }
     }
 }
