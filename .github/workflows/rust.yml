@@ -30,8 +30,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-          key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-build-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Build (default features)
         run: cargo build --workspace
       - name: Build (all features)
@@ -59,8 +59,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-          key: ${{ runner.os }}-cargo-test-asan-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-test-asan-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Show Rust Toolchain
@@ -93,8 +93,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-test-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Test (default features)
@@ -137,8 +137,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-          key: ${{ runner.os }}-cargo-doc-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-doc-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Check Docs
         env:
           RUSTDOCFLAGS: "-D warnings"
@@ -174,8 +174,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-          key: ${{ runner.os }}-cargo-udeps-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-udeps-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Install cargo-udeps
@@ -186,7 +186,7 @@ jobs:
       - name: Check uDeps
         run: cargo udeps --all-targets
 
-  fuzz_translate:
+  fuzz-translate:
     name: Fuzz (Translation)
     runs-on: ubuntu-latest
     steps:
@@ -205,8 +205,8 @@ jobs:
             ~/fuzz/target/
             ~/fuzz/corpus/translate/
             ~/fuzz/curpus/translate_metered/
-          key: ${{ runner.os }}-cargo-fuzz-translation-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-fuzz-translation-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Install cargo-fuzz
@@ -219,7 +219,7 @@ jobs:
       - name: Fuzz (Translation) + fuel
         run: cargo fuzz run translate_metered -j 2 --verbose -- -max_total_time=60 # 1 minute of fuzzing
 
-  fuzz_execute:
+  fuzz-execute:
     name: Fuzz (Execution)
     runs-on: ubuntu-latest
     steps:
@@ -237,8 +237,8 @@ jobs:
             ~/target/
             ~/fuzz/target/
             ~/fuzz/corpus/execute/
-          key: ${{ runner.os }}-cargo-fuzz-execution-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-fuzz-execution-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Install cargo-fuzz
@@ -249,7 +249,7 @@ jobs:
       - name: Fuzz (Execution)
         run: cargo fuzz run execute -j 2 --verbose -- -max_total_time=120 # 2 minutes of fuzzing
 
-  fuzz_differential:
+  fuzz-differential:
     name: Fuzz (Differential)
     runs-on: ubuntu-latest
     steps:
@@ -267,8 +267,8 @@ jobs:
             ~/target/
             ~/fuzz/target/
             ~/fuzz/corpus/execute/
-          key: ${{ runner.os }}-cargo-fuzz-differential-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-fuzz-differential-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Install cargo-fuzz
@@ -299,8 +299,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-          key: ${{ runner.os }}-cargo-miri-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-miri-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Install cargo-nextest
@@ -333,8 +333,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-          key: ${{ runner.os }}-cargo-miri-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-miri-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Install cargo-nextest
@@ -366,8 +366,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-          key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-clippy-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Clippy (default features)
@@ -400,8 +400,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-          key: ${{ runner.os }}-cargo-coverage-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-coverage-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Run cargo-tarpaulin (default features)
