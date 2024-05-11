@@ -1,4 +1,3 @@
-use super::AddWasi;
 use crate::WasmiGuestMemory;
 use std::{
     pin::Pin,
@@ -33,6 +32,20 @@ fn run_in_dummy_executor<F: std::future::Future>(f: F) -> Result<F::Output, wasm
         std::task::Poll::Ready(val) => Ok(val),
         std::task::Poll::Pending => Err(wasmi::Error::new("Cannot wait on pending future")),
     }
+}
+
+/// Implemented by Wasmi [`Linker`] and [`LinkerBuilder`] to populate them with WASI definitions.
+///
+/// [`Linker`]: wasmi::Linker
+/// [`LinkerBuilder`]: wasmi::LinkerBuilder
+pub trait AddWasi<T> {
+    /// Add Wasi preview1 definitions to `self`.
+    fn add_wasi<U>(
+        &mut self,
+        wasi_ctx: impl Fn(&mut T) -> &mut U + Send + Sync + Copy + 'static,
+    ) -> Result<(), Error>
+    where
+        U: WasiSnapshotPreview1 + UserErrorConversion;
 }
 
 /// Adds the entire WASI API to the Wasmi [`Linker`].
