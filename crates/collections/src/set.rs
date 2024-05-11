@@ -380,7 +380,7 @@ impl<'a, T: 'a> ExactSizeIterator for Iter<'a, T> {
     }
 }
 
-impl<'a, T: 'a> FusedIterator for Iter<'a, T> {}
+impl<'a, T: 'a> FusedIterator for Iter<'a, T> where detail::IterImpl<'a, T>: FusedIterator {}
 
 impl<T> IntoIterator for Set<T> {
     type Item = T;
@@ -421,7 +421,7 @@ impl<T> ExactSizeIterator for IntoIter<T> {
     }
 }
 
-impl<T> FusedIterator for IntoIter<T> {}
+impl<T> FusedIterator for IntoIter<T> where detail::IntoIterImpl<T>: FusedIterator {}
 
 /// A lazy iterator producing elements in the difference of [`Set`]s.
 ///
@@ -469,7 +469,12 @@ where
     }
 }
 
-impl<T> FusedIterator for Difference<'_, T> where T: Hash + Eq + Ord {}
+impl<'a, T> FusedIterator for Difference<'a, T>
+where
+    T: Hash + Eq + Ord,
+    detail::DifferenceImpl<'a, T>: FusedIterator,
+{
+}
 
 /// A lazy iterator producing elements in the intersection of [`Set`]s.
 ///
@@ -517,7 +522,12 @@ where
     }
 }
 
-impl<T> FusedIterator for Intersection<'_, T> where T: Hash + Eq + Ord {}
+impl<'a, T> FusedIterator for Intersection<'a, T>
+where
+    T: Hash + Eq + Ord,
+    detail::IntersectionImpl<'a, T>: FusedIterator,
+{
+}
 
 /// A lazy iterator producing elements in the symmetric difference of [`Set`]s.
 ///
@@ -565,7 +575,12 @@ where
     }
 }
 
-impl<T> FusedIterator for SymmetricDifference<'_, T> where T: Hash + Eq + Ord {}
+impl<'a, T> FusedIterator for SymmetricDifference<'a, T>
+where
+    T: Hash + Eq + Ord,
+    detail::SymmetricDifferenceImpl<'a, T>: FusedIterator,
+{
+}
 
 /// A lazy iterator producing elements in the union of [`Set`]s.
 ///
@@ -613,4 +628,9 @@ where
     }
 }
 
-impl<T> FusedIterator for Union<'_, T> where T: Hash + Eq + Ord {}
+impl<'a, T> FusedIterator for Union<'a, T>
+where
+    T: Hash + Eq + Ord,
+    detail::UnionImpl<'a, T>: FusedIterator,
+{
+}
