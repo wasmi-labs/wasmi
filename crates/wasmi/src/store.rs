@@ -822,6 +822,21 @@ impl StoreInner {
     }
 }
 
+impl<T> Default for Store<T>
+where
+    T: Default,
+{
+    fn default() -> Self {
+        let engine = Engine::default();
+        Self {
+            inner: StoreInner::new(&engine),
+            trampolines: Arena::new(),
+            data: T::default(),
+            limiter: None,
+        }
+    }
+}
+
 impl<T> Store<T> {
     /// Creates a new store.
     pub fn new(engine: &Engine, data: T) -> Self {
