@@ -50,7 +50,7 @@ pub struct ModuleHeaderBuilder {
     pub start: Option<FuncIdx>,
     pub compiled_funcs: Vec<CompiledFunc>,
     pub compiled_funcs_idx: BTreeMap<CompiledFunc, FuncIdx>,
-    pub element_segments: Vec<ElementSegment>,
+    pub element_segments: Box<[ElementSegment]>,
 }
 
 impl ModuleHeaderBuilder {
@@ -69,7 +69,7 @@ impl ModuleHeaderBuilder {
             start: None,
             compiled_funcs: Vec::new(),
             compiled_funcs_idx: BTreeMap::new(),
-            element_segments: Vec::new(),
+            element_segments: Box::from([]),
         }
     }
 
@@ -89,7 +89,7 @@ impl ModuleHeaderBuilder {
                 start: self.start,
                 compiled_funcs: self.compiled_funcs.into(),
                 compiled_funcs_idx: self.compiled_funcs_idx,
-                element_segments: self.element_segments.into(),
+                element_segments: self.element_segments,
             }),
         }
     }
@@ -153,11 +153,17 @@ impl ModuleHeaderBuilder {
     pub fn push_func_types<T>(&mut self, func_types: T) -> Result<(), Error>
     where
         T: IntoIterator<Item = Result<FuncType, Error>>,
+        <T as IntoIterator>::IntoIter: ExactSizeIterator,
     {
         assert!(
             self.func_types.is_empty(),
             "tried to initialize module function types twice"
         );
+        let func_types = func_types.into_iter();
+        // Note: we use `reserve_exact` instead of `reserve` because this
+        //       is the last extension of the vector during the build process
+        //       and optimizes conversion to boxed slice.
+        self.func_types.reserve_exact(func_types.len());
         for func_type in func_types {
             let func_type = func_type?;
             let dedup = self.engine.alloc_func_type(func_type);
@@ -217,12 +223,19 @@ impl ModuleHeaderBuilder {
     pub fn push_funcs<T>(&mut self, funcs: T) -> Result<(), Error>
     where
         T: IntoIterator<Item = Result<FuncTypeIdx, Error>>,
+        <T as IntoIterator>::IntoIter: ExactSizeIterator,
     {
         assert_eq!(
             self.funcs.len(),
             self.imports.funcs.len(),
             "tried to initialize module function declarations twice"
         );
+        let funcs = funcs.into_iter();
+        // Note: we use `reserve_exact` instead of `reserve` because this
+        //       is the last extension of the vector during the build process
+        //       and optimizes conversion to boxed slice.
+        self.funcs.reserve_exact(funcs.len());
+        self.compiled_funcs.reserve_exact(funcs.len());
         for func in funcs {
             let func_type_idx = func?;
             let func_type = self.func_types[func_type_idx.into_u32() as usize];
@@ -250,12 +263,18 @@ impl ModuleHeaderBuilder {
     pub fn push_tables<T>(&mut self, tables: T) -> Result<(), Error>
     where
         T: IntoIterator<Item = Result<TableType, Error>>,
+        <T as IntoIterator>::IntoIter: ExactSizeIterator,
     {
         assert_eq!(
             self.tables.len(),
             self.imports.tables.len(),
             "tried to initialize module table declarations twice"
         );
+        let tables = tables.into_iter();
+        // Note: we use `reserve_exact` instead of `reserve` because this
+        //       is the last extension of the vector during the build process
+        //       and optimizes conversion to boxed slice.
+        self.tables.reserve_exact(tables.len());
         for table in tables {
             let table = table?;
             self.tables.push(table);
@@ -275,12 +294,18 @@ impl ModuleHeaderBuilder {
     pub fn push_memories<T>(&mut self, memories: T) -> Result<(), Error>
     where
         T: IntoIterator<Item = Result<MemoryType, Error>>,
+        <T as IntoIterator>::IntoIter: ExactSizeIterator,
     {
         assert_eq!(
             self.memories.len(),
             self.imports.memories.len(),
             "tried to initialize module linear memory declarations twice"
         );
+        let memories = memories.into_iter();
+        // Note: we use `reserve_exact` instead of `reserve` because this
+        //       is the last extension of the vector during the build process
+        //       and optimizes conversion to boxed slice.
+        self.memories.reserve_exact(memories.len());
         for memory in memories {
             let memory = memory?;
             self.memories.push(memory);
@@ -300,12 +325,18 @@ impl ModuleHeaderBuilder {
     pub fn push_globals<T>(&mut self, globals: T) -> Result<(), Error>
     where
         T: IntoIterator<Item = Result<Global, Error>>,
+        <T as IntoIterator>::IntoIter: ExactSizeIterator,
     {
         assert_eq!(
             self.globals.len(),
             self.imports.globals.len(),
             "tried to initialize module global variable declarations twice"
         );
+        let globals = globals.into_iter();
+        // Note: we use `reserve_exact` instead of `reserve` because this
+        //       is the last extension of the vector during the build process
+        //       and optimizes conversion to boxed slice.
+        self.globals.reserve_exact(globals.len());
         for global in globals {
             let global = global?;
             let (global_decl, global_init) = global.into_type_and_init();
@@ -360,12 +391,13 @@ impl ModuleHeaderBuilder {
     pub fn push_element_segments<T>(&mut self, elements: T) -> Result<(), Error>
     where
         T: IntoIterator<Item = Result<ElementSegment, Error>>,
+        <T as IntoIterator>::IntoIter: ExactSizeIterator,
     {
         assert!(
             self.element_segments.is_empty(),
             "tried to initialize module export declarations twice"
         );
-        self.element_segments = elements.into_iter().collect::<Result<Vec<_>, _>>()?;
+        self.element_segments = elements.into_iter().collect::<Result<Box<[_]>, _>>()?;
         Ok(())
     }
 }
