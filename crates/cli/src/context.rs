@@ -30,8 +30,6 @@ impl Context {
         compilation_mode: CompilationMode,
     ) -> Result<Self, Error> {
         let mut config = Config::default();
-        config.wasm_tail_call(true);
-        config.wasm_extended_const(true);
         if fuel.is_some() {
             config.consume_fuel(true);
         }
