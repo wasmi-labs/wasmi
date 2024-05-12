@@ -89,7 +89,7 @@ impl ModuleHeaderBuilder {
                 start: self.start,
                 compiled_funcs: self.compiled_funcs.into(),
                 compiled_funcs_idx: self.compiled_funcs_idx,
-                element_segments: self.element_segments.into(),
+                element_segments: self.element_segments,
             }),
         }
     }
