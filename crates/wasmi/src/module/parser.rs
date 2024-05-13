@@ -314,10 +314,6 @@ impl ModuleStreamingParser {
                             let bytes = &buffer[start..consumed];
                             self.process_code_entry(func_body, bytes, &header)?;
                         }
-                        Payload::CustomSection { .. } => {}
-                        Payload::UnknownSection { id, range, .. } => {
-                            self.process_unknown(id, range)?
-                        }
                         _ => break,
                     }
                     // Cut away the parts from the intermediate buffer that have already been parsed.
