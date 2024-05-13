@@ -1,8 +1,13 @@
-use super::{TestDescriptor, TestError, TestProfile, TestSpan};
+use super::{
+    run::{ParsingMode, RunnerConfig},
+    TestDescriptor,
+    TestError,
+    TestProfile,
+    TestSpan,
+};
 use anyhow::Result;
 use std::collections::HashMap;
 use wasmi::{
-    Config,
     Engine,
     Extern,
     Func,
@@ -26,6 +31,8 @@ use wast::token::{Id, Span};
 pub struct TestContext<'a> {
     /// The Wasmi engine used for executing functions used during the test.
     engine: Engine,
+    /// The configuration of the test runner.
+    runner_config: RunnerConfig,
     /// The linker for linking together Wasm test modules.
     linker: Linker<()>,
     /// The store to hold all runtime data during the test.
@@ -48,8 +55,8 @@ pub struct TestContext<'a> {
 
 impl<'a> TestContext<'a> {
     /// Creates a new [`TestContext`] with the given [`TestDescriptor`].
-    pub fn new(descriptor: &'a TestDescriptor, config: Config) -> Self {
-        let engine = Engine::new(&config);
+    pub fn new(descriptor: &'a TestDescriptor, runner_config: RunnerConfig) -> Self {
+        let engine = Engine::new(&runner_config.config);
         let mut linker = Linker::new(&engine);
         let mut store = Store::new(&engine, ());
         _ = store.set_fuel(1_000_000_000);
@@ -104,6 +111,7 @@ impl<'a> TestContext<'a> {
             .unwrap();
         TestContext {
             engine,
+            runner_config,
             linker,
             store,
             modules: Vec::new(),
@@ -164,7 +172,10 @@ impl TestContext<'_> {
                 error
             )
         });
-        let module = Module::new(self.engine(), &wasm[..])?;
+        let module = match self.runner_config.mode {
+            ParsingMode::Buffered => Module::new(self.engine(), &wasm[..])?,
+            ParsingMode::Streaming => Module::new_streaming(self.engine(), &wasm[..])?,
+        };
         let instance_pre = self.linker.instantiate(&mut self.store, &module)?;
         let instance = instance_pre.start(&mut self.store)?;
         self.modules.push(module);

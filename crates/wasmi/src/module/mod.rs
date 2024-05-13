@@ -15,7 +15,7 @@ use self::{
     export::ExternIdx,
     global::Global,
     import::{ExternTypeIdx, Import},
-    parser::{parse, parse_unchecked},
+    parser::ModuleParser,
 };
 pub(crate) use self::{
     data::{DataSegment, DataSegments, InitDataSegment, PassiveDataSegmentBytes},
@@ -186,7 +186,25 @@ impl ModuleImports {
 }
 
 impl Module {
-    /// Creates a new Wasm [`Module`] from the given byte stream.
+    /// Creates a new Wasm [`Module`] from the given Wasm bytecode buffer.
+    ///
+    /// # Note
+    ///
+    /// This parses, validates and translates the buffered Wasm bytecode.
+    ///
+    /// # Errors
+    ///
+    /// - If the Wasm bytecode is malformed or fails to validate.
+    /// - If the Wasm bytecode violates restrictions
+    ///   set in the [`Config`] used by the `engine`.
+    /// - If Wasmi cannot translate the Wasm bytecode.
+    ///
+    /// [`Config`]: crate::Config
+    pub fn new(engine: &Engine, wasm: &[u8]) -> Result<Self, Error> {
+        ModuleParser::new(engine).parse_buffered(wasm)
+    }
+
+    /// Creates a new Wasm [`Module`] from the given Wasm bytecode stream.
     ///
     /// # Note
     ///
@@ -194,41 +212,67 @@ impl Module {
     ///
     /// # Errors
     ///
-    /// - If the `stream` cannot be parsed as a valid Wasm module.
-    /// - If the Wasm bytecode yielded by `stream` is not valid.
-    /// - If the Wasm bytecode yielded by `stream` violates restrictions
+    /// - If the Wasm bytecode is malformed or fails to validate.
+    /// - If the Wasm bytecode violates restrictions
     ///   set in the [`Config`] used by the `engine`.
-    /// - If Wasmi cannot translate the Wasm bytecode yielded by `stream`.
+    /// - If Wasmi cannot translate the Wasm bytecode.
     ///
     /// [`Config`]: crate::Config
-    pub fn new(engine: &Engine, stream: impl Read) -> Result<Self, Error> {
-        parse(engine, stream).map_err(Into::into)
+    pub fn new_streaming(engine: &Engine, stream: impl Read) -> Result<Self, Error> {
+        ModuleParser::new(engine).parse_streaming(stream)
+    }
+
+    /// Creates a new Wasm [`Module`] from the given Wasm bytecode buffer.
+    ///
+    /// # Note
+    ///
+    /// This parses and translates the buffered Wasm bytecode.
+    ///
+    /// # Safety
+    ///
+    /// - This does _not_ validate the Wasm bytecode.
+    /// - It is the caller's responsibility that the Wasm bytecode is valid.
+    /// - It is the caller's responsibility that the Wasm bytecode adheres
+    ///   to the restrictions set by the used [`Config`] of the `engine`.
+    /// - Violating the above rules is undefined behavior.
+    ///
+    /// # Errors
+    ///
+    /// - If the Wasm bytecode is malformed or contains invalid sections.
+    /// - If the Wasm bytecode fails to be compiled by Wasmi.
+    ///
+    /// [`Config`]: crate::Config
+    pub unsafe fn new_unchecked(engine: &Engine, wasm: &[u8]) -> Result<Self, Error> {
+        let parser = ModuleParser::new(engine);
+        unsafe { parser.parse_buffered_unchecked(wasm) }
     }
 
     /// Creates a new Wasm [`Module`] from the given byte stream.
     ///
     /// # Note
     ///
-    /// - This parses and translates the Wasm bytecode yielded by `stream`.
-    /// - This still validates Wasm bytecode outside of function bodies.
+    /// This parses and translates the Wasm bytecode yielded by `stream`.
     ///
     /// # Safety
     ///
-    /// - This does _not_ fully validate the Wasm bytecode yielded by `stream`.
-    /// - It is the caller's responsibility to call this function only with
-    ///   a `stream` that yields fully valid Wasm bytecode.
-    /// - Additionally it is the caller's responsibility that the Wasm bytecode
-    ///   yielded by `stream` must adhere to the restrictions set by the used
-    ///   [`Config`] of the `engine`.
-    /// - Violating these rules may lead to undefined behavior.
+    /// - This does _not_ validate the Wasm bytecode.
+    /// - It is the caller's responsibility that the Wasm bytecode is valid.
+    /// - It is the caller's responsibility that the Wasm bytecode adheres
+    ///   to the restrictions set by the used [`Config`] of the `engine`.
+    /// - Violating the above rules is undefined behavior.
     ///
     /// # Errors
     ///
-    /// If the `stream` cannot be parsed as a valid Wasm module.
+    /// - If the Wasm bytecode is malformed or contains invalid sections.
+    /// - If the Wasm bytecode fails to be compiled by Wasmi.
     ///
     /// [`Config`]: crate::Config
-    pub unsafe fn new_unchecked(engine: &Engine, stream: impl Read) -> Result<Self, Error> {
-        unsafe { parse_unchecked(engine, stream).map_err(Into::into) }
+    pub unsafe fn new_streaming_unchecked(
+        engine: &Engine,
+        stream: impl Read,
+    ) -> Result<Self, Error> {
+        let parser = ModuleParser::new(engine);
+        unsafe { parser.parse_streaming_unchecked(stream) }
     }
 
     /// Returns the [`Engine`] used during creation of the [`Module`].
