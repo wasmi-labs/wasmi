@@ -16,8 +16,26 @@ use wast::{
     Wat,
 };
 
+/// The configuation for the test runner.
+#[derive(Debug, Copy, Clone)]
+pub struct RunnerConfig {
+    /// The Wasmi configuration used for all tests.
+    pub config: Config,
+    /// The parsing mode that is used.
+    pub mode: ParsingMode,
+}
+
+/// The mode in which Wasm is parsed.
+#[derive(Debug, Copy, Clone)]
+pub enum ParsingMode {
+    /// The test runner shall use buffered Wasm compilation.
+    Buffered,
+    /// The test runner shall use streaming Wasm compilation.
+    Streaming,
+}
+
 /// Runs the Wasm test spec identified by the given name.
-pub fn run_wasm_spec_test(name: &'static str, file: &'static str, config: Config) {
+pub fn run_wasm_spec_test(name: &'static str, file: &'static str, config: RunnerConfig) {
     let test = TestDescriptor::new(name, file);
     let mut context = TestContext::new(&test, config);
 
