@@ -62,21 +62,21 @@ impl ModuleParser {
     /// # Errors
     ///
     /// If the parsed Wasm is malformed.
-    fn next_payload<'a>(
-        &mut self,
-        buffer: &mut &'a [u8],
-    ) -> Result<(Payload<'a>, &'a [u8]), Error> {
+    fn next_payload<'a>(&mut self, buffer: &mut &'a [u8]) -> Result<(usize, Payload<'a>), Error> {
         match self.parser.parse(&buffer[..], true)? {
-            Chunk::Parsed { consumed, payload } => {
-                let (consumed, remaining) = buffer.split_at(consumed);
-                *buffer = remaining;
-                Ok((payload, consumed))
-            }
+            Chunk::Parsed { consumed, payload } => Ok((consumed, payload)),
             Chunk::NeedMoreData(_hint) => {
                 // This is not possible since `eof` is always true.
                 unreachable!()
             }
         }
+    }
+
+    /// Consumes the parts of the buffer that have been processed.
+    fn consume_buffer<'a>(consumed: usize, buffer: &mut &'a [u8]) -> &'a [u8] {
+        let (consumed, remaining) = buffer.split_at(consumed);
+        *buffer = remaining;
+        consumed
     }
 
     /// Parse the Wasm module header.
@@ -92,7 +92,7 @@ impl ModuleParser {
     fn parse_buffered_header(&mut self, buffer: &mut &[u8]) -> Result<ModuleHeader, Error> {
         let mut header = ModuleHeaderBuilder::new(&self.engine);
         loop {
-            let (payload, _) = self.next_payload(buffer)?;
+            let (consumed, payload) = self.next_payload(buffer)?;
             match payload {
                 Payload::Version {
                     num,
@@ -113,6 +113,7 @@ impl ModuleParser {
                 Payload::DataCountSection { count, range } => self.process_data_count(count, range),
                 Payload::CodeSectionStart { count, range, size } => {
                     self.process_code_start(count, range, size)?;
+                    Self::consume_buffer(consumed, buffer);
                     break;
                 }
                 Payload::DataSection(_) => break,
@@ -120,6 +121,7 @@ impl ModuleParser {
                 Payload::CustomSection { .. } => Ok(()),
                 unexpected => self.process_invalid_payload(unexpected),
             }?;
+            Self::consume_buffer(consumed, buffer);
         }
         Ok(header.finish())
     }
@@ -139,16 +141,17 @@ impl ModuleParser {
         header: ModuleHeader,
     ) -> Result<ModuleBuilder, Error> {
         loop {
-            let (payload, consumed) = self.next_payload(buffer)?;
+            let (consumed, payload) = self.next_payload(buffer)?;
             match payload {
                 Payload::CodeSectionEntry(func_body) => {
                     // Note: Unfortunately the `wasmparser` crate is missing an API
                     //       to return the byte slice for the respective code section
                     //       entry payload. Please remove this work around as soon as
                     //       such an API becomes available.
+                    let bytes = Self::consume_buffer(consumed, buffer);
                     let remaining = func_body.get_binary_reader().bytes_remaining();
-                    let start = consumed.len() - remaining;
-                    let bytes = &consumed[start..];
+                    let start = consumed - remaining;
+                    let bytes = &bytes[start..];
                     self.process_code_entry(func_body, bytes, &header)?;
                 }
                 _ => break,
@@ -172,7 +175,7 @@ impl ModuleParser {
         mut builder: ModuleBuilder,
     ) -> Result<Module, Error> {
         loop {
-            let (payload, _) = self.next_payload(buffer)?;
+            let (consumed, payload) = self.next_payload(buffer)?;
             match payload {
                 Payload::DataSection(section) => {
                     self.process_data(section, &mut builder)?;
@@ -184,6 +187,7 @@ impl ModuleParser {
                 Payload::CustomSection { .. } => {}
                 invalid => self.process_invalid_payload(invalid)?,
             }
+            Self::consume_buffer(consumed, buffer);
         }
         Ok(builder.finish(&self.engine))
     }
