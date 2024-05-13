@@ -141,6 +141,7 @@ impl RegisterAlloc {
         self.next_dynamic = 0;
         self.max_dynamic = 0;
         self.min_preserve = Self::INITIAL_PRESERVATION_INDEX;
+        self.defrag_offset = 0;
     }
 
     /// Adjusts the [`RegisterAlloc`] for the popped [`TaggedProvider`] and returns a [`TypedProvider`].

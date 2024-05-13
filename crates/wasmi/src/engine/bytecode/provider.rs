@@ -92,6 +92,12 @@ impl<T> Default for ProviderSliceStack<T> {
 }
 
 impl<T> ProviderSliceStack<T> {
+    /// Resets the [`ProviderSliceStack`] to allow for reuse.
+    pub fn reset(&mut self) {
+        self.ends.clear();
+        self.providers.clear();
+    }
+
     /// Pushes a new [`Provider`] slice and returns its [`ProviderSliceRef`].
     pub fn push<I>(&mut self, providers: I) -> Result<ProviderSliceRef, Error>
     where

@@ -44,7 +44,8 @@ pub struct ControlStack {
 impl ControlStack {
     /// Resets the [`ControlStack`] to allow for reuse.
     pub fn reset(&mut self) {
-        self.frames.clear()
+        self.frames.clear();
+        self.else_providers.reset();
     }
 
     /// Returns `true` if `relative_depth` points to the first control flow frame.

@@ -112,6 +112,7 @@ impl PreservedLocal {
 }
 
 impl TranslationBuffers {
+    /// Resets the [`TranslationBuffers`].
     fn reset(&mut self) {
         self.providers.clear();
         self.br_table_targets.clear();
