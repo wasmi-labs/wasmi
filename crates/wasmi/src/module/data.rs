@@ -1,33 +1,37 @@
 use super::{ConstExpr, MemoryIdx};
-use std::sync::Arc;
+use crate::Error;
+use core::slice;
+use std::{boxed::Box, sync::Arc, vec::Vec};
 
 /// A Wasm [`Module`] data segment.
 ///
 /// [`Module`]: [`super::Module`]
 #[derive(Debug)]
 pub struct DataSegment {
-    /// The kind of the data segment.
-    kind: DataSegmentKind,
-    /// The bytes of the data segment.
-    bytes: Arc<[u8]>,
+    inner: DataSegmentInner,
 }
 
-/// The kind of a Wasm module [`DataSegment`].
+/// The inner structure of a [`DataSegment`].
 #[derive(Debug)]
-pub enum DataSegmentKind {
-    /// A passive data segment from the `bulk-memory` Wasm proposal.
-    Passive,
-    /// An active data segment that is initialized upon module instantiation.
+pub enum DataSegmentInner {
+    /// An active data segment that is initialized upon Wasm module instantiation.
     Active(ActiveDataSegment),
+    /// A passive data segment that can be used by some Wasm bulk instructions.
+    Passive {
+        /// The bytes of the passive data segment.
+        bytes: PassiveDataSegmentBytes,
+    },
 }
 
-/// An active data segment.
+/// An active data segment that is initialized upon Wasm module instantiation.
 #[derive(Debug)]
 pub struct ActiveDataSegment {
     /// The linear memory that is to be initialized with this active segment.
     memory_index: MemoryIdx,
     /// The offset at which the data segment is initialized.
     offset: ConstExpr,
+    /// Number of bytes of the active data segment.
+    len: u32,
 }
 
 impl ActiveDataSegment {
@@ -40,48 +44,186 @@ impl ActiveDataSegment {
     pub fn offset(&self) -> &ConstExpr {
         &self.offset
     }
+
+    /// Returns the number of bytes of the [`ActiveDataSegment`] as `usize`.
+    pub fn len(&self) -> usize {
+        self.len as usize
+    }
 }
 
-impl From<wasmparser::DataKind<'_>> for DataSegmentKind {
-    fn from(data_kind: wasmparser::DataKind<'_>) -> Self {
-        match data_kind {
+/// The bytes of the passive data segment.
+#[derive(Debug, Clone)]
+pub struct PassiveDataSegmentBytes {
+    bytes: Arc<[u8]>,
+}
+
+impl AsRef<[u8]> for PassiveDataSegmentBytes {
+    fn as_ref(&self) -> &[u8] {
+        &self.bytes[..]
+    }
+}
+
+#[test]
+fn size_of_data_segment() {
+    assert!(core::mem::size_of::<DataSegment>() <= 32);
+    assert!(core::mem::size_of::<DataSegmentInner>() <= 32);
+}
+
+impl DataSegment {
+    /// Returns the bytes of the [`DataSegment`] if passive, otherwise returns `None`.
+    pub fn passive_data_segment_bytes(&self) -> Option<PassiveDataSegmentBytes> {
+        match &self.inner {
+            DataSegmentInner::Active { .. } => None,
+            DataSegmentInner::Passive { bytes } => Some(bytes.clone()),
+        }
+    }
+}
+
+/// Stores all data segments and their associated data.
+#[derive(Debug)]
+pub struct DataSegments {
+    /// All data segments.
+    segments: Box<[DataSegment]>,
+    /// All bytes from all active data segments.
+    ///
+    /// # Note
+    ///
+    /// We deliberately do not use `Box<[u8]>` here because it is not possible
+    /// to properly pre-reserve space for the bytes and thus finishing construction
+    /// of the [`DataSegments`] would highly likely reallocate and mass-copy
+    /// which we prevent by simply using a `Vec<u8>` instead.
+    bytes: Vec<u8>,
+}
+
+impl DataSegments {
+    /// Creates a new [`DataSegmentsBuilder`].
+    pub fn build() -> DataSegmentsBuilder {
+        DataSegmentsBuilder {
+            segments: Vec::new(),
+            bytes: Vec::new(),
+        }
+    }
+}
+
+/// Builds up a [`DataSegments`] instance.
+#[derive(Debug)]
+pub struct DataSegmentsBuilder {
+    /// All active or passive data segments built-up so far.
+    segments: Vec<DataSegment>,
+    /// The bytes of all active data segments.
+    bytes: Vec<u8>,
+}
+
+impl DataSegmentsBuilder {
+    /// Reserves space for at least `additional` new [`DataSegments`].
+    pub fn reserve(&mut self, count: usize) {
+        assert!(
+            self.segments.capacity() == 0,
+            "must not reserve multiple times"
+        );
+        self.segments.reserve(count);
+    }
+
+    /// Pushes another [`DataSegment`] to the [`DataSegmentsBuilder`].
+    ///
+    /// # Panics
+    ///
+    /// If an active data segment has too many bytes.
+    pub fn push_data_segment(&mut self, segment: wasmparser::Data) -> Result<(), Error> {
+        match segment.kind {
+            wasmparser::DataKind::Passive => {
+                self.segments.push(DataSegment {
+                    inner: DataSegmentInner::Passive {
+                        bytes: PassiveDataSegmentBytes {
+                            bytes: segment.data.into(),
+                        },
+                    },
+                });
+            }
             wasmparser::DataKind::Active {
                 memory_index,
                 offset_expr,
             } => {
                 let memory_index = MemoryIdx::from(memory_index);
                 let offset = ConstExpr::new(offset_expr);
-                Self::Active(ActiveDataSegment {
-                    memory_index,
-                    offset,
-                })
+                let len = u32::try_from(segment.data.len()).unwrap_or_else(|_x| {
+                    panic!("data segment has too many bytes: {}", segment.data.len())
+                });
+                self.bytes.extend_from_slice(segment.data);
+                self.segments.push(DataSegment {
+                    inner: DataSegmentInner::Active(ActiveDataSegment {
+                        memory_index,
+                        offset,
+                        len,
+                    }),
+                });
             }
-            wasmparser::DataKind::Passive => Self::Passive,
+        }
+        Ok(())
+    }
+
+    pub fn finish(self) -> DataSegments {
+        DataSegments {
+            segments: self.segments.into(),
+            bytes: self.bytes,
         }
     }
 }
 
-impl From<wasmparser::Data<'_>> for DataSegment {
-    fn from(data: wasmparser::Data<'_>) -> Self {
-        let kind = DataSegmentKind::from(data.kind);
-        let bytes = data.data.into();
-        Self { kind, bytes }
+impl<'a> IntoIterator for &'a DataSegments {
+    type Item = InitDataSegment<'a>;
+    type IntoIter = InitDataSegmentIter<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        InitDataSegmentIter {
+            segments: self.segments.iter(),
+            bytes: &self.bytes[..],
+        }
     }
 }
 
-impl DataSegment {
-    /// Returns the [`DataSegmentKind`] of the [`DataSegment`].
-    pub fn kind(&self) -> &DataSegmentKind {
-        &self.kind
-    }
+/// Iterator over the [`DataSegment`]s and their associated bytes.
+#[derive(Debug)]
+pub struct InitDataSegmentIter<'a> {
+    segments: slice::Iter<'a, DataSegment>,
+    bytes: &'a [u8],
+}
 
-    /// Returns the bytes of the [`DataSegment`].
-    pub fn bytes(&self) -> &[u8] {
-        &self.bytes[..]
-    }
+impl<'a> Iterator for InitDataSegmentIter<'a> {
+    type Item = InitDataSegment<'a>;
 
-    /// Clone the underlying bytes of the [`DataSegment`].
-    pub fn clone_bytes(&self) -> Arc<[u8]> {
-        self.bytes.clone()
+    fn next(&mut self) -> Option<Self::Item> {
+        let segment = self.segments.next()?;
+        match &segment.inner {
+            DataSegmentInner::Active(segment) => {
+                let (bytes, rest) = self.bytes.split_at(segment.len());
+                self.bytes = rest;
+                Some(InitDataSegment::Active {
+                    memory_index: segment.memory_index(),
+                    offset: segment.offset(),
+                    bytes,
+                })
+            }
+            DataSegmentInner::Passive { bytes } => Some(InitDataSegment::Passive {
+                bytes: bytes.clone(),
+            }),
+        }
     }
+}
+
+/// Iterated-over [`DataSegment`] when instantiating a [`Module`].
+///
+/// [`Module`]: crate::Module
+pub enum InitDataSegment<'a> {
+    Active {
+        /// The linear memory that is to be initialized with this active segment.
+        memory_index: MemoryIdx,
+        /// The offset at which the data segment is initialized.
+        offset: &'a ConstExpr,
+        /// The bytes of the active data segment.
+        bytes: &'a [u8],
+    },
+    Passive {
+        bytes: PassiveDataSegmentBytes,
+    },
 }

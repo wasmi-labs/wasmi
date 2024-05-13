@@ -16,7 +16,7 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown, thumbv7em-none-eabi
@@ -30,12 +30,14 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-          key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-build-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Build (default features)
         run: cargo build --workspace
       - name: Build (all features)
         run: cargo build --workspace --all-features
+      - name: Build (no_std + no-hash-maps)
+        run: cargo build -p wasmi_collections --no-default-features --features no-hash-maps
       - name: Build (no_std)
         run: cargo build --workspace --lib --no-default-features --target thumbv7em-none-eabi --exclude wasmi_cli --exclude wasmi_wasi --exclude wasmi_fuzz
       - name: Build (wasm32)
@@ -45,7 +47,7 @@ jobs:
     name: Test (Address Sanitizer)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b
       - uses: dtolnay/rust-toolchain@nightly
       - name: Set up Cargo cache
         uses: actions/cache@v4
@@ -57,8 +59,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-          key: ${{ runner.os }}-cargo-test-asan-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-test-asan-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Show Rust Toolchain
@@ -74,12 +76,10 @@ jobs:
     name: Test
     strategy:
       matrix:
-        # windows-latest was pinned to windows-2019
-        # because of https://github.com/wasmi-labs/wasmi/runs/5021520759
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b
       - uses: dtolnay/rust-toolchain@stable
       - name: Set up Cargo cache
         uses: actions/cache@v4
@@ -91,8 +91,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-test-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Test (default features)
@@ -108,7 +108,7 @@ jobs:
     name: Formatting
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt
@@ -121,7 +121,7 @@ jobs:
     name: Documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rust-docs, rust-src
@@ -135,8 +135,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-          key: ${{ runner.os }}-cargo-doc-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-doc-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Check Docs
         env:
           RUSTDOCFLAGS: "-D warnings"
@@ -146,7 +146,7 @@ jobs:
     name: Audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b
       - uses: dtolnay/rust-toolchain@stable
       - name: Install cargo-audit
         run: |
@@ -160,7 +160,7 @@ jobs:
     name: uDeps
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b
       - uses: dtolnay/rust-toolchain@nightly
       - name: Set up Cargo cache
         uses: actions/cache@v4
@@ -172,8 +172,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-          key: ${{ runner.os }}-cargo-udeps-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-udeps-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Install cargo-udeps
@@ -184,11 +184,11 @@ jobs:
       - name: Check uDeps
         run: cargo udeps --all-targets
 
-  fuzz_translate:
+  fuzz-translate:
     name: Fuzz (Translation)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b
       - uses: dtolnay/rust-toolchain@nightly
       - name: Set up Cargo cache
         uses: actions/cache@v4
@@ -203,8 +203,8 @@ jobs:
             ~/fuzz/target/
             ~/fuzz/corpus/translate/
             ~/fuzz/curpus/translate_metered/
-          key: ${{ runner.os }}-cargo-fuzz-translation-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-fuzz-translation-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Install cargo-fuzz
@@ -217,11 +217,11 @@ jobs:
       - name: Fuzz (Translation) + fuel
         run: cargo fuzz run translate_metered -j 2 --verbose -- -max_total_time=60 # 1 minute of fuzzing
 
-  fuzz_execute:
+  fuzz-execute:
     name: Fuzz (Execution)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b
       - uses: dtolnay/rust-toolchain@nightly
       - name: Set up Cargo cache
         uses: actions/cache@v4
@@ -235,8 +235,8 @@ jobs:
             ~/target/
             ~/fuzz/target/
             ~/fuzz/corpus/execute/
-          key: ${{ runner.os }}-cargo-fuzz-execution-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-fuzz-execution-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Install cargo-fuzz
@@ -247,11 +247,11 @@ jobs:
       - name: Fuzz (Execution)
         run: cargo fuzz run execute -j 2 --verbose -- -max_total_time=120 # 2 minutes of fuzzing
 
-  fuzz_differential:
+  fuzz-differential:
     name: Fuzz (Differential)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b
       - uses: dtolnay/rust-toolchain@nightly
       - name: Set up Cargo cache
         uses: actions/cache@v4
@@ -265,8 +265,8 @@ jobs:
             ~/target/
             ~/fuzz/target/
             ~/fuzz/corpus/execute/
-          key: ${{ runner.os }}-cargo-fuzz-differential-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-fuzz-differential-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Install cargo-fuzz
@@ -281,7 +281,7 @@ jobs:
     name: Miri
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: miri
@@ -292,12 +292,13 @@ jobs:
         with:
           path: |
             ~/.cargo/bin/
+            ~/.cargo/bin/cargo-nextest
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-          key: ${{ runner.os }}-cargo-miri-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-miri-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Install cargo-nextest
@@ -309,6 +310,36 @@ jobs:
         run: cargo miri nextest run --target x86_64-unknown-linux-gnu --lib --workspace
       - name: Miri (--doc)
         run: cargo miri test --doc --workspace --target x86_64-unknown-linux-gnu
+
+  miri-spec:
+    name: Miri (spec)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: miri
+          targets: x86_64-unknown-linux-gnu
+      - name: Set up Cargo cache
+        uses: actions/cache@v4
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/bin/cargo-nextest
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            ~/target/
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
+      - name: Checkout Submodules
+        run: git submodule update --init --recursive
+      - name: Install cargo-nextest
+        run: |
+          # Note: We use `|| true` because cargo install returns an error
+          #       if cargo-nextest was already installed on the CI runner.
+          cargo install cargo-nextest || true
       - name: Miri - Wasm Spec Testsuite (store)
         # We just run the `store.wast` test since running the entire Wasm spec testsuite
         # simply takes too long to do on every pull request commit. There exists an entire
@@ -319,7 +350,7 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
+      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: clippy
@@ -333,8 +364,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-          key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-clippy-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Clippy (default features)
@@ -353,7 +384,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
+        uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b
         with:
           fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
@@ -367,8 +398,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-          key: ${{ runner.os }}-cargo-coverage-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-coverage-
+          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Run cargo-tarpaulin (default features)

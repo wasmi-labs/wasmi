@@ -5,7 +5,7 @@ mod pre;
 mod tests;
 
 pub use self::{error::InstantiationError, pre::InstancePre};
-use super::{element::ElementSegmentKind, export, ConstExpr, DataSegmentKind, Module};
+use super::{element::ElementSegmentKind, export, ConstExpr, InitDataSegment, Module};
 use crate::{
     core::UntypedVal,
     func::WasmFuncEntity,
@@ -350,16 +350,24 @@ impl Module {
         context: &mut impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
     ) -> Result<(), Error> {
-        for segment in &self.data_segments[..] {
-            let bytes = segment.bytes();
-            if let DataSegmentKind::Active(segment) = segment.kind() {
-                let offset_expr = segment.offset();
-                let offset =
-                    u32::from(Self::eval_init_expr(&mut *context, builder, offset_expr)) as usize;
-                let memory = builder.get_memory(segment.memory_index().into_u32());
-                memory.write(&mut *context, offset, bytes)?;
-            }
-            builder.push_data_segment(DataSegment::new(context.as_context_mut(), segment));
+        for segment in &self.data_segments {
+            let segment = match segment {
+                InitDataSegment::Active {
+                    memory_index,
+                    offset,
+                    bytes,
+                } => {
+                    let offset =
+                        u32::from(Self::eval_init_expr(&mut *context, builder, offset)) as usize;
+                    let memory = builder.get_memory(memory_index.into_u32());
+                    memory.write(&mut *context, offset, bytes)?;
+                    DataSegment::new_active(context.as_context_mut())
+                }
+                InitDataSegment::Passive { bytes } => {
+                    DataSegment::new_passive(context.as_context_mut(), bytes)
+                }
+            };
+            builder.push_data_segment(segment);
         }
         Ok(())
     }
