@@ -12,7 +12,7 @@ fn setup_test(wat: &str) -> (Store<()>, Func) {
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());
     let linker = <Linker<()>>::new(&engine);
-    let module = Module::new_streaming(&engine, &wasm[..]).unwrap();
+    let module = Module::new(&engine, &wasm[..]).unwrap();
     let instance = linker
         .instantiate(&mut store, &module)
         .unwrap()

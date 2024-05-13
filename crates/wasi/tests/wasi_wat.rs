@@ -6,7 +6,7 @@ pub fn load_instance_from_wat(wat_bytes: &[u8]) -> (Store<WasiCtx>, wasmi::Insta
     let wasm = wat2wasm(wat_bytes);
     let config = Config::default();
     let engine = Engine::new(&config);
-    let module = Module::new_streaming(&engine, &wasm[..]).unwrap();
+    let module = Module::new(&engine, &wasm[..]).unwrap();
     let mut linker = <Linker<WasiCtx>>::new(&engine);
     // add wasi to linker
     let wasi = WasiCtxBuilder::new()

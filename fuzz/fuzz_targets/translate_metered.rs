@@ -7,5 +7,5 @@ fuzz_target!(|data: wasm_smith::Module| {
     let mut config = Config::default();
     config.consume_fuel(true);
     let engine = Engine::new(&config);
-    Module::new_streaming(&engine, &mut &wasm[..]).unwrap();
+    Module::new(&engine, &mut &wasm[..]).unwrap();
 });

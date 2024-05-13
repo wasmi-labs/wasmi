@@ -76,8 +76,8 @@ pub struct EnforcedLimits {
     /// - This is checked in [`Module::new`] or [`Module::new_unchecked`].
     /// - `None` means the limit is not enforced.
     ///
-    /// [`Module::new`]: crate::Module::new_streaming
-    /// [`Module::new_unchecked`]: crate::Module::new_streaming_unchecked
+    /// [`Module::new`]: crate::Module::new
+    /// [`Module::new_unchecked`]: crate::Module::new_unchecked
     pub(crate) max_globals: Option<u32>,
     /// Number of functions a single Wasm module can have at most.
     ///
@@ -86,8 +86,8 @@ pub struct EnforcedLimits {
     /// - This is checked in [`Module::new`] or [`Module::new_unchecked`].
     /// - `None` means the limit is not enforced.
     ///
-    /// [`Module::new`]: crate::Module::new_streaming
-    /// [`Module::new_unchecked`]: crate::Module::new_streaming_unchecked
+    /// [`Module::new`]: crate::Module::new
+    /// [`Module::new_unchecked`]: crate::Module::new_unchecked
     pub(crate) max_functions: Option<u32>,
     /// Number of tables a single Wasm module can have at most.
     ///
@@ -97,8 +97,8 @@ pub struct EnforcedLimits {
     /// - This is only relevant if the Wasm `reference-types` proposal is enabled.
     /// - `None` means the limit is not enforced.
     ///
-    /// [`Module::new`]: crate::Module::new_streaming
-    /// [`Module::new_unchecked`]: crate::Module::new_streaming_unchecked
+    /// [`Module::new`]: crate::Module::new
+    /// [`Module::new_unchecked`]: crate::Module::new_unchecked
     pub(crate) max_tables: Option<u32>,
     /// Number of table element segments a single Wasm module can have at most.
     ///
@@ -108,8 +108,8 @@ pub struct EnforcedLimits {
     /// - This is only relevant if the Wasm `reference-types` proposal is enabled.
     /// - `None` means the limit is not enforced.
     ///
-    /// [`Module::new`]: crate::Module::new_streaming
-    /// [`Module::new_unchecked`]: crate::Module::new_streaming_unchecked
+    /// [`Module::new`]: crate::Module::new
+    /// [`Module::new_unchecked`]: crate::Module::new_unchecked
     pub(crate) max_element_segments: Option<u32>,
     /// Number of linear memories a single Wasm module can have.
     ///
@@ -120,8 +120,8 @@ pub struct EnforcedLimits {
     ///   which is not supported in Wasmi at the time of writing this comment.
     /// - `None` means the limit is not enforced.
     ///
-    /// [`Module::new`]: crate::Module::new_streaming
-    /// [`Module::new_unchecked`]: crate::Module::new_streaming_unchecked
+    /// [`Module::new`]: crate::Module::new
+    /// [`Module::new_unchecked`]: crate::Module::new_unchecked
     pub(crate) max_memories: Option<u32>,
     /// Number of linear memory data segments a single Wasm module can have at most.
     ///
@@ -131,8 +131,8 @@ pub struct EnforcedLimits {
     /// - This is only relevant if the Wasm `reference-types` proposal is enabled.
     /// - `None` means the limit is not enforced.
     ///
-    /// [`Module::new`]: crate::Module::new_streaming
-    /// [`Module::new_unchecked`]: crate::Module::new_streaming_unchecked
+    /// [`Module::new`]: crate::Module::new
+    /// [`Module::new_unchecked`]: crate::Module::new_unchecked
     pub(crate) max_data_segments: Option<u32>,
     /// Limits the number of parameter of all functions and control structures.
     ///
@@ -142,8 +142,8 @@ pub struct EnforcedLimits {
     /// - `None` means the limit is not enforced.
     ///
     /// [`Engine`]: crate::Engine
-    /// [`Module::new`]: crate::Module::new_streaming
-    /// [`Module::new_unchecked`]: crate::Module::new_streaming_unchecked
+    /// [`Module::new`]: crate::Module::new
+    /// [`Module::new_unchecked`]: crate::Module::new_unchecked
     pub(crate) max_params: Option<usize>,
     /// Limits the number of results of all functions and control structures.
     ///
@@ -154,8 +154,8 @@ pub struct EnforcedLimits {
     /// - `None` means the limit is not enforced.
     ///
     /// [`Engine`]: crate::Engine
-    /// [`Module::new`]: crate::Module::new_streaming
-    /// [`Module::new_unchecked`]: crate::Module::new_streaming_unchecked
+    /// [`Module::new`]: crate::Module::new
+    /// [`Module::new_unchecked`]: crate::Module::new_unchecked
     pub(crate) max_results: Option<usize>,
     /// Minimum number of bytes a function must have on average.
     ///
@@ -166,8 +166,8 @@ pub struct EnforcedLimits {
     ///   malicious inputs targeting lazy compilation.
     /// - `None` means the limit is not enforced.
     ///
-    /// [`Module::new`]: crate::Module::new_streaming
-    /// [`Module::new_unchecked`]: crate::Module::new_streaming_unchecked
+    /// [`Module::new`]: crate::Module::new
+    /// [`Module::new_unchecked`]: crate::Module::new_unchecked
     pub(crate) min_avg_bytes_per_function: Option<AvgBytesPerFunctionLimit>,
 }
 

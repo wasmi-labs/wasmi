@@ -293,7 +293,7 @@ impl Module {
     /// - This will only validate the `wasm` but not try to translate it. Therefore `Module::new`
     ///   might still fail if translation of the Wasm binary input fails to translate via the Wasmi
     ///   [`Engine`].
-    /// - Validation automatically happens as part of [`Module::new_streaming`].
+    /// - Validation automatically happens as part of [`Module::new`].
     ///
     /// # Errors
     ///

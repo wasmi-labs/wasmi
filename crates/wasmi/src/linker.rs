@@ -982,7 +982,7 @@ mod tests {
                 )
             "#;
         let wasm = wat::parse_str(wat).unwrap();
-        let module = Module::new_streaming(&engine, &wasm[..]).unwrap();
+        let module = Module::new(&engine, &wasm[..]).unwrap();
         let instance = linker
             .instantiate(&mut store, &module)
             .unwrap()
@@ -1060,7 +1060,7 @@ mod tests {
             .unwrap();
         let linker = builder.finish().create(&engine);
         let mut store = Store::new(&engine, ());
-        let module = Module::new_streaming(&engine, &wasm[..]).unwrap();
+        let module = Module::new(&engine, &wasm[..]).unwrap();
         linker.instantiate(&mut store, &module).unwrap();
     }
 
@@ -1089,7 +1089,7 @@ mod tests {
             .func_wrap("host", "func.1", |_caller: Caller<()>| unimplemented!())
             .unwrap();
         let mut store = Store::new(&engine, ());
-        let module = Module::new_streaming(&engine, &wasm[..]).unwrap();
+        let module = Module::new(&engine, &wasm[..]).unwrap();
         linker.instantiate(&mut store, &module).unwrap();
     }
 
@@ -1131,7 +1131,7 @@ mod tests {
         let mut linker = <Linker<()>>::new(&engine);
         let mut store = Store::new(&engine, ());
         let memory = Memory::new(&mut store, MemoryType::new(1, Some(4096)).unwrap()).unwrap();
-        let module = Module::new_streaming(&engine, &wasm[..]).unwrap();
+        let module = Module::new(&engine, &wasm[..]).unwrap();
         linker.define("env", "memory", memory).unwrap();
         let func = Func::new(
             &mut store,
