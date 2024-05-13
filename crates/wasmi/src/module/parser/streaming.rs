@@ -58,7 +58,7 @@ impl DerefMut for ParseBuffer {
 }
 
 impl ModuleParser {
-    /// Starts parsing and validating the Wasm bytecode stream.
+    /// Parses and validates the Wasm bytecode `stream`.
     ///
     /// Returns the compiled and validated Wasm [`Module`] upon success.
     ///
@@ -73,7 +73,7 @@ impl ModuleParser {
         unsafe { self.parse_streaming_impl(stream) }
     }
 
-    /// Starts parsing and validating the Wasm bytecode stream.
+    /// Parses the Wasm bytecode `stream` without Wasm validation.
     ///
     /// Returns the compiled and validated Wasm [`Module`] upon success.
     ///
@@ -188,11 +188,11 @@ impl ModuleParser {
         Ok(header.finish())
     }
 
-    /// Parse the Wasm data section and finalize parsing.
+    /// Parse the Wasm code section entries.
     ///
-    /// We separate parsing of the Wasm data section since it is the only Wasm
-    /// section that comes after the Wasm code section that we have to separate
-    /// out for technical reasons.
+    /// We separate parsing of the Wasm code section since most of a Wasm module
+    /// is made up of code section entries which we can parse and validate more efficiently
+    /// by serving them with a specialized routine.
     ///
     /// # Errors
     ///
@@ -230,6 +230,15 @@ impl ModuleParser {
         Ok(ModuleBuilder::new(header))
     }
 
+    /// Parse the Wasm data section and finalize parsing.
+    ///
+    /// We separate parsing of the Wasm data section since it is the only Wasm
+    /// section that comes after the Wasm code section that we have to separate
+    /// out for technical reasons.
+    ///
+    /// # Errors
+    ///
+    /// If the Wasm bytecode stream fails to parse or validate.
     fn parse_streaming_data(
         &mut self,
         stream: &mut impl Read,
