@@ -26,7 +26,7 @@ use std::{fmt::Display, format};
 /// If an error occurred upon module compilation, validation or translation.
 fn create_module(config: &Config, bytes: &[u8]) -> Module {
     let engine = Engine::new(config);
-    Module::new(&engine, bytes).unwrap()
+    Module::new_streaming(&engine, bytes).unwrap()
 }
 
 /// Used to swap operands of a `rev` variant [`Instruction`] constructor.

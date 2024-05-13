@@ -308,7 +308,7 @@ fn fuzz_regression_13_execute() {
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());
     let linker = Linker::new(&engine);
-    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let module = Module::new_streaming(&engine, &wasm[..]).unwrap();
     let instance = linker
         .instantiate(&mut store, &module)
         .unwrap()
@@ -377,7 +377,7 @@ fn fuzz_regression_15_01_execute() {
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());
     let linker = Linker::new(&engine);
-    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let module = Module::new_streaming(&engine, &wasm[..]).unwrap();
     let instance = linker
         .instantiate(&mut store, &module)
         .unwrap()

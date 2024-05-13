@@ -46,8 +46,8 @@ use wasmparser::{
 /// # Errors
 ///
 /// If the Wasm bytecode stream fails to parse, validate or translate.
-pub fn parse(engine: &Engine, stream: impl Read) -> Result<Module, Error> {
-    ModuleParser::new(engine).parse(stream)
+pub fn parse_streaming(engine: &Engine, stream: impl Read) -> Result<Module, Error> {
+    ModuleStreamingParser::new(engine).parse(stream)
 }
 
 /// Parse and translate the Wasm bytecode stream into Wasm IR bytecode.
@@ -58,12 +58,15 @@ pub fn parse(engine: &Engine, stream: impl Read) -> Result<Module, Error> {
 /// # Errors
 ///
 /// If the Wasm bytecode stream fails to parse or translate.
-pub unsafe fn parse_unchecked(engine: &Engine, stream: impl Read) -> Result<Module, Error> {
-    unsafe { ModuleParser::new(engine).parse_unchecked(stream) }
+pub unsafe fn parse_streaming_unchecked(
+    engine: &Engine,
+    stream: impl Read,
+) -> Result<Module, Error> {
+    unsafe { ModuleStreamingParser::new(engine).parse_unchecked(stream) }
 }
 
 /// Context used to construct a WebAssembly module from a stream of bytes.
-struct ModuleParser {
+struct ModuleStreamingParser {
     /// The engine used for translation.
     engine: Engine,
     /// The Wasm validator used throughout stream parsing.
@@ -129,8 +132,8 @@ impl DerefMut for ParseBuffer {
     }
 }
 
-impl ModuleParser {
-    /// Creates a new [`ModuleParser`] for the given [`Engine`].
+impl ModuleStreamingParser {
+    /// Creates a new [`ModuleStreamingParser`] for the given [`Engine`].
     fn new(engine: &Engine) -> Self {
         let parser = WasmParser::new(0);
         Self {
@@ -181,7 +184,7 @@ impl ModuleParser {
     ///
     /// The caller is responsible to either
     ///
-    /// 1) Populate the [`ModuleParser`] with a [`Validator`] prior to calling this method, OR;
+    /// 1) Populate the [`ModuleStreamingParser`] with a [`Validator`] prior to calling this method, OR;
     /// 2) Make sure that the provided `stream` yields valid WebAssembly bytecode.
     ///
     /// Otherwise this method has undefined behavior.

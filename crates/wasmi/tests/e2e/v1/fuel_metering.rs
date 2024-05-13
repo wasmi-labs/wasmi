@@ -24,7 +24,7 @@ fn wat2wasm(wat: &str) -> Vec<u8> {
 ///
 /// If an error occurred upon module compilation, validation or translation.
 fn create_module(store: &Store<()>, bytes: &[u8]) -> Module {
-    Module::new(store.engine(), bytes).unwrap()
+    Module::new_streaming(store.engine(), bytes).unwrap()
 }
 
 /// Setup [`Store`] and [`Instance`] for fuel metering.

@@ -120,7 +120,7 @@ impl DifferentialTarget for WasmiRegister {
             .build();
         let mut store = Store::new(&engine, limiter);
         store.limiter(|lim| lim);
-        let module = Module::new(store.engine(), wasm).unwrap();
+        let module = Module::new_streaming(store.engine(), wasm).unwrap();
         let Ok(preinstance) = linker.instantiate(&mut store, &module) else {
             return None;
         };

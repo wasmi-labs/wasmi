@@ -33,7 +33,7 @@ fn wat2wasm(wat: &str) -> Vec<u8> {
 ///
 /// If an error occurred upon module compilation, validation or translation.
 fn create_module(store: &Store<StoreLimits>, bytes: &[u8]) -> Result<Module, Error> {
-    Module::new(store.engine(), bytes)
+    Module::new_streaming(store.engine(), bytes)
 }
 
 struct Test {

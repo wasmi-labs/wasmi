@@ -22,7 +22,7 @@ fuzz_target!(|cfg_module: ConfiguredModule<ExecConfig>| {
         .build();
     let mut store = Store::new(&engine, limiter);
     store.limiter(|lim| lim);
-    let module = Module::new(store.engine(), wasm.as_slice()).unwrap();
+    let module = Module::new_streaming(store.engine(), wasm.as_slice()).unwrap();
     let Ok(preinstance) = linker.instantiate(&mut store, &module) else {
         return;
     };

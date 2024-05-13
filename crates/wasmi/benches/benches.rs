@@ -169,12 +169,12 @@ fn bench_translate_for(
         }
         config.compilation_mode(mode);
         let create_module = match validation {
-            Validation::Checked => {
-                |engine: &Engine, bytes: &[u8]| -> Module { Module::new(engine, bytes).unwrap() }
-            }
+            Validation::Checked => |engine: &Engine, bytes: &[u8]| -> Module {
+                Module::new_streaming(engine, bytes).unwrap()
+            },
             Validation::Unchecked => |engine: &Engine, bytes: &[u8]| -> Module {
                 // Safety: We made sure that all translation benchmark inputs are valid Wasm.
-                unsafe { Module::new_unchecked(engine, bytes).unwrap() }
+                unsafe { Module::new_streaming_unchecked(engine, bytes).unwrap() }
             },
         };
         let wasm_bytes = load_wasm_from_file(path);
@@ -317,7 +317,7 @@ fn bench_translate_case_best(c: &mut Criterion) {
         });
         b.iter_with_large_drop(|| {
             let engine = Engine::default();
-            let _ = Module::new(&engine, &wasm[..]).unwrap();
+            let _ = Module::new_streaming(&engine, &wasm[..]).unwrap();
         })
     });
 }
@@ -373,7 +373,7 @@ fn bench_translate_case_worst_stackbomb_small(c: &mut Criterion) {
         });
         b.iter_with_large_drop(|| {
             let engine = Engine::default();
-            let _ = Module::new(&engine, &wasm[..]).unwrap();
+            let _ = Module::new_streaming(&engine, &wasm[..]).unwrap();
         })
     });
 }
@@ -403,7 +403,7 @@ fn bench_translate_case_worst_stackbomb_big(c: &mut Criterion) {
         });
         b.iter_with_large_drop(|| {
             let engine = Engine::default();
-            let _ = Module::new(&engine, &wasm[..]).unwrap();
+            let _ = Module::new_streaming(&engine, &wasm[..]).unwrap();
         })
     });
 }
@@ -1215,7 +1215,7 @@ fn bench_execute_host_calls(c: &mut Criterion) {
     c.bench_function("execute/call/host/1", |b| {
         let wasm = wat2wasm(include_bytes!("wat/host_calls.wat"));
         let engine = Engine::default();
-        let module = Module::new(&engine, &wasm[..]).unwrap();
+        let module = Module::new_streaming(&engine, &wasm[..]).unwrap();
         let mut linker = <Linker<()>>::new(&engine);
         let mut store = Store::new(&engine, ());
         let host_call = Func::wrap(&mut store, |value: i64| value.wrapping_sub(1));
