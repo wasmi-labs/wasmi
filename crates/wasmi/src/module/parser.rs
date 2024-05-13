@@ -5,10 +5,8 @@ use super::{
     import::{FuncTypeIdx, Import},
     ElementSegment,
     FuncIdx,
-    Module,
     ModuleBuilder,
     ModuleHeader,
-    Read,
 };
 use crate::{
     engine::{CompiledFunc, EnforcedLimitsError},
@@ -39,35 +37,8 @@ use wasmparser::{
 
 mod streaming;
 
-/// Parse, validate and translate the Wasm bytecode stream into Wasm IR bytecode.
-///
-/// - Returns the fully compiled and validated Wasm [`Module`] upon success.
-/// - Uses the given [`Engine`] as the translation target of the process.
-///
-/// # Errors
-///
-/// If the Wasm bytecode stream fails to parse, validate or translate.
-pub fn parse_streaming(engine: &Engine, stream: impl Read) -> Result<Module, Error> {
-    ModuleParser::new(engine).parse_streaming(stream)
-}
-
-/// Parse and translate the Wasm bytecode stream into Wasm IR bytecode.
-///
-/// - Returns the fully compiled Wasm [`Module`] upon success.
-/// - Uses the given [`Engine`] as the translation target of the process.
-///
-/// # Errors
-///
-/// If the Wasm bytecode stream fails to parse or translate.
-pub unsafe fn parse_streaming_unchecked(
-    engine: &Engine,
-    stream: impl Read,
-) -> Result<Module, Error> {
-    unsafe { ModuleParser::new(engine).parse_streaming_unchecked(stream) }
-}
-
 /// Context used to construct a WebAssembly module from a stream of bytes.
-struct ModuleParser {
+pub struct ModuleParser {
     /// The engine used for translation.
     engine: Engine,
     /// The Wasm validator used throughout stream parsing.
@@ -82,7 +53,7 @@ struct ModuleParser {
 
 impl ModuleParser {
     /// Creates a new [`ModuleParser`] for the given [`Engine`].
-    fn new(engine: &Engine) -> Self {
+    pub fn new(engine: &Engine) -> Self {
         let parser = WasmParser::new(0);
         Self {
             engine: engine.clone(),

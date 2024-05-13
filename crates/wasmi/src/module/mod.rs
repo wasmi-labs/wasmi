@@ -15,7 +15,7 @@ use self::{
     export::ExternIdx,
     global::Global,
     import::{ExternTypeIdx, Import},
-    parser::{parse_streaming, parse_streaming_unchecked},
+    parser::ModuleParser,
 };
 pub(crate) use self::{
     data::{DataSegment, DataSegments, InitDataSegment, PassiveDataSegmentBytes},
@@ -202,7 +202,7 @@ impl Module {
     ///
     /// [`Config`]: crate::Config
     pub fn new_streaming(engine: &Engine, stream: impl Read) -> Result<Self, Error> {
-        parse_streaming(engine, stream).map_err(Into::into)
+        ModuleParser::new(engine).parse_streaming(stream)
     }
 
     /// Creates a new Wasm [`Module`] from the given byte stream.
@@ -231,7 +231,8 @@ impl Module {
         engine: &Engine,
         stream: impl Read,
     ) -> Result<Self, Error> {
-        unsafe { parse_streaming_unchecked(engine, stream).map_err(Into::into) }
+        let parser = ModuleParser::new(engine);
+        unsafe { parser.parse_streaming_unchecked(stream) }
     }
 
     /// Returns the [`Engine`] used during creation of the [`Module`].
