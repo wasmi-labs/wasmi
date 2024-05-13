@@ -102,13 +102,13 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Minimum Rust version set to 1.77. (https://github.com/wasmi-labs/wasmi/pull/961)
 - CLI: Enabled Wasm `tail-calls` and `extend-const` proposals by default. (https://github.com/wasmi-labs/wasmi/pull/849)
     - We expect those Wasm proposals to be stabilized very soon so we feel safe to enable them by default already.
-- Improve `Debug` and `Display` impls for NaNs of Wasm `f32` and `f64` values.
+- Improved `Debug` and `Display` impls for NaNs of Wasm `f32` and `f64` values.
   - They now show `nan:0x{bytes}` where `{bytes}` is their respective raw bytes.
 - Implement `Sync` for `ResumableInvocation` and `TypedResumableInvocation`. (https://github.com/wasmi-labs/wasmi/pull/870)
 - Properly mirror Wasmtime's fuel API. (https://github.com/wasmi-labs/wasmi/pull/1002)
 - Renamed some Wasmi items to improve its Wasmtime mirroring. (https://github.com/wasmi-labs/wasmi/pull/1011)
-- Improve Wasmtime API mirror for Store fuel. (https://github.com/wasmi-labs/wasmi/pull/1002)
-- Enable `Config::tail_call` and `Config::extended_const` by default. (https://github.com/wasmi-labs/wasmi/pull/1031)
+- Improved Wasmtime API mirror for Store fuel. (https://github.com/wasmi-labs/wasmi/pull/1002)
+- Enabled `Config::tail_call` and `Config::extended_const` by default. (https://github.com/wasmi-labs/wasmi/pull/1031)
     - Those Wasm proposals have been moved to phase 4 for many months now.
 
 ### Removed
@@ -116,7 +116,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Removed the stack-machine bytecode based Wasmi `Engine` backend. (https://github.com/wasmi-labs/wasmi/pull/818)
     - The new register-machine bytecode based Wasmi `Engine` is more promising
       and the Wasmi team does not want to maintain two different engine backends.
-- Remove `FuelConsumptionMode` from `Config`. (https://github.com/wasmi-labs/wasmi/pull/877)
+- Removed `FuelConsumptionMode` from `Config`. (https://github.com/wasmi-labs/wasmi/pull/877)
     - `FuelConsumptionMode` was required to differentiate between lazy and eager fuel consumption.
       This was necessary due to how lazy fuel consumption was implemented in that it would pre-charge
       for instruction execution were the exact amount of required fuel was not possible to determine
