@@ -18,7 +18,7 @@ use crate::{
     MemoryType,
     TableType,
 };
-use core::ops::Range;
+use core::ops::{Deref, DerefMut, Range};
 use std::{boxed::Box, vec::Vec};
 use wasmparser::{
     Chunk,
@@ -113,7 +113,7 @@ impl ParseBuffer {
     }
 }
 
-impl std::ops::Deref for ParseBuffer {
+impl Deref for ParseBuffer {
     type Target = Vec<u8>;
 
     #[inline]
@@ -122,7 +122,7 @@ impl std::ops::Deref for ParseBuffer {
     }
 }
 
-impl std::ops::DerefMut for ParseBuffer {
+impl DerefMut for ParseBuffer {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.buffer
