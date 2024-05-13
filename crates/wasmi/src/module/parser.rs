@@ -48,7 +48,7 @@ mod streaming;
 ///
 /// If the Wasm bytecode stream fails to parse, validate or translate.
 pub fn parse_streaming(engine: &Engine, stream: impl Read) -> Result<Module, Error> {
-    ModuleStreamingParser::new(engine).parse_streaming(stream)
+    ModuleParser::new(engine).parse_streaming(stream)
 }
 
 /// Parse and translate the Wasm bytecode stream into Wasm IR bytecode.
@@ -63,11 +63,11 @@ pub unsafe fn parse_streaming_unchecked(
     engine: &Engine,
     stream: impl Read,
 ) -> Result<Module, Error> {
-    unsafe { ModuleStreamingParser::new(engine).parse_streaming_unchecked(stream) }
+    unsafe { ModuleParser::new(engine).parse_streaming_unchecked(stream) }
 }
 
 /// Context used to construct a WebAssembly module from a stream of bytes.
-struct ModuleStreamingParser {
+struct ModuleParser {
     /// The engine used for translation.
     engine: Engine,
     /// The Wasm validator used throughout stream parsing.
@@ -80,8 +80,8 @@ struct ModuleStreamingParser {
     eof: bool,
 }
 
-impl ModuleStreamingParser {
-    /// Creates a new [`ModuleStreamingParser`] for the given [`Engine`].
+impl ModuleParser {
+    /// Creates a new [`ModuleParser`] for the given [`Engine`].
     fn new(engine: &Engine) -> Self {
         let parser = WasmParser::new(0);
         Self {

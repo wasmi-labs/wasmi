@@ -1,4 +1,4 @@
-use super::{ModuleBuilder, ModuleHeader, ModuleHeaderBuilder, ModuleStreamingParser};
+use super::{ModuleBuilder, ModuleHeader, ModuleHeaderBuilder, ModuleParser};
 use crate::{Error, Module, Read};
 use core::ops::{Deref, DerefMut};
 use std::vec::Vec;
@@ -57,7 +57,7 @@ impl DerefMut for ParseBuffer {
     }
 }
 
-impl ModuleStreamingParser {
+impl ModuleParser {
     /// Starts parsing and validating the Wasm bytecode stream.
     ///
     /// Returns the compiled and validated Wasm [`Module`] upon success.
@@ -97,7 +97,7 @@ impl ModuleStreamingParser {
     ///
     /// The caller is responsible to either
     ///
-    /// 1) Populate the [`ModuleStreamingParser`] with a [`Validator`] prior to calling this method, OR;
+    /// 1) Populate the [`ModuleParser`] with a [`Validator`] prior to calling this method, OR;
     /// 2) Make sure that the provided `stream` yields valid WebAssembly bytecode.
     ///
     /// Otherwise this method has undefined behavior.
