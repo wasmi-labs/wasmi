@@ -35,6 +35,9 @@ use wasmparser::{
     Validator,
 };
 
+#[cfg(doc)]
+use crate::Module;
+
 mod buffered;
 mod streaming;
 
