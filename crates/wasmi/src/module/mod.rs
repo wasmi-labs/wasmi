@@ -186,6 +186,24 @@ impl ModuleImports {
 }
 
 impl Module {
+    /// Creates a new Wasm [`Module`] from the given Wasm bytecode buffer.
+    ///
+    /// # Note
+    ///
+    /// This parses, validates and translates the buffered Wasm bytecode.
+    ///
+    /// # Errors
+    ///
+    /// - If the Wasm bytecode is malformed or fails to validate.
+    /// - If the Wasm bytecode violates restrictions
+    ///   set in the [`Config`] used by the `engine`.
+    /// - If Wasmi cannot translate the Wasm bytecode.
+    ///
+    /// [`Config`]: crate::Config
+    pub fn new(engine: &Engine, wasm: &[u8]) -> Result<Self, Error> {
+        ModuleParser::new(engine).parse_buffered(wasm)
+    }
+
     /// Creates a new Wasm [`Module`] from the given Wasm bytecode stream.
     ///
     /// # Note
@@ -202,6 +220,31 @@ impl Module {
     /// [`Config`]: crate::Config
     pub fn new_streaming(engine: &Engine, stream: impl Read) -> Result<Self, Error> {
         ModuleParser::new(engine).parse_streaming(stream)
+    }
+
+    /// Creates a new Wasm [`Module`] from the given Wasm bytecode buffer.
+    ///
+    /// # Note
+    ///
+    /// This parses and translates the buffered Wasm bytecode.
+    ///
+    /// # Safety
+    ///
+    /// - This does _not_ validate the Wasm bytecode.
+    /// - It is the caller's responsibility that the Wasm bytecode is valid.
+    /// - It is the caller's responsibility that the Wasm bytecode adheres
+    ///   to the restrictions set by the used [`Config`] of the `engine`.
+    /// - Violating the above rules is undefined behavior.
+    ///
+    /// # Errors
+    ///
+    /// - If the Wasm bytecode is malformed or contains invalid sections.
+    /// - If the Wasm bytecode fails to be compiled by Wasmi.
+    ///
+    /// [`Config`]: crate::Config
+    pub unsafe fn new_unchecked(engine: &Engine, wasm: &[u8]) -> Result<Self, Error> {
+        let parser = ModuleParser::new(engine);
+        unsafe { parser.parse_buffered_unchecked(wasm) }
     }
 
     /// Creates a new Wasm [`Module`] from the given byte stream.

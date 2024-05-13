@@ -35,6 +35,7 @@ use wasmparser::{
     Validator,
 };
 
+mod buffered;
 mod streaming;
 
 /// Context used to construct a WebAssembly module from a stream of bytes.
