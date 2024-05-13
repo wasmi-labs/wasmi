@@ -265,16 +265,7 @@ impl ModuleStreamingParser {
                         Payload::DataSection(_) => break,
                         Payload::End(_) => break,
                         Payload::CustomSection { .. } => Ok(()),
-                        unexpected => {
-                            if let Some(validator) = &mut self.validator {
-                                if let Err(error) = validator.payload(&unexpected) {
-                                    return Err(Error::from(error));
-                                }
-                            }
-                            panic!(
-                                "encountered unsupported or malformed Wasm section: {unexpected:?}"
-                            )
-                        }
+                        unexpected => self.process_invalid_payload(unexpected),
                     }?;
                     // Cut away the parts from the intermediate buffer that have already been parsed.
                     buffer.consume(consumed);
@@ -348,9 +339,7 @@ impl ModuleStreamingParser {
                             break;
                         }
                         Payload::CustomSection { .. } => {}
-                        unexpected => {
-                            unreachable!("encountered unexpected Wasm section: {unexpected:?}")
-                        }
+                        invalid => self.process_invalid_payload(invalid)?,
                     }
                     // Cut away the parts from the intermediate buffer that have already been parsed.
                     buffer.consume(consumed);
@@ -783,5 +772,15 @@ impl ModuleStreamingParser {
         self.engine
             .translate_func(func, compiled_func, offset, bytes, module, func_to_validate)?;
         Ok(())
+    }
+
+    /// Process an unexpected, unsupported or malformed Wasm module section payload.
+    fn process_invalid_payload(&mut self, payload: Payload<'_>) -> Result<(), Error> {
+        if let Some(validator) = &mut self.validator {
+            if let Err(error) = validator.payload(&payload) {
+                return Err(Error::from(error));
+            }
+        }
+        panic!("encountered unsupported, unexpected or malformed Wasm payload: {payload:?}")
     }
 }
