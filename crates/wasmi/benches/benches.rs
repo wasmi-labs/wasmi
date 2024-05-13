@@ -169,9 +169,9 @@ fn bench_translate_for(
         }
         config.compilation_mode(mode);
         let create_module = match validation {
-            Validation::Checked => |engine: &Engine, bytes: &[u8]| -> Module {
-                Module::new(engine, bytes).unwrap()
-            },
+            Validation::Checked => {
+                |engine: &Engine, bytes: &[u8]| -> Module { Module::new(engine, bytes).unwrap() }
+            }
             Validation::Unchecked => |engine: &Engine, bytes: &[u8]| -> Module {
                 // Safety: We made sure that all translation benchmark inputs are valid Wasm.
                 unsafe { Module::new_unchecked(engine, bytes).unwrap() }
