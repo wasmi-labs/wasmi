@@ -235,7 +235,6 @@ impl ModuleStreamingParser {
                         Payload::ImportSection(section) => {
                             self.process_imports(section, &mut header)
                         }
-                        Payload::InstanceSection(section) => self.process_instances(section),
                         Payload::FunctionSection(section) => {
                             self.process_functions(section, &mut header)
                         }
@@ -243,7 +242,6 @@ impl ModuleStreamingParser {
                         Payload::MemorySection(section) => {
                             self.process_memories(section, &mut header)
                         }
-                        Payload::TagSection(section) => self.process_tags(section),
                         Payload::GlobalSection(section) => {
                             self.process_globals(section, &mut header)
                         }
@@ -267,11 +265,15 @@ impl ModuleStreamingParser {
                         Payload::DataSection(_) => break,
                         Payload::End(_) => break,
                         Payload::CustomSection { .. } => Ok(()),
-                        Payload::UnknownSection { id, range, .. } => {
-                            self.process_unknown(id, range)
-                        }
                         unexpected => {
-                            unreachable!("encountered unexpected Wasm section: {unexpected:?}")
+                            if let Some(validator) = &mut self.validator {
+                                if let Err(error) = validator.payload(&unexpected) {
+                                    return Err(Error::from(error));
+                                }
+                            }
+                            panic!(
+                                "encountered unsupported or malformed Wasm section: {unexpected:?}"
+                            )
                         }
                     }?;
                     // Cut away the parts from the intermediate buffer that have already been parsed.
@@ -346,9 +348,6 @@ impl ModuleStreamingParser {
                             break;
                         }
                         Payload::CustomSection { .. } => {}
-                        Payload::UnknownSection { id, range, .. } => {
-                            self.process_unknown(id, range)?
-                        }
                         unexpected => {
                             unreachable!("encountered unexpected Wasm section: {unexpected:?}")
                         }
@@ -448,22 +447,6 @@ impl ModuleStreamingParser {
         Ok(())
     }
 
-    /// Process module instances.
-    ///
-    /// # Note
-    ///
-    /// This is part of the module linking Wasm proposal and not yet supported
-    /// by Wasmi.
-    fn process_instances(
-        &mut self,
-        section: wasmparser::InstanceSectionReader,
-    ) -> Result<(), Error> {
-        if let Some(validator) = &mut self.validator {
-            validator.instance_section(&section)?;
-        }
-        Ok(())
-    }
-
     /// Process module function declarations.
     ///
     /// # Note
@@ -548,19 +531,6 @@ impl ModuleStreamingParser {
             .into_iter()
             .map(|memory| memory.map(MemoryType::from_wasmparser).map_err(Error::from));
         header.push_memories(memories)?;
-        Ok(())
-    }
-
-    /// Process module tags.
-    ///
-    /// # Note
-    ///
-    /// This is part of the module linking Wasm proposal and not yet supported
-    /// by Wasmi.
-    fn process_tags(&mut self, section: wasmparser::TagSectionReader) -> Result<(), Error> {
-        if let Some(validator) = &mut self.validator {
-            validator.tag_section(&section)?;
-        }
         Ok(())
     }
 
@@ -812,18 +782,6 @@ impl ModuleStreamingParser {
         };
         self.engine
             .translate_func(func, compiled_func, offset, bytes, module, func_to_validate)?;
-        Ok(())
-    }
-
-    /// Process an unknown Wasm module section.
-    ///
-    /// # Note
-    ///
-    /// This generally will be treated as an error for now.
-    fn process_unknown(&mut self, id: u8, range: Range<usize>) -> Result<(), Error> {
-        if let Some(validator) = &mut self.validator {
-            validator.unknown_section(id, &range)?;
-        }
         Ok(())
     }
 }
