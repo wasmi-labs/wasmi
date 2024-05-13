@@ -68,7 +68,6 @@ impl ModuleParser {
     ) -> Result<(Payload<'a>, &'a [u8]), Error> {
         match self.parser.parse(&buffer[..], true)? {
             Chunk::Parsed { consumed, payload } => {
-                *buffer = &buffer[consumed..];
                 let (consumed, remaining) = buffer.split_at(consumed);
                 *buffer = remaining;
                 Ok((payload, consumed))
