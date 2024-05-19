@@ -389,24 +389,19 @@ impl Config {
 
     /// Returns the [`WasmFeatures`] represented by the [`Config`].
     pub(crate) fn wasm_features(&self) -> WasmFeatures {
-        WasmFeatures {
-            multi_value: self.multi_value,
-            mutable_global: self.mutable_global,
-            saturating_float_to_int: self.saturating_float_to_int,
-            sign_extension: self.sign_extension,
-            bulk_memory: self.bulk_memory,
-            reference_types: self.reference_types,
-            tail_call: self.tail_call,
-            extended_const: self.extended_const,
-            floats: self.floats,
-            component_model: false,
-            simd: false,
-            relaxed_simd: false,
-            threads: false,
-            multi_memory: false,
-            exceptions: false,
-            memory64: false,
-            memory_control: false,
-        }
+        let mut features = WasmFeatures::empty();
+        features.set(WasmFeatures::MUTABLE_GLOBAL, self.mutable_global);
+        features.set(WasmFeatures::MULTI_VALUE, self.multi_value);
+        features.set(
+            WasmFeatures::SATURATING_FLOAT_TO_INT,
+            self.saturating_float_to_int,
+        );
+        features.set(WasmFeatures::SIGN_EXTENSION, self.sign_extension);
+        features.set(WasmFeatures::BULK_MEMORY, self.bulk_memory);
+        features.set(WasmFeatures::REFERENCE_TYPES, self.reference_types);
+        features.set(WasmFeatures::TAIL_CALL, self.tail_call);
+        features.set(WasmFeatures::EXTENDED_CONST, self.extended_const);
+        features.set(WasmFeatures::FLOATS, self.floats);
+        features
     }
 }

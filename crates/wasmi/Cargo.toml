@@ -19,7 +19,7 @@ exclude = [
 ]
 
 [dependencies]
-wasmparser = { version = "0.100.2", package = "wasmparser-nostd", default-features = false }
+wasmparser = { version = "0.207.0", default-features = false, features = ["validate"] }
 wasmi_core = { workspace = true }
 wasmi_collections = { workspace = true }
 spin = { version = "0.9", default-features = false, features = [
@@ -57,7 +57,10 @@ std = [
 # malious actors that control their inputs.
 #
 # An example of such an environment is `wasm32-unknown-unknown`.
-no-hash-maps = ["wasmi_collections/no-hash-maps"]
+no-hash-maps = [
+    "wasmi_collections/no-hash-maps",
+    # "wasmparser/no-hash-maps",
+]
 
 [[bench]]
 name = "benches"

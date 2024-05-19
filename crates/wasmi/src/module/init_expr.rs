@@ -267,11 +267,11 @@ impl ConstExpr {
                 wasmparser::Operator::GlobalGet { global_index } => {
                     stack.push(Op::global(global_index));
                 }
-                wasmparser::Operator::RefNull { ty } => {
-                    let value = match ty {
-                        wasmparser::ValType::FuncRef => Val::from(FuncRef::null()),
-                        wasmparser::ValType::ExternRef => Val::from(ExternRef::null()),
-                        ty => panic!("encountered invalid value type for RefNull: {ty:?}"),
+                wasmparser::Operator::RefNull { hty } => {
+                    let value = match hty {
+                        wasmparser::HeapType::Func => Val::from(FuncRef::null()),
+                        wasmparser::HeapType::Extern => Val::from(ExternRef::null()),
+                        invalid => panic!("encountered invalid heap type for RefNull: {invalid:?}"),
                     };
                     stack.push(Op::constant(value));
                 }

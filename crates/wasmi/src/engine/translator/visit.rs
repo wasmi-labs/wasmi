@@ -1203,9 +1203,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_ref_null(&mut self, ty: wasmparser::ValType) -> Self::Output {
+    fn visit_ref_null(&mut self, hty: wasmparser::HeapType) -> Self::Output {
         bail_unreachable!(self);
-        let type_hint = WasmiValueType::from(ty).into_inner();
+        let type_hint = WasmiValueType::from(hty).into_inner();
         let null = match type_hint {
             ValType::FuncRef => TypedVal::from(FuncRef::null()),
             ValType::ExternRef => TypedVal::from(ExternRef::null()),
