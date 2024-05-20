@@ -295,6 +295,8 @@ impl<'a> From<&'a [u8]> for SmallByteSlice {
 pub struct CompiledFuncEntity {
     /// The sequence of [`Instruction`] of the [`CompiledFuncEntity`].
     instrs: Box<[Instruction]>,
+    /// The constant values local to the [`CompiledFunc`].
+    consts: Box<[UntypedVal]>,
     /// The number of registers used by the [`CompiledFunc`] in total.
     ///
     /// # Note
@@ -302,8 +304,6 @@ pub struct CompiledFuncEntity {
     /// This includes registers to store the function local constant values,
     /// function parameters, function locals and dynamically used registers.
     len_registers: u16,
-    /// The constant values local to the [`CompiledFunc`].
-    consts: Box<[UntypedVal]>,
 }
 
 impl CompiledFuncEntity {
