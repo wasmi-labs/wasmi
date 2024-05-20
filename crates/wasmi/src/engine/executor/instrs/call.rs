@@ -130,7 +130,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Creates a [`CallFrame`] for calling the [`CompiledFunc`].
     #[inline(always)]
-    fn dispatch_compiled_func(
+    fn dispatch_compiled_func<C: CallContext>(
         &mut self,
         results: RegisterSpan,
         func: &CompiledFuncEntity,
@@ -147,6 +147,10 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         let instance = caller.instance();
         let instr_ptr = InstructionPtr::new(func.instrs().as_ptr());
         let frame = CallFrame::new(instr_ptr, frame_ptr, base_ptr, results, *instance);
+        if <C as CallContext>::HAS_PARAMS {
+            let called_sp = self.frame_stack_ptr(&frame);
+            self.copy_call_params(called_sp);
+        }
         Ok(frame)
     }
 
@@ -220,11 +224,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         func: CompiledFunc,
     ) -> Result<(), Error> {
         let func = self.code_map.get(Some(self.ctx.fuel_mut()), func)?;
-        let mut called = self.dispatch_compiled_func(results, func)?;
-        if <C as CallContext>::HAS_PARAMS {
-            let called_sp = self.frame_stack_ptr(&called);
-            self.copy_call_params(called_sp);
-        }
+        let mut called = self.dispatch_compiled_func::<C>(results, func)?;
         match <C as CallContext>::KIND {
             CallKind::Nested => {
                 // We need to update the instruction pointer of the caller call frame.
