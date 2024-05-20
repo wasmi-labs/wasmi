@@ -135,8 +135,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         results: RegisterSpan,
         func: &CompiledFuncEntity,
     ) -> Result<CallFrame, Error> {
-        let instrs = func.instrs();
-        let instr_ptr = InstructionPtr::new(instrs.as_ptr());
         let (base_ptr, frame_ptr) = self.value_stack.alloc_call_frame(func)?;
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
         // [`ValueStack::alloc_call_frame`] which might invalidate all live [`FrameRegisters`].
@@ -147,6 +145,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         // Safety: We use the base offset of a live call frame on the call stack.
         self.sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
         let instance = caller.instance();
+        let instr_ptr = InstructionPtr::new(func.instrs().as_ptr());
         let frame = CallFrame::new(instr_ptr, frame_ptr, base_ptr, results, *instance);
         Ok(frame)
     }
