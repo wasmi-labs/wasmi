@@ -408,7 +408,7 @@ jobs:
           version: "0.18.0"
           args: --workspace
       - name: Upload to codecov.io
-        uses: codecov/codecov-action@v4.4.0
+        uses: codecov/codecov-action@v4.4.1
         with:
           token: ${{secrets.CODECOV_TOKEN}}
       - name: Archive code coverage results
