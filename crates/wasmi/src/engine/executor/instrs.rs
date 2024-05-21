@@ -96,8 +96,8 @@ pub enum WasmOutcome {
 ///
 /// If the execution traps.
 #[inline(never)]
-pub fn execute_instrs<'store, 'engine, T>(
-    store: &'store mut Store<T>,
+pub fn execute_instrs<'engine, T>(
+    store: &mut Store<T>,
     cache: &'engine mut InstanceCache,
     value_stack: &'engine mut ValueStack,
     call_stack: &'engine mut CallStack,
@@ -174,7 +174,7 @@ impl<'engine> Executor<'engine> {
 
     /// Executes the function frame until it returns or traps.
     #[inline(always)]
-    fn execute<'store, T>(mut self, store: &'store mut Store<T>) -> Result<WasmOutcome, Error> {
+    fn execute<T>(mut self, store: &mut Store<T>) -> Result<WasmOutcome, Error> {
         use Instruction as Instr;
         loop {
             match *self.ip.get() {
@@ -786,13 +786,13 @@ impl<'engine> Executor<'engine> {
                 Instr::F64ConvertI64S(instr) => self.execute_f64_convert_i64_s(instr),
                 Instr::F64ConvertI64U(instr) => self.execute_f64_convert_i64_u(instr),
                 Instr::TableGet { result, index } => {
-                    self.execute_table_get(&mut store.inner, result, index)?
+                    self.execute_table_get(&store.inner, result, index)?
                 }
                 Instr::TableGetImm { result, index } => {
-                    self.execute_table_get_imm(&mut store.inner, result, index)?
+                    self.execute_table_get_imm(&store.inner, result, index)?
                 }
                 Instr::TableSize { result, table } => {
-                    self.execute_table_size(&mut store.inner, result, table)
+                    self.execute_table_size(&store.inner, result, table)
                 }
                 Instr::TableSet { index, value } => {
                     self.execute_table_set(&mut store.inner, index, value)?
@@ -874,7 +874,7 @@ impl<'engine> Executor<'engine> {
                     self.execute_element_drop(&mut store.inner, element_index)
                 }
                 Instr::DataDrop(data_index) => self.execute_data_drop(&mut store.inner, data_index),
-                Instr::MemorySize { result } => self.execute_memory_size(&mut store.inner, result),
+                Instr::MemorySize { result } => self.execute_memory_size(&store.inner, result),
                 Instr::MemoryGrow { result, delta } => {
                     self.execute_memory_grow(store, result, delta)?
                 }

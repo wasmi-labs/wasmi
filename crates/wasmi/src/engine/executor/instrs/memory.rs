@@ -69,7 +69,7 @@ impl<'engine> Executor<'engine> {
     /// Executes a generic `memory.grow` instruction.
     fn execute_memory_grow_impl<'store>(
         &mut self,
-        store: &mut StoreInner,
+        store: &'store mut StoreInner,
         result: Register,
         delta: u32,
         resource_limiter: &mut ResourceLimiterRef<'store>,

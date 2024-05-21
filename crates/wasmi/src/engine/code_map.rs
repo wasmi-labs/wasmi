@@ -326,8 +326,8 @@ impl CompiledFuncEntity {
         );
         Self {
             instrs,
-            len_registers,
             consts,
+            len_registers,
         }
     }
 
