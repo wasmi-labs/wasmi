@@ -115,13 +115,12 @@ impl<'engine> Executor<'engine> {
     fn update_instr_ptr_at(&mut self, offset: usize) {
         // Note: we explicitly do not mutate `self.ip` since that would make
         // other parts of the code more fragile with respect to instruction ordering.
-        let mut ip = self.ip;
-        ip.add(offset);
+        self.ip.add(offset);
         let caller = self
             .call_stack
             .peek_mut()
             .expect("caller call frame must be on the stack");
-        caller.update_instr_ptr(ip);
+        caller.update_instr_ptr(self.ip);
     }
 
     /// Fetches the [`Instruction::CallIndirectParams`] parameter for a call [`Instruction`].
@@ -422,6 +421,9 @@ impl<'engine> Executor<'engine> {
                 let len_results = output_types.len();
                 let max_inout = len_params.max(len_results);
                 self.value_stack.reserve(max_inout)?;
+                // Safety: we just called reserve to fit the new values.
+                let offset = unsafe { self.value_stack.extend_zeros(max_inout) };
+                let offset_sp = unsafe { self.value_stack.stack_ptr_at(offset) };
                 // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
                 // [`ValueStack::reserve`] which might invalidate all live [`FrameRegisters`].
                 let caller = *self
@@ -430,9 +432,6 @@ impl<'engine> Executor<'engine> {
                     .expect("need to have a caller on the call stack");
                 // Safety: we use the base offset of a live call frame on the call stack.
                 self.sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
-                // Safety: we just called reserve to fit the new values.
-                let offset = unsafe { self.value_stack.extend_zeros(max_inout) };
-                let offset_sp = unsafe { self.value_stack.stack_ptr_at(offset) };
                 if <C as CallContext>::HAS_PARAMS {
                     self.copy_call_params(offset_sp);
                 }
