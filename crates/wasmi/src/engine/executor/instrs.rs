@@ -21,11 +21,11 @@ use crate::{
         func_types::FuncTypeRegistry,
         CodeMap,
     },
-    store::ResourceLimiterRef,
+    store::StoreInner,
     Error,
     Func,
     FuncRef,
-    StoreInner,
+    Store,
 };
 
 mod binary;
@@ -96,32 +96,26 @@ pub enum WasmOutcome {
 ///
 /// If the execution traps.
 #[inline(never)]
-pub fn execute_instrs<'ctx, 'engine>(
-    ctx: &'ctx mut StoreInner,
+pub fn execute_instrs<'store, 'engine, T>(
+    store: &'store mut Store<T>,
     cache: &'engine mut InstanceCache,
     value_stack: &'engine mut ValueStack,
     call_stack: &'engine mut CallStack,
     code_map: &'engine CodeMap,
     func_types: &'engine FuncTypeRegistry,
-    resource_limiter: &'ctx mut ResourceLimiterRef<'ctx>,
 ) -> Result<WasmOutcome, Error> {
-    Executor::new(ctx, cache, value_stack, call_stack, code_map, func_types)
-        .execute(resource_limiter)
+    Executor::new(cache, value_stack, call_stack, code_map, func_types).execute(store)
 }
 
 /// An execution context for executing a Wasmi function frame.
 #[derive(Debug)]
-struct Executor<'ctx, 'engine> {
+struct Executor<'engine> {
     /// Stores the value stack of live values on the Wasm stack.
     sp: FrameRegisters,
     /// The pointer to the currently executed instruction.
     ip: InstructionPtr,
     /// Stores frequently used instance related data.
     cache: &'engine mut InstanceCache,
-    /// A mutable [`StoreInner`] context.
-    ///
-    /// [`StoreInner`]: [`crate::StoreInner`]
-    ctx: &'ctx mut StoreInner,
     /// The value stack.
     ///
     /// # Note
@@ -149,11 +143,10 @@ struct Executor<'ctx, 'engine> {
     func_types: &'engine FuncTypeRegistry,
 }
 
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     /// Creates a new [`Executor`] for executing a Wasmi function frame.
     #[inline(always)]
     pub fn new(
-        ctx: &'ctx mut StoreInner,
         cache: &'engine mut InstanceCache,
         value_stack: &'engine mut ValueStack,
         call_stack: &'engine mut CallStack,
@@ -172,7 +165,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             sp,
             ip,
             cache,
-            ctx,
             value_stack,
             call_stack,
             code_map,
@@ -182,15 +174,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes the function frame until it returns or traps.
     #[inline(always)]
-    fn execute(
-        mut self,
-        resource_limiter: &'ctx mut ResourceLimiterRef<'ctx>,
-    ) -> Result<WasmOutcome, Error> {
+    fn execute<'store, T>(mut self, store: &'store mut Store<T>) -> Result<WasmOutcome, Error> {
         use Instruction as Instr;
         loop {
             match *self.ip.get() {
                 Instr::Trap(trap_code) => self.execute_trap(trap_code)?,
-                Instr::ConsumeFuel(block_fuel) => self.execute_consume_fuel(block_fuel)?,
+                Instr::ConsumeFuel(block_fuel) => {
+                    self.execute_consume_fuel(&mut store.inner, block_fuel)?
+                }
                 Instr::Return => {
                     forward_return!(self.execute_return())
                 }
@@ -332,37 +323,41 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::CopyManyNonOverlapping { results, values } => {
                     self.execute_copy_many_non_overlapping(results, values)
                 }
-                Instr::ReturnCallInternal0 { func } => self.execute_return_call_internal_0(func)?,
-                Instr::ReturnCallInternal { func } => self.execute_return_call_internal(func)?,
+                Instr::ReturnCallInternal0 { func } => {
+                    self.execute_return_call_internal_0(&mut store.inner, func)?
+                }
+                Instr::ReturnCallInternal { func } => {
+                    self.execute_return_call_internal(&mut store.inner, func)?
+                }
                 Instr::ReturnCallImported0 { func } => {
-                    forward_call!(self.execute_return_call_imported_0(func))
+                    forward_call!(self.execute_return_call_imported_0::<T>(store, func))
                 }
                 Instr::ReturnCallImported { func } => {
-                    forward_call!(self.execute_return_call_imported(func))
+                    forward_call!(self.execute_return_call_imported::<T>(store, func))
                 }
                 Instr::ReturnCallIndirect0 { func_type } => {
-                    forward_call!(self.execute_return_call_indirect_0(func_type))
+                    forward_call!(self.execute_return_call_indirect_0::<T>(store, func_type))
                 }
                 Instr::ReturnCallIndirect { func_type } => {
-                    forward_call!(self.execute_return_call_indirect(func_type))
+                    forward_call!(self.execute_return_call_indirect::<T>(store, func_type))
                 }
                 Instr::CallInternal0 { results, func } => {
-                    self.execute_call_internal_0(results, func)?
+                    self.execute_call_internal_0(&mut store.inner, results, func)?
                 }
                 Instr::CallInternal { results, func } => {
-                    self.execute_call_internal(results, func)?
+                    self.execute_call_internal(&mut store.inner, results, func)?
                 }
                 Instr::CallImported0 { results, func } => {
-                    forward_call!(self.execute_call_imported_0(results, func))
+                    forward_call!(self.execute_call_imported_0::<T>(store, results, func))
                 }
                 Instr::CallImported { results, func } => {
-                    forward_call!(self.execute_call_imported(results, func))
+                    forward_call!(self.execute_call_imported::<T>(store, results, func))
                 }
                 Instr::CallIndirect0 { results, func_type } => {
-                    forward_call!(self.execute_call_indirect_0(results, func_type))
+                    forward_call!(self.execute_call_indirect_0::<T>(store, results, func_type))
                 }
                 Instr::CallIndirect { results, func_type } => {
-                    forward_call!(self.execute_call_indirect(results, func_type))
+                    forward_call!(self.execute_call_indirect::<T>(store, results, func_type))
                 }
                 Instr::Select {
                     result,
@@ -386,112 +381,204 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     result_or_condition,
                     lhs_or_rhs,
                 } => self.execute_select_f64imm32(result_or_condition, lhs_or_rhs),
-                Instr::RefFunc { result, func } => self.execute_ref_func(result, func),
-                Instr::GlobalGet { result, global } => self.execute_global_get(result, global),
-                Instr::GlobalSet { global, input } => self.execute_global_set(global, input),
+                Instr::RefFunc { result, func } => {
+                    self.execute_ref_func(&mut store.inner, result, func)
+                }
+                Instr::GlobalGet { result, global } => {
+                    self.execute_global_get(&mut store.inner, result, global)
+                }
+                Instr::GlobalSet { global, input } => {
+                    self.execute_global_set(&mut store.inner, global, input)
+                }
                 Instr::GlobalSetI32Imm16 { global, input } => {
-                    self.execute_global_set_i32imm16(global, input)
+                    self.execute_global_set_i32imm16(&mut store.inner, global, input)
                 }
                 Instr::GlobalSetI64Imm16 { global, input } => {
-                    self.execute_global_set_i64imm16(global, input)
+                    self.execute_global_set_i64imm16(&mut store.inner, global, input)
                 }
-                Instr::I32Load(instr) => self.execute_i32_load(instr)?,
-                Instr::I32LoadAt(instr) => self.execute_i32_load_at(instr)?,
-                Instr::I32LoadOffset16(instr) => self.execute_i32_load_offset16(instr)?,
-                Instr::I64Load(instr) => self.execute_i64_load(instr)?,
-                Instr::I64LoadAt(instr) => self.execute_i64_load_at(instr)?,
-                Instr::I64LoadOffset16(instr) => self.execute_i64_load_offset16(instr)?,
-                Instr::F32Load(instr) => self.execute_f32_load(instr)?,
-                Instr::F32LoadAt(instr) => self.execute_f32_load_at(instr)?,
-                Instr::F32LoadOffset16(instr) => self.execute_f32_load_offset16(instr)?,
-                Instr::F64Load(instr) => self.execute_f64_load(instr)?,
-                Instr::F64LoadAt(instr) => self.execute_f64_load_at(instr)?,
-                Instr::F64LoadOffset16(instr) => self.execute_f64_load_offset16(instr)?,
-                Instr::I32Load8s(instr) => self.execute_i32_load8_s(instr)?,
-                Instr::I32Load8sAt(instr) => self.execute_i32_load8_s_at(instr)?,
-                Instr::I32Load8sOffset16(instr) => self.execute_i32_load8_s_offset16(instr)?,
-                Instr::I32Load8u(instr) => self.execute_i32_load8_u(instr)?,
-                Instr::I32Load8uAt(instr) => self.execute_i32_load8_u_at(instr)?,
-                Instr::I32Load8uOffset16(instr) => self.execute_i32_load8_u_offset16(instr)?,
-                Instr::I32Load16s(instr) => self.execute_i32_load16_s(instr)?,
-                Instr::I32Load16sAt(instr) => self.execute_i32_load16_s_at(instr)?,
-                Instr::I32Load16sOffset16(instr) => self.execute_i32_load16_s_offset16(instr)?,
-                Instr::I32Load16u(instr) => self.execute_i32_load16_u(instr)?,
-                Instr::I32Load16uAt(instr) => self.execute_i32_load16_u_at(instr)?,
-                Instr::I32Load16uOffset16(instr) => self.execute_i32_load16_u_offset16(instr)?,
-                Instr::I64Load8s(instr) => self.execute_i64_load8_s(instr)?,
-                Instr::I64Load8sAt(instr) => self.execute_i64_load8_s_at(instr)?,
-                Instr::I64Load8sOffset16(instr) => self.execute_i64_load8_s_offset16(instr)?,
-                Instr::I64Load8u(instr) => self.execute_i64_load8_u(instr)?,
-                Instr::I64Load8uAt(instr) => self.execute_i64_load8_u_at(instr)?,
-                Instr::I64Load8uOffset16(instr) => self.execute_i64_load8_u_offset16(instr)?,
-                Instr::I64Load16s(instr) => self.execute_i64_load16_s(instr)?,
-                Instr::I64Load16sAt(instr) => self.execute_i64_load16_s_at(instr)?,
-                Instr::I64Load16sOffset16(instr) => self.execute_i64_load16_s_offset16(instr)?,
-                Instr::I64Load16u(instr) => self.execute_i64_load16_u(instr)?,
-                Instr::I64Load16uAt(instr) => self.execute_i64_load16_u_at(instr)?,
-                Instr::I64Load16uOffset16(instr) => self.execute_i64_load16_u_offset16(instr)?,
-                Instr::I64Load32s(instr) => self.execute_i64_load32_s(instr)?,
-                Instr::I64Load32sAt(instr) => self.execute_i64_load32_s_at(instr)?,
-                Instr::I64Load32sOffset16(instr) => self.execute_i64_load32_s_offset16(instr)?,
-                Instr::I64Load32u(instr) => self.execute_i64_load32_u(instr)?,
-                Instr::I64Load32uAt(instr) => self.execute_i64_load32_u_at(instr)?,
-                Instr::I64Load32uOffset16(instr) => self.execute_i64_load32_u_offset16(instr)?,
-                Instr::I32Store(instr) => self.execute_i32_store(instr)?,
-                Instr::I32StoreOffset16(instr) => self.execute_i32_store_offset16(instr)?,
+                Instr::I32Load(instr) => self.execute_i32_load(&mut store.inner, instr)?,
+                Instr::I32LoadAt(instr) => self.execute_i32_load_at(&mut store.inner, instr)?,
+                Instr::I32LoadOffset16(instr) => {
+                    self.execute_i32_load_offset16(&mut store.inner, instr)?
+                }
+                Instr::I64Load(instr) => self.execute_i64_load(&mut store.inner, instr)?,
+                Instr::I64LoadAt(instr) => self.execute_i64_load_at(&mut store.inner, instr)?,
+                Instr::I64LoadOffset16(instr) => {
+                    self.execute_i64_load_offset16(&mut store.inner, instr)?
+                }
+                Instr::F32Load(instr) => self.execute_f32_load(&mut store.inner, instr)?,
+                Instr::F32LoadAt(instr) => self.execute_f32_load_at(&mut store.inner, instr)?,
+                Instr::F32LoadOffset16(instr) => {
+                    self.execute_f32_load_offset16(&mut store.inner, instr)?
+                }
+                Instr::F64Load(instr) => self.execute_f64_load(&mut store.inner, instr)?,
+                Instr::F64LoadAt(instr) => self.execute_f64_load_at(&mut store.inner, instr)?,
+                Instr::F64LoadOffset16(instr) => {
+                    self.execute_f64_load_offset16(&mut store.inner, instr)?
+                }
+                Instr::I32Load8s(instr) => self.execute_i32_load8_s(&mut store.inner, instr)?,
+                Instr::I32Load8sAt(instr) => {
+                    self.execute_i32_load8_s_at(&mut store.inner, instr)?
+                }
+                Instr::I32Load8sOffset16(instr) => {
+                    self.execute_i32_load8_s_offset16(&mut store.inner, instr)?
+                }
+                Instr::I32Load8u(instr) => self.execute_i32_load8_u(&mut store.inner, instr)?,
+                Instr::I32Load8uAt(instr) => {
+                    self.execute_i32_load8_u_at(&mut store.inner, instr)?
+                }
+                Instr::I32Load8uOffset16(instr) => {
+                    self.execute_i32_load8_u_offset16(&mut store.inner, instr)?
+                }
+                Instr::I32Load16s(instr) => self.execute_i32_load16_s(&mut store.inner, instr)?,
+                Instr::I32Load16sAt(instr) => {
+                    self.execute_i32_load16_s_at(&mut store.inner, instr)?
+                }
+                Instr::I32Load16sOffset16(instr) => {
+                    self.execute_i32_load16_s_offset16(&mut store.inner, instr)?
+                }
+                Instr::I32Load16u(instr) => self.execute_i32_load16_u(&mut store.inner, instr)?,
+                Instr::I32Load16uAt(instr) => {
+                    self.execute_i32_load16_u_at(&mut store.inner, instr)?
+                }
+                Instr::I32Load16uOffset16(instr) => {
+                    self.execute_i32_load16_u_offset16(&mut store.inner, instr)?
+                }
+                Instr::I64Load8s(instr) => self.execute_i64_load8_s(&mut store.inner, instr)?,
+                Instr::I64Load8sAt(instr) => {
+                    self.execute_i64_load8_s_at(&mut store.inner, instr)?
+                }
+                Instr::I64Load8sOffset16(instr) => {
+                    self.execute_i64_load8_s_offset16(&mut store.inner, instr)?
+                }
+                Instr::I64Load8u(instr) => self.execute_i64_load8_u(&mut store.inner, instr)?,
+                Instr::I64Load8uAt(instr) => {
+                    self.execute_i64_load8_u_at(&mut store.inner, instr)?
+                }
+                Instr::I64Load8uOffset16(instr) => {
+                    self.execute_i64_load8_u_offset16(&mut store.inner, instr)?
+                }
+                Instr::I64Load16s(instr) => self.execute_i64_load16_s(&mut store.inner, instr)?,
+                Instr::I64Load16sAt(instr) => {
+                    self.execute_i64_load16_s_at(&mut store.inner, instr)?
+                }
+                Instr::I64Load16sOffset16(instr) => {
+                    self.execute_i64_load16_s_offset16(&mut store.inner, instr)?
+                }
+                Instr::I64Load16u(instr) => self.execute_i64_load16_u(&mut store.inner, instr)?,
+                Instr::I64Load16uAt(instr) => {
+                    self.execute_i64_load16_u_at(&mut store.inner, instr)?
+                }
+                Instr::I64Load16uOffset16(instr) => {
+                    self.execute_i64_load16_u_offset16(&mut store.inner, instr)?
+                }
+                Instr::I64Load32s(instr) => self.execute_i64_load32_s(&mut store.inner, instr)?,
+                Instr::I64Load32sAt(instr) => {
+                    self.execute_i64_load32_s_at(&mut store.inner, instr)?
+                }
+                Instr::I64Load32sOffset16(instr) => {
+                    self.execute_i64_load32_s_offset16(&mut store.inner, instr)?
+                }
+                Instr::I64Load32u(instr) => self.execute_i64_load32_u(&mut store.inner, instr)?,
+                Instr::I64Load32uAt(instr) => {
+                    self.execute_i64_load32_u_at(&mut store.inner, instr)?
+                }
+                Instr::I64Load32uOffset16(instr) => {
+                    self.execute_i64_load32_u_offset16(&mut store.inner, instr)?
+                }
+                Instr::I32Store(instr) => self.execute_i32_store(&mut store.inner, instr)?,
+                Instr::I32StoreOffset16(instr) => {
+                    self.execute_i32_store_offset16(&mut store.inner, instr)?
+                }
                 Instr::I32StoreOffset16Imm16(instr) => {
-                    self.execute_i32_store_offset16_imm16(instr)?
+                    self.execute_i32_store_offset16_imm16(&mut store.inner, instr)?
                 }
-                Instr::I32StoreAt(instr) => self.execute_i32_store_at(instr)?,
-                Instr::I32StoreAtImm16(instr) => self.execute_i32_store_at_imm16(instr)?,
-                Instr::I32Store8(instr) => self.execute_i32_store8(instr)?,
-                Instr::I32Store8Offset16(instr) => self.execute_i32_store8_offset16(instr)?,
+                Instr::I32StoreAt(instr) => self.execute_i32_store_at(&mut store.inner, instr)?,
+                Instr::I32StoreAtImm16(instr) => {
+                    self.execute_i32_store_at_imm16(&mut store.inner, instr)?
+                }
+                Instr::I32Store8(instr) => self.execute_i32_store8(&mut store.inner, instr)?,
+                Instr::I32Store8Offset16(instr) => {
+                    self.execute_i32_store8_offset16(&mut store.inner, instr)?
+                }
                 Instr::I32Store8Offset16Imm(instr) => {
-                    self.execute_i32_store8_offset16_imm(instr)?
+                    self.execute_i32_store8_offset16_imm(&mut store.inner, instr)?
                 }
-                Instr::I32Store8At(instr) => self.execute_i32_store8_at(instr)?,
-                Instr::I32Store8AtImm(instr) => self.execute_i32_store8_at_imm(instr)?,
-                Instr::I32Store16(instr) => self.execute_i32_store16(instr)?,
-                Instr::I32Store16Offset16(instr) => self.execute_i32_store16_offset16(instr)?,
+                Instr::I32Store8At(instr) => self.execute_i32_store8_at(&mut store.inner, instr)?,
+                Instr::I32Store8AtImm(instr) => {
+                    self.execute_i32_store8_at_imm(&mut store.inner, instr)?
+                }
+                Instr::I32Store16(instr) => self.execute_i32_store16(&mut store.inner, instr)?,
+                Instr::I32Store16Offset16(instr) => {
+                    self.execute_i32_store16_offset16(&mut store.inner, instr)?
+                }
                 Instr::I32Store16Offset16Imm(instr) => {
-                    self.execute_i32_store16_offset16_imm(instr)?
+                    self.execute_i32_store16_offset16_imm(&mut store.inner, instr)?
                 }
-                Instr::I32Store16At(instr) => self.execute_i32_store16_at(instr)?,
-                Instr::I32Store16AtImm(instr) => self.execute_i32_store16_at_imm(instr)?,
-                Instr::I64Store(instr) => self.execute_i64_store(instr)?,
-                Instr::I64StoreOffset16(instr) => self.execute_i64_store_offset16(instr)?,
+                Instr::I32Store16At(instr) => {
+                    self.execute_i32_store16_at(&mut store.inner, instr)?
+                }
+                Instr::I32Store16AtImm(instr) => {
+                    self.execute_i32_store16_at_imm(&mut store.inner, instr)?
+                }
+                Instr::I64Store(instr) => self.execute_i64_store(&mut store.inner, instr)?,
+                Instr::I64StoreOffset16(instr) => {
+                    self.execute_i64_store_offset16(&mut store.inner, instr)?
+                }
                 Instr::I64StoreOffset16Imm16(instr) => {
-                    self.execute_i64_store_offset16_imm16(instr)?
+                    self.execute_i64_store_offset16_imm16(&mut store.inner, instr)?
                 }
-                Instr::I64StoreAt(instr) => self.execute_i64_store_at(instr)?,
-                Instr::I64StoreAtImm16(instr) => self.execute_i64_store_at_imm16(instr)?,
-                Instr::I64Store8(instr) => self.execute_i64_store8(instr)?,
-                Instr::I64Store8Offset16(instr) => self.execute_i64_store8_offset16(instr)?,
+                Instr::I64StoreAt(instr) => self.execute_i64_store_at(&mut store.inner, instr)?,
+                Instr::I64StoreAtImm16(instr) => {
+                    self.execute_i64_store_at_imm16(&mut store.inner, instr)?
+                }
+                Instr::I64Store8(instr) => self.execute_i64_store8(&mut store.inner, instr)?,
+                Instr::I64Store8Offset16(instr) => {
+                    self.execute_i64_store8_offset16(&mut store.inner, instr)?
+                }
                 Instr::I64Store8Offset16Imm(instr) => {
-                    self.execute_i64_store8_offset16_imm(instr)?
+                    self.execute_i64_store8_offset16_imm(&mut store.inner, instr)?
                 }
-                Instr::I64Store8At(instr) => self.execute_i64_store8_at(instr)?,
-                Instr::I64Store8AtImm(instr) => self.execute_i64_store8_at_imm(instr)?,
-                Instr::I64Store16(instr) => self.execute_i64_store16(instr)?,
-                Instr::I64Store16Offset16(instr) => self.execute_i64_store16_offset16(instr)?,
+                Instr::I64Store8At(instr) => self.execute_i64_store8_at(&mut store.inner, instr)?,
+                Instr::I64Store8AtImm(instr) => {
+                    self.execute_i64_store8_at_imm(&mut store.inner, instr)?
+                }
+                Instr::I64Store16(instr) => self.execute_i64_store16(&mut store.inner, instr)?,
+                Instr::I64Store16Offset16(instr) => {
+                    self.execute_i64_store16_offset16(&mut store.inner, instr)?
+                }
                 Instr::I64Store16Offset16Imm(instr) => {
-                    self.execute_i64_store16_offset16_imm(instr)?
+                    self.execute_i64_store16_offset16_imm(&mut store.inner, instr)?
                 }
-                Instr::I64Store16At(instr) => self.execute_i64_store16_at(instr)?,
-                Instr::I64Store16AtImm(instr) => self.execute_i64_store16_at_imm(instr)?,
-                Instr::I64Store32(instr) => self.execute_i64_store32(instr)?,
-                Instr::I64Store32Offset16(instr) => self.execute_i64_store32_offset16(instr)?,
+                Instr::I64Store16At(instr) => {
+                    self.execute_i64_store16_at(&mut store.inner, instr)?
+                }
+                Instr::I64Store16AtImm(instr) => {
+                    self.execute_i64_store16_at_imm(&mut store.inner, instr)?
+                }
+                Instr::I64Store32(instr) => self.execute_i64_store32(&mut store.inner, instr)?,
+                Instr::I64Store32Offset16(instr) => {
+                    self.execute_i64_store32_offset16(&mut store.inner, instr)?
+                }
                 Instr::I64Store32Offset16Imm16(instr) => {
-                    self.execute_i64_store32_offset16_imm16(instr)?
+                    self.execute_i64_store32_offset16_imm16(&mut store.inner, instr)?
                 }
-                Instr::I64Store32At(instr) => self.execute_i64_store32_at(instr)?,
-                Instr::I64Store32AtImm16(instr) => self.execute_i64_store32_at_imm16(instr)?,
-                Instr::F32Store(instr) => self.execute_f32_store(instr)?,
-                Instr::F32StoreOffset16(instr) => self.execute_f32_store_offset16(instr)?,
-                Instr::F32StoreAt(instr) => self.execute_f32_store_at(instr)?,
-                Instr::F64Store(instr) => self.execute_f64_store(instr)?,
-                Instr::F64StoreOffset16(instr) => self.execute_f64_store_offset16(instr)?,
-                Instr::F64StoreAt(instr) => self.execute_f64_store_at(instr)?,
+                Instr::I64Store32At(instr) => {
+                    self.execute_i64_store32_at(&mut store.inner, instr)?
+                }
+                Instr::I64Store32AtImm16(instr) => {
+                    self.execute_i64_store32_at_imm16(&mut store.inner, instr)?
+                }
+                Instr::F32Store(instr) => self.execute_f32_store(&mut store.inner, instr)?,
+                Instr::F32StoreOffset16(instr) => {
+                    self.execute_f32_store_offset16(&mut store.inner, instr)?
+                }
+                Instr::F32StoreAt(instr) => self.execute_f32_store_at(&mut store.inner, instr)?,
+                Instr::F64Store(instr) => self.execute_f64_store(&mut store.inner, instr)?,
+                Instr::F64StoreOffset16(instr) => {
+                    self.execute_f64_store_offset16(&mut store.inner, instr)?
+                }
+                Instr::F64StoreAt(instr) => self.execute_f64_store_at(&mut store.inner, instr)?,
                 Instr::I32Eq(instr) => self.execute_i32_eq(instr),
                 Instr::I32EqImm16(instr) => self.execute_i32_eq_imm16(instr),
                 Instr::I32Ne(instr) => self.execute_i32_ne(instr),
@@ -698,153 +785,173 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::F64ConvertI32U(instr) => self.execute_f64_convert_i32_u(instr),
                 Instr::F64ConvertI64S(instr) => self.execute_f64_convert_i64_s(instr),
                 Instr::F64ConvertI64U(instr) => self.execute_f64_convert_i64_u(instr),
-                Instr::TableGet { result, index } => self.execute_table_get(result, index)?,
-                Instr::TableGetImm { result, index } => {
-                    self.execute_table_get_imm(result, index)?
+                Instr::TableGet { result, index } => {
+                    self.execute_table_get(&mut store.inner, result, index)?
                 }
-                Instr::TableSize { result, table } => self.execute_table_size(result, table),
-                Instr::TableSet { index, value } => self.execute_table_set(index, value)?,
-                Instr::TableSetAt { index, value } => self.execute_table_set_at(index, value)?,
-                Instr::TableCopy { dst, src, len } => self.execute_table_copy(dst, src, len)?,
+                Instr::TableGetImm { result, index } => {
+                    self.execute_table_get_imm(&mut store.inner, result, index)?
+                }
+                Instr::TableSize { result, table } => {
+                    self.execute_table_size(&mut store.inner, result, table)
+                }
+                Instr::TableSet { index, value } => {
+                    self.execute_table_set(&mut store.inner, index, value)?
+                }
+                Instr::TableSetAt { index, value } => {
+                    self.execute_table_set_at(&mut store.inner, index, value)?
+                }
+                Instr::TableCopy { dst, src, len } => {
+                    self.execute_table_copy(&mut store.inner, dst, src, len)?
+                }
                 Instr::TableCopyTo { dst, src, len } => {
-                    self.execute_table_copy_to(dst, src, len)?
+                    self.execute_table_copy_to(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableCopyFrom { dst, src, len } => {
-                    self.execute_table_copy_from(dst, src, len)?
+                    self.execute_table_copy_from(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableCopyFromTo { dst, src, len } => {
-                    self.execute_table_copy_from_to(dst, src, len)?
+                    self.execute_table_copy_from_to(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableCopyExact { dst, src, len } => {
-                    self.execute_table_copy_exact(dst, src, len)?
+                    self.execute_table_copy_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableCopyToExact { dst, src, len } => {
-                    self.execute_table_copy_to_exact(dst, src, len)?
+                    self.execute_table_copy_to_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableCopyFromExact { dst, src, len } => {
-                    self.execute_table_copy_from_exact(dst, src, len)?
+                    self.execute_table_copy_from_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableCopyFromToExact { dst, src, len } => {
-                    self.execute_table_copy_from_to_exact(dst, src, len)?
+                    self.execute_table_copy_from_to_exact(&mut store.inner, dst, src, len)?
                 }
-                Instr::TableInit { dst, src, len } => self.execute_table_init(dst, src, len)?,
+                Instr::TableInit { dst, src, len } => {
+                    self.execute_table_init(&mut store.inner, dst, src, len)?
+                }
                 Instr::TableInitTo { dst, src, len } => {
-                    self.execute_table_init_to(dst, src, len)?
+                    self.execute_table_init_to(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableInitFrom { dst, src, len } => {
-                    self.execute_table_init_from(dst, src, len)?
+                    self.execute_table_init_from(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableInitFromTo { dst, src, len } => {
-                    self.execute_table_init_from_to(dst, src, len)?
+                    self.execute_table_init_from_to(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableInitExact { dst, src, len } => {
-                    self.execute_table_init_exact(dst, src, len)?
+                    self.execute_table_init_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableInitToExact { dst, src, len } => {
-                    self.execute_table_init_to_exact(dst, src, len)?
+                    self.execute_table_init_to_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableInitFromExact { dst, src, len } => {
-                    self.execute_table_init_from_exact(dst, src, len)?
+                    self.execute_table_init_from_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableInitFromToExact { dst, src, len } => {
-                    self.execute_table_init_from_to_exact(dst, src, len)?
+                    self.execute_table_init_from_to_exact(&mut store.inner, dst, src, len)?
                 }
-                Instr::TableFill { dst, len, value } => self.execute_table_fill(dst, len, value)?,
+                Instr::TableFill { dst, len, value } => {
+                    self.execute_table_fill(&mut store.inner, dst, len, value)?
+                }
                 Instr::TableFillAt { dst, len, value } => {
-                    self.execute_table_fill_at(dst, len, value)?
+                    self.execute_table_fill_at(&mut store.inner, dst, len, value)?
                 }
                 Instr::TableFillExact { dst, len, value } => {
-                    self.execute_table_fill_exact(dst, len, value)?
+                    self.execute_table_fill_exact(&mut store.inner, dst, len, value)?
                 }
                 Instr::TableFillAtExact { dst, len, value } => {
-                    self.execute_table_fill_at_exact(dst, len, value)?
+                    self.execute_table_fill_at_exact(&mut store.inner, dst, len, value)?
                 }
                 Instr::TableGrow {
                     result,
                     delta,
                     value,
-                } => self.execute_table_grow(result, delta, value, &mut *resource_limiter)?,
+                } => self.execute_table_grow(store, result, delta, value)?,
                 Instr::TableGrowImm {
                     result,
                     delta,
                     value,
-                } => self.execute_table_grow_imm(result, delta, value, &mut *resource_limiter)?,
-                Instr::ElemDrop(element_index) => self.execute_element_drop(element_index),
-                Instr::DataDrop(data_index) => self.execute_data_drop(data_index),
-                Instr::MemorySize { result } => self.execute_memory_size(result),
+                } => self.execute_table_grow_imm(store, result, delta, value)?,
+                Instr::ElemDrop(element_index) => {
+                    self.execute_element_drop(&mut store.inner, element_index)
+                }
+                Instr::DataDrop(data_index) => self.execute_data_drop(&mut store.inner, data_index),
+                Instr::MemorySize { result } => self.execute_memory_size(&mut store.inner, result),
                 Instr::MemoryGrow { result, delta } => {
-                    self.execute_memory_grow(result, delta, &mut *resource_limiter)?
+                    self.execute_memory_grow(store, result, delta)?
                 }
                 Instr::MemoryGrowBy { result, delta } => {
-                    self.execute_memory_grow_by(result, delta, &mut *resource_limiter)?
+                    self.execute_memory_grow_by(store, result, delta)?
                 }
-                Instr::MemoryCopy { dst, src, len } => self.execute_memory_copy(dst, src, len)?,
+                Instr::MemoryCopy { dst, src, len } => {
+                    self.execute_memory_copy(&mut store.inner, dst, src, len)?
+                }
                 Instr::MemoryCopyTo { dst, src, len } => {
-                    self.execute_memory_copy_to(dst, src, len)?
+                    self.execute_memory_copy_to(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryCopyFrom { dst, src, len } => {
-                    self.execute_memory_copy_from(dst, src, len)?
+                    self.execute_memory_copy_from(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryCopyFromTo { dst, src, len } => {
-                    self.execute_memory_copy_from_to(dst, src, len)?
+                    self.execute_memory_copy_from_to(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryCopyExact { dst, src, len } => {
-                    self.execute_memory_copy_exact(dst, src, len)?
+                    self.execute_memory_copy_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryCopyToExact { dst, src, len } => {
-                    self.execute_memory_copy_to_exact(dst, src, len)?
+                    self.execute_memory_copy_to_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryCopyFromExact { dst, src, len } => {
-                    self.execute_memory_copy_from_exact(dst, src, len)?
+                    self.execute_memory_copy_from_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryCopyFromToExact { dst, src, len } => {
-                    self.execute_memory_copy_from_to_exact(dst, src, len)?
+                    self.execute_memory_copy_from_to_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryFill { dst, value, len } => {
-                    self.execute_memory_fill(dst, value, len)?
+                    self.execute_memory_fill(&mut store.inner, dst, value, len)?
                 }
                 Instr::MemoryFillAt { dst, value, len } => {
-                    self.execute_memory_fill_at(dst, value, len)?
+                    self.execute_memory_fill_at(&mut store.inner, dst, value, len)?
                 }
                 Instr::MemoryFillImm { dst, value, len } => {
-                    self.execute_memory_fill_imm(dst, value, len)?
+                    self.execute_memory_fill_imm(&mut store.inner, dst, value, len)?
                 }
                 Instr::MemoryFillExact { dst, value, len } => {
-                    self.execute_memory_fill_exact(dst, value, len)?
+                    self.execute_memory_fill_exact(&mut store.inner, dst, value, len)?
                 }
                 Instr::MemoryFillAtImm { dst, value, len } => {
-                    self.execute_memory_fill_at_imm(dst, value, len)?
+                    self.execute_memory_fill_at_imm(&mut store.inner, dst, value, len)?
                 }
                 Instr::MemoryFillAtExact { dst, value, len } => {
-                    self.execute_memory_fill_at_exact(dst, value, len)?
+                    self.execute_memory_fill_at_exact(&mut store.inner, dst, value, len)?
                 }
                 Instr::MemoryFillImmExact { dst, value, len } => {
-                    self.execute_memory_fill_imm_exact(dst, value, len)?
+                    self.execute_memory_fill_imm_exact(&mut store.inner, dst, value, len)?
                 }
                 Instr::MemoryFillAtImmExact { dst, value, len } => {
-                    self.execute_memory_fill_at_imm_exact(dst, value, len)?
+                    self.execute_memory_fill_at_imm_exact(&mut store.inner, dst, value, len)?
                 }
-                Instr::MemoryInit { dst, src, len } => self.execute_memory_init(dst, src, len)?,
+                Instr::MemoryInit { dst, src, len } => {
+                    self.execute_memory_init(&mut store.inner, dst, src, len)?
+                }
                 Instr::MemoryInitTo { dst, src, len } => {
-                    self.execute_memory_init_to(dst, src, len)?
+                    self.execute_memory_init_to(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryInitFrom { dst, src, len } => {
-                    self.execute_memory_init_from(dst, src, len)?
+                    self.execute_memory_init_from(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryInitFromTo { dst, src, len } => {
-                    self.execute_memory_init_from_to(dst, src, len)?
+                    self.execute_memory_init_from_to(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryInitExact { dst, src, len } => {
-                    self.execute_memory_init_exact(dst, src, len)?
+                    self.execute_memory_init_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryInitToExact { dst, src, len } => {
-                    self.execute_memory_init_to_exact(dst, src, len)?
+                    self.execute_memory_init_to_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryInitFromExact { dst, src, len } => {
-                    self.execute_memory_init_from_exact(dst, src, len)?
+                    self.execute_memory_init_from_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryInitFromToExact { dst, src, len } => {
-                    self.execute_memory_init_from_to_exact(dst, src, len)?
+                    self.execute_memory_init_from_to_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableIdx(_)
                 | Instr::DataSegmentIdx(_)
@@ -1093,7 +1200,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 }
 
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     /// Used for all [`Instruction`] words that are not meant for execution.
     ///
     /// # Note
@@ -1113,11 +1220,15 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::ConsumeFuel`].
     #[inline(always)]
-    fn execute_consume_fuel(&mut self, block_fuel: BlockFuel) -> Result<(), Error> {
+    fn execute_consume_fuel(
+        &mut self,
+        store: &mut StoreInner,
+        block_fuel: BlockFuel,
+    ) -> Result<(), Error> {
         // We do not have to check if fuel metering is enabled since
         // [`Instruction::ConsumeFuel`] are only generated if fuel metering
         // is enabled to begin with.
-        self.ctx
+        store
             .fuel_mut()
             .consume_fuel_unchecked(block_fuel.to_u64())?;
         self.try_next_instr()
@@ -1125,8 +1236,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::RefFunc`].
     #[inline(always)]
-    fn execute_ref_func(&mut self, result: Register, func_index: FuncIdx) {
-        let func = self.cache.get_func(self.ctx, func_index);
+    fn execute_ref_func(&mut self, store: &mut StoreInner, result: Register, func_index: FuncIdx) {
+        let func = self.cache.get_func(store, func_index);
         let funcref = FuncRef::new(func);
         self.set_register(result, funcref);
         self.next_instr();

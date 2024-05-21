@@ -496,19 +496,17 @@ impl<'engine> EngineExecutor<'engine> {
         ctx: StoreContextMut<T>,
         cache: &mut InstanceCache,
     ) -> Result<WasmOutcome, Error> {
-        let (store_inner, mut resource_limiter) = ctx.store.store_inner_and_resource_limiter_ref();
         let value_stack = &mut self.stack.values;
         let call_stack = &mut self.stack.calls;
         let code_map = &self.res.code_map;
         let func_types = &self.res.func_types;
         execute_instrs(
-            store_inner,
+            ctx.store,
             cache,
             value_stack,
             call_stack,
             code_map,
             func_types,
-            &mut resource_limiter,
         )
     }
 

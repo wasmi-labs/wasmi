@@ -11,9 +11,11 @@ use crate::{
         CompiledFuncEntity,
     },
     func::FuncEntity,
+    store::StoreInner,
     Error,
     Func,
     FuncRef,
+    Store,
 };
 
 /// The outcome of a Wasm execution.
@@ -79,7 +81,7 @@ mod marker {
     }
 }
 
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     /// Updates the [`InstructionPtr`] of the caller [`CallFrame`] before dispatching a call.
     ///
     /// # Note
@@ -220,10 +222,11 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     fn prepare_compiled_func_call<C: CallContext>(
         &mut self,
+        store: &mut StoreInner,
         results: RegisterSpan,
         func: CompiledFunc,
     ) -> Result<(), Error> {
-        let func = self.code_map.get(Some(self.ctx.fuel_mut()), func)?;
+        let func = self.code_map.get(Some(store.fuel_mut()), func)?;
         let mut called = self.dispatch_compiled_func::<C>(results, func)?;
         match <C as CallContext>::KIND {
             CallKind::Nested => {
@@ -251,23 +254,32 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::ReturnCallInternal0`].
     #[inline(always)]
-    pub fn execute_return_call_internal_0(&mut self, func: CompiledFunc) -> Result<(), Error> {
-        self.execute_return_call_internal_impl::<marker::ReturnCall0>(func)
+    pub fn execute_return_call_internal_0(
+        &mut self,
+        store: &mut StoreInner,
+        func: CompiledFunc,
+    ) -> Result<(), Error> {
+        self.execute_return_call_internal_impl::<marker::ReturnCall0>(store, func)
     }
 
     /// Executes an [`Instruction::ReturnCallInternal`].
     #[inline(always)]
-    pub fn execute_return_call_internal(&mut self, func: CompiledFunc) -> Result<(), Error> {
-        self.execute_return_call_internal_impl::<marker::ReturnCall>(func)
+    pub fn execute_return_call_internal(
+        &mut self,
+        store: &mut StoreInner,
+        func: CompiledFunc,
+    ) -> Result<(), Error> {
+        self.execute_return_call_internal_impl::<marker::ReturnCall>(store, func)
     }
 
     /// Executes an [`Instruction::ReturnCallInternal`] or [`Instruction::ReturnCallInternal0`].
     fn execute_return_call_internal_impl<C: CallContext>(
         &mut self,
+        store: &mut StoreInner,
         func: CompiledFunc,
     ) -> Result<(), Error> {
         let results = self.caller_results();
-        self.prepare_compiled_func_call::<C>(results, func)
+        self.prepare_compiled_func_call::<C>(store, results, func)
     }
 
     /// Returns the `results` [`RegisterSpan`] of the top-most [`CallFrame`] on the [`CallStack`].
@@ -289,76 +301,91 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     #[inline(always)]
     pub fn execute_call_internal_0(
         &mut self,
+        store: &mut StoreInner,
         results: RegisterSpan,
         func: CompiledFunc,
     ) -> Result<(), Error> {
-        self.prepare_compiled_func_call::<marker::NestedCall0>(results, func)
+        self.prepare_compiled_func_call::<marker::NestedCall0>(store, results, func)
     }
 
     /// Executes an [`Instruction::CallInternal`].
     #[inline(always)]
     pub fn execute_call_internal(
         &mut self,
+        store: &mut StoreInner,
         results: RegisterSpan,
         func: CompiledFunc,
     ) -> Result<(), Error> {
-        self.prepare_compiled_func_call::<marker::NestedCall>(results, func)
+        self.prepare_compiled_func_call::<marker::NestedCall>(store, results, func)
     }
 
     /// Executes an [`Instruction::ReturnCallImported0`].
     #[inline(always)]
-    pub fn execute_return_call_imported_0(&mut self, func: FuncIdx) -> Result<CallOutcome, Error> {
-        self.execute_return_call_imported_impl::<marker::ReturnCall0>(func)
+    pub fn execute_return_call_imported_0<T>(
+        &mut self,
+        store: &mut Store<T>,
+        func: FuncIdx,
+    ) -> Result<CallOutcome, Error> {
+        self.execute_return_call_imported_impl::<marker::ReturnCall0, T>(store, func)
     }
 
     /// Executes an [`Instruction::ReturnCallImported`].
     #[inline(always)]
-    pub fn execute_return_call_imported(&mut self, func: FuncIdx) -> Result<CallOutcome, Error> {
-        self.execute_return_call_imported_impl::<marker::ReturnCall>(func)
+    pub fn execute_return_call_imported<T>(
+        &mut self,
+        store: &mut Store<T>,
+        func: FuncIdx,
+    ) -> Result<CallOutcome, Error> {
+        self.execute_return_call_imported_impl::<marker::ReturnCall, T>(store, func)
     }
 
     /// Executes an [`Instruction::ReturnCallImported`] or [`Instruction::ReturnCallImported0`].
-    fn execute_return_call_imported_impl<C: ReturnCallContext>(
+    fn execute_return_call_imported_impl<C: ReturnCallContext, T>(
         &mut self,
+        store: &mut Store<T>,
         func: FuncIdx,
     ) -> Result<CallOutcome, Error> {
-        let func = self.cache.get_func(self.ctx, func);
+        let func = self.cache.get_func(&store.inner, func);
         let results = self.caller_results();
-        self.execute_call_imported_impl::<C>(results, &func)
+        self.execute_call_imported_impl::<C, T>(store, results, &func)
     }
 
     /// Executes an [`Instruction::CallImported0`].
     #[inline(never)]
-    pub fn execute_call_imported_0(
+    pub fn execute_call_imported_0<T>(
         &mut self,
+        store: &mut Store<T>,
         results: RegisterSpan,
         func: FuncIdx,
     ) -> Result<CallOutcome, Error> {
-        let func = self.cache.get_func(self.ctx, func);
-        self.execute_call_imported_impl::<marker::NestedCall0>(results, &func)
+        let func = self.cache.get_func(&store.inner, func);
+        self.execute_call_imported_impl::<marker::NestedCall0, T>(store, results, &func)
     }
 
     /// Executes an [`Instruction::CallImported`].
     #[inline(never)]
-    pub fn execute_call_imported(
+    pub fn execute_call_imported<T>(
         &mut self,
+        store: &mut Store<T>,
         results: RegisterSpan,
         func: FuncIdx,
     ) -> Result<CallOutcome, Error> {
-        let func = self.cache.get_func(self.ctx, func);
-        self.execute_call_imported_impl::<marker::NestedCall>(results, &func)
+        let func = self.cache.get_func(&store.inner, func);
+        self.execute_call_imported_impl::<marker::NestedCall, T>(store, results, &func)
     }
 
     /// Executes an imported or indirect (tail) call instruction.
-    fn execute_call_imported_impl<C: CallContext>(
+    fn execute_call_imported_impl<C: CallContext, T>(
         &mut self,
+        store: &mut Store<T>,
         results: RegisterSpan,
         func: &Func,
     ) -> Result<CallOutcome, Error> {
-        match self.ctx.resolve_func(func) {
+        match store.inner.resolve_func(func) {
             FuncEntity::Wasm(func) => {
                 let instance = *func.instance();
-                self.prepare_compiled_func_call::<C>(results, func.func_body())?;
+                let func_body = func.func_body();
+                self.prepare_compiled_func_call::<C>(&mut store.inner, results, func_body)?;
                 self.cache.update_instance(&instance);
                 Ok(CallOutcome::Continue)
             }
@@ -400,67 +427,80 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::CallIndirect0`].
     #[inline(never)]
-    pub fn execute_return_call_indirect_0(
+    pub fn execute_return_call_indirect_0<T>(
         &mut self,
+        store: &mut Store<T>,
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, Error> {
         let (index, table) = self.pull_call_indirect_params();
         let results = self.caller_results();
-        self.execute_call_indirect_impl::<marker::ReturnCall0>(results, func_type, index, table)
+        self.execute_call_indirect_impl::<marker::ReturnCall0, T>(
+            store, results, func_type, index, table,
+        )
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
     #[inline(never)]
-    pub fn execute_return_call_indirect(
+    pub fn execute_return_call_indirect<T>(
         &mut self,
+        store: &mut Store<T>,
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, Error> {
         let (index, table) = self.pull_call_indirect_params();
         let results = self.caller_results();
-        self.execute_call_indirect_impl::<marker::ReturnCall>(results, func_type, index, table)
+        self.execute_call_indirect_impl::<marker::ReturnCall, T>(
+            store, results, func_type, index, table,
+        )
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
     #[inline(never)]
-    pub fn execute_call_indirect_0(
+    pub fn execute_call_indirect_0<T>(
         &mut self,
+        store: &mut Store<T>,
         results: RegisterSpan,
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, Error> {
         let (index, table) = self.pull_call_indirect_params();
-        self.execute_call_indirect_impl::<marker::NestedCall0>(results, func_type, index, table)
+        self.execute_call_indirect_impl::<marker::NestedCall0, T>(
+            store, results, func_type, index, table,
+        )
     }
 
     /// Executes an [`Instruction::CallIndirect`].
     #[inline(never)]
-    pub fn execute_call_indirect(
+    pub fn execute_call_indirect<T>(
         &mut self,
+        store: &mut Store<T>,
         results: RegisterSpan,
         func_type: SignatureIdx,
     ) -> Result<CallOutcome, Error> {
         let (index, table) = self.pull_call_indirect_params();
-        self.execute_call_indirect_impl::<marker::NestedCall>(results, func_type, index, table)
+        self.execute_call_indirect_impl::<marker::NestedCall, T>(
+            store, results, func_type, index, table,
+        )
     }
 
     /// Executes an [`Instruction::CallIndirect`] and [`Instruction::CallIndirect0`].
-    fn execute_call_indirect_impl<C: CallContext>(
+    fn execute_call_indirect_impl<C: CallContext, T>(
         &mut self,
+        store: &mut Store<T>,
         results: RegisterSpan,
         func_type: SignatureIdx,
         index: u32,
         table: TableIdx,
     ) -> Result<CallOutcome, Error> {
-        let table = self.cache.get_table(self.ctx, table);
-        let funcref = self
-            .ctx
+        let table = self.cache.get_table(&store.inner, table);
+        let funcref = store
+            .inner
             .resolve_table(&table)
             .get_untyped(index)
             .map(FuncRef::from)
             .ok_or(TrapCode::TableOutOfBounds)?;
         let func = funcref.func().ok_or(TrapCode::IndirectCallToNull)?;
-        let actual_signature = self.ctx.resolve_func(func).ty_dedup();
-        let expected_signature = self
-            .ctx
+        let actual_signature = store.inner.resolve_func(func).ty_dedup();
+        let expected_signature = store
+            .inner
             .resolve_instance(self.cache.instance())
             .get_signature(func_type.to_u32())
             .unwrap_or_else(|| {
@@ -469,6 +509,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         if actual_signature != expected_signature {
             return Err(Error::from(TrapCode::BadSignature));
         }
-        self.execute_call_imported_impl::<C>(results, func)
+        self.execute_call_imported_impl::<C, T>(store, results, func)
     }
 }

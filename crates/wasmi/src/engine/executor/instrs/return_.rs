@@ -17,7 +17,7 @@ pub enum ReturnOutcome {
     Host,
 }
 
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     /// Returns the execution to the caller.
     ///
     /// Any return values are expected to already have been transferred

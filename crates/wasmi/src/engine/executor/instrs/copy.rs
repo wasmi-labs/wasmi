@@ -6,7 +6,7 @@ use crate::{
 use core::slice;
 use smallvec::SmallVec;
 
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     /// Executes a generic `copy` [`Instruction`].
     fn execute_copy_impl<T>(
         &mut self,

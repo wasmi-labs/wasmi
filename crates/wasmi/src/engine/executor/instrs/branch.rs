@@ -16,7 +16,7 @@ use crate::{
 };
 use core::cmp;
 
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     /// Branches and adjusts the value stack.
     ///
     /// # Note
@@ -199,7 +199,7 @@ fn cmp_i32_xor_eqz(a: i32, b: i32) -> bool {
 
 macro_rules! impl_execute_branch_binop {
     ( $( ($ty:ty, Instruction::$op_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
-        impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+        impl<'engine> Executor<'engine> {
             $(
                 #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
                 #[inline(always)]
@@ -256,7 +256,7 @@ impl_execute_branch_binop! {
 
 macro_rules! impl_execute_branch_binop_imm {
     ( $( ($ty:ty, Instruction::$op_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
-        impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+        impl<'engine> Executor<'engine> {
             $(
                 #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
                 #[inline(always)]
@@ -297,7 +297,7 @@ impl_execute_branch_binop_imm! {
     (u64, Instruction::BranchI64GeUImm, execute_branch_i64_ge_u_imm, cmp_ge),
 }
 
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::BranchCmpFallback`].
     pub fn execute_branch_cmp_fallback(&mut self, lhs: Register, rhs: Register, params: Register) {
         use BranchComparator as C;
