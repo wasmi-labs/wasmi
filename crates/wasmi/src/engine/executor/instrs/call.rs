@@ -1,5 +1,3 @@
-use core::array;
-
 use super::Executor;
 use crate::{
     core::TrapCode,
@@ -9,6 +7,7 @@ use crate::{
         executor::stack::{CallFrame, FrameRegisters, Stack},
         CompiledFunc,
         CompiledFuncEntity,
+        FuncParams,
     },
     func::FuncEntity,
     store::StoreInner,
@@ -17,24 +16,8 @@ use crate::{
     FuncRef,
     Store,
 };
-
-/// The outcome of a Wasm execution.
-///
-/// # Note
-///
-/// A Wasm execution includes everything but host calls.
-/// In other words: Everything in between host calls is a Wasm execution.
-#[derive(Debug, Copy, Clone)]
-pub enum CallOutcome {
-    /// The Wasm execution continues in Wasm.
-    Continue,
-    /// The Wasm execution calls a host function.
-    Call {
-        results: RegisterSpan,
-        host_func: Func,
-        call_kind: CallKind,
-    },
-}
+use core::array;
+use std::fmt;
 
 /// The kind of a function call.
 #[derive(Debug, Copy, Clone)]
@@ -43,6 +26,47 @@ pub enum CallKind {
     Nested,
     /// A tailing function call.
     Tail,
+}
+
+/// Error returned from a called host function in a resumable state.
+#[derive(Debug)]
+pub struct ResumableHostError {
+    host_error: Error,
+    host_func: Func,
+    caller_results: RegisterSpan,
+}
+
+impl fmt::Display for ResumableHostError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.host_error.fmt(f)
+    }
+}
+
+impl ResumableHostError {
+    /// Creates a new [`ResumableHostError`].
+    #[cold]
+    pub(crate) fn new(host_error: Error, host_func: Func, caller_results: RegisterSpan) -> Self {
+        Self {
+            host_error,
+            host_func,
+            caller_results,
+        }
+    }
+
+    /// Consumes `self` to return the underlying [`Error`].
+    pub(crate) fn into_error(self) -> Error {
+        self.host_error
+    }
+
+    /// Returns the [`Func`] of the [`ResumableHostError`].
+    pub(crate) fn host_func(&self) -> &Func {
+        &self.host_func
+    }
+
+    /// Returns the caller results [`RegisterSpan`] of the [`ResumableHostError`].
+    pub(crate) fn caller_results(&self) -> &RegisterSpan {
+        &self.caller_results
+    }
 }
 
 trait CallContext {
@@ -325,7 +349,7 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut Store<T>,
         func: FuncIdx,
-    ) -> Result<CallOutcome, Error> {
+    ) -> Result<(), Error> {
         self.execute_return_call_imported_impl::<marker::ReturnCall0, T>(store, func)
     }
 
@@ -335,7 +359,7 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut Store<T>,
         func: FuncIdx,
-    ) -> Result<CallOutcome, Error> {
+    ) -> Result<(), Error> {
         self.execute_return_call_imported_impl::<marker::ReturnCall, T>(store, func)
     }
 
@@ -344,7 +368,7 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut Store<T>,
         func: FuncIdx,
-    ) -> Result<CallOutcome, Error> {
+    ) -> Result<(), Error> {
         let func = self.cache.get_func(&store.inner, func);
         let results = self.caller_results();
         self.execute_call_imported_impl::<C, T>(store, results, &func)
@@ -357,7 +381,7 @@ impl<'engine> Executor<'engine> {
         store: &mut Store<T>,
         results: RegisterSpan,
         func: FuncIdx,
-    ) -> Result<CallOutcome, Error> {
+    ) -> Result<(), Error> {
         let func = self.cache.get_func(&store.inner, func);
         self.execute_call_imported_impl::<marker::NestedCall0, T>(store, results, &func)
     }
@@ -369,7 +393,7 @@ impl<'engine> Executor<'engine> {
         store: &mut Store<T>,
         results: RegisterSpan,
         func: FuncIdx,
-    ) -> Result<CallOutcome, Error> {
+    ) -> Result<(), Error> {
         let func = self.cache.get_func(&store.inner, func);
         self.execute_call_imported_impl::<marker::NestedCall, T>(store, results, &func)
     }
@@ -380,14 +404,14 @@ impl<'engine> Executor<'engine> {
         store: &mut Store<T>,
         results: RegisterSpan,
         func: &Func,
-    ) -> Result<CallOutcome, Error> {
+    ) -> Result<(), Error> {
         match store.inner.resolve_func(func) {
             FuncEntity::Wasm(func) => {
                 let instance = *func.instance();
                 let func_body = func.func_body();
                 self.prepare_compiled_func_call::<C>(&mut store.inner, results, func_body)?;
                 self.cache.update_instance(&instance);
-                Ok(CallOutcome::Continue)
+                Ok(())
             }
             FuncEntity::Host(host_func) => {
                 let (input_types, output_types) = self
@@ -400,7 +424,7 @@ impl<'engine> Executor<'engine> {
                 self.value_stack.reserve(max_inout)?;
                 // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
                 // [`ValueStack::reserve`] which might invalidate all live [`FrameRegisters`].
-                let caller = self
+                let caller = *self
                     .call_stack
                     .peek()
                     .expect("need to have a caller on the call stack");
@@ -416,11 +440,61 @@ impl<'engine> Executor<'engine> {
                     self.update_instr_ptr_at(1);
                 }
                 self.cache.reset();
-                Ok(CallOutcome::Call {
-                    results,
-                    host_func: *func,
-                    call_kind: <C as CallContext>::KIND,
-                })
+                // The host function signature is required for properly
+                // adjusting, inspecting and manipulating the value stack.
+                let (input_types, output_types) = self
+                    .func_types
+                    .resolve_func_type(host_func.ty_dedup())
+                    .params_results();
+                // In case the host function returns more values than it takes
+                // we are required to extend the value stack.
+                let len_inputs = input_types.len();
+                let len_outputs = output_types.len();
+                let max_inout = len_inputs.max(len_outputs);
+                let values = self.value_stack.as_slice_mut();
+                let params_results = FuncParams::new(
+                    values.split_at_mut(values.len() - max_inout).1,
+                    len_inputs,
+                    len_outputs,
+                );
+                // Now we are ready to perform the host function call.
+                // Note: We need to clone the host function due to some borrowing issues.
+                //       This should not be a big deal since host functions usually are cheap to clone.
+                let trampoline = store.resolve_trampoline(host_func.trampoline()).clone();
+                trampoline
+                    .call(store, Some(caller.instance()), params_results)
+                    .map_err(|error| {
+                        // Note: We drop the values that have been temporarily added to
+                        //       the stack to act as parameter and result buffer for the
+                        //       called host function. Since the host function failed we
+                        //       need to clean up the temporary buffer values here.
+                        //       This is required for resumable calls to work properly.
+                        self.value_stack.drop(max_inout);
+                        ResumableHostError::new(error, *func, results)
+                    })?;
+                // # Safety (1)
+                //
+                // We can safely acquire the stack pointer to the caller's and callee's (host)
+                // call frames because we just allocated the host call frame and can be sure that
+                // they are different.
+                // In the following we make sure to not access registers out of bounds of each
+                // call frame since we rely on Wasm validation and proper Wasm translation to
+                // provide us with valid result registers.
+                let mut caller_sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
+                // # Safety: See Safety (1) above.
+                let callee_sp = unsafe { self.value_stack.stack_ptr_last_n(max_inout) };
+                let results = results.iter(len_outputs);
+                let values = RegisterSpan::new(Register::from_i16(0)).iter(len_outputs);
+                for (result, value) in results.zip(values) {
+                    // # Safety: See Safety (1) above.
+                    unsafe { caller_sp.set(result, callee_sp.get(value)) };
+                }
+                // Finally, the value stack needs to be truncated to its original size.
+                self.value_stack.drop(max_inout);
+                if matches!(<C as CallContext>::KIND, CallKind::Tail) {
+                    self.call_stack.pop();
+                }
+                Ok(())
             }
         }
     }
@@ -431,7 +505,7 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut Store<T>,
         func_type: SignatureIdx,
-    ) -> Result<CallOutcome, Error> {
+    ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
         let results = self.caller_results();
         self.execute_call_indirect_impl::<marker::ReturnCall0, T>(
@@ -445,7 +519,7 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut Store<T>,
         func_type: SignatureIdx,
-    ) -> Result<CallOutcome, Error> {
+    ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
         let results = self.caller_results();
         self.execute_call_indirect_impl::<marker::ReturnCall, T>(
@@ -460,7 +534,7 @@ impl<'engine> Executor<'engine> {
         store: &mut Store<T>,
         results: RegisterSpan,
         func_type: SignatureIdx,
-    ) -> Result<CallOutcome, Error> {
+    ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
         self.execute_call_indirect_impl::<marker::NestedCall0, T>(
             store, results, func_type, index, table,
@@ -474,7 +548,7 @@ impl<'engine> Executor<'engine> {
         store: &mut Store<T>,
         results: RegisterSpan,
         func_type: SignatureIdx,
-    ) -> Result<CallOutcome, Error> {
+    ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
         self.execute_call_indirect_impl::<marker::NestedCall, T>(
             store, results, func_type, index, table,
@@ -489,7 +563,7 @@ impl<'engine> Executor<'engine> {
         func_type: SignatureIdx,
         index: u32,
         table: TableIdx,
-    ) -> Result<CallOutcome, Error> {
+    ) -> Result<(), Error> {
         let table = self.cache.get_table(&store.inner, table);
         let funcref = store
             .inner

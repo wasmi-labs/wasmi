@@ -1,5 +1,5 @@
-pub use self::call::CallKind;
-use self::{call::CallOutcome, return_::ReturnOutcome};
+pub use self::call::ResumableHostError;
+use self::return_::ReturnOutcome;
 use crate::{
     core::{TrapCode, UntypedVal},
     engine::{
@@ -12,7 +12,6 @@ use crate::{
             FuncIdx,
             Instruction,
             Register,
-            RegisterSpan,
             UnaryInstr,
         },
         cache::InstanceCache,
@@ -23,7 +22,6 @@ use crate::{
     },
     store::StoreInner,
     Error,
-    Func,
     FuncRef,
     Store,
 };
@@ -43,47 +41,12 @@ mod store;
 mod table;
 mod unary;
 
-macro_rules! forward_call {
-    ($expr:expr) => {{
-        if let CallOutcome::Call {
-            results,
-            host_func,
-            call_kind,
-        } = $expr?
-        {
-            return Ok(WasmOutcome::Call {
-                results,
-                host_func,
-                call_kind,
-            });
-        }
-    }};
-}
-
 macro_rules! forward_return {
     ($expr:expr) => {{
         if let ReturnOutcome::Host = $expr {
-            return Ok(WasmOutcome::Return);
+            return Ok(());
         }
     }};
-}
-
-/// The outcome of a Wasm execution.
-///
-/// # Note
-///
-/// A Wasm execution includes everything but host calls.
-/// In other words: Everything in between host calls is a Wasm execution.
-#[derive(Debug, Copy, Clone)]
-pub enum WasmOutcome {
-    /// The Wasm execution has ended and returns to the host side.
-    Return,
-    /// The Wasm execution calls a host function.
-    Call {
-        results: RegisterSpan,
-        host_func: Func,
-        call_kind: CallKind,
-    },
 }
 
 /// Executes compiled function instructions until either
@@ -103,7 +66,7 @@ pub fn execute_instrs<'engine, T>(
     call_stack: &'engine mut CallStack,
     code_map: &'engine CodeMap,
     func_types: &'engine FuncTypeRegistry,
-) -> Result<WasmOutcome, Error> {
+) -> Result<(), Error> {
     Executor::new(cache, value_stack, call_stack, code_map, func_types).execute(store)
 }
 
@@ -174,7 +137,7 @@ impl<'engine> Executor<'engine> {
 
     /// Executes the function frame until it returns or traps.
     #[inline(always)]
-    fn execute<T>(mut self, store: &mut Store<T>) -> Result<WasmOutcome, Error> {
+    fn execute<T>(mut self, store: &mut Store<T>) -> Result<(), Error> {
         use Instruction as Instr;
         loop {
             match *self.ip.get() {
@@ -330,16 +293,16 @@ impl<'engine> Executor<'engine> {
                     self.execute_return_call_internal(&mut store.inner, func)?
                 }
                 Instr::ReturnCallImported0 { func } => {
-                    forward_call!(self.execute_return_call_imported_0::<T>(store, func))
+                    self.execute_return_call_imported_0::<T>(store, func)?
                 }
                 Instr::ReturnCallImported { func } => {
-                    forward_call!(self.execute_return_call_imported::<T>(store, func))
+                    self.execute_return_call_imported::<T>(store, func)?
                 }
                 Instr::ReturnCallIndirect0 { func_type } => {
-                    forward_call!(self.execute_return_call_indirect_0::<T>(store, func_type))
+                    self.execute_return_call_indirect_0::<T>(store, func_type)?
                 }
                 Instr::ReturnCallIndirect { func_type } => {
-                    forward_call!(self.execute_return_call_indirect::<T>(store, func_type))
+                    self.execute_return_call_indirect::<T>(store, func_type)?
                 }
                 Instr::CallInternal0 { results, func } => {
                     self.execute_call_internal_0(&mut store.inner, results, func)?
@@ -348,16 +311,16 @@ impl<'engine> Executor<'engine> {
                     self.execute_call_internal(&mut store.inner, results, func)?
                 }
                 Instr::CallImported0 { results, func } => {
-                    forward_call!(self.execute_call_imported_0::<T>(store, results, func))
+                    self.execute_call_imported_0::<T>(store, results, func)?
                 }
                 Instr::CallImported { results, func } => {
-                    forward_call!(self.execute_call_imported::<T>(store, results, func))
+                    self.execute_call_imported::<T>(store, results, func)?
                 }
                 Instr::CallIndirect0 { results, func_type } => {
-                    forward_call!(self.execute_call_indirect_0::<T>(store, results, func_type))
+                    self.execute_call_indirect_0::<T>(store, results, func_type)?
                 }
                 Instr::CallIndirect { results, func_type } => {
-                    forward_call!(self.execute_call_indirect::<T>(store, results, func_type))
+                    self.execute_call_indirect::<T>(store, results, func_type)?
                 }
                 Instr::Select {
                     result,
