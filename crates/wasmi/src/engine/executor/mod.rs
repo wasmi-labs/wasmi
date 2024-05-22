@@ -20,7 +20,6 @@ use crate::{
     Error,
     Func,
     FuncEntity,
-    Instance,
     StoreContextMut,
 };
 
@@ -244,7 +243,7 @@ impl<'engine> EngineExecutor<'engine> {
                     *value = param;
                 }
                 let host_func = *host_func;
-                self.dispatch_host_func(ctx.as_context_mut(), host_func, HostFuncCaller::Root)?;
+                self.dispatch_host_func(ctx.as_context_mut(), host_func)?;
             }
         };
         let results = self.write_results_back(results);
@@ -316,32 +315,12 @@ impl<'engine> EngineExecutor<'engine> {
     }
 }
 
-/// The caller of a host function call.
-#[derive(Debug, Copy, Clone)]
-enum HostFuncCaller {
-    /// The host-side is itself the caller of the host function.
-    Root,
-}
-
-impl HostFuncCaller {
-    /// Returns the [`RegisterSpan`] if `self` is a Wasm caller, otherwise returns `None`.
-    pub fn results(&self) -> Option<RegisterSpan> {
-        None
-    }
-
-    /// Returns the [`Instance`] if `self` is a Wasm caller, otherwise returns `None`.
-    pub fn instance(&self) -> Option<&Instance> {
-        None
-    }
-}
-
 impl<'engine> EngineExecutor<'engine> {
     /// Dispatches a host function call and returns its result.
     fn dispatch_host_func<T>(
         &mut self,
         ctx: StoreContextMut<T>,
         host_func: HostFuncEntity,
-        caller: HostFuncCaller,
     ) -> Result<(), Error> {
         // The host function signature is required for properly
         // adjusting, inspecting and manipulating the value stack.
@@ -370,7 +349,7 @@ impl<'engine> EngineExecutor<'engine> {
             .resolve_trampoline(host_func.trampoline())
             .clone();
         trampoline
-            .call(ctx, caller.instance(), params_results)
+            .call(ctx, None, params_results)
             .map_err(|error| {
                 // Note: We drop the values that have been temporarily added to
                 //       the stack to act as parameter and result buffer for the
@@ -380,34 +359,6 @@ impl<'engine> EngineExecutor<'engine> {
                 self.stack.values.drop(max_inout);
                 error
             })?;
-        if let Some(results) = caller.results() {
-            // Now the results need to be written back to where the caller expects them.
-            let caller_offset = self
-                .stack
-                .calls
-                .peek()
-                .expect("caller must be on the stack")
-                .base_offset();
-            // # Safety (1)
-            //
-            // We can safely acquire the stack pointer to the caller's and callee's (host)
-            // call frames because we just allocated the host call frame and can be sure that
-            // they are different.
-            // In the following we make sure to not access registers out of bounds of each
-            // call frame since we rely on Wasm validation and proper Wasm translation to
-            // provide us with valid result registers.
-            let mut caller_sp = unsafe { self.stack.values.stack_ptr_at(caller_offset) };
-            // # Safety: See Safety (1) above.
-            let callee_sp = unsafe { self.stack.values.stack_ptr_last_n(max_inout) };
-            let results = results.iter(len_outputs);
-            let values = RegisterSpan::new(Register::from_i16(0)).iter(len_outputs);
-            for (result, value) in results.zip(values) {
-                // # Safety: See Safety (1) above.
-                unsafe { caller_sp.set(result, callee_sp.get(value)) };
-            }
-            // Finally, the value stack needs to be truncated to its original size.
-            self.stack.values.drop(max_inout);
-        }
         Ok(())
     }
 
