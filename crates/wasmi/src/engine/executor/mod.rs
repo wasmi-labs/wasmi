@@ -15,16 +15,15 @@ use crate::{
         ResumableInvocation,
     },
     func::HostFuncEntity,
-    AsContext,
-    AsContextMut,
     Error,
     Func,
     FuncEntity,
+    Store,
     StoreContextMut,
 };
 
 #[cfg(doc)]
-use crate::{engine::StackLimits, Store};
+use crate::engine::StackLimits;
 
 mod instrs;
 mod stack;
@@ -49,8 +48,8 @@ impl EngineInner {
     {
         let res = self.res.read();
         let mut stack = self.stacks.lock().reuse_or_new();
-        let results =
-            EngineExecutor::new(&res, &mut stack).execute_root_func(ctx, func, params, results);
+        let results = EngineExecutor::new(&res, &mut stack)
+            .execute_root_func(ctx.store, func, params, results);
         self.stacks.lock().recycle(stack);
         results
     }
@@ -64,7 +63,7 @@ impl EngineInner {
     /// If the Wasm execution traps or runs out of resources.
     pub fn execute_func_resumable<T, Results>(
         &self,
-        mut ctx: StoreContextMut<T>,
+        ctx: StoreContextMut<T>,
         func: &Func,
         params: impl CallParams,
         results: Results,
@@ -72,14 +71,11 @@ impl EngineInner {
     where
         Results: CallResults,
     {
+        let store = ctx.store;
         let res = self.res.read();
         let mut stack = self.stacks.lock().reuse_or_new();
-        let results = EngineExecutor::new(&res, &mut stack).execute_root_func(
-            ctx.as_context_mut(),
-            func,
-            params,
-            results,
-        );
+        let results =
+            EngineExecutor::new(&res, &mut stack).execute_root_func(store, func, params, results);
         match results {
             Ok(results) => {
                 self.stacks.lock().recycle(stack);
@@ -91,7 +87,7 @@ impl EngineInner {
                     let caller_results = *error.caller_results();
                     let host_error = error.into_error();
                     Ok(ResumableCallBase::Resumable(ResumableInvocation::new(
-                        ctx.as_context().store.engine().clone(),
+                        store.engine().clone(),
                         *func,
                         host_func,
                         host_error,
@@ -128,7 +124,7 @@ impl EngineInner {
         let host_func = invocation.host_func();
         let caller_results = invocation.caller_results();
         let results = EngineExecutor::new(&res, &mut invocation.stack).resume_func(
-            ctx,
+            ctx.store,
             host_func,
             params,
             caller_results,
@@ -168,7 +164,7 @@ impl<'engine> EngineExecutor<'engine> {
     /// Creates a new [`EngineExecutor`] with the given [`StackLimits`].
     ///
     /// [`StackLimits`]: []
-    pub fn new(res: &'engine EngineResources, stack: &'engine mut Stack) -> Self {
+    fn new(res: &'engine EngineResources, stack: &'engine mut Stack) -> Self {
         Self { res, stack }
     }
 
@@ -181,9 +177,9 @@ impl<'engine> EngineExecutor<'engine> {
     /// - If the given `params` do not match the expected parameters of `func`.
     /// - If the given `results` do not match the the length of the expected results of `func`.
     /// - When encountering a Wasm or host trap during the execution of `func`.
-    pub fn execute_root_func<T, Results>(
+    fn execute_root_func<T, Results>(
         &mut self,
-        mut ctx: StoreContextMut<T>,
+        store: &mut Store<T>,
         func: &Func,
         params: impl CallParams,
         results: Results,
@@ -192,7 +188,7 @@ impl<'engine> EngineExecutor<'engine> {
         Results: CallResults,
     {
         self.stack.reset();
-        match ctx.as_context().store.inner.resolve_func(func) {
+        match store.inner.resolve_func(func) {
             FuncEntity::Wasm(wasm_func) => {
                 // We reserve space on the stack to write the results of the root function execution.
                 let len_results = results.len_results();
@@ -201,11 +197,10 @@ impl<'engine> EngineExecutor<'engine> {
                 unsafe { self.stack.values.extend_zeros(len_results) };
                 let instance = *wasm_func.instance();
                 let compiled_func = wasm_func.func_body();
-                let ctx = ctx.as_context_mut();
                 let compiled_func = self
                     .res
                     .code_map
-                    .get(Some(ctx.store.inner.fuel_mut()), compiled_func)?;
+                    .get(Some(store.inner.fuel_mut()), compiled_func)?;
                 let (base_ptr, frame_ptr) = self.stack.values.alloc_call_frame(compiled_func)?;
                 // Safety: We use the `base_ptr` that we just received upon allocating the new
                 //         call frame which is guaranteed to be valid for this particular operation
@@ -220,7 +215,7 @@ impl<'engine> EngineExecutor<'engine> {
                     RegisterSpan::new(Register::from_i16(0)),
                     instance,
                 ))?;
-                self.execute_func(ctx)?;
+                self.execute_func(store)?;
             }
             FuncEntity::Host(host_func) => {
                 // The host function signature is required for properly
@@ -243,7 +238,7 @@ impl<'engine> EngineExecutor<'engine> {
                     *value = param;
                 }
                 let host_func = *host_func;
-                self.dispatch_host_func(ctx.as_context_mut(), host_func)?;
+                self.dispatch_host_func(store, host_func)?;
             }
         };
         let results = self.write_results_back(results);
@@ -259,9 +254,9 @@ impl<'engine> EngineExecutor<'engine> {
     /// - If the given `params` do not match the expected parameters of `func`.
     /// - If the given `results` do not match the the length of the expected results of `func`.
     /// - When encountering a Wasm or host trap during the execution of `func`.
-    pub fn resume_func<T, Results>(
+    fn resume_func<T, Results>(
         &mut self,
-        mut ctx: StoreContextMut<T>,
+        store: &mut Store<T>,
         _host_func: Func,
         params: impl CallParams,
         caller_results: RegisterSpan,
@@ -281,7 +276,7 @@ impl<'engine> EngineExecutor<'engine> {
         for (result, param) in caller_results.iter(len_params).zip(call_params) {
             unsafe { caller_sp.set(result, param) };
         }
-        self.execute_func(ctx.as_context_mut())?;
+        self.execute_func(store)?;
         let results = self.write_results_back(results);
         Ok(results)
     }
@@ -292,7 +287,7 @@ impl<'engine> EngineExecutor<'engine> {
     ///
     /// When encountering a Wasm or host trap during execution.
     #[inline(always)]
-    fn execute_func<T>(&mut self, ctx: StoreContextMut<T>) -> Result<(), Error> {
+    fn execute_func<T>(&mut self, store: &mut Store<T>) -> Result<(), Error> {
         let mut cache = self
             .stack
             .calls
@@ -305,7 +300,7 @@ impl<'engine> EngineExecutor<'engine> {
         let code_map = &self.res.code_map;
         let func_types = &self.res.func_types;
         execute_instrs(
-            ctx.store,
+            store,
             &mut cache,
             value_stack,
             call_stack,
@@ -319,7 +314,7 @@ impl<'engine> EngineExecutor<'engine> {
     /// Dispatches a host function call and returns its result.
     fn dispatch_host_func<T>(
         &mut self,
-        ctx: StoreContextMut<T>,
+        store: &mut Store<T>,
         host_func: HostFuncEntity,
     ) -> Result<(), Error> {
         // The host function signature is required for properly
@@ -343,13 +338,9 @@ impl<'engine> EngineExecutor<'engine> {
         // Now we are ready to perform the host function call.
         // Note: We need to clone the host function due to some borrowing issues.
         //       This should not be a big deal since host functions usually are cheap to clone.
-        let trampoline = ctx
-            .as_context()
-            .store
-            .resolve_trampoline(host_func.trampoline())
-            .clone();
+        let trampoline = store.resolve_trampoline(host_func.trampoline()).clone();
         trampoline
-            .call(ctx, None, params_results)
+            .call(store, None, params_results)
             .map_err(|error| {
                 // Note: We drop the values that have been temporarily added to
                 //       the stack to act as parameter and result buffer for the
