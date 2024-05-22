@@ -9,7 +9,7 @@ use crate::{
         CompiledFuncEntity,
         FuncParams,
     },
-    func::FuncEntity,
+    func::{FuncEntity, HostFuncEntity},
     store::StoreInner,
     Error,
     Func,
@@ -413,90 +413,108 @@ impl<'engine> Executor<'engine> {
                 Ok(())
             }
             FuncEntity::Host(host_func) => {
-                let (input_types, output_types) = self
-                    .func_types
-                    .resolve_func_type(host_func.ty_dedup())
-                    .params_results();
-                let len_params = input_types.len();
-                let len_results = output_types.len();
-                let max_inout = len_params.max(len_results);
-                self.value_stack.reserve(max_inout)?;
-                // Safety: we just called reserve to fit the new values.
-                let offset = unsafe { self.value_stack.extend_zeros(max_inout) };
-                let offset_sp = unsafe { self.value_stack.stack_ptr_at(offset) };
-                // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
-                // [`ValueStack::reserve`] which might invalidate all live [`FrameRegisters`].
-                let caller = match <C as CallContext>::KIND {
-                    CallKind::Nested => self.call_stack.peek().copied(),
-                    CallKind::Tail => self.call_stack.pop(),
-                }
-                .expect("need to have a caller on the call stack");
-                // Safety: we use the base offset of a live call frame on the call stack.
-                self.sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
-                if <C as CallContext>::HAS_PARAMS {
-                    self.copy_call_params(offset_sp);
-                }
-                if matches!(<C as CallContext>::KIND, CallKind::Nested) {
-                    self.update_instr_ptr_at(1);
-                }
-                self.cache.reset();
-                // The host function signature is required for properly
-                // adjusting, inspecting and manipulating the value stack.
-                let (input_types, output_types) = self
-                    .func_types
-                    .resolve_func_type(host_func.ty_dedup())
-                    .params_results();
-                // In case the host function returns more values than it takes
-                // we are required to extend the value stack.
-                let len_inputs = input_types.len();
-                let len_outputs = output_types.len();
-                let max_inout = len_inputs.max(len_outputs);
-                let values = self.value_stack.as_slice_mut();
-                let params_results = FuncParams::new(
-                    values.split_at_mut(values.len() - max_inout).1,
-                    len_inputs,
-                    len_outputs,
-                );
-                // Now we are ready to perform the host function call.
-                // Note: We need to clone the host function due to some borrowing issues.
-                //       This should not be a big deal since host functions usually are cheap to clone.
-                let trampoline = store.resolve_trampoline(host_func.trampoline()).clone();
-                trampoline
-                    .call(store, Some(caller.instance()), params_results)
-                    .map_err(|error| {
-                        // Note: We drop the values that have been temporarily added to
-                        //       the stack to act as parameter and result buffer for the
-                        //       called host function. Since the host function failed we
-                        //       need to clean up the temporary buffer values here.
-                        //       This is required for resumable calls to work properly.
-                        self.value_stack.drop(max_inout);
-                        match self.call_stack.is_empty() {
-                            true => error,
-                            false => ResumableHostError::new(error, *func, results).into(),
-                        }
-                    })?;
-                // # Safety (1)
-                //
-                // We can safely acquire the stack pointer to the caller's and callee's (host)
-                // call frames because we just allocated the host call frame and can be sure that
-                // they are different.
-                // In the following we make sure to not access registers out of bounds of each
-                // call frame since we rely on Wasm validation and proper Wasm translation to
-                // provide us with valid result registers.
-                let mut caller_sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
-                // # Safety: See Safety (1) above.
-                let callee_sp = unsafe { self.value_stack.stack_ptr_last_n(max_inout) };
-                let results = results.iter(len_outputs);
-                let values = RegisterSpan::new(Register::from_i16(0)).iter(len_outputs);
-                for (result, value) in results.zip(values) {
-                    // # Safety: See Safety (1) above.
-                    unsafe { caller_sp.set(result, callee_sp.get(value)) };
-                }
-                // Finally, the value stack needs to be truncated to its original size.
-                self.value_stack.drop(max_inout);
-                Ok(())
+                self.execute_host_func::<C, T>(store, results, func, *host_func)
             }
         }
+    }
+
+    /// Executes a host function.
+    ///
+    /// # Note
+    ///
+    /// This uses the value stack to store paramters and results of the host function call.
+    /// Returns an [`Error::ResumableHost`] variant if the host function returned an error
+    /// and there are still call frames on the call stack making it possible to resume the
+    /// execution at a later point in time.
+    fn execute_host_func<C: CallContext, T>(
+        &mut self,
+        store: &mut Store<T>,
+        results: RegisterSpan,
+        func: &Func,
+        host_func: HostFuncEntity,
+    ) -> Result<(), Error> {
+        let (input_types, output_types) = self
+            .func_types
+            .resolve_func_type(host_func.ty_dedup())
+            .params_results();
+        let len_params = input_types.len();
+        let len_results = output_types.len();
+        let max_inout = len_params.max(len_results);
+        self.value_stack.reserve(max_inout)?;
+        // Safety: we just called reserve to fit the new values.
+        let offset = unsafe { self.value_stack.extend_zeros(max_inout) };
+        let offset_sp = unsafe { self.value_stack.stack_ptr_at(offset) };
+        // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
+        // [`ValueStack::reserve`] which might invalidate all live [`FrameRegisters`].
+        let caller = match <C as CallContext>::KIND {
+            CallKind::Nested => self.call_stack.peek().copied(),
+            CallKind::Tail => self.call_stack.pop(),
+        }
+        .expect("need to have a caller on the call stack");
+        // Safety: we use the base offset of a live call frame on the call stack.
+        self.sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
+        if <C as CallContext>::HAS_PARAMS {
+            self.copy_call_params(offset_sp);
+        }
+        if matches!(<C as CallContext>::KIND, CallKind::Nested) {
+            self.update_instr_ptr_at(1);
+        }
+        self.cache.reset();
+        // The host function signature is required for properly
+        // adjusting, inspecting and manipulating the value stack.
+        let (input_types, output_types) = self
+            .func_types
+            .resolve_func_type(host_func.ty_dedup())
+            .params_results();
+        // In case the host function returns more values than it takes
+        // we are required to extend the value stack.
+        let len_inputs = input_types.len();
+        let len_outputs = output_types.len();
+        let max_inout = len_inputs.max(len_outputs);
+        let values = self.value_stack.as_slice_mut();
+        let params_results = FuncParams::new(
+            values.split_at_mut(values.len() - max_inout).1,
+            len_inputs,
+            len_outputs,
+        );
+        // Now we are ready to perform the host function call.
+        // Note: We need to clone the host function due to some borrowing issues.
+        //       This should not be a big deal since host functions usually are cheap to clone.
+        let trampoline = store.resolve_trampoline(host_func.trampoline()).clone();
+        trampoline
+            .call(store, Some(caller.instance()), params_results)
+            .map_err(|error| {
+                // Note: We drop the values that have been temporarily added to
+                //       the stack to act as parameter and result buffer for the
+                //       called host function. Since the host function failed we
+                //       need to clean up the temporary buffer values here.
+                //       This is required for resumable calls to work properly.
+                self.value_stack.drop(max_inout);
+                match self.call_stack.is_empty() {
+                    true => error,
+                    false => ResumableHostError::new(error, *func, results).into(),
+                }
+            })?;
+        // # Safety (1)
+        //
+        // We can safely acquire the stack pointer to the caller's and callee's (host)
+        // call frames because we just allocated the host call frame and can be sure that
+        // they are different.
+        // In the following we make sure to not access registers out of bounds of each
+        // call frame since we rely on Wasm validation and proper Wasm translation to
+        // provide us with valid result registers.
+        let mut caller_sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
+        // # Safety: See Safety (1) above.
+        let callee_sp = unsafe { self.value_stack.stack_ptr_last_n(max_inout) };
+        let results = results.iter(len_outputs);
+        let values = RegisterSpan::new(Register::from_i16(0)).iter(len_outputs);
+        for (result, value) in results.zip(values) {
+            // # Safety: See Safety (1) above.
+            unsafe { caller_sp.set(result, callee_sp.get(value)) };
+        }
+        // Finally, the value stack needs to be truncated to its original size.
+        self.value_stack.drop(max_inout);
+        Ok(())
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
