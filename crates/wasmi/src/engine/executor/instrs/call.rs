@@ -470,7 +470,7 @@ impl<'engine> Executor<'engine> {
     /// Returns an [`ErrorKind::ResumableHost`] variant if the host function returned an error
     /// and there are still call frames on the call stack making it possible to resume the
     /// execution at a later point in time.
-    /// 
+    ///
     /// [`ErrorKind::ResumableHost`]: crate::error::ErrorKind::ResumableHost
     #[inline(always)]
     fn execute_host_func<C: CallContext, T>(
