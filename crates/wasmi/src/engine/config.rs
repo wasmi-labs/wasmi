@@ -291,7 +291,7 @@ impl Config {
     ///
     /// # Note
     ///
-    /// Disabled by default.
+    /// Enabled by default.
     ///
     /// [`tail-call`]: https://github.com/WebAssembly/tail-calls
     pub fn wasm_tail_call(&mut self, enable: bool) -> &mut Self {
@@ -303,9 +303,9 @@ impl Config {
     ///
     /// # Note
     ///
-    /// Disabled by default.
+    /// Enabled by default.
     ///
-    /// [`tail-call`]: https://github.com/WebAssembly/extended-const
+    /// [`extended-const`]: https://github.com/WebAssembly/extended-const
     pub fn wasm_extended_const(&mut self, enable: bool) -> &mut Self {
         self.extended_const = enable;
         self
