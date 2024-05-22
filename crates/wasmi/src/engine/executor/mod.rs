@@ -311,7 +311,7 @@ impl<'engine> EngineExecutor<'engine> {
         )
     }
 
-    /// Dispatches a host function call and returns its result.
+    /// Convenience forwarder to [`dispatch_host_func`].
     fn dispatch_host_func<T>(
         &mut self,
         store: &mut Store<T>,

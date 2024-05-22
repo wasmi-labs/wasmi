@@ -534,7 +534,7 @@ impl<'engine> Executor<'engine> {
         Ok(())
     }
 
-    /// Convenience forwarder to [`Executor::dispatch_host_func_impl`].
+    /// Convenience forwarder to [`dispatch_host_func`].
     fn dispatch_host_func<T>(
         &mut self,
         store: &mut Store<T>,
