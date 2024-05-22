@@ -164,8 +164,6 @@ pub struct EngineExecutor<'engine> {
 
 impl<'engine> EngineExecutor<'engine> {
     /// Creates a new [`EngineExecutor`] with the given [`StackLimits`].
-    ///
-    /// [`StackLimits`]: []
     fn new(res: &'engine EngineResources, stack: &'engine mut Stack) -> Self {
         Self { res, stack }
     }
