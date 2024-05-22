@@ -1050,6 +1050,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic unary [`Instruction`].
+    #[inline(always)]
     fn execute_unary(&mut self, instr: UnaryInstr, op: fn(UntypedVal) -> UntypedVal) {
         let value = self.get_register(instr.input);
         self.set_register(instr.result, op(value));
@@ -1057,6 +1058,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a fallible generic unary [`Instruction`].
+    #[inline(always)]
     fn try_execute_unary(
         &mut self,
         instr: UnaryInstr,
@@ -1068,6 +1070,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic binary [`Instruction`].
+    #[inline(always)]
     fn execute_binary(&mut self, instr: BinInstr, op: fn(UntypedVal, UntypedVal) -> UntypedVal) {
         let lhs = self.get_register(instr.lhs);
         let rhs = self.get_register(instr.rhs);
@@ -1076,6 +1079,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic binary [`Instruction`].
+    #[inline(always)]
     fn execute_binary_imm16<T>(
         &mut self,
         instr: BinInstrImm16<T>,
@@ -1091,6 +1095,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic binary [`Instruction`] with reversed operands.
+    #[inline(always)]
     fn execute_binary_imm16_rev<T>(
         &mut self,
         instr: BinInstrImm16<T>,
@@ -1106,6 +1111,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a fallible generic binary [`Instruction`].
+    #[inline(always)]
     fn try_execute_binary(
         &mut self,
         instr: BinInstr,
@@ -1118,6 +1124,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a fallible generic binary [`Instruction`].
+    #[inline(always)]
     fn try_execute_divrem_imm16<NonZeroT>(
         &mut self,
         instr: BinInstrImm16<NonZeroT>,
@@ -1133,6 +1140,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a fallible generic binary [`Instruction`].
+    #[inline(always)]
     fn execute_divrem_imm16<NonZeroT>(
         &mut self,
         instr: BinInstrImm16<NonZeroT>,
@@ -1147,6 +1155,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a fallible generic binary [`Instruction`] with reversed operands.
+    #[inline(always)]
     fn try_execute_binary_imm16_rev<T>(
         &mut self,
         instr: BinInstrImm16<T>,

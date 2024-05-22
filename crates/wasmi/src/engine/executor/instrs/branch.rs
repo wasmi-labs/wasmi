@@ -92,6 +92,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic fused compare and branch instruction.
+    #[inline(always)]
     fn execute_branch_binop<T>(&mut self, instr: BranchBinOpInstr, f: fn(T, T) -> bool)
     where
         T: From<UntypedVal>,
@@ -100,6 +101,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic fused compare and branch instruction with raw inputs.
+    #[inline]
     fn execute_branch_binop_raw<T>(
         &mut self,
         lhs: Register,
@@ -118,6 +120,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic fused compare and branch instruction with immediate `rhs` operand.
+    #[inline(always)]
     fn execute_branch_binop_imm<T>(&mut self, instr: BranchBinOpInstrImm16<T>, f: fn(T, T) -> bool)
     where
         T: From<UntypedVal> + From<Const16<T>>,

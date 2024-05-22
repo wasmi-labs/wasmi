@@ -59,6 +59,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `global.set` instruction.
+    #[inline(always)]
     fn execute_global_set_impl(
         &mut self,
         store: &mut StoreInner,

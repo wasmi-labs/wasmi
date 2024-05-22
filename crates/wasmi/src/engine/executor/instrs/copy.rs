@@ -8,6 +8,7 @@ use smallvec::SmallVec;
 
 impl<'engine> Executor<'engine> {
     /// Executes a generic `copy` [`Instruction`].
+    #[inline(always)]
     fn execute_copy_impl<T>(
         &mut self,
         result: Register,

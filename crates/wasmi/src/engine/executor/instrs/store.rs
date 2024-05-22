@@ -52,6 +52,7 @@ impl<'engine> Executor<'engine> {
         Ok(())
     }
 
+    #[inline(always)]
     fn execute_store(
         &mut self,
         store: &mut StoreInner,
@@ -69,6 +70,7 @@ impl<'engine> Executor<'engine> {
         self.try_next_instr_at(2)
     }
 
+    #[inline(always)]
     fn execute_store_offset16(
         &mut self,
         store: &mut StoreInner,
@@ -85,6 +87,7 @@ impl<'engine> Executor<'engine> {
         self.try_next_instr()
     }
 
+    #[inline(always)]
     fn execute_store_offset16_imm16<T, V>(
         &mut self,
         store: &mut StoreInner,
@@ -104,6 +107,7 @@ impl<'engine> Executor<'engine> {
         self.try_next_instr()
     }
 
+    #[inline(always)]
     fn execute_store_at(
         &mut self,
         store: &mut StoreInner,
@@ -120,6 +124,7 @@ impl<'engine> Executor<'engine> {
         self.try_next_instr()
     }
 
+    #[inline(always)]
     fn execute_store_at_imm16<T, V>(
         &mut self,
         store: &mut StoreInner,

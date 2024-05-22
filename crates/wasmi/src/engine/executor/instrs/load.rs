@@ -43,6 +43,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `load` [`Instruction`].
+    #[inline(always)]
     fn execute_load_impl(
         &mut self,
         store: &mut StoreInner,
@@ -56,6 +57,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `load_at` [`Instruction`].
+    #[inline(always)]
     fn execute_load_at_impl(
         &mut self,
         store: &mut StoreInner,
@@ -74,6 +76,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `load_offset16` [`Instruction`].
+    #[inline(always)]
     fn execute_load_offset16_impl(
         &mut self,
         store: &mut StoreInner,

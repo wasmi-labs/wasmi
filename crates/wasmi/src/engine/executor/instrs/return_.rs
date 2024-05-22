@@ -48,6 +48,7 @@ impl<'engine> Executor<'engine> {
     /// Returns the [`FrameRegisters`] of the caller and the [`RegisterSpan`] of the results.
     ///
     /// The returned [`FrameRegisters`] is valid for all [`Register`] in the returned [`RegisterSpan`].
+    #[inline(always)]
     fn return_caller_results(&mut self) -> (FrameRegisters, RegisterSpan) {
         let (callee, caller) = self
             .call_stack
@@ -79,6 +80,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Execute a generic return [`Instruction`] returning a single value.
+    #[inline(always)]
     fn execute_return_value<T>(
         &mut self,
         value: T,
@@ -113,6 +115,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::ReturnReg2`] or [`Instruction::ReturnReg3`] generically.
+    #[inline(always)]
     fn execute_return_reg_n_impl<const N: usize>(
         &mut self,
         values: [Register; N],
@@ -203,6 +206,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Execute a generic conditional return [`Instruction`].
+    #[inline(always)]
     fn execute_return_nez_impl<T>(
         &mut self,
         condition: Register,
