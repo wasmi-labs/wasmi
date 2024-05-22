@@ -490,6 +490,9 @@ impl<'engine> Executor<'engine> {
                 //       need to clean up the temporary buffer values here.
                 //       This is required for resumable calls to work properly.
                 self.value_stack.drop(max_inout);
+                error
+            })
+            .map_err(|error| {
                 match self.call_stack.is_empty() {
                     true => error,
                     false => ResumableHostError::new(error, *func, results).into(),
