@@ -60,6 +60,12 @@ impl CallStack {
         self.calls.len()
     }
 
+    /// Returns `true` if the [`CallStack`] is empty.
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     /// Pushes a [`CallFrame`] onto the [`CallStack`].
     ///
     /// # Errors

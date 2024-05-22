@@ -426,10 +426,11 @@ impl<'engine> Executor<'engine> {
                 let offset_sp = unsafe { self.value_stack.stack_ptr_at(offset) };
                 // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
                 // [`ValueStack::reserve`] which might invalidate all live [`FrameRegisters`].
-                let caller = *self
-                    .call_stack
-                    .peek()
-                    .expect("need to have a caller on the call stack");
+                let caller = match <C as CallContext>::KIND {
+                    CallKind::Nested => self.call_stack.peek().copied(),
+                    CallKind::Tail => self.call_stack.pop(),
+                }
+                .expect("need to have a caller on the call stack");
                 // Safety: we use the base offset of a live call frame on the call stack.
                 self.sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
                 if <C as CallContext>::HAS_PARAMS {
@@ -469,7 +470,10 @@ impl<'engine> Executor<'engine> {
                         //       need to clean up the temporary buffer values here.
                         //       This is required for resumable calls to work properly.
                         self.value_stack.drop(max_inout);
-                        ResumableHostError::new(error, *func, results)
+                        match self.call_stack.is_empty() {
+                            true => error,
+                            false => ResumableHostError::new(error, *func, results).into(),
+                        }
                     })?;
                 // # Safety (1)
                 //
@@ -490,9 +494,6 @@ impl<'engine> Executor<'engine> {
                 }
                 // Finally, the value stack needs to be truncated to its original size.
                 self.value_stack.drop(max_inout);
-                if matches!(<C as CallContext>::KIND, CallKind::Tail) {
-                    self.call_stack.pop();
-                }
                 Ok(())
             }
         }
