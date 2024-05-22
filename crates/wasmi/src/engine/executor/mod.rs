@@ -1,6 +1,9 @@
 pub use self::instrs::ResumableHostError;
 pub(crate) use self::stack::Stack;
-use self::{instrs::execute_instrs, stack::CallFrame};
+use self::{
+    instrs::{dispatch_host_func, execute_instrs},
+    stack::CallFrame,
+};
 use crate::{
     engine::{
         bytecode::{Register, RegisterSpan},
@@ -10,7 +13,6 @@ use crate::{
         CallResults,
         EngineInner,
         EngineResources,
-        FuncParams,
         ResumableCallBase,
         ResumableInvocation,
     },
@@ -308,48 +310,20 @@ impl<'engine> EngineExecutor<'engine> {
             func_types,
         )
     }
-}
 
-impl<'engine> EngineExecutor<'engine> {
     /// Dispatches a host function call and returns its result.
     fn dispatch_host_func<T>(
         &mut self,
         store: &mut Store<T>,
         host_func: HostFuncEntity,
     ) -> Result<(), Error> {
-        // The host function signature is required for properly
-        // adjusting, inspecting and manipulating the value stack.
-        let (input_types, output_types) = self
-            .res
-            .func_types
-            .resolve_func_type(host_func.ty_dedup())
-            .params_results();
-        // In case the host function returns more values than it takes
-        // we are required to extend the value stack.
-        let len_inputs = input_types.len();
-        let len_outputs = output_types.len();
-        let max_inout = len_inputs.max(len_outputs);
-        let values = self.stack.values.as_slice_mut();
-        let params_results = FuncParams::new(
-            values.split_at_mut(values.len() - max_inout).1,
-            len_inputs,
-            len_outputs,
-        );
-        // Now we are ready to perform the host function call.
-        // Note: We need to clone the host function due to some borrowing issues.
-        //       This should not be a big deal since host functions usually are cheap to clone.
-        let trampoline = store.resolve_trampoline(host_func.trampoline()).clone();
-        trampoline
-            .call(store, None, params_results)
-            .map_err(|error| {
-                // Note: We drop the values that have been temporarily added to
-                //       the stack to act as parameter and result buffer for the
-                //       called host function. Since the host function failed we
-                //       need to clean up the temporary buffer values here.
-                //       This is required for resumable calls to work properly.
-                self.stack.values.drop(max_inout);
-                error
-            })?;
+        dispatch_host_func(
+            store,
+            &self.res.func_types,
+            &mut self.stack.values,
+            host_func,
+            None,
+        )?;
         Ok(())
     }
 

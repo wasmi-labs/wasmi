@@ -1,4 +1,4 @@
-pub use self::call::ResumableHostError;
+pub use self::call::{dispatch_host_func, ResumableHostError};
 use self::return_::ReturnOutcome;
 use crate::{
     core::{TrapCode, UntypedVal},
