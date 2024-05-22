@@ -19,7 +19,7 @@ macro_rules! impl_comparison {
     };
 }
 
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     impl_comparison! {
         (Instruction::I32Eq, execute_i32_eq, UntypedVal::i32_eq),
         (Instruction::I32Ne, execute_i32_ne, UntypedVal::i32_ne),
@@ -71,7 +71,7 @@ macro_rules! impl_comparison_imm16 {
     };
 }
 
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     impl_comparison_imm16! {
         (i32, Instruction::I32EqImm16, execute_i32_eq_imm16, UntypedVal::i32_eq),
         (i32, Instruction::I32NeImm16, execute_i32_ne_imm16, UntypedVal::i32_ne),

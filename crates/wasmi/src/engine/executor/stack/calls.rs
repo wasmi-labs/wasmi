@@ -55,9 +55,15 @@ impl CallStack {
     }
 
     /// Returns the number of [`CallFrame`] on the [`CallStack`].
-    #[inline]
+    #[inline(always)]
     fn len(&self) -> usize {
         self.calls.len()
+    }
+
+    /// Returns `true` if the [`CallStack`] is empty.
+    #[inline(always)]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     /// Pushes a [`CallFrame`] onto the [`CallStack`].
@@ -65,7 +71,7 @@ impl CallStack {
     /// # Errors
     ///
     /// If the recursion limit has been reached.
-    #[inline]
+    #[inline(always)]
     pub fn push(&mut self, call: CallFrame) -> Result<(), TrapCode> {
         if self.len() == self.recursion_limit {
             return Err(err_stack_overflow());
@@ -75,19 +81,19 @@ impl CallStack {
     }
 
     /// Pops the last [`CallFrame`] from the [`CallStack`] if any.
-    #[inline]
+    #[inline(always)]
     pub fn pop(&mut self) -> Option<CallFrame> {
         self.calls.pop()
     }
 
     /// Peeks the last [`CallFrame`] of the [`CallStack`] if any.
-    #[inline]
+    #[inline(always)]
     pub fn peek(&self) -> Option<&CallFrame> {
         self.calls.last()
     }
 
     /// Peeks the last [`CallFrame`] of the [`CallStack`] if any.
-    #[inline]
+    #[inline(always)]
     pub fn peek_mut(&mut self) -> Option<&mut CallFrame> {
         self.calls.last_mut()
     }

@@ -20,7 +20,7 @@ macro_rules! impl_binary {
         )*
     };
 }
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     impl_binary! {
         (Instruction::I32Add, execute_i32_add, UntypedVal::i32_add),
         (Instruction::I32Sub, execute_i32_sub, UntypedVal::i32_sub),
@@ -80,7 +80,7 @@ macro_rules! impl_binary_imm16 {
         )*
     };
 }
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     impl_binary_imm16! {
         (i32, Instruction::I32AddImm16, execute_i32_add_imm16, UntypedVal::i32_add),
         (i32, Instruction::I32MulImm16, execute_i32_mul_imm16, UntypedVal::i32_mul),
@@ -123,7 +123,7 @@ macro_rules! impl_binary_imm16_rev {
         )*
     };
 }
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     impl_binary_imm16_rev! {
         (i32, Instruction::I32SubImm16Rev, execute_i32_sub_imm16_rev, UntypedVal::i32_sub),
         (i64, Instruction::I64SubImm16Rev, execute_i64_sub_imm16_rev, UntypedVal::i64_sub),
@@ -153,7 +153,7 @@ macro_rules! impl_fallible_binary {
         )*
     };
 }
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     impl_fallible_binary! {
         (Instruction::I32DivS, execute_i32_div_s, UntypedVal::i32_div_s),
         (Instruction::I32DivU, execute_i32_div_u, UntypedVal::i32_div_u),
@@ -245,7 +245,7 @@ macro_rules! impl_divrem_s_imm16 {
         )*
     };
 }
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     impl_divrem_s_imm16! {
         (NonZeroI32, Instruction::I32DivSImm16, execute_i32_div_s_imm16, <UntypedVal as DivRemExt>::i32_div_s),
         (NonZeroI32, Instruction::I32RemSImm16, execute_i32_rem_s_imm16, <UntypedVal as DivRemExt>::i32_rem_s),
@@ -266,7 +266,7 @@ macro_rules! impl_divrem_u_imm16 {
         )*
     };
 }
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     impl_divrem_u_imm16! {
         (NonZeroU32, Instruction::I32DivUImm16, execute_i32_div_u_imm16, <UntypedVal as DivRemExt>::i32_div_u),
         (NonZeroU32, Instruction::I32RemUImm16, execute_i32_rem_u_imm16, <UntypedVal as DivRemExt>::i32_rem_u),
@@ -287,7 +287,7 @@ macro_rules! impl_fallible_binary_imm16_rev {
         )*
     };
 }
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     impl_fallible_binary_imm16_rev! {
         (i32, Instruction::I32DivSImm16Rev, execute_i32_div_s_imm16_rev, UntypedVal::i32_div_s),
         (u32, Instruction::I32DivUImm16Rev, execute_i32_div_u_imm16_rev, UntypedVal::i32_div_u),
@@ -301,7 +301,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 }
 
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::F32CopysignImm`].
     #[inline(always)]
     pub fn execute_f32_copysign_imm(&mut self, instr: BinInstrImm<Sign>) {

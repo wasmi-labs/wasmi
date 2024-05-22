@@ -16,7 +16,7 @@ use crate::{
 };
 use core::cmp;
 
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     /// Branches and adjusts the value stack.
     ///
     /// # Note
@@ -92,6 +92,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic fused compare and branch instruction.
+    #[inline(always)]
     fn execute_branch_binop<T>(&mut self, instr: BranchBinOpInstr, f: fn(T, T) -> bool)
     where
         T: From<UntypedVal>,
@@ -100,6 +101,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic fused compare and branch instruction with raw inputs.
+    #[inline(always)]
     fn execute_branch_binop_raw<T>(
         &mut self,
         lhs: Register,
@@ -118,6 +120,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic fused compare and branch instruction with immediate `rhs` operand.
+    #[inline(always)]
     fn execute_branch_binop_imm<T>(&mut self, instr: BranchBinOpInstrImm16<T>, f: fn(T, T) -> bool)
     where
         T: From<UntypedVal> + From<Const16<T>>,
@@ -199,7 +202,7 @@ fn cmp_i32_xor_eqz(a: i32, b: i32) -> bool {
 
 macro_rules! impl_execute_branch_binop {
     ( $( ($ty:ty, Instruction::$op_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
-        impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+        impl<'engine> Executor<'engine> {
             $(
                 #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
                 #[inline(always)]
@@ -256,7 +259,7 @@ impl_execute_branch_binop! {
 
 macro_rules! impl_execute_branch_binop_imm {
     ( $( ($ty:ty, Instruction::$op_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
-        impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+        impl<'engine> Executor<'engine> {
             $(
                 #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
                 #[inline(always)]
@@ -297,7 +300,7 @@ impl_execute_branch_binop_imm! {
     (u64, Instruction::BranchI64GeUImm, execute_branch_i64_ge_u_imm, cmp_ge),
 }
 
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::BranchCmpFallback`].
     pub fn execute_branch_cmp_fallback(&mut self, lhs: Register, rhs: Register, params: Register) {
         use BranchComparator as C;
