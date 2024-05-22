@@ -292,8 +292,8 @@ impl<'engine> EngineExecutor<'engine> {
     /// # Errors
     ///
     /// When encountering a Wasm or host trap during execution.
-    #[inline(never)]
-    fn execute_func<T>(&mut self, mut ctx: StoreContextMut<T>) -> Result<(), Error> {
+    #[inline(always)]
+    fn execute_func<T>(&mut self, ctx: StoreContextMut<T>) -> Result<(), Error> {
         let mut cache = self
             .stack
             .calls
@@ -301,7 +301,18 @@ impl<'engine> EngineExecutor<'engine> {
             .map(CallFrame::instance)
             .map(InstanceCache::from)
             .expect("must have frame on the call stack");
-        self.execute_compiled_func(ctx.as_context_mut(), &mut cache)
+        let value_stack = &mut self.stack.values;
+        let call_stack = &mut self.stack.calls;
+        let code_map = &self.res.code_map;
+        let func_types = &self.res.func_types;
+        execute_instrs(
+            ctx.store,
+            &mut cache,
+            value_stack,
+            call_stack,
+            code_map,
+            func_types,
+        )
     }
 }
 
@@ -398,36 +409,6 @@ impl<'engine> EngineExecutor<'engine> {
             self.stack.values.drop(max_inout);
         }
         Ok(())
-    }
-
-    /// Executes the given function `frame`.
-    ///
-    /// # Note
-    ///
-    /// This executes Wasm instructions until either the execution calls
-    /// into a host function or the Wasm execution has come to an end.
-    ///
-    /// # Errors
-    ///
-    /// If the Wasm execution traps.
-    #[inline(always)]
-    fn execute_compiled_func<T>(
-        &mut self,
-        ctx: StoreContextMut<T>,
-        cache: &mut InstanceCache,
-    ) -> Result<(), Error> {
-        let value_stack = &mut self.stack.values;
-        let call_stack = &mut self.stack.calls;
-        let code_map = &self.res.code_map;
-        let func_types = &self.res.func_types;
-        execute_instrs(
-            ctx.store,
-            cache,
-            value_stack,
-            call_stack,
-            code_map,
-            func_types,
-        )
     }
 
     /// Writes the results of the function execution back into the `results` buffer.
