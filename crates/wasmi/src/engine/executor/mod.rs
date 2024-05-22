@@ -104,22 +104,7 @@ impl EngineInner {
                     self.stacks.lock().recycle(stack);
                     Err(error)
                 }
-            }, // Err(TaggedTrap::Wasm(error)) => {
-               //     self.stacks.lock().recycle(stack);
-               //     Err(error)
-               // }
-               // Err(TaggedTrap::Host {
-               //     host_func,
-               //     host_error,
-               //     caller_results,
-               // }) => Ok(ResumableCallBase::Resumable(ResumableInvocation::new(
-               //     ctx.as_context().store.engine().clone(),
-               //     *func,
-               //     host_func,
-               //     host_error,
-               //     caller_results,
-               //     stack,
-               // ))),
+            },
         }
     }
 
