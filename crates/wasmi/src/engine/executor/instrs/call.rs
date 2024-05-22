@@ -28,6 +28,7 @@ use std::fmt;
 /// # Errors
 ///
 /// Returns the error of the host function if an error occurred.
+#[inline(always)]
 pub fn dispatch_host_func<T>(
     store: &mut Store<T>,
     func_types: &FuncTypeRegistry,
@@ -154,7 +155,7 @@ impl<'engine> Executor<'engine> {
     /// # Note
     ///
     /// The `offset` denotes how many [`Instruction`] words make up the call instruction.
-    #[inline]
+    #[inline(always)]
     fn update_instr_ptr_at(&mut self, offset: usize) {
         // Note: we explicitly do not mutate `self.ip` since that would make
         // other parts of the code more fragile with respect to instruction ordering.
@@ -275,7 +276,7 @@ impl<'engine> Executor<'engine> {
     ///
     /// This will make the [`InstructionPtr`] point to the [`Instruction`] following the
     /// last [`Instruction::RegisterList`] if any.
-    #[inline]
+    #[inline(always)]
     #[cold]
     fn copy_call_params_list(&mut self, dst: &mut Register, callee_regs: &mut FrameRegisters) {
         while let Instruction::RegisterList(values) = self.ip.get() {
@@ -417,7 +418,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CallImported0`].
-    #[inline(never)]
+    #[inline(always)]
     pub fn execute_call_imported_0<T>(
         &mut self,
         store: &mut Store<T>,
@@ -429,7 +430,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CallImported`].
-    #[inline(never)]
+    #[inline(always)]
     pub fn execute_call_imported<T>(
         &mut self,
         store: &mut Store<T>,
@@ -471,6 +472,7 @@ impl<'engine> Executor<'engine> {
     /// execution at a later point in time.
     /// 
     /// [`ErrorKind::ResumableHost`]: crate::error::ErrorKind::ResumableHost
+    #[inline(always)]
     fn execute_host_func<C: CallContext, T>(
         &mut self,
         store: &mut Store<T>,
@@ -537,6 +539,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Convenience forwarder to [`dispatch_host_func`].
+    #[inline(always)]
     fn dispatch_host_func<T>(
         &mut self,
         store: &mut Store<T>,
@@ -553,7 +556,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
-    #[inline(never)]
+    #[inline(always)]
     pub fn execute_return_call_indirect_0<T>(
         &mut self,
         store: &mut Store<T>,
@@ -567,7 +570,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
-    #[inline(never)]
+    #[inline(always)]
     pub fn execute_return_call_indirect<T>(
         &mut self,
         store: &mut Store<T>,
@@ -581,7 +584,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
-    #[inline(never)]
+    #[inline(always)]
     pub fn execute_call_indirect_0<T>(
         &mut self,
         store: &mut Store<T>,
@@ -595,7 +598,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CallIndirect`].
-    #[inline(never)]
+    #[inline(always)]
     pub fn execute_call_indirect<T>(
         &mut self,
         store: &mut Store<T>,

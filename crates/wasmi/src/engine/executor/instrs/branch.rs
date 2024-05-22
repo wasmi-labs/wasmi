@@ -101,7 +101,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic fused compare and branch instruction with raw inputs.
-    #[inline]
+    #[inline(always)]
     fn execute_branch_binop_raw<T>(
         &mut self,
         lhs: Register,

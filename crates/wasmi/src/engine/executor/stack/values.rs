@@ -215,7 +215,7 @@ impl ValueStack {
     /// # Panics (Debug)
     ///
     /// If `amount` is greater than the [`ValueStack`] height.
-    #[inline]
+    #[inline(always)]
     pub fn drop(&mut self, amount: usize) {
         assert!(self.len() >= amount);
         // Safety: we just asserted that the current length is large enough to not underflow.
@@ -227,7 +227,7 @@ impl ValueStack {
     /// # Panics (Debug)
     ///
     /// If `new_sp` is greater than the current [`ValueStack`] pointer.
-    #[inline]
+    #[inline(always)]
     pub fn truncate(&mut self, new_len: impl Into<ValueStackOffset>) {
         let new_len = new_len.into().0;
         assert!(new_len <= self.len());
@@ -291,13 +291,13 @@ impl ValueStack {
     }
 
     /// Returns a shared slice over the values of the [`ValueStack`].
-    #[inline]
+    #[inline(always)]
     pub fn as_slice(&self) -> &[UntypedVal] {
         self.values.as_slice()
     }
 
     /// Returns an exclusive slice over the values of the [`ValueStack`].
-    #[inline]
+    #[inline(always)]
     pub fn as_slice_mut(&mut self) -> &mut [UntypedVal] {
         self.values.as_mut_slice()
     }
@@ -312,7 +312,7 @@ impl ValueStack {
     /// make sure to properly reinstantiate all those pointers after this operation.
     /// - This also invalidates all [`FrameValueStackOffset`] and [`BaseValueStackOffset`] indices
     /// within the range `from..`.
-    #[inline]
+    #[inline(always)]
     pub fn drain(&mut self, from: FrameValueStackOffset, to: FrameValueStackOffset) -> usize {
         debug_assert!(from <= to);
         let from = from.0 .0;

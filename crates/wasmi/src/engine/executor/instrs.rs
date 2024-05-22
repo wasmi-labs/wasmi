@@ -997,7 +997,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Returns the [`FrameRegisters`] of the [`CallFrame`].
-    #[inline]
+    #[inline(always)]
     fn frame_stack_ptr(&mut self, frame: &CallFrame) -> FrameRegisters {
         Self::frame_stack_ptr_impl(self.value_stack, frame)
     }

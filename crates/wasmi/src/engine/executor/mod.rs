@@ -310,6 +310,7 @@ impl<'engine> EngineExecutor<'engine> {
     }
 
     /// Convenience forwarder to [`dispatch_host_func`].
+    #[inline(always)]
     fn dispatch_host_func<T>(
         &mut self,
         store: &mut Store<T>,
@@ -334,7 +335,7 @@ impl<'engine> EngineExecutor<'engine> {
     /// # Panics
     ///
     /// - If the `results` buffer length does not match the remaining amount of stack values.
-    #[inline]
+    #[inline(always)]
     fn write_results_back<Results>(&mut self, results: Results) -> <Results as CallResults>::Results
     where
         Results: CallResults,
