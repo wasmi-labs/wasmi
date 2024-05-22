@@ -301,8 +301,7 @@ impl<'engine> EngineExecutor<'engine> {
             .map(CallFrame::instance)
             .map(InstanceCache::from)
             .expect("must have frame on the call stack");
-        self.execute_compiled_func(ctx.as_context_mut(), &mut cache)?;
-        Ok(())
+        self.execute_compiled_func(ctx.as_context_mut(), &mut cache)
     }
 }
 
