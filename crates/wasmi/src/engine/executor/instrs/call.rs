@@ -75,8 +75,11 @@ pub enum CallKind {
 /// Error returned from a called host function in a resumable state.
 #[derive(Debug)]
 pub struct ResumableHostError {
+    /// The error returned by the called host function.
     host_error: Error,
+    /// The host function that returned the error.
     host_func: Func,
+    /// The result registers of the caller of the host function.
     caller_results: RegisterSpan,
 }
 
