@@ -309,9 +309,9 @@ impl ValueStack {
     /// # Safety
     ///
     /// - This invalidates all [`FrameRegisters`] within the range `from..` and the caller has to
-    /// make sure to properly reinstantiate all those pointers after this operation.
+    ///   make sure to properly reinstantiate all those pointers after this operation.
     /// - This also invalidates all [`FrameValueStackOffset`] and [`BaseValueStackOffset`] indices
-    /// within the range `from..`.
+    ///   within the range `from..`.
     #[inline(always)]
     pub fn drain(&mut self, from: FrameValueStackOffset, to: FrameValueStackOffset) -> usize {
         debug_assert!(from <= to);

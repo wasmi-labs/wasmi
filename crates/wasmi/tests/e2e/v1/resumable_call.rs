@@ -4,6 +4,8 @@ use core::slice;
 use wasmi::{
     core::{TrapCode, ValType},
     errors::ErrorKind,
+    AsContext,
+    AsContextMut,
     Caller,
     Config,
     Engine,
@@ -286,21 +288,25 @@ impl AssertResumable for ResumableCall {
     }
 }
 
-fn run_test(wasm_fn: Func, mut store: &mut Store<TestData>, wasm_trap: bool) {
+fn run_test(wasm_fn: Func, store: &mut Store<TestData>, wasm_trap: bool) {
     let mut results = Val::I32(0);
     let invocation = wasm_fn
         .call_resumable(
-            &mut store,
+            store.as_context_mut(),
             &[Val::I32(wasm_trap as i32)],
             slice::from_mut(&mut results),
         )
         .unwrap()
         .assert_resumable(store, 10, &[ValType::I32]);
     let invocation = invocation
-        .resume(&mut store, &[Val::I32(2)], slice::from_mut(&mut results))
+        .resume(
+            store.as_context_mut(),
+            &[Val::I32(2)],
+            slice::from_mut(&mut results),
+        )
         .unwrap()
         .assert_resumable(store, 20, &[ValType::I32]);
-    let call = invocation.resume(&mut store, &[Val::I32(3)], slice::from_mut(&mut results));
+    let call = invocation.resume(store, &[Val::I32(3)], slice::from_mut(&mut results));
     if wasm_trap {
         match call.unwrap_err().kind() {
             ErrorKind::TrapCode(trap) => {
@@ -342,18 +348,18 @@ impl<Results> AssertResumable for TypedResumableCall<Results> {
     }
 }
 
-fn run_test_typed(wasm_fn: Func, mut store: &mut Store<TestData>, wasm_trap: bool) {
+fn run_test_typed(wasm_fn: Func, store: &mut Store<TestData>, wasm_trap: bool) {
     let invocation = wasm_fn
-        .typed::<i32, i32>(&store)
+        .typed::<i32, i32>(store.as_context())
         .unwrap()
-        .call_resumable(&mut store, wasm_trap as i32)
+        .call_resumable(store.as_context_mut(), wasm_trap as i32)
         .unwrap()
         .assert_resumable(store, 10, &[ValType::I32]);
     let invocation = invocation
-        .resume(&mut store, &[Val::I32(2)])
+        .resume(store.as_context_mut(), &[Val::I32(2)])
         .unwrap()
         .assert_resumable(store, 20, &[ValType::I32]);
-    let call = invocation.resume(&mut store, &[Val::I32(3)]);
+    let call = invocation.resume(store, &[Val::I32(3)]);
     if wasm_trap {
         match call.unwrap_err().kind() {
             ErrorKind::TrapCode(trap) => {

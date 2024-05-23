@@ -93,7 +93,7 @@ impl Module {
     /// [`Func`]: [`crate::Func`]
     fn extract_imports<I>(
         &self,
-        context: &impl AsContextMut,
+        context: impl AsContext,
         builder: &mut InstanceEntityBuilder,
         externals: I,
     ) -> Result<(), InstantiationError>
@@ -166,7 +166,7 @@ impl Module {
     /// [`Func`]: [`crate::Func`]
     fn extract_functions(
         &self,
-        context: &mut impl AsContextMut,
+        mut context: impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
         handle: Instance,
     ) {
@@ -188,7 +188,7 @@ impl Module {
     /// [`Store`]: struct.Store.html
     fn extract_tables(
         &self,
-        context: &mut impl AsContextMut,
+        mut context: impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
     ) -> Result<(), InstantiationError> {
         context
@@ -210,7 +210,7 @@ impl Module {
     /// [`Store`]: struct.Store.html
     fn extract_memories(
         &self,
-        context: &mut impl AsContextMut,
+        mut context: impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
     ) -> Result<(), MemoryError> {
         context
@@ -229,11 +229,7 @@ impl Module {
     /// This also stores [`Global`] references into the [`Instance`] under construction.
     ///
     /// [`Store`]: struct.Store.html
-    fn extract_globals(
-        &self,
-        context: &mut impl AsContextMut,
-        builder: &mut InstanceEntityBuilder,
-    ) {
+    fn extract_globals(&self, mut context: impl AsContextMut, builder: &mut InstanceEntityBuilder) {
         for (global_type, global_init) in self.internal_globals() {
             let value_type = global_type.content();
             let init_value = Self::eval_init_expr(context.as_context_mut(), builder, global_init);
@@ -300,14 +296,14 @@ impl Module {
     /// Initializes the [`Instance`] tables with the Wasm element segments of the [`Module`].
     fn initialize_table_elements(
         &self,
-        mut context: &mut impl AsContextMut,
+        mut context: impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
     ) -> Result<(), Error> {
         for segment in &self.header.inner.element_segments[..] {
             let element = ElementSegment::new(context.as_context_mut(), segment);
             if let ElementSegmentKind::Active(active) = segment.kind() {
                 let dst_index = u32::from(Self::eval_init_expr(
-                    &mut *context,
+                    context.as_context(),
                     builder,
                     active.offset(),
                 ));
@@ -347,7 +343,7 @@ impl Module {
     /// Initializes the [`Instance`] linear memories with the Wasm data segments of the [`Module`].
     fn initialize_memory_data(
         &self,
-        context: &mut impl AsContextMut,
+        mut context: impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
     ) -> Result<(), Error> {
         for segment in &self.data_segments {
@@ -358,9 +354,10 @@ impl Module {
                     bytes,
                 } => {
                     let offset =
-                        u32::from(Self::eval_init_expr(&mut *context, builder, offset)) as usize;
+                        u32::from(Self::eval_init_expr(context.as_context(), builder, offset))
+                            as usize;
                     let memory = builder.get_memory(memory_index.into_u32());
-                    memory.write(&mut *context, offset, bytes)?;
+                    memory.write(context.as_context_mut(), offset, bytes)?;
                     DataSegment::new_active(context.as_context_mut())
                 }
                 InitDataSegment::Passive { bytes } => {

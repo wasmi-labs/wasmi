@@ -159,6 +159,12 @@ pub enum ErrorKind {
     /// A trap as defined by the WebAssembly specification.
     Host(Box<dyn HostError>),
     /// An error stemming from a host function call with resumable state information.
+    ///
+    /// # Note
+    ///
+    /// This variant is meant for internal uses only in order to store data necessary
+    /// to resume a call after a host function returned an error. This should never
+    /// actually reach user code thus we hide its documentation.
     #[doc(hidden)]
     ResumableHost(ResumableHostError),
     /// A global variable error.

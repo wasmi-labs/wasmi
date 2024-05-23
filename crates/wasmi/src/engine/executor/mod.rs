@@ -51,7 +51,11 @@ impl EngineInner {
         let res = self.res.read();
         let mut stack = self.stacks.lock().reuse_or_new();
         let results = EngineExecutor::new(&res, &mut stack)
-            .execute_root_func(ctx.store, func, params, results);
+            .execute_root_func(ctx.store, func, params, results)
+            .map_err(|error| match error.into_resumable() {
+                Ok(error) => error.into_error(),
+                Err(error) => error,
+            });
         self.stacks.lock().recycle(stack);
         results
     }
