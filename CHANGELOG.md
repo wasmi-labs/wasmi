@@ -8,24 +8,19 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
-## [`0.32.0-beta.18`] - 2024-05-23
+## [`0.32.0`] - 2024-05-28
 
 **Note:**
 
-- This is the beta of the upcoming `v0.32.0` release.
-  This version is not production ready yet and might contain serious bugs.
-  Please use this only for experimentation or at your own risk.
-- Performance tests indicated that the new register-machine bytecode based
-  Wasmi engine performance is very sensitive to hardware or OS specifics
-  which may lead to very different performance characteristics.
-    - We are working on fixing this until the stable release.
-    - Measurements concluded that execution performance can be equal or sometimes
-        even surpass Wasm3 execution performance.
+- This release is the culmination of months of research, development and QA
+  with a new execution engine utilizing register-based IR at its core boosting
+  both startup and execution performance to new levels for the Wasmi interpreter.
+- This release is accompanied with [an article](https://wasmi-labs.github.io/blog/) that presents some of the highlights.
 
 ### Added
 
-- Added a new execution engine based on register-machine bytecode. (https://github.com/wasmi-labs/wasmi/pull/729)
-    - The register-machine Wasmi `Engine` executes roughly 80-100% faster and
+- Added a new execution engine based on register-based bytecode. (https://github.com/wasmi-labs/wasmi/pull/729)
+    - The register-based Wasmi `Engine` executes roughly 80-100% faster and
       compiles roughly 30% slower according to benchmarks conducted so far.
 - Added `Module::new_unchecked` API. (https://github.com/wasmi-labs/wasmi/pull/829)
     - This allows to compile a Wasm module without Wasm validation which can be useful
@@ -114,7 +109,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 ### Removed
 
 - Removed the stack-machine bytecode based Wasmi `Engine` backend. (https://github.com/wasmi-labs/wasmi/pull/818)
-    - The new register-machine bytecode based Wasmi `Engine` is more promising
+    - The new register-based bytecode based Wasmi `Engine` is more promising
       and the Wasmi team does not want to maintain two different engine backends.
 - Removed `FuelConsumptionMode` from `Config`. (https://github.com/wasmi-labs/wasmi/pull/877)
     - `FuelConsumptionMode` was required to differentiate between lazy and eager fuel consumption.
