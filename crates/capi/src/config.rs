@@ -139,5 +139,5 @@ pub extern "C" fn wasmi_config_set_enforced_limits(
     config: &mut wasm_config_t,
     limits: &wasmi_enforced_limits_t,
 ) {
-    config.inner.engine_limits(limits.inner);
+    config.inner.enforced_limits(limits.inner);
 }
