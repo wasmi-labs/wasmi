@@ -1,5 +1,5 @@
 use super::{EnforcedLimits, StackLimits};
-use crate::core::UntypedValue;
+use crate::core::UntypedVal;
 use core::{mem::size_of, num::NonZeroU64};
 use wasmparser::WasmFeatures;
 
@@ -136,7 +136,7 @@ impl FuelCosts {
 impl Default for FuelCosts {
     fn default() -> Self {
         let bytes_per_fuel = 64;
-        let bytes_per_register = size_of::<UntypedValue>() as u64;
+        let bytes_per_register = size_of::<UntypedVal>() as u64;
         let registers_per_fuel = bytes_per_fuel / bytes_per_register;
         Self {
             base: 1,
@@ -176,8 +176,8 @@ impl Default for Config {
             multi_value: true,
             bulk_memory: true,
             reference_types: true,
-            tail_call: false,
-            extended_const: false,
+            tail_call: true,
+            extended_const: true,
             floats: true,
             consume_fuel: false,
             fuel_costs: FuelCosts::default(),
@@ -291,7 +291,7 @@ impl Config {
     ///
     /// # Note
     ///
-    /// Disabled by default.
+    /// Enabled by default.
     ///
     /// [`tail-call`]: https://github.com/WebAssembly/tail-calls
     pub fn wasm_tail_call(&mut self, enable: bool) -> &mut Self {
@@ -303,9 +303,9 @@ impl Config {
     ///
     /// # Note
     ///
-    /// Disabled by default.
+    /// Enabled by default.
     ///
-    /// [`tail-call`]: https://github.com/WebAssembly/extended-const
+    /// [`extended-const`]: https://github.com/WebAssembly/extended-const
     pub fn wasm_extended_const(&mut self, enable: bool) -> &mut Self {
         self.extended_const = enable;
         self
@@ -375,7 +375,7 @@ impl Config {
     /// By default no limits are enforced.
     ///
     /// [`Engine`]: crate::Engine
-    pub fn engine_limits(&mut self, limits: EnforcedLimits) -> &mut Self {
+    pub fn enforced_limits(&mut self, limits: EnforcedLimits) -> &mut Self {
         self.limits = limits;
         self
     }

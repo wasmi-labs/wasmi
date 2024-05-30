@@ -6,7 +6,7 @@ use anyhow::{anyhow, bail, Error, Result};
 use clap::Parser;
 use context::Context;
 use std::{path::Path, process};
-use wasmi::{Func, FuncType, Value};
+use wasmi::{Func, FuncType, Val};
 
 mod args;
 mod context;
@@ -80,7 +80,7 @@ fn print_remaining_fuel(args: &Args, ctx: &Context) {
 /// # Errors
 ///
 /// If too many or too few function arguments were given to the invoked function.
-fn typecheck_args(func_name: &str, func_ty: &FuncType, args: &[Value]) -> Result<(), Error> {
+fn typecheck_args(func_name: &str, func_ty: &FuncType, args: &[Val]) -> Result<(), Error> {
     if func_ty.params().len() != args.len() {
         bail!(
             "invalid amount of arguments given to function {}. expected {} but received {}",
@@ -125,7 +125,7 @@ fn get_invoked_func(args: &Args, ctx: &Context) -> Result<(String, Func), Error>
 }
 
 /// Prints a signalling text that Wasm execution has started.
-fn print_execution_start(wasm_file: &Path, func_name: &str, func_args: &[Value]) {
+fn print_execution_start(wasm_file: &Path, func_name: &str, func_args: &[Val]) {
     println!(
         "executing File({wasm_file:?})::{func_name}({}) ...",
         DisplaySequence::new(", ", func_args.iter().map(DisplayValue::from))
@@ -133,7 +133,7 @@ fn print_execution_start(wasm_file: &Path, func_name: &str, func_args: &[Value])
 }
 
 /// Prints the results of the Wasm computation in a human readable form.
-fn print_pretty_results(results: &[Value]) {
+fn print_pretty_results(results: &[Val]) {
     match results.len() {
         0 => {}
         1 => {

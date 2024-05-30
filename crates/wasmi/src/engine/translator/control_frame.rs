@@ -30,7 +30,7 @@ impl BlockHeight {
             let len_params = u16::try_from(block_type.len_params(engine)).ok()?;
             let height = u16::try_from(height).ok()?;
             let block_height = height.checked_sub(len_params)?;
-            Some(Self(block_height))
+            Some(BlockHeight(block_height))
         }
         new_impl(engine, height, block_type)
             .ok_or(TranslationError::EmulatedValueStackOverflow)

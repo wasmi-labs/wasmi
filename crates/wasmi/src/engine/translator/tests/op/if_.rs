@@ -1,6 +1,6 @@
 use super::*;
 use crate::{
-    core::{TrapCode, UntypedValue},
+    core::{TrapCode, UntypedVal},
     engine::{
         bytecode::{BranchOffset, BranchOffset16, GlobalIdx, RegisterSpan},
         CompiledFunc,
@@ -546,7 +546,7 @@ fn test_if_without_else_has_result() {
     TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([Instruction::return_reg2(-1, -2)])
-                .consts([UntypedValue::from(1_i64), UntypedValue::from(0_i32)]),
+                .consts([UntypedVal::from(1_i64), UntypedVal::from(0_i32)]),
         )
         .expect_func_instrs([
             Instruction::call_internal_0(

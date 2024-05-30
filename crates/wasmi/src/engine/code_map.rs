@@ -14,7 +14,7 @@ use super::{
 };
 use crate::{
     collections::arena::{Arena, ArenaIndex},
-    core::{TrapCode, UntypedValue},
+    core::{TrapCode, UntypedVal},
     engine::bytecode::Instruction,
     module::{FuncIdx, ModuleHeader},
     store::{Fuel, FuelError},
@@ -295,6 +295,8 @@ impl<'a> From<&'a [u8]> for SmallByteSlice {
 pub struct CompiledFuncEntity {
     /// The sequence of [`Instruction`] of the [`CompiledFuncEntity`].
     instrs: Box<[Instruction]>,
+    /// The constant values local to the [`CompiledFunc`].
+    consts: Box<[UntypedVal]>,
     /// The number of registers used by the [`CompiledFunc`] in total.
     ///
     /// # Note
@@ -302,8 +304,6 @@ pub struct CompiledFuncEntity {
     /// This includes registers to store the function local constant values,
     /// function parameters, function locals and dynamically used registers.
     len_registers: u16,
-    /// The constant values local to the [`CompiledFunc`].
-    consts: Box<[UntypedValue]>,
 }
 
 impl CompiledFuncEntity {
@@ -316,18 +316,18 @@ impl CompiledFuncEntity {
     pub fn new<I, C>(len_registers: u16, instrs: I, consts: C) -> Self
     where
         I: IntoIterator<Item = Instruction>,
-        C: IntoIterator<Item = UntypedValue>,
+        C: IntoIterator<Item = UntypedVal>,
     {
         let instrs: Box<[Instruction]> = instrs.into_iter().collect();
-        let consts: Box<[UntypedValue]> = consts.into_iter().collect();
+        let consts: Box<[UntypedVal]> = consts.into_iter().collect();
         assert!(
             !instrs.is_empty(),
             "compiled functions must have at least one instruction"
         );
         Self {
             instrs,
-            len_registers,
             consts,
+            len_registers,
         }
     }
 
@@ -368,7 +368,7 @@ impl CompiledFuncEntity {
     }
 
     /// Returns the function local constant values of the [`CompiledFunc`].
-    pub fn consts(&self) -> &[UntypedValue] {
+    pub fn consts(&self) -> &[UntypedVal] {
         &self.consts
     }
 }

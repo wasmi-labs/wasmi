@@ -150,8 +150,8 @@ pub use self::{
         WasmParams,
         WasmResults,
         WasmRet,
-        WasmType,
-        WasmTypeList,
+        WasmTy,
+        WasmTyList,
     },
     global::{Global, GlobalType, Mutability},
     instance::{Export, ExportsIter, Extern, ExternType, Instance},
@@ -169,7 +169,7 @@ pub use self::{
     },
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
-    value::Value,
+    value::Val,
 };
 use self::{
     func::{FuncEntity, FuncIdx},

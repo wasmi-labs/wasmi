@@ -1,5 +1,5 @@
 use super::TableType;
-use crate::core::ValueType;
+use crate::core::ValType;
 use core::{fmt, fmt::Display};
 
 /// Errors that may occur upon operating with table entities.
@@ -18,9 +18,9 @@ pub enum TableError {
     /// Occurs when operating with a [`Table`](crate::Table) and mismatching element types.
     ElementTypeMismatch {
         /// Expected element type for the [`Table`](crate::Table).
-        expected: ValueType,
+        expected: ValType,
         /// Encountered element type.
-        actual: ValueType,
+        actual: ValType,
     },
     /// Occurs when accessing the table out of bounds.
     AccessOutOfBounds {

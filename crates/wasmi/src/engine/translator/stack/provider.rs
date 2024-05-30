@@ -1,4 +1,4 @@
-use super::{LocalRefs, RegisterAlloc, TypedValue};
+use super::{LocalRefs, RegisterAlloc, TypedVal};
 use crate::{
     engine::{bytecode::Register, translator::PreservedLocal},
     Error,
@@ -7,11 +7,11 @@ use arrayvec::ArrayVec;
 use std::vec::Vec;
 
 #[cfg(doc)]
-use crate::core::UntypedValue;
+use crate::core::UntypedVal;
 
 /// Tagged providers are inputs to Wasmi bytecode instructions.
 ///
-/// Either a [`Register`] or a constant [`UntypedValue`].
+/// Either a [`Register`] or a constant [`UntypedVal`].
 #[derive(Debug, Copy, Clone)]
 pub enum TaggedProvider {
     /// A register referring to a function local constant value.
@@ -23,7 +23,7 @@ pub enum TaggedProvider {
     /// A register referring to a preservation allocated register.
     Preserved(Register),
     /// An untyped constant value.
-    ConstValue(TypedValue),
+    ConstValue(TypedVal),
 }
 
 /// The stack of providers.
@@ -364,7 +364,7 @@ impl ProviderStack {
     /// Pushes a constant value to the [`ProviderStack`].
     pub fn push_const_value<T>(&mut self, value: T)
     where
-        T: Into<TypedValue>,
+        T: Into<TypedVal>,
     {
         self.push(TaggedProvider::ConstValue(value.into()));
     }

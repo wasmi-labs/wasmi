@@ -1,6 +1,6 @@
-use crate::core::UntypedValue;
+use crate::core::UntypedVal;
 
-/// Utility type used to convert between `reftype` and [`UntypedValue`].
+/// Utility type used to convert between `reftype` and [`UntypedVal`].
 ///
 /// # Note
 ///
@@ -29,8 +29,8 @@ impl<T: Copy> Transposer<T> {
     }
 }
 
-impl<T: Copy> From<UntypedValue> for Transposer<T> {
-    fn from(untyped: UntypedValue) -> Self {
+impl<T: Copy> From<UntypedVal> for Transposer<T> {
+    fn from(untyped: UntypedVal) -> Self {
         Transposer {
             value: u64::from(untyped),
         }

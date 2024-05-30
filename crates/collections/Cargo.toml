@@ -1,6 +1,6 @@
 [package]
 name = "wasmi_collections"
-version = "0.1.0"
+version.workspace = true
 rust-version.workspace = true
 documentation = "https://docs.rs/wasmi_collections/"
 description = "Specialized data structures for the Wasmi interpreter"
@@ -15,7 +15,7 @@ exclude.workspace = true
 
 [dependencies]
 hashbrown = { version = "0.14", default-features = false, features = ["ahash", "inline-more"] }
-string-interner = { version = "0.15", default-features = false, features = ["inline-more", "backends"] }
+string-interner = { version = "0.17", default-features = false, features = ["inline-more", "backends"] }
 ahash = { version = "0.8.11", default-features = false }
 
 [features]

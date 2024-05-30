@@ -4,9 +4,9 @@
 mod detail {
     use super::{GetOrInternWithHint, Sym};
     use crate::hash;
-    use string_interner::{backend::StringBackend, StringInterner, Symbol};
+    use string_interner::{backend::BufferBackend, StringInterner, Symbol};
 
-    pub type StringInternerImpl = StringInterner<StringBackend<Sym>, hash::RandomState>;
+    pub type StringInternerImpl = StringInterner<BufferBackend<Sym>, hash::RandomState>;
 
     impl GetOrInternWithHint for StringInternerImpl {
         #[inline]
@@ -21,12 +21,15 @@ mod detail {
     impl Symbol for Sym {
         #[inline]
         fn try_from_usize(index: usize) -> Option<Self> {
-            Some(Self(index))
+            let Ok(value) = u32::try_from(index) else {
+                return None;
+            };
+            Some(Self::from_u32(value))
         }
 
         #[inline]
         fn to_usize(self) -> usize {
-            self.0
+            self.into_u32() as usize
         }
     }
 }
@@ -47,7 +50,33 @@ pub enum InternHint {
 
 /// Symbols returned by the [`StringInterner`] to resolve interned strings.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Sym(usize);
+pub struct Sym(u32);
+
+impl Sym {
+    /// Creates a new [`Sym`] from the `u32` value.
+    pub fn from_u32(value: u32) -> Self {
+        Self(value)
+    }
+
+    /// Creates a new [`Sym`] from the `usize` value.
+    ///
+    /// # Panics
+    ///
+    /// If the `usize` value is out of bounds for [`Sym`].
+    pub fn from_usize(value: usize) -> Self {
+        u32::try_from(value).map_or_else(|_| panic!("out of bounds symbol index: {value}"), Self)
+    }
+
+    /// Returns the `u32` value of the [`Sym`].
+    pub fn into_u32(self) -> u32 {
+        self.0
+    }
+
+    /// Returns the value of the [`Sym`] as `usize`.
+    pub fn into_usize(self) -> usize {
+        self.0 as usize
+    }
+}
 
 /// Efficienty interns and deduplicates strings.
 #[derive(Debug, Clone, PartialEq, Eq)]

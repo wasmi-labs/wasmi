@@ -7,4 +7,8 @@ pub mod snapshots;
 pub use wasi_cap_std_sync::*;
 
 #[doc(inline)]
-pub use self::snapshots::preview_1::add_wasi_snapshot_preview1_to_linker as add_to_linker;
+pub use self::snapshots::preview_1::{
+    add_wasi_snapshot_preview1_to_linker as add_to_linker,
+    add_wasi_snapshot_preview1_to_linker_builder as add_to_linker_builder,
+    AddWasi,
+};

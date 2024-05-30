@@ -2,7 +2,7 @@ use super::*;
 
 use crate::engine::bytecode::GlobalIdx;
 use core::fmt::Display;
-use wasm_type::WasmType;
+use wasm_type::WasmTy;
 
 /// Test for `global.get` of internally defined mutable global variables.
 ///
@@ -13,7 +13,7 @@ use wasm_type::WasmType;
 /// during program execution.
 fn test_mutable<T>(value: T)
 where
-    T: WasmType,
+    T: WasmTy,
     DisplayWasm<T>: Display,
 {
     let ty = T::NAME;
@@ -68,7 +68,7 @@ fn mutable_f64() {
 /// value of the global variable can be applied always.
 fn test_immutable<T>(value: T)
 where
-    T: WasmType,
+    T: WasmTy,
     DisplayWasm<T>: Display,
 {
     let ty = T::NAME;
@@ -84,7 +84,7 @@ where
     "#,
     );
     let mut testcase = TranslationTest::from_wat(&wasm);
-    let instr = <T as WasmType>::return_imm_instr(&value);
+    let instr = <T as WasmTy>::return_imm_instr(&value);
     match instr {
         Instruction::ReturnReg { value: register } => {
             assert!(register.is_const());
@@ -130,7 +130,7 @@ fn immutable_f64() {
 /// to being imported.
 fn test_imported<T>()
 where
-    T: WasmType,
+    T: WasmTy,
 {
     let ty = T::NAME;
     let wasm = format!(

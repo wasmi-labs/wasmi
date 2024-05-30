@@ -1,12 +1,12 @@
 use super::*;
 
-use crate::{core::ValueType, engine::bytecode::GlobalIdx};
+use crate::{core::ValType, engine::bytecode::GlobalIdx};
 use core::fmt::Display;
-use wasm_type::WasmType;
+use wasm_type::WasmTy;
 
 fn test_reg<T>()
 where
-    T: WasmType + Default,
+    T: WasmTy + Default,
     DisplayWasm<T>: Display,
 {
     let ty = T::NAME;
@@ -41,7 +41,7 @@ fn reg() {
 
 fn test_imm<T>(value: T)
 where
-    T: WasmType + Default,
+    T: WasmTy + Default,
     DisplayWasm<T>: Display,
 {
     let display_ty = DisplayValueType::from(T::VALUE_TYPE);
@@ -82,7 +82,7 @@ fn imm() {
 }
 
 fn test_i32imm16(value: i32) {
-    let display_ty = DisplayValueType::from(ValueType::I32);
+    let display_ty = DisplayValueType::from(ValType::I32);
     let display_value = DisplayWasm::from(value);
     let wasm = format!(
         r#"
@@ -116,7 +116,7 @@ fn i32imm16() {
 }
 
 fn test_i64imm16(value: i64) {
-    let display_ty = DisplayValueType::from(ValueType::I64);
+    let display_ty = DisplayValueType::from(ValType::I64);
     let display_value = DisplayWasm::from(value);
     let wasm = format!(
         r#"

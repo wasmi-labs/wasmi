@@ -1,4 +1,4 @@
-use super::{stack::ValueStack, TypedProvider, TypedValue};
+use super::{stack::ValueStack, TypedProvider, TypedVal};
 use crate::{
     engine::bytecode::{AnyConst16, Const16, Provider, Register, RegisterSpanIter, Sign},
     Error,
@@ -10,7 +10,7 @@ use crate::{
 ///
 /// This trait provides some utility methods useful for translation.
 pub trait WasmInteger:
-    Copy + Eq + From<TypedValue> + Into<TypedValue> + TryInto<AnyConst16> + TryInto<Const16<Self>>
+    Copy + Eq + From<TypedVal> + Into<TypedVal> + TryInto<AnyConst16> + TryInto<Const16<Self>>
 {
     /// Returns the `i16` shift amount.
     ///
@@ -72,7 +72,7 @@ impl WasmInteger for u64 {
 /// # Note
 ///
 /// This trait provides some utility methods useful for translation.
-pub trait WasmFloat: Copy + Into<TypedValue> + From<TypedValue> {
+pub trait WasmFloat: Copy + Into<TypedVal> + From<TypedVal> {
     /// Returns `true` if `self` is any kind of NaN value.
     fn is_nan(self) -> bool;
 

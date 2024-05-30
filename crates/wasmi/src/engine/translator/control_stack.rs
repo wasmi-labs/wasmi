@@ -1,4 +1,4 @@
-use super::{typed_value::TypedValue, ControlFrame};
+use super::{typed_value::TypedVal, ControlFrame};
 use crate::{
     engine::bytecode::{Provider, ProviderSliceStack},
     Error,
@@ -38,13 +38,14 @@ pub struct ControlStack {
     /// during translation of the `then` branch these inputs have
     /// already been consumed. Therefore we need to duplicate them
     /// here to push them back on the stack once we see the `else` branch.
-    else_providers: ProviderSliceStack<TypedValue>,
+    else_providers: ProviderSliceStack<TypedVal>,
 }
 
 impl ControlStack {
     /// Resets the [`ControlStack`] to allow for reuse.
     pub fn reset(&mut self) {
-        self.frames.clear()
+        self.frames.clear();
+        self.else_providers.reset();
     }
 
     /// Returns `true` if `relative_depth` points to the first control flow frame.
@@ -87,7 +88,7 @@ impl ControlStack {
     /// [`IfControlFrame`]: super::control_frame::IfControlFrame
     pub fn push_else_providers<I>(&mut self, providers: I) -> Result<(), Error>
     where
-        I: IntoIterator<Item = Provider<TypedValue>>,
+        I: IntoIterator<Item = Provider<TypedVal>>,
     {
         self.else_providers.push(providers)?;
         Ok(())
@@ -96,7 +97,7 @@ impl ControlStack {
     /// Pops the top-most [`Provider`] slice of an `else` branch of an [`IfControlFrame`] to the [`ControlStack`].
     ///
     /// [`IfControlFrame`]: super::control_frame::IfControlFrame
-    pub fn pop_else_providers(&mut self) -> Drain<Provider<TypedValue>> {
+    pub fn pop_else_providers(&mut self) -> Drain<Provider<TypedVal>> {
         self.else_providers
             .pop()
             .expect("missing else providers for `else` branch")

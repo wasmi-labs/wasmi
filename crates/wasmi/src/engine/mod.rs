@@ -37,6 +37,7 @@ pub(crate) use self::{
 pub use self::{
     code_map::CompiledFunc,
     config::{CompilationMode, Config},
+    executor::ResumableHostError,
     limits::{EnforcedLimits, EnforcedLimitsError, StackLimits},
     resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
     traits::{CallParams, CallResults},
@@ -67,7 +68,7 @@ use wasmparser::{FuncToValidate, FuncValidatorAllocations, ValidatorResources};
 use self::bytecode::Instruction;
 
 #[cfg(test)]
-use crate::core::UntypedValue;
+use crate::core::UntypedVal;
 
 #[cfg(doc)]
 use crate::Store;
@@ -353,7 +354,7 @@ impl Engine {
         &self,
         func: CompiledFunc,
         index: usize,
-    ) -> Result<Option<UntypedValue>, Error> {
+    ) -> Result<Option<UntypedVal>, Error> {
         self.inner.get_func_const(func, index)
     }
 
@@ -581,7 +582,7 @@ impl EngineStacks {
 
     /// Disose and recycle the `stack`.
     pub fn recycle(&mut self, stack: Stack) {
-        if !stack.is_empty() && self.stacks.len() < self.keep {
+        if stack.capacity() > 0 && self.stacks.len() < self.keep {
             self.stacks.push(stack);
         }
     }
@@ -771,7 +772,7 @@ impl EngineInner {
         &self,
         func: CompiledFunc,
         index: usize,
-    ) -> Result<Option<UntypedValue>, Error> {
+    ) -> Result<Option<UntypedVal>, Error> {
         // Function local constants are stored in reverse order of their indices since
         // they are allocated in reverse order to their absolute indices during function
         // translation. That is why we need to access them in reverse order.

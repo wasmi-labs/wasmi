@@ -1,5 +1,5 @@
 use crate::{
-    core::UntypedValue,
+    core::UntypedVal,
     engine::bytecode::{DataSegmentIdx, ElementSegmentIdx, FuncIdx, GlobalIdx, TableIdx},
     instance::InstanceEntity,
     memory::DataSegment,
@@ -23,7 +23,7 @@ pub struct InstanceCache {
     /// The bytes of a default linear memory of the currently used [`Instance`].
     default_memory_bytes: Option<NonNull<[u8]>>,
     /// The last accessed global variable value of the currently used [`Instance`].
-    last_global: Option<(GlobalIdx, NonNull<UntypedValue>)>,
+    last_global: Option<(GlobalIdx, NonNull<UntypedVal>)>,
     /// The current instance in use.
     instance: Instance,
     /// The default linear memory of the currently used [`Instance`].
@@ -69,10 +69,9 @@ impl InstanceCache {
     /// Updates the currently used instance resetting all cached entities.
     #[inline]
     pub fn update_instance(&mut self, instance: &Instance) {
-        if instance == self.instance() {
-            return;
+        if instance != self.instance() {
+            self.set_instance(instance);
         }
-        self.set_instance(instance);
     }
 
     /// Loads the [`DataSegment`] at `index` of the currently used [`Instance`].
@@ -313,7 +312,7 @@ impl InstanceCache {
     /// If the currently used [`Instance`] does not have a default table.
     #[cold]
     #[inline]
-    fn load_global_at(&mut self, ctx: &mut StoreInner, index: GlobalIdx) -> NonNull<UntypedValue> {
+    fn load_global_at(&mut self, ctx: &mut StoreInner, index: GlobalIdx) -> NonNull<UntypedVal> {
         let global = ctx
             .resolve_instance(self.instance())
             .get_global(index.to_u32())
@@ -340,7 +339,7 @@ impl InstanceCache {
         &mut self,
         ctx: &'ctx mut StoreInner,
         global_index: GlobalIdx,
-    ) -> &'ctx mut UntypedValue {
+    ) -> &'ctx mut UntypedVal {
         let mut ptr = match self.last_global {
             Some((index, global)) if index == global_index => global,
             _ => self.load_global_at(ctx, global_index),
@@ -358,7 +357,7 @@ impl InstanceCache {
     ///
     /// If the currently used [`Instance`] does not have a [`Func`] at the index.
     #[inline(always)]
-    pub fn get_global(&mut self, ctx: &mut StoreInner, global_index: GlobalIdx) -> UntypedValue {
+    pub fn get_global(&mut self, ctx: &mut StoreInner, global_index: GlobalIdx) -> UntypedVal {
         *self.get_global_mut(ctx, global_index)
     }
 
@@ -373,7 +372,7 @@ impl InstanceCache {
         &mut self,
         ctx: &mut StoreInner,
         global_index: GlobalIdx,
-        new_value: UntypedValue,
+        new_value: UntypedVal,
     ) {
         *self.get_global_mut(ctx, global_index) = new_value;
     }

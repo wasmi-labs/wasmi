@@ -1,5 +1,6 @@
 use super::InstanceEntity;
 use crate::{
+    collections::Map,
     engine::DedupFuncType,
     memory::DataSegment,
     module::FuncIdx,
@@ -12,7 +13,7 @@ use crate::{
     Module,
     Table,
 };
-use std::{boxed::Box, collections::BTreeMap, sync::Arc, vec::Vec};
+use std::{boxed::Box, sync::Arc, vec::Vec};
 
 /// A module instance entity builder.
 #[derive(Debug)]
@@ -23,7 +24,7 @@ pub struct InstanceEntityBuilder {
     memories: Vec<Memory>,
     globals: Vec<Global>,
     start_fn: Option<FuncIdx>,
-    exports: BTreeMap<Box<str>, Extern>,
+    exports: Map<Box<str>, Extern>,
     data_segments: Vec<DataSegment>,
     elem_segments: Vec<ElementSegment>,
 }
@@ -63,7 +64,7 @@ impl InstanceEntityBuilder {
             memories: vec_with_capacity_exact(len_memories),
             globals: vec_with_capacity_exact(len_globals),
             start_fn: None,
-            exports: BTreeMap::default(),
+            exports: Map::default(),
             data_segments: Vec::new(),
             elem_segments: Vec::new(),
         }

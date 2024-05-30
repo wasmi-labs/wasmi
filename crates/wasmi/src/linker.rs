@@ -1,5 +1,8 @@
 use crate::{
-    core::hint,
+    collections::{
+        string_interner::{InternHint, Sym as Symbol},
+        StringInterner,
+    },
     func::{FuncEntity, HostFuncEntity, HostFuncTrampolineEntity},
     module::{ImportName, ImportType},
     AsContext,
@@ -17,15 +20,11 @@ use crate::{
     MemoryType,
     Module,
     TableType,
-    Value,
+    Val,
 };
 use core::{
-    borrow::Borrow,
-    cmp::Ordering,
     fmt::{self, Debug, Display},
     marker::PhantomData,
-    mem,
-    ops::Deref,
 };
 use std::{
     collections::{btree_map::Entry, BTreeMap},
@@ -213,220 +212,6 @@ impl Display for LinkerError {
     }
 }
 
-/// A symbol representing an interned string.
-///
-/// # Note
-///
-/// Comparing symbols for equality is equal to comparing their respective
-/// interned strings for equality given that both symbol are coming from
-/// the same string interner instance.
-#[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq)]
-#[repr(transparent)]
-pub struct Symbol(u32);
-
-impl Symbol {
-    /// Creates a new symbol.
-    ///
-    /// # Panics
-    ///
-    /// If the `value` is equal to `usize::MAX`.
-    #[inline]
-    pub fn from_usize(value: usize) -> Self {
-        let Ok(value) = u32::try_from(value) else {
-            panic!("encountered invalid symbol value: {value}");
-        };
-        Self(value)
-    }
-
-    /// Returns the underlying `usize` value of the [`Symbol`].
-    #[inline]
-    pub fn into_usize(self) -> usize {
-        self.0 as usize
-    }
-
-    /// Returns the underlying `u32` value of the [`Symbol`].
-    #[inline]
-    pub fn into_u32(self) -> u32 {
-        self.0
-    }
-}
-
-/// An `Arc<str>` that defines its own (more efficient) [`Ord`].
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[repr(transparent)]
-pub struct LenOrder(Arc<str>);
-
-impl Ord for LenOrder {
-    #[inline]
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.as_str().cmp(other.as_str())
-    }
-}
-
-impl PartialOrd for LenOrder {
-    #[inline]
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl LenOrder {
-    #[inline]
-    pub fn as_str(&self) -> &LenOrderStr {
-        (&*self.0).into()
-    }
-}
-
-/// A `str` that defines its own (more efficient) [`Ord`].
-#[derive(Debug, Eq, PartialEq)]
-#[repr(transparent)]
-pub struct LenOrderStr(str);
-
-impl<'a> From<&'a str> for &'a LenOrderStr {
-    #[inline]
-    fn from(value: &'a str) -> Self {
-        // Safety: This operation is safe because
-        //
-        // - we preserve the lifetime `'a`
-        // - the `LenOrderStr` type is a `str` newtype wrapper and `#[repr(transparent)`
-        unsafe { mem::transmute(value) }
-    }
-}
-
-impl Borrow<LenOrderStr> for LenOrder {
-    #[inline]
-    fn borrow(&self) -> &LenOrderStr {
-        (&*self.0).into()
-    }
-}
-
-impl PartialOrd for LenOrderStr {
-    #[inline]
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for LenOrderStr {
-    #[inline]
-    fn cmp(&self, other: &Self) -> Ordering {
-        let lhs = self.0.as_bytes();
-        let rhs = other.0.as_bytes();
-        match lhs.len().cmp(&rhs.len()) {
-            Ordering::Equal => {
-                if lhs.len() < 8 {
-                    for (l, r) in lhs.iter().zip(rhs) {
-                        match l.cmp(r) {
-                            Ordering::Equal => (),
-                            ordering => return ordering,
-                        }
-                    }
-                    Ordering::Equal
-                } else {
-                    lhs.cmp(rhs)
-                }
-            }
-            ordering => ordering,
-        }
-    }
-}
-
-/// A string interner.
-///
-/// Efficiently interns strings and distributes symbols.
-#[derive(Debug, Default, Clone)]
-pub struct StringInterner {
-    string2symbol: BTreeMap<LenOrder, Symbol>,
-    strings: Vec<Arc<str>>,
-}
-
-#[derive(Debug, Copy, Clone)]
-pub enum InternHint {
-    /// Hint that the string to be interned likely already exists.
-    LikelyExists,
-    /// Hint that the string to be interned likely does not yet exist.
-    LikelyNew,
-}
-
-impl StringInterner {
-    /// Returns the symbol of the string and interns it if necessary.
-    ///
-    /// Optimized for `string` not to be contained in [`StringInterner`] before this operation.
-    #[inline]
-    pub fn get_or_intern(&mut self, string: &str, hint: InternHint) -> Symbol {
-        match hint {
-            InternHint::LikelyExists => self.get_or_intern_hint_existing(string),
-            InternHint::LikelyNew => self.get_or_intern_hint_new(string),
-        }
-    }
-
-    /// Returns the symbol of the string and interns it if necessary.
-    ///
-    /// # Note
-    ///
-    /// - Optimized for `string` not to be contained in [`StringInterner`] before this operation.
-    /// - Allocates `string` twice on the heap if it already existed prior to this operation.
-    fn get_or_intern_hint_new(&mut self, string: &str) -> Symbol {
-        match self.string2symbol.entry(LenOrder(string.into())) {
-            Entry::Vacant(entry) => {
-                let symbol = Symbol::from_usize(self.strings.len());
-                self.strings.push(entry.key().clone().0);
-                entry.insert(symbol);
-                symbol
-            }
-            Entry::Occupied(entry) => {
-                hint::cold();
-                *entry.get()
-            }
-        }
-    }
-
-    /// Returns the symbol of the string and interns it if necessary.
-    ///
-    /// # Note
-    ///
-    /// - Optimized for `string` to already be contained in [`StringInterner`] before this operation.
-    /// - Queries the position within `strings2symbol` twice in case `string` already existed.
-    #[inline]
-    fn get_or_intern_hint_existing(&mut self, string: &str) -> Symbol {
-        match self.string2symbol.get(<&LenOrderStr>::from(string)) {
-            Some(symbol) => *symbol,
-            None => self.intern(string),
-        }
-    }
-
-    /// Interns the `string` into the [`StringInterner`].
-    ///
-    /// # Panics
-    ///
-    /// If the `string` already exists.
-    #[cold]
-    fn intern(&mut self, string: &str) -> Symbol {
-        let symbol = Symbol::from_usize(self.strings.len());
-        let rc_string: Arc<str> = Arc::from(string);
-        let old = self
-            .string2symbol
-            .insert(LenOrder(rc_string.clone()), symbol);
-        assert!(old.is_none());
-        self.strings.push(rc_string);
-        symbol
-    }
-
-    /// Returns the symbol for the string if interned.
-    #[inline]
-    pub fn get(&self, string: &str) -> Option<Symbol> {
-        self.string2symbol
-            .get(<&LenOrderStr>::from(string))
-            .copied()
-    }
-
-    /// Resolves the symbol to the underlying string.
-    #[inline]
-    pub fn resolve(&self, symbol: Symbol) -> Option<&str> {
-        self.strings.get(symbol.into_usize()).map(Deref::deref)
-    }
-}
-
 /// Wasm import keys.
 #[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq)]
 #[repr(transparent)]
@@ -457,13 +242,13 @@ impl ImportKey {
     /// Returns the `module` [`Symbol`] of the [`ImportKey`].
     #[inline]
     pub fn module(&self) -> Symbol {
-        Symbol((self.module_and_name >> 32) as u32)
+        Symbol::from_u32((self.module_and_name >> 32) as u32)
     }
 
     /// Returns the `name` [`Symbol`] of the [`ImportKey`].
     #[inline]
     pub fn name(&self) -> Symbol {
-        Symbol(self.module_and_name as u32)
+        Symbol::from_u32(self.module_and_name as u32)
     }
 }
 
@@ -514,7 +299,7 @@ impl<T> Definition<T> {
     ///   defined host function.
     /// - This unifies handling of [`Definition::Extern(Extern::Func)`] and
     ///   [`Definition::HostFunc`].
-    pub fn as_func(&self, mut ctx: impl AsContextMut<UserState = T>) -> Option<Func> {
+    pub fn as_func(&self, mut ctx: impl AsContextMut<Data = T>) -> Option<Func> {
         match self {
             Definition::Extern(Extern::Func(func)) => Some(*func),
             Definition::HostFunc(host_func) => {
@@ -643,10 +428,7 @@ impl<T> Linker<T> {
         module: &str,
         name: &str,
         ty: FuncType,
-        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Error>
-            + Send
-            + Sync
-            + 'static,
+        func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<(), Error> + Send + Sync + 'static,
     ) -> Result<&mut Self, LinkerError> {
         self.ensure_undefined(module, name)?;
         let func = HostFuncTrampolineEntity::new(ty, func);
@@ -699,7 +481,7 @@ impl<T> Linker<T> {
     /// If the [`Engine`] of this [`Linker`] and the [`Engine`] of `context` are not the same.
     pub fn get(
         &self,
-        context: impl AsContext<UserState = T>,
+        context: impl AsContext<Data = T>,
         module: &str,
         name: &str,
     ) -> Option<Extern> {
@@ -718,7 +500,7 @@ impl<T> Linker<T> {
     /// If the [`Engine`] of this [`Linker`] and the [`Engine`] of `context` are not the same.
     fn get_definition(
         &self,
-        context: impl AsContext<UserState = T>,
+        context: impl AsContext<Data = T>,
         module: &str,
         name: &str,
     ) -> Option<&Definition<T>> {
@@ -746,7 +528,7 @@ impl<T> Linker<T> {
     /// - If any imported item does not satisfy its type requirements.
     pub fn instantiate(
         &self,
-        mut context: impl AsContextMut<UserState = T>,
+        mut context: impl AsContextMut<Data = T>,
         module: &Module,
     ) -> Result<InstancePre, Error> {
         assert!(Engine::same(self.engine(), context.as_context().engine()));
@@ -770,7 +552,7 @@ impl<T> Linker<T> {
     /// If the imported item does not satisfy constraints set by the [`Module`].
     fn process_import(
         &self,
-        mut context: impl AsContextMut<UserState = T>,
+        mut context: impl AsContextMut<Data = T>,
         import: ImportType,
     ) -> Result<Extern, Error> {
         assert!(Engine::same(self.engine(), context.as_context().engine()));
@@ -925,10 +707,7 @@ impl<T> LinkerBuilder<state::Constructing, T> {
         module: &str,
         name: &str,
         ty: FuncType,
-        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Error>
-            + Send
-            + Sync
-            + 'static,
+        func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<(), Error> + Send + Sync + 'static,
     ) -> Result<&mut Self, LinkerError> {
         self.inner_mut().func_new(module, name, ty, func)?;
         Ok(self)
@@ -976,6 +755,13 @@ pub struct LinkerInner<T> {
     /// Allows to efficiently store strings and deduplicate them..
     strings: StringInterner,
     /// Stores the definitions given their names.
+    ///
+    /// # Dev. Note
+    ///
+    /// Benchmarks show that [`BTreeMap`] performs better than [`HashMap`]
+    /// which is why we do not use [`wasmi_collections::Map`] here.
+    ///
+    /// [`HashMap`]: std::collections::HashMap
     definitions: BTreeMap<ImportKey, Definition<T>>,
 }
 
@@ -1001,8 +787,10 @@ impl<T> LinkerInner<T> {
     /// Returns the import key for the module name and item name.
     fn new_import_key(&mut self, module: &str, name: &str) -> ImportKey {
         ImportKey::new(
-            self.strings.get_or_intern(module, InternHint::LikelyExists),
-            self.strings.get_or_intern(name, InternHint::LikelyNew),
+            self.strings
+                .get_or_intern_with_hint(module, InternHint::LikelyExists),
+            self.strings
+                .get_or_intern_with_hint(name, InternHint::LikelyNew),
         )
     }
 
@@ -1054,10 +842,7 @@ impl<T> LinkerInner<T> {
         module: &str,
         name: &str,
         ty: FuncType,
-        func: impl Fn(Caller<'_, T>, &[Value], &mut [Value]) -> Result<(), Error>
-            + Send
-            + Sync
-            + 'static,
+        func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<(), Error> + Send + Sync + 'static,
     ) -> Result<&mut Self, LinkerError> {
         let func = HostFuncTrampolineEntity::new(ty, func);
         let key = self.new_import_key(module, name);
@@ -1121,7 +906,7 @@ impl<T> LinkerInner<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::ValueType;
+    use crate::core::ValType;
 
     use super::*;
     use crate::Store;
@@ -1139,9 +924,9 @@ mod tests {
             .func_new(
                 "host",
                 "get_a",
-                FuncType::new([], [ValueType::I32]),
-                |ctx: Caller<HostState>, _params: &[Value], results: &mut [Value]| {
-                    results[0] = Value::from(ctx.data().a);
+                FuncType::new([], [ValType::I32]),
+                |ctx: Caller<HostState>, _params: &[Val], results: &mut [Val]| {
+                    results[0] = Val::from(ctx.data().a);
                     Ok(())
                 },
             )
@@ -1150,8 +935,8 @@ mod tests {
             .func_new(
                 "host",
                 "set_a",
-                FuncType::new([ValueType::I32], []),
-                |mut ctx: Caller<HostState>, params: &[Value], _results: &mut [Value]| {
+                FuncType::new([ValType::I32], []),
+                |mut ctx: Caller<HostState>, params: &[Val], _results: &mut [Val]| {
                     ctx.data_mut().a = params[0].i32().unwrap();
                     Ok(())
                 },
@@ -1197,7 +982,7 @@ mod tests {
                 )
             "#;
         let wasm = wat::parse_str(wat).unwrap();
-        let module = Module::new(&engine, &mut &wasm[..]).unwrap();
+        let module = Module::new(&engine, &wasm[..]).unwrap();
         let instance = linker
             .instantiate(&mut store, &module)
             .unwrap()
@@ -1248,5 +1033,112 @@ mod tests {
             let engine = Engine::default();
             let _ = builder.create(&engine);
         }
+    }
+
+    #[test]
+    fn linker_builder_uses() {
+        use crate::{Engine, Linker, Module, Store};
+        let wasm = wat::parse_str(
+            r#"
+            (module
+                (import "host" "func.0" (func $host_func.0))
+                (import "host" "func.1" (func $host_func.1))
+                (func (export "hello")
+                    (call $host_func.0)
+                    (call $host_func.1)
+                )
+            )"#,
+        )
+        .unwrap();
+        let engine = Engine::default();
+        let mut builder = <Linker<()>>::build();
+        builder
+            .func_wrap("host", "func.0", |_caller: Caller<()>| unimplemented!())
+            .unwrap();
+        builder
+            .func_wrap("host", "func.1", |_caller: Caller<()>| unimplemented!())
+            .unwrap();
+        let linker = builder.finish().create(&engine);
+        let mut store = Store::new(&engine, ());
+        let module = Module::new(&engine, &wasm[..]).unwrap();
+        linker.instantiate(&mut store, &module).unwrap();
+    }
+
+    #[test]
+    fn linker_builder_and_linker_uses() {
+        use crate::{Engine, Linker, Module, Store};
+        let wasm = wat::parse_str(
+            r#"
+            (module
+                (import "host" "func.0" (func $host_func.0))
+                (import "host" "func.1" (func $host_func.1))
+                (func (export "hello")
+                    (call $host_func.0)
+                    (call $host_func.1)
+                )
+            )"#,
+        )
+        .unwrap();
+        let engine = Engine::default();
+        let mut builder = <Linker<()>>::build();
+        builder
+            .func_wrap("host", "func.0", |_caller: Caller<()>| unimplemented!())
+            .unwrap();
+        let mut linker = builder.finish().create(&engine);
+        linker
+            .func_wrap("host", "func.1", |_caller: Caller<()>| unimplemented!())
+            .unwrap();
+        let mut store = Store::new(&engine, ());
+        let module = Module::new(&engine, &wasm[..]).unwrap();
+        linker.instantiate(&mut store, &module).unwrap();
+    }
+
+    #[test]
+    fn linker_builder_no_overwrite() {
+        use crate::{Engine, Linker};
+        let engine = Engine::default();
+        let mut builder = <Linker<()>>::build();
+        builder
+            .func_wrap("host", "func.0", |_caller: Caller<()>| unimplemented!())
+            .unwrap();
+        let mut linker = builder.finish().create(&engine);
+        linker
+            .func_wrap("host", "func.1", |_caller: Caller<()>| unimplemented!())
+            .unwrap();
+        // The following definition won't shadow the previous 'host/func.0' func and errors instead:
+        linker
+            .func_wrap("host", "func.0", |_caller: Caller<()>| unimplemented!())
+            .unwrap_err();
+    }
+
+    #[test]
+    fn populate_via_imports() {
+        use crate::{Engine, Func, Linker, Memory, MemoryType, Module, Store};
+        let wasm = wat::parse_str(
+            r#"
+            (module
+                (import "host" "hello" (func $host_hello (param i32) (result i32)))
+                (import "env" "memory" (memory $mem 0 4096))
+                (func (export "hello") (result i32)
+                    (call $host_hello (i32.const 3))
+                    (i32.const 2)
+                    i32.add
+                )
+            )"#,
+        )
+        .unwrap();
+        let engine = Engine::default();
+        let mut linker = <Linker<()>>::new(&engine);
+        let mut store = Store::new(&engine, ());
+        let memory = Memory::new(&mut store, MemoryType::new(1, Some(4096)).unwrap()).unwrap();
+        let module = Module::new(&engine, &wasm[..]).unwrap();
+        linker.define("env", "memory", memory).unwrap();
+        let func = Func::new(
+            &mut store,
+            FuncType::new([ValType::I32], [ValType::I32]),
+            |_caller, _params, _results| todo!(),
+        );
+        linker.define("host", "hello", func).unwrap();
+        linker.instantiate(&mut store, &module).unwrap();
     }
 }

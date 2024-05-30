@@ -1,6 +1,6 @@
 use super::Executor;
 use crate::{
-    core::UntypedValue,
+    core::UntypedVal,
     engine::{
         bytecode::{AnyConst32, Const32, Instruction, Register},
         code_map::InstructionPtr,
@@ -25,16 +25,16 @@ macro_rules! fetch_select_imm_param {
     }};
 }
 
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
-    /// Returns the parameter of [`Instruction::Select`] or [`Instruction::SelectRev`] as [`UntypedValue`].
-    fn fetch_select_param(&self) -> UntypedValue {
+impl<'engine> Executor<'engine> {
+    /// Returns the parameter of [`Instruction::Select`] or [`Instruction::SelectRev`] as [`UntypedVal`].
+    fn fetch_select_param(&self) -> UntypedVal {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
         match *addr.get() {
             Instruction::Register(register) => self.get_register(register),
-            Instruction::Const32(value) => UntypedValue::from(u32::from(value)),
-            Instruction::I64Const32(value) => UntypedValue::from(i64::from(value)),
-            Instruction::F64Const32(value) => UntypedValue::from(f64::from(value)),
+            Instruction::Const32(value) => UntypedVal::from(u32::from(value)),
+            Instruction::I64Const32(value) => UntypedVal::from(i64::from(value)),
+            Instruction::F64Const32(value) => UntypedVal::from(f64::from(value)),
             unexpected => unreachable!(
                 "expected a select parameter instruction word but found {unexpected:?}"
             ),
@@ -49,8 +49,8 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         lhs: impl FnOnce(&Self) -> L,
         rhs: impl FnOnce(&Self) -> R,
     ) where
-        L: Into<UntypedValue>,
-        R: Into<UntypedValue>,
+        L: Into<UntypedVal>,
+        R: Into<UntypedVal>,
     {
         let condition: bool = self.get_register_as(condition);
         let selected = match condition {

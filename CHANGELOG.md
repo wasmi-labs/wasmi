@@ -8,24 +8,19 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
-## [`0.32.0-beta.12`] - 2024-04-25
+## [`0.32.0`] - 2024-05-28
 
 **Note:**
 
-- This is the beta of the upcoming `v0.32.0` release.
-  This version is not production ready yet and might contain serious bugs.
-  Please use this only for experimentation or at your own risk.
-- Performance tests indicated that the new register-machine bytecode based
-  Wasmi engine performance is very sensitive to hardware or OS specifics
-  which may lead to very different performance characteristics.
-    - We are working on fixing this until the stable release.
-    - Measurements concluded that execution performance can be equal or sometimes
-        even surpass Wasm3 execution performance.
+- This release is the culmination of months of research, development and QA
+  with a new execution engine utilizing register-based IR at its core boosting
+  both startup and execution performance to new levels for the Wasmi interpreter.
+- This release is accompanied with [an article](https://wasmi-labs.github.io/blog/) that presents some of the highlights.
 
 ### Added
 
-- Added a new execution engine based on register-machine bytecode. (https://github.com/wasmi-labs/wasmi/pull/729)
-    - The register-machine Wasmi `Engine` executes roughly 80-100% faster and
+- Added a new execution engine based on register-based bytecode. (https://github.com/wasmi-labs/wasmi/pull/729)
+    - The register-based Wasmi `Engine` executes roughly 80-100% faster and
       compiles roughly 30% slower according to benchmarks conducted so far.
 - Added `Module::new_unchecked` API. (https://github.com/wasmi-labs/wasmi/pull/829)
     - This allows to compile a Wasm module without Wasm validation which can be useful
@@ -52,7 +47,13 @@ Dates in this file are formattes as `YYYY-MM-DD`.
       ```
     - When `CompilationMode::Lazy` or `CompilationMode::LazyTranslation` and fuel metering is enabled
       the first function access that triggers compilation (and validation) will charge fuel respective
-      to the number of bytes of the Wasm function body. (https://github.com/wasmi-labs/wasmi/pull/876) 
+      to the number of bytes of the Wasm function body. (https://github.com/wasmi-labs/wasmi/pull/876)
+- Added non-streaming Wasm module compilation. (https://github.com/wasmi-labs/wasmi/pull/1035)
+    - So far Wasmi only offered a streaming Wasm module compilation API, however most users
+      probably never really needed that. So starting from this version both `Module::new` and
+      `Module::new_unchecked` are now non-streaming with insane performance improvements of up
+      to 80% in certain configurations.
+    - For streaming Wasm module users we added `Module::new_streaming` and `Module::new_streaming_unchecked` APIs.
 - Added `Module::validate` API. (https://github.com/wasmi-labs/wasmi/pull/840)
     - This allows to quickly check if a Wasm binary is valid according to a Wasmi `Engine` config.
     - Note that this does not translate the Wasm and thus `Module::new` or `Module::new_unchecked`
@@ -78,24 +79,39 @@ Dates in this file are formattes as `YYYY-MM-DD`.
       ```
       In future updates we might relax this to make `EnforcedLimits` fully customizable.
 - Added `EngineWeak` constructed via `Engine::weak`. (https://github.com/wasmi-labs/wasmi/pull/1003)
-     - This properly mirrors the Wasmtime API and allows users to store weak references to the `Engine`.
+    - This properly mirrors the Wasmtime API and allows users to store weak references to the `Engine`.
+- Added `no-hash-maps` crate feature to the `wasmi` crate. (https://github.com/wasmi-labs/wasmi/pull/1007)
+    - This tells the `wasmi` crate to avoid using hash based data structures which can be beneficial for
+      running Wasmi in some embedded environments such as `wasm32-unknown-unknown` that do not support
+      random sources and thus are incapable to spawn hash maps that are resilient to malicious actors.
+    - Note that Wasmi has always avoided using hash map based data structures prior to this change so
+      not enabling this new crate feature kind of acts as an optimization.
+- Added `Default` implementation for `Store<T> where T: Default`. (https://github.com/wasmi-labs/wasmi/pull/1031)
+    - This mostly serves as a convenient way to create a minimal Wasmi setup.
+- Added `WasmTy` implementations for `f32` and `f64` Rust primitives. (https://github.com/wasmi-labs/wasmi/pull/1031)
+    - This is convenience for `Linker::func_wrap` calls that take those primitives as arguments.
+      Before this change users had to use `F32` and `F64` instead which is a bit cumbersome.
 
 ### Changed
 
 - Minimum Rust version set to 1.77. (https://github.com/wasmi-labs/wasmi/pull/961)
 - CLI: Enabled Wasm `tail-calls` and `extend-const` proposals by default. (https://github.com/wasmi-labs/wasmi/pull/849)
     - We expect those Wasm proposals to be stabilized very soon so we feel safe to enable them by default already.
-- Improve `Debug` and `Display` impls for NaNs of Wasm `f32` and `f64` values.
+- Improved `Debug` and `Display` impls for NaNs of Wasm `f32` and `f64` values.
   - They now show `nan:0x{bytes}` where `{bytes}` is their respective raw bytes.
 - Implement `Sync` for `ResumableInvocation` and `TypedResumableInvocation`. (https://github.com/wasmi-labs/wasmi/pull/870)
 - Properly mirror Wasmtime's fuel API. (https://github.com/wasmi-labs/wasmi/pull/1002)
+- Renamed some Wasmi items to improve its Wasmtime mirroring. (https://github.com/wasmi-labs/wasmi/pull/1011)
+- Improved Wasmtime API mirror for Store fuel. (https://github.com/wasmi-labs/wasmi/pull/1002)
+- Enabled `Config::tail_call` and `Config::extended_const` by default. (https://github.com/wasmi-labs/wasmi/pull/1031)
+    - Those Wasm proposals have been moved to phase 4 for many months now.
 
 ### Removed
 
 - Removed the stack-machine bytecode based Wasmi `Engine` backend. (https://github.com/wasmi-labs/wasmi/pull/818)
-    - The new register-machine bytecode based Wasmi `Engine` is more promising
+    - The new register-based bytecode based Wasmi `Engine` is more promising
       and the Wasmi team does not want to maintain two different engine backends.
-- Remove `FuelConsumptionMode` from `Config`. (https://github.com/wasmi-labs/wasmi/pull/877)
+- Removed `FuelConsumptionMode` from `Config`. (https://github.com/wasmi-labs/wasmi/pull/877)
     - `FuelConsumptionMode` was required to differentiate between lazy and eager fuel consumption.
       This was necessary due to how lazy fuel consumption was implemented in that it would pre-charge
       for instruction execution were the exact amount of required fuel was not possible to determine
