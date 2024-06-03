@@ -8,6 +8,12 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.32.2`] - 2024-06-03
+
+### Fixed
+
+- Refine and generalize the fix for v0.32.1. (https://github.com/wasmi-labs/wasmi/pull/1054)
+
 ## [`0.32.1`] - 2024-06-03
 
 ### Fixed
