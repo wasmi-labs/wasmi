@@ -352,15 +352,14 @@ impl InstrEncoder {
             return None;
         }
 
+        // Propagate values according to the order of the merged copies.
+        if value == last_result {
+            value = last_value;
+        }
+
         let (merged_result, value0, value1) = if last_result < result {
-            if last_value == result {
-                value = last_value;
-            }
             (last_result, last_value, value)
         } else {
-            if value == last_result {
-                value = last_value;
-            }
             (result, value, last_value)
         };
 
