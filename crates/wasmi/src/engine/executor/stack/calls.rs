@@ -1,3 +1,4 @@
+use crate::core::hint;
 use super::{err_stack_overflow, BaseValueStackOffset, FrameValueStackOffset};
 use crate::{
     core::TrapCode,
@@ -22,12 +23,72 @@ use crate::{
 pub struct CallStack {
     /// The stack of nested function calls.
     calls: Vec<CallFrame>,
+    /// The [`Instance`] used at `calls` height.
+    instances: InstanceStack,
     /// The maximum allowed recursion depth.
     ///
     /// # Note
     ///
     /// A [`TrapCode::StackOverflow`] is raised if the recursion limit is exceeded.
     recursion_limit: usize,
+}
+
+#[derive(Debug)]
+pub struct InstanceStack {
+    top: Option<IndexedInstance>,
+    stack: Vec<IndexedInstance>,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct IndexedInstance {
+    pub index: usize,
+    pub instance: Instance,
+}
+
+impl Default for InstanceStack {
+    fn default() -> Self {
+        Self {
+            top: None,
+            stack: Vec::new(),
+        }
+    }
+}
+
+impl InstanceStack {
+    pub fn peek(&self) -> Option<&Instance> {
+        self.top.as_ref().map(|i| &i.instance)
+    }
+
+    pub fn push(&mut self, index: usize, instance: Instance) {
+        match self.top {
+            Some(top) => {
+                if top.instance == instance {
+                    return
+                }
+                debug_assert!(top.index < index);
+                self.stack.push(top);
+                self.top = Some(IndexedInstance { index, instance });
+            }
+            None => {
+                self.top = Some(IndexedInstance { index, instance });
+            }
+        }
+    }
+
+    /// Pops the top [`Instance`] if its `index` matches.
+    /// 
+    /// Returnst the new top [`Instance`] if the top [`Instance`] actually got popped.
+    pub fn pop_if(&mut self, index: usize) -> Option<Instance> {
+        let Some(top) = self.top else {
+            return None
+        };
+        if top.index != index {
+            return None
+        }
+        let new_top = self.stack.pop();
+        self.top = new_top;
+        new_top.map(|i| i.instance)
+    }
 }
 
 impl CallStack {
@@ -38,6 +99,7 @@ impl CallStack {
     pub fn new(recursion_limit: usize) -> Self {
         Self {
             calls: Vec::new(),
+            instances: InstanceStack::default(),
             recursion_limit,
         }
     }
@@ -66,24 +128,40 @@ impl CallStack {
         self.len() == 0
     }
 
+    /// Returns the currently used [`Instance`].
+    pub fn instance(&self) -> Option<&Instance> {
+        self.instances.peek()
+    }
+
     /// Pushes a [`CallFrame`] onto the [`CallStack`].
     ///
     /// # Errors
     ///
     /// If the recursion limit has been reached.
     #[inline(always)]
-    pub fn push(&mut self, call: CallFrame) -> Result<(), TrapCode> {
+    pub fn push(&mut self, call: CallFrame, instance: Option<Instance>) -> Result<(), TrapCode> {
         if self.len() == self.recursion_limit {
             return Err(err_stack_overflow());
+        }
+        if let Some(new_instance) = instance {
+            hint::cold();
+            let index = self.calls.len();
+            self.instances.push(index, new_instance);
         }
         self.calls.push(call);
         Ok(())
     }
 
     /// Pops the last [`CallFrame`] from the [`CallStack`] if any.
+    /// 
+    /// Returns `Some(new_instance)` if the currently used [`Instance`]
+    /// has changed by popping the returned [`CallFrame`].
     #[inline(always)]
-    pub fn pop(&mut self) -> Option<CallFrame> {
-        self.calls.pop()
+    pub fn pop(&mut self) -> Option<(CallFrame, Option<Instance>)> {
+        let frame = self.calls.pop()?;
+        let index = self.calls.len();
+        let new_instance = self.instances.pop_if(index);
+        Some((frame, new_instance))
     }
 
     /// Peeks the last [`CallFrame`] of the [`CallStack`] if any.
@@ -124,13 +202,6 @@ pub struct CallFrame {
     frame_ptr: FrameValueStackOffset,
     /// Span of registers were the caller expects them in its [`CallFrame`].
     results: RegisterSpan,
-    /// The instance in which the function has been defined.
-    ///
-    /// # Note
-    ///
-    /// The [`Instance`] is used to inspect and manipulate data that is
-    /// non-local to the function such as [`Memory`], [`Global`] and [`Table`].
-    instance: Instance,
 }
 
 impl CallFrame {
@@ -140,14 +211,12 @@ impl CallFrame {
         frame_ptr: FrameValueStackOffset,
         base_ptr: BaseValueStackOffset,
         results: RegisterSpan,
-        instance: Instance,
     ) -> Self {
         Self {
             instr_ptr,
             base_ptr,
             frame_ptr,
             results,
-            instance,
         }
     }
 
@@ -197,10 +266,5 @@ impl CallFrame {
     /// refer to the [`CallFrame`] of the caller of this [`CallFrame`].
     pub fn results(&self) -> RegisterSpan {
         self.results
-    }
-
-    /// Returns the [`Instance`] of the [`CallFrame`].
-    pub fn instance(&self) -> &Instance {
-        &self.instance
     }
 }

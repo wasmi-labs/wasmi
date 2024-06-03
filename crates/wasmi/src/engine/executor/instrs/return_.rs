@@ -24,7 +24,7 @@ impl<'engine> Executor<'engine> {
     /// from the returning callee to the caller.
     #[inline(always)]
     fn return_impl(&mut self) -> ReturnOutcome {
-        let returned = self
+        let (returned, caller_instance) = self
             .call_stack
             .pop()
             .expect("the executing call frame is always on the stack");
@@ -32,7 +32,9 @@ impl<'engine> Executor<'engine> {
         match self.call_stack.peek() {
             Some(caller) => {
                 Self::init_call_frame_impl(self.value_stack, &mut self.sp, &mut self.ip, caller);
-                self.cache.update_instance(caller.instance());
+                if let Some(caller_instance) = caller_instance.as_ref() {
+                    self.cache.update_instance(caller_instance);
+                }
                 ReturnOutcome::Wasm
             }
             None => ReturnOutcome::Host,

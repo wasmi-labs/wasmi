@@ -96,7 +96,7 @@ impl Stack {
         value_stack: &mut ValueStack,
         callee: &mut CallFrame,
     ) {
-        let caller = call_stack.pop().expect("caller call frame must exist");
+        let (caller, _) = call_stack.pop().expect("caller call frame must exist");
         debug_assert_eq!(callee.results(), caller.results());
         debug_assert!(caller.base_offset() <= callee.base_offset());
         // Safety:

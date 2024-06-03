@@ -212,13 +212,15 @@ impl<'engine> EngineExecutor<'engine> {
                 //         Also we are providing call parameters which have been checked already to
                 //         be exactly the length of the expected function arguments.
                 unsafe { self.stack.values.fill_at(base_ptr, params.call_params()) };
-                self.stack.calls.push(CallFrame::new(
-                    InstructionPtr::new(compiled_func.instrs().as_ptr()),
-                    frame_ptr,
-                    base_ptr,
-                    RegisterSpan::new(Register::from_i16(0)),
-                    instance,
-                ))?;
+                self.stack.calls.push(
+                    CallFrame::new(
+                        InstructionPtr::new(compiled_func.instrs().as_ptr()),
+                        frame_ptr,
+                        base_ptr,
+                        RegisterSpan::new(Register::from_i16(0)),
+                    ),
+                    Some(instance),
+                )?;
                 self.execute_func(store)?;
             }
             FuncEntity::Host(host_func) => {
@@ -295,10 +297,9 @@ impl<'engine> EngineExecutor<'engine> {
         let mut cache = self
             .stack
             .calls
-            .peek()
-            .map(CallFrame::instance)
+            .instance()
             .map(InstanceCache::from)
-            .expect("must have frame on the call stack");
+            .expect("must have an instance on the call stack");
         let value_stack = &mut self.stack.values;
         let call_stack = &mut self.stack.calls;
         let code_map = &self.res.code_map;

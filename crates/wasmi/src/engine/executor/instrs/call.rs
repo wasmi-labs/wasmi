@@ -216,9 +216,8 @@ impl<'engine> Executor<'engine> {
             .expect("need to have a caller on the call stack");
         // Safety: We use the base offset of a live call frame on the call stack.
         self.sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
-        let instance = caller.instance();
         let instr_ptr = InstructionPtr::new(func.instrs().as_ptr());
-        let frame = CallFrame::new(instr_ptr, frame_ptr, base_ptr, results, *instance);
+        let frame = CallFrame::new(instr_ptr, frame_ptr, base_ptr, results);
         if <C as CallContext>::HAS_PARAMS {
             let called_sp = self.frame_stack_ptr(&frame);
             self.copy_call_params(called_sp);
@@ -295,6 +294,7 @@ impl<'engine> Executor<'engine> {
         store: &mut StoreInner,
         results: RegisterSpan,
         func: CompiledFunc,
+        instance: Option<Instance>,
     ) -> Result<(), Error> {
         let func = self.code_map.get(Some(store.fuel_mut()), func)?;
         let mut called = self.dispatch_compiled_func::<C>(results, func)?;
@@ -318,7 +318,7 @@ impl<'engine> Executor<'engine> {
             }
         }
         self.init_call_frame(&called);
-        self.call_stack.push(called)?;
+        self.call_stack.push(called, instance)?;
         Ok(())
     }
 
@@ -349,7 +349,7 @@ impl<'engine> Executor<'engine> {
         func: CompiledFunc,
     ) -> Result<(), Error> {
         let results = self.caller_results();
-        self.prepare_compiled_func_call::<C>(store, results, func)
+        self.prepare_compiled_func_call::<C>(store, results, func, None)
     }
 
     /// Returns the `results` [`RegisterSpan`] of the top-most [`CallFrame`] on the [`CallStack`].
@@ -375,7 +375,7 @@ impl<'engine> Executor<'engine> {
         results: RegisterSpan,
         func: CompiledFunc,
     ) -> Result<(), Error> {
-        self.prepare_compiled_func_call::<marker::NestedCall0>(store, results, func)
+        self.prepare_compiled_func_call::<marker::NestedCall0>(store, results, func, None)
     }
 
     /// Executes an [`Instruction::CallInternal`].
@@ -386,7 +386,7 @@ impl<'engine> Executor<'engine> {
         results: RegisterSpan,
         func: CompiledFunc,
     ) -> Result<(), Error> {
-        self.prepare_compiled_func_call::<marker::NestedCall>(store, results, func)
+        self.prepare_compiled_func_call::<marker::NestedCall>(store, results, func, None)
     }
 
     /// Executes an [`Instruction::ReturnCallImported0`].
@@ -455,7 +455,7 @@ impl<'engine> Executor<'engine> {
             FuncEntity::Wasm(func) => {
                 let instance = *func.instance();
                 let func_body = func.func_body();
-                self.prepare_compiled_func_call::<C>(&mut store.inner, results, func_body)?;
+                self.prepare_compiled_func_call::<C>(&mut store.inner, results, func_body, Some(instance))?;
                 self.cache.update_instance(&instance);
                 Ok(())
             }
@@ -494,11 +494,12 @@ impl<'engine> Executor<'engine> {
         // Safety: we just called reserve to fit the new values.
         let offset = unsafe { self.value_stack.extend_zeros(max_inout) };
         let offset_sp = unsafe { self.value_stack.stack_ptr_at(offset) };
+        let instance = *self.call_stack.instance().expect("need to have an instance on the call stack");
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
         // [`ValueStack::reserve`] which might invalidate all live [`FrameRegisters`].
         let caller = match <C as CallContext>::KIND {
             CallKind::Nested => self.call_stack.peek().copied(),
-            CallKind::Tail => self.call_stack.pop(),
+            CallKind::Tail => self.call_stack.pop().map(|(frame, _instance)| frame),
         }
         .expect("need to have a caller on the call stack");
         // Safety: we use the base offset of a live call frame on the call stack.
@@ -511,7 +512,7 @@ impl<'engine> Executor<'engine> {
         }
         self.cache.reset();
         let (len_inputs, len_outputs) = self
-            .dispatch_host_func::<T>(store, host_func, caller)
+            .dispatch_host_func::<T>(store, host_func, &instance)
             .map_err(|error| match self.call_stack.is_empty() {
                 true => error,
                 false => ResumableHostError::new(error, *func, results).into(),
@@ -547,14 +548,14 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut Store<T>,
         host_func: HostFuncEntity,
-        caller: CallFrame,
+        instance: &Instance,
     ) -> Result<(usize, usize), Error> {
         dispatch_host_func(
             store,
             self.func_types,
             self.value_stack,
             host_func,
-            Some(caller.instance()),
+            Some(&instance),
         )
     }
 
