@@ -208,29 +208,6 @@ impl ValueStack {
         ValueStackOffset(old_len)
     }
 
-    /// Extends the [`ValueStack`] by the `values` slice.
-    ///
-    /// Returns the [`ValueStackOffset`] before this operation.
-    /// Use [`ValueStack::truncate`] to undo the [`ValueStack`] state change.
-    ///
-    /// # Safety
-    ///
-    /// The caller is responsible to make sure enough space is reserved for `values.len()` new values.
-    pub unsafe fn extend_slice(&mut self, values: &[UntypedVal]) -> ValueStackOffset {
-        if values.is_empty() {
-            return ValueStackOffset(self.len());
-        }
-        let amount = values.len();
-        let remaining = self.values.spare_capacity_mut();
-        let uninit = unsafe { remaining.get_unchecked_mut(..amount) };
-        for (uninit, value) in uninit.iter_mut().zip(values) {
-            uninit.write(*value);
-        }
-        let old_len = self.len();
-        unsafe { self.values.set_len(old_len + amount) };
-        ValueStackOffset(old_len)
-    }
-
     /// Drop the last `amount` cells of the [`ValueStack`].
     ///
     /// # Panics (Debug)
@@ -274,18 +251,19 @@ impl ValueStack {
         func: &CompiledFuncEntity,
     ) -> Result<(BaseValueStackOffset, FrameValueStackOffset), TrapCode> {
         let len_registers = func.len_registers();
-        self.reserve(len_registers as usize)?;
-        // SAFETY: We just called reserve to fit all new values.
-        let (frame_offset, base_offset) = unsafe {
-            (
-                self.extend_slice(func.consts()),
-                self.extend_zeros(func.len_cells() as usize),
-            )
-        };
-        Ok((
-            BaseValueStackOffset(base_offset),
-            FrameValueStackOffset(frame_offset),
-        ))
+        let len = self.len();
+        let mut spare = self.extend_by(len_registers as usize)?.into_iter();
+        (&mut spare)
+            .zip(func.consts())
+            .for_each(|(uninit, const_value)| {
+                uninit.write(*const_value);
+            });
+        spare.for_each(|uninit| {
+            uninit.write(UntypedVal::from(0));
+        });
+        let frame = ValueStackOffset(len);
+        let base = ValueStackOffset(len + func.consts().len());
+        Ok((BaseValueStackOffset(base), FrameValueStackOffset(frame)))
     }
 
     /// Fills the [`ValueStack`] cells at `offset` with `values`.
