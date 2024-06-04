@@ -60,19 +60,13 @@ impl InstanceStack {
     }
 
     pub fn push(&mut self, index: usize, instance: Instance) {
-        match self.top {
-            Some(top) => {
-                if top.instance == instance {
-                    return
-                }
-                debug_assert!(top.index < index);
-                self.stack.push(top);
-                self.top = Some(IndexedInstance { index, instance });
+        if let Some(top) = self.top {
+            if top.instance == instance {
+                return
             }
-            None => {
-                self.top = Some(IndexedInstance { index, instance });
-            }
+            self.stack.push(top);
         }
+        self.top = Some(IndexedInstance { index, instance });
     }
 
     /// Pops the top [`Instance`] if its `index` matches.
