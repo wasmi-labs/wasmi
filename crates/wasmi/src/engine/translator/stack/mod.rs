@@ -130,6 +130,13 @@ impl ValueStack {
         self.providers.preserve_all_locals(&mut self.reg_alloc, f)
     }
 
+    /// Frees all preservation slots that have been flagged for removal.
+    ///
+    /// This is important to allow them for reuse for future preservations.
+    pub fn gc_preservations(&mut self) {
+        self.reg_alloc.gc_preservations()
+    }
+
     /// Returns the number of [`Provider`] on the [`ValueStack`].
     ///
     /// # Note
