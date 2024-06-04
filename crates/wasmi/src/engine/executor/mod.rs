@@ -196,9 +196,7 @@ impl<'engine> EngineExecutor<'engine> {
             FuncEntity::Wasm(wasm_func) => {
                 // We reserve space on the stack to write the results of the root function execution.
                 let len_results = results.len_results();
-                self.stack.values.reserve(len_results)?;
-                // SAFETY: we just called reserve to fit all new values.
-                unsafe { self.stack.values.extend_zeros(len_results) };
+                self.stack.values.extend_by(len_results)?;
                 let instance = *wasm_func.instance();
                 let compiled_func = wasm_func.func_body();
                 let compiled_func = self
@@ -234,12 +232,9 @@ impl<'engine> EngineExecutor<'engine> {
                 let len_params = input_types.len();
                 let len_results = output_types.len();
                 let max_inout = len_params.max(len_results);
-                self.stack.values.reserve(max_inout)?;
-                // SAFETY: we just called reserve to fit all new values.
-                unsafe { self.stack.values.extend_zeros(max_inout) };
-                let values = &mut self.stack.values.as_slice_mut()[..len_params];
-                for (value, param) in values.iter_mut().zip(params.call_params()) {
-                    *value = param;
+                let uninit = self.stack.values.extend_by(max_inout)?;
+                for (uninit, param) in uninit.iter_mut().zip(params.call_params()) {
+                    uninit.write(param);
                 }
                 let host_func = *host_func;
                 self.dispatch_host_func(store, host_func)?;
