@@ -180,6 +180,7 @@ impl ValueStack {
     /// # Errors
     ///
     /// When trying to grow the [`ValueStack`] over its maximum size limit.
+    #[deprecated(note = "use extend_by instead")]
     pub fn reserve(&mut self, additional: usize) -> Result<(), TrapCode> {
         if additional >= self.max_len() - self.len() {
             return Err(err_stack_overflow());
@@ -196,6 +197,7 @@ impl ValueStack {
     /// # Safety
     ///
     /// The caller is responsible to make sure enough space is reserved for `amount` new values.
+    #[deprecated(note = "use extend_by instead")]
     pub unsafe fn extend_zeros(&mut self, amount: usize) -> ValueStackOffset {
         if amount == 0 {
             return ValueStackOffset(self.len());
