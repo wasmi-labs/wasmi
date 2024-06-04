@@ -338,6 +338,22 @@ impl RegisterAlloc {
             None => unreachable!(),
         };
         self.assert_alloc_phase();
+        // Now we can clear the removed preserved registers.
+        self.removed_preserved.clear();
+        let key = self.preservations.put(NZ_TWO, ());
+        let reg = Self::key2reg(key);
+        self.update_min_preserved(reg.prev())?;
+        Ok(reg)
+    }
+
+    /// Frees all preservation slots that are flagged for removal.
+    ///
+    /// This is important to allow them for reuse for future preservations.
+    pub fn gc_preservations(&mut self) {
+        self.assert_alloc_phase();
+        if self.removed_preserved.is_empty() {
+            return;
+        }
         for &key in &self.removed_preserved {
             let entry = self.preservations.get(key);
             debug_assert!(
@@ -352,12 +368,6 @@ impl RegisterAlloc {
                 self.preservations.take_all(key);
             }
         }
-        // Now we can clear the removed preserved registers.
-        self.removed_preserved.clear();
-        let key = self.preservations.put(NZ_TWO, ());
-        let reg = Self::key2reg(key);
-        self.update_min_preserved(reg.prev())?;
-        Ok(reg)
     }
 
     /// Bumps the [`Register`] quantity on the preservation stack by one.
