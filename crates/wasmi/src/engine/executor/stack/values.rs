@@ -7,6 +7,7 @@ use core::{
     fmt::{self, Debug},
     mem::{self, MaybeUninit},
     ptr,
+    slice,
 };
 use std::vec::Vec;
 
@@ -138,6 +139,26 @@ impl ValueStack {
     /// Returns `true` if the [`ValueStack`] is empty.
     pub fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+
+    /// Reserves enough space for `additional` cells on the [`ValueStack`].
+    ///
+    /// This may heap allocate in case the [`ValueStack`] ran out of preallocated memory.
+    ///
+    /// # Errors
+    ///
+    /// When trying to grow the [`ValueStack`] over its maximum size limit.
+    pub fn extend_by(
+        &mut self,
+        additional: usize,
+    ) -> Result<&mut [MaybeUninit<UntypedVal>], TrapCode> {
+        if additional >= self.max_len() - self.len() {
+            return Err(err_stack_overflow());
+        }
+        self.values.reserve(additional);
+        let spare = self.values.spare_capacity_mut().as_mut_ptr();
+        unsafe { self.values.set_len(self.values.len() + additional) };
+        Ok(unsafe { slice::from_raw_parts_mut(spare, additional) })
     }
 
     /// Returns the current length of the [`ValueStack`].
