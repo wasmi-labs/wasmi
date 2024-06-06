@@ -13,7 +13,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 ### Fixed
 
 - Fix overlapping reuse of local preservation slots. (https://github.com/wasmi-labs/wasmi/pull/1057)
-    - THanks again to [kaiavintr](https://github.com/kaiavintr) for reporting the bug.
+    - Thanks again to [kaiavintr](https://github.com/kaiavintr) for reporting the bug.
 
 ## [`0.32.2`] - 2024-06-03
 
