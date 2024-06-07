@@ -166,6 +166,10 @@ pub struct EngineExecutor<'engine> {
     stack: &'engine mut Stack,
 }
 
+/// Convenience function that does nothing to its `&mut` parameter.
+#[inline]
+fn do_nothing<T>(_: &mut T) {}
+
 impl<'engine> EngineExecutor<'engine> {
     /// Creates a new [`EngineExecutor`] with the given [`StackLimits`].
     fn new(res: &'engine EngineResources, stack: &'engine mut Stack) -> Self {
@@ -196,20 +200,21 @@ impl<'engine> EngineExecutor<'engine> {
             FuncEntity::Wasm(wasm_func) => {
                 // We reserve space on the stack to write the results of the root function execution.
                 let len_results = results.len_results();
-                self.stack.values.extend_by(len_results)?;
+                self.stack.values.extend_by(len_results, do_nothing)?;
                 let instance = *wasm_func.instance();
                 let compiled_func = wasm_func.func_body();
                 let compiled_func = self
                     .res
                     .code_map
                     .get(Some(store.inner.fuel_mut()), compiled_func)?;
-                let (base_ptr, frame_ptr) = self.stack.values.alloc_call_frame(compiled_func)?;
-                // Safety: We use the `base_ptr` that we just received upon allocating the new
-                //         call frame which is guaranteed to be valid for this particular operation
-                //         until deallocating the call frame again.
-                //         Also we are providing call parameters which have been checked already to
-                //         be exactly the length of the expected function arguments.
-                unsafe { self.stack.values.fill_at(base_ptr, params.call_params()) };
+                let (mut uninit_params, base_ptr, frame_ptr) = self
+                    .stack
+                    .values
+                    .alloc_call_frame(compiled_func, do_nothing)?;
+                for value in params.call_params() {
+                    unsafe { uninit_params.init_next(value) };
+                }
+                uninit_params.init_zeroes();
                 self.stack.calls.push(CallFrame::new(
                     InstructionPtr::new(compiled_func.instrs().as_ptr()),
                     frame_ptr,
@@ -232,7 +237,7 @@ impl<'engine> EngineExecutor<'engine> {
                 let len_params = input_types.len();
                 let len_results = output_types.len();
                 let max_inout = len_params.max(len_results);
-                let uninit = self.stack.values.extend_by(max_inout)?;
+                let uninit = self.stack.values.extend_by(max_inout, do_nothing)?;
                 for (uninit, param) in uninit.iter_mut().zip(params.call_params()) {
                     uninit.write(param);
                 }

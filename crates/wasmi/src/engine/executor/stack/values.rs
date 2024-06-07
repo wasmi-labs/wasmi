@@ -6,6 +6,7 @@ use crate::{
 use core::{
     fmt::{self, Debug},
     mem::{self, MaybeUninit},
+    ops::Range,
     ptr,
     slice,
 };
@@ -151,11 +152,16 @@ impl ValueStack {
     pub fn extend_by(
         &mut self,
         additional: usize,
+        on_resize: impl FnOnce(&mut Self),
     ) -> Result<&mut [MaybeUninit<UntypedVal>], TrapCode> {
         if additional >= self.max_len() - self.len() {
             return Err(err_stack_overflow());
         }
+        let prev_capacity = self.capacity();
         self.values.reserve(additional);
+        if prev_capacity != self.capacity() {
+            on_resize(self);
+        }
         let spare = self.values.spare_capacity_mut().as_mut_ptr();
         unsafe { self.values.set_len(self.values.len() + additional) };
         Ok(unsafe { slice::from_raw_parts_mut(spare, additional) })
@@ -171,43 +177,6 @@ impl ValueStack {
     fn max_len(&self) -> usize {
         debug_assert!(self.values.len() <= self.max_len);
         self.max_len
-    }
-
-    /// Reserves enough space for `additional` cells on the [`ValueStack`].
-    ///
-    /// This may heap allocate in case the [`ValueStack`] ran out of preallocated memory.
-    ///
-    /// # Errors
-    ///
-    /// When trying to grow the [`ValueStack`] over its maximum size limit.
-    #[deprecated(note = "use extend_by instead")]
-    pub fn reserve(&mut self, additional: usize) -> Result<(), TrapCode> {
-        if additional >= self.max_len() - self.len() {
-            return Err(err_stack_overflow());
-        }
-        self.values.reserve(additional);
-        Ok(())
-    }
-
-    /// Extends the [`ValueStack`] by the `amount` of zeros.
-    ///
-    /// Returns the [`ValueStackOffset`] before this operation.
-    /// Use [`ValueStack::truncate`] to undo the [`ValueStack`] state change.
-    ///
-    /// # Safety
-    ///
-    /// The caller is responsible to make sure enough space is reserved for `amount` new values.
-    #[deprecated(note = "use extend_by instead")]
-    pub unsafe fn extend_zeros(&mut self, amount: usize) -> ValueStackOffset {
-        if amount == 0 {
-            return ValueStackOffset(self.len());
-        }
-        let remaining = self.values.spare_capacity_mut();
-        let uninit = unsafe { remaining.get_unchecked_mut(..amount) };
-        uninit.fill(MaybeUninit::new(UntypedVal::default()));
-        let old_len = self.len();
-        unsafe { self.values.set_len(old_len + amount) };
-        ValueStackOffset(old_len)
     }
 
     /// Drop the last `amount` cells of the [`ValueStack`].
@@ -251,44 +220,27 @@ impl ValueStack {
     pub fn alloc_call_frame(
         &mut self,
         func: &CompiledFuncEntity,
-    ) -> Result<(BaseValueStackOffset, FrameValueStackOffset), TrapCode> {
+        on_resize: impl FnMut(&mut Self),
+    ) -> Result<(FrameParams, BaseValueStackOffset, FrameValueStackOffset), TrapCode> {
         let len_registers = func.len_registers();
+        let len_consts = func.consts().len();
         let len = self.len();
-        let mut spare = self.extend_by(len_registers as usize)?.into_iter();
+        let mut spare = self
+            .extend_by(len_registers as usize, on_resize)?
+            .iter_mut();
         (&mut spare)
             .zip(func.consts())
             .for_each(|(uninit, const_value)| {
                 uninit.write(*const_value);
             });
-        spare.for_each(|uninit| {
-            uninit.write(UntypedVal::from(0));
-        });
+        let params = FrameParams::new(spare.into_slice());
         let frame = ValueStackOffset(len);
-        let base = ValueStackOffset(len + func.consts().len());
-        Ok((BaseValueStackOffset(base), FrameValueStackOffset(frame)))
-    }
-
-    /// Fills the [`ValueStack`] cells at `offset` with `values`.
-    ///
-    /// # Safety
-    ///
-    /// The caller has to ensure that `offset` is valid for the range of
-    /// `values` required to be stored on the [`ValueStack`].
-    pub unsafe fn fill_at<IntoIter, Iter>(
-        &mut self,
-        offset: impl Into<ValueStackOffset>,
-        values: IntoIter,
-    ) where
-        IntoIter: IntoIterator<IntoIter = Iter>,
-        Iter: ExactSizeIterator<Item = UntypedVal>,
-    {
-        let offset = offset.into().0;
-        let values = values.into_iter();
-        let len_values = values.len();
-        let cells = &mut self.values[offset..offset + len_values];
-        for (cell, value) in cells.iter_mut().zip(values) {
-            *cell = value;
-        }
+        let base = ValueStackOffset(len + len_consts);
+        Ok((
+            params,
+            BaseValueStackOffset(base),
+            FrameValueStackOffset(frame),
+        ))
     }
 
     /// Returns a shared slice over the values of the [`ValueStack`].
@@ -390,6 +342,40 @@ impl BaseValueStackOffset {
 impl From<BaseValueStackOffset> for usize {
     fn from(offset: BaseValueStackOffset) -> usize {
         offset.0 .0
+    }
+}
+
+/// Uninitialized parameters of a [`CallFrame`].
+pub struct FrameParams {
+    range: Range<*mut MaybeUninit<UntypedVal>>,
+}
+
+impl FrameParams {
+    /// Creates a new [`FrameRegisters`].
+    pub fn new(ptr: &mut [MaybeUninit<UntypedVal>]) -> Self {
+        Self {
+            range: ptr.as_mut_ptr_range(),
+        }
+    }
+
+    /// Sets the value of the `register` to `value`.`
+    ///
+    /// # Safety
+    ///
+    /// It is the callers responsibility to provide a [`Register`] that
+    /// does not access the underlying [`ValueStack`] out of bounds.
+    pub unsafe fn init_next(&mut self, value: UntypedVal) {
+        self.range.start.write(MaybeUninit::new(value));
+        self.range.start = self.range.start.add(1);
+    }
+
+    /// Zero-initialize the remaining locals and parameters.
+    pub fn init_zeroes(mut self) {
+        debug_assert!(self.range.start <= self.range.end);
+        while self.range.start != self.range.end {
+            // Safety: We do not write out-of-buffer due to the above condition.
+            unsafe { self.init_next(UntypedVal::from(0_u64)) }
+        }
     }
 }
 

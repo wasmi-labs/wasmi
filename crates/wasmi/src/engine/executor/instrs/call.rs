@@ -4,7 +4,7 @@ use crate::{
     engine::{
         bytecode::{FuncIdx, Instruction, Register, RegisterSpan, SignatureIdx, TableIdx},
         code_map::InstructionPtr,
-        executor::stack::{CallFrame, FrameRegisters, Stack, ValueStack},
+        executor::stack::{CallFrame, FrameParams, Stack, ValueStack},
         func_types::FuncTypeRegistry,
         CompiledFunc,
         CompiledFuncEntity,
@@ -207,22 +207,24 @@ impl<'engine> Executor<'engine> {
         results: RegisterSpan,
         func: &CompiledFuncEntity,
     ) -> Result<CallFrame, Error> {
-        let (base_ptr, frame_ptr) = self.value_stack.alloc_call_frame(func)?;
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
         // [`ValueStack::alloc_call_frame`] which might invalidate all live [`FrameRegisters`].
         let caller = self
             .call_stack
             .peek()
             .expect("need to have a caller on the call stack");
-        // Safety: We use the base offset of a live call frame on the call stack.
-        self.sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
+        let (mut uninit_params, base_ptr, frame_ptr) =
+            self.value_stack.alloc_call_frame(func, |this| {
+                // Safety: We use the base offset of a live call frame on the call stack.
+                self.sp = unsafe { this.stack_ptr_at(caller.base_offset()) };
+            })?;
         let instance = caller.instance();
         let instr_ptr = InstructionPtr::new(func.instrs().as_ptr());
         let frame = CallFrame::new(instr_ptr, frame_ptr, base_ptr, results, *instance);
         if <C as CallContext>::HAS_PARAMS {
-            let called_sp = self.frame_stack_ptr(&frame);
-            self.copy_call_params(called_sp);
+            self.copy_call_params(&mut uninit_params);
         }
+        uninit_params.init_zeroes();
         Ok(frame)
     }
 
@@ -231,21 +233,20 @@ impl<'engine> Executor<'engine> {
     /// This will also adjust the instruction pointer to point to the
     /// last call parameter [`Instruction`] if any.
     #[inline(always)]
-    fn copy_call_params(&mut self, mut callee_regs: FrameRegisters) {
-        let mut dst = Register::from_i16(0);
+    fn copy_call_params(&mut self, uninit_params: &mut FrameParams) {
         self.ip.add(1);
         if let Instruction::RegisterList(_) = self.ip.get() {
-            self.copy_call_params_list(&mut dst, &mut callee_regs);
+            self.copy_call_params_list(uninit_params);
         }
         match self.ip.get() {
             Instruction::Register(value) => {
-                self.copy_regs(&mut dst, &mut callee_regs, array::from_ref(value));
+                self.copy_regs(uninit_params, array::from_ref(value));
             }
             Instruction::Register2(values) => {
-                self.copy_regs(&mut dst, &mut callee_regs, values);
+                self.copy_regs(uninit_params, values);
             }
             Instruction::Register3(values) => {
-                self.copy_regs(&mut dst, &mut callee_regs, values);
+                self.copy_regs(uninit_params, values);
             }
             unexpected => {
                 unreachable!(
@@ -257,20 +258,14 @@ impl<'engine> Executor<'engine> {
 
     /// Copies an array of [`Register`] to the `dst` [`Register`] span.
     #[inline(always)]
-    fn copy_regs<const N: usize>(
-        &self,
-        dst: &mut Register,
-        callee_regs: &mut FrameRegisters,
-        regs: &[Register; N],
-    ) {
+    fn copy_regs<const N: usize>(&self, uninit_params: &mut FrameParams, regs: &[Register; N]) {
         for value in regs {
             let value = self.get_register(*value);
             // Safety: The `callee.results()` always refer to a span of valid
             //         registers of the `caller` that does not overlap with the
             //         registers of the callee since they reside in different
             //         call frames. Therefore this access is safe.
-            unsafe { callee_regs.set(*dst, value) }
-            *dst = dst.next();
+            unsafe { uninit_params.init_next(value) }
         }
     }
 
@@ -281,9 +276,9 @@ impl<'engine> Executor<'engine> {
     /// last [`Instruction::RegisterList`] if any.
     #[inline(always)]
     #[cold]
-    fn copy_call_params_list(&mut self, dst: &mut Register, callee_regs: &mut FrameRegisters) {
+    fn copy_call_params_list(&mut self, uninit_params: &mut FrameParams) {
         while let Instruction::RegisterList(values) = self.ip.get() {
-            self.copy_regs(dst, callee_regs, values);
+            self.copy_regs(uninit_params, values);
             self.ip.add(1);
         }
     }
@@ -487,13 +482,6 @@ impl<'engine> Executor<'engine> {
             .func_types
             .resolve_func_type(host_func.ty_dedup())
             .params_results();
-        let len_params = input_types.len();
-        let len_results = output_types.len();
-        let max_inout = len_params.max(len_results);
-        self.value_stack.reserve(max_inout)?;
-        // Safety: we just called reserve to fit the new values.
-        let offset = unsafe { self.value_stack.extend_zeros(max_inout) };
-        let offset_sp = unsafe { self.value_stack.stack_ptr_at(offset) };
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
         // [`ValueStack::reserve`] which might invalidate all live [`FrameRegisters`].
         let caller = match <C as CallContext>::KIND {
@@ -501,10 +489,17 @@ impl<'engine> Executor<'engine> {
             CallKind::Tail => self.call_stack.pop(),
         }
         .expect("need to have a caller on the call stack");
-        // Safety: we use the base offset of a live call frame on the call stack.
-        self.sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
+        let len_params = input_types.len();
+        let len_results = output_types.len();
+        let max_inout = len_params.max(len_results);
+        let buffer = self.value_stack.extend_by(max_inout, |this| {
+            // Safety: we use the base offset of a live call frame on the call stack.
+            self.sp = unsafe { this.stack_ptr_at(caller.base_offset()) };
+        })?;
         if <C as CallContext>::HAS_PARAMS {
-            self.copy_call_params(offset_sp);
+            let mut uninit_params = FrameParams::new(buffer);
+            self.copy_call_params(&mut uninit_params);
+            uninit_params.init_zeroes();
         }
         if matches!(<C as CallContext>::KIND, CallKind::Nested) {
             self.update_instr_ptr_at(1);
