@@ -1,7 +1,6 @@
-use crate::core::hint;
 use super::{err_stack_overflow, BaseValueStackOffset, FrameValueStackOffset};
 use crate::{
-    core::TrapCode,
+    core::{hint, TrapCode},
     engine::{bytecode::RegisterSpan, code_map::InstructionPtr},
     Instance,
 };
@@ -33,7 +32,7 @@ pub struct CallStack {
     recursion_limit: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct InstanceStack {
     top: Option<IndexedInstance>,
     stack: Vec<IndexedInstance>,
@@ -45,15 +44,6 @@ pub struct IndexedInstance {
     pub instance: Instance,
 }
 
-impl Default for InstanceStack {
-    fn default() -> Self {
-        Self {
-            top: None,
-            stack: Vec::new(),
-        }
-    }
-}
-
 impl InstanceStack {
     pub fn peek(&self) -> Option<&Instance> {
         self.top.as_ref().map(|i| &i.instance)
@@ -62,7 +52,7 @@ impl InstanceStack {
     pub fn push(&mut self, index: usize, instance: Instance) {
         if let Some(top) = self.top {
             if top.instance == instance {
-                return
+                return;
             }
             self.stack.push(top);
         }
@@ -70,14 +60,12 @@ impl InstanceStack {
     }
 
     /// Pops the top [`Instance`] if its `index` matches.
-    /// 
+    ///
     /// Returnst the new top [`Instance`] if the top [`Instance`] actually got popped.
     pub fn pop_if(&mut self, index: usize) -> Option<Instance> {
-        let Some(top) = self.top else {
-            return None
-        };
+        let top = self.top?;
         if top.index != index {
-            return None
+            return None;
         }
         let new_top = self.stack.pop();
         self.top = new_top;
@@ -147,7 +135,7 @@ impl CallStack {
     }
 
     /// Pops the last [`CallFrame`] from the [`CallStack`] if any.
-    /// 
+    ///
     /// Returns `Some(new_instance)` if the currently used [`Instance`]
     /// has changed by popping the returned [`CallFrame`].
     #[inline(always)]

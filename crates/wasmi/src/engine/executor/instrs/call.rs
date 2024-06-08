@@ -493,7 +493,10 @@ impl<'engine> Executor<'engine> {
     ) -> Result<(), Error> {
         let (len_params, len_results) = self.func_types.len_params_results(host_func.ty_dedup());
         let max_inout = len_params.max(len_results);
-        let instance = *self.call_stack.instance().expect("need to have an instance on the call stack");
+        let instance = *self
+            .call_stack
+            .instance()
+            .expect("need to have an instance on the call stack");
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
         // [`ValueStack::reserve`] which might invalidate all live [`FrameRegisters`].
         let caller = match <C as CallContext>::KIND {
