@@ -137,6 +137,7 @@ impl ValueStack {
     /// # Errors
     ///
     /// When trying to grow the [`ValueStack`] over its maximum size limit.
+    #[inline(always)]
     pub fn extend_by(
         &mut self,
         additional: usize,
@@ -156,12 +157,14 @@ impl ValueStack {
     }
 
     /// Returns the current length of the [`ValueStack`].
+    #[inline(always)]
     fn len(&self) -> usize {
         debug_assert!(self.values.len() <= self.max_len);
         self.values.len()
     }
 
     /// Returns the maximum length of the [`ValueStack`].
+    #[inline(always)]
     fn max_len(&self) -> usize {
         debug_assert!(self.values.len() <= self.max_len);
         self.max_len
