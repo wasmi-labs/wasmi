@@ -8,6 +8,7 @@ use crate::{
         func_types::FuncTypeRegistry,
         CompiledFunc,
         CompiledFuncEntity,
+        DedupFuncType,
         FuncParams,
     },
     func::{FuncEntity, HostFuncEntity},
@@ -20,6 +21,17 @@ use crate::{
 };
 use core::array;
 use std::fmt;
+
+impl FuncTypeRegistry {
+    /// Returns the maximum value of number of parameters and results for the given [`DedupFuncType`].
+    #[inline]
+    fn len_params_results(&self, func_ty: &DedupFuncType) -> (usize, usize) {
+        let (input_types, output_types) = self.resolve_func_type(func_ty).params_results();
+        let len_inputs = input_types.len();
+        let len_outputs = output_types.len();
+        (len_inputs, len_outputs)
+    }
+}
 
 /// Dispatches and executes the host function.
 ///
@@ -36,11 +48,7 @@ pub fn dispatch_host_func<T>(
     host_func: HostFuncEntity,
     instance: Option<&Instance>,
 ) -> Result<(usize, usize), Error> {
-    let (input_types, output_types) = func_types
-        .resolve_func_type(host_func.ty_dedup())
-        .params_results();
-    let len_inputs = input_types.len();
-    let len_outputs = output_types.len();
+    let (len_inputs, len_outputs) = func_types.len_params_results(host_func.ty_dedup());
     let max_inout = len_inputs.max(len_outputs);
     let values = value_stack.as_slice_mut();
     let params_results = FuncParams::new(
@@ -478,10 +486,8 @@ impl<'engine> Executor<'engine> {
         func: &Func,
         host_func: HostFuncEntity,
     ) -> Result<(), Error> {
-        let (input_types, output_types) = self
-            .func_types
-            .resolve_func_type(host_func.ty_dedup())
-            .params_results();
+        let (len_params, len_results) = self.func_types.len_params_results(host_func.ty_dedup());
+        let max_inout = len_params.max(len_results);
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
         // [`ValueStack::reserve`] which might invalidate all live [`FrameRegisters`].
         let caller = match <C as CallContext>::KIND {
@@ -489,9 +495,6 @@ impl<'engine> Executor<'engine> {
             CallKind::Tail => self.call_stack.pop(),
         }
         .expect("need to have a caller on the call stack");
-        let len_params = input_types.len();
-        let len_results = output_types.len();
-        let max_inout = len_params.max(len_results);
         let buffer = self.value_stack.extend_by(max_inout, |this| {
             // Safety: we use the base offset of a live call frame on the call stack.
             self.sp = unsafe { this.stack_ptr_at(caller.base_offset()) };
