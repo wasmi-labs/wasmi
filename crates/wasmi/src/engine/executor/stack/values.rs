@@ -119,18 +119,6 @@ impl ValueStack {
         FrameRegisters::new(ptr)
     }
 
-    /// Returns the [`FrameRegisters`] at the given `offset` from the back.
-    ///
-    /// # Panics (Debug)
-    ///
-    /// If `n` is greater than the height of the [`ValueStack`].
-    pub unsafe fn stack_ptr_last_n(&mut self, n: usize) -> FrameRegisters {
-        let len_values = self.len();
-        debug_assert!(n <= len_values);
-        let offset = len_values - n;
-        self.stack_ptr_at(ValueStackOffset(offset))
-    }
-
     /// Returns the capacity of the [`ValueStack`].
     pub fn capacity(&self) -> usize {
         debug_assert!(self.values.len() <= self.values.capacity());
@@ -189,6 +177,19 @@ impl ValueStack {
         assert!(self.len() >= amount);
         // Safety: we just asserted that the current length is large enough to not underflow.
         unsafe { self.values.set_len(self.len() - amount) };
+    }
+
+    /// Drop the last `amount` cells of the [`ValueStack`] and returns a slice to them.
+    ///
+    /// # Panics (Debug)
+    ///
+    /// If `amount` is greater than the [`ValueStack`] height.
+    #[inline(always)]
+    pub fn drop_return(&mut self, amount: usize) -> &[UntypedVal] {
+        let len = self.len();
+        let dropped = unsafe { self.values.get_unchecked(len - amount..) }.as_ptr();
+        self.drop(amount);
+        unsafe { slice::from_raw_parts(dropped, amount) }
     }
 
     /// Shrink the [`ValueStack`] to the [`ValueStackOffset`].

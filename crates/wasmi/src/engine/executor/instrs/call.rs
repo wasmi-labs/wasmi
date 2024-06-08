@@ -507,33 +507,24 @@ impl<'engine> Executor<'engine> {
             self.update_instr_ptr_at(1);
         }
         self.cache.reset();
-        let (len_inputs, len_outputs) = self
-            .dispatch_host_func::<T>(store, host_func, caller)
+        self.dispatch_host_func::<T>(store, host_func, caller)
             .map_err(|error| match self.call_stack.is_empty() {
                 true => error,
                 false => ResumableHostError::new(error, *func, results).into(),
             })?;
-        // # Safety (1)
-        //
-        // We can safely acquire the stack pointer to the caller's and callee's (host)
-        // call frames because we just allocated the host call frame and can be sure that
-        // they are different.
-        // In the following we make sure to not access registers out of bounds of each
-        // call frame since we rely on Wasm validation and proper Wasm translation to
-        // provide us with valid result registers.
-        let callee_sp = unsafe {
-            self.value_stack
-                .stack_ptr_last_n(len_inputs.max(len_outputs))
-        };
-        let results = results.iter(len_outputs);
-        let values = RegisterSpan::new(Register::from_i16(0)).iter(len_outputs);
-        for (result, value) in results.zip(values) {
-            // # Safety: See Safety (1) above.
-            let returned_value = unsafe { callee_sp.get(value) };
-            self.set_register(result, returned_value);
+        let results = results.iter(len_results);
+        let returned = self.value_stack.drop_return(max_inout);
+        for (result, value) in results.zip(returned) {
+            // # Safety (1)
+            //
+            // We can safely acquire the stack pointer to the caller's and callee's (host)
+            // call frames because we just allocated the host call frame and can be sure that
+            // they are different.
+            // In the following we make sure to not access registers out of bounds of each
+            // call frame since we rely on Wasm validation and proper Wasm translation to
+            // provide us with valid result registers.
+            unsafe { self.sp.set(result, *value) };
         }
-        // Finally, the value stack needs to be truncated to its original size.
-        self.value_stack.drop(max_inout);
         Ok(())
     }
 
