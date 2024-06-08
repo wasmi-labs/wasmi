@@ -518,8 +518,6 @@ impl<'engine> Executor<'engine> {
         // In the following we make sure to not access registers out of bounds of each
         // call frame since we rely on Wasm validation and proper Wasm translation to
         // provide us with valid result registers.
-        let mut caller_sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
-        // # Safety: See Safety (1) above.
         let callee_sp = unsafe {
             self.value_stack
                 .stack_ptr_last_n(len_inputs.max(len_outputs))
@@ -528,7 +526,8 @@ impl<'engine> Executor<'engine> {
         let values = RegisterSpan::new(Register::from_i16(0)).iter(len_outputs);
         for (result, value) in results.zip(values) {
             // # Safety: See Safety (1) above.
-            unsafe { caller_sp.set(result, callee_sp.get(value)) };
+            let returned_value = unsafe { callee_sp.get(value) };
+            self.set_register(result, returned_value);
         }
         // Finally, the value stack needs to be truncated to its original size.
         self.value_stack.drop(max_inout);
