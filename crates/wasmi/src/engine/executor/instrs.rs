@@ -997,12 +997,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Returns the [`FrameRegisters`] of the [`CallFrame`].
-    #[inline(always)]
-    fn frame_stack_ptr(&mut self, frame: &CallFrame) -> FrameRegisters {
-        Self::frame_stack_ptr_impl(self.value_stack, frame)
-    }
-
-    /// Returns the [`FrameRegisters`] of the [`CallFrame`].
     fn frame_stack_ptr_impl(value_stack: &mut ValueStack, frame: &CallFrame) -> FrameRegisters {
         // Safety: We are using the frame's own base offset as input because it is
         //         guaranteed by the Wasm validation and translation phase to be

@@ -350,23 +350,6 @@ impl CompiledFuncEntity {
         self.len_registers
     }
 
-    /// Returns the number of mutable registers used by the [`CompiledFunc`].
-    ///
-    /// # Note
-    ///
-    /// This excludes registers required to store function local constant values.
-    pub fn len_cells(&self) -> u16 {
-        debug_assert!(
-            self.consts.len() <= self.len_registers as usize,
-            "len_registers contains function local constant values and therefore must be greater or equals",
-        );
-        debug_assert!(
-            u16::try_from(self.consts.len()).is_ok(),
-            "there can never be more than i16::MAX function local constant values"
-        );
-        self.len_registers - self.consts().len() as u16
-    }
-
     /// Returns the function local constant values of the [`CompiledFunc`].
     pub fn consts(&self) -> &[UntypedVal] {
         &self.consts

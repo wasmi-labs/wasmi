@@ -8,6 +8,13 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.32.3`] - 2024-06-06
+
+### Fixed
+
+- Fix overlapping reuse of local preservation slots. (https://github.com/wasmi-labs/wasmi/pull/1057)
+    - Thanks again to [kaiavintr](https://github.com/kaiavintr) for reporting the bug.
+
 ## [`0.32.2`] - 2024-06-03
 
 ### Fixed
