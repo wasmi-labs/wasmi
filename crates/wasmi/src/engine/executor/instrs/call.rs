@@ -499,7 +499,6 @@ impl<'engine> Executor<'engine> {
         if <C as CallContext>::HAS_PARAMS {
             let mut uninit_params = FrameParams::new(buffer);
             self.copy_call_params(&mut uninit_params);
-            uninit_params.init_zeroes();
         }
         if matches!(<C as CallContext>::KIND, CallKind::Nested) {
             self.update_instr_ptr_at(1);
