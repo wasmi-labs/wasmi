@@ -58,7 +58,7 @@ impl InstanceAndHeight {
 /// A stack of [`Instance`]s and their associated call stack heights.
 #[derive(Debug, Default)]
 pub struct InstanceStack {
-    instances: TopVec<InstanceAndHeight>,
+    instances: HeadVec<InstanceAndHeight>,
 }
 
 impl InstanceStack {
@@ -101,16 +101,16 @@ impl InstanceStack {
     }
 }
 
-/// A [`Vec`]-like data structure with fast access to the top-most item.
+/// A [`Vec`]-like data structure with fast access to the last item.
 #[derive(Debug)]
-pub struct TopVec<T> {
-    /// The top (or last) item in the [`TopVec`].
+pub struct HeadVec<T> {
+    /// The top (or last) item in the [`HeadVec`].
     head: Option<T>,
-    /// The rest of the items in the [`TopVec`] excluding the top-most item.
+    /// The rest of the items in the [`HeadVec`] excluding the last item.
     rest: Vec<T>,
 }
 
-impl<T> Default for TopVec<T> {
+impl<T> Default for HeadVec<T> {
     fn default() -> Self {
         Self {
             head: None,
@@ -119,21 +119,21 @@ impl<T> Default for TopVec<T> {
     }
 }
 
-impl<T> TopVec<T> {
-    /// Removes all items from the [`TopVec`].
+impl<T> HeadVec<T> {
+    /// Removes all items from the [`HeadVec`].
     #[inline(always)]
     pub fn clear(&mut self) {
         self.head = None;
         self.rest.clear();
     }
 
-    /// Returns a shared reference to the last item in the [`TopVec`] if any.
+    /// Returns a shared reference to the last item in the [`HeadVec`] if any.
     #[inline(always)]
     pub fn last(&self) -> Option<&T> {
         self.head.as_ref()
     }
 
-    /// Pushes a new `value` onto the [`TopVec`].
+    /// Pushes a new `value` onto the [`HeadVec`].
     #[inline(always)]
     pub fn push(&mut self, value: T) {
         let prev_head = mem::replace(&mut self.head, Some(value));
@@ -142,7 +142,7 @@ impl<T> TopVec<T> {
         }
     }
 
-    /// Pops the last `value` from the [`TopVec`] if any.
+    /// Pops the last `value` from the [`HeadVec`] if any.
     #[inline(always)]
     pub fn pop(&mut self) -> Option<T> {
         let new_top = self.rest.pop();
