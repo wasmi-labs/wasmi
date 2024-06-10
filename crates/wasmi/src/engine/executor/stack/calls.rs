@@ -33,44 +33,60 @@ pub struct CallStack {
     recursion_limit: usize,
 }
 
-#[derive(Debug, Default)]
-pub struct InstanceStack {
-    top: Option<IndexedInstance>,
-    stack: Vec<IndexedInstance>,
-}
-
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct IndexedInstance {
+    /// The height of the call stack for the given [`Instance`].
     pub index: usize,
+    /// The underlying [`Instance`] used at the `index` call stack height.
     pub instance: Instance,
 }
 
-impl InstanceStack {
-    pub fn peek(&self) -> Option<&Instance> {
-        self.top.as_ref().map(|i| &i.instance)
+impl IndexedInstance {
+    /// Consumes `self` to return the [`Instance`].
+    fn into_instance(self) -> Instance {
+        self.instance
     }
 
+    /// Returns a shared reference to the [`Instance`].
+    fn instance(&self) -> &Instance {
+        &self.instance
+    }
+}
+
+/// A stack of [`Instance`]s and their associated call stack heights.
+#[derive(Debug, Default)]
+pub struct InstanceStack {
+    instances: TopVec<IndexedInstance>,
+}
+
+impl InstanceStack {
+    /// Returns the top-most [`Instance`] on the [`InstanceStack`].
+    ///
+    /// Returns `None` if the [`InstanceStack`] is empty.
+    pub fn peek(&self) -> Option<&Instance> {
+        self.instances.top().map(IndexedInstance::instance)
+    }
+
+    /// Pushes an [`Instance`] with its `index` onto the [`InstanceStack`].
     pub fn push(&mut self, index: usize, instance: Instance) {
-        if let Some(top) = self.top {
+        if let Some(top) = self.instances.top() {
+            debug_assert!(index > top.index);
             if top.instance == instance {
                 return;
             }
-            self.stack.push(top);
         }
-        self.top = Some(IndexedInstance { index, instance });
+        self.instances.push(IndexedInstance { index, instance });
     }
 
     /// Pops the top [`Instance`] if its `index` matches.
     ///
     /// Returnst the new top [`Instance`] if the top [`Instance`] actually got popped.
     pub fn pop_if(&mut self, index: usize) -> Option<Instance> {
-        let top = self.top?;
+        let top = self.instances.top()?;
         if top.index != index {
             return None;
         }
-        let new_top = self.stack.pop();
-        self.top = new_top;
-        new_top.map(|i| i.instance)
+        self.instances.pop().map(IndexedInstance::into_instance)
     }
 }
 
