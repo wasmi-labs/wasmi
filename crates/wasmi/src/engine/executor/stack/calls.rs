@@ -34,14 +34,14 @@ pub struct CallStack {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct IndexedInstance {
-    /// The height of the call stack for the given [`Instance`].
-    pub index: usize,
+pub struct InstanceAndHeight {
     /// The underlying [`Instance`] used at the `index` call stack height.
     pub instance: Instance,
+    /// The height of the call stack for the given [`Instance`].
+    pub height: usize,
 }
 
-impl IndexedInstance {
+impl InstanceAndHeight {
     /// Consumes `self` to return the [`Instance`].
     fn into_instance(self) -> Instance {
         self.instance
@@ -56,7 +56,7 @@ impl IndexedInstance {
 /// A stack of [`Instance`]s and their associated call stack heights.
 #[derive(Debug, Default)]
 pub struct InstanceStack {
-    instances: TopVec<IndexedInstance>,
+    instances: TopVec<InstanceAndHeight>,
 }
 
 impl InstanceStack {
@@ -69,29 +69,29 @@ impl InstanceStack {
     ///
     /// Returns `None` if the [`InstanceStack`] is empty.
     pub fn peek(&self) -> Option<&Instance> {
-        self.instances.top().map(IndexedInstance::instance)
+        self.instances.top().map(InstanceAndHeight::instance)
     }
 
-    /// Pushes an [`Instance`] with its `index` onto the [`InstanceStack`].
-    pub fn push(&mut self, index: usize, instance: Instance) {
+    /// Pushes an [`Instance`] with its `height` onto the [`InstanceStack`].
+    pub fn push(&mut self, height: usize, instance: Instance) {
         if let Some(top) = self.instances.top() {
-            debug_assert!(index > top.index);
+            debug_assert!(height > top.height);
             if top.instance == instance {
                 return;
             }
         }
-        self.instances.push(IndexedInstance { index, instance });
+        self.instances.push(InstanceAndHeight { height, instance });
     }
 
-    /// Pops the top [`Instance`] if its `index` matches.
+    /// Pops the top [`Instance`] if its `height` matches.
     ///
     /// Returnst the new top [`Instance`] if the top [`Instance`] actually got popped.
-    pub fn pop_if(&mut self, index: usize) -> Option<Instance> {
+    pub fn pop_if(&mut self, height: usize) -> Option<Instance> {
         let top = self.instances.top()?;
-        if top.index != index {
+        if top.height != height {
             return None;
         }
-        self.instances.pop().map(IndexedInstance::into_instance)
+        self.instances.pop().map(InstanceAndHeight::into_instance)
     }
 }
 
