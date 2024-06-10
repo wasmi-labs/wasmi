@@ -206,7 +206,6 @@ impl CallStack {
             return Err(err_stack_overflow());
         }
         if let Some(new_instance) = instance {
-            // hint::cold();
             let height = self.frames.len();
             self.instances.push(height, new_instance);
         }
