@@ -60,6 +60,11 @@ pub struct InstanceStack {
 }
 
 impl InstanceStack {
+    /// Resets the [`InstanceStack`], removing all [`Instance`]s.
+    pub fn reset(&mut self) {
+        self.instances.clear();
+    }
+
     /// Returns the top-most [`Instance`] on the [`InstanceStack`].
     ///
     /// Returns `None` if the [`InstanceStack`] is empty.
@@ -171,6 +176,7 @@ impl CallStack {
     /// provide a clean slate for all executions.
     pub fn reset(&mut self) {
         self.calls.clear();
+        self.instances.reset();
     }
 
     /// Returns the number of [`CallFrame`] on the [`CallStack`].
