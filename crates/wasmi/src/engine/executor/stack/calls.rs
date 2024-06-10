@@ -21,8 +21,8 @@ use crate::{
 /// The stack of nested function calls.
 #[derive(Debug, Default)]
 pub struct CallStack {
-    /// The stack of nested function calls.
-    calls: Vec<CallFrame>,
+    /// The stack of nested function call frames.
+    frames: Vec<CallFrame>,
     /// The [`Instance`] used at `calls` height.
     instances: InstanceStack,
     /// The maximum allowed recursion depth.
@@ -160,7 +160,7 @@ impl CallStack {
     /// Creates a new [`CallStack`] using the given recursion limit.
     pub fn new(recursion_limit: usize) -> Self {
         Self {
-            calls: Vec::new(),
+            frames: Vec::new(),
             instances: InstanceStack::default(),
             recursion_limit,
         }
@@ -175,14 +175,14 @@ impl CallStack {
     /// reset the [`CallStack`] before executing the next function to
     /// provide a clean slate for all executions.
     pub fn reset(&mut self) {
-        self.calls.clear();
+        self.frames.clear();
         self.instances.reset();
     }
 
     /// Returns the number of [`CallFrame`] on the [`CallStack`].
     #[inline(always)]
     fn len(&self) -> usize {
-        self.calls.len()
+        self.frames.len()
     }
 
     /// Returns `true` if the [`CallStack`] is empty.
@@ -208,10 +208,10 @@ impl CallStack {
         }
         if let Some(new_instance) = instance {
             hint::cold();
-            let index = self.calls.len();
+            let index = self.frames.len();
             self.instances.push(index, new_instance);
         }
-        self.calls.push(call);
+        self.frames.push(call);
         Ok(())
     }
 
@@ -221,8 +221,8 @@ impl CallStack {
     /// has changed by popping the returned [`CallFrame`].
     #[inline(always)]
     pub fn pop(&mut self) -> Option<(CallFrame, Option<Instance>)> {
-        let frame = self.calls.pop()?;
-        let index = self.calls.len();
+        let frame = self.frames.pop()?;
+        let index = self.frames.len();
         let new_instance = self.instances.pop_if(index);
         Some((frame, new_instance))
     }
@@ -230,13 +230,13 @@ impl CallStack {
     /// Peeks the last [`CallFrame`] of the [`CallStack`] if any.
     #[inline(always)]
     pub fn peek(&self) -> Option<&CallFrame> {
-        self.calls.last()
+        self.frames.last()
     }
 
     /// Peeks the last [`CallFrame`] of the [`CallStack`] if any.
     #[inline(always)]
     pub fn peek_mut(&mut self) -> Option<&mut CallFrame> {
-        self.calls.last_mut()
+        self.frames.last_mut()
     }
 
     /// Peeks the two top-most [`CallFrame`] on the [`CallStack`] if any.
@@ -248,7 +248,7 @@ impl CallStack {
     ///
     /// So this function returns a pair of `(callee, caller?)`.
     pub fn peek_2(&self) -> Option<(&CallFrame, Option<&CallFrame>)> {
-        let (callee, remaining) = self.calls.split_last()?;
+        let (callee, remaining) = self.frames.split_last()?;
         let caller = remaining.last();
         Some((callee, caller))
     }
