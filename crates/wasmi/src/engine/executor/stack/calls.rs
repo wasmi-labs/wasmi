@@ -127,7 +127,7 @@ impl<T> TopVec<T> {
         self.rest.clear();
     }
 
-    /// Returns the number of items stored in the [`TopVec`].
+    /// Returns a shared reference to the last item in the [`TopVec`] if any.
     #[inline(always)]
     pub fn last(&self) -> Option<&T> {
         self.head.as_ref()
