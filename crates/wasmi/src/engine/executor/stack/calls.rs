@@ -127,7 +127,7 @@ impl<T> TopVec<T> {
         self.rest.clear();
     }
 
-    /// Returns a shared reference to the top-most (last) item in the [`TopVec`] if any.
+    /// Returns the number of items stored in the [`TopVec`].
     #[inline(always)]
     pub fn top(&self) -> Option<&T> {
         self.head.as_ref()
@@ -142,7 +142,7 @@ impl<T> TopVec<T> {
         }
     }
 
-    /// Pushes the top-most (last) `value` from the [`TopVec`] if any.
+    /// Pops the last `value` from the [`TopVec`] if any.
     #[inline(always)]
     pub fn pop(&mut self) -> Option<T> {
         let new_top = self.rest.pop();
