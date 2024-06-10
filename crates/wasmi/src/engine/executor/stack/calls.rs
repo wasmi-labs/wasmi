@@ -120,19 +120,6 @@ impl<T> TopVec<T> {
         self.rest.clear();
     }
 
-    /// Returns the number of items stored in the [`TopVec`].
-    pub fn len(&self) -> usize {
-        match self.head {
-            Some(_) => 1 + self.rest.len(),
-            None => 0,
-        }
-    }
-
-    /// Returns `true` if the [`TopVec`] is empty.
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
     /// Returns a shared reference to the top-most (last) item in the [`TopVec`] if any.
     pub fn top(&self) -> Option<&T> {
         self.head.as_ref()
