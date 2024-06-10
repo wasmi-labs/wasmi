@@ -80,7 +80,7 @@ impl InstanceStack {
                 return;
             }
         }
-        self.instances.push(InstanceAndHeight { height, instance });
+        self.instances.push(InstanceAndHeight { instance, height });
     }
 
     /// Pops the top [`Instance`] if its `height` matches.
