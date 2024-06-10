@@ -43,11 +43,13 @@ pub struct InstanceAndHeight {
 
 impl InstanceAndHeight {
     /// Consumes `self` to return the [`Instance`].
+    #[inline(always)]
     fn into_instance(self) -> Instance {
         self.instance
     }
 
     /// Returns a shared reference to the [`Instance`].
+    #[inline(always)]
     fn instance(&self) -> &Instance {
         &self.instance
     }
@@ -61,6 +63,7 @@ pub struct InstanceStack {
 
 impl InstanceStack {
     /// Resets the [`InstanceStack`], removing all [`Instance`]s.
+    #[inline(always)]
     pub fn reset(&mut self) {
         self.instances.clear();
     }
@@ -68,11 +71,13 @@ impl InstanceStack {
     /// Returns the top-most [`Instance`] on the [`InstanceStack`].
     ///
     /// Returns `None` if the [`InstanceStack`] is empty.
+    #[inline(always)]
     pub fn peek(&self) -> Option<&Instance> {
         self.instances.top().map(InstanceAndHeight::instance)
     }
 
     /// Pushes an [`Instance`] with its `height` onto the [`InstanceStack`].
+    #[inline(always)]
     pub fn push(&mut self, height: usize, instance: Instance) {
         if let Some(top) = self.instances.top() {
             debug_assert!(height > top.height);
@@ -86,6 +91,7 @@ impl InstanceStack {
     /// Pops the top [`Instance`] if its `height` matches.
     ///
     /// Returnst the new top [`Instance`] if the top [`Instance`] actually got popped.
+    #[inline(always)]
     pub fn pop_if(&mut self, height: usize) -> Option<Instance> {
         let top = self.instances.top()?;
         if top.height != height {
@@ -115,17 +121,20 @@ impl<T> Default for TopVec<T> {
 
 impl<T> TopVec<T> {
     /// Removes all items from the [`TopVec`].
+    #[inline(always)]
     pub fn clear(&mut self) {
         self.head = None;
         self.rest.clear();
     }
 
     /// Returns a shared reference to the top-most (last) item in the [`TopVec`] if any.
+    #[inline(always)]
     pub fn top(&self) -> Option<&T> {
         self.head.as_ref()
     }
 
     /// Pushes a new `value` onto the [`TopVec`].
+    #[inline(always)]
     pub fn push(&mut self, value: T) {
         let prev_head = mem::replace(&mut self.head, Some(value));
         if let Some(prev_head) = prev_head {
@@ -134,6 +143,7 @@ impl<T> TopVec<T> {
     }
 
     /// Pushes the top-most (last) `value` from the [`TopVec`] if any.
+    #[inline(always)]
     pub fn pop(&mut self) -> Option<T> {
         let new_top = self.rest.pop();
         mem::replace(&mut self.head, new_top)
@@ -161,6 +171,7 @@ impl CallStack {
     /// executing a function, for example when a trap is encountered. We
     /// reset the [`CallStack`] before executing the next function to
     /// provide a clean slate for all executions.
+    #[inline(always)]
     pub fn reset(&mut self) {
         self.frames.clear();
         self.instances.reset();
@@ -179,6 +190,7 @@ impl CallStack {
     }
 
     /// Returns the currently used [`Instance`].
+    #[inline(always)]
     pub fn instance(&self) -> Option<&Instance> {
         self.instances.peek()
     }
@@ -194,7 +206,7 @@ impl CallStack {
             return Err(err_stack_overflow());
         }
         if let Some(new_instance) = instance {
-            hint::cold();
+            // hint::cold();
             let height = self.frames.len();
             self.instances.push(height, new_instance);
         }
