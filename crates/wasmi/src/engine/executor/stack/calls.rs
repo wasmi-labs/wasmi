@@ -65,6 +65,7 @@ pub struct HeadVec<T> {
 }
 
 impl<T> Default for HeadVec<T> {
+    #[inline(always)]
     fn default() -> Self {
         Self {
             head: None,
@@ -167,7 +168,7 @@ impl CallStack {
     }
 
     /// Pushes the `instance` onto the internal instances stack.
-    #[inline]
+    #[inline(always)]
     fn push_instance(&mut self, instance: Instance) {
         let height = self.frames.len();
         if let Some(last) = self.instances.last() {
