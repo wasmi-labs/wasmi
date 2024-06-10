@@ -73,6 +73,64 @@ impl InstanceStack {
     }
 }
 
+/// A [`Vec`]-like data structure with fast access to the top-most item.
+#[derive(Debug)]
+pub struct TopVec<T> {
+    /// The top (or last) item in the [`TopVec`].
+    head: Option<T>,
+    /// The rest of the items in the [`TopVec`] excluding the top-most item.
+    rest: Vec<T>,
+}
+
+impl<T> Default for TopVec<T> {
+    fn default() -> Self {
+        Self {
+            head: None,
+            rest: Vec::new(),
+        }
+    }
+}
+
+impl<T> TopVec<T> {
+    /// Removes all items from the [`TopVec`].
+    pub fn clear(&mut self) {
+        self.head = None;
+        self.rest.clear();
+    }
+
+    /// Returns the number of items stored in the [`TopVec`].
+    pub fn len(&self) -> usize {
+        match self.head {
+            Some(_) => 1 + self.rest.len(),
+            None => 0,
+        }
+    }
+
+    /// Returns `true` if the [`TopVec`] is empty.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    /// Returns a shared reference to the top-most (last) item in the [`TopVec`] if any.
+    pub fn top(&self) -> Option<&T> {
+        self.head.as_ref()
+    }
+
+    /// Pushes a new `value` onto the [`TopVec`].
+    pub fn push(&mut self, value: T) {
+        let prev_head = mem::replace(&mut self.head, Some(value));
+        if let Some(prev_head) = prev_head {
+            self.rest.push(prev_head);
+        }
+    }
+
+    /// Pushes the top-most (last) `value` from the [`TopVec`] if any.
+    pub fn pop(&mut self) -> Option<T> {
+        let new_top = self.rest.pop();
+        mem::replace(&mut self.head, new_top)
+    }
+}
+
 impl CallStack {
     /// Default value for the maximum recursion depth.
     pub const DEFAULT_MAX_RECURSION_DEPTH: usize = 1024;
