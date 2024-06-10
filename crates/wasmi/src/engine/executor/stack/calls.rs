@@ -73,13 +73,13 @@ impl InstanceStack {
     /// Returns `None` if the [`InstanceStack`] is empty.
     #[inline(always)]
     pub fn peek(&self) -> Option<&Instance> {
-        self.instances.top().map(InstanceAndHeight::instance)
+        self.instances.last().map(InstanceAndHeight::instance)
     }
 
     /// Pushes an [`Instance`] with its `height` onto the [`InstanceStack`].
     #[inline(always)]
     pub fn push(&mut self, height: usize, instance: Instance) {
-        if let Some(top) = self.instances.top() {
+        if let Some(top) = self.instances.last() {
             debug_assert!(height > top.height);
             if top.instance == instance {
                 return;
@@ -93,7 +93,7 @@ impl InstanceStack {
     /// Returnst the new top [`Instance`] if the top [`Instance`] actually got popped.
     #[inline(always)]
     pub fn pop_if(&mut self, height: usize) -> Option<Instance> {
-        let top = self.instances.top()?;
+        let top = self.instances.last()?;
         if top.height != height {
             return None;
         }
@@ -129,7 +129,7 @@ impl<T> TopVec<T> {
 
     /// Returns the number of items stored in the [`TopVec`].
     #[inline(always)]
-    pub fn top(&self) -> Option<&T> {
+    pub fn last(&self) -> Option<&T> {
         self.head.as_ref()
     }
 
