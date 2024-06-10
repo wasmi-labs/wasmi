@@ -217,14 +217,14 @@ impl CallStack {
 
     /// Pops the last [`CallFrame`] from the [`CallStack`] if any.
     ///
-    /// Returns `Some(new_instance)` if the currently used [`Instance`]
-    /// has changed by popping the returned [`CallFrame`].
+    /// Returns the new [`Instance`] in case the popped [`CallFrame`]
+    /// introduced a new [`Instance`] on the [`CallStack`].
     #[inline(always)]
-    pub fn pop(&mut self) -> Option<(CallFrame, Option<Instance>)> {
+    pub fn pop(&mut self) -> Option<(CallFrame, Option<&Instance>)> {
         let frame = self.frames.pop()?;
-        let index = self.frames.len();
-        let new_instance = self.instances.pop_if(index);
-        Some((frame, new_instance))
+        let height = self.frames.len();
+        let instance = self.instances.pop_if(height).and_then(|_| self.instance());
+        Some((frame, instance))
     }
 
     /// Peeks the last [`CallFrame`] of the [`CallStack`] if any.
