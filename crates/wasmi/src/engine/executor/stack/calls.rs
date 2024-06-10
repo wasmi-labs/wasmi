@@ -1,6 +1,6 @@
 use super::{err_stack_overflow, BaseValueStackOffset, FrameValueStackOffset};
 use crate::{
-    core::{hint, TrapCode},
+    core::TrapCode,
     engine::{bytecode::RegisterSpan, code_map::InstructionPtr},
     Instance,
 };
