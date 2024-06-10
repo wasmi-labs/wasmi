@@ -297,7 +297,7 @@ impl<'engine> Executor<'engine> {
         store: &mut StoreInner,
         results: RegisterSpan,
         func: CompiledFunc,
-        instance: Option<Instance>,
+        mut instance: Option<Instance>,
     ) -> Result<(), Error> {
         let func = self.code_map.get(Some(store.fuel_mut()), func)?;
         let mut called = self.dispatch_compiled_func::<C>(results, func)?;
@@ -317,7 +317,12 @@ impl<'engine> Executor<'engine> {
                 // on the value stack which is what the function expects. After this operation we ensure
                 // that `self.sp` is adjusted via a call to `init_call_frame` since it may have been
                 // invalidated by this method.
-                unsafe { Stack::merge_call_frames(self.call_stack, self.value_stack, &mut called) };
+                let caller_instance = unsafe {
+                    Stack::merge_call_frames(self.call_stack, self.value_stack, &mut called)
+                };
+                if let Some(caller_instance) = caller_instance {
+                    instance.get_or_insert(caller_instance);
+                }
             }
         }
         self.init_call_frame(&called);

@@ -23,8 +23,8 @@ use crate::{
 pub struct CallStack {
     /// The stack of nested function call frames.
     frames: Vec<CallFrame>,
-    /// The [`Instance`] used at `calls` height.
-    instances: InstanceStack,
+    /// The [`Instance`] used at certain frame stack heights.
+    instances: HeadVec<InstanceAndHeight>,
     /// The maximum allowed recursion depth.
     ///
     /// # Note
@@ -42,7 +42,7 @@ pub struct InstanceAndHeight {
 }
 
 impl InstanceAndHeight {
-    /// Consumes `self` to return the [`Instance`].
+    /// Consumes `self` and returns the [`Instance`].
     #[inline(always)]
     fn into_instance(self) -> Instance {
         self.instance
@@ -52,52 +52,6 @@ impl InstanceAndHeight {
     #[inline(always)]
     fn instance(&self) -> &Instance {
         &self.instance
-    }
-}
-
-/// A stack of [`Instance`]s and their associated call stack heights.
-#[derive(Debug, Default)]
-pub struct InstanceStack {
-    instances: HeadVec<InstanceAndHeight>,
-}
-
-impl InstanceStack {
-    /// Resets the [`InstanceStack`], removing all [`Instance`]s.
-    #[inline(always)]
-    pub fn reset(&mut self) {
-        self.instances.clear();
-    }
-
-    /// Returns the top-most [`Instance`] on the [`InstanceStack`].
-    ///
-    /// Returns `None` if the [`InstanceStack`] is empty.
-    #[inline(always)]
-    pub fn peek(&self) -> Option<&Instance> {
-        self.instances.last().map(InstanceAndHeight::instance)
-    }
-
-    /// Pushes an [`Instance`] with its `height` onto the [`InstanceStack`].
-    #[inline(always)]
-    pub fn push(&mut self, height: usize, instance: Instance) {
-        if let Some(top) = self.instances.last() {
-            debug_assert!(height > top.height);
-            if top.instance == instance {
-                return;
-            }
-        }
-        self.instances.push(InstanceAndHeight { instance, height });
-    }
-
-    /// Pops the top [`Instance`] if its `height` matches.
-    ///
-    /// Returns the new top [`Instance`] if the top [`Instance`] actually got popped.
-    #[inline(always)]
-    pub fn pop_if(&mut self, height: usize) -> Option<Instance> {
-        let top = self.instances.last()?;
-        if top.height != height {
-            return None;
-        }
-        self.instances.pop().map(InstanceAndHeight::into_instance)
     }
 }
 
@@ -158,7 +112,7 @@ impl CallStack {
     pub fn new(recursion_limit: usize) -> Self {
         Self {
             frames: Vec::new(),
-            instances: InstanceStack::default(),
+            instances: HeadVec::default(),
             recursion_limit,
         }
     }
@@ -174,7 +128,7 @@ impl CallStack {
     #[inline(always)]
     pub fn reset(&mut self) {
         self.frames.clear();
-        self.instances.reset();
+        self.instances.clear();
     }
 
     /// Returns the number of [`CallFrame`]s on the [`CallStack`].
@@ -192,7 +146,7 @@ impl CallStack {
     /// Returns the currently used [`Instance`].
     #[inline(always)]
     pub fn instance(&self) -> Option<&Instance> {
-        self.instances.peek()
+        self.instances.last().map(InstanceAndHeight::instance)
     }
 
     /// Pushes a [`CallFrame`] onto the [`CallStack`].
@@ -205,23 +159,43 @@ impl CallStack {
         if self.len() == self.recursion_limit {
             return Err(err_stack_overflow());
         }
-        if let Some(new_instance) = instance {
-            let height = self.frames.len();
-            self.instances.push(height, new_instance);
+        if let Some(instance) = instance {
+            self.push_instance(instance);
         }
         self.frames.push(call);
         Ok(())
     }
 
+    /// Pushes the `instance` onto the internal instances stack.
+    #[inline]
+    fn push_instance(&mut self, instance: Instance) {
+        let height = self.frames.len();
+        if let Some(last) = self.instances.last() {
+            debug_assert!(height > last.height);
+            if instance == last.instance {
+                return;
+            }
+        }
+        self.instances.push(InstanceAndHeight { instance, height });
+    }
+
     /// Pops the last [`CallFrame`] from the [`CallStack`] if any.
     ///
-    /// Returns the new [`Instance`] in case the popped [`CallFrame`]
+    /// Returns the popped [`Instance`] in case the popped [`CallFrame`]
     /// introduced a new [`Instance`] on the [`CallStack`].
     #[inline(always)]
-    pub fn pop(&mut self) -> Option<(CallFrame, Option<&Instance>)> {
+    pub fn pop(&mut self) -> Option<(CallFrame, Option<Instance>)> {
         let frame = self.frames.pop()?;
-        let height = self.frames.len();
-        let instance = self.instances.pop_if(height).and_then(|_| self.instance());
+        let f_height = self.frames.len();
+        let i_height = self
+            .instances
+            .last()
+            .expect("must have instance when there is a frame")
+            .height;
+        let instance = match i_height == f_height {
+            true => self.instances.pop().map(InstanceAndHeight::into_instance),
+            false => None,
+        };
         Some((frame, instance))
     }
 

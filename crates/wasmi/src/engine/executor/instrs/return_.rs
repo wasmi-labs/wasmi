@@ -24,11 +24,12 @@ impl<'engine> Executor<'engine> {
     /// from the returning callee to the caller.
     #[inline(always)]
     fn return_impl(&mut self) -> ReturnOutcome {
-        let (returned, new_instance) = self
+        let (returned, popped_instance) = self
             .call_stack
             .pop()
             .expect("the executing call frame is always on the stack");
         self.value_stack.truncate(returned.frame_offset());
+        let new_instance = popped_instance.and_then(|_| self.call_stack.instance());
         if let Some(new_instance) = new_instance {
             self.cache.update_instance(new_instance);
         }
