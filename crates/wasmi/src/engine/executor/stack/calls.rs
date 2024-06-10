@@ -90,7 +90,7 @@ impl InstanceStack {
 
     /// Pops the top [`Instance`] if its `height` matches.
     ///
-    /// Returnst the new top [`Instance`] if the top [`Instance`] actually got popped.
+    /// Returns the new top [`Instance`] if the top [`Instance`] actually got popped.
     #[inline(always)]
     pub fn pop_if(&mut self, height: usize) -> Option<Instance> {
         let top = self.instances.last()?;
