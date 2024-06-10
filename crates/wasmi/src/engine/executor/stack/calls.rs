@@ -4,6 +4,7 @@ use crate::{
     engine::{bytecode::RegisterSpan, code_map::InstructionPtr},
     Instance,
 };
+use core::mem;
 use std::vec::Vec;
 
 #[cfg(doc)]
