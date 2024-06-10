@@ -179,7 +179,7 @@ impl CallStack {
         self.instances.reset();
     }
 
-    /// Returns the number of [`CallFrame`] on the [`CallStack`].
+    /// Returns the number of [`CallFrame`]s on the [`CallStack`].
     #[inline(always)]
     fn len(&self) -> usize {
         self.frames.len()
