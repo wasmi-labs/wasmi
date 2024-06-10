@@ -208,8 +208,8 @@ impl CallStack {
         }
         if let Some(new_instance) = instance {
             hint::cold();
-            let index = self.frames.len();
-            self.instances.push(index, new_instance);
+            let height = self.frames.len();
+            self.instances.push(height, new_instance);
         }
         self.frames.push(call);
         Ok(())
