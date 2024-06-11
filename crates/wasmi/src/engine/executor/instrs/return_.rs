@@ -5,6 +5,7 @@ use crate::{
         bytecode::{AnyConst32, Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
         executor::stack::FrameRegisters,
     },
+    store::StoreInner,
 };
 use core::slice;
 
@@ -23,7 +24,7 @@ impl<'engine> Executor<'engine> {
     /// Any return values are expected to already have been transferred
     /// from the returning callee to the caller.
     #[inline(always)]
-    fn return_impl(&mut self) -> ReturnOutcome {
+    fn return_impl(&mut self, store: &mut StoreInner) -> ReturnOutcome {
         let returned = self
             .call_stack
             .pop()
@@ -32,7 +33,9 @@ impl<'engine> Executor<'engine> {
         match self.call_stack.peek() {
             Some(caller) => {
                 Self::init_call_frame_impl(self.value_stack, &mut self.sp, &mut self.ip, caller);
-                self.cache.update_instance(caller.instance());
+                let instance = caller.instance();
+                self.cache.update_instance(instance);
+                self.memory = Self::load_default_memory(store, instance);
                 ReturnOutcome::Wasm
             }
             None => ReturnOutcome::Host,
@@ -41,8 +44,8 @@ impl<'engine> Executor<'engine> {
 
     /// Execute an [`Instruction::Return`].
     #[inline(always)]
-    pub fn execute_return(&mut self) -> ReturnOutcome {
-        self.return_impl()
+    pub fn execute_return(&mut self, store: &mut StoreInner) -> ReturnOutcome {
+        self.return_impl(store)
     }
 
     /// Returns the [`FrameRegisters`] of the caller and the [`RegisterSpan`] of the results.
@@ -83,6 +86,7 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn execute_return_value<T>(
         &mut self,
+        store: &mut StoreInner,
         value: T,
         f: fn(&Self, T) -> UntypedVal,
     ) -> ReturnOutcome {
@@ -93,31 +97,40 @@ impl<'engine> Executor<'engine> {
         //         registers of the callee since they reside in different
         //         call frames. Therefore this access is safe.
         unsafe { caller_sp.set(results.head(), value) }
-        self.return_impl()
+        self.return_impl(store)
     }
 
     /// Execute an [`Instruction::ReturnReg`] returning a single [`Register`] value.
     #[inline(always)]
-    pub fn execute_return_reg(&mut self, value: Register) -> ReturnOutcome {
-        self.execute_return_value(value, Self::get_register)
+    pub fn execute_return_reg(&mut self, store: &mut StoreInner, value: Register) -> ReturnOutcome {
+        self.execute_return_value(store, value, Self::get_register)
     }
 
     /// Execute an [`Instruction::ReturnReg2`] returning two [`Register`] values.
     #[inline(always)]
-    pub fn execute_return_reg2(&mut self, values: [Register; 2]) -> ReturnOutcome {
-        self.execute_return_reg_n_impl::<2>(values)
+    pub fn execute_return_reg2(
+        &mut self,
+        store: &mut StoreInner,
+        values: [Register; 2],
+    ) -> ReturnOutcome {
+        self.execute_return_reg_n_impl::<2>(store, values)
     }
 
     /// Execute an [`Instruction::ReturnReg3`] returning three [`Register`] values.
     #[inline(always)]
-    pub fn execute_return_reg3(&mut self, values: [Register; 3]) -> ReturnOutcome {
-        self.execute_return_reg_n_impl::<3>(values)
+    pub fn execute_return_reg3(
+        &mut self,
+        store: &mut StoreInner,
+        values: [Register; 3],
+    ) -> ReturnOutcome {
+        self.execute_return_reg_n_impl::<3>(store, values)
     }
 
     /// Executes an [`Instruction::ReturnReg2`] or [`Instruction::ReturnReg3`] generically.
     #[inline(always)]
     fn execute_return_reg_n_impl<const N: usize>(
         &mut self,
+        store: &mut StoreInner,
         values: [Register; N],
     ) -> ReturnOutcome {
         let (mut caller_sp, results) = self.return_caller_results();
@@ -130,30 +143,46 @@ impl<'engine> Executor<'engine> {
             //         call frames. Therefore this access is safe.
             unsafe { caller_sp.set(result, value) }
         }
-        self.return_impl()
+        self.return_impl(store)
     }
 
     /// Execute an [`Instruction::ReturnImm32`] returning a single 32-bit value.
     #[inline(always)]
-    pub fn execute_return_imm32(&mut self, value: AnyConst32) -> ReturnOutcome {
-        self.execute_return_value(value, |_, value| u32::from(value).into())
+    pub fn execute_return_imm32(
+        &mut self,
+        store: &mut StoreInner,
+        value: AnyConst32,
+    ) -> ReturnOutcome {
+        self.execute_return_value(store, value, |_, value| u32::from(value).into())
     }
 
     /// Execute an [`Instruction::ReturnI64Imm32`] returning a single 32-bit encoded `i64` value.
     #[inline(always)]
-    pub fn execute_return_i64imm32(&mut self, value: Const32<i64>) -> ReturnOutcome {
-        self.execute_return_value(value, |_, value| i64::from(value).into())
+    pub fn execute_return_i64imm32(
+        &mut self,
+        store: &mut StoreInner,
+        value: Const32<i64>,
+    ) -> ReturnOutcome {
+        self.execute_return_value(store, value, |_, value| i64::from(value).into())
     }
 
     /// Execute an [`Instruction::ReturnF64Imm32`] returning a single 32-bit encoded `f64` value.
     #[inline(always)]
-    pub fn execute_return_f64imm32(&mut self, value: Const32<f64>) -> ReturnOutcome {
-        self.execute_return_value(value, |_, value| f64::from(value).into())
+    pub fn execute_return_f64imm32(
+        &mut self,
+        store: &mut StoreInner,
+        value: Const32<f64>,
+    ) -> ReturnOutcome {
+        self.execute_return_value(store, value, |_, value| f64::from(value).into())
     }
 
     /// Execute an [`Instruction::ReturnSpan`] returning many values.
     #[inline(always)]
-    pub fn execute_return_span(&mut self, values: RegisterSpanIter) -> ReturnOutcome {
+    pub fn execute_return_span(
+        &mut self,
+        store: &mut StoreInner,
+        values: RegisterSpanIter,
+    ) -> ReturnOutcome {
         let (mut caller_sp, results) = self.return_caller_results();
         let results = results.iter(values.len());
         for (result, value) in results.zip(values) {
@@ -164,17 +193,25 @@ impl<'engine> Executor<'engine> {
             let value = self.get_register(value);
             unsafe { caller_sp.set(result, value) }
         }
-        self.return_impl()
+        self.return_impl(store)
     }
 
     /// Execute an [`Instruction::ReturnMany`] returning many values.
     #[inline(always)]
-    pub fn execute_return_many(&mut self, values: [Register; 3]) -> ReturnOutcome {
-        self.execute_return_many_impl(&values)
+    pub fn execute_return_many(
+        &mut self,
+        store: &mut StoreInner,
+        values: [Register; 3],
+    ) -> ReturnOutcome {
+        self.execute_return_many_impl(store, &values)
     }
 
     /// Executes [`Instruction::ReturnMany`] or parts of [`Instruction::ReturnNezMany`] generically.
-    fn execute_return_many_impl(&mut self, values: &[Register]) -> ReturnOutcome {
+    fn execute_return_many_impl(
+        &mut self,
+        store: &mut StoreInner,
+        values: &[Register],
+    ) -> ReturnOutcome {
         let (mut caller_sp, results) = self.return_caller_results();
         let mut result = results.head();
         let mut copy_results = |values: &[Register]| {
@@ -202,20 +239,21 @@ impl<'engine> Executor<'engine> {
             unexpected => unreachable!("unexpected Instruction found while executing Instruction::ReturnMany: {unexpected:?}"),
         };
         copy_results(values);
-        self.return_impl()
+        self.return_impl(store)
     }
 
     /// Execute a generic conditional return [`Instruction`].
     #[inline(always)]
     fn execute_return_nez_impl<T>(
         &mut self,
+        store: &mut StoreInner,
         condition: Register,
         value: T,
-        f: fn(&mut Self, T) -> ReturnOutcome,
+        f: fn(&mut Self, &mut StoreInner, T) -> ReturnOutcome,
     ) -> ReturnOutcome {
         let condition = self.get_register(condition);
         match bool::from(condition) {
-            true => f(self, value),
+            true => f(self, store, value),
             false => {
                 self.next_instr();
                 ReturnOutcome::Wasm
@@ -225,80 +263,93 @@ impl<'engine> Executor<'engine> {
 
     /// Execute an [`Instruction::Return`].
     #[inline(always)]
-    pub fn execute_return_nez(&mut self, condition: Register) -> ReturnOutcome {
-        self.execute_return_nez_impl(condition, (), |this, _| this.execute_return())
+    pub fn execute_return_nez(
+        &mut self,
+        store: &mut StoreInner,
+        condition: Register,
+    ) -> ReturnOutcome {
+        self.execute_return_nez_impl(store, condition, (), |this, store, _| {
+            this.execute_return(store)
+        })
     }
 
     /// Execute an [`Instruction::ReturnNezReg`] returning a single [`Register`] value.
     #[inline(always)]
     pub fn execute_return_nez_reg(
         &mut self,
+        store: &mut StoreInner,
         condition: Register,
         value: Register,
     ) -> ReturnOutcome {
-        self.execute_return_nez_impl(condition, value, Self::execute_return_reg)
+        self.execute_return_nez_impl(store, condition, value, Self::execute_return_reg)
     }
 
     /// Execute an [`Instruction::ReturnNezReg`] returning a single [`Register`] value.
     #[inline(always)]
     pub fn execute_return_nez_reg2(
         &mut self,
+        store: &mut StoreInner,
         condition: Register,
         value: [Register; 2],
     ) -> ReturnOutcome {
-        self.execute_return_nez_impl(condition, value, Self::execute_return_reg2)
+        self.execute_return_nez_impl(store, condition, value, Self::execute_return_reg2)
     }
 
     /// Execute an [`Instruction::ReturnNezImm32`] returning a single 32-bit constant value.
     #[inline(always)]
     pub fn execute_return_nez_imm32(
         &mut self,
+        store: &mut StoreInner,
         condition: Register,
         value: AnyConst32,
     ) -> ReturnOutcome {
-        self.execute_return_nez_impl(condition, value, Self::execute_return_imm32)
+        self.execute_return_nez_impl(store, condition, value, Self::execute_return_imm32)
     }
 
     /// Execute an [`Instruction::ReturnNezI64Imm32`] returning a single 32-bit encoded constant `i64` value.
     #[inline(always)]
     pub fn execute_return_nez_i64imm32(
         &mut self,
+        store: &mut StoreInner,
         condition: Register,
         value: Const32<i64>,
     ) -> ReturnOutcome {
-        self.execute_return_nez_impl(condition, value, Self::execute_return_i64imm32)
+        self.execute_return_nez_impl(store, condition, value, Self::execute_return_i64imm32)
     }
 
     /// Execute an [`Instruction::ReturnNezF64Imm32`] returning a single 32-bit encoded constant `f64` value.
     #[inline(always)]
     pub fn execute_return_nez_f64imm32(
         &mut self,
+        store: &mut StoreInner,
         condition: Register,
         value: Const32<f64>,
     ) -> ReturnOutcome {
-        self.execute_return_nez_impl(condition, value, Self::execute_return_f64imm32)
+        self.execute_return_nez_impl(store, condition, value, Self::execute_return_f64imm32)
     }
 
     /// Execute an [`Instruction::ReturnNezSpan`] returning many values.
     #[inline(always)]
     pub fn execute_return_nez_span(
         &mut self,
+        store: &mut StoreInner,
         condition: Register,
         values: RegisterSpanIter,
     ) -> ReturnOutcome {
-        self.execute_return_nez_impl(condition, values, Self::execute_return_span)
+        self.execute_return_nez_impl(store, condition, values, Self::execute_return_span)
     }
 
     /// Execute an [`Instruction::ReturnNezMany`] returning many values.
     #[inline(always)]
     pub fn execute_return_nez_many(
         &mut self,
+        store: &mut StoreInner,
         condition: Register,
         values: [Register; 2],
     ) -> ReturnOutcome {
         let condition = self.get_register(condition);
         match bool::from(condition) {
-            true => self.execute_return_many_impl(&values),
+            true => self.execute_return_many_impl(store, &values),
             false => {
                 self.ip.add(1);
                 while let Instruction::RegisterList(_values) = self.ip.get() {
