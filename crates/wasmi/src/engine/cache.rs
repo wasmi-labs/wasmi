@@ -146,19 +146,17 @@ impl InstanceCache {
         ctx.resolve_table_init_params(inst, &tab, &seg)
     }
 
-    /// Clears the cached default memory instance and global variable.
+    /// Clears the cached global variable.
     ///
     /// # Note
     ///
-    /// - This is required for host function calls for reasons explained
-    ///   in [`InstanceCache::reset_default_memory_bytes`].
-    /// - Furthermore a called host function could introduce new global
-    ///   variables to the [`Store`] and thus might invalidate cached
-    ///   global variables. So we need to reset them as well.
+    /// A called host function could introduce new global
+    /// variables to the [`Store`] and thus might invalidate cached
+    /// global variable. So we need to reset them.
     ///
     /// [`Store`]: crate::Store
     #[inline]
-    pub fn reset(&mut self) {
+    pub fn reset_last_global(&mut self) {
         self.last_global = None;
     }
 

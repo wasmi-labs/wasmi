@@ -512,7 +512,7 @@ impl<'engine> Executor<'engine> {
                 true => error,
                 false => ResumableHostError::new(error, *func, results).into(),
             })?;
-        self.cache.reset();
+        self.cache.reset_last_global();
         self.memory = Self::load_default_memory(&mut store.inner, caller.instance());
         let results = results.iter(len_results);
         let returned = self.value_stack.drop_return(max_inout);
