@@ -293,7 +293,7 @@ impl Config {
     ///
     /// Enabled by default.
     ///
-    /// [`tail-call`]: https://github.com/WebAssembly/tail-calls
+    /// [`tail-call`]: https://github.com/WebAssembly/tail-call
     pub fn wasm_tail_call(&mut self, enable: bool) -> &mut Self {
         self.tail_call = enable;
         self

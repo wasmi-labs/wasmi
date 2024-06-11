@@ -2,7 +2,6 @@ use super::Executor;
 use crate::{
     core::{TrapCode, UntypedVal},
     engine::bytecode::{LoadAtInstr, LoadInstr, LoadOffset16Instr, Register},
-    store::StoreInner,
     Error,
 };
 
@@ -30,13 +29,14 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn execute_load_extend(
         &mut self,
-        store: &mut StoreInner,
         result: Register,
         address: UntypedVal,
         offset: u32,
         load_extend: WasmLoadOp,
     ) -> Result<(), Error> {
-        let memory = self.cache.default_memory_bytes(store);
+        // Safety: `self.memory` is always re-loaded conservatively whenever
+        //         the heap allocations and thus the pointer might have changed.
+        let memory = unsafe { self.memory.as_ref() };
         let loaded_value = load_extend(memory, address, offset)?;
         self.set_register(result, loaded_value);
         Ok(())
@@ -46,13 +46,12 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn execute_load_impl(
         &mut self,
-        store: &mut StoreInner,
         instr: LoadInstr,
         load_extend: WasmLoadOp,
     ) -> Result<(), Error> {
         let offset = self.fetch_address_offset(1);
         let address = self.get_register(instr.ptr);
-        self.execute_load_extend(store, instr.result, address, offset, load_extend)?;
+        self.execute_load_extend(instr.result, address, offset, load_extend)?;
         self.try_next_instr_at(2)
     }
 
@@ -60,18 +59,11 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn execute_load_at_impl(
         &mut self,
-        store: &mut StoreInner,
         instr: LoadAtInstr,
         load_extend: WasmLoadOp,
     ) -> Result<(), Error> {
         let offset = u32::from(instr.address);
-        self.execute_load_extend(
-            store,
-            instr.result,
-            UntypedVal::from(0u32),
-            offset,
-            load_extend,
-        )?;
+        self.execute_load_extend(instr.result, UntypedVal::from(0u32), offset, load_extend)?;
         self.try_next_instr()
     }
 
@@ -79,13 +71,12 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn execute_load_offset16_impl(
         &mut self,
-        store: &mut StoreInner,
         instr: LoadOffset16Instr,
         load_extend: WasmLoadOp,
     ) -> Result<(), Error> {
         let offset = u32::from(instr.offset);
         let address = self.get_register(instr.ptr);
-        self.execute_load_extend(store, instr.result, address, offset, load_extend)?;
+        self.execute_load_extend(instr.result, address, offset, load_extend)?;
         self.try_next_instr()
     }
 }
@@ -102,20 +93,20 @@ macro_rules! impl_execute_load {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load), "`].")]
             #[inline(always)]
-            pub fn $fn_load(&mut self, store: &mut StoreInner, instr: LoadInstr) -> Result<(), Error> {
-                self.execute_load_impl(store, instr, $impl_fn)
+            pub fn $fn_load(&mut self, instr: LoadInstr) -> Result<(), Error> {
+                self.execute_load_impl(instr, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_at), "`].")]
             #[inline(always)]
-            pub fn $fn_load_at(&mut self, store: &mut StoreInner, instr: LoadAtInstr) -> Result<(), Error> {
-                self.execute_load_at_impl(store, instr, $impl_fn)
+            pub fn $fn_load_at(&mut self, instr: LoadAtInstr) -> Result<(), Error> {
+                self.execute_load_at_impl(instr, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_off16), "`].")]
             #[inline(always)]
-            pub fn $fn_load_off16(&mut self, store: &mut StoreInner, instr: LoadOffset16Instr) -> Result<(), Error> {
-                self.execute_load_offset16_impl(store, instr, $impl_fn)
+            pub fn $fn_load_off16(&mut self, instr: LoadOffset16Instr) -> Result<(), Error> {
+                self.execute_load_offset16_impl(instr, $impl_fn)
             }
         )*
     }
