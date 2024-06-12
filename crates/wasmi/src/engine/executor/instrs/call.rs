@@ -221,13 +221,12 @@ impl<'engine> Executor<'engine> {
             .call_stack
             .peek()
             .expect("need to have a caller on the call stack");
-        let (mut uninit_params, base_ptr, frame_ptr) =
-            self.value_stack.alloc_call_frame(func, |this| {
-                // Safety: We use the base offset of a live call frame on the call stack.
-                self.sp = unsafe { this.stack_ptr_at(caller.base_offset()) };
-            })?;
+        let (mut uninit_params, offsets) = self.value_stack.alloc_call_frame(func, |this| {
+            // Safety: We use the base offset of a live call frame on the call stack.
+            self.sp = unsafe { this.stack_ptr_at(caller.base_offset()) };
+        })?;
         let instr_ptr = InstructionPtr::new(func.instrs().as_ptr());
-        let frame = CallFrame::new(instr_ptr, frame_ptr, base_ptr, results);
+        let frame = CallFrame::new(instr_ptr, offsets, results);
         if <C as CallContext>::HAS_PARAMS {
             self.copy_call_params(&mut uninit_params);
         }
