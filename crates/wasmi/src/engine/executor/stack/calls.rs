@@ -156,28 +156,35 @@ impl CallStack {
     ///
     /// If the recursion limit has been reached.
     #[inline(always)]
-    pub fn push(&mut self, call: CallFrame, instance: Option<Instance>) -> Result<(), TrapCode> {
+    pub fn push(
+        &mut self,
+        mut call: CallFrame,
+        instance: Option<Instance>,
+    ) -> Result<(), TrapCode> {
         if self.len() == self.recursion_limit {
             return Err(err_stack_overflow());
         }
         if let Some(instance) = instance {
-            self.push_instance(instance);
+            call.changed_instance = self.push_instance(instance);
         }
         self.frames.push(call);
         Ok(())
     }
 
     /// Pushes the `instance` onto the internal instances stack.
+    ///
+    /// Returns `true` if the [`Instance`] stack has been adjusted.
     #[inline(always)]
-    fn push_instance(&mut self, instance: Instance) {
+    fn push_instance(&mut self, instance: Instance) -> bool {
         let height = self.frames.len();
         if let Some(last) = self.instances.last() {
             debug_assert!(height > last.height);
             if instance == last.instance {
-                return;
+                return false;
             }
         }
         self.instances.push(InstanceAndHeight { instance, height });
+        true
     }
 
     /// Pops the last [`CallFrame`] from the [`CallStack`] if any.
@@ -187,17 +194,27 @@ impl CallStack {
     #[inline(always)]
     pub fn pop(&mut self) -> Option<(CallFrame, Option<Instance>)> {
         let frame = self.frames.pop()?;
+        let instance = match frame.changed_instance {
+            true => self.pop_instance(),
+            false => None,
+        };
+        Some((frame, instance))
+    }
+
+    /// Pops the last [`Instance`] from the [`CallStack`] if height condition holds.
+    #[inline(always)]
+    #[cold]
+    fn pop_instance(&mut self) -> Option<Instance> {
         let f_height = self.frames.len();
         let i_height = self
             .instances
             .last()
             .expect("must have instance when there is a frame")
             .height;
-        let instance = match i_height == f_height {
+        match i_height == f_height {
             true => self.instances.pop().map(InstanceAndHeight::into_instance),
             false => None,
-        };
-        Some((frame, instance))
+        }
     }
 
     /// Peeks the last [`CallFrame`] of the [`CallStack`] if any.
@@ -236,6 +253,14 @@ pub struct CallFrame {
     offsets: StackOffsets,
     /// Span of registers were the caller expects them in its [`CallFrame`].
     results: RegisterSpan,
+    /// Is `true` if this [`CallFrame`] changed the currently used [`Instance`].
+    ///
+    /// - This flag is an optimization to reduce the amount of accesses on the
+    ///   instance stack of the [`CallStack`] for the common case where this is
+    ///   not needed.
+    /// - This flag is private to the [`CallStack`] and shall not be observable
+    ///   from the outside.
+    changed_instance: bool,
 }
 
 /// Offsets for a [`CallFrame`] into the [`ValueStack`].
@@ -270,6 +295,7 @@ impl CallFrame {
             instr_ptr,
             offsets,
             results,
+            changed_instance: false,
         }
     }
 
