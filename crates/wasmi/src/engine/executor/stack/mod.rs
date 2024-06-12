@@ -2,7 +2,7 @@ mod calls;
 mod values;
 
 pub use self::{
-    calls::{CallFrame, CallStack},
+    calls::{CallFrame, CallStack, StackOffsets},
     values::{
         BaseValueStackOffset,
         FrameParams,
