@@ -278,6 +278,7 @@ impl StackOffsets {
     /// # Note
     ///
     /// This is used for the implementation of tail calls.
+    #[inline(always)]
     fn move_down(&mut self, delta: usize) {
         let base = usize::from(self.base);
         let frame = usize::from(self.frame);
@@ -290,6 +291,7 @@ impl StackOffsets {
 
 impl CallFrame {
     /// Creates a new [`CallFrame`].
+    #[inline(always)]
     pub fn new(instr_ptr: InstructionPtr, offsets: StackOffsets, results: RegisterSpan) -> Self {
         Self {
             instr_ptr,
@@ -304,6 +306,7 @@ impl CallFrame {
     /// # Note
     ///
     /// This is used for the implementation of tail calls.
+    #[inline(always)]
     pub fn move_down(&mut self, delta: usize) {
         self.offsets.move_down(delta);
     }
@@ -313,21 +316,25 @@ impl CallFrame {
     /// This is required before dispatching a nested function call to update
     /// the instruction pointer of the caller so that it can continue at that
     /// position when the called function returns.
+    #[inline(always)]
     pub fn update_instr_ptr(&mut self, new_instr_ptr: InstructionPtr) {
         self.instr_ptr = new_instr_ptr;
     }
 
     /// Returns the [`InstructionPtr`] of the [`CallFrame`].
+    #[inline(always)]
     pub fn instr_ptr(&self) -> InstructionPtr {
         self.instr_ptr
     }
 
     /// Returns the [`FrameValueStackOffset`] of the [`CallFrame`].
+    #[inline(always)]
     pub fn frame_offset(&self) -> FrameValueStackOffset {
         self.offsets.frame
     }
 
     /// Returns the [`BaseValueStackOffset`] of the [`CallFrame`].
+    #[inline(always)]
     pub fn base_offset(&self) -> BaseValueStackOffset {
         self.offsets.base
     }
@@ -338,6 +345,7 @@ impl CallFrame {
     ///
     /// The registers yielded by the returned [`RegisterSpan`]
     /// refer to the [`CallFrame`] of the caller of this [`CallFrame`].
+    #[inline(always)]
     pub fn results(&self) -> RegisterSpan {
         self.results
     }
