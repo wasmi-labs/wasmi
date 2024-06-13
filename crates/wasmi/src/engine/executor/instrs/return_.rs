@@ -33,7 +33,7 @@ impl<'engine> Executor<'engine> {
         let new_instance = popped_instance.and_then(|_| self.call_stack.instance());
         if let Some(new_instance) = new_instance {
             self.cache.update_instance(new_instance);
-            self.memory = Self::load_default_memory(store, new_instance);
+            self.memory.update(store, new_instance);
         }
         match self.call_stack.peek() {
             Some(caller) => {

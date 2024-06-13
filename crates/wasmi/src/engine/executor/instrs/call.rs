@@ -469,7 +469,7 @@ impl<'engine> Executor<'engine> {
                     Some(instance),
                 )?;
                 self.cache.update_instance(&instance);
-                self.memory = Self::load_default_memory(&mut store.inner, &instance);
+                self.memory.update(&mut store.inner, &instance);
                 Ok(())
             }
             FuncEntity::Host(host_func) => {
@@ -526,7 +526,7 @@ impl<'engine> Executor<'engine> {
                 false => ResumableHostError::new(error, *func, results).into(),
             })?;
         self.cache.reset_last_global();
-        self.memory = Self::load_default_memory(&mut store.inner, &instance);
+        self.memory.update(&mut store.inner, &instance);
         let results = results.iter(len_results);
         let returned = self.value_stack.drop_return(max_inout);
         for (result, value) in results.zip(returned) {

@@ -98,7 +98,7 @@ impl<'engine> Executor<'engine> {
                 // linear memory so we need to reset it in order for the cache to
                 // reload in case it is used again.
                 let instance = self.cache.instance();
-                self.memory = Self::load_default_memory(store, instance);
+                self.memory.update(store, instance);
                 return_value
             }
             Err(EntityGrowError::InvalidGrow) => EntityGrowError::ERROR_CODE,

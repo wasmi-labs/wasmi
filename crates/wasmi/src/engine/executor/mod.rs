@@ -1,6 +1,7 @@
 pub use self::instrs::ResumableHostError;
 pub(crate) use self::stack::Stack;
 use self::{
+    cache::CachedMemory,
     instrs::{dispatch_host_func, execute_instrs},
     stack::CallFrame,
 };
@@ -27,6 +28,7 @@ use crate::{
 #[cfg(doc)]
 use crate::engine::StackLimits;
 
+mod cache;
 mod instrs;
 mod stack;
 
