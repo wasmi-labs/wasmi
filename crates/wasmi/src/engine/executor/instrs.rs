@@ -157,6 +157,12 @@ impl<'engine> Executor<'engine> {
             .into()
     }
 
+    /// Returns the default memory of the current [`Instance`] for `ctx`.
+    /// 
+    /// # Panics
+    /// 
+    /// - If the current [`Instance`] does not belong to `ctx`.
+    /// - If the current [`Instance`] does not have a linear memory.
     #[inline]
     fn default_memory(&self, ctx: &StoreInner) -> Memory {
         let instance = self.cache.instance();
