@@ -26,7 +26,7 @@ impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::DataDrop`].
     #[inline(always)]
     pub fn execute_data_drop(&mut self, store: &mut StoreInner, segment_index: DataSegmentIdx) {
-        let segment = self.cache.get_data_segment(store, segment_index.to_u32());
+        let segment = self.cache.get_data_segment(store, u32::from(segment_index));
         store.resolve_data_segment_mut(&segment).drop_bytes();
         self.next_instr();
     }

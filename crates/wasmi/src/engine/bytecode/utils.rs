@@ -605,10 +605,9 @@ impl From<u32> for FuncIdx {
     }
 }
 
-impl FuncIdx {
-    /// Returns the index value as `u32`.
-    pub fn to_u32(self) -> u32 {
-        self.0
+impl From<FuncIdx> for u32 {
+    fn from(index: FuncIdx) -> Self {
+        index.0
     }
 }
 
@@ -623,10 +622,9 @@ impl From<u32> for TableIdx {
     }
 }
 
-impl TableIdx {
-    /// Returns the index value as `u32`.
-    pub fn to_u32(self) -> u32 {
-        u32::from_ne_bytes(self.0)
+impl From<TableIdx> for u32 {
+    fn from(index: TableIdx) -> Self {
+        u32::from_ne_bytes(index.0)
     }
 }
 
@@ -641,10 +639,9 @@ impl From<u32> for SignatureIdx {
     }
 }
 
-impl SignatureIdx {
-    /// Returns the index value as `u32`.
-    pub fn to_u32(self) -> u32 {
-        self.0
+impl From<SignatureIdx> for u32 {
+    fn from(index: SignatureIdx) -> Self {
+        index.0
     }
 }
 
@@ -665,10 +662,9 @@ impl From<u32> for GlobalIdx {
     }
 }
 
-impl GlobalIdx {
-    /// Returns the index value as `u32`.
-    pub fn to_u32(self) -> u32 {
-        self.0
+impl From<GlobalIdx> for u32 {
+    fn from(index: GlobalIdx) -> Self {
+        index.0
     }
 }
 
@@ -689,10 +685,9 @@ impl From<u32> for DataSegmentIdx {
     }
 }
 
-impl DataSegmentIdx {
-    /// Returns the index value as `u32`.
-    pub fn to_u32(self) -> u32 {
-        self.0
+impl From<DataSegmentIdx> for u32 {
+    fn from(index: DataSegmentIdx) -> Self {
+        index.0
     }
 }
 
@@ -713,10 +708,9 @@ impl From<u32> for ElementSegmentIdx {
     }
 }
 
-impl ElementSegmentIdx {
-    /// Returns the index value as `u32`.
-    pub fn to_u32(self) -> u32 {
-        self.0
+impl From<ElementSegmentIdx> for u32 {
+    fn from(index: ElementSegmentIdx) -> Self {
+        index.0
     }
 }
 
