@@ -460,7 +460,7 @@ impl<'engine> Executor<'engine> {
                 let func_body = func.func_body();
                 self.prepare_compiled_func_call::<C>(&mut store.inner, results, func_body)?;
                 self.cache.update_instance(&instance);
-                self.memory = Self::load_default_memory(&mut store.inner, &instance);
+                self.memory.update(&mut store.inner, &instance);
                 Ok(())
             }
             FuncEntity::Host(host_func) => {
@@ -513,7 +513,7 @@ impl<'engine> Executor<'engine> {
                 false => ResumableHostError::new(error, *func, results).into(),
             })?;
         self.cache.reset_last_global();
-        self.memory = Self::load_default_memory(&mut store.inner, caller.instance());
+        self.memory.update(&mut store.inner, caller.instance());
         let results = results.iter(len_results);
         let returned = self.value_stack.drop_return(max_inout);
         for (result, value) in results.zip(returned) {

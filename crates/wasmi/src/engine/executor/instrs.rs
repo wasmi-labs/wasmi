@@ -1,7 +1,6 @@
-use core::ptr::NonNull;
-
 pub use self::call::{dispatch_host_func, ResumableHostError};
 use self::return_::ReturnOutcome;
+use super::cache::CachedMemory;
 use crate::{
     core::{TrapCode, UntypedVal},
     engine::{
@@ -26,7 +25,6 @@ use crate::{
     store::StoreInner,
     Error,
     FuncRef,
-    Instance,
     Memory,
     Store,
 };
@@ -82,8 +80,8 @@ struct Executor<'engine> {
     sp: FrameRegisters,
     /// The pointer to the currently executed instruction.
     ip: InstructionPtr,
-    /// The default memory byte buffer.
-    memory: NonNull<[u8]>,
+    /// The cached default memory bytes.
+    memory: CachedMemory,
     /// Stores frequently used instance related data.
     cache: &'engine mut InstanceCache,
     /// The value stack.
@@ -134,27 +132,13 @@ impl<'engine> Executor<'engine> {
         Self {
             sp,
             ip,
-            memory: NonNull::from(&mut []),
+            memory: CachedMemory::default(),
             cache,
             value_stack,
             call_stack,
             code_map,
             func_types,
         }
-    }
-
-    /// Loads the default [`Memory`] of the currently used [`Instance`].
-    ///
-    /// # Panics
-    ///
-    /// If the currently used [`Instance`] does not have a default linear memory.
-    #[inline]
-    fn load_default_memory(ctx: &mut StoreInner, instance: &Instance) -> NonNull<[u8]> {
-        ctx.resolve_instance(instance)
-            .get_memory(DEFAULT_MEMORY_INDEX)
-            .map(|memory| ctx.resolve_memory_mut(&memory).data_mut())
-            .unwrap_or_else(|| &mut [])
-            .into()
     }
 
     #[inline]
@@ -170,7 +154,7 @@ impl<'engine> Executor<'engine> {
     fn execute<T>(mut self, store: &mut Store<T>) -> Result<(), Error> {
         use Instruction as Instr;
         let instance = self.cache.instance();
-        self.memory = Self::load_default_memory(&mut store.inner, instance);
+        self.memory.update(&mut store.inner, instance);
         loop {
             match *self.ip.get() {
                 Instr::Trap(trap_code) => self.execute_trap(trap_code)?,
