@@ -12,7 +12,7 @@ impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::GlobalGet`].
     #[inline(always)]
     pub fn execute_global_get(&mut self, store: &StoreInner, result: Register, global: GlobalIdx) {
-        let value = match global.to_u32() {
+        let value = match u32::from(global) {
             0 => unsafe { self.global.get() },
             _ => {
                 hint::cold();
@@ -68,7 +68,7 @@ impl<'engine> Executor<'engine> {
         global: GlobalIdx,
         new_value: UntypedVal,
     ) {
-        match global.to_u32() {
+        match u32::from(global) {
             0 => unsafe { self.global.set(new_value) },
             _ => {
                 hint::cold();

@@ -674,7 +674,7 @@ impl FuncTranslator {
 
     /// Resolves the [`FuncType`] of the given [`FuncTypeIdx`].
     fn func_type_at(&self, func_type_index: SignatureIdx) -> FuncType {
-        let func_type_index = FuncTypeIdx::from(func_type_index.to_u32()); // TODO: use the same type
+        let func_type_index = FuncTypeIdx::from(u32::from(func_type_index));
         let dedup_func_type = self.module.get_func_type(func_type_index);
         self.engine()
             .resolve_func_type(dedup_func_type, Clone::clone)

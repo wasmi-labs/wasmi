@@ -637,7 +637,7 @@ impl<'engine> Executor<'engine> {
         let expected_signature = store
             .inner
             .resolve_instance(Self::instance(self.call_stack))
-            .get_signature(func_type.to_u32())
+            .get_signature(u32::from(func_type))
             .unwrap_or_else(|| {
                 panic!("missing signature for call_indirect at index: {func_type:?}")
             });
