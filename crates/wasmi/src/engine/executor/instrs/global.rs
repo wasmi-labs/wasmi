@@ -1,6 +1,6 @@
 use super::Executor;
 use crate::{
-    core::UntypedVal,
+    core::{hint, UntypedVal},
     engine::bytecode::{Const16, GlobalIdx, Register},
     store::StoreInner,
 };
@@ -15,6 +15,7 @@ impl<'engine> Executor<'engine> {
         let value = match global.to_u32() {
             0 => unsafe { self.global.get() },
             _ => {
+                hint::cold();
                 let global = self.get_global(store, global);
                 store.resolve_global(&global).get_untyped()
             }
@@ -70,6 +71,7 @@ impl<'engine> Executor<'engine> {
         match global.to_u32() {
             0 => unsafe { self.global.set(new_value) },
             _ => {
+                hint::cold();
                 let global = self.get_global(store, global);
                 store.resolve_global_mut(&global).set_untyped(new_value)
             }
