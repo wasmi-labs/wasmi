@@ -1,6 +1,6 @@
 pub use self::call::{dispatch_host_func, ResumableHostError};
 use self::return_::ReturnOutcome;
-use super::CachedMemory;
+use super::cache::{CachedGlobal, CachedMemory};
 use crate::{
     core::{TrapCode, UntypedVal},
     engine::{
@@ -10,23 +10,32 @@ use crate::{
             BinInstrImm16,
             BlockFuel,
             Const16,
+            DataSegmentIdx,
+            ElementSegmentIdx,
             FuncIdx,
+            GlobalIdx,
             Instruction,
             Register,
+            TableIdx,
             UnaryInstr,
         },
-        cache::InstanceCache,
         code_map::InstructionPtr,
         executor::stack::{CallFrame, CallStack, FrameRegisters, ValueStack},
         func_types::FuncTypeRegistry,
         CodeMap,
     },
+    memory::DataSegment,
     module::DEFAULT_MEMORY_INDEX,
     store::StoreInner,
+    table::ElementSegment,
     Error,
+    Func,
     FuncRef,
+    Global,
+    Instance,
     Memory,
     Store,
+    Table,
 };
 
 mod binary;
@@ -64,13 +73,12 @@ macro_rules! forward_return {
 #[inline(never)]
 pub fn execute_instrs<'engine, T>(
     store: &mut Store<T>,
-    cache: &'engine mut InstanceCache,
     value_stack: &'engine mut ValueStack,
     call_stack: &'engine mut CallStack,
     code_map: &'engine CodeMap,
     func_types: &'engine FuncTypeRegistry,
 ) -> Result<(), Error> {
-    Executor::new(cache, value_stack, call_stack, code_map, func_types).execute(store)
+    Executor::new(value_stack, call_stack, code_map, func_types).execute(store)
 }
 
 /// An execution context for executing a Wasmi function frame.
@@ -82,8 +90,8 @@ struct Executor<'engine> {
     ip: InstructionPtr,
     /// The default memory byte buffer.
     memory: CachedMemory,
-    /// Stores frequently used instance related data.
-    cache: &'engine mut InstanceCache,
+    /// The cached global variable at index 0.
+    global: CachedGlobal,
     /// The value stack.
     ///
     /// # Note
@@ -115,7 +123,6 @@ impl<'engine> Executor<'engine> {
     /// Creates a new [`Executor`] for executing a Wasmi function frame.
     #[inline(always)]
     pub fn new(
-        cache: &'engine mut InstanceCache,
         value_stack: &'engine mut ValueStack,
         call_stack: &'engine mut CallStack,
         code_map: &'engine CodeMap,
@@ -133,7 +140,7 @@ impl<'engine> Executor<'engine> {
             sp,
             ip,
             memory: CachedMemory::default(),
-            cache,
+            global: CachedGlobal::default(),
             value_stack,
             call_stack,
             code_map,
@@ -141,25 +148,20 @@ impl<'engine> Executor<'engine> {
         }
     }
 
-    /// Returns the default memory of the current [`Instance`] for `ctx`.
-    ///
-    /// # Panics
-    ///
-    /// - If the current [`Instance`] does not belong to `ctx`.
-    /// - If the current [`Instance`] does not have a linear memory.
+    /// Returns the currently used [`Instance`].
     #[inline]
-    fn default_memory(&self, ctx: &StoreInner) -> Memory {
-        let instance = self.cache.instance();
-        ctx.resolve_instance(instance)
-            .get_memory(DEFAULT_MEMORY_INDEX)
-            .expect("missing default memory for instance: {instance:?}")
+    fn instance(call_stack: &CallStack) -> &Instance {
+        call_stack
+            .instance()
+            .expect("missing instance for non-empty call stack")
     }
 
     /// Executes the function frame until it returns or traps.
     #[inline(always)]
     fn execute<T>(mut self, store: &mut Store<T>) -> Result<(), Error> {
         use Instruction as Instr;
-        let instance = self.cache.instance();
+        let instance = Self::instance(self.call_stack);
+        self.global.update(&mut store.inner, instance);
         self.memory.update(&mut store.inner, instance);
         loop {
             match *self.ip.get() {
@@ -394,7 +396,7 @@ impl<'engine> Executor<'engine> {
                     self.execute_ref_func(&mut store.inner, result, func)
                 }
                 Instr::GlobalGet { result, global } => {
-                    self.execute_global_get(&mut store.inner, result, global)
+                    self.execute_global_get(&store.inner, result, global)
                 }
                 Instr::GlobalSet { global, input } => {
                     self.execute_global_set(&mut store.inner, global, input)
@@ -892,6 +894,125 @@ impl<'engine> Executor<'engine> {
         }
     }
 
+    /// Returns the [`Func`] at `func_index` for the currently used [`Instance`] in `store`.
+    ///
+    /// # Panics
+    ///
+    /// - If the current [`Instance`] does not belong to `ctx`.
+    /// - If there is no [`Func`] at `func_index` for the currently used [`Instance`] in `store`.
+    #[inline]
+    fn get_func(&self, store: &StoreInner, index: FuncIdx) -> Func {
+        let instance = Self::instance(self.call_stack);
+        let index = index.to_u32();
+        store
+            .resolve_instance(instance)
+            .get_func(index)
+            .unwrap_or_else(|| {
+                unreachable!(
+                    "missing func at index {index:?} for instance: {:?}",
+                    instance,
+                )
+            })
+    }
+
+    /// Returns the default memory of the current [`Instance`] for `ctx`.
+    ///
+    /// # Panics
+    ///
+    /// - If the current [`Instance`] does not belong to `ctx`.
+    /// - If the current [`Instance`] does not have a linear memory.
+    #[inline]
+    fn get_default_memory(&self, ctx: &StoreInner) -> Memory {
+        let instance = Self::instance(self.call_stack);
+        ctx.resolve_instance(instance)
+            .get_memory(DEFAULT_MEMORY_INDEX)
+            .expect("missing default memory for instance: {instance:?}")
+    }
+
+    /// Returns the [`Table`] at `index` for the currently used [`Instance`] in `store`.
+    ///
+    /// # Panics
+    ///
+    /// - If the current [`Instance`] does not belong to `ctx`.
+    /// - If there is no [`Table`] at `index` for the currently used [`Instance`] in `store`.
+    #[inline]
+    fn get_table(&self, store: &StoreInner, index: TableIdx) -> Table {
+        let instance = Self::instance(self.call_stack);
+        let index = index.to_u32();
+        store
+            .resolve_instance(instance)
+            .get_table(index)
+            .unwrap_or_else(|| {
+                unreachable!(
+                    "missing table at index {index:?} for instance: {:?}",
+                    instance,
+                )
+            })
+    }
+
+    /// Returns the [`Global`] at `index` for the currently used [`Instance`] in `store`.
+    ///
+    /// # Panics
+    ///
+    /// - If the current [`Instance`] does not belong to `ctx`.
+    /// - If there is no [`Global`] at `index` for the currently used [`Instance`] in `store`.
+    #[inline]
+    fn get_global(&self, store: &StoreInner, index: GlobalIdx) -> Global {
+        let instance = Self::instance(self.call_stack);
+        let index = index.to_u32();
+        store
+            .resolve_instance(instance)
+            .get_global(index)
+            .unwrap_or_else(|| {
+                unreachable!(
+                    "missing global variable at index {index:?} for instance: {:?}",
+                    instance,
+                )
+            })
+    }
+
+    /// Returns the [`DataSegment`] at `index` for the currently used [`Instance`] in `store`.
+    ///
+    /// # Panics
+    ///
+    /// - If the current [`Instance`] does not belong to `ctx`.
+    /// - If there is no [`DataSegment`] at `index` for the currently used [`Instance`] in `store`.
+    #[inline]
+    fn get_data_segment(&self, store: &StoreInner, index: DataSegmentIdx) -> DataSegment {
+        let instance = Self::instance(self.call_stack);
+        let index = index.to_u32();
+        store
+            .resolve_instance(instance)
+            .get_data_segment(index)
+            .unwrap_or_else(|| {
+                unreachable!(
+                    "missing data segment at index {index:?} for instance: {:?}",
+                    instance,
+                )
+            })
+    }
+
+    /// Returns the [`ElementSegment`] at `index` for the currently used [`Instance`] in `store`.
+    ///
+    /// # Panics
+    ///
+    /// - If the current [`Instance`] does not belong to `ctx`.
+    /// - If there is no [`ElementSegment`] at `index` for the currently used [`Instance`] in `store`.
+    #[inline]
+    fn get_element_segment(&self, store: &StoreInner, index: ElementSegmentIdx) -> ElementSegment {
+        let instance = Self::instance(self.call_stack);
+        let index = index.to_u32();
+        store
+            .resolve_instance(instance)
+            .get_element_segment(index)
+            .unwrap_or_else(|| {
+                unreachable!(
+                    "missing element segment at index {index:?} for instance: {:?}",
+                    instance,
+                )
+            })
+    }
+
     /// Returns the [`Register`] value.
     fn get_register(&self, register: Register) -> UntypedVal {
         // Safety: - It is the responsibility of the `Executor`
@@ -1171,7 +1292,7 @@ impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::RefFunc`].
     #[inline(always)]
     fn execute_ref_func(&mut self, store: &mut StoreInner, result: Register, func_index: FuncIdx) {
-        let func = self.cache.get_func(store, func_index);
+        let func = self.get_func(store, func_index);
         let funcref = FuncRef::new(func);
         self.set_register(result, funcref);
         self.next_instr();

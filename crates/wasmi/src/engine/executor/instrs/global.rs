@@ -11,13 +11,14 @@ use crate::engine::bytecode::Instruction;
 impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::GlobalGet`].
     #[inline(always)]
-    pub fn execute_global_get(
-        &mut self,
-        store: &mut StoreInner,
-        result: Register,
-        global: GlobalIdx,
-    ) {
-        let value = self.cache.get_global(store, global);
+    pub fn execute_global_get(&mut self, store: &StoreInner, result: Register, global: GlobalIdx) {
+        let value = match global.to_u32() {
+            0 => unsafe { self.global.get() },
+            _ => {
+                let global = self.get_global(store, global);
+                store.resolve_global(&global).get_untyped()
+            }
+        };
         self.set_register(result, value);
         self.next_instr()
     }
@@ -66,7 +67,13 @@ impl<'engine> Executor<'engine> {
         global: GlobalIdx,
         new_value: UntypedVal,
     ) {
-        self.cache.set_global(store, global, new_value);
+        match global.to_u32() {
+            0 => unsafe { self.global.set(new_value) },
+            _ => {
+                let global = self.get_global(store, global);
+                store.resolve_global_mut(&global).set_untyped(new_value)
+            }
+        };
         self.next_instr()
     }
 }

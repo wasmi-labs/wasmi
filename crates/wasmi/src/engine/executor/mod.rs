@@ -1,14 +1,12 @@
 pub use self::instrs::ResumableHostError;
 pub(crate) use self::stack::Stack;
 use self::{
-    cache::CachedMemory,
     instrs::{dispatch_host_func, execute_instrs},
     stack::CallFrame,
 };
 use crate::{
     engine::{
         bytecode::{Register, RegisterSpan},
-        cache::InstanceCache,
         code_map::InstructionPtr,
         CallParams,
         CallResults,
@@ -295,24 +293,11 @@ impl<'engine> EngineExecutor<'engine> {
     /// When encountering a Wasm or host trap during execution.
     #[inline(always)]
     fn execute_func<T>(&mut self, store: &mut Store<T>) -> Result<(), Error> {
-        let mut cache = self
-            .stack
-            .calls
-            .instance()
-            .map(InstanceCache::from)
-            .expect("must have an instance on the call stack");
         let value_stack = &mut self.stack.values;
         let call_stack = &mut self.stack.calls;
         let code_map = &self.res.code_map;
         let func_types = &self.res.func_types;
-        execute_instrs(
-            store,
-            &mut cache,
-            value_stack,
-            call_stack,
-            code_map,
-            func_types,
-        )
+        execute_instrs(store, value_stack, call_stack, code_map, func_types)
     }
 
     /// Convenience forwarder to [`dispatch_host_func`].
