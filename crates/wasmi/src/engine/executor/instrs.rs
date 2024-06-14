@@ -161,8 +161,8 @@ impl<'engine> Executor<'engine> {
     fn execute<T>(mut self, store: &mut Store<T>) -> Result<(), Error> {
         use Instruction as Instr;
         let instance = Self::instance(self.call_stack);
-        self.global.update(&mut store.inner, instance);
         self.memory.update(&mut store.inner, instance);
+        self.global.update(&mut store.inner, instance);
         loop {
             match *self.ip.get() {
                 Instr::Trap(trap_code) => self.execute_trap(trap_code)?,
