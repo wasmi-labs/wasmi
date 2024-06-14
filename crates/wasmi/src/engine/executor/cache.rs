@@ -39,6 +39,8 @@ impl CachedMemory {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a default linear memory.
+    /// 
+    /// [`Memory`]: crate::Memory
     #[inline]
     fn load_default_memory(ctx: &mut StoreInner, instance: &Instance) -> NonNull<[u8]> {
         ctx.resolve_instance(instance)
@@ -111,6 +113,8 @@ impl CachedGlobal {
     /// # Panics
     ///
     /// If the currently used [`Instance`] does not have a default linear memory.
+    /// 
+    /// [`Global`]: crate::Global
     #[inline]
     fn load_global(ctx: &mut StoreInner, instance: &Instance) -> NonNull<UntypedVal> {
         ctx.resolve_instance(instance)
