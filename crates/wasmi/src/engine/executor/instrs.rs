@@ -149,7 +149,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Returns the currently used [`Instance`].
-    #[inline]
+    #[inline(always)]
     fn instance(call_stack: &CallStack) -> &Instance {
         call_stack
             .instance()
