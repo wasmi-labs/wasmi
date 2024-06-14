@@ -894,7 +894,11 @@ impl<'engine> Executor<'engine> {
 
     /// Returns the [`Register`] value.
     fn get_register(&self, register: Register) -> UntypedVal {
-        // Safety: TODO
+        // Safety: - It is the responsibility of the `Executor`
+        //           implementation to keep the `sp` pointer valid
+        //           whenever this method is accessed.
+        //         - This is done by updating the `sp` pointer whenever
+        //           the heap underlying the value stack is changed.
         unsafe { self.sp.get(register) }
     }
 
@@ -908,7 +912,11 @@ impl<'engine> Executor<'engine> {
 
     /// Sets the [`Register`] value to `value`.
     fn set_register(&mut self, register: Register, value: impl Into<UntypedVal>) {
-        // Safety: TODO
+        // Safety: - It is the responsibility of the `Executor`
+        //           implementation to keep the `sp` pointer valid
+        //           whenever this method is accessed.
+        //         - This is done by updating the `sp` pointer whenever
+        //           the heap underlying the value stack is changed.
         unsafe { self.sp.set(register, value.into()) };
     }
 
