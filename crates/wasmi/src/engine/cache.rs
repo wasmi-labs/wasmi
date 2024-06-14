@@ -93,7 +93,7 @@ impl InstanceCache {
     ) -> ElementSegment {
         let instance = self.instance();
         ctx.resolve_instance(self.instance())
-            .get_element_segment(index.to_u32())
+            .get_element_segment(u32::from(index))
             .unwrap_or_else(|| {
                 unreachable!("missing element segment ({index:?}) for instance: {instance:?}",)
             })
@@ -110,7 +110,7 @@ impl InstanceCache {
         ctx: &'a mut StoreInner,
         segment: DataSegmentIdx,
     ) -> (&'a mut [u8], &'a [u8], &'a mut Fuel) {
-        let seg = self.get_data_segment(ctx, segment.to_u32());
+        let seg = self.get_data_segment(ctx, u32::from(segment));
         let instance = &self.instance;
         let mem = ctx
             .resolve_instance(instance)
@@ -183,7 +183,7 @@ impl InstanceCache {
     fn load_table_at(&mut self, ctx: &StoreInner, index: TableIdx) -> Table {
         let table = ctx
             .resolve_instance(self.instance())
-            .get_table(index.to_u32())
+            .get_table(u32::from(index))
             .unwrap_or_else(|| {
                 unreachable!(
                     "missing table at index {index:?} for instance: {:?}",
@@ -204,7 +204,7 @@ impl InstanceCache {
     fn load_func_at(&mut self, ctx: &StoreInner, index: FuncIdx) -> Func {
         let func = ctx
             .resolve_instance(self.instance())
-            .get_func(index.to_u32())
+            .get_func(u32::from(index))
             .unwrap_or_else(|| {
                 unreachable!(
                     "missing func at index {index:?} for instance: {:?}",
@@ -239,7 +239,7 @@ impl InstanceCache {
     fn load_global_at(&mut self, ctx: &mut StoreInner, index: GlobalIdx) -> NonNull<UntypedVal> {
         let global = ctx
             .resolve_instance(self.instance())
-            .get_global(index.to_u32())
+            .get_global(u32::from(index))
             .as_ref()
             .map(|global| ctx.resolve_global_mut(global).get_untyped_ptr())
             .unwrap_or_else(|| {
