@@ -34,8 +34,8 @@ impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::MemorySize`].
     #[inline(always)]
     pub fn execute_memory_size(&mut self, store: &StoreInner, result: Register) {
-        let memory = self.cache.default_memory(store);
-        let size: u32 = store.resolve_memory(memory).current_pages().into();
+        let memory = self.default_memory(store);
+        let size: u32 = store.resolve_memory(&memory).current_pages().into();
         self.set_register(result, size);
         self.next_instr()
     }
@@ -87,8 +87,8 @@ impl<'engine> Executor<'engine> {
                 return self.try_next_instr();
             }
         };
-        let memory = self.cache.default_memory(store);
-        let (memory, fuel) = store.resolve_memory_and_fuel_mut(memory);
+        let memory = self.default_memory(store);
+        let (memory, fuel) = store.resolve_memory_and_fuel_mut(&memory);
         let return_value = memory
             .grow(delta, Some(fuel), resource_limiter)
             .map(u32::from);
@@ -97,7 +97,8 @@ impl<'engine> Executor<'engine> {
                 // The `memory.grow` operation might have invalidated the cached
                 // linear memory so we need to reset it in order for the cache to
                 // reload in case it is used again.
-                self.cache.reset_default_memory_bytes();
+                let instance = self.cache.instance();
+                self.memory = Self::load_default_memory(store, instance);
                 return_value
             }
             Err(EntityGrowError::InvalidGrow) => EntityGrowError::ERROR_CODE,
@@ -237,8 +238,8 @@ impl<'engine> Executor<'engine> {
     ) -> Result<(), Error> {
         let src_index = src_index as usize;
         let dst_index = dst_index as usize;
-        let default_memory = self.cache.default_memory(store);
-        let (memory, fuel) = store.resolve_memory_and_fuel_mut(default_memory);
+        let default_memory = self.default_memory(store);
+        let (memory, fuel) = store.resolve_memory_and_fuel_mut(&default_memory);
         let data = memory.data_mut();
         // These accesses just perform the bounds checks required by the Wasm spec.
         data.get(src_index..)
@@ -378,8 +379,8 @@ impl<'engine> Executor<'engine> {
     ) -> Result<(), Error> {
         let dst = dst as usize;
         let len = len as usize;
-        let default_memory = self.cache.default_memory(store);
-        let (memory, fuel) = store.resolve_memory_and_fuel_mut(default_memory);
+        let default_memory = self.default_memory(store);
+        let (memory, fuel) = store.resolve_memory_and_fuel_mut(&default_memory);
         let memory = memory
             .data_mut()
             .get_mut(dst..)

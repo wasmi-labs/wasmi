@@ -1,3 +1,5 @@
+use core::ptr::NonNull;
+
 pub use self::call::{dispatch_host_func, ResumableHostError};
 use self::return_::ReturnOutcome;
 use crate::{
@@ -20,9 +22,12 @@ use crate::{
         func_types::FuncTypeRegistry,
         CodeMap,
     },
+    module::DEFAULT_MEMORY_INDEX,
     store::StoreInner,
     Error,
     FuncRef,
+    Instance,
+    Memory,
     Store,
 };
 
@@ -77,6 +82,8 @@ struct Executor<'engine> {
     sp: FrameRegisters,
     /// The pointer to the currently executed instruction.
     ip: InstructionPtr,
+    /// The default memory byte buffer.
+    memory: NonNull<[u8]>,
     /// Stores frequently used instance related data.
     cache: &'engine mut InstanceCache,
     /// The value stack.
@@ -127,6 +134,7 @@ impl<'engine> Executor<'engine> {
         Self {
             sp,
             ip,
+            memory: NonNull::from(&mut []),
             cache,
             value_stack,
             call_stack,
@@ -135,10 +143,34 @@ impl<'engine> Executor<'engine> {
         }
     }
 
+    /// Loads the default [`Memory`] of the currently used [`Instance`].
+    ///
+    /// # Panics
+    ///
+    /// If the currently used [`Instance`] does not have a default linear memory.
+    #[inline]
+    fn load_default_memory(ctx: &mut StoreInner, instance: &Instance) -> NonNull<[u8]> {
+        ctx.resolve_instance(instance)
+            .get_memory(DEFAULT_MEMORY_INDEX)
+            .map(|memory| ctx.resolve_memory_mut(&memory).data_mut())
+            .unwrap_or_else(|| &mut [])
+            .into()
+    }
+
+    #[inline]
+    fn default_memory(&self, ctx: &StoreInner) -> Memory {
+        let instance = self.cache.instance();
+        ctx.resolve_instance(instance)
+            .get_memory(DEFAULT_MEMORY_INDEX)
+            .expect("missing default memory for instance: {instance:?}")
+    }
+
     /// Executes the function frame until it returns or traps.
     #[inline(always)]
     fn execute<T>(mut self, store: &mut Store<T>) -> Result<(), Error> {
         use Instruction as Instr;
+        let instance = self.cache.instance();
+        self.memory = Self::load_default_memory(&mut store.inner, instance);
         loop {
             match *self.ip.get() {
                 Instr::Trap(trap_code) => self.execute_trap(trap_code)?,
@@ -146,55 +178,79 @@ impl<'engine> Executor<'engine> {
                     self.execute_consume_fuel(&mut store.inner, block_fuel)?
                 }
                 Instr::Return => {
-                    forward_return!(self.execute_return())
+                    forward_return!(self.execute_return(&mut store.inner))
                 }
                 Instr::ReturnReg { value } => {
-                    forward_return!(self.execute_return_reg(value))
+                    forward_return!(self.execute_return_reg(&mut store.inner, value))
                 }
                 Instr::ReturnReg2 { values } => {
-                    forward_return!(self.execute_return_reg2(values))
+                    forward_return!(self.execute_return_reg2(&mut store.inner, values))
                 }
                 Instr::ReturnReg3 { values } => {
-                    forward_return!(self.execute_return_reg3(values))
+                    forward_return!(self.execute_return_reg3(&mut store.inner, values))
                 }
                 Instr::ReturnImm32 { value } => {
-                    forward_return!(self.execute_return_imm32(value))
+                    forward_return!(self.execute_return_imm32(&mut store.inner, value))
                 }
                 Instr::ReturnI64Imm32 { value } => {
-                    forward_return!(self.execute_return_i64imm32(value))
+                    forward_return!(self.execute_return_i64imm32(&mut store.inner, value))
                 }
                 Instr::ReturnF64Imm32 { value } => {
-                    forward_return!(self.execute_return_f64imm32(value))
+                    forward_return!(self.execute_return_f64imm32(&mut store.inner, value))
                 }
                 Instr::ReturnSpan { values } => {
-                    forward_return!(self.execute_return_span(values))
+                    forward_return!(self.execute_return_span(&mut store.inner, values))
                 }
                 Instr::ReturnMany { values } => {
-                    forward_return!(self.execute_return_many(values))
+                    forward_return!(self.execute_return_many(&mut store.inner, values))
                 }
                 Instr::ReturnNez { condition } => {
-                    forward_return!(self.execute_return_nez(condition))
+                    forward_return!(self.execute_return_nez(&mut store.inner, condition))
                 }
                 Instr::ReturnNezReg { condition, value } => {
-                    forward_return!(self.execute_return_nez_reg(condition, value))
+                    forward_return!(self.execute_return_nez_reg(&mut store.inner, condition, value))
                 }
                 Instr::ReturnNezReg2 { condition, values } => {
-                    forward_return!(self.execute_return_nez_reg2(condition, values))
+                    forward_return!(self.execute_return_nez_reg2(
+                        &mut store.inner,
+                        condition,
+                        values
+                    ))
                 }
                 Instr::ReturnNezImm32 { condition, value } => {
-                    forward_return!(self.execute_return_nez_imm32(condition, value))
+                    forward_return!(self.execute_return_nez_imm32(
+                        &mut store.inner,
+                        condition,
+                        value
+                    ))
                 }
                 Instr::ReturnNezI64Imm32 { condition, value } => {
-                    forward_return!(self.execute_return_nez_i64imm32(condition, value))
+                    forward_return!(self.execute_return_nez_i64imm32(
+                        &mut store.inner,
+                        condition,
+                        value
+                    ))
                 }
                 Instr::ReturnNezF64Imm32 { condition, value } => {
-                    forward_return!(self.execute_return_nez_f64imm32(condition, value))
+                    forward_return!(self.execute_return_nez_f64imm32(
+                        &mut store.inner,
+                        condition,
+                        value
+                    ))
                 }
                 Instr::ReturnNezSpan { condition, values } => {
-                    forward_return!(self.execute_return_nez_span(condition, values))
+                    forward_return!(self.execute_return_nez_span(
+                        &mut store.inner,
+                        condition,
+                        values
+                    ))
                 }
                 Instr::ReturnNezMany { condition, values } => {
-                    forward_return!(self.execute_return_nez_many(condition, values))
+                    forward_return!(self.execute_return_nez_many(
+                        &mut store.inner,
+                        condition,
+                        values
+                    ))
                 }
                 Instr::Branch { offset } => self.execute_branch(offset),
                 Instr::BranchTable { index, len_targets } => {
@@ -359,189 +415,103 @@ impl<'engine> Executor<'engine> {
                 Instr::GlobalSetI64Imm16 { global, input } => {
                     self.execute_global_set_i64imm16(&mut store.inner, global, input)
                 }
-                Instr::I32Load(instr) => self.execute_i32_load(&mut store.inner, instr)?,
-                Instr::I32LoadAt(instr) => self.execute_i32_load_at(&mut store.inner, instr)?,
-                Instr::I32LoadOffset16(instr) => {
-                    self.execute_i32_load_offset16(&mut store.inner, instr)?
-                }
-                Instr::I64Load(instr) => self.execute_i64_load(&mut store.inner, instr)?,
-                Instr::I64LoadAt(instr) => self.execute_i64_load_at(&mut store.inner, instr)?,
-                Instr::I64LoadOffset16(instr) => {
-                    self.execute_i64_load_offset16(&mut store.inner, instr)?
-                }
-                Instr::F32Load(instr) => self.execute_f32_load(&mut store.inner, instr)?,
-                Instr::F32LoadAt(instr) => self.execute_f32_load_at(&mut store.inner, instr)?,
-                Instr::F32LoadOffset16(instr) => {
-                    self.execute_f32_load_offset16(&mut store.inner, instr)?
-                }
-                Instr::F64Load(instr) => self.execute_f64_load(&mut store.inner, instr)?,
-                Instr::F64LoadAt(instr) => self.execute_f64_load_at(&mut store.inner, instr)?,
-                Instr::F64LoadOffset16(instr) => {
-                    self.execute_f64_load_offset16(&mut store.inner, instr)?
-                }
-                Instr::I32Load8s(instr) => self.execute_i32_load8_s(&mut store.inner, instr)?,
-                Instr::I32Load8sAt(instr) => {
-                    self.execute_i32_load8_s_at(&mut store.inner, instr)?
-                }
-                Instr::I32Load8sOffset16(instr) => {
-                    self.execute_i32_load8_s_offset16(&mut store.inner, instr)?
-                }
-                Instr::I32Load8u(instr) => self.execute_i32_load8_u(&mut store.inner, instr)?,
-                Instr::I32Load8uAt(instr) => {
-                    self.execute_i32_load8_u_at(&mut store.inner, instr)?
-                }
-                Instr::I32Load8uOffset16(instr) => {
-                    self.execute_i32_load8_u_offset16(&mut store.inner, instr)?
-                }
-                Instr::I32Load16s(instr) => self.execute_i32_load16_s(&mut store.inner, instr)?,
-                Instr::I32Load16sAt(instr) => {
-                    self.execute_i32_load16_s_at(&mut store.inner, instr)?
-                }
-                Instr::I32Load16sOffset16(instr) => {
-                    self.execute_i32_load16_s_offset16(&mut store.inner, instr)?
-                }
-                Instr::I32Load16u(instr) => self.execute_i32_load16_u(&mut store.inner, instr)?,
-                Instr::I32Load16uAt(instr) => {
-                    self.execute_i32_load16_u_at(&mut store.inner, instr)?
-                }
-                Instr::I32Load16uOffset16(instr) => {
-                    self.execute_i32_load16_u_offset16(&mut store.inner, instr)?
-                }
-                Instr::I64Load8s(instr) => self.execute_i64_load8_s(&mut store.inner, instr)?,
-                Instr::I64Load8sAt(instr) => {
-                    self.execute_i64_load8_s_at(&mut store.inner, instr)?
-                }
-                Instr::I64Load8sOffset16(instr) => {
-                    self.execute_i64_load8_s_offset16(&mut store.inner, instr)?
-                }
-                Instr::I64Load8u(instr) => self.execute_i64_load8_u(&mut store.inner, instr)?,
-                Instr::I64Load8uAt(instr) => {
-                    self.execute_i64_load8_u_at(&mut store.inner, instr)?
-                }
-                Instr::I64Load8uOffset16(instr) => {
-                    self.execute_i64_load8_u_offset16(&mut store.inner, instr)?
-                }
-                Instr::I64Load16s(instr) => self.execute_i64_load16_s(&mut store.inner, instr)?,
-                Instr::I64Load16sAt(instr) => {
-                    self.execute_i64_load16_s_at(&mut store.inner, instr)?
-                }
-                Instr::I64Load16sOffset16(instr) => {
-                    self.execute_i64_load16_s_offset16(&mut store.inner, instr)?
-                }
-                Instr::I64Load16u(instr) => self.execute_i64_load16_u(&mut store.inner, instr)?,
-                Instr::I64Load16uAt(instr) => {
-                    self.execute_i64_load16_u_at(&mut store.inner, instr)?
-                }
-                Instr::I64Load16uOffset16(instr) => {
-                    self.execute_i64_load16_u_offset16(&mut store.inner, instr)?
-                }
-                Instr::I64Load32s(instr) => self.execute_i64_load32_s(&mut store.inner, instr)?,
-                Instr::I64Load32sAt(instr) => {
-                    self.execute_i64_load32_s_at(&mut store.inner, instr)?
-                }
-                Instr::I64Load32sOffset16(instr) => {
-                    self.execute_i64_load32_s_offset16(&mut store.inner, instr)?
-                }
-                Instr::I64Load32u(instr) => self.execute_i64_load32_u(&mut store.inner, instr)?,
-                Instr::I64Load32uAt(instr) => {
-                    self.execute_i64_load32_u_at(&mut store.inner, instr)?
-                }
-                Instr::I64Load32uOffset16(instr) => {
-                    self.execute_i64_load32_u_offset16(&mut store.inner, instr)?
-                }
-                Instr::I32Store(instr) => self.execute_i32_store(&mut store.inner, instr)?,
-                Instr::I32StoreOffset16(instr) => {
-                    self.execute_i32_store_offset16(&mut store.inner, instr)?
-                }
+                Instr::I32Load(instr) => self.execute_i32_load(instr)?,
+                Instr::I32LoadAt(instr) => self.execute_i32_load_at(instr)?,
+                Instr::I32LoadOffset16(instr) => self.execute_i32_load_offset16(instr)?,
+                Instr::I64Load(instr) => self.execute_i64_load(instr)?,
+                Instr::I64LoadAt(instr) => self.execute_i64_load_at(instr)?,
+                Instr::I64LoadOffset16(instr) => self.execute_i64_load_offset16(instr)?,
+                Instr::F32Load(instr) => self.execute_f32_load(instr)?,
+                Instr::F32LoadAt(instr) => self.execute_f32_load_at(instr)?,
+                Instr::F32LoadOffset16(instr) => self.execute_f32_load_offset16(instr)?,
+                Instr::F64Load(instr) => self.execute_f64_load(instr)?,
+                Instr::F64LoadAt(instr) => self.execute_f64_load_at(instr)?,
+                Instr::F64LoadOffset16(instr) => self.execute_f64_load_offset16(instr)?,
+                Instr::I32Load8s(instr) => self.execute_i32_load8_s(instr)?,
+                Instr::I32Load8sAt(instr) => self.execute_i32_load8_s_at(instr)?,
+                Instr::I32Load8sOffset16(instr) => self.execute_i32_load8_s_offset16(instr)?,
+                Instr::I32Load8u(instr) => self.execute_i32_load8_u(instr)?,
+                Instr::I32Load8uAt(instr) => self.execute_i32_load8_u_at(instr)?,
+                Instr::I32Load8uOffset16(instr) => self.execute_i32_load8_u_offset16(instr)?,
+                Instr::I32Load16s(instr) => self.execute_i32_load16_s(instr)?,
+                Instr::I32Load16sAt(instr) => self.execute_i32_load16_s_at(instr)?,
+                Instr::I32Load16sOffset16(instr) => self.execute_i32_load16_s_offset16(instr)?,
+                Instr::I32Load16u(instr) => self.execute_i32_load16_u(instr)?,
+                Instr::I32Load16uAt(instr) => self.execute_i32_load16_u_at(instr)?,
+                Instr::I32Load16uOffset16(instr) => self.execute_i32_load16_u_offset16(instr)?,
+                Instr::I64Load8s(instr) => self.execute_i64_load8_s(instr)?,
+                Instr::I64Load8sAt(instr) => self.execute_i64_load8_s_at(instr)?,
+                Instr::I64Load8sOffset16(instr) => self.execute_i64_load8_s_offset16(instr)?,
+                Instr::I64Load8u(instr) => self.execute_i64_load8_u(instr)?,
+                Instr::I64Load8uAt(instr) => self.execute_i64_load8_u_at(instr)?,
+                Instr::I64Load8uOffset16(instr) => self.execute_i64_load8_u_offset16(instr)?,
+                Instr::I64Load16s(instr) => self.execute_i64_load16_s(instr)?,
+                Instr::I64Load16sAt(instr) => self.execute_i64_load16_s_at(instr)?,
+                Instr::I64Load16sOffset16(instr) => self.execute_i64_load16_s_offset16(instr)?,
+                Instr::I64Load16u(instr) => self.execute_i64_load16_u(instr)?,
+                Instr::I64Load16uAt(instr) => self.execute_i64_load16_u_at(instr)?,
+                Instr::I64Load16uOffset16(instr) => self.execute_i64_load16_u_offset16(instr)?,
+                Instr::I64Load32s(instr) => self.execute_i64_load32_s(instr)?,
+                Instr::I64Load32sAt(instr) => self.execute_i64_load32_s_at(instr)?,
+                Instr::I64Load32sOffset16(instr) => self.execute_i64_load32_s_offset16(instr)?,
+                Instr::I64Load32u(instr) => self.execute_i64_load32_u(instr)?,
+                Instr::I64Load32uAt(instr) => self.execute_i64_load32_u_at(instr)?,
+                Instr::I64Load32uOffset16(instr) => self.execute_i64_load32_u_offset16(instr)?,
+                Instr::I32Store(instr) => self.execute_i32_store(instr)?,
+                Instr::I32StoreOffset16(instr) => self.execute_i32_store_offset16(instr)?,
                 Instr::I32StoreOffset16Imm16(instr) => {
-                    self.execute_i32_store_offset16_imm16(&mut store.inner, instr)?
+                    self.execute_i32_store_offset16_imm16(instr)?
                 }
-                Instr::I32StoreAt(instr) => self.execute_i32_store_at(&mut store.inner, instr)?,
-                Instr::I32StoreAtImm16(instr) => {
-                    self.execute_i32_store_at_imm16(&mut store.inner, instr)?
-                }
-                Instr::I32Store8(instr) => self.execute_i32_store8(&mut store.inner, instr)?,
-                Instr::I32Store8Offset16(instr) => {
-                    self.execute_i32_store8_offset16(&mut store.inner, instr)?
-                }
+                Instr::I32StoreAt(instr) => self.execute_i32_store_at(instr)?,
+                Instr::I32StoreAtImm16(instr) => self.execute_i32_store_at_imm16(instr)?,
+                Instr::I32Store8(instr) => self.execute_i32_store8(instr)?,
+                Instr::I32Store8Offset16(instr) => self.execute_i32_store8_offset16(instr)?,
                 Instr::I32Store8Offset16Imm(instr) => {
-                    self.execute_i32_store8_offset16_imm(&mut store.inner, instr)?
+                    self.execute_i32_store8_offset16_imm(instr)?
                 }
-                Instr::I32Store8At(instr) => self.execute_i32_store8_at(&mut store.inner, instr)?,
-                Instr::I32Store8AtImm(instr) => {
-                    self.execute_i32_store8_at_imm(&mut store.inner, instr)?
-                }
-                Instr::I32Store16(instr) => self.execute_i32_store16(&mut store.inner, instr)?,
-                Instr::I32Store16Offset16(instr) => {
-                    self.execute_i32_store16_offset16(&mut store.inner, instr)?
-                }
+                Instr::I32Store8At(instr) => self.execute_i32_store8_at(instr)?,
+                Instr::I32Store8AtImm(instr) => self.execute_i32_store8_at_imm(instr)?,
+                Instr::I32Store16(instr) => self.execute_i32_store16(instr)?,
+                Instr::I32Store16Offset16(instr) => self.execute_i32_store16_offset16(instr)?,
                 Instr::I32Store16Offset16Imm(instr) => {
-                    self.execute_i32_store16_offset16_imm(&mut store.inner, instr)?
+                    self.execute_i32_store16_offset16_imm(instr)?
                 }
-                Instr::I32Store16At(instr) => {
-                    self.execute_i32_store16_at(&mut store.inner, instr)?
-                }
-                Instr::I32Store16AtImm(instr) => {
-                    self.execute_i32_store16_at_imm(&mut store.inner, instr)?
-                }
-                Instr::I64Store(instr) => self.execute_i64_store(&mut store.inner, instr)?,
-                Instr::I64StoreOffset16(instr) => {
-                    self.execute_i64_store_offset16(&mut store.inner, instr)?
-                }
+                Instr::I32Store16At(instr) => self.execute_i32_store16_at(instr)?,
+                Instr::I32Store16AtImm(instr) => self.execute_i32_store16_at_imm(instr)?,
+                Instr::I64Store(instr) => self.execute_i64_store(instr)?,
+                Instr::I64StoreOffset16(instr) => self.execute_i64_store_offset16(instr)?,
                 Instr::I64StoreOffset16Imm16(instr) => {
-                    self.execute_i64_store_offset16_imm16(&mut store.inner, instr)?
+                    self.execute_i64_store_offset16_imm16(instr)?
                 }
-                Instr::I64StoreAt(instr) => self.execute_i64_store_at(&mut store.inner, instr)?,
-                Instr::I64StoreAtImm16(instr) => {
-                    self.execute_i64_store_at_imm16(&mut store.inner, instr)?
-                }
-                Instr::I64Store8(instr) => self.execute_i64_store8(&mut store.inner, instr)?,
-                Instr::I64Store8Offset16(instr) => {
-                    self.execute_i64_store8_offset16(&mut store.inner, instr)?
-                }
+                Instr::I64StoreAt(instr) => self.execute_i64_store_at(instr)?,
+                Instr::I64StoreAtImm16(instr) => self.execute_i64_store_at_imm16(instr)?,
+                Instr::I64Store8(instr) => self.execute_i64_store8(instr)?,
+                Instr::I64Store8Offset16(instr) => self.execute_i64_store8_offset16(instr)?,
                 Instr::I64Store8Offset16Imm(instr) => {
-                    self.execute_i64_store8_offset16_imm(&mut store.inner, instr)?
+                    self.execute_i64_store8_offset16_imm(instr)?
                 }
-                Instr::I64Store8At(instr) => self.execute_i64_store8_at(&mut store.inner, instr)?,
-                Instr::I64Store8AtImm(instr) => {
-                    self.execute_i64_store8_at_imm(&mut store.inner, instr)?
-                }
-                Instr::I64Store16(instr) => self.execute_i64_store16(&mut store.inner, instr)?,
-                Instr::I64Store16Offset16(instr) => {
-                    self.execute_i64_store16_offset16(&mut store.inner, instr)?
-                }
+                Instr::I64Store8At(instr) => self.execute_i64_store8_at(instr)?,
+                Instr::I64Store8AtImm(instr) => self.execute_i64_store8_at_imm(instr)?,
+                Instr::I64Store16(instr) => self.execute_i64_store16(instr)?,
+                Instr::I64Store16Offset16(instr) => self.execute_i64_store16_offset16(instr)?,
                 Instr::I64Store16Offset16Imm(instr) => {
-                    self.execute_i64_store16_offset16_imm(&mut store.inner, instr)?
+                    self.execute_i64_store16_offset16_imm(instr)?
                 }
-                Instr::I64Store16At(instr) => {
-                    self.execute_i64_store16_at(&mut store.inner, instr)?
-                }
-                Instr::I64Store16AtImm(instr) => {
-                    self.execute_i64_store16_at_imm(&mut store.inner, instr)?
-                }
-                Instr::I64Store32(instr) => self.execute_i64_store32(&mut store.inner, instr)?,
-                Instr::I64Store32Offset16(instr) => {
-                    self.execute_i64_store32_offset16(&mut store.inner, instr)?
-                }
+                Instr::I64Store16At(instr) => self.execute_i64_store16_at(instr)?,
+                Instr::I64Store16AtImm(instr) => self.execute_i64_store16_at_imm(instr)?,
+                Instr::I64Store32(instr) => self.execute_i64_store32(instr)?,
+                Instr::I64Store32Offset16(instr) => self.execute_i64_store32_offset16(instr)?,
                 Instr::I64Store32Offset16Imm16(instr) => {
-                    self.execute_i64_store32_offset16_imm16(&mut store.inner, instr)?
+                    self.execute_i64_store32_offset16_imm16(instr)?
                 }
-                Instr::I64Store32At(instr) => {
-                    self.execute_i64_store32_at(&mut store.inner, instr)?
-                }
-                Instr::I64Store32AtImm16(instr) => {
-                    self.execute_i64_store32_at_imm16(&mut store.inner, instr)?
-                }
-                Instr::F32Store(instr) => self.execute_f32_store(&mut store.inner, instr)?,
-                Instr::F32StoreOffset16(instr) => {
-                    self.execute_f32_store_offset16(&mut store.inner, instr)?
-                }
-                Instr::F32StoreAt(instr) => self.execute_f32_store_at(&mut store.inner, instr)?,
-                Instr::F64Store(instr) => self.execute_f64_store(&mut store.inner, instr)?,
-                Instr::F64StoreOffset16(instr) => {
-                    self.execute_f64_store_offset16(&mut store.inner, instr)?
-                }
-                Instr::F64StoreAt(instr) => self.execute_f64_store_at(&mut store.inner, instr)?,
+                Instr::I64Store32At(instr) => self.execute_i64_store32_at(instr)?,
+                Instr::I64Store32AtImm16(instr) => self.execute_i64_store32_at_imm16(instr)?,
+                Instr::F32Store(instr) => self.execute_f32_store(instr)?,
+                Instr::F32StoreOffset16(instr) => self.execute_f32_store_offset16(instr)?,
+                Instr::F32StoreAt(instr) => self.execute_f32_store_at(instr)?,
+                Instr::F64Store(instr) => self.execute_f64_store(instr)?,
+                Instr::F64StoreOffset16(instr) => self.execute_f64_store_offset16(instr)?,
+                Instr::F64StoreAt(instr) => self.execute_f64_store_at(instr)?,
                 Instr::I32Eq(instr) => self.execute_i32_eq(instr),
                 Instr::I32EqImm16(instr) => self.execute_i32_eq_imm16(instr),
                 Instr::I32Ne(instr) => self.execute_i32_ne(instr),
