@@ -893,26 +893,51 @@ impl<'engine> Executor<'engine> {
             }
         }
     }
+}
 
-    /// Returns the [`Func`] at `func_index` for the currently used [`Instance`] in `store`.
-    ///
-    /// # Panics
-    ///
-    /// - If the current [`Instance`] does not belong to `ctx`.
-    /// - If there is no [`Func`] at `func_index` for the currently used [`Instance`] in `store`.
-    #[inline]
-    fn get_func(&self, store: &StoreInner, index: FuncIdx) -> Func {
-        let instance = Self::instance(self.call_stack);
-        let index = index.to_u32();
-        store
-            .resolve_instance(instance)
-            .get_func(index)
-            .unwrap_or_else(|| {
-                unreachable!(
-                    "missing func at index {index:?} for instance: {:?}",
-                    instance,
-                )
-            })
+macro_rules! get_entity {
+    (
+        $(
+            fn $name:ident(&self, store: &StoreInner, index: $index_ty:ty) -> $id_ty:ty;
+        )*
+    ) => {
+        $(
+            #[doc = ::core::concat!(
+                "Returns the [`",
+                ::core::stringify!($id_ty),
+                "`] at `index` for the currently used [`Instance`] in `store`.\n\n",
+                "# Panics\n\n",
+                "- If the current [`Instance`] does not belong to `ctx`.\n",
+                "- If there is no [`",
+                ::core::stringify!($id_ty),
+                "`] at `index` for the currently used [`Instance`] in `store`."
+            )]
+            #[inline]
+            fn $name(&self, store: &StoreInner, index: $index_ty) -> $id_ty {
+                let instance = Self::instance(self.call_stack);
+                let index = ::core::primitive::u32::from(index);
+                store
+                    .resolve_instance(instance)
+                    .$name(index)
+                    .unwrap_or_else(|| {
+                        const ENTITY_NAME: &'static str = ::core::stringify!($id_ty);
+                        ::core::unreachable!(
+                            "missing {ENTITY_NAME} at index {index:?} for instance: {instance:?}",
+                        )
+                    })
+            }
+        )*
+    }
+}
+
+impl<'engine> Executor<'engine> {
+    get_entity! {
+        fn get_func(&self, store: &StoreInner, index: FuncIdx) -> Func;
+        fn get_memory(&self, store: &StoreInner, index: u32) -> Memory;
+        fn get_table(&self, store: &StoreInner, index: TableIdx) -> Table;
+        fn get_global(&self, store: &StoreInner, index: GlobalIdx) -> Global;
+        fn get_data_segment(&self, store: &StoreInner, index: DataSegmentIdx) -> DataSegment;
+        fn get_element_segment(&self, store: &StoreInner, index: ElementSegmentIdx) -> ElementSegment;
     }
 
     /// Returns the default memory of the current [`Instance`] for `ctx`.
@@ -922,95 +947,8 @@ impl<'engine> Executor<'engine> {
     /// - If the current [`Instance`] does not belong to `ctx`.
     /// - If the current [`Instance`] does not have a linear memory.
     #[inline]
-    fn get_default_memory(&self, ctx: &StoreInner) -> Memory {
-        let instance = Self::instance(self.call_stack);
-        ctx.resolve_instance(instance)
-            .get_memory(DEFAULT_MEMORY_INDEX)
-            .expect("missing default memory for instance: {instance:?}")
-    }
-
-    /// Returns the [`Table`] at `index` for the currently used [`Instance`] in `store`.
-    ///
-    /// # Panics
-    ///
-    /// - If the current [`Instance`] does not belong to `ctx`.
-    /// - If there is no [`Table`] at `index` for the currently used [`Instance`] in `store`.
-    #[inline]
-    fn get_table(&self, store: &StoreInner, index: TableIdx) -> Table {
-        let instance = Self::instance(self.call_stack);
-        let index = index.to_u32();
-        store
-            .resolve_instance(instance)
-            .get_table(index)
-            .unwrap_or_else(|| {
-                unreachable!(
-                    "missing table at index {index:?} for instance: {:?}",
-                    instance,
-                )
-            })
-    }
-
-    /// Returns the [`Global`] at `index` for the currently used [`Instance`] in `store`.
-    ///
-    /// # Panics
-    ///
-    /// - If the current [`Instance`] does not belong to `ctx`.
-    /// - If there is no [`Global`] at `index` for the currently used [`Instance`] in `store`.
-    #[inline]
-    fn get_global(&self, store: &StoreInner, index: GlobalIdx) -> Global {
-        let instance = Self::instance(self.call_stack);
-        let index = index.to_u32();
-        store
-            .resolve_instance(instance)
-            .get_global(index)
-            .unwrap_or_else(|| {
-                unreachable!(
-                    "missing global variable at index {index:?} for instance: {:?}",
-                    instance,
-                )
-            })
-    }
-
-    /// Returns the [`DataSegment`] at `index` for the currently used [`Instance`] in `store`.
-    ///
-    /// # Panics
-    ///
-    /// - If the current [`Instance`] does not belong to `ctx`.
-    /// - If there is no [`DataSegment`] at `index` for the currently used [`Instance`] in `store`.
-    #[inline]
-    fn get_data_segment(&self, store: &StoreInner, index: DataSegmentIdx) -> DataSegment {
-        let instance = Self::instance(self.call_stack);
-        let index = index.to_u32();
-        store
-            .resolve_instance(instance)
-            .get_data_segment(index)
-            .unwrap_or_else(|| {
-                unreachable!(
-                    "missing data segment at index {index:?} for instance: {:?}",
-                    instance,
-                )
-            })
-    }
-
-    /// Returns the [`ElementSegment`] at `index` for the currently used [`Instance`] in `store`.
-    ///
-    /// # Panics
-    ///
-    /// - If the current [`Instance`] does not belong to `ctx`.
-    /// - If there is no [`ElementSegment`] at `index` for the currently used [`Instance`] in `store`.
-    #[inline]
-    fn get_element_segment(&self, store: &StoreInner, index: ElementSegmentIdx) -> ElementSegment {
-        let instance = Self::instance(self.call_stack);
-        let index = index.to_u32();
-        store
-            .resolve_instance(instance)
-            .get_element_segment(index)
-            .unwrap_or_else(|| {
-                unreachable!(
-                    "missing element segment at index {index:?} for instance: {:?}",
-                    instance,
-                )
-            })
+    fn get_default_memory(&self, store: &StoreInner) -> Memory {
+        self.get_memory(store, DEFAULT_MEMORY_INDEX)
     }
 
     /// Returns the [`Register`] value.
