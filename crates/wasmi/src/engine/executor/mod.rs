@@ -27,6 +27,7 @@ use crate::{
 #[cfg(doc)]
 use crate::engine::StackLimits;
 
+mod cache;
 mod instrs;
 mod stack;
 

@@ -36,7 +36,7 @@ impl<'engine> Executor<'engine> {
     ) -> Result<(), Error> {
         // Safety: `self.memory` is always re-loaded conservatively whenever
         //         the heap allocations and thus the pointer might have changed.
-        let memory = unsafe { self.memory.as_ref() };
+        let memory = unsafe { self.memory.data() };
         let loaded_value = load_extend(memory, address, offset)?;
         self.set_register(result, loaded_value);
         Ok(())

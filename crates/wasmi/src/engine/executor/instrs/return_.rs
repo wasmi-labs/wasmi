@@ -35,7 +35,7 @@ impl<'engine> Executor<'engine> {
                 Self::init_call_frame_impl(self.value_stack, &mut self.sp, &mut self.ip, caller);
                 let instance = caller.instance();
                 self.cache.update_instance(instance);
-                self.memory = Self::load_default_memory(store, instance);
+                self.memory.update(store, instance);
                 ReturnOutcome::Wasm
             }
             None => ReturnOutcome::Host,
