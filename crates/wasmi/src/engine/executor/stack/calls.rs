@@ -113,15 +113,39 @@ impl CallStack {
     }
 }
 
+/// Offsets for a [`CallFrame`] into the [`ValueStack`].
+#[derive(Debug, Copy, Clone)]
+pub struct StackOffsets {
+    /// Offset to the first mutable cell of a [`CallFrame`].
+    pub base: BaseValueStackOffset,
+    /// Offset to the first cell of a [`CallFrame`].
+    pub frame: FrameValueStackOffset,
+}
+
+impl StackOffsets {
+    /// Moves the [`StackOffsets`] values down by `delta`.
+    ///
+    /// # Note
+    ///
+    /// This is used for the implementation of tail calls.
+    #[inline(always)]
+    fn move_down(&mut self, delta: usize) {
+        let base = usize::from(self.base);
+        let frame = usize::from(self.frame);
+        debug_assert!(delta <= base);
+        debug_assert!(delta <= frame);
+        self.base = BaseValueStackOffset::new(base - delta);
+        self.frame = FrameValueStackOffset::new(frame - delta);
+    }
+}
+
 /// A single frame of a called [`CompiledFunc`].
 #[derive(Debug, Copy, Clone)]
 pub struct CallFrame {
     /// The pointer to the [`Instruction`] that is executed next.
     instr_ptr: InstructionPtr,
-    /// Pointer to the first mutable cell of a [`CallFrame`].
-    base_ptr: BaseValueStackOffset,
-    /// Pointer to the first cell of a [`CallFrame`].
-    frame_ptr: FrameValueStackOffset,
+    /// Offsets of the [`CallFrame`] into the [`ValueStack`].
+    offsets: StackOffsets,
     /// Span of registers were the caller expects them in its [`CallFrame`].
     results: RegisterSpan,
     /// The instance in which the function has been defined.
@@ -137,15 +161,13 @@ impl CallFrame {
     /// Creates a new [`CallFrame`].
     pub fn new(
         instr_ptr: InstructionPtr,
-        frame_ptr: FrameValueStackOffset,
-        base_ptr: BaseValueStackOffset,
+        offsets: StackOffsets,
         results: RegisterSpan,
         instance: Instance,
     ) -> Self {
         Self {
             instr_ptr,
-            base_ptr,
-            frame_ptr,
+            offsets,
             results,
             instance,
         }
@@ -157,12 +179,7 @@ impl CallFrame {
     ///
     /// This is used for the implementation of tail calls.
     pub fn move_down(&mut self, delta: usize) {
-        let base_index = usize::from(self.base_offset());
-        let frame_index = usize::from(self.frame_offset());
-        debug_assert!(delta <= base_index);
-        debug_assert!(delta <= frame_index);
-        self.base_ptr = BaseValueStackOffset::new(base_index - delta);
-        self.frame_ptr = FrameValueStackOffset::new(frame_index - delta);
+        self.offsets.move_down(delta);
     }
 
     /// Updates the [`InstructionPtr`] of the [`CallFrame`].
@@ -181,12 +198,12 @@ impl CallFrame {
 
     /// Returns the [`FrameValueStackOffset`] of the [`CallFrame`].
     pub fn frame_offset(&self) -> FrameValueStackOffset {
-        self.frame_ptr
+        self.offsets.frame
     }
 
     /// Returns the [`BaseValueStackOffset`] of the [`CallFrame`].
     pub fn base_offset(&self) -> BaseValueStackOffset {
-        self.base_ptr
+        self.offsets.base
     }
 
     /// Returns the [`RegisterSpan`] of the [`CallFrame`].
