@@ -154,7 +154,7 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn execute<T>(mut self, store: &mut Store<T>) -> Result<(), Error> {
         use Instruction as Instr;
-        let instance = self.cache.instance();
+        let instance = Self::instance(self.call_stack);
         self.memory.update(&mut store.inner, instance);
         loop {
             match *self.ip.get() {
@@ -1223,7 +1223,7 @@ impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::RefFunc`].
     #[inline(always)]
     fn execute_ref_func(&mut self, store: &mut StoreInner, result: Register, func_index: FuncIdx) {
-        let func = self.cache.get_func(store, func_index);
+        let func = self.get_func(store, func_index);
         let funcref = FuncRef::new(func);
         self.set_register(result, funcref);
         self.next_instr();

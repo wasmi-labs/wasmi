@@ -418,7 +418,7 @@ impl<'engine> Executor<'engine> {
         store: &mut Store<T>,
         func: FuncIdx,
     ) -> Result<(), Error> {
-        let func = self.cache.get_func(&store.inner, func);
+        let func = self.get_func(&store.inner, func);
         let results = self.caller_results();
         self.execute_call_imported_impl::<C, T>(store, results, &func)
     }
@@ -431,7 +431,7 @@ impl<'engine> Executor<'engine> {
         results: RegisterSpan,
         func: FuncIdx,
     ) -> Result<(), Error> {
-        let func = self.cache.get_func(&store.inner, func);
+        let func = self.get_func(&store.inner, func);
         self.execute_call_imported_impl::<marker::NestedCall0, T>(store, results, &func)
     }
 
@@ -443,7 +443,7 @@ impl<'engine> Executor<'engine> {
         results: RegisterSpan,
         func: FuncIdx,
     ) -> Result<(), Error> {
-        let func = self.cache.get_func(&store.inner, func);
+        let func = self.get_func(&store.inner, func);
         self.execute_call_imported_impl::<marker::NestedCall, T>(store, results, &func)
     }
 
@@ -612,7 +612,7 @@ impl<'engine> Executor<'engine> {
         index: u32,
         table: TableIdx,
     ) -> Result<(), Error> {
-        let table = self.cache.get_table(&store.inner, table);
+        let table = self.get_table(&store.inner, table);
         let funcref = store
             .inner
             .resolve_table(&table)
@@ -623,7 +623,7 @@ impl<'engine> Executor<'engine> {
         let actual_signature = store.inner.resolve_func(func).ty_dedup();
         let expected_signature = store
             .inner
-            .resolve_instance(self.cache.instance())
+            .resolve_instance(Self::instance(self.call_stack))
             .get_signature(u32::from(func_type))
             .unwrap_or_else(|| {
                 panic!("missing signature for call_indirect at index: {func_type:?}")
