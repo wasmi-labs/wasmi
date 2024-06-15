@@ -172,7 +172,8 @@ impl<'engine> Executor<'engine> {
         // other parts of the code more fragile with respect to instruction ordering.
         self.ip.add(offset);
         let caller = self
-            .call_stack
+            .stack
+            .calls
             .peek_mut()
             .expect("caller call frame must be on the stack");
         caller.update_instr_ptr(self.ip);
@@ -218,10 +219,11 @@ impl<'engine> Executor<'engine> {
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
         // [`ValueStack::alloc_call_frame`] which might invalidate all live [`FrameRegisters`].
         let caller = self
-            .call_stack
+            .stack
+            .calls
             .peek()
             .expect("need to have a caller on the call stack");
-        let (mut uninit_params, offsets) = self.value_stack.alloc_call_frame(func, |this| {
+        let (mut uninit_params, offsets) = self.stack.values.alloc_call_frame(func, |this| {
             // Safety: We use the base offset of a live call frame on the call stack.
             self.sp = unsafe { this.stack_ptr_at(caller.base_offset()) };
         })?;
@@ -317,7 +319,11 @@ impl<'engine> Executor<'engine> {
                 // that `self.sp` is adjusted via a call to `init_call_frame` since it may have been
                 // invalidated by this method.
                 let caller_instance = unsafe {
-                    Stack::merge_call_frames(self.call_stack, self.value_stack, &mut called)
+                    Stack::merge_call_frames(
+                        &mut self.stack.calls,
+                        &mut self.stack.values,
+                        &mut called,
+                    )
                 };
                 if let Some(caller_instance) = caller_instance {
                     instance.get_or_insert(caller_instance);
@@ -325,7 +331,7 @@ impl<'engine> Executor<'engine> {
             }
         }
         self.init_call_frame(&called);
-        self.call_stack.push(called, instance)?;
+        self.stack.calls.push(called, instance)?;
         Ok(())
     }
 
@@ -368,7 +374,8 @@ impl<'engine> Executor<'engine> {
     ///
     /// [`CallStack`]: crate::engine::executor::stack::CallStack
     fn caller_results(&self) -> RegisterSpan {
-        self.call_stack
+        self.stack
+            .calls
             .peek()
             .expect("must have caller on the stack")
             .results()
@@ -498,18 +505,15 @@ impl<'engine> Executor<'engine> {
     ) -> Result<(), Error> {
         let (len_params, len_results) = self.func_types.len_params_results(host_func.ty_dedup());
         let max_inout = len_params.max(len_results);
-        let instance = *self
-            .call_stack
-            .instance()
-            .expect("need to have an instance on the call stack");
+        let instance = *Self::instance(&self.stack.calls);
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
         // [`ValueStack::reserve`] which might invalidate all live [`FrameRegisters`].
         let caller = match <C as CallContext>::KIND {
-            CallKind::Nested => self.call_stack.peek().copied(),
-            CallKind::Tail => self.call_stack.pop().map(|(frame, _instance)| frame),
+            CallKind::Nested => self.stack.calls.peek().copied(),
+            CallKind::Tail => self.stack.calls.pop().map(|(frame, _instance)| frame),
         }
         .expect("need to have a caller on the call stack");
-        let buffer = self.value_stack.extend_by(max_inout, |this| {
+        let buffer = self.stack.values.extend_by(max_inout, |this| {
             // Safety: we use the base offset of a live call frame on the call stack.
             self.sp = unsafe { this.stack_ptr_at(caller.base_offset()) };
         })?;
@@ -521,14 +525,14 @@ impl<'engine> Executor<'engine> {
             self.update_instr_ptr_at(1);
         }
         self.dispatch_host_func::<T>(store, host_func, &instance)
-            .map_err(|error| match self.call_stack.is_empty() {
+            .map_err(|error| match self.stack.calls.is_empty() {
                 true => error,
                 false => ResumableHostError::new(error, *func, results).into(),
             })?;
         self.memory.update(&mut store.inner, &instance);
         self.global.update(&mut store.inner, &instance);
         let results = results.iter(len_results);
-        let returned = self.value_stack.drop_return(max_inout);
+        let returned = self.stack.values.drop_return(max_inout);
         for (result, value) in results.zip(returned) {
             // # Safety (1)
             //
@@ -554,7 +558,7 @@ impl<'engine> Executor<'engine> {
         dispatch_host_func(
             store,
             self.func_types,
-            self.value_stack,
+            &mut self.stack.values,
             host_func,
             Some(instance),
         )
@@ -636,7 +640,7 @@ impl<'engine> Executor<'engine> {
         let actual_signature = store.inner.resolve_func(func).ty_dedup();
         let expected_signature = store
             .inner
-            .resolve_instance(Self::instance(self.call_stack))
+            .resolve_instance(Self::instance(&self.stack.calls))
             .get_signature(u32::from(func_type))
             .unwrap_or_else(|| {
                 panic!("missing signature for call_indirect at index: {func_type:?}")
