@@ -88,7 +88,7 @@ struct Executor<'engine> {
     sp: FrameRegisters,
     /// The pointer to the currently executed instruction.
     ip: InstructionPtr,
-    /// The default memory byte buffer.
+    /// The cached default memory bytes.
     memory: CachedMemory,
     /// The cached global variable at index 0.
     global: CachedGlobal,
