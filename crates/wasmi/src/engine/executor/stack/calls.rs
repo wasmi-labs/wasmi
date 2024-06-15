@@ -1,10 +1,10 @@
 use super::{err_stack_overflow, BaseValueStackOffset, FrameValueStackOffset};
 use crate::{
+    collections::HeadVec,
     core::TrapCode,
     engine::{bytecode::RegisterSpan, code_map::InstructionPtr},
     Instance,
 };
-use core::mem;
 use std::vec::Vec;
 
 #[cfg(doc)]
@@ -52,56 +52,6 @@ impl InstanceAndHeight {
     #[inline]
     fn instance(&self) -> &Instance {
         &self.instance
-    }
-}
-
-/// A [`Vec`]-like data structure with fast access to the last item.
-#[derive(Debug)]
-pub struct HeadVec<T> {
-    /// The top (or last) item in the [`HeadVec`].
-    head: Option<T>,
-    /// The rest of the items in the [`HeadVec`] excluding the last item.
-    rest: Vec<T>,
-}
-
-impl<T> Default for HeadVec<T> {
-    #[inline]
-    fn default() -> Self {
-        Self {
-            head: None,
-            rest: Vec::new(),
-        }
-    }
-}
-
-impl<T> HeadVec<T> {
-    /// Removes all items from the [`HeadVec`].
-    #[inline]
-    pub fn clear(&mut self) {
-        self.head = None;
-        self.rest.clear();
-    }
-
-    /// Returns a shared reference to the last item in the [`HeadVec`] if any.
-    #[inline]
-    pub fn last(&self) -> Option<&T> {
-        self.head.as_ref()
-    }
-
-    /// Pushes a new `value` onto the [`HeadVec`].
-    #[inline]
-    pub fn push(&mut self, value: T) {
-        let prev_head = mem::replace(&mut self.head, Some(value));
-        if let Some(prev_head) = prev_head {
-            self.rest.push(prev_head);
-        }
-    }
-
-    /// Pops the last `value` from the [`HeadVec`] if any.
-    #[inline]
-    pub fn pop(&mut self) -> Option<T> {
-        let new_top = self.rest.pop();
-        mem::replace(&mut self.head, new_top)
     }
 }
 
