@@ -49,7 +49,7 @@ impl Stack {
             limits.initial_value_stack_height,
             limits.maximum_value_stack_height,
         );
-        Self { values, calls }
+        Self { calls, values }
     }
 
     /// Resets the [`Stack`] for clean reuse.
