@@ -141,12 +141,13 @@ impl<'engine> Executor<'engine> {
         }
     }
 
-    #[inline]
-    fn default_memory(&self, ctx: &StoreInner) -> Memory {
-        let instance = self.cache.instance();
-        ctx.resolve_instance(instance)
-            .get_memory(DEFAULT_MEMORY_INDEX)
-            .expect("missing default memory for instance: {instance:?}")
+    /// Returns the currently used [`Instance`].
+    #[inline(always)]
+    fn instance(call_stack: &CallStack) -> &Instance {
+        call_stack
+            .peek()
+            .map(CallFrame::instance)
+            .expect("missing instance for non-empty call stack")
     }
 
     /// Executes the function frame until it returns or traps.
