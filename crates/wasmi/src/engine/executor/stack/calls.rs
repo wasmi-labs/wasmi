@@ -43,13 +43,13 @@ pub struct InstanceAndHeight {
 
 impl InstanceAndHeight {
     /// Consumes `self` and returns the [`Instance`].
-    #[inline(always)]
+    #[inline]
     fn into_instance(self) -> Instance {
         self.instance
     }
 
     /// Returns a shared reference to the [`Instance`].
-    #[inline(always)]
+    #[inline]
     fn instance(&self) -> &Instance {
         &self.instance
     }
@@ -65,7 +65,7 @@ pub struct HeadVec<T> {
 }
 
 impl<T> Default for HeadVec<T> {
-    #[inline(always)]
+    #[inline]
     fn default() -> Self {
         Self {
             head: None,
@@ -76,20 +76,20 @@ impl<T> Default for HeadVec<T> {
 
 impl<T> HeadVec<T> {
     /// Removes all items from the [`HeadVec`].
-    #[inline(always)]
+    #[inline]
     pub fn clear(&mut self) {
         self.head = None;
         self.rest.clear();
     }
 
     /// Returns a shared reference to the last item in the [`HeadVec`] if any.
-    #[inline(always)]
+    #[inline]
     pub fn last(&self) -> Option<&T> {
         self.head.as_ref()
     }
 
     /// Pushes a new `value` onto the [`HeadVec`].
-    #[inline(always)]
+    #[inline]
     pub fn push(&mut self, value: T) {
         let prev_head = mem::replace(&mut self.head, Some(value));
         if let Some(prev_head) = prev_head {
@@ -98,7 +98,7 @@ impl<T> HeadVec<T> {
     }
 
     /// Pops the last `value` from the [`HeadVec`] if any.
-    #[inline(always)]
+    #[inline]
     pub fn pop(&mut self) -> Option<T> {
         let new_top = self.rest.pop();
         mem::replace(&mut self.head, new_top)
