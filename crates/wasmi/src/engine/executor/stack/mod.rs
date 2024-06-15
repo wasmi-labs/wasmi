@@ -54,8 +54,8 @@ impl Stack {
 
     /// Resets the [`Stack`] for clean reuse.
     pub fn reset(&mut self) {
-        self.values.reset();
         self.calls.reset();
+        self.values.reset();
     }
 
     /// Create an empty [`Stack`].
