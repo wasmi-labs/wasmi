@@ -31,8 +31,13 @@ pub struct UntypedVal {
 }
 
 impl UntypedVal {
+    /// Creates an [`UntypedVal`] from the given `u64` bits.
+    pub const fn from_bits(bits: u64) -> Self {
+        Self { bits }
+    }
+
     /// Returns the underlying bits of the [`UntypedVal`].
-    pub fn to_bits(self) -> u64 {
+    pub const fn to_bits(self) -> u64 {
         self.bits
     }
 }

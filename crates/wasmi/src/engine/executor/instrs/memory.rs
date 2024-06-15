@@ -26,7 +26,7 @@ impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::DataDrop`].
     #[inline(always)]
     pub fn execute_data_drop(&mut self, store: &mut StoreInner, segment_index: DataSegmentIdx) {
-        let segment = self.cache.get_data_segment(store, u32::from(segment_index));
+        let segment = self.get_data_segment(store, segment_index);
         store.resolve_data_segment_mut(&segment).drop_bytes();
         self.next_instr();
     }
@@ -34,7 +34,7 @@ impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::MemorySize`].
     #[inline(always)]
     pub fn execute_memory_size(&mut self, store: &StoreInner, result: Register) {
-        let memory = self.default_memory(store);
+        let memory = self.get_default_memory(store);
         let size: u32 = store.resolve_memory(&memory).current_pages().into();
         self.set_register(result, size);
         self.next_instr()
@@ -87,7 +87,7 @@ impl<'engine> Executor<'engine> {
                 return self.try_next_instr();
             }
         };
-        let memory = self.default_memory(store);
+        let memory = self.get_default_memory(store);
         let (memory, fuel) = store.resolve_memory_and_fuel_mut(&memory);
         let return_value = memory
             .grow(delta, Some(fuel), resource_limiter)
@@ -97,7 +97,7 @@ impl<'engine> Executor<'engine> {
                 // The `memory.grow` operation might have invalidated the cached
                 // linear memory so we need to reset it in order for the cache to
                 // reload in case it is used again.
-                let instance = self.cache.instance();
+                let instance = Self::instance(self.call_stack);
                 self.memory.update(store, instance);
                 return_value
             }
@@ -238,7 +238,7 @@ impl<'engine> Executor<'engine> {
     ) -> Result<(), Error> {
         let src_index = src_index as usize;
         let dst_index = dst_index as usize;
-        let default_memory = self.default_memory(store);
+        let default_memory = self.get_default_memory(store);
         let (memory, fuel) = store.resolve_memory_and_fuel_mut(&default_memory);
         let data = memory.data_mut();
         // These accesses just perform the bounds checks required by the Wasm spec.
@@ -379,7 +379,7 @@ impl<'engine> Executor<'engine> {
     ) -> Result<(), Error> {
         let dst = dst as usize;
         let len = len as usize;
-        let default_memory = self.default_memory(store);
+        let default_memory = self.get_default_memory(store);
         let (memory, fuel) = store.resolve_memory_and_fuel_mut(&default_memory);
         let memory = memory
             .data_mut()
@@ -523,12 +523,19 @@ impl<'engine> Executor<'engine> {
         let src_index = src as usize;
         let len = len as usize;
         let data_index: DataSegmentIdx = self.fetch_data_segment_index(1);
-        let (memory, data, fuel) = self.cache.get_memory_init_triplet(store, data_index);
+        // TODO: We could re-use the `CachedMemory` here instead of resolving it.
+        //       Once Wasmi supports `multi-memory` this is required to be reverted again though.
+        let (memory, data, fuel) = store.resolve_memory_init_triplet(
+            &self.get_default_memory(store),
+            &self.get_data_segment(store, data_index),
+        );
         let memory = memory
+            .data_mut()
             .get_mut(dst_index..)
             .and_then(|memory| memory.get_mut(..len))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
         let data = data
+            .bytes()
             .get(src_index..)
             .and_then(|data| data.get(..len))
             .ok_or(TrapCode::MemoryOutOfBounds)?;

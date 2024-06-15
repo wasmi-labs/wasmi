@@ -1,6 +1,6 @@
 pub use self::call::{dispatch_host_func, ResumableHostError};
 use self::return_::ReturnOutcome;
-use super::cache::CachedMemory;
+use super::cache::{CachedGlobal, CachedMemory};
 use crate::{
     core::{TrapCode, UntypedVal},
     engine::{
@@ -10,23 +10,32 @@ use crate::{
             BinInstrImm16,
             BlockFuel,
             Const16,
+            DataSegmentIdx,
+            ElementSegmentIdx,
             FuncIdx,
+            GlobalIdx,
             Instruction,
             Register,
+            TableIdx,
             UnaryInstr,
         },
-        cache::InstanceCache,
         code_map::InstructionPtr,
         executor::stack::{CallFrame, CallStack, FrameRegisters, ValueStack},
         func_types::FuncTypeRegistry,
         CodeMap,
     },
+    memory::DataSegment,
     module::DEFAULT_MEMORY_INDEX,
     store::StoreInner,
+    table::ElementSegment,
     Error,
+    Func,
     FuncRef,
+    Global,
+    Instance,
     Memory,
     Store,
+    Table,
 };
 
 mod binary;
@@ -64,13 +73,12 @@ macro_rules! forward_return {
 #[inline(never)]
 pub fn execute_instrs<'engine, T>(
     store: &mut Store<T>,
-    cache: &'engine mut InstanceCache,
     value_stack: &'engine mut ValueStack,
     call_stack: &'engine mut CallStack,
     code_map: &'engine CodeMap,
     func_types: &'engine FuncTypeRegistry,
 ) -> Result<(), Error> {
-    Executor::new(cache, value_stack, call_stack, code_map, func_types).execute(store)
+    Executor::new(value_stack, call_stack, code_map, func_types).execute(store)
 }
 
 /// An execution context for executing a Wasmi function frame.
@@ -82,8 +90,8 @@ struct Executor<'engine> {
     ip: InstructionPtr,
     /// The cached default memory bytes.
     memory: CachedMemory,
-    /// Stores frequently used instance related data.
-    cache: &'engine mut InstanceCache,
+    /// The cached global variable at index 0.
+    global: CachedGlobal,
     /// The value stack.
     ///
     /// # Note
@@ -115,7 +123,6 @@ impl<'engine> Executor<'engine> {
     /// Creates a new [`Executor`] for executing a Wasmi function frame.
     #[inline(always)]
     pub fn new(
-        cache: &'engine mut InstanceCache,
         value_stack: &'engine mut ValueStack,
         call_stack: &'engine mut CallStack,
         code_map: &'engine CodeMap,
@@ -133,7 +140,7 @@ impl<'engine> Executor<'engine> {
             sp,
             ip,
             memory: CachedMemory::default(),
-            cache,
+            global: CachedGlobal::default(),
             value_stack,
             call_stack,
             code_map,
@@ -141,20 +148,22 @@ impl<'engine> Executor<'engine> {
         }
     }
 
-    #[inline]
-    fn default_memory(&self, ctx: &StoreInner) -> Memory {
-        let instance = self.cache.instance();
-        ctx.resolve_instance(instance)
-            .get_memory(DEFAULT_MEMORY_INDEX)
-            .expect("missing default memory for instance: {instance:?}")
+    /// Returns the currently used [`Instance`].
+    #[inline(always)]
+    fn instance(call_stack: &CallStack) -> &Instance {
+        call_stack
+            .peek()
+            .map(CallFrame::instance)
+            .expect("missing instance for non-empty call stack")
     }
 
     /// Executes the function frame until it returns or traps.
     #[inline(always)]
     fn execute<T>(mut self, store: &mut Store<T>) -> Result<(), Error> {
         use Instruction as Instr;
-        let instance = self.cache.instance();
+        let instance = Self::instance(self.call_stack);
         self.memory.update(&mut store.inner, instance);
+        self.global.update(&mut store.inner, instance);
         loop {
             match *self.ip.get() {
                 Instr::Trap(trap_code) => self.execute_trap(trap_code)?,
@@ -388,7 +397,7 @@ impl<'engine> Executor<'engine> {
                     self.execute_ref_func(&mut store.inner, result, func)
                 }
                 Instr::GlobalGet { result, global } => {
-                    self.execute_global_get(&mut store.inner, result, global)
+                    self.execute_global_get(&store.inner, result, global)
                 }
                 Instr::GlobalSet { global, input } => {
                     self.execute_global_set(&mut store.inner, global, input)
@@ -885,10 +894,71 @@ impl<'engine> Executor<'engine> {
             }
         }
     }
+}
+
+macro_rules! get_entity {
+    (
+        $(
+            fn $name:ident(&self, store: &StoreInner, index: $index_ty:ty) -> $id_ty:ty;
+        )*
+    ) => {
+        $(
+            #[doc = ::core::concat!(
+                "Returns the [`",
+                ::core::stringify!($id_ty),
+                "`] at `index` for the currently used [`Instance`] in `store`.\n\n",
+                "# Panics\n\n",
+                "- If the current [`Instance`] does not belong to `ctx`.\n",
+                "- If there is no [`",
+                ::core::stringify!($id_ty),
+                "`] at `index` for the currently used [`Instance`] in `store`."
+            )]
+            #[inline]
+            fn $name(&self, store: &StoreInner, index: $index_ty) -> $id_ty {
+                let instance = Self::instance(self.call_stack);
+                let index = ::core::primitive::u32::from(index);
+                store
+                    .resolve_instance(instance)
+                    .$name(index)
+                    .unwrap_or_else(|| {
+                        const ENTITY_NAME: &'static str = ::core::stringify!($id_ty);
+                        ::core::unreachable!(
+                            "missing {ENTITY_NAME} at index {index:?} for instance: {instance:?}",
+                        )
+                    })
+            }
+        )*
+    }
+}
+
+impl<'engine> Executor<'engine> {
+    get_entity! {
+        fn get_func(&self, store: &StoreInner, index: FuncIdx) -> Func;
+        fn get_memory(&self, store: &StoreInner, index: u32) -> Memory;
+        fn get_table(&self, store: &StoreInner, index: TableIdx) -> Table;
+        fn get_global(&self, store: &StoreInner, index: GlobalIdx) -> Global;
+        fn get_data_segment(&self, store: &StoreInner, index: DataSegmentIdx) -> DataSegment;
+        fn get_element_segment(&self, store: &StoreInner, index: ElementSegmentIdx) -> ElementSegment;
+    }
+
+    /// Returns the default memory of the current [`Instance`] for `ctx`.
+    ///
+    /// # Panics
+    ///
+    /// - If the current [`Instance`] does not belong to `ctx`.
+    /// - If the current [`Instance`] does not have a linear memory.
+    #[inline]
+    fn get_default_memory(&self, store: &StoreInner) -> Memory {
+        self.get_memory(store, DEFAULT_MEMORY_INDEX)
+    }
 
     /// Returns the [`Register`] value.
     fn get_register(&self, register: Register) -> UntypedVal {
-        // Safety: TODO
+        // Safety: - It is the responsibility of the `Executor`
+        //           implementation to keep the `sp` pointer valid
+        //           whenever this method is accessed.
+        //         - This is done by updating the `sp` pointer whenever
+        //           the heap underlying the value stack is changed.
         unsafe { self.sp.get(register) }
     }
 
@@ -902,7 +972,11 @@ impl<'engine> Executor<'engine> {
 
     /// Sets the [`Register`] value to `value`.
     fn set_register(&mut self, register: Register, value: impl Into<UntypedVal>) {
-        // Safety: TODO
+        // Safety: - It is the responsibility of the `Executor`
+        //           implementation to keep the `sp` pointer valid
+        //           whenever this method is accessed.
+        //         - This is done by updating the `sp` pointer whenever
+        //           the heap underlying the value stack is changed.
         unsafe { self.sp.set(register, value.into()) };
     }
 
@@ -1157,7 +1231,7 @@ impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::RefFunc`].
     #[inline(always)]
     fn execute_ref_func(&mut self, store: &mut StoreInner, result: Register, func_index: FuncIdx) {
-        let func = self.cache.get_func(store, func_index);
+        let func = self.get_func(store, func_index);
         let funcref = FuncRef::new(func);
         self.set_register(result, funcref);
         self.next_instr();
