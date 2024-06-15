@@ -214,6 +214,7 @@ impl<'engine> Executor<'engine> {
         &mut self,
         results: RegisterSpan,
         func: &CompiledFuncEntity,
+        instance: &Instance,
     ) -> Result<CallFrame, Error> {
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
         // [`ValueStack::alloc_call_frame`] which might invalidate all live [`FrameRegisters`].
@@ -226,7 +227,6 @@ impl<'engine> Executor<'engine> {
                 // Safety: We use the base offset of a live call frame on the call stack.
                 self.sp = unsafe { this.stack_ptr_at(caller.base_offset()) };
             })?;
-        let instance = caller.instance();
         let instr_ptr = InstructionPtr::new(func.instrs().as_ptr());
         let frame = CallFrame::new(instr_ptr, frame_ptr, base_ptr, results, *instance);
         if <C as CallContext>::HAS_PARAMS {
@@ -298,9 +298,11 @@ impl<'engine> Executor<'engine> {
         store: &mut StoreInner,
         results: RegisterSpan,
         func: CompiledFunc,
+        mut instance: Option<Instance>,
     ) -> Result<(), Error> {
         let func = self.code_map.get(Some(store.fuel_mut()), func)?;
-        let mut called = self.dispatch_compiled_func::<C>(results, func)?;
+        let instance = instance.get_or_insert_with(|| *Self::instance(self.call_stack));
+        let mut called = self.dispatch_compiled_func::<C>(results, func, instance)?;
         match <C as CallContext>::KIND {
             CallKind::Nested => {
                 // We need to update the instruction pointer of the caller call frame.
@@ -352,7 +354,7 @@ impl<'engine> Executor<'engine> {
         func: CompiledFunc,
     ) -> Result<(), Error> {
         let results = self.caller_results();
-        self.prepare_compiled_func_call::<C>(store, results, func)
+        self.prepare_compiled_func_call::<C>(store, results, func, None)
     }
 
     /// Returns the `results` [`RegisterSpan`] of the top-most [`CallFrame`] on the [`CallStack`].
@@ -378,7 +380,7 @@ impl<'engine> Executor<'engine> {
         results: RegisterSpan,
         func: CompiledFunc,
     ) -> Result<(), Error> {
-        self.prepare_compiled_func_call::<marker::NestedCall0>(store, results, func)
+        self.prepare_compiled_func_call::<marker::NestedCall0>(store, results, func, None)
     }
 
     /// Executes an [`Instruction::CallInternal`].
@@ -389,7 +391,7 @@ impl<'engine> Executor<'engine> {
         results: RegisterSpan,
         func: CompiledFunc,
     ) -> Result<(), Error> {
-        self.prepare_compiled_func_call::<marker::NestedCall>(store, results, func)
+        self.prepare_compiled_func_call::<marker::NestedCall>(store, results, func, None)
     }
 
     /// Executes an [`Instruction::ReturnCallImported0`].
@@ -458,9 +460,14 @@ impl<'engine> Executor<'engine> {
             FuncEntity::Wasm(func) => {
                 let instance = *func.instance();
                 let func_body = func.func_body();
-                self.prepare_compiled_func_call::<C>(&mut store.inner, results, func_body)?;
-                self.cache.update_instance(&instance);
+                self.prepare_compiled_func_call::<C>(
+                    &mut store.inner,
+                    results,
+                    func_body,
+                    Some(instance),
+                )?;
                 self.memory.update(&mut store.inner, &instance);
+                self.global.update(&mut store.inner, &instance);
                 Ok(())
             }
             FuncEntity::Host(host_func) => {
@@ -512,8 +519,8 @@ impl<'engine> Executor<'engine> {
                 true => error,
                 false => ResumableHostError::new(error, *func, results).into(),
             })?;
-        self.cache.reset_last_global();
         self.memory.update(&mut store.inner, caller.instance());
+        self.global.update(&mut store.inner, caller.instance());
         let results = results.iter(len_results);
         let returned = self.value_stack.drop_return(max_inout);
         for (result, value) in results.zip(returned) {

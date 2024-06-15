@@ -1,6 +1,6 @@
 pub use self::call::{dispatch_host_func, ResumableHostError};
 use self::return_::ReturnOutcome;
-use super::cache::CachedMemory;
+use super::cache::{CachedGlobal, CachedMemory};
 use crate::{
     core::{TrapCode, UntypedVal},
     engine::{
@@ -10,23 +10,32 @@ use crate::{
             BinInstrImm16,
             BlockFuel,
             Const16,
+            DataSegmentIdx,
+            ElementSegmentIdx,
             FuncIdx,
+            GlobalIdx,
             Instruction,
             Register,
+            TableIdx,
             UnaryInstr,
         },
-        cache::InstanceCache,
         code_map::InstructionPtr,
         executor::stack::{CallFrame, CallStack, FrameRegisters, ValueStack},
         func_types::FuncTypeRegistry,
         CodeMap,
     },
+    memory::DataSegment,
     module::DEFAULT_MEMORY_INDEX,
     store::StoreInner,
+    table::ElementSegment,
     Error,
+    Func,
     FuncRef,
+    Global,
+    Instance,
     Memory,
     Store,
+    Table,
 };
 
 mod binary;
@@ -64,13 +73,12 @@ macro_rules! forward_return {
 #[inline(never)]
 pub fn execute_instrs<'engine, T>(
     store: &mut Store<T>,
-    cache: &'engine mut InstanceCache,
     value_stack: &'engine mut ValueStack,
     call_stack: &'engine mut CallStack,
     code_map: &'engine CodeMap,
     func_types: &'engine FuncTypeRegistry,
 ) -> Result<(), Error> {
-    Executor::new(cache, value_stack, call_stack, code_map, func_types).execute(store)
+    Executor::new(value_stack, call_stack, code_map, func_types).execute(store)
 }
 
 /// An execution context for executing a Wasmi function frame.
@@ -82,8 +90,8 @@ struct Executor<'engine> {
     ip: InstructionPtr,
     /// The cached default memory bytes.
     memory: CachedMemory,
-    /// Stores frequently used instance related data.
-    cache: &'engine mut InstanceCache,
+    /// The cached global variable at index 0.
+    global: CachedGlobal,
     /// The value stack.
     ///
     /// # Note
@@ -115,7 +123,6 @@ impl<'engine> Executor<'engine> {
     /// Creates a new [`Executor`] for executing a Wasmi function frame.
     #[inline(always)]
     pub fn new(
-        cache: &'engine mut InstanceCache,
         value_stack: &'engine mut ValueStack,
         call_stack: &'engine mut CallStack,
         code_map: &'engine CodeMap,
@@ -133,7 +140,7 @@ impl<'engine> Executor<'engine> {
             sp,
             ip,
             memory: CachedMemory::default(),
-            cache,
+            global: CachedGlobal::default(),
             value_stack,
             call_stack,
             code_map,
@@ -156,6 +163,7 @@ impl<'engine> Executor<'engine> {
         use Instruction as Instr;
         let instance = Self::instance(self.call_stack);
         self.memory.update(&mut store.inner, instance);
+        self.global.update(&mut store.inner, instance);
         loop {
             match *self.ip.get() {
                 Instr::Trap(trap_code) => self.execute_trap(trap_code)?,
@@ -389,7 +397,7 @@ impl<'engine> Executor<'engine> {
                     self.execute_ref_func(&mut store.inner, result, func)
                 }
                 Instr::GlobalGet { result, global } => {
-                    self.execute_global_get(&mut store.inner, result, global)
+                    self.execute_global_get(&store.inner, result, global)
                 }
                 Instr::GlobalSet { global, input } => {
                     self.execute_global_set(&mut store.inner, global, input)

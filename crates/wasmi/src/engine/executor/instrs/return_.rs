@@ -34,8 +34,8 @@ impl<'engine> Executor<'engine> {
             Some(caller) => {
                 Self::init_call_frame_impl(self.value_stack, &mut self.sp, &mut self.ip, caller);
                 let instance = caller.instance();
-                self.cache.update_instance(instance);
                 self.memory.update(store, instance);
+                self.global.update(store, instance);
                 ReturnOutcome::Wasm
             }
             None => ReturnOutcome::Host,
