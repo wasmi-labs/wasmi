@@ -62,7 +62,7 @@ impl<T> HeadVec<T> {
     /// Pushes a new `value` onto the [`HeadVec`].
     #[inline]
     pub fn push(&mut self, value: T) {
-        let prev_head = mem::replace(&mut self.head, Some(value));
+        let prev_head = self.head.replace(value);
         if let Some(prev_head) = prev_head {
             self.rest.push(prev_head);
         }
