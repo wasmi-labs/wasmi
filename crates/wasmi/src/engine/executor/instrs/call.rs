@@ -4,7 +4,7 @@ use crate::{
     engine::{
         bytecode::{FuncIdx, Instruction, Register, RegisterSpan, SignatureIdx, TableIdx},
         code_map::InstructionPtr,
-        executor::stack::{CallFrame, FrameParams, Stack, ValueStack},
+        executor::stack::{CallFrame, FrameParams, ValueStack},
         func_types::FuncTypeRegistry,
         CompiledFunc,
         CompiledFuncEntity,
@@ -318,13 +318,7 @@ impl<'engine> Executor<'engine> {
                 // on the value stack which is what the function expects. After this operation we ensure
                 // that `self.sp` is adjusted via a call to `init_call_frame` since it may have been
                 // invalidated by this method.
-                let caller_instance = unsafe {
-                    Stack::merge_call_frames(
-                        &mut self.stack.calls,
-                        &mut self.stack.values,
-                        &mut called,
-                    )
-                };
+                let caller_instance = unsafe { self.stack.merge_call_frames(&mut called) };
                 if let Some(caller_instance) = caller_instance {
                     instance.get_or_insert(caller_instance);
                 }
