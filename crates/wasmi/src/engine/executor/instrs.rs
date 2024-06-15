@@ -95,7 +95,7 @@ struct Executor<'engine> {
     /// The value and call stacks.
     stack: &'engine mut Stack,
     /// The static resources of an [`Engine`].
-    /// 
+    ///
     /// [`Engine`]: crate::Engine
     res: &'engine EngineResources,
 }
