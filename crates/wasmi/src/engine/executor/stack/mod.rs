@@ -22,10 +22,10 @@ fn err_stack_overflow() -> TrapCode {
 /// Data structure that combines both value stack and call stack.
 #[derive(Debug, Default)]
 pub struct Stack {
-    /// The value stack.
-    pub values: ValueStack,
     /// The call stack.
     pub calls: CallStack,
+    /// The value stack.
+    pub values: ValueStack,
 }
 
 impl Stack {
