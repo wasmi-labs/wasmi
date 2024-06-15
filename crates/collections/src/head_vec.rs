@@ -2,7 +2,7 @@ use core::mem;
 use std::vec::Vec;
 
 /// A [`Vec`]-like data structure with fast access to the last item.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct HeadVec<T> {
     /// The top (or last) item in the [`HeadVec`].
     head: Option<T>,
