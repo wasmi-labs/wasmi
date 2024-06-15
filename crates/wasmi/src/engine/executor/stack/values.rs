@@ -1,4 +1,4 @@
-use super::err_stack_overflow;
+use super::{calls::StackOffsets, err_stack_overflow};
 use crate::{
     core::{TrapCode, UntypedVal},
     engine::{bytecode::Register, CompiledFuncEntity},
@@ -225,7 +225,7 @@ impl ValueStack {
         &mut self,
         func: &CompiledFuncEntity,
         on_resize: impl FnMut(&mut Self),
-    ) -> Result<(FrameParams, BaseValueStackOffset, FrameValueStackOffset), TrapCode> {
+    ) -> Result<(FrameParams, StackOffsets), TrapCode> {
         let len_registers = func.len_registers();
         let len_consts = func.consts().len();
         let len = self.len();
@@ -242,8 +242,10 @@ impl ValueStack {
         let base = ValueStackOffset(len + len_consts);
         Ok((
             params,
-            BaseValueStackOffset(base),
-            FrameValueStackOffset(frame),
+            StackOffsets {
+                base: BaseValueStackOffset(base),
+                frame: FrameValueStackOffset(frame),
+            },
         ))
     }
 

@@ -207,7 +207,7 @@ impl<'engine> EngineExecutor<'engine> {
                     .res
                     .code_map
                     .get(Some(store.inner.fuel_mut()), compiled_func)?;
-                let (mut uninit_params, base_ptr, frame_ptr) = self
+                let (mut uninit_params, offsets) = self
                     .stack
                     .values
                     .alloc_call_frame(compiled_func, do_nothing)?;
@@ -217,8 +217,7 @@ impl<'engine> EngineExecutor<'engine> {
                 uninit_params.init_zeroes();
                 self.stack.calls.push(CallFrame::new(
                     InstructionPtr::new(compiled_func.instrs().as_ptr()),
-                    frame_ptr,
-                    base_ptr,
+                    offsets,
                     RegisterSpan::new(Register::from_i16(0)),
                     instance,
                 ))?;
