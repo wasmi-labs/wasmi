@@ -1,5 +1,6 @@
 use super::{err_stack_overflow, BaseValueStackOffset, FrameValueStackOffset};
 use crate::{
+    collections::HeadVec,
     core::TrapCode,
     engine::{bytecode::RegisterSpan, code_map::InstructionPtr},
     Instance,
@@ -20,8 +21,10 @@ use crate::{
 /// The stack of nested function calls.
 #[derive(Debug, Default)]
 pub struct CallStack {
-    /// The stack of nested function calls.
-    calls: Vec<CallFrame>,
+    /// The stack of nested function call frames.
+    frames: Vec<CallFrame>,
+    /// The [`Instance`] used at certain frame stack heights.
+    instances: HeadVec<Instance>,
     /// The maximum allowed recursion depth.
     ///
     /// # Note
@@ -37,7 +40,8 @@ impl CallStack {
     /// Creates a new [`CallStack`] using the given recursion limit.
     pub fn new(recursion_limit: usize) -> Self {
         Self {
-            calls: Vec::new(),
+            frames: Vec::new(),
+            instances: HeadVec::default(),
             recursion_limit,
         }
     }
@@ -50,14 +54,16 @@ impl CallStack {
     /// executing a function, for example when a trap is encountered. We
     /// reset the [`CallStack`] before executing the next function to
     /// provide a clean slate for all executions.
+    #[inline(always)]
     pub fn reset(&mut self) {
-        self.calls.clear();
+        self.frames.clear();
+        self.instances.clear();
     }
 
-    /// Returns the number of [`CallFrame`] on the [`CallStack`].
+    /// Returns the number of [`CallFrame`]s on the [`CallStack`].
     #[inline(always)]
     fn len(&self) -> usize {
-        self.calls.len()
+        self.frames.len()
     }
 
     /// Returns `true` if the [`CallStack`] is empty.
@@ -66,36 +72,71 @@ impl CallStack {
         self.len() == 0
     }
 
+    /// Returns the currently used [`Instance`].
+    #[inline(always)]
+    pub fn instance(&self) -> Option<&Instance> {
+        self.instances.last()
+    }
+
     /// Pushes a [`CallFrame`] onto the [`CallStack`].
     ///
     /// # Errors
     ///
     /// If the recursion limit has been reached.
     #[inline(always)]
-    pub fn push(&mut self, call: CallFrame) -> Result<(), TrapCode> {
+    pub fn push(
+        &mut self,
+        mut call: CallFrame,
+        instance: Option<Instance>,
+    ) -> Result<(), TrapCode> {
         if self.len() == self.recursion_limit {
             return Err(err_stack_overflow());
         }
-        self.calls.push(call);
+        if let Some(instance) = instance {
+            call.changed_instance = self.push_instance(instance);
+        }
+        self.frames.push(call);
         Ok(())
     }
 
-    /// Pops the last [`CallFrame`] from the [`CallStack`] if any.
+    /// Pushes the `instance` onto the internal instances stack.
+    ///
+    /// Returns `true` if the [`Instance`] stack has been adjusted.
     #[inline(always)]
-    pub fn pop(&mut self) -> Option<CallFrame> {
-        self.calls.pop()
+    fn push_instance(&mut self, instance: Instance) -> bool {
+        if let Some(last) = self.instances.last() {
+            if instance.eq(last) {
+                return false;
+            }
+        }
+        self.instances.push(instance);
+        true
+    }
+
+    /// Pops the last [`CallFrame`] from the [`CallStack`] if any.
+    ///
+    /// Returns the popped [`Instance`] in case the popped [`CallFrame`]
+    /// introduced a new [`Instance`] on the [`CallStack`].
+    #[inline(always)]
+    pub fn pop(&mut self) -> Option<(CallFrame, Option<Instance>)> {
+        let frame = self.frames.pop()?;
+        let instance = match frame.changed_instance {
+            true => self.instances.pop(),
+            false => None,
+        };
+        Some((frame, instance))
     }
 
     /// Peeks the last [`CallFrame`] of the [`CallStack`] if any.
     #[inline(always)]
     pub fn peek(&self) -> Option<&CallFrame> {
-        self.calls.last()
+        self.frames.last()
     }
 
     /// Peeks the last [`CallFrame`] of the [`CallStack`] if any.
     #[inline(always)]
     pub fn peek_mut(&mut self) -> Option<&mut CallFrame> {
-        self.calls.last_mut()
+        self.frames.last_mut()
     }
 
     /// Peeks the two top-most [`CallFrame`] on the [`CallStack`] if any.
@@ -107,7 +148,7 @@ impl CallStack {
     ///
     /// So this function returns a pair of `(callee, caller?)`.
     pub fn peek_2(&self) -> Option<(&CallFrame, Option<&CallFrame>)> {
-        let (callee, remaining) = self.calls.split_last()?;
+        let (callee, remaining) = self.frames.split_last()?;
         let caller = remaining.last();
         Some((callee, caller))
     }
@@ -148,28 +189,24 @@ pub struct CallFrame {
     offsets: StackOffsets,
     /// Span of registers were the caller expects them in its [`CallFrame`].
     results: RegisterSpan,
-    /// The instance in which the function has been defined.
+    /// Is `true` if this [`CallFrame`] changed the currently used [`Instance`].
     ///
-    /// # Note
-    ///
-    /// The [`Instance`] is used to inspect and manipulate data that is
-    /// non-local to the function such as [`Memory`], [`Global`] and [`Table`].
-    instance: Instance,
+    /// - This flag is an optimization to reduce the amount of accesses on the
+    ///   instance stack of the [`CallStack`] for the common case where this is
+    ///   not needed.
+    /// - This flag is private to the [`CallStack`] and shall not be observable
+    ///   from the outside.
+    changed_instance: bool,
 }
 
 impl CallFrame {
     /// Creates a new [`CallFrame`].
-    pub fn new(
-        instr_ptr: InstructionPtr,
-        offsets: StackOffsets,
-        results: RegisterSpan,
-        instance: Instance,
-    ) -> Self {
+    pub fn new(instr_ptr: InstructionPtr, offsets: StackOffsets, results: RegisterSpan) -> Self {
         Self {
             instr_ptr,
             offsets,
             results,
-            instance,
+            changed_instance: false,
         }
     }
 
@@ -214,10 +251,5 @@ impl CallFrame {
     /// refer to the [`CallFrame`] of the caller of this [`CallFrame`].
     pub fn results(&self) -> RegisterSpan {
         self.results
-    }
-
-    /// Returns the [`Instance`] of the [`CallFrame`].
-    pub fn instance(&self) -> &Instance {
-        &self.instance
     }
 }

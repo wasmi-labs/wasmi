@@ -2,7 +2,7 @@ mod calls;
 mod values;
 
 pub use self::{
-    calls::{CallFrame, CallStack},
+    calls::{CallFrame, CallStack, StackOffsets},
     values::{
         BaseValueStackOffset,
         FrameParams,
@@ -11,7 +11,7 @@ pub use self::{
         ValueStack,
     },
 };
-use crate::{core::TrapCode, StackLimits};
+use crate::{core::TrapCode, Instance, StackLimits};
 
 /// Returns a [`TrapCode`] signalling a stack overflow.
 #[cold]
@@ -97,12 +97,13 @@ impl Stack {
     /// may be invalidated by this operation. It is the caller's responsibility to reinstantiate
     /// all [`FrameRegisters`] affected by this.
     #[inline(always)]
+    #[must_use]
     pub unsafe fn merge_call_frames(
         call_stack: &mut CallStack,
         value_stack: &mut ValueStack,
         callee: &mut CallFrame,
-    ) {
-        let caller = call_stack.pop().expect("caller call frame must exist");
+    ) -> Option<Instance> {
+        let (caller, instance) = call_stack.pop().expect("caller call frame must exist");
         debug_assert_eq!(callee.results(), caller.results());
         debug_assert!(caller.base_offset() <= callee.base_offset());
         // Safety:
@@ -113,5 +114,6 @@ impl Stack {
         // reinstantiate after this operation.
         let len_drained = value_stack.drain(caller.frame_offset(), callee.frame_offset());
         callee.move_down(len_drained);
+        instance
     }
 }

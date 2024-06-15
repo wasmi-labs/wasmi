@@ -214,7 +214,6 @@ impl<'engine> Executor<'engine> {
         &mut self,
         results: RegisterSpan,
         func: &CompiledFuncEntity,
-        instance: &Instance,
     ) -> Result<CallFrame, Error> {
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
         // [`ValueStack::alloc_call_frame`] which might invalidate all live [`FrameRegisters`].
@@ -227,7 +226,7 @@ impl<'engine> Executor<'engine> {
             self.sp = unsafe { this.stack_ptr_at(caller.base_offset()) };
         })?;
         let instr_ptr = InstructionPtr::new(func.instrs().as_ptr());
-        let frame = CallFrame::new(instr_ptr, offsets, results, *instance);
+        let frame = CallFrame::new(instr_ptr, offsets, results);
         if <C as CallContext>::HAS_PARAMS {
             self.copy_call_params(&mut uninit_params);
         }
@@ -300,8 +299,7 @@ impl<'engine> Executor<'engine> {
         mut instance: Option<Instance>,
     ) -> Result<(), Error> {
         let func = self.code_map.get(Some(store.fuel_mut()), func)?;
-        let instance = instance.get_or_insert_with(|| *Self::instance(self.call_stack));
-        let mut called = self.dispatch_compiled_func::<C>(results, func, instance)?;
+        let mut called = self.dispatch_compiled_func::<C>(results, func)?;
         match <C as CallContext>::KIND {
             CallKind::Nested => {
                 // We need to update the instruction pointer of the caller call frame.
@@ -318,11 +316,16 @@ impl<'engine> Executor<'engine> {
                 // on the value stack which is what the function expects. After this operation we ensure
                 // that `self.sp` is adjusted via a call to `init_call_frame` since it may have been
                 // invalidated by this method.
-                unsafe { Stack::merge_call_frames(self.call_stack, self.value_stack, &mut called) };
+                let caller_instance = unsafe {
+                    Stack::merge_call_frames(self.call_stack, self.value_stack, &mut called)
+                };
+                if let Some(caller_instance) = caller_instance {
+                    instance.get_or_insert(caller_instance);
+                }
             }
         }
         self.init_call_frame(&called);
-        self.call_stack.push(called)?;
+        self.call_stack.push(called, instance)?;
         Ok(())
     }
 
@@ -495,11 +498,15 @@ impl<'engine> Executor<'engine> {
     ) -> Result<(), Error> {
         let (len_params, len_results) = self.func_types.len_params_results(host_func.ty_dedup());
         let max_inout = len_params.max(len_results);
+        let instance = *self
+            .call_stack
+            .instance()
+            .expect("need to have an instance on the call stack");
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
         // [`ValueStack::reserve`] which might invalidate all live [`FrameRegisters`].
         let caller = match <C as CallContext>::KIND {
             CallKind::Nested => self.call_stack.peek().copied(),
-            CallKind::Tail => self.call_stack.pop(),
+            CallKind::Tail => self.call_stack.pop().map(|(frame, _instance)| frame),
         }
         .expect("need to have a caller on the call stack");
         let buffer = self.value_stack.extend_by(max_inout, |this| {
@@ -513,13 +520,13 @@ impl<'engine> Executor<'engine> {
         if matches!(<C as CallContext>::KIND, CallKind::Nested) {
             self.update_instr_ptr_at(1);
         }
-        self.dispatch_host_func::<T>(store, host_func, caller)
+        self.dispatch_host_func::<T>(store, host_func, &instance)
             .map_err(|error| match self.call_stack.is_empty() {
                 true => error,
                 false => ResumableHostError::new(error, *func, results).into(),
             })?;
-        self.memory.update(&mut store.inner, caller.instance());
-        self.global.update(&mut store.inner, caller.instance());
+        self.memory.update(&mut store.inner, &instance);
+        self.global.update(&mut store.inner, &instance);
         let results = results.iter(len_results);
         let returned = self.value_stack.drop_return(max_inout);
         for (result, value) in results.zip(returned) {
@@ -542,14 +549,14 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut Store<T>,
         host_func: HostFuncEntity,
-        caller: CallFrame,
+        instance: &Instance,
     ) -> Result<(usize, usize), Error> {
         dispatch_host_func(
             store,
             self.func_types,
             self.value_stack,
             host_func,
-            Some(caller.instance()),
+            Some(instance),
         )
     }
 

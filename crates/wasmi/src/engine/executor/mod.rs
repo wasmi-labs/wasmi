@@ -215,12 +215,14 @@ impl<'engine> EngineExecutor<'engine> {
                     unsafe { uninit_params.init_next(value) };
                 }
                 uninit_params.init_zeroes();
-                self.stack.calls.push(CallFrame::new(
-                    InstructionPtr::new(compiled_func.instrs().as_ptr()),
-                    offsets,
-                    RegisterSpan::new(Register::from_i16(0)),
-                    instance,
-                ))?;
+                self.stack.calls.push(
+                    CallFrame::new(
+                        InstructionPtr::new(compiled_func.instrs().as_ptr()),
+                        offsets,
+                        RegisterSpan::new(Register::from_i16(0)),
+                    ),
+                    Some(instance),
+                )?;
                 self.execute_func(store)?;
             }
             FuncEntity::Host(host_func) => {

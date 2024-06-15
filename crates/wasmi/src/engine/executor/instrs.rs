@@ -152,8 +152,7 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn instance(call_stack: &CallStack) -> &Instance {
         call_stack
-            .peek()
-            .map(CallFrame::instance)
+            .instance()
             .expect("missing instance for non-empty call stack")
     }
 

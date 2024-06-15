@@ -1,4 +1,4 @@
-use super::{calls::StackOffsets, err_stack_overflow};
+use super::{err_stack_overflow, StackOffsets};
 use crate::{
     core::{TrapCode, UntypedVal},
     engine::{bytecode::Register, CompiledFuncEntity},
