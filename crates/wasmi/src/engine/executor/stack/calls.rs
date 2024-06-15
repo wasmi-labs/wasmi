@@ -35,10 +35,10 @@ pub struct CallStack {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct InstanceAndHeight {
-    /// The underlying [`Instance`] used at the `index` call stack height.
-    pub instance: Instance,
     /// The height of the call stack for the given [`Instance`].
     pub height: usize,
+    /// The underlying [`Instance`] used at the `index` call stack height.
+    pub instance: Instance,
 }
 
 impl InstanceAndHeight {
@@ -133,7 +133,7 @@ impl CallStack {
                 return false;
             }
         }
-        self.instances.push(InstanceAndHeight { instance, height });
+        self.instances.push(InstanceAndHeight { height, instance });
         true
     }
 
