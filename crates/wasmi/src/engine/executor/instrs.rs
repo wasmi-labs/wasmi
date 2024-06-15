@@ -24,8 +24,7 @@ use crate::{
         },
         code_map::InstructionPtr,
         executor::stack::{CallFrame, CallStack, FrameRegisters, ValueStack},
-        func_types::FuncTypeRegistry,
-        CodeMap,
+        EngineResources,
     },
     memory::DataSegment,
     module::DEFAULT_MEMORY_INDEX,
@@ -77,10 +76,9 @@ macro_rules! forward_return {
 pub fn execute_instrs<'engine, T>(
     store: &mut Store<T>,
     stack: &'engine mut Stack,
-    code_map: &'engine CodeMap,
-    func_types: &'engine FuncTypeRegistry,
+    res: &'engine EngineResources,
 ) -> Result<(), Error> {
-    Executor::new(stack, code_map, func_types).execute(store)
+    Executor::new(stack, res).execute(store)
 }
 
 /// An execution context for executing a Wasmi function frame.
@@ -96,28 +94,14 @@ struct Executor<'engine> {
     global: CachedGlobal,
     /// The value and call stacks.
     stack: &'engine mut Stack,
-    /// The Wasm function code map.
-    ///
-    /// # Note
-    ///
-    /// This is used to lookup Wasm function information.
-    code_map: &'engine CodeMap,
-    /// The Wasm function type registry.
-    ///
-    /// # Note
-    ///
-    /// This is used to lookup Wasm function information.
-    func_types: &'engine FuncTypeRegistry,
+    /// The static resources of an [`Engine`].
+    res: &'engine EngineResources,
 }
 
 impl<'engine> Executor<'engine> {
     /// Creates a new [`Executor`] for executing a Wasmi function frame.
     #[inline(always)]
-    pub fn new(
-        stack: &'engine mut Stack,
-        code_map: &'engine CodeMap,
-        func_types: &'engine FuncTypeRegistry,
-    ) -> Self {
+    pub fn new(stack: &'engine mut Stack, res: &'engine EngineResources) -> Self {
         let frame = stack
             .calls
             .peek()
@@ -133,8 +117,7 @@ impl<'engine> Executor<'engine> {
             memory: CachedMemory::default(),
             global: CachedGlobal::default(),
             stack,
-            code_map,
-            func_types,
+            res,
         }
     }
 

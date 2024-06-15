@@ -300,7 +300,7 @@ impl<'engine> Executor<'engine> {
         func: CompiledFunc,
         mut instance: Option<Instance>,
     ) -> Result<(), Error> {
-        let func = self.code_map.get(Some(store.fuel_mut()), func)?;
+        let func = self.res.code_map.get(Some(store.fuel_mut()), func)?;
         let mut called = self.dispatch_compiled_func::<C>(results, func)?;
         match <C as CallContext>::KIND {
             CallKind::Nested => {
@@ -497,7 +497,8 @@ impl<'engine> Executor<'engine> {
         func: &Func,
         host_func: HostFuncEntity,
     ) -> Result<(), Error> {
-        let (len_params, len_results) = self.func_types.len_params_results(host_func.ty_dedup());
+        let (len_params, len_results) =
+            self.res.func_types.len_params_results(host_func.ty_dedup());
         let max_inout = len_params.max(len_results);
         let instance = *Self::instance(&self.stack.calls);
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
@@ -551,7 +552,7 @@ impl<'engine> Executor<'engine> {
     ) -> Result<(usize, usize), Error> {
         dispatch_host_func(
             store,
-            self.func_types,
+            &self.res.func_types,
             &mut self.stack.values,
             host_func,
             Some(instance),

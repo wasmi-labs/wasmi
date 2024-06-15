@@ -293,9 +293,7 @@ impl<'engine> EngineExecutor<'engine> {
     /// When encountering a Wasm or host trap during execution.
     #[inline(always)]
     fn execute_func<T>(&mut self, store: &mut Store<T>) -> Result<(), Error> {
-        let code_map = &self.res.code_map;
-        let func_types = &self.res.func_types;
-        execute_instrs(store, self.stack, code_map, func_types)
+        execute_instrs(store, self.stack, self.res)
     }
 
     /// Convenience forwarder to [`dispatch_host_func`].
