@@ -885,6 +885,63 @@ impl<'engine> Executor<'engine> {
             }
         }
     }
+}
+
+macro_rules! get_entity {
+    (
+        $(
+            fn $name:ident(&self, store: &StoreInner, index: $index_ty:ty) -> $id_ty:ty;
+        )*
+    ) => {
+        $(
+            #[doc = ::core::concat!(
+                "Returns the [`",
+                ::core::stringify!($id_ty),
+                "`] at `index` for the currently used [`Instance`] in `store`.\n\n",
+                "# Panics\n\n",
+                "- If the current [`Instance`] does not belong to `ctx`.\n",
+                "- If there is no [`",
+                ::core::stringify!($id_ty),
+                "`] at `index` for the currently used [`Instance`] in `store`."
+            )]
+            #[inline]
+            fn $name(&self, store: &StoreInner, index: $index_ty) -> $id_ty {
+                let instance = Self::instance(self.call_stack);
+                let index = ::core::primitive::u32::from(index);
+                store
+                    .resolve_instance(instance)
+                    .$name(index)
+                    .unwrap_or_else(|| {
+                        const ENTITY_NAME: &'static str = ::core::stringify!($id_ty);
+                        ::core::unreachable!(
+                            "missing {ENTITY_NAME} at index {index:?} for instance: {instance:?}",
+                        )
+                    })
+            }
+        )*
+    }
+}
+
+impl<'engine> Executor<'engine> {
+    get_entity! {
+        fn get_func(&self, store: &StoreInner, index: FuncIdx) -> Func;
+        fn get_memory(&self, store: &StoreInner, index: u32) -> Memory;
+        fn get_table(&self, store: &StoreInner, index: TableIdx) -> Table;
+        fn get_global(&self, store: &StoreInner, index: GlobalIdx) -> Global;
+        fn get_data_segment(&self, store: &StoreInner, index: DataSegmentIdx) -> DataSegment;
+        fn get_element_segment(&self, store: &StoreInner, index: ElementSegmentIdx) -> ElementSegment;
+    }
+
+    /// Returns the default memory of the current [`Instance`] for `ctx`.
+    ///
+    /// # Panics
+    ///
+    /// - If the current [`Instance`] does not belong to `ctx`.
+    /// - If the current [`Instance`] does not have a linear memory.
+    #[inline]
+    fn get_default_memory(&self, store: &StoreInner) -> Memory {
+        self.get_memory(store, DEFAULT_MEMORY_INDEX)
+    }
 
     /// Returns the [`Register`] value.
     fn get_register(&self, register: Register) -> UntypedVal {
