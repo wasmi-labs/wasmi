@@ -289,32 +289,6 @@ pub struct CallFrame {
     changed_instance: bool,
 }
 
-/// Offsets for a [`CallFrame`] into the [`ValueStack`].
-#[derive(Debug, Copy, Clone)]
-pub struct StackOffsets {
-    /// Offset to the first mutable cell of a [`CallFrame`].
-    pub base: BaseValueStackOffset,
-    /// Offset to the first cell of a [`CallFrame`].
-    pub frame: FrameValueStackOffset,
-}
-
-impl StackOffsets {
-    /// Moves the [`StackOffsets`] values down by `delta`.
-    ///
-    /// # Note
-    ///
-    /// This is used for the implementation of tail calls.
-    #[inline(always)]
-    fn move_down(&mut self, delta: usize) {
-        let base = usize::from(self.base);
-        let frame = usize::from(self.frame);
-        debug_assert!(delta <= base);
-        debug_assert!(delta <= frame);
-        self.base = BaseValueStackOffset::new(base - delta);
-        self.frame = FrameValueStackOffset::new(frame - delta);
-    }
-}
-
 impl CallFrame {
     /// Creates a new [`CallFrame`].
     #[inline(always)]
