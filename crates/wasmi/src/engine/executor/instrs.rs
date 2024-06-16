@@ -1,6 +1,9 @@
 pub use self::call::{dispatch_host_func, ResumableHostError};
 use self::return_::ReturnOutcome;
-use super::cache::{CachedGlobal, CachedMemory};
+use super::{
+    cache::{CachedGlobal, CachedMemory},
+    Stack,
+};
 use crate::{
     core::{TrapCode, UntypedVal},
     engine::{
@@ -21,8 +24,7 @@ use crate::{
         },
         code_map::InstructionPtr,
         executor::stack::{CallFrame, CallStack, FrameRegisters, ValueStack},
-        func_types::FuncTypeRegistry,
-        CodeMap,
+        EngineResources,
     },
     memory::DataSegment,
     module::DEFAULT_MEMORY_INDEX,
@@ -73,12 +75,10 @@ macro_rules! forward_return {
 #[inline(never)]
 pub fn execute_instrs<'engine, T>(
     store: &mut Store<T>,
-    value_stack: &'engine mut ValueStack,
-    call_stack: &'engine mut CallStack,
-    code_map: &'engine CodeMap,
-    func_types: &'engine FuncTypeRegistry,
+    stack: &'engine mut Stack,
+    res: &'engine EngineResources,
 ) -> Result<(), Error> {
-    Executor::new(value_stack, call_stack, code_map, func_types).execute(store)
+    Executor::new(stack, res).execute(store)
 }
 
 /// An execution context for executing a Wasmi function frame.
@@ -92,59 +92,34 @@ struct Executor<'engine> {
     memory: CachedMemory,
     /// The cached global variable at index 0.
     global: CachedGlobal,
-    /// The value stack.
+    /// The value and call stacks.
+    stack: &'engine mut Stack,
+    /// The static resources of an [`Engine`].
     ///
-    /// # Note
-    ///
-    /// This reference is mainly used to synchronize back state
-    /// after manipulations to the value stack via `sp`.
-    value_stack: &'engine mut ValueStack,
-    /// The call stack.
-    ///
-    /// # Note
-    ///
-    /// This is used to store the stack of nested function calls.
-    call_stack: &'engine mut CallStack,
-    /// The Wasm function code map.
-    ///
-    /// # Note
-    ///
-    /// This is used to lookup Wasm function information.
-    code_map: &'engine CodeMap,
-    /// The Wasm function type registry.
-    ///
-    /// # Note
-    ///
-    /// This is used to lookup Wasm function information.
-    func_types: &'engine FuncTypeRegistry,
+    /// [`Engine`]: crate::Engine
+    res: &'engine EngineResources,
 }
 
 impl<'engine> Executor<'engine> {
     /// Creates a new [`Executor`] for executing a Wasmi function frame.
     #[inline(always)]
-    pub fn new(
-        value_stack: &'engine mut ValueStack,
-        call_stack: &'engine mut CallStack,
-        code_map: &'engine CodeMap,
-        func_types: &'engine FuncTypeRegistry,
-    ) -> Self {
-        let frame = call_stack
+    pub fn new(stack: &'engine mut Stack, res: &'engine EngineResources) -> Self {
+        let frame = stack
+            .calls
             .peek()
             .expect("must have call frame on the call stack");
         // Safety: We are using the frame's own base offset as input because it is
         //         guaranteed by the Wasm validation and translation phase to be
         //         valid for all register indices used by the associated function body.
-        let sp = unsafe { value_stack.stack_ptr_at(frame.base_offset()) };
+        let sp = unsafe { stack.values.stack_ptr_at(frame.base_offset()) };
         let ip = frame.instr_ptr();
         Self {
             sp,
             ip,
             memory: CachedMemory::default(),
             global: CachedGlobal::default(),
-            value_stack,
-            call_stack,
-            code_map,
-            func_types,
+            stack,
+            res,
         }
     }
 
@@ -160,7 +135,7 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn execute<T>(mut self, store: &mut Store<T>) -> Result<(), Error> {
         use Instruction as Instr;
-        let instance = Self::instance(self.call_stack);
+        let instance = Self::instance(&self.stack.calls);
         self.memory.update(&mut store.inner, instance);
         self.global.update(&mut store.inner, instance);
         loop {
@@ -914,7 +889,7 @@ macro_rules! get_entity {
             )]
             #[inline]
             fn $name(&self, store: &StoreInner, index: $index_ty) -> $id_ty {
-                let instance = Self::instance(self.call_stack);
+                let instance = Self::instance(&self.stack.calls);
                 let index = ::core::primitive::u32::from(index);
                 store
                     .resolve_instance(instance)
@@ -1037,7 +1012,7 @@ impl<'engine> Executor<'engine> {
     ///
     /// The initialization of the [`Executor`] allows for efficient execution.
     fn init_call_frame(&mut self, frame: &CallFrame) {
-        Self::init_call_frame_impl(self.value_stack, &mut self.sp, &mut self.ip, frame)
+        Self::init_call_frame_impl(&mut self.stack.values, &mut self.sp, &mut self.ip, frame)
     }
 
     /// Initializes the [`Executor`] state for the [`CallFrame`].

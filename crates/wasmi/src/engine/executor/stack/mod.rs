@@ -22,10 +22,10 @@ fn err_stack_overflow() -> TrapCode {
 /// Data structure that combines both value stack and call stack.
 #[derive(Debug, Default)]
 pub struct Stack {
-    /// The value stack.
-    pub values: ValueStack,
     /// The call stack.
     pub calls: CallStack,
+    /// The value stack.
+    pub values: ValueStack,
 }
 
 impl Stack {
@@ -49,13 +49,13 @@ impl Stack {
             limits.initial_value_stack_height,
             limits.maximum_value_stack_height,
         );
-        Self { values, calls }
+        Self { calls, values }
     }
 
     /// Resets the [`Stack`] for clean reuse.
     pub fn reset(&mut self) {
-        self.values.reset();
         self.calls.reset();
+        self.values.reset();
     }
 
     /// Create an empty [`Stack`].
@@ -98,12 +98,8 @@ impl Stack {
     /// all [`FrameRegisters`] affected by this.
     #[inline(always)]
     #[must_use]
-    pub unsafe fn merge_call_frames(
-        call_stack: &mut CallStack,
-        value_stack: &mut ValueStack,
-        callee: &mut CallFrame,
-    ) -> Option<Instance> {
-        let (caller, instance) = call_stack.pop().expect("caller call frame must exist");
+    pub unsafe fn merge_call_frames(&mut self, callee: &mut CallFrame) -> Option<Instance> {
+        let (caller, instance) = self.calls.pop().expect("caller call frame must exist");
         debug_assert_eq!(callee.results(), caller.results());
         debug_assert!(caller.base_offset() <= callee.base_offset());
         // Safety:
@@ -112,7 +108,9 @@ impl Stack {
         // Therefore only value stack offsets of the top-most call frame on the
         // value stack are going to be invalidated which we ensure to adjust and
         // reinstantiate after this operation.
-        let len_drained = value_stack.drain(caller.frame_offset(), callee.frame_offset());
+        let len_drained = self
+            .values
+            .drain(caller.frame_offset(), callee.frame_offset());
         callee.move_down(len_drained);
         instance
     }

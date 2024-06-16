@@ -97,7 +97,7 @@ impl<'engine> Executor<'engine> {
                 // The `memory.grow` operation might have invalidated the cached
                 // linear memory so we need to reset it in order for the cache to
                 // reload in case it is used again.
-                let instance = Self::instance(self.call_stack);
+                let instance = Self::instance(&self.stack.calls);
                 self.memory.update(store, instance);
                 return_value
             }

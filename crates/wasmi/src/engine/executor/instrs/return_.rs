@@ -26,18 +26,24 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn return_impl(&mut self, store: &mut StoreInner) -> ReturnOutcome {
         let (returned, popped_instance) = self
-            .call_stack
+            .stack
+            .calls
             .pop()
             .expect("the executing call frame is always on the stack");
-        self.value_stack.truncate(returned.frame_offset());
-        let new_instance = popped_instance.and_then(|_| self.call_stack.instance());
+        self.stack.values.truncate(returned.frame_offset());
+        let new_instance = popped_instance.and_then(|_| self.stack.calls.instance());
         if let Some(new_instance) = new_instance {
             self.global.update(store, new_instance);
             self.memory.update(store, new_instance);
         }
-        match self.call_stack.peek() {
+        match self.stack.calls.peek() {
             Some(caller) => {
-                Self::init_call_frame_impl(self.value_stack, &mut self.sp, &mut self.ip, caller);
+                Self::init_call_frame_impl(
+                    &mut self.stack.values,
+                    &mut self.sp,
+                    &mut self.ip,
+                    caller,
+                );
                 ReturnOutcome::Wasm
             }
             None => ReturnOutcome::Host,
@@ -56,7 +62,8 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn return_caller_results(&mut self) -> (FrameRegisters, RegisterSpan) {
         let (callee, caller) = self
-            .call_stack
+            .stack
+            .calls
             .peek_2()
             .expect("the callee must exist on the call stack");
         match caller {
@@ -68,7 +75,7 @@ impl<'engine> Executor<'engine> {
                 //
                 // Safety: The caller call frame is still live on the value stack
                 //         and therefore it is safe to acquire its value stack pointer.
-                let caller_sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
+                let caller_sp = unsafe { self.stack.values.stack_ptr_at(caller.base_offset()) };
                 let results = callee.results();
                 (caller_sp, results)
             }
@@ -77,7 +84,7 @@ impl<'engine> Executor<'engine> {
                 //
                 // In this case we transfer the single return `value` to the root
                 // register span of the entire value stack which is simply its zero index.
-                let dst_sp = self.value_stack.root_stack_ptr();
+                let dst_sp = self.stack.values.root_stack_ptr();
                 let results = RegisterSpan::new(Register::from_i16(0));
                 (dst_sp, results)
             }
