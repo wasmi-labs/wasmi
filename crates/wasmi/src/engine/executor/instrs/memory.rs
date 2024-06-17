@@ -238,7 +238,6 @@ impl<'engine> Executor<'engine> {
     ) -> Result<(), Error> {
         let src_index = src_index as usize;
         let dst_index = dst_index as usize;
-        let fuel = store.fuel_mut();
         // Safety: The Wasmi executor keep track of the current Wasm instance
         //         being used and properly updates the cached linear memory
         //         whenever needed.
@@ -252,7 +251,7 @@ impl<'engine> Executor<'engine> {
             .get(dst_index..)
             .and_then(|memory| memory.get(..len as usize))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
-        fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(u64::from(len)))?;
+        store.fuel_mut().consume_fuel_if(|costs| costs.fuel_for_bytes(u64::from(len)))?;
         memory.copy_within(src_index..src_index.wrapping_add(len as usize), dst_index);
         self.try_next_instr()
     }
@@ -383,7 +382,6 @@ impl<'engine> Executor<'engine> {
     ) -> Result<(), Error> {
         let dst = dst as usize;
         let len = len as usize;
-        let fuel = store.fuel_mut();
         // Safety: The Wasmi executor keep track of the current Wasm instance
         //         being used and properly updates the cached linear memory
         //         whenever needed.
@@ -392,7 +390,7 @@ impl<'engine> Executor<'engine> {
             .get_mut(dst..)
             .and_then(|memory| memory.get_mut(..len))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
-        fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(len as u64))?;
+        store.fuel_mut().consume_fuel_if(|costs| costs.fuel_for_bytes(len as u64))?;
         slice.fill(value);
         self.try_next_instr()
     }
