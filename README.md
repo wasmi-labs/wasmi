@@ -43,6 +43,10 @@ The following list states some of the distinct features of Wasmi.
 - 100% WebAssembly spec testsuite compliance.
 - Built-in support for fuel metering.
 
+## Usage
+
+Refer to the [Wasmi usage guide](./docs/usage.md) to learn how properly to use [Wasmi](https://crates.io/crates/wasmi).
+
 ## WebAssembly Proposals
 
 The new Wasmi engine supports a variety of WebAssembly proposals and will support even more of them in the future.
@@ -99,10 +103,6 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 [(#776)]: https://github.com/wasmi-labs/wasmi/pull/776
 [(#777)]: https://github.com/wasmi-labs/wasmi/pull/777
 [(#897)]: https://github.com/wasmi-labs/wasmi/pull/897
-
-## Usage
-
-Refer to the [Wasmi usage guide](./docs/usage.md) to learn how properly to use [Wasmi](https://crates.io/crates/wasmi).
 
 ## Development
 
