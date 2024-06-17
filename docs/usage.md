@@ -87,3 +87,23 @@ One way to achieve this is to isolate Wasmi usage into its own crate and apply t
 lto = "fat"
 codegen-units = 1
 ```
+
+## WebAssembly Optimizations
+
+WebAssembly runtimes are fast because they usually are fed with pre-optimized Wasm binaries.  
+This is especially true for Wasm runtimes that have no sophisticated optimizations built-in such as Wasmi.
+
+In order to reap the most out of your WebAssembly experience make sure to always apply proper optimizations on your programs that are being compiled to WebAssembly before executing them via Wasmi.
+
+For compiling a Rust application to WebAssembly make sure to use the following profile:
+
+```toml
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+```
+
+After compilation via the Rust compiler it is recommended to apply [Binaryen]'s `wasm-opt` on the resulting Wasm binary as a post-optimization routine.
+
+[Binaryen]: https://github.com/WebAssembly/binaryen
