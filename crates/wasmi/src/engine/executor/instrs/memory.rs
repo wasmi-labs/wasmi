@@ -97,8 +97,7 @@ impl<'engine> Executor<'engine> {
                 // The `memory.grow` operation might have invalidated the cached
                 // linear memory so we need to reset it in order for the cache to
                 // reload in case it is used again.
-                let instance = Self::instance(&self.stack.calls);
-                self.memory.update(store, instance);
+                self.cache.update_memory(store);
                 return_value
             }
             Err(EntityGrowError::InvalidGrow) => EntityGrowError::ERROR_CODE,
@@ -242,7 +241,7 @@ impl<'engine> Executor<'engine> {
         // Safety: The Wasmi executor keep track of the current Wasm instance
         //         being used and properly updates the cached linear memory
         //         whenever needed.
-        let memory = unsafe { self.memory.data_mut() };
+        let memory = unsafe { self.cache.memory.data_mut() };
         // These accesses just perform the bounds checks required by the Wasm spec.
         memory
             .get(src_index..)
@@ -389,7 +388,7 @@ impl<'engine> Executor<'engine> {
         // Safety: The Wasmi executor keep track of the current Wasm instance
         //         being used and properly updates the cached linear memory
         //         whenever needed.
-        let memory = unsafe { self.memory.data_mut() };
+        let memory = unsafe { self.cache.memory.data_mut() };
         let slice = memory
             .get_mut(dst..)
             .and_then(|memory| memory.get_mut(..len))
@@ -539,7 +538,7 @@ impl<'engine> Executor<'engine> {
         // Safety: The Wasmi executor keep track of the current Wasm instance
         //         being used and properly updates the cached linear memory
         //         whenever needed.
-        let memory = unsafe { self.memory.data_mut() };
+        let memory = unsafe { self.cache.memory.data_mut() };
         let memory = memory
             .get_mut(dst_index..)
             .and_then(|memory| memory.get_mut(..len))

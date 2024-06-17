@@ -1,8 +1,93 @@
-use crate::{core::UntypedVal, module::DEFAULT_MEMORY_INDEX, store::StoreInner, Instance};
+use crate::{
+    core::UntypedVal,
+    instance::InstanceEntity,
+    module::DEFAULT_MEMORY_INDEX,
+    store::StoreInner,
+    Global,
+    Instance,
+    Memory,
+};
 use core::ptr::{self, NonNull};
 
+/// Cached WebAssembly instance.
+#[derive(Debug)]
+pub struct CachedInstance {
+    /// The currently used instance.
+    instance: NonNull<InstanceEntity>,
+    /// The cached bytes of the default linear memory.
+    pub memory: CachedMemory,
+    /// The cached value of the global variable at index 0.
+    pub global: CachedGlobal,
+}
+
+impl CachedInstance {
+    /// Creates a new [`CachedInstance`].
+    #[inline]
+    pub fn new(ctx: &mut StoreInner, instance: &Instance) -> Self {
+        let (instance, memory, global) = Self::load_caches(ctx, instance);
+        Self {
+            instance,
+            memory,
+            global,
+        }
+    }
+
+    /// Loads the [`InstanceEntity`] from the [`StoreInner`].
+    #[inline]
+    fn load_instance<'ctx>(ctx: &'ctx mut StoreInner, instance: &Instance) -> &'ctx InstanceEntity {
+        ctx.resolve_instance(instance)
+    }
+
+    /// Loads the cached global and linear memory.
+    #[inline]
+    fn load_caches(
+        ctx: &mut StoreInner,
+        instance: &Instance,
+    ) -> (NonNull<InstanceEntity>, CachedMemory, CachedGlobal) {
+        let entity = Self::load_instance(ctx, instance);
+        let memory = entity.get_memory(DEFAULT_MEMORY_INDEX);
+        let global = entity.get_global(0);
+        let instance = entity.into();
+        let memory = memory
+            .map(|memory| CachedMemory::new(ctx, &memory))
+            .unwrap_or_default();
+        let global = global
+            .map(|global| CachedGlobal::new(ctx, &global))
+            .unwrap_or_default();
+        (instance, memory, global)
+    }
+
+    /// Update the cached instance, linear memory and global variable.
+    #[inline]
+    pub fn update(&mut self, ctx: &mut StoreInner, instance: &Instance) {
+        (self.instance, self.memory, self.global) = Self::load_caches(ctx, instance);
+    }
+
+    /// Updates the [`CachedMemory`]'s linear memory data pointer.
+    ///
+    /// # Note
+    ///
+    /// This needs to be called whenever the cached pointer might have changed.
+    ///
+    /// The linear memory pointer might change when ...
+    ///
+    /// - calling a host function
+    /// - successfully growing the default linear memory
+    /// - calling functions defined in other instances via imported or indirect calls
+    /// - returning from functions that changed the currently used instance
+    #[inline]
+    pub fn update_memory(&mut self, ctx: &mut StoreInner) {
+        // Safety: TODO
+        let instance = unsafe { self.instance.as_ref() };
+        self.memory = instance
+            .get_memory(DEFAULT_MEMORY_INDEX)
+            .map(|memory| CachedMemory::new(ctx, &memory))
+            .unwrap_or_default();
+    }
+}
+
 /// Cached default linear memory bytes.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct CachedMemory {
     data: NonNull<[u8]>,
 }
@@ -17,21 +102,11 @@ impl Default for CachedMemory {
 }
 
 impl CachedMemory {
-    /// Updates the [`CachedMemory`]'s linear memory data pointer.
-    ///
-    /// # Note
-    ///
-    /// This needs to be called whenever the cached pointer might have changed.
-    ///
-    /// The linear memory pointer might change when ...
-    ///
-    /// - calling a host function
-    /// - successfully growing the default linear memory
-    /// - calling functions defined in other instances via imported or indirect calls
-    /// - returning from functions that changed the currently used instance
+    /// Create a new [`CachedMemory`].
     #[inline]
-    pub fn update(&mut self, ctx: &mut StoreInner, instance: &Instance) {
-        self.data = Self::load_default_memory(ctx, instance);
+    fn new(ctx: &mut StoreInner, instance: &Memory) -> Self {
+        let data = Self::load_default_memory(ctx, instance);
+        Self { data }
     }
 
     /// Loads the default [`Memory`] of the currently used [`Instance`].
@@ -42,12 +117,8 @@ impl CachedMemory {
     ///
     /// [`Memory`]: crate::Memory
     #[inline]
-    fn load_default_memory(ctx: &mut StoreInner, instance: &Instance) -> NonNull<[u8]> {
-        ctx.resolve_instance(instance)
-            .get_memory(DEFAULT_MEMORY_INDEX)
-            .map(|memory| ctx.resolve_memory_mut(&memory).data_mut())
-            .unwrap_or_else(|| &mut [])
-            .into()
+    fn load_default_memory(ctx: &mut StoreInner, memory: &Memory) -> NonNull<[u8]> {
+        ctx.resolve_memory_mut(memory).data_mut().into()
     }
 
     /// Returns a shared slice to the bytes of the cached default linear memory.
@@ -64,7 +135,7 @@ impl CachedMemory {
 }
 
 /// Cached default global variable value.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct CachedGlobal {
     data: NonNull<UntypedVal>,
 }
@@ -92,20 +163,11 @@ static mut FALLBACK_GLOBAL_VALUE: NonNull<UntypedVal> = {
 };
 
 impl CachedGlobal {
-    /// Updates the [`CachedGlobal`]'s data pointer.
-    ///
-    /// # Note
-    ///
-    /// This needs to be called whenever the cached pointer might have changed.
-    ///
-    /// The global variable pointer might change when ...
-    ///
-    /// - calling a host function
-    /// - calling functions defined in other instances via imported or indirect calls
-    /// - returning from functions that changed the currently used instance
+    /// Create a new [`CachedGlobal`].
     #[inline]
-    pub fn update(&mut self, ctx: &mut StoreInner, instance: &Instance) {
-        self.data = Self::load_global(ctx, instance);
+    fn new(ctx: &mut StoreInner, global: &Global) -> Self {
+        let data = Self::load_global(ctx, global);
+        Self { data }
     }
 
     /// Loads the default [`Global`] of the currently used [`Instance`].
@@ -116,11 +178,8 @@ impl CachedGlobal {
     ///
     /// [`Global`]: crate::Global
     #[inline]
-    fn load_global(ctx: &mut StoreInner, instance: &Instance) -> NonNull<UntypedVal> {
-        ctx.resolve_instance(instance)
-            .get_global(0)
-            .map(|global| ctx.resolve_global_mut(&global).get_untyped_ptr())
-            .unwrap_or_else(|| unsafe { FALLBACK_GLOBAL_VALUE })
+    fn load_global(ctx: &mut StoreInner, global: &Global) -> NonNull<UntypedVal> {
+        ctx.resolve_global_mut(global).get_untyped_ptr()
     }
 
     /// Returns the value of the cached global variable.

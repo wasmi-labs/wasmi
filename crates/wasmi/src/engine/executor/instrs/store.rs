@@ -47,7 +47,7 @@ impl<'engine> Executor<'engine> {
     ) -> Result<(), Error> {
         // Safety: `self.memory` is always re-loaded conservatively whenever
         //         the heap allocations and thus the pointer might have changed.
-        let memory = unsafe { self.memory.data_mut() };
+        let memory = unsafe { self.cache.memory.data_mut() };
         store_wrap(memory, address, offset, value)?;
         Ok(())
     }

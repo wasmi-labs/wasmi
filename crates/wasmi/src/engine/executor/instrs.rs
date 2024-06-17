@@ -1,9 +1,6 @@
 pub use self::call::{dispatch_host_func, ResumableHostError};
 use self::return_::ReturnOutcome;
-use super::{
-    cache::{CachedGlobal, CachedMemory},
-    Stack,
-};
+use super::{cache::CachedInstance, Stack};
 use crate::{
     core::{TrapCode, UntypedVal},
     engine::{
@@ -78,7 +75,12 @@ pub fn execute_instrs<'engine, T>(
     stack: &'engine mut Stack,
     res: &'engine EngineResources,
 ) -> Result<(), Error> {
-    Executor::new(stack, res).execute(store)
+    let instance = stack
+        .calls
+        .instance()
+        .expect("must have instance on the call stack");
+    let cache = CachedInstance::new(&mut store.inner, instance);
+    Executor::new(stack, res, cache).execute(store)
 }
 
 /// An execution context for executing a Wasmi function frame.
@@ -88,10 +90,8 @@ struct Executor<'engine> {
     sp: FrameRegisters,
     /// The pointer to the currently executed instruction.
     ip: InstructionPtr,
-    /// The cached default memory bytes.
-    memory: CachedMemory,
-    /// The cached global variable at index 0.
-    global: CachedGlobal,
+    /// The cached instance and instance related data.
+    cache: CachedInstance,
     /// The value and call stacks.
     stack: &'engine mut Stack,
     /// The static resources of an [`Engine`].
@@ -103,7 +103,11 @@ struct Executor<'engine> {
 impl<'engine> Executor<'engine> {
     /// Creates a new [`Executor`] for executing a Wasmi function frame.
     #[inline(always)]
-    pub fn new(stack: &'engine mut Stack, res: &'engine EngineResources) -> Self {
+    pub fn new(
+        stack: &'engine mut Stack,
+        res: &'engine EngineResources,
+        cache: CachedInstance,
+    ) -> Self {
         let frame = stack
             .calls
             .peek()
@@ -116,8 +120,7 @@ impl<'engine> Executor<'engine> {
         Self {
             sp,
             ip,
-            memory: CachedMemory::default(),
-            global: CachedGlobal::default(),
+            cache,
             stack,
             res,
         }
@@ -135,9 +138,6 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn execute<T>(mut self, store: &mut Store<T>) -> Result<(), Error> {
         use Instruction as Instr;
-        let instance = Self::instance(&self.stack.calls);
-        self.memory.update(&mut store.inner, instance);
-        self.global.update(&mut store.inner, instance);
         loop {
             match *self.ip.get() {
                 Instr::Trap(trap_code) => self.execute_trap(trap_code)?,
