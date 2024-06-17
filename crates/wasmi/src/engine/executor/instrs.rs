@@ -16,11 +16,13 @@ use crate::{
             GlobalIdx,
             Instruction,
             Register,
+            SignatureIdx,
             TableIdx,
             UnaryInstr,
         },
         code_map::InstructionPtr,
         executor::stack::{CallFrame, CallStack, FrameRegisters, ValueStack},
+        DedupFuncType,
         EngineResources,
     },
     memory::DataSegment,
@@ -367,9 +369,7 @@ impl<'engine> Executor<'engine> {
                     result_or_condition,
                     lhs_or_rhs,
                 } => self.execute_select_f64imm32(result_or_condition, lhs_or_rhs),
-                Instr::RefFunc { result, func } => {
-                    self.execute_ref_func(&mut store.inner, result, func)
-                }
+                Instr::RefFunc { result, func } => self.execute_ref_func(result, func),
                 Instr::GlobalGet { result, global } => {
                     self.execute_global_get(&store.inner, result, global)
                 }
@@ -880,24 +880,19 @@ macro_rules! get_entity {
             #[doc = ::core::concat!(
                 "Returns the [`",
                 ::core::stringify!($id_ty),
-                "`] at `index` for the currently used [`Instance`] in `store`.\n\n",
+                "`] at `index` for the currently used [`Instance`].\n\n",
                 "# Panics\n\n",
-                "- If the current [`Instance`] does not belong to `ctx`.\n",
                 "- If there is no [`",
                 ::core::stringify!($id_ty),
                 "`] at `index` for the currently used [`Instance`] in `store`."
             )]
             #[inline]
-            fn $name(&self, store: &StoreInner, index: $index_ty) -> $id_ty {
-                let instance = Self::instance(&self.stack.calls);
-                let index = ::core::primitive::u32::from(index);
-                store
-                    .resolve_instance(instance)
-                    .$name(index)
+            fn $name(&self, index: $index_ty) -> $id_ty {
+                unsafe { self.cache.$name(index) }
                     .unwrap_or_else(|| {
                         const ENTITY_NAME: &'static str = ::core::stringify!($id_ty);
                         ::core::unreachable!(
-                            "missing {ENTITY_NAME} at index {index:?} for instance: {instance:?}",
+                            "missing {ENTITY_NAME} at index {index:?} for the currently used instance",
                         )
                     })
             }
@@ -908,6 +903,7 @@ macro_rules! get_entity {
 impl<'engine> Executor<'engine> {
     get_entity! {
         fn get_func(&self, store: &StoreInner, index: FuncIdx) -> Func;
+        fn get_func_type_dedup(&self, store: &StoreInner, index: SignatureIdx) -> DedupFuncType;
         fn get_memory(&self, store: &StoreInner, index: u32) -> Memory;
         fn get_table(&self, store: &StoreInner, index: TableIdx) -> Table;
         fn get_global(&self, store: &StoreInner, index: GlobalIdx) -> Global;
@@ -922,8 +918,8 @@ impl<'engine> Executor<'engine> {
     /// - If the current [`Instance`] does not belong to `ctx`.
     /// - If the current [`Instance`] does not have a linear memory.
     #[inline]
-    fn get_default_memory(&self, store: &StoreInner) -> Memory {
-        self.get_memory(store, DEFAULT_MEMORY_INDEX)
+    fn get_default_memory(&self) -> Memory {
+        self.get_memory(DEFAULT_MEMORY_INDEX)
     }
 
     /// Returns the [`Register`] value.
@@ -1204,8 +1200,8 @@ impl<'engine> Executor<'engine> {
 
     /// Executes an [`Instruction::RefFunc`].
     #[inline(always)]
-    fn execute_ref_func(&mut self, store: &mut StoreInner, result: Register, func_index: FuncIdx) {
-        let func = self.get_func(store, func_index);
+    fn execute_ref_func(&mut self, result: Register, func_index: FuncIdx) {
+        let func = self.get_func(func_index);
         let funcref = FuncRef::new(func);
         self.set_register(result, funcref);
         self.next_instr();

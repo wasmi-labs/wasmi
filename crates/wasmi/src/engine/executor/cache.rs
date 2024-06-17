@@ -1,11 +1,19 @@
 use crate::{
     core::UntypedVal,
+    engine::{
+        bytecode::{DataSegmentIdx, ElementSegmentIdx, FuncIdx, GlobalIdx, SignatureIdx, TableIdx},
+        DedupFuncType,
+    },
     instance::InstanceEntity,
+    memory::DataSegment,
     module::DEFAULT_MEMORY_INDEX,
     store::StoreInner,
+    table::ElementSegment,
+    Func,
     Global,
     Instance,
     Memory,
+    Table,
 };
 use core::ptr::{self, NonNull};
 
@@ -63,6 +71,16 @@ impl CachedInstance {
         (self.instance, self.memory, self.global) = Self::load_caches(ctx, instance);
     }
 
+    /// Returns a shared reference to the cached [`InstanceEntity`].
+    ///
+    /// # Safety
+    ///
+    /// It is the callers responsibility to use this method only when the caches are fresh.
+    #[inline]
+    unsafe fn as_ref(&self) -> &InstanceEntity {
+        unsafe { self.instance.as_ref() }
+    }
+
     /// Updates the [`CachedMemory`]'s linear memory data pointer.
     ///
     /// # Note
@@ -75,14 +93,94 @@ impl CachedInstance {
     /// - successfully growing the default linear memory
     /// - calling functions defined in other instances via imported or indirect calls
     /// - returning from functions that changed the currently used instance
+    ///
+    /// # Safety
+    ///
+    /// It is the callers responsibility to use this method only when the caches are fresh.
     #[inline]
-    pub fn update_memory(&mut self, ctx: &mut StoreInner) {
-        // Safety: TODO
-        let instance = unsafe { self.instance.as_ref() };
+    pub unsafe fn update_memory(&mut self, ctx: &mut StoreInner) {
+        let instance = unsafe { self.as_ref() };
         self.memory = instance
             .get_memory(DEFAULT_MEMORY_INDEX)
             .map(|memory| CachedMemory::new(ctx, &memory))
             .unwrap_or_default();
+    }
+
+    /// Returns the [`Func`] at the `index` if any.
+    ///
+    /// # Safety
+    ///
+    /// It is the callers responsibility to use this method only when the caches are fresh.
+    #[inline]
+    pub unsafe fn get_func(&self, index: FuncIdx) -> Option<Func> {
+        let instance = unsafe { self.as_ref() };
+        instance.get_func(u32::from(index))
+    }
+
+    /// Returns the [`Memory`] at the `index` if any.
+    ///
+    /// # Safety
+    ///
+    /// It is the callers responsibility to use this method only when the caches are fresh.
+    #[inline]
+    pub unsafe fn get_memory(&self, index: u32) -> Option<Memory> {
+        let instance = unsafe { self.as_ref() };
+        instance.get_memory(index)
+    }
+
+    /// Returns the [`Table`] at the `index` if any.
+    ///
+    /// # Safety
+    ///
+    /// It is the callers responsibility to use this method only when the caches are fresh.
+    #[inline]
+    pub unsafe fn get_table(&self, index: TableIdx) -> Option<Table> {
+        let instance = unsafe { self.as_ref() };
+        instance.get_table(u32::from(index))
+    }
+
+    /// Returns the [`Global`] at the `index` if any.
+    ///
+    /// # Safety
+    ///
+    /// It is the callers responsibility to use this method only when the caches are fresh.
+    #[inline]
+    pub unsafe fn get_global(&self, index: GlobalIdx) -> Option<Global> {
+        let instance = unsafe { self.as_ref() };
+        instance.get_global(u32::from(index))
+    }
+
+    /// Returns the [`DataSegment`] at the `index` if any.
+    ///
+    /// # Safety
+    ///
+    /// It is the callers responsibility to use this method only when the caches are fresh.
+    #[inline]
+    pub unsafe fn get_data_segment(&self, index: DataSegmentIdx) -> Option<DataSegment> {
+        let instance = unsafe { self.as_ref() };
+        instance.get_data_segment(u32::from(index))
+    }
+
+    /// Returns the [`ElementSegment`] at the `index` if any.
+    ///
+    /// # Safety
+    ///
+    /// It is the callers responsibility to use this method only when the caches are fresh.
+    #[inline]
+    pub unsafe fn get_element_segment(&self, index: ElementSegmentIdx) -> Option<ElementSegment> {
+        let instance = unsafe { self.as_ref() };
+        instance.get_element_segment(u32::from(index))
+    }
+
+    /// Returns the [`DedupFuncType`] at the `index` if any.
+    ///
+    /// # Safety
+    ///
+    /// It is the callers responsibility to use this method only when the caches are fresh.
+    #[inline]
+    pub unsafe fn get_func_type_dedup(&self, index: SignatureIdx) -> Option<DedupFuncType> {
+        let instance = unsafe { self.as_ref() };
+        instance.get_signature(u32::from(index)).copied()
     }
 }
 

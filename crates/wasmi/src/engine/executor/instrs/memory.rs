@@ -26,7 +26,7 @@ impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::DataDrop`].
     #[inline(always)]
     pub fn execute_data_drop(&mut self, store: &mut StoreInner, segment_index: DataSegmentIdx) {
-        let segment = self.get_data_segment(store, segment_index);
+        let segment = self.get_data_segment(segment_index);
         store.resolve_data_segment_mut(&segment).drop_bytes();
         self.next_instr();
     }
@@ -34,7 +34,7 @@ impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::MemorySize`].
     #[inline(always)]
     pub fn execute_memory_size(&mut self, store: &StoreInner, result: Register) {
-        let memory = self.get_default_memory(store);
+        let memory = self.get_default_memory();
         let size: u32 = store.resolve_memory(&memory).current_pages().into();
         self.set_register(result, size);
         self.next_instr()
@@ -87,7 +87,7 @@ impl<'engine> Executor<'engine> {
                 return self.try_next_instr();
             }
         };
-        let memory = self.get_default_memory(store);
+        let memory = self.get_default_memory();
         let (memory, fuel) = store.resolve_memory_and_fuel_mut(&memory);
         let return_value = memory
             .grow(delta, Some(fuel), resource_limiter)
@@ -97,7 +97,9 @@ impl<'engine> Executor<'engine> {
                 // The `memory.grow` operation might have invalidated the cached
                 // linear memory so we need to reset it in order for the cache to
                 // reload in case it is used again.
-                self.cache.update_memory(store);
+                //
+                // Safety: the instance has not changed thus calling this is valid.
+                unsafe { self.cache.update_memory(store) };
                 return_value
             }
             Err(EntityGrowError::InvalidGrow) => EntityGrowError::ERROR_CODE,
@@ -533,8 +535,7 @@ impl<'engine> Executor<'engine> {
         let src_index = src as usize;
         let len = len as usize;
         let data_index: DataSegmentIdx = self.fetch_data_segment_index(1);
-        let (data, fuel) =
-            store.resolve_data_and_fuel_mut(&self.get_data_segment(store, data_index));
+        let (data, fuel) = store.resolve_data_and_fuel_mut(&self.get_data_segment(data_index));
         // Safety: The Wasmi executor keep track of the current Wasm instance
         //         being used and properly updates the cached linear memory
         //         whenever needed.

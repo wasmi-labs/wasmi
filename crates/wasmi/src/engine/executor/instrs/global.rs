@@ -16,7 +16,7 @@ impl<'engine> Executor<'engine> {
             0 => unsafe { self.cache.global.get() },
             _ => {
                 hint::cold();
-                let global = self.get_global(store, global);
+                let global = self.get_global(global);
                 store.resolve_global(&global).get_untyped()
             }
         };
@@ -72,7 +72,7 @@ impl<'engine> Executor<'engine> {
             0 => unsafe { self.cache.global.set(new_value) },
             _ => {
                 hint::cold();
-                let global = self.get_global(store, global);
+                let global = self.get_global(global);
                 store.resolve_global_mut(&global).set_untyped(new_value)
             }
         };
