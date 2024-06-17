@@ -1,4 +1,4 @@
-# Guide: Wasmi Usage
+# Wasmi Usage Guide
 
 This document briefly explains how to use Wasmi as a Rust dependency and get the most out of it performance-wise.
 
