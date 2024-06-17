@@ -229,6 +229,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `memory.copy` instruction.
+    #[inline(never)]
     fn execute_memory_copy_impl(
         &mut self,
         store: &mut StoreInner,
@@ -375,6 +376,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `memory.fill` instruction.
+    #[inline(never)]
     fn execute_memory_fill_impl(
         &mut self,
         store: &mut StoreInner,
@@ -520,6 +522,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `memory.init` instruction.
+    #[inline(never)]
     fn execute_memory_init_impl(
         &mut self,
         store: &mut StoreInner,
