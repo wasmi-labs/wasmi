@@ -112,6 +112,7 @@ criterion_group! {
         bench_execute_memory_sum,
         bench_execute_memory_fill,
         bench_execute_vec_add,
+        bench_execute_bulk_ops,
 }
 
 criterion_main!(
@@ -1475,5 +1476,22 @@ fn bench_execute_vec_add(c: &mut Criterion) {
             (0..len).map(|i| (i * i) as i32),
             (0..len).map(|i| (i * 10) as i32),
         )
+    });
+}
+
+fn bench_execute_bulk_ops(c: &mut Criterion) {
+    const ITERATIONS: i64 = 5_000;
+    c.bench_function("execute/memory/bulk-ops", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bulk-ops.wat"));
+        let run = instance
+            .get_export(&store, "run")
+            .and_then(Extern::into_func)
+            .unwrap()
+            .typed::<i64, i64>(&store)
+            .unwrap();
+
+        b.iter(|| {
+            run.call(&mut store, ITERATIONS).unwrap();
+        })
     });
 }
