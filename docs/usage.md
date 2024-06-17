@@ -63,7 +63,7 @@ codegen-units = 1
 
 Read more about Cargo profiles [here](https://doc.rust-lang.org/cargo/reference/profiles.html).
 
-### Footgun: Profile Overwrites
+## Footgun: Profile Overwrites
 
 Before Wasmi v0.32 it was possible to apply certain optimization just to Wasmi via [Cargo profile overwrites](https://doc.rust-lang.org/cargo/reference/profiles.html#overrides):
 
