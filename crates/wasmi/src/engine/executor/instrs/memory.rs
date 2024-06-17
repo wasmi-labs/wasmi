@@ -229,6 +229,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `memory.copy` instruction.
+    #[inline(never)]
     fn execute_memory_copy_impl(
         &mut self,
         store: &mut StoreInner,
@@ -238,18 +239,23 @@ impl<'engine> Executor<'engine> {
     ) -> Result<(), Error> {
         let src_index = src_index as usize;
         let dst_index = dst_index as usize;
-        let default_memory = self.get_default_memory(store);
-        let (memory, fuel) = store.resolve_memory_and_fuel_mut(&default_memory);
-        let data = memory.data_mut();
+        // Safety: The Wasmi executor keep track of the current Wasm instance
+        //         being used and properly updates the cached linear memory
+        //         whenever needed.
+        let memory = unsafe { self.memory.data_mut() };
         // These accesses just perform the bounds checks required by the Wasm spec.
-        data.get(src_index..)
+        memory
+            .get(src_index..)
             .and_then(|memory| memory.get(..len as usize))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
-        data.get(dst_index..)
+        memory
+            .get(dst_index..)
             .and_then(|memory| memory.get(..len as usize))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
-        fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(u64::from(len)))?;
-        data.copy_within(src_index..src_index.wrapping_add(len as usize), dst_index);
+        store
+            .fuel_mut()
+            .consume_fuel_if(|costs| costs.fuel_for_bytes(u64::from(len)))?;
+        memory.copy_within(src_index..src_index.wrapping_add(len as usize), dst_index);
         self.try_next_instr()
     }
 
@@ -370,6 +376,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `memory.fill` instruction.
+    #[inline(never)]
     fn execute_memory_fill_impl(
         &mut self,
         store: &mut StoreInner,
@@ -379,15 +386,18 @@ impl<'engine> Executor<'engine> {
     ) -> Result<(), Error> {
         let dst = dst as usize;
         let len = len as usize;
-        let default_memory = self.get_default_memory(store);
-        let (memory, fuel) = store.resolve_memory_and_fuel_mut(&default_memory);
-        let memory = memory
-            .data_mut()
+        // Safety: The Wasmi executor keep track of the current Wasm instance
+        //         being used and properly updates the cached linear memory
+        //         whenever needed.
+        let memory = unsafe { self.memory.data_mut() };
+        let slice = memory
             .get_mut(dst..)
             .and_then(|memory| memory.get_mut(..len))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
-        fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(len as u64))?;
-        memory.fill(value);
+        store
+            .fuel_mut()
+            .consume_fuel_if(|costs| costs.fuel_for_bytes(len as u64))?;
+        slice.fill(value);
         self.try_next_instr()
     }
 
@@ -512,6 +522,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `memory.init` instruction.
+    #[inline(never)]
     fn execute_memory_init_impl(
         &mut self,
         store: &mut StoreInner,
@@ -523,14 +534,13 @@ impl<'engine> Executor<'engine> {
         let src_index = src as usize;
         let len = len as usize;
         let data_index: DataSegmentIdx = self.fetch_data_segment_index(1);
-        // TODO: We could re-use the `CachedMemory` here instead of resolving it.
-        //       Once Wasmi supports `multi-memory` this is required to be reverted again though.
-        let (memory, data, fuel) = store.resolve_memory_init_triplet(
-            &self.get_default_memory(store),
-            &self.get_data_segment(store, data_index),
-        );
+        let (data, fuel) =
+            store.resolve_data_and_fuel_mut(&self.get_data_segment(store, data_index));
+        // Safety: The Wasmi executor keep track of the current Wasm instance
+        //         being used and properly updates the cached linear memory
+        //         whenever needed.
+        let memory = unsafe { self.memory.data_mut() };
         let memory = memory
-            .data_mut()
             .get_mut(dst_index..)
             .and_then(|memory| memory.get_mut(..len))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
