@@ -740,7 +740,7 @@ impl StoreInner {
         (memory, fuel)
     }
 
-    /// Returns an exclusive reference to the [`DataEntity`] associated to the given [`Memory`].
+    /// Returns an exclusive reference to the [`DataSegmentEntity`] associated to the given [`Memory`].
     ///
     /// # Panics
     ///
