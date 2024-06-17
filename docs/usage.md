@@ -4,15 +4,29 @@ This document briefly explains how to use Wasmi as a Rust dependency and get the
 
 Refer to the [Wasmi crate docs](https://docs.rs/wasmi) to learn how to use the [Wasmi crate](https://crates.io/crates/wasmi) as library. Reading the API docs provide a good overview of Wasmi's potential and possibilities.
 
-## Installation
+## Usage: As CLI Installation
 
-This article does _not_ detail usage of the Wasmi CLI tool. However, in case you came here for that, use the following command to install the Wasmi CLI application:
+Install the newest Wasmi CLI version using:
 
 ```
 cargo install wasmi_cli
 ```
 
-## Cargo
+Then run `wasm32-unknown-unknown` or `wasm32-wasi` Wasm binaries via:
+
+```console
+wasmi_cli <WASM_FILE> --invoke <FUNC_NAME> [<FUNC_ARGS>]
+```
+
+Where
+
+- `<WASM_FILE>` is the path to your WebAssembly binary
+- `<FUNC_NAME>` is the name of the _exported_ function that you want to invoke.
+- `[<FUNC_ARGS>]` is the list of parameters with which to invoke the _exported_ function specified as `FUNC_NAME`.
+
+## Usage: As Rust Dependency
+
+### Cargo
 
 Incorporate Wasmi in your Rust application in the usual way by adding it to your projects `Cargo.toml` file:
 
@@ -23,7 +37,7 @@ wasmi = "0.32"
 
 Alternatively use `cargo add wasmi` which automatically uses the most recent version of a new dependency that is applicable.
 
-## Embedded Environments
+### Embedded Environments
 
 If you want to use Wasmi in an embedded environment that happens to _not_ support Rust's `std` facilities you can simply disable Wasmi's default features.
 
@@ -34,7 +48,7 @@ wasmi = { version = "0.32", default-features = false }
 
 This disables Wasmi's `std` feature which is enabled by default and thus makes Wasmi usable in `no_std` Rust environments.
 
-## Optimizations
+### Optimizations
 
 Wasmi heavily depends on proper Rust and LLVM optimizations. The difference between a `debug` Wasmi build and a properly optimized one can be 100x.
 
@@ -63,7 +77,7 @@ codegen-units = 1
 
 Read more about Cargo profiles [here](https://doc.rust-lang.org/cargo/reference/profiles.html).
 
-## Footgun: Profile Overwrites
+### Footgun: Profile Overwrites
 
 Before Wasmi v0.32 it was possible to apply certain optimization just to Wasmi via [Cargo profile overwrites](https://doc.rust-lang.org/cargo/reference/profiles.html#overrides):
 
