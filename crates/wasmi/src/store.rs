@@ -740,12 +740,12 @@ impl StoreInner {
         (memory, fuel)
     }
 
-    /// Returns an exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`].
+    /// Returns an exclusive reference to the [`DataEntity`] associated to the given [`Memory`].
     ///
     /// # Panics
     ///
-    /// - If the [`Memory`] does not originate from this [`Store`].
-    /// - If the [`Memory`] cannot be resolved to its entity.
+    /// - If the [`DataSegment`] does not originate from this [`Store`].
+    /// - If the [`DataSegment`] cannot be resolved to its entity.
     pub fn resolve_data_and_fuel_mut(
         &mut self,
         data: &DataSegment,
