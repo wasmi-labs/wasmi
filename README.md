@@ -115,7 +115,7 @@ wasmi_cli <WASM_FILE> --invoke <FUNC_NAME> [<FUNC_ARGS>]*
 
 ### As Rust Library
 
-Refer to the [Wasmi crate docs](https://docs.rs/wasmi) to learn how to use the [Wasmi crate](https://crates.io/crates/wasmi) as library.
+Refer to the [Wasmi usage guide](./docs/usage.md) to learn how properly to use the [Wasmi crate](https://crates.io/crates/wasmi) as library. 
 
 ## Development
 
