@@ -1,8 +1,6 @@
 # Wasmi Usage Guide
 
-This document briefly explains how to use Wasmi as a Rust dependency and get the most out of it performance-wise.
-
-Refer to the [Wasmi crate docs](https://docs.rs/wasmi) to learn how to use the [Wasmi crate](https://crates.io/crates/wasmi) as library. Reading the API docs provide a good overview of Wasmi's potential and possibilities.
+This document briefly explains how to properly use Wasmi and get the most out of it performance-wise.
 
 ## Usage: As CLI Installation
 
@@ -25,6 +23,8 @@ Where
 - `[<FUNC_ARGS>]` is the list of parameters with which to invoke the _exported_ function specified as `FUNC_NAME`.
 
 ## Usage: As Rust Dependency
+
+Refer to the [Wasmi crate docs](https://docs.rs/wasmi) to learn how to use the [Wasmi crate](https://crates.io/crates/wasmi) as Rust dependency. Reading the API docs provide a good overview of Wasmi's potential and possibilities.
 
 ### Cargo
 
