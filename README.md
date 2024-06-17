@@ -150,24 +150,6 @@ Wasmi supports a wide variety of architectures and platforms.
 - **Note:** Wasmi can be used in `no_std` embedded environments, thus not requiring the standard library (`std`).
 - Only some platforms are checked in CI and guaranteed to be fully working by the Wasmi maintainers.
 
-## Production Builds
-
-In order to reap the most performance out of Wasmi we highly recommended
-to compile the Wasmi crate using the following Cargo `profile`:
-
-```toml
-[profile.release]
-lto = "fat"
-codegen-units = 1
-```
-
-When compiling for the WebAssembly target we highly recommend to post-optimize
-Wasmi using [Binaryen]'s `wasm-opt` tool since our experiments displayed a
-80-100% performance improvements when executed under Wasmtime and also
-slightly smaller Wasm binaries.
-
-[Binaryen]: https://github.com/WebAssembly/binaryen
-
 ## License
 
 Licensed under either of
