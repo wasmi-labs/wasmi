@@ -2559,15 +2559,15 @@ impl FuncTranslator {
     fn translate_global_set_imm(
         &mut self,
         global: bytecode::GlobalIdx,
-        input: TypedValue,
+        input: TypedVal,
     ) -> Result<(), Error> {
-        let global_index = global.to_u32();
+        let global_index = u32::from(global);
         let (global_type, _init_value) = self
             .module
             .get_global(module::GlobalIdx::from(global_index));
         debug_assert_eq!(global_type.content(), input.ty());
         match global_type.content() {
-            ValueType::I32 => {
+            ValType::I32 => {
                 if let Ok(value) = Const16::try_from(i32::from(input)) {
                     self.push_fueled_instr(
                         Instruction::global_set_i32imm16(global, value),
@@ -2576,7 +2576,7 @@ impl FuncTranslator {
                     return Ok(());
                 }
             }
-            ValueType::I64 => {
+            ValType::I64 => {
                 if let Ok(value) = Const16::try_from(i64::from(input)) {
                     self.push_fueled_instr(
                         Instruction::global_set_i64imm16(global, value),

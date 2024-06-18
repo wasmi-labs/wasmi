@@ -192,7 +192,7 @@ impl ValueStack {
     /// Returns the [`UntypedValue`] of the function local constant value referred to by `register` if any.
     ///
     /// Returns `None` if the `register` does not refer to a function local constant.
-    pub fn resolve_func_local_const(&self, register: Register) -> Option<UntypedValue> {
+    pub fn resolve_func_local_const(&self, register: Register) -> Option<UntypedVal> {
         self.consts.get(register)
     }
 

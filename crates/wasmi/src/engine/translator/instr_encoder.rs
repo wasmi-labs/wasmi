@@ -913,7 +913,7 @@ impl InstrEncoder {
             // It is only possible to fuse an `GlobalGet` with a `I32AddImm` instruction.
             return Ok(false);
         };
-        if global.to_u32() != 0 {
+        if u32::from(global) != 0 {
             // There only is an optimized instruction for a global index of 0.
             // This is because most Wasm producers use the global at index 0 for their shadow stack.
             return Ok(false);
