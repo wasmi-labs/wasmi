@@ -208,9 +208,9 @@ impl CachedMemory {
     }
 
     /// Loads the default [`Memory`] of the currently used [`Instance`].
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// Must be called whenever the heap allocation of the [`CachedMemory`]
     /// could have been changed and thus the cached pointer invalidated.
     ///
@@ -282,9 +282,9 @@ impl CachedGlobal {
     }
 
     /// Loads the default [`Global`] of the currently used [`Instance`].
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// Must be called whenever the heap allocation of the [`CachedGlobal`]
     /// could have been changed and thus the cached pointer invalidated.
     ///
