@@ -208,6 +208,11 @@ impl CachedMemory {
     }
 
     /// Loads the default [`Memory`] of the currently used [`Instance`].
+    /// 
+    /// # Note
+    /// 
+    /// Must be called whenever the heap allocation of the [`CachedMemory`]
+    /// could have been changed and thus the cached pointer invalidated.
     ///
     /// # Panics
     ///
@@ -220,12 +225,20 @@ impl CachedMemory {
     }
 
     /// Returns a shared slice to the bytes of the cached default linear memory.
+    ///
+    /// # Safety
+    ///
+    /// The user is required to call [`CachedMemory::load_default_memory`] according to its specification.
     #[inline]
     pub unsafe fn data(&self) -> &[u8] {
         unsafe { self.data.as_ref() }
     }
 
     /// Returns an exclusive slice to the bytes of the cached default linear memory.
+    ///
+    /// # Safety
+    ///
+    /// The user is required to call [`CachedMemory::load_default_memory`] according to its specification.
     #[inline]
     pub unsafe fn data_mut(&mut self) -> &mut [u8] {
         unsafe { self.data.as_mut() }
@@ -269,6 +282,11 @@ impl CachedGlobal {
     }
 
     /// Loads the default [`Global`] of the currently used [`Instance`].
+    /// 
+    /// # Note
+    /// 
+    /// Must be called whenever the heap allocation of the [`CachedGlobal`]
+    /// could have been changed and thus the cached pointer invalidated.
     ///
     /// # Panics
     ///
@@ -284,8 +302,7 @@ impl CachedGlobal {
     ///
     /// # Safety
     ///
-    /// The user is required to call [`CachedGlobal::update`] according to its specification.
-    /// For more information read the docs of [`CachedGlobal::update`].
+    /// The user is required to call [`CachedGlobal::load_global`] according to its specification.
     #[inline]
     pub unsafe fn get(&self) -> UntypedVal {
         // SAFETY: This API guarantees to always write to a valid pointer
@@ -297,8 +314,7 @@ impl CachedGlobal {
     ///
     /// # Safety
     ///
-    /// The user is required to call [`CachedGlobal::update`] according to its specification.
-    /// For more information read the docs of [`CachedGlobal::update`].
+    /// The user is required to call [`CachedGlobal::load_global`] according to its specification.
     #[inline]
     pub unsafe fn set(&mut self, new_value: UntypedVal) {
         // SAFETY: This API guarantees to always write to a valid pointer
