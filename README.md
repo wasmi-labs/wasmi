@@ -43,6 +43,10 @@ The following list states some of the distinct features of Wasmi.
 - 100% WebAssembly spec testsuite compliance.
 - Built-in support for fuel metering.
 
+## Usage
+
+Refer to the [Wasmi usage guide](./docs/usage.md) to learn how properly to use [Wasmi](https://crates.io/crates/wasmi).
+
 ## WebAssembly Proposals
 
 The new Wasmi engine supports a variety of WebAssembly proposals and will support even more of them in the future.
@@ -100,23 +104,6 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 [(#777)]: https://github.com/wasmi-labs/wasmi/pull/777
 [(#897)]: https://github.com/wasmi-labs/wasmi/pull/897
 
-## Usage
-
-### As CLI Application
-
-Install the newest Wasmi CLI version:
-```console
-cargo install wasmi_cli
-```
-Run `wasm32-unknown-unknown` or `wasm32-wasi` Wasm binaries:
-```console
-wasmi_cli <WASM_FILE> --invoke <FUNC_NAME> [<FUNC_ARGS>]*
-```
-
-### As Rust Library
-
-Refer to the [Wasmi crate docs](https://docs.rs/wasmi) to learn how to use the [Wasmi crate](https://crates.io/crates/wasmi) as library.
-
 ## Development
 
 ### Build & Test
@@ -149,24 +136,6 @@ Wasmi supports a wide variety of architectures and platforms.
 - Fore more details see this [list of supported platforms for Rust](https://doc.rust-lang.org/stable/rustc/platform-support.html).
 - **Note:** Wasmi can be used in `no_std` embedded environments, thus not requiring the standard library (`std`).
 - Only some platforms are checked in CI and guaranteed to be fully working by the Wasmi maintainers.
-
-## Production Builds
-
-In order to reap the most performance out of Wasmi we highly recommended
-to compile the Wasmi crate using the following Cargo `profile`:
-
-```toml
-[profile.release]
-lto = "fat"
-codegen-units = 1
-```
-
-When compiling for the WebAssembly target we highly recommend to post-optimize
-Wasmi using [Binaryen]'s `wasm-opt` tool since our experiments displayed a
-80-100% performance improvements when executed under Wasmtime and also
-slightly smaller Wasm binaries.
-
-[Binaryen]: https://github.com/WebAssembly/binaryen
 
 ## License
 

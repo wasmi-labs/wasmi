@@ -817,6 +817,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_local_set(&mut self, local_index: u32) -> Self::Output {
         bail_unreachable!(self);
+        self.alloc.stack.gc_preservations();
         let value = self.alloc.stack.pop();
         let local = Register::try_from(local_index)?;
         if let TypedProvider::Register(value) = value {

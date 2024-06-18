@@ -684,7 +684,6 @@ impl StoreInner {
     ///
     /// - If the [`ElementSegment`] does not originate from this [`Store`].
     /// - If the [`ElementSegment`] cannot be resolved to its entity.
-    #[allow(unused)] // Note: We allow this unused API to exist to uphold code symmetry.
     pub fn resolve_element_segment(&self, segment: &ElementSegment) -> &ElementSegmentEntity {
         self.resolve(segment.as_inner(), &self.elems)
     }
@@ -740,35 +739,20 @@ impl StoreInner {
         (memory, fuel)
     }
 
-    /// Returns the triple of:
-    ///
-    /// - An exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`].
-    /// - A shared reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
-    /// - An exclusive reference to the [`Fuel`] for fuel metering.
-    ///
-    ///
-    /// # Note
-    ///
-    /// This method exists to properly handle use cases where
-    /// otherwise the Rust borrow-checker would not accept.
+    /// Returns an exclusive reference to the [`DataSegmentEntity`] associated to the given [`Memory`].
     ///
     /// # Panics
     ///
-    /// - If the [`Memory`] does not originate from this [`Store`].
-    /// - If the [`Memory`] cannot be resolved to its entity.
     /// - If the [`DataSegment`] does not originate from this [`Store`].
     /// - If the [`DataSegment`] cannot be resolved to its entity.
-    pub(super) fn resolve_memory_init_triplet(
+    pub fn resolve_data_and_fuel_mut(
         &mut self,
-        memory: &Memory,
-        segment: &DataSegment,
-    ) -> (&mut MemoryEntity, &DataSegmentEntity, &mut Fuel) {
-        let mem_idx = self.unwrap_stored(memory.as_inner());
-        let data_idx = segment.as_inner();
-        let data = self.resolve(data_idx, &self.datas);
-        let mem = Self::resolve_mut(mem_idx, &mut self.memories);
+        data: &DataSegment,
+    ) -> (&mut DataSegmentEntity, &mut Fuel) {
+        let idx = self.unwrap_stored(data.as_inner());
+        let data_segment = Self::resolve_mut(idx, &mut self.datas);
         let fuel = &mut self.fuel;
-        (mem, data, fuel)
+        (data_segment, fuel)
     }
 
     /// Returns an exclusive reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].

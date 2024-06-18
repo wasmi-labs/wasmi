@@ -328,7 +328,6 @@ mod tests {
         marker: core::marker::PhantomData<fn() -> T>,
     }
     /// Utility trait for the fallback case of the `implements_wasm_results` macro.
-    #[allow(dead_code)] // TODO: somehow the tests work without this which is strange.
     pub trait ImplementsWasmRetFallback {
         const VALUE: bool = false;
     }
@@ -341,7 +340,6 @@ mod tests {
         // We need to allow for dead code at this point because
         // the Rust compiler thinks this function is unused even
         // though it acts as the specialized case for detection.
-        #[allow(dead_code)]
         pub const VALUE: bool = true;
     }
     /// Returns `true` if the given type `T` implements the `WasmRet` trait.

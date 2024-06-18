@@ -64,7 +64,7 @@ impl<'engine> Executor<'engine> {
         index: u32,
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
-        let table = self.cache.get_table(store, table_index);
+        let table = self.get_table(table_index);
         let value = store
             .resolve_table(&table)
             .get_untyped(index)
@@ -92,7 +92,7 @@ impl<'engine> Executor<'engine> {
         result: Register,
         table_index: TableIdx,
     ) {
-        let table = self.cache.get_table(store, table_index);
+        let table = self.get_table(table_index);
         let size = store.resolve_table(&table).size();
         self.set_register(result, size);
     }
@@ -129,7 +129,7 @@ impl<'engine> Executor<'engine> {
         value: Register,
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
-        let table = self.cache.get_table(store, table_index);
+        let table = self.get_table(table_index);
         let value = self.get_register(value);
         store
             .resolve_table_mut(&table)
@@ -270,13 +270,13 @@ impl<'engine> Executor<'engine> {
         let src_table_index = self.fetch_table_index(2);
         if dst_table_index == src_table_index {
             // Case: copy within the same table
-            let table = self.cache.get_table(store, dst_table_index);
+            let table = self.get_table(dst_table_index);
             let (table, fuel) = store.resolve_table_and_fuel_mut(&table);
             table.copy_within(dst_index, src_index, len, Some(fuel))?;
         } else {
             // Case: copy between two different tables
-            let dst_table = self.cache.get_table(store, dst_table_index);
-            let src_table = self.cache.get_table(store, src_table_index);
+            let dst_table = self.get_table(dst_table_index);
+            let src_table = self.get_table(src_table_index);
             // Copy from one table to another table:
             let (dst_table, src_table, fuel) =
                 store.resolve_table_pair_and_fuel(&dst_table, &src_table);
@@ -415,9 +415,11 @@ impl<'engine> Executor<'engine> {
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         let element_index = self.fetch_element_segment_index(2);
-        let (instance, table, element, fuel) =
-            self.cache
-                .get_table_init_params(store, table_index, element_index);
+        let (instance, table, element, fuel) = store.resolve_table_init_params(
+            self.stack.calls.instance_expect(),
+            &self.get_table(table_index),
+            &self.get_element_segment(element_index),
+        );
         table.init(
             dst_index,
             element,
@@ -499,7 +501,7 @@ impl<'engine> Executor<'engine> {
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         let value = self.get_register(value);
-        let table = self.cache.get_table(store, table_index);
+        let table = self.get_table(table_index);
         let (table, fuel) = store.resolve_table_and_fuel_mut(&table);
         table.fill_untyped(dst, value, len, Some(fuel))?;
         self.try_next_instr_at(2)
@@ -548,7 +550,7 @@ impl<'engine> Executor<'engine> {
             self.execute_table_size_impl(store, result, table_index);
             return self.try_next_instr_at(2);
         }
-        let table = self.cache.get_table(store, table_index);
+        let table = self.get_table(table_index);
         let value = self.get_register(value);
         let (table, fuel) = store.resolve_table_and_fuel_mut(&table);
         let return_value = table.grow_untyped(delta, value, Some(fuel), resource_limiter);
@@ -568,7 +570,7 @@ impl<'engine> Executor<'engine> {
         store: &mut StoreInner,
         segment_index: ElementSegmentIdx,
     ) {
-        let segment = self.cache.get_element_segment(store, segment_index);
+        let segment = self.get_element_segment(segment_index);
         store.resolve_element_segment_mut(&segment).drop_items();
         self.next_instr();
     }

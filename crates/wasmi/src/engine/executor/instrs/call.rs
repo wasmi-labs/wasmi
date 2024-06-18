@@ -4,10 +4,11 @@ use crate::{
     engine::{
         bytecode::{FuncIdx, Instruction, Register, RegisterSpan, SignatureIdx, TableIdx},
         code_map::InstructionPtr,
-        executor::stack::{CallFrame, FrameRegisters, Stack, ValueStack},
+        executor::stack::{CallFrame, FrameParams, ValueStack},
         func_types::FuncTypeRegistry,
         CompiledFunc,
         CompiledFuncEntity,
+        DedupFuncType,
         FuncParams,
     },
     func::{FuncEntity, HostFuncEntity},
@@ -20,6 +21,17 @@ use crate::{
 };
 use core::array;
 use std::fmt;
+
+impl FuncTypeRegistry {
+    /// Returns the maximum value of number of parameters and results for the given [`DedupFuncType`].
+    #[inline]
+    fn len_params_results(&self, func_ty: &DedupFuncType) -> (usize, usize) {
+        let (input_types, output_types) = self.resolve_func_type(func_ty).params_results();
+        let len_inputs = input_types.len();
+        let len_outputs = output_types.len();
+        (len_inputs, len_outputs)
+    }
+}
 
 /// Dispatches and executes the host function.
 ///
@@ -36,11 +48,7 @@ pub fn dispatch_host_func<T>(
     host_func: HostFuncEntity,
     instance: Option<&Instance>,
 ) -> Result<(usize, usize), Error> {
-    let (input_types, output_types) = func_types
-        .resolve_func_type(host_func.ty_dedup())
-        .params_results();
-    let len_inputs = input_types.len();
-    let len_outputs = output_types.len();
+    let (len_inputs, len_outputs) = func_types.len_params_results(host_func.ty_dedup());
     let max_inout = len_inputs.max(len_outputs);
     let values = value_stack.as_slice_mut();
     let params_results = FuncParams::new(
@@ -164,7 +172,8 @@ impl<'engine> Executor<'engine> {
         // other parts of the code more fragile with respect to instruction ordering.
         self.ip.add(offset);
         let caller = self
-            .call_stack
+            .stack
+            .calls
             .peek_mut()
             .expect("caller call frame must be on the stack");
         caller.update_instr_ptr(self.ip);
@@ -207,22 +216,23 @@ impl<'engine> Executor<'engine> {
         results: RegisterSpan,
         func: &CompiledFuncEntity,
     ) -> Result<CallFrame, Error> {
-        let (base_ptr, frame_ptr) = self.value_stack.alloc_call_frame(func)?;
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
         // [`ValueStack::alloc_call_frame`] which might invalidate all live [`FrameRegisters`].
         let caller = self
-            .call_stack
+            .stack
+            .calls
             .peek()
             .expect("need to have a caller on the call stack");
-        // Safety: We use the base offset of a live call frame on the call stack.
-        self.sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
-        let instance = caller.instance();
+        let (mut uninit_params, offsets) = self.stack.values.alloc_call_frame(func, |this| {
+            // Safety: We use the base offset of a live call frame on the call stack.
+            self.sp = unsafe { this.stack_ptr_at(caller.base_offset()) };
+        })?;
         let instr_ptr = InstructionPtr::new(func.instrs().as_ptr());
-        let frame = CallFrame::new(instr_ptr, frame_ptr, base_ptr, results, *instance);
+        let frame = CallFrame::new(instr_ptr, offsets, results);
         if <C as CallContext>::HAS_PARAMS {
-            let called_sp = self.frame_stack_ptr(&frame);
-            self.copy_call_params(called_sp);
+            self.copy_call_params(&mut uninit_params);
         }
+        uninit_params.init_zeroes();
         Ok(frame)
     }
 
@@ -231,21 +241,20 @@ impl<'engine> Executor<'engine> {
     /// This will also adjust the instruction pointer to point to the
     /// last call parameter [`Instruction`] if any.
     #[inline(always)]
-    fn copy_call_params(&mut self, mut callee_regs: FrameRegisters) {
-        let mut dst = Register::from_i16(0);
+    fn copy_call_params(&mut self, uninit_params: &mut FrameParams) {
         self.ip.add(1);
         if let Instruction::RegisterList(_) = self.ip.get() {
-            self.copy_call_params_list(&mut dst, &mut callee_regs);
+            self.copy_call_params_list(uninit_params);
         }
         match self.ip.get() {
             Instruction::Register(value) => {
-                self.copy_regs(&mut dst, &mut callee_regs, array::from_ref(value));
+                self.copy_regs(uninit_params, array::from_ref(value));
             }
             Instruction::Register2(values) => {
-                self.copy_regs(&mut dst, &mut callee_regs, values);
+                self.copy_regs(uninit_params, values);
             }
             Instruction::Register3(values) => {
-                self.copy_regs(&mut dst, &mut callee_regs, values);
+                self.copy_regs(uninit_params, values);
             }
             unexpected => {
                 unreachable!(
@@ -257,20 +266,14 @@ impl<'engine> Executor<'engine> {
 
     /// Copies an array of [`Register`] to the `dst` [`Register`] span.
     #[inline(always)]
-    fn copy_regs<const N: usize>(
-        &self,
-        dst: &mut Register,
-        callee_regs: &mut FrameRegisters,
-        regs: &[Register; N],
-    ) {
+    fn copy_regs<const N: usize>(&self, uninit_params: &mut FrameParams, regs: &[Register; N]) {
         for value in regs {
             let value = self.get_register(*value);
             // Safety: The `callee.results()` always refer to a span of valid
             //         registers of the `caller` that does not overlap with the
             //         registers of the callee since they reside in different
             //         call frames. Therefore this access is safe.
-            unsafe { callee_regs.set(*dst, value) }
-            *dst = dst.next();
+            unsafe { uninit_params.init_next(value) }
         }
     }
 
@@ -281,9 +284,9 @@ impl<'engine> Executor<'engine> {
     /// last [`Instruction::RegisterList`] if any.
     #[inline(always)]
     #[cold]
-    fn copy_call_params_list(&mut self, dst: &mut Register, callee_regs: &mut FrameRegisters) {
+    fn copy_call_params_list(&mut self, uninit_params: &mut FrameParams) {
         while let Instruction::RegisterList(values) = self.ip.get() {
-            self.copy_regs(dst, callee_regs, values);
+            self.copy_regs(uninit_params, values);
             self.ip.add(1);
         }
     }
@@ -295,8 +298,9 @@ impl<'engine> Executor<'engine> {
         store: &mut StoreInner,
         results: RegisterSpan,
         func: CompiledFunc,
+        mut instance: Option<Instance>,
     ) -> Result<(), Error> {
-        let func = self.code_map.get(Some(store.fuel_mut()), func)?;
+        let func = self.res.code_map.get(Some(store.fuel_mut()), func)?;
         let mut called = self.dispatch_compiled_func::<C>(results, func)?;
         match <C as CallContext>::KIND {
             CallKind::Nested => {
@@ -314,11 +318,14 @@ impl<'engine> Executor<'engine> {
                 // on the value stack which is what the function expects. After this operation we ensure
                 // that `self.sp` is adjusted via a call to `init_call_frame` since it may have been
                 // invalidated by this method.
-                unsafe { Stack::merge_call_frames(self.call_stack, self.value_stack, &mut called) };
+                let caller_instance = unsafe { self.stack.merge_call_frames(&mut called) };
+                if let Some(caller_instance) = caller_instance {
+                    instance.get_or_insert(caller_instance);
+                }
             }
         }
         self.init_call_frame(&called);
-        self.call_stack.push(called)?;
+        self.stack.calls.push(called, instance)?;
         Ok(())
     }
 
@@ -349,7 +356,7 @@ impl<'engine> Executor<'engine> {
         func: CompiledFunc,
     ) -> Result<(), Error> {
         let results = self.caller_results();
-        self.prepare_compiled_func_call::<C>(store, results, func)
+        self.prepare_compiled_func_call::<C>(store, results, func, None)
     }
 
     /// Returns the `results` [`RegisterSpan`] of the top-most [`CallFrame`] on the [`CallStack`].
@@ -361,7 +368,8 @@ impl<'engine> Executor<'engine> {
     ///
     /// [`CallStack`]: crate::engine::executor::stack::CallStack
     fn caller_results(&self) -> RegisterSpan {
-        self.call_stack
+        self.stack
+            .calls
             .peek()
             .expect("must have caller on the stack")
             .results()
@@ -375,7 +383,7 @@ impl<'engine> Executor<'engine> {
         results: RegisterSpan,
         func: CompiledFunc,
     ) -> Result<(), Error> {
-        self.prepare_compiled_func_call::<marker::NestedCall0>(store, results, func)
+        self.prepare_compiled_func_call::<marker::NestedCall0>(store, results, func, None)
     }
 
     /// Executes an [`Instruction::CallInternal`].
@@ -386,7 +394,7 @@ impl<'engine> Executor<'engine> {
         results: RegisterSpan,
         func: CompiledFunc,
     ) -> Result<(), Error> {
-        self.prepare_compiled_func_call::<marker::NestedCall>(store, results, func)
+        self.prepare_compiled_func_call::<marker::NestedCall>(store, results, func, None)
     }
 
     /// Executes an [`Instruction::ReturnCallImported0`].
@@ -415,7 +423,7 @@ impl<'engine> Executor<'engine> {
         store: &mut Store<T>,
         func: FuncIdx,
     ) -> Result<(), Error> {
-        let func = self.cache.get_func(&store.inner, func);
+        let func = self.get_func(func);
         let results = self.caller_results();
         self.execute_call_imported_impl::<C, T>(store, results, &func)
     }
@@ -428,7 +436,7 @@ impl<'engine> Executor<'engine> {
         results: RegisterSpan,
         func: FuncIdx,
     ) -> Result<(), Error> {
-        let func = self.cache.get_func(&store.inner, func);
+        let func = self.get_func(func);
         self.execute_call_imported_impl::<marker::NestedCall0, T>(store, results, &func)
     }
 
@@ -440,7 +448,7 @@ impl<'engine> Executor<'engine> {
         results: RegisterSpan,
         func: FuncIdx,
     ) -> Result<(), Error> {
-        let func = self.cache.get_func(&store.inner, func);
+        let func = self.get_func(func);
         self.execute_call_imported_impl::<marker::NestedCall, T>(store, results, &func)
     }
 
@@ -455,8 +463,13 @@ impl<'engine> Executor<'engine> {
             FuncEntity::Wasm(func) => {
                 let instance = *func.instance();
                 let func_body = func.func_body();
-                self.prepare_compiled_func_call::<C>(&mut store.inner, results, func_body)?;
-                self.cache.update_instance(&instance);
+                self.prepare_compiled_func_call::<C>(
+                    &mut store.inner,
+                    results,
+                    func_body,
+                    Some(instance),
+                )?;
+                self.cache.update(&mut store.inner, &instance);
                 Ok(())
             }
             FuncEntity::Host(host_func) => {
@@ -483,61 +496,47 @@ impl<'engine> Executor<'engine> {
         func: &Func,
         host_func: HostFuncEntity,
     ) -> Result<(), Error> {
-        let (input_types, output_types) = self
-            .func_types
-            .resolve_func_type(host_func.ty_dedup())
-            .params_results();
-        let len_params = input_types.len();
-        let len_results = output_types.len();
+        let (len_params, len_results) =
+            self.res.func_types.len_params_results(host_func.ty_dedup());
         let max_inout = len_params.max(len_results);
-        self.value_stack.reserve(max_inout)?;
-        // Safety: we just called reserve to fit the new values.
-        let offset = unsafe { self.value_stack.extend_zeros(max_inout) };
-        let offset_sp = unsafe { self.value_stack.stack_ptr_at(offset) };
+        let instance = *self.stack.calls.instance_expect();
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
         // [`ValueStack::reserve`] which might invalidate all live [`FrameRegisters`].
         let caller = match <C as CallContext>::KIND {
-            CallKind::Nested => self.call_stack.peek().copied(),
-            CallKind::Tail => self.call_stack.pop(),
+            CallKind::Nested => self.stack.calls.peek().copied(),
+            CallKind::Tail => self.stack.calls.pop().map(|(frame, _instance)| frame),
         }
         .expect("need to have a caller on the call stack");
-        // Safety: we use the base offset of a live call frame on the call stack.
-        self.sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
+        let buffer = self.stack.values.extend_by(max_inout, |this| {
+            // Safety: we use the base offset of a live call frame on the call stack.
+            self.sp = unsafe { this.stack_ptr_at(caller.base_offset()) };
+        })?;
         if <C as CallContext>::HAS_PARAMS {
-            self.copy_call_params(offset_sp);
+            let mut uninit_params = FrameParams::new(buffer);
+            self.copy_call_params(&mut uninit_params);
         }
         if matches!(<C as CallContext>::KIND, CallKind::Nested) {
             self.update_instr_ptr_at(1);
         }
-        self.cache.reset();
-        let (len_inputs, len_outputs) = self
-            .dispatch_host_func::<T>(store, host_func, caller)
-            .map_err(|error| match self.call_stack.is_empty() {
+        self.dispatch_host_func::<T>(store, host_func, &instance)
+            .map_err(|error| match self.stack.calls.is_empty() {
                 true => error,
                 false => ResumableHostError::new(error, *func, results).into(),
             })?;
-        // # Safety (1)
-        //
-        // We can safely acquire the stack pointer to the caller's and callee's (host)
-        // call frames because we just allocated the host call frame and can be sure that
-        // they are different.
-        // In the following we make sure to not access registers out of bounds of each
-        // call frame since we rely on Wasm validation and proper Wasm translation to
-        // provide us with valid result registers.
-        let mut caller_sp = unsafe { self.value_stack.stack_ptr_at(caller.base_offset()) };
-        // # Safety: See Safety (1) above.
-        let callee_sp = unsafe {
-            self.value_stack
-                .stack_ptr_last_n(len_inputs.max(len_outputs))
-        };
-        let results = results.iter(len_outputs);
-        let values = RegisterSpan::new(Register::from_i16(0)).iter(len_outputs);
-        for (result, value) in results.zip(values) {
-            // # Safety: See Safety (1) above.
-            unsafe { caller_sp.set(result, callee_sp.get(value)) };
+        self.cache.update(&mut store.inner, &instance);
+        let results = results.iter(len_results);
+        let returned = self.stack.values.drop_return(max_inout);
+        for (result, value) in results.zip(returned) {
+            // # Safety (1)
+            //
+            // We can safely acquire the stack pointer to the caller's and callee's (host)
+            // call frames because we just allocated the host call frame and can be sure that
+            // they are different.
+            // In the following we make sure to not access registers out of bounds of each
+            // call frame since we rely on Wasm validation and proper Wasm translation to
+            // provide us with valid result registers.
+            unsafe { self.sp.set(result, *value) };
         }
-        // Finally, the value stack needs to be truncated to its original size.
-        self.value_stack.drop(max_inout);
         Ok(())
     }
 
@@ -547,14 +546,14 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut Store<T>,
         host_func: HostFuncEntity,
-        caller: CallFrame,
+        instance: &Instance,
     ) -> Result<(usize, usize), Error> {
         dispatch_host_func(
             store,
-            self.func_types,
-            self.value_stack,
+            &self.res.func_types,
+            &mut self.stack.values,
             host_func,
-            Some(caller.instance()),
+            Some(instance),
         )
     }
 
@@ -623,7 +622,7 @@ impl<'engine> Executor<'engine> {
         index: u32,
         table: TableIdx,
     ) -> Result<(), Error> {
-        let table = self.cache.get_table(&store.inner, table);
+        let table = self.get_table(table);
         let funcref = store
             .inner
             .resolve_table(&table)
@@ -632,13 +631,7 @@ impl<'engine> Executor<'engine> {
             .ok_or(TrapCode::TableOutOfBounds)?;
         let func = funcref.func().ok_or(TrapCode::IndirectCallToNull)?;
         let actual_signature = store.inner.resolve_func(func).ty_dedup();
-        let expected_signature = store
-            .inner
-            .resolve_instance(self.cache.instance())
-            .get_signature(func_type.to_u32())
-            .unwrap_or_else(|| {
-                panic!("missing signature for call_indirect at index: {func_type:?}")
-            });
+        let expected_signature = &self.get_func_type_dedup(func_type);
         if actual_signature != expected_signature {
             return Err(Error::from(TrapCode::BadSignature));
         }
