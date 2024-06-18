@@ -77,10 +77,7 @@ pub fn execute_instrs<'engine, T>(
     stack: &'engine mut Stack,
     res: &'engine EngineResources,
 ) -> Result<(), Error> {
-    let instance = stack
-        .calls
-        .instance()
-        .expect("must have instance on the call stack");
+    let instance = Executor::instance(&stack.calls);
     let cache = CachedInstance::new(&mut store.inner, instance);
     Executor::new(stack, res, cache).execute(store)
 }
