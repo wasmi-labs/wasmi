@@ -416,7 +416,7 @@ impl<'engine> Executor<'engine> {
         let table_index = self.fetch_table_index(1);
         let element_index = self.fetch_element_segment_index(2);
         let (instance, table, element, fuel) = store.resolve_table_init_params(
-            Self::instance(&self.stack.calls),
+            self.stack.calls.instance_expect(),
             &self.get_table(table_index),
             &self.get_element_segment(element_index),
         );

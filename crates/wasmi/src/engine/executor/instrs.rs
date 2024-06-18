@@ -21,7 +21,7 @@ use crate::{
             UnaryInstr,
         },
         code_map::InstructionPtr,
-        executor::stack::{CallFrame, CallStack, FrameRegisters, ValueStack},
+        executor::stack::{CallFrame, FrameRegisters, ValueStack},
         DedupFuncType,
         EngineResources,
     },
@@ -33,7 +33,6 @@ use crate::{
     Func,
     FuncRef,
     Global,
-    Instance,
     Memory,
     Store,
     Table,
@@ -77,7 +76,7 @@ pub fn execute_instrs<'engine, T>(
     stack: &'engine mut Stack,
     res: &'engine EngineResources,
 ) -> Result<(), Error> {
-    let instance = Executor::instance(&stack.calls);
+    let instance = stack.calls.instance_expect();
     let cache = CachedInstance::new(&mut store.inner, instance);
     Executor::new(stack, res, cache).execute(store)
 }
@@ -123,14 +122,6 @@ impl<'engine> Executor<'engine> {
             stack,
             res,
         }
-    }
-
-    /// Returns the currently used [`Instance`].
-    #[inline(always)]
-    fn instance(call_stack: &CallStack) -> &Instance {
-        call_stack
-            .instance()
-            .expect("missing instance for non-empty call stack")
     }
 
     /// Executes the function frame until it returns or traps.
