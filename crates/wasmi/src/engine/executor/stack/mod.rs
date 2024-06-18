@@ -29,17 +29,6 @@ pub struct Stack {
 }
 
 impl Stack {
-    #![allow(dead_code)]
-
-    /// Default value for the maximum recursion depth.
-    pub const DEFAULT_MAX_RECURSION_DEPTH: usize = CallStack::DEFAULT_MAX_RECURSION_DEPTH;
-
-    /// Default value for initial value stack height in bytes.
-    pub const DEFAULT_MIN_VALUE_STACK_HEIGHT: usize = ValueStack::DEFAULT_MIN_HEIGHT;
-
-    /// Default value for maximum value stack height in bytes.
-    pub const DEFAULT_MAX_VALUE_STACK_HEIGHT: usize = ValueStack::DEFAULT_MAX_HEIGHT;
-
     /// Creates a new [`Stack`] given the [`Config`].
     ///
     /// [`Config`]: [`crate::Config`]
@@ -68,15 +57,6 @@ impl Stack {
             values: ValueStack::empty(),
             calls: CallStack::default(),
         }
-    }
-
-    /// Returns `true` if the [`Stack`] is empty.
-    ///
-    /// # Note
-    ///
-    /// Empty [`Stack`] instances are usually non-usable dummy instances.
-    pub fn is_empty(&self) -> bool {
-        self.values.is_empty()
     }
 
     /// Returns the capacity of the [`Stack`].
