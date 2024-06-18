@@ -125,11 +125,6 @@ impl ValueStack {
         self.values.capacity()
     }
 
-    /// Returns `true` if the [`ValueStack`] is empty.
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
     /// Reserves enough space for `additional` cells on the [`ValueStack`].
     ///
     /// This may heap allocate in case the [`ValueStack`] ran out of preallocated memory.

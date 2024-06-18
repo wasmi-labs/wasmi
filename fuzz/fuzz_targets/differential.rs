@@ -323,7 +323,6 @@ impl DifferentialTarget for Wasmtime {
     }
 }
 
-#[allow(dead_code)] // Note: dead code analysis somehow ignores Debug impl usage.
 #[derive(Debug, Default)]
 pub struct UnmatchedState {
     globals: Vec<UnmatchedGlobal>,

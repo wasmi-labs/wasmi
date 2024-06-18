@@ -684,7 +684,6 @@ impl StoreInner {
     ///
     /// - If the [`ElementSegment`] does not originate from this [`Store`].
     /// - If the [`ElementSegment`] cannot be resolved to its entity.
-    #[allow(unused)] // Note: We allow this unused API to exist to uphold code symmetry.
     pub fn resolve_element_segment(&self, segment: &ElementSegment) -> &ElementSegmentEntity {
         self.resolve(segment.as_inner(), &self.elems)
     }

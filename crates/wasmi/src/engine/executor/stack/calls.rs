@@ -34,9 +34,6 @@ pub struct CallStack {
 }
 
 impl CallStack {
-    /// Default value for the maximum recursion depth.
-    pub const DEFAULT_MAX_RECURSION_DEPTH: usize = 1024;
-
     /// Creates a new [`CallStack`] using the given recursion limit.
     pub fn new(recursion_limit: usize) -> Self {
         Self {
