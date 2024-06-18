@@ -38,6 +38,9 @@ use crate::{
     Table,
 };
 
+#[cfg(doc)]
+use crate::Instance;
+
 mod binary;
 mod branch;
 mod call;
