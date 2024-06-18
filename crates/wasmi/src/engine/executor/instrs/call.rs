@@ -423,7 +423,7 @@ impl<'engine> Executor<'engine> {
         store: &mut Store<T>,
         func: FuncIdx,
     ) -> Result<(), Error> {
-        let func = self.get_func(&store.inner, func);
+        let func = self.get_func(func);
         let results = self.caller_results();
         self.execute_call_imported_impl::<C, T>(store, results, &func)
     }
@@ -436,7 +436,7 @@ impl<'engine> Executor<'engine> {
         results: RegisterSpan,
         func: FuncIdx,
     ) -> Result<(), Error> {
-        let func = self.get_func(&store.inner, func);
+        let func = self.get_func(func);
         self.execute_call_imported_impl::<marker::NestedCall0, T>(store, results, &func)
     }
 
@@ -448,7 +448,7 @@ impl<'engine> Executor<'engine> {
         results: RegisterSpan,
         func: FuncIdx,
     ) -> Result<(), Error> {
-        let func = self.get_func(&store.inner, func);
+        let func = self.get_func(func);
         self.execute_call_imported_impl::<marker::NestedCall, T>(store, results, &func)
     }
 
@@ -469,8 +469,7 @@ impl<'engine> Executor<'engine> {
                     func_body,
                     Some(instance),
                 )?;
-                self.memory.update(&mut store.inner, &instance);
-                self.global.update(&mut store.inner, &instance);
+                self.cache.update(&mut store.inner, &instance);
                 Ok(())
             }
             FuncEntity::Host(host_func) => {
@@ -500,7 +499,7 @@ impl<'engine> Executor<'engine> {
         let (len_params, len_results) =
             self.res.func_types.len_params_results(host_func.ty_dedup());
         let max_inout = len_params.max(len_results);
-        let instance = *Self::instance(&self.stack.calls);
+        let instance = *self.stack.calls.instance_expect();
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
         // [`ValueStack::reserve`] which might invalidate all live [`FrameRegisters`].
         let caller = match <C as CallContext>::KIND {
@@ -524,8 +523,7 @@ impl<'engine> Executor<'engine> {
                 true => error,
                 false => ResumableHostError::new(error, *func, results).into(),
             })?;
-        self.memory.update(&mut store.inner, &instance);
-        self.global.update(&mut store.inner, &instance);
+        self.cache.update(&mut store.inner, &instance);
         let results = results.iter(len_results);
         let returned = self.stack.values.drop_return(max_inout);
         for (result, value) in results.zip(returned) {
@@ -624,7 +622,7 @@ impl<'engine> Executor<'engine> {
         index: u32,
         table: TableIdx,
     ) -> Result<(), Error> {
-        let table = self.get_table(&store.inner, table);
+        let table = self.get_table(table);
         let funcref = store
             .inner
             .resolve_table(&table)
@@ -633,13 +631,7 @@ impl<'engine> Executor<'engine> {
             .ok_or(TrapCode::TableOutOfBounds)?;
         let func = funcref.func().ok_or(TrapCode::IndirectCallToNull)?;
         let actual_signature = store.inner.resolve_func(func).ty_dedup();
-        let expected_signature = store
-            .inner
-            .resolve_instance(Self::instance(&self.stack.calls))
-            .get_signature(u32::from(func_type))
-            .unwrap_or_else(|| {
-                panic!("missing signature for call_indirect at index: {func_type:?}")
-            });
+        let expected_signature = &self.get_func_type_dedup(func_type);
         if actual_signature != expected_signature {
             return Err(Error::from(TrapCode::BadSignature));
         }

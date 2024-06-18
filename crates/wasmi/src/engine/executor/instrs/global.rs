@@ -13,10 +13,10 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     pub fn execute_global_get(&mut self, store: &StoreInner, result: Register, global: GlobalIdx) {
         let value = match u32::from(global) {
-            0 => unsafe { self.global.get() },
+            0 => unsafe { self.cache.global.get() },
             _ => {
                 hint::cold();
-                let global = self.get_global(store, global);
+                let global = self.get_global(global);
                 store.resolve_global(&global).get_untyped()
             }
         };
@@ -69,10 +69,10 @@ impl<'engine> Executor<'engine> {
         new_value: UntypedVal,
     ) {
         match u32::from(global) {
-            0 => unsafe { self.global.set(new_value) },
+            0 => unsafe { self.cache.global.set(new_value) },
             _ => {
                 hint::cold();
-                let global = self.get_global(store, global);
+                let global = self.get_global(global);
                 store.resolve_global_mut(&global).set_untyped(new_value)
             }
         };

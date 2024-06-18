@@ -75,6 +75,19 @@ impl CallStack {
         self.instances.last()
     }
 
+    /// Returns the currently used [`Instance`].
+    ///
+    /// # Panics
+    ///
+    /// If there is no currently used [`Instance`].
+    /// This happens if the [`CallStack`] is empty.
+    #[inline(always)]
+    #[track_caller]
+    pub fn instance_expect(&self) -> &Instance {
+        self.instance()
+            .expect("the currently used instance must be present")
+    }
+
     /// Pushes a [`CallFrame`] onto the [`CallStack`].
     ///
     /// # Errors

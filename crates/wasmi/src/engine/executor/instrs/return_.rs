@@ -33,8 +33,7 @@ impl<'engine> Executor<'engine> {
         self.stack.values.truncate(returned.frame_offset());
         let new_instance = popped_instance.and_then(|_| self.stack.calls.instance());
         if let Some(new_instance) = new_instance {
-            self.global.update(store, new_instance);
-            self.memory.update(store, new_instance);
+            self.cache.update(store, new_instance);
         }
         match self.stack.calls.peek() {
             Some(caller) => {
