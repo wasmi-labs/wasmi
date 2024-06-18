@@ -1,7 +1,7 @@
 //! Translation tests for all Wasm `store` instructions.
 
 use super::*;
-use crate::core::UntypedValue;
+use crate::core::UntypedVal;
 
 mod f32_store;
 mod f64_store;
@@ -13,8 +13,8 @@ mod i64_store16;
 mod i64_store32;
 mod i64_store8;
 
+use crate::core::TrapCode;
 use core::fmt::Display;
-use wasmi_core::TrapCode;
 
 fn test_store_for(
     wasm_op: WasmOp,
@@ -94,7 +94,7 @@ fn test_store_offset16_imm_for<T>(
     value: T,
     make_instr: fn(ptr: Register, offset: u16, value: Register) -> Instruction,
 ) where
-    T: Copy + Into<UntypedValue>,
+    T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
 {
     let param_ty = wasm_op.param_ty();
@@ -127,7 +127,7 @@ fn test_store_offset16_imm<T>(
     value: T,
     make_instr: fn(ptr: Register, offset: u16, value: Register) -> Instruction,
 ) where
-    T: Copy + Into<UntypedValue>,
+    T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
 {
     test_store_offset16_imm_for(wasm_op, 0, value, make_instr);
@@ -185,7 +185,7 @@ fn test_store_imm_for<T>(
     value: T,
     make_instr: fn(ptr: Register, offset: Const32<u32>) -> Instruction,
 ) where
-    T: Copy + Into<UntypedValue>,
+    T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
 {
     assert!(
@@ -223,7 +223,7 @@ fn test_store_imm<T>(
     value: T,
     make_instr: fn(ptr: Register, offset: Const32<u32>) -> Instruction,
 ) where
-    T: Copy + Into<UntypedValue>,
+    T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
 {
     test_store_imm_for(wasm_op, u32::from(u16::MAX) + 1, value, make_instr);
@@ -312,7 +312,7 @@ fn test_store_at_imm_for<T>(
     value: T,
     make_instr: fn(address: Const32<u32>, value: Register) -> Instruction,
 ) where
-    T: Copy + Into<UntypedValue>,
+    T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
 {
     let address = ptr
@@ -348,7 +348,7 @@ fn test_store_at_imm<T>(
     value: T,
     make_instr: fn(address: Const32<u32>, value: Register) -> Instruction,
 ) where
-    T: Copy + Into<UntypedValue>,
+    T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
 {
     test_store_at_imm_for(wasm_op, 0, 0, value, make_instr);

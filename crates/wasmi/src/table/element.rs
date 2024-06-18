@@ -1,12 +1,12 @@
 use crate::{
+    collections::arena::ArenaIndex,
+    core::ValType,
     module,
     module::{ConstExpr, ElementSegmentItems},
     store::Stored,
     AsContext,
     AsContextMut,
 };
-use wasmi_arena::ArenaIndex;
-use wasmi_core::ValueType;
 
 /// A raw index to a element segment entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -82,8 +82,8 @@ impl ElementSegment {
 /// a need to have an instantiated representation of data segments.
 #[derive(Debug)]
 pub struct ElementSegmentEntity {
-    /// The [`ValueType`] of elements of this [`ElementSegmentEntity`].
-    ty: ValueType,
+    /// The [`ValType`] of elements of this [`ElementSegmentEntity`].
+    ty: ValType,
     /// The underlying items of the instance element segment.
     ///
     /// # Note
@@ -109,12 +109,12 @@ impl From<&'_ module::ElementSegment> for ElementSegmentEntity {
 
 impl ElementSegmentEntity {
     /// Create an empty [`ElementSegmentEntity`] representing dropped element segments.
-    fn empty(ty: ValueType) -> Self {
+    fn empty(ty: ValType) -> Self {
         Self { ty, items: None }
     }
 
-    /// Returns the [`ValueType`] of elements in the [`ElementSegmentEntity`].
-    pub fn ty(&self) -> ValueType {
+    /// Returns the [`ValType`] of elements in the [`ElementSegmentEntity`].
+    pub fn ty(&self) -> ValType {
         self.ty
     }
 

@@ -1,6 +1,6 @@
-use super::{EngineLimits, StackLimits};
+use super::{EnforcedLimits, StackLimits};
+use crate::core::UntypedVal;
 use core::{mem::size_of, num::NonZeroU64};
-use wasmi_core::UntypedValue;
 use wasmparser::WasmFeatures;
 
 /// The default amount of stacks kept in the cache at most.
@@ -40,7 +40,7 @@ pub struct Config {
     /// The mode of Wasm to Wasmi bytecode compilation.
     compilation_mode: CompilationMode,
     /// Enforced limits for Wasm module parsing and compilation.
-    limits: EngineLimits,
+    limits: EnforcedLimits,
 }
 
 /// Type storing all kinds of fuel costs of instructions.
@@ -136,7 +136,7 @@ impl FuelCosts {
 impl Default for FuelCosts {
     fn default() -> Self {
         let bytes_per_fuel = 64;
-        let bytes_per_register = size_of::<UntypedValue>() as u64;
+        let bytes_per_register = size_of::<UntypedVal>() as u64;
         let registers_per_fuel = bytes_per_fuel / bytes_per_register;
         Self {
             base: 1,
@@ -176,13 +176,13 @@ impl Default for Config {
             multi_value: true,
             bulk_memory: true,
             reference_types: true,
-            tail_call: false,
-            extended_const: false,
+            tail_call: true,
+            extended_const: true,
             floats: true,
             consume_fuel: false,
             fuel_costs: FuelCosts::default(),
             compilation_mode: CompilationMode::default(),
-            limits: EngineLimits::default(),
+            limits: EnforcedLimits::default(),
         }
     }
 }
@@ -291,9 +291,9 @@ impl Config {
     ///
     /// # Note
     ///
-    /// Disabled by default.
+    /// Enabled by default.
     ///
-    /// [`tail-call`]: https://github.com/WebAssembly/tail-calls
+    /// [`tail-call`]: https://github.com/WebAssembly/tail-call
     pub fn wasm_tail_call(&mut self, enable: bool) -> &mut Self {
         self.tail_call = enable;
         self
@@ -303,9 +303,9 @@ impl Config {
     ///
     /// # Note
     ///
-    /// Disabled by default.
+    /// Enabled by default.
     ///
-    /// [`tail-call`]: https://github.com/WebAssembly/extended-const
+    /// [`extended-const`]: https://github.com/WebAssembly/extended-const
     pub fn wasm_extended_const(&mut self, enable: bool) -> &mut Self {
         self.extended_const = enable;
         self
@@ -328,9 +328,9 @@ impl Config {
     /// a [`TrapCode::OutOfFuel`](crate::core::TrapCode::OutOfFuel) trap is raised.
     /// This way users can deterministically halt or yield the execution of WebAssembly code.
     ///
-    /// - Use [`Store::add_fuel`](crate::Store::add_fuel) to pour some fuel into the [`Store`] before
+    /// - Use [`Store::set_fuel`](crate::Store::set_fuel) to set the remaining fuel of the [`Store`] before
     ///   executing some code as the [`Store`] start with no fuel.
-    /// - Use [`Caller::consume_fuel`](crate::Caller::consume_fuel) to charge costs for executed host functions.
+    /// - Use [`Caller::set_fuel`](crate::Caller::set_fuel) to update the remaining fuel when executing host functions.
     ///
     /// Disabled by default.
     ///
@@ -370,20 +370,20 @@ impl Config {
         self.compilation_mode
     }
 
-    /// Sets the [`EngineLimits`] enforced by the [`Engine`] for Wasm module parsing and compilation.
+    /// Sets the [`EnforcedLimits`] enforced by the [`Engine`] for Wasm module parsing and compilation.
     ///
     /// By default no limits are enforced.
     ///
     /// [`Engine`]: crate::Engine
-    pub fn engine_limits(&mut self, limits: EngineLimits) -> &mut Self {
+    pub fn enforced_limits(&mut self, limits: EnforcedLimits) -> &mut Self {
         self.limits = limits;
         self
     }
 
-    /// Returns the [`EngineLimits`] used for the [`Engine`].
+    /// Returns the [`EnforcedLimits`] used for the [`Engine`].
     ///
     /// [`Engine`]: crate::Engine
-    pub(crate) fn get_engine_limits(&self) -> &EngineLimits {
+    pub(crate) fn get_engine_limits(&self) -> &EnforcedLimits {
         &self.limits
     }
 

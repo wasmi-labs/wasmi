@@ -1,39 +1,39 @@
-use wasmi_core::ValueType;
+use crate::core::ValType;
 
 use crate::{
-    core::{UntypedValue, F32},
+    core::{UntypedVal, F32},
     engine::bytecode::{Const32, Instruction, Register},
 };
 use core::fmt::Display;
 
-pub trait WasmType: Copy + Display + Into<UntypedValue> + From<UntypedValue> {
+pub trait WasmTy: Copy + Display + Into<UntypedVal> + From<UntypedVal> {
     const NAME: &'static str;
-    const VALUE_TYPE: ValueType;
+    const VALUE_TYPE: ValType;
 
     fn return_imm_instr(&self) -> Instruction;
 }
 
-impl WasmType for u32 {
+impl WasmTy for u32 {
     const NAME: &'static str = "i32";
-    const VALUE_TYPE: ValueType = ValueType::I32;
+    const VALUE_TYPE: ValType = ValType::I32;
 
     fn return_imm_instr(&self) -> Instruction {
         Instruction::return_imm32(*self)
     }
 }
 
-impl WasmType for i32 {
+impl WasmTy for i32 {
     const NAME: &'static str = "i32";
-    const VALUE_TYPE: ValueType = ValueType::I32;
+    const VALUE_TYPE: ValType = ValType::I32;
 
     fn return_imm_instr(&self) -> Instruction {
         Instruction::return_imm32(*self)
     }
 }
 
-impl WasmType for u64 {
+impl WasmTy for u64 {
     const NAME: &'static str = "i64";
-    const VALUE_TYPE: ValueType = ValueType::I64;
+    const VALUE_TYPE: ValType = ValType::I64;
 
     fn return_imm_instr(&self) -> Instruction {
         match <Const32<i64>>::try_from(*self as i64).ok() {
@@ -43,9 +43,9 @@ impl WasmType for u64 {
     }
 }
 
-impl WasmType for i64 {
+impl WasmTy for i64 {
     const NAME: &'static str = "i64";
-    const VALUE_TYPE: ValueType = ValueType::I64;
+    const VALUE_TYPE: ValType = ValType::I64;
 
     fn return_imm_instr(&self) -> Instruction {
         match <Const32<i64>>::try_from(*self).ok() {
@@ -55,18 +55,18 @@ impl WasmType for i64 {
     }
 }
 
-impl WasmType for f32 {
+impl WasmTy for f32 {
     const NAME: &'static str = "f32";
-    const VALUE_TYPE: ValueType = ValueType::F32;
+    const VALUE_TYPE: ValType = ValType::F32;
 
     fn return_imm_instr(&self) -> Instruction {
         Instruction::return_imm32(F32::from(*self))
     }
 }
 
-impl WasmType for f64 {
+impl WasmTy for f64 {
     const NAME: &'static str = "f64";
-    const VALUE_TYPE: ValueType = ValueType::F64;
+    const VALUE_TYPE: ValType = ValType::F64;
 
     fn return_imm_instr(&self) -> Instruction {
         match <Const32<f64>>::try_from(*self).ok() {

@@ -41,9 +41,8 @@ pub(crate) use self::{
         UnaryInstr,
     },
 };
-use crate::{engine::CompiledFunc, Error};
+use crate::{core::TrapCode, engine::CompiledFunc, Error};
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
-use wasmi_core::TrapCode;
 
 /// A Wasmi instruction.
 ///

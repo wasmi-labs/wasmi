@@ -1,5 +1,5 @@
 use super::Func;
-use crate::{core::UntypedValue, reftype::Transposer};
+use crate::{core::UntypedVal, reftype::Transposer};
 
 /// A nullable [`Func`] reference.
 #[derive(Debug, Default, Copy, Clone)]
@@ -23,33 +23,33 @@ fn funcref_sizeof() {
     //     size_of(Func) == size_of(UntypedValue) == size_of(FuncRef)
     use core::mem::size_of;
     assert_eq!(size_of::<Func>(), size_of::<u64>());
-    assert_eq!(size_of::<Func>(), size_of::<UntypedValue>());
+    assert_eq!(size_of::<Func>(), size_of::<UntypedVal>());
     assert_eq!(size_of::<Func>(), size_of::<FuncRef>());
 }
 
 #[test]
 fn funcref_null_to_zero() {
-    assert_eq!(UntypedValue::from(FuncRef::null()), UntypedValue::from(0));
-    assert!(FuncRef::from(UntypedValue::from(0)).is_null());
+    assert_eq!(UntypedVal::from(FuncRef::null()), UntypedVal::from(0));
+    assert!(FuncRef::from(UntypedVal::from(0)).is_null());
 }
 
-impl From<UntypedValue> for FuncRef {
-    fn from(untyped: UntypedValue) -> Self {
+impl From<UntypedVal> for FuncRef {
+    fn from(untyped: UntypedVal) -> Self {
         // Safety: This union access is safe since there are no invalid
         //         bit patterns for [`FuncRef`] instances. Therefore
         //         this operation cannot produce invalid [`FuncRef`]
-        //         instances even though the input [`UntypedValue`]
+        //         instances even though the input [`UntypedVal`]
         //         was modified arbitrarily.
         unsafe { <Transposer<Self>>::from(untyped).reftype }.canonicalize()
     }
 }
 
-impl From<FuncRef> for UntypedValue {
+impl From<FuncRef> for UntypedVal {
     fn from(funcref: FuncRef) -> Self {
         let funcref = funcref.canonicalize();
         // Safety: This operation is safe since there are no invalid
-        //         bit patterns for [`UntypedValue`] instances. Therefore
-        //         this operation cannot produce invalid [`UntypedValue`]
+        //         bit patterns for [`UntypedVal`] instances. Therefore
+        //         this operation cannot produce invalid [`UntypedVal`]
         //         instances even if it was possible to arbitrarily modify
         //         the input [`FuncRef`] instance.
         Self::from(unsafe { <Transposer<FuncRef>>::new(funcref).value })

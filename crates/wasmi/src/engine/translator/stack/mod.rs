@@ -9,8 +9,9 @@ pub use self::{
     provider::{ProviderStack, TaggedProvider},
     register_alloc::{RegisterAlloc, RegisterSpace},
 };
-use super::{PreservedLocal, TypedValue};
+use super::{PreservedLocal, TypedVal};
 use crate::{
+    core::UntypedVal,
     engine::{
         bytecode::{Provider, Register, RegisterSpan, UntypedProvider},
         TranslationError,
@@ -19,24 +20,23 @@ use crate::{
     FuncType,
 };
 use std::vec::Vec;
-use wasmi_core::UntypedValue;
 
 /// Typed inputs to Wasmi bytecode instructions.
 ///
-/// Either a [`Register`] or a constant [`UntypedValue`].
+/// Either a [`Register`] or a constant [`UntypedVal`].
 ///
 /// # Note
 ///
 /// The [`TypedProvider`] is used primarily during translation of a Wasmi
 /// function where types of constant values play an important role.
-pub type TypedProvider = Provider<TypedValue>;
+pub type TypedProvider = Provider<TypedVal>;
 
 impl TypedProvider {
     /// Converts the [`TypedProvider`] to a resolved [`UntypedProvider`].
     pub fn into_untyped(self) -> UntypedProvider {
         match self {
             Self::Register(register) => UntypedProvider::Register(register),
-            Self::Const(value) => UntypedProvider::Const(UntypedValue::from(value)),
+            Self::Const(value) => UntypedProvider::Const(UntypedVal::from(value)),
         }
     }
 
@@ -130,6 +130,13 @@ impl ValueStack {
         self.providers.preserve_all_locals(&mut self.reg_alloc, f)
     }
 
+    /// Frees all preservation slots that have been flagged for removal.
+    ///
+    /// This is important to allow them for reuse for future preservations.
+    pub fn gc_preservations(&mut self) {
+        self.reg_alloc.gc_preservations()
+    }
+
     /// Returns the number of [`Provider`] on the [`ValueStack`].
     ///
     /// # Note
@@ -177,7 +184,7 @@ impl ValueStack {
     /// Constant values allocated this way are deduplicated and return shared [`Register`].
     pub fn alloc_const<T>(&mut self, value: T) -> Result<Register, Error>
     where
-        T: Into<UntypedValue>,
+        T: Into<UntypedVal>,
     {
         self.consts.alloc(value.into())
     }
@@ -218,7 +225,7 @@ impl ValueStack {
     /// Pushes a constant value to the [`ProviderStack`].
     pub fn push_const<T>(&mut self, value: T)
     where
-        T: Into<TypedValue>,
+        T: Into<TypedVal>,
     {
         self.providers.push_const_value(value)
     }

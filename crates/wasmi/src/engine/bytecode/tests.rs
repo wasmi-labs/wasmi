@@ -1,5 +1,5 @@
 use super::*;
-use std::mem::size_of;
+use core::mem::size_of;
 
 #[test]
 fn bytecode_size() {

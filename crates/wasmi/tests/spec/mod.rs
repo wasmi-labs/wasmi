@@ -9,6 +9,7 @@ use self::{
     descriptor::{TestDescriptor, TestSpan},
     error::TestError,
     profile::TestProfile,
+    run::{ParsingMode, RunnerConfig},
 };
 use wasmi::Config;
 
@@ -68,7 +69,7 @@ fn mvp_config() -> Config {
 /// # Note
 ///
 /// The Wasm MVP has no Wasm proposals enabled.
-fn test_config(consume_fuel: bool) -> Config {
+fn test_config(consume_fuel: bool, mode: ParsingMode) -> RunnerConfig {
     let mut config = mvp_config();
     // We have to enable the `mutable-global` Wasm proposal because
     // it seems that the entire Wasm spec test suite is already built
@@ -83,7 +84,7 @@ fn test_config(consume_fuel: bool) -> Config {
         .wasm_tail_call(true)
         .wasm_extended_const(true)
         .consume_fuel(consume_fuel);
-    config
+    RunnerConfig { config, mode }
 }
 
 macro_rules! expand_tests {
@@ -217,7 +218,7 @@ mod blobs {
 expand_tests! {
     define_spec_tests,
 
-    let config = test_config(false);
+    let config = test_config(false, ParsingMode::Buffered);
     let runner = run::run_wasm_spec_test;
 }
 
@@ -227,7 +228,18 @@ mod fueled {
     expand_tests! {
         define_spec_tests,
 
-        let config = test_config(true);
+        let config = test_config(true, ParsingMode::Buffered);
+        let runner = run::run_wasm_spec_test;
+    }
+}
+
+mod streaming {
+    use super::*;
+
+    expand_tests! {
+        define_spec_tests,
+
+        let config = test_config(false, ParsingMode::Streaming);
         let runner = run::run_wasm_spec_test;
     }
 }

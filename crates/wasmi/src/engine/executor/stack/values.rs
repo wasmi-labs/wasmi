@@ -1,11 +1,16 @@
-use super::err_stack_overflow;
+use super::{err_stack_overflow, StackOffsets};
 use crate::{
-    core::UntypedValue,
+    core::{TrapCode, UntypedVal},
     engine::{bytecode::Register, CompiledFuncEntity},
 };
-use core::{fmt, fmt::Debug, iter, mem, ptr};
-use std::{vec, vec::Vec};
-use wasmi_core::TrapCode;
+use core::{
+    fmt::{self, Debug},
+    mem::{self, MaybeUninit},
+    ops::Range,
+    ptr,
+    slice,
+};
+use std::vec::Vec;
 
 #[cfg(doc)]
 use super::calls::CallFrame;
@@ -14,11 +19,9 @@ use crate::engine::CompiledFunc;
 
 pub struct ValueStack {
     /// The values on the [`ValueStack`].
-    values: Vec<UntypedValue>,
-    /// Index of the first free value in the `values` buffer.
-    sp: usize,
+    values: Vec<UntypedVal>,
     /// Maximal possible `sp` value.
-    max_sp: usize,
+    max_len: usize,
 }
 
 impl ValueStack {
@@ -32,9 +35,8 @@ impl ValueStack {
 impl Debug for ValueStack {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ValueStack")
-            .field("sp", &self.sp)
-            .field("max_sp", &self.max_sp)
-            .field("entries", &&self.values[..self.sp])
+            .field("max_len", &self.max_len)
+            .field("entries", &&self.values[..])
             .finish()
     }
 }
@@ -42,7 +44,7 @@ impl Debug for ValueStack {
 #[cfg(test)]
 impl PartialEq for ValueStack {
     fn eq(&self, other: &Self) -> bool {
-        self.sp == other.sp && self.values[..self.sp] == other.values[..other.sp]
+        self.values == other.values
     }
 }
 
@@ -51,7 +53,7 @@ impl Eq for ValueStack {}
 
 impl Default for ValueStack {
     fn default() -> Self {
-        const REGISTER_SIZE: usize = mem::size_of::<UntypedValue>();
+        const REGISTER_SIZE: usize = mem::size_of::<UntypedVal>();
         Self::new(
             Self::DEFAULT_MIN_HEIGHT / REGISTER_SIZE,
             Self::DEFAULT_MAX_HEIGHT / REGISTER_SIZE,
@@ -76,9 +78,8 @@ impl ValueStack {
             "initial value stack length is greater than maximum value stack length",
         );
         Self {
-            values: vec![UntypedValue::default(); initial_len],
-            sp: 0,
-            max_sp: maximum_len,
+            values: Vec::with_capacity(initial_len),
+            max_len: maximum_len,
         }
     }
 
@@ -91,8 +92,7 @@ impl ValueStack {
     pub fn empty() -> Self {
         Self {
             values: Vec::new(),
-            sp: 0,
-            max_sp: 0,
+            max_len: 0,
         }
     }
 
@@ -105,7 +105,7 @@ impl ValueStack {
     /// reset the [`ValueStack`] before executing the next function to
     /// provide a clean slate for all executions.
     pub fn reset(&mut self) {
-        self.sp = 0;
+        self.values.clear();
     }
 
     /// Returns the root [`FrameRegisters`] pointing to the first value on the [`ValueStack`].
@@ -119,31 +119,10 @@ impl ValueStack {
         FrameRegisters::new(ptr)
     }
 
-    /// Returns the [`FrameRegisters`] at the given `offset` from the back.
-    ///
-    /// # Panics (Debug)
-    ///
-    /// If `n` is greater than the height of the [`ValueStack`].
-    pub unsafe fn stack_ptr_last_n(&mut self, n: usize) -> FrameRegisters {
-        let len_values = self.len();
-        debug_assert!(n <= len_values);
-        let offset = len_values - n;
-        self.stack_ptr_at(ValueStackOffset(offset))
-    }
-
     /// Returns the capacity of the [`ValueStack`].
-    fn capacity(&self) -> usize {
-        self.values.len()
-    }
-
-    /// Returns `true` if the [`ValueStack`] is empty.
-    pub fn is_empty(&self) -> bool {
-        self.values.capacity() == 0
-    }
-
-    /// Returns the current length of the [`ValueStack`].
-    fn len(&self) -> usize {
-        self.sp
+    pub fn capacity(&self) -> usize {
+        debug_assert!(self.values.len() <= self.values.capacity());
+        self.values.capacity()
     }
 
     /// Reserves enough space for `additional` cells on the [`ValueStack`].
@@ -153,67 +132,37 @@ impl ValueStack {
     /// # Errors
     ///
     /// When trying to grow the [`ValueStack`] over its maximum size limit.
-    pub fn reserve(&mut self, additional: usize) -> Result<(), TrapCode> {
-        let new_len = self
-            .len()
-            .checked_add(additional)
-            .filter(|&new_len| new_len <= self.max_sp)
-            .ok_or_else(err_stack_overflow)?;
-        if new_len > self.capacity() {
-            // Note: By extending with the new length we effectively double
-            // the current value stack length and add the additional flat amount
-            // on top. This avoids too many frequent reallocations.
-            self.values
-                .extend(iter::repeat(UntypedValue::default()).take(new_len));
+    #[inline(always)]
+    pub fn extend_by(
+        &mut self,
+        additional: usize,
+        on_resize: impl FnOnce(&mut Self),
+    ) -> Result<&mut [MaybeUninit<UntypedVal>], TrapCode> {
+        if additional >= self.max_len() - self.len() {
+            return Err(err_stack_overflow());
         }
-        Ok(())
+        let prev_capacity = self.capacity();
+        self.values.reserve(additional);
+        if prev_capacity != self.capacity() {
+            on_resize(self);
+        }
+        let spare = self.values.spare_capacity_mut().as_mut_ptr();
+        unsafe { self.values.set_len(self.values.len() + additional) };
+        Ok(unsafe { slice::from_raw_parts_mut(spare, additional) })
     }
 
-    /// Extends the [`ValueStack`] by the `amount` of zeros.
-    ///
-    /// Returns the [`ValueStackOffset`] before this operation.
-    /// Use [`ValueStack::truncate`] to undo the [`ValueStack`] state change.
-    ///
-    /// # Panics
-    ///
-    /// If the value stack cannot fit `additional` stack values.
-    pub fn extend_zeros(&mut self, amount: usize) -> ValueStackOffset {
-        if amount == 0 {
-            return ValueStackOffset(self.sp);
-        }
-        let old_sp = self.sp;
-        let cells = self
-            .values
-            .get_mut(self.sp..)
-            .and_then(|slice| slice.get_mut(..amount))
-            .unwrap_or_else(|| panic!("did not reserve enough value stack space"));
-        cells.fill(UntypedValue::default());
-        self.sp += amount;
-        ValueStackOffset(old_sp)
+    /// Returns the current length of the [`ValueStack`].
+    #[inline(always)]
+    fn len(&self) -> usize {
+        debug_assert!(self.values.len() <= self.max_len);
+        self.values.len()
     }
 
-    /// Extends the [`ValueStack`] by the `values` slice.
-    ///
-    /// Returns the [`ValueStackOffset`] before this operation.
-    /// Use [`ValueStack::truncate`] to undo the [`ValueStack`] state change.
-    ///
-    /// # Panics
-    ///
-    /// If the value stack cannot fit `additional` stack values.
-    pub fn extend_slice(&mut self, values: &[UntypedValue]) -> ValueStackOffset {
-        if values.is_empty() {
-            return ValueStackOffset(self.sp);
-        }
-        let old_sp = self.sp;
-        let len_values = values.len();
-        let cells = self
-            .values
-            .get_mut(self.sp..)
-            .and_then(|slice| slice.get_mut(..len_values))
-            .unwrap_or_else(|| panic!("did not reserve enough value stack space"));
-        cells.copy_from_slice(values);
-        self.sp += len_values;
-        ValueStackOffset(old_sp)
+    /// Returns the maximum length of the [`ValueStack`].
+    #[inline(always)]
+    fn max_len(&self) -> usize {
+        debug_assert!(self.values.len() <= self.max_len);
+        self.max_len
     }
 
     /// Drop the last `amount` cells of the [`ValueStack`].
@@ -221,10 +170,24 @@ impl ValueStack {
     /// # Panics (Debug)
     ///
     /// If `amount` is greater than the [`ValueStack`] height.
-    #[inline]
+    #[inline(always)]
     pub fn drop(&mut self, amount: usize) {
-        debug_assert!(self.sp >= amount);
-        self.sp -= amount;
+        assert!(self.len() >= amount);
+        // Safety: we just asserted that the current length is large enough to not underflow.
+        unsafe { self.values.set_len(self.len() - amount) };
+    }
+
+    /// Drop the last `amount` cells of the [`ValueStack`] and returns a slice to them.
+    ///
+    /// # Panics (Debug)
+    ///
+    /// If `amount` is greater than the [`ValueStack`] height.
+    #[inline(always)]
+    pub fn drop_return(&mut self, amount: usize) -> &[UntypedVal] {
+        let len = self.len();
+        let dropped = unsafe { self.values.get_unchecked(len - amount..) }.as_ptr();
+        self.drop(amount);
+        unsafe { slice::from_raw_parts(dropped, amount) }
     }
 
     /// Shrink the [`ValueStack`] to the [`ValueStackOffset`].
@@ -232,11 +195,12 @@ impl ValueStack {
     /// # Panics (Debug)
     ///
     /// If `new_sp` is greater than the current [`ValueStack`] pointer.
-    #[inline]
-    pub fn truncate(&mut self, new_sp: impl Into<ValueStackOffset>) {
-        let new_sp = new_sp.into().0;
-        debug_assert!(new_sp <= self.sp);
-        self.sp = new_sp;
+    #[inline(always)]
+    pub fn truncate(&mut self, new_len: impl Into<ValueStackOffset>) {
+        let new_len = new_len.into().0;
+        assert!(new_len <= self.len());
+        // Safety: we just asserted that the new length is valid.
+        unsafe { self.values.set_len(new_len) };
     }
 
     /// Allocates a new [`CompiledFunc`] on the [`ValueStack`].
@@ -255,68 +219,61 @@ impl ValueStack {
     pub fn alloc_call_frame(
         &mut self,
         func: &CompiledFuncEntity,
-    ) -> Result<(BaseValueStackOffset, FrameValueStackOffset), TrapCode> {
+        on_resize: impl FnMut(&mut Self),
+    ) -> Result<(FrameParams, StackOffsets), TrapCode> {
         let len_registers = func.len_registers();
-        self.reserve(len_registers as usize)?;
-        let frame_offset = FrameValueStackOffset(self.extend_slice(func.consts()));
-        let base_offset = BaseValueStackOffset(self.extend_zeros(func.len_cells() as usize));
-        Ok((base_offset, frame_offset))
-    }
-
-    /// Fills the [`ValueStack`] cells at `offset` with `values`.
-    ///
-    /// # Safety
-    ///
-    /// The caller has to ensure that `offset` is valid for the range of
-    /// `values` required to be stored on the [`ValueStack`].
-    pub unsafe fn fill_at<I>(&mut self, offset: impl Into<ValueStackOffset>, values: I)
-    where
-        I: IntoIterator<Item = UntypedValue>,
-    {
-        let offset = offset.into().0;
-        let mut values = values.into_iter();
-        if offset >= self.sp {
-            // In this case we can assert that `values` must be empty since
-            // otherwise there is a buffer overflow on the value stack.
-            debug_assert!(values.next().is_none());
-        }
-        let cells = &mut self.values[offset..];
-        for (cell, value) in cells.iter_mut().zip(values) {
-            *cell = value;
-        }
+        let len_consts = func.consts().len();
+        let len = self.len();
+        let mut spare = self
+            .extend_by(len_registers as usize, on_resize)?
+            .iter_mut();
+        (&mut spare)
+            .zip(func.consts())
+            .for_each(|(uninit, const_value)| {
+                uninit.write(*const_value);
+            });
+        let params = FrameParams::new(spare.into_slice());
+        let frame = ValueStackOffset(len);
+        let base = ValueStackOffset(len + len_consts);
+        Ok((
+            params,
+            StackOffsets {
+                base: BaseValueStackOffset(base),
+                frame: FrameValueStackOffset(frame),
+            },
+        ))
     }
 
     /// Returns a shared slice over the values of the [`ValueStack`].
-    #[inline]
-    pub fn as_slice(&self) -> &[UntypedValue] {
-        &self.values[0..self.sp]
+    #[inline(always)]
+    pub fn as_slice(&self) -> &[UntypedVal] {
+        self.values.as_slice()
     }
 
     /// Returns an exclusive slice over the values of the [`ValueStack`].
-    #[inline]
-    pub fn as_slice_mut(&mut self) -> &mut [UntypedValue] {
-        &mut self.values[0..self.sp]
+    #[inline(always)]
+    pub fn as_slice_mut(&mut self) -> &mut [UntypedVal] {
+        self.values.as_mut_slice()
     }
 
-    /// Removes the slice `from..to` of [`UntypedValue`] cells from the [`ValueStack`].
+    /// Removes the slice `from..to` of [`UntypedVal`] cells from the [`ValueStack`].
     ///
     /// Returns the number of drained [`ValueStack`] cells.
     ///
     /// # Safety
     ///
     /// - This invalidates all [`FrameRegisters`] within the range `from..` and the caller has to
-    /// make sure to properly reinstantiate all those pointers after this operation.
+    ///   make sure to properly reinstantiate all those pointers after this operation.
     /// - This also invalidates all [`FrameValueStackOffset`] and [`BaseValueStackOffset`] indices
-    /// within the range `from..`.
-    #[inline]
+    ///   within the range `from..`.
+    #[inline(always)]
     pub fn drain(&mut self, from: FrameValueStackOffset, to: FrameValueStackOffset) -> usize {
         debug_assert!(from <= to);
         let from = from.0 .0;
         let to = to.0 .0;
-        debug_assert!(from <= self.sp);
-        debug_assert!(to <= self.sp);
+        debug_assert!(from <= self.len());
+        debug_assert!(to <= self.len());
         let len_drained = to - from;
-        self.sp -= len_drained;
         self.values.drain(from..to);
         len_drained
     }
@@ -389,12 +346,46 @@ impl From<BaseValueStackOffset> for usize {
     }
 }
 
+/// Uninitialized parameters of a [`CallFrame`].
+pub struct FrameParams {
+    range: Range<*mut MaybeUninit<UntypedVal>>,
+}
+
+impl FrameParams {
+    /// Creates a new [`FrameRegisters`].
+    pub fn new(ptr: &mut [MaybeUninit<UntypedVal>]) -> Self {
+        Self {
+            range: ptr.as_mut_ptr_range(),
+        }
+    }
+
+    /// Sets the value of the `register` to `value`.`
+    ///
+    /// # Safety
+    ///
+    /// It is the callers responsibility to provide a [`Register`] that
+    /// does not access the underlying [`ValueStack`] out of bounds.
+    pub unsafe fn init_next(&mut self, value: UntypedVal) {
+        self.range.start.write(MaybeUninit::new(value));
+        self.range.start = self.range.start.add(1);
+    }
+
+    /// Zero-initialize the remaining locals and parameters.
+    pub fn init_zeroes(mut self) {
+        debug_assert!(self.range.start <= self.range.end);
+        while self.range.start != self.range.end {
+            // Safety: We do not write out-of-buffer due to the above condition.
+            unsafe { self.init_next(UntypedVal::from(0_u64)) }
+        }
+    }
+}
+
 /// Accessor to the [`Register`] values of a [`CallFrame`] on the [`CallStack`].
 ///
 /// [`CallStack`]: [`super::CallStack`]
 pub struct FrameRegisters {
     /// The underlying raw pointer to a [`CallFrame`] on the [`ValueStack`].
-    ptr: *mut UntypedValue,
+    ptr: *mut UntypedVal,
 }
 
 impl Debug for FrameRegisters {
@@ -405,17 +396,17 @@ impl Debug for FrameRegisters {
 
 impl FrameRegisters {
     /// Creates a new [`FrameRegisters`].
-    fn new(ptr: *mut UntypedValue) -> Self {
+    fn new(ptr: *mut UntypedVal) -> Self {
         Self { ptr }
     }
 
-    /// Returns the [`UntypedValue`] at the given [`Register`].
+    /// Returns the [`UntypedVal`] at the given [`Register`].
     ///
     /// # Safety
     ///
     /// It is the callers responsibility to provide a [`Register`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn get(&self, register: Register) -> UntypedValue {
+    pub unsafe fn get(&self, register: Register) -> UntypedVal {
         ptr::read(self.register_offset(register))
     }
 
@@ -425,12 +416,12 @@ impl FrameRegisters {
     ///
     /// It is the callers responsibility to provide a [`Register`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn set(&mut self, register: Register, value: UntypedValue) {
+    pub unsafe fn set(&mut self, register: Register, value: UntypedVal) {
         ptr::write(self.register_offset(register), value)
     }
 
     /// Returns the underlying pointer offset by the [`Register`] index.
-    unsafe fn register_offset(&self, register: Register) -> *mut UntypedValue {
+    unsafe fn register_offset(&self, register: Register) -> *mut UntypedVal {
         unsafe { self.ptr.offset(register.to_i16() as isize) }
     }
 }

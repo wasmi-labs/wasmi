@@ -1,4 +1,4 @@
-use super::*;
+use super::arena::*;
 
 impl ArenaIndex for usize {
     fn into_usize(self) -> usize {

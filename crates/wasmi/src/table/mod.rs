@@ -4,18 +4,18 @@ pub use self::{
 };
 use super::{AsContext, AsContextMut, Stored};
 use crate::{
+    collections::arena::ArenaIndex,
+    core::{TrapCode, UntypedVal, ValType},
     error::EntityGrowError,
     module::FuncIdx,
     store::{Fuel, FuelError, ResourceLimiterRef},
     value::WithType,
     Func,
     FuncRef,
-    Value,
+    Val,
 };
 use core::cmp::max;
 use std::{vec, vec::Vec};
-use wasmi_arena::ArenaIndex;
-use wasmi_core::{TrapCode, UntypedValue, ValueType};
 
 mod element;
 mod error;
@@ -44,7 +44,7 @@ impl ArenaIndex for TableIdx {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct TableType {
     /// The type of values stored in the [`Table`].
-    element: ValueType,
+    element: ValType,
     /// The minimum number of elements the [`Table`] must have.
     min: u32,
     /// The optional maximum number of elements the [`Table`] can have.
@@ -59,15 +59,15 @@ impl TableType {
     /// # Panics
     ///
     /// If `min` is greater than `max`.
-    pub fn new(element: ValueType, min: u32, max: Option<u32>) -> Self {
+    pub fn new(element: ValType, min: u32, max: Option<u32>) -> Self {
         if let Some(max) = max {
             assert!(min <= max);
         }
         Self { element, min, max }
     }
 
-    /// Returns the [`ValueType`] of elements stored in the [`Table`].
-    pub fn element(&self) -> ValueType {
+    /// Returns the [`ValType`] of elements stored in the [`Table`].
+    pub fn element(&self) -> ValType {
         self.element
     }
 
@@ -83,8 +83,8 @@ impl TableType {
         self.max
     }
 
-    /// Returns a [`TableError`] if `ty` does not match the [`Table`] element [`ValueType`].
-    fn matches_element_type(&self, ty: ValueType) -> Result<(), TableError> {
+    /// Returns a [`TableError`] if `ty` does not match the [`Table`] element [`ValType`].
+    fn matches_element_type(&self, ty: ValType) -> Result<(), TableError> {
         let expected = self.element();
         let actual = ty;
         if actual != expected {
@@ -144,7 +144,7 @@ impl TableType {
 #[derive(Debug)]
 pub struct TableEntity {
     ty: TableType,
-    elements: Vec<UntypedValue>,
+    elements: Vec<UntypedVal>,
 }
 
 impl TableEntity {
@@ -155,7 +155,7 @@ impl TableEntity {
     /// If `init` does not match the [`TableType`] element type.
     pub fn new(
         ty: TableType,
-        init: Value,
+        init: Val,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<Self, TableError> {
         ty.matches_element_type(init.ty())?;
@@ -203,7 +203,7 @@ impl TableEntity {
     ///
     /// # Note
     ///
-    /// The newly added elements are initialized to the `init` [`Value`].
+    /// The newly added elements are initialized to the `init` [`Val`].
     ///
     /// # Errors
     ///
@@ -212,7 +212,7 @@ impl TableEntity {
     pub fn grow(
         &mut self,
         delta: u32,
-        init: Value,
+        init: Val,
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u32, EntityGrowError> {
@@ -230,7 +230,7 @@ impl TableEntity {
     ///
     /// This is an internal API that exists for efficiency purposes.
     ///
-    /// The newly added elements are initialized to the `init` [`Value`].
+    /// The newly added elements are initialized to the `init` [`Val`].
     ///
     /// # Errors
     ///
@@ -238,7 +238,7 @@ impl TableEntity {
     pub fn grow_untyped(
         &mut self,
         delta: u32,
-        init: UntypedValue,
+        init: UntypedVal,
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u32, EntityGrowError> {
@@ -283,15 +283,15 @@ impl TableEntity {
         Ok(current)
     }
 
-    /// Converts the internal [`UntypedValue`] into a [`Value`] for this [`Table`] element type.
-    fn make_typed(&self, untyped: UntypedValue) -> Value {
+    /// Converts the internal [`UntypedVal`] into a [`Val`] for this [`Table`] element type.
+    fn make_typed(&self, untyped: UntypedVal) -> Val {
         untyped.with_type(self.ty().element())
     }
 
     /// Returns the [`Table`] element value at `index`.
     ///
     /// Returns `None` if `index` is out of bounds.
-    pub fn get(&self, index: u32) -> Option<Value> {
+    pub fn get(&self, index: u32) -> Option<Val> {
         self.get_untyped(index)
             .map(|untyped| self.make_typed(untyped))
     }
@@ -304,27 +304,27 @@ impl TableEntity {
     ///
     /// This is a more efficient version of [`Table::get`] for
     /// internal use only.
-    pub fn get_untyped(&self, index: u32) -> Option<UntypedValue> {
+    pub fn get_untyped(&self, index: u32) -> Option<UntypedVal> {
         self.elements.get(index as usize).copied()
     }
 
-    /// Sets the [`Value`] of this [`Table`] at `index`.
+    /// Sets the [`Val`] of this [`Table`] at `index`.
     ///
     /// # Errors
     ///
     /// - If `index` is out of bounds.
     /// - If `value` does not match the [`Table`] element type.
-    pub fn set(&mut self, index: u32, value: Value) -> Result<(), TableError> {
+    pub fn set(&mut self, index: u32, value: Val) -> Result<(), TableError> {
         self.ty().matches_element_type(value.ty())?;
         self.set_untyped(index, value.into())
     }
 
-    /// Returns the [`UntypedValue`] of the [`Table`] at `index`.
+    /// Returns the [`UntypedVal`] of the [`Table`] at `index`.
     ///
     /// # Errors
     ///
     /// If `index` is out of bounds.
-    pub fn set_untyped(&mut self, index: u32, value: UntypedValue) -> Result<(), TableError> {
+    pub fn set_untyped(&mut self, index: u32, value: UntypedVal) -> Result<(), TableError> {
         let current = self.size();
         let untyped =
             self.elements
@@ -395,14 +395,14 @@ impl TableEntity {
         }
         // Perform the actual table initialization.
         match table_type.element() {
-            ValueType::FuncRef => {
+            ValType::FuncRef => {
                 // Initialize element interpreted as Wasm `funrefs`.
                 dst_items.iter_mut().zip(src_items).for_each(|(dst, src)| {
                     let func_or_null = src.funcref().map(FuncIdx::into_u32).map(&get_func);
                     *dst = FuncRef::new(func_or_null).into();
                 });
             }
-            ValueType::ExternRef => {
+            ValType::ExternRef => {
                 // Initialize element interpreted as Wasm `externrefs`.
                 dst_items.iter_mut().zip(src_items).for_each(|(dst, src)| {
                     *dst = src.eval_const().expect("must evaluate to some value");
@@ -498,7 +498,7 @@ impl TableEntity {
     pub fn fill(
         &mut self,
         dst: u32,
-        val: Value,
+        val: Val,
         len: u32,
         fuel: Option<&mut Fuel>,
     ) -> Result<(), TrapCode> {
@@ -526,7 +526,7 @@ impl TableEntity {
     pub fn fill_untyped(
         &mut self,
         dst: u32,
-        val: UntypedValue,
+        val: UntypedVal,
         len: u32,
         fuel: Option<&mut Fuel>,
     ) -> Result<(), TrapCode> {
@@ -566,7 +566,7 @@ impl Table {
     /// # Errors
     ///
     /// If `init` does not match the [`TableType`] element type.
-    pub fn new(mut ctx: impl AsContextMut, ty: TableType, init: Value) -> Result<Self, TableError> {
+    pub fn new(mut ctx: impl AsContextMut, ty: TableType, init: Val) -> Result<Self, TableError> {
         let (inner, mut resource_limiter) = ctx
             .as_context_mut()
             .store
@@ -618,7 +618,7 @@ impl Table {
     ///
     /// # Note
     ///
-    /// The newly added elements are initialized to the `init` [`Value`].
+    /// The newly added elements are initialized to the `init` [`Val`].
     ///
     /// # Errors
     ///
@@ -632,7 +632,7 @@ impl Table {
         &self,
         mut ctx: impl AsContextMut,
         delta: u32,
-        init: Value,
+        init: Val,
     ) -> Result<u32, TableError> {
         let (inner, mut limiter) = ctx
             .as_context_mut()
@@ -657,11 +657,11 @@ impl Table {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Table`].
-    pub fn get(&self, ctx: impl AsContext, index: u32) -> Option<Value> {
+    pub fn get(&self, ctx: impl AsContext, index: u32) -> Option<Val> {
         ctx.as_context().store.inner.resolve_table(self).get(index)
     }
 
-    /// Sets the [`Value`] of this [`Table`] at `index`.
+    /// Sets the [`Val`] of this [`Table`] at `index`.
     ///
     /// # Errors
     ///
@@ -675,7 +675,7 @@ impl Table {
         &self,
         mut ctx: impl AsContextMut,
         index: u32,
-        value: Value,
+        value: Val,
     ) -> Result<(), TableError> {
         ctx.as_context_mut()
             .store
@@ -758,7 +758,7 @@ impl Table {
         &self,
         mut ctx: impl AsContextMut,
         dst: u32,
-        val: Value,
+        val: Val,
         len: u32,
     ) -> Result<(), TrapCode> {
         ctx.as_context_mut()

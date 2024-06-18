@@ -11,7 +11,7 @@ use self::{
     driver::{ExpectedFunc, TranslationTest},
 };
 use crate::{
-    core::UntypedValue,
+    core::UntypedVal,
     engine::bytecode::{AnyConst32, Const16, Const32, Instruction, Register},
     Config,
     Engine,
@@ -82,27 +82,27 @@ pub enum WasmOp {
 }
 
 impl WasmOp {
-    /// Create a new binary [`WasmOp`] for the given [`ValueType`]: `fn(T, T) -> T`
+    /// Create a new binary [`WasmOp`] for the given [`ValType`]: `fn(T, T) -> T`
     pub const fn binary(ty: WasmType, op: &'static str) -> Self {
         Self::Binary { ty, op }
     }
 
-    /// Create a new compare [`WasmOp`] for the given [`ValueType`]: `fn(T, T) -> i32`
+    /// Create a new compare [`WasmOp`] for the given [`ValType`]: `fn(T, T) -> i32`
     pub const fn cmp(ty: WasmType, op: &'static str) -> Self {
         Self::Cmp { ty, op }
     }
 
-    /// Create a new `load` [`WasmOp`] for the given [`ValueType`].
+    /// Create a new `load` [`WasmOp`] for the given [`ValType`].
     pub const fn load(ty: WasmType, op: &'static str) -> Self {
         Self::Load { ty, op }
     }
 
-    /// Create a new `store` [`WasmOp`] for the given [`ValueType`].
+    /// Create a new `store` [`WasmOp`] for the given [`ValType`].
     pub const fn store(ty: WasmType, op: &'static str) -> Self {
         Self::Store { ty, op }
     }
 
-    /// Returns the parameter [`ValueType`] of the [`WasmOp`].
+    /// Returns the parameter [`ValType`] of the [`WasmOp`].
     pub fn param_ty(&self) -> WasmType {
         match self {
             Self::Binary { ty, op: _ } => *ty,
@@ -112,7 +112,7 @@ impl WasmOp {
         }
     }
 
-    /// Returns the result [`ValueType`] of the [`WasmOp`].
+    /// Returns the result [`ValType`] of the [`WasmOp`].
     pub fn result_ty(&self) -> WasmType {
         match self {
             Self::Binary { ty, op: _ } => *ty,
@@ -122,7 +122,7 @@ impl WasmOp {
         }
     }
 
-    /// Returns the display [`ValueType`] of the [`WasmOp`].
+    /// Returns the display [`ValType`] of the [`WasmOp`].
     pub fn display_ty(&self) -> WasmType {
         match self {
             Self::Binary { .. } => self.param_ty(),
@@ -287,7 +287,7 @@ fn test_binary_reg_imm32<T>(
     value: T,
     make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
 ) where
-    T: Copy + Into<UntypedValue>,
+    T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
 {
     let expected = [
@@ -309,7 +309,7 @@ fn test_binary_reg_imm32_rev<T>(
     value: T,
     make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
 ) where
-    T: Copy + Into<UntypedValue>,
+    T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
 {
     let expected = [
@@ -331,7 +331,7 @@ fn test_binary_reg_imm32_rev_commutative<T>(
     value: T,
     make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
 ) where
-    T: Copy + Into<UntypedValue>,
+    T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
 {
     let expected = [

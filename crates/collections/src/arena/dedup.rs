@@ -1,17 +1,21 @@
 use super::{Arena, ArenaIndex, Iter, IterMut};
-use core::ops::{Index, IndexMut};
-use std::collections::BTreeMap;
+use crate::{map, Map};
+use core::{
+    hash::Hash,
+    ops::{Index, IndexMut},
+};
 
 /// A deduplicating arena allocator with a given index and entity type.
 ///
 /// For performance reasons the arena cannot deallocate single entities.
 #[derive(Debug)]
 pub struct DedupArena<Idx, T> {
-    entity2idx: BTreeMap<T, Idx>,
+    entity2idx: Map<T, Idx>,
     entities: Arena<Idx, T>,
 }
 
 impl<Idx, T> Default for DedupArena<Idx, T> {
+    #[inline]
     fn default() -> Self {
         Self::new()
     }
@@ -21,6 +25,7 @@ impl<Idx, T> PartialEq for DedupArena<Idx, T>
 where
     T: PartialEq,
 {
+    #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.entities.eq(&other.entities)
     }
@@ -30,9 +35,10 @@ impl<Idx, T> Eq for DedupArena<Idx, T> where T: Eq {}
 
 impl<Idx, T> DedupArena<Idx, T> {
     /// Creates a new empty deduplicating entity arena.
+    #[inline]
     pub fn new() -> Self {
         Self {
-            entity2idx: BTreeMap::new(),
+            entity2idx: Map::new(),
             entities: Arena::new(),
         }
     }
@@ -50,17 +56,20 @@ impl<Idx, T> DedupArena<Idx, T> {
     }
 
     /// Clears all entities from the arena.
+    #[inline]
     pub fn clear(&mut self) {
         self.entity2idx.clear();
         self.entities.clear();
     }
 
     /// Returns an iterator over the shared reference of the [`Arena`] entities.
+    #[inline]
     pub fn iter(&self) -> Iter<Idx, T> {
         self.entities.iter()
     }
 
     /// Returns an iterator over the exclusive reference of the [`Arena`] entities.
+    #[inline]
     pub fn iter_mut(&mut self) -> IterMut<Idx, T> {
         self.entities.iter_mut()
     }
@@ -69,25 +78,20 @@ impl<Idx, T> DedupArena<Idx, T> {
 impl<Idx, T> DedupArena<Idx, T>
 where
     Idx: ArenaIndex,
-    T: Ord + Clone,
+    T: Hash + Ord + Clone,
 {
-    /// Returns the next entity index.
-    fn next_index(&self) -> Idx {
-        self.entities.next_index()
-    }
-
     /// Allocates a new entity and returns its index.
     ///
     /// # Note
     ///
     /// Only allocates if the entity does not already exist in the [`DedupArena`].
     pub fn alloc(&mut self, entity: T) -> Idx {
-        match self.entity2idx.get(&entity) {
-            Some(index) => *index,
-            None => {
-                let index = self.next_index();
-                self.entity2idx.insert(entity.clone(), index);
+        match self.entity2idx.entry(entity.clone()) {
+            map::Entry::Occupied(entry) => *entry.get(),
+            map::Entry::Vacant(entry) => {
+                let index = self.entities.next_index();
                 self.entities.alloc(entity);
+                entry.insert(index);
                 index
             }
         }
@@ -109,7 +113,7 @@ where
 impl<Idx, T> FromIterator<T> for DedupArena<Idx, T>
 where
     Idx: ArenaIndex,
-    T: Clone + Ord,
+    T: Hash + Clone + Ord,
 {
     fn from_iter<I>(iter: I) -> Self
     where
@@ -119,7 +123,7 @@ where
         let entity2idx = entities
             .iter()
             .map(|(idx, entity)| (entity.clone(), idx))
-            .collect::<BTreeMap<_, _>>();
+            .collect::<Map<_, _>>();
         Self {
             entity2idx,
             entities,
@@ -134,6 +138,7 @@ where
     type Item = (Idx, &'a T);
     type IntoIter = Iter<'a, Idx, T>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
@@ -146,6 +151,7 @@ where
     type Item = (Idx, &'a mut T);
     type IntoIter = IterMut<'a, Idx, T>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.iter_mut()
     }

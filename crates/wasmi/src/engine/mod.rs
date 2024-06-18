@@ -2,7 +2,6 @@
 
 mod block_type;
 pub mod bytecode;
-mod cache;
 mod code_map;
 mod config;
 mod executor;
@@ -37,7 +36,8 @@ pub(crate) use self::{
 pub use self::{
     code_map::CompiledFunc,
     config::{CompilationMode, Config},
-    limits::{EngineLimits, EngineLimitsError, StackLimits},
+    executor::ResumableHostError,
+    limits::{EnforcedLimits, EnforcedLimitsError, StackLimits},
     resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
     traits::{CallParams, CallResults},
     translator::{Instr, TranslationError},
@@ -48,6 +48,7 @@ use self::{
     resumable::ResumableCallBase,
 };
 use crate::{
+    collections::arena::{ArenaIndex, GuardedEntity},
     module::{FuncIdx, ModuleHeader},
     Error,
     Func,
@@ -60,14 +61,13 @@ use std::{
     sync::{Arc, Weak},
     vec::Vec,
 };
-use wasmi_arena::{ArenaIndex, GuardedEntity};
 use wasmparser::{FuncToValidate, FuncValidatorAllocations, ValidatorResources};
 
 #[cfg(test)]
 use self::bytecode::Instruction;
 
 #[cfg(test)]
-use wasmi_core::UntypedValue;
+use crate::core::UntypedVal;
 
 #[cfg(doc)]
 use crate::Store;
@@ -77,7 +77,7 @@ use crate::Store;
 /// # Note
 ///
 /// Used to protect against invalid entity indices.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct EngineIdx(u32);
 
 impl ArenaIndex for EngineIdx {
@@ -119,17 +119,15 @@ pub struct Engine {
 }
 
 /// A weak reference to an [`Engine`].
-///
-/// # Note
-///
-/// This was required to break a reference cycle between [`Engine`] and [`ModuleHeader`].
 #[derive(Debug, Clone)]
 pub struct EngineWeak {
     inner: Weak<EngineInner>,
 }
 
 impl EngineWeak {
-    /// Upgrades the [`EngineWeak`] to an [`Engine`] if the [`Engine`] does still exist.
+    /// Upgrades the [`EngineWeak`] to an [`Engine`].
+    ///
+    /// Returns `None` if strong references (the [`Engine`] itself) no longer exist.
     pub fn upgrade(&self) -> Option<Engine> {
         let inner = self.inner.upgrade()?;
         Some(Engine { inner })
@@ -155,7 +153,7 @@ impl Engine {
     }
 
     /// Creates an [`EngineWeak`] from the given [`Engine`].
-    pub(crate) fn downgrade(&self) -> EngineWeak {
+    pub fn weak(&self) -> EngineWeak {
         EngineWeak {
             inner: Arc::downgrade(&self.inner),
         }
@@ -355,7 +353,7 @@ impl Engine {
         &self,
         func: CompiledFunc,
         index: usize,
-    ) -> Result<Option<UntypedValue>, Error> {
+    ) -> Result<Option<UntypedVal>, Error> {
         self.inner.get_func_const(func, index)
     }
 
@@ -583,7 +581,7 @@ impl EngineStacks {
 
     /// Disose and recycle the `stack`.
     pub fn recycle(&mut self, stack: Stack) {
-        if !stack.is_empty() && self.stacks.len() < self.keep {
+        if stack.capacity() > 0 && self.stacks.len() < self.keep {
             self.stacks.push(stack);
         }
     }
@@ -773,7 +771,7 @@ impl EngineInner {
         &self,
         func: CompiledFunc,
         index: usize,
-    ) -> Result<Option<UntypedValue>, Error> {
+    ) -> Result<Option<UntypedVal>, Error> {
         // Function local constants are stored in reverse order of their indices since
         // they are allocated in reverse order to their absolute indices during function
         // translation. That is why we need to access them in reverse order.

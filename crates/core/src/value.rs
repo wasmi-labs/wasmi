@@ -6,11 +6,11 @@ use crate::{
 
 /// Type of a value.
 ///
-/// See [`Value`] for details.
+/// See [`Val`] for details.
 ///
-/// [`Value`]: enum.Value.html
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum ValueType {
+/// [`Val`]: enum.Value.html
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ValType {
     /// 32-bit signed or unsigned integer.
     I32,
     /// 64-bit signed or unsigned integer.
@@ -25,18 +25,18 @@ pub enum ValueType {
     ExternRef,
 }
 
-impl ValueType {
-    /// Returns `true` if [`ValueType`] is a Wasm numeric type.
+impl ValType {
+    /// Returns `true` if [`ValType`] is a Wasm numeric type.
     ///
-    /// This is `true` for [`ValueType::I32`], [`ValueType::I64`],
-    /// [`ValueType::F32`] and [`ValueType::F64`].
+    /// This is `true` for [`ValType::I32`], [`ValType::I64`],
+    /// [`ValType::F32`] and [`ValType::F64`].
     pub fn is_num(&self) -> bool {
         matches!(self, Self::I32 | Self::I64 | Self::F32 | Self::F64)
     }
 
-    /// Returns `true` if [`ValueType`] is a Wasm reference type.
+    /// Returns `true` if [`ValType`] is a Wasm reference type.
     ///
-    /// This is `true` for [`ValueType::FuncRef`] and [`ValueType::ExternRef`].
+    /// This is `true` for [`ValType::FuncRef`] and [`ValType::ExternRef`].
     pub fn is_ref(&self) -> bool {
         matches!(self, Self::ExternRef | Self::FuncRef)
     }

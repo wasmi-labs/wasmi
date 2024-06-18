@@ -2,10 +2,16 @@ mod calls;
 mod values;
 
 pub use self::{
-    calls::{CallFrame, CallStack},
-    values::{BaseValueStackOffset, FrameRegisters, FrameValueStackOffset, ValueStack},
+    calls::{CallFrame, CallStack, StackOffsets},
+    values::{
+        BaseValueStackOffset,
+        FrameParams,
+        FrameRegisters,
+        FrameValueStackOffset,
+        ValueStack,
+    },
 };
-use crate::{core::TrapCode, StackLimits};
+use crate::{core::TrapCode, Instance, StackLimits};
 
 /// Returns a [`TrapCode`] signalling a stack overflow.
 #[cold]
@@ -16,24 +22,13 @@ fn err_stack_overflow() -> TrapCode {
 /// Data structure that combines both value stack and call stack.
 #[derive(Debug, Default)]
 pub struct Stack {
-    /// The value stack.
-    pub values: ValueStack,
     /// The call stack.
     pub calls: CallStack,
+    /// The value stack.
+    pub values: ValueStack,
 }
 
 impl Stack {
-    #![allow(dead_code)]
-
-    /// Default value for the maximum recursion depth.
-    pub const DEFAULT_MAX_RECURSION_DEPTH: usize = CallStack::DEFAULT_MAX_RECURSION_DEPTH;
-
-    /// Default value for initial value stack height in bytes.
-    pub const DEFAULT_MIN_VALUE_STACK_HEIGHT: usize = ValueStack::DEFAULT_MIN_HEIGHT;
-
-    /// Default value for maximum value stack height in bytes.
-    pub const DEFAULT_MAX_VALUE_STACK_HEIGHT: usize = ValueStack::DEFAULT_MAX_HEIGHT;
-
     /// Creates a new [`Stack`] given the [`Config`].
     ///
     /// [`Config`]: [`crate::Config`]
@@ -43,13 +38,13 @@ impl Stack {
             limits.initial_value_stack_height,
             limits.maximum_value_stack_height,
         );
-        Self { values, calls }
+        Self { calls, values }
     }
 
     /// Resets the [`Stack`] for clean reuse.
     pub fn reset(&mut self) {
-        self.values.reset();
         self.calls.reset();
+        self.values.reset();
     }
 
     /// Create an empty [`Stack`].
@@ -64,13 +59,9 @@ impl Stack {
         }
     }
 
-    /// Returns `true` if the [`Stack`] is empty.
-    ///
-    /// # Note
-    ///
-    /// Empty [`Stack`] instances are usually non-usable dummy instances.
-    pub fn is_empty(&self) -> bool {
-        self.values.is_empty()
+    /// Returns the capacity of the [`Stack`].
+    pub fn capacity(&self) -> usize {
+        self.values.capacity()
     }
 
     /// Merge the two top-most [`CallFrame`] with respect to a tail call.
@@ -86,12 +77,9 @@ impl Stack {
     /// may be invalidated by this operation. It is the caller's responsibility to reinstantiate
     /// all [`FrameRegisters`] affected by this.
     #[inline(always)]
-    pub unsafe fn merge_call_frames(
-        call_stack: &mut CallStack,
-        value_stack: &mut ValueStack,
-        callee: &mut CallFrame,
-    ) {
-        let caller = call_stack.pop().expect("caller call frame must exist");
+    #[must_use]
+    pub unsafe fn merge_call_frames(&mut self, callee: &mut CallFrame) -> Option<Instance> {
+        let (caller, instance) = self.calls.pop().expect("caller call frame must exist");
         debug_assert_eq!(callee.results(), caller.results());
         debug_assert!(caller.base_offset() <= callee.base_offset());
         // Safety:
@@ -100,7 +88,10 @@ impl Stack {
         // Therefore only value stack offsets of the top-most call frame on the
         // value stack are going to be invalidated which we ensure to adjust and
         // reinstantiate after this operation.
-        let len_drained = value_stack.drain(caller.frame_offset(), callee.frame_offset());
+        let len_drained = self
+            .values
+            .drain(caller.frame_offset(), callee.frame_offset());
         callee.move_down(len_drained);
+        instance
     }
 }

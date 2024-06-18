@@ -1,5 +1,5 @@
 use super::errors::{
-    EngineLimitsError,
+    EnforcedLimitsError,
     FuelError,
     FuncError,
     GlobalError,
@@ -10,7 +10,7 @@ use super::errors::{
 };
 use crate::{
     core::{HostError, TrapCode},
-    engine::TranslationError,
+    engine::{ResumableHostError, TranslationError},
     module::ReadError,
 };
 use core::{fmt, fmt::Display};
@@ -125,6 +125,16 @@ impl Error {
             .and_then(|error| error.downcast().ok())
             .map(|boxed| *boxed)
     }
+
+    pub(crate) fn into_resumable(self) -> Result<ResumableHostError, Error> {
+        if matches!(&*self.kind, ErrorKind::ResumableHost(_)) {
+            let ErrorKind::ResumableHost(error) = *self.kind else {
+                unreachable!("asserted that host error is resumable")
+            };
+            return Ok(error);
+        }
+        Err(self)
+    }
 }
 
 #[cfg(feature = "std")]
@@ -148,6 +158,15 @@ pub enum ErrorKind {
     I32ExitStatus(i32),
     /// A trap as defined by the WebAssembly specification.
     Host(Box<dyn HostError>),
+    /// An error stemming from a host function call with resumable state information.
+    ///
+    /// # Note
+    ///
+    /// This variant is meant for internal uses only in order to store data necessary
+    /// to resume a call after a host function returned an error. This should never
+    /// actually reach user code thus we hide its documentation.
+    #[doc(hidden)]
+    ResumableHost(ResumableHostError),
     /// A global variable error.
     Global(GlobalError),
     /// A linear memory error.
@@ -169,7 +188,7 @@ pub enum ErrorKind {
     /// Encountered when there is a Wasm to Wasmi translation error.
     Translation(TranslationError),
     /// Encountered when an enforced limit is exceeded.
-    Limits(EngineLimitsError),
+    Limits(EnforcedLimitsError),
 }
 
 impl ErrorKind {
@@ -235,6 +254,7 @@ impl Display for ErrorKind {
             Self::Wasm(error) => Display::fmt(error, f),
             Self::Translation(error) => Display::fmt(error, f),
             Self::Limits(error) => Display::fmt(error, f),
+            Self::ResumableHost(error) => Display::fmt(error, f),
         }
     }
 }
@@ -264,7 +284,8 @@ impl_from! {
     impl From<ReadError> for Error::Read;
     impl From<FuelError> for Error::Fuel;
     impl From<FuncError> for Error::Func;
-    impl From<EngineLimitsError> for Error::Limits;
+    impl From<EnforcedLimitsError> for Error::Limits;
+    impl From<ResumableHostError> for Error::ResumableHost;
 }
 
 /// An error that can occur upon `memory.grow` or `table.grow`.

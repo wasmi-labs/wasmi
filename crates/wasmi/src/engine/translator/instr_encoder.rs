@@ -6,6 +6,7 @@ use super::{
     TypedProvider,
 };
 use crate::{
+    core::{UntypedVal, ValType, F32},
     engine::{
         bytecode::{
             BinInstr,
@@ -30,7 +31,6 @@ use crate::{
 };
 use core::mem;
 use std::vec::{Drain, Vec};
-use wasmi_core::{UntypedValue, ValueType, F32};
 
 /// A reference to an instruction of the partially
 /// constructed function body of the [`InstrEncoder`].
@@ -323,6 +323,51 @@ impl InstrEncoder {
         self.instrs.push(instr)
     }
 
+    /// Tries to merge `copy(result, value)` if the last instruction is a matching copy instruction.
+    ///
+    /// - Returns `None` if merging of the copy instruction was not possible.
+    /// - Returns the `Instr` of the merged `copy2` instruction if merging was successful.
+    fn merge_copy_instrs(&mut self, result: Register, value: TypedProvider) -> Option<Instr> {
+        let TypedProvider::Register(mut value) = value else {
+            // Case: cannot merge copies with immediate values at the moment.
+            //
+            // Note: we could implement this but it would require us to allocate
+            //       function local constants which we want to avoid generally.
+            return None;
+        };
+        let Some(last_instr) = self.last_instr else {
+            // There is no last instruction, e.g. when ending a `block`.
+            return None;
+        };
+        let Instruction::Copy {
+            result: last_result,
+            value: last_value,
+        } = *self.instrs.get(last_instr)
+        else {
+            // Case: last instruction was not a copy instruction, so we cannot merge anything.
+            return None;
+        };
+        if !(result == last_result.next() || result == last_result.prev()) {
+            // Case: cannot merge copy instructions as `copy2` since result registers are not contiguous.
+            return None;
+        }
+
+        // Propagate values according to the order of the merged copies.
+        if value == last_result {
+            value = last_value;
+        }
+
+        let (merged_result, value0, value1) = if last_result < result {
+            (last_result, last_value, value)
+        } else {
+            (result, value, last_value)
+        };
+
+        let merged_copy = Instruction::copy2(RegisterSpan::new(merged_result), value0, value1);
+        *self.instrs.get_mut(last_instr) = merged_copy;
+        Some(last_instr)
+    }
+
     /// Encode a `copy result <- value` instruction.
     ///
     /// # Note
@@ -340,10 +385,13 @@ impl InstrEncoder {
         fn copy_imm(
             stack: &mut ValueStack,
             result: Register,
-            value: impl Into<UntypedValue>,
+            value: impl Into<UntypedVal>,
         ) -> Result<Instruction, Error> {
             let cref = stack.alloc_const(value.into())?;
             Ok(Instruction::copy(result, cref))
+        }
+        if let Some(merged_instr) = self.merge_copy_instrs(result, value) {
+            return Ok(Some(merged_instr));
         }
         let instr = match value {
             TypedProvider::Register(value) => {
@@ -354,18 +402,18 @@ impl InstrEncoder {
                 Instruction::copy(result, value)
             }
             TypedProvider::Const(value) => match value.ty() {
-                ValueType::I32 => Instruction::copy_imm32(result, i32::from(value)),
-                ValueType::F32 => Instruction::copy_imm32(result, f32::from(value)),
-                ValueType::I64 => match <Const32<i64>>::try_from(i64::from(value)).ok() {
+                ValType::I32 => Instruction::copy_imm32(result, i32::from(value)),
+                ValType::F32 => Instruction::copy_imm32(result, f32::from(value)),
+                ValType::I64 => match <Const32<i64>>::try_from(i64::from(value)).ok() {
                     Some(value) => Instruction::copy_i64imm32(result, value),
                     None => copy_imm(stack, result, value)?,
                 },
-                ValueType::F64 => match <Const32<f64>>::try_from(f64::from(value)).ok() {
+                ValType::F64 => match <Const32<f64>>::try_from(f64::from(value)).ok() {
                     Some(value) => Instruction::copy_f64imm32(result, value),
                     None => copy_imm(stack, result, value)?,
                 },
-                ValueType::FuncRef => copy_imm(stack, result, value)?,
-                ValueType::ExternRef => copy_imm(stack, result, value)?,
+                ValType::FuncRef => copy_imm(stack, result, value)?,
+                ValType::ExternRef => copy_imm(stack, result, value)?,
             },
         };
         self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
@@ -526,17 +574,17 @@ impl InstrEncoder {
             [] => Instruction::Return,
             [TypedProvider::Register(reg)] => Instruction::return_reg(*reg),
             [TypedProvider::Const(value)] => match value.ty() {
-                ValueType::I32 => Instruction::return_imm32(i32::from(*value)),
-                ValueType::I64 => match <Const32<i64>>::try_from(i64::from(*value)).ok() {
+                ValType::I32 => Instruction::return_imm32(i32::from(*value)),
+                ValType::I64 => match <Const32<i64>>::try_from(i64::from(*value)).ok() {
                     Some(value) => Instruction::return_i64imm32(value),
                     None => Instruction::return_reg(stack.alloc_const(*value)?),
                 },
-                ValueType::F32 => Instruction::return_imm32(F32::from(*value)),
-                ValueType::F64 => match <Const32<f64>>::try_from(f64::from(*value)).ok() {
+                ValType::F32 => Instruction::return_imm32(F32::from(*value)),
+                ValType::F64 => match <Const32<f64>>::try_from(f64::from(*value)).ok() {
                     Some(value) => Instruction::return_f64imm32(value),
                     None => Instruction::return_reg(stack.alloc_const(*value)?),
                 },
-                ValueType::FuncRef | ValueType::ExternRef => {
+                ValType::FuncRef | ValType::ExternRef => {
                     Instruction::return_reg(stack.alloc_const(*value)?)
                 }
             },
@@ -594,17 +642,17 @@ impl InstrEncoder {
             [] => Instruction::return_nez(condition),
             [TypedProvider::Register(reg)] => Instruction::return_nez_reg(condition, *reg),
             [TypedProvider::Const(value)] => match value.ty() {
-                ValueType::I32 => Instruction::return_nez_imm32(condition, i32::from(*value)),
-                ValueType::I64 => match <Const32<i64>>::try_from(i64::from(*value)).ok() {
+                ValType::I32 => Instruction::return_nez_imm32(condition, i32::from(*value)),
+                ValType::I64 => match <Const32<i64>>::try_from(i64::from(*value)).ok() {
                     Some(value) => Instruction::return_nez_i64imm32(condition, value),
                     None => Instruction::return_nez_reg(condition, stack.alloc_const(*value)?),
                 },
-                ValueType::F32 => Instruction::return_nez_imm32(condition, F32::from(*value)),
-                ValueType::F64 => match <Const32<f64>>::try_from(f64::from(*value)).ok() {
+                ValType::F32 => Instruction::return_nez_imm32(condition, F32::from(*value)),
+                ValType::F64 => match <Const32<f64>>::try_from(f64::from(*value)).ok() {
                     Some(value) => Instruction::return_nez_f64imm32(condition, value),
                     None => Instruction::return_nez_reg(condition, stack.alloc_const(*value)?),
                 },
-                ValueType::FuncRef | ValueType::ExternRef => {
+                ValType::FuncRef | ValType::ExternRef => {
                     Instruction::return_nez_reg(condition, stack.alloc_const(*value)?)
                 }
             },
@@ -1131,7 +1179,7 @@ impl InstrEncoder {
             make_instr: BranchCmpImmConstructor<T>,
         ) -> Result<Option<Instruction>, Error>
         where
-            T: From<Const16<T>> + Into<UntypedValue>,
+            T: From<Const16<T>> + Into<UntypedVal>,
         {
             if matches!(stack.get_register_space(instr.result), RegisterSpace::Local) {
                 // We need to filter out instructions that store their result
@@ -1324,7 +1372,7 @@ impl InstrEncoder {
             make_instr: BranchCmpImmConstructor<T>,
         ) -> Result<Option<Instruction>, Error>
         where
-            T: From<Const16<T>> + Into<UntypedValue>,
+            T: From<Const16<T>> + Into<UntypedVal>,
         {
             if matches!(stack.get_register_space(instr.result), RegisterSpace::Local) {
                 // We need to filter out instructions that store their result
@@ -1541,7 +1589,7 @@ impl Instruction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::engine::translator::typed_value::TypedValue;
+    use crate::engine::translator::typed_value::TypedVal;
 
     #[test]
     fn has_overlapping_copies_works() {
@@ -1556,14 +1604,14 @@ mod tests {
         assert!(!InstrEncoder::has_overlapping_copies(
             RegisterSpan::new(Register::from_i16(0)).iter(2),
             &[
-                TypedProvider::Const(TypedValue::from(10_i32)),
-                TypedProvider::Const(TypedValue::from(20_i32)),
+                TypedProvider::Const(TypedVal::from(10_i32)),
+                TypedProvider::Const(TypedVal::from(20_i32)),
             ],
         ));
         assert!(InstrEncoder::has_overlapping_copies(
             RegisterSpan::new(Register::from_i16(0)).iter(2),
             &[
-                TypedProvider::Const(TypedValue::from(10_i32)),
+                TypedProvider::Const(TypedVal::from(10_i32)),
                 TypedProvider::register(0),
             ],
         ));

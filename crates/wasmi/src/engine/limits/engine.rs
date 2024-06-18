@@ -1,8 +1,8 @@
 use core::fmt::{self, Display};
 
-/// An error that can occur upon parsing or compiling a Wasm module when [`EngineLimits`] are set.
+/// An error that can occur upon parsing or compiling a Wasm module when [`EnforcedLimits`] are set.
 #[derive(Debug, Copy, Clone)]
-pub enum EngineLimitsError {
+pub enum EnforcedLimitsError {
     /// When a Wasm module exceeds the global variable limit.
     TooManyGlobals { limit: u32 },
     /// When a Wasm module exceeds the table limit.
@@ -23,7 +23,7 @@ pub enum EngineLimitsError {
     MinAvgBytesPerFunction { limit: u32, avg: u32 },
 }
 
-impl Display for EngineLimitsError {
+impl Display for EnforcedLimitsError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::TooManyGlobals { limit } => write!(
@@ -68,7 +68,7 @@ impl Display for EngineLimitsError {
 ///
 /// [`Engine`]: crate::Engine
 #[derive(Debug, Default, Copy, Clone)]
-pub struct EngineLimits {
+pub struct EnforcedLimits {
     /// Number of global variables a single Wasm module can have at most.
     ///
     /// # Note
@@ -188,7 +188,7 @@ pub struct AvgBytesPerFunctionLimit {
     pub min_avg_bytes_per_function: u32,
 }
 
-impl EngineLimits {
+impl EnforcedLimits {
     /// A strict set of limits that makes use of Wasmi implementation details.
     ///
     /// This set of strict enforced rules can be used by Wasmi users in order

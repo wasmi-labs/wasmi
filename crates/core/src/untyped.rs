@@ -24,15 +24,20 @@ use paste::paste;
 /// Provides a dense and simple interface to all functional Wasm operations.
 #[derive(Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
-pub struct UntypedValue {
+pub struct UntypedVal {
     /// This inner value is required to have enough bits to represent
     /// all fundamental WebAssembly types `i32`, `i64`, `f32` and `f64`.
     bits: u64,
 }
 
-impl UntypedValue {
-    /// Returns the underlying bits of the [`UntypedValue`].
-    pub fn to_bits(self) -> u64 {
+impl UntypedVal {
+    /// Creates an [`UntypedVal`] from the given `u64` bits.
+    pub const fn from_bits(bits: u64) -> Self {
+        Self { bits }
+    }
+
+    /// Returns the underlying bits of the [`UntypedVal`].
+    pub const fn to_bits(self) -> u64 {
         self.bits
     }
 }
@@ -40,8 +45,8 @@ impl UntypedValue {
 macro_rules! impl_from_untyped_for_int {
     ( $( $int:ty ),* $(,)? ) => {
         $(
-            impl From<UntypedValue> for $int {
-                fn from(untyped: UntypedValue) -> Self {
+            impl From<UntypedVal> for $int {
+                fn from(untyped: UntypedVal) -> Self {
                     untyped.to_bits() as _
                 }
             }
@@ -53,8 +58,8 @@ impl_from_untyped_for_int!(i8, i16, i32, i64, u8, u16, u32, u64);
 macro_rules! impl_from_untyped_for_float {
     ( $( $float:ty ),* $(,)? ) => {
         $(
-            impl From<UntypedValue> for $float {
-                fn from(untyped: UntypedValue) -> Self {
+            impl From<UntypedVal> for $float {
+                fn from(untyped: UntypedVal) -> Self {
                     Self::from_bits(untyped.to_bits() as _)
                 }
             }
@@ -63,8 +68,8 @@ macro_rules! impl_from_untyped_for_float {
 }
 impl_from_untyped_for_float!(f32, f64, F32, F64);
 
-impl From<UntypedValue> for bool {
-    fn from(untyped: UntypedValue) -> Self {
+impl From<UntypedVal> for bool {
+    fn from(untyped: UntypedVal) -> Self {
         untyped.to_bits() != 0
     }
 }
@@ -72,7 +77,7 @@ impl From<UntypedValue> for bool {
 macro_rules! impl_from_unsigned_prim {
     ( $( $prim:ty ),* $(,)? ) => {
         $(
-            impl From<$prim> for UntypedValue {
+            impl From<$prim> for UntypedVal {
                 #[allow(clippy::cast_lossless)]
                 fn from(value: $prim) -> Self {
                     Self { bits: value as _ }
@@ -89,7 +94,7 @@ impl_from_unsigned_prim!(
 macro_rules! impl_from_signed_prim {
     ( $( $prim:ty as $base:ty ),* $(,)? ) => {
         $(
-            impl From<$prim> for UntypedValue {
+            impl From<$prim> for UntypedVal {
                 #[allow(clippy::cast_lossless)]
                 fn from(value: $prim) -> Self {
                     Self { bits: u64::from(value as $base) }
@@ -109,7 +114,7 @@ impl_from_signed_prim!(
 macro_rules! impl_from_float {
     ( $( $float:ty ),* $(,)? ) => {
         $(
-            impl From<$float> for UntypedValue {
+            impl From<$float> for UntypedVal {
                 fn from(value: $float) -> Self {
                     Self {
                         bits: u64::from(value.to_bits()),
@@ -139,7 +144,7 @@ fn effective_address(address: u32, offset: u32) -> Result<usize, TrapCode> {
         .ok_or(TrapCode::MemoryOutOfBounds)
 }
 
-impl UntypedValue {
+impl UntypedVal {
     /// Executes a generic `T.loadN_[s|u]` Wasm operation.
     ///
     /// # Errors
@@ -1338,10 +1343,10 @@ macro_rules! for_each_tuple {
     }
 }
 
-/// An error that may occur upon encoding or decoding slices of [`UntypedValue`].
+/// An error that may occur upon encoding or decoding slices of [`UntypedVal`].
 #[derive(Debug, Copy, Clone)]
 pub enum UntypedError {
-    /// The [`UntypedValue`] slice length did not match `Self`.
+    /// The [`UntypedVal`] slice length did not match `Self`.
     InvalidLen,
 }
 
@@ -1363,8 +1368,8 @@ impl Display for UntypedError {
     }
 }
 
-impl UntypedValue {
-    /// Decodes the slice of [`UntypedValue`] as a value of type `T`.
+impl UntypedVal {
+    /// Decodes the slice of [`UntypedVal`] as a value of type `T`.
     ///
     /// # Note
     ///
@@ -1381,7 +1386,7 @@ impl UntypedValue {
         <T as DecodeUntypedSlice>::decode_untyped_slice(slice)
     }
 
-    /// Encodes the slice of [`UntypedValue`] from the given value of type `T`.
+    /// Encodes the slice of [`UntypedVal`] from the given value of type `T`.
     ///
     /// # Note
     ///
@@ -1399,9 +1404,9 @@ impl UntypedValue {
     }
 }
 
-/// Tuple types that allow to decode a slice of [`UntypedValue`].
+/// Tuple types that allow to decode a slice of [`UntypedVal`].
 pub trait DecodeUntypedSlice: Sized {
-    /// Decodes the slice of [`UntypedValue`] as a value of type `Self`.
+    /// Decodes the slice of [`UntypedVal`] as a value of type `Self`.
     ///
     /// # Note
     ///
@@ -1411,15 +1416,15 @@ pub trait DecodeUntypedSlice: Sized {
     /// # Errors
     ///
     /// If the tuple length of `Self` and the length of `slice` does not match.
-    fn decode_untyped_slice(params: &[UntypedValue]) -> Result<Self, UntypedError>;
+    fn decode_untyped_slice(params: &[UntypedVal]) -> Result<Self, UntypedError>;
 }
 
 impl<T1> DecodeUntypedSlice for T1
 where
-    T1: From<UntypedValue>,
+    T1: From<UntypedVal>,
 {
     #[inline]
-    fn decode_untyped_slice(results: &[UntypedValue]) -> Result<Self, UntypedError> {
+    fn decode_untyped_slice(results: &[UntypedVal]) -> Result<Self, UntypedError> {
         <(T1,) as DecodeUntypedSlice>::decode_untyped_slice(results).map(|t| t.0)
     }
 }
@@ -1429,16 +1434,16 @@ macro_rules! impl_decode_untyped_slice {
         impl<$($tuple),*> DecodeUntypedSlice for ($($tuple,)*)
         where
             $(
-                $tuple: From<UntypedValue>
+                $tuple: From<UntypedVal>
             ),*
         {
             #[allow(non_snake_case)]
             #[inline]
-            fn decode_untyped_slice(results: &[UntypedValue]) -> Result<Self, UntypedError> {
+            fn decode_untyped_slice(results: &[UntypedVal]) -> Result<Self, UntypedError> {
                 match results {
                     &[ $($tuple),* ] => Ok((
                         $(
-                            <$tuple as From<UntypedValue>>::from($tuple),
+                            <$tuple as From<UntypedVal>>::from($tuple),
                         )*
                     )),
                     _ => Err(UntypedError::invalid_len()),
@@ -1449,9 +1454,9 @@ macro_rules! impl_decode_untyped_slice {
 }
 for_each_tuple!(impl_decode_untyped_slice);
 
-/// Tuple types that allow to encode a slice of [`UntypedValue`].
+/// Tuple types that allow to encode a slice of [`UntypedVal`].
 pub trait EncodeUntypedSlice {
-    /// Encodes the slice of [`UntypedValue`] from the given value of type `Self`.
+    /// Encodes the slice of [`UntypedVal`] from the given value of type `Self`.
     ///
     /// # Note
     ///
@@ -1461,15 +1466,15 @@ pub trait EncodeUntypedSlice {
     /// # Errors
     ///
     /// If the tuple length of `Self` and the length of `slice` does not match.
-    fn encode_untyped_slice(self, results: &mut [UntypedValue]) -> Result<(), UntypedError>;
+    fn encode_untyped_slice(self, results: &mut [UntypedVal]) -> Result<(), UntypedError>;
 }
 
 impl<T1> EncodeUntypedSlice for T1
 where
-    T1: Into<UntypedValue>,
+    T1: Into<UntypedVal>,
 {
     #[inline]
-    fn encode_untyped_slice(self, results: &mut [UntypedValue]) -> Result<(), UntypedError> {
+    fn encode_untyped_slice(self, results: &mut [UntypedVal]) -> Result<(), UntypedError> {
         <(T1,) as EncodeUntypedSlice>::encode_untyped_slice((self,), results)
     }
 }
@@ -1480,17 +1485,17 @@ macro_rules! impl_encode_untyped_slice {
             impl<$($tuple),*> EncodeUntypedSlice for ($($tuple,)*)
             where
                 $(
-                    $tuple: Into<UntypedValue>
+                    $tuple: Into<UntypedVal>
                 ),*
             {
                 #[allow(non_snake_case)]
                 #[inline]
-                fn encode_untyped_slice(self, results: &mut [UntypedValue]) -> Result<(), UntypedError> {
+                fn encode_untyped_slice(self, results: &mut [UntypedVal]) -> Result<(), UntypedError> {
                     match results {
                         [ $( [< _results_ $tuple >] ,)* ] => {
                             let ( $( [< _self_ $tuple >] ,)* ) = self;
                             $(
-                                *[< _results_ $tuple >] = <$tuple as Into<UntypedValue>>::into([< _self_ $tuple >]);
+                                *[< _results_ $tuple >] = <$tuple as Into<UntypedVal>>::into([< _self_ $tuple >]);
                             )*
                             Ok(())
                         }

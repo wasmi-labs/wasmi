@@ -1,5 +1,5 @@
 use crate::{
-    core::ValueType,
+    core::ValType,
     engine::DedupFuncType,
     module::{utils::WasmiValueType, FuncTypeIdx, ModuleHeader},
     Engine,
@@ -53,7 +53,7 @@ impl BlockType {
     }
 
     /// Creates a [`BlockType`] with no parameters and a single result type.
-    fn returns(_return_type: ValueType) -> Self {
+    fn returns(_return_type: ValType) -> Self {
         Self::from_inner(BlockTypeInner::Returns)
     }
 

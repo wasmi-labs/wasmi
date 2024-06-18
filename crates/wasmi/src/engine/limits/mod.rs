@@ -5,6 +5,6 @@ mod stack;
 mod tests;
 
 pub use self::{
-    engine::{EngineLimits, EngineLimitsError},
+    engine::{EnforcedLimits, EnforcedLimitsError},
     stack::StackLimits,
 };

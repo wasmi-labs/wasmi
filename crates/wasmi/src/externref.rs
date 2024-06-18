@@ -1,8 +1,13 @@
-use crate::{reftype::Transposer, store::Stored, AsContextMut, StoreContext};
+use crate::{
+    collections::arena::ArenaIndex,
+    core::UntypedVal,
+    reftype::Transposer,
+    store::Stored,
+    AsContextMut,
+    StoreContext,
+};
 use core::{any::Any, num::NonZeroU32};
 use std::boxed::Box;
-use wasmi_arena::ArenaIndex;
-use wasmi_core::UntypedValue;
 
 /// A raw index to a function entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -100,33 +105,33 @@ fn externref_sizeof() {
     //     size_of(ExternRef) == size_of(ExternObject) == size_of(UntypedValue)
     use core::mem::size_of;
     assert_eq!(size_of::<ExternRef>(), size_of::<u64>());
-    assert_eq!(size_of::<ExternRef>(), size_of::<UntypedValue>());
+    assert_eq!(size_of::<ExternRef>(), size_of::<UntypedVal>());
     assert_eq!(size_of::<ExternRef>(), size_of::<ExternObject>());
 }
 
 #[test]
 fn externref_null_to_zero() {
-    assert_eq!(UntypedValue::from(ExternRef::null()), UntypedValue::from(0));
-    assert!(ExternRef::from(UntypedValue::from(0)).is_null());
+    assert_eq!(UntypedVal::from(ExternRef::null()), UntypedVal::from(0));
+    assert!(ExternRef::from(UntypedVal::from(0)).is_null());
 }
 
-impl From<UntypedValue> for ExternRef {
-    fn from(untyped: UntypedValue) -> Self {
+impl From<UntypedVal> for ExternRef {
+    fn from(untyped: UntypedVal) -> Self {
         // Safety: This operation is safe since there are no invalid
         //         bit patterns for [`ExternRef`] instances. Therefore
         //         this operation cannot produce invalid [`ExternRef`]
-        //         instances even though the input [`UntypedValue`]
+        //         instances even though the input [`UntypedVal`]
         //         was modified arbitrarily.
         unsafe { <Transposer<Self>>::from(untyped).reftype }.canonicalize()
     }
 }
 
-impl From<ExternRef> for UntypedValue {
+impl From<ExternRef> for UntypedVal {
     fn from(externref: ExternRef) -> Self {
         let externref = externref.canonicalize();
         // Safety: This operation is safe since there are no invalid
-        //         bit patterns for [`UntypedValue`] instances. Therefore
-        //         this operation cannot produce invalid [`UntypedValue`]
+        //         bit patterns for [`UntypedVal`] instances. Therefore
+        //         this operation cannot produce invalid [`UntypedVal`]
         //         instances even if it was possible to arbitrarily modify
         //         the input [`ExternRef`] instance.
         Self::from(unsafe { <Transposer<ExternRef>>::new(externref).value })

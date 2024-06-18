@@ -1,34 +1,12 @@
-//! Fast arena allocators for different usage purposes.
+//! Fast arena data structures specialized for usage in the Wasmi interpreter.
 //!
 //! They cannot deallocate single allocated entities for extra efficiency.
-//! These allocators mainly serve as the backbone for an efficient Wasm store
-//! implementation.
-
-#![no_std]
-#![warn(
-    clippy::cast_lossless,
-    clippy::missing_errors_doc,
-    clippy::used_underscore_binding,
-    clippy::redundant_closure_for_method_calls,
-    clippy::type_repetition_in_bounds,
-    clippy::inconsistent_struct_constructor,
-    clippy::default_trait_access,
-    clippy::map_unwrap_or,
-    clippy::items_after_statements
-)]
-
-#[cfg(not(feature = "std"))]
-extern crate alloc as std;
-
-#[cfg(feature = "std")]
-extern crate std;
+//! These data structures mainly serve as the backbone for an efficient WebAssembly
+//! store, module, instance and engine implementation.
 
 mod component_vec;
 mod dedup;
 mod guarded;
-
-#[cfg(test)]
-mod tests;
 
 pub use self::{component_vec::ComponentVec, dedup::DedupArena, guarded::GuardedEntity};
 use core::{
@@ -56,10 +34,10 @@ pub struct Arena<Idx, T> {
     marker: PhantomData<Idx>,
 }
 
-/// `Arena` does not store `Idx` therefore it is `Send` without its bound.
+/// [`Arena`] does not store `Idx` therefore it is `Send` without its bound.
 unsafe impl<Idx, T> Send for Arena<Idx, T> where T: Send {}
 
-/// `Arena` does not store `Idx` therefore it is `Sync` without its bound.
+/// [`Arena`] does not store `Idx` therefore it is `Sync` without its bound.
 unsafe impl<Idx, T> Sync for Arena<Idx, T> where T: Send {}
 
 impl<Idx, T> Default for Arena<Idx, T> {
@@ -80,7 +58,7 @@ where
 impl<Idx, T> Eq for Arena<Idx, T> where T: Eq {}
 
 impl<Idx, T> Arena<Idx, T> {
-    /// Creates a new empty entity arena.
+    /// Creates a new empty entity [`Arena`].
     pub fn new() -> Self {
         Self {
             entities: Vec::new(),
@@ -101,11 +79,13 @@ impl<Idx, T> Arena<Idx, T> {
     }
 
     /// Clears all entities from the arena.
+    #[inline]
     pub fn clear(&mut self) {
         self.entities.clear();
     }
 
     /// Returns an iterator over the shared reference of the arena entities.
+    #[inline]
     pub fn iter(&self) -> Iter<Idx, T> {
         Iter {
             iter: self.entities.iter().enumerate(),
@@ -114,6 +94,7 @@ impl<Idx, T> Arena<Idx, T> {
     }
 
     /// Returns an iterator over the exclusive reference of the arena entities.
+    #[inline]
     pub fn iter_mut(&mut self) -> IterMut<Idx, T> {
         IterMut {
             iter: self.entities.iter_mut().enumerate(),
@@ -175,6 +156,7 @@ where
 }
 
 impl<Idx, T> FromIterator<T> for Arena<Idx, T> {
+    #[inline]
     fn from_iter<I>(iter: I) -> Self
     where
         I: IntoIterator<Item = T>,
@@ -193,6 +175,7 @@ where
     type Item = (Idx, &'a T);
     type IntoIter = Iter<'a, Idx, T>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
@@ -205,6 +188,7 @@ where
     type Item = (Idx, &'a mut T);
     type IntoIter = IterMut<'a, Idx, T>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.iter_mut()
     }
@@ -252,6 +236,7 @@ impl<'a, Idx, T> ExactSizeIterator for Iter<'a, Idx, T>
 where
     Idx: ArenaIndex,
 {
+    #[inline]
     fn len(&self) -> usize {
         self.iter.len()
     }

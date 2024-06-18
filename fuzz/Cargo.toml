@@ -15,7 +15,7 @@ libfuzzer-sys = "0.4.7"
 wasm-smith = "=0.13.1"
 arbitrary = { version = "=1.3.2", features = ["derive"] }
 wasmi-stack = { package = "wasmi", version = "0.31.2" }
-wasmtime = "18.0.3"
+wasmtime = "21.0.1"
 wasmi = { workspace = true, features = ["std"] }
 
 [[bin]]

@@ -1,13 +1,5 @@
 use super::{bytecode::RegisterSpan, Func};
-use crate::{
-    engine::Stack,
-    func::CallResultsTuple,
-    AsContextMut,
-    Engine,
-    Error,
-    Value,
-    WasmResults,
-};
+use crate::{engine::Stack, func::CallResultsTuple, AsContextMut, Engine, Error, Val, WasmResults};
 use core::{fmt, marker::PhantomData, mem::replace, ops::Deref};
 
 /// Returned by [`Engine`] methods for calling a function in a resumable way.
@@ -213,9 +205,9 @@ impl ResumableInvocation {
     ///   outputs required by the called function.
     pub fn resume<T>(
         self,
-        mut ctx: impl AsContextMut<UserState = T>,
-        inputs: &[Value],
-        outputs: &mut [Value],
+        mut ctx: impl AsContextMut<Data = T>,
+        inputs: &[Val],
+        outputs: &mut [Val],
     ) -> Result<ResumableCall, Error> {
         self.engine
             .resolve_func_type(self.host_func().ty_dedup(ctx.as_context()), |func_type| {
@@ -291,8 +283,8 @@ impl<Results> TypedResumableInvocation<Results> {
     /// [`TypedFunc`]: [`crate::TypedFunc`]
     pub fn resume<T>(
         self,
-        mut ctx: impl AsContextMut<UserState = T>,
-        inputs: &[Value],
+        mut ctx: impl AsContextMut<Data = T>,
+        inputs: &[Val],
     ) -> Result<TypedResumableCall<Results>, Error>
     where
         Results: WasmResults,

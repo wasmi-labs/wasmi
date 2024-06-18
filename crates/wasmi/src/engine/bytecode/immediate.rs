@@ -1,9 +1,9 @@
+use crate::core::{F32, F64};
 use core::{
     fmt::Debug,
     marker::PhantomData,
     num::{NonZeroI16, NonZeroI32, NonZeroI64, NonZeroU16, NonZeroU32, NonZeroU64},
 };
-use wasmi_core::{F32, F64};
 
 /// Error that may occur upon converting values to [`Const16`].
 #[derive(Debug, Copy, Clone)]

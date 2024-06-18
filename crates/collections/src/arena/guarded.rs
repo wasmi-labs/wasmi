@@ -1,7 +1,7 @@
-use crate::ArenaIndex;
+use crate::arena::ArenaIndex;
 
 /// A guarded entity.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct GuardedEntity<GuardIdx, EntityIdx> {
     guard_idx: GuardIdx,
     entity_idx: EntityIdx,
@@ -9,6 +9,7 @@ pub struct GuardedEntity<GuardIdx, EntityIdx> {
 
 impl<GuardIdx, EntityIdx> GuardedEntity<GuardIdx, EntityIdx> {
     /// Creates a new [`GuardedEntity`].
+    #[inline]
     pub fn new(guard_idx: GuardIdx, entity_idx: EntityIdx) -> Self {
         Self {
             guard_idx,
@@ -25,6 +26,7 @@ where
     /// Returns the entity index of the [`GuardedEntity`].
     ///
     /// Return `None` if the `guard_index` does not match.
+    #[inline]
     pub fn entity_index(&self, guard_index: GuardIdx) -> Option<EntityIdx> {
         if self.guard_idx.into_usize() != guard_index.into_usize() {
             return None;

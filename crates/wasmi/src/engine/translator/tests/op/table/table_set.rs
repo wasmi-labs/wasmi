@@ -1,7 +1,7 @@
 use super::*;
-use crate::core::ValueType;
+use crate::core::ValType;
 
-fn test_reg(ty: ValueType) {
+fn test_reg(ty: ValType) {
     let display_ty = DisplayValueType::from(ty);
     let wasm = format!(
         r"
@@ -26,11 +26,11 @@ fn test_reg(ty: ValueType) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg() {
-    test_reg(ValueType::FuncRef);
-    test_reg(ValueType::ExternRef);
+    test_reg(ValType::FuncRef);
+    test_reg(ValType::ExternRef);
 }
 
-fn test_reg_at(index: u32, value_type: ValueType) {
+fn test_reg_at(index: u32, value_type: ValType) {
     let display_ty = DisplayValueType::from(value_type);
     let display_index = DisplayWasm::from(index);
     let wasm = format!(
@@ -57,8 +57,8 @@ fn test_reg_at(index: u32, value_type: ValueType) {
 #[cfg_attr(miri, ignore)]
 fn reg_at() {
     fn test_for(index: u32) {
-        test_reg_at(index, ValueType::FuncRef);
-        test_reg_at(index, ValueType::ExternRef);
+        test_reg_at(index, ValType::FuncRef);
+        test_reg_at(index, ValType::ExternRef);
     }
     test_for(0);
     test_for(u32::MAX);
@@ -113,11 +113,11 @@ fn at_imm_funcref() {
     test_at_imm_funcref(u32::MAX);
 }
 
-fn test_imm_null(value_type: ValueType) {
+fn test_imm_null(value_type: ValType) {
     let display_ty = DisplayValueType::from(value_type);
     let ref_id = match value_type {
-        ValueType::FuncRef => "func",
-        ValueType::ExternRef => "extern",
+        ValType::FuncRef => "func",
+        ValType::ExternRef => "extern",
         _ => panic!("invalid Wasm reftype"),
     };
     let wasm = format!(
@@ -144,15 +144,15 @@ fn test_imm_null(value_type: ValueType) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn imm_null() {
-    test_imm_null(ValueType::FuncRef);
-    test_imm_null(ValueType::ExternRef);
+    test_imm_null(ValType::FuncRef);
+    test_imm_null(ValType::ExternRef);
 }
 
-fn test_at_imm_null(index: u32, value_type: ValueType) {
+fn test_at_imm_null(index: u32, value_type: ValType) {
     let display_ty = DisplayValueType::from(value_type);
     let ref_id = match value_type {
-        ValueType::FuncRef => "func",
-        ValueType::ExternRef => "extern",
+        ValType::FuncRef => "func",
+        ValType::ExternRef => "extern",
         _ => panic!("invalid Wasm reftype"),
     };
     let wasm = format!(
@@ -180,8 +180,8 @@ fn test_at_imm_null(index: u32, value_type: ValueType) {
 #[cfg_attr(miri, ignore)]
 fn at_imm_null() {
     fn test_for(index: u32) {
-        test_at_imm_null(index, ValueType::FuncRef);
-        test_at_imm_null(index, ValueType::ExternRef);
+        test_at_imm_null(index, ValType::FuncRef);
+        test_at_imm_null(index, ValType::ExternRef);
     }
     test_for(0);
     test_for(u32::MAX);

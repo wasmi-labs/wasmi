@@ -12,6 +12,7 @@ use super::{
     Table,
 };
 use crate::{
+    collections::{arena::ArenaIndex, Map},
     func::FuncError,
     memory::DataSegment,
     ElementSegment,
@@ -20,8 +21,7 @@ use crate::{
     WasmParams,
     WasmResults,
 };
-use std::{boxed::Box, collections::BTreeMap, sync::Arc};
-use wasmi_arena::ArenaIndex;
+use std::{boxed::Box, sync::Arc};
 
 mod builder;
 mod exports;
@@ -52,7 +52,7 @@ pub struct InstanceEntity {
     funcs: Box<[Func]>,
     memories: Box<[Memory]>,
     globals: Box<[Global]>,
-    exports: BTreeMap<Box<str>, Extern>,
+    exports: Map<Box<str>, Extern>,
     data_segments: Box<[DataSegment]>,
     elem_segments: Box<[ElementSegment]>,
 }
@@ -67,7 +67,7 @@ impl InstanceEntity {
             funcs: [].into(),
             memories: [].into(),
             globals: [].into(),
-            exports: BTreeMap::new(),
+            exports: Map::new(),
             data_segments: [].into(),
             elem_segments: [].into(),
         }

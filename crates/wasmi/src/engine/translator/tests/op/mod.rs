@@ -6,6 +6,7 @@ mod br_table;
 mod call;
 mod cmp;
 mod cmp_br;
+mod copy;
 mod global_get;
 mod global_set;
 mod i32_eqz;
@@ -58,7 +59,7 @@ use std::format;
 ///
 /// If the `value` cannot be converted into `i32` losslessly.
 #[track_caller]
-#[allow(dead_code)]
+#[allow(dead_code)] // might be useful later
 fn i32imm16(value: i32) -> Const16<i32> {
     <Const16<i32>>::try_from(value)
         .unwrap_or_else(|_| panic!("value must be 16-bit encodable: {}", value))

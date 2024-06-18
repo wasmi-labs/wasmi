@@ -106,10 +106,14 @@ mod value;
 #[doc(inline)]
 pub use wasmi_core as core;
 
+/// Definitions from the `wasmi_collections` crate.
+#[doc(inline)]
+use wasmi_collections as collections;
+
 /// Defines some errors that may occur upon interaction with Wasmi.
 pub mod errors {
     pub use super::{
-        engine::EngineLimitsError,
+        engine::EnforcedLimitsError,
         error::ErrorKind,
         func::FuncError,
         global::GlobalError,
@@ -125,8 +129,9 @@ pub use self::{
     engine::{
         CompilationMode,
         Config,
+        EnforcedLimits,
         Engine,
-        EngineLimits,
+        EngineWeak,
         ResumableCall,
         ResumableInvocation,
         StackLimits,
@@ -145,13 +150,13 @@ pub use self::{
         WasmParams,
         WasmResults,
         WasmRet,
-        WasmType,
-        WasmTypeList,
+        WasmTy,
+        WasmTyList,
     },
     global::{Global, GlobalType, Mutability},
     instance::{Export, ExportsIter, Extern, ExternType, Instance},
     limits::{ResourceLimiter, StoreLimits, StoreLimitsBuilder},
-    linker::{Linker, LinkerBuilder},
+    linker::{state, Linker, LinkerBuilder},
     memory::{Memory, MemoryType},
     module::{
         ExportType,
@@ -164,13 +169,13 @@ pub use self::{
     },
     store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
-    value::Value,
+    value::Val,
 };
 use self::{
     func::{FuncEntity, FuncIdx},
     global::{GlobalEntity, GlobalIdx},
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
     memory::{DataSegmentEntity, DataSegmentIdx, MemoryEntity, MemoryIdx},
-    store::{StoreInner, Stored},
+    store::Stored,
     table::{ElementSegment, ElementSegmentEntity, ElementSegmentIdx, TableEntity, TableIdx},
 };

@@ -1,8 +1,13 @@
-use super::{TestDescriptor, TestError, TestProfile, TestSpan};
+use super::{
+    run::{ParsingMode, RunnerConfig},
+    TestDescriptor,
+    TestError,
+    TestProfile,
+    TestSpan,
+};
 use anyhow::Result;
 use std::collections::HashMap;
 use wasmi::{
-    Config,
     Engine,
     Extern,
     Func,
@@ -16,9 +21,9 @@ use wasmi::{
     Store,
     Table,
     TableType,
-    Value,
+    Val,
 };
-use wasmi_core::{ValueType, F32, F64};
+use wasmi_core::{ValType, F32, F64};
 use wast::token::{Id, Span};
 
 /// The context of a single Wasm test spec suite run.
@@ -26,6 +31,8 @@ use wast::token::{Id, Span};
 pub struct TestContext<'a> {
     /// The Wasmi engine used for executing functions used during the test.
     engine: Engine,
+    /// The configuration of the test runner.
+    runner_config: RunnerConfig,
     /// The linker for linking together Wasm test modules.
     linker: Linker<()>,
     /// The store to hold all runtime data during the test.
@@ -39,7 +46,7 @@ pub struct TestContext<'a> {
     /// Profiling during the Wasm spec test run.
     profile: TestProfile,
     /// Intermediate results buffer that can be reused for calling Wasm functions.
-    results: Vec<Value>,
+    results: Vec<Val>,
     /// The descriptor of the test.
     ///
     /// Useful for printing better debug messages in case of failure.
@@ -48,22 +55,22 @@ pub struct TestContext<'a> {
 
 impl<'a> TestContext<'a> {
     /// Creates a new [`TestContext`] with the given [`TestDescriptor`].
-    pub fn new(descriptor: &'a TestDescriptor, config: Config) -> Self {
-        let engine = Engine::new(&config);
+    pub fn new(descriptor: &'a TestDescriptor, runner_config: RunnerConfig) -> Self {
+        let engine = Engine::new(&runner_config.config);
         let mut linker = Linker::new(&engine);
         let mut store = Store::new(&engine, ());
-        _ = store.add_fuel(1_000_000_000);
+        _ = store.set_fuel(1_000_000_000);
         let default_memory = Memory::new(&mut store, MemoryType::new(1, Some(2)).unwrap()).unwrap();
         let default_table = Table::new(
             &mut store,
-            TableType::new(ValueType::FuncRef, 10, Some(20)),
-            Value::default(ValueType::FuncRef),
+            TableType::new(ValType::FuncRef, 10, Some(20)),
+            Val::default(ValType::FuncRef),
         )
         .unwrap();
-        let global_i32 = Global::new(&mut store, Value::I32(666), Mutability::Const);
-        let global_i64 = Global::new(&mut store, Value::I64(666), Mutability::Const);
-        let global_f32 = Global::new(&mut store, Value::F32(666.0.into()), Mutability::Const);
-        let global_f64 = Global::new(&mut store, Value::F64(666.0.into()), Mutability::Const);
+        let global_i32 = Global::new(&mut store, Val::I32(666), Mutability::Const);
+        let global_i64 = Global::new(&mut store, Val::I64(666), Mutability::Const);
+        let global_f32 = Global::new(&mut store, Val::F32(666.0.into()), Mutability::Const);
+        let global_f64 = Global::new(&mut store, Val::F64(666.0.into()), Mutability::Const);
         let print = Func::wrap(&mut store, || {
             println!("print");
         });
@@ -104,6 +111,7 @@ impl<'a> TestContext<'a> {
             .unwrap();
         TestContext {
             engine,
+            runner_config,
             linker,
             store,
             modules: Vec::new(),
@@ -164,7 +172,10 @@ impl TestContext<'_> {
                 error
             )
         });
-        let module = Module::new(self.engine(), &wasm[..])?;
+        let module = match self.runner_config.mode {
+            ParsingMode::Buffered => Module::new(self.engine(), &wasm[..])?,
+            ParsingMode::Streaming => Module::new_streaming(self.engine(), &wasm[..])?,
+        };
         let instance_pre = self.linker.instantiate(&mut self.store, &module)?;
         let instance = instance_pre.start(&mut self.store)?;
         self.modules.push(module);
@@ -242,8 +253,8 @@ impl TestContext<'_> {
         &mut self,
         module_name: Option<&str>,
         func_name: &str,
-        args: &[Value],
-    ) -> Result<&[Value], TestError> {
+        args: &[Val],
+    ) -> Result<&[Val], TestError> {
         let instance = self.instance_by_name_or_last(module_name)?;
         let func = instance
             .get_export(&self.store, func_name)
@@ -254,7 +265,7 @@ impl TestContext<'_> {
             })?;
         let len_results = func.ty(&self.store).results().len();
         self.results.clear();
-        self.results.resize(len_results, Value::I32(0));
+        self.results.resize(len_results, Val::I32(0));
         func.call(&mut self.store, args, &mut self.results)?;
         Ok(&self.results)
     }
@@ -265,11 +276,7 @@ impl TestContext<'_> {
     ///
     /// - If no module instances can be found.
     /// - If no global variable identifier with `global_name` can be found.
-    pub fn get_global(
-        &self,
-        module_name: Option<Id>,
-        global_name: &str,
-    ) -> Result<Value, TestError> {
+    pub fn get_global(&self, module_name: Option<Id>, global_name: &str) -> Result<Val, TestError> {
         let module_name = module_name.map(|id| id.name());
         let instance = self.instance_by_name_or_last(module_name)?;
         let global = instance

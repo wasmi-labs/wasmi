@@ -1,4 +1,4 @@
-use crate::{core::ValueType, func::FuncError, Value};
+use crate::{core::ValType, func::FuncError, Val};
 use core::fmt;
 use std::{sync::Arc, vec::Vec};
 
@@ -7,14 +7,14 @@ use std::{sync::Arc, vec::Vec};
 /// # Note
 ///
 /// Can be cloned cheaply.
-#[derive(Clone, PartialOrd, Ord, PartialEq, Eq)]
+#[derive(Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct FuncType {
     /// The inner function type internals.
     inner: FuncTypeInner,
 }
 
 /// Internal details of [`FuncType`].
-#[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub enum FuncTypeInner {
     /// Stores the value types of the parameters and results inline.
     Inline {
@@ -23,14 +23,14 @@ pub enum FuncTypeInner {
         /// The number of results.
         len_results: u8,
         /// The parameter types, followed by the result types, followed by unspecified elements.
-        params_results: [ValueType; Self::INLINE_SIZE],
+        params_results: [ValType; Self::INLINE_SIZE],
     },
     /// Stores the value types of the parameters and results on the heap.
     Big {
         /// The number of parameters.
         len_params: u32,
         /// Combined parameter and result types allocated on the heap.
-        params_results: Arc<[ValueType]>,
+        params_results: Arc<[ValType]>,
     },
 }
 
@@ -60,8 +60,8 @@ impl FuncTypeInner {
     where
         P: IntoIterator,
         R: IntoIterator,
-        <P as IntoIterator>::IntoIter: Iterator<Item = ValueType> + ExactSizeIterator,
-        <R as IntoIterator>::IntoIter: Iterator<Item = ValueType> + ExactSizeIterator,
+        <P as IntoIterator>::IntoIter: Iterator<Item = ValType> + ExactSizeIterator,
+        <R as IntoIterator>::IntoIter: Iterator<Item = ValType> + ExactSizeIterator,
     {
         let mut params = params.into_iter();
         let mut results = results.into_iter();
@@ -89,8 +89,8 @@ impl FuncTypeInner {
     /// - Does not mutate `params` or `results` if this method returns `None`.
     pub fn try_new_small<P, R>(params: &mut P, results: &mut R) -> Option<Self>
     where
-        P: Iterator<Item = ValueType> + ExactSizeIterator,
-        R: Iterator<Item = ValueType> + ExactSizeIterator,
+        P: Iterator<Item = ValType> + ExactSizeIterator,
+        R: Iterator<Item = ValType> + ExactSizeIterator,
     {
         let params = params.into_iter();
         let results = results.into_iter();
@@ -100,7 +100,7 @@ impl FuncTypeInner {
         if usize::from(len) > Self::INLINE_SIZE {
             return None;
         }
-        let mut params_results = [ValueType::I32; Self::INLINE_SIZE];
+        let mut params_results = [ValType::I32; Self::INLINE_SIZE];
         params_results
             .iter_mut()
             .zip(params.chain(results))
@@ -115,7 +115,7 @@ impl FuncTypeInner {
     }
 
     /// Returns the parameter types of the function type.
-    pub fn params(&self) -> &[ValueType] {
+    pub fn params(&self) -> &[ValType] {
         match self {
             FuncTypeInner::Inline {
                 len_params,
@@ -130,7 +130,7 @@ impl FuncTypeInner {
     }
 
     /// Returns the result types of the function type.
-    pub fn results(&self) -> &[ValueType] {
+    pub fn results(&self) -> &[ValType] {
         match self {
             FuncTypeInner::Inline {
                 len_params,
@@ -165,7 +165,7 @@ impl FuncTypeInner {
     }
 
     /// Returns the pair of parameter and result types of the function type.
-    pub(crate) fn params_results(&self) -> (&[ValueType], &[ValueType]) {
+    pub(crate) fn params_results(&self) -> (&[ValType], &[ValType]) {
         match self {
             FuncTypeInner::Inline {
                 len_params,
@@ -207,8 +207,8 @@ impl FuncType {
     where
         P: IntoIterator,
         R: IntoIterator,
-        <P as IntoIterator>::IntoIter: Iterator<Item = ValueType> + ExactSizeIterator,
-        <R as IntoIterator>::IntoIter: Iterator<Item = ValueType> + ExactSizeIterator,
+        <P as IntoIterator>::IntoIter: Iterator<Item = ValType> + ExactSizeIterator,
+        <R as IntoIterator>::IntoIter: Iterator<Item = ValType> + ExactSizeIterator,
     {
         Self {
             inner: FuncTypeInner::new(params, results),
@@ -216,12 +216,12 @@ impl FuncType {
     }
 
     /// Returns the parameter types of the function type.
-    pub fn params(&self) -> &[ValueType] {
+    pub fn params(&self) -> &[ValType] {
         self.inner.params()
     }
 
     /// Returns the result types of the function type.
-    pub fn results(&self) -> &[ValueType] {
+    pub fn results(&self) -> &[ValType] {
         self.inner.results()
     }
 
@@ -231,7 +231,7 @@ impl FuncType {
     }
 
     /// Returns the pair of parameter and result types of the function type.
-    pub(crate) fn params_results(&self) -> (&[ValueType], &[ValueType]) {
+    pub(crate) fn params_results(&self) -> (&[ValType], &[ValType]) {
         self.inner.params_results()
     }
 
@@ -298,13 +298,13 @@ impl FuncType {
     /// # Panics
     ///
     /// If the number of items in `outputs` does not match the number of results of the [`FuncType`].
-    pub(crate) fn prepare_outputs(&self, outputs: &mut [Value]) {
+    pub(crate) fn prepare_outputs(&self, outputs: &mut [Val]) {
         assert_eq!(
             self.results().len(),
             outputs.len(),
             "must have the same number of items in outputs as results of the function type"
         );
-        let init_values = self.results().iter().copied().map(Value::default);
+        let init_values = self.results().iter().copied().map(Val::default);
         outputs
             .iter_mut()
             .zip(init_values)
@@ -312,24 +312,24 @@ impl FuncType {
     }
 }
 
-/// Types that have a [`ValueType`].
+/// Types that have a [`ValType`].
 ///
 /// # Note
 ///
 /// Primarily used to allow `match_params` and `match_results`
-/// to be called with both [`Value`] and [`ValueType`] parameters.
+/// to be called with both [`Val`] and [`ValType`] parameters.
 pub(crate) trait Ty {
-    fn ty(&self) -> ValueType;
+    fn ty(&self) -> ValType;
 }
 
-impl Ty for ValueType {
-    fn ty(&self) -> ValueType {
+impl Ty for ValType {
+    fn ty(&self) -> ValType {
         *self
     }
 }
 
-impl Ty for Value {
-    fn ty(&self) -> ValueType {
+impl Ty for Val {
+    fn ty(&self) -> ValType {
         self.ty()
     }
 }
@@ -350,34 +350,24 @@ mod tests {
     #[test]
     fn new_works() {
         let types = [
-            &[ValueType::I32][..],
-            &[ValueType::I64][..],
-            &[ValueType::F32][..],
-            &[ValueType::F64][..],
-            &[ValueType::I32, ValueType::I32][..],
-            &[ValueType::I32, ValueType::I32, ValueType::I32][..],
+            &[ValType::I32][..],
+            &[ValType::I64][..],
+            &[ValType::F32][..],
+            &[ValType::F64][..],
+            &[ValType::I32, ValType::I32][..],
+            &[ValType::I32, ValType::I32, ValType::I32][..],
+            &[ValType::I32, ValType::I32, ValType::I32, ValType::I32][..],
             &[
-                ValueType::I32,
-                ValueType::I32,
-                ValueType::I32,
-                ValueType::I32,
+                ValType::I32,
+                ValType::I32,
+                ValType::I32,
+                ValType::I32,
+                ValType::I32,
+                ValType::I32,
+                ValType::I32,
+                ValType::I32,
             ][..],
-            &[
-                ValueType::I32,
-                ValueType::I32,
-                ValueType::I32,
-                ValueType::I32,
-                ValueType::I32,
-                ValueType::I32,
-                ValueType::I32,
-                ValueType::I32,
-            ][..],
-            &[
-                ValueType::I32,
-                ValueType::I64,
-                ValueType::F32,
-                ValueType::F64,
-            ][..],
+            &[ValType::I32, ValType::I64, ValType::F32, ValType::F64][..],
         ];
         for params in types {
             for results in types {

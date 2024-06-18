@@ -30,20 +30,18 @@ impl Context {
         compilation_mode: CompilationMode,
     ) -> Result<Self, Error> {
         let mut config = Config::default();
-        config.wasm_tail_call(true);
-        config.wasm_extended_const(true);
         if fuel.is_some() {
             config.consume_fuel(true);
         }
         config.compilation_mode(compilation_mode);
         let engine = wasmi::Engine::new(&config);
         let wasm_bytes = utils::read_wasm_or_wat(wasm_file)?;
-        let module = wasmi::Module::new(&engine, &mut &wasm_bytes[..]).map_err(|error| {
+        let module = wasmi::Module::new(&engine, &wasm_bytes[..]).map_err(|error| {
             anyhow!("failed to parse and validate Wasm module {wasm_file:?}: {error}")
         })?;
         let mut store = wasmi::Store::new(&engine, wasi_ctx);
         if let Some(fuel) = fuel {
-            store.add_fuel(fuel).unwrap_or_else(|error| {
+            store.set_fuel(fuel).unwrap_or_else(|error| {
                 panic!("error: fuel metering is enabled but encountered: {error}")
             });
         }

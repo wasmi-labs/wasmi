@@ -1,5 +1,9 @@
-use crate::{ExternRef, Func, FuncRef};
-use wasmi_core::{UntypedValue, ValueType, F32, F64};
+use crate::{
+    core::{UntypedVal, ValType, F32, F64},
+    ExternRef,
+    Func,
+    FuncRef,
+};
 
 /// Untyped instances that allow to be typed.
 pub trait WithType {
@@ -7,38 +11,38 @@ pub trait WithType {
     type Output;
 
     /// Converts `self` to [`Self::Output`] using `ty`.
-    fn with_type(self, ty: ValueType) -> Self::Output;
+    fn with_type(self, ty: ValType) -> Self::Output;
 }
 
-impl WithType for UntypedValue {
-    type Output = Value;
+impl WithType for UntypedVal {
+    type Output = Val;
 
-    fn with_type(self, ty: ValueType) -> Self::Output {
+    fn with_type(self, ty: ValType) -> Self::Output {
         match ty {
-            ValueType::I32 => Value::I32(self.into()),
-            ValueType::I64 => Value::I64(self.into()),
-            ValueType::F32 => Value::F32(self.into()),
-            ValueType::F64 => Value::F64(self.into()),
-            ValueType::FuncRef => Value::FuncRef(self.into()),
-            ValueType::ExternRef => Value::ExternRef(self.into()),
+            ValType::I32 => Val::I32(self.into()),
+            ValType::I64 => Val::I64(self.into()),
+            ValType::F32 => Val::F32(self.into()),
+            ValType::F64 => Val::F64(self.into()),
+            ValType::FuncRef => Val::FuncRef(self.into()),
+            ValType::ExternRef => Val::ExternRef(self.into()),
         }
     }
 }
 
-impl From<Value> for UntypedValue {
-    fn from(value: Value) -> Self {
+impl From<Val> for UntypedVal {
+    fn from(value: Val) -> Self {
         match value {
-            Value::I32(value) => value.into(),
-            Value::I64(value) => value.into(),
-            Value::F32(value) => value.into(),
-            Value::F64(value) => value.into(),
-            Value::FuncRef(value) => value.into(),
-            Value::ExternRef(value) => value.into(),
+            Val::I32(value) => value.into(),
+            Val::I64(value) => value.into(),
+            Val::F32(value) => value.into(),
+            Val::F64(value) => value.into(),
+            Val::FuncRef(value) => value.into(),
+            Val::ExternRef(value) => value.into(),
         }
     }
 }
 
-/// Runtime representation of a value.
+/// Runtime representation of a Wasm value.
 ///
 /// Wasm code manipulate values of the four basic value types:
 /// integers and floating-point (IEEE 754-2008) data of 32 or 64 bit width each, respectively.
@@ -46,7 +50,7 @@ impl From<Value> for UntypedValue {
 /// There is no distinction between signed and unsigned integer types. Instead, integers are
 /// interpreted by respective operations as either unsigned or signed in two’s complement representation.
 #[derive(Clone, Debug)]
-pub enum Value {
+pub enum Val {
     /// Value of 32-bit signed or unsigned integer.
     I32(i32),
     /// Value of 64-bit signed or unsigned integer.
@@ -61,30 +65,30 @@ pub enum Value {
     ExternRef(ExternRef),
 }
 
-impl Value {
+impl Val {
     /// Creates new default value of given type.
     #[inline]
-    pub fn default(value_type: ValueType) -> Self {
+    pub fn default(value_type: ValType) -> Self {
         match value_type {
-            ValueType::I32 => Self::I32(0),
-            ValueType::I64 => Self::I64(0),
-            ValueType::F32 => Self::F32(0f32.into()),
-            ValueType::F64 => Self::F64(0f64.into()),
-            ValueType::FuncRef => Self::from(FuncRef::null()),
-            ValueType::ExternRef => Self::from(ExternRef::null()),
+            ValType::I32 => Self::I32(0),
+            ValType::I64 => Self::I64(0),
+            ValType::F32 => Self::F32(0f32.into()),
+            ValType::F64 => Self::F64(0f64.into()),
+            ValType::FuncRef => Self::from(FuncRef::null()),
+            ValType::ExternRef => Self::from(ExternRef::null()),
         }
     }
 
     /// Get variable type for this value.
     #[inline]
-    pub fn ty(&self) -> ValueType {
+    pub fn ty(&self) -> ValType {
         match *self {
-            Self::I32(_) => ValueType::I32,
-            Self::I64(_) => ValueType::I64,
-            Self::F32(_) => ValueType::F32,
-            Self::F64(_) => ValueType::F64,
-            Self::FuncRef(_) => ValueType::FuncRef,
-            Self::ExternRef(_) => ValueType::ExternRef,
+            Self::I32(_) => ValType::I32,
+            Self::I64(_) => ValType::I64,
+            Self::F32(_) => ValType::F32,
+            Self::F64(_) => ValType::F64,
+            Self::FuncRef(_) => ValType::FuncRef,
+            Self::ExternRef(_) => ValType::ExternRef,
         }
     }
 
@@ -137,49 +141,49 @@ impl Value {
     }
 }
 
-impl From<i32> for Value {
+impl From<i32> for Val {
     #[inline]
     fn from(val: i32) -> Self {
         Self::I32(val)
     }
 }
 
-impl From<i64> for Value {
+impl From<i64> for Val {
     #[inline]
     fn from(val: i64) -> Self {
         Self::I64(val)
     }
 }
 
-impl From<F32> for Value {
+impl From<F32> for Val {
     #[inline]
     fn from(val: F32) -> Self {
         Self::F32(val)
     }
 }
 
-impl From<F64> for Value {
+impl From<F64> for Val {
     #[inline]
     fn from(val: F64) -> Self {
         Self::F64(val)
     }
 }
 
-impl From<FuncRef> for Value {
+impl From<FuncRef> for Val {
     #[inline]
     fn from(funcref: FuncRef) -> Self {
         Self::FuncRef(funcref)
     }
 }
 
-impl From<Func> for Value {
+impl From<Func> for Val {
     #[inline]
     fn from(func: Func) -> Self {
         Self::FuncRef(FuncRef::new(func))
     }
 }
 
-impl From<ExternRef> for Value {
+impl From<ExternRef> for Val {
     #[inline]
     fn from(externref: ExternRef) -> Self {
         Self::ExternRef(externref)

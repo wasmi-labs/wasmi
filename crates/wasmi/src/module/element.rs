@@ -1,7 +1,6 @@
 use super::{ConstExpr, TableIdx};
-use crate::module::utils::WasmiValueType;
+use crate::{core::ValType, module::utils::WasmiValueType};
 use std::sync::Arc;
-use wasmi_core::ValueType;
 
 /// A table element segment within a [`Module`].
 ///
@@ -11,7 +10,7 @@ pub struct ElementSegment {
     /// The kind of the [`ElementSegment`].
     kind: ElementSegmentKind,
     /// The type of elements of the [`ElementSegment`].
-    ty: ValueType,
+    ty: ValType,
     /// The items of the [`ElementSegment`].
     items: ElementSegmentItems,
 }
@@ -128,8 +127,8 @@ impl ElementSegment {
         &self.kind
     }
 
-    /// Returns the [`ValueType`] of the [`ElementSegment`].
-    pub fn ty(&self) -> ValueType {
+    /// Returns the [`ValType`] of the [`ElementSegment`].
+    pub fn ty(&self) -> ValType {
         self.ty
     }
 

@@ -1,9 +1,11 @@
 use super::{EngineIdx, Guarded};
-use crate::FuncType;
-use wasmi_arena::{ArenaIndex, DedupArena, GuardedEntity};
+use crate::{
+    collections::arena::{ArenaIndex, DedupArena, GuardedEntity},
+    FuncType,
+};
 
 /// A raw index to a function signature entity.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct DedupFuncTypeIdx(u32);
 
 impl ArenaIndex for DedupFuncTypeIdx {
@@ -34,7 +36,7 @@ impl ArenaIndex for DedupFuncTypeIdx {
 ///
 /// - Requires another indirection to acquire information such as parameter
 ///   or result types of the underlying [`FuncType`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[repr(transparent)]
 pub struct DedupFuncType(GuardedEntity<EngineIdx, DedupFuncTypeIdx>);
 

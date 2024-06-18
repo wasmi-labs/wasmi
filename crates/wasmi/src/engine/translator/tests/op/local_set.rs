@@ -455,3 +455,119 @@ fn preserve_multiple_6() {
         ])
         .run()
 }
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn merge_overwriting_local_set() {
+    let wasm = r"
+        (module
+            (func (result i32)
+                (local i32 i32)
+
+                i32.const 10
+                local.set 0
+                i32.const 20
+                local.set 1
+            
+                local.get 1
+                local.tee 0
+                local.tee 1
+            )
+        )
+    ";
+    TranslationTest::from_wat(wasm)
+        .expect_func_instrs([
+            Instruction::copy_imm32(Register::from_i16(0), 10_i32),
+            Instruction::copy_imm32(Register::from_i16(1), 20_i32),
+            Instruction::copy2(RegisterSpan::new(Register::from_i16(0)), 1, 1),
+            Instruction::return_reg(1),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn merge_overwriting_local_set_rev() {
+    let wasm = r"
+        (module
+            (func (result i32)
+                (local i32 i32)
+
+                i32.const 10
+                local.set 0
+                i32.const 20
+                local.set 1
+            
+                local.get 0
+                local.tee 1
+                local.tee 0
+            )
+        )
+    ";
+    TranslationTest::from_wat(wasm)
+        .expect_func_instrs([
+            Instruction::copy_imm32(Register::from_i16(0), 10_i32),
+            Instruction::copy_imm32(Register::from_i16(1), 20_i32),
+            Instruction::copy2(RegisterSpan::new(Register::from_i16(0)), 0, 0),
+            Instruction::return_reg(0),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn merge_overwriting_local_set_3() {
+    let wasm = r"
+        (module
+            (func (result i32)
+                (local i32 i32 i32) 
+
+                (local.set 0 (i32.const 10))
+                (local.set 1 (i32.const 20))
+                (local.set 2 (i32.const 30))
+
+                local.get 2
+                local.tee 0
+                local.tee 1
+            )
+        )
+    ";
+    TranslationTest::from_wat(wasm)
+        .expect_func_instrs([
+            Instruction::copy_imm32(Register::from_i16(0), 10_i32),
+            Instruction::copy_imm32(Register::from_i16(1), 20_i32),
+            Instruction::copy_imm32(Register::from_i16(2), 30_i32),
+            Instruction::copy2(RegisterSpan::new(Register::from_i16(0)), 2, 2),
+            Instruction::return_reg(1),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn merge_overwriting_local_set_3_rev() {
+    let wasm = r"
+        (module
+            (func (result i32)
+                (local i32 i32 i32) 
+
+                (local.set 0 (i32.const 10))
+                (local.set 1 (i32.const 20))
+                (local.set 2 (i32.const 30))
+
+                local.get 2
+                local.tee 1
+                local.tee 0
+            )
+        )
+    ";
+    TranslationTest::from_wat(wasm)
+        .expect_func_instrs([
+            Instruction::copy_imm32(Register::from_i16(0), 10_i32),
+            Instruction::copy_imm32(Register::from_i16(1), 20_i32),
+            Instruction::copy_imm32(Register::from_i16(2), 30_i32),
+            Instruction::copy2(RegisterSpan::new(Register::from_i16(0)), 2, 2),
+            Instruction::return_reg(0),
+        ])
+        .run()
+}
