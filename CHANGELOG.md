@@ -95,7 +95,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
       With this change they can enable this new strict mode using
       ```rust
       let mut config = wasmi::Config::default();
-      config.engine_limits(wasmi::EnforcedLimits::strict());
+      config.enforced_limits(wasmi::EnforcedLimits::strict());
       ```
       In future updates we might relax this to make `EnforcedLimits` fully customizable.
 - Added `EngineWeak` constructed via `Engine::weak`. (https://github.com/wasmi-labs/wasmi/pull/1003)
