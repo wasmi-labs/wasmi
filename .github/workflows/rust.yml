@@ -233,7 +233,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-            ~/fuzz/target/
+            ~/target/release/
+            ~/target/debug/
             ~/fuzz/corpus/execute/
           key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-${{ github.job }}-
@@ -263,7 +264,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-            ~/fuzz/target/
+            ~/target/release/
+            ~/target/debug/
             ~/fuzz/corpus/execute/
           key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-${{ github.job }}-
@@ -297,6 +299,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
+            ~/target/miri/
           key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
@@ -331,6 +334,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
+            ~/target/miri/
           key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
