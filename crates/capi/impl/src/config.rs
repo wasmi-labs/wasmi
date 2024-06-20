@@ -133,7 +133,7 @@ pub extern "C" fn wasmi_enforced_limits_delete(_: Box<wasmi_enforced_limits_t>) 
 
 /// Sets the [`wasmi_enforced_limits_t`] for the config.
 ///
-/// Wraps [`wasmi::Config::engine_limits`]
+/// Wraps [`wasmi::Config::enforced_limits`]
 #[no_mangle]
 pub extern "C" fn wasmi_config_set_enforced_limits(
     config: &mut wasm_config_t,
