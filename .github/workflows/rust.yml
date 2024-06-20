@@ -98,7 +98,7 @@ jobs:
       - name: Build (default features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
-        run: cargo build --workspace --release
+        run: cargo build --tests --workspace --release
       - name: Test (default features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
@@ -106,7 +106,7 @@ jobs:
       - name: Build (all features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
-        run: cargo build --workspace --release --all-features
+        run: cargo build --tests --workspace --release --all-features
       - name: Test (all features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
