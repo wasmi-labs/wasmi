@@ -95,10 +95,18 @@ jobs:
           restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
+      - name: Build (default features)
+        env:
+          RUSTFLAGS: "--cfg debug_assertions"
+        run: cargo build --workspace --release
       - name: Test (default features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
         run: cargo test --workspace --release
+      - name: Build (all features)
+        env:
+          RUSTFLAGS: "--cfg debug_assertions"
+        run: cargo build --workspace --release --all-features
       - name: Test (all features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
