@@ -109,7 +109,7 @@ impl ModuleParser {
         if let Some(validator) = &mut self.validator {
             validator.type_section(&section)?;
         }
-        let limits = self.engine.config().get_engine_limits();
+        let limits = self.engine.config().get_enforced_limits();
         let func_types = section.into_iter().map(|result| {
             let wasmparser::Type::Func(ty) = result?;
             if let Some(limit) = limits.max_params {
@@ -169,7 +169,7 @@ impl ModuleParser {
         section: FunctionSectionReader,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
-        if let Some(limit) = self.engine.config().get_engine_limits().max_functions {
+        if let Some(limit) = self.engine.config().get_enforced_limits().max_functions {
             if section.count() > limit {
                 return Err(Error::from(EnforcedLimitsError::TooManyFunctions { limit }));
             }
@@ -198,7 +198,7 @@ impl ModuleParser {
         section: TableSectionReader,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
-        if let Some(limit) = self.engine.config().get_engine_limits().max_tables {
+        if let Some(limit) = self.engine.config().get_enforced_limits().max_tables {
             if section.count() > limit {
                 return Err(Error::from(EnforcedLimitsError::TooManyTables { limit }));
             }
@@ -227,7 +227,7 @@ impl ModuleParser {
         section: MemorySectionReader,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
-        if let Some(limit) = self.engine.config().get_engine_limits().max_memories {
+        if let Some(limit) = self.engine.config().get_enforced_limits().max_memories {
             if section.count() > limit {
                 return Err(Error::from(EnforcedLimitsError::TooManyMemories { limit }));
             }
@@ -256,7 +256,7 @@ impl ModuleParser {
         section: GlobalSectionReader,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
-        if let Some(limit) = self.engine.config().get_engine_limits().max_globals {
+        if let Some(limit) = self.engine.config().get_enforced_limits().max_globals {
             if section.count() > limit {
                 return Err(Error::from(EnforcedLimitsError::TooManyGlobals { limit }));
             }
@@ -337,7 +337,7 @@ impl ModuleParser {
         if let Some(limit) = self
             .engine
             .config()
-            .get_engine_limits()
+            .get_enforced_limits()
             .max_element_segments
         {
             if section.count() > limit {
@@ -363,7 +363,7 @@ impl ModuleParser {
     /// This is part of the bulk memory operations Wasm proposal and not yet supported
     /// by Wasmi.
     fn process_data_count(&mut self, count: u32, range: Range<usize>) -> Result<(), Error> {
-        if let Some(limit) = self.engine.config().get_engine_limits().max_data_segments {
+        if let Some(limit) = self.engine.config().get_enforced_limits().max_data_segments {
             if count > limit {
                 return Err(Error::from(EnforcedLimitsError::TooManyDataSegments {
                     limit,
@@ -390,7 +390,7 @@ impl ModuleParser {
         section: DataSectionReader,
         builder: &mut ModuleBuilder,
     ) -> Result<(), Error> {
-        if let Some(limit) = self.engine.config().get_engine_limits().max_data_segments {
+        if let Some(limit) = self.engine.config().get_enforced_limits().max_data_segments {
             if section.count() > limit {
                 return Err(Error::from(EnforcedLimitsError::TooManyDataSegments {
                     limit,
@@ -427,13 +427,13 @@ impl ModuleParser {
         range: Range<usize>,
         size: u32,
     ) -> Result<(), Error> {
-        let engine_limits = self.engine.config().get_engine_limits();
-        if let Some(limit) = engine_limits.max_functions {
+        let enforced_limits = self.engine.config().get_enforced_limits();
+        if let Some(limit) = enforced_limits.max_functions {
             if count > limit {
                 return Err(Error::from(EnforcedLimitsError::TooManyFunctions { limit }));
             }
         }
-        if let Some(limit) = engine_limits.min_avg_bytes_per_function {
+        if let Some(limit) = enforced_limits.min_avg_bytes_per_function {
             if size >= limit.req_funcs_bytes {
                 let limit = limit.min_avg_bytes_per_function;
                 let avg = size / count;
