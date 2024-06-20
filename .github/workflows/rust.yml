@@ -39,7 +39,7 @@ jobs:
       - name: Build (no_std + no-hash-maps)
         run: cargo build -p wasmi_collections --no-default-features --features no-hash-maps
       - name: Build (no_std)
-        run: cargo build --workspace --lib --no-default-features --target thumbv7em-none-eabi --exclude wasmi_cli --exclude wasmi_wasi --exclude wasmi_fuzz
+        run: cargo build --workspace --lib --no-default-features --target x86_64-unknown-none --exclude wasmi_cli --exclude wasmi_wasi --exclude wasmi_fuzz
       - name: Build (wasm32)
         run: cargo build --workspace --lib --no-default-features --target wasm32-unknown-unknown --exclude wasmi_cli --exclude wasmi_wasi --exclude wasmi_fuzz
 
