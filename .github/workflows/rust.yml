@@ -403,6 +403,8 @@ jobs:
         run: cargo clippy --workspace --no-default-features -- -D warnings
       - name: Clippy (tests)
         run: cargo clippy --workspace --tests -- -D warnings
+      - name: Clippy (benches)
+        run: cargo clippy --workspace --benches -- -D warnings
       - name: Clippy (fuzz)
         run: pushd fuzz && cargo clippy -- -D warnings && popd
 
