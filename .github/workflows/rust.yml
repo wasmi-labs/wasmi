@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: wasm32-unknown-unknown, thumbv7em-none-eabi
+          targets: wasm32-unknown-unknown, x86_64-unknown-none
       - name: Set up Cargo cache
         uses: actions/cache@v4
         continue-on-error: false
@@ -39,7 +39,7 @@ jobs:
       - name: Build (no_std + no-hash-maps)
         run: cargo build -p wasmi_collections --no-default-features --features no-hash-maps
       - name: Build (no_std)
-        run: cargo build --workspace --lib --no-default-features --target thumbv7em-none-eabi --exclude wasmi_cli --exclude wasmi_wasi --exclude wasmi_fuzz
+        run: cargo build --workspace --lib --no-default-features --target x86_64-unknown-none --exclude wasmi_cli --exclude wasmi_wasi --exclude wasmi_fuzz
       - name: Build (wasm32)
         run: cargo build --workspace --lib --no-default-features --target wasm32-unknown-unknown --exclude wasmi_cli --exclude wasmi_wasi --exclude wasmi_fuzz
 
@@ -67,6 +67,10 @@ jobs:
         run: rustup show
       - name: "Add Rust Component: `rust-src`"
         run: rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
+      - name: Build Tests
+        env:
+          RUSTFLAGS: "--cfg debug_assertions -Zsanitizer=address"
+        run: cargo build --tests --workspace -Zbuild-std --target x86_64-unknown-linux-gnu
       - name: Test
         env:
           RUSTFLAGS: "--cfg debug_assertions -Zsanitizer=address"
@@ -95,10 +99,18 @@ jobs:
           restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
+      - name: Build (default features)
+        env:
+          RUSTFLAGS: "--cfg debug_assertions"
+        run: cargo build --tests --workspace --release
       - name: Test (default features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
         run: cargo test --workspace --release
+      - name: Build (all features)
+        env:
+          RUSTFLAGS: "--cfg debug_assertions"
+        run: cargo build --tests --workspace --release --all-features
       - name: Test (all features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
@@ -200,7 +212,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-            ~/fuzz/target/
+            ~/target/x86_64-unknown-linux-gnu/
+            ~/target/x86_64-unknown-linux-gnu/release/
             ~/fuzz/corpus/translate/
             ~/fuzz/curpus/translate_metered/
           key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
@@ -212,6 +225,8 @@ jobs:
           # Note: We use `|| true` because cargo install returns an error
           #       if cargo-udeps was already installed on the CI runner.
           cargo install cargo-fuzz || true
+      - name: Build Fuzzing
+        run: cargo fuzz build translate
       - name: Fuzz (Translation)
         run: cargo fuzz run translate -j 2 --verbose -- -max_total_time=60 # 1 minute of fuzzing
       - name: Fuzz (Translation) + fuel
@@ -233,7 +248,10 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-            ~/fuzz/target/
+            ~/target/x86_64-unknown-linux-gnu/
+            ~/target/x86_64-unknown-linux-gnu/release/
+            ~/target/release/
+            ~/target/debug/
             ~/fuzz/corpus/execute/
           key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-${{ github.job }}-
@@ -244,6 +262,8 @@ jobs:
           # Note: We use `|| true` because cargo install returns an error
           #       if cargo-udeps was already installed on the CI runner.
           cargo install cargo-fuzz || true
+      - name: Build Fuzzing
+        run: cargo fuzz build execute
       - name: Fuzz (Execution)
         run: cargo fuzz run execute -j 2 --verbose -- -max_total_time=120 # 2 minutes of fuzzing
 
@@ -263,7 +283,10 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
-            ~/fuzz/target/
+            ~/target/x86_64-unknown-linux-gnu/
+            ~/target/x86_64-unknown-linux-gnu/release/
+            ~/target/release/
+            ~/target/debug/
             ~/fuzz/corpus/execute/
           key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-${{ github.job }}-
@@ -274,6 +297,8 @@ jobs:
           # Note: We use `|| true` because cargo install returns an error
           #       if cargo-udeps was already installed on the CI runner.
           cargo install cargo-fuzz || true
+      - name: Build Fuzzing
+        run: cargo fuzz build differential
       - name: Fuzz (Differential)
         run: cargo fuzz run differential -j 2 --verbose -- -max_total_time=120 # 2 minutes of fuzzing
 
@@ -297,6 +322,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
+            ~/target/miri/
           key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
@@ -331,6 +357,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             ~/target/
+            ~/target/miri/
           key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules

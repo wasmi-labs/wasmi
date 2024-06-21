@@ -383,7 +383,7 @@ impl Config {
     /// Returns the [`EnforcedLimits`] used for the [`Engine`].
     ///
     /// [`Engine`]: crate::Engine
-    pub(crate) fn get_engine_limits(&self) -> &EnforcedLimits {
+    pub(crate) fn get_enforced_limits(&self) -> &EnforcedLimits {
         &self.limits
     }
 
