@@ -590,21 +590,21 @@ fn bench_instantiate_contract(c: &mut Criterion, name: &str, path: &str) {
             .define(
                 "seal0",
                 "seal_value_transferred",
-                Func::wrap(&mut store, |_0: i32, _1: i32| unimplemented!()),
+                Func::wrap(&mut store, |_0: i32, _1: i32| ()),
             )
             .unwrap();
         linker
             .define(
                 "seal0",
                 "seal_input",
-                Func::wrap(&mut store, |_0: i32, _1: i32| unimplemented!()),
+                Func::wrap(&mut store, |_0: i32, _1: i32| ()),
             )
             .unwrap();
         linker
             .define(
                 "seal0",
                 "seal_caller",
-                Func::wrap(&mut store, |_0: i32, _1: i32| unimplemented!()),
+                Func::wrap(&mut store, |_0: i32, _1: i32| ()),
             )
             .unwrap();
         linker
@@ -631,7 +631,7 @@ fn bench_instantiate_contract(c: &mut Criterion, name: &str, path: &str) {
                 "seal_deposit_event",
                 Func::wrap(
                     &mut store,
-                    |_0: i32, _1: i32, _2: i32, _3: i32| unimplemented!(),
+                    |_0: i32, _1: i32, _2: i32, _3: i32| (),
                 ),
             )
             .unwrap();
@@ -662,14 +662,14 @@ fn bench_instantiate_contract(c: &mut Criterion, name: &str, path: &str) {
             .define(
                 "seal0",
                 "seal_return",
-                Func::wrap(&mut store, |_0: i32, _1: i32, _2: i32| unimplemented!()),
+                Func::wrap(&mut store, |_0: i32, _1: i32, _2: i32| ()),
             )
             .unwrap();
         linker
             .define(
                 "seal0",
                 "seal_hash_blake2_256",
-                Func::wrap(&mut store, |_0: i32, _1: i32, _2: i32| unimplemented!()),
+                Func::wrap(&mut store, |_0: i32, _1: i32, _2: i32| ()),
             )
             .unwrap();
         b.iter(|| {
