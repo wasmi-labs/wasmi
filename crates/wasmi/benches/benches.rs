@@ -15,17 +15,7 @@ use std::{
     sync::OnceLock,
 };
 use wasmi::{
-    core::{Pages, TrapCode, ValType, F32, F64},
-    CompilationMode,
-    Engine,
-    Extern,
-    Func,
-    FuncType,
-    Linker,
-    Memory,
-    Module,
-    Store,
-    Val,
+    core::{Pages, TrapCode, ValType, F32, F64}, CompilationMode, Engine, Extern, Func, FuncType, Linker, Memory, Module, Store, Val
 };
 
 criterion_group!(
@@ -1386,7 +1376,7 @@ fn bench_execute_vec_add(c: &mut Criterion) {
     fn test_for<A, B>(
         b: &mut Bencher,
         vec_add: Func,
-        mut store: &mut Store<()>,
+        store: &mut Store<()>,
         mem: Memory,
         len: usize,
         vec_a: A,
@@ -1404,15 +1394,15 @@ fn bench_execute_vec_add(c: &mut Criterion) {
         let ptr_b = ptr_a + len_a;
 
         // Reset `result` buffer to zeros:
-        mem.data_mut(&mut store)[ptr_result..ptr_result + (len * size_of::<i32>())].fill(0);
+        mem.data_mut(&mut *store)[ptr_result..ptr_result + (len * size_of::<i32>())].fill(0);
         // Initialize `a` buffer:
         for (n, a) in vec_a.into_iter().take(len).enumerate() {
-            mem.write(&mut store, ptr_a + (n * size_of::<i32>()), &a.to_le_bytes())
+            mem.write(&mut *store, ptr_a + (n * size_of::<i32>()), &a.to_le_bytes())
                 .unwrap();
         }
         // Initialize `b` buffer:
         for (n, b) in vec_b.into_iter().take(len).enumerate() {
-            mem.write(&mut store, ptr_b + (n * size_of::<i32>()), &b.to_le_bytes())
+            mem.write(&mut *store, ptr_b + (n * size_of::<i32>()), &b.to_le_bytes())
                 .unwrap();
         }
 
@@ -1424,7 +1414,7 @@ fn bench_execute_vec_add(c: &mut Criterion) {
             Val::I32(len as i32),
         ];
         b.iter(|| {
-            vec_add.call(&mut store, &params, &mut []).unwrap();
+            vec_add.call(&mut *store, &params, &mut []).unwrap();
         });
 
         // Validate the result buffer:
@@ -1432,17 +1422,17 @@ fn bench_execute_vec_add(c: &mut Criterion) {
             let mut buffer4 = [0x00; 4];
             let mut buffer8 = [0x00; 8];
             let a = {
-                mem.read(&store, ptr_a + (n * size_of::<i32>()), &mut buffer4)
+                mem.read(&*store, ptr_a + (n * size_of::<i32>()), &mut buffer4)
                     .unwrap();
                 i32::from_le_bytes(buffer4)
             };
             let b = {
-                mem.read(&store, ptr_b + (n * size_of::<i32>()), &mut buffer4)
+                mem.read(&*store, ptr_b + (n * size_of::<i32>()), &mut buffer4)
                     .unwrap();
                 i32::from_le_bytes(buffer4)
             };
             let actual_result = {
-                mem.read(&store, ptr_result + (n * size_of::<i64>()), &mut buffer8)
+                mem.read(&*store, ptr_result + (n * size_of::<i64>()), &mut buffer8)
                     .unwrap();
                 i64::from_le_bytes(buffer8)
             };
