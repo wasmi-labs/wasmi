@@ -15,7 +15,17 @@ use std::{
     sync::OnceLock,
 };
 use wasmi::{
-    core::{Pages, TrapCode, ValType, F32, F64}, CompilationMode, Engine, Extern, Func, FuncType, Linker, Memory, Module, Store, Val
+    core::{Pages, TrapCode, ValType, F32, F64},
+    CompilationMode,
+    Engine,
+    Extern,
+    Func,
+    FuncType,
+    Linker,
+    Memory,
+    Module,
+    Store,
+    Val,
 };
 
 criterion_group!(
@@ -619,10 +629,7 @@ fn bench_instantiate_contract(c: &mut Criterion, name: &str, path: &str) {
             .define(
                 "seal0",
                 "seal_deposit_event",
-                Func::wrap(
-                    &mut store,
-                    |_0: i32, _1: i32, _2: i32, _3: i32| (),
-                ),
+                Func::wrap(&mut store, |_0: i32, _1: i32, _2: i32, _3: i32| ()),
             )
             .unwrap();
         linker
@@ -1397,13 +1404,21 @@ fn bench_execute_vec_add(c: &mut Criterion) {
         mem.data_mut(&mut *store)[ptr_result..ptr_result + (len * size_of::<i32>())].fill(0);
         // Initialize `a` buffer:
         for (n, a) in vec_a.into_iter().take(len).enumerate() {
-            mem.write(&mut *store, ptr_a + (n * size_of::<i32>()), &a.to_le_bytes())
-                .unwrap();
+            mem.write(
+                &mut *store,
+                ptr_a + (n * size_of::<i32>()),
+                &a.to_le_bytes(),
+            )
+            .unwrap();
         }
         // Initialize `b` buffer:
         for (n, b) in vec_b.into_iter().take(len).enumerate() {
-            mem.write(&mut *store, ptr_b + (n * size_of::<i32>()), &b.to_le_bytes())
-                .unwrap();
+            mem.write(
+                &mut *store,
+                ptr_b + (n * size_of::<i32>()),
+                &b.to_le_bytes(),
+            )
+            .unwrap();
         }
 
         // Prepare parameters and all Wasm `vec_add`:
