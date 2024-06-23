@@ -35,7 +35,7 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     pub fn execute_memory_size(&mut self, store: &StoreInner, result: Register) {
         let memory = self.get_default_memory();
-        let size: u32 = store.resolve_memory(&memory).current_pages().into();
+        let size = store.resolve_memory(&memory).size();
         self.set_register(result, size);
         self.next_instr()
     }

@@ -223,8 +223,13 @@ impl MemoryEntity {
     }
 
     /// Returns the amount of pages in use by the linear memory.
-    pub fn current_pages(&self) -> Pages {
+    fn current_pages(&self) -> Pages {
         self.current_pages
+    }
+
+    /// Returns the size, in WebAssembly pages, of this Wasm linear memory.
+    pub fn size(&self) -> u32 {
+        self.current_pages.into()
     }
 
     /// Grows the linear memory by the given amount of new pages.
@@ -431,12 +436,21 @@ impl Memory {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Memory`].
-    pub fn current_pages(&self, ctx: impl AsContext) -> Pages {
+    fn current_pages(&self, ctx: impl AsContext) -> Pages {
         ctx.as_context()
             .store
             .inner
             .resolve_memory(self)
             .current_pages()
+    }
+
+    /// Returns the size, in WebAssembly pages, of this Wasm linear memory.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Memory`].
+    pub fn size(&self, ctx: impl AsContext) -> u32 {
+        self.current_pages(ctx).into()
     }
 
     /// Grows the linear memory by the given amount of new pages.
