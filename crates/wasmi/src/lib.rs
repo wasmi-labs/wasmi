@@ -159,6 +159,8 @@ pub use self::{
     linker::{state, Linker, LinkerBuilder},
     memory::{Memory, MemoryType},
     module::{
+        CustomSection,
+        CustomSectionsIter,
         ExportType,
         ImportType,
         InstancePre,

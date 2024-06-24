@@ -3,6 +3,7 @@ use super::{
     export::ExternIdx,
     global::Global,
     import::{FuncTypeIdx, Import},
+    CustomSectionsBuilder,
     ElementSegment,
     FuncIdx,
     ModuleBuilder,
@@ -19,6 +20,7 @@ use crate::{
 use core::ops::Range;
 use std::boxed::Box;
 use wasmparser::{
+    CustomSectionReader,
     DataSectionReader,
     ElementSectionReader,
     Encoding,
@@ -490,6 +492,19 @@ impl ModuleParser {
         };
         self.engine
             .translate_func(func, compiled_func, offset, bytes, module, func_to_validate)?;
+        Ok(())
+    }
+
+    /// Process a single Wasm custom section.
+    fn process_custom_section(
+        &mut self,
+        custom_sections: &mut CustomSectionsBuilder,
+        reader: CustomSectionReader,
+    ) -> Result<(), Error> {
+        if self.engine.config().get_ignore_custom_sections() {
+            return Ok(());
+        }
+        custom_sections.push(reader.name(), reader.data());
         Ok(())
     }
 

@@ -3,6 +3,7 @@ use super::{
     export::ExternIdx,
     import::FuncTypeIdx,
     ConstExpr,
+    CustomSectionsBuilder,
     DataSegments,
     ElementSegment,
     ExternTypeIdx,
@@ -33,6 +34,7 @@ use std::{boxed::Box, collections::BTreeMap, sync::Arc, vec::Vec};
 pub struct ModuleBuilder {
     pub header: ModuleHeader,
     pub data_segments: DataSegmentsBuilder,
+    pub custom_sections: CustomSectionsBuilder,
 }
 
 /// A builder for a WebAssembly [`Module`] header.
@@ -132,10 +134,11 @@ impl ModuleImportsBuilder {
 
 impl ModuleBuilder {
     /// Creates a new [`ModuleBuilder`] for the given [`Engine`].
-    pub fn new(header: ModuleHeader) -> Self {
+    pub fn new(header: ModuleHeader, custom_sections: CustomSectionsBuilder) -> Self {
         Self {
             header,
             data_segments: DataSegments::build(),
+            custom_sections,
         }
     }
 }
@@ -419,6 +422,7 @@ impl ModuleBuilder {
             engine: engine.clone(),
             header: self.header,
             data_segments: self.data_segments.finish(),
+            custom_sections: self.custom_sections.finish(),
         }
     }
 }
