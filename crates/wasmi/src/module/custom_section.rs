@@ -76,7 +76,7 @@ impl CustomSectionsInner {
     }
 }
 
-/// The data of a Wasm custom section.
+/// A Wasm custom section.
 #[derive(Debug)]
 pub struct CustomSection<'a> {
     /// The name of the custom section.
