@@ -33,12 +33,6 @@ impl CustomSectionsBuilder {
         })
     }
 
-    /// Appends the `other` [`CustomSectionsBuilder`] to `self` leaving `other` empty.
-    #[inline]
-    pub fn append(&mut self, other: &mut Self) {
-        self.items.append(&mut other.items);
-    }
-
     /// Finalize construction of the [`CustomSections`].
     #[inline]
     pub fn finish(self) -> CustomSections {
