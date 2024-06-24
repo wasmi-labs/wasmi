@@ -445,26 +445,13 @@ impl Memory {
             .dynamic_ty()
     }
 
-    /// Returns the amount of pages in use by the linear memory.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `ctx` does not own this [`Memory`].
-    fn current_pages(&self, ctx: impl AsContext) -> Pages {
-        ctx.as_context()
-            .store
-            .inner
-            .resolve_memory(self)
-            .current_pages()
-    }
-
     /// Returns the size, in WebAssembly pages, of this Wasm linear memory.
     ///
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Memory`].
     pub fn size(&self, ctx: impl AsContext) -> u32 {
-        self.current_pages(ctx).into()
+        ctx.as_context().store.inner.resolve_memory(self).size()
     }
 
     /// Grows the linear memory by the given amount of new pages.
