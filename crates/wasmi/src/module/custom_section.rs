@@ -141,11 +141,26 @@ mod tests {
         builder.push("E", &[]); // empty data
         let custom_sections = builder.finish();
         let mut iter = custom_sections.iter();
-        assert_eq!(iter.next().map(|s| (s.name(), s.data())), Some(("A", &b"first"[..])));
-        assert_eq!(iter.next().map(|s| (s.name(), s.data())), Some(("B", &b"second"[..])));
-        assert_eq!(iter.next().map(|s| (s.name(), s.data())), Some(("C", &b"third"[..])));
-        assert_eq!(iter.next().map(|s| (s.name(), s.data())), Some(("", &b"fourth"[..])));
-        assert_eq!(iter.next().map(|s| (s.name(), s.data())), Some(("E", &b""[..])));
+        assert_eq!(
+            iter.next().map(|s| (s.name(), s.data())),
+            Some(("A", &b"first"[..]))
+        );
+        assert_eq!(
+            iter.next().map(|s| (s.name(), s.data())),
+            Some(("B", &b"second"[..]))
+        );
+        assert_eq!(
+            iter.next().map(|s| (s.name(), s.data())),
+            Some(("C", &b"third"[..]))
+        );
+        assert_eq!(
+            iter.next().map(|s| (s.name(), s.data())),
+            Some(("", &b"fourth"[..]))
+        );
+        assert_eq!(
+            iter.next().map(|s| (s.name(), s.data())),
+            Some(("E", &b""[..]))
+        );
         assert_eq!(iter.next().map(|s| (s.name(), s.data())), None);
     }
 }

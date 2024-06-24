@@ -352,7 +352,7 @@ impl Config {
     }
 
     /// Configures whether Wasmi will ignore custom sections when parsing Wasm modules.
-    /// 
+    ///
     /// Default value: `false`
     pub fn ignore_custom_sections(&mut self, enable: bool) -> &mut Self {
         self.ignore_custom_sections = enable;
