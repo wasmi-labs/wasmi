@@ -19,18 +19,19 @@ use self::{
     import::{ExternTypeIdx, Import},
     parser::ModuleParser,
 };
-pub(crate) use self::{
-    data::{DataSegment, DataSegments, InitDataSegment, PassiveDataSegmentBytes},
-    element::{ElementSegment, ElementSegmentItems, ElementSegmentKind},
-    init_expr::ConstExpr,
-    utils::WasmiValueType,
-};
 pub use self::{
+    custom_section::{CustomSection, CustomSectionsIter},
     export::{ExportType, FuncIdx, MemoryIdx, ModuleExportsIter, TableIdx},
     global::GlobalIdx,
     import::{FuncTypeIdx, ImportName},
     instantiate::{InstancePre, InstantiationError},
     read::{Read, ReadError},
+};
+pub(crate) use self::{
+    data::{DataSegment, DataSegments, InitDataSegment, PassiveDataSegmentBytes},
+    element::{ElementSegment, ElementSegmentItems, ElementSegmentKind},
+    init_expr::ConstExpr,
+    utils::WasmiValueType,
 };
 use crate::{
     collections::Map,
@@ -448,6 +449,12 @@ impl Module {
                 ExternType::Global(global_type)
             }
         }
+    }
+
+    /// Returns an iterator yielding the custom sections of the Wasm [`Module`].
+    #[inline]
+    pub fn custom_sections(&self) -> CustomSectionsIter {
+        self.custom_sections.iter()
     }
 }
 
