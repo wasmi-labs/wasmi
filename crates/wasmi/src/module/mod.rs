@@ -1,4 +1,5 @@
 mod builder;
+mod custom_section;
 mod data;
 mod element;
 mod export;
@@ -12,6 +13,7 @@ pub(crate) mod utils;
 
 use self::{
     builder::ModuleBuilder,
+    custom_section::CustomSectionsBuilder,
     export::ExternIdx,
     global::Global,
     import::{ExternTypeIdx, Import},
