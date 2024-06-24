@@ -320,6 +320,18 @@ impl MemoryEntity {
         self.bytes.data_mut()
     }
 
+    /// Returns the base pointer, in the host’s address space, that the [`Memory`] is located at.
+    pub fn data_ptr(&self) -> *mut u8 {
+        self.bytes.ptr
+    }
+
+    /// Returns the byte length of this [`Memory`].
+    ///
+    /// The returned value will be a multiple of the wasm page size, 64k.
+    pub fn data_size(&self) -> usize {
+        self.bytes.len
+    }
+
     /// Reads `n` bytes from `memory[offset..offset+n]` into `buffer`
     /// where `n` is the length of `buffer`.
     ///
@@ -508,6 +520,30 @@ impl Memory {
     ) -> (&'a mut [u8], &'a mut T) {
         let (memory, store) = ctx.into().store.resolve_memory_and_state_mut(self);
         (memory.data_mut(), store)
+    }
+
+    /// Returns the base pointer, in the host’s address space, that the [`Memory`] is located at.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Memory`].
+    pub fn data_ptr(&self, ctx: impl AsContext) -> *mut u8 {
+        ctx.as_context().store.inner.resolve_memory(self).data_ptr()
+    }
+
+    /// Returns the byte length of this [`Memory`].
+    ///
+    /// The returned value will be a multiple of the wasm page size, 64k.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ctx` does not own this [`Memory`].
+    pub fn data_size(&self, ctx: impl AsContext) -> usize {
+        ctx.as_context()
+            .store
+            .inner
+            .resolve_memory(self)
+            .data_size()
     }
 
     /// Reads `n` bytes from `memory[offset..offset+n]` into `buffer`
