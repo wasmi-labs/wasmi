@@ -42,8 +42,6 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 - Removed `Memory::current_pages` method. (https://github.com/wasmi-labs/wasmi/pull/1082)
     - Users should use the new `Memory::size` method instead.
 
-###
-
 ## [`0.32.3`] - 2024-06-06
 
 ### Fixed
