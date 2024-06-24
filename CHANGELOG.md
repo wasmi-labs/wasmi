@@ -23,10 +23,10 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 ### Changed
 
 - Optimized the Wasmi executor in various ways.
-    - In summary the Wasmi executor now more optimally cached the currently used
+    - In summary the Wasmi executor now more optimally caches the currently used
       Wasm instance and optimizes access to instance related data.
-      In particular access to the default linear memory bytes as well as the global
-      variable at index 0 (often used as shadow stack pointer) are more efficient.
+      In particular access to the default linear memory bytes as well as the value of
+      the global variable at index 0 (often used as shadow stack pointer) are more efficient.
     - The following PRs are part of this effort:
         - https://github.com/wasmi-labs/wasmi/pull/1059
         - https://github.com/wasmi-labs/wasmi/pull/1062
