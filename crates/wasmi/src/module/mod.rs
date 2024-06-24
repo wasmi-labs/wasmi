@@ -452,6 +452,14 @@ impl Module {
     }
 
     /// Returns an iterator yielding the custom sections of the Wasm [`Module`].
+    /// 
+    /// # Note
+    /// 
+    /// The returned iterator will yield no items if [`Config::ignore_custom_sections`]
+    /// is set to `true` even if the original Wasm module contains custom sections.
+    /// 
+    /// 
+    /// [`Config::ignore_custom_sections`]: crate::Config::ignore_custom_sections
     #[inline]
     pub fn custom_sections(&self) -> CustomSectionsIter {
         self.custom_sections.iter()
