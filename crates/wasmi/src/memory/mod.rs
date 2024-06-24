@@ -242,7 +242,7 @@ impl MemoryEntity {
     /// the grow operation.
     pub fn grow(
         &mut self,
-        additional: Pages,
+        additional: u32,
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u32, EntityGrowError> {
@@ -256,12 +256,14 @@ impl MemoryEntity {
             Err(err)
         }
 
-        let current_pages = self.current_pages();
-        if additional == Pages::from(0) {
-            // Nothing to do in this case. Bail out early.
-            return Ok(u32::from(current_pages));
+        if additional == 0 {
+            return Ok(self.size());
         }
+        let Some(additional) = Pages::new(additional) else {
+            return Err(EntityGrowError::InvalidGrow);
+        };
 
+        let current_pages = self.current_pages();
         let maximum_pages = self.ty().maximum_pages().unwrap_or_else(Pages::max);
         let desired_pages = current_pages.checked_add(additional);
 
@@ -465,7 +467,7 @@ impl Memory {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Memory`].
-    pub fn grow(&self, mut ctx: impl AsContextMut, additional: Pages) -> Result<u32, MemoryError> {
+    pub fn grow(&self, mut ctx: impl AsContextMut, additional: u32) -> Result<u32, MemoryError> {
         let (inner, mut limiter) = ctx
             .as_context_mut()
             .store

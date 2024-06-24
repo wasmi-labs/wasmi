@@ -1,5 +1,3 @@
-use crate::{core::Pages, store::StoreInner, Store};
-
 use super::Executor;
 use crate::{
     core::TrapCode,
@@ -8,8 +6,9 @@ use crate::{
         code_map::InstructionPtr,
     },
     error::EntityGrowError,
-    store::ResourceLimiterRef,
+    store::{ResourceLimiterRef, StoreInner},
     Error,
+    Store,
 };
 
 impl<'engine> Executor<'engine> {
@@ -79,14 +78,6 @@ impl<'engine> Executor<'engine> {
             self.execute_memory_size(store, result);
             return Ok(());
         }
-        let delta = match Pages::new(delta) {
-            Some(pages) => pages,
-            None => {
-                // Cannot grow memory so we push the expected error value.
-                self.set_register(result, EntityGrowError::ERROR_CODE);
-                return self.try_next_instr();
-            }
-        };
         let memory = self.get_default_memory();
         let (memory, fuel) = store.resolve_memory_and_fuel_mut(&memory);
         let return_value = memory
