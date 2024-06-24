@@ -245,11 +245,11 @@ impl MemoryEntity {
         additional: Pages,
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
-    ) -> Result<Pages, EntityGrowError> {
+    ) -> Result<u32, EntityGrowError> {
         fn notify_limiter(
             limiter: &mut ResourceLimiterRef<'_>,
             err: EntityGrowError,
-        ) -> Result<Pages, EntityGrowError> {
+        ) -> Result<u32, EntityGrowError> {
             if let Some(limiter) = limiter.as_resource_limiter() {
                 limiter.memory_grow_failed(&MemoryError::OutOfBoundsGrowth)
             }
@@ -259,7 +259,7 @@ impl MemoryEntity {
         let current_pages = self.current_pages();
         if additional == Pages::from(0) {
             // Nothing to do in this case. Bail out early.
-            return Ok(current_pages);
+            return Ok(u32::from(current_pages));
         }
 
         let maximum_pages = self.ty().maximum_pages().unwrap_or_else(Pages::max);
@@ -305,7 +305,7 @@ impl MemoryEntity {
         // 3. There is enough fuel for the operation.
         self.bytes.grow(new_size);
         self.current_pages = new_pages;
-        Ok(current_pages)
+        Ok(u32::from(current_pages))
     }
 
     /// Returns a shared slice to the bytes underlying to the byte buffer.
@@ -465,11 +465,7 @@ impl Memory {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Memory`].
-    pub fn grow(
-        &self,
-        mut ctx: impl AsContextMut,
-        additional: Pages,
-    ) -> Result<Pages, MemoryError> {
+    pub fn grow(&self, mut ctx: impl AsContextMut, additional: Pages) -> Result<u32, MemoryError> {
         let (inner, mut limiter) = ctx
             .as_context_mut()
             .store
