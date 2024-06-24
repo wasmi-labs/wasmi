@@ -13,7 +13,7 @@ pub(crate) mod utils;
 
 use self::{
     builder::ModuleBuilder,
-    custom_section::CustomSectionsBuilder,
+    custom_section::{CustomSections, CustomSectionsBuilder},
     export::ExternIdx,
     global::Global,
     import::{ExternTypeIdx, Import},
@@ -53,6 +53,7 @@ pub struct Module {
     engine: Engine,
     header: ModuleHeader,
     data_segments: DataSegments,
+    custom_sections: CustomSections,
 }
 
 /// A parsed and validated WebAssembly module header.

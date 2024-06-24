@@ -422,6 +422,7 @@ impl ModuleBuilder {
             engine: engine.clone(),
             header: self.header,
             data_segments: self.data_segments.finish(),
+            custom_sections: self.custom_sections.finish(),
         }
     }
 }

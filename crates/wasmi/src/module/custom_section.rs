@@ -1,7 +1,23 @@
 use core::slice;
 use std::{boxed::Box, vec::Vec};
 
-/// A Wasm custom section builder.
+/// Wasm custom sections.
+#[derive(Default, Debug)]
+pub struct CustomSections {
+    items: Vec<CustomSection>,
+}
+
+impl CustomSections {
+    /// Returns an iterator over the [`CustomSection`]s stored in `self`.
+    #[inline]
+    pub fn iter(&self) -> CustomSectionsIter {
+        CustomSectionsIter {
+            iter: self.items.iter(),
+        }
+    }
+}
+
+/// A builder for [`CustomSections`].
 #[derive(Default, Debug)]
 pub struct CustomSectionsBuilder {
     items: Vec<CustomSection>,
@@ -23,12 +39,10 @@ impl CustomSectionsBuilder {
         self.items.append(&mut other.items);
     }
 
-    /// Returns an iterator over the [`CustomSection`]s stored in `self`.
+    /// Finalize construction of the [`CustomSections`].
     #[inline]
-    pub fn iter(&self) -> CustomSectionsIter {
-        CustomSectionsIter {
-            iter: self.items.iter(),
-        }
+    pub fn finish(self) -> CustomSections {
+        CustomSections { items: self.items }
     }
 }
 
