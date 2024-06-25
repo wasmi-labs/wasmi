@@ -1358,6 +1358,9 @@ impl UntypedError {
     }
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for UntypedError {}
+
 impl Display for UntypedError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {

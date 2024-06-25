@@ -26,6 +26,9 @@ pub enum MemoryError {
     InvalidStaticBufferSize,
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for MemoryError {}
+
 impl Display for MemoryError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
