@@ -12,6 +12,9 @@ pub enum ReadError {
     UnknownError,
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for ReadError {}
+
 impl Display for ReadError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

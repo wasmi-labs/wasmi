@@ -41,6 +41,9 @@ pub enum TableError {
     TooManyTables,
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for TableError {}
+
 impl Display for TableError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

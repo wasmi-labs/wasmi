@@ -43,6 +43,9 @@ impl TranslationError {
     }
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for TranslationError {}
+
 impl Display for TranslationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
