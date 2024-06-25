@@ -1,7 +1,7 @@
 use super::Executor;
 use crate::{
     core::{hint, UntypedVal},
-    engine::bytecode::{Const16, GlobalIdx, Register},
+    engine::bytecode::{Const16, Const32, GlobalIdx, Register},
     store::StoreInner,
 };
 
@@ -76,6 +76,40 @@ impl<'engine> Executor<'engine> {
                 store.resolve_global_mut(&global).set_untyped(new_value)
             }
         };
+        self.next_instr()
+    }
+
+    /// Executes an [`Instruction::I32AddImmIntoGlobal0`].
+    #[inline(always)]
+    pub fn execute_i32_add_imm_into_global_0(&mut self, lhs: Register, rhs: Const32<i32>) {
+        let lhs: i32 = self.get_register_as(lhs);
+        let rhs: i32 = i32::from(rhs);
+        let result = lhs.wrapping_add(rhs);
+        // Safety: TODO
+        unsafe { self.cache.global.set(result.into()) };
+        self.next_instr()
+    }
+
+    /// Executes an [`Instruction::I32AddImmFromGlobal0`].
+    #[inline(always)]
+    pub fn execute_i32_add_imm_from_global_0(&mut self, result: Register, rhs: Const32<i32>) {
+        // Safety: TODO
+        let lhs: i32 = unsafe { self.cache.global.get() }.into();
+        let rhs: i32 = rhs.into();
+        self.set_register(result, lhs.wrapping_add(rhs));
+        self.next_instr()
+    }
+
+    /// Executes an [`Instruction::I32AddImmInoutGlobal0`].
+    #[inline(always)]
+    pub fn execute_i32_add_imm_inout_global_0(&mut self, result: Register, rhs: Const32<i32>) {
+        // Safety: TODO
+        let lhs: i32 = unsafe { self.cache.global.get() }.into();
+        let rhs: i32 = rhs.into();
+        let sum = lhs.wrapping_add(rhs);
+        // Safety: TODO
+        unsafe { self.cache.global.set(sum.into()) };
+        self.set_register(result, sum);
         self.next_instr()
     }
 }
