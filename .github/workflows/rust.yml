@@ -332,6 +332,8 @@ jobs:
           # Note: We use `|| true` because cargo install returns an error
           #       if cargo-nextest was already installed on the CI runner.
           cargo install cargo-nextest || true
+      - name: Miri (setup)
+        run: cargo miri setup --target x86_64-unknown-linux-gnu --lib --workspace --locked
       - name: Miri (--lib)
         run: cargo miri nextest run --target x86_64-unknown-linux-gnu --lib --workspace --locked
       - name: Miri (--doc)
@@ -367,6 +369,8 @@ jobs:
           # Note: We use `|| true` because cargo install returns an error
           #       if cargo-nextest was already installed on the CI runner.
           cargo install cargo-nextest || true
+      - name: Miri (setup)
+        run: cargo miri setup --target x86_64-unknown-linux-gnu --locked
       - name: Miri - Wasm Spec Testsuite (store)
         # We just run the `store.wast` test since running the entire Wasm spec testsuite
         # simply takes too long to do on every pull request commit. There exists an entire
