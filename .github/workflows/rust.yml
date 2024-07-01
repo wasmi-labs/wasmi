@@ -33,15 +33,15 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Build (default features)
-        run: cargo build --workspace
+        run: cargo build --workspace --locked
       - name: Build (all features)
-        run: cargo build --workspace --all-features
+        run: cargo build --workspace --locked --all-features
       - name: Build (no_std + no-hash-maps)
-        run: cargo build -p wasmi_collections --no-default-features --features no-hash-maps
+        run: cargo build --locked -p wasmi_collections --no-default-features --features no-hash-maps
       - name: Build (no_std)
-        run: cargo build --workspace --lib --no-default-features --target x86_64-unknown-none --exclude wasmi_cli --exclude wasmi_wasi --exclude wasmi_fuzz
+        run: cargo build --workspace --locked --lib --no-default-features --target x86_64-unknown-none --exclude wasmi_cli --exclude wasmi_wasi --exclude wasmi_fuzz
       - name: Build (wasm32)
-        run: cargo build --workspace --lib --no-default-features --target wasm32-unknown-unknown --exclude wasmi_cli --exclude wasmi_wasi --exclude wasmi_fuzz
+        run: cargo build --workspace --locked --lib --no-default-features --target wasm32-unknown-unknown --exclude wasmi_cli --exclude wasmi_wasi --exclude wasmi_fuzz
 
   test-asan:
     name: Test (Address Sanitizer)
@@ -70,11 +70,11 @@ jobs:
       - name: Build Tests
         env:
           RUSTFLAGS: "--cfg debug_assertions -Zsanitizer=address"
-        run: cargo build --tests --workspace -Zbuild-std --target x86_64-unknown-linux-gnu
+        run: cargo build --tests --workspace --locked -Zbuild-std --target x86_64-unknown-linux-gnu
       - name: Test
         env:
           RUSTFLAGS: "--cfg debug_assertions -Zsanitizer=address"
-        run: cargo test --workspace --tests -Zbuild-std --target x86_64-unknown-linux-gnu
+        run: cargo test --workspace --locked --tests -Zbuild-std --target x86_64-unknown-linux-gnu
 
   test:
     name: Test
@@ -102,19 +102,19 @@ jobs:
       - name: Build (default features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
-        run: cargo build --tests --workspace --release
+        run: cargo build --tests --workspace --locked --release
       - name: Test (default features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
-        run: cargo test --workspace --release
+        run: cargo test --workspace --locked --release
       - name: Build (all features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
-        run: cargo build --tests --workspace --release --all-features
+        run: cargo build --tests --workspace --locked --release --all-features
       - name: Test (all features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
-        run: cargo test --workspace --release --all-features
+        run: cargo test --workspace --locked --release --all-features
 
   fmt:
     name: Formatting
@@ -152,7 +152,7 @@ jobs:
       - name: Check Docs
         env:
           RUSTDOCFLAGS: "-D warnings"
-        run: cargo doc --workspace --all-features --no-deps --document-private-items
+        run: cargo doc --workspace --locked --all-features --no-deps --document-private-items
 
   audit:
     name: Audit
@@ -332,10 +332,12 @@ jobs:
           # Note: We use `|| true` because cargo install returns an error
           #       if cargo-nextest was already installed on the CI runner.
           cargo install cargo-nextest || true
+      - name: Miri (setup)
+        run: cargo miri setup --target x86_64-unknown-linux-gnu --lib --workspace --locked
       - name: Miri (--lib)
-        run: cargo miri nextest run --target x86_64-unknown-linux-gnu --lib --workspace
+        run: cargo miri nextest run --target x86_64-unknown-linux-gnu --lib --workspace --locked
       - name: Miri (--doc)
-        run: cargo miri test --doc --workspace --target x86_64-unknown-linux-gnu
+        run: cargo miri test --target x86_64-unknown-linux-gnu --doc --workspace --locked
 
   miri-spec:
     name: Miri (spec)
@@ -367,11 +369,13 @@ jobs:
           # Note: We use `|| true` because cargo install returns an error
           #       if cargo-nextest was already installed on the CI runner.
           cargo install cargo-nextest || true
+      - name: Miri (setup)
+        run: cargo miri setup --target x86_64-unknown-linux-gnu --locked
       - name: Miri - Wasm Spec Testsuite (store)
         # We just run the `store.wast` test since running the entire Wasm spec testsuite
         # simply takes too long to do on every pull request commit. There exists an entire
         # CRON job that runs the entire Wasm spec testsuite using miri every night.
-        run: cargo miri nextest run --target x86_64-unknown-linux-gnu ::wasm_store
+        run: cargo miri nextest run --target x86_64-unknown-linux-gnu ::wasm_store --locked
 
   clippy:
     name: Clippy
@@ -396,15 +400,15 @@ jobs:
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Clippy (default features)
-        run: cargo clippy --workspace -- -D warnings
+        run: cargo clippy --workspace --locked -- -D warnings
       - name: Clippy (all features)
-        run: cargo clippy --workspace --all-features -- -D warnings
+        run: cargo clippy --workspace --locked --all-features -- -D warnings
       - name: Clippy (no_std)
-        run: cargo clippy --workspace --no-default-features -- -D warnings
+        run: cargo clippy --workspace --locked --no-default-features -- -D warnings
       - name: Clippy (tests)
-        run: cargo clippy --workspace --tests -- -D warnings
+        run: cargo clippy --workspace --locked --tests -- -D warnings
       - name: Clippy (benches)
-        run: cargo clippy --workspace --benches -- -D warnings
+        run: cargo clippy --workspace --locked --benches -- -D warnings
       - name: Clippy (fuzz)
         run: pushd fuzz && cargo clippy -- -D warnings && popd
 
@@ -435,7 +439,7 @@ jobs:
         uses: actions-rs/tarpaulin@v0.1.3
         with:
           version: "0.18.0"
-          args: --workspace
+          args: --workspace --locked
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v4.5.0
         with:
