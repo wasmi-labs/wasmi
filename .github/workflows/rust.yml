@@ -82,19 +82,19 @@ jobs:
       - name: Build (default features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
-        run: cargo build --tests --workspace --locked --release
+        run: cargo build --tests --workspace --locked --profile ci
       - name: Test (default features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
-        run: cargo test --workspace --locked --release
+        run: cargo test --workspace --locked --profile ci
       - name: Build (all features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
-        run: cargo build --tests --workspace --locked --release --all-features
+        run: cargo build --tests --workspace --locked --profile ci --all-features
       - name: Test (all features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
-        run: cargo test --workspace --locked --release --all-features
+        run: cargo test --workspace --locked --profile ci --all-features
 
   fmt:
     name: Formatting

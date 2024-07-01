@@ -32,3 +32,8 @@ num-traits = { version = "0.2.8", default-features = false }
 [profile.bench]
 lto = "fat"
 codegen-units = 1
+
+[profile.ci]
+inherits = "dev"
+opt-level = 1
+incremental = false
