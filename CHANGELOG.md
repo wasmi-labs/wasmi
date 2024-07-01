@@ -8,6 +8,18 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.33.1`] - 2024-07-01
+
+### Added
+
+- Added `Error` trait impls for all Wasmi error types impleemnting `Display`. (https://github.com/wasmi-labs/wasmi/pull/1089)
+    - Contributed by [kajacx](https://github.com/kajacx).
+
+### Fixed
+
+- Fixed compilation for Rust versions <1.78. (https://github.com/wasmi-labs/wasmi/pull/1093)
+- Fixed nightly `clippy` warning about `map_err`. (https://github.com/wasmi-labs/wasmi/pull/1094)
+
 ## [`0.33.0`] - 2024-06-24
 
 ### Added
