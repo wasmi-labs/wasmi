@@ -152,22 +152,13 @@ jobs:
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - uses: dtolnay/rust-toolchain@nightly
-      - name: Set up Cargo cache
-        uses: actions/cache@v4
-        continue-on-error: false
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            ~/target/
-            ~/target/x86_64-unknown-linux-gnu/
-            ~/target/x86_64-unknown-linux-gnu/release/
+          cache-directories: |
+            ~/fuzz/corpus/
             ~/fuzz/corpus/translate/
-            ~/fuzz/curpus/translate_metered/
-          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-${{ github.job }}-
+            ~/fuzz/corpus/translate_metered/
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Install cargo-fuzz
@@ -188,23 +179,12 @@ jobs:
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - uses: dtolnay/rust-toolchain@nightly
-      - name: Set up Cargo cache
-        uses: actions/cache@v4
-        continue-on-error: false
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            ~/target/
-            ~/target/x86_64-unknown-linux-gnu/
-            ~/target/x86_64-unknown-linux-gnu/release/
-            ~/target/release/
-            ~/target/debug/
+          cache-directories: |
+            ~/fuzz/corpus/
             ~/fuzz/corpus/execute/
-          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-${{ github.job }}-
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Install cargo-fuzz
@@ -223,23 +203,12 @@ jobs:
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - uses: dtolnay/rust-toolchain@nightly
-      - name: Set up Cargo cache
-        uses: actions/cache@v4
-        continue-on-error: false
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            ~/target/
-            ~/target/x86_64-unknown-linux-gnu/
-            ~/target/x86_64-unknown-linux-gnu/release/
-            ~/target/release/
-            ~/target/debug/
-            ~/fuzz/corpus/execute/
-          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-${{ github.job }}-
+          cache-directories: |
+            ~/fuzz/corpus/
+            ~/fuzz/corpus/differential/
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Install cargo-fuzz
