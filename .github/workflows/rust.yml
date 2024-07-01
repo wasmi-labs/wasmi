@@ -23,15 +23,15 @@ jobs:
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
       - name: Build (default features)
-        run: cargo build --workspace --locked
+        run: cargo build --workspace --locked --verbose
       - name: Build (all features)
-        run: cargo build --workspace --locked --all-features
+        run: cargo build --workspace --locked --all-features --verbose
       - name: Build (no_std + no-hash-maps)
-        run: cargo build --locked -p wasmi_collections --no-default-features --features no-hash-maps
+        run: cargo build --locked -p wasmi_collections --no-default-features --features no-hash-maps --verbose
       - name: Build (no_std)
-        run: cargo build --workspace --locked --lib --no-default-features --target x86_64-unknown-none --exclude wasmi_cli --exclude wasmi_wasi --exclude wasmi_fuzz
+        run: cargo build --workspace --locked --lib --no-default-features --target x86_64-unknown-none --verbose --exclude wasmi_cli --exclude wasmi_wasi --exclude wasmi_fuzz
       - name: Build (wasm32)
-        run: cargo build --workspace --locked --lib --no-default-features --target wasm32-unknown-unknown --exclude wasmi_cli --exclude wasmi_wasi --exclude wasmi_fuzz
+        run: cargo build --workspace --locked --lib --no-default-features --target wasm32-unknown-unknown --verbose --exclude wasmi_cli --exclude wasmi_wasi --exclude wasmi_fuzz
 
   test-asan:
     name: Test (Address Sanitizer)
@@ -50,7 +50,7 @@ jobs:
       - name: Build Tests
         env:
           RUSTFLAGS: "--cfg debug_assertions -Zsanitizer=address"
-        run: cargo build --tests --workspace --locked -Zbuild-std --target x86_64-unknown-linux-gnu
+        run: cargo build --tests --workspace --locked -Zbuild-std --target x86_64-unknown-linux-gnu --verbose
       - name: Test
         env:
           RUSTFLAGS: "--cfg debug_assertions -Zsanitizer=address"
@@ -72,7 +72,7 @@ jobs:
       - name: Build (default features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
-        run: cargo build --tests --workspace --locked
+        run: cargo build --tests --workspace --locked --verbose
       - name: Test (default features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
@@ -80,7 +80,7 @@ jobs:
       - name: Build (all features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
-        run: cargo build --tests --workspace --locked --all-features
+        run: cargo build --tests --workspace --locked --all-features --verbose
       - name: Test (all features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
