@@ -23,4 +23,9 @@ jobs:
             #       if cargo-nextest was already installed on the CI runner.
             cargo install cargo-nextest || true
         - name: Miri Testing - Wasm Spec Testsuite
+          env:
+            # Debug assertions are checked in the normal test jobs.
+            # They have huge overhead for Wasmi and unnecessarily slow down Miri.
+            # The Miri job should focus on finding undefined behavior instead or logic errors.
+            CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: "false"
           run: cargo miri nextest run --target x86_64-unknown-linux-gnu --test spec_shim
