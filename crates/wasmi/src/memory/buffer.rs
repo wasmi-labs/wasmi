@@ -11,14 +11,14 @@ use std::{slice, vec, vec::Vec};
 #[derive(Debug)]
 pub struct ByteBuffer {
     /// The pointer to the underlying byte buffer.
-    ptr: *mut u8,
+    pub(super) ptr: *mut u8,
     /// The current length of the byte buffer.
     ///
     /// # Note
     ///
     /// - **Vec:** `vec.len()`
     /// - **Static:** The accessible subslice of the entire underlying static byte buffer.
-    len: usize,
+    pub(super) len: usize,
     /// The capacity of the current allocation.
     ///
     /// # Note

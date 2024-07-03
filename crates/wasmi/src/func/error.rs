@@ -15,6 +15,9 @@ pub enum FuncError {
     MismatchingResultLen,
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for FuncError {}
+
 impl Display for FuncError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

@@ -31,6 +31,9 @@ pub enum LimitsError {
     InitialValueStackExceedsMaximum,
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for LimitsError {}
+
 impl Display for LimitsError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

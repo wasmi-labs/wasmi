@@ -8,6 +8,52 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.33.1`] - 2024-07-01
+
+### Added
+
+- Added `Error` trait impls for all Wasmi error types impleemnting `Display`. (https://github.com/wasmi-labs/wasmi/pull/1089)
+    - Contributed by [kajacx](https://github.com/kajacx).
+
+### Fixed
+
+- Fixed compilation for Rust versions <1.78. (https://github.com/wasmi-labs/wasmi/pull/1093)
+- Fixed nightly `clippy` warning about `map_err`. (https://github.com/wasmi-labs/wasmi/pull/1094)
+
+## [`0.33.0`] - 2024-06-24
+
+### Added
+
+- Added support for Wasm custom sections processing. (https://github.com/wasmi-labs/wasmi/pull/1085)
+    - It is now possible to query name and data of Wasm custom sections of a `Module`.
+    - Use the new `Config::ignore_custom_sections` flag to disable this functionality.
+- Added `Config::ignore_custom_sections` flag to disable processing custom sections if this is unwanted. (https://github.com/wasmi-labs/wasmi/pull/1085)
+- Add `Memory::{data_ptr, data_size, size}` methods. (https://github.com/wasmi-labs/wasmi/pull/1082)
+- Added a Wasmi usage guide documentation. (https://github.com/wasmi-labs/wasmi/pull/1072)
+    - Link: https://github.com/wasmi-labs/wasmi/blob/master/docs/usage.md
+
+### Changed
+
+- Optimized the Wasmi executor in various ways.
+    - In summary the Wasmi executor now more optimally caches the currently used
+      Wasm instance and optimizes access to instance related data.
+      In particular access to the default linear memory bytes as well as the value of
+      the global variable at index 0 (often used as shadow stack pointer) are more efficient.
+    - The following PRs are part of this effort:
+        - https://github.com/wasmi-labs/wasmi/pull/1059
+        - https://github.com/wasmi-labs/wasmi/pull/1062
+        - https://github.com/wasmi-labs/wasmi/pull/1068
+        - https://github.com/wasmi-labs/wasmi/pull/1069
+        - https://github.com/wasmi-labs/wasmi/pull/1065
+        - https://github.com/wasmi-labs/wasmi/pull/1075
+        - https://github.com/wasmi-labs/wasmi/pull/1076
+- Changed `Memory::grow` signature to mirror Wasmtime's `Memory::grow` method. (https://github.com/wasmi-labs/wasmi/pull/1082)
+
+### Removed
+
+- Removed `Memory::current_pages` method. (https://github.com/wasmi-labs/wasmi/pull/1082)
+    - Users should use the new `Memory::size` method instead.
+
 ## [`0.32.3`] - 2024-06-06
 
 ### Fixed

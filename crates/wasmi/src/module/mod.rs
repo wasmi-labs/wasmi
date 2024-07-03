@@ -1,4 +1,5 @@
 mod builder;
+mod custom_section;
 mod data;
 mod element;
 mod export;
@@ -12,23 +13,25 @@ pub(crate) mod utils;
 
 use self::{
     builder::ModuleBuilder,
+    custom_section::{CustomSections, CustomSectionsBuilder},
     export::ExternIdx,
     global::Global,
     import::{ExternTypeIdx, Import},
     parser::ModuleParser,
+};
+pub use self::{
+    custom_section::{CustomSection, CustomSectionsIter},
+    export::{ExportType, FuncIdx, MemoryIdx, ModuleExportsIter, TableIdx},
+    global::GlobalIdx,
+    import::{FuncTypeIdx, ImportName},
+    instantiate::{InstancePre, InstantiationError},
+    read::{Read, ReadError},
 };
 pub(crate) use self::{
     data::{DataSegment, DataSegments, InitDataSegment, PassiveDataSegmentBytes},
     element::{ElementSegment, ElementSegmentItems, ElementSegmentKind},
     init_expr::ConstExpr,
     utils::WasmiValueType,
-};
-pub use self::{
-    export::{ExportType, FuncIdx, MemoryIdx, ModuleExportsIter, TableIdx},
-    global::GlobalIdx,
-    import::{FuncTypeIdx, ImportName},
-    instantiate::{InstancePre, InstantiationError},
-    read::{Read, ReadError},
 };
 use crate::{
     collections::Map,
@@ -51,6 +54,7 @@ pub struct Module {
     engine: Engine,
     header: ModuleHeader,
     data_segments: DataSegments,
+    custom_sections: CustomSections,
 }
 
 /// A parsed and validated WebAssembly module header.
@@ -445,6 +449,20 @@ impl Module {
                 ExternType::Global(global_type)
             }
         }
+    }
+
+    /// Returns an iterator yielding the custom sections of the Wasm [`Module`].
+    ///
+    /// # Note
+    ///
+    /// The returned iterator will yield no items if [`Config::ignore_custom_sections`]
+    /// is set to `true` even if the original Wasm module contains custom sections.
+    ///
+    ///
+    /// [`Config::ignore_custom_sections`]: crate::Config::ignore_custom_sections
+    #[inline]
+    pub fn custom_sections(&self) -> CustomSectionsIter {
+        self.custom_sections.iter()
     }
 }
 

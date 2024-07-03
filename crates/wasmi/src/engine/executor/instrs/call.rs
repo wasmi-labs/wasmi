@@ -59,14 +59,13 @@ pub fn dispatch_host_func<T>(
     let trampoline = store.resolve_trampoline(host_func.trampoline()).clone();
     trampoline
         .call(store, instance, params_results)
-        .map_err(|error| {
+        .inspect_err(|_error| {
             // Note: We drop the values that have been temporarily added to
             //       the stack to act as parameter and result buffer for the
             //       called host function. Since the host function failed we
             //       need to clean up the temporary buffer values here.
             //       This is required for resumable calls to work properly.
             value_stack.drop(max_inout);
-            error
         })?;
     Ok((len_inputs, len_outputs))
 }
@@ -90,6 +89,9 @@ pub struct ResumableHostError {
     /// The result registers of the caller of the host function.
     caller_results: RegisterSpan,
 }
+
+#[cfg(feature = "std")]
+impl std::error::Error for ResumableHostError {}
 
 impl fmt::Display for ResumableHostError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
