@@ -15,7 +15,7 @@ use std::{
     sync::OnceLock,
 };
 use wasmi::{
-    core::{Pages, TrapCode, ValType, F32, F64},
+    core::{TrapCode, ValType, F32, F64},
     CompilationMode,
     Engine,
     Extern,
@@ -590,21 +590,21 @@ fn bench_instantiate_contract(c: &mut Criterion, name: &str, path: &str) {
             .define(
                 "seal0",
                 "seal_value_transferred",
-                Func::wrap(&mut store, |_0: i32, _1: i32| unimplemented!()),
+                Func::wrap(&mut store, |_0: i32, _1: i32| ()),
             )
             .unwrap();
         linker
             .define(
                 "seal0",
                 "seal_input",
-                Func::wrap(&mut store, |_0: i32, _1: i32| unimplemented!()),
+                Func::wrap(&mut store, |_0: i32, _1: i32| ()),
             )
             .unwrap();
         linker
             .define(
                 "seal0",
                 "seal_caller",
-                Func::wrap(&mut store, |_0: i32, _1: i32| unimplemented!()),
+                Func::wrap(&mut store, |_0: i32, _1: i32| ()),
             )
             .unwrap();
         linker
@@ -629,10 +629,7 @@ fn bench_instantiate_contract(c: &mut Criterion, name: &str, path: &str) {
             .define(
                 "seal0",
                 "seal_deposit_event",
-                Func::wrap(
-                    &mut store,
-                    |_0: i32, _1: i32, _2: i32, _3: i32| unimplemented!(),
-                ),
+                Func::wrap(&mut store, |_0: i32, _1: i32, _2: i32, _3: i32| ()),
             )
             .unwrap();
         linker
@@ -662,14 +659,14 @@ fn bench_instantiate_contract(c: &mut Criterion, name: &str, path: &str) {
             .define(
                 "seal0",
                 "seal_return",
-                Func::wrap(&mut store, |_0: i32, _1: i32, _2: i32| unimplemented!()),
+                Func::wrap(&mut store, |_0: i32, _1: i32, _2: i32| ()),
             )
             .unwrap();
         linker
             .define(
                 "seal0",
                 "seal_hash_blake2_256",
-                Func::wrap(&mut store, |_0: i32, _1: i32, _2: i32| unimplemented!()),
+                Func::wrap(&mut store, |_0: i32, _1: i32, _2: i32| ()),
             )
             .unwrap();
         b.iter(|| {
@@ -1331,7 +1328,7 @@ fn bench_execute_memory_sum(c: &mut Criterion) {
             .get_export(&store, "mem")
             .and_then(Extern::into_memory)
             .unwrap();
-        mem.grow(&mut store, Pages::new(1).unwrap()).unwrap();
+        mem.grow(&mut store, 1).unwrap();
         let len = 100_000;
         let mut expected_sum: i64 = 0;
         for (n, byte) in &mut mem.data_mut(&mut store)[..len].iter_mut().enumerate() {
@@ -1363,7 +1360,7 @@ fn bench_execute_memory_fill(c: &mut Criterion) {
             .get_export(&store, "mem")
             .and_then(Extern::into_memory)
             .unwrap();
-        mem.grow(&mut store, Pages::new(1).unwrap()).unwrap();
+        mem.grow(&mut store, 1).unwrap();
         let ptr = 0x100;
         let len = 100_000;
         let value = 0x42_u8;
@@ -1386,7 +1383,7 @@ fn bench_execute_vec_add(c: &mut Criterion) {
     fn test_for<A, B>(
         b: &mut Bencher,
         vec_add: Func,
-        mut store: &mut Store<()>,
+        store: &mut Store<()>,
         mem: Memory,
         len: usize,
         vec_a: A,
@@ -1404,16 +1401,24 @@ fn bench_execute_vec_add(c: &mut Criterion) {
         let ptr_b = ptr_a + len_a;
 
         // Reset `result` buffer to zeros:
-        mem.data_mut(&mut store)[ptr_result..ptr_result + (len * size_of::<i32>())].fill(0);
+        mem.data_mut(&mut *store)[ptr_result..ptr_result + (len * size_of::<i32>())].fill(0);
         // Initialize `a` buffer:
         for (n, a) in vec_a.into_iter().take(len).enumerate() {
-            mem.write(&mut store, ptr_a + (n * size_of::<i32>()), &a.to_le_bytes())
-                .unwrap();
+            mem.write(
+                &mut *store,
+                ptr_a + (n * size_of::<i32>()),
+                &a.to_le_bytes(),
+            )
+            .unwrap();
         }
         // Initialize `b` buffer:
         for (n, b) in vec_b.into_iter().take(len).enumerate() {
-            mem.write(&mut store, ptr_b + (n * size_of::<i32>()), &b.to_le_bytes())
-                .unwrap();
+            mem.write(
+                &mut *store,
+                ptr_b + (n * size_of::<i32>()),
+                &b.to_le_bytes(),
+            )
+            .unwrap();
         }
 
         // Prepare parameters and all Wasm `vec_add`:
@@ -1424,7 +1429,7 @@ fn bench_execute_vec_add(c: &mut Criterion) {
             Val::I32(len as i32),
         ];
         b.iter(|| {
-            vec_add.call(&mut store, &params, &mut []).unwrap();
+            vec_add.call(&mut *store, &params, &mut []).unwrap();
         });
 
         // Validate the result buffer:
@@ -1432,17 +1437,17 @@ fn bench_execute_vec_add(c: &mut Criterion) {
             let mut buffer4 = [0x00; 4];
             let mut buffer8 = [0x00; 8];
             let a = {
-                mem.read(&store, ptr_a + (n * size_of::<i32>()), &mut buffer4)
+                mem.read(&*store, ptr_a + (n * size_of::<i32>()), &mut buffer4)
                     .unwrap();
                 i32::from_le_bytes(buffer4)
             };
             let b = {
-                mem.read(&store, ptr_b + (n * size_of::<i32>()), &mut buffer4)
+                mem.read(&*store, ptr_b + (n * size_of::<i32>()), &mut buffer4)
                     .unwrap();
                 i32::from_le_bytes(buffer4)
             };
             let actual_result = {
-                mem.read(&store, ptr_result + (n * size_of::<i64>()), &mut buffer8)
+                mem.read(&*store, ptr_result + (n * size_of::<i64>()), &mut buffer8)
                     .unwrap();
                 i64::from_le_bytes(buffer8)
             };
@@ -1465,7 +1470,7 @@ fn bench_execute_vec_add(c: &mut Criterion) {
             .get_export(&store, "mem")
             .and_then(Extern::into_memory)
             .unwrap();
-        mem.grow(&mut store, Pages::new(25).unwrap()).unwrap();
+        mem.grow(&mut store, 1).unwrap();
         let len = 100_000;
         test_for(
             b,

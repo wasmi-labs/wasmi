@@ -35,6 +35,8 @@ pub struct Config {
     floats: bool,
     /// Is `true` if Wasmi executions shall consume fuel.
     consume_fuel: bool,
+    /// Is `true` if Wasmi shall ignore Wasm custom sections when parsing Wasm modules.
+    ignore_custom_sections: bool,
     /// The configured fuel costs of all Wasmi bytecode instructions.
     fuel_costs: FuelCosts,
     /// The mode of Wasm to Wasmi bytecode compilation.
@@ -180,6 +182,7 @@ impl Default for Config {
             extended_const: true,
             floats: true,
             consume_fuel: false,
+            ignore_custom_sections: false,
             fuel_costs: FuelCosts::default(),
             compilation_mode: CompilationMode::default(),
             limits: EnforcedLimits::default(),
@@ -346,6 +349,19 @@ impl Config {
     /// [`Engine`]: crate::Engine
     pub(crate) fn get_consume_fuel(&self) -> bool {
         self.consume_fuel
+    }
+
+    /// Configures whether Wasmi will ignore custom sections when parsing Wasm modules.
+    ///
+    /// Default value: `false`
+    pub fn ignore_custom_sections(&mut self, enable: bool) -> &mut Self {
+        self.ignore_custom_sections = enable;
+        self
+    }
+
+    /// Returns `true` if the [`Config`] mandates to ignore Wasm custom sections when parsing Wasm modules.
+    pub(crate) fn get_ignore_custom_sections(&self) -> bool {
+        self.ignore_custom_sections
     }
 
     /// Returns the configured [`FuelCosts`].

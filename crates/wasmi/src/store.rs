@@ -174,6 +174,9 @@ pub enum FuelError {
     OutOfFuel,
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for FuelError {}
+
 impl fmt::Display for FuelError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

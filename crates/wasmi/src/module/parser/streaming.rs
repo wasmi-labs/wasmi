@@ -1,4 +1,10 @@
-use super::{ModuleBuilder, ModuleHeader, ModuleHeaderBuilder, ModuleParser};
+use super::{
+    CustomSectionsBuilder,
+    ModuleBuilder,
+    ModuleHeader,
+    ModuleHeaderBuilder,
+    ModuleParser,
+};
 use crate::{Error, Module, Read};
 use core::ops::{Deref, DerefMut};
 use std::vec::Vec;
@@ -106,9 +112,21 @@ impl ModuleParser {
     ///
     /// If the Wasm bytecode stream fails to validate.
     unsafe fn parse_streaming_impl(mut self, mut stream: impl Read) -> Result<Module, Error> {
+        let mut custom_sections = CustomSectionsBuilder::default();
         let mut buffer = ParseBuffer::default();
-        let header = Self::parse_streaming_header(&mut self, &mut stream, &mut buffer)?;
-        let builder = Self::parse_streaming_code(&mut self, &mut stream, &mut buffer, header)?;
+        let header = Self::parse_streaming_header(
+            &mut self,
+            &mut stream,
+            &mut buffer,
+            &mut custom_sections,
+        )?;
+        let builder = Self::parse_streaming_code(
+            &mut self,
+            &mut stream,
+            &mut buffer,
+            header,
+            custom_sections,
+        )?;
         let module = Self::parse_streaming_data(&mut self, &mut stream, &mut buffer, builder)?;
         Ok(module)
     }
@@ -127,6 +145,7 @@ impl ModuleParser {
         &mut self,
         stream: &mut impl Read,
         buffer: &mut ParseBuffer,
+        custom_sections: &mut CustomSectionsBuilder,
     ) -> Result<ModuleHeader, Error> {
         let mut header = ModuleHeaderBuilder::new(&self.engine);
         loop {
@@ -177,7 +196,9 @@ impl ModuleParser {
                         }
                         Payload::DataSection(_) => break,
                         Payload::End(_) => break,
-                        Payload::CustomSection { .. } => Ok(()),
+                        Payload::CustomSection(reader) => {
+                            self.process_custom_section(custom_sections, reader)
+                        }
                         unexpected => self.process_invalid_payload(unexpected),
                     }?;
                     // Cut away the parts from the intermediate buffer that have already been parsed.
@@ -202,6 +223,7 @@ impl ModuleParser {
         stream: &mut impl Read,
         buffer: &mut ParseBuffer,
         header: ModuleHeader,
+        custom_sections: CustomSectionsBuilder,
     ) -> Result<ModuleBuilder, Error> {
         loop {
             match self.parser.parse(&buffer[..], self.eof)? {
@@ -227,7 +249,7 @@ impl ModuleParser {
                 }
             }
         }
-        Ok(ModuleBuilder::new(header))
+        Ok(ModuleBuilder::new(header, custom_sections))
     }
 
     /// Parse the Wasm data section and finalize parsing.
@@ -260,7 +282,9 @@ impl ModuleParser {
                             ParseBuffer::consume(buffer, consumed);
                             break;
                         }
-                        Payload::CustomSection { .. } => {}
+                        Payload::CustomSection(reader) => {
+                            self.process_custom_section(&mut builder.custom_sections, reader)?
+                        }
                         invalid => self.process_invalid_payload(invalid)?,
                     }
                     // Cut away the parts from the intermediate buffer that have already been parsed.

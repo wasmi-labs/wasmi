@@ -248,30 +248,29 @@ impl CachedMemory {
 /// Cached default global variable value.
 #[derive(Debug)]
 pub struct CachedGlobal {
-    data: NonNull<UntypedVal>,
+    // Dev. Note: we cannot use `NonNull<UntypedVal>` here, yet.
+    //
+    // The advantage is that we could safely use a static fallback value
+    // which would be safer than using a null pointer since it would
+    // only read or overwrite the fallback value instead of reading or
+    // writing a null pointer which is UB.
+    //
+    // We cannot use `NonNull<UntypedVal>` because it requires pointers
+    // to mutable statics which have just been allowed in Rust 1.78 but
+    // not in Rust 1.77 which is Wasmi's MSRV.
+    //
+    // We can and should use `NonNull<UntypedVal>` here once we bump the MSRV.
+    data: *mut UntypedVal,
 }
 
 impl Default for CachedGlobal {
     #[inline]
     fn default() -> Self {
         Self {
-            data: unsafe { FALLBACK_GLOBAL_VALUE },
+            data: ptr::null_mut(),
         }
     }
 }
-
-/// Static fallback value for when an [`Instance`] does not define a global variable.
-///
-/// # Dev. Note
-///
-/// If the Wasm inputs are valid and the Wasmi translation and executor work correctly
-/// this fallback global value is never read from or written to. Doing so indicates a bug
-/// or an invalid Wasm input.
-static mut FALLBACK_GLOBAL_VALUE: NonNull<UntypedVal> = {
-    static mut ZERO_CELL: UntypedVal = UntypedVal::from_bits(0_u64);
-
-    unsafe { NonNull::new_unchecked(ptr::addr_of_mut!(ZERO_CELL)) }
-};
 
 impl CachedGlobal {
     /// Create a new [`CachedGlobal`].
@@ -294,8 +293,8 @@ impl CachedGlobal {
     ///
     /// [`Global`]: crate::Global
     #[inline]
-    fn load_global(ctx: &mut StoreInner, global: &Global) -> NonNull<UntypedVal> {
-        ctx.resolve_global_mut(global).get_untyped_ptr()
+    fn load_global(ctx: &mut StoreInner, global: &Global) -> *mut UntypedVal {
+        ctx.resolve_global_mut(global).get_untyped_ptr().as_ptr()
     }
 
     /// Returns the value of the cached global variable.
@@ -307,7 +306,7 @@ impl CachedGlobal {
     pub unsafe fn get(&self) -> UntypedVal {
         // SAFETY: This API guarantees to always write to a valid pointer
         //         as long as `update` is called when needed by the user.
-        unsafe { *self.data.as_ref() }
+        unsafe { self.data.read() }
     }
 
     /// Sets the value of the cached global variable to `new_value`.
@@ -319,6 +318,6 @@ impl CachedGlobal {
     pub unsafe fn set(&mut self, new_value: UntypedVal) {
         // SAFETY: This API guarantees to always write to a valid pointer
         //         as long as `update` is called when needed by the user.
-        *unsafe { self.data.as_mut() } = new_value;
+        unsafe { self.data.write(new_value) };
     }
 }
