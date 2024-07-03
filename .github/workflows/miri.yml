@@ -13,18 +13,8 @@ jobs:
           with:
             components: miri
             targets: x86_64-unknown-linux-gnu
-        - name: Set up Cargo cache
-          uses: actions/cache@v4
-          continue-on-error: false
-          with:
-            path: |
-              ~/.cargo/bin/
-              ~/.cargo/registry/index/
-              ~/.cargo/registry/cache/
-              ~/.cargo/git/db/
-              ~/target/
-            key: ${{ runner.os }}-cargo-miri-${{ hashFiles('**/Cargo.lock') }}
-            restore-keys: ${{ runner.os }}-cargo-miri-
+        - name: Set up Rust cache
+          uses: Swatinem/rust-cache@v2
         - name: Checkout Submodules
           run: git submodule update --init --recursive
         - name: Install cargo-nextest
