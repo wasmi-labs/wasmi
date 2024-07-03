@@ -18,7 +18,7 @@ jobs:
         - name: Checkout Submodules
           run: git submodule update --init --recursive
         - name: Install cargo-nextest
-          run: |
+          run:
             # Note: We use `|| true` because cargo install returns an error
             #       if cargo-nextest was already installed on the CI runner.
             cargo install cargo-nextest || true
