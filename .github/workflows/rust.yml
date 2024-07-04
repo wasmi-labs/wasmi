@@ -55,6 +55,10 @@ jobs:
         env:
           RUSTFLAGS: "--cfg debug_assertions -Zsanitizer=address"
         run: cargo test --workspace --locked --tests -Zbuild-std --target x86_64-unknown-linux-gnu
+      - name: Test (Benches)
+        env:
+          RUSTFLAGS: "--cfg debug_assertions -Zsanitizer=address"
+        run: cargo test --package wasmi --locked --benches -Zbuild-std --target x86_64-unknown-linux-gnu
 
   test:
     name: Test
@@ -85,6 +89,14 @@ jobs:
         env:
           RUSTFLAGS: "--cfg debug_assertions"
         run: cargo test --workspace --locked --all-features
+      - name: Build (Benches)
+        env:
+          RUSTFLAGS: "--cfg debug_assertions"
+        run: cargo build --package wasmi --locked --verbose --benches
+      - name: Test (Benches)
+        env:
+          RUSTFLAGS: "--cfg debug_assertions"
+        run: cargo test --package wasmi --locked --benches
 
   fmt:
     name: Formatting
