@@ -1,5 +1,5 @@
 use parity_wasm::elements::Module;
-use wasmi_core::Value;
+use wasmi_core::{Trap, Value};
 
 use crate::{
     isa::Instruction,
@@ -40,7 +40,8 @@ pub trait Monitor {
         _function_context: &FunctionContext,
         _instruction: &Instruction,
         _outcome: &InstructionOutcome,
-    ) {
+    ) -> Result<(), Trap> {
+        Ok(())
     }
 
     /// Called after 'call_host' instruction is executed.
