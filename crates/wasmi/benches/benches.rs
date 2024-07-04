@@ -1205,10 +1205,10 @@ fn bench_execute_recursive_is_even(c: &mut Criterion) {
     });
 }
 
-/// How often the `host_call` should be called per Wasm invocation.
-const HOST_CALLS_REPETITIONS: i64 = 1000;
-
 fn bench_execute_host_calls(c: &mut Criterion) {
+    /// How often the host functions are called per benchmark run.
+    const ITERATIONS: i64 = 1000;
+
     let mut g = c.benchmark_group("execute/call/host/");
     let wasm = wat2wasm(include_bytes!("wat/host_calls.wat"));
     let engine = Engine::default();
@@ -1246,7 +1246,7 @@ fn bench_execute_host_calls(c: &mut Criterion) {
             instance
                 .get_typed_func::<i64, i64>(&store, "run0")
                 .unwrap()
-                .call(&mut store, HOST_CALLS_REPETITIONS)
+                .call(&mut store, ITERATIONS)
                 .unwrap();
         })
     });
@@ -1255,7 +1255,7 @@ fn bench_execute_host_calls(c: &mut Criterion) {
             instance
                 .get_typed_func::<i64, i64>(&store, "run1")
                 .unwrap()
-                .call(&mut store, HOST_CALLS_REPETITIONS)
+                .call(&mut store, ITERATIONS)
                 .unwrap();
         })
     });
@@ -1264,7 +1264,7 @@ fn bench_execute_host_calls(c: &mut Criterion) {
             instance
                 .get_typed_func::<i64, i64>(&store, "run10")
                 .unwrap()
-                .call(&mut store, HOST_CALLS_REPETITIONS)
+                .call(&mut store, ITERATIONS)
                 .unwrap();
         })
     });
