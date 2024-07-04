@@ -1499,7 +1499,7 @@ fn bench_execute_vec_add(c: &mut Criterion) {
             .get_export(&store, "mem")
             .and_then(Extern::into_memory)
             .unwrap();
-        mem.grow(&mut store, 1).unwrap();
+        mem.grow(&mut store, 25).unwrap();
         let len = 100_000;
         test_for(
             b,
