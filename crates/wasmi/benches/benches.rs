@@ -1205,38 +1205,67 @@ fn bench_execute_recursive_is_even(c: &mut Criterion) {
     });
 }
 
-/// How often the `host_call` should be called per Wasm invocation.
-const HOST_CALLS_REPETITIONS: i64 = 1000;
-
-#[allow(dead_code)]
 fn bench_execute_host_calls(c: &mut Criterion) {
-    c.bench_function("execute/call/host/1", |b| {
-        let wasm = wat2wasm(include_bytes!("wat/host_calls.wat"));
-        let engine = Engine::default();
-        let module = Module::new(&engine, &wasm[..]).unwrap();
-        let mut linker = <Linker<()>>::new(&engine);
-        let mut store = Store::new(&engine, ());
-        let host_call = Func::wrap(&mut store, |value: i64| value.wrapping_sub(1));
-        linker.define("benchmark", "host_call", host_call).unwrap();
-        let instance = linker
-            .instantiate(&mut store, &module)
-            .unwrap()
-            .ensure_no_start(&mut store)
-            .unwrap();
-        let call = instance
-            .get_export(&store, "call")
-            .and_then(Extern::into_func)
-            .unwrap();
-        let mut result = Val::I64(0);
+    /// How often the host functions are called per benchmark run.
+    const ITERATIONS: i64 = 1000;
 
+    let mut g = c.benchmark_group("execute/call/host/");
+    let wasm = wat2wasm(include_bytes!("wat/host_calls.wat"));
+    let engine = Engine::default();
+    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let mut store = Store::new(&engine, ());
+    let host0 = Func::wrap(&mut store, || ());
+    let host1 = Func::wrap(&mut store, |a: i64| a);
+    let host10 = Func::wrap(
+        &mut store,
+        |_0: i64,
+         _1: i64,
+         _2: i64,
+         _3: i64,
+         _4: i64,
+         _5: i64,
+         _6: i64,
+         _7: i64,
+         _8: i64,
+         _9: i64|
+         -> (i64, i64, i64, i64, i64, i64, i64, i64, i64, i64) {
+            (_0, _1, _2, _3, _4, _5, _6, _7, _8, _9)
+        },
+    );
+    let mut linker = <Linker<()>>::new(&engine);
+    linker.define("benchmark", "host0", host0).unwrap();
+    linker.define("benchmark", "host1", host1).unwrap();
+    linker.define("benchmark", "host10", host10).unwrap();
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    g.bench_function("0", |b| {
         b.iter(|| {
-            call.call(
-                &mut store,
-                &[Val::I64(HOST_CALLS_REPETITIONS)],
-                slice::from_mut(&mut result),
-            )
-            .unwrap();
-            assert_eq!(result.i64(), Some(0));
+            instance
+                .get_typed_func::<i64, i64>(&store, "run0")
+                .unwrap()
+                .call(&mut store, ITERATIONS)
+                .unwrap();
+        })
+    });
+    g.bench_function("1", |b| {
+        b.iter(|| {
+            instance
+                .get_typed_func::<i64, i64>(&store, "run1")
+                .unwrap()
+                .call(&mut store, ITERATIONS)
+                .unwrap();
+        })
+    });
+    g.bench_function("10", |b| {
+        b.iter(|| {
+            instance
+                .get_typed_func::<i64, i64>(&store, "run10")
+                .unwrap()
+                .call(&mut store, ITERATIONS)
+                .unwrap();
         })
     });
 }
