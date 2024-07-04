@@ -403,20 +403,22 @@ impl<'m> Interpreter<'m> {
 
             let outcome = self.run_instruction(function_context, &instruction)?;
 
-            self.monitor.as_mut().map(|monitor| {
-                monitor.invoke_instruction_post_hook(
-                    function_context
-                        .module
-                        .func_index_by_func_ref(&function_context.function),
-                    pc,
-                    sp.try_into().unwrap(),
-                    current_memory.try_into().unwrap(),
-                    &self.value_stack,
-                    &function_context,
-                    &instruction,
-                    &outcome,
-                )
-            });
+            if let Some(monitor) = self.monitor.as_mut() {
+                monitor
+                    .invoke_instruction_post_hook(
+                        function_context
+                            .module
+                            .func_index_by_func_ref(&function_context.function),
+                        pc,
+                        sp.try_into().unwrap(),
+                        current_memory.try_into().unwrap(),
+                        &self.value_stack,
+                        &function_context,
+                        &instruction,
+                        &outcome,
+                    )
+                    .unwrap();
+            }
 
             match outcome {
                 InstructionOutcome::RunNextInstruction => {}

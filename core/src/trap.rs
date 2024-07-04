@@ -148,6 +148,9 @@ pub enum TrapCode {
     /// with an index that points to a function with signature different of what is
     /// expected by this indirect call, this trap is raised.
     UnexpectedSignature,
+
+    /// Instruction number exceeds user specified limit.
+    InstructionExceedsLimit,
 }
 
 impl TrapCode {
@@ -168,6 +171,7 @@ impl TrapCode {
             TrapCode::InvalidConversionToInt => "invalid conversion to integer",
             TrapCode::StackOverflow => "call stack exhausted",
             TrapCode::UnexpectedSignature => "indirect call type mismatch",
+            TrapCode::InstructionExceedsLimit => "instruction number exceeds user specified limit",
         }
     }
 }
