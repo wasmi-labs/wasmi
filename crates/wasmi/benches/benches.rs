@@ -123,8 +123,7 @@ criterion_main!(
     bench_linker,
 );
 
-const WASM_KERNEL: &str =
-    "benches/wasm/wasm_kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm";
+const WASM_KERNEL: &str = "benches/wasm/wasm_kernel.wasm";
 const REVCOMP_INPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-input.txt");
 const REVCOMP_OUTPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-output.txt");
 
