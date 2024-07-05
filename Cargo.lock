@@ -1874,6 +1874,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "104a7f73be44570cac297b3035d76b169d6599637631cf37a1703326a0727073"
 
 [[package]]
+name = "wasmi_benches_reverse_complement"
+version = "0.0.0"
+
+[[package]]
 name = "wasmi_benches_tiny_keccak"
 version = "0.0.0"
 dependencies = [
