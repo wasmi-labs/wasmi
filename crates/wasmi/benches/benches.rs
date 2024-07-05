@@ -30,7 +30,7 @@ use wasmi::{
 };
 
 criterion_group!(
-    name = bench_translate;
+    name = bench_group_translate;
     config = Criterion::default()
         .sample_size(10)
         .measurement_time(Duration::from_millis(2000))
@@ -51,7 +51,7 @@ criterion_group!(
         bench_translate_case_worst_stackbomb_big,
 );
 criterion_group!(
-    name = bench_instantiate;
+    name = bench_group_instantiate;
     config = Criterion::default()
         .sample_size(10)
         .measurement_time(Duration::from_millis(2000))
@@ -65,7 +65,7 @@ criterion_group!(
         // bench_instantiate_erc1155,
 );
 criterion_group!(
-    name = bench_overhead;
+    name = bench_group_overhead;
     config = Criterion::default()
         .sample_size(10)
         .measurement_time(Duration::from_millis(1000))
@@ -77,7 +77,7 @@ criterion_group!(
         bench_overhead_call_untyped_16,
 );
 criterion_group!(
-    name = bench_linker;
+    name = bench_group_linker;
     config = Criterion::default()
         .sample_size(10)
         .measurement_time(Duration::from_millis(1000))
@@ -91,7 +91,7 @@ criterion_group!(
         bench_linker_build_construct_unique,
 );
 criterion_group! {
-    name = bench_execute;
+    name = bench_group_execute;
     config = Criterion::default()
         .sample_size(10)
         .measurement_time(Duration::from_millis(2000))
@@ -121,11 +121,11 @@ criterion_group! {
 }
 
 criterion_main!(
-    bench_translate,
-    bench_instantiate,
-    bench_execute,
-    bench_overhead,
-    bench_linker,
+    bench_group_translate,
+    bench_group_instantiate,
+    bench_group_execute,
+    bench_group_overhead,
+    bench_group_linker,
 );
 
 const REVCOMP_INPUT: &[u8] = include_bytes!("res/revcomp-input.txt");
