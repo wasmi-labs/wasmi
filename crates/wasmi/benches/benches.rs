@@ -756,7 +756,6 @@ fn bench_execute_rev_comp(c: &mut Criterion) {
     });
 }
 
-#[allow(dead_code)]
 fn bench_execute_regex_redux(c: &mut Criterion) {
     c.bench_function("execute/regex_redux", |b| {
         let (mut store, instance) = load_instance_from_file(WASM_KERNEL);
