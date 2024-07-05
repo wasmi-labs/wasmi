@@ -37,6 +37,8 @@ criterion_group!(
         .warm_up_time(Duration::from_millis(1000));
     targets =
         bench_translate_tiny_keccak,
+        bench_translate_reverse_complement,
+        bench_translate_regex_redux,
         bench_translate_spidermonkey,
         bench_translate_pulldown_cmark,
         bench_translate_bz2,
@@ -230,6 +232,18 @@ fn bench_translate_for_all(c: &mut Criterion, name: &str, path: &str) {
 
 fn bench_translate_tiny_keccak(c: &mut Criterion) {
     bench_translate_for_all(c, "tiny_keccak", "benches/rust/tiny_keccak.wasm");
+}
+
+fn bench_translate_reverse_complement(c: &mut Criterion) {
+    bench_translate_for_all(
+        c,
+        "reverse_complement",
+        "benches/rust/reverse_complement.wasm",
+    );
+}
+
+fn bench_translate_regex_redux(c: &mut Criterion) {
+    bench_translate_for_all(c, "regex_redux", "benches/rust/regex_redux.wasm");
 }
 
 fn bench_translate_spidermonkey(c: &mut Criterion) {
