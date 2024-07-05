@@ -714,79 +714,49 @@ fn bench_execute_rev_comp(c: &mut Criterion) {
         let (mut store, instance) = load_instance_from_file(WASM_KERNEL);
 
         // Allocate buffers for the input and output.
-        let mut result = Val::I32(0);
-        let input_size = Val::I32(REVCOMP_INPUT.len() as i32);
-        let prepare_rev_complement = instance
-            .get_export(&store, "prepare_rev_complement")
-            .and_then(Extern::into_func)
+        let data_ptr = instance
+            .get_typed_func::<i32, i32>(&store, "prepare_rev_complement")
+            .unwrap()
+            .call(&mut store, REVCOMP_INPUT.len() as i32)
             .unwrap();
-        prepare_rev_complement
-            .call(&mut store, &[input_size], slice::from_mut(&mut result))
-            .unwrap();
-        let test_data_ptr = match &result {
-            Val::I32(value) => Val::I32(*value),
-            _ => panic!("unexpected non-I32 result found for prepare_rev_complement"),
-        };
 
         // Get the pointer to the input buffer.
-        let rev_complement_input_ptr = instance
-            .get_export(&store, "rev_complement_input_ptr")
-            .and_then(Extern::into_func)
+        let input_offset = instance
+            .get_typed_func::<i32, i32>(&store, "rev_complement_input_ptr")
+            .unwrap()
+            .call(&mut store, data_ptr)
             .unwrap();
-        rev_complement_input_ptr
-            .call(
-                &mut store,
-                slice::from_ref(&test_data_ptr),
-                slice::from_mut(&mut result),
-            )
-            .unwrap();
-        let input_data_mem_offset = match &result {
-            Val::I32(value) => *value,
-            _ => panic!("unexpected non-I32 result found for prepare_rev_complement"),
-        };
 
         // Copy test data inside the wasm memory.
         let memory = instance
-            .get_export(&store, "memory")
-            .and_then(Extern::into_memory)
-            .expect("failed to find 'memory' exported linear memory in instance");
+            .get_memory(&store, "memory")
+            .unwrap();
         memory
-            .write(&mut store, input_data_mem_offset as usize, REVCOMP_INPUT)
-            .expect("failed to write test data into a wasm memory");
-
-        let bench_rev_complement = instance
-            .get_export(&store, "bench_rev_complement")
-            .and_then(Extern::into_func)
+            .write(&mut store, input_offset as usize, REVCOMP_INPUT)
             .unwrap();
 
+        // Run the rev complement benchmark.
+        let bench_rev_complement = instance
+            .get_typed_func::<i32, ()>(&store, "bench_rev_complement")
+            .unwrap();
         b.iter(|| {
             bench_rev_complement
-                .call(&mut store, slice::from_ref(&test_data_ptr), &mut [])
+                .call(&mut store, data_ptr)
                 .unwrap();
         });
 
         // Get the pointer to the output buffer.
-        let rev_complement_output_ptr = instance
-            .get_export(&store, "rev_complement_output_ptr")
-            .and_then(Extern::into_func)
+        let output_offset = instance
+            .get_typed_func::<i32, i32>(&store, "rev_complement_output_ptr")
+            .unwrap()
+            .call(&mut store, data_ptr)
             .unwrap();
-        rev_complement_output_ptr
-            .call(
-                &mut store,
-                slice::from_ref(&test_data_ptr),
-                slice::from_mut(&mut result),
-            )
-            .unwrap();
-        let output_data_mem_offset = match &result {
-            Val::I32(value) => *value,
-            _ => panic!("unexpected non-I32 result found for prepare_rev_complement"),
-        };
 
-        let mut revcomp_result = vec![0x00_u8; REVCOMP_OUTPUT.len()];
+        let mut result = [0x00_u8; REVCOMP_OUTPUT.len()];
         memory
-            .read(&store, output_data_mem_offset as usize, &mut revcomp_result)
-            .expect("failed to read result data from a wasm memory");
-        assert_eq!(&revcomp_result[..], REVCOMP_OUTPUT);
+            .read(&store, output_offset as usize, &mut result)
+            .unwrap();
+        assert_eq!(&result[..], REVCOMP_OUTPUT);
     });
 }
 
