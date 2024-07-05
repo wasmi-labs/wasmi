@@ -7,6 +7,7 @@ use self::bench::{
     load_wasm_from_file,
     wat2wasm,
 };
+use assert_matches::assert_matches;
 use bench::bench_config;
 use core::{slice, time::Duration};
 use criterion::{criterion_group, criterion_main, Bencher, Criterion};
@@ -1006,19 +1007,17 @@ fn bench_execute_global_const(c: &mut Criterion) {
 fn bench_execute_factorial(c: &mut Criterion) {
     const REPETITIONS: usize = 1_000;
     const INPUT: i64 = 25;
-    const RESULT: i64 = 7034535277573963776; // factorial(25)
+    const EXPECTED: i64 = 7034535277573963776; // factorial(25)
     let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/factorial.wat"));
     let mut bench_fac = |bench_id: &str, func_name: &str| {
         c.bench_function(bench_id, |b| {
             let fac = instance
-                .get_export(&store, func_name)
-                .and_then(Extern::into_func)
-                .unwrap()
-                .typed::<i64, i64>(&store)
+                .get_typed_func::<i64, i64>(&store, func_name)
                 .unwrap();
             b.iter(|| {
                 for _ in 0..REPETITIONS {
-                    assert_eq!(fac.call(&mut store, INPUT).unwrap(), RESULT);
+                    let result = fac.call(&mut store, INPUT).unwrap();
+                    assert_eq!(result, EXPECTED);
                 }
             })
         });
@@ -1028,69 +1027,41 @@ fn bench_execute_factorial(c: &mut Criterion) {
 }
 
 fn bench_execute_recursive_ok(c: &mut Criterion) {
-    const RECURSIVE_DEPTH: i32 = 8000;
+    const DEPTH: i32 = 8000;
     c.bench_function("execute/call/rec", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/recursive_ok.wat"));
-        let bench_call = instance
-            .get_export(&store, "call")
-            .and_then(Extern::into_func)
-            .unwrap();
-        let mut result = Val::I32(0);
-
+        let run = instance.get_typed_func::<i32, i32>(&store, "call").unwrap();
         b.iter(|| {
-            bench_call
-                .call(
-                    &mut store,
-                    &[Val::I32(RECURSIVE_DEPTH)],
-                    slice::from_mut(&mut result),
-                )
-                .unwrap();
-            assert_eq!(result.i32(), Some(0));
+            let result = run.call(&mut store, DEPTH).unwrap();
+            assert_eq!(result, 0);
         })
     });
 }
 
 fn bench_execute_recursive_scan(c: &mut Criterion) {
-    const RECURSIVE_SCAN_DEPTH: i32 = 8000;
-    const RECURSIVE_SCAN_EXPECTED: i32 =
-        ((RECURSIVE_SCAN_DEPTH * RECURSIVE_SCAN_DEPTH) + RECURSIVE_SCAN_DEPTH) / 2;
+    const DEPTH: i32 = 8000;
+    const EXPECTED: i32 = ((DEPTH * DEPTH) + DEPTH) / 2;
     c.bench_function("execute/recursive_scan", |b| {
         let (mut store, instance) =
             load_instance_from_wat(include_bytes!("wat/recursive_scan.wat"));
-        let bench_call = instance
-            .get_export(&store, "func")
-            .and_then(Extern::into_func)
-            .unwrap();
-        let mut result = Val::I32(0);
-
+        let run = instance.get_typed_func::<i32, i32>(&store, "func").unwrap();
         b.iter(|| {
-            bench_call
-                .call(
-                    &mut store,
-                    &[Val::I32(RECURSIVE_SCAN_DEPTH)],
-                    slice::from_mut(&mut result),
-                )
-                .unwrap();
-            assert_eq!(result.i32(), Some(RECURSIVE_SCAN_EXPECTED));
+            let result = run.call(&mut store, DEPTH).unwrap();
+            assert_eq!(result, EXPECTED);
         })
     });
 }
 
 fn bench_execute_recursive_trap(c: &mut Criterion) {
+    use wasmi::errors::ErrorKind;
     c.bench_function("execute/recursive_trap", |b| {
         let (mut store, instance) =
             load_instance_from_wat(include_bytes!("wat/recursive_trap.wat"));
-        let bench_call = instance
-            .get_export(&store, "call")
-            .and_then(Extern::into_func)
-            .unwrap();
-        let mut result = [Val::I32(0)];
+        let run = instance.get_typed_func::<i32, i32>(&store, "call").unwrap();
         b.iter(|| {
-            let error = bench_call
-                .call(&mut store, &[Val::I32(1000)], &mut result)
-                .unwrap_err();
+            let error = run.call(&mut store, 1000).unwrap_err();
             match error.kind() {
-                wasmi::errors::ErrorKind::TrapCode(trap_code) => assert_matches::assert_matches!(
+                ErrorKind::TrapCode(trap_code) => assert_matches!(
                     trap_code,
                     TrapCode::UnreachableCodeReached,
                     "expected unreachable trap",
@@ -1102,24 +1073,16 @@ fn bench_execute_recursive_trap(c: &mut Criterion) {
 }
 
 fn bench_execute_recursive_is_even(c: &mut Criterion) {
+    const ITERATIONS: i32 = 50_000;
     c.bench_function("execute/is_even/rec", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/is_even.wat"));
-        let bench_call = instance
-            .get_export(&store, "is_even")
-            .and_then(Extern::into_func)
+        let run = instance
+            .get_typed_func::<i32, i32>(&store, "is_even")
             .unwrap();
-        let mut result = Val::I32(0);
-
         b.iter(|| {
-            bench_call
-                .call(
-                    &mut store,
-                    &[Val::I32(50_000)],
-                    slice::from_mut(&mut result),
-                )
-                .unwrap();
+            let result = run.call(&mut store, ITERATIONS).unwrap();
+            assert_eq!(result, 1);
         });
-        assert_eq!(result.i32(), Some(1));
     });
 }
 
