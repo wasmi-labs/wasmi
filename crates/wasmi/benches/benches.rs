@@ -756,6 +756,13 @@ fn bench_execute_rev_comp(c: &mut Criterion) {
             .read(&store, output_offset as usize, &mut result)
             .unwrap();
         assert_eq!(&result[..], REVCOMP_OUTPUT);
+
+        // Teardown benchmark data.
+        instance
+            .get_typed_func::<i32, ()>(&store, "teardown")
+            .unwrap()
+            .call(&mut store, data_ptr)
+            .unwrap();
     });
 }
 

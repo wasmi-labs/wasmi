@@ -29,6 +29,8 @@ pub extern "C" fn setup(size: usize) -> *mut RevComplementData {
 #[no_mangle]
 pub unsafe extern "C" fn input_ptr(test_data: *mut RevComplementData) -> *mut u8 {
     (*test_data).input.as_mut_ptr()
+pub extern "C" fn teardown(_: Box<RevComplementData>) {}
+
 }
 
 /// # Safety
