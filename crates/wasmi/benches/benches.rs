@@ -1209,7 +1209,7 @@ fn bench_execute_host_calls(c: &mut Criterion) {
     /// How often the host functions are called per benchmark run.
     const ITERATIONS: i64 = 1000;
 
-    let mut g = c.benchmark_group("execute/call/host/");
+    let mut g = c.benchmark_group("execute/call/host");
     let wasm = wat2wasm(include_bytes!("wat/host_calls.wat"));
     let engine = Engine::default();
     let module = Module::new(&engine, &wasm[..]).unwrap();
@@ -1499,7 +1499,7 @@ fn bench_execute_vec_add(c: &mut Criterion) {
             .get_export(&store, "mem")
             .and_then(Extern::into_memory)
             .unwrap();
-        mem.grow(&mut store, 1).unwrap();
+        mem.grow(&mut store, 25).unwrap();
         let len = 100_000;
         test_for(
             b,
