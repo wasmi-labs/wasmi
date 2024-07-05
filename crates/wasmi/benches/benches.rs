@@ -9,7 +9,7 @@ use self::bench::{
 };
 use assert_matches::assert_matches;
 use bench::bench_config;
-use core::{slice, time::Duration};
+use core::time::Duration;
 use criterion::{criterion_group, criterion_main, Bencher, Criterion};
 use std::{
     fmt::{self, Display},
@@ -19,7 +19,6 @@ use wasmi::{
     core::{TrapCode, ValType, F32, F64},
     CompilationMode,
     Engine,
-    Extern,
     Func,
     FuncType,
     Linker,
@@ -763,55 +762,32 @@ fn bench_execute_regex_redux(c: &mut Criterion) {
         let (mut store, instance) = load_instance_from_file(WASM_KERNEL);
 
         // Allocate buffers for the input and output.
-        let mut result = Val::I32(0);
-        let input_size = Val::I32(REVCOMP_INPUT.len() as i32);
-        let prepare_regex_redux = instance
-            .get_export(&store, "prepare_regex_redux")
-            .and_then(Extern::into_func)
+        let test_data_ptr = instance
+            .get_typed_func::<i32, i32>(&store, "prepare_regex_redux")
+            .unwrap()
+            .call(&mut store, REVCOMP_INPUT.len() as i32)
             .unwrap();
-        prepare_regex_redux
-            .call(&mut store, &[input_size], slice::from_mut(&mut result))
-            .unwrap();
-        let test_data_ptr = match &result {
-            Val::I32(value) => Val::I32(*value),
-            _ => panic!("unexpected non-I32 result found for prepare_regex_redux"),
-        };
 
         // Get the pointer to the input buffer.
-        let regex_redux_input_ptr = instance
-            .get_export(&store, "regex_redux_input_ptr")
-            .and_then(Extern::into_func)
+        let input_data_mem_offset = instance
+            .get_typed_func::<i32, i32>(&store, "regex_redux_input_ptr")
+            .unwrap()
+            .call(&mut store, test_data_ptr)
             .unwrap();
-        regex_redux_input_ptr
-            .call(
-                &mut store,
-                slice::from_ref(&test_data_ptr),
-                slice::from_mut(&mut result),
-            )
-            .unwrap();
-        let input_data_mem_offset = match &result {
-            Val::I32(value) => *value,
-            _ => panic!("unexpected non-I32 result found for regex_redux_input_ptr"),
-        };
 
         // Copy test data inside the wasm memory.
-        let memory = instance
-            .get_export(&store, "memory")
-            .and_then(Extern::into_memory)
-            .expect("failed to find 'memory' exported linear memory in instance");
-        memory
+        instance
+            .get_memory(&store, "memory")
+            .unwrap()
             .write(&mut store, input_data_mem_offset as usize, REVCOMP_INPUT)
-            .expect("failed to write test data into a wasm memory");
-
-        let bench_regex_redux = instance
-            .get_export(&store, "bench_regex_redux")
-            .and_then(Extern::into_func)
             .unwrap();
 
+        // Actually run the benchmark:
+        let run = instance
+            .get_typed_func::<i32, ()>(&store, "bench_regex_redux")
+            .unwrap();
         b.iter(|| {
-            bench_regex_redux
-                .call(&mut store, slice::from_ref(&test_data_ptr), &mut [])
-                .unwrap();
+            run.call(&mut store, test_data_ptr).unwrap();
         })
     });
 }
