@@ -75,9 +75,11 @@ const LINE_LEN: usize = 61;
 
 /// Compute the reverse complement for two contiguous chunks without line breaks.
 fn reverse_chunks(left: &mut [u8], right: &mut [u8], table: &[u8; 256]) {
-    for (x, y) in left.iter_mut().zip(right.iter_mut().rev()) {
-        *y = table[replace(x, table[*y as usize]) as usize];
-    }
+    left.iter_mut()
+        .zip(right.iter_mut().rev())
+        .for_each(|(x, y)| {
+            *y = table[replace(x, table[*y as usize]) as usize];
+        });
 }
 
 /// Compute the reverse complement on chunks from opposite ends of a sequence.
@@ -137,7 +139,6 @@ fn reverse_complement(seq: &mut [u8], table: &[u8; 256]) {
 /// Read sequences from stdin and print the reverse complement to stdout.
 pub fn run(input: &[u8]) -> Vec<u8> {
     let mut buf = Vec::with_capacity(input.len());
-
     let mut input = io::Cursor::new(input);
 
     // Read the first header line.
