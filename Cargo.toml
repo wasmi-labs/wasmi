@@ -6,6 +6,7 @@ members = [
     "crates/wasmi",
     "crates/wasi",
     "crates/wasmi/benches/rust/tiny_keccak",
+    "crates/wasmi/benches/rust/reverse_complement",
     "fuzz",
 ]
 exclude = []

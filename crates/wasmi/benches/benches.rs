@@ -715,19 +715,19 @@ fn bench_execute_tiny_keccak(c: &mut Criterion) {
 }
 
 fn bench_execute_rev_comp(c: &mut Criterion) {
-    c.bench_function("execute/rev_complement", |b| {
-        let (mut store, instance) = load_instance_from_file(WASM_KERNEL);
+    c.bench_function("execute/reverse_complement", |b| {
+        let (mut store, instance) = load_instance_from_file("benches/rust/reverse_complement.wasm");
 
         // Allocate buffers for the input and output.
         let data_ptr = instance
-            .get_typed_func::<i32, i32>(&store, "prepare_rev_complement")
+            .get_typed_func::<i32, i32>(&store, "setup")
             .unwrap()
             .call(&mut store, REVCOMP_INPUT.len() as i32)
             .unwrap();
 
         // Get the pointer to the input buffer.
         let input_offset = instance
-            .get_typed_func::<i32, i32>(&store, "rev_complement_input_ptr")
+            .get_typed_func::<i32, i32>(&store, "input_ptr")
             .unwrap()
             .call(&mut store, data_ptr)
             .unwrap();
@@ -739,16 +739,14 @@ fn bench_execute_rev_comp(c: &mut Criterion) {
             .unwrap();
 
         // Run the rev complement benchmark.
-        let bench_rev_complement = instance
-            .get_typed_func::<i32, ()>(&store, "bench_rev_complement")
-            .unwrap();
+        let bench_rev_complement = instance.get_typed_func::<i32, ()>(&store, "run").unwrap();
         b.iter(|| {
             bench_rev_complement.call(&mut store, data_ptr).unwrap();
         });
 
         // Get the pointer to the output buffer.
         let output_offset = instance
-            .get_typed_func::<i32, i32>(&store, "rev_complement_output_ptr")
+            .get_typed_func::<i32, i32>(&store, "output_ptr")
             .unwrap()
             .call(&mut store, data_ptr)
             .unwrap();
