@@ -819,12 +819,8 @@ fn bench_execute_count_until(c: &mut Criterion) {
     c.bench_function("execute/count_until", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/count_until.wat"));
         let count_until = instance
-            .get_export(&store, "count_until")
-            .and_then(Extern::into_func)
-            .unwrap()
-            .typed::<i32, i32>(&store)
+            .get_typed_func::<i32, i32>(&store, "count_until")
             .unwrap();
-
         b.iter(|| {
             let result = count_until.call(&mut store, COUNT_UNTIL).unwrap();
             assert_eq!(result, COUNT_UNTIL);
