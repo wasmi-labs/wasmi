@@ -728,9 +728,7 @@ fn bench_execute_rev_comp(c: &mut Criterion) {
             .unwrap();
 
         // Copy test data inside the wasm memory.
-        let memory = instance
-            .get_memory(&store, "memory")
-            .unwrap();
+        let memory = instance.get_memory(&store, "memory").unwrap();
         memory
             .write(&mut store, input_offset as usize, REVCOMP_INPUT)
             .unwrap();
@@ -740,9 +738,7 @@ fn bench_execute_rev_comp(c: &mut Criterion) {
             .get_typed_func::<i32, ()>(&store, "bench_rev_complement")
             .unwrap();
         b.iter(|| {
-            bench_rev_complement
-                .call(&mut store, data_ptr)
-                .unwrap();
+            bench_rev_complement.call(&mut store, data_ptr).unwrap();
         });
 
         // Get the pointer to the output buffer.
