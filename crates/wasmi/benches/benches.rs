@@ -30,13 +30,15 @@ use wasmi::{
 };
 
 criterion_group!(
-    name = bench_translate;
+    name = bench_group_translate;
     config = Criterion::default()
         .sample_size(10)
         .measurement_time(Duration::from_millis(2000))
         .warm_up_time(Duration::from_millis(1000));
     targets =
-        bench_translate_wasm_kernel,
+        bench_translate_tiny_keccak,
+        bench_translate_reverse_complement,
+        bench_translate_regex_redux,
         bench_translate_spidermonkey,
         bench_translate_pulldown_cmark,
         bench_translate_bz2,
@@ -49,19 +51,21 @@ criterion_group!(
         bench_translate_case_worst_stackbomb_big,
 );
 criterion_group!(
-    name = bench_instantiate;
+    name = bench_group_instantiate;
     config = Criterion::default()
         .sample_size(10)
         .measurement_time(Duration::from_millis(2000))
         .warm_up_time(Duration::from_millis(1000));
     targets =
-        bench_instantiate_wasm_kernel,
+        bench_instantiate_tiny_keccak,
+        bench_instantiate_reverse_complement,
+        bench_instantiate_regex_redux,
         // bench_instantiate_erc20,
         // bench_instantiate_erc721,
         // bench_instantiate_erc1155,
 );
 criterion_group!(
-    name = bench_overhead;
+    name = bench_group_overhead;
     config = Criterion::default()
         .sample_size(10)
         .measurement_time(Duration::from_millis(1000))
@@ -73,7 +77,7 @@ criterion_group!(
         bench_overhead_call_untyped_16,
 );
 criterion_group!(
-    name = bench_linker;
+    name = bench_group_linker;
     config = Criterion::default()
         .sample_size(10)
         .measurement_time(Duration::from_millis(1000))
@@ -87,7 +91,7 @@ criterion_group!(
         bench_linker_build_construct_unique,
 );
 criterion_group! {
-    name = bench_execute;
+    name = bench_group_execute;
     config = Criterion::default()
         .sample_size(10)
         .measurement_time(Duration::from_millis(2000))
@@ -117,17 +121,15 @@ criterion_group! {
 }
 
 criterion_main!(
-    bench_translate,
-    bench_instantiate,
-    bench_execute,
-    bench_overhead,
-    bench_linker,
+    bench_group_translate,
+    bench_group_instantiate,
+    bench_group_execute,
+    bench_group_overhead,
+    bench_group_linker,
 );
 
-const WASM_KERNEL: &str =
-    "benches/wasm/wasm_kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm";
-const REVCOMP_INPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-input.txt");
-const REVCOMP_OUTPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-output.txt");
+const REVCOMP_INPUT: &[u8] = include_bytes!("res/revcomp-input.txt");
+const REVCOMP_OUTPUT: &[u8] = include_bytes!("res/revcomp-output.txt");
 
 enum FuelMetering {
     Enabled,
@@ -230,8 +232,20 @@ fn bench_translate_for_all(c: &mut Criterion, name: &str, path: &str) {
     );
 }
 
-fn bench_translate_wasm_kernel(c: &mut Criterion) {
-    bench_translate_for_all(c, "wasm_kernel", WASM_KERNEL);
+fn bench_translate_tiny_keccak(c: &mut Criterion) {
+    bench_translate_for_all(c, "tiny_keccak", "benches/rust/tiny_keccak.wasm");
+}
+
+fn bench_translate_reverse_complement(c: &mut Criterion) {
+    bench_translate_for_all(
+        c,
+        "reverse_complement",
+        "benches/rust/reverse_complement.wasm",
+    );
+}
+
+fn bench_translate_regex_redux(c: &mut Criterion) {
+    bench_translate_for_all(c, "regex_redux", "benches/rust/regex_redux.wasm");
 }
 
 fn bench_translate_spidermonkey(c: &mut Criterion) {
@@ -410,15 +424,29 @@ fn bench_translate_case_worst_stackbomb_big(c: &mut Criterion) {
     });
 }
 
-fn bench_instantiate_wasm_kernel(c: &mut Criterion) {
-    c.bench_function("instantiate/wasm_kernel", |b| {
-        let module = load_module_from_file(WASM_KERNEL);
+fn bench_instantiate_using(c: &mut Criterion, name: &str) {
+    let id = format!("instantiate/{name}");
+    c.bench_function(&id, |b| {
+        let path = format!("benches/rust/{name}.wasm");
+        let module = load_module_from_file(&path);
         let linker = <Linker<()>>::new(module.engine());
         b.iter(|| {
             let mut store = Store::new(module.engine(), ());
             let _instance = linker.instantiate(&mut store, &module).unwrap();
         })
     });
+}
+
+fn bench_instantiate_tiny_keccak(c: &mut Criterion) {
+    bench_instantiate_using(c, "tiny_keccak");
+}
+
+fn bench_instantiate_reverse_complement(c: &mut Criterion) {
+    bench_instantiate_using(c, "reverse_complement");
+}
+
+fn bench_instantiate_regex_redux(c: &mut Criterion) {
+    bench_instantiate_using(c, "regex_redux");
 }
 
 fn bench_linker_build_finish_same(c: &mut Criterion) {
