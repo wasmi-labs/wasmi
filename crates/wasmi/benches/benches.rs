@@ -696,17 +696,21 @@ fn bench_instantiate_erc1155(c: &mut Criterion) {
 
 fn bench_execute_tiny_keccak(c: &mut Criterion) {
     c.bench_function("execute/tiny_keccak", |b| {
-        let (mut store, instance) = load_instance_from_file(WASM_KERNEL);
-        let prepare = instance
-            .get_typed_func::<(), i32>(&store, "prepare_tiny_keccak")
+        let (mut store, instance) = load_instance_from_file("benches/rust/tiny_keccak.wasm");
+        let data_ptr = instance
+            .get_typed_func::<(), i32>(&store, "setup")
+            .unwrap()
+            .call(&mut store, ())
             .unwrap();
-        let keccak = instance
-            .get_typed_func::<i32, ()>(&store, "bench_tiny_keccak")
-            .unwrap();
-        let test_data_ptr = prepare.call(&mut store, ()).unwrap();
+        let keccak = instance.get_typed_func::<i32, ()>(&store, "run").unwrap();
         b.iter(|| {
-            keccak.call(&mut store, test_data_ptr).unwrap();
-        })
+            keccak.call(&mut store, data_ptr).unwrap();
+        });
+        instance
+            .get_typed_func::<i32, ()>(&store, "teardown")
+            .unwrap()
+            .call(&mut store, data_ptr)
+            .unwrap();
     });
 }
 
