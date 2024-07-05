@@ -29,28 +29,30 @@ jobs:
       - name: Build (no_std + no-hash-maps)
         run: cargo build --locked -p wasmi_collections --no-default-features --features no-hash-maps --verbose
       - name: Build (no_std)
-        run: cargo build \
-          --workspace \
-          --locked \
-          --lib \
-          --no-default-features \
-          --target x86_64-unknown-none \
-          --verbose \
-          --exclude wasmi_cli \
-          --exclude wasmi_wasi \
-          --exclude wasmi_fuzz \
-          --exclude wasmi_benches_tiny_keccak
+        run: >-
+            cargo build
+            --workspace
+            --locked
+            --lib
+            --no-default-features
+            --target x86_64-unknown-none
+            --verbose
+            --exclude wasmi_cli
+            --exclude wasmi_wasi
+            --exclude wasmi_fuzz
+            --exclude wasmi_benches_tiny_keccak
       - name: Build (wasm32)
-        run: cargo build \
-          --workspace \
-          --locked \
-          --lib \
-          --no-default-features \
-          --target wasm32-unknown-unknown \
-          --verbose \
-          --exclude wasmi_cli \
-          --exclude wasmi_wasi \
-          --exclude wasmi_fuzz \
+        run: >-
+          cargo build
+          --workspace
+          --locked
+          --lib
+          --no-default-features
+          --target wasm32-unknown-unknown
+          --verbose
+          --exclude wasmi_cli
+          --exclude wasmi_wasi
+          --exclude wasmi_fuzz
           --exclude wasmi_benches_tiny_keccak
 
   test-asan:
