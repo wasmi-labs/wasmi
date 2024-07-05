@@ -768,20 +768,20 @@ fn bench_execute_rev_comp(c: &mut Criterion) {
 
 fn bench_execute_regex_redux(c: &mut Criterion) {
     c.bench_function("execute/regex_redux", |b| {
-        let (mut store, instance) = load_instance_from_file(WASM_KERNEL);
+        let (mut store, instance) = load_instance_from_file("benches/rust/regex_redux.wasm");
 
         // Allocate buffers for the input and output.
-        let test_data_ptr = instance
-            .get_typed_func::<i32, i32>(&store, "prepare_regex_redux")
+        let data_ptr = instance
+            .get_typed_func::<i32, i32>(&store, "setup")
             .unwrap()
             .call(&mut store, REVCOMP_INPUT.len() as i32)
             .unwrap();
 
         // Get the pointer to the input buffer.
         let input_data_mem_offset = instance
-            .get_typed_func::<i32, i32>(&store, "regex_redux_input_ptr")
+            .get_typed_func::<i32, i32>(&store, "input_ptr")
             .unwrap()
-            .call(&mut store, test_data_ptr)
+            .call(&mut store, data_ptr)
             .unwrap();
 
         // Copy test data inside the wasm memory.
@@ -792,12 +792,25 @@ fn bench_execute_regex_redux(c: &mut Criterion) {
             .unwrap();
 
         // Actually run the benchmark:
-        let run = instance
-            .get_typed_func::<i32, ()>(&store, "bench_regex_redux")
-            .unwrap();
+        let run = instance.get_typed_func::<i32, ()>(&store, "run").unwrap();
         b.iter(|| {
-            run.call(&mut store, test_data_ptr).unwrap();
-        })
+            run.call(&mut store, data_ptr).unwrap();
+        });
+
+        // Check the result of the regex find.
+        let result = instance
+            .get_typed_func::<i32, i32>(&store, "output")
+            .unwrap()
+            .call(&mut store, data_ptr)
+            .unwrap();
+        assert_eq!(result, 2);
+
+        // Teardown benchmark data.
+        instance
+            .get_typed_func::<i32, ()>(&store, "teardown")
+            .unwrap()
+            .call(&mut store, data_ptr)
+            .unwrap();
     });
 }
 
