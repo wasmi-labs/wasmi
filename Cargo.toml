@@ -5,6 +5,7 @@ members = [
     "crates/core",
     "crates/wasmi",
     "crates/wasi",
+    "crates/wasmi/benches/rust/tiny_keccak",
     "fuzz",
 ]
 exclude = []
@@ -32,3 +33,11 @@ num-traits = { version = "0.2.8", default-features = false }
 [profile.bench]
 lto = "fat"
 codegen-units = 1
+
+[profile.wasm]
+inherits = "release"
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
