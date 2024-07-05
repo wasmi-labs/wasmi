@@ -156,7 +156,6 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           cache-directories: |
-            ~/fuzz/corpus/
             ~/fuzz/corpus/translate/
             ~/fuzz/corpus/translate_metered/
       - name: Checkout Submodules
@@ -183,7 +182,6 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           cache-directories: |
-            ~/fuzz/corpus/
             ~/fuzz/corpus/execute/
       - name: Checkout Submodules
         run: git submodule update --init --recursive
@@ -207,7 +205,6 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           cache-directories: |
-            ~/fuzz/corpus/
             ~/fuzz/corpus/differential/
       - name: Checkout Submodules
         run: git submodule update --init --recursive
