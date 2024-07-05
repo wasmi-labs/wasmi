@@ -697,21 +697,14 @@ fn bench_execute_tiny_keccak(c: &mut Criterion) {
     c.bench_function("execute/tiny_keccak", |b| {
         let (mut store, instance) = load_instance_from_file(WASM_KERNEL);
         let prepare = instance
-            .get_export(&store, "prepare_tiny_keccak")
-            .and_then(Extern::into_func)
+            .get_typed_func::<(), i32>(&store, "prepare_tiny_keccak")
             .unwrap();
         let keccak = instance
-            .get_export(&store, "bench_tiny_keccak")
-            .and_then(Extern::into_func)
+            .get_typed_func::<i32, ()>(&store, "bench_tiny_keccak")
             .unwrap();
-        let mut test_data_ptr = Val::I32(0);
-        prepare
-            .call(&mut store, &[], slice::from_mut(&mut test_data_ptr))
-            .unwrap();
+        let test_data_ptr = prepare.call(&mut store, ()).unwrap();
         b.iter(|| {
-            keccak
-                .call(&mut store, slice::from_ref(&test_data_ptr), &mut [])
-                .unwrap();
+            keccak.call(&mut store, test_data_ptr).unwrap();
         })
     });
 }
