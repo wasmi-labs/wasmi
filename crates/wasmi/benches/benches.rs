@@ -833,15 +833,11 @@ fn bench_execute_br_table(c: &mut Criterion) {
     c.bench_function("execute/br_table", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/br_table.wat"));
         let br_table = instance
-            .get_export(&store, "br_table")
-            .and_then(Extern::into_func)
-            .unwrap()
-            .typed::<i32, i32>(&store)
+            .get_typed_func::<i32, i32>(&store, "br_table")
             .unwrap();
         let expected = [
             -10, -20, -30, -40, -50, -60, -70, -80, -90, -100, -110, -120, -130, -140, -150, -160,
         ];
-
         b.iter(|| {
             for input in 0..REPETITIONS {
                 let cramped = input % expected.len();
@@ -856,15 +852,11 @@ fn bench_execute_trunc_f2i(c: &mut Criterion) {
     const ITERATIONS: i32 = 25_000;
     c.bench_function("execute/trunc_f2i", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/trunc_f2i.wat"));
-        let count_until = instance
-            .get_export(&store, "trunc_f2i")
-            .and_then(Extern::into_func)
+        let run = instance
+            .get_typed_func::<(i32, F32, F64), ()>(&store, "trunc_f2i")
             .unwrap();
-        let count_until = count_until.typed::<(i32, F32, F64), ()>(&store).unwrap();
-
         b.iter(|| {
-            count_until
-                .call(&mut store, (ITERATIONS, F32::from(42.0), F64::from(69.0)))
+            run.call(&mut store, (ITERATIONS, F32::from(42.0), F64::from(69.0)))
                 .unwrap();
         })
     });
@@ -875,10 +867,8 @@ fn bench_overhead_call_typed_0(c: &mut Criterion) {
     c.bench_function("overhead/call/typed/0", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
         let bare_call = instance
-            .get_export(&store, "bare_call_0")
-            .and_then(Extern::into_func)
+            .get_typed_func::<(), ()>(&store, "bare_call_0")
             .unwrap();
-        let bare_call = bare_call.typed::<(), ()>(&store).unwrap();
         b.iter(|| {
             for _ in 0..REPETITIONS {
                 bare_call.call(&mut store, ()).unwrap();
@@ -910,10 +900,8 @@ fn bench_overhead_call_typed_16(c: &mut Criterion) {
     c.bench_function("overhead/call/typed/16", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
         let bare_call = instance
-            .get_export(&store, "bare_call_16")
-            .and_then(Extern::into_func)
+            .get_typed_func::<InOut, InOut>(&store, "bare_call_16")
             .unwrap();
-        let bare_call = bare_call.typed::<InOut, InOut>(&store).unwrap();
         b.iter(|| {
             for _ in 0..REPETITIONS {
                 let _ = bare_call
@@ -948,10 +936,7 @@ fn bench_overhead_call_untyped_0(c: &mut Criterion) {
     const REPETITIONS: usize = 20_000;
     c.bench_function("overhead/call/untyped/0", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
-        let bare_call = instance
-            .get_export(&store, "bare_call_0")
-            .and_then(Extern::into_func)
-            .unwrap();
+        let bare_call = instance.get_func(&store, "bare_call_0").unwrap();
         let params = &[];
         let results = &mut [];
         b.iter(|| {
@@ -966,10 +951,7 @@ fn bench_overhead_call_untyped_16(c: &mut Criterion) {
     const REPETITIONS: usize = 20_000;
     c.bench_function("overhead/call/untyped/16", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
-        let bare_call = instance
-            .get_export(&store, "bare_call_16")
-            .and_then(Extern::into_func)
-            .unwrap();
+        let bare_call = instance.get_func(&store, "bare_call_16").unwrap();
         let params = &[
             Val::default(ValType::I32),
             Val::default(ValType::I64),
@@ -998,43 +980,25 @@ fn bench_overhead_call_untyped_16(c: &mut Criterion) {
 }
 
 fn bench_execute_global_bump(c: &mut Criterion) {
-    const BUMP_AMOUNT: i32 = 100_000;
+    const ITERATIONS: i32 = 100_000;
     c.bench_function("execute/global/bump", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/global_bump.wat"));
-        let count_until = instance
-            .get_export(&store, "bump")
-            .and_then(Extern::into_func)
-            .unwrap();
-        let mut result = Val::I32(0);
-
+        let run = instance.get_typed_func::<i32, i32>(&store, "bump").unwrap();
         b.iter(|| {
-            count_until
-                .call(
-                    &mut store,
-                    &[Val::I32(BUMP_AMOUNT)],
-                    slice::from_mut(&mut result),
-                )
-                .unwrap();
-            assert_eq!(result.i32(), Some(BUMP_AMOUNT));
+            let result = run.call(&mut store, ITERATIONS).unwrap();
+            assert_eq!(result, ITERATIONS);
         })
     });
 }
 
 fn bench_execute_global_const(c: &mut Criterion) {
-    const LIMIT: i32 = 100_000;
+    const ITERATIONS: i32 = 100_000;
     c.bench_function("execute/global/get_const", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/global_const.wat"));
-        let count_until = instance
-            .get_export(&store, "call")
-            .and_then(Extern::into_func)
-            .unwrap();
-        let mut result = Val::I32(0);
-
+        let run = instance.get_typed_func::<i32, i32>(&store, "call").unwrap();
         b.iter(|| {
-            count_until
-                .call(&mut store, &[Val::I32(LIMIT)], slice::from_mut(&mut result))
-                .unwrap();
-            assert_eq!(result.i32(), Some(LIMIT));
+            let result = run.call(&mut store, ITERATIONS).unwrap();
+            assert_eq!(result, ITERATIONS);
         })
     });
 }
