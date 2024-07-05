@@ -1220,6 +1220,7 @@ fn bench_execute_memory_sum(c: &mut Criterion) {
             .unwrap();
         let mem = instance.get_memory(&store, "mem").unwrap();
         let len = 100_000;
+        mem.grow(&mut store, 1).unwrap();
         let expected_sum: i64 = mem.data_mut(&mut store)[..len]
             .iter_mut()
             .enumerate()
