@@ -26,6 +26,7 @@ use wasmi::{
     Memory,
     Module,
     Store,
+    TypedFunc,
     Val,
 };
 
@@ -1148,14 +1149,11 @@ fn bench_execute_fuse(c: &mut Criterion) {
     let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/fuse.wat"));
     let mut bench_fuse = |bench_id: &str, func_name: &str, input: i32| {
         c.bench_function(bench_id, |b| {
-            let test = instance
-                .get_export(&store, func_name)
-                .and_then(Extern::into_func)
-                .unwrap()
-                .typed::<i32, i32>(&store)
+            let run = instance
+                .get_typed_func::<i32, i32>(&store, func_name)
                 .unwrap();
             b.iter(|| {
-                assert_eq!(test.call(&mut store, input).unwrap(), input);
+                assert_eq!(run.call(&mut store, input).unwrap(), input);
             });
         });
     };
@@ -1166,14 +1164,11 @@ fn bench_execute_divrem(c: &mut Criterion) {
     let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/divrem.wat"));
     let mut bench_fuse = |bench_id: &str, func_name: &str, input: i32| {
         c.bench_function(bench_id, |b| {
-            let fib = instance
-                .get_export(&store, func_name)
-                .and_then(Extern::into_func)
-                .unwrap()
-                .typed::<i32, i32>(&store)
+            let run = instance
+                .get_typed_func::<i32, i32>(&store, func_name)
                 .unwrap();
             b.iter(|| {
-                assert_eq!(fib.call(&mut store, input).unwrap(), 0);
+                assert_eq!(run.call(&mut store, input).unwrap(), 0);
             });
         });
     };
@@ -1204,14 +1199,11 @@ fn bench_execute_fibonacci(c: &mut Criterion) {
     let mut bench_fib = |bench_id: &str, func_name: &str, input: i64| {
         c.bench_function(bench_id, |b| {
             let expected = fib(input);
-            let fib = instance
-                .get_export(&store, func_name)
-                .and_then(Extern::into_func)
-                .unwrap()
-                .typed::<i64, i64>(&store)
+            let run = instance
+                .get_typed_func::<i64, i64>(&store, func_name)
                 .unwrap();
             b.iter(|| {
-                assert_eq!(fib.call(&mut store, input).unwrap(), expected);
+                assert_eq!(run.call(&mut store, input).unwrap(), expected);
             });
         });
     };
@@ -1223,58 +1215,42 @@ fn bench_execute_fibonacci(c: &mut Criterion) {
 fn bench_execute_memory_sum(c: &mut Criterion) {
     c.bench_function("execute/memory/sum_bytes", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/memory-sum.wat"));
-        let sum = instance
-            .get_export(&store, "sum_bytes")
-            .and_then(Extern::into_func)
+        let run = instance
+            .get_typed_func::<i32, i64>(&store, "sum_bytes")
             .unwrap();
-        let mem = instance
-            .get_export(&store, "mem")
-            .and_then(Extern::into_memory)
-            .unwrap();
-        mem.grow(&mut store, 1).unwrap();
+        let mem = instance.get_memory(&store, "mem").unwrap();
         let len = 100_000;
-        let mut expected_sum: i64 = 0;
-        for (n, byte) in &mut mem.data_mut(&mut store)[..len].iter_mut().enumerate() {
-            let new_byte = (n % 256) as u8;
-            *byte = new_byte;
-            expected_sum += new_byte as u64 as i64;
-        }
-        let mut result = Val::I64(0);
+        let expected_sum: i64 = mem.data_mut(&mut store)[..len]
+            .iter_mut()
+            .enumerate()
+            .map(|(n, byte)| {
+                let new_byte = (n % 256) as u8;
+                *byte = new_byte;
+                new_byte as u64 as i64
+            })
+            .sum();
         b.iter(|| {
-            sum.call(
-                &mut store,
-                &[Val::I32(len as i32)],
-                slice::from_mut(&mut result),
-            )
-            .unwrap();
+            let result = run.call(&mut store, len as i32).unwrap();
+            assert_eq!(result, expected_sum);
         });
-        assert_eq!(result.i64(), Some(expected_sum));
     });
 }
 
 fn bench_execute_memory_fill(c: &mut Criterion) {
     c.bench_function("execute/memory/fill_bytes", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/memory-fill.wat"));
-        let fill = instance
-            .get_export(&store, "fill_bytes")
-            .and_then(Extern::into_func)
+        let run = instance
+            .get_typed_func::<(i32, i32, i32), ()>(&store, "fill_bytes")
             .unwrap();
-        let mem = instance
-            .get_export(&store, "mem")
-            .and_then(Extern::into_memory)
-            .unwrap();
-        mem.grow(&mut store, 1).unwrap();
         let ptr = 0x100;
         let len = 100_000;
         let value = 0x42_u8;
+        let mem = instance.get_memory(&store, "mem").unwrap();
+        mem.grow(&mut store, 1).unwrap();
         mem.data_mut(&mut store)[ptr..(ptr + len)].fill(0x00);
-        let params = [
-            Val::I32(ptr as i32),
-            Val::I32(len as i32),
-            Val::I32(value as i32),
-        ];
         b.iter(|| {
-            fill.call(&mut store, &params, &mut []).unwrap();
+            run.call(&mut store, (ptr as i32, len as i32, value as i32))
+                .unwrap();
         });
         assert!(mem.data(&store)[ptr..(ptr + len)]
             .iter()
@@ -1285,8 +1261,8 @@ fn bench_execute_memory_fill(c: &mut Criterion) {
 fn bench_execute_vec_add(c: &mut Criterion) {
     fn test_for<A, B>(
         b: &mut Bencher,
-        vec_add: Func,
         store: &mut Store<()>,
+        run: TypedFunc<(i32, i32, i32, i32), ()>,
         mem: Memory,
         len: usize,
         vec_a: A,
@@ -1323,16 +1299,13 @@ fn bench_execute_vec_add(c: &mut Criterion) {
             )
             .unwrap();
         }
-
-        // Prepare parameters and all Wasm `vec_add`:
-        let params = [
-            Val::I32(ptr_result as i32),
-            Val::I32(ptr_a as i32),
-            Val::I32(ptr_b as i32),
-            Val::I32(len as i32),
-        ];
+        // Run actual benchmark:
         b.iter(|| {
-            vec_add.call(&mut *store, &params, &mut []).unwrap();
+            run.call(
+                &mut *store,
+                (ptr_result as i32, ptr_a as i32, ptr_b as i32, len as i32),
+            )
+            .unwrap();
         });
 
         // Validate the result buffer:
@@ -1365,20 +1338,16 @@ fn bench_execute_vec_add(c: &mut Criterion) {
     c.bench_function("execute/memory/vec_add", |b| {
         let (mut store, instance) =
             load_instance_from_wat(include_bytes!("wat/memory-vec-add.wat"));
-        let vec_add = instance
-            .get_export(&store, "vec_add")
-            .and_then(Extern::into_func)
+        let run = instance
+            .get_typed_func::<(i32, i32, i32, i32), ()>(&store, "vec_add")
             .unwrap();
-        let mem = instance
-            .get_export(&store, "mem")
-            .and_then(Extern::into_memory)
-            .unwrap();
+        let mem = instance.get_memory(&store, "mem").unwrap();
         mem.grow(&mut store, 25).unwrap();
         let len = 100_000;
         test_for(
             b,
-            vec_add,
             &mut store,
+            run,
             mem,
             len,
             (0..len).map(|i| (i * i) as i32),
@@ -1391,13 +1360,7 @@ fn bench_execute_bulk_ops(c: &mut Criterion) {
     const ITERATIONS: i64 = 5_000;
     c.bench_function("execute/memory/bulk-ops", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bulk-ops.wat"));
-        let run = instance
-            .get_export(&store, "run")
-            .and_then(Extern::into_func)
-            .unwrap()
-            .typed::<i64, i64>(&store)
-            .unwrap();
-
+        let run = instance.get_typed_func::<i64, i64>(&store, "run").unwrap();
         b.iter(|| {
             run.call(&mut store, ITERATIONS).unwrap();
         })
