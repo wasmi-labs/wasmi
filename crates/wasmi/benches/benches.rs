@@ -36,7 +36,7 @@ criterion_group!(
         .measurement_time(Duration::from_millis(2000))
         .warm_up_time(Duration::from_millis(1000));
     targets =
-        bench_translate_wasm_kernel,
+        bench_translate_tiny_keccak,
         bench_translate_spidermonkey,
         bench_translate_pulldown_cmark,
         bench_translate_bz2,
@@ -55,7 +55,7 @@ criterion_group!(
         .measurement_time(Duration::from_millis(2000))
         .warm_up_time(Duration::from_millis(1000));
     targets =
-        bench_instantiate_wasm_kernel,
+        bench_instantiate_tiny_keccak,
         // bench_instantiate_erc20,
         // bench_instantiate_erc721,
         // bench_instantiate_erc1155,
@@ -124,10 +124,8 @@ criterion_main!(
     bench_linker,
 );
 
-const WASM_KERNEL: &str =
-    "benches/wasm/wasm_kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm";
-const REVCOMP_INPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-input.txt");
-const REVCOMP_OUTPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-output.txt");
+const REVCOMP_INPUT: &[u8] = include_bytes!("res/revcomp-input.txt");
+const REVCOMP_OUTPUT: &[u8] = include_bytes!("res/revcomp-output.txt");
 
 enum FuelMetering {
     Enabled,
@@ -230,8 +228,8 @@ fn bench_translate_for_all(c: &mut Criterion, name: &str, path: &str) {
     );
 }
 
-fn bench_translate_wasm_kernel(c: &mut Criterion) {
-    bench_translate_for_all(c, "wasm_kernel", WASM_KERNEL);
+fn bench_translate_tiny_keccak(c: &mut Criterion) {
+    bench_translate_for_all(c, "tiny_keccak", "benches/rust/tiny_keccak.wasm");
 }
 
 fn bench_translate_spidermonkey(c: &mut Criterion) {
@@ -410,9 +408,9 @@ fn bench_translate_case_worst_stackbomb_big(c: &mut Criterion) {
     });
 }
 
-fn bench_instantiate_wasm_kernel(c: &mut Criterion) {
-    c.bench_function("instantiate/wasm_kernel", |b| {
-        let module = load_module_from_file(WASM_KERNEL);
+fn bench_instantiate_tiny_keccak(c: &mut Criterion) {
+    c.bench_function("instantiate/tiny_keccak", |b| {
+        let module = load_module_from_file("benches/rust/tiny_keccak.wasm");
         let linker = <Linker<()>>::new(module.engine());
         b.iter(|| {
             let mut store = Store::new(module.engine(), ());
