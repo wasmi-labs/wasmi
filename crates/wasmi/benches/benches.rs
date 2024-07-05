@@ -1160,30 +1160,23 @@ fn bench_execute_host_calls(c: &mut Criterion) {
         .ensure_no_start(&mut store)
         .unwrap();
     g.bench_function("0", |b| {
+        let run = instance.get_typed_func::<i64, i64>(&store, "run0").unwrap();
         b.iter(|| {
-            instance
-                .get_typed_func::<i64, i64>(&store, "run0")
-                .unwrap()
-                .call(&mut store, ITERATIONS)
-                .unwrap();
+            run.call(&mut store, ITERATIONS).unwrap();
         })
     });
     g.bench_function("1", |b| {
+        let run = instance.get_typed_func::<i64, i64>(&store, "run1").unwrap();
         b.iter(|| {
-            instance
-                .get_typed_func::<i64, i64>(&store, "run1")
-                .unwrap()
-                .call(&mut store, ITERATIONS)
-                .unwrap();
+            run.call(&mut store, ITERATIONS).unwrap();
         })
     });
     g.bench_function("10", |b| {
+        let run = instance
+            .get_typed_func::<i64, i64>(&store, "run10")
+            .unwrap();
         b.iter(|| {
-            instance
-                .get_typed_func::<i64, i64>(&store, "run10")
-                .unwrap()
-                .call(&mut store, ITERATIONS)
-                .unwrap();
+            run.call(&mut store, ITERATIONS).unwrap();
         })
     });
 }
