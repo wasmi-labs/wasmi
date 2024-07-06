@@ -106,15 +106,13 @@ criterion_group! {
         .warm_up_time(Duration::from_millis(1000));
     targets =
         bench_execute_tiny_keccak,
-        bench_execute_rev_comp,
+        bench_execute_reverse_complement,
         bench_execute_regex_redux,
-        bench_execute_count_until,
+        bench_execute_counter,
         bench_execute_br_table,
         bench_execute_trunc_f2i,
         bench_execute_global_bump,
         bench_execute_global_const,
-        bench_execute_factorial,
-        bench_execute_recursive_ok,
         bench_execute_recursive_scan,
         bench_execute_recursive_trap,
         bench_execute_flat_calls,
@@ -752,7 +750,7 @@ fn bench_execute_tiny_keccak(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_rev_comp(c: &mut Criterion) {
+fn bench_execute_reverse_complement(c: &mut Criterion) {
     c.bench_function("execute/reverse_complement", |b| {
         let (mut store, instance) =
             load_instance_from_file("benches/rust/reverse_complement/out.wasm");
@@ -853,16 +851,14 @@ fn bench_execute_regex_redux(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_count_until(c: &mut Criterion) {
-    const COUNT_UNTIL: i32 = 1_000_000;
-    c.bench_function("execute/count_until", |b| {
-        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/count_until.wat"));
-        let count_until = instance
-            .get_typed_func::<i32, i32>(&store, "count_until")
-            .unwrap();
+fn bench_execute_counter(c: &mut Criterion) {
+    const ITERATIONS: i32 = 1_000_000;
+    c.bench_function("execute/counter", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/counter.wat"));
+        let run = instance.get_typed_func::<i32, i32>(&store, "run").unwrap();
         b.iter(|| {
-            let result = count_until.call(&mut store, COUNT_UNTIL).unwrap();
-            assert_eq!(result, COUNT_UNTIL);
+            let result = run.call(&mut store, ITERATIONS).unwrap();
+            assert_eq!(result, ITERATIONS);
         })
     });
 }
@@ -906,7 +902,7 @@ fn bench_overhead_call_typed_0(c: &mut Criterion) {
     c.bench_function("overhead/call/typed/0", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
         let bare_call = instance
-            .get_typed_func::<(), ()>(&store, "bare_call_0")
+            .get_typed_func::<(), ()>(&store, "bare_call/0")
             .unwrap();
         b.iter(|| {
             for _ in 0..REPETITIONS {
@@ -939,7 +935,7 @@ fn bench_overhead_call_typed_16(c: &mut Criterion) {
     c.bench_function("overhead/call/typed/16", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
         let bare_call = instance
-            .get_typed_func::<InOut, InOut>(&store, "bare_call_16")
+            .get_typed_func::<InOut, InOut>(&store, "bare_call/16")
             .unwrap();
         b.iter(|| {
             for _ in 0..REPETITIONS {
@@ -975,7 +971,7 @@ fn bench_overhead_call_untyped_0(c: &mut Criterion) {
     const REPETITIONS: usize = 20_000;
     c.bench_function("overhead/call/untyped/0", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
-        let bare_call = instance.get_func(&store, "bare_call_0").unwrap();
+        let bare_call = instance.get_func(&store, "bare_call/0").unwrap();
         let params = &[];
         let results = &mut [];
         b.iter(|| {
@@ -990,7 +986,7 @@ fn bench_overhead_call_untyped_16(c: &mut Criterion) {
     const REPETITIONS: usize = 20_000;
     c.bench_function("overhead/call/untyped/16", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
-        let bare_call = instance.get_func(&store, "bare_call_16").unwrap();
+        let bare_call = instance.get_func(&store, "bare_call/16").unwrap();
         let params = &[
             Val::default(ValType::I32),
             Val::default(ValType::I64),
@@ -1038,40 +1034,6 @@ fn bench_execute_global_const(c: &mut Criterion) {
         b.iter(|| {
             let result = run.call(&mut store, ITERATIONS).unwrap();
             assert_eq!(result, ITERATIONS);
-        })
-    });
-}
-
-fn bench_execute_factorial(c: &mut Criterion) {
-    const REPETITIONS: usize = 1_000;
-    const INPUT: i64 = 25;
-    const EXPECTED: i64 = 7034535277573963776; // factorial(25)
-    let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/factorial.wat"));
-    let mut bench_fac = |bench_id: &str, func_name: &str| {
-        c.bench_function(bench_id, |b| {
-            let fac = instance
-                .get_typed_func::<i64, i64>(&store, func_name)
-                .unwrap();
-            b.iter(|| {
-                for _ in 0..REPETITIONS {
-                    let result = fac.call(&mut store, INPUT).unwrap();
-                    assert_eq!(result, EXPECTED);
-                }
-            })
-        });
-    };
-    bench_fac("execute/factorial/rec", "recursive_factorial");
-    bench_fac("execute/factorial/iter", "iterative_factorial");
-}
-
-fn bench_execute_recursive_ok(c: &mut Criterion) {
-    const DEPTH: i32 = 8000;
-    c.bench_function("execute/call/rec", |b| {
-        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/recursive_ok.wat"));
-        let run = instance.get_typed_func::<i32, i32>(&store, "call").unwrap();
-        b.iter(|| {
-            let result = run.call(&mut store, DEPTH).unwrap();
-            assert_eq!(result, 0);
         })
     });
 }
@@ -1127,7 +1089,7 @@ fn bench_execute_recursive_is_even(c: &mut Criterion) {
 fn bench_execute_flat_calls(c: &mut Criterion) {
     fn bench_with(g: &mut BenchmarkGroup<WallTime>, wasm: &[u8], n: usize) {
         /// How often the host functions are called per benchmark run.
-        const ITERATIONS: i64 = 1000;
+        const ITERATIONS: i64 = 5_000;
 
         let id = format!("{n}");
         g.bench_function(&id, |b| {
@@ -1152,7 +1114,7 @@ fn bench_execute_flat_calls(c: &mut Criterion) {
 fn bench_execute_nested_calls(c: &mut Criterion) {
     fn bench_with(g: &mut BenchmarkGroup<WallTime>, wasm: &[u8], n: usize) {
         /// How often the host functions are called per benchmark run.
-        const ITERATIONS: i64 = 1000;
+        const ITERATIONS: i64 = 5_000;
 
         let id = format!("{n}");
         g.bench_function(&id, |b| {
@@ -1182,7 +1144,7 @@ fn bench_execute_host_calls(c: &mut Criterion) {
         n: usize,
     ) {
         /// How often the host functions are called per benchmark run.
-        const ITERATIONS: i64 = 1000;
+        const ITERATIONS: i64 = 5_000;
 
         let id = format!("{n}");
         g.bench_function(&id, |b| {
