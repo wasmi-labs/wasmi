@@ -113,7 +113,6 @@ criterion_group! {
         bench_execute_trunc_f2i,
         bench_execute_global_bump,
         bench_execute_global_const,
-        bench_execute_factorial,
         bench_execute_recursive_ok,
         bench_execute_recursive_scan,
         bench_execute_recursive_trap,
@@ -1040,28 +1039,6 @@ fn bench_execute_global_const(c: &mut Criterion) {
             assert_eq!(result, ITERATIONS);
         })
     });
-}
-
-fn bench_execute_factorial(c: &mut Criterion) {
-    const REPETITIONS: usize = 1_000;
-    const INPUT: i64 = 25;
-    const EXPECTED: i64 = 7034535277573963776; // factorial(25)
-    let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/factorial.wat"));
-    let mut bench_fac = |bench_id: &str, func_name: &str| {
-        c.bench_function(bench_id, |b| {
-            let fac = instance
-                .get_typed_func::<i64, i64>(&store, func_name)
-                .unwrap();
-            b.iter(|| {
-                for _ in 0..REPETITIONS {
-                    let result = fac.call(&mut store, INPUT).unwrap();
-                    assert_eq!(result, EXPECTED);
-                }
-            })
-        });
-    };
-    bench_fac("execute/factorial/rec", "recursive_factorial");
-    bench_fac("execute/factorial/iter", "iterative_factorial");
 }
 
 fn bench_execute_recursive_ok(c: &mut Criterion) {
