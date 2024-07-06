@@ -1089,7 +1089,7 @@ fn bench_execute_recursive_is_even(c: &mut Criterion) {
 fn bench_execute_flat_calls(c: &mut Criterion) {
     fn bench_with(g: &mut BenchmarkGroup<WallTime>, wasm: &[u8], n: usize) {
         /// How often the host functions are called per benchmark run.
-        const ITERATIONS: i64 = 1000;
+        const ITERATIONS: i64 = 5_000;
 
         let id = format!("{n}");
         g.bench_function(&id, |b| {
@@ -1114,7 +1114,7 @@ fn bench_execute_flat_calls(c: &mut Criterion) {
 fn bench_execute_nested_calls(c: &mut Criterion) {
     fn bench_with(g: &mut BenchmarkGroup<WallTime>, wasm: &[u8], n: usize) {
         /// How often the host functions are called per benchmark run.
-        const ITERATIONS: i64 = 1000;
+        const ITERATIONS: i64 = 5_000;
 
         let id = format!("{n}");
         g.bench_function(&id, |b| {
@@ -1144,7 +1144,7 @@ fn bench_execute_host_calls(c: &mut Criterion) {
         n: usize,
     ) {
         /// How often the host functions are called per benchmark run.
-        const ITERATIONS: i64 = 1000;
+        const ITERATIONS: i64 = 5_000;
 
         let id = format!("{n}");
         g.bench_function(&id, |b| {
