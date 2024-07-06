@@ -28,6 +28,7 @@ use wasmi::{
     Engine,
     Func,
     FuncType,
+    Instance,
     Linker,
     Memory,
     Module,
@@ -1174,8 +1175,26 @@ fn bench_execute_nested_calls(c: &mut Criterion) {
 }
 
 fn bench_execute_host_calls(c: &mut Criterion) {
-    /// How often the host functions are called per benchmark run.
-    const ITERATIONS: i64 = 1000;
+    fn bench_with(
+        g: &mut BenchmarkGroup<WallTime>,
+        store: &mut Store<()>,
+        instance: &Instance,
+        n: usize,
+    ) {
+        /// How often the host functions are called per benchmark run.
+        const ITERATIONS: i64 = 1000;
+
+        let id = format!("{n}");
+        g.bench_function(&id, |b| {
+            let func_name = format!("run/{n}");
+            let run = instance
+                .get_typed_func::<i64, i64>(&store, &func_name)
+                .unwrap();
+            b.iter(|| {
+                run.call(&mut *store, ITERATIONS).unwrap();
+            })
+        });
+    }
 
     let mut g = c.benchmark_group("execute/call/host");
     let wasm = wat2wasm(include_bytes!("wat/host_calls.wat"));
@@ -1247,38 +1266,9 @@ fn bench_execute_host_calls(c: &mut Criterion) {
         .unwrap()
         .ensure_no_start(&mut store)
         .unwrap();
-    g.bench_function("0", |b| {
-        let run = instance
-            .get_typed_func::<i64, i64>(&store, "run/0")
-            .unwrap();
-        b.iter(|| {
-            run.call(&mut store, ITERATIONS).unwrap();
-        })
-    });
-    g.bench_function("1", |b| {
-        let run = instance
-            .get_typed_func::<i64, i64>(&store, "run/1")
-            .unwrap();
-        b.iter(|| {
-            run.call(&mut store, ITERATIONS).unwrap();
-        })
-    });
-    g.bench_function("8", |b| {
-        let run = instance
-            .get_typed_func::<i64, i64>(&store, "run/8")
-            .unwrap();
-        b.iter(|| {
-            run.call(&mut store, ITERATIONS).unwrap();
-        })
-    });
-    g.bench_function("16", |b| {
-        let run = instance
-            .get_typed_func::<i64, i64>(&store, "run/16")
-            .unwrap();
-        b.iter(|| {
-            run.call(&mut store, ITERATIONS).unwrap();
-        })
-    });
+    for n in [0, 1, 8, 16] {
+        bench_with(&mut g, &mut store, &instance, n);
+    }
 }
 
 fn bench_execute_fuse(c: &mut Criterion) {
