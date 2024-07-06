@@ -856,9 +856,7 @@ fn bench_execute_counter(c: &mut Criterion) {
     const ITERATIONS: i32 = 1_000_000;
     c.bench_function("execute/counter", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/counter.wat"));
-        let run = instance
-            .get_typed_func::<i32, i32>(&store, "run")
-            .unwrap();
+        let run = instance.get_typed_func::<i32, i32>(&store, "run").unwrap();
         b.iter(|| {
             let result = run.call(&mut store, ITERATIONS).unwrap();
             assert_eq!(result, ITERATIONS);
