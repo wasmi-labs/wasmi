@@ -10,7 +10,14 @@ use self::bench::{
 use assert_matches::assert_matches;
 use bench::bench_config;
 use core::time::Duration;
-use criterion::{criterion_group, criterion_main, Bencher, Criterion};
+use criterion::{
+    criterion_group,
+    criterion_main,
+    measurement::WallTime,
+    Bencher,
+    BenchmarkGroup,
+    Criterion,
+};
 use std::{
     fmt::{self, Display},
     sync::OnceLock,
@@ -109,6 +116,7 @@ criterion_group! {
         bench_execute_recursive_ok,
         bench_execute_recursive_scan,
         bench_execute_recursive_trap,
+        bench_execute_flat_calls,
         bench_execute_host_calls,
         bench_execute_fuse,
         bench_execute_divrem,
@@ -1112,6 +1120,31 @@ fn bench_execute_recursive_is_even(c: &mut Criterion) {
             assert_eq!(result, 1);
         });
     });
+}
+
+fn bench_execute_flat_calls(c: &mut Criterion) {
+    fn bench_with(g: &mut BenchmarkGroup<WallTime>, wasm: &[u8], n: usize) {
+        /// How often the host functions are called per benchmark run.
+        const ITERATIONS: i64 = 1000;
+
+        let id = format!("execute/call/flat/{n}");
+        g.bench_function(&id, |b| {
+            let (mut store, instance) = load_instance_from_wat(wasm);
+            let func_name = format!("run/{n}");
+            let run = instance
+                .get_typed_func::<i64, i64>(&store, &func_name)
+                .unwrap();
+            b.iter(|| {
+                run.call(&mut store, ITERATIONS).unwrap();
+            });
+        });
+    }
+
+    let wasm = include_bytes!("wat/flat_calls.wat");
+    let mut g = c.benchmark_group("execute/call/host");
+    for n in [0, 1, 8, 16] {
+        bench_with(&mut g, wasm, n);
+    }
 }
 
 fn bench_execute_host_calls(c: &mut Criterion) {
