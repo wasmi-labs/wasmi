@@ -435,7 +435,7 @@ fn bench_translate_case_worst_stackbomb_big(c: &mut Criterion) {
 fn bench_instantiate_using(c: &mut Criterion, name: &str) {
     let id = format!("instantiate/{name}");
     c.bench_function(&id, |b| {
-        let path = format!("benches/rust/{name}/out.wasm");
+        let path = format!("benches/rust/cases/{name}/out.wasm");
         let module = load_module_from_file(&path);
         let linker = <Linker<()>>::new(module.engine());
         b.iter(|| {
