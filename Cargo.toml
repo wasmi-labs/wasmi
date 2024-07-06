@@ -8,6 +8,7 @@ members = [
     "crates/wasmi/benches/rust/tiny_keccak",
     "crates/wasmi/benches/rust/reverse_complement",
     "crates/wasmi/benches/rust/regex_redux",
+    "crates/wasmi/benches/rust/build",
     "fuzz",
 ]
 exclude = []
