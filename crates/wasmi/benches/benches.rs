@@ -108,7 +108,7 @@ criterion_group! {
         bench_execute_tiny_keccak,
         bench_execute_rev_comp,
         bench_execute_regex_redux,
-        bench_execute_count_until,
+        bench_execute_counter,
         bench_execute_br_table,
         bench_execute_trunc_f2i,
         bench_execute_global_bump,
@@ -853,16 +853,16 @@ fn bench_execute_regex_redux(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_count_until(c: &mut Criterion) {
-    const COUNT_UNTIL: i32 = 1_000_000;
-    c.bench_function("execute/count_until", |b| {
-        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/count_until.wat"));
-        let count_until = instance
-            .get_typed_func::<i32, i32>(&store, "count_until")
+fn bench_execute_counter(c: &mut Criterion) {
+    const ITERATIONS: i32 = 1_000_000;
+    c.bench_function("execute/counter", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/counter.wat"));
+        let run = instance
+            .get_typed_func::<i32, i32>(&store, "run")
             .unwrap();
         b.iter(|| {
-            let result = count_until.call(&mut store, COUNT_UNTIL).unwrap();
-            assert_eq!(result, COUNT_UNTIL);
+            let result = run.call(&mut store, ITERATIONS).unwrap();
+            assert_eq!(result, ITERATIONS);
         })
     });
 }
