@@ -902,7 +902,7 @@ fn bench_overhead_call_typed_0(c: &mut Criterion) {
     c.bench_function("overhead/call/typed/0", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
         let bare_call = instance
-            .get_typed_func::<(), ()>(&store, "bare_call_0")
+            .get_typed_func::<(), ()>(&store, "bare_call/0")
             .unwrap();
         b.iter(|| {
             for _ in 0..REPETITIONS {
@@ -935,7 +935,7 @@ fn bench_overhead_call_typed_16(c: &mut Criterion) {
     c.bench_function("overhead/call/typed/16", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
         let bare_call = instance
-            .get_typed_func::<InOut, InOut>(&store, "bare_call_16")
+            .get_typed_func::<InOut, InOut>(&store, "bare_call/16")
             .unwrap();
         b.iter(|| {
             for _ in 0..REPETITIONS {
@@ -971,7 +971,7 @@ fn bench_overhead_call_untyped_0(c: &mut Criterion) {
     const REPETITIONS: usize = 20_000;
     c.bench_function("overhead/call/untyped/0", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
-        let bare_call = instance.get_func(&store, "bare_call_0").unwrap();
+        let bare_call = instance.get_func(&store, "bare_call/0").unwrap();
         let params = &[];
         let results = &mut [];
         b.iter(|| {
@@ -986,7 +986,7 @@ fn bench_overhead_call_untyped_16(c: &mut Criterion) {
     const REPETITIONS: usize = 20_000;
     c.bench_function("overhead/call/untyped/16", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
-        let bare_call = instance.get_func(&store, "bare_call_16").unwrap();
+        let bare_call = instance.get_func(&store, "bare_call/16").unwrap();
         let params = &[
             Val::default(ValType::I32),
             Val::default(ValType::I64),
