@@ -10,7 +10,14 @@ use self::bench::{
 use assert_matches::assert_matches;
 use bench::bench_config;
 use core::time::Duration;
-use criterion::{criterion_group, criterion_main, Bencher, Criterion};
+use criterion::{
+    criterion_group,
+    criterion_main,
+    measurement::WallTime,
+    Bencher,
+    BenchmarkGroup,
+    Criterion,
+};
 use std::{
     fmt::{self, Display},
     sync::OnceLock,
@@ -21,6 +28,7 @@ use wasmi::{
     Engine,
     Func,
     FuncType,
+    Instance,
     Linker,
     Memory,
     Module,
@@ -109,6 +117,8 @@ criterion_group! {
         bench_execute_recursive_ok,
         bench_execute_recursive_scan,
         bench_execute_recursive_trap,
+        bench_execute_flat_calls,
+        bench_execute_nested_calls,
         bench_execute_host_calls,
         bench_execute_fuse,
         bench_execute_divrem,
@@ -1114,9 +1124,77 @@ fn bench_execute_recursive_is_even(c: &mut Criterion) {
     });
 }
 
+fn bench_execute_flat_calls(c: &mut Criterion) {
+    fn bench_with(g: &mut BenchmarkGroup<WallTime>, wasm: &[u8], n: usize) {
+        /// How often the host functions are called per benchmark run.
+        const ITERATIONS: i64 = 1000;
+
+        let id = format!("{n}");
+        g.bench_function(&id, |b| {
+            let (mut store, instance) = load_instance_from_wat(wasm);
+            let func_name = format!("run/{n}");
+            let run = instance
+                .get_typed_func::<i64, i64>(&store, &func_name)
+                .unwrap();
+            b.iter(|| {
+                run.call(&mut store, ITERATIONS).unwrap();
+            });
+        });
+    }
+
+    let wasm = include_bytes!("wat/flat_calls.wat");
+    let mut g = c.benchmark_group("execute/call/flat");
+    for n in [0, 1, 8, 16] {
+        bench_with(&mut g, wasm, n);
+    }
+}
+
+fn bench_execute_nested_calls(c: &mut Criterion) {
+    fn bench_with(g: &mut BenchmarkGroup<WallTime>, wasm: &[u8], n: usize) {
+        /// How often the host functions are called per benchmark run.
+        const ITERATIONS: i64 = 1000;
+
+        let id = format!("{n}");
+        g.bench_function(&id, |b| {
+            let (mut store, instance) = load_instance_from_wat(wasm);
+            let func_name = format!("run/{n}");
+            let run = instance
+                .get_typed_func::<i64, i64>(&store, &func_name)
+                .unwrap();
+            b.iter(|| {
+                run.call(&mut store, ITERATIONS).unwrap();
+            });
+        });
+    }
+
+    let wasm = include_bytes!("wat/nested_calls.wat");
+    let mut g = c.benchmark_group("execute/call/nested");
+    for n in [1, 8, 16] {
+        bench_with(&mut g, wasm, n);
+    }
+}
+
 fn bench_execute_host_calls(c: &mut Criterion) {
-    /// How often the host functions are called per benchmark run.
-    const ITERATIONS: i64 = 1000;
+    fn bench_with(
+        g: &mut BenchmarkGroup<WallTime>,
+        store: &mut Store<()>,
+        instance: &Instance,
+        n: usize,
+    ) {
+        /// How often the host functions are called per benchmark run.
+        const ITERATIONS: i64 = 1000;
+
+        let id = format!("{n}");
+        g.bench_function(&id, |b| {
+            let func_name = format!("run/{n}");
+            let run = instance
+                .get_typed_func::<i64, i64>(&store, &func_name)
+                .unwrap();
+            b.iter(|| {
+                run.call(&mut *store, ITERATIONS).unwrap();
+            })
+        });
+    }
 
     let mut g = c.benchmark_group("execute/call/host");
     let wasm = wat2wasm(include_bytes!("wat/host_calls.wat"));
@@ -1125,7 +1203,20 @@ fn bench_execute_host_calls(c: &mut Criterion) {
     let mut store = Store::new(&engine, ());
     let host0 = Func::wrap(&mut store, || ());
     let host1 = Func::wrap(&mut store, |a: i64| a);
-    let host10 = Func::wrap(
+    let host8 = Func::wrap(
+        &mut store,
+        |_0: i64,
+         _1: i64,
+         _2: i64,
+         _3: i64,
+         _4: i64,
+         _5: i64,
+         _6: i64,
+         _7: i64|
+         -> (i64, i64, i64, i64, i64, i64, i64, i64) { (_0, _1, _2, _3, _4, _5, _6, _7) },
+    );
+    #[allow(clippy::type_complexity)]
+    let host16 = Func::wrap(
         &mut store,
         |_0: i64,
          _1: i64,
@@ -1136,40 +1227,49 @@ fn bench_execute_host_calls(c: &mut Criterion) {
          _6: i64,
          _7: i64,
          _8: i64,
-         _9: i64|
-         -> (i64, i64, i64, i64, i64, i64, i64, i64, i64, i64) {
-            (_0, _1, _2, _3, _4, _5, _6, _7, _8, _9)
+         _9: i64,
+         _10: i64,
+         _11: i64,
+         _12: i64,
+         _13: i64,
+         _14: i64,
+         _15: i64|
+         -> (
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+        ) {
+            (
+                _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15,
+            )
         },
     );
     let mut linker = <Linker<()>>::new(&engine);
-    linker.define("benchmark", "host0", host0).unwrap();
-    linker.define("benchmark", "host1", host1).unwrap();
-    linker.define("benchmark", "host10", host10).unwrap();
+    linker.define("benchmark", "host/0", host0).unwrap();
+    linker.define("benchmark", "host/1", host1).unwrap();
+    linker.define("benchmark", "host/8", host8).unwrap();
+    linker.define("benchmark", "host/16", host16).unwrap();
     let instance = linker
         .instantiate(&mut store, &module)
         .unwrap()
         .ensure_no_start(&mut store)
         .unwrap();
-    g.bench_function("0", |b| {
-        let run = instance.get_typed_func::<i64, i64>(&store, "run0").unwrap();
-        b.iter(|| {
-            run.call(&mut store, ITERATIONS).unwrap();
-        })
-    });
-    g.bench_function("1", |b| {
-        let run = instance.get_typed_func::<i64, i64>(&store, "run1").unwrap();
-        b.iter(|| {
-            run.call(&mut store, ITERATIONS).unwrap();
-        })
-    });
-    g.bench_function("10", |b| {
-        let run = instance
-            .get_typed_func::<i64, i64>(&store, "run10")
-            .unwrap();
-        b.iter(|| {
-            run.call(&mut store, ITERATIONS).unwrap();
-        })
-    });
+    for n in [0, 1, 8, 16] {
+        bench_with(&mut g, &mut store, &instance, n);
+    }
 }
 
 fn bench_execute_fuse(c: &mut Criterion) {

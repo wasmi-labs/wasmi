@@ -1,15 +1,15 @@
-;; The exported `run` function calls the imported `benchmark/host` function `n` times.
-;; The `benchmark/host` function is supposed to be an identity function with arity 0.
-;;
-;; After successful execution the `run` function returns 0.
 (module
-    (import "benchmark" "host/0" (func $host/0))
-    (import "benchmark" "host/1" (func $host/1 (param i64) (result i64)))
-    (import "benchmark" "host/8" (func $host/8
+    (func $identity/0)
+    (func $identity/1 (param i64) (result i64)
+        (local.get 0)
+    )
+    (func $identity/8
         (param i64 i64 i64 i64 i64 i64 i64 i64)
         (result i64 i64 i64 i64 i64 i64 i64 i64)
-    ))
-    (import "benchmark" "host/16" (func $host/16
+        (local.get 0) (local.get 1) (local.get 2) (local.get 3)
+        (local.get 4) (local.get 5) (local.get 6) (local.get 7)
+    )
+    (func $identity/16
         (param
             i64 i64 i64 i64 i64 i64 i64 i64
             i64 i64 i64 i64 i64 i64 i64 i64
@@ -18,7 +18,11 @@
             i64 i64 i64 i64 i64 i64 i64 i64
             i64 i64 i64 i64 i64 i64 i64 i64
         )
-    ))
+        (local.get  0) (local.get  1) (local.get  2) (local.get  3)
+        (local.get  4) (local.get  5) (local.get  6) (local.get  7)
+        (local.get  8) (local.get  9) (local.get 10) (local.get 11)
+        (local.get 12) (local.get 13) (local.get 14) (local.get 15)
+    )
 
     (func (export "run/0") (param $n i64) (result i64)
         (loop $continue
@@ -28,7 +32,7 @@
                     (return (i64.const 0))
                 )
             )
-            (call $host/0)
+            (call $identity/0)
             (local.set $n (i64.sub (local.get $n) (i64.const 1)))
             (br $continue)
         )
@@ -43,7 +47,7 @@
                     (return (i64.const 0))
                 )
             )
-            (drop (call $host/1 (local.get $n)))
+            (drop (call $identity/1 (local.get $n)))
             (local.set $n (i64.sub (local.get $n) (i64.const 1)))
             (br $continue)
         )
@@ -58,13 +62,13 @@
                     (return (i64.const 0))
                 )
             )
-            (call $host/8 ;; takes 8 parameters
+            (call $identity/8 ;; takes 8 parameters
                 (local.get $n) (local.get $n)
                 (local.get $n) (local.get $n)
                 (local.get $n) (local.get $n)
                 (local.get $n) (local.get $n)
             )
-            ;; drop all return values from the host function call
+            ;; drop all return values from the previous function call
             (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
             (local.set $n (i64.sub (local.get $n) (i64.const 1)))
             (br $continue)
@@ -80,13 +84,13 @@
                     (return (i64.const 0))
                 )
             )
-            (call $host/16 ;; takes 16 parameters
+            (call $identity/16 ;; takes 16 parameters
                 (local.get $n) (local.get $n) (local.get $n) (local.get $n)
                 (local.get $n) (local.get $n) (local.get $n) (local.get $n)
                 (local.get $n) (local.get $n) (local.get $n) (local.get $n)
                 (local.get $n) (local.get $n) (local.get $n) (local.get $n)
             )
-            ;; drop all return values from the host function call
+            ;; drop all return values from the previous function call
             (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
             (drop) (drop) (drop) (drop) (drop) (drop) (drop) (drop)
             (local.set $n (i64.sub (local.get $n) (i64.const 1)))
