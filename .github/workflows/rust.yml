@@ -40,9 +40,6 @@ jobs:
             --exclude wasmi_cli
             --exclude wasmi_wasi
             --exclude wasmi_fuzz
-            --exclude wasmi_benches_tiny_keccak
-            --exclude wasmi_benches_reverse_complement
-            --exclude wasmi_benches_regex_redux
       - name: Build (wasm32)
         run: >-
           cargo build
@@ -55,9 +52,6 @@ jobs:
           --exclude wasmi_cli
           --exclude wasmi_wasi
           --exclude wasmi_fuzz
-          --exclude wasmi_benches_tiny_keccak
-          --exclude wasmi_benches_reverse_complement
-          --exclude wasmi_benches_regex_redux
 
   test-asan:
     name: Test (Address Sanitizer)
