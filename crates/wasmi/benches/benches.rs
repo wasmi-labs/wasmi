@@ -1215,6 +1215,7 @@ fn bench_execute_host_calls(c: &mut Criterion) {
          _7: i64|
          -> (i64, i64, i64, i64, i64, i64, i64, i64) { (_0, _1, _2, _3, _4, _5, _6, _7) },
     );
+    #[allow(clippy::type_complexity)]
     let host16 = Func::wrap(
         &mut store,
         |_0: i64,
