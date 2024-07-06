@@ -10,6 +10,7 @@ use wasmi::{Config, StackLimits};
 /// # Panics
 ///
 /// If the benchmark Wasm file could not be opened, read or parsed.
+#[track_caller]
 pub fn load_wasm_from_file(file_name: &str) -> Vec<u8> {
     let mut file = File::open(file_name)
         .unwrap_or_else(|error| panic!("could not open benchmark file {}: {}", file_name, error));
