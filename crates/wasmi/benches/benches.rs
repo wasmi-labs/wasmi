@@ -106,7 +106,7 @@ criterion_group! {
         .warm_up_time(Duration::from_millis(1000));
     targets =
         bench_execute_tiny_keccak,
-        bench_execute_rev_comp,
+        bench_execute_reverse_complement,
         bench_execute_regex_redux,
         bench_execute_counter,
         bench_execute_br_table,
@@ -751,7 +751,7 @@ fn bench_execute_tiny_keccak(c: &mut Criterion) {
     });
 }
 
-fn bench_execute_rev_comp(c: &mut Criterion) {
+fn bench_execute_reverse_complement(c: &mut Criterion) {
     c.bench_function("execute/reverse_complement", |b| {
         let (mut store, instance) =
             load_instance_from_file("benches/rust/reverse_complement/out.wasm");
