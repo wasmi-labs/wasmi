@@ -1127,7 +1127,7 @@ fn bench_execute_flat_calls(c: &mut Criterion) {
         /// How often the host functions are called per benchmark run.
         const ITERATIONS: i64 = 1000;
 
-        let id = format!("execute/call/flat/{n}");
+        let id = format!("{n}");
         g.bench_function(&id, |b| {
             let (mut store, instance) = load_instance_from_wat(wasm);
             let func_name = format!("run/{n}");
@@ -1141,7 +1141,7 @@ fn bench_execute_flat_calls(c: &mut Criterion) {
     }
 
     let wasm = include_bytes!("wat/flat_calls.wat");
-    let mut g = c.benchmark_group("execute/call/host");
+    let mut g = c.benchmark_group("execute/call/flat");
     for n in [0, 1, 8, 16] {
         bench_with(&mut g, wasm, n);
     }
