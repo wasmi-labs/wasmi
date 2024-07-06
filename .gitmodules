@@ -1,3 +1,6 @@
 [submodule "crates/wasmi/tests/spec/testsuite"]
 	path = crates/wasmi/tests/spec/testsuite
 	url = https://github.com/WebAssembly/testsuite.git
+[submodule "crates/wasmi/benches/rust"]
+	path = crates/wasmi/benches/rust
+	url = https://github.com/wasmi-labs/rust-benchmarks
