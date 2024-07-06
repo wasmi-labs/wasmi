@@ -113,7 +113,6 @@ criterion_group! {
         bench_execute_trunc_f2i,
         bench_execute_global_bump,
         bench_execute_global_const,
-        bench_execute_recursive_ok,
         bench_execute_recursive_scan,
         bench_execute_recursive_trap,
         bench_execute_flat_calls,
@@ -1035,18 +1034,6 @@ fn bench_execute_global_const(c: &mut Criterion) {
         b.iter(|| {
             let result = run.call(&mut store, ITERATIONS).unwrap();
             assert_eq!(result, ITERATIONS);
-        })
-    });
-}
-
-fn bench_execute_recursive_ok(c: &mut Criterion) {
-    const DEPTH: i32 = 8000;
-    c.bench_function("execute/call/rec", |b| {
-        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/recursive_ok.wat"));
-        let run = instance.get_typed_func::<i32, i32>(&store, "call").unwrap();
-        b.iter(|| {
-            let result = run.call(&mut store, DEPTH).unwrap();
-            assert_eq!(result, 0);
         })
     });
 }
