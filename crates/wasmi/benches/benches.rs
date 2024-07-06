@@ -1125,7 +1125,19 @@ fn bench_execute_host_calls(c: &mut Criterion) {
     let mut store = Store::new(&engine, ());
     let host0 = Func::wrap(&mut store, || ());
     let host1 = Func::wrap(&mut store, |a: i64| a);
-    let host10 = Func::wrap(
+    let host8 = Func::wrap(
+        &mut store,
+        |_0: i64,
+         _1: i64,
+         _2: i64,
+         _3: i64,
+         _4: i64,
+         _5: i64,
+         _6: i64,
+         _7: i64|
+         -> (i64, i64, i64, i64, i64, i64, i64, i64) { (_0, _1, _2, _3, _4, _5, _6, _7) },
+    );
+    let host16 = Func::wrap(
         &mut store,
         |_0: i64,
          _1: i64,
@@ -1136,35 +1148,73 @@ fn bench_execute_host_calls(c: &mut Criterion) {
          _6: i64,
          _7: i64,
          _8: i64,
-         _9: i64|
-         -> (i64, i64, i64, i64, i64, i64, i64, i64, i64, i64) {
-            (_0, _1, _2, _3, _4, _5, _6, _7, _8, _9)
+         _9: i64,
+         _10: i64,
+         _11: i64,
+         _12: i64,
+         _13: i64,
+         _14: i64,
+         _15: i64|
+         -> (
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+        ) {
+            (
+                _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15,
+            )
         },
     );
     let mut linker = <Linker<()>>::new(&engine);
-    linker.define("benchmark", "host0", host0).unwrap();
-    linker.define("benchmark", "host1", host1).unwrap();
-    linker.define("benchmark", "host10", host10).unwrap();
+    linker.define("benchmark", "host/0", host0).unwrap();
+    linker.define("benchmark", "host/1", host1).unwrap();
+    linker.define("benchmark", "host/8", host8).unwrap();
+    linker.define("benchmark", "host/16", host16).unwrap();
     let instance = linker
         .instantiate(&mut store, &module)
         .unwrap()
         .ensure_no_start(&mut store)
         .unwrap();
     g.bench_function("0", |b| {
-        let run = instance.get_typed_func::<i64, i64>(&store, "run0").unwrap();
+        let run = instance
+            .get_typed_func::<i64, i64>(&store, "run/0")
+            .unwrap();
         b.iter(|| {
             run.call(&mut store, ITERATIONS).unwrap();
         })
     });
     g.bench_function("1", |b| {
-        let run = instance.get_typed_func::<i64, i64>(&store, "run1").unwrap();
+        let run = instance
+            .get_typed_func::<i64, i64>(&store, "run/1")
+            .unwrap();
         b.iter(|| {
             run.call(&mut store, ITERATIONS).unwrap();
         })
     });
-    g.bench_function("10", |b| {
+    g.bench_function("8", |b| {
         let run = instance
-            .get_typed_func::<i64, i64>(&store, "run10")
+            .get_typed_func::<i64, i64>(&store, "run/8")
+            .unwrap();
+        b.iter(|| {
+            run.call(&mut store, ITERATIONS).unwrap();
+        })
+    });
+    g.bench_function("16", |b| {
+        let run = instance
+            .get_typed_func::<i64, i64>(&store, "run/16")
             .unwrap();
         b.iter(|| {
             run.call(&mut store, ITERATIONS).unwrap();
