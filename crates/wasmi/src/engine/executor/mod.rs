@@ -11,7 +11,6 @@ use crate::{
         CallParams,
         CallResults,
         EngineInner,
-        EngineResources,
         ResumableCallBase,
         ResumableInvocation,
     },
@@ -25,6 +24,8 @@ use crate::{
 
 #[cfg(doc)]
 use crate::engine::StackLimits;
+
+use super::code_map::CodeMap;
 
 mod cache;
 mod instrs;
@@ -48,7 +49,7 @@ impl EngineInner {
     where
         Results: CallResults,
     {
-        let res = self.res.read();
+        let res = self.code_map.read();
         let mut stack = self.stacks.lock().reuse_or_new();
         let results = EngineExecutor::new(&res, &mut stack)
             .execute_root_func(ctx.store, func, params, results)
@@ -78,10 +79,10 @@ impl EngineInner {
         Results: CallResults,
     {
         let store = ctx.store;
-        let res = self.res.read();
+        let code_map = self.code_map.read();
         let mut stack = self.stacks.lock().reuse_or_new();
-        let results =
-            EngineExecutor::new(&res, &mut stack).execute_root_func(store, func, params, results);
+        let results = EngineExecutor::new(&code_map, &mut stack)
+            .execute_root_func(store, func, params, results);
         match results {
             Ok(results) => {
                 self.stacks.lock().recycle(stack);
@@ -126,10 +127,10 @@ impl EngineInner {
     where
         Results: CallResults,
     {
-        let res = self.res.read();
+        let code_map = self.code_map.read();
         let host_func = invocation.host_func();
         let caller_results = invocation.caller_results();
-        let results = EngineExecutor::new(&res, &mut invocation.stack).resume_func(
+        let results = EngineExecutor::new(&code_map, &mut invocation.stack).resume_func(
             ctx.store,
             host_func,
             params,
@@ -161,7 +162,7 @@ impl EngineInner {
 #[derive(Debug)]
 pub struct EngineExecutor<'engine> {
     /// Shared and reusable generic engine resources.
-    res: &'engine EngineResources,
+    code_map: &'engine CodeMap,
     /// The value and call stacks.
     stack: &'engine mut Stack,
 }
@@ -172,8 +173,8 @@ fn do_nothing<T>(_: &mut T) {}
 
 impl<'engine> EngineExecutor<'engine> {
     /// Creates a new [`EngineExecutor`] with the given [`StackLimits`].
-    fn new(res: &'engine EngineResources, stack: &'engine mut Stack) -> Self {
-        Self { res, stack }
+    fn new(code_map: &'engine CodeMap, stack: &'engine mut Stack) -> Self {
+        Self { code_map, stack }
     }
 
     /// Executes the given [`Func`] using the given `params`.
@@ -204,7 +205,6 @@ impl<'engine> EngineExecutor<'engine> {
                 let instance = *wasm_func.instance();
                 let compiled_func = wasm_func.func_body();
                 let compiled_func = self
-                    .res
                     .code_map
                     .get(Some(store.inner.fuel_mut()), compiled_func)?;
                 let (mut uninit_params, offsets) = self
@@ -288,7 +288,7 @@ impl<'engine> EngineExecutor<'engine> {
     /// When encountering a Wasm or host trap during execution.
     #[inline(always)]
     fn execute_func<T>(&mut self, store: &mut Store<T>) -> Result<(), Error> {
-        execute_instrs(store, self.stack, self.res)
+        execute_instrs(store, self.stack, self.code_map)
     }
 
     /// Convenience forwarder to [`dispatch_host_func`].

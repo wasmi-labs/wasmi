@@ -289,7 +289,7 @@ impl<'engine> Executor<'engine> {
         func: CompiledFunc,
         mut instance: Option<Instance>,
     ) -> Result<(), Error> {
-        let func = self.res.code_map.get(Some(store.fuel_mut()), func)?;
+        let func = self.code_map.get(Some(store.fuel_mut()), func)?;
         let mut called = self.dispatch_compiled_func::<C>(results, func)?;
         match <C as CallContext>::KIND {
             CallKind::Nested => {

@@ -474,8 +474,15 @@ impl Engine {
 pub struct EngineInner {
     /// The [`Config`] of the engine.
     config: Config,
-    /// Engine resources shared across multiple engine executors.
-    res: RwLock<EngineResources>,
+    /// Stores information about all compiled functions.
+    code_map: RwLock<CodeMap>,
+    /// Deduplicated function types.
+    ///
+    /// # Note
+    ///
+    /// The engine deduplicates function types to make the equality
+    /// comparison very fast. This helps to speed up indirect calls.
+    func_types: RwLock<FuncTypeRegistry>,
     /// Reusable allocation stacks.
     allocs: Mutex<ReusableAllocationStack>,
     /// Reusable engine stacks for Wasm execution.
@@ -590,9 +597,11 @@ impl EngineStacks {
 impl EngineInner {
     /// Creates a new [`EngineInner`] with the given [`Config`].
     fn new(config: &Config) -> Self {
+        let engine_idx = EngineIdx::new();
         Self {
             config: *config,
-            res: RwLock::new(EngineResources::new(config)),
+            code_map: RwLock::new(CodeMap::new(config)),
+            func_types: RwLock::new(FuncTypeRegistry::new(engine_idx)),
             allocs: Mutex::new(ReusableAllocationStack::default()),
             stacks: Mutex::new(EngineStacks::new(config)),
         }
@@ -605,7 +614,7 @@ impl EngineInner {
 
     /// Allocates a new function type to the [`EngineInner`].
     fn alloc_func_type(&self, func_type: FuncType) -> DedupFuncType {
-        self.res.write().func_types.alloc_func_type(func_type)
+        self.func_types.write().alloc_func_type(func_type)
     }
 
     /// Resolves a deduplicated function type into a [`FuncType`] entity.
@@ -618,14 +627,14 @@ impl EngineInner {
     where
         F: FnOnce(&FuncType) -> R,
     {
-        f(self.res.read().func_types.resolve_func_type(func_type))
+        f(self.func_types.read().resolve_func_type(func_type))
     }
 
     /// Allocates a new uninitialized [`CompiledFunc`] to the [`EngineInner`].
     ///
     /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
     fn alloc_func(&self) -> CompiledFunc {
-        self.res.write().code_map.alloc_func()
+        self.code_map.write().alloc_func()
     }
 
     /// Returns reusable [`FuncTranslatorAllocations`] from the [`Engine`].
@@ -690,10 +699,7 @@ impl EngineInner {
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
     fn init_func(&self, compiled_func: CompiledFunc, func_entity: CompiledFuncEntity) {
-        self.res
-            .write()
-            .code_map
-            .init_func(compiled_func, func_entity)
+        self.code_map.write().init_func(compiled_func, func_entity)
     }
 
     /// Initializes the uninitialized [`CompiledFunc`] for the [`Engine`].
@@ -715,9 +721,8 @@ impl EngineInner {
         module: &ModuleHeader,
         func_to_validate: Option<FuncToValidate<ValidatorResources>>,
     ) {
-        self.res
+        self.code_map
             .write()
-            .code_map
             .init_lazy_func(func, func_idx, bytes, module, func_to_validate)
     }
 
@@ -732,7 +737,7 @@ impl EngineInner {
         F: FnOnce(&CompiledFuncEntity) -> R,
     {
         // Note: We use `None` so this test-only function will never charge for compilation fuel.
-        Ok(f(self.res.read().code_map.get(None, func)?))
+        Ok(f(self.code_map.read().get(None, func)?))
     }
 
     /// Returns the [`Instruction`] of `func` at `index`.
@@ -781,32 +786,5 @@ impl EngineInner {
     /// Recycles the given [`Stack`].
     fn recycle_stack(&self, stack: Stack) {
         self.stacks.lock().recycle(stack)
-    }
-}
-
-/// Engine resources that are immutable during function execution.
-///
-/// Can be shared by multiple engine executors.
-#[derive(Debug)]
-pub struct EngineResources {
-    /// Stores information about all compiled functions.
-    code_map: CodeMap,
-    /// Deduplicated function types.
-    ///
-    /// # Note
-    ///
-    /// The engine deduplicates function types to make the equality
-    /// comparison very fast. This helps to speed up indirect calls.
-    func_types: FuncTypeRegistry,
-}
-
-impl EngineResources {
-    /// Creates a new [`EngineResources`].
-    fn new(config: &Config) -> Self {
-        let engine_idx = EngineIdx::new();
-        Self {
-            code_map: CodeMap::new(config),
-            func_types: FuncTypeRegistry::new(engine_idx),
-        }
     }
 }
