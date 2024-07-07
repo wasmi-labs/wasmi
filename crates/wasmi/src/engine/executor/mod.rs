@@ -4,6 +4,7 @@ use self::{
     instrs::{dispatch_host_func, execute_instrs},
     stack::CallFrame,
 };
+use super::{code_map::CodeMap, func_types::FuncTypeRegistry};
 use crate::{
     engine::{
         bytecode::{Register, RegisterSpan},
@@ -22,7 +23,6 @@ use crate::{
     StoreContextMut,
 };
 use spin::RwLock;
-use super::{code_map::CodeMap, func_types::FuncTypeRegistry};
 
 #[cfg(doc)]
 use crate::engine::StackLimits;
