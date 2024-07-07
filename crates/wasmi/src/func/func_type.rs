@@ -157,23 +157,26 @@ impl FuncTypeInner {
     }
 
     /// Returns the number of parameter types of the function type.
-    pub fn len_params(&self) -> usize {
+    pub fn len_params(&self) -> u16 {
         match self {
-            FuncTypeInner::Inline { len_params, .. } => usize::from(*len_params),
-            FuncTypeInner::Big { len_params, .. } => *len_params as usize,
+            FuncTypeInner::Inline { len_params, .. } => u16::from(*len_params),
+            FuncTypeInner::Big { len_params, .. } => *len_params,
         }
     }
 
     /// Returns the number of result types of the function type.
-    pub fn len_results(&self) -> usize {
+    pub fn len_results(&self) -> u16 {
         match self {
-            FuncTypeInner::Inline { len_results, .. } => usize::from(*len_results),
+            FuncTypeInner::Inline { len_results, .. } => u16::from(*len_results),
             FuncTypeInner::Big {
                 len_params,
                 params_results,
             } => {
-                let len_buffer = params_results.len();
-                let len_params = *len_params as usize;
+                // Note: this cast is safe since the number of parameters and results
+                //       are both bounded to 1000 maximum and `params_results`
+                //       thus contains 2000 items at most.
+                let len_buffer = params_results.len() as u16;
+                let len_params = *len_params;
                 len_buffer - len_params
             }
         }
@@ -241,12 +244,12 @@ impl FuncType {
     }
 
     /// Returns the number of parameter types of the function type.
-    pub fn len_params(&self) -> usize {
+    pub fn len_params(&self) -> u16 {
         self.inner.len_params()
     }
 
     /// Returns the number of result types of the function type.
-    pub fn len_results(&self) -> usize {
+    pub fn len_results(&self) -> u16 {
         self.inner.len_results()
     }
 

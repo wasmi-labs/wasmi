@@ -33,15 +33,15 @@ pub fn dispatch_host_func<T>(
     value_stack: &mut ValueStack,
     host_func: HostFuncEntity,
     instance: Option<&Instance>,
-) -> Result<(usize, usize), Error> {
+) -> Result<(u16, u16), Error> {
     let len_params = host_func.len_params();
     let len_results = host_func.len_results();
     let max_inout = len_params.max(len_results);
     let values = value_stack.as_slice_mut();
     let params_results = FuncParams::new(
-        values.split_at_mut(values.len() - max_inout).1,
-        len_params,
-        len_results,
+        values.split_at_mut(values.len() - usize::from(max_inout)).1,
+        usize::from(len_params),
+        usize::from(len_results),
     );
     let trampoline = store.resolve_trampoline(host_func.trampoline()).clone();
     trampoline
@@ -52,7 +52,7 @@ pub fn dispatch_host_func<T>(
             //       called host function. Since the host function failed we
             //       need to clean up the temporary buffer values here.
             //       This is required for resumable calls to work properly.
-            value_stack.drop(max_inout);
+            value_stack.drop(usize::from(max_inout));
         })?;
     Ok((len_params, len_results))
 }
@@ -485,8 +485,8 @@ impl<'engine> Executor<'engine> {
         func: &Func,
         host_func: HostFuncEntity,
     ) -> Result<(), Error> {
-        let len_params = host_func.len_params();
-        let len_results = host_func.len_results();
+        let len_params = usize::from(host_func.len_params());
+        let len_results = usize::from(host_func.len_results());
         let max_inout = len_params.max(len_results);
         let instance = *self.stack.calls.instance_expect();
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
@@ -536,7 +536,7 @@ impl<'engine> Executor<'engine> {
         store: &mut Store<T>,
         host_func: HostFuncEntity,
         instance: &Instance,
-    ) -> Result<(usize, usize), Error> {
+    ) -> Result<(u16, u16), Error> {
         dispatch_host_func(store, &mut self.stack.values, host_func, Some(instance))
     }
 

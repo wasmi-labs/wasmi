@@ -102,9 +102,9 @@ impl From<HostFuncEntity> for FuncEntity {
 #[derive(Debug, Copy, Clone)]
 pub struct HostFuncEntity {
     /// The number of parameters of the [`HostFuncEntity`].
-    len_params: usize,
+    len_params: u16,
     /// The number of results of the [`HostFuncEntity`].
-    len_results: usize,
+    len_results: u16,
     /// The function type of the host function.
     ty: DedupFuncType,
     /// A reference to the trampoline of the host function.
@@ -126,12 +126,12 @@ impl HostFuncEntity {
     }
 
     /// Returns the number of parameters of the [`HostFuncEntity`].
-    pub fn len_params(&self) -> usize {
+    pub fn len_params(&self) -> u16 {
         self.len_params
     }
 
     /// Returns the number of results of the [`HostFuncEntity`].
-    pub fn len_results(&self) -> usize {
+    pub fn len_results(&self) -> u16 {
         self.len_results
     }
 

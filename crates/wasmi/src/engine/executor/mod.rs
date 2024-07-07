@@ -233,7 +233,10 @@ impl<'engine> EngineExecutor<'engine> {
                 let len_params = host_func.len_params();
                 let len_results = host_func.len_results();
                 let max_inout = len_params.max(len_results);
-                let uninit = self.stack.values.extend_by(max_inout, do_nothing)?;
+                let uninit = self
+                    .stack
+                    .values
+                    .extend_by(usize::from(max_inout), do_nothing)?;
                 for (uninit, param) in uninit.iter_mut().zip(params.call_params()) {
                     uninit.write(param);
                 }
