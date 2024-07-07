@@ -22,7 +22,7 @@ use super::{
     StoreContext,
     Stored,
 };
-use crate::{collections::arena::ArenaIndex, engine::ResumableCall, Error, Val};
+use crate::{collections::arena::ArenaIndex, engine::ResumableCall, Engine, Error, Val};
 use core::{fmt, fmt::Debug, num::NonZeroU32};
 use std::{boxed::Box, sync::Arc};
 
@@ -114,6 +114,19 @@ pub struct HostFuncEntity {
 impl HostFuncEntity {
     /// Creates a new [`HostFuncEntity`].
     pub fn new(len_params: usize, len_results: usize, ty: DedupFuncType, func: Trampoline) -> Self {
+        Self {
+            len_params,
+            len_results,
+            ty,
+            func,
+        }
+    }
+
+    /// Creates a new [`HostFuncEntity`].
+    pub fn new2(engine: &Engine, ty: &FuncType, func: Trampoline) -> Self {
+        let len_params = ty.len_params();
+        let len_results = ty.len_results();
+        let ty = engine.alloc_func_type(ty.clone());
         Self {
             len_params,
             len_results,
