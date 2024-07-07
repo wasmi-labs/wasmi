@@ -11,7 +11,6 @@ use crate::{
         CallParams,
         CallResults,
         EngineInner,
-        EngineResources,
         ResumableCallBase,
         ResumableInvocation,
     },
@@ -22,6 +21,8 @@ use crate::{
     Store,
     StoreContextMut,
 };
+use spin::RwLock;
+use super::{code_map::CodeMap, func_types::FuncTypeRegistry};
 
 #[cfg(doc)]
 use crate::engine::StackLimits;
@@ -48,9 +49,10 @@ impl EngineInner {
     where
         Results: CallResults,
     {
-        let res = self.res.read();
+        let code_map = self.code_map.read();
+        let func_types = &self.func_types;
         let mut stack = self.stacks.lock().reuse_or_new();
-        let results = EngineExecutor::new(&res, &mut stack)
+        let results = EngineExecutor::new(&code_map, func_types, &mut stack)
             .execute_root_func(ctx.store, func, params, results)
             .map_err(|error| match error.into_resumable() {
                 Ok(error) => error.into_error(),
@@ -78,10 +80,11 @@ impl EngineInner {
         Results: CallResults,
     {
         let store = ctx.store;
-        let res = self.res.read();
+        let code_map = self.code_map.read();
+        let func_types = &self.func_types;
         let mut stack = self.stacks.lock().reuse_or_new();
-        let results =
-            EngineExecutor::new(&res, &mut stack).execute_root_func(store, func, params, results);
+        let results = EngineExecutor::new(&code_map, func_types, &mut stack)
+            .execute_root_func(store, func, params, results);
         match results {
             Ok(results) => {
                 self.stacks.lock().recycle(stack);
@@ -126,16 +129,12 @@ impl EngineInner {
     where
         Results: CallResults,
     {
-        let res = self.res.read();
+        let code_map = self.code_map.read();
+        let func_types = &self.func_types;
         let host_func = invocation.host_func();
         let caller_results = invocation.caller_results();
-        let results = EngineExecutor::new(&res, &mut invocation.stack).resume_func(
-            ctx.store,
-            host_func,
-            params,
-            caller_results,
-            results,
-        );
+        let results = EngineExecutor::new(&code_map, func_types, &mut invocation.stack)
+            .resume_func(ctx.store, host_func, params, caller_results, results);
         match results {
             Ok(results) => {
                 self.stacks.lock().recycle(invocation.take_stack());
@@ -161,7 +160,9 @@ impl EngineInner {
 #[derive(Debug)]
 pub struct EngineExecutor<'engine> {
     /// Shared and reusable generic engine resources.
-    res: &'engine EngineResources,
+    code_map: &'engine CodeMap,
+    /// Stores and resolves deduplicated function types.
+    func_types: &'engine RwLock<FuncTypeRegistry>,
     /// The value and call stacks.
     stack: &'engine mut Stack,
 }
@@ -172,8 +173,16 @@ fn do_nothing<T>(_: &mut T) {}
 
 impl<'engine> EngineExecutor<'engine> {
     /// Creates a new [`EngineExecutor`] with the given [`StackLimits`].
-    fn new(res: &'engine EngineResources, stack: &'engine mut Stack) -> Self {
-        Self { res, stack }
+    fn new(
+        code_map: &'engine CodeMap,
+        func_types: &'engine RwLock<FuncTypeRegistry>,
+        stack: &'engine mut Stack,
+    ) -> Self {
+        Self {
+            code_map,
+            func_types,
+            stack,
+        }
     }
 
     /// Executes the given [`Func`] using the given `params`.
@@ -204,7 +213,6 @@ impl<'engine> EngineExecutor<'engine> {
                 let instance = *wasm_func.instance();
                 let compiled_func = wasm_func.func_body();
                 let compiled_func = self
-                    .res
                     .code_map
                     .get(Some(store.inner.fuel_mut()), compiled_func)?;
                 let (mut uninit_params, offsets) = self
@@ -227,16 +235,13 @@ impl<'engine> EngineExecutor<'engine> {
             }
             FuncEntity::Host(host_func) => {
                 // The host function signature is required for properly
-                // adjusting, inspecting and manipulating the value stack.
-                let (input_types, output_types) = self
-                    .res
-                    .func_types
-                    .resolve_func_type(host_func.ty_dedup())
-                    .params_results();
-                // In case the host function returns more values than it takes
+                // adjusting, inspecting and manipulating the value stack.                // In case the host function returns more values than it takes
                 // we are required to extend the value stack.
-                let len_params = input_types.len();
-                let len_results = output_types.len();
+                let (len_params, len_results) = self
+                    .func_types
+                    .read()
+                    .resolve_func_type(host_func.ty_dedup())
+                    .len_params_results();
                 let max_inout = len_params.max(len_results);
                 let uninit = self.stack.values.extend_by(max_inout, do_nothing)?;
                 for (uninit, param) in uninit.iter_mut().zip(params.call_params()) {
@@ -293,7 +298,7 @@ impl<'engine> EngineExecutor<'engine> {
     /// When encountering a Wasm or host trap during execution.
     #[inline(always)]
     fn execute_func<T>(&mut self, store: &mut Store<T>) -> Result<(), Error> {
-        execute_instrs(store, self.stack, self.res)
+        execute_instrs(store, self.stack, self.code_map, self.func_types)
     }
 
     /// Convenience forwarder to [`dispatch_host_func`].
@@ -305,7 +310,7 @@ impl<'engine> EngineExecutor<'engine> {
     ) -> Result<(), Error> {
         dispatch_host_func(
             store,
-            &self.res.func_types,
+            self.func_types,
             &mut self.stack.values,
             host_func,
             None,

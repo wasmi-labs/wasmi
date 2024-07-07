@@ -8,7 +8,6 @@ use crate::{
         func_types::FuncTypeRegistry,
         CompiledFunc,
         CompiledFuncEntity,
-        DedupFuncType,
         FuncParams,
     },
     func::{FuncEntity, HostFuncEntity},
@@ -20,18 +19,8 @@ use crate::{
     Store,
 };
 use core::array;
+use spin::RwLock;
 use std::fmt;
-
-impl FuncTypeRegistry {
-    /// Returns the maximum value of number of parameters and results for the given [`DedupFuncType`].
-    #[inline]
-    fn len_params_results(&self, func_ty: &DedupFuncType) -> (usize, usize) {
-        let (input_types, output_types) = self.resolve_func_type(func_ty).params_results();
-        let len_inputs = input_types.len();
-        let len_outputs = output_types.len();
-        (len_inputs, len_outputs)
-    }
-}
 
 /// Dispatches and executes the host function.
 ///
@@ -43,12 +32,15 @@ impl FuncTypeRegistry {
 #[inline(always)]
 pub fn dispatch_host_func<T>(
     store: &mut Store<T>,
-    func_types: &FuncTypeRegistry,
+    func_types: &RwLock<FuncTypeRegistry>,
     value_stack: &mut ValueStack,
     host_func: HostFuncEntity,
     instance: Option<&Instance>,
 ) -> Result<(usize, usize), Error> {
-    let (len_inputs, len_outputs) = func_types.len_params_results(host_func.ty_dedup());
+    let (len_inputs, len_outputs) = func_types
+        .read()
+        .resolve_func_type(host_func.ty_dedup())
+        .len_params_results();
     let max_inout = len_inputs.max(len_outputs);
     let values = value_stack.as_slice_mut();
     let params_results = FuncParams::new(
@@ -302,7 +294,7 @@ impl<'engine> Executor<'engine> {
         func: CompiledFunc,
         mut instance: Option<Instance>,
     ) -> Result<(), Error> {
-        let func = self.res.code_map.get(Some(store.fuel_mut()), func)?;
+        let func = self.code_map.get(Some(store.fuel_mut()), func)?;
         let mut called = self.dispatch_compiled_func::<C>(results, func)?;
         match <C as CallContext>::KIND {
             CallKind::Nested => {
@@ -498,8 +490,11 @@ impl<'engine> Executor<'engine> {
         func: &Func,
         host_func: HostFuncEntity,
     ) -> Result<(), Error> {
-        let (len_params, len_results) =
-            self.res.func_types.len_params_results(host_func.ty_dedup());
+        let (len_params, len_results) = self
+            .func_types
+            .read()
+            .resolve_func_type(host_func.ty_dedup())
+            .len_params_results();
         let max_inout = len_params.max(len_results);
         let instance = *self.stack.calls.instance_expect();
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
@@ -552,7 +547,7 @@ impl<'engine> Executor<'engine> {
     ) -> Result<(usize, usize), Error> {
         dispatch_host_func(
             store,
-            &self.res.func_types,
+            self.func_types,
             &mut self.stack.values,
             host_func,
             Some(instance),
