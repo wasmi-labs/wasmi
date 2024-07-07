@@ -230,6 +230,12 @@ impl FuncType {
         self.inner.len_results()
     }
 
+    /// Returns the number of parameter and result types of the function type.
+    pub(crate) fn len_params_results(&self) -> (usize, usize) {
+        let (params, results) = self.inner.params_results();
+        (params.len(), results.len())
+    }
+
     /// Returns the pair of parameter and result types of the function type.
     pub(crate) fn params_results(&self) -> (&[ValType], &[ValType]) {
         self.inner.params_results()
