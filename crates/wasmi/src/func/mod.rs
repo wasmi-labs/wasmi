@@ -113,7 +113,7 @@ pub struct HostFuncEntity {
 
 impl HostFuncEntity {
     /// Creates a new [`HostFuncEntity`].
-    pub fn new2(engine: &Engine, ty: &FuncType, func: Trampoline) -> Self {
+    pub fn new(engine: &Engine, ty: &FuncType, func: Trampoline) -> Self {
         let len_params = ty.len_params();
         let len_results = ty.len_results();
         let ty = engine.alloc_func_type(ty.clone());
@@ -357,7 +357,7 @@ impl Func {
         let host_func = HostFuncTrampolineEntity::new(ty.clone(), func);
         let trampoline = host_func.trampoline().clone();
         let func = ctx.as_context_mut().store.alloc_trampoline(trampoline);
-        let host_func = HostFuncEntity::new2(ctx.as_context().engine(), &ty, func);
+        let host_func = HostFuncEntity::new(ctx.as_context().engine(), &ty, func);
         ctx.as_context_mut()
             .store
             .inner
@@ -373,7 +373,7 @@ impl Func {
         let ty = host_func.func_type();
         let trampoline = host_func.trampoline().clone();
         let func = ctx.as_context_mut().store.alloc_trampoline(trampoline);
-        let host_func = HostFuncEntity::new2(ctx.as_context().engine(), ty, func);
+        let host_func = HostFuncEntity::new(ctx.as_context().engine(), ty, func);
         ctx.as_context_mut()
             .store
             .inner

@@ -308,7 +308,7 @@ impl<T> Definition<T> {
                     .store
                     .alloc_trampoline(host_func.trampoline().clone());
                 let ty = host_func.func_type();
-                let entity = HostFuncEntity::new2(ctx.as_context().engine(), ty, trampoline);
+                let entity = HostFuncEntity::new(ctx.as_context().engine(), ty, trampoline);
                 let func = ctx
                     .as_context_mut()
                     .store
