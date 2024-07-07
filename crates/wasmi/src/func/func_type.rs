@@ -149,6 +149,14 @@ impl FuncTypeInner {
         }
     }
 
+    /// Returns the number of parameter types of the function type.
+    pub fn len_params(&self) -> usize {
+        match self {
+            FuncTypeInner::Inline { len_params, .. } => usize::from(*len_params),
+            FuncTypeInner::Big { len_params, .. } => *len_params as usize,
+        }
+    }
+
     /// Returns the number of result types of the function type.
     pub fn len_results(&self) -> usize {
         match self {
@@ -223,6 +231,11 @@ impl FuncType {
     /// Returns the result types of the function type.
     pub fn results(&self) -> &[ValType] {
         self.inner.results()
+    }
+
+    /// Returns the number of parameter types of the function type.
+    pub fn len_params(&self) -> usize {
+        self.inner.len_params()
     }
 
     /// Returns the number of result types of the function type.

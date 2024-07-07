@@ -307,11 +307,11 @@ impl<T> Definition<T> {
                     .as_context_mut()
                     .store
                     .alloc_trampoline(host_func.trampoline().clone());
-                let ty_dedup = ctx
-                    .as_context()
-                    .engine()
-                    .alloc_func_type(host_func.func_type().clone());
-                let entity = HostFuncEntity::new(ty_dedup, trampoline);
+                let ty = host_func.func_type();
+                let len_params = ty.len_params();
+                let len_results = ty.len_results();
+                let ty_dedup = ctx.as_context().engine().alloc_func_type(ty.clone());
+                let entity = HostFuncEntity::new(len_params, len_results, ty_dedup, trampoline);
                 let func = ctx
                     .as_context_mut()
                     .store

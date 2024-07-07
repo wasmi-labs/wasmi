@@ -101,6 +101,10 @@ impl From<HostFuncEntity> for FuncEntity {
 /// A host function reference and its function type.
 #[derive(Debug, Copy, Clone)]
 pub struct HostFuncEntity {
+    /// The number of parameters of the [`HostFuncEntity`].
+    len_params: usize,
+    /// The number of results of the [`HostFuncEntity`].
+    len_results: usize,
     /// The function type of the host function.
     ty: DedupFuncType,
     /// A reference to the trampoline of the host function.
@@ -109,8 +113,23 @@ pub struct HostFuncEntity {
 
 impl HostFuncEntity {
     /// Creates a new [`HostFuncEntity`].
-    pub fn new(ty: DedupFuncType, func: Trampoline) -> Self {
-        Self { ty, func }
+    pub fn new(len_params: usize, len_results: usize, ty: DedupFuncType, func: Trampoline) -> Self {
+        Self {
+            len_params,
+            len_results,
+            ty,
+            func,
+        }
+    }
+
+    /// Returns the number of parameters of the [`HostFuncEntity`].
+    pub fn len_params(&self) -> usize {
+        self.len_params
+    }
+
+    /// Returns the number of results of the [`HostFuncEntity`].
+    pub fn len_results(&self) -> usize {
+        self.len_results
     }
 
     /// Returns the signature of the host function.
@@ -333,6 +352,8 @@ impl Func {
         func: impl Fn(Caller<'_, T>, &[Val], &mut [Val]) -> Result<(), Error> + Send + Sync + 'static,
     ) -> Self {
         let engine = ctx.as_context().store.engine();
+        let len_params = ty.len_params();
+        let len_results = ty.len_results();
         let host_func = HostFuncTrampolineEntity::new(ty, func);
         let ty_dedup = engine.alloc_func_type(host_func.func_type().clone());
         let trampoline = host_func.trampoline().clone();
@@ -340,7 +361,7 @@ impl Func {
         ctx.as_context_mut()
             .store
             .inner
-            .alloc_func(HostFuncEntity::new(ty_dedup, func).into())
+            .alloc_func(HostFuncEntity::new(len_params, len_results, ty_dedup, func).into())
     }
 
     /// Creates a new host function from the given closure.
@@ -350,13 +371,16 @@ impl Func {
     ) -> Self {
         let engine = ctx.as_context().store.engine();
         let host_func = HostFuncTrampolineEntity::wrap(func);
+        let ty = host_func.func_type();
+        let len_params = ty.len_params();
+        let len_results = ty.len_results();
         let ty_dedup = engine.alloc_func_type(host_func.func_type().clone());
         let trampoline = host_func.trampoline().clone();
         let func = ctx.as_context_mut().store.alloc_trampoline(trampoline);
         ctx.as_context_mut()
             .store
             .inner
-            .alloc_func(HostFuncEntity::new(ty_dedup, func).into())
+            .alloc_func(HostFuncEntity::new(len_params, len_results, ty_dedup, func).into())
     }
 
     /// Returns the signature of the function.
