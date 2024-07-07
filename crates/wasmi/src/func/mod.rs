@@ -242,7 +242,6 @@ impl<T> HostFuncTrampolineEntity<T> {
             func(caller, params, results)?;
             Ok(func_results.encode_results_from_slice(results).unwrap())
         });
-        // let ty = engine.alloc_func_type(ty.clone());
         Self { ty, trampoline }
     }
 
