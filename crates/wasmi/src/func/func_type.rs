@@ -28,7 +28,7 @@ pub enum FuncTypeInner {
     /// Stores the value types of the parameters and results on the heap.
     Big {
         /// The number of parameters.
-        len_params: u32,
+        len_params: u16,
         /// Combined parameter and result types allocated on the heap.
         params_results: Arc<[ValType]>,
     },
@@ -51,6 +51,12 @@ impl FuncTypeInner {
     #[cfg(target_pointer_width = "64")]
     const INLINE_SIZE: usize = 21;
 
+    /// The maximum number of parameter types allowed of a [`FuncType`].
+    const MAX_LEN_PARAMS: usize = 1_000;
+
+    /// The maximum number of result types allowed of a [`FuncType`].
+    const MAX_LEN_RESULTS: usize = 1_000;
+
     /// Creates a new [`FuncTypeInner`].
     ///
     /// # Panics
@@ -65,15 +71,16 @@ impl FuncTypeInner {
     {
         let mut params = params.into_iter();
         let mut results = results.into_iter();
-        let len_params = params.len();
-        let len_results = results.len();
         if let Some(small) = Self::try_new_small(&mut params, &mut results) {
             return small;
         }
-        let mut params_results = params.collect::<Vec<_>>();
-        let len_params = u32::try_from(params_results.len()).unwrap_or_else(|_| {
+        let len_params = params.len();
+        let len_results = results.len();
+        if !(len_params <= Self::MAX_LEN_PARAMS && len_results <= Self::MAX_LEN_RESULTS) {
             panic!("out of bounds parameters (={len_params}) and results (={len_results}) for FuncType")
-        });
+        }
+        let len_params = len_params as u16;
+        let mut params_results = params.collect::<Vec<_>>();
         params_results.extend(results);
         Self::Big {
             params_results: params_results.into(),
@@ -94,12 +101,12 @@ impl FuncTypeInner {
     {
         let params = params.into_iter();
         let results = results.into_iter();
-        let len_params = u8::try_from(params.len()).ok()?;
-        let len_results = u8::try_from(results.len()).ok()?;
-        let len = len_params.checked_add(len_results)?;
-        if usize::from(len) > Self::INLINE_SIZE {
+        if params.len().saturating_add(results.len()) > Self::INLINE_SIZE {
             return None;
         }
+        // Inline size requirements are met so both values must be valid `u8`.
+        let len_params = params.len() as u8;
+        let len_results = results.len() as u8;
         let mut params_results = [ValType::I32; Self::INLINE_SIZE];
         params_results
             .iter_mut()
