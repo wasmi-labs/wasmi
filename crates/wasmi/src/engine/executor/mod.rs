@@ -228,15 +228,10 @@ impl<'engine> EngineExecutor<'engine> {
             FuncEntity::Host(host_func) => {
                 // The host function signature is required for properly
                 // adjusting, inspecting and manipulating the value stack.
-                let (input_types, output_types) = self
-                    .res
-                    .func_types
-                    .resolve_func_type(host_func.ty_dedup())
-                    .params_results();
                 // In case the host function returns more values than it takes
                 // we are required to extend the value stack.
-                let len_params = input_types.len();
-                let len_results = output_types.len();
+                let len_params = host_func.len_params();
+                let len_results = host_func.len_results();
                 let max_inout = len_params.max(len_results);
                 let uninit = self.stack.values.extend_by(max_inout, do_nothing)?;
                 for (uninit, param) in uninit.iter_mut().zip(params.call_params()) {
@@ -303,13 +298,7 @@ impl<'engine> EngineExecutor<'engine> {
         store: &mut Store<T>,
         host_func: HostFuncEntity,
     ) -> Result<(), Error> {
-        dispatch_host_func(
-            store,
-            &self.res.func_types,
-            &mut self.stack.values,
-            host_func,
-            None,
-        )?;
+        dispatch_host_func(store, &mut self.stack.values, host_func, None)?;
         Ok(())
     }
 

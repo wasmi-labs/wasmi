@@ -5,10 +5,8 @@ use crate::{
         bytecode::{FuncIdx, Instruction, Register, RegisterSpan, SignatureIdx, TableIdx},
         code_map::InstructionPtr,
         executor::stack::{CallFrame, FrameParams, ValueStack},
-        func_types::FuncTypeRegistry,
         CompiledFunc,
         CompiledFuncEntity,
-        DedupFuncType,
         FuncParams,
     },
     func::{FuncEntity, HostFuncEntity},
@@ -22,17 +20,6 @@ use crate::{
 use core::array;
 use std::fmt;
 
-impl FuncTypeRegistry {
-    /// Returns the maximum value of number of parameters and results for the given [`DedupFuncType`].
-    #[inline]
-    fn len_params_results(&self, func_ty: &DedupFuncType) -> (usize, usize) {
-        let (input_types, output_types) = self.resolve_func_type(func_ty).params_results();
-        let len_inputs = input_types.len();
-        let len_outputs = output_types.len();
-        (len_inputs, len_outputs)
-    }
-}
-
 /// Dispatches and executes the host function.
 ///
 /// Returns the number of parameters and results of the called host function.
@@ -43,18 +30,18 @@ impl FuncTypeRegistry {
 #[inline(always)]
 pub fn dispatch_host_func<T>(
     store: &mut Store<T>,
-    func_types: &FuncTypeRegistry,
     value_stack: &mut ValueStack,
     host_func: HostFuncEntity,
     instance: Option<&Instance>,
 ) -> Result<(usize, usize), Error> {
-    let (len_inputs, len_outputs) = func_types.len_params_results(host_func.ty_dedup());
-    let max_inout = len_inputs.max(len_outputs);
+    let len_params = host_func.len_params();
+    let len_results = host_func.len_results();
+    let max_inout = len_params.max(len_results);
     let values = value_stack.as_slice_mut();
     let params_results = FuncParams::new(
         values.split_at_mut(values.len() - max_inout).1,
-        len_inputs,
-        len_outputs,
+        len_params,
+        len_results,
     );
     let trampoline = store.resolve_trampoline(host_func.trampoline()).clone();
     trampoline
@@ -67,7 +54,7 @@ pub fn dispatch_host_func<T>(
             //       This is required for resumable calls to work properly.
             value_stack.drop(max_inout);
         })?;
-    Ok((len_inputs, len_outputs))
+    Ok((len_params, len_results))
 }
 
 /// The kind of a function call.
@@ -498,8 +485,8 @@ impl<'engine> Executor<'engine> {
         func: &Func,
         host_func: HostFuncEntity,
     ) -> Result<(), Error> {
-        let (len_params, len_results) =
-            self.res.func_types.len_params_results(host_func.ty_dedup());
+        let len_params = host_func.len_params();
+        let len_results = host_func.len_results();
         let max_inout = len_params.max(len_results);
         let instance = *self.stack.calls.instance_expect();
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
@@ -550,13 +537,7 @@ impl<'engine> Executor<'engine> {
         host_func: HostFuncEntity,
         instance: &Instance,
     ) -> Result<(usize, usize), Error> {
-        dispatch_host_func(
-            store,
-            &self.res.func_types,
-            &mut self.stack.values,
-            host_func,
-            Some(instance),
-        )
+        dispatch_host_func(store, &mut self.stack.values, host_func, Some(instance))
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
