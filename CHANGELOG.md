@@ -8,6 +8,42 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.34.0`] - 2024-07-08
+
+### Added
+
+- Allows Wasmi CLI to be installed with locked dependencies. ([#1096])
+    - This can be done as follows: `cargo install --locked wasmi_cli`
+
+### Fixed
+
+- Allow Wasm module instantiation in host functions called from Wasmi's executor. ([#1116])
+
+### Changed
+
+- Limit number of parameter and result types in `FuncType` to 1000, each. ([#1116])
+
+### Dev. Note
+
+- Significantly improved and Wasmi's CI and made it a lot faster.
+    - Multi PR effort: [#1098], [#1100], [#1104]
+- Refactored and cleaned-up call based and Rust sourced Wasmi benchmarks.
+    - Call-based Benchmarks: [#1102], [#1113]
+    - Rust-sourced Benchmarks: [#1107], [#1108], [#1109], [#1111], [#1115]
+
+[#1096]: https://github.com/wasmi-labs/wasmi/pull/1096
+[#1098]: https://github.com/wasmi-labs/wasmi/pull/1098
+[#1100]: https://github.com/wasmi-labs/wasmi/pull/1100
+[#1102]: https://github.com/wasmi-labs/wasmi/pull/1102
+[#1104]: https://github.com/wasmi-labs/wasmi/pull/1104
+[#1107]: https://github.com/wasmi-labs/wasmi/pull/1107
+[#1108]: https://github.com/wasmi-labs/wasmi/pull/1108
+[#1109]: https://github.com/wasmi-labs/wasmi/pull/1109
+[#1111]: https://github.com/wasmi-labs/wasmi/pull/1111
+[#1113]: https://github.com/wasmi-labs/wasmi/pull/1113
+[#1115]: https://github.com/wasmi-labs/wasmi/pull/1115
+[#1116]: https://github.com/wasmi-labs/wasmi/pull/1116
+
 ## [`0.33.1`] - 2024-07-01
 
 ### Added
