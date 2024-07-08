@@ -21,6 +21,7 @@ use crate::{
     Store,
     StoreContextMut,
 };
+use spin::RwLock;
 
 #[cfg(doc)]
 use crate::engine::StackLimits;
@@ -49,9 +50,8 @@ impl EngineInner {
     where
         Results: CallResults,
     {
-        let res = self.code_map.read();
         let mut stack = self.stacks.lock().reuse_or_new();
-        let results = EngineExecutor::new(&res, &mut stack)
+        let results = EngineExecutor::new(&self.code_map, &mut stack)
             .execute_root_func(ctx.store, func, params, results)
             .map_err(|error| match error.into_resumable() {
                 Ok(error) => error.into_error(),
@@ -79,9 +79,8 @@ impl EngineInner {
         Results: CallResults,
     {
         let store = ctx.store;
-        let code_map = self.code_map.read();
         let mut stack = self.stacks.lock().reuse_or_new();
-        let results = EngineExecutor::new(&code_map, &mut stack)
+        let results = EngineExecutor::new(&self.code_map, &mut stack)
             .execute_root_func(store, func, params, results);
         match results {
             Ok(results) => {
@@ -127,10 +126,9 @@ impl EngineInner {
     where
         Results: CallResults,
     {
-        let code_map = self.code_map.read();
         let host_func = invocation.host_func();
         let caller_results = invocation.caller_results();
-        let results = EngineExecutor::new(&code_map, &mut invocation.stack).resume_func(
+        let results = EngineExecutor::new(&self.code_map, &mut invocation.stack).resume_func(
             ctx.store,
             host_func,
             params,
@@ -162,7 +160,7 @@ impl EngineInner {
 #[derive(Debug)]
 pub struct EngineExecutor<'engine> {
     /// Shared and reusable generic engine resources.
-    code_map: &'engine CodeMap,
+    code_map: &'engine RwLock<CodeMap>,
     /// The value and call stacks.
     stack: &'engine mut Stack,
 }
@@ -173,7 +171,7 @@ fn do_nothing<T>(_: &mut T) {}
 
 impl<'engine> EngineExecutor<'engine> {
     /// Creates a new [`EngineExecutor`] with the given [`StackLimits`].
-    fn new(code_map: &'engine CodeMap, stack: &'engine mut Stack) -> Self {
+    fn new(code_map: &'engine RwLock<CodeMap>, stack: &'engine mut Stack) -> Self {
         Self { code_map, stack }
     }
 
@@ -204,23 +202,23 @@ impl<'engine> EngineExecutor<'engine> {
                 self.stack.values.extend_by(len_results, do_nothing)?;
                 let instance = *wasm_func.instance();
                 let compiled_func = wasm_func.func_body();
-                let compiled_func = self
-                    .code_map
-                    .get(Some(store.inner.fuel_mut()), compiled_func)?;
-                let (mut uninit_params, offsets) = self
-                    .stack
-                    .values
-                    .alloc_call_frame(compiled_func, do_nothing)?;
-                for value in params.call_params() {
-                    unsafe { uninit_params.init_next(value) };
-                }
-                uninit_params.init_zeroes();
+                let (instr_ptr, offsets) = {
+                    let code_map = self.code_map.read();
+                    let compiled_func =
+                        code_map.get(Some(store.inner.fuel_mut()), compiled_func)?;
+                    let (mut uninit_params, offsets) = self
+                        .stack
+                        .values
+                        .alloc_call_frame(compiled_func, do_nothing)?;
+                    for value in params.call_params() {
+                        unsafe { uninit_params.init_next(value) };
+                    }
+                    uninit_params.init_zeroes();
+                    let instr_ptr = InstructionPtr::new(compiled_func.instrs().as_ptr());
+                    (instr_ptr, offsets)
+                };
                 self.stack.calls.push(
-                    CallFrame::new(
-                        InstructionPtr::new(compiled_func.instrs().as_ptr()),
-                        offsets,
-                        RegisterSpan::new(Register::from_i16(0)),
-                    ),
+                    CallFrame::new(instr_ptr, offsets, RegisterSpan::new(Register::from_i16(0))),
                     Some(instance),
                 )?;
                 self.execute_func(store)?;

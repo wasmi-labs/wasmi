@@ -289,8 +289,11 @@ impl<'engine> Executor<'engine> {
         func: CompiledFunc,
         mut instance: Option<Instance>,
     ) -> Result<(), Error> {
-        let func = self.code_map.get(Some(store.fuel_mut()), func)?;
-        let mut called = self.dispatch_compiled_func::<C>(results, func)?;
+        let mut called = {
+            let code_map = self.code_map.read();
+            let func = code_map.get(Some(store.fuel_mut()), func)?;
+            self.dispatch_compiled_func::<C>(results, func)?
+        };
         match <C as CallContext>::KIND {
             CallKind::Nested => {
                 // We need to update the instruction pointer of the caller call frame.

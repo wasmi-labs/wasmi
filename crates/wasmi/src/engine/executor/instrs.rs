@@ -36,6 +36,7 @@ use crate::{
     Store,
     Table,
 };
+use spin::RwLock;
 
 #[cfg(doc)]
 use crate::Instance;
@@ -76,7 +77,7 @@ macro_rules! forward_return {
 pub fn execute_instrs<'engine, T>(
     store: &mut Store<T>,
     stack: &'engine mut Stack,
-    code_map: &'engine CodeMap,
+    code_map: &'engine RwLock<CodeMap>,
 ) -> Result<(), Error> {
     let instance = stack.calls.instance_expect();
     let cache = CachedInstance::new(&mut store.inner, instance);
@@ -97,7 +98,7 @@ struct Executor<'engine> {
     /// The static resources of an [`Engine`].
     ///
     /// [`Engine`]: crate::Engine
-    code_map: &'engine CodeMap,
+    code_map: &'engine RwLock<CodeMap>,
 }
 
 impl<'engine> Executor<'engine> {
@@ -105,7 +106,7 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     pub fn new(
         stack: &'engine mut Stack,
-        code_map: &'engine CodeMap,
+        code_map: &'engine RwLock<CodeMap>,
         cache: CachedInstance,
     ) -> Self {
         let frame = stack
