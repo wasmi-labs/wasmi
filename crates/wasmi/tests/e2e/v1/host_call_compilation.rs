@@ -9,7 +9,7 @@ fn wat2wasm(wat: &str) -> Result<Vec<u8>, wat::Error> {
 
 fn compile_module(engine: &Engine) -> wasmi::Module {
     let wasm = wat2wasm(include_str!("../wat/host_call_compilation.wat")).unwrap();
-    Module::new(&engine, &wasm[..]).unwrap()
+    Module::new(engine, &wasm[..]).unwrap()
 }
 
 #[test]
