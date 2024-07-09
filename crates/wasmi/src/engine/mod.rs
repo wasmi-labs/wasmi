@@ -18,6 +18,9 @@ mod tests;
 #[cfg(test)]
 use self::bytecode::RegisterSpan;
 
+#[cfg(test)]
+use code_map::CompiledFuncRef;
+
 pub(crate) use self::{
     block_type::BlockType,
     config::FuelCosts,
@@ -475,7 +478,7 @@ pub struct EngineInner {
     /// The [`Config`] of the engine.
     config: Config,
     /// Stores information about all compiled functions.
-    code_map: RwLock<CodeMap>,
+    code_map: CodeMap,
     /// Deduplicated function types.
     ///
     /// # Note
@@ -600,7 +603,7 @@ impl EngineInner {
         let engine_idx = EngineIdx::new();
         Self {
             config: *config,
-            code_map: RwLock::new(CodeMap::new(config)),
+            code_map: CodeMap::new(config),
             func_types: RwLock::new(FuncTypeRegistry::new(engine_idx)),
             allocs: Mutex::new(ReusableAllocationStack::default()),
             stacks: Mutex::new(EngineStacks::new(config)),
@@ -634,7 +637,7 @@ impl EngineInner {
     ///
     /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
     fn alloc_func(&self) -> CompiledFunc {
-        self.code_map.write().alloc_func()
+        self.code_map.alloc_func()
     }
 
     /// Returns reusable [`FuncTranslatorAllocations`] from the [`Engine`].
@@ -699,7 +702,7 @@ impl EngineInner {
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
     fn init_func(&self, compiled_func: CompiledFunc, func_entity: CompiledFuncEntity) {
-        self.code_map.write().init_func(compiled_func, func_entity)
+        self.code_map.init_func(compiled_func, func_entity)
     }
 
     /// Initializes the uninitialized [`CompiledFunc`] for the [`Engine`].
@@ -722,7 +725,6 @@ impl EngineInner {
         func_to_validate: Option<FuncToValidate<ValidatorResources>>,
     ) {
         self.code_map
-            .write()
             .init_lazy_func(func, func_idx, bytes, module, func_to_validate)
     }
 
@@ -732,12 +734,12 @@ impl EngineInner {
     ///
     /// If [`CompiledFunc`] is invalid for [`Engine`].
     #[cfg(test)]
-    pub(super) fn resolve_func<F, R>(&self, func: CompiledFunc, f: F) -> Result<R, Error>
+    pub(super) fn resolve_func<'a, F, R>(&'a self, func: CompiledFunc, f: F) -> Result<R, Error>
     where
-        F: FnOnce(&CompiledFuncEntity) -> R,
+        F: FnOnce(CompiledFuncRef<'a>) -> R,
     {
         // Note: We use `None` so this test-only function will never charge for compilation fuel.
-        Ok(f(self.code_map.read().get(None, func)?))
+        Ok(f(self.code_map.get(None, func)?))
     }
 
     /// Returns the [`Instruction`] of `func` at `index`.

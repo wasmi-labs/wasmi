@@ -1,7 +1,7 @@
 use super::{err_stack_overflow, StackOffsets};
 use crate::{
     core::{TrapCode, UntypedVal},
-    engine::{bytecode::Register, CompiledFuncEntity},
+    engine::{bytecode::Register, code_map::CompiledFuncRef},
 };
 use core::{
     fmt::{self, Debug},
@@ -218,7 +218,7 @@ impl ValueStack {
     /// When trying to grow the [`ValueStack`] over its maximum size limit.
     pub fn alloc_call_frame(
         &mut self,
-        func: &CompiledFuncEntity,
+        func: CompiledFuncRef,
         on_resize: impl FnMut(&mut Self),
     ) -> Result<(FrameParams, StackOffsets), TrapCode> {
         let len_registers = func.len_registers();

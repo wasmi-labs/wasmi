@@ -3,10 +3,9 @@ use crate::{
     core::TrapCode,
     engine::{
         bytecode::{FuncIdx, Instruction, Register, RegisterSpan, SignatureIdx, TableIdx},
-        code_map::InstructionPtr,
+        code_map::{CompiledFuncRef, InstructionPtr},
         executor::stack::{CallFrame, FrameParams, ValueStack},
         CompiledFunc,
-        CompiledFuncEntity,
         FuncParams,
     },
     func::{FuncEntity, HostFuncEntity},
@@ -203,7 +202,7 @@ impl<'engine> Executor<'engine> {
     fn dispatch_compiled_func<C: CallContext>(
         &mut self,
         results: RegisterSpan,
-        func: &CompiledFuncEntity,
+        func: CompiledFuncRef,
     ) -> Result<CallFrame, Error> {
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
         // [`ValueStack::alloc_call_frame`] which might invalidate all live [`FrameRegisters`].

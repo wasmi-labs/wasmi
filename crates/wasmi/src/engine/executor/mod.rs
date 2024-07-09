@@ -49,9 +49,8 @@ impl EngineInner {
     where
         Results: CallResults,
     {
-        let res = self.code_map.read();
         let mut stack = self.stacks.lock().reuse_or_new();
-        let results = EngineExecutor::new(&res, &mut stack)
+        let results = EngineExecutor::new(&self.code_map, &mut stack)
             .execute_root_func(ctx.store, func, params, results)
             .map_err(|error| match error.into_resumable() {
                 Ok(error) => error.into_error(),
@@ -79,9 +78,8 @@ impl EngineInner {
         Results: CallResults,
     {
         let store = ctx.store;
-        let code_map = self.code_map.read();
         let mut stack = self.stacks.lock().reuse_or_new();
-        let results = EngineExecutor::new(&code_map, &mut stack)
+        let results = EngineExecutor::new(&self.code_map, &mut stack)
             .execute_root_func(store, func, params, results);
         match results {
             Ok(results) => {
@@ -127,10 +125,9 @@ impl EngineInner {
     where
         Results: CallResults,
     {
-        let code_map = self.code_map.read();
         let host_func = invocation.host_func();
         let caller_results = invocation.caller_results();
-        let results = EngineExecutor::new(&code_map, &mut invocation.stack).resume_func(
+        let results = EngineExecutor::new(&self.code_map, &mut invocation.stack).resume_func(
             ctx.store,
             host_func,
             params,
