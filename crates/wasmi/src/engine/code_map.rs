@@ -90,6 +90,7 @@ impl InternalFuncEntity {
     /// # Panics
     ///
     /// If `func` has already been initialized.
+    #[inline]
     pub fn init_compiled(&mut self, entity: CompiledFuncEntity) {
         assert!(matches!(self, Self::Uninit | Self::Compiling));
         *self = Self::Compiled(entity);
@@ -100,6 +101,7 @@ impl InternalFuncEntity {
     /// # Panics
     ///
     /// If `func` has already been initialized.
+    #[inline]
     pub fn init_uncompiled(&mut self, entity: UncompiledFuncEntity) {
         assert!(matches!(self, Self::Uninit));
         *self = Self::Uncompiled(entity);
@@ -147,6 +149,7 @@ impl InternalFuncEntity {
     /// # Panics
     ///
     /// If `func` has already been initialized.
+    #[inline]
     pub fn set_compiled(&mut self, entity: CompiledFuncEntity) -> CompiledFuncRef {
         assert!(matches!(self, Self::Compiling));
         *self = Self::Compiled(entity);
@@ -421,16 +424,19 @@ impl CompiledFuncEntity {
     }
 
     /// Returns the sequence of [`Instruction`] of the [`CompiledFunc`].
+    #[inline]
     pub fn instrs(&self) -> &[Instruction] {
         &self.instrs[..]
     }
 
     /// Returns the number of registers used by the [`CompiledFunc`].
+    #[inline]
     pub fn len_registers(&self) -> u16 {
         self.len_registers
     }
 
     /// Returns the function local constant values of the [`CompiledFunc`].
+    #[inline]
     pub fn consts(&self) -> &[UntypedVal] {
         &self.consts
     }
@@ -448,6 +454,7 @@ pub struct CompiledFuncRef<'a> {
 }
 
 impl<'a> From<&'a CompiledFuncEntity> for CompiledFuncRef<'a> {
+    #[inline]
     fn from(func: &'a CompiledFuncEntity) -> Self {
         Self {
             instrs: func.instrs.as_ref(),
@@ -459,16 +466,19 @@ impl<'a> From<&'a CompiledFuncEntity> for CompiledFuncRef<'a> {
 
 impl<'a> CompiledFuncRef<'a> {
     /// Returns the sequence of [`Instruction`] of the [`CompiledFunc`].
+    #[inline]
     pub fn instrs(&self) -> &'a [Instruction] {
         self.instrs.get_ref()
     }
 
     /// Returns the number of registers used by the [`CompiledFunc`].
+    #[inline]
     pub fn len_registers(&self) -> u16 {
         self.len_registers
     }
 
     /// Returns the function local constant values of the [`CompiledFunc`].
+    #[inline]
     pub fn consts(&self) -> &'a [UntypedVal] {
         self.consts.get_ref()
     }
@@ -547,6 +557,7 @@ impl CodeMap {
     /// - If translation or Wasm validation of the [`FuncEntity`] failed.
     /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
     #[track_caller]
+    #[inline]
     pub fn get<'a>(
         &'a self,
         fuel: Option<&mut Fuel>,
@@ -567,11 +578,13 @@ impl CodeMap {
         self.wait_for_compilation(func)
     }
 
+    #[inline]
     fn get_compiled<'a>(&'a self, entity: &InternalFuncEntity) -> Option<CompiledFuncRef<'a>> {
         let cref = entity.get_compiled()?;
         Some(self.adjust_cref_lifetime(cref))
     }
 
+    #[inline]
     fn adjust_cref_lifetime<'a>(&'a self, cref: CompiledFuncRef<'_>) -> CompiledFuncRef<'a> {
         // Safety: we cast the lifetime of `cref` to match `&self` instead of the inner
         //         `MutexGuard` which is safe because `CodeMap` is append-only and the
@@ -579,6 +592,8 @@ impl CodeMap {
         unsafe { mem::transmute::<CompiledFuncRef<'_>, CompiledFuncRef<'a>>(cref) }
     }
 
+    #[cold]
+    #[inline]
     fn compile<'a>(
         &'a self,
         fuel: Option<&mut Fuel>,
@@ -602,6 +617,8 @@ impl CodeMap {
         }
     }
 
+    #[cold]
+    #[inline]
     fn wait_for_compilation(&self, func: CompiledFunc) -> Result<CompiledFuncRef, Error> {
         'wait: loop {
             let funcs = self.funcs.lock();
