@@ -563,19 +563,35 @@ impl CodeMap {
         fuel: Option<&mut Fuel>,
         func: CompiledFunc,
     ) -> Result<CompiledFuncRef<'a>, Error> {
-        let mut funcs = self.funcs.lock();
-        let Some(entity) = funcs.get_mut(func) else {
-            panic!("encountered invalid internal function: {func:?}")
+        let funcs = self.funcs.lock();
+        let Some(entity) = funcs.get(func) else {
+            // panic!("encountered invalid internal function: {func:?}")
+            unsafe { core::hint::unreachable_unchecked() }
         };
         if let Some(cref) = self.get_compiled(entity) {
             return Ok(cref);
         }
-        if let Ok(entity) = entity.get_uncompiled() {
-            drop(funcs);
-            return self.compile(fuel, func, entity);
-        }
         drop(funcs);
-        self.wait_for_compilation(func)
+        self.compile_or_wait(fuel, func)
+    }
+
+    #[cold]
+    #[inline]
+    fn compile_or_wait<'a>(
+        &'a self,
+        fuel: Option<&mut Fuel>,
+        func: CompiledFunc,
+    ) -> Result<CompiledFuncRef<'a>, Error> {
+        let mut funcs = self.funcs.lock();
+        let Some(entity) = funcs.get_mut(func) else {
+            panic!("encountered invalid internal function: {func:?}")
+        };
+        let entity = entity.get_uncompiled();
+        drop(funcs);
+        match entity {
+            Ok(entity) => self.compile(fuel, func, entity),
+            Err(_) => self.wait_for_compilation(func),
+        }
     }
 
     #[inline]
@@ -592,7 +608,6 @@ impl CodeMap {
         unsafe { mem::transmute::<CompiledFuncRef<'_>, CompiledFuncRef<'a>>(cref) }
     }
 
-    #[cold]
     #[inline]
     fn compile<'a>(
         &'a self,
@@ -617,7 +632,6 @@ impl CodeMap {
         }
     }
 
-    #[cold]
     #[inline]
     fn wait_for_compilation(&self, func: CompiledFunc) -> Result<CompiledFuncRef, Error> {
         'wait: loop {
