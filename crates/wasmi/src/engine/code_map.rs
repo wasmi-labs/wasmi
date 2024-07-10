@@ -538,6 +538,9 @@ impl Default for SmallByteSlice {
 
 impl SmallByteSlice {
     /// The maximum amount of bytes that can be stored inline.
+    /// 
+    /// This value was chosen because it allows for the maximum
+    /// amount of bytes stored inline with minimal `size_of`.
     const MAX_INLINE_SIZE: usize = 22;
 
     /// Returns the underlying slice of bytes.
