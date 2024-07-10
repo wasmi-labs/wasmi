@@ -81,8 +81,10 @@ impl CodeMap {
     ///
     /// # Note
     ///
-    /// The uninitialized [`CompiledFunc`] must be initialized using
-    /// [`CodeMap::init_func`] before it is executed.
+    /// Before using the [`CodeMap`] the [`CompiledFunc`] must be initialized with either of:
+    ///
+    /// - [`CodeMap::init_func_as_compiled`]
+    /// - [`CodeMap::init_func_as_uncompiled`]
     pub fn alloc_func(&self) -> CompiledFunc {
         self.funcs.lock().alloc(FuncEntity::Uninit)
     }
@@ -181,7 +183,7 @@ impl CodeMap {
 
     /// Returns the [`UncompiledFuncEntity`] of `func` if possible, otherwise returns `None`.
     ///
-    /// After this operation `func` will be in [`InternalFuncEntity::Compiling`] state.
+    /// After this operation `func` will be in [`FuncEntity::Compiling`] state.
     #[inline]
     fn get_uncompiled(&self, func: CompiledFunc) -> Option<UncompiledFuncEntity> {
         let mut funcs = self.funcs.lock();
