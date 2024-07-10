@@ -376,6 +376,11 @@ impl InternalFuncEntity {
     }
 }
 
+/// A function type index into the Wasm module.
+#[derive(Debug, Copy, Clone)]
+#[repr(transparent)]
+pub struct TypeIndex(u32);
+
 /// An internal uncompiled function entity.
 pub struct UncompiledFuncEntity {
     /// The index of the function within the Wasm module.
@@ -493,11 +498,6 @@ impl UncompiledFuncEntity {
         Ok(unsafe { result.assume_init() })
     }
 }
-
-/// A function type index into the Wasm module.
-#[derive(Debug, Copy, Clone)]
-#[repr(transparent)]
-pub struct TypeIndex(u32);
 
 impl fmt::Debug for UncompiledFuncEntity {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
