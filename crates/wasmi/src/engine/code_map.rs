@@ -511,7 +511,7 @@ impl fmt::Debug for UncompiledFuncEntity {
     }
 }
 
-/// A boxed byte slice that stores up to 30 bytes inline.
+/// A boxed byte slice that can store some bytes inline.
 #[derive(Debug)]
 pub enum SmallByteSlice {
     /// The byte slice fits in the inline buffer.
