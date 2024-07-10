@@ -702,7 +702,8 @@ impl EngineInner {
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
     fn init_func(&self, compiled_func: CompiledFunc, func_entity: CompiledFuncEntity) {
-        self.code_map.init_func_as_compiled(compiled_func, func_entity)
+        self.code_map
+            .init_func_as_compiled(compiled_func, func_entity)
     }
 
     /// Initializes the uninitialized [`CompiledFunc`] for the [`Engine`].
