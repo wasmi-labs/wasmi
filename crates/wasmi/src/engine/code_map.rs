@@ -628,8 +628,8 @@ impl CodeMap {
         }
     }
 
-    #[inline]
     #[cold]
+    #[inline(never)]
     fn wait_for_compilation(&self, func: CompiledFunc) -> Result<CompiledFuncRef, Error> {
         'wait: loop {
             let funcs = self.funcs.lock();
