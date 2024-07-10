@@ -376,18 +376,6 @@ impl InternalFuncEntity {
     }
 }
 
-impl From<CompiledFuncEntity> for InternalFuncEntity {
-    fn from(func: CompiledFuncEntity) -> Self {
-        Self::Compiled(func)
-    }
-}
-
-impl From<UncompiledFuncEntity> for InternalFuncEntity {
-    fn from(func: UncompiledFuncEntity) -> Self {
-        Self::Uncompiled(func)
-    }
-}
-
 /// An internal uncompiled function entity.
 pub struct UncompiledFuncEntity {
     /// The index of the function within the Wasm module.
