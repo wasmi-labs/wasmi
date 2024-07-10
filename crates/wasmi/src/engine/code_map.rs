@@ -126,9 +126,9 @@ impl InternalFuncEntity {
         match mem::replace(self, Self::Compiling) {
             Self::Uncompiled(func) => Some(func),
             _ => {
-                // Safety: this is just called internally with function indices
-                //         that are known to be valid. Since this is a performance
-                //         critical path we need to leave out this check.
+                // Safety: we just asserted that `self` must be an uncompiled function
+                //         since otherwise we would have returned `None` above.
+                //         Since this is a performance critical path we need to leave out this check.
                 unsafe { core::hint::unreachable_unchecked() }
             }
         }
