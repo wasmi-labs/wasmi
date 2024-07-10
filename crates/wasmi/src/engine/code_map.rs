@@ -546,7 +546,7 @@ impl CodeMap {
     ///
     /// # Errors
     ///
-    /// - If translation or Wasm validation of the [`FuncEntity`] failed.
+    /// - If translation or Wasm validation of `func` failed.
     /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
     #[track_caller]
     #[inline]
@@ -561,6 +561,12 @@ impl CodeMap {
         }
     }
 
+    /// Compile `func` or wait for result if another process already started compilation.
+    ///
+    /// # Errors
+    ///
+    /// - If translation or Wasm validation of `func` failed.
+    /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
     #[cold]
     #[inline]
     fn compile_or_wait<'a>(
@@ -574,6 +580,7 @@ impl CodeMap {
         }
     }
 
+    /// Returns the [`CompiledFuncRef`] of `func` if possible, otherwise returns `None`.
     #[inline]
     fn get_compiled(&self, func: CompiledFunc) -> Option<CompiledFuncRef> {
         let funcs = self.funcs.lock();
@@ -587,6 +594,9 @@ impl CodeMap {
         Some(self.adjust_cref_lifetime(cref))
     }
 
+    /// Returns the [`UncompiledFuncEntity`] of `func` if possible, otherwise returns `None`.
+    ///
+    /// After this operation `func` will be in [`InternalFuncEntity::Compiling`] state.
     #[inline]
     fn get_uncompiled(&self, func: CompiledFunc) -> Option<UncompiledFuncEntity> {
         let mut funcs = self.funcs.lock();
@@ -596,6 +606,16 @@ impl CodeMap {
         entity.get_uncompiled()
     }
 
+    /// Prolongs the lifetime of `cref` to `self`.
+    ///
+    /// # Safety
+    ///
+    /// This is safe since
+    ///
+    /// - [`CompiledFuncRef`] only references `Pin`ned data
+    /// - [`CodeMap`] is an append-only data structure
+    ///
+    /// Thus any shared [`CompiledFuncRef`] can safely outlive the internal `Mutex` lock.
     #[inline]
     fn adjust_cref_lifetime<'a>(&'a self, cref: CompiledFuncRef<'_>) -> CompiledFuncRef<'a> {
         // Safety: we cast the lifetime of `cref` to match `&self` instead of the inner
@@ -604,6 +624,12 @@ impl CodeMap {
         unsafe { mem::transmute::<CompiledFuncRef<'_>, CompiledFuncRef<'a>>(cref) }
     }
 
+    /// Compile and validate the [`UncompiledFuncEntity`] identified by `func`.
+    ///
+    /// # Errors
+    ///
+    /// - If translation or Wasm validation of `func` failed.
+    /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
     #[inline]
     fn compile<'a>(
         &'a self,
@@ -630,6 +656,14 @@ impl CodeMap {
         }
     }
 
+    /// Wait until `func` has finished compilation.
+    ///
+    /// In this case compilation of `func` is driven by another thread.
+    ///
+    /// # Errors
+    ///
+    /// - If translation or Wasm validation of `func` failed.
+    /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
     #[cold]
     #[inline(never)]
     fn wait_for_compilation(&self, func: CompiledFunc) -> Result<CompiledFuncRef, Error> {
