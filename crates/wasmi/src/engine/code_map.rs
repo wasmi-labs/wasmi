@@ -414,24 +414,6 @@ impl CompiledFuncEntity {
             len_registers,
         }
     }
-
-    /// Returns the sequence of [`Instruction`] of the [`CompiledFunc`].
-    #[inline]
-    pub fn instrs(&self) -> &[Instruction] {
-        &self.instrs[..]
-    }
-
-    /// Returns the number of registers used by the [`CompiledFunc`].
-    #[inline]
-    pub fn len_registers(&self) -> u16 {
-        self.len_registers
-    }
-
-    /// Returns the function local constant values of the [`CompiledFunc`].
-    #[inline]
-    pub fn consts(&self) -> &[UntypedVal] {
-        &self.consts
-    }
 }
 
 /// A shared reference to the data of a [`CompiledFunc`].
