@@ -193,7 +193,7 @@ pub struct UncompiledFuncEntity {
 }
 
 impl UncompiledFuncEntity {
-    /// Compile the uncompiled [`FuncEntity`].
+    /// Compile the [`UncompiledFuncEntity`].
     ///
     /// # Panics
     ///
