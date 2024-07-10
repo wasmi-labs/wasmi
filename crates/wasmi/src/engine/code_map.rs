@@ -61,6 +61,219 @@ impl ArenaIndex for CompiledFunc {
     }
 }
 
+/// Datastructure to efficiently store information about compiled functions.
+#[derive(Debug)]
+pub struct CodeMap {
+    funcs: Mutex<Arena<CompiledFunc, InternalFuncEntity>>,
+    features: WasmFeatures,
+}
+
+impl CodeMap {
+    /// Creates a new [`CodeMap`].
+    pub fn new(config: &Config) -> Self {
+        Self {
+            funcs: Mutex::new(Arena::default()),
+            features: config.wasm_features(),
+        }
+    }
+
+    /// Allocates a new uninitialized [`CompiledFunc`] to the [`CodeMap`].
+    ///
+    /// # Note
+    ///
+    /// The uninitialized [`CompiledFunc`] must be initialized using
+    /// [`CodeMap::init_func`] before it is executed.
+    pub fn alloc_func(&self) -> CompiledFunc {
+        self.funcs.lock().alloc(InternalFuncEntity::Uninit)
+    }
+
+    /// Initializes the [`CompiledFunc`] with its [`CompiledFuncEntity`].
+    ///
+    /// # Panics
+    ///
+    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
+    /// - If `func` refers to an already initialized [`CompiledFunc`].
+    pub fn init_func(&self, func: CompiledFunc, entity: CompiledFuncEntity) {
+        let mut funcs = self.funcs.lock();
+        let Some(func) = funcs.get_mut(func) else {
+            panic!("encountered invalid internal function: {func:?}")
+        };
+        func.init_compiled(entity);
+    }
+
+    /// Initializes the [`CompiledFunc`] for lazy translation.
+    ///
+    /// # Panics
+    ///
+    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
+    /// - If `func` refers to an already initialized [`CompiledFunc`].
+    pub fn init_lazy_func(
+        &self,
+        func: CompiledFunc,
+        func_idx: FuncIdx,
+        bytes: &[u8],
+        module: &ModuleHeader,
+        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+    ) {
+        let mut funcs = self.funcs.lock();
+        let Some(func) = funcs.get_mut(func) else {
+            panic!("encountered invalid internal function: {func:?}")
+        };
+        func.init_uncompiled(UncompiledFuncEntity::new(
+            func_idx,
+            bytes,
+            module.clone(),
+            func_to_validate,
+        ));
+    }
+
+    /// Returns the [`InternalFuncEntity`] of the [`CompiledFunc`].
+    ///
+    /// # Errors
+    ///
+    /// - If translation or Wasm validation of `func` failed.
+    /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
+    #[track_caller]
+    #[inline]
+    pub fn get<'a>(
+        &'a self,
+        fuel: Option<&mut Fuel>,
+        func: CompiledFunc,
+    ) -> Result<CompiledFuncRef<'a>, Error> {
+        match self.get_compiled(func) {
+            Some(cref) => Ok(cref),
+            None => self.compile_or_wait(fuel, func),
+        }
+    }
+
+    /// Compile `func` or wait for result if another process already started compilation.
+    ///
+    /// # Errors
+    ///
+    /// - If translation or Wasm validation of `func` failed.
+    /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
+    #[cold]
+    #[inline]
+    fn compile_or_wait<'a>(
+        &'a self,
+        fuel: Option<&mut Fuel>,
+        func: CompiledFunc,
+    ) -> Result<CompiledFuncRef<'a>, Error> {
+        match self.get_uncompiled(func) {
+            Some(entity) => self.compile(fuel, func, entity),
+            None => self.wait_for_compilation(func),
+        }
+    }
+
+    /// Returns the [`CompiledFuncRef`] of `func` if possible, otherwise returns `None`.
+    #[inline]
+    fn get_compiled(&self, func: CompiledFunc) -> Option<CompiledFuncRef> {
+        let funcs = self.funcs.lock();
+        let Some(entity) = funcs.get(func) else {
+            // Safety: this is just called internally with function indices
+            //         that are known to be valid. Since this is a performance
+            //         critical path we need to leave out this check.
+            unsafe { core::hint::unreachable_unchecked() }
+        };
+        let cref = entity.get_compiled()?;
+        Some(self.adjust_cref_lifetime(cref))
+    }
+
+    /// Returns the [`UncompiledFuncEntity`] of `func` if possible, otherwise returns `None`.
+    ///
+    /// After this operation `func` will be in [`InternalFuncEntity::Compiling`] state.
+    #[inline]
+    fn get_uncompiled(&self, func: CompiledFunc) -> Option<UncompiledFuncEntity> {
+        let mut funcs = self.funcs.lock();
+        let Some(entity) = funcs.get_mut(func) else {
+            panic!("encountered invalid internal function: {func:?}")
+        };
+        entity.get_uncompiled()
+    }
+
+    /// Prolongs the lifetime of `cref` to `self`.
+    ///
+    /// # Safety
+    ///
+    /// This is safe since
+    ///
+    /// - [`CompiledFuncRef`] only references `Pin`ned data
+    /// - [`CodeMap`] is an append-only data structure
+    ///
+    /// Thus any shared [`CompiledFuncRef`] can safely outlive the internal `Mutex` lock.
+    #[inline]
+    fn adjust_cref_lifetime<'a>(&'a self, cref: CompiledFuncRef<'_>) -> CompiledFuncRef<'a> {
+        // Safety: we cast the lifetime of `cref` to match `&self` instead of the inner
+        //         `MutexGuard` which is safe because `CodeMap` is append-only and the
+        //         returned `CompiledFuncRef` only references `Pin`ned data.
+        unsafe { mem::transmute::<CompiledFuncRef<'_>, CompiledFuncRef<'a>>(cref) }
+    }
+
+    /// Compile and validate the [`UncompiledFuncEntity`] identified by `func`.
+    ///
+    /// # Errors
+    ///
+    /// - If translation or Wasm validation of `func` failed.
+    /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
+    #[inline]
+    fn compile<'a>(
+        &'a self,
+        fuel: Option<&mut Fuel>,
+        func: CompiledFunc,
+        mut entity: UncompiledFuncEntity,
+    ) -> Result<CompiledFuncRef<'a>, Error> {
+        // Note: it is important that compilation happens without locking the `CodeMap`
+        //       since compilation can take a prolonged time.
+        let compiled_func = entity.compile(fuel, &self.features);
+        let mut funcs = self.funcs.lock();
+        let Some(entity) = funcs.get_mut(func) else {
+            panic!("encountered invalid internal function: {func:?}")
+        };
+        match compiled_func {
+            Ok(compiled_func) => {
+                let cref = entity.set_compiled(compiled_func);
+                Ok(self.adjust_cref_lifetime(cref))
+            }
+            Err(error) => {
+                entity.set_failed_to_compile();
+                Err(error)
+            }
+        }
+    }
+
+    /// Wait until `func` has finished compilation.
+    ///
+    /// In this case compilation of `func` is driven by another thread.
+    ///
+    /// # Errors
+    ///
+    /// - If translation or Wasm validation of `func` failed.
+    /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
+    #[cold]
+    #[inline(never)]
+    fn wait_for_compilation(&self, func: CompiledFunc) -> Result<CompiledFuncRef, Error> {
+        'wait: loop {
+            let funcs = self.funcs.lock();
+            let Some(entity) = funcs.get(func) else {
+                panic!("encountered invalid internal function: {func:?}")
+            };
+            match entity {
+                InternalFuncEntity::Compiling => continue 'wait,
+                InternalFuncEntity::Compiled(func) => {
+                    let cref = CompiledFuncRef::from(func);
+                    return Ok(self.adjust_cref_lifetime(cref));
+                }
+                InternalFuncEntity::FailedToCompile => {
+                    return Err(Error::from(TranslationError::LazyCompilationFailed))
+                }
+                InternalFuncEntity::Uncompiled(_) | InternalFuncEntity::Uninit => {
+                    panic!("unexpected function state: {entity:?}")
+                }
+            }
+        }
+    }
+}
+
 /// An internal function entity.
 ///
 /// Either an already compiled or still uncompiled function entity.
@@ -455,219 +668,6 @@ impl<'a> CompiledFuncRef<'a> {
     #[inline]
     pub fn consts(&self) -> &'a [UntypedVal] {
         self.consts.get_ref()
-    }
-}
-
-/// Datastructure to efficiently store information about compiled functions.
-#[derive(Debug)]
-pub struct CodeMap {
-    funcs: Mutex<Arena<CompiledFunc, InternalFuncEntity>>,
-    features: WasmFeatures,
-}
-
-impl CodeMap {
-    /// Creates a new [`CodeMap`].
-    pub fn new(config: &Config) -> Self {
-        Self {
-            funcs: Mutex::new(Arena::default()),
-            features: config.wasm_features(),
-        }
-    }
-
-    /// Allocates a new uninitialized [`CompiledFunc`] to the [`CodeMap`].
-    ///
-    /// # Note
-    ///
-    /// The uninitialized [`CompiledFunc`] must be initialized using
-    /// [`CodeMap::init_func`] before it is executed.
-    pub fn alloc_func(&self) -> CompiledFunc {
-        self.funcs.lock().alloc(InternalFuncEntity::Uninit)
-    }
-
-    /// Initializes the [`CompiledFunc`] with its [`CompiledFuncEntity`].
-    ///
-    /// # Panics
-    ///
-    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
-    /// - If `func` refers to an already initialized [`CompiledFunc`].
-    pub fn init_func(&self, func: CompiledFunc, entity: CompiledFuncEntity) {
-        let mut funcs = self.funcs.lock();
-        let Some(func) = funcs.get_mut(func) else {
-            panic!("encountered invalid internal function: {func:?}")
-        };
-        func.init_compiled(entity);
-    }
-
-    /// Initializes the [`CompiledFunc`] for lazy translation.
-    ///
-    /// # Panics
-    ///
-    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
-    /// - If `func` refers to an already initialized [`CompiledFunc`].
-    pub fn init_lazy_func(
-        &self,
-        func: CompiledFunc,
-        func_idx: FuncIdx,
-        bytes: &[u8],
-        module: &ModuleHeader,
-        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
-    ) {
-        let mut funcs = self.funcs.lock();
-        let Some(func) = funcs.get_mut(func) else {
-            panic!("encountered invalid internal function: {func:?}")
-        };
-        func.init_uncompiled(UncompiledFuncEntity::new(
-            func_idx,
-            bytes,
-            module.clone(),
-            func_to_validate,
-        ));
-    }
-
-    /// Returns the [`InternalFuncEntity`] of the [`CompiledFunc`].
-    ///
-    /// # Errors
-    ///
-    /// - If translation or Wasm validation of `func` failed.
-    /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
-    #[track_caller]
-    #[inline]
-    pub fn get<'a>(
-        &'a self,
-        fuel: Option<&mut Fuel>,
-        func: CompiledFunc,
-    ) -> Result<CompiledFuncRef<'a>, Error> {
-        match self.get_compiled(func) {
-            Some(cref) => Ok(cref),
-            None => self.compile_or_wait(fuel, func),
-        }
-    }
-
-    /// Compile `func` or wait for result if another process already started compilation.
-    ///
-    /// # Errors
-    ///
-    /// - If translation or Wasm validation of `func` failed.
-    /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
-    #[cold]
-    #[inline]
-    fn compile_or_wait<'a>(
-        &'a self,
-        fuel: Option<&mut Fuel>,
-        func: CompiledFunc,
-    ) -> Result<CompiledFuncRef<'a>, Error> {
-        match self.get_uncompiled(func) {
-            Some(entity) => self.compile(fuel, func, entity),
-            None => self.wait_for_compilation(func),
-        }
-    }
-
-    /// Returns the [`CompiledFuncRef`] of `func` if possible, otherwise returns `None`.
-    #[inline]
-    fn get_compiled(&self, func: CompiledFunc) -> Option<CompiledFuncRef> {
-        let funcs = self.funcs.lock();
-        let Some(entity) = funcs.get(func) else {
-            // Safety: this is just called internally with function indices
-            //         that are known to be valid. Since this is a performance
-            //         critical path we need to leave out this check.
-            unsafe { core::hint::unreachable_unchecked() }
-        };
-        let cref = entity.get_compiled()?;
-        Some(self.adjust_cref_lifetime(cref))
-    }
-
-    /// Returns the [`UncompiledFuncEntity`] of `func` if possible, otherwise returns `None`.
-    ///
-    /// After this operation `func` will be in [`InternalFuncEntity::Compiling`] state.
-    #[inline]
-    fn get_uncompiled(&self, func: CompiledFunc) -> Option<UncompiledFuncEntity> {
-        let mut funcs = self.funcs.lock();
-        let Some(entity) = funcs.get_mut(func) else {
-            panic!("encountered invalid internal function: {func:?}")
-        };
-        entity.get_uncompiled()
-    }
-
-    /// Prolongs the lifetime of `cref` to `self`.
-    ///
-    /// # Safety
-    ///
-    /// This is safe since
-    ///
-    /// - [`CompiledFuncRef`] only references `Pin`ned data
-    /// - [`CodeMap`] is an append-only data structure
-    ///
-    /// Thus any shared [`CompiledFuncRef`] can safely outlive the internal `Mutex` lock.
-    #[inline]
-    fn adjust_cref_lifetime<'a>(&'a self, cref: CompiledFuncRef<'_>) -> CompiledFuncRef<'a> {
-        // Safety: we cast the lifetime of `cref` to match `&self` instead of the inner
-        //         `MutexGuard` which is safe because `CodeMap` is append-only and the
-        //         returned `CompiledFuncRef` only references `Pin`ned data.
-        unsafe { mem::transmute::<CompiledFuncRef<'_>, CompiledFuncRef<'a>>(cref) }
-    }
-
-    /// Compile and validate the [`UncompiledFuncEntity`] identified by `func`.
-    ///
-    /// # Errors
-    ///
-    /// - If translation or Wasm validation of `func` failed.
-    /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
-    #[inline]
-    fn compile<'a>(
-        &'a self,
-        fuel: Option<&mut Fuel>,
-        func: CompiledFunc,
-        mut entity: UncompiledFuncEntity,
-    ) -> Result<CompiledFuncRef<'a>, Error> {
-        // Note: it is important that compilation happens without locking the `CodeMap`
-        //       since compilation can take a prolonged time.
-        let compiled_func = entity.compile(fuel, &self.features);
-        let mut funcs = self.funcs.lock();
-        let Some(entity) = funcs.get_mut(func) else {
-            panic!("encountered invalid internal function: {func:?}")
-        };
-        match compiled_func {
-            Ok(compiled_func) => {
-                let cref = entity.set_compiled(compiled_func);
-                Ok(self.adjust_cref_lifetime(cref))
-            }
-            Err(error) => {
-                entity.set_failed_to_compile();
-                Err(error)
-            }
-        }
-    }
-
-    /// Wait until `func` has finished compilation.
-    ///
-    /// In this case compilation of `func` is driven by another thread.
-    ///
-    /// # Errors
-    ///
-    /// - If translation or Wasm validation of `func` failed.
-    /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
-    #[cold]
-    #[inline(never)]
-    fn wait_for_compilation(&self, func: CompiledFunc) -> Result<CompiledFuncRef, Error> {
-        'wait: loop {
-            let funcs = self.funcs.lock();
-            let Some(entity) = funcs.get(func) else {
-                panic!("encountered invalid internal function: {func:?}")
-            };
-            match entity {
-                InternalFuncEntity::Compiling => continue 'wait,
-                InternalFuncEntity::Compiled(func) => {
-                    let cref = CompiledFuncRef::from(func);
-                    return Ok(self.adjust_cref_lifetime(cref));
-                }
-                InternalFuncEntity::FailedToCompile => {
-                    return Err(Error::from(TranslationError::LazyCompilationFailed))
-                }
-                InternalFuncEntity::Uncompiled(_) | InternalFuncEntity::Uninit => {
-                    panic!("unexpected function state: {entity:?}")
-                }
-            }
-        }
     }
 }
 
