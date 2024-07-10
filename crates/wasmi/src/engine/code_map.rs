@@ -611,6 +611,8 @@ impl CodeMap {
         func: CompiledFunc,
         mut entity: UncompiledFuncEntity,
     ) -> Result<CompiledFuncRef<'a>, Error> {
+        // Note: it is important that compilation happens without locking the `CodeMap`
+        //       since compilation can take a prolonged time.
         let compiled_func = entity.compile(fuel, &self.features);
         let mut funcs = self.funcs.lock();
         let Some(entity) = funcs.get_mut(func) else {
