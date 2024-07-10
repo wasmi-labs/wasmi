@@ -5,7 +5,13 @@
 //! This is the data structure specialized to handle compiled
 //! register machine based bytecode functions.
 
-use super::{FuelCosts, FuncTranslationDriver, FuncTranslator, ValidatingFuncTranslator};
+use super::{
+    FuelCosts,
+    FuncTranslationDriver,
+    FuncTranslator,
+    TranslationError,
+    ValidatingFuncTranslator,
+};
 use crate::{
     collections::arena::{Arena, ArenaIndex},
     core::{TrapCode, UntypedVal},
@@ -563,18 +569,10 @@ impl CodeMap {
         fuel: Option<&mut Fuel>,
         func: CompiledFunc,
     ) -> Result<CompiledFuncRef<'a>, Error> {
-        let funcs = self.funcs.lock();
-        let Some(entity) = funcs.get(func) else {
-            // Safety: this is just called internally with function indices
-            //         that are known to be valid. Since this is a performance
-            //         critical path we need to leave out this check.
-            unsafe { core::hint::unreachable_unchecked() }
-        };
-        if let Some(cref) = self.get_compiled(entity) {
-            return Ok(cref);
+        match self.get_compiled(func) {
+            Some(cref) => Ok(cref),
+            None => self.compile_or_wait(fuel, func),
         }
-        drop(funcs);
-        self.compile_or_wait(fuel, func)
     }
 
     #[cold]
@@ -584,22 +582,32 @@ impl CodeMap {
         fuel: Option<&mut Fuel>,
         func: CompiledFunc,
     ) -> Result<CompiledFuncRef<'a>, Error> {
-        let mut funcs = self.funcs.lock();
-        let Some(entity) = funcs.get_mut(func) else {
-            panic!("encountered invalid internal function: {func:?}")
-        };
-        let entity = entity.get_uncompiled();
-        drop(funcs);
-        match entity {
-            Ok(entity) => self.compile(fuel, func, entity),
-            Err(_) => self.wait_for_compilation(func),
+        match self.get_uncompiled(func) {
+            Some(entity) => self.compile(fuel, func, entity),
+            None => self.wait_for_compilation(func),
         }
     }
 
     #[inline]
-    fn get_compiled<'a>(&'a self, entity: &InternalFuncEntity) -> Option<CompiledFuncRef<'a>> {
+    fn get_compiled(&self, func: CompiledFunc) -> Option<CompiledFuncRef> {
+        let funcs = self.funcs.lock();
+        let Some(entity) = funcs.get(func) else {
+            // Safety: this is just called internally with function indices
+            //         that are known to be valid. Since this is a performance
+            //         critical path we need to leave out this check.
+            unsafe { core::hint::unreachable_unchecked() }
+        };
         let cref = entity.get_compiled()?;
         Some(self.adjust_cref_lifetime(cref))
+    }
+
+    #[inline]
+    fn get_uncompiled(&self, func: CompiledFunc) -> Option<UncompiledFuncEntity> {
+        let mut funcs = self.funcs.lock();
+        let Some(entity) = funcs.get_mut(func) else {
+            panic!("encountered invalid internal function: {func:?}")
+        };
+        entity.get_uncompiled().ok()
     }
 
     #[inline]
@@ -635,6 +643,7 @@ impl CodeMap {
     }
 
     #[inline]
+    #[cold]
     fn wait_for_compilation(&self, func: CompiledFunc) -> Result<CompiledFuncRef, Error> {
         'wait: loop {
             let funcs = self.funcs.lock();
@@ -648,8 +657,7 @@ impl CodeMap {
                     return Ok(self.adjust_cref_lifetime(cref));
                 }
                 InternalFuncEntity::FailedToCompile => {
-                    // return Err(CodeMapError::FailedToCompile)
-                    todo!()
+                    return Err(Error::from(TranslationError::LazyCompilationFailed))
                 }
                 InternalFuncEntity::Uncompiled(_) | InternalFuncEntity::Uninit => {
                     panic!("unexpected function state: {entity:?}")
