@@ -86,7 +86,7 @@ impl InternalFuncEntity {
     /// If `func` has already been initialized.
     #[inline]
     pub fn init_compiled(&mut self, entity: CompiledFuncEntity) {
-        assert!(matches!(self, Self::Uninit | Self::Compiling));
+        assert!(matches!(self, Self::Uninit));
         *self = Self::Compiled(entity);
     }
 
