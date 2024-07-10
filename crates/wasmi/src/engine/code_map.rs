@@ -565,7 +565,9 @@ impl CodeMap {
     ) -> Result<CompiledFuncRef<'a>, Error> {
         let funcs = self.funcs.lock();
         let Some(entity) = funcs.get(func) else {
-            // panic!("encountered invalid internal function: {func:?}")
+            // Safety: this is just called internally with function indices
+            //         that are known to be valid. Since this is a performance
+            //         critical path we need to leave out this check.
             unsafe { core::hint::unreachable_unchecked() }
         };
         if let Some(cref) = self.get_compiled(entity) {
