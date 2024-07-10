@@ -93,7 +93,7 @@ impl CodeMap {
     ///
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
-    pub fn init_func(&self, func: CompiledFunc, entity: CompiledFuncEntity) {
+    pub fn init_func_as_compiled(&self, func: CompiledFunc, entity: CompiledFuncEntity) {
         let mut funcs = self.funcs.lock();
         let Some(func) = funcs.get_mut(func) else {
             panic!("encountered invalid internal function: {func:?}")
@@ -107,7 +107,7 @@ impl CodeMap {
     ///
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
-    pub fn init_lazy_func(
+    pub fn init_func_as_uncompiled(
         &self,
         func: CompiledFunc,
         func_idx: FuncIdx,

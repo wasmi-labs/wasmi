@@ -702,7 +702,7 @@ impl EngineInner {
     /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
     /// - If `func` refers to an already initialized [`CompiledFunc`].
     fn init_func(&self, compiled_func: CompiledFunc, func_entity: CompiledFuncEntity) {
-        self.code_map.init_func(compiled_func, func_entity)
+        self.code_map.init_func_as_compiled(compiled_func, func_entity)
     }
 
     /// Initializes the uninitialized [`CompiledFunc`] for the [`Engine`].
@@ -725,7 +725,7 @@ impl EngineInner {
         func_to_validate: Option<FuncToValidate<ValidatorResources>>,
     ) {
         self.code_map
-            .init_lazy_func(func, func_idx, bytes, module, func_to_validate)
+            .init_func_as_uncompiled(func, func_idx, bytes, module, func_to_validate)
     }
 
     /// Resolves the [`InternalFuncEntity`] for [`CompiledFunc`] and applies `f` to it.
