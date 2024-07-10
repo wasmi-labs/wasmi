@@ -402,7 +402,7 @@ impl UncompiledFuncEntity {
     /// Creates a new [`UncompiledFuncEntity`].
     pub fn new(
         func_index: FuncIdx,
-        bytes: impl Into<SmallByteSlice>,
+        bytes: &[u8],
         module: ModuleHeader,
         func_to_validate: impl Into<Option<FuncToValidate<ValidatorResources>>>,
     ) -> Self {
@@ -416,9 +416,10 @@ impl UncompiledFuncEntity {
             );
             (TypeIndex(func_to_validate.ty), func_to_validate.resources)
         });
+        let bytes = bytes.into();
         Self {
             func_index,
-            bytes: bytes.into(),
+            bytes,
             module,
             validation,
         }
