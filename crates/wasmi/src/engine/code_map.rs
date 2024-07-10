@@ -78,18 +78,6 @@ enum InternalFuncEntity {
     Compiled(CompiledFuncEntity),
 }
 
-#[derive(Debug)]
-pub enum CodeMapError {
-    /// Error when compiling a function that has not yet been initialized.
-    StillUninitialized,
-    /// Error when compiling a function that is already compiling.
-    AlreadyCompiling,
-    /// Error when compiling a function that has already been compiled.
-    AlreadyCompiled,
-    /// Error when compiling a function that already failed to compile.
-    AlreadyFailedToCompile,
-}
-
 impl InternalFuncEntity {
     /// Initializes the [`InternalFuncEntity`] with a [`CompiledFuncEntity`].
     ///
@@ -130,22 +118,18 @@ impl InternalFuncEntity {
     ///
     /// Returns a proper error if the [`InternalFuncEntity`] is not uncompiled.
     #[inline]
-    pub fn get_uncompiled(&mut self) -> Result<UncompiledFuncEntity, CodeMapError> {
+    pub fn get_uncompiled(&mut self) -> Option<UncompiledFuncEntity> {
         match self {
-            InternalFuncEntity::Uninit => return Err(CodeMapError::StillUninitialized),
-            InternalFuncEntity::Compiling => return Err(CodeMapError::AlreadyCompiling),
-            InternalFuncEntity::Compiled(_) => return Err(CodeMapError::AlreadyCompiled),
-            InternalFuncEntity::FailedToCompile => {
-                return Err(CodeMapError::AlreadyFailedToCompile)
+            Self::Uncompiled(_) => {}
+            _ => return None,
+        };
+        match mem::replace(self, Self::Compiling) {
+            Self::Uncompiled(func) => Some(func),
+            _ => {
+                // Safety: TODO
+                unsafe { core::hint::unreachable_unchecked() }
             }
-            _ => {}
-        };
-        let InternalFuncEntity::Uncompiled(func) =
-            mem::replace(self, InternalFuncEntity::Compiling)
-        else {
-            panic!("already asserted that `self` is uncompiled")
-        };
-        Ok(func)
+        }
     }
 
     /// Sets the [`InternalFuncEntity`] as [`CompiledFuncEntity`].
@@ -607,7 +591,7 @@ impl CodeMap {
         let Some(entity) = funcs.get_mut(func) else {
             panic!("encountered invalid internal function: {func:?}")
         };
-        entity.get_uncompiled().ok()
+        entity.get_uncompiled()
     }
 
     #[inline]
