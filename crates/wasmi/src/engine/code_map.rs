@@ -394,6 +394,31 @@ pub struct UncompiledFuncEntity {
 }
 
 impl UncompiledFuncEntity {
+    /// Creates a new [`UncompiledFuncEntity`].
+    pub fn new(
+        func_index: FuncIdx,
+        bytes: impl Into<SmallByteSlice>,
+        module: ModuleHeader,
+        func_to_validate: impl Into<Option<FuncToValidate<ValidatorResources>>>,
+    ) -> Self {
+        let validation = func_to_validate.into().map(|func_to_validate| {
+            assert_eq!(
+                func_to_validate.index,
+                func_index.into_u32(),
+                "Wasmi function index ({}) does not match with Wasm validation function index ({})",
+                func_to_validate.index,
+                func_index.into_u32(),
+            );
+            (TypeIndex(func_to_validate.ty), func_to_validate.resources)
+        });
+        Self {
+            func_index,
+            bytes: bytes.into(),
+            module,
+            validation,
+        }
+    }
+
     /// Compile the [`UncompiledFuncEntity`].
     ///
     /// # Panics
@@ -473,33 +498,6 @@ impl UncompiledFuncEntity {
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
 pub struct TypeIndex(u32);
-
-impl UncompiledFuncEntity {
-    /// Creates a new [`UncompiledFuncEntity`].
-    pub fn new(
-        func_index: FuncIdx,
-        bytes: impl Into<SmallByteSlice>,
-        module: ModuleHeader,
-        func_to_validate: impl Into<Option<FuncToValidate<ValidatorResources>>>,
-    ) -> Self {
-        let validation = func_to_validate.into().map(|func_to_validate| {
-            assert_eq!(
-                func_to_validate.index,
-                func_index.into_u32(),
-                "Wasmi function index ({}) does not match with Wasm validation function index ({})",
-                func_to_validate.index,
-                func_index.into_u32(),
-            );
-            (TypeIndex(func_to_validate.ty), func_to_validate.resources)
-        });
-        Self {
-            func_index,
-            bytes: bytes.into(),
-            module,
-            validation,
-        }
-    }
-}
 
 impl fmt::Debug for UncompiledFuncEntity {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
