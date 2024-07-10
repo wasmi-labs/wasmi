@@ -64,7 +64,7 @@ impl ArenaIndex for CompiledFunc {
 /// Datastructure to efficiently store information about compiled functions.
 #[derive(Debug)]
 pub struct CodeMap {
-    funcs: Mutex<Arena<CompiledFunc, InternalFuncEntity>>,
+    funcs: Mutex<Arena<CompiledFunc, FuncEntity>>,
     features: WasmFeatures,
 }
 
@@ -84,7 +84,7 @@ impl CodeMap {
     /// The uninitialized [`CompiledFunc`] must be initialized using
     /// [`CodeMap::init_func`] before it is executed.
     pub fn alloc_func(&self) -> CompiledFunc {
-        self.funcs.lock().alloc(InternalFuncEntity::Uninit)
+        self.funcs.lock().alloc(FuncEntity::Uninit)
     }
 
     /// Initializes the [`CompiledFunc`] with its [`CompiledFuncEntity`].
@@ -127,7 +127,7 @@ impl CodeMap {
         ));
     }
 
-    /// Returns the [`InternalFuncEntity`] of the [`CompiledFunc`].
+    /// Returns the [`FuncEntity`] of the [`CompiledFunc`].
     ///
     /// # Errors
     ///
@@ -258,15 +258,15 @@ impl CodeMap {
                 panic!("encountered invalid internal function: {func:?}")
             };
             match entity {
-                InternalFuncEntity::Compiling => continue 'wait,
-                InternalFuncEntity::Compiled(func) => {
+                FuncEntity::Compiling => continue 'wait,
+                FuncEntity::Compiled(func) => {
                     let cref = CompiledFuncRef::from(func);
                     return Ok(self.adjust_cref_lifetime(cref));
                 }
-                InternalFuncEntity::FailedToCompile => {
+                FuncEntity::FailedToCompile => {
                     return Err(Error::from(TranslationError::LazyCompilationFailed))
                 }
-                InternalFuncEntity::Uncompiled(_) | InternalFuncEntity::Uninit => {
+                FuncEntity::Uncompiled(_) | FuncEntity::Uninit => {
                     panic!("unexpected function state: {entity:?}")
                 }
             }
@@ -278,7 +278,7 @@ impl CodeMap {
 ///
 /// Either an already compiled or still uncompiled function entity.
 #[derive(Debug)]
-enum InternalFuncEntity {
+enum FuncEntity {
     /// The function entity has not yet been initialized.
     Uninit,
     /// An internal function that has not yet been compiled.
@@ -291,8 +291,8 @@ enum InternalFuncEntity {
     Compiled(CompiledFuncEntity),
 }
 
-impl InternalFuncEntity {
-    /// Initializes the [`InternalFuncEntity`] with a [`CompiledFuncEntity`].
+impl FuncEntity {
+    /// Initializes the [`FuncEntity`] with a [`CompiledFuncEntity`].
     ///
     /// # Panics
     ///
@@ -303,7 +303,7 @@ impl InternalFuncEntity {
         *self = Self::Compiled(entity);
     }
 
-    /// Initializes the [`InternalFuncEntity`] to an uncompiled state.
+    /// Initializes the [`FuncEntity`] to an uncompiled state.
     ///
     /// # Panics
     ///
@@ -316,11 +316,11 @@ impl InternalFuncEntity {
 
     /// Returns the [`CompiledFuncEntity`] if possible.
     ///
-    /// Returns `None` if the [`InternalFuncEntity`] has not yet been compiled.
+    /// Returns `None` if the [`FuncEntity`] has not yet been compiled.
     #[inline]
     pub fn get_compiled(&self) -> Option<CompiledFuncRef> {
         match self {
-            InternalFuncEntity::Compiled(func) => Some(func.into()),
+            FuncEntity::Compiled(func) => Some(func.into()),
             _ => None,
         }
     }
@@ -329,7 +329,7 @@ impl InternalFuncEntity {
     ///
     /// # Errors
     ///
-    /// Returns a proper error if the [`InternalFuncEntity`] is not uncompiled.
+    /// Returns a proper error if the [`FuncEntity`] is not uncompiled.
     #[inline]
     pub fn get_uncompiled(&mut self) -> Option<UncompiledFuncEntity> {
         match self {
@@ -347,7 +347,7 @@ impl InternalFuncEntity {
         }
     }
 
-    /// Sets the [`InternalFuncEntity`] as [`CompiledFuncEntity`].
+    /// Sets the [`FuncEntity`] as [`CompiledFuncEntity`].
     ///
     /// Returns a [`CompiledFuncRef`] to the [`CompiledFuncEntity`].
     ///
@@ -364,7 +364,7 @@ impl InternalFuncEntity {
         CompiledFuncRef::from(&*entity)
     }
 
-    /// Signals a failed compilation for the [`InternalFuncEntity`].
+    /// Signals a failed compilation for the [`FuncEntity`].
     ///
     /// # Panics
     ///
@@ -538,7 +538,7 @@ impl Default for SmallByteSlice {
 
 impl SmallByteSlice {
     /// The maximum amount of bytes that can be stored inline.
-    /// 
+    ///
     /// This value was chosen because it allows for the maximum
     /// amount of bytes stored inline with minimal `size_of`.
     const MAX_INLINE_SIZE: usize = 22;
