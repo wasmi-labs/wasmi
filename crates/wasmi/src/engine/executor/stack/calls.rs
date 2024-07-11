@@ -2,7 +2,7 @@ use super::{err_stack_overflow, BaseValueStackOffset, FrameValueStackOffset};
 use crate::{
     collections::HeadVec,
     core::TrapCode,
-    engine::{bytecode::RegisterSpan, code_map::InstructionPtr},
+    engine::bytecode::{InstructionPtr, RegisterSpan},
     Instance,
 };
 use std::vec::Vec;

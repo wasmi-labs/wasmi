@@ -6,8 +6,7 @@ use self::{
 };
 use crate::{
     engine::{
-        bytecode::{Register, RegisterSpan},
-        code_map::InstructionPtr,
+        bytecode::{InstructionPtr, Register, RegisterSpan},
         CallParams,
         CallResults,
         EngineInner,

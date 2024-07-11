@@ -1,9 +1,14 @@
 use super::Executor;
 use crate::{
     core::{TrapCode, UntypedVal},
-    engine::{
-        bytecode::{Const16, Instruction, Register, StoreAtInstr, StoreInstr, StoreOffset16Instr},
-        code_map::InstructionPtr,
+    engine::bytecode::{
+        Const16,
+        Instruction,
+        InstructionPtr,
+        Register,
+        StoreAtInstr,
+        StoreInstr,
+        StoreOffset16Instr,
     },
     Error,
 };
