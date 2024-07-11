@@ -35,7 +35,7 @@ pub(crate) use self::{
 };
 use crate::{
     collections::Map,
-    engine::{DedupFuncType, EngineFunc, EngineWeak},
+    engine::{DedupFuncType, EngineFunc, EngineFuncSpan, EngineFuncSpanIter, EngineWeak},
     Engine,
     Error,
     ExternType,
@@ -45,7 +45,7 @@ use crate::{
     TableType,
 };
 use core::{iter, slice::Iter as SliceIter};
-use std::{boxed::Box, collections::BTreeMap, sync::Arc};
+use std::{boxed::Box, sync::Arc};
 use wasmparser::{FuncValidatorAllocations, Parser, ValidPayload, Validator};
 
 /// A parsed and validated WebAssembly module.
@@ -75,8 +75,7 @@ struct ModuleHeaderInner {
     globals_init: Box<[ConstExpr]>,
     exports: Map<Box<str>, ExternIdx>,
     start: Option<FuncIdx>,
-    engine_funcs: Box<[EngineFunc]>,
-    engine_funcs_idx: BTreeMap<EngineFunc, FuncIdx>,
+    engine_funcs: EngineFuncSpan,
     element_segments: Box<[ElementSegment]>,
 }
 
@@ -105,17 +104,19 @@ impl ModuleHeader {
     ///
     /// Returns `None` if [`FuncIdx`] refers to an imported function.
     pub fn get_engine_func(&self, func_idx: FuncIdx) -> Option<EngineFunc> {
-        let index = func_idx.into_u32() as usize;
-        let len_imported = self.inner.imports.len_funcs();
+        let index = func_idx.into_u32();
+        let len_imported = self.inner.imports.len_funcs() as u32;
         let index = index.checked_sub(len_imported)?;
         // Note: It is a bug if this index access is out of bounds
         //       therefore we panic here instead of using `get`.
-        Some(self.inner.engine_funcs[index])
+        Some(self.inner.engine_funcs.get_or_panic(index))
     }
 
     /// Returns the [`FuncIdx`] for the given [`EngineFunc`].
     pub fn get_func_index(&self, func: EngineFunc) -> Option<FuncIdx> {
-        self.inner.engine_funcs_idx.get(&func).copied()
+        let position = self.inner.engine_funcs.position(func)?;
+        let len_imports = self.inner.imports.len_funcs as u32;
+        Some(FuncIdx::from(position + len_imports))
     }
 
     /// Returns the global variable type and optional initial value.
@@ -366,7 +367,7 @@ impl Module {
         // since they refer to imported and not internally defined
         // functions.
         let funcs = &self.header.inner.funcs[len_imported..];
-        let engine_funcs = &self.header.inner.engine_funcs[..];
+        let engine_funcs = self.header.inner.engine_funcs.iter();
         assert_eq!(funcs.len(), engine_funcs.len());
         InternalFuncsIter {
             iter: funcs.iter().zip(engine_funcs),
@@ -574,7 +575,7 @@ impl<'module> ImportType<'module> {
 /// An iterator over the internally defined functions of a [`Module`].
 #[derive(Debug)]
 pub struct InternalFuncsIter<'a> {
-    iter: iter::Zip<SliceIter<'a, DedupFuncType>, SliceIter<'a, EngineFunc>>,
+    iter: iter::Zip<SliceIter<'a, DedupFuncType>, EngineFuncSpanIter>,
 }
 
 impl<'a> Iterator for InternalFuncsIter<'a> {
@@ -583,7 +584,7 @@ impl<'a> Iterator for InternalFuncsIter<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         self.iter
             .next()
-            .map(|(func_type, func_body)| (*func_type, *func_body))
+            .map(|(func_type, engine_func)| (*func_type, engine_func))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {

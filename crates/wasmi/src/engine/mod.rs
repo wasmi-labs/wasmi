@@ -36,19 +36,19 @@ pub(crate) use self::{
         WasmTranslator,
     },
 };
+use self::{
+    code_map::{CodeMap, CompiledFuncEntity},
+    func_types::FuncTypeRegistry,
+    resumable::ResumableCallBase,
+};
 pub use self::{
-    code_map::EngineFunc,
+    code_map::{EngineFunc, EngineFuncSpan, EngineFuncSpanIter},
     config::{CompilationMode, Config},
     executor::ResumableHostError,
     limits::{EnforcedLimits, EnforcedLimitsError, StackLimits},
     resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
     traits::{CallParams, CallResults},
     translator::{Instr, TranslationError},
-};
-use self::{
-    code_map::{CodeMap, CompiledFuncEntity},
-    func_types::FuncTypeRegistry,
-    resumable::ResumableCallBase,
 };
 use crate::{
     collections::arena::{ArenaIndex, GuardedEntity},
@@ -58,10 +58,7 @@ use crate::{
     FuncType,
     StoreContextMut,
 };
-use core::{
-    ops::Range,
-    sync::atomic::{AtomicU32, Ordering},
-};
+use core::sync::atomic::{AtomicU32, Ordering};
 use spin::{Mutex, RwLock};
 use std::{
     sync::{Arc, Weak},
@@ -193,17 +190,10 @@ impl Engine {
         self.inner.resolve_func_type(func_type, f)
     }
 
-    /// Allocates a new uninitialized [`EngineFunc`] to the [`Engine`].
-    ///
-    /// Returns a [`EngineFunc`] reference to allow accessing the allocated [`EngineFunc`].
-    pub(super) fn alloc_func(&self) -> EngineFunc {
-        self.inner.alloc_func()
-    }
-
     /// Allocates `amount` new uninitialized [`EngineFunc`] to the [`CodeMap`].
     ///
     /// Returns a range of [`EngineFunc`]s to allow accessing the allocated [`EngineFunc`].
-    fn alloc_funcs(&self, amount: usize) -> Range<EngineFunc> {
+    pub(super) fn alloc_funcs(&self, amount: usize) -> EngineFuncSpan {
         self.inner.alloc_funcs(amount)
     }
 
@@ -639,17 +629,10 @@ impl EngineInner {
         f(self.func_types.read().resolve_func_type(func_type))
     }
 
-    /// Allocates a new uninitialized [`EngineFunc`] to the [`EngineInner`].
-    ///
-    /// Returns a [`EngineFunc`] to allow accessing the allocated [`EngineFunc`].
-    fn alloc_func(&self) -> EngineFunc {
-        self.code_map.alloc_func()
-    }
-
     /// Allocates `amount` new uninitialized [`EngineFunc`] to the [`CodeMap`].
     ///
     /// Returns a range of [`EngineFunc`]s to allow accessing the allocated [`EngineFunc`].
-    fn alloc_funcs(&self, amount: usize) -> Range<EngineFunc> {
+    fn alloc_funcs(&self, amount: usize) -> EngineFuncSpan {
         self.code_map.alloc_funcs(amount)
     }
 
