@@ -8,6 +8,24 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.35.0`] - 2024-07-11
+
+### Fixed
+
+- Fixed a dead-lock that prevented users from compiling Wasm modules in host functions
+  called from Wasmi's executor. (https://github.com/wasmi-labs/wasmi/pull/1122)
+    - This was a very long-standing bug in the Wasmi interpreter and it is now finally closed.
+    - Note that this regressed performance of call-intense workloads by roughly 5-10%.
+      Future work is under way to hopefully fix these regressions.
+    - Before this fix, users had to use a work-around using resumable function calls to
+      cirumvent this issue which is no longer necessary, fortunately.
+
+### Internals
+
+- Add `CodeMap::alloc_funcs` API and use it when compiling Wasm modules. (https://github.com/wasmi-labs/wasmi/pull/1125)
+    - This significantly improved performance for lazily compiling
+      Wasm modules (e.g.  via `Module::new`) by up to 23%.
+
 ## [`0.34.0`] - 2024-07-08
 
 ### Added
