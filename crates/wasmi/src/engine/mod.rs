@@ -58,7 +58,10 @@ use crate::{
     FuncType,
     StoreContextMut,
 };
-use core::sync::atomic::{AtomicU32, Ordering};
+use core::{
+    ops::Range,
+    sync::atomic::{AtomicU32, Ordering},
+};
 use spin::{Mutex, RwLock};
 use std::{
     sync::{Arc, Weak},
@@ -195,6 +198,13 @@ impl Engine {
     /// Returns a [`EngineFunc`] reference to allow accessing the allocated [`EngineFunc`].
     pub(super) fn alloc_func(&self) -> EngineFunc {
         self.inner.alloc_func()
+    }
+
+    /// Allocates `amount` new uninitialized [`EngineFunc`] to the [`CodeMap`].
+    ///
+    /// Returns a range of [`EngineFunc`]s to allow accessing the allocated [`EngineFunc`].
+    fn alloc_funcs(&self, amount: usize) -> Range<EngineFunc> {
+        self.inner.alloc_funcs(amount)
     }
 
     /// Translates the Wasm function using the [`Engine`].
@@ -631,9 +641,16 @@ impl EngineInner {
 
     /// Allocates a new uninitialized [`EngineFunc`] to the [`EngineInner`].
     ///
-    /// Returns a [`EngineFunc`] reference to allow accessing the allocated [`EngineFunc`].
+    /// Returns a [`EngineFunc`] to allow accessing the allocated [`EngineFunc`].
     fn alloc_func(&self) -> EngineFunc {
         self.code_map.alloc_func()
+    }
+
+    /// Allocates `amount` new uninitialized [`EngineFunc`] to the [`CodeMap`].
+    ///
+    /// Returns a range of [`EngineFunc`]s to allow accessing the allocated [`EngineFunc`].
+    fn alloc_funcs(&self, amount: usize) -> Range<EngineFunc> {
+        self.code_map.alloc_funcs(amount)
     }
 
     /// Returns reusable [`FuncTranslatorAllocations`] from the [`Engine`].

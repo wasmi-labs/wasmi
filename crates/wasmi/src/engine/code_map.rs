@@ -24,7 +24,7 @@ use crate::{
 use core::{
     fmt,
     mem::{self, MaybeUninit},
-    ops,
+    ops::{self, Range},
     pin::Pin,
     slice,
 };
@@ -87,6 +87,18 @@ impl CodeMap {
     /// - [`CodeMap::init_func_as_uncompiled`]
     pub fn alloc_func(&self) -> EngineFunc {
         self.funcs.lock().alloc(FuncEntity::Uninit)
+    }
+
+    /// Allocates `amount` new uninitialized [`EngineFunc`] to the [`CodeMap`].
+    ///
+    /// # Note
+    ///
+    /// Before using the [`CodeMap`] all [`EngineFunc`]s must be initialized with either of:
+    ///
+    /// - [`CodeMap::init_func_as_compiled`]
+    /// - [`CodeMap::init_func_as_uncompiled`]
+    pub fn alloc_funcs(&self, amount: usize) -> Range<EngineFunc> {
+        self.funcs.lock().alloc_many(amount)
     }
 
     /// Initializes the [`EngineFunc`] with its [`CompiledFuncEntity`].
@@ -291,6 +303,13 @@ enum FuncEntity {
     FailedToCompile,
     /// An internal function that has already been compiled.
     Compiled(CompiledFuncEntity),
+}
+
+impl Default for FuncEntity {
+    #[inline]
+    fn default() -> Self {
+        Self::Uninit
+    }
 }
 
 impl FuncEntity {
