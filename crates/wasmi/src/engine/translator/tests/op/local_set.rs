@@ -1,7 +1,7 @@
 use super::*;
 use crate::engine::{
     bytecode::{FuncIdx, RegisterSpan, SignatureIdx, TableIdx},
-    CompiledFunc,
+    EngineFunc,
 };
 
 #[test]
@@ -84,7 +84,7 @@ fn overwrite_call_internal_result_1() {
         .expect_func_instrs([
             Instruction::call_internal(
                 RegisterSpan::new(Register::from_i16(0)),
-                CompiledFunc::from_u32(0),
+                EngineFunc::from_u32(0),
             ),
             Instruction::register(0),
             Instruction::return_reg(Register::from_i16(0)),

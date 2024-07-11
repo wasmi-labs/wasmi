@@ -19,7 +19,7 @@ use super::{
 };
 use crate::{
     collections::Map,
-    engine::{CompiledFunc, DedupFuncType},
+    engine::{DedupFuncType, EngineFunc},
     Engine,
     Error,
     FuncType,
@@ -50,8 +50,8 @@ pub struct ModuleHeaderBuilder {
     pub globals_init: Vec<ConstExpr>,
     pub exports: Map<Box<str>, ExternIdx>,
     pub start: Option<FuncIdx>,
-    pub compiled_funcs: Vec<CompiledFunc>,
-    pub compiled_funcs_idx: BTreeMap<CompiledFunc, FuncIdx>,
+    pub engine_funcs: Vec<EngineFunc>,
+    pub engine_funcs_idx: BTreeMap<EngineFunc, FuncIdx>,
     pub element_segments: Box<[ElementSegment]>,
 }
 
@@ -69,8 +69,8 @@ impl ModuleHeaderBuilder {
             globals_init: Vec::new(),
             exports: Map::new(),
             start: None,
-            compiled_funcs: Vec::new(),
-            compiled_funcs_idx: BTreeMap::new(),
+            engine_funcs: Vec::new(),
+            engine_funcs_idx: BTreeMap::new(),
             element_segments: Box::from([]),
         }
     }
@@ -89,8 +89,8 @@ impl ModuleHeaderBuilder {
                 globals_init: self.globals_init.into(),
                 exports: self.exports,
                 start: self.start,
-                compiled_funcs: self.compiled_funcs.into(),
-                compiled_funcs_idx: self.compiled_funcs_idx,
+                engine_funcs: self.engine_funcs.into(),
+                engine_funcs_idx: self.engine_funcs_idx,
                 element_segments: self.element_segments,
             }),
         }
@@ -238,7 +238,7 @@ impl ModuleHeaderBuilder {
         //       is the last extension of the vector during the build process
         //       and optimizes conversion to boxed slice.
         self.funcs.reserve_exact(funcs.len());
-        self.compiled_funcs.reserve_exact(funcs.len());
+        self.engine_funcs.reserve_exact(funcs.len());
         for func in funcs {
             let func_type_idx = func?;
             let func_type = self.func_types[func_type_idx.into_u32() as usize];
@@ -246,10 +246,10 @@ impl ModuleHeaderBuilder {
                 panic!("function index out of bounds: {}", self.funcs.len())
             };
             self.funcs.push(func_type);
-            let compiled_func = self.engine.alloc_func();
-            self.compiled_funcs.push(compiled_func);
-            self.compiled_funcs_idx
-                .insert(compiled_func, FuncIdx::from(func_index));
+            let engine_func = self.engine.alloc_func();
+            self.engine_funcs.push(engine_func);
+            self.engine_funcs_idx
+                .insert(engine_func, FuncIdx::from(func_index));
         }
         Ok(())
     }

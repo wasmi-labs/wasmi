@@ -34,10 +34,10 @@ use wasmparser::{FuncToValidate, ValidatorResources, WasmFeatures};
 
 /// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`](crate::Engine).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct CompiledFunc(u32);
+pub struct EngineFunc(u32);
 
-impl CompiledFunc {
-    /// Creates a new [`CompiledFunc`] from the given `u32` index.
+impl EngineFunc {
+    /// Creates a new [`EngineFunc`] from the given `u32` index.
     ///
     /// # Note
     ///
@@ -48,7 +48,7 @@ impl CompiledFunc {
     }
 }
 
-impl ArenaIndex for CompiledFunc {
+impl ArenaIndex for EngineFunc {
     fn into_usize(self) -> usize {
         self.0 as usize
     }
@@ -64,7 +64,7 @@ impl ArenaIndex for CompiledFunc {
 /// Datastructure to efficiently store information about compiled functions.
 #[derive(Debug)]
 pub struct CodeMap {
-    funcs: Mutex<Arena<CompiledFunc, FuncEntity>>,
+    funcs: Mutex<Arena<EngineFunc, FuncEntity>>,
     features: WasmFeatures,
 }
 
@@ -77,25 +77,25 @@ impl CodeMap {
         }
     }
 
-    /// Allocates a new uninitialized [`CompiledFunc`] to the [`CodeMap`].
+    /// Allocates a new uninitialized [`EngineFunc`] to the [`CodeMap`].
     ///
     /// # Note
     ///
-    /// Before using the [`CodeMap`] the [`CompiledFunc`] must be initialized with either of:
+    /// Before using the [`CodeMap`] the [`EngineFunc`] must be initialized with either of:
     ///
     /// - [`CodeMap::init_func_as_compiled`]
     /// - [`CodeMap::init_func_as_uncompiled`]
-    pub fn alloc_func(&self) -> CompiledFunc {
+    pub fn alloc_func(&self) -> EngineFunc {
         self.funcs.lock().alloc(FuncEntity::Uninit)
     }
 
-    /// Initializes the [`CompiledFunc`] with its [`CompiledFuncEntity`].
+    /// Initializes the [`EngineFunc`] with its [`CompiledFuncEntity`].
     ///
     /// # Panics
     ///
-    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
-    /// - If `func` refers to an already initialized [`CompiledFunc`].
-    pub fn init_func_as_compiled(&self, func: CompiledFunc, entity: CompiledFuncEntity) {
+    /// - If `func` is an invalid [`EngineFunc`] reference for this [`CodeMap`].
+    /// - If `func` refers to an already initialized [`EngineFunc`].
+    pub fn init_func_as_compiled(&self, func: EngineFunc, entity: CompiledFuncEntity) {
         let mut funcs = self.funcs.lock();
         let Some(func) = funcs.get_mut(func) else {
             panic!("encountered invalid internal function: {func:?}")
@@ -103,15 +103,15 @@ impl CodeMap {
         func.init_compiled(entity);
     }
 
-    /// Initializes the [`CompiledFunc`] for lazy translation.
+    /// Initializes the [`EngineFunc`] for lazy translation.
     ///
     /// # Panics
     ///
-    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
-    /// - If `func` refers to an already initialized [`CompiledFunc`].
+    /// - If `func` is an invalid [`EngineFunc`] reference for this [`CodeMap`].
+    /// - If `func` refers to an already initialized [`EngineFunc`].
     pub fn init_func_as_uncompiled(
         &self,
-        func: CompiledFunc,
+        func: EngineFunc,
         func_idx: FuncIdx,
         bytes: &[u8],
         module: &ModuleHeader,
@@ -129,7 +129,7 @@ impl CodeMap {
         ));
     }
 
-    /// Returns the [`FuncEntity`] of the [`CompiledFunc`].
+    /// Returns the [`FuncEntity`] of the [`EngineFunc`].
     ///
     /// # Errors
     ///
@@ -140,7 +140,7 @@ impl CodeMap {
     pub fn get<'a>(
         &'a self,
         fuel: Option<&mut Fuel>,
-        func: CompiledFunc,
+        func: EngineFunc,
     ) -> Result<CompiledFuncRef<'a>, Error> {
         match self.get_compiled(func) {
             Some(cref) => Ok(cref),
@@ -159,7 +159,7 @@ impl CodeMap {
     fn compile_or_wait<'a>(
         &'a self,
         fuel: Option<&mut Fuel>,
-        func: CompiledFunc,
+        func: EngineFunc,
     ) -> Result<CompiledFuncRef<'a>, Error> {
         match self.get_uncompiled(func) {
             Some(entity) => self.compile(fuel, func, entity),
@@ -169,7 +169,7 @@ impl CodeMap {
 
     /// Returns the [`CompiledFuncRef`] of `func` if possible, otherwise returns `None`.
     #[inline]
-    fn get_compiled(&self, func: CompiledFunc) -> Option<CompiledFuncRef> {
+    fn get_compiled(&self, func: EngineFunc) -> Option<CompiledFuncRef> {
         let funcs = self.funcs.lock();
         let Some(entity) = funcs.get(func) else {
             // Safety: this is just called internally with function indices
@@ -185,7 +185,7 @@ impl CodeMap {
     ///
     /// After this operation `func` will be in [`FuncEntity::Compiling`] state.
     #[inline]
-    fn get_uncompiled(&self, func: CompiledFunc) -> Option<UncompiledFuncEntity> {
+    fn get_uncompiled(&self, func: EngineFunc) -> Option<UncompiledFuncEntity> {
         let mut funcs = self.funcs.lock();
         let Some(entity) = funcs.get_mut(func) else {
             panic!("encountered invalid internal function: {func:?}")
@@ -221,7 +221,7 @@ impl CodeMap {
     fn compile<'a>(
         &'a self,
         fuel: Option<&mut Fuel>,
-        func: CompiledFunc,
+        func: EngineFunc,
         mut entity: UncompiledFuncEntity,
     ) -> Result<CompiledFuncRef<'a>, Error> {
         // Note: it is important that compilation happens without locking the `CodeMap`
@@ -253,7 +253,7 @@ impl CodeMap {
     /// - If `ctx` ran out of fuel in case fuel consumption is enabled.
     #[cold]
     #[inline(never)]
-    fn wait_for_compilation(&self, func: CompiledFunc) -> Result<CompiledFuncRef, Error> {
+    fn wait_for_compilation(&self, func: EngineFunc) -> Result<CompiledFuncRef, Error> {
         'wait: loop {
             let funcs = self.funcs.lock();
             let Some(entity) = funcs.get(func) else {
@@ -579,14 +579,14 @@ impl<'a> From<&'a [u8]> for SmallByteSlice {
     }
 }
 
-/// Meta information about a [`CompiledFunc`].
+/// Meta information about a [`EngineFunc`].
 #[derive(Debug)]
 pub struct CompiledFuncEntity {
     /// The sequence of [`Instruction`] of the [`CompiledFuncEntity`].
     instrs: Pin<Box<[Instruction]>>,
-    /// The constant values local to the [`CompiledFunc`].
+    /// The constant values local to the [`EngineFunc`].
     consts: Pin<Box<[UntypedVal]>>,
-    /// The number of registers used by the [`CompiledFunc`] in total.
+    /// The number of registers used by the [`EngineFunc`] in total.
     ///
     /// # Note
     ///
@@ -621,14 +621,14 @@ impl CompiledFuncEntity {
     }
 }
 
-/// A shared reference to the data of a [`CompiledFunc`].
+/// A shared reference to the data of a [`EngineFunc`].
 #[derive(Debug, Copy, Clone)]
 pub struct CompiledFuncRef<'a> {
     /// The sequence of [`Instruction`] of the [`CompiledFuncEntity`].
     instrs: Pin<&'a [Instruction]>,
-    /// The constant values local to the [`CompiledFunc`].
+    /// The constant values local to the [`EngineFunc`].
     consts: Pin<&'a [UntypedVal]>,
-    /// The number of registers used by the [`CompiledFunc`] in total.
+    /// The number of registers used by the [`EngineFunc`] in total.
     len_registers: u16,
 }
 
@@ -644,19 +644,19 @@ impl<'a> From<&'a CompiledFuncEntity> for CompiledFuncRef<'a> {
 }
 
 impl<'a> CompiledFuncRef<'a> {
-    /// Returns the sequence of [`Instruction`] of the [`CompiledFunc`].
+    /// Returns the sequence of [`Instruction`] of the [`EngineFunc`].
     #[inline]
     pub fn instrs(&self) -> &'a [Instruction] {
         self.instrs.get_ref()
     }
 
-    /// Returns the number of registers used by the [`CompiledFunc`].
+    /// Returns the number of registers used by the [`EngineFunc`].
     #[inline]
     pub fn len_registers(&self) -> u16 {
         self.len_registers
     }
 
-    /// Returns the function local constant values of the [`CompiledFunc`].
+    /// Returns the function local constant values of the [`EngineFunc`].
     #[inline]
     pub fn consts(&self) -> &'a [UntypedVal] {
         self.consts.get_ref()

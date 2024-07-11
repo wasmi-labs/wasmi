@@ -199,10 +199,10 @@ impl<'engine> EngineExecutor<'engine> {
                 let len_results = results.len_results();
                 self.stack.values.extend_by(len_results, do_nothing)?;
                 let instance = *wasm_func.instance();
-                let compiled_func = wasm_func.func_body();
+                let engine_func = wasm_func.func_body();
                 let compiled_func = self
                     .code_map
-                    .get(Some(store.inner.fuel_mut()), compiled_func)?;
+                    .get(Some(store.inner.fuel_mut()), engine_func)?;
                 let (mut uninit_params, offsets) = self
                     .stack
                     .values

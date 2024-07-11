@@ -15,7 +15,7 @@ use std::vec::Vec;
 #[cfg(doc)]
 use super::calls::CallFrame;
 #[cfg(doc)]
-use crate::engine::CompiledFunc;
+use crate::engine::EngineFunc;
 
 pub struct ValueStack {
     /// The values on the [`ValueStack`].
@@ -203,14 +203,14 @@ impl ValueStack {
         unsafe { self.values.set_len(new_len) };
     }
 
-    /// Allocates a new [`CompiledFunc`] on the [`ValueStack`].
+    /// Allocates a new [`EngineFunc`] on the [`ValueStack`].
     ///
-    /// Returns the [`BaseValueStackOffset`] and [`FrameValueStackOffset`] of the allocated [`CompiledFunc`].
+    /// Returns the [`BaseValueStackOffset`] and [`FrameValueStackOffset`] of the allocated [`EngineFunc`].
     ///
     /// # Note
     ///
     /// - All live [`FrameRegisters`] might be invalidated and need to be reinstantiated.
-    /// - The parameters of the allocated [`CompiledFunc`] are set to zero
+    /// - The parameters of the allocated [`EngineFunc`] are set to zero
     ///   and require proper initialization after this call.
     ///
     /// # Errors

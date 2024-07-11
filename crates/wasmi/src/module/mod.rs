@@ -35,7 +35,7 @@ pub(crate) use self::{
 };
 use crate::{
     collections::Map,
-    engine::{CompiledFunc, DedupFuncType, EngineWeak},
+    engine::{DedupFuncType, EngineFunc, EngineWeak},
     Engine,
     Error,
     ExternType,
@@ -75,8 +75,8 @@ struct ModuleHeaderInner {
     globals_init: Box<[ConstExpr]>,
     exports: Map<Box<str>, ExternIdx>,
     start: Option<FuncIdx>,
-    compiled_funcs: Box<[CompiledFunc]>,
-    compiled_funcs_idx: BTreeMap<CompiledFunc, FuncIdx>,
+    engine_funcs: Box<[EngineFunc]>,
+    engine_funcs_idx: BTreeMap<EngineFunc, FuncIdx>,
     element_segments: Box<[ElementSegment]>,
 }
 
@@ -101,21 +101,21 @@ impl ModuleHeader {
         &self.inner.globals[global_idx.into_u32() as usize]
     }
 
-    /// Returns the [`CompiledFunc`] for the given [`FuncIdx`].
+    /// Returns the [`EngineFunc`] for the given [`FuncIdx`].
     ///
     /// Returns `None` if [`FuncIdx`] refers to an imported function.
-    pub fn get_compiled_func(&self, func_idx: FuncIdx) -> Option<CompiledFunc> {
+    pub fn get_engine_func(&self, func_idx: FuncIdx) -> Option<EngineFunc> {
         let index = func_idx.into_u32() as usize;
         let len_imported = self.inner.imports.len_funcs();
         let index = index.checked_sub(len_imported)?;
         // Note: It is a bug if this index access is out of bounds
         //       therefore we panic here instead of using `get`.
-        Some(self.inner.compiled_funcs[index])
+        Some(self.inner.engine_funcs[index])
     }
 
-    /// Returns the [`FuncIdx`] for the given [`CompiledFunc`].
-    pub fn get_func_index(&self, func: CompiledFunc) -> Option<FuncIdx> {
-        self.inner.compiled_funcs_idx.get(&func).copied()
+    /// Returns the [`FuncIdx`] for the given [`EngineFunc`].
+    pub fn get_func_index(&self, func: EngineFunc) -> Option<FuncIdx> {
+        self.inner.engine_funcs_idx.get(&func).copied()
     }
 
     /// Returns the global variable type and optional initial value.
@@ -366,10 +366,10 @@ impl Module {
         // since they refer to imported and not internally defined
         // functions.
         let funcs = &self.header.inner.funcs[len_imported..];
-        let compiled_funcs = &self.header.inner.compiled_funcs[..];
-        assert_eq!(funcs.len(), compiled_funcs.len());
+        let engine_funcs = &self.header.inner.engine_funcs[..];
+        assert_eq!(funcs.len(), engine_funcs.len());
         InternalFuncsIter {
-            iter: funcs.iter().zip(compiled_funcs),
+            iter: funcs.iter().zip(engine_funcs),
         }
     }
 
@@ -574,11 +574,11 @@ impl<'module> ImportType<'module> {
 /// An iterator over the internally defined functions of a [`Module`].
 #[derive(Debug)]
 pub struct InternalFuncsIter<'a> {
-    iter: iter::Zip<SliceIter<'a, DedupFuncType>, SliceIter<'a, CompiledFunc>>,
+    iter: iter::Zip<SliceIter<'a, DedupFuncType>, SliceIter<'a, EngineFunc>>,
 }
 
 impl<'a> Iterator for InternalFuncsIter<'a> {
-    type Item = (DedupFuncType, CompiledFunc);
+    type Item = (DedupFuncType, EngineFunc);
 
     fn next(&mut self) -> Option<Self::Item> {
         self.iter
