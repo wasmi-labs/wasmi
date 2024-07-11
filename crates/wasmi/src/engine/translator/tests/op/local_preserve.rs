@@ -1,7 +1,7 @@
 use super::*;
 use crate::engine::{
     bytecode::{BranchOffset, BranchOffset16, RegisterSpan},
-    CompiledFunc,
+    EngineFunc,
 };
 
 #[test]
@@ -579,7 +579,7 @@ fn invalid_preservation_slot_reuse_2() {
             Instruction::i32_popcnt(Register::from_i16(0), Register::from_i16(0)),
             Instruction::call_internal(
                 RegisterSpan::new(Register::from_i16(2)),
-                CompiledFunc::from_u32(0),
+                EngineFunc::from_u32(0),
             ),
             Instruction::register3(1, 3, 0),
             Instruction::copy(3, 1),

@@ -13,7 +13,7 @@ use crate::{
         },
         code_map::CompiledFuncRef,
         executor::stack::{CallFrame, FrameParams, ValueStack},
-        CompiledFunc,
+        EngineFunc,
         FuncParams,
     },
     func::{FuncEntity, HostFuncEntity},
@@ -205,7 +205,7 @@ impl<'engine> Executor<'engine> {
         }
     }
 
-    /// Creates a [`CallFrame`] for calling the [`CompiledFunc`].
+    /// Creates a [`CallFrame`] for calling the [`EngineFunc`].
     #[inline(always)]
     fn dispatch_compiled_func<C: CallContext>(
         &mut self,
@@ -287,13 +287,13 @@ impl<'engine> Executor<'engine> {
         }
     }
 
-    /// Prepares a [`CompiledFunc`] call with optional call parameters.
+    /// Prepares a [`EngineFunc`] call with optional call parameters.
     #[inline(always)]
     fn prepare_compiled_func_call<C: CallContext>(
         &mut self,
         store: &mut StoreInner,
         results: RegisterSpan,
-        func: CompiledFunc,
+        func: EngineFunc,
         mut instance: Option<Instance>,
     ) -> Result<(), Error> {
         let func = self.code_map.get(Some(store.fuel_mut()), func)?;
@@ -330,7 +330,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_return_call_internal_0(
         &mut self,
         store: &mut StoreInner,
-        func: CompiledFunc,
+        func: EngineFunc,
     ) -> Result<(), Error> {
         self.execute_return_call_internal_impl::<marker::ReturnCall0>(store, func)
     }
@@ -340,7 +340,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_return_call_internal(
         &mut self,
         store: &mut StoreInner,
-        func: CompiledFunc,
+        func: EngineFunc,
     ) -> Result<(), Error> {
         self.execute_return_call_internal_impl::<marker::ReturnCall>(store, func)
     }
@@ -349,7 +349,7 @@ impl<'engine> Executor<'engine> {
     fn execute_return_call_internal_impl<C: CallContext>(
         &mut self,
         store: &mut StoreInner,
-        func: CompiledFunc,
+        func: EngineFunc,
     ) -> Result<(), Error> {
         let results = self.caller_results();
         self.prepare_compiled_func_call::<C>(store, results, func, None)
@@ -377,7 +377,7 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut StoreInner,
         results: RegisterSpan,
-        func: CompiledFunc,
+        func: EngineFunc,
     ) -> Result<(), Error> {
         self.prepare_compiled_func_call::<marker::NestedCall0>(store, results, func, None)
     }
@@ -388,7 +388,7 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut StoreInner,
         results: RegisterSpan,
-        func: CompiledFunc,
+        func: EngineFunc,
     ) -> Result<(), Error> {
         self.prepare_compiled_func_call::<marker::NestedCall>(store, results, func, None)
     }

@@ -10,7 +10,7 @@ use super::{
     ModuleHeader,
 };
 use crate::{
-    engine::{CompiledFunc, EnforcedLimitsError},
+    engine::{EnforcedLimitsError, EngineFunc},
     Engine,
     Error,
     FuncType,
@@ -52,7 +52,7 @@ pub struct ModuleParser {
     /// The underlying Wasm parser.
     parser: WasmParser,
     /// The number of compiled or processed functions.
-    compiled_funcs: u32,
+    engine_funcs: u32,
     /// Flag, `true` when `stream` is at the end.
     eof: bool,
 }
@@ -65,7 +65,7 @@ impl ModuleParser {
             engine: engine.clone(),
             validator: None,
             parser,
-            compiled_funcs: 0,
+            engine_funcs: 0,
             eof: false,
         }
     }
@@ -454,16 +454,16 @@ impl ModuleParser {
     }
 
     /// Returns the next `FuncIdx` for processing of its function body.
-    fn next_func(&mut self, header: &ModuleHeader) -> (FuncIdx, CompiledFunc) {
-        let index = self.compiled_funcs;
-        let compiled_func = header.inner.compiled_funcs[index as usize];
-        self.compiled_funcs += 1;
+    fn next_func(&mut self, header: &ModuleHeader) -> (FuncIdx, EngineFunc) {
+        let index = self.engine_funcs;
+        let engine_func = header.inner.engine_funcs[index as usize];
+        self.engine_funcs += 1;
         // We have to adjust the initial func reference to the first
         // internal function before we process any of the internal functions.
         let len_func_imports = u32::try_from(header.inner.imports.len_funcs())
             .unwrap_or_else(|_| panic!("too many imported functions"));
         let func_idx = FuncIdx::from(index + len_func_imports);
-        (func_idx, compiled_func)
+        (func_idx, engine_func)
     }
 
     /// Process a single module code section entry.
@@ -483,7 +483,7 @@ impl ModuleParser {
         bytes: &[u8],
         header: &ModuleHeader,
     ) -> Result<(), Error> {
-        let (func, compiled_func) = self.next_func(header);
+        let (func, engine_func) = self.next_func(header);
         let module = header.clone();
         let offset = func_body.get_binary_reader().original_position();
         let func_to_validate = match &mut self.validator {
@@ -491,7 +491,7 @@ impl ModuleParser {
             None => None,
         };
         self.engine
-            .translate_func(func, compiled_func, offset, bytes, module, func_to_validate)?;
+            .translate_func(func, engine_func, offset, bytes, module, func_to_validate)?;
         Ok(())
     }
 

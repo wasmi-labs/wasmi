@@ -13,7 +13,7 @@ use crate::{
             SignatureIdx,
             UnaryInstr,
         },
-        CompiledFunc,
+        EngineFunc,
     },
     module::ModuleHeader,
     Engine,
@@ -563,7 +563,7 @@ fn get_engine(module: &ModuleHeader) -> Engine {
 
 fn relink_call_internal(
     results: &mut RegisterSpan,
-    func: CompiledFunc,
+    func: EngineFunc,
     module: &ModuleHeader,
     new_result: Register,
     old_result: Register,
