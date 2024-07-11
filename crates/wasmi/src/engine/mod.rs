@@ -36,19 +36,19 @@ pub(crate) use self::{
         WasmTranslator,
     },
 };
+use self::{
+    code_map::{CodeMap, CompiledFuncEntity},
+    func_types::FuncTypeRegistry,
+    resumable::ResumableCallBase,
+};
 pub use self::{
-    code_map::EngineFunc,
+    code_map::{EngineFunc, EngineFuncSpan, EngineFuncSpanIter},
     config::{CompilationMode, Config},
     executor::ResumableHostError,
     limits::{EnforcedLimits, EnforcedLimitsError, StackLimits},
     resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
     traits::{CallParams, CallResults},
     translator::{Instr, TranslationError},
-};
-use self::{
-    code_map::{CodeMap, CompiledFuncEntity},
-    func_types::FuncTypeRegistry,
-    resumable::ResumableCallBase,
 };
 use crate::{
     collections::arena::{ArenaIndex, GuardedEntity},
@@ -190,11 +190,11 @@ impl Engine {
         self.inner.resolve_func_type(func_type, f)
     }
 
-    /// Allocates a new uninitialized [`EngineFunc`] to the [`Engine`].
+    /// Allocates `amount` new uninitialized [`EngineFunc`] to the [`CodeMap`].
     ///
-    /// Returns a [`EngineFunc`] reference to allow accessing the allocated [`EngineFunc`].
-    pub(super) fn alloc_func(&self) -> EngineFunc {
-        self.inner.alloc_func()
+    /// Returns a range of [`EngineFunc`]s to allow accessing the allocated [`EngineFunc`].
+    pub(super) fn alloc_funcs(&self, amount: usize) -> EngineFuncSpan {
+        self.inner.alloc_funcs(amount)
     }
 
     /// Translates the Wasm function using the [`Engine`].
@@ -629,11 +629,11 @@ impl EngineInner {
         f(self.func_types.read().resolve_func_type(func_type))
     }
 
-    /// Allocates a new uninitialized [`EngineFunc`] to the [`EngineInner`].
+    /// Allocates `amount` new uninitialized [`EngineFunc`] to the [`CodeMap`].
     ///
-    /// Returns a [`EngineFunc`] reference to allow accessing the allocated [`EngineFunc`].
-    fn alloc_func(&self) -> EngineFunc {
-        self.code_map.alloc_func()
+    /// Returns a range of [`EngineFunc`]s to allow accessing the allocated [`EngineFunc`].
+    fn alloc_funcs(&self, amount: usize) -> EngineFuncSpan {
+        self.code_map.alloc_funcs(amount)
     }
 
     /// Returns reusable [`FuncTranslatorAllocations`] from the [`Engine`].

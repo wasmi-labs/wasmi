@@ -24,7 +24,7 @@ use crate::{
 use core::{
     fmt,
     mem::{self, MaybeUninit},
-    ops,
+    ops::{self, Range},
     pin::Pin,
     slice,
 };
@@ -68,6 +68,124 @@ pub struct CodeMap {
     features: WasmFeatures,
 }
 
+/// A range of [`EngineFunc`]s with contiguous indices.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct EngineFuncSpan {
+    start: EngineFunc,
+    end: EngineFunc,
+}
+
+impl Default for EngineFuncSpan {
+    #[inline]
+    fn default() -> Self {
+        Self::empty()
+    }
+}
+
+impl EngineFuncSpan {
+    /// Creates an empty [`EngineFuncSpan`].
+    #[inline]
+    pub fn empty() -> Self {
+        Self {
+            start: EngineFunc(0),
+            end: EngineFunc(0),
+        }
+    }
+
+    /// Returns `true` if `self` is empty.
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.start == self.end
+    }
+
+    /// Returns the number of [`EngineFunc`] in `self`.
+    pub fn len(&self) -> u32 {
+        let start = self.start.0;
+        let end = self.end.0;
+        end - start
+    }
+
+    /// Returns the n-th [`EngineFunc`] in `self`, if any.
+    ///
+    /// Returns `None` if `n` is out of bounds.
+    pub fn get(&self, n: u32) -> Option<EngineFunc> {
+        if n >= self.len() {
+            return None;
+        }
+        Some(EngineFunc(self.start.0 + n))
+    }
+
+    /// Returns the `u32` index of the [`EngineFunc`] in `self` if any.
+    ///
+    /// Returns `None` if `func` is not contained in `self`.
+    pub fn position(&self, func: EngineFunc) -> Option<u32> {
+        if func < self.start || func >= self.end {
+            return None;
+        }
+        Some(func.0 - self.start.0)
+    }
+
+    /// Returns the n-th [`EngineFunc`] in `self`, if any.
+    ///
+    /// # Pancis
+    ///
+    /// If `n` is out of bounds.
+    #[track_caller]
+    pub fn get_or_panic(&self, n: u32) -> EngineFunc {
+        self.get(n)
+            .unwrap_or_else(|| panic!("out of bounds `EngineFunc` index: {n}"))
+    }
+
+    /// Returns an iterator over the [`EngineFunc`]s in `self`.
+    #[inline]
+    pub fn iter(&self) -> EngineFuncSpanIter {
+        EngineFuncSpanIter { span: *self }
+    }
+}
+
+#[derive(Debug)]
+pub struct EngineFuncSpanIter {
+    span: EngineFuncSpan,
+}
+
+impl Iterator for EngineFuncSpanIter {
+    type Item = EngineFunc;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.span.is_empty() {
+            return None;
+        }
+        let func = self.span.start;
+        self.span.start = EngineFunc(self.span.start.0 + 1);
+        Some(func)
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let remaining = self.span.len() as usize;
+        (remaining, Some(remaining))
+    }
+}
+
+impl DoubleEndedIterator for EngineFuncSpanIter {
+    #[inline]
+    fn next_back(&mut self) -> Option<Self::Item> {
+        if self.span.is_empty() {
+            return None;
+        }
+        self.span.end = EngineFunc(self.span.end.0 - 1);
+        Some(self.span.end)
+    }
+}
+
+impl ExactSizeIterator for EngineFuncSpanIter {
+    #[inline]
+    fn len(&self) -> usize {
+        self.span.len() as usize
+    }
+}
+
 impl CodeMap {
     /// Creates a new [`CodeMap`].
     pub fn new(config: &Config) -> Self {
@@ -77,16 +195,17 @@ impl CodeMap {
         }
     }
 
-    /// Allocates a new uninitialized [`EngineFunc`] to the [`CodeMap`].
+    /// Allocates `amount` new uninitialized [`EngineFunc`] to the [`CodeMap`].
     ///
     /// # Note
     ///
-    /// Before using the [`CodeMap`] the [`EngineFunc`] must be initialized with either of:
+    /// Before using the [`CodeMap`] all [`EngineFunc`]s must be initialized with either of:
     ///
     /// - [`CodeMap::init_func_as_compiled`]
     /// - [`CodeMap::init_func_as_uncompiled`]
-    pub fn alloc_func(&self) -> EngineFunc {
-        self.funcs.lock().alloc(FuncEntity::Uninit)
+    pub fn alloc_funcs(&self, amount: usize) -> EngineFuncSpan {
+        let Range { start, end } = self.funcs.lock().alloc_many(amount);
+        EngineFuncSpan { start, end }
     }
 
     /// Initializes the [`EngineFunc`] with its [`CompiledFuncEntity`].
@@ -291,6 +410,13 @@ enum FuncEntity {
     FailedToCompile,
     /// An internal function that has already been compiled.
     Compiled(CompiledFuncEntity),
+}
+
+impl Default for FuncEntity {
+    #[inline]
+    fn default() -> Self {
+        Self::Uninit
+    }
 }
 
 impl FuncEntity {
