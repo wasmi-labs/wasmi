@@ -2,8 +2,16 @@ use super::Executor;
 use crate::{
     core::TrapCode,
     engine::{
-        bytecode::{FuncIdx, Instruction, Register, RegisterSpan, SignatureIdx, TableIdx},
-        code_map::{CompiledFuncRef, InstructionPtr},
+        bytecode::{
+            FuncIdx,
+            Instruction,
+            InstructionPtr,
+            Register,
+            RegisterSpan,
+            SignatureIdx,
+            TableIdx,
+        },
+        code_map::CompiledFuncRef,
         executor::stack::{CallFrame, FrameParams, ValueStack},
         CompiledFunc,
         FuncParams,

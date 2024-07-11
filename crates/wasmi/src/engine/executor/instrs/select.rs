@@ -1,10 +1,7 @@
 use super::Executor;
 use crate::{
     core::UntypedVal,
-    engine::{
-        bytecode::{AnyConst32, Const32, Instruction, Register},
-        code_map::InstructionPtr,
-    },
+    engine::bytecode::{AnyConst32, Const32, Instruction, InstructionPtr, Register},
 };
 
 /// Fetches the parameters for a `select` instruction with immutable `lhs` and `rhs`.

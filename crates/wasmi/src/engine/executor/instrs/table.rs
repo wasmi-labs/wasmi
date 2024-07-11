@@ -1,9 +1,14 @@
 use super::Executor;
 use crate::{
     core::TrapCode,
-    engine::{
-        bytecode::{Const16, Const32, ElementSegmentIdx, Instruction, Register, TableIdx},
-        code_map::InstructionPtr,
+    engine::bytecode::{
+        Const16,
+        Const32,
+        ElementSegmentIdx,
+        Instruction,
+        InstructionPtr,
+        Register,
+        TableIdx,
     },
     error::EntityGrowError,
     store::{ResourceLimiterRef, StoreInner},
