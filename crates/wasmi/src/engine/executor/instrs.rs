@@ -15,15 +15,15 @@ use crate::{
             FuncIdx,
             GlobalIdx,
             Instruction,
+            InstructionPtr,
             Register,
             SignatureIdx,
             TableIdx,
             UnaryInstr,
         },
-        code_map::InstructionPtr,
+        code_map::CodeMap,
         executor::stack::{CallFrame, FrameRegisters, ValueStack},
         DedupFuncType,
-        EngineResources,
     },
     memory::DataSegment,
     module::DEFAULT_MEMORY_INDEX,
@@ -77,11 +77,11 @@ macro_rules! forward_return {
 pub fn execute_instrs<'engine, T>(
     store: &mut Store<T>,
     stack: &'engine mut Stack,
-    res: &'engine EngineResources,
+    code_map: &'engine CodeMap,
 ) -> Result<(), Error> {
     let instance = stack.calls.instance_expect();
     let cache = CachedInstance::new(&mut store.inner, instance);
-    Executor::new(stack, res, cache).execute(store)
+    Executor::new(stack, code_map, cache).execute(store)
 }
 
 /// An execution context for executing a Wasmi function frame.
@@ -98,7 +98,7 @@ struct Executor<'engine> {
     /// The static resources of an [`Engine`].
     ///
     /// [`Engine`]: crate::Engine
-    res: &'engine EngineResources,
+    code_map: &'engine CodeMap,
 }
 
 impl<'engine> Executor<'engine> {
@@ -106,7 +106,7 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     pub fn new(
         stack: &'engine mut Stack,
-        res: &'engine EngineResources,
+        code_map: &'engine CodeMap,
         cache: CachedInstance,
     ) -> Self {
         let frame = stack
@@ -123,7 +123,7 @@ impl<'engine> Executor<'engine> {
             ip,
             cache,
             stack,
-            res,
+            code_map,
         }
     }
 

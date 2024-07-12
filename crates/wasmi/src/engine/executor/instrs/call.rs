@@ -2,13 +2,18 @@ use super::Executor;
 use crate::{
     core::TrapCode,
     engine::{
-        bytecode::{FuncIdx, Instruction, Register, RegisterSpan, SignatureIdx, TableIdx},
-        code_map::InstructionPtr,
+        bytecode::{
+            FuncIdx,
+            Instruction,
+            InstructionPtr,
+            Register,
+            RegisterSpan,
+            SignatureIdx,
+            TableIdx,
+        },
+        code_map::CompiledFuncRef,
         executor::stack::{CallFrame, FrameParams, ValueStack},
-        func_types::FuncTypeRegistry,
-        CompiledFunc,
-        CompiledFuncEntity,
-        DedupFuncType,
+        EngineFunc,
         FuncParams,
     },
     func::{FuncEntity, HostFuncEntity},
@@ -22,17 +27,6 @@ use crate::{
 use core::array;
 use std::fmt;
 
-impl FuncTypeRegistry {
-    /// Returns the maximum value of number of parameters and results for the given [`DedupFuncType`].
-    #[inline]
-    fn len_params_results(&self, func_ty: &DedupFuncType) -> (usize, usize) {
-        let (input_types, output_types) = self.resolve_func_type(func_ty).params_results();
-        let len_inputs = input_types.len();
-        let len_outputs = output_types.len();
-        (len_inputs, len_outputs)
-    }
-}
-
 /// Dispatches and executes the host function.
 ///
 /// Returns the number of parameters and results of the called host function.
@@ -43,18 +37,18 @@ impl FuncTypeRegistry {
 #[inline(always)]
 pub fn dispatch_host_func<T>(
     store: &mut Store<T>,
-    func_types: &FuncTypeRegistry,
     value_stack: &mut ValueStack,
     host_func: HostFuncEntity,
     instance: Option<&Instance>,
-) -> Result<(usize, usize), Error> {
-    let (len_inputs, len_outputs) = func_types.len_params_results(host_func.ty_dedup());
-    let max_inout = len_inputs.max(len_outputs);
+) -> Result<(u16, u16), Error> {
+    let len_params = host_func.len_params();
+    let len_results = host_func.len_results();
+    let max_inout = len_params.max(len_results);
     let values = value_stack.as_slice_mut();
     let params_results = FuncParams::new(
-        values.split_at_mut(values.len() - max_inout).1,
-        len_inputs,
-        len_outputs,
+        values.split_at_mut(values.len() - usize::from(max_inout)).1,
+        usize::from(len_params),
+        usize::from(len_results),
     );
     let trampoline = store.resolve_trampoline(host_func.trampoline()).clone();
     trampoline
@@ -65,9 +59,9 @@ pub fn dispatch_host_func<T>(
             //       called host function. Since the host function failed we
             //       need to clean up the temporary buffer values here.
             //       This is required for resumable calls to work properly.
-            value_stack.drop(max_inout);
+            value_stack.drop(usize::from(max_inout));
         })?;
-    Ok((len_inputs, len_outputs))
+    Ok((len_params, len_results))
 }
 
 /// The kind of a function call.
@@ -211,12 +205,12 @@ impl<'engine> Executor<'engine> {
         }
     }
 
-    /// Creates a [`CallFrame`] for calling the [`CompiledFunc`].
+    /// Creates a [`CallFrame`] for calling the [`EngineFunc`].
     #[inline(always)]
     fn dispatch_compiled_func<C: CallContext>(
         &mut self,
         results: RegisterSpan,
-        func: &CompiledFuncEntity,
+        func: CompiledFuncRef,
     ) -> Result<CallFrame, Error> {
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
         // [`ValueStack::alloc_call_frame`] which might invalidate all live [`FrameRegisters`].
@@ -293,16 +287,16 @@ impl<'engine> Executor<'engine> {
         }
     }
 
-    /// Prepares a [`CompiledFunc`] call with optional call parameters.
+    /// Prepares a [`EngineFunc`] call with optional call parameters.
     #[inline(always)]
     fn prepare_compiled_func_call<C: CallContext>(
         &mut self,
         store: &mut StoreInner,
         results: RegisterSpan,
-        func: CompiledFunc,
+        func: EngineFunc,
         mut instance: Option<Instance>,
     ) -> Result<(), Error> {
-        let func = self.res.code_map.get(Some(store.fuel_mut()), func)?;
+        let func = self.code_map.get(Some(store.fuel_mut()), func)?;
         let mut called = self.dispatch_compiled_func::<C>(results, func)?;
         match <C as CallContext>::KIND {
             CallKind::Nested => {
@@ -336,7 +330,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_return_call_internal_0(
         &mut self,
         store: &mut StoreInner,
-        func: CompiledFunc,
+        func: EngineFunc,
     ) -> Result<(), Error> {
         self.execute_return_call_internal_impl::<marker::ReturnCall0>(store, func)
     }
@@ -346,7 +340,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_return_call_internal(
         &mut self,
         store: &mut StoreInner,
-        func: CompiledFunc,
+        func: EngineFunc,
     ) -> Result<(), Error> {
         self.execute_return_call_internal_impl::<marker::ReturnCall>(store, func)
     }
@@ -355,7 +349,7 @@ impl<'engine> Executor<'engine> {
     fn execute_return_call_internal_impl<C: CallContext>(
         &mut self,
         store: &mut StoreInner,
-        func: CompiledFunc,
+        func: EngineFunc,
     ) -> Result<(), Error> {
         let results = self.caller_results();
         self.prepare_compiled_func_call::<C>(store, results, func, None)
@@ -383,7 +377,7 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut StoreInner,
         results: RegisterSpan,
-        func: CompiledFunc,
+        func: EngineFunc,
     ) -> Result<(), Error> {
         self.prepare_compiled_func_call::<marker::NestedCall0>(store, results, func, None)
     }
@@ -394,7 +388,7 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut StoreInner,
         results: RegisterSpan,
-        func: CompiledFunc,
+        func: EngineFunc,
     ) -> Result<(), Error> {
         self.prepare_compiled_func_call::<marker::NestedCall>(store, results, func, None)
     }
@@ -498,8 +492,8 @@ impl<'engine> Executor<'engine> {
         func: &Func,
         host_func: HostFuncEntity,
     ) -> Result<(), Error> {
-        let (len_params, len_results) =
-            self.res.func_types.len_params_results(host_func.ty_dedup());
+        let len_params = usize::from(host_func.len_params());
+        let len_results = usize::from(host_func.len_results());
         let max_inout = len_params.max(len_results);
         let instance = *self.stack.calls.instance_expect();
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
@@ -549,14 +543,8 @@ impl<'engine> Executor<'engine> {
         store: &mut Store<T>,
         host_func: HostFuncEntity,
         instance: &Instance,
-    ) -> Result<(usize, usize), Error> {
-        dispatch_host_func(
-            store,
-            &self.res.func_types,
-            &mut self.stack.values,
-            host_func,
-            Some(instance),
-        )
+    ) -> Result<(u16, u16), Error> {
+        dispatch_host_func(store, &mut self.stack.values, host_func, Some(instance))
     }
 
     /// Executes an [`Instruction::CallIndirect0`].

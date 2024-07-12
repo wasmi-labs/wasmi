@@ -29,9 +29,29 @@ jobs:
       - name: Build (no_std + no-hash-maps)
         run: cargo build --locked -p wasmi_collections --no-default-features --features no-hash-maps --verbose
       - name: Build (no_std)
-        run: cargo build --workspace --locked --lib --no-default-features --target x86_64-unknown-none --verbose --exclude wasmi_cli --exclude wasmi_wasi --exclude wasmi_fuzz
+        run: >-
+            cargo build
+            --workspace
+            --locked
+            --lib
+            --no-default-features
+            --target x86_64-unknown-none
+            --verbose
+            --exclude wasmi_cli
+            --exclude wasmi_wasi
+            --exclude wasmi_fuzz
       - name: Build (wasm32)
-        run: cargo build --workspace --locked --lib --no-default-features --target wasm32-unknown-unknown --verbose --exclude wasmi_cli --exclude wasmi_wasi --exclude wasmi_fuzz
+        run: >-
+          cargo build
+          --workspace
+          --locked
+          --lib
+          --no-default-features
+          --target wasm32-unknown-unknown
+          --verbose
+          --exclude wasmi_cli
+          --exclude wasmi_wasi
+          --exclude wasmi_fuzz
 
   test-asan:
     name: Test (Address Sanitizer)
@@ -156,7 +176,6 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           cache-directories: |
-            ~/fuzz/corpus/
             ~/fuzz/corpus/translate/
             ~/fuzz/corpus/translate_metered/
       - name: Checkout Submodules
@@ -183,7 +202,6 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           cache-directories: |
-            ~/fuzz/corpus/
             ~/fuzz/corpus/execute/
       - name: Checkout Submodules
         run: git submodule update --init --recursive
@@ -207,7 +225,6 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           cache-directories: |
-            ~/fuzz/corpus/
             ~/fuzz/corpus/differential/
       - name: Checkout Submodules
         run: git submodule update --init --recursive

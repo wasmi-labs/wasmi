@@ -12,7 +12,7 @@ pub use self::{component_vec::ComponentVec, dedup::DedupArena, guarded::GuardedE
 use core::{
     iter::Enumerate,
     marker::PhantomData,
-    ops::{Index, IndexMut},
+    ops::{Index, IndexMut, Range},
     slice,
 };
 use std::vec::Vec;
@@ -118,6 +118,19 @@ where
         let index = self.next_index();
         self.entities.push(entity);
         index
+    }
+
+    /// Allocates a new default initialized entity and returns its index.
+    #[inline]
+    pub fn alloc_many(&mut self, amount: usize) -> Range<Idx>
+    where
+        T: Default,
+    {
+        let start = self.next_index();
+        self.entities
+            .extend(core::iter::repeat_with(T::default).take(amount));
+        let end = self.next_index();
+        Range { start, end }
     }
 
     /// Returns a shared reference to the entity at the given index if any.

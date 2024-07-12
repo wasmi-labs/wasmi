@@ -2,7 +2,7 @@ use super::{err_stack_overflow, BaseValueStackOffset, FrameValueStackOffset};
 use crate::{
     collections::HeadVec,
     core::TrapCode,
-    engine::{bytecode::RegisterSpan, code_map::InstructionPtr},
+    engine::bytecode::{InstructionPtr, RegisterSpan},
     Instance,
 };
 use std::vec::Vec;
@@ -12,7 +12,7 @@ use crate::{
     engine::bytecode::Instruction,
     engine::bytecode::Register,
     engine::executor::stack::ValueStack,
-    engine::CompiledFunc,
+    engine::EngineFunc,
     Global,
     Memory,
     Table,
@@ -190,7 +190,7 @@ impl StackOffsets {
     }
 }
 
-/// A single frame of a called [`CompiledFunc`].
+/// A single frame of a called [`EngineFunc`].
 #[derive(Debug, Copy, Clone)]
 pub struct CallFrame {
     /// The pointer to the [`Instruction`] that is executed next.

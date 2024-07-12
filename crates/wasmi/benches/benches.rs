@@ -7,9 +7,17 @@ use self::bench::{
     load_wasm_from_file,
     wat2wasm,
 };
+use assert_matches::assert_matches;
 use bench::bench_config;
-use core::{slice, time::Duration};
-use criterion::{criterion_group, criterion_main, Bencher, Criterion};
+use core::time::Duration;
+use criterion::{
+    criterion_group,
+    criterion_main,
+    measurement::WallTime,
+    Bencher,
+    BenchmarkGroup,
+    Criterion,
+};
 use std::{
     fmt::{self, Display},
     sync::OnceLock,
@@ -18,24 +26,27 @@ use wasmi::{
     core::{TrapCode, ValType, F32, F64},
     CompilationMode,
     Engine,
-    Extern,
     Func,
     FuncType,
+    Instance,
     Linker,
     Memory,
     Module,
     Store,
+    TypedFunc,
     Val,
 };
 
 criterion_group!(
-    name = bench_translate;
+    name = bench_group_translate;
     config = Criterion::default()
         .sample_size(10)
         .measurement_time(Duration::from_millis(2000))
         .warm_up_time(Duration::from_millis(1000));
     targets =
-        bench_translate_wasm_kernel,
+        bench_translate_tiny_keccak,
+        bench_translate_reverse_complement,
+        bench_translate_regex_redux,
         bench_translate_spidermonkey,
         bench_translate_pulldown_cmark,
         bench_translate_bz2,
@@ -48,19 +59,21 @@ criterion_group!(
         bench_translate_case_worst_stackbomb_big,
 );
 criterion_group!(
-    name = bench_instantiate;
+    name = bench_group_instantiate;
     config = Criterion::default()
         .sample_size(10)
         .measurement_time(Duration::from_millis(2000))
         .warm_up_time(Duration::from_millis(1000));
     targets =
-        bench_instantiate_wasm_kernel,
+        bench_instantiate_tiny_keccak,
+        bench_instantiate_reverse_complement,
+        bench_instantiate_regex_redux,
         // bench_instantiate_erc20,
         // bench_instantiate_erc721,
         // bench_instantiate_erc1155,
 );
 criterion_group!(
-    name = bench_overhead;
+    name = bench_group_overhead;
     config = Criterion::default()
         .sample_size(10)
         .measurement_time(Duration::from_millis(1000))
@@ -72,7 +85,7 @@ criterion_group!(
         bench_overhead_call_untyped_16,
 );
 criterion_group!(
-    name = bench_linker;
+    name = bench_group_linker;
     config = Criterion::default()
         .sample_size(10)
         .measurement_time(Duration::from_millis(1000))
@@ -86,24 +99,24 @@ criterion_group!(
         bench_linker_build_construct_unique,
 );
 criterion_group! {
-    name = bench_execute;
+    name = bench_group_execute;
     config = Criterion::default()
         .sample_size(10)
         .measurement_time(Duration::from_millis(2000))
         .warm_up_time(Duration::from_millis(1000));
     targets =
         bench_execute_tiny_keccak,
-        bench_execute_rev_comp,
+        bench_execute_reverse_complement,
         bench_execute_regex_redux,
-        bench_execute_count_until,
+        bench_execute_counter,
         bench_execute_br_table,
         bench_execute_trunc_f2i,
         bench_execute_global_bump,
         bench_execute_global_const,
-        bench_execute_factorial,
-        bench_execute_recursive_ok,
         bench_execute_recursive_scan,
         bench_execute_recursive_trap,
+        bench_execute_flat_calls,
+        bench_execute_nested_calls,
         bench_execute_host_calls,
         bench_execute_fuse,
         bench_execute_divrem,
@@ -116,17 +129,15 @@ criterion_group! {
 }
 
 criterion_main!(
-    bench_translate,
-    bench_instantiate,
-    bench_execute,
-    bench_overhead,
-    bench_linker,
+    bench_group_translate,
+    bench_group_instantiate,
+    bench_group_execute,
+    bench_group_overhead,
+    bench_group_linker,
 );
 
-const WASM_KERNEL: &str =
-    "benches/wasm/wasm_kernel/target/wasm32-unknown-unknown/release/wasm_kernel.wasm";
-const REVCOMP_INPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-input.txt");
-const REVCOMP_OUTPUT: &[u8] = include_bytes!("wasm/wasm_kernel/res/revcomp-output.txt");
+const REVCOMP_INPUT: &[u8] = include_bytes!("rust/cases/reverse_complement/input.txt");
+const REVCOMP_OUTPUT: &[u8] = include_bytes!("rust/cases/reverse_complement/output.txt");
 
 enum FuelMetering {
     Enabled,
@@ -229,8 +240,20 @@ fn bench_translate_for_all(c: &mut Criterion, name: &str, path: &str) {
     );
 }
 
-fn bench_translate_wasm_kernel(c: &mut Criterion) {
-    bench_translate_for_all(c, "wasm_kernel", WASM_KERNEL);
+fn bench_translate_tiny_keccak(c: &mut Criterion) {
+    bench_translate_for_all(c, "tiny_keccak", "benches/rust/cases/tiny_keccak/out.wasm");
+}
+
+fn bench_translate_reverse_complement(c: &mut Criterion) {
+    bench_translate_for_all(
+        c,
+        "reverse_complement",
+        "benches/rust/cases/reverse_complement/out.wasm",
+    );
+}
+
+fn bench_translate_regex_redux(c: &mut Criterion) {
+    bench_translate_for_all(c, "regex_redux", "benches/rust/cases/regex_redux/out.wasm");
 }
 
 fn bench_translate_spidermonkey(c: &mut Criterion) {
@@ -409,15 +432,29 @@ fn bench_translate_case_worst_stackbomb_big(c: &mut Criterion) {
     });
 }
 
-fn bench_instantiate_wasm_kernel(c: &mut Criterion) {
-    c.bench_function("instantiate/wasm_kernel", |b| {
-        let module = load_module_from_file(WASM_KERNEL);
+fn bench_instantiate_using(c: &mut Criterion, name: &str) {
+    let id = format!("instantiate/{name}");
+    c.bench_function(&id, |b| {
+        let path = format!("benches/rust/cases/{name}/out.wasm");
+        let module = load_module_from_file(&path);
         let linker = <Linker<()>>::new(module.engine());
         b.iter(|| {
             let mut store = Store::new(module.engine(), ());
             let _instance = linker.instantiate(&mut store, &module).unwrap();
         })
     });
+}
+
+fn bench_instantiate_tiny_keccak(c: &mut Criterion) {
+    bench_instantiate_using(c, "tiny_keccak");
+}
+
+fn bench_instantiate_reverse_complement(c: &mut Criterion) {
+    bench_instantiate_using(c, "reverse_complement");
+}
+
+fn bench_instantiate_regex_redux(c: &mut Criterion) {
+    bench_instantiate_using(c, "regex_redux");
 }
 
 fn bench_linker_build_finish_same(c: &mut Criterion) {
@@ -695,181 +732,135 @@ fn bench_instantiate_erc1155(c: &mut Criterion) {
 
 fn bench_execute_tiny_keccak(c: &mut Criterion) {
     c.bench_function("execute/tiny_keccak", |b| {
-        let (mut store, instance) = load_instance_from_file(WASM_KERNEL);
-        let prepare = instance
-            .get_export(&store, "prepare_tiny_keccak")
-            .and_then(Extern::into_func)
+        let (mut store, instance) =
+            load_instance_from_file("benches/rust/cases/tiny_keccak/out.wasm");
+        let data_ptr = instance
+            .get_typed_func::<(), i32>(&store, "setup")
+            .unwrap()
+            .call(&mut store, ())
             .unwrap();
-        let keccak = instance
-            .get_export(&store, "bench_tiny_keccak")
-            .and_then(Extern::into_func)
-            .unwrap();
-        let mut test_data_ptr = Val::I32(0);
-        prepare
-            .call(&mut store, &[], slice::from_mut(&mut test_data_ptr))
-            .unwrap();
+        let keccak = instance.get_typed_func::<i32, ()>(&store, "run").unwrap();
         b.iter(|| {
-            keccak
-                .call(&mut store, slice::from_ref(&test_data_ptr), &mut [])
-                .unwrap();
-        })
+            keccak.call(&mut store, data_ptr).unwrap();
+        });
+        instance
+            .get_typed_func::<i32, ()>(&store, "teardown")
+            .unwrap()
+            .call(&mut store, data_ptr)
+            .unwrap();
     });
 }
 
-fn bench_execute_rev_comp(c: &mut Criterion) {
-    c.bench_function("execute/rev_complement", |b| {
-        let (mut store, instance) = load_instance_from_file(WASM_KERNEL);
+fn bench_execute_reverse_complement(c: &mut Criterion) {
+    c.bench_function("execute/reverse_complement", |b| {
+        let (mut store, instance) =
+            load_instance_from_file("benches/rust/cases/reverse_complement/out.wasm");
 
         // Allocate buffers for the input and output.
-        let mut result = Val::I32(0);
-        let input_size = Val::I32(REVCOMP_INPUT.len() as i32);
-        let prepare_rev_complement = instance
-            .get_export(&store, "prepare_rev_complement")
-            .and_then(Extern::into_func)
+        let data_ptr = instance
+            .get_typed_func::<i32, i32>(&store, "setup")
+            .unwrap()
+            .call(&mut store, REVCOMP_INPUT.len() as i32)
             .unwrap();
-        prepare_rev_complement
-            .call(&mut store, &[input_size], slice::from_mut(&mut result))
-            .unwrap();
-        let test_data_ptr = match &result {
-            Val::I32(value) => Val::I32(*value),
-            _ => panic!("unexpected non-I32 result found for prepare_rev_complement"),
-        };
 
         // Get the pointer to the input buffer.
-        let rev_complement_input_ptr = instance
-            .get_export(&store, "rev_complement_input_ptr")
-            .and_then(Extern::into_func)
+        let input_offset = instance
+            .get_typed_func::<i32, i32>(&store, "input_ptr")
+            .unwrap()
+            .call(&mut store, data_ptr)
             .unwrap();
-        rev_complement_input_ptr
-            .call(
-                &mut store,
-                slice::from_ref(&test_data_ptr),
-                slice::from_mut(&mut result),
-            )
-            .unwrap();
-        let input_data_mem_offset = match &result {
-            Val::I32(value) => *value,
-            _ => panic!("unexpected non-I32 result found for prepare_rev_complement"),
-        };
 
         // Copy test data inside the wasm memory.
-        let memory = instance
-            .get_export(&store, "memory")
-            .and_then(Extern::into_memory)
-            .expect("failed to find 'memory' exported linear memory in instance");
+        let memory = instance.get_memory(&store, "memory").unwrap();
         memory
-            .write(&mut store, input_data_mem_offset as usize, REVCOMP_INPUT)
-            .expect("failed to write test data into a wasm memory");
-
-        let bench_rev_complement = instance
-            .get_export(&store, "bench_rev_complement")
-            .and_then(Extern::into_func)
+            .write(&mut store, input_offset as usize, REVCOMP_INPUT)
             .unwrap();
 
+        // Run the rev complement benchmark.
+        let bench_rev_complement = instance.get_typed_func::<i32, ()>(&store, "run").unwrap();
         b.iter(|| {
-            bench_rev_complement
-                .call(&mut store, slice::from_ref(&test_data_ptr), &mut [])
-                .unwrap();
+            bench_rev_complement.call(&mut store, data_ptr).unwrap();
         });
 
         // Get the pointer to the output buffer.
-        let rev_complement_output_ptr = instance
-            .get_export(&store, "rev_complement_output_ptr")
-            .and_then(Extern::into_func)
+        let output_offset = instance
+            .get_typed_func::<i32, i32>(&store, "output_ptr")
+            .unwrap()
+            .call(&mut store, data_ptr)
             .unwrap();
-        rev_complement_output_ptr
-            .call(
-                &mut store,
-                slice::from_ref(&test_data_ptr),
-                slice::from_mut(&mut result),
-            )
-            .unwrap();
-        let output_data_mem_offset = match &result {
-            Val::I32(value) => *value,
-            _ => panic!("unexpected non-I32 result found for prepare_rev_complement"),
-        };
 
-        let mut revcomp_result = vec![0x00_u8; REVCOMP_OUTPUT.len()];
+        let mut result = [0x00_u8; REVCOMP_OUTPUT.len()];
         memory
-            .read(&store, output_data_mem_offset as usize, &mut revcomp_result)
-            .expect("failed to read result data from a wasm memory");
-        assert_eq!(&revcomp_result[..], REVCOMP_OUTPUT);
+            .read(&store, output_offset as usize, &mut result)
+            .unwrap();
+        assert_eq!(&result[..], REVCOMP_OUTPUT);
+
+        // Teardown benchmark data.
+        instance
+            .get_typed_func::<i32, ()>(&store, "teardown")
+            .unwrap()
+            .call(&mut store, data_ptr)
+            .unwrap();
     });
 }
 
-#[allow(dead_code)]
 fn bench_execute_regex_redux(c: &mut Criterion) {
     c.bench_function("execute/regex_redux", |b| {
-        let (mut store, instance) = load_instance_from_file(WASM_KERNEL);
+        let (mut store, instance) =
+            load_instance_from_file("benches/rust/cases/regex_redux/out.wasm");
 
         // Allocate buffers for the input and output.
-        let mut result = Val::I32(0);
-        let input_size = Val::I32(REVCOMP_INPUT.len() as i32);
-        let prepare_regex_redux = instance
-            .get_export(&store, "prepare_regex_redux")
-            .and_then(Extern::into_func)
+        let data_ptr = instance
+            .get_typed_func::<i32, i32>(&store, "setup")
+            .unwrap()
+            .call(&mut store, REVCOMP_INPUT.len() as i32)
             .unwrap();
-        prepare_regex_redux
-            .call(&mut store, &[input_size], slice::from_mut(&mut result))
-            .unwrap();
-        let test_data_ptr = match &result {
-            Val::I32(value) => Val::I32(*value),
-            _ => panic!("unexpected non-I32 result found for prepare_regex_redux"),
-        };
 
         // Get the pointer to the input buffer.
-        let regex_redux_input_ptr = instance
-            .get_export(&store, "regex_redux_input_ptr")
-            .and_then(Extern::into_func)
+        let input_data_mem_offset = instance
+            .get_typed_func::<i32, i32>(&store, "input_ptr")
+            .unwrap()
+            .call(&mut store, data_ptr)
             .unwrap();
-        regex_redux_input_ptr
-            .call(
-                &mut store,
-                slice::from_ref(&test_data_ptr),
-                slice::from_mut(&mut result),
-            )
-            .unwrap();
-        let input_data_mem_offset = match &result {
-            Val::I32(value) => *value,
-            _ => panic!("unexpected non-I32 result found for regex_redux_input_ptr"),
-        };
 
         // Copy test data inside the wasm memory.
-        let memory = instance
-            .get_export(&store, "memory")
-            .and_then(Extern::into_memory)
-            .expect("failed to find 'memory' exported linear memory in instance");
-        memory
+        instance
+            .get_memory(&store, "memory")
+            .unwrap()
             .write(&mut store, input_data_mem_offset as usize, REVCOMP_INPUT)
-            .expect("failed to write test data into a wasm memory");
-
-        let bench_regex_redux = instance
-            .get_export(&store, "bench_regex_redux")
-            .and_then(Extern::into_func)
             .unwrap();
 
+        // Actually run the benchmark:
+        let run = instance.get_typed_func::<i32, ()>(&store, "run").unwrap();
         b.iter(|| {
-            bench_regex_redux
-                .call(&mut store, slice::from_ref(&test_data_ptr), &mut [])
-                .unwrap();
-        })
+            run.call(&mut store, data_ptr).unwrap();
+        });
+
+        // Check the result of the regex find.
+        let result = instance
+            .get_typed_func::<i32, i32>(&store, "output")
+            .unwrap()
+            .call(&mut store, data_ptr)
+            .unwrap();
+        assert_eq!(result, 2);
+
+        // Teardown benchmark data.
+        instance
+            .get_typed_func::<i32, ()>(&store, "teardown")
+            .unwrap()
+            .call(&mut store, data_ptr)
+            .unwrap();
     });
 }
 
-fn bench_execute_count_until(c: &mut Criterion) {
-    const COUNT_UNTIL: i32 = 1_000_000;
-    c.bench_function("execute/count_until", |b| {
-        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/count_until.wat"));
-        let count_until = instance
-            .get_export(&store, "count_until")
-            .and_then(Extern::into_func)
-            .unwrap()
-            .typed::<i32, i32>(&store)
-            .unwrap();
-
+fn bench_execute_counter(c: &mut Criterion) {
+    const ITERATIONS: i32 = 1_000_000;
+    c.bench_function("execute/counter", |b| {
+        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/counter.wat"));
+        let run = instance.get_typed_func::<i32, i32>(&store, "run").unwrap();
         b.iter(|| {
-            let result = count_until.call(&mut store, COUNT_UNTIL).unwrap();
-            assert_eq!(result, COUNT_UNTIL);
+            let result = run.call(&mut store, ITERATIONS).unwrap();
+            assert_eq!(result, ITERATIONS);
         })
     });
 }
@@ -879,15 +870,11 @@ fn bench_execute_br_table(c: &mut Criterion) {
     c.bench_function("execute/br_table", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/br_table.wat"));
         let br_table = instance
-            .get_export(&store, "br_table")
-            .and_then(Extern::into_func)
-            .unwrap()
-            .typed::<i32, i32>(&store)
+            .get_typed_func::<i32, i32>(&store, "br_table")
             .unwrap();
         let expected = [
             -10, -20, -30, -40, -50, -60, -70, -80, -90, -100, -110, -120, -130, -140, -150, -160,
         ];
-
         b.iter(|| {
             for input in 0..REPETITIONS {
                 let cramped = input % expected.len();
@@ -902,15 +889,11 @@ fn bench_execute_trunc_f2i(c: &mut Criterion) {
     const ITERATIONS: i32 = 25_000;
     c.bench_function("execute/trunc_f2i", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/trunc_f2i.wat"));
-        let count_until = instance
-            .get_export(&store, "trunc_f2i")
-            .and_then(Extern::into_func)
+        let run = instance
+            .get_typed_func::<(i32, F32, F64), ()>(&store, "trunc_f2i")
             .unwrap();
-        let count_until = count_until.typed::<(i32, F32, F64), ()>(&store).unwrap();
-
         b.iter(|| {
-            count_until
-                .call(&mut store, (ITERATIONS, F32::from(42.0), F64::from(69.0)))
+            run.call(&mut store, (ITERATIONS, F32::from(42.0), F64::from(69.0)))
                 .unwrap();
         })
     });
@@ -921,10 +904,8 @@ fn bench_overhead_call_typed_0(c: &mut Criterion) {
     c.bench_function("overhead/call/typed/0", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
         let bare_call = instance
-            .get_export(&store, "bare_call_0")
-            .and_then(Extern::into_func)
+            .get_typed_func::<(), ()>(&store, "bare_call/0")
             .unwrap();
-        let bare_call = bare_call.typed::<(), ()>(&store).unwrap();
         b.iter(|| {
             for _ in 0..REPETITIONS {
                 bare_call.call(&mut store, ()).unwrap();
@@ -956,10 +937,8 @@ fn bench_overhead_call_typed_16(c: &mut Criterion) {
     c.bench_function("overhead/call/typed/16", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
         let bare_call = instance
-            .get_export(&store, "bare_call_16")
-            .and_then(Extern::into_func)
+            .get_typed_func::<InOut, InOut>(&store, "bare_call/16")
             .unwrap();
-        let bare_call = bare_call.typed::<InOut, InOut>(&store).unwrap();
         b.iter(|| {
             for _ in 0..REPETITIONS {
                 let _ = bare_call
@@ -994,10 +973,7 @@ fn bench_overhead_call_untyped_0(c: &mut Criterion) {
     const REPETITIONS: usize = 20_000;
     c.bench_function("overhead/call/untyped/0", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
-        let bare_call = instance
-            .get_export(&store, "bare_call_0")
-            .and_then(Extern::into_func)
-            .unwrap();
+        let bare_call = instance.get_func(&store, "bare_call/0").unwrap();
         let params = &[];
         let results = &mut [];
         b.iter(|| {
@@ -1012,10 +988,7 @@ fn bench_overhead_call_untyped_16(c: &mut Criterion) {
     const REPETITIONS: usize = 20_000;
     c.bench_function("overhead/call/untyped/16", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bare_call.wat"));
-        let bare_call = instance
-            .get_export(&store, "bare_call_16")
-            .and_then(Extern::into_func)
-            .unwrap();
+        let bare_call = instance.get_func(&store, "bare_call/16").unwrap();
         let params = &[
             Val::default(ValType::I32),
             Val::default(ValType::I64),
@@ -1044,135 +1017,53 @@ fn bench_overhead_call_untyped_16(c: &mut Criterion) {
 }
 
 fn bench_execute_global_bump(c: &mut Criterion) {
-    const BUMP_AMOUNT: i32 = 100_000;
+    const ITERATIONS: i32 = 100_000;
     c.bench_function("execute/global/bump", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/global_bump.wat"));
-        let count_until = instance
-            .get_export(&store, "bump")
-            .and_then(Extern::into_func)
-            .unwrap();
-        let mut result = Val::I32(0);
-
+        let run = instance.get_typed_func::<i32, i32>(&store, "bump").unwrap();
         b.iter(|| {
-            count_until
-                .call(
-                    &mut store,
-                    &[Val::I32(BUMP_AMOUNT)],
-                    slice::from_mut(&mut result),
-                )
-                .unwrap();
-            assert_eq!(result.i32(), Some(BUMP_AMOUNT));
+            let result = run.call(&mut store, ITERATIONS).unwrap();
+            assert_eq!(result, ITERATIONS);
         })
     });
 }
 
 fn bench_execute_global_const(c: &mut Criterion) {
-    const LIMIT: i32 = 100_000;
+    const ITERATIONS: i32 = 100_000;
     c.bench_function("execute/global/get_const", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/global_const.wat"));
-        let count_until = instance
-            .get_export(&store, "call")
-            .and_then(Extern::into_func)
-            .unwrap();
-        let mut result = Val::I32(0);
-
+        let run = instance.get_typed_func::<i32, i32>(&store, "call").unwrap();
         b.iter(|| {
-            count_until
-                .call(&mut store, &[Val::I32(LIMIT)], slice::from_mut(&mut result))
-                .unwrap();
-            assert_eq!(result.i32(), Some(LIMIT));
-        })
-    });
-}
-
-fn bench_execute_factorial(c: &mut Criterion) {
-    const REPETITIONS: usize = 1_000;
-    const INPUT: i64 = 25;
-    const RESULT: i64 = 7034535277573963776; // factorial(25)
-    let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/factorial.wat"));
-    let mut bench_fac = |bench_id: &str, func_name: &str| {
-        c.bench_function(bench_id, |b| {
-            let fac = instance
-                .get_export(&store, func_name)
-                .and_then(Extern::into_func)
-                .unwrap()
-                .typed::<i64, i64>(&store)
-                .unwrap();
-            b.iter(|| {
-                for _ in 0..REPETITIONS {
-                    assert_eq!(fac.call(&mut store, INPUT).unwrap(), RESULT);
-                }
-            })
-        });
-    };
-    bench_fac("execute/factorial/rec", "recursive_factorial");
-    bench_fac("execute/factorial/iter", "iterative_factorial");
-}
-
-fn bench_execute_recursive_ok(c: &mut Criterion) {
-    const RECURSIVE_DEPTH: i32 = 8000;
-    c.bench_function("execute/call/rec", |b| {
-        let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/recursive_ok.wat"));
-        let bench_call = instance
-            .get_export(&store, "call")
-            .and_then(Extern::into_func)
-            .unwrap();
-        let mut result = Val::I32(0);
-
-        b.iter(|| {
-            bench_call
-                .call(
-                    &mut store,
-                    &[Val::I32(RECURSIVE_DEPTH)],
-                    slice::from_mut(&mut result),
-                )
-                .unwrap();
-            assert_eq!(result.i32(), Some(0));
+            let result = run.call(&mut store, ITERATIONS).unwrap();
+            assert_eq!(result, ITERATIONS);
         })
     });
 }
 
 fn bench_execute_recursive_scan(c: &mut Criterion) {
-    const RECURSIVE_SCAN_DEPTH: i32 = 8000;
-    const RECURSIVE_SCAN_EXPECTED: i32 =
-        ((RECURSIVE_SCAN_DEPTH * RECURSIVE_SCAN_DEPTH) + RECURSIVE_SCAN_DEPTH) / 2;
+    const DEPTH: i32 = 8000;
+    const EXPECTED: i32 = ((DEPTH * DEPTH) + DEPTH) / 2;
     c.bench_function("execute/recursive_scan", |b| {
         let (mut store, instance) =
             load_instance_from_wat(include_bytes!("wat/recursive_scan.wat"));
-        let bench_call = instance
-            .get_export(&store, "func")
-            .and_then(Extern::into_func)
-            .unwrap();
-        let mut result = Val::I32(0);
-
+        let run = instance.get_typed_func::<i32, i32>(&store, "func").unwrap();
         b.iter(|| {
-            bench_call
-                .call(
-                    &mut store,
-                    &[Val::I32(RECURSIVE_SCAN_DEPTH)],
-                    slice::from_mut(&mut result),
-                )
-                .unwrap();
-            assert_eq!(result.i32(), Some(RECURSIVE_SCAN_EXPECTED));
+            let result = run.call(&mut store, DEPTH).unwrap();
+            assert_eq!(result, EXPECTED);
         })
     });
 }
 
 fn bench_execute_recursive_trap(c: &mut Criterion) {
+    use wasmi::errors::ErrorKind;
     c.bench_function("execute/recursive_trap", |b| {
         let (mut store, instance) =
             load_instance_from_wat(include_bytes!("wat/recursive_trap.wat"));
-        let bench_call = instance
-            .get_export(&store, "call")
-            .and_then(Extern::into_func)
-            .unwrap();
-        let mut result = [Val::I32(0)];
+        let run = instance.get_typed_func::<i32, i32>(&store, "call").unwrap();
         b.iter(|| {
-            let error = bench_call
-                .call(&mut store, &[Val::I32(1000)], &mut result)
-                .unwrap_err();
+            let error = run.call(&mut store, 1000).unwrap_err();
             match error.kind() {
-                wasmi::errors::ErrorKind::TrapCode(trap_code) => assert_matches::assert_matches!(
+                ErrorKind::TrapCode(trap_code) => assert_matches!(
                     trap_code,
                     TrapCode::UnreachableCodeReached,
                     "expected unreachable trap",
@@ -1184,75 +1075,176 @@ fn bench_execute_recursive_trap(c: &mut Criterion) {
 }
 
 fn bench_execute_recursive_is_even(c: &mut Criterion) {
+    const ITERATIONS: i32 = 50_000;
     c.bench_function("execute/is_even/rec", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/is_even.wat"));
-        let bench_call = instance
-            .get_export(&store, "is_even")
-            .and_then(Extern::into_func)
+        let run = instance
+            .get_typed_func::<i32, i32>(&store, "is_even")
             .unwrap();
-        let mut result = Val::I32(0);
-
         b.iter(|| {
-            bench_call
-                .call(
-                    &mut store,
-                    &[Val::I32(50_000)],
-                    slice::from_mut(&mut result),
-                )
-                .unwrap();
+            let result = run.call(&mut store, ITERATIONS).unwrap();
+            assert_eq!(result, 1);
         });
-        assert_eq!(result.i32(), Some(1));
     });
 }
 
-/// How often the `host_call` should be called per Wasm invocation.
-const HOST_CALLS_REPETITIONS: i64 = 1000;
+fn bench_execute_flat_calls(c: &mut Criterion) {
+    fn bench_with(g: &mut BenchmarkGroup<WallTime>, wasm: &[u8], n: usize) {
+        /// How often the host functions are called per benchmark run.
+        const ITERATIONS: i64 = 5_000;
 
-#[allow(dead_code)]
+        let id = format!("{n}");
+        g.bench_function(&id, |b| {
+            let (mut store, instance) = load_instance_from_wat(wasm);
+            let func_name = format!("run/{n}");
+            let run = instance
+                .get_typed_func::<i64, i64>(&store, &func_name)
+                .unwrap();
+            b.iter(|| {
+                run.call(&mut store, ITERATIONS).unwrap();
+            });
+        });
+    }
+
+    let wasm = include_bytes!("wat/flat_calls.wat");
+    let mut g = c.benchmark_group("execute/call/flat");
+    for n in [0, 1, 8, 16] {
+        bench_with(&mut g, wasm, n);
+    }
+}
+
+fn bench_execute_nested_calls(c: &mut Criterion) {
+    fn bench_with(g: &mut BenchmarkGroup<WallTime>, wasm: &[u8], n: usize) {
+        /// How often the host functions are called per benchmark run.
+        const ITERATIONS: i64 = 5_000;
+
+        let id = format!("{n}");
+        g.bench_function(&id, |b| {
+            let (mut store, instance) = load_instance_from_wat(wasm);
+            let func_name = format!("run/{n}");
+            let run = instance
+                .get_typed_func::<i64, i64>(&store, &func_name)
+                .unwrap();
+            b.iter(|| {
+                run.call(&mut store, ITERATIONS).unwrap();
+            });
+        });
+    }
+
+    let wasm = include_bytes!("wat/nested_calls.wat");
+    let mut g = c.benchmark_group("execute/call/nested");
+    for n in [1, 8, 16] {
+        bench_with(&mut g, wasm, n);
+    }
+}
+
 fn bench_execute_host_calls(c: &mut Criterion) {
-    c.bench_function("execute/call/host/1", |b| {
-        let wasm = wat2wasm(include_bytes!("wat/host_calls.wat"));
-        let engine = Engine::default();
-        let module = Module::new(&engine, &wasm[..]).unwrap();
-        let mut linker = <Linker<()>>::new(&engine);
-        let mut store = Store::new(&engine, ());
-        let host_call = Func::wrap(&mut store, |value: i64| value.wrapping_sub(1));
-        linker.define("benchmark", "host_call", host_call).unwrap();
-        let instance = linker
-            .instantiate(&mut store, &module)
-            .unwrap()
-            .ensure_no_start(&mut store)
-            .unwrap();
-        let call = instance
-            .get_export(&store, "call")
-            .and_then(Extern::into_func)
-            .unwrap();
-        let mut result = Val::I64(0);
+    fn bench_with(
+        g: &mut BenchmarkGroup<WallTime>,
+        store: &mut Store<()>,
+        instance: &Instance,
+        n: usize,
+    ) {
+        /// How often the host functions are called per benchmark run.
+        const ITERATIONS: i64 = 5_000;
 
-        b.iter(|| {
-            call.call(
-                &mut store,
-                &[Val::I64(HOST_CALLS_REPETITIONS)],
-                slice::from_mut(&mut result),
+        let id = format!("{n}");
+        g.bench_function(&id, |b| {
+            let func_name = format!("run/{n}");
+            let run = instance
+                .get_typed_func::<i64, i64>(&store, &func_name)
+                .unwrap();
+            b.iter(|| {
+                run.call(&mut *store, ITERATIONS).unwrap();
+            })
+        });
+    }
+
+    let mut g = c.benchmark_group("execute/call/host");
+    let wasm = wat2wasm(include_bytes!("wat/host_calls.wat"));
+    let engine = Engine::default();
+    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let mut store = Store::new(&engine, ());
+    let host0 = Func::wrap(&mut store, || ());
+    let host1 = Func::wrap(&mut store, |a: i64| a);
+    let host8 = Func::wrap(
+        &mut store,
+        |_0: i64,
+         _1: i64,
+         _2: i64,
+         _3: i64,
+         _4: i64,
+         _5: i64,
+         _6: i64,
+         _7: i64|
+         -> (i64, i64, i64, i64, i64, i64, i64, i64) { (_0, _1, _2, _3, _4, _5, _6, _7) },
+    );
+    #[allow(clippy::type_complexity)]
+    let host16 = Func::wrap(
+        &mut store,
+        |_0: i64,
+         _1: i64,
+         _2: i64,
+         _3: i64,
+         _4: i64,
+         _5: i64,
+         _6: i64,
+         _7: i64,
+         _8: i64,
+         _9: i64,
+         _10: i64,
+         _11: i64,
+         _12: i64,
+         _13: i64,
+         _14: i64,
+         _15: i64|
+         -> (
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+            i64,
+        ) {
+            (
+                _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15,
             )
-            .unwrap();
-            assert_eq!(result.i64(), Some(0));
-        })
-    });
+        },
+    );
+    let mut linker = <Linker<()>>::new(&engine);
+    linker.define("benchmark", "host/0", host0).unwrap();
+    linker.define("benchmark", "host/1", host1).unwrap();
+    linker.define("benchmark", "host/8", host8).unwrap();
+    linker.define("benchmark", "host/16", host16).unwrap();
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .ensure_no_start(&mut store)
+        .unwrap();
+    for n in [0, 1, 8, 16] {
+        bench_with(&mut g, &mut store, &instance, n);
+    }
 }
 
 fn bench_execute_fuse(c: &mut Criterion) {
     let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/fuse.wat"));
     let mut bench_fuse = |bench_id: &str, func_name: &str, input: i32| {
         c.bench_function(bench_id, |b| {
-            let test = instance
-                .get_export(&store, func_name)
-                .and_then(Extern::into_func)
-                .unwrap()
-                .typed::<i32, i32>(&store)
+            let run = instance
+                .get_typed_func::<i32, i32>(&store, func_name)
                 .unwrap();
             b.iter(|| {
-                assert_eq!(test.call(&mut store, input).unwrap(), input);
+                assert_eq!(run.call(&mut store, input).unwrap(), input);
             });
         });
     };
@@ -1263,14 +1255,11 @@ fn bench_execute_divrem(c: &mut Criterion) {
     let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/divrem.wat"));
     let mut bench_fuse = |bench_id: &str, func_name: &str, input: i32| {
         c.bench_function(bench_id, |b| {
-            let fib = instance
-                .get_export(&store, func_name)
-                .and_then(Extern::into_func)
-                .unwrap()
-                .typed::<i32, i32>(&store)
+            let run = instance
+                .get_typed_func::<i32, i32>(&store, func_name)
                 .unwrap();
             b.iter(|| {
-                assert_eq!(fib.call(&mut store, input).unwrap(), 0);
+                assert_eq!(run.call(&mut store, input).unwrap(), 0);
             });
         });
     };
@@ -1301,14 +1290,11 @@ fn bench_execute_fibonacci(c: &mut Criterion) {
     let mut bench_fib = |bench_id: &str, func_name: &str, input: i64| {
         c.bench_function(bench_id, |b| {
             let expected = fib(input);
-            let fib = instance
-                .get_export(&store, func_name)
-                .and_then(Extern::into_func)
-                .unwrap()
-                .typed::<i64, i64>(&store)
+            let run = instance
+                .get_typed_func::<i64, i64>(&store, func_name)
                 .unwrap();
             b.iter(|| {
-                assert_eq!(fib.call(&mut store, input).unwrap(), expected);
+                assert_eq!(run.call(&mut store, input).unwrap(), expected);
             });
         });
     };
@@ -1320,58 +1306,43 @@ fn bench_execute_fibonacci(c: &mut Criterion) {
 fn bench_execute_memory_sum(c: &mut Criterion) {
     c.bench_function("execute/memory/sum_bytes", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/memory-sum.wat"));
-        let sum = instance
-            .get_export(&store, "sum_bytes")
-            .and_then(Extern::into_func)
+        let run = instance
+            .get_typed_func::<i32, i64>(&store, "sum_bytes")
             .unwrap();
-        let mem = instance
-            .get_export(&store, "mem")
-            .and_then(Extern::into_memory)
-            .unwrap();
-        mem.grow(&mut store, 1).unwrap();
+        let mem = instance.get_memory(&store, "mem").unwrap();
         let len = 100_000;
-        let mut expected_sum: i64 = 0;
-        for (n, byte) in &mut mem.data_mut(&mut store)[..len].iter_mut().enumerate() {
-            let new_byte = (n % 256) as u8;
-            *byte = new_byte;
-            expected_sum += new_byte as u64 as i64;
-        }
-        let mut result = Val::I64(0);
+        mem.grow(&mut store, 1).unwrap();
+        let expected_sum: i64 = mem.data_mut(&mut store)[..len]
+            .iter_mut()
+            .enumerate()
+            .map(|(n, byte)| {
+                let new_byte = (n % 256) as u8;
+                *byte = new_byte;
+                new_byte as u64 as i64
+            })
+            .sum();
         b.iter(|| {
-            sum.call(
-                &mut store,
-                &[Val::I32(len as i32)],
-                slice::from_mut(&mut result),
-            )
-            .unwrap();
+            let result = run.call(&mut store, len as i32).unwrap();
+            assert_eq!(result, expected_sum);
         });
-        assert_eq!(result.i64(), Some(expected_sum));
     });
 }
 
 fn bench_execute_memory_fill(c: &mut Criterion) {
     c.bench_function("execute/memory/fill_bytes", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/memory-fill.wat"));
-        let fill = instance
-            .get_export(&store, "fill_bytes")
-            .and_then(Extern::into_func)
+        let run = instance
+            .get_typed_func::<(i32, i32, i32), ()>(&store, "fill_bytes")
             .unwrap();
-        let mem = instance
-            .get_export(&store, "mem")
-            .and_then(Extern::into_memory)
-            .unwrap();
-        mem.grow(&mut store, 1).unwrap();
         let ptr = 0x100;
         let len = 100_000;
         let value = 0x42_u8;
+        let mem = instance.get_memory(&store, "mem").unwrap();
+        mem.grow(&mut store, 1).unwrap();
         mem.data_mut(&mut store)[ptr..(ptr + len)].fill(0x00);
-        let params = [
-            Val::I32(ptr as i32),
-            Val::I32(len as i32),
-            Val::I32(value as i32),
-        ];
         b.iter(|| {
-            fill.call(&mut store, &params, &mut []).unwrap();
+            run.call(&mut store, (ptr as i32, len as i32, value as i32))
+                .unwrap();
         });
         assert!(mem.data(&store)[ptr..(ptr + len)]
             .iter()
@@ -1382,8 +1353,8 @@ fn bench_execute_memory_fill(c: &mut Criterion) {
 fn bench_execute_vec_add(c: &mut Criterion) {
     fn test_for<A, B>(
         b: &mut Bencher,
-        vec_add: Func,
         store: &mut Store<()>,
+        run: TypedFunc<(i32, i32, i32, i32), ()>,
         mem: Memory,
         len: usize,
         vec_a: A,
@@ -1420,16 +1391,13 @@ fn bench_execute_vec_add(c: &mut Criterion) {
             )
             .unwrap();
         }
-
-        // Prepare parameters and all Wasm `vec_add`:
-        let params = [
-            Val::I32(ptr_result as i32),
-            Val::I32(ptr_a as i32),
-            Val::I32(ptr_b as i32),
-            Val::I32(len as i32),
-        ];
+        // Run actual benchmark:
         b.iter(|| {
-            vec_add.call(&mut *store, &params, &mut []).unwrap();
+            run.call(
+                &mut *store,
+                (ptr_result as i32, ptr_a as i32, ptr_b as i32, len as i32),
+            )
+            .unwrap();
         });
 
         // Validate the result buffer:
@@ -1462,20 +1430,16 @@ fn bench_execute_vec_add(c: &mut Criterion) {
     c.bench_function("execute/memory/vec_add", |b| {
         let (mut store, instance) =
             load_instance_from_wat(include_bytes!("wat/memory-vec-add.wat"));
-        let vec_add = instance
-            .get_export(&store, "vec_add")
-            .and_then(Extern::into_func)
+        let run = instance
+            .get_typed_func::<(i32, i32, i32, i32), ()>(&store, "vec_add")
             .unwrap();
-        let mem = instance
-            .get_export(&store, "mem")
-            .and_then(Extern::into_memory)
-            .unwrap();
-        mem.grow(&mut store, 1).unwrap();
+        let mem = instance.get_memory(&store, "mem").unwrap();
+        mem.grow(&mut store, 25).unwrap();
         let len = 100_000;
         test_for(
             b,
-            vec_add,
             &mut store,
+            run,
             mem,
             len,
             (0..len).map(|i| (i * i) as i32),
@@ -1488,13 +1452,7 @@ fn bench_execute_bulk_ops(c: &mut Criterion) {
     const ITERATIONS: i64 = 5_000;
     c.bench_function("execute/memory/bulk-ops", |b| {
         let (mut store, instance) = load_instance_from_wat(include_bytes!("wat/bulk-ops.wat"));
-        let run = instance
-            .get_export(&store, "run")
-            .and_then(Extern::into_func)
-            .unwrap()
-            .typed::<i64, i64>(&store)
-            .unwrap();
-
+        let run = instance.get_typed_func::<i64, i64>(&store, "run").unwrap();
         b.iter(|| {
             run.call(&mut store, ITERATIONS).unwrap();
         })
