@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "crates/collections",
-    "crates/capi/artifact",
+    "crates/c_api/artifact",
     "crates/cli",
     "crates/core",
     "crates/wasmi",
