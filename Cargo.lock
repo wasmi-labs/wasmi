@@ -1866,16 +1866,16 @@ checksum = "104a7f73be44570cac297b3035d76b169d6599637631cf37a1703326a0727073"
 
 [[package]]
 name = "wasmi_c_api"
-version = "0.33.1"
+version = "0.35.0"
 dependencies = [
  "wasmi_c_api_impl",
 ]
 
 [[package]]
 name = "wasmi_c_api_impl"
-version = "0.33.1"
+version = "0.35.0"
 dependencies = [
- "wasmi 0.33.1",
+ "wasmi 0.35.0",
 ]
 
 [[package]]
