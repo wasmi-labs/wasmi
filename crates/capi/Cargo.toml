@@ -1,5 +1,5 @@
 [package]
-name = "wasmi_c_api"
+name = "wasmi_c_api_impl"
 version.workspace = true
 rust-version.workspace = true
 documentation = "https://docs.rs/wasmi_c_api_impl"
@@ -12,14 +12,12 @@ license.workspace = true
 keywords.workspace = true
 categories.workspace = true
 exclude.workspace = true
-publish = false
-
-[lib]
-name = "wasmi"
-crate-type = ["staticlib", "cdylib"]
-doc = false
-test = false
-doctest = false
+links = "wasmi_c_api"
 
 [dependencies]
-wasmi_c_api = { path = 'impl', package = 'wasmi_c_api_impl' }
+wasmi = { workspace = true }
+
+[lib]
+name = "wasmi_c_api"
+test = false
+doctest = false
