@@ -60,7 +60,7 @@ fn call_hooks_get_called() {
     let (mut store, mut linker) = test_setup();
 
     store.call_hook(
-        |data: &mut TimesCallbacksFired, hook_type: CallHook| -> Result<(), TrapCode> {
+        |data: &mut TimesCallbacksFired, hook_type: CallHook| -> Result<(), Error> {
             match hook_type {
                 CallHook::CallingWasm => data.calling_wasm += 1,
                 CallHook::ReturningFromWasm => data.returning_from_wasm += 1,
@@ -75,10 +75,10 @@ fn call_hooks_get_called() {
     let host_fn_a = Func::wrap(&mut store, |mut caller: Caller<TimesCallbacksFired>| {
         // Call wasm_fn_a
         // Call host_fn_a
-        assert!(caller.data().calling_wasm == 1);
-        assert!(caller.data().returning_from_wasm == 0);
-        assert!(caller.data().calling_host == 1);
-        assert!(caller.data().returning_from_host == 0);
+        assert_eq!(caller.data().calling_wasm, 1);
+        assert_eq!(caller.data().returning_from_wasm, 0);
+        assert_eq!(caller.data().calling_host, 1);
+        assert_eq!(caller.data().returning_from_host, 0);
 
         caller
             .get_export("wasm_fn_b")
@@ -95,10 +95,10 @@ fn call_hooks_get_called() {
         // Call host_fn_b
         // Return host_fn_b
         // Return wasm_fn_b
-        assert!(caller.data().calling_wasm == 2);
-        assert!(caller.data().returning_from_wasm == 1);
-        assert!(caller.data().calling_host == 2);
-        assert!(caller.data().returning_from_host == 1);
+        assert_eq!(caller.data().calling_wasm, 2);
+        assert_eq!(caller.data().returning_from_wasm, 1);
+        assert_eq!(caller.data().calling_host, 2);
+        assert_eq!(caller.data().returning_from_host, 1);
     });
     linker.define("env", "host_fn_a", host_fn_a).unwrap();
 
@@ -107,37 +107,36 @@ fn call_hooks_get_called() {
         // Call host_fn_a
         // Call wasm_fn_b
         // Call host_fn_b
-        assert!(caller.data().calling_wasm == 2);
-        assert!(caller.data().returning_from_wasm == 0);
-        assert!(caller.data().calling_host == 2);
-        assert!(caller.data().returning_from_host == 0);
+        assert_eq!(caller.data().calling_wasm, 2);
+        assert_eq!(caller.data().returning_from_wasm, 0);
+        assert_eq!(caller.data().calling_host, 2);
+        assert_eq!(caller.data().returning_from_host, 0);
     });
     linker.define("env", "host_fn_b", host_fn_b).unwrap();
 
     execute_wasm_fn_a(&mut store, &mut linker).unwrap();
 
-    assert!(store.data().calling_wasm == 2);
-    assert!(store.data().returning_from_wasm == 2);
-    assert!(store.data().calling_host == 2);
-    assert!(store.data().returning_from_host == 2);
+    assert_eq!(store.data().calling_wasm, 2);
+    assert_eq!(store.data().returning_from_wasm, 2);
+    assert_eq!(store.data().calling_host, 2);
+    assert_eq!(store.data().returning_from_host, 2);
 }
 
 /// Utility function to generate a callback that fails after is has been called
 /// `n` times.
-fn generate_trap_after_n_calls(
+fn generate_error_after_n_calls<E: Into<Error> + Clone + Send + Sync + 'static>(
     limit: u32,
-    trap_code: TrapCode,
-) -> Box<
-    dyn FnMut(&mut TimesCallbacksFired, CallHook) -> Result<(), TrapCode> + Send + Sync + 'static,
-> {
-    Box::new(move |data, hook_type| -> Result<(), TrapCode> {
+    error: E,
+) -> Box<dyn FnMut(&mut TimesCallbacksFired, CallHook) -> Result<(), Error> + Send + Sync + 'static>
+{
+    Box::new(move |data, hook_type| -> Result<(), Error> {
         if (data.calling_wasm
             + data.returning_from_wasm
             + data.calling_host
             + data.returning_from_host)
             >= limit
         {
-            return Err(trap_code);
+            return Err(error.clone().into());
         }
 
         match hook_type {
@@ -155,9 +154,9 @@ fn generate_trap_after_n_calls(
 fn call_hook_prevents_wasm_execution() {
     let (mut store, mut linker) = test_setup();
 
-    store.call_hook(generate_trap_after_n_calls(
+    store.call_hook(generate_error_after_n_calls(
         0,
-        TrapCode::BadConversionToInteger,
+        wasmi_core::TrapCode::BadConversionToInteger,
     ));
 
     let should_not_run = Func::wrap(&mut store, |_: Caller<TimesCallbacksFired>| {
@@ -179,7 +178,7 @@ fn call_hook_prevents_wasm_execution() {
 fn call_hook_prevents_host_execution() {
     let (mut store, mut linker) = test_setup();
 
-    store.call_hook(generate_trap_after_n_calls(1, TrapCode::BadSignature));
+    store.call_hook(generate_error_after_n_calls(1, TrapCode::BadSignature));
 
     let should_not_run = Func::wrap(&mut store, |_: Caller<TimesCallbacksFired>| {
         panic!("Host function that should not run due to trap from call hook executed");
@@ -200,7 +199,7 @@ fn call_hook_prevents_host_execution() {
 fn call_hook_prevents_nested_wasm_execution() {
     let (mut store, mut linker) = test_setup();
 
-    store.call_hook(generate_trap_after_n_calls(
+    store.call_hook(generate_error_after_n_calls(
         2,
         TrapCode::GrowthOperationLimited,
     ));

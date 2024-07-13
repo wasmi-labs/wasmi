@@ -14,6 +14,7 @@ use crate::{
     ElementSegmentEntity,
     ElementSegmentIdx,
     Engine,
+    Error,
     Func,
     FuncEntity,
     FuncIdx,
@@ -103,12 +104,12 @@ impl<T> Debug for ResourceLimiterQuery<T> {
 }
 
 /// A wrapper used to store hooks added with [`Store::call_hook`], containing a
-/// boxed `FnMut(&mut T, CallHook) -> Result<(), TrapCode>`.
+/// boxed `FnMut(&mut T, CallHook) -> Result<(), Error>`.
 ///
 /// This wrapper exists to provide a `Debug` impl so that `#[derive(Debug)]`
 /// works for [`Store`].
 #[allow(clippy::type_complexity)]
-struct CallHookWrapper<T>(Box<dyn FnMut(&mut T, CallHook) -> Result<(), TrapCode> + Send + Sync>);
+struct CallHookWrapper<T>(Box<dyn FnMut(&mut T, CallHook) -> Result<(), Error> + Send + Sync>);
 impl<T> Debug for CallHookWrapper<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "CallHook(...)")
@@ -1017,13 +1018,13 @@ impl<T> Store<T> {
     /// [`CallHook`]. [`CallHook`] can be used to find out what kind of function
     /// is being called or returned from.
     ///
-    /// The callback can either return `Ok(())` or an `Err` with a [`TrapCode`].
-    /// If a [`TrapCode`] is returned, the [`TrapCode`] is returned to the host
+    /// The callback can either return `Ok(())` or an `Err` with an
+    /// [`Error`]. If an error is returned, it is returned to the host
     /// caller. If there are nested calls, only the most recent caller receives
-    /// the [`TrapCode`], it is not propagated further.
+    /// the error, it is not propagated further.
     pub fn call_hook(
         &mut self,
-        hook: impl FnMut(&mut T, CallHook) -> Result<(), TrapCode> + Send + Sync + 'static,
+        hook: impl FnMut(&mut T, CallHook) -> Result<(), Error> + Send + Sync + 'static,
     ) {
         self.call_hook = Some(CallHookWrapper(Box::new(hook)));
     }
