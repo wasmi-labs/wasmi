@@ -49,8 +49,14 @@ use std::{boxed::Box, sync::Arc};
 use wasmparser::{FuncValidatorAllocations, Parser, ValidPayload, Validator};
 
 /// A parsed and validated WebAssembly module.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Module {
+    inner: Arc<ModuleInner>,
+}
+
+/// The internal data of a [`Module`].
+#[derive(Debug)]
+struct ModuleInner {
     engine: Engine,
     header: ModuleHeader,
     data_segments: DataSegments,
@@ -282,7 +288,12 @@ impl Module {
 
     /// Returns the [`Engine`] used during creation of the [`Module`].
     pub fn engine(&self) -> &Engine {
-        &self.engine
+        &self.inner.engine
+    }
+
+    /// Returns a shared reference to the [`ModuleHeaderInner`].
+    fn module_header(&self) -> &ModuleHeaderInner {
+        &self.inner.header.inner
     }
 
     /// Validates `wasm` as a WebAssembly binary given the configuration (via [`Config`]) in `engine`.
@@ -320,19 +331,19 @@ impl Module {
 
     /// Returns the number of non-imported functions of the [`Module`].
     pub(crate) fn len_funcs(&self) -> usize {
-        self.header.inner.funcs.len()
+        self.module_header().funcs.len()
     }
     /// Returns the number of non-imported tables of the [`Module`].
     pub(crate) fn len_tables(&self) -> usize {
-        self.header.inner.tables.len()
+        self.module_header().tables.len()
     }
     /// Returns the number of non-imported linear memories of the [`Module`].
     pub(crate) fn len_memories(&self) -> usize {
-        self.header.inner.memories.len()
+        self.module_header().memories.len()
     }
     /// Returns the number of non-imported global variables of the [`Module`].
     pub(crate) fn len_globals(&self) -> usize {
-        self.header.inner.globals.len()
+        self.module_header().globals.len()
     }
 
     /// Returns a slice to the function types of the [`Module`].
@@ -341,20 +352,21 @@ impl Module {
     ///
     /// The slice is stored in a `Arc` so that this operation is very cheap.
     pub(crate) fn func_types_cloned(&self) -> Arc<[DedupFuncType]> {
-        self.header.inner.func_types.clone()
+        self.module_header().func_types.clone()
     }
 
     /// Returns an iterator over the imports of the [`Module`].
     pub fn imports(&self) -> ModuleImportsIter {
-        let len_imported_funcs = self.header.inner.imports.len_funcs;
-        let len_imported_globals = self.header.inner.imports.len_globals;
+        let header = self.module_header();
+        let len_imported_funcs = header.imports.len_funcs;
+        let len_imported_globals = header.imports.len_globals;
         ModuleImportsIter {
             engine: self.engine(),
-            names: self.header.inner.imports.items.iter(),
-            funcs: self.header.inner.funcs[..len_imported_funcs].iter(),
-            tables: self.header.inner.tables.iter(),
-            memories: self.header.inner.memories.iter(),
-            globals: self.header.inner.globals[..len_imported_globals].iter(),
+            names: header.imports.items.iter(),
+            funcs: header.funcs[..len_imported_funcs].iter(),
+            tables: header.tables.iter(),
+            memories: header.memories.iter(),
+            globals: header.globals[..len_imported_globals].iter(),
         }
     }
 
@@ -362,12 +374,13 @@ impl Module {
     ///
     /// [`Func`]: [`crate::Func`]
     pub(crate) fn internal_funcs(&self) -> InternalFuncsIter {
-        let len_imported = self.header.inner.imports.len_funcs;
+        let header = self.module_header();
+        let len_imported = header.imports.len_funcs;
         // We skip the first `len_imported` elements in `funcs`
         // since they refer to imported and not internally defined
         // functions.
-        let funcs = &self.header.inner.funcs[len_imported..];
-        let engine_funcs = self.header.inner.engine_funcs.iter();
+        let funcs = &header.funcs[len_imported..];
+        let engine_funcs = header.engine_funcs.iter();
         assert_eq!(funcs.len(), engine_funcs.len());
         InternalFuncsIter {
             iter: funcs.iter().zip(engine_funcs),
@@ -376,32 +389,35 @@ impl Module {
 
     /// Returns an iterator over the [`MemoryType`] of internal linear memories.
     fn internal_memories(&self) -> SliceIter<MemoryType> {
-        let len_imported = self.header.inner.imports.len_memories;
+        let header = self.module_header();
+        let len_imported = header.imports.len_memories;
         // We skip the first `len_imported` elements in `memories`
         // since they refer to imported and not internally defined
         // linear memories.
-        let memories = &self.header.inner.memories[len_imported..];
+        let memories = &header.memories[len_imported..];
         memories.iter()
     }
 
     /// Returns an iterator over the [`TableType`] of internal tables.
     fn internal_tables(&self) -> SliceIter<TableType> {
-        let len_imported = self.header.inner.imports.len_tables;
+        let header = self.module_header();
+        let len_imported = header.imports.len_tables;
         // We skip the first `len_imported` elements in `memories`
         // since they refer to imported and not internally defined
         // linear memories.
-        let tables = &self.header.inner.tables[len_imported..];
+        let tables = &header.tables[len_imported..];
         tables.iter()
     }
 
     /// Returns an iterator over the internally defined [`Global`].
     fn internal_globals(&self) -> InternalGlobalsIter {
-        let len_imported = self.header.inner.imports.len_globals;
+        let header = self.module_header();
+        let len_imported = header.imports.len_globals;
         // We skip the first `len_imported` elements in `globals`
         // since they refer to imported and not internally defined
         // global variables.
-        let globals = self.header.inner.globals[len_imported..].iter();
-        let global_inits = self.header.inner.globals_init.iter();
+        let globals = header.globals[len_imported..].iter();
+        let global_inits = header.globals_init.iter();
         InternalGlobalsIter {
             iter: globals.zip(global_inits),
         }
@@ -420,7 +436,7 @@ impl Module {
     ///
     /// This function will return the type of an export with the given `name`.
     pub fn get_export(&self, name: &str) -> Option<ExternType> {
-        let idx = self.header.inner.exports.get(name).copied()?;
+        let idx = self.module_header().exports.get(name).copied()?;
         let ty = self.get_extern_type(idx);
         Some(ty)
     }
@@ -431,22 +447,23 @@ impl Module {
     ///
     /// This function assumes that the given [`ExternType`] is valid.
     fn get_extern_type(&self, idx: ExternIdx) -> ExternType {
+        let header = self.module_header();
         match idx {
             ExternIdx::Func(index) => {
-                let dedup = &self.header.inner.funcs[index.into_u32() as usize];
+                let dedup = &header.funcs[index.into_u32() as usize];
                 let func_type = self.engine().resolve_func_type(dedup, Clone::clone);
                 ExternType::Func(func_type)
             }
             ExternIdx::Table(index) => {
-                let table_type = self.header.inner.tables[index.into_u32() as usize];
+                let table_type = header.tables[index.into_u32() as usize];
                 ExternType::Table(table_type)
             }
             ExternIdx::Memory(index) => {
-                let memory_type = self.header.inner.memories[index.into_u32() as usize];
+                let memory_type = header.memories[index.into_u32() as usize];
                 ExternType::Memory(memory_type)
             }
             ExternIdx::Global(index) => {
-                let global_type = self.header.inner.globals[index.into_u32() as usize];
+                let global_type = header.globals[index.into_u32() as usize];
                 ExternType::Global(global_type)
             }
         }
@@ -463,7 +480,7 @@ impl Module {
     /// [`Config::ignore_custom_sections`]: crate::Config::ignore_custom_sections
     #[inline]
     pub fn custom_sections(&self) -> CustomSectionsIter {
-        self.custom_sections.iter()
+        self.inner.custom_sections.iter()
     }
 }
 
