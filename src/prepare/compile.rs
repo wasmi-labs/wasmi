@@ -2,7 +2,7 @@ use alloc::{string::String, vec::Vec};
 
 use parity_wasm::elements::{BlockType, FuncBody, Instruction, SignExtInstruction, ValueType};
 
-use crate::isa::{self, InstructionInternal};
+use crate::isa::{self, InstructionInternal, UniArg};
 use validation::{
     func::{
         require_label,
@@ -328,7 +328,7 @@ impl Compiler {
             CallIndirect(index, _reserved) => {
                 context.step(instruction)?;
                 self.sink
-                    .emit(isa::InstructionInternal::CallIndirect(index));
+                    .emit(isa::InstructionInternal::CallIndirect(index, UniArg::Pop));
             }
 
             Drop => {
@@ -338,7 +338,11 @@ impl Compiler {
             Select => {
                 context.step(instruction)?;
                 if let StackValueType::Specific(t) = context.value_stack.top()? {
-                    self.sink.emit(isa::InstructionInternal::Select(*t));
+                    self.sink.emit(isa::InstructionInternal::Select(
+                        *t,
+                        UniArg::Pop,
+                        UniArg::Pop,
+                    ));
                 } else {
                     unreachable!()
                 }
@@ -358,7 +362,7 @@ impl Compiler {
                 let (depth, typ) =
                     relative_local_depth_type(index, &context.locals, &context.value_stack)?;
                 self.sink
-                    .emit(isa::InstructionInternal::SetLocal(depth, typ));
+                    .emit(isa::InstructionInternal::SetLocal(depth, typ, UniArg::Pop));
             }
             TeeLocal(index) => {
                 context.step(instruction)?;
@@ -373,16 +377,19 @@ impl Compiler {
             }
             SetGlobal(index) => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::SetGlobal(index));
+                self.sink
+                    .emit(isa::InstructionInternal::SetGlobal(index, UniArg::Pop));
             }
 
             I32Load(_, offset) => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32Load(offset));
+                self.sink
+                    .emit(isa::InstructionInternal::I32Load(offset, UniArg::Pop));
             }
             I64Load(_, offset) => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Load(offset));
+                self.sink
+                    .emit(isa::InstructionInternal::I64Load(offset, UniArg::Pop));
             }
             F32Load(_, offset) => {
                 context.step(instruction)?;
@@ -394,52 +401,70 @@ impl Compiler {
             }
             I32Load8S(_, offset) => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32Load8S(offset));
+                self.sink
+                    .emit(isa::InstructionInternal::I32Load8S(offset, UniArg::Pop));
             }
             I32Load8U(_, offset) => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32Load8U(offset));
+                self.sink
+                    .emit(isa::InstructionInternal::I32Load8U(offset, UniArg::Pop));
             }
             I32Load16S(_, offset) => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32Load16S(offset));
+                self.sink
+                    .emit(isa::InstructionInternal::I32Load16S(offset, UniArg::Pop));
             }
             I32Load16U(_, offset) => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32Load16U(offset));
+                self.sink
+                    .emit(isa::InstructionInternal::I32Load16U(offset, UniArg::Pop));
             }
             I64Load8S(_, offset) => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Load8S(offset));
+                self.sink
+                    .emit(isa::InstructionInternal::I64Load8S(offset, UniArg::Pop));
             }
             I64Load8U(_, offset) => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Load8U(offset));
+                self.sink
+                    .emit(isa::InstructionInternal::I64Load8U(offset, UniArg::Pop));
             }
             I64Load16S(_, offset) => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Load16S(offset));
+                self.sink
+                    .emit(isa::InstructionInternal::I64Load16S(offset, UniArg::Pop));
             }
             I64Load16U(_, offset) => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Load16U(offset));
+                self.sink
+                    .emit(isa::InstructionInternal::I64Load16U(offset, UniArg::Pop));
             }
             I64Load32S(_, offset) => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Load32S(offset));
+                self.sink
+                    .emit(isa::InstructionInternal::I64Load32S(offset, UniArg::Pop));
             }
             I64Load32U(_, offset) => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Load32U(offset));
+                self.sink
+                    .emit(isa::InstructionInternal::I64Load32U(offset, UniArg::Pop));
             }
 
             I32Store(_, offset) => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32Store(offset));
+                self.sink.emit(isa::InstructionInternal::I32Store(
+                    offset,
+                    UniArg::Pop,
+                    UniArg::Pop,
+                ));
             }
             I64Store(_, offset) => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Store(offset));
+                self.sink.emit(isa::InstructionInternal::I64Store(
+                    offset,
+                    UniArg::Pop,
+                    UniArg::Pop,
+                ));
             }
             F32Store(_, offset) => {
                 context.step(instruction)?;
@@ -451,23 +476,43 @@ impl Compiler {
             }
             I32Store8(_, offset) => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32Store8(offset));
+                self.sink.emit(isa::InstructionInternal::I32Store8(
+                    offset,
+                    UniArg::Pop,
+                    UniArg::Pop,
+                ));
             }
             I32Store16(_, offset) => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32Store16(offset));
+                self.sink.emit(isa::InstructionInternal::I32Store16(
+                    offset,
+                    UniArg::Pop,
+                    UniArg::Pop,
+                ));
             }
             I64Store8(_, offset) => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Store8(offset));
+                self.sink.emit(isa::InstructionInternal::I64Store8(
+                    offset,
+                    UniArg::Pop,
+                    UniArg::Pop,
+                ));
             }
             I64Store16(_, offset) => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Store16(offset));
+                self.sink.emit(isa::InstructionInternal::I64Store16(
+                    offset,
+                    UniArg::Pop,
+                    UniArg::Pop,
+                ));
             }
             I64Store32(_, offset) => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Store32(offset));
+                self.sink.emit(isa::InstructionInternal::I64Store32(
+                    offset,
+                    UniArg::Pop,
+                    UniArg::Pop,
+                ));
             }
 
             CurrentMemory(_) => {
@@ -476,7 +521,8 @@ impl Compiler {
             }
             GrowMemory(_) => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::GrowMemory);
+                self.sink
+                    .emit(isa::InstructionInternal::GrowMemory(UniArg::Pop));
             }
 
             I32Const(v) => {
@@ -498,92 +544,114 @@ impl Compiler {
 
             I32Eqz => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32Eqz);
+                self.sink
+                    .emit(isa::InstructionInternal::I32Eqz(UniArg::Pop));
             }
             I32Eq => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32Eq);
+                self.sink
+                    .emit(isa::InstructionInternal::I32Eq(UniArg::Pop, UniArg::Pop));
             }
             I32Ne => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32Ne);
+                self.sink
+                    .emit(isa::InstructionInternal::I32Ne(UniArg::Pop, UniArg::Pop));
             }
             I32LtS => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32LtS);
+                self.sink
+                    .emit(isa::InstructionInternal::I32LtS(UniArg::Pop, UniArg::Pop));
             }
             I32LtU => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32LtU);
+                self.sink
+                    .emit(isa::InstructionInternal::I32LtU(UniArg::Pop, UniArg::Pop));
             }
             I32GtS => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32GtS);
+                self.sink
+                    .emit(isa::InstructionInternal::I32GtS(UniArg::Pop, UniArg::Pop));
             }
             I32GtU => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32GtU);
+                self.sink
+                    .emit(isa::InstructionInternal::I32GtU(UniArg::Pop, UniArg::Pop));
             }
             I32LeS => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32LeS);
+                self.sink
+                    .emit(isa::InstructionInternal::I32LeS(UniArg::Pop, UniArg::Pop));
             }
             I32LeU => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32LeU);
+                self.sink
+                    .emit(isa::InstructionInternal::I32LeU(UniArg::Pop, UniArg::Pop));
             }
             I32GeS => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32GeS);
+                self.sink
+                    .emit(isa::InstructionInternal::I32GeS(UniArg::Pop, UniArg::Pop));
             }
             I32GeU => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32GeU);
+                self.sink
+                    .emit(isa::InstructionInternal::I32GeU(UniArg::Pop, UniArg::Pop));
             }
 
             I64Eqz => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Eqz);
+                self.sink
+                    .emit(isa::InstructionInternal::I64Eqz(UniArg::Pop));
             }
             I64Eq => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Eq);
+                self.sink
+                    .emit(isa::InstructionInternal::I64Eq(UniArg::Pop, UniArg::Pop));
             }
             I64Ne => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Ne);
+                self.sink
+                    .emit(isa::InstructionInternal::I64Ne(UniArg::Pop, UniArg::Pop));
             }
             I64LtS => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64LtS);
+                self.sink
+                    .emit(isa::InstructionInternal::I64LtS(UniArg::Pop, UniArg::Pop));
             }
             I64LtU => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64LtU);
+                self.sink
+                    .emit(isa::InstructionInternal::I64LtU(UniArg::Pop, UniArg::Pop));
             }
             I64GtS => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64GtS);
+                self.sink
+                    .emit(isa::InstructionInternal::I64GtS(UniArg::Pop, UniArg::Pop));
             }
             I64GtU => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64GtU);
+                self.sink
+                    .emit(isa::InstructionInternal::I64GtU(UniArg::Pop, UniArg::Pop));
             }
             I64LeS => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64LeS);
+                self.sink
+                    .emit(isa::InstructionInternal::I64LeS(UniArg::Pop, UniArg::Pop));
             }
             I64LeU => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64LeU);
+                self.sink
+                    .emit(isa::InstructionInternal::I64LeU(UniArg::Pop, UniArg::Pop));
             }
             I64GeS => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64GeS);
+                self.sink
+                    .emit(isa::InstructionInternal::I64GeS(UniArg::Pop, UniArg::Pop));
             }
             I64GeU => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64GeU);
+                self.sink
+                    .emit(isa::InstructionInternal::I64GeU(UniArg::Pop, UniArg::Pop));
             }
 
             F32Eq => {
@@ -638,148 +706,184 @@ impl Compiler {
 
             I32Clz => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32Clz);
+                self.sink
+                    .emit(isa::InstructionInternal::I32Clz(UniArg::Pop));
             }
             I32Ctz => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32Ctz);
+                self.sink
+                    .emit(isa::InstructionInternal::I32Ctz(UniArg::Pop));
             }
             I32Popcnt => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32Popcnt);
+                self.sink
+                    .emit(isa::InstructionInternal::I32Popcnt(UniArg::Pop));
             }
             I32Add => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32Add);
+                self.sink
+                    .emit(isa::InstructionInternal::I32Add(UniArg::Pop, UniArg::Pop));
             }
             I32Sub => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32Sub);
+                self.sink
+                    .emit(isa::InstructionInternal::I32Sub(UniArg::Pop, UniArg::Pop));
             }
             I32Mul => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32Mul);
+                self.sink
+                    .emit(isa::InstructionInternal::I32Mul(UniArg::Pop, UniArg::Pop));
             }
             I32DivS => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32DivS);
+                self.sink
+                    .emit(isa::InstructionInternal::I32DivS(UniArg::Pop, UniArg::Pop));
             }
             I32DivU => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32DivU);
+                self.sink
+                    .emit(isa::InstructionInternal::I32DivU(UniArg::Pop, UniArg::Pop));
             }
             I32RemS => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32RemS);
+                self.sink
+                    .emit(isa::InstructionInternal::I32RemS(UniArg::Pop, UniArg::Pop));
             }
             I32RemU => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32RemU);
+                self.sink
+                    .emit(isa::InstructionInternal::I32RemU(UniArg::Pop, UniArg::Pop));
             }
             I32And => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32And);
+                self.sink
+                    .emit(isa::InstructionInternal::I32And(UniArg::Pop, UniArg::Pop));
             }
             I32Or => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32Or);
+                self.sink
+                    .emit(isa::InstructionInternal::I32Or(UniArg::Pop, UniArg::Pop));
             }
             I32Xor => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32Xor);
+                self.sink
+                    .emit(isa::InstructionInternal::I32Xor(UniArg::Pop, UniArg::Pop));
             }
             I32Shl => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32Shl);
+                self.sink
+                    .emit(isa::InstructionInternal::I32Shl(UniArg::Pop, UniArg::Pop));
             }
             I32ShrS => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32ShrS);
+                self.sink
+                    .emit(isa::InstructionInternal::I32ShrS(UniArg::Pop, UniArg::Pop));
             }
             I32ShrU => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32ShrU);
+                self.sink
+                    .emit(isa::InstructionInternal::I32ShrU(UniArg::Pop, UniArg::Pop));
             }
             I32Rotl => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32Rotl);
+                self.sink
+                    .emit(isa::InstructionInternal::I32Rotl(UniArg::Pop, UniArg::Pop));
             }
             I32Rotr => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32Rotr);
+                self.sink
+                    .emit(isa::InstructionInternal::I32Rotr(UniArg::Pop, UniArg::Pop));
             }
 
             I64Clz => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Clz);
+                self.sink
+                    .emit(isa::InstructionInternal::I64Clz(UniArg::Pop));
             }
             I64Ctz => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Ctz);
+                self.sink
+                    .emit(isa::InstructionInternal::I64Ctz(UniArg::Pop));
             }
             I64Popcnt => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Popcnt);
+                self.sink
+                    .emit(isa::InstructionInternal::I64Popcnt(UniArg::Pop));
             }
             I64Add => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Add);
+                self.sink
+                    .emit(isa::InstructionInternal::I64Add(UniArg::Pop, UniArg::Pop));
             }
             I64Sub => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Sub);
+                self.sink
+                    .emit(isa::InstructionInternal::I64Sub(UniArg::Pop, UniArg::Pop));
             }
             I64Mul => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Mul);
+                self.sink
+                    .emit(isa::InstructionInternal::I64Mul(UniArg::Pop, UniArg::Pop));
             }
             I64DivS => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64DivS);
+                self.sink
+                    .emit(isa::InstructionInternal::I64DivS(UniArg::Pop, UniArg::Pop));
             }
             I64DivU => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64DivU);
+                self.sink
+                    .emit(isa::InstructionInternal::I64DivU(UniArg::Pop, UniArg::Pop));
             }
             I64RemS => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64RemS);
+                self.sink
+                    .emit(isa::InstructionInternal::I64RemS(UniArg::Pop, UniArg::Pop));
             }
             I64RemU => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64RemU);
+                self.sink
+                    .emit(isa::InstructionInternal::I64RemU(UniArg::Pop, UniArg::Pop));
             }
             I64And => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64And);
+                self.sink
+                    .emit(isa::InstructionInternal::I64And(UniArg::Pop, UniArg::Pop));
             }
             I64Or => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Or);
+                self.sink
+                    .emit(isa::InstructionInternal::I64Or(UniArg::Pop, UniArg::Pop));
             }
             I64Xor => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Xor);
+                self.sink
+                    .emit(isa::InstructionInternal::I64Xor(UniArg::Pop, UniArg::Pop));
             }
             I64Shl => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Shl);
+                self.sink
+                    .emit(isa::InstructionInternal::I64Shl(UniArg::Pop, UniArg::Pop));
             }
             I64ShrS => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64ShrS);
+                self.sink
+                    .emit(isa::InstructionInternal::I64ShrS(UniArg::Pop, UniArg::Pop));
             }
             I64ShrU => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64ShrU);
+                self.sink
+                    .emit(isa::InstructionInternal::I64ShrU(UniArg::Pop, UniArg::Pop));
             }
             I64Rotl => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Rotl);
+                self.sink
+                    .emit(isa::InstructionInternal::I64Rotl(UniArg::Pop, UniArg::Pop));
             }
             I64Rotr => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64Rotr);
+                self.sink
+                    .emit(isa::InstructionInternal::I64Rotr(UniArg::Pop, UniArg::Pop));
             }
 
             F32Abs => {
@@ -898,7 +1002,8 @@ impl Compiler {
 
             I32WrapI64 => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I32WrapI64);
+                self.sink
+                    .emit(isa::InstructionInternal::I32WrapI64(UniArg::Pop));
             }
             I32TruncSF32 => {
                 context.step(instruction)?;
@@ -918,11 +1023,13 @@ impl Compiler {
             }
             I64ExtendSI32 => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64ExtendSI32);
+                self.sink
+                    .emit(isa::InstructionInternal::I64ExtendSI32(UniArg::Pop));
             }
             I64ExtendUI32 => {
                 context.step(instruction)?;
-                self.sink.emit(isa::InstructionInternal::I64ExtendUI32);
+                self.sink
+                    .emit(isa::InstructionInternal::I64ExtendUI32(UniArg::Pop));
             }
             I64TruncSF32 => {
                 context.step(instruction)?;
@@ -999,19 +1106,24 @@ impl Compiler {
             }
             SignExt(ref ext) => match ext {
                 SignExtInstruction::I32Extend8S => {
-                    self.sink.emit(isa::InstructionInternal::I32Extend8S);
+                    self.sink
+                        .emit(isa::InstructionInternal::I32Extend8S(UniArg::Pop));
                 }
                 SignExtInstruction::I32Extend16S => {
-                    self.sink.emit(isa::InstructionInternal::I32Extend16S);
+                    self.sink
+                        .emit(isa::InstructionInternal::I32Extend16S(UniArg::Pop));
                 }
                 SignExtInstruction::I64Extend8S => {
-                    self.sink.emit(isa::InstructionInternal::I64Extend8S);
+                    self.sink
+                        .emit(isa::InstructionInternal::I64Extend8S(UniArg::Pop));
                 }
                 SignExtInstruction::I64Extend16S => {
-                    self.sink.emit(isa::InstructionInternal::I64Extend16S);
+                    self.sink
+                        .emit(isa::InstructionInternal::I64Extend16S(UniArg::Pop));
                 }
                 SignExtInstruction::I64Extend32S => {
-                    self.sink.emit(isa::InstructionInternal::I64Extend32S);
+                    self.sink
+                        .emit(isa::InstructionInternal::I64Extend32S(UniArg::Pop));
                 }
             },
             _ => {
@@ -1254,22 +1366,20 @@ impl Sink {
         let Target { label, drop_keep } = target;
         let pc = self.cur_pc();
         let dst_pc = self.pc_or_placeholder(label, || isa::Reloc::Br { pc });
-        self.ins
-            .push(isa::InstructionInternal::BrIfEqz(isa::Target {
-                dst_pc,
-                drop_keep,
-            }));
+        self.ins.push(isa::InstructionInternal::BrIfEqz(
+            isa::Target { dst_pc, drop_keep },
+            UniArg::Pop,
+        ));
     }
 
     fn emit_br_nez(&mut self, target: Target) {
         let Target { label, drop_keep } = target;
         let pc = self.cur_pc();
         let dst_pc = self.pc_or_placeholder(label, || isa::Reloc::Br { pc });
-        self.ins
-            .push(isa::InstructionInternal::BrIfNez(isa::Target {
-                dst_pc,
-                drop_keep,
-            }));
+        self.ins.push(isa::InstructionInternal::BrIfNez(
+            isa::Target { dst_pc, drop_keep },
+            UniArg::Pop,
+        ));
     }
 
     fn emit_br_table(&mut self, targets: &[Target], default: Target) {
@@ -1279,6 +1389,7 @@ impl Sink {
 
         self.ins.push(isa::InstructionInternal::BrTable {
             count: targets.len() as u32 + 1,
+            arg: UniArg::Pop,
         });
 
         for (idx, &Target { label, drop_keep }) in

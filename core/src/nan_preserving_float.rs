@@ -32,7 +32,7 @@ macro_rules! float {
         );
     };
     ($for:ident, $rep:ident, $is:ident, $sign_bit:expr) => {
-        #[derive(Copy, Clone)]
+        #[derive(Copy, Clone, Eq)]
         pub struct $for($rep);
 
         impl_binop!($for, $is, Add, add);

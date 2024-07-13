@@ -3,7 +3,7 @@
 use crate::{
     func::{FuncInstance, FuncInstanceInternal, FuncRef},
     host::Externals,
-    isa::{self},
+    isa::{self, UniArg},
     memory::MemoryRef,
     memory_units::Pages,
     module::ModuleRef,
@@ -450,220 +450,236 @@ impl<'m> Interpreter<'m> {
             isa::Instruction::Unreachable => self.run_unreachable(context),
 
             isa::Instruction::Br(target) => self.run_br(context, *target),
-            isa::Instruction::BrIfEqz(target) => self.run_br_eqz(*target),
-            isa::Instruction::BrIfNez(target) => self.run_br_nez(*target),
-            isa::Instruction::BrTable(targets) => self.run_br_table(*targets),
+            isa::Instruction::BrIfEqz(target, a) => self.run_br_eqz(*target, a),
+            isa::Instruction::BrIfNez(target, a) => self.run_br_nez(*target, a),
+            isa::Instruction::BrTable(targets, a) => self.run_br_table(*targets, a),
             isa::Instruction::Return(drop_keep, ..) => self.run_return(*drop_keep),
 
             isa::Instruction::Call(index) => self.run_call(context, *index),
-            isa::Instruction::CallIndirect(index) => self.run_call_indirect(context, *index),
+            isa::Instruction::CallIndirect(index, a) => self.run_call_indirect(context, *index, a),
 
             isa::Instruction::Drop => self.run_drop(),
-            isa::Instruction::Select(_) => self.run_select(),
+            isa::Instruction::Select(_, arg0, arg1) => self.run_select(arg0, arg1),
 
             isa::Instruction::GetLocal(depth, ..) => self.run_get_local(*depth),
-            isa::Instruction::SetLocal(depth, ..) => self.run_set_local(*depth),
+            isa::Instruction::SetLocal(depth, _, arg0) => self.run_set_local(*depth, arg0),
             isa::Instruction::TeeLocal(depth, ..) => self.run_tee_local(*depth),
             isa::Instruction::GetGlobal(index) => self.run_get_global(context, *index),
-            isa::Instruction::SetGlobal(index) => self.run_set_global(context, *index),
+            isa::Instruction::SetGlobal(index, a) => self.run_set_global(context, *index, a),
 
-            isa::Instruction::I32Load(offset) => self.run_load::<i32>(context, *offset),
-            isa::Instruction::I64Load(offset) => self.run_load::<i64>(context, *offset),
-            isa::Instruction::F32Load(offset) => self.run_load::<F32>(context, *offset),
-            isa::Instruction::F64Load(offset) => self.run_load::<F64>(context, *offset),
-            isa::Instruction::I32Load8S(offset) => {
-                self.run_load_extend::<i8, i32>(context, *offset)
+            isa::Instruction::I32Load(offset, a) => self.run_load::<i32>(context, *offset, a),
+            isa::Instruction::I64Load(offset, a) => self.run_load::<i64>(context, *offset, a),
+            isa::Instruction::F32Load(offset) => {
+                self.run_load::<F32>(context, *offset, &UniArg::Pop)
             }
-            isa::Instruction::I32Load8U(offset) => {
-                self.run_load_extend::<u8, i32>(context, *offset)
+            isa::Instruction::F64Load(offset) => {
+                self.run_load::<F64>(context, *offset, &UniArg::Pop)
             }
-            isa::Instruction::I32Load16S(offset) => {
-                self.run_load_extend::<i16, i32>(context, *offset)
+            isa::Instruction::I32Load8S(offset, a) => {
+                self.run_load_extend::<i8, i32>(context, *offset, a)
             }
-            isa::Instruction::I32Load16U(offset) => {
-                self.run_load_extend::<u16, i32>(context, *offset)
+            isa::Instruction::I32Load8U(offset, a) => {
+                self.run_load_extend::<u8, i32>(context, *offset, a)
             }
-            isa::Instruction::I64Load8S(offset) => {
-                self.run_load_extend::<i8, i64>(context, *offset)
+            isa::Instruction::I32Load16S(offset, a) => {
+                self.run_load_extend::<i16, i32>(context, *offset, a)
             }
-            isa::Instruction::I64Load8U(offset) => {
-                self.run_load_extend::<u8, i64>(context, *offset)
+            isa::Instruction::I32Load16U(offset, a) => {
+                self.run_load_extend::<u16, i32>(context, *offset, a)
             }
-            isa::Instruction::I64Load16S(offset) => {
-                self.run_load_extend::<i16, i64>(context, *offset)
+            isa::Instruction::I64Load8S(offset, a) => {
+                self.run_load_extend::<i8, i64>(context, *offset, a)
             }
-            isa::Instruction::I64Load16U(offset) => {
-                self.run_load_extend::<u16, i64>(context, *offset)
+            isa::Instruction::I64Load8U(offset, a) => {
+                self.run_load_extend::<u8, i64>(context, *offset, a)
             }
-            isa::Instruction::I64Load32S(offset) => {
-                self.run_load_extend::<i32, i64>(context, *offset)
+            isa::Instruction::I64Load16S(offset, a) => {
+                self.run_load_extend::<i16, i64>(context, *offset, a)
             }
-            isa::Instruction::I64Load32U(offset) => {
-                self.run_load_extend::<u32, i64>(context, *offset)
+            isa::Instruction::I64Load16U(offset, a) => {
+                self.run_load_extend::<u16, i64>(context, *offset, a)
+            }
+            isa::Instruction::I64Load32S(offset, a) => {
+                self.run_load_extend::<i32, i64>(context, *offset, a)
+            }
+            isa::Instruction::I64Load32U(offset, a) => {
+                self.run_load_extend::<u32, i64>(context, *offset, a)
             }
 
-            isa::Instruction::I32Store(offset) => self.run_store::<i32>(context, *offset),
-            isa::Instruction::I64Store(offset) => self.run_store::<i64>(context, *offset),
-            isa::Instruction::F32Store(offset) => self.run_store::<F32>(context, *offset),
-            isa::Instruction::F64Store(offset) => self.run_store::<F64>(context, *offset),
-            isa::Instruction::I32Store8(offset) => self.run_store_wrap::<i32, i8>(context, *offset),
-            isa::Instruction::I32Store16(offset) => {
-                self.run_store_wrap::<i32, i16>(context, *offset)
+            isa::Instruction::I32Store(offset, a0, a1) => {
+                self.run_store::<i32>(context, *offset, a0, a1)
             }
-            isa::Instruction::I64Store8(offset) => self.run_store_wrap::<i64, i8>(context, *offset),
-            isa::Instruction::I64Store16(offset) => {
-                self.run_store_wrap::<i64, i16>(context, *offset)
+            isa::Instruction::I64Store(offset, a0, a1) => {
+                self.run_store::<i64>(context, *offset, a0, a1)
             }
-            isa::Instruction::I64Store32(offset) => {
-                self.run_store_wrap::<i64, i32>(context, *offset)
+            isa::Instruction::F32Store(offset) => {
+                self.run_store::<F32>(context, *offset, &UniArg::Pop, &UniArg::Pop)
+            }
+            isa::Instruction::F64Store(offset) => {
+                self.run_store::<F64>(context, *offset, &UniArg::Pop, &UniArg::Pop)
+            }
+            isa::Instruction::I32Store8(offset, a0, a1) => {
+                self.run_store_wrap::<i32, i8>(context, *offset, a0, a1)
+            }
+            isa::Instruction::I32Store16(offset, a0, a1) => {
+                self.run_store_wrap::<i32, i16>(context, *offset, a0, a1)
+            }
+            isa::Instruction::I64Store8(offset, a0, a1) => {
+                self.run_store_wrap::<i64, i8>(context, *offset, a0, a1)
+            }
+            isa::Instruction::I64Store16(offset, a0, a1) => {
+                self.run_store_wrap::<i64, i16>(context, *offset, a0, a1)
+            }
+            isa::Instruction::I64Store32(offset, a0, a1) => {
+                self.run_store_wrap::<i64, i32>(context, *offset, a0, a1)
             }
 
             isa::Instruction::CurrentMemory => self.run_current_memory(context),
-            isa::Instruction::GrowMemory => self.run_grow_memory(context),
+            isa::Instruction::GrowMemory(a) => self.run_grow_memory(context, a),
 
             isa::Instruction::I32Const(val) => self.run_const((*val).into()),
             isa::Instruction::I64Const(val) => self.run_const((*val).into()),
             isa::Instruction::F32Const(val) => self.run_const((*val).into()),
             isa::Instruction::F64Const(val) => self.run_const((*val).into()),
 
-            isa::Instruction::I32Eqz => self.run_eqz::<i32>(),
-            isa::Instruction::I32Eq => self.run_eq::<i32>(),
-            isa::Instruction::I32Ne => self.run_ne::<i32>(),
-            isa::Instruction::I32LtS => self.run_lt::<i32>(),
-            isa::Instruction::I32LtU => self.run_lt::<u32>(),
-            isa::Instruction::I32GtS => self.run_gt::<i32>(),
-            isa::Instruction::I32GtU => self.run_gt::<u32>(),
-            isa::Instruction::I32LeS => self.run_lte::<i32>(),
-            isa::Instruction::I32LeU => self.run_lte::<u32>(),
-            isa::Instruction::I32GeS => self.run_gte::<i32>(),
-            isa::Instruction::I32GeU => self.run_gte::<u32>(),
+            isa::Instruction::I32Eqz(a) => self.run_eqz::<i32>(a),
+            isa::Instruction::I32Eq(a0, a1) => self.run_eq::<i32>(a0, a1),
+            isa::Instruction::I32Ne(a0, a1) => self.run_ne::<i32>(a0, a1),
+            isa::Instruction::I32LtS(a0, a1) => self.run_lt::<i32>(a0, a1),
+            isa::Instruction::I32LtU(a0, a1) => self.run_lt::<u32>(a0, a1),
+            isa::Instruction::I32GtS(a0, a1) => self.run_gt::<i32>(a0, a1),
+            isa::Instruction::I32GtU(a0, a1) => self.run_gt::<u32>(a0, a1),
+            isa::Instruction::I32LeS(a0, a1) => self.run_lte::<i32>(a0, a1),
+            isa::Instruction::I32LeU(a0, a1) => self.run_lte::<u32>(a0, a1),
+            isa::Instruction::I32GeS(a0, a1) => self.run_gte::<i32>(a0, a1),
+            isa::Instruction::I32GeU(a0, a1) => self.run_gte::<u32>(a0, a1),
 
-            isa::Instruction::I64Eqz => self.run_eqz::<i64>(),
-            isa::Instruction::I64Eq => self.run_eq::<i64>(),
-            isa::Instruction::I64Ne => self.run_ne::<i64>(),
-            isa::Instruction::I64LtS => self.run_lt::<i64>(),
-            isa::Instruction::I64LtU => self.run_lt::<u64>(),
-            isa::Instruction::I64GtS => self.run_gt::<i64>(),
-            isa::Instruction::I64GtU => self.run_gt::<u64>(),
-            isa::Instruction::I64LeS => self.run_lte::<i64>(),
-            isa::Instruction::I64LeU => self.run_lte::<u64>(),
-            isa::Instruction::I64GeS => self.run_gte::<i64>(),
-            isa::Instruction::I64GeU => self.run_gte::<u64>(),
+            isa::Instruction::I64Eqz(a) => self.run_eqz::<i64>(a),
+            isa::Instruction::I64Eq(a0, a1) => self.run_eq::<i64>(a0, a1),
+            isa::Instruction::I64Ne(a0, a1) => self.run_ne::<i64>(a0, a1),
+            isa::Instruction::I64LtS(a0, a1) => self.run_lt::<i64>(a0, a1),
+            isa::Instruction::I64LtU(a0, a1) => self.run_lt::<u64>(a0, a1),
+            isa::Instruction::I64GtS(a0, a1) => self.run_gt::<i64>(a0, a1),
+            isa::Instruction::I64GtU(a0, a1) => self.run_gt::<u64>(a0, a1),
+            isa::Instruction::I64LeS(a0, a1) => self.run_lte::<i64>(a0, a1),
+            isa::Instruction::I64LeU(a0, a1) => self.run_lte::<u64>(a0, a1),
+            isa::Instruction::I64GeS(a0, a1) => self.run_gte::<i64>(a0, a1),
+            isa::Instruction::I64GeU(a0, a1) => self.run_gte::<u64>(a0, a1),
 
-            isa::Instruction::F32Eq => self.run_eq::<F32>(),
-            isa::Instruction::F32Ne => self.run_ne::<F32>(),
-            isa::Instruction::F32Lt => self.run_lt::<F32>(),
-            isa::Instruction::F32Gt => self.run_gt::<F32>(),
-            isa::Instruction::F32Le => self.run_lte::<F32>(),
-            isa::Instruction::F32Ge => self.run_gte::<F32>(),
+            isa::Instruction::F32Eq => self.run_eq::<F32>(&UniArg::Pop, &UniArg::Pop),
+            isa::Instruction::F32Ne => self.run_ne::<F32>(&UniArg::Pop, &UniArg::Pop),
+            isa::Instruction::F32Lt => self.run_lt::<F32>(&UniArg::Pop, &UniArg::Pop),
+            isa::Instruction::F32Gt => self.run_gt::<F32>(&UniArg::Pop, &UniArg::Pop),
+            isa::Instruction::F32Le => self.run_lte::<F32>(&UniArg::Pop, &UniArg::Pop),
+            isa::Instruction::F32Ge => self.run_gte::<F32>(&UniArg::Pop, &UniArg::Pop),
 
-            isa::Instruction::F64Eq => self.run_eq::<F64>(),
-            isa::Instruction::F64Ne => self.run_ne::<F64>(),
-            isa::Instruction::F64Lt => self.run_lt::<F64>(),
-            isa::Instruction::F64Gt => self.run_gt::<F64>(),
-            isa::Instruction::F64Le => self.run_lte::<F64>(),
-            isa::Instruction::F64Ge => self.run_gte::<F64>(),
+            isa::Instruction::F64Eq => self.run_eq::<F64>(&UniArg::Pop, &UniArg::Pop),
+            isa::Instruction::F64Ne => self.run_ne::<F64>(&UniArg::Pop, &UniArg::Pop),
+            isa::Instruction::F64Lt => self.run_lt::<F64>(&UniArg::Pop, &UniArg::Pop),
+            isa::Instruction::F64Gt => self.run_gt::<F64>(&UniArg::Pop, &UniArg::Pop),
+            isa::Instruction::F64Le => self.run_lte::<F64>(&UniArg::Pop, &UniArg::Pop),
+            isa::Instruction::F64Ge => self.run_gte::<F64>(&UniArg::Pop, &UniArg::Pop),
 
-            isa::Instruction::I32Clz => self.run_clz::<i32>(),
-            isa::Instruction::I32Ctz => self.run_ctz::<i32>(),
-            isa::Instruction::I32Popcnt => self.run_popcnt::<i32>(),
-            isa::Instruction::I32Add => self.run_add::<i32>(),
-            isa::Instruction::I32Sub => self.run_sub::<i32>(),
-            isa::Instruction::I32Mul => self.run_mul::<i32>(),
-            isa::Instruction::I32DivS => self.run_div::<i32, i32>(),
-            isa::Instruction::I32DivU => self.run_div::<i32, u32>(),
-            isa::Instruction::I32RemS => self.run_rem::<i32, i32>(),
-            isa::Instruction::I32RemU => self.run_rem::<i32, u32>(),
-            isa::Instruction::I32And => self.run_and::<i32>(),
-            isa::Instruction::I32Or => self.run_or::<i32>(),
-            isa::Instruction::I32Xor => self.run_xor::<i32>(),
-            isa::Instruction::I32Shl => self.run_shl::<i32>(0x1F),
-            isa::Instruction::I32ShrS => self.run_shr::<i32, i32>(0x1F),
-            isa::Instruction::I32ShrU => self.run_shr::<i32, u32>(0x1F),
-            isa::Instruction::I32Rotl => self.run_rotl::<i32>(),
-            isa::Instruction::I32Rotr => self.run_rotr::<i32>(),
+            isa::Instruction::I32Clz(a) => self.run_clz::<i32>(a),
+            isa::Instruction::I32Ctz(a) => self.run_ctz::<i32>(a),
+            isa::Instruction::I32Popcnt(a) => self.run_popcnt::<i32>(a),
+            isa::Instruction::I32Add(a0, a1) => self.run_add::<i32>(a0, a1),
+            isa::Instruction::I32Sub(a0, a1) => self.run_sub::<i32>(a0, a1),
+            isa::Instruction::I32Mul(a0, a1) => self.run_mul::<i32>(a0, a1),
+            isa::Instruction::I32DivS(a0, a1) => self.run_div::<i32, i32>(a0, a1),
+            isa::Instruction::I32DivU(a0, a1) => self.run_div::<i32, u32>(a0, a1),
+            isa::Instruction::I32RemS(a0, a1) => self.run_rem::<i32, i32>(a0, a1),
+            isa::Instruction::I32RemU(a0, a1) => self.run_rem::<i32, u32>(a0, a1),
+            isa::Instruction::I32And(a0, a1) => self.run_and::<i32>(a0, a1),
+            isa::Instruction::I32Or(a0, a1) => self.run_or::<i32>(a0, a1),
+            isa::Instruction::I32Xor(a0, a1) => self.run_xor::<i32>(a0, a1),
+            isa::Instruction::I32Shl(a0, a1) => self.run_shl::<i32>(0x1F, a0, a1),
+            isa::Instruction::I32ShrS(a0, a1) => self.run_shr::<i32, i32>(0x1F, a0, a1),
+            isa::Instruction::I32ShrU(a0, a1) => self.run_shr::<i32, u32>(0x1F, a0, a1),
+            isa::Instruction::I32Rotl(a0, a1) => self.run_rotl::<i32>(a0, a1),
+            isa::Instruction::I32Rotr(a0, a1) => self.run_rotr::<i32>(a0, a1),
 
-            isa::Instruction::I64Clz => self.run_clz::<i64>(),
-            isa::Instruction::I64Ctz => self.run_ctz::<i64>(),
-            isa::Instruction::I64Popcnt => self.run_popcnt::<i64>(),
-            isa::Instruction::I64Add => self.run_add::<i64>(),
-            isa::Instruction::I64Sub => self.run_sub::<i64>(),
-            isa::Instruction::I64Mul => self.run_mul::<i64>(),
-            isa::Instruction::I64DivS => self.run_div::<i64, i64>(),
-            isa::Instruction::I64DivU => self.run_div::<i64, u64>(),
-            isa::Instruction::I64RemS => self.run_rem::<i64, i64>(),
-            isa::Instruction::I64RemU => self.run_rem::<i64, u64>(),
-            isa::Instruction::I64And => self.run_and::<i64>(),
-            isa::Instruction::I64Or => self.run_or::<i64>(),
-            isa::Instruction::I64Xor => self.run_xor::<i64>(),
-            isa::Instruction::I64Shl => self.run_shl::<i64>(0x3F),
-            isa::Instruction::I64ShrS => self.run_shr::<i64, i64>(0x3F),
-            isa::Instruction::I64ShrU => self.run_shr::<i64, u64>(0x3F),
-            isa::Instruction::I64Rotl => self.run_rotl::<i64>(),
-            isa::Instruction::I64Rotr => self.run_rotr::<i64>(),
+            isa::Instruction::I64Clz(a) => self.run_clz::<i64>(a),
+            isa::Instruction::I64Ctz(a) => self.run_ctz::<i64>(a),
+            isa::Instruction::I64Popcnt(a) => self.run_popcnt::<i64>(a),
+            isa::Instruction::I64Add(a0, a1) => self.run_add::<i64>(a0, a1),
+            isa::Instruction::I64Sub(a0, a1) => self.run_sub::<i64>(a0, a1),
+            isa::Instruction::I64Mul(a0, a1) => self.run_mul::<i64>(a0, a1),
+            isa::Instruction::I64DivS(a0, a1) => self.run_div::<i64, i64>(a0, a1),
+            isa::Instruction::I64DivU(a0, a1) => self.run_div::<i64, u64>(a0, a1),
+            isa::Instruction::I64RemS(a0, a1) => self.run_rem::<i64, i64>(a0, a1),
+            isa::Instruction::I64RemU(a0, a1) => self.run_rem::<i64, u64>(a0, a1),
+            isa::Instruction::I64And(a0, a1) => self.run_and::<i64>(a0, a1),
+            isa::Instruction::I64Or(a0, a1) => self.run_or::<i64>(a0, a1),
+            isa::Instruction::I64Xor(a0, a1) => self.run_xor::<i64>(a0, a1),
+            isa::Instruction::I64Shl(a0, a1) => self.run_shl::<i64>(0x3F, a0, a1),
+            isa::Instruction::I64ShrS(a0, a1) => self.run_shr::<i64, i64>(0x3F, a0, a1),
+            isa::Instruction::I64ShrU(a0, a1) => self.run_shr::<i64, u64>(0x3F, a0, a1),
+            isa::Instruction::I64Rotl(a0, a1) => self.run_rotl::<i64>(a0, a1),
+            isa::Instruction::I64Rotr(a0, a1) => self.run_rotr::<i64>(a0, a1),
 
-            isa::Instruction::F32Abs => self.run_abs::<F32>(),
-            isa::Instruction::F32Neg => self.run_neg::<F32>(),
-            isa::Instruction::F32Ceil => self.run_ceil::<F32>(),
-            isa::Instruction::F32Floor => self.run_floor::<F32>(),
-            isa::Instruction::F32Trunc => self.run_trunc::<F32>(),
-            isa::Instruction::F32Nearest => self.run_nearest::<F32>(),
-            isa::Instruction::F32Sqrt => self.run_sqrt::<F32>(),
-            isa::Instruction::F32Add => self.run_add::<F32>(),
-            isa::Instruction::F32Sub => self.run_sub::<F32>(),
-            isa::Instruction::F32Mul => self.run_mul::<F32>(),
-            isa::Instruction::F32Div => self.run_div::<F32, F32>(),
-            isa::Instruction::F32Min => self.run_min::<F32>(),
-            isa::Instruction::F32Max => self.run_max::<F32>(),
-            isa::Instruction::F32Copysign => self.run_copysign::<F32>(),
+            isa::Instruction::F32Abs => self.run_abs::<F32>(&UniArg::Pop),
+            isa::Instruction::F32Neg => self.run_neg::<F32>(&UniArg::Pop),
+            isa::Instruction::F32Ceil => self.run_ceil::<F32>(&UniArg::Pop),
+            isa::Instruction::F32Floor => self.run_floor::<F32>(&UniArg::Pop),
+            isa::Instruction::F32Trunc => self.run_trunc::<F32>(&UniArg::Pop),
+            isa::Instruction::F32Nearest => self.run_nearest::<F32>(&UniArg::Pop),
+            isa::Instruction::F32Sqrt => self.run_sqrt::<F32>(&UniArg::Pop),
+            isa::Instruction::F32Add => self.run_add::<F32>(&UniArg::Pop, &UniArg::Pop),
+            isa::Instruction::F32Sub => self.run_sub::<F32>(&UniArg::Pop, &UniArg::Pop),
+            isa::Instruction::F32Mul => self.run_mul::<F32>(&UniArg::Pop, &UniArg::Pop),
+            isa::Instruction::F32Div => self.run_div::<F32, F32>(&UniArg::Pop, &UniArg::Pop),
+            isa::Instruction::F32Min => self.run_min::<F32>(&UniArg::Pop, &UniArg::Pop),
+            isa::Instruction::F32Max => self.run_max::<F32>(&UniArg::Pop, &UniArg::Pop),
+            isa::Instruction::F32Copysign => self.run_copysign::<F32>(&UniArg::Pop, &UniArg::Pop),
 
-            isa::Instruction::F64Abs => self.run_abs::<F64>(),
-            isa::Instruction::F64Neg => self.run_neg::<F64>(),
-            isa::Instruction::F64Ceil => self.run_ceil::<F64>(),
-            isa::Instruction::F64Floor => self.run_floor::<F64>(),
-            isa::Instruction::F64Trunc => self.run_trunc::<F64>(),
-            isa::Instruction::F64Nearest => self.run_nearest::<F64>(),
-            isa::Instruction::F64Sqrt => self.run_sqrt::<F64>(),
-            isa::Instruction::F64Add => self.run_add::<F64>(),
-            isa::Instruction::F64Sub => self.run_sub::<F64>(),
-            isa::Instruction::F64Mul => self.run_mul::<F64>(),
-            isa::Instruction::F64Div => self.run_div::<F64, F64>(),
-            isa::Instruction::F64Min => self.run_min::<F64>(),
-            isa::Instruction::F64Max => self.run_max::<F64>(),
-            isa::Instruction::F64Copysign => self.run_copysign::<F64>(),
+            isa::Instruction::F64Abs => self.run_abs::<F64>(&UniArg::Pop),
+            isa::Instruction::F64Neg => self.run_neg::<F64>(&UniArg::Pop),
+            isa::Instruction::F64Ceil => self.run_ceil::<F64>(&UniArg::Pop),
+            isa::Instruction::F64Floor => self.run_floor::<F64>(&UniArg::Pop),
+            isa::Instruction::F64Trunc => self.run_trunc::<F64>(&UniArg::Pop),
+            isa::Instruction::F64Nearest => self.run_nearest::<F64>(&UniArg::Pop),
+            isa::Instruction::F64Sqrt => self.run_sqrt::<F64>(&UniArg::Pop),
+            isa::Instruction::F64Add => self.run_add::<F64>(&UniArg::Pop, &UniArg::Pop),
+            isa::Instruction::F64Sub => self.run_sub::<F64>(&UniArg::Pop, &UniArg::Pop),
+            isa::Instruction::F64Mul => self.run_mul::<F64>(&UniArg::Pop, &UniArg::Pop),
+            isa::Instruction::F64Div => self.run_div::<F64, F64>(&UniArg::Pop, &UniArg::Pop),
+            isa::Instruction::F64Min => self.run_min::<F64>(&UniArg::Pop, &UniArg::Pop),
+            isa::Instruction::F64Max => self.run_max::<F64>(&UniArg::Pop, &UniArg::Pop),
+            isa::Instruction::F64Copysign => self.run_copysign::<F64>(&UniArg::Pop, &UniArg::Pop),
 
-            isa::Instruction::I32WrapI64 => self.run_wrap::<i64, i32>(),
-            isa::Instruction::I32TruncSF32 => self.run_trunc_to_int::<F32, i32, i32>(),
-            isa::Instruction::I32TruncUF32 => self.run_trunc_to_int::<F32, u32, i32>(),
-            isa::Instruction::I32TruncSF64 => self.run_trunc_to_int::<F64, i32, i32>(),
-            isa::Instruction::I32TruncUF64 => self.run_trunc_to_int::<F64, u32, i32>(),
-            isa::Instruction::I64ExtendSI32 => self.run_extend::<i32, i64, i64>(),
-            isa::Instruction::I64ExtendUI32 => self.run_extend::<u32, u64, i64>(),
-            isa::Instruction::I64TruncSF32 => self.run_trunc_to_int::<F32, i64, i64>(),
-            isa::Instruction::I64TruncUF32 => self.run_trunc_to_int::<F32, u64, i64>(),
-            isa::Instruction::I64TruncSF64 => self.run_trunc_to_int::<F64, i64, i64>(),
-            isa::Instruction::I64TruncUF64 => self.run_trunc_to_int::<F64, u64, i64>(),
-            isa::Instruction::F32ConvertSI32 => self.run_extend::<i32, F32, F32>(),
-            isa::Instruction::F32ConvertUI32 => self.run_extend::<u32, F32, F32>(),
-            isa::Instruction::F32ConvertSI64 => self.run_wrap::<i64, F32>(),
-            isa::Instruction::F32ConvertUI64 => self.run_wrap::<u64, F32>(),
-            isa::Instruction::F32DemoteF64 => self.run_wrap::<F64, F32>(),
-            isa::Instruction::F64ConvertSI32 => self.run_extend::<i32, F64, F64>(),
-            isa::Instruction::F64ConvertUI32 => self.run_extend::<u32, F64, F64>(),
-            isa::Instruction::F64ConvertSI64 => self.run_extend::<i64, F64, F64>(),
-            isa::Instruction::F64ConvertUI64 => self.run_extend::<u64, F64, F64>(),
-            isa::Instruction::F64PromoteF32 => self.run_extend::<F32, F64, F64>(),
+            isa::Instruction::I32WrapI64(a) => self.run_wrap::<i64, i32>(a),
+            isa::Instruction::I32TruncSF32 => self.run_trunc_to_int::<F32, i32, i32>(&UniArg::Pop),
+            isa::Instruction::I32TruncUF32 => self.run_trunc_to_int::<F32, u32, i32>(&UniArg::Pop),
+            isa::Instruction::I32TruncSF64 => self.run_trunc_to_int::<F64, i32, i32>(&UniArg::Pop),
+            isa::Instruction::I32TruncUF64 => self.run_trunc_to_int::<F64, u32, i32>(&UniArg::Pop),
+            isa::Instruction::I64ExtendSI32(a) => self.run_extend::<i32, i64, i64>(a),
+            isa::Instruction::I64ExtendUI32(a) => self.run_extend::<u32, u64, i64>(a),
+            isa::Instruction::I64TruncSF32 => self.run_trunc_to_int::<F32, i64, i64>(&UniArg::Pop),
+            isa::Instruction::I64TruncUF32 => self.run_trunc_to_int::<F32, u64, i64>(&UniArg::Pop),
+            isa::Instruction::I64TruncSF64 => self.run_trunc_to_int::<F64, i64, i64>(&UniArg::Pop),
+            isa::Instruction::I64TruncUF64 => self.run_trunc_to_int::<F64, u64, i64>(&UniArg::Pop),
+            isa::Instruction::F32ConvertSI32 => self.run_extend::<i32, F32, F32>(&UniArg::Pop),
+            isa::Instruction::F32ConvertUI32 => self.run_extend::<u32, F32, F32>(&UniArg::Pop),
+            isa::Instruction::F32ConvertSI64 => self.run_wrap::<i64, F32>(&UniArg::Pop),
+            isa::Instruction::F32ConvertUI64 => self.run_wrap::<u64, F32>(&UniArg::Pop),
+            isa::Instruction::F32DemoteF64 => self.run_wrap::<F64, F32>(&UniArg::Pop),
+            isa::Instruction::F64ConvertSI32 => self.run_extend::<i32, F64, F64>(&UniArg::Pop),
+            isa::Instruction::F64ConvertUI32 => self.run_extend::<u32, F64, F64>(&UniArg::Pop),
+            isa::Instruction::F64ConvertSI64 => self.run_extend::<i64, F64, F64>(&UniArg::Pop),
+            isa::Instruction::F64ConvertUI64 => self.run_extend::<u64, F64, F64>(&UniArg::Pop),
+            isa::Instruction::F64PromoteF32 => self.run_extend::<F32, F64, F64>(&UniArg::Pop),
 
-            isa::Instruction::I32ReinterpretF32 => self.run_reinterpret::<F32, i32>(),
-            isa::Instruction::I64ReinterpretF64 => self.run_reinterpret::<F64, i64>(),
-            isa::Instruction::F32ReinterpretI32 => self.run_reinterpret::<i32, F32>(),
-            isa::Instruction::F64ReinterpretI64 => self.run_reinterpret::<i64, F64>(),
+            isa::Instruction::I32ReinterpretF32 => self.run_reinterpret::<F32, i32>(&UniArg::Pop),
+            isa::Instruction::I64ReinterpretF64 => self.run_reinterpret::<F64, i64>(&UniArg::Pop),
+            isa::Instruction::F32ReinterpretI32 => self.run_reinterpret::<i32, F32>(&UniArg::Pop),
+            isa::Instruction::F64ReinterpretI64 => self.run_reinterpret::<i64, F64>(&UniArg::Pop),
 
-            isa::Instruction::I32Extend8S => self.run_extend::<i8, i32, i32>(),
-            isa::Instruction::I32Extend16S => self.run_extend::<i16, i32, i32>(),
-            isa::Instruction::I64Extend8S => self.run_extend::<i8, i64, i64>(),
-            isa::Instruction::I64Extend16S => self.run_extend::<i16, i64, i64>(),
-            isa::Instruction::I64Extend32S => self.run_extend::<i32, i64, i64>(),
+            isa::Instruction::I32Extend8S(a) => self.run_extend::<i8, i32, i32>(a),
+            isa::Instruction::I32Extend16S(a) => self.run_extend::<i16, i32, i32>(a),
+            isa::Instruction::I64Extend8S(a) => self.run_extend::<i8, i64, i64>(a),
+            isa::Instruction::I64Extend16S(a) => self.run_extend::<i16, i64, i64>(a),
+            isa::Instruction::I64Extend32S(a) => self.run_extend::<i32, i64, i64>(a),
         }
     }
 
@@ -682,8 +698,12 @@ impl<'m> Interpreter<'m> {
         Ok(InstructionOutcome::Branch(target))
     }
 
-    fn run_br_nez(&mut self, target: isa::Target) -> Result<InstructionOutcome, TrapCode> {
-        let condition = self.value_stack.pop_as();
+    fn run_br_nez(
+        &mut self,
+        target: isa::Target,
+        arg: &UniArg,
+    ) -> Result<InstructionOutcome, TrapCode> {
+        let condition = self.value_stack.handle_uniarg(arg);
         if condition {
             Ok(InstructionOutcome::Branch(target))
         } else {
@@ -691,8 +711,12 @@ impl<'m> Interpreter<'m> {
         }
     }
 
-    fn run_br_eqz(&mut self, target: isa::Target) -> Result<InstructionOutcome, TrapCode> {
-        let condition = self.value_stack.pop_as();
+    fn run_br_eqz(
+        &mut self,
+        target: isa::Target,
+        arg: &UniArg,
+    ) -> Result<InstructionOutcome, TrapCode> {
+        let condition = self.value_stack.handle_uniarg(arg);
         if condition {
             Ok(InstructionOutcome::RunNextInstruction)
         } else {
@@ -700,8 +724,12 @@ impl<'m> Interpreter<'m> {
         }
     }
 
-    fn run_br_table(&mut self, targets: isa::BrTargets) -> Result<InstructionOutcome, TrapCode> {
-        let index: u32 = self.value_stack.pop_as();
+    fn run_br_table(
+        &mut self,
+        targets: isa::BrTargets,
+        arg: &UniArg,
+    ) -> Result<InstructionOutcome, TrapCode> {
+        let index: u32 = self.value_stack.handle_uniarg(arg);
 
         let dst = targets.get(index);
 
@@ -728,8 +756,9 @@ impl<'m> Interpreter<'m> {
         &mut self,
         context: &mut FunctionContext,
         signature_idx: u32,
+        arg: &UniArg,
     ) -> Result<InstructionOutcome, TrapCode> {
-        let table_func_idx: u32 = self.value_stack.pop_as();
+        let table_func_idx: u32 = self.value_stack.handle_uniarg(arg);
         let table = context
             .module()
             .table_by_index(DEFAULT_TABLE_INDEX)
@@ -759,10 +788,11 @@ impl<'m> Interpreter<'m> {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_select(&mut self) -> Result<InstructionOutcome, TrapCode> {
-        let (left, mid, right) = self.value_stack.pop_triple();
+    fn run_select(&mut self, arg0: &UniArg, arg1: &UniArg) -> Result<InstructionOutcome, TrapCode> {
+        let condition = bool::from_value_internal(self.value_stack.pop());
+        let mid = self.value_stack.handle_uniarg_raw(arg1);
+        let left = self.value_stack.handle_uniarg_raw(arg0);
 
-        let condition = <_>::from_value_internal(right);
         let val = if condition { left } else { mid };
         self.value_stack.push(val)?;
         Ok(InstructionOutcome::RunNextInstruction)
@@ -774,8 +804,8 @@ impl<'m> Interpreter<'m> {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_set_local(&mut self, index: u32) -> Result<InstructionOutcome, TrapCode> {
-        let val = self.value_stack.pop();
+    fn run_set_local(&mut self, index: u32, arg0: &UniArg) -> Result<InstructionOutcome, TrapCode> {
+        let val = self.value_stack.handle_uniarg_raw(arg0);
         *self.value_stack.pick_mut(index as usize) = val;
         Ok(InstructionOutcome::RunNextInstruction)
     }
@@ -804,8 +834,9 @@ impl<'m> Interpreter<'m> {
         &mut self,
         context: &mut FunctionContext,
         index: u32,
+        arg: &UniArg,
     ) -> Result<InstructionOutcome, TrapCode> {
-        let val = self.value_stack.pop();
+        let val: ValueInternal = self.value_stack.handle_uniarg_raw(arg);
         let global = context
             .module()
             .global_by_index(index)
@@ -820,12 +851,13 @@ impl<'m> Interpreter<'m> {
         &mut self,
         context: &mut FunctionContext,
         offset: u32,
+        arg: &UniArg,
     ) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: LittleEndianConvert,
     {
-        let raw_address = self.value_stack.pop_as();
+        let raw_address = self.value_stack.handle_uniarg(arg);
         let address = effective_address(offset, raw_address)?;
         let m = context
             .memory()
@@ -841,13 +873,14 @@ impl<'m> Interpreter<'m> {
         &mut self,
         context: &mut FunctionContext,
         offset: u32,
+        arg: &UniArg,
     ) -> Result<InstructionOutcome, TrapCode>
     where
         T: ExtendInto<U>,
         ValueInternal: From<U>,
         T: LittleEndianConvert,
     {
-        let raw_address = self.value_stack.pop_as();
+        let raw_address = self.value_stack.handle_uniarg(arg);
         let address = effective_address(offset, raw_address)?;
         let m = context
             .memory()
@@ -866,13 +899,15 @@ impl<'m> Interpreter<'m> {
         &mut self,
         context: &mut FunctionContext,
         offset: u32,
+        arg0: &UniArg,
+        arg1: &UniArg,
     ) -> Result<InstructionOutcome, TrapCode>
     where
         T: FromValueInternal,
         T: LittleEndianConvert,
     {
-        let stack_value = self.value_stack.pop_as::<T>();
-        let raw_address = self.value_stack.pop_as::<u32>();
+        let stack_value = self.value_stack.handle_uniarg::<T>(arg1);
+        let raw_address = self.value_stack.handle_uniarg::<u32>(arg0);
         let address = effective_address(offset, raw_address)?;
 
         let m = context
@@ -887,15 +922,18 @@ impl<'m> Interpreter<'m> {
         &mut self,
         context: &mut FunctionContext,
         offset: u32,
+        arg0: &UniArg,
+        arg1: &UniArg,
     ) -> Result<InstructionOutcome, TrapCode>
     where
         T: FromValueInternal,
         T: WrapInto<U>,
         U: LittleEndianConvert,
     {
-        let stack_value: T = <_>::from_value_internal(self.value_stack.pop());
+        let stack_value: T = self.value_stack.handle_uniarg(arg0);
         let stack_value = stack_value.wrap_into();
-        let raw_address = self.value_stack.pop_as::<u32>();
+        let raw_address: u32 = self.value_stack.handle_uniarg(arg1);
+
         let address = effective_address(offset, raw_address)?;
         let m = context
             .memory()
@@ -920,8 +958,9 @@ impl<'m> Interpreter<'m> {
     fn run_grow_memory(
         &mut self,
         context: &mut FunctionContext,
+        arg0: &UniArg,
     ) -> Result<InstructionOutcome, TrapCode> {
-        let pages: u32 = self.value_stack.pop_as();
+        let pages: u32 = self.value_stack.handle_uniarg(arg0);
         let m = context
             .memory()
             .expect("Due to validation memory should exists");
@@ -940,12 +979,18 @@ impl<'m> Interpreter<'m> {
             .map(|_| InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_relop<T, F>(&mut self, f: F) -> Result<InstructionOutcome, TrapCode>
+    fn run_relop<T, F>(
+        &mut self,
+        f: F,
+        arg0: &UniArg,
+        arg1: &UniArg,
+    ) -> Result<InstructionOutcome, TrapCode>
     where
         T: FromValueInternal,
         F: FnOnce(T, T) -> bool,
     {
-        let (left, right) = self.value_stack.pop_pair_as::<T>();
+        let right = self.value_stack.handle_uniarg::<T>(arg1);
+        let left = self.value_stack.handle_uniarg::<T>(arg0);
         let v = if f(left, right) {
             ValueInternal(1)
         } else {
@@ -955,135 +1000,147 @@ impl<'m> Interpreter<'m> {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_eqz<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_eqz<T>(&mut self, arg0: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         T: FromValueInternal,
         T: PartialEq<T> + Default,
     {
-        let v = self.value_stack.pop_as::<T>();
+        let v = self.value_stack.handle_uniarg::<T>(arg0);
         let v = ValueInternal(if v == Default::default() { 1 } else { 0 });
         self.value_stack.push(v)?;
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_eq<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_eq<T>(&mut self, arg0: &UniArg, arg1: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         T: FromValueInternal + PartialEq<T>,
     {
-        self.run_relop(|left: T, right: T| left == right)
+        self.run_relop(|left: T, right: T| left == right, arg0, arg1)
     }
 
-    fn run_ne<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_ne<T>(&mut self, arg0: &UniArg, arg1: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         T: FromValueInternal + PartialEq<T>,
     {
-        self.run_relop(|left: T, right: T| left != right)
+        self.run_relop(|left: T, right: T| left != right, arg0, arg1)
     }
 
-    fn run_lt<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_lt<T>(&mut self, arg0: &UniArg, arg1: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         T: FromValueInternal + PartialOrd<T>,
     {
-        self.run_relop(|left: T, right: T| left < right)
+        self.run_relop(|left: T, right: T| left < right, arg0, arg1)
     }
 
-    fn run_gt<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_gt<T>(&mut self, arg0: &UniArg, arg1: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         T: FromValueInternal + PartialOrd<T>,
     {
-        self.run_relop(|left: T, right: T| left > right)
+        self.run_relop(|left: T, right: T| left > right, arg0, arg1)
     }
 
-    fn run_lte<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_lte<T>(&mut self, arg0: &UniArg, arg1: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         T: FromValueInternal + PartialOrd<T>,
     {
-        self.run_relop(|left: T, right: T| left <= right)
+        self.run_relop(|left: T, right: T| left <= right, arg0, arg1)
     }
 
-    fn run_gte<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_gte<T>(&mut self, arg0: &UniArg, arg1: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         T: FromValueInternal + PartialOrd<T>,
     {
-        self.run_relop(|left: T, right: T| left >= right)
+        self.run_relop(|left: T, right: T| left >= right, arg0, arg1)
     }
 
-    fn run_unop<T, U, F>(&mut self, f: F) -> Result<InstructionOutcome, TrapCode>
+    fn run_unop<T, U, F>(&mut self, f: F, arg0: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         F: FnOnce(T) -> U,
         T: FromValueInternal,
         ValueInternal: From<U>,
     {
-        let v = self.value_stack.pop_as::<T>();
+        let v = self.value_stack.handle_uniarg::<T>(arg0);
         let v = f(v);
         self.value_stack.push(v.into())?;
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_clz<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_clz<T>(&mut self, arg0: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Integer<T> + FromValueInternal,
     {
-        self.run_unop(|v: T| v.leading_zeros())
+        self.run_unop(|v: T| v.leading_zeros(), arg0)
     }
 
-    fn run_ctz<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_ctz<T>(&mut self, arg0: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Integer<T> + FromValueInternal,
     {
-        self.run_unop(|v: T| v.trailing_zeros())
+        self.run_unop(|v: T| v.trailing_zeros(), arg0)
     }
 
-    fn run_popcnt<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_popcnt<T>(&mut self, arg0: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Integer<T> + FromValueInternal,
     {
-        self.run_unop(|v: T| v.count_ones())
+        self.run_unop(|v: T| v.count_ones(), arg0)
     }
 
-    fn run_add<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_add<T>(&mut self, arg0: &UniArg, arg1: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: ArithmeticOps<T> + FromValueInternal,
     {
-        let (left, right) = self.value_stack.pop_pair_as::<T>();
+        let right: T = self.value_stack.handle_uniarg(arg1);
+        let left: T = self.value_stack.handle_uniarg(arg0);
+
         let v = left.add(right);
         self.value_stack.push(v.into())?;
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_sub<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_sub<T>(&mut self, arg0: &UniArg, arg1: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: ArithmeticOps<T> + FromValueInternal,
     {
-        let (left, right) = self.value_stack.pop_pair_as::<T>();
+        let right: T = self.value_stack.handle_uniarg(arg1);
+        let left: T = self.value_stack.handle_uniarg(arg0);
+
         let v = left.sub(right);
         self.value_stack.push(v.into())?;
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_mul<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_mul<T>(&mut self, arg0: &UniArg, arg1: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: ArithmeticOps<T> + FromValueInternal,
     {
-        let (left, right) = self.value_stack.pop_pair_as::<T>();
+        let right: T = self.value_stack.handle_uniarg(arg1);
+        let left: T = self.value_stack.handle_uniarg(arg0);
+
         let v = left.mul(right);
         self.value_stack.push(v.into())?;
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_div<T, U>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_div<T, U>(
+        &mut self,
+        arg0: &UniArg,
+        arg1: &UniArg,
+    ) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: TransmuteInto<U> + FromValueInternal,
         U: ArithmeticOps<U> + TransmuteInto<T>,
     {
-        let (left, right) = self.value_stack.pop_pair_as::<T>();
+        let right: T = self.value_stack.handle_uniarg(arg1);
+        let left: T = self.value_stack.handle_uniarg(arg0);
+
         let (left, right) = (left.transmute_into(), right.transmute_into());
         let v = left.div(right)?;
         let v = v.transmute_into();
@@ -1091,13 +1148,19 @@ impl<'m> Interpreter<'m> {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_rem<T, U>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_rem<T, U>(
+        &mut self,
+        arg0: &UniArg,
+        arg1: &UniArg,
+    ) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: TransmuteInto<U> + FromValueInternal,
         U: Integer<U> + TransmuteInto<T>,
     {
-        let (left, right) = self.value_stack.pop_pair_as::<T>();
+        let right: T = self.value_stack.handle_uniarg(arg1);
+        let left: T = self.value_stack.handle_uniarg(arg0);
+
         let (left, right) = (left.transmute_into(), right.transmute_into());
         let v = left.rem(right)?;
         let v = v.transmute_into();
@@ -1105,58 +1168,78 @@ impl<'m> Interpreter<'m> {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_and<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_and<T>(&mut self, arg0: &UniArg, arg1: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<<T as ops::BitAnd>::Output>,
         T: ops::BitAnd<T> + FromValueInternal,
     {
-        let (left, right) = self.value_stack.pop_pair_as::<T>();
+        let right: T = self.value_stack.handle_uniarg(arg1);
+        let left: T = self.value_stack.handle_uniarg(arg0);
+
         let v = left.bitand(right);
         self.value_stack.push(v.into())?;
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_or<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_or<T>(&mut self, arg0: &UniArg, arg1: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<<T as ops::BitOr>::Output>,
         T: ops::BitOr<T> + FromValueInternal,
     {
-        let (left, right) = self.value_stack.pop_pair_as::<T>();
+        let right: T = self.value_stack.handle_uniarg(arg1);
+        let left: T = self.value_stack.handle_uniarg(arg0);
+
         let v = left.bitor(right);
         self.value_stack.push(v.into())?;
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_xor<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_xor<T>(&mut self, arg0: &UniArg, arg1: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<<T as ops::BitXor>::Output>,
         T: ops::BitXor<T> + FromValueInternal,
     {
-        let (left, right) = self.value_stack.pop_pair_as::<T>();
+        let right: T = self.value_stack.handle_uniarg(arg1);
+        let left: T = self.value_stack.handle_uniarg(arg0);
+
         let v = left.bitxor(right);
         self.value_stack.push(v.into())?;
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_shl<T>(&mut self, mask: T) -> Result<InstructionOutcome, TrapCode>
+    fn run_shl<T>(
+        &mut self,
+        mask: T,
+        arg0: &UniArg,
+        arg1: &UniArg,
+    ) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<<T as ops::Shl<T>>::Output>,
         T: ops::Shl<T> + ops::BitAnd<T, Output = T> + FromValueInternal,
     {
-        let (left, right) = self.value_stack.pop_pair_as::<T>();
+        let right: T = self.value_stack.handle_uniarg(arg1);
+        let left: T = self.value_stack.handle_uniarg(arg0);
+
         let v = left.shl(right & mask);
         self.value_stack.push(v.into())?;
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_shr<T, U>(&mut self, mask: U) -> Result<InstructionOutcome, TrapCode>
+    fn run_shr<T, U>(
+        &mut self,
+        mask: U,
+        arg0: &UniArg,
+        arg1: &UniArg,
+    ) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: TransmuteInto<U> + FromValueInternal,
         U: ops::Shr<U> + ops::BitAnd<U, Output = U>,
         <U as ops::Shr<U>>::Output: TransmuteInto<T>,
     {
-        let (left, right) = self.value_stack.pop_pair_as::<T>();
+        let right: T = self.value_stack.handle_uniarg(arg1);
+        let left: T = self.value_stack.handle_uniarg(arg0);
+
         let (left, right) = (left.transmute_into(), right.transmute_into());
         let v = left.shr(right & mask);
         let v = v.transmute_into();
@@ -1164,132 +1247,146 @@ impl<'m> Interpreter<'m> {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_rotl<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_rotl<T>(&mut self, arg0: &UniArg, arg1: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Integer<T> + FromValueInternal,
     {
-        let (left, right) = self.value_stack.pop_pair_as::<T>();
+        let right: T = self.value_stack.handle_uniarg(arg1);
+        let left: T = self.value_stack.handle_uniarg(arg0);
+
         let v = left.rotl(right);
         self.value_stack.push(v.into())?;
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_rotr<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_rotr<T>(&mut self, arg0: &UniArg, arg1: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Integer<T> + FromValueInternal,
     {
-        let (left, right) = self.value_stack.pop_pair_as::<T>();
+        let right: T = self.value_stack.handle_uniarg(arg1);
+        let left: T = self.value_stack.handle_uniarg(arg0);
+
         let v = left.rotr(right);
         self.value_stack.push(v.into())?;
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_abs<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_abs<T>(&mut self, arg0: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Float<T> + FromValueInternal,
     {
-        self.run_unop(|v: T| v.abs())
+        self.run_unop(|v: T| v.abs(), arg0)
     }
 
-    fn run_neg<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_neg<T>(&mut self, arg0: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<<T as ops::Neg>::Output>,
         T: ops::Neg + FromValueInternal,
     {
-        self.run_unop(|v: T| v.neg())
+        self.run_unop(|v: T| v.neg(), arg0)
     }
 
-    fn run_ceil<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_ceil<T>(&mut self, arg0: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Float<T> + FromValueInternal,
     {
-        self.run_unop(|v: T| v.ceil())
+        self.run_unop(|v: T| v.ceil(), arg0)
     }
 
-    fn run_floor<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_floor<T>(&mut self, arg0: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Float<T> + FromValueInternal,
     {
-        self.run_unop(|v: T| v.floor())
+        self.run_unop(|v: T| v.floor(), arg0)
     }
 
-    fn run_trunc<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_trunc<T>(&mut self, arg0: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Float<T> + FromValueInternal,
     {
-        self.run_unop(|v: T| v.trunc())
+        self.run_unop(|v: T| v.trunc(), arg0)
     }
 
-    fn run_nearest<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_nearest<T>(&mut self, arg0: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Float<T> + FromValueInternal,
     {
-        self.run_unop(|v: T| v.nearest())
+        self.run_unop(|v: T| v.nearest(), arg0)
     }
 
-    fn run_sqrt<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_sqrt<T>(&mut self, arg0: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Float<T> + FromValueInternal,
     {
-        self.run_unop(|v: T| v.sqrt())
+        self.run_unop(|v: T| v.sqrt(), arg0)
     }
 
-    fn run_min<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_min<T>(&mut self, arg0: &UniArg, arg1: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Float<T> + FromValueInternal,
     {
-        let (left, right) = self.value_stack.pop_pair_as::<T>();
+        let right: T = self.value_stack.handle_uniarg(arg1);
+        let left: T = self.value_stack.handle_uniarg(arg0);
+
         let v = left.min(right);
         self.value_stack.push(v.into())?;
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_max<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_max<T>(&mut self, arg0: &UniArg, arg1: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Float<T> + FromValueInternal,
     {
-        let (left, right) = self.value_stack.pop_pair_as::<T>();
+        let right: T = self.value_stack.handle_uniarg(arg1);
+        let left: T = self.value_stack.handle_uniarg(arg0);
+
         let v = left.max(right);
         self.value_stack.push(v.into())?;
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_copysign<T>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_copysign<T>(
+        &mut self,
+        arg0: &UniArg,
+        arg1: &UniArg,
+    ) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<T>,
         T: Float<T> + FromValueInternal,
     {
-        let (left, right) = self.value_stack.pop_pair_as::<T>();
+        let right: T = self.value_stack.handle_uniarg(arg1);
+        let left: T = self.value_stack.handle_uniarg(arg0);
+
         let v = left.copysign(right);
         self.value_stack.push(v.into())?;
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_wrap<T, U>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_wrap<T, U>(&mut self, arg0: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<U>,
         T: WrapInto<U> + FromValueInternal,
     {
-        self.run_unop(|v: T| v.wrap_into())
+        self.run_unop(|v: T| v.wrap_into(), arg0)
     }
 
-    fn run_trunc_to_int<T, U, V>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_trunc_to_int<T, U, V>(&mut self, arg0: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<V>,
         T: TryTruncateInto<U, TrapCode> + FromValueInternal,
         U: TransmuteInto<V>,
     {
-        let v = self.value_stack.pop_as::<T>();
+        let v: T = self.value_stack.handle_uniarg(arg0);
 
         v.try_truncate_into()
             .map(|v| v.transmute_into())
@@ -1297,13 +1394,13 @@ impl<'m> Interpreter<'m> {
             .map(|_| InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_extend<T, U, V>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_extend<T, U, V>(&mut self, arg0: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<V>,
         T: ExtendInto<U> + FromValueInternal,
         U: TransmuteInto<V>,
     {
-        let v = self.value_stack.pop_as::<T>();
+        let v: T = self.value_stack.handle_uniarg(arg0);
 
         let v = v.extend_into().transmute_into();
         self.value_stack.push(v.into())?;
@@ -1311,13 +1408,13 @@ impl<'m> Interpreter<'m> {
         Ok(InstructionOutcome::RunNextInstruction)
     }
 
-    fn run_reinterpret<T, U>(&mut self) -> Result<InstructionOutcome, TrapCode>
+    fn run_reinterpret<T, U>(&mut self, arg0: &UniArg) -> Result<InstructionOutcome, TrapCode>
     where
         ValueInternal: From<U>,
         T: FromValueInternal,
         T: TransmuteInto<U>,
     {
-        let v = self.value_stack.pop_as::<T>();
+        let v: T = self.value_stack.handle_uniarg(arg0);
 
         let v = v.transmute_into();
         self.value_stack.push(v.into())?;
@@ -1462,34 +1559,6 @@ impl ValueStack {
     }
 
     #[inline]
-    fn pop_as<T>(&mut self) -> T
-    where
-        T: FromValueInternal,
-    {
-        let value = self.pop();
-
-        T::from_value_internal(value)
-    }
-
-    #[inline]
-    fn pop_pair_as<T>(&mut self) -> (T, T)
-    where
-        T: FromValueInternal,
-    {
-        let right = self.pop_as();
-        let left = self.pop_as();
-        (left, right)
-    }
-
-    #[inline]
-    fn pop_triple(&mut self) -> (ValueInternal, ValueInternal, ValueInternal) {
-        let right = self.pop();
-        let mid = self.pop();
-        let left = self.pop();
-        (left, mid, right)
-    }
-
-    #[inline]
     pub fn top(&self) -> &ValueInternal {
         self.pick(1)
     }
@@ -1507,6 +1576,23 @@ impl ValueStack {
     fn pop(&mut self) -> ValueInternal {
         self.sp -= 1;
         self.buf[self.sp]
+    }
+
+    #[inline]
+    fn handle_uniarg_raw(&mut self, arg: &UniArg) -> ValueInternal {
+        match arg {
+            UniArg::Pop => self.pop(),
+            UniArg::Stack(i) => *self.pick(*i),
+            UniArg::IConst(c) => (*c).into(),
+        }
+    }
+
+    #[inline]
+    fn handle_uniarg<T>(&mut self, arg: &UniArg) -> T
+    where
+        T: FromValueInternal,
+    {
+        T::from_value_internal(self.handle_uniarg_raw(arg))
     }
 
     #[inline]
