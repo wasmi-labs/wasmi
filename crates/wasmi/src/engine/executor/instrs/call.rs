@@ -18,6 +18,7 @@ use crate::{
     },
     func::{FuncEntity, HostFuncEntity},
     store::StoreInner,
+    CallHook,
     Error,
     Func,
     FuncRef,
@@ -469,7 +470,13 @@ impl<'engine> Executor<'engine> {
                 Ok(())
             }
             FuncEntity::Host(host_func) => {
-                self.execute_host_func::<C, T>(store, results, func, *host_func)
+                let host_func = *host_func;
+
+                store.invoke_call_hook(CallHook::CallingHost)?;
+                self.execute_host_func::<C, T>(store, results, func, host_func)?;
+                store.invoke_call_hook(CallHook::ReturningFromHost)?;
+
+                Ok(())
             }
         }
     }

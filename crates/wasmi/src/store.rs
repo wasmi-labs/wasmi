@@ -132,7 +132,9 @@ pub struct Store<T> {
     data: T,
     /// User provided hook to retrieve a [`ResourceLimiter`].
     limiter: Option<ResourceLimiterQuery<T>>,
-    /// User provided callback called whenever a WebAssembly or host function is executed and returns.
+    /// User provided callback called when a host calls a WebAssembly function
+    /// or a WebAssembly function calls a host function, or these functions
+    /// return.
     call_hook: Option<CallHookWrapper<T>>,
 }
 
@@ -182,8 +184,8 @@ fn test_store_is_send_sync() {
 }
 
 #[derive(Debug)]
-/// Included as an argument to the callback set by [`Store::call_hook`] to
-/// indicate why the callback was executed.
+/// Argument to the callback set by [`Store::call_hook`] to indicate why the
+/// callback was invoked.
 pub enum CallHook {
     /// Indicates that a WebAssembly function is being called from the host.
     CallingWasm,
@@ -1027,6 +1029,16 @@ impl<T> Store<T> {
         hook: impl FnMut(&mut T, CallHook) -> Result<(), Error> + Send + Sync + 'static,
     ) {
         self.call_hook = Some(CallHookWrapper(Box::new(hook)));
+    }
+
+    /// Executes the callback set by [`Store::call_hook`] if any has been set
+    /// and returns the value returned by the callback. If no callback has been
+    /// set, `Ok(())` is returned.
+    pub(crate) fn invoke_call_hook(&mut self, call_type: CallHook) -> Result<(), Error> {
+        match &mut self.call_hook {
+            None => Ok(()),
+            Some(call_hook) => call_hook.0(&mut self.data, call_type),
+        }
     }
 }
 
