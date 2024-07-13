@@ -259,7 +259,7 @@ impl Module {
 
     /// Extracts the Wasm exports from the module and registers them into the [`Instance`].
     fn extract_exports(&self, builder: &mut InstanceEntityBuilder) {
-        for (field, idx) in &self.header.inner.exports {
+        for (field, idx) in &self.module_header().exports {
             let external = match idx {
                 export::ExternIdx::Func(func_index) => {
                     let func_index = func_index.into_u32();
@@ -288,7 +288,7 @@ impl Module {
 
     /// Extracts the optional start function for the build instance.
     fn extract_start_fn(&self, builder: &mut InstanceEntityBuilder) {
-        if let Some(start_fn) = self.header.inner.start {
+        if let Some(start_fn) = self.module_header().start {
             builder.set_start(start_fn)
         }
     }
@@ -299,7 +299,7 @@ impl Module {
         mut context: impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
     ) -> Result<(), Error> {
-        for segment in &self.header.inner.element_segments[..] {
+        for segment in &self.module_header().element_segments[..] {
             let element = ElementSegment::new(context.as_context_mut(), segment);
             if let ElementSegmentKind::Active(active) = segment.kind() {
                 let dst_index = u32::from(Self::eval_init_expr(
@@ -346,7 +346,7 @@ impl Module {
         mut context: impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
     ) -> Result<(), Error> {
-        for segment in &self.data_segments {
+        for segment in &self.inner.data_segments {
             let segment = match segment {
                 InitDataSegment::Active {
                     memory_index,
