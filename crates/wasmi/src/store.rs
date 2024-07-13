@@ -1022,8 +1022,9 @@ impl<T> Store<T> {
     ///
     /// The callback can either return `Ok(())` or an `Err` with an
     /// [`Error`]. If an error is returned, it is returned to the host
-    /// caller. If there are nested calls, only the most recent caller receives
-    /// the error, it is not propagated further.
+    /// caller. If there are nested calls, only the most recent host caller
+    /// receives the error and it is not propagated further automatically. The
+    /// hook may be invoked again as new functions are called and returned from.
     pub fn call_hook(
         &mut self,
         hook: impl FnMut(&mut T, CallHook) -> Result<(), Error> + Send + Sync + 'static,
