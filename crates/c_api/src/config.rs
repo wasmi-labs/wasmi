@@ -10,7 +10,7 @@ pub struct wasm_config_t {
     pub(crate) inner: Config,
 }
 
-wasmtime_c_api_macros::declare_own!(wasm_config_t);
+wasmi_c_api_macros::declare_own!(wasm_config_t);
 
 /// Creates a new default initialized [`wasm_config_t`].
 ///
@@ -25,36 +25,40 @@ pub extern "C" fn wasm_config_new() -> Box<wasm_config_t> {
 /// Enables or disables support for the Wasm [`mutable-global`] proposal.
 ///
 /// Wraps [wasmi::Config::wasm_multi_value]
-/// [`mutable-global`]: https://github.com/WebAssembly/mutable-global
+/// 
+/// [`mutable-global`]: <https://github.com/WebAssembly/mutable-global>
 #[no_mangle]
-pub extern "C" fn wasmtime_config_wasm_mutable_globals_set(c: &mut wasm_config_t, enable: bool) {
+pub extern "C" fn wasmi_config_wasm_mutable_globals_set(c: &mut wasm_config_t, enable: bool) {
     c.inner.wasm_mutable_global(enable);
 }
 
 /// Enables or disables support for the Wasm [`multi-value`] proposal.
 ///
 /// Wraps [wasmi::Config::wasm_multi_value]
-/// [`multi-value`]: https://github.com/WebAssembly/multi-value
+/// 
+/// [`multi-value`]: <https://github.com/WebAssembly/multi-value>
 #[no_mangle]
-pub extern "C" fn wasmtime_config_wasm_multi_value_set(c: &mut wasm_config_t, enable: bool) {
+pub extern "C" fn wasmi_config_wasm_multi_value_set(c: &mut wasm_config_t, enable: bool) {
     c.inner.wasm_multi_value(enable);
 }
 
 /// Enables or disables support for the Wasm [`sign-extension-ops`] proposal.
 ///
 /// Wraps [wasmi::Config::wasm_sign_extension]
-/// [`sign-extension`]: https://github.com/WebAssembly/sign-extension-ops
+/// 
+/// [`sign-extension-ops`]: <https://github.com/WebAssembly/sign-extension-ops>
 #[no_mangle]
-pub extern "C" fn wasmtime_config_wasm_sign_extension_set(c: &mut wasm_config_t, enable: bool) {
+pub extern "C" fn wasmi_config_wasm_sign_extension_set(c: &mut wasm_config_t, enable: bool) {
     c.inner.wasm_sign_extension(enable);
 }
 
 /// Enables or disables support for the Wasm [`nontrapping-float-to-int-conversions`] proposal.
 ///
 /// Wraps [wasmi::Config::wasm_saturating_float_to_int]
-/// [`nontrapping-float-to-int-conversions`]: https://github.com/WebAssembly/nontrapping-float-to-int-conversions
+/// 
+/// [`nontrapping-float-to-int-conversions`]: <https://github.com/WebAssembly/nontrapping-float-to-int-conversions>
 #[no_mangle]
-pub extern "C" fn wasmtime_config_wasm_saturating_float_to_int_set(
+pub extern "C" fn wasmi_config_wasm_saturating_float_to_int_set(
     c: &mut wasm_config_t,
     enable: bool,
 ) {
@@ -64,36 +68,40 @@ pub extern "C" fn wasmtime_config_wasm_saturating_float_to_int_set(
 /// Enables or disables support for the Wasm [`bulk-memory-operations`] proposal.
 ///
 /// Wraps [wasmi::Config::wasm_bulk_memory]
-/// [`bulk-memory-operations`]: https://github.com/WebAssembly/bulk-memory-operations
+/// 
+/// [`bulk-memory-operations`]: <https://github.com/WebAssembly/bulk-memory-operations>
 #[no_mangle]
-pub extern "C" fn wasmtime_config_wasm_bulk_memory_set(c: &mut wasm_config_t, enable: bool) {
+pub extern "C" fn wasmi_config_wasm_bulk_memory_set(c: &mut wasm_config_t, enable: bool) {
     c.inner.wasm_bulk_memory(enable);
 }
 
 /// Enables or disables support for the Wasm [`reference-types`] proposal.
 ///
 /// Wraps [wasmi::Config::wasm_reference_types]
-/// [`reference-types`]: https://github.com/WebAssembly/reference-types
+/// 
+/// [`reference-types`]: <https://github.com/WebAssembly/reference-types>
 #[no_mangle]
-pub extern "C" fn wasmtime_config_wasm_reference_types_set(c: &mut wasm_config_t, enable: bool) {
+pub extern "C" fn wasmi_config_wasm_reference_types_set(c: &mut wasm_config_t, enable: bool) {
     c.inner.wasm_reference_types(enable);
 }
 
 /// Enables or disables support for the Wasm [`tail-call`] proposal.
 ///
 /// Wraps [wasmi::Config::wasm_tail_call]
-/// [`tail-call`]: https://github.com/WebAssembly/tail-call
+/// 
+/// [`tail-call`]: <https://github.com/WebAssembly/tail-call>
 #[no_mangle]
-pub extern "C" fn wasmtime_config_wasm_tail_call_set(c: &mut wasm_config_t, enable: bool) {
+pub extern "C" fn wasmi_config_wasm_tail_call_set(c: &mut wasm_config_t, enable: bool) {
     c.inner.wasm_tail_call(enable);
 }
 
 /// Enables or disables support for the Wasm [`extended-const`] proposal.
 ///
 /// Wraps [wasmi::Config::wasm_extended_const]
-/// [`extended-const`]: https://github.com/WebAssembly/extended-const
+/// 
+/// [`extended-const`]: <https://github.com/WebAssembly/extended-const>
 #[no_mangle]
-pub extern "C" fn wasmtime_config_wasm_extended_const_set(c: &mut wasm_config_t, enable: bool) {
+pub extern "C" fn wasmi_config_wasm_extended_const_set(c: &mut wasm_config_t, enable: bool) {
     c.inner.wasm_extended_const(enable);
 }
 
