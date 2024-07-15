@@ -1,7 +1,9 @@
 #ifndef WASMI_H
 #define WASMI_H
 
+#include <wasm.h>
 #include <wasmi/config.h>
+#include <wasmi/engine.h>
 
 /**
  * \brief Wasmi version string.
