@@ -10,7 +10,7 @@ pub struct wasm_config_t {
     pub(crate) inner: Config,
 }
 
-wasmi_c_api_macros::declare_own!(wasm_config_t);
+wasmtime_c_api_macros::declare_own!(wasm_config_t);
 
 /// Creates a new default initialized [`wasm_config_t`].
 ///
