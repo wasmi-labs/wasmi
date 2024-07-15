@@ -34,7 +34,7 @@ pub extern "C" fn wasm_engine_new_with_config(config: Box<wasm_config_t>) -> Box
 }
 
 /// Clones a [`wasm_engine_t`].
-/// 
+///
 /// The cloned [`wasm_engine_t`] has to be freed with [`wasm_engine_delete`] after use.
 ///
 /// Wraps [wasmi::Engine::clone].
