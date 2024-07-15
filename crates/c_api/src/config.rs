@@ -1,5 +1,5 @@
 use alloc::boxed::Box;
-use wasmi::{CompilationMode, Config, EnforcedLimits};
+use wasmi::{CompilationMode, Config};
 
 /// The Wasm configuration.
 ///
@@ -22,50 +22,86 @@ pub extern "C" fn wasm_config_new() -> Box<wasm_config_t> {
     })
 }
 
-/// Wasm proposals supported by Wasmi.
-#[repr(u8)]
-#[derive(Clone)]
-pub enum wasmi_proposal_t {
-    WASMI_PROPOSAL_MUTABLE_GLOBALS,
-    WASMI_PROPOSAL_MULTI_VALUE,
-    WASMI_PROPOSAL_SIGN_EXTENSION,
-    WASMI_PROPOSAL_SATURATING_FLOAT_TO_INT,
-    WASMI_PROPOSAL_BULK_MEMORY,
-    WASMI_PROPOSAL_REFERENCE_TYPES,
-    WASMI_PROPOSAL_TAIL_CALL,
-    WASMI_PROPOSAL_EXTENDED_CONST,
+/// Enables or disables support for the Wasm [`mutable-global`] proposal.
+///
+/// Wraps [wasmi::Config::wasm_multi_value]
+/// [`mutable-global`]: https://github.com/WebAssembly/mutable-global
+#[no_mangle]
+pub extern "C" fn wasmtime_config_wasm_mutable_globals_set(c: &mut wasm_config_t, enable: bool) {
+    c.inner.wasm_mutable_global(enable);
 }
 
-/// Enables or disables the `proposal` for the config.
+/// Enables or disables support for the Wasm [`multi-value`] proposal.
+///
+/// Wraps [wasmi::Config::wasm_multi_value]
+/// [`multi-value`]: https://github.com/WebAssembly/multi-value
 #[no_mangle]
-pub extern "C" fn wasmi_config_set_proposal(
-    config: &mut wasm_config_t,
-    proposal: wasmi_proposal_t,
+pub extern "C" fn wasmtime_config_wasm_multi_value_set(c: &mut wasm_config_t, enable: bool) {
+    c.inner.wasm_multi_value(enable);
+}
+
+/// Enables or disables support for the Wasm [`sign-extension-ops`] proposal.
+///
+/// Wraps [wasmi::Config::wasm_sign_extension]
+/// [`sign-extension`]: https://github.com/WebAssembly/sign-extension-ops
+#[no_mangle]
+pub extern "C" fn wasmtime_config_wasm_sign_extension_set(c: &mut wasm_config_t, enable: bool) {
+    c.inner.wasm_sign_extension(enable);
+}
+
+/// Enables or disables support for the Wasm [`nontrapping-float-to-int-conversions`] proposal.
+///
+/// Wraps [wasmi::Config::wasm_saturating_float_to_int]
+/// [`nontrapping-float-to-int-conversions`]: https://github.com/WebAssembly/nontrapping-float-to-int-conversions
+#[no_mangle]
+pub extern "C" fn wasmtime_config_wasm_saturating_float_to_int_set(
+    c: &mut wasm_config_t,
     enable: bool,
 ) {
-    match proposal {
-        wasmi_proposal_t::WASMI_PROPOSAL_MUTABLE_GLOBALS => {
-            config.inner.wasm_mutable_global(enable)
-        }
-        wasmi_proposal_t::WASMI_PROPOSAL_MULTI_VALUE => config.inner.wasm_multi_value(enable),
-        wasmi_proposal_t::WASMI_PROPOSAL_SIGN_EXTENSION => config.inner.wasm_sign_extension(enable),
-        wasmi_proposal_t::WASMI_PROPOSAL_SATURATING_FLOAT_TO_INT => {
-            config.inner.wasm_saturating_float_to_int(enable)
-        }
-        wasmi_proposal_t::WASMI_PROPOSAL_BULK_MEMORY => config.inner.wasm_bulk_memory(enable),
-        wasmi_proposal_t::WASMI_PROPOSAL_REFERENCE_TYPES => {
-            config.inner.wasm_reference_types(enable)
-        }
-        wasmi_proposal_t::WASMI_PROPOSAL_TAIL_CALL => config.inner.wasm_tail_call(enable),
-        wasmi_proposal_t::WASMI_PROPOSAL_EXTENDED_CONST => config.inner.wasm_extended_const(enable),
-    };
+    c.inner.wasm_saturating_float_to_int(enable);
+}
+
+/// Enables or disables support for the Wasm [`bulk-memory-operations`] proposal.
+///
+/// Wraps [wasmi::Config::wasm_bulk_memory]
+/// [`bulk-memory-operations`]: https://github.com/WebAssembly/bulk-memory-operations
+#[no_mangle]
+pub extern "C" fn wasmtime_config_wasm_bulk_memory_set(c: &mut wasm_config_t, enable: bool) {
+    c.inner.wasm_bulk_memory(enable);
+}
+
+/// Enables or disables support for the Wasm [`reference-types`] proposal.
+///
+/// Wraps [wasmi::Config::wasm_reference_types]
+/// [`reference-types`]: https://github.com/WebAssembly/reference-types
+#[no_mangle]
+pub extern "C" fn wasmtime_config_wasm_reference_types_set(c: &mut wasm_config_t, enable: bool) {
+    c.inner.wasm_reference_types(enable);
+}
+
+/// Enables or disables support for the Wasm [`tail-call`] proposal.
+///
+/// Wraps [wasmi::Config::wasm_tail_call]
+/// [`tail-call`]: https://github.com/WebAssembly/tail-call
+#[no_mangle]
+pub extern "C" fn wasmtime_config_wasm_tail_call_set(c: &mut wasm_config_t, enable: bool) {
+    c.inner.wasm_tail_call(enable);
+}
+
+/// Enables or disables support for the Wasm [`extended-const`] proposal.
+///
+/// Wraps [wasmi::Config::wasm_extended_const]
+/// [`extended-const`]: https://github.com/WebAssembly/extended-const
+#[no_mangle]
+pub extern "C" fn wasmtime_config_wasm_extended_const_set(c: &mut wasm_config_t, enable: bool) {
+    c.inner.wasm_extended_const(enable);
 }
 
 /// Enables or disables support for floating point numbers for the config.
 ///
 /// Wraps [wasmi::Config::floats]
 #[no_mangle]
-pub extern "C" fn wasmi_config_set_floats(config: &mut wasm_config_t, enable: bool) {
+pub extern "C" fn wasmi_config_floats_set(config: &mut wasm_config_t, enable: bool) {
     config.inner.floats(enable);
 }
 
@@ -73,7 +109,7 @@ pub extern "C" fn wasmi_config_set_floats(config: &mut wasm_config_t, enable: bo
 ///
 /// Wraps [wasmi::Config::consume_fuel]
 #[no_mangle]
-pub extern "C" fn wasmi_config_set_consume_fuel(config: &mut wasm_config_t, enable: bool) {
+pub extern "C" fn wasmi_config_consume_fuel_set(config: &mut wasm_config_t, enable: bool) {
     config.inner.consume_fuel(enable);
 }
 
@@ -96,46 +132,21 @@ pub extern "C" fn wasmi_config_set_compilation_mode(
     config: &mut wasm_config_t,
     mode: wasmi_compilation_mode_t,
 ) {
-    let chosen_mode = match mode {
-        wasmi_compilation_mode_t::WASMI_COMPILATION_MODE_EAGER => CompilationMode::Eager,
-        wasmi_compilation_mode_t::WASMI_COMPILATION_MODE_LAZY_TRANSLATION => {
-            CompilationMode::LazyTranslation
-        }
-        wasmi_compilation_mode_t::WASMI_COMPILATION_MODE_LAZY => CompilationMode::Lazy,
-    };
-    config.inner.compilation_mode(chosen_mode);
+    use wasmi_compilation_mode_t::*;
+    config.inner.compilation_mode(match mode {
+        WASMI_COMPILATION_MODE_EAGER => CompilationMode::Eager,
+        WASMI_COMPILATION_MODE_LAZY_TRANSLATION => CompilationMode::LazyTranslation,
+        WASMI_COMPILATION_MODE_LAZY => CompilationMode::Lazy,
+    });
 }
 
-/// Limits that the Wasmi interpreter enforces on Wasm inputs.
+/// Enables or disables processing of Wasm custom sections.
 ///
-/// Wraps [`wasmi::EnforcedLimits`]
-#[repr(C)]
-#[derive(Clone)]
-pub struct wasmi_enforced_limits_t {
-    inner: EnforcedLimits,
-}
-
-/// Creates a new default initialized [`wasmi_enforced_limits_t`].
-///
-/// Wraps [wasmi::EnforcedLimits::strict].
+/// Wraps [wasmi::Config::ignore_custom_sections]
 #[no_mangle]
-pub extern "C" fn wasmi_enforced_limits_new_strict() -> Box<wasmi_enforced_limits_t> {
-    Box::new(wasmi_enforced_limits_t {
-        inner: EnforcedLimits::strict(),
-    })
-}
-
-/// Releases resources allocated for [`wasm_config_t`].
-#[no_mangle]
-pub extern "C" fn wasmi_enforced_limits_delete(_: Box<wasmi_enforced_limits_t>) {}
-
-/// Sets the [`wasmi_enforced_limits_t`] for the config.
-///
-/// Wraps [`wasmi::Config::enforced_limits`]
-#[no_mangle]
-pub extern "C" fn wasmi_config_set_enforced_limits(
+pub extern "C" fn wasmi_config_ignore_custom_sections_set(
     config: &mut wasm_config_t,
-    limits: &wasmi_enforced_limits_t,
+    enable: bool,
 ) {
-    config.inner.enforced_limits(limits.inner);
+    config.inner.ignore_custom_sections(enable);
 }
