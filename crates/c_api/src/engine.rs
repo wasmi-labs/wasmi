@@ -11,9 +11,7 @@ pub struct wasm_engine_t {
     inner: Engine,
 }
 
-/// Releases resources allocated for [`wasm_engine_t`].
-#[no_mangle]
-pub extern "C" fn wasm_engine_delete(_: Box<wasm_engine_t>) {}
+wasmtime_c_api_macros::declare_own!(wasm_engine_t);
 
 /// Creates a new default initialized [`wasm_engine_t`].
 ///

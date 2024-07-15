@@ -10,6 +10,8 @@ pub struct wasm_config_t {
     pub(crate) inner: Config,
 }
 
+wasmtime_c_api_macros::declare_own!(wasm_config_t);
+
 /// Creates a new default initialized [`wasm_config_t`].
 ///
 /// Wraps [wasmi::Config::default].
@@ -19,10 +21,6 @@ pub extern "C" fn wasm_config_new() -> Box<wasm_config_t> {
         inner: Config::default(),
     })
 }
-
-/// Releases resources allocated for [`wasm_config_t`].
-#[no_mangle]
-pub extern "C" fn wasm_config_delete(_: Box<wasm_config_t>) {}
 
 /// Wasm proposals supported by Wasmi.
 #[repr(u8)]

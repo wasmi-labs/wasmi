@@ -1876,6 +1876,7 @@ name = "wasmi_c_api_impl"
 version = "0.35.0"
 dependencies = [
  "wasmi 0.35.0",
+ "wasmtime-c-api-macros",
 ]
 
 [[package]]
@@ -2040,6 +2041,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6dee8679c974a7f258c03d60d3c747c426ed219945b6d08cbc77fd2eab15b2d1"
 dependencies = [
  "cfg-if",
+]
+
+[[package]]
+name = "wasmtime-c-api-macros"
+version = "22.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c04d921170e6564ce9333e5a4661d646d06ec10f8c6529f866b585b12bdf1162"
+dependencies = [
+ "proc-macro2",
+ "quote",
 ]
 
 [[package]]
