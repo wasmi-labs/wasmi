@@ -11,5 +11,6 @@ pub use wasmi;
 
 mod config;
 mod engine;
+mod store;
 
-pub use self::{config::*, engine::*};
+pub use self::{config::*, engine::*, store::*};

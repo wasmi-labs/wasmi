@@ -8,7 +8,7 @@ use wasmi::Engine;
 #[repr(C)]
 #[derive(Clone)]
 pub struct wasm_engine_t {
-    inner: Engine,
+    pub(crate) inner: Engine,
 }
 
 wasmtime_c_api_macros::declare_own!(wasm_engine_t);
