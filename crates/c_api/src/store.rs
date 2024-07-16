@@ -60,6 +60,7 @@ wasmtime_c_api_macros::declare_own!(wasm_store_t);
 ///
 /// Wraps [`<wasmi::Store<()>>::new`](wasmi::Store::new).
 #[no_mangle]
+#[allow(clippy::arc_with_non_send_sync)]
 pub extern "C" fn wasm_store_new(engine: &wasm_engine_t) -> Box<wasm_store_t> {
     let engine = &engine.inner;
     let store = Store::new(engine, ());
