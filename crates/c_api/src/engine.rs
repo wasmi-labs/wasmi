@@ -15,7 +15,9 @@ wasmtime_c_api_macros::declare_own!(wasm_engine_t);
 
 /// Creates a new default initialized [`wasm_engine_t`].
 ///
-/// Wraps [wasmi::Engine::default].
+/// The returned [`wasm_engine_t`] must be freed using [`wasm_engine_delete`].
+///
+/// Wraps [`wasmi::Engine::default`].
 #[no_mangle]
 pub extern "C" fn wasm_engine_new() -> Box<wasm_engine_t> {
     Box::new(wasm_engine_t {
@@ -25,7 +27,9 @@ pub extern "C" fn wasm_engine_new() -> Box<wasm_engine_t> {
 
 /// Creates a new [`wasm_engine_t`] initialized with a [`wasm_config_t`].
 ///
-/// Wraps [wasmi::Engine::new].
+/// The returned [`wasm_engine_t`] must be freed using [`wasm_engine_delete`].
+///
+/// Wraps [`wasmi::Engine::new`].
 #[no_mangle]
 pub extern "C" fn wasm_engine_new_with_config(config: Box<wasm_config_t>) -> Box<wasm_engine_t> {
     Box::new(wasm_engine_t {
@@ -37,7 +41,7 @@ pub extern "C" fn wasm_engine_new_with_config(config: Box<wasm_config_t>) -> Box
 ///
 /// The cloned [`wasm_engine_t`] has to be freed with [`wasm_engine_delete`] after use.
 ///
-/// Wraps [wasmi::Engine::clone].
+/// Wraps [`wasmi::Engine::clone`].
 #[no_mangle]
 pub extern "C" fn wasmi_engine_clone(engine: &wasm_engine_t) -> Box<wasm_engine_t> {
     Box::new(engine.clone())
