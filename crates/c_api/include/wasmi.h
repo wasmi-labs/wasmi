@@ -4,6 +4,7 @@
 #include <wasm.h>
 #include <wasmi/config.h>
 #include <wasmi/engine.h>
+#include <wasmi/error.h>
 #include <wasmi/store.h>
 
 /**
