@@ -45,6 +45,8 @@ impl WasmStoreRef {
 
 /// The Wasm store.
 ///
+/// The returned [`wasm_engine_t`] must be freed using [`wasm_store_delete`].
+///
 /// Wraps [`wasmi::Store<()>`](wasmi::Store).
 #[repr(C)]
 #[derive(Clone)]
