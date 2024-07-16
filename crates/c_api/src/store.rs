@@ -4,7 +4,7 @@ use core::cell::UnsafeCell;
 use wasmi::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut};
 
 /// This representation of a `Store` is used to implement the `wasm.h` API (and
-/// *not* the `wasmtime.h` API!)
+/// *not* the `wasmi.h` API!)
 ///
 /// This is stored alongside `Func` and such for `wasm.h` so each object is
 /// independently owned. The usage of `Arc` here is mostly to just get it to be
