@@ -1,3 +1,5 @@
+#![allow(dead_code)] // TODO: remove when all warnings are gone
+
 use core::{ffi, slice};
 
 /// Wrapper for running a C-defined finalizer over foreign data upon [`Drop`].
