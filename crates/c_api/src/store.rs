@@ -23,6 +23,10 @@ impl WasmStoreRef {
     /// Returns shared access to the store context of the [`WasmStoreRef`].
     ///
     /// Wraps [`wasmi::AsContext`].
+    /// 
+    /// # Safety
+    /// 
+    /// It is the callers responsibility to provide a valid `self`.
     pub unsafe fn context(&self) -> StoreContext<'_, ()> {
         (*self.inner.get()).as_context()
     }
@@ -30,6 +34,10 @@ impl WasmStoreRef {
     /// Returns mutable access to the store context of the [`WasmStoreRef`].
     ///
     /// Wraps [`wasmi::AsContextMut`].
+    /// 
+    /// # Safety
+    /// 
+    /// It is the callers responsibility to provide a valid `self`.
     pub unsafe fn context_mut(&mut self) -> StoreContextMut<'_, ()> {
         (*self.inner.get()).as_context_mut()
     }
