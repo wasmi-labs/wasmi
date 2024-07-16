@@ -21,14 +21,14 @@ pub struct WasmStoreRef {
 
 impl WasmStoreRef {
     /// Returns shared access to the store context of the [`WasmStoreRef`].
-    /// 
+    ///
     /// Wraps [`wasmi::AsContext`].
     pub unsafe fn context(&self) -> StoreContext<'_, ()> {
         (*self.inner.get()).as_context()
     }
 
     /// Returns mutable access to the store context of the [`WasmStoreRef`].
-    /// 
+    ///
     /// Wraps [`wasmi::AsContextMut`].
     pub unsafe fn context_mut(&mut self) -> StoreContextMut<'_, ()> {
         (*self.inner.get()).as_context_mut()
@@ -36,7 +36,7 @@ impl WasmStoreRef {
 }
 
 /// The Wasm store.
-/// 
+///
 /// Wraps [`wasmi::Store<()>`](wasmi::Store).
 #[repr(C)]
 #[derive(Clone)]
@@ -49,7 +49,7 @@ wasmtime_c_api_macros::declare_own!(wasm_store_t);
 /// Creates a new [`Store<()>`](wasmi::Store) for the given `engine`.
 ///
 /// The returned [`wasm_store_t`] must be freed using [`wasm_store_delete`].
-/// 
+///
 /// Wraps [`<wasmi::Store<()>>::new`](wasmi::Store::new).
 #[no_mangle]
 pub extern "C" fn wasm_store_new(engine: &wasm_engine_t) -> Box<wasm_store_t> {

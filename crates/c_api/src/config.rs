@@ -13,12 +13,12 @@ pub struct wasm_config_t {
 wasmtime_c_api_macros::declare_own!(wasm_config_t);
 
 /// Creates a new default initialized [`wasm_config_t`].
-/// 
+///
 /// The returned [`wasm_config_t`] must be freed using [`wasm_config_delete`]
 /// or consumed by [`wasm_engine_new_with_config`].
 ///
 /// Wraps [`wasmi::Config::default`].
-/// 
+///
 /// [`wasm_engine_new_with_config`]: crate::wasm_engine_new_with_config
 #[no_mangle]
 pub extern "C" fn wasm_config_new() -> Box<wasm_config_t> {
