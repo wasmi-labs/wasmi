@@ -4,8 +4,8 @@ use core::{ffi, slice};
 
 /// Wrapper for running a C-defined finalizer over foreign data upon [`Drop`].
 pub struct ForeignData {
-    data: *mut ffi::c_void,
-    finalizer: Option<extern "C" fn(*mut ffi::c_void)>,
+    pub(crate) data: *mut ffi::c_void,
+    pub(crate) finalizer: Option<extern "C" fn(*mut ffi::c_void)>,
 }
 
 unsafe impl Send for ForeignData {}
