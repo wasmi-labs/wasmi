@@ -132,3 +132,14 @@ if(WASMI_TARGET MATCHES "darwin")
         install(CODE "execute_process(COMMAND ${install_name_tool_cmd})")
     endif()
 endif()
+
+# Doxygen Generation
+
+set(DOXYGEN_CONF_IN ${CMAKE_CURRENT_SOURCE_DIR}/doxygen.conf.in)
+set(DOXYGEN_CONF_OUT ${CMAKE_BINARY_DIR}/doxygen.conf)
+configure_file(${DOXYGEN_CONF_IN} ${DOXYGEN_CONF_OUT})
+add_custom_target(doc
+    COMMAND doxygen ${DOXYGEN_CONF_OUT}
+    DEPENDS ${WASMI_GENERATED_CONF_H} ${DOXYGEN_CONF_OUT}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
