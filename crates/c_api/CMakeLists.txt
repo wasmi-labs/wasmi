@@ -54,10 +54,9 @@ ExternalProject_Add(
     BUILD_COMMAND
         ${CMAKE_COMMAND} -E env ${CARGO_PROFILE_PANIC}=abort
         ${WASMI_CARGO_BINARY} build
-          --package wasmi
+          --package wasmi_c_api
           --target ${WASMI_TARGET}
           --no-default-features
-          --features no-hash-maps
           ${WASMI_BUILD_TYPE_FLAG}
           ${WASMI_FEATURES}
           ${WASMI_USER_CARGO_BUILD_OPTIONS}
