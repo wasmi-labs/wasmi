@@ -92,11 +92,21 @@ target_include_directories(wasmi INTERFACE
     ${CMAKE_BINARY_DIR}/include
 )
 
+set(WASMI_GENERATED_CONF_H ${CMAKE_BINARY_DIR}/include/wasmi/conf.h)
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/wasmi/conf.h.in
+    ${WASMI_GENERATED_CONF_H}
+)
+
 include(GNUInstallDirs)
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     FILES_MATCHING PATTERN "*.h" PATTERN "*.hh"
+)
+install(
+    FILES ${WASMI_GENERATED_CONF_H}
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/wasmi
 )
 install(
     FILES ${WASMI_SHARED_FILES} ${WASMI_STATIC_FILES}
