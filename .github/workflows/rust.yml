@@ -26,43 +26,45 @@ jobs:
         run: cargo build --workspace --locked --verbose
       - name: Build (all features)
         run: cargo build --workspace --locked --all-features --verbose
-      - name: Build (no_std + no-hash-maps)
-        run: cargo build --locked -p wasmi_collections --no-default-features --features no-hash-maps --verbose
       - name: Build (no_std)
         run: >-
             cargo build
-            --workspace
+            --package wasmi
             --locked
             --lib
             --no-default-features
             --target x86_64-unknown-none
             --verbose
-            --exclude wasmi_cli
-            --exclude wasmi_wasi
-            --exclude wasmi_fuzz
-      - name: Build (wasm32)
+      - name: Build (no_std + no-hash-maps)
         run: >-
-          cargo build
-          --workspace
-          --locked
-          --lib
-          --no-default-features
-          --target wasm32-unknown-unknown
-          --verbose
-          --exclude wasmi_cli
-          --exclude wasmi_wasi
-          --exclude wasmi_fuzz
+            cargo build
+            --package wasmi
+            --locked
+            --lib
+            --no-default-features
+            --features no-hash-maps
+            --target x86_64-unknown-none
+            --verbose
+      - name: Build (no_std + wasm32)
+        run: >-
+            cargo build
+            --package wasmi
+            --locked
+            --lib
+            --no-default-features
+            --target wasm32-unknown-unknown
+            --verbose
 
   test-asan:
     name: Test (Address Sanitizer)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          submodules: true
       - uses: dtolnay/rust-toolchain@nightly
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
-      - name: Checkout Submodules
-        run: git submodule update --init --recursive
       - name: Show Rust Toolchain
         run: rustup show
       - name: "Add Rust Component: `rust-src`"
@@ -84,11 +86,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          submodules: true
       - uses: dtolnay/rust-toolchain@stable
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
-      - name: Checkout Submodules
-        run: git submodule update --init --recursive
       - name: Build (default features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
@@ -153,11 +155,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          submodules: true
       - uses: dtolnay/rust-toolchain@nightly
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
-      - name: Checkout Submodules
-        run: git submodule update --init --recursive
       - name: Install cargo-udeps
         run: |
           # Note: We use `|| true` because cargo install returns an error
@@ -171,6 +173,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          submodules: true
       - uses: dtolnay/rust-toolchain@nightly
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
@@ -178,8 +182,6 @@ jobs:
           cache-directories: |
             ~/fuzz/corpus/translate/
             ~/fuzz/corpus/translate_metered/
-      - name: Checkout Submodules
-        run: git submodule update --init --recursive
       - name: Install cargo-fuzz
         run: |
           # Note: We use `|| true` because cargo install returns an error
@@ -197,14 +199,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          submodules: true
       - uses: dtolnay/rust-toolchain@nightly
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
         with:
           cache-directories: |
             ~/fuzz/corpus/execute/
-      - name: Checkout Submodules
-        run: git submodule update --init --recursive
       - name: Install cargo-fuzz
         run: |
           # Note: We use `|| true` because cargo install returns an error
@@ -220,14 +222,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          submodules: true
       - uses: dtolnay/rust-toolchain@nightly
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
         with:
           cache-directories: |
             ~/fuzz/corpus/differential/
-      - name: Checkout Submodules
-        run: git submodule update --init --recursive
       - name: Install cargo-fuzz
         run: |
           # Note: We use `|| true` because cargo install returns an error
@@ -243,14 +245,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          submodules: true
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: miri
           targets: x86_64-unknown-linux-gnu
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
-      - name: Checkout Submodules
-        run: git submodule update --init --recursive
       - name: Install cargo-nextest
         run: |
           # Note: We use `|| true` because cargo install returns an error
@@ -268,14 +270,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          submodules: true
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: miri
           targets: x86_64-unknown-linux-gnu
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
-      - name: Checkout Submodules
-        run: git submodule update --init --recursive
       - name: Install cargo-nextest
         run: |
           # Note: We use `|| true` because cargo install returns an error
@@ -294,13 +296,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          submodules: true
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: clippy
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
-      - name: Checkout Submodules
-        run: git submodule update --init --recursive
       - name: Clippy (default features)
         run: cargo clippy --workspace --locked -- -D warnings
       - name: Clippy (all features)
@@ -321,12 +323,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
+          submodules: true
           fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
-      - name: Checkout Submodules
-        run: git submodule update --init --recursive
       - name: Run cargo-tarpaulin (default features)
         uses: actions-rs/tarpaulin@v0.1.3
         with:
