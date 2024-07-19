@@ -132,8 +132,7 @@ if(WASMI_TARGET MATCHES "darwin")
     endif()
 endif()
 
-# Doxygen Generation
-
+# Documentation Generation via Doxygen:
 set(DOXYGEN_CONF_IN ${CMAKE_CURRENT_SOURCE_DIR}/doxygen.conf.in)
 set(DOXYGEN_CONF_OUT ${CMAKE_BINARY_DIR}/doxygen.conf)
 configure_file(${DOXYGEN_CONF_IN} ${DOXYGEN_CONF_OUT})
