@@ -153,3 +153,7 @@ add_custom_target(check-format
     COMMAND ${CLANG_FORMAT} -style=llvm -Werror --dry-run ${HEADER_FILES}
     COMMENT "clang-format: Check formatting for Wasmi C-API header files"
 )
+add_custom_target(format
+    COMMAND ${CLANG_FORMAT} -style=llvm -i ${HEADER_FILES}
+    COMMENT "clang-format: Apply formatting rules for Wasmi C-API header files"
+)
