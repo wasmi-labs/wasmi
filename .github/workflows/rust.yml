@@ -57,10 +57,10 @@ jobs:
             --target wasm32-unknown-unknown
             --verbose
       - name: Build (CMake)
-        run: |
-            - cmake --version
-            - cmake -S crates/c_api -B target/c_api --install-prefix "$(pwd)/artifacts"
-            - cmake --build target/c_api --target install
+        run: >-
+            cmake --version &&
+            cmake -S crates/c_api -B target/c_api --install-prefix "$(pwd)/artifacts" &&
+            cmake --build target/c_api --target install
 
   test-asan:
     name: Test (Address Sanitizer)
