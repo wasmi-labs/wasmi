@@ -46,7 +46,7 @@ jobs:
             --features no-hash-maps
             --target x86_64-unknown-none
             --verbose
-      - name: Build (wasm32)
+      - name: Build (no_std + wasm32)
         run: >-
             cargo build
             --package wasmi
