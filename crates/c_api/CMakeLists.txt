@@ -141,3 +141,15 @@ add_custom_target(doc
     DEPENDS ${WASMI_GENERATED_CONF_H} ${DOXYGEN_CONF_OUT}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
+
+# C-Header Formatting via clang-format:
+find_program(CLANG_FORMAT clang-format REQUIRED)
+file(GLOB_RECURSE HEADER_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/wasmi.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/wasmi/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/wasmi/*.hh
+)
+add_custom_target(format
+    COMMAND ${CLANG_FORMAT} -style=llvm -Werror --dry-run ${HEADER_FILES}
+    COMMENT "Running clang-format on header files"
+)
