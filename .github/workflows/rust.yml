@@ -142,12 +142,16 @@ jobs:
         env:
           RUSTDOCFLAGS: "-D warnings"
         run: cargo doc --workspace --locked --all-features --no-deps --document-private-items
-      - name: Generate Docs (C-API)
+      - name: Verify tar installation
         run: tar --version
-      - run: curl -L https://sourceforge.net/projects/doxygen/files/rel-1.11.0/doxygen-1.11.0.linux.bin.tar.gz/download | tar xzf -
-      - run: echo "`pwd`/doxygen-1.11.0/bin" >> $GITHUB_PATH
-      - run: cmake -S crates/c_api -B target/c_api
-      - run: cmake --build target/c_api --target doc
+      - name: Download, extract, and add Doxygen to PATH
+        run: |
+          curl -L https://sourceforge.net/projects/doxygen/files/rel-1.11.0/doxygen-1.11.0.linux.bin.tar.gz/download | tar xzf - -C $GITHUB_WORKSPACE
+          echo "$GITHUB_WORKSPACE/doxygen-1.11.0/bin" >> $GITHUB_PATH
+      - name: Configure CMake and generate docs via Doxygen
+        run: |
+            cmake -S crates/c_api -B target/c_api
+            cmake --build target/c_api --target doc
 
   audit:
     name: Audit
