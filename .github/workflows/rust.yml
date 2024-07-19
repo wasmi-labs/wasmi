@@ -131,7 +131,7 @@ jobs:
         run: |
             cmake --version
             cmake -S crates/c_api -B target/c_api --install-prefix "$(pwd)/artifacts"
-            cmake --build target/c_api --target format
+            cmake --build target/c_api --target check-format
 
   doc:
     name: Documentation

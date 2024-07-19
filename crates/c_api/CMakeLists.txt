@@ -149,7 +149,7 @@ file(GLOB_RECURSE HEADER_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/include/wasmi/*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/wasmi/*.hh
 )
-add_custom_target(format
+add_custom_target(check-format
     COMMAND ${CLANG_FORMAT} -style=llvm -Werror --dry-run ${HEADER_FILES}
-    COMMENT "Running clang-format on header files"
+    COMMENT "clang-format: Check formatting for Wasmi C-API header files"
 )
