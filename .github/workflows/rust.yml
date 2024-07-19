@@ -26,32 +26,34 @@ jobs:
         run: cargo build --workspace --locked --verbose
       - name: Build (all features)
         run: cargo build --workspace --locked --all-features --verbose
-      - name: Build (no_std + no-hash-maps)
-        run: cargo build --locked -p wasmi_collections --no-default-features --features no-hash-maps --verbose
       - name: Build (no_std)
         run: >-
             cargo build
-            --workspace
+            --package wasmi
             --locked
             --lib
             --no-default-features
             --target x86_64-unknown-none
             --verbose
-            --exclude wasmi_cli
-            --exclude wasmi_wasi
-            --exclude wasmi_fuzz
-      - name: Build (wasm32)
+      - name: Build (no_std + no-hash-maps)
         run: >-
-          cargo build
-          --workspace
-          --locked
-          --lib
-          --no-default-features
-          --target wasm32-unknown-unknown
-          --verbose
-          --exclude wasmi_cli
-          --exclude wasmi_wasi
-          --exclude wasmi_fuzz
+            cargo build
+            --package wasmi
+            --locked
+            --lib
+            --no-default-features
+            --features no-hash-maps
+            --target x86_64-unknown-none
+            --verbose
+      - name: Build (no_std + wasm32)
+        run: >-
+            cargo build
+            --package wasmi
+            --locked
+            --lib
+            --no-default-features
+            --target wasm32-unknown-unknown
+            --verbose
 
   test-asan:
     name: Test (Address Sanitizer)
