@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#define WASMI_CONFIG_PROP(ret, name, ty) \
+#define WASMI_CONFIG_PROP(ret, name, ty)                                       \
   WASM_API_EXTERN ret wasmi_config_##name##_set(wasm_config_t *, ty);
 
 /**
@@ -21,7 +21,7 @@ extern "C" {
  *
  * When enabled it will enable fuel counting meaning that fuel will be consumed
  * every time a Wasm instruction is executed, and trap when reaching zero.
- * 
+ *
  * Default value: `false`
  */
 WASMI_CONFIG_PROP(void, consume_fuel, bool)
@@ -30,7 +30,7 @@ WASMI_CONFIG_PROP(void, consume_fuel, bool)
  * \brief Whether or not to ignore Wasm custom sections.
  *
  * When enabled it will ignoe Wasm custom sections when creating a Wasm module.
- * 
+ *
  * Default value: `false`
  */
 WASMI_CONFIG_PROP(void, ignore_custom_sections, bool)
@@ -57,7 +57,8 @@ WASMI_CONFIG_PROP(void, wasm_multi_value, bool)
 WASMI_CONFIG_PROP(void, wasm_sign_extension, bool)
 
 /**
- * \brief Whether or not to Wasm non-trapping-float-to-int-conversions proposal is enabled.
+ * \brief Whether or not to Wasm non-trapping-float-to-int-conversions proposal
+ * is enabled.
  *
  * Default value: `true`
  */
@@ -92,7 +93,8 @@ WASMI_CONFIG_PROP(void, wasm_tail_call, bool)
 WASMI_CONFIG_PROP(void, wasm_extended_const, bool)
 
 /**
- * \brief Whether or not to floating Wasm point types and operations are enabled.
+ * \brief Whether or not to floating Wasm point types and operations are
+ * enabled.
  *
  * Default value: `true`
  */
@@ -108,12 +110,14 @@ enum wasmi_compilation_mode_enum {
   WASMI_COMPILATION_MODE_EAGER,
   /// Wasmi compiles and validates Wasm bytecode upon first use.
   WASMI_COMPILATION_MODE_LAZY,
-  /// Wasmi compiles Wasm bytecode upon first use but validates Wasm bytecode eagerly.
+  /// Wasmi compiles Wasm bytecode upon first use but validates Wasm bytecode
+  /// eagerly.
   WASMI_COMPILATION_MODE_LAZY_TRANSLATION,
 };
 
 /**
- * \brief Whether or not to floating Wasm point types and operations are enabled.
+ * \brief Whether or not to floating Wasm point types and operations are
+ * enabled.
  *
  * Default value: #WASMI_COMPILATION_MODE_EAGER
  */

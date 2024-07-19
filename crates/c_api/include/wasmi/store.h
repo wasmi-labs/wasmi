@@ -30,7 +30,8 @@ extern "C" {
  * Objects stored within a #wasmi_store_t are referenced with integer handles.
  * This means that most APIs require that the store be explicitly passed in,
  * which is done via #wasmi_context_t. It is safe to move a #wasmi_store_t
- * to any thread at any time. Though, a store generally cannot be concurrently used.
+ * to any thread at any time. Though, a store generally cannot be concurrently
+ * used.
  */
 typedef struct wasmi_store wasmi_store_t;
 
@@ -44,13 +45,14 @@ typedef struct wasmi_store wasmi_store_t;
  *
  * This context pointer is used throughout Wasmi's API.
  * It can be acquired from #wasmi_store_context or #wasmi_caller_context.
- * The context pointer for a store is the same for the entire lifetime of a store,
- * so it can safely be stored adjacent to a #wasmi_store_t itself.
+ * The context pointer for a store is the same for the entire lifetime of a
+ * store, so it can safely be stored adjacent to a #wasmi_store_t itself.
  *
  * - Usage of a #wasmi_context_t must not outlive the original #wasmi_store_t.
  * - Additionally #wasmi_context_t can only be used in situations where it has
  *   explicitly been granted access to doing so.
- * - Finalizers cannot use #wasmi_context_t because they are not given access to it.
+ * - Finalizers cannot use #wasmi_context_t because they are not given access to
+ * it.
  */
 typedef struct wasmi_context wasmi_context_t;
 
@@ -66,11 +68,8 @@ typedef struct wasmi_context wasmi_context_t;
  * This function creates a fresh store with the provided configuration settings.
  * The returned store must be deleted with #wasmi_store_delete.
  */
-WASM_API_EXTERN own wasmi_store_t *wasmi_store_new(
-    wasm_engine_t *engine,
-    void *data,
-    void (*finalizer)(void *)
-);
+WASM_API_EXTERN own wasmi_store_t *
+wasmi_store_new(wasm_engine_t *engine, void *data, void (*finalizer)(void *));
 
 /**
  * \brief Deletes a Wasmi store.
@@ -94,10 +93,8 @@ WASM_API_EXTERN void *wasmi_context_get_data(const wasmi_context_t *context);
  * and the original finalizer will be executed for the provided data when the
  * store is deleted.
  */
-WASM_API_EXTERN void wasmi_context_set_data(
-    wasmi_context_t *context,
-    void *data
-);
+WASM_API_EXTERN void wasmi_context_set_data(wasmi_context_t *context,
+                                            void *data);
 
 /**
  * \brief Set fuel to this context's store for wasm to consume while executing.
@@ -113,10 +110,8 @@ WASM_API_EXTERN void wasmi_context_set_data(
  * If fuel is not enabled within this store then an error is returned. If fuel
  * is successfully added then NULL is returned.
  */
-WASM_API_EXTERN wasmi_error_t *wasmi_context_set_fuel(
-    wasmi_context_t *store,
-    uint64_t fuel
-);
+WASM_API_EXTERN wasmi_error_t *wasmi_context_set_fuel(wasmi_context_t *store,
+                                                      uint64_t fuel);
 
 /**
  * \brief Returns the amount of fuel remaining in this context's store.
@@ -128,10 +123,8 @@ WASM_API_EXTERN wasmi_error_t *wasmi_context_set_fuel(
  * Also note that fuel, if enabled, must be originally configured via
  * #wasmi_context_set_fuel.
  */
-WASM_API_EXTERN wasmi_error_t *wasmi_context_get_fuel(
-    const wasmi_context_t *context,
-    uint64_t *fuel
-);
+WASM_API_EXTERN wasmi_error_t *
+wasmi_context_get_fuel(const wasmi_context_t *context, uint64_t *fuel);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -50,10 +50,8 @@ WASM_API_EXTERN void wasmi_error_delete(own wasmi_error_t *error);
  * uninitialized before this function is called and the caller is responsible
  * for deallocating it with #wasm_byte_vec_delete afterwards.
  */
-WASM_API_EXTERN void wasmi_error_message(
-    const wasmi_error_t *error,
-    wasm_name_t *message
-);
+WASM_API_EXTERN void wasmi_error_message(const wasmi_error_t *error,
+                                         wasm_name_t *message);
 
 #ifdef __cplusplus
 } // extern "C"
