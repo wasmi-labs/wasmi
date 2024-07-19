@@ -147,7 +147,6 @@ jobs:
             tar --version
             curl -L https://sourceforge.net/projects/doxygen/files/rel-1.11.0/doxygen-1.11.0.linux.bin.tar.gz/download | tar xzf -
             echo "`pwd`/doxygen-1.11.0/bin" >> $GITHUB_PATH
-            doxygen --version
             cmake -S crates/c_api -B target/c_api
             cmake --build target/c_api --target doc
 
