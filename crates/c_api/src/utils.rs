@@ -42,3 +42,9 @@ pub unsafe fn slice_from_raw_parts_mut<'a, T>(ptr: *mut T, len: usize) -> &'a mu
         _ => slice::from_raw_parts_mut(ptr, len),
     }
 }
+
+/// Aborts the execution with a message.
+#[allow(clippy::empty_loop)] // TODO: implement this properly for both, no_std and std modes
+pub fn abort(_message: &str) -> ! {
+    loop {}
+}
