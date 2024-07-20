@@ -13,7 +13,8 @@ mod config;
 mod engine;
 mod error;
 mod store;
+mod types;
 mod utils;
 
 use self::utils::*;
-pub use self::{config::*, engine::*, error::*, store::*};
+pub use self::{config::*, engine::*, error::*, store::*, types::*};
