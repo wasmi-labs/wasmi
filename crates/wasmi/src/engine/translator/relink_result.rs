@@ -233,6 +233,9 @@ impl Instruction {
             I::GlobalSet { .. } | I::GlobalSetI32Imm16 { .. } | I::GlobalSetI64Imm16 { .. } => {
                 Ok(false)
             }
+            I::I32AddImmIntoGlobal0 { .. } => Ok(false),
+            I::I32AddImmFromGlobal0 { result, .. } => relink_simple(result, new_result, old_result),
+            I::I32AddImmInoutGlobal0 { result, .. } => relink_simple(result, new_result, old_result),
             I::I32Load(instr) |
             I::I64Load(instr) |
             I::F32Load(instr) |
