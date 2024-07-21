@@ -4,7 +4,7 @@ use wasmi::MemoryType;
 
 /// A Wasm linear memory type.
 ///
-/// Wraps [`MemoryType`](wasmi::MemoryType).
+/// Wraps [`MemoryType`].
 #[repr(transparent)]
 #[derive(Clone)]
 pub struct wasm_memorytype_t {

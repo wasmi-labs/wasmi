@@ -4,7 +4,7 @@ use wasmi::FuncType;
 
 /// A Wasm function type.
 ///
-/// Wraps [`FuncType`](wasmi::FuncType).
+/// Wraps [`FuncType`].
 #[repr(transparent)]
 #[derive(Clone)]
 pub struct wasm_functype_t {

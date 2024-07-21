@@ -13,7 +13,7 @@ use wasmi::ExternType;
 
 /// A Wasm extern type.
 ///
-/// Wraps [`ExternType`](wasmi::ExternType).
+/// Wraps [`ExternType`].
 #[repr(C)]
 #[derive(Clone)]
 pub struct wasm_externtype_t {

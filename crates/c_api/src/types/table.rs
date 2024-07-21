@@ -4,7 +4,7 @@ use wasmi::TableType;
 
 /// A Wasm table type.
 ///
-/// Wraps [`TableType`](wasmi::TableType).
+/// Wraps [`TableType`].
 #[repr(transparent)]
 #[derive(Clone)]
 pub struct wasm_tabletype_t {

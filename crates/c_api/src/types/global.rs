@@ -4,7 +4,7 @@ use wasmi::GlobalType;
 
 /// A Wasm global variable type.
 ///
-/// Wraps [`GlobalType`](wasmi::GlobalType).
+/// Wraps [`GlobalType`].
 #[repr(u8)]
 pub enum wasm_mutability_t {
     WASM_CONST = 0,
