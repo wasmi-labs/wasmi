@@ -152,6 +152,10 @@ macro_rules! declare_vecs {
         #[doc = ""]
         #[doc = "- The `ptr` must point to a buffer of length `size` or larger."]
         #[doc = concat!("- Returns the resulting [`", stringify!($name), "`] in `out`.")]
+        #[doc = ""]
+        #[doc = "# Safety"]
+        #[doc = ""]
+        #[doc = "It is the callers responsibility to provide a valid pair of `ptr` and `size`."]
         #[no_mangle]
         pub unsafe extern "C" fn $new $(<$lt>)? (
             out: &mut $name $(<$lt>)?,
