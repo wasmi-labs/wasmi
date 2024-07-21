@@ -15,6 +15,7 @@ mod error;
 mod store;
 mod types;
 mod utils;
+mod vec;
 
 use self::utils::*;
-pub use self::{config::*, engine::*, error::*, store::*, types::*};
+pub use self::{config::*, engine::*, error::*, store::*, types::*, vec::*};

@@ -1,6 +1,22 @@
+mod export;
+mod r#extern;
+mod func;
+mod global;
+mod import;
+mod memory;
+mod table;
 mod val;
 
-pub use self::val::*;
+pub use self::{
+    export::*,
+    func::*,
+    global::*,
+    import::*,
+    memory::*,
+    r#extern::*,
+    table::*,
+    val::*,
+};
 
 /// Utility type representing minimum and maximum limitations for Wasm types.
 ///
