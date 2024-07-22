@@ -1,6 +1,7 @@
 use crate::{
     wasm_exporttype_t,
     wasm_externtype_t,
+    wasm_frame_t,
     wasm_functype_t,
     wasm_globaltype_t,
     wasm_importtype_t,
