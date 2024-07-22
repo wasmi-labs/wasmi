@@ -23,4 +23,4 @@ doctest = false
 path = "lib.rs"
 
 [dependencies]
-wasmi_c_api = { path = '..', package = 'wasmi_c_api_impl' }
+wasmi_c_api_impl = { workspace = true }
