@@ -59,7 +59,7 @@ impl WasmRef {
 }
 
 impl wasm_ref_t {
-    /// Creates a new boxed [`wasm_ref_r`] from the given [`WasmRef`].
+    /// Creates a new boxed [`wasm_ref_t`] from the given [`WasmRef`].
     pub(crate) fn new(r: WasmRef) -> Option<Box<wasm_ref_t>> {
         if r.is_null() || !r.is_func() {
             None
