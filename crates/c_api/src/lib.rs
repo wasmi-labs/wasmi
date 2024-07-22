@@ -13,10 +13,19 @@ pub use wasmi;
 mod config;
 mod engine;
 mod error;
+mod foreign;
 mod store;
 mod types;
 mod utils;
 mod vec;
 
 use self::utils::*;
-pub use self::{config::*, engine::*, error::*, store::*, types::*, vec::*};
+pub use self::{
+    config::*,
+    engine::*,
+    error::*,
+    foreign::*,
+    store::*,
+    types::*,
+    vec::*,
+};
