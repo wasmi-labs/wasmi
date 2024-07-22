@@ -13,7 +13,7 @@ pub struct wasm_globaltype_t {
 
 wasmi_c_api_macros::declare_ty!(wasm_globaltype_t);
 
-/// The mutability of a Wasm global variable.
+/// The mutability of a [`wasm_globaltype_t`].
 #[repr(u8)]
 #[derive(Copy, Clone)]
 pub enum wasm_mutability_t {
