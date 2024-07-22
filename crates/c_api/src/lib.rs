@@ -14,7 +14,9 @@ mod config;
 mod engine;
 mod error;
 mod foreign;
+mod frame;
 mod store;
+mod trap;
 mod types;
 mod utils;
 mod vec;
@@ -25,7 +27,12 @@ pub use self::{
     engine::*,
     error::*,
     foreign::*,
+    frame::*,
     store::*,
+    trap::*,
     types::*,
     vec::*,
 };
+
+// TODO: remove type alias place-holders once types are fully implemented
+pub type wasm_instance_t = core::ffi::c_void;
