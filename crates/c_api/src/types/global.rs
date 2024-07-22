@@ -5,13 +5,6 @@ use wasmi::GlobalType;
 /// A Wasm global variable type.
 ///
 /// Wraps [`GlobalType`].
-#[repr(u8)]
-#[derive(Copy, Clone)]
-pub enum wasm_mutability_t {
-    WASM_CONST = 0,
-    WASM_VAR = 1,
-}
-
 #[repr(transparent)]
 #[derive(Clone)]
 pub struct wasm_globaltype_t {
@@ -19,6 +12,16 @@ pub struct wasm_globaltype_t {
 }
 
 wasmi_c_api_macros::declare_ty!(wasm_globaltype_t);
+
+/// The mutability of a Wasm global variable.
+#[repr(u8)]
+#[derive(Copy, Clone)]
+pub enum wasm_mutability_t {
+    /// The global variable is immutable.
+    WASM_CONST = 0,
+    /// The global variable is mutable.
+    WASM_VAR = 1,
+}
 
 #[derive(Clone)]
 pub(crate) struct CGlobalType {
