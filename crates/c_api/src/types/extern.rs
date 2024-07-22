@@ -43,6 +43,7 @@ impl CExternType {
 
 /// The kind of a [`wasm_externtype_t`].
 #[repr(u8)]
+#[derive(Copy, Clone)]
 pub enum wasm_externkind_t {
     WASM_EXTERN_FUNC = 0,
     WASM_EXTERN_GLOBAL = 1,

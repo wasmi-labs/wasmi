@@ -16,6 +16,7 @@ wasmtime_c_api_macros::declare_ty!(wasm_valtype_t);
 ///
 /// Wraps [`ValType`].
 #[repr(u8)]
+#[derive(Copy, Clone)]
 pub enum wasm_valkind_t {
     /// A Wasm `i32` value type.
     ///

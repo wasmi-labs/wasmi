@@ -6,6 +6,7 @@ use wasmi::GlobalType;
 ///
 /// Wraps [`GlobalType`].
 #[repr(u8)]
+#[derive(Copy, Clone)]
 pub enum wasm_mutability_t {
     WASM_CONST = 0,
     WASM_VAR = 1,
