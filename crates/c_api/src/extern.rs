@@ -37,7 +37,7 @@ pub extern "C" fn wasm_extern_kind(e: &wasm_extern_t) -> wasm_externkind_t {
 /// # Safety
 ///
 /// It is the caller's responsibility not to alias the [`wasm_extern_t`]
-/// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
+/// with its underlying, internal [`WasmStoreRef`].
 #[no_mangle]
 pub unsafe extern "C" fn wasm_extern_type(e: &wasm_extern_t) -> Box<wasm_externtype_t> {
     Box::new(wasm_externtype_t::from_extern_type(
