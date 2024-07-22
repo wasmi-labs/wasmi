@@ -268,14 +268,14 @@ declare_vecs! {
     //     fn copy: wasm_val_vec_copy;
     //     fn delete: wasm_val_vec_delete;
     // }
-    // struct wasm_frame_vec_t<'a> {
-    //     type element = Option<Box<wasm_frame_t<'a>>>;
-    //     fn new: wasm_frame_vec_new;
-    //     fn empty: wasm_frame_vec_new_empty;
-    //     fn uninit: wasm_frame_vec_new_uninitialized;
-    //     fn copy: wasm_frame_vec_copy;
-    //     fn delete: wasm_frame_vec_delete;
-    // }
+    struct wasm_frame_vec_t<'a> {
+        type element = Option<Box<wasm_frame_t<'a>>>;
+        fn new: wasm_frame_vec_new;
+        fn empty: wasm_frame_vec_new_empty;
+        fn uninit: wasm_frame_vec_new_uninitialized;
+        fn copy: wasm_frame_vec_copy;
+        fn delete: wasm_frame_vec_delete;
+    }
     // struct wasm_extern_vec_t {
     //     type element = Option<Box<wasm_extern_t>>;
     //     fn new: wasm_extern_vec_new;
