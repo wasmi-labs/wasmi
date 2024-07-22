@@ -11,7 +11,7 @@ pub struct wasm_engine_t {
     pub(crate) inner: Engine,
 }
 
-wasmtime_c_api_macros::declare_own!(wasm_engine_t);
+wasmi_c_api_macros::declare_own!(wasm_engine_t);
 
 /// Creates a new default initialized [`wasm_engine_t`].
 ///

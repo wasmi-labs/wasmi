@@ -16,7 +16,7 @@ links = "wasmi_c_api"
 
 [dependencies]
 wasmi = { workspace = true }
-wasmtime-c-api-macros = "22.0.0"
+wasmi_c_api_macros = { workspace = true }
 
 [lib]
 name = "wasmi_c_api"

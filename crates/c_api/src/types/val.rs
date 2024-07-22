@@ -10,7 +10,7 @@ pub struct wasm_valtype_t {
     pub(crate) ty: ValType,
 }
 
-wasmtime_c_api_macros::declare_ty!(wasm_valtype_t);
+wasmi_c_api_macros::declare_ty!(wasm_valtype_t);
 
 /// The different kinds of [`wasm_valtype_t`].
 ///

@@ -13,7 +13,7 @@ pub struct wasm_exporttype_t {
     c_ty: wasm_externtype_t,
 }
 
-wasmtime_c_api_macros::declare_ty!(wasm_exporttype_t);
+wasmi_c_api_macros::declare_ty!(wasm_exporttype_t);
 
 impl wasm_exporttype_t {
     pub(crate) fn new(name: String, ty: CExternType) -> wasm_exporttype_t {

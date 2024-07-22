@@ -54,7 +54,7 @@ pub struct wasm_store_t {
     pub(crate) inner: WasmStoreRef,
 }
 
-wasmtime_c_api_macros::declare_own!(wasm_store_t);
+wasmi_c_api_macros::declare_own!(wasm_store_t);
 
 /// Creates a new [`Store<()>`](wasmi::Store) for the given `engine`.
 ///
@@ -83,7 +83,7 @@ pub struct wasmi_store_t {
     pub(crate) store: Store<WasmiStoreData>,
 }
 
-wasmtime_c_api_macros::declare_own!(wasmi_store_t);
+wasmi_c_api_macros::declare_own!(wasmi_store_t);
 
 /// Extensional data stored by [`wasmi_store_t`] to handle foreign data and optional WASI support.
 pub struct WasmiStoreData {

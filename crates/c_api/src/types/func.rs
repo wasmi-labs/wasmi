@@ -11,7 +11,7 @@ pub struct wasm_functype_t {
     ext: wasm_externtype_t,
 }
 
-wasmtime_c_api_macros::declare_ty!(wasm_functype_t);
+wasmi_c_api_macros::declare_ty!(wasm_functype_t);
 
 #[derive(Clone)]
 pub(crate) struct CFuncType {

@@ -15,7 +15,7 @@ pub struct wasm_importtype_t {
     c_ty: wasm_externtype_t,
 }
 
-wasmtime_c_api_macros::declare_ty!(wasm_importtype_t);
+wasmi_c_api_macros::declare_ty!(wasm_importtype_t);
 
 impl wasm_importtype_t {
     pub(crate) fn new(module: String, name: String, ty: CExternType) -> wasm_importtype_t {

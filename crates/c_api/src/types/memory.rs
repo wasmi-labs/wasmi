@@ -11,7 +11,7 @@ pub struct wasm_memorytype_t {
     ext: wasm_externtype_t,
 }
 
-wasmtime_c_api_macros::declare_ty!(wasm_memorytype_t);
+wasmi_c_api_macros::declare_ty!(wasm_memorytype_t);
 
 #[derive(Clone)]
 pub(crate) struct CMemoryType {

@@ -12,7 +12,7 @@ pub struct wasmi_error_t {
     inner: Error,
 }
 
-wasmtime_c_api_macros::declare_own!(wasmi_error_t);
+wasmi_c_api_macros::declare_own!(wasmi_error_t);
 
 impl From<Error> for wasmi_error_t {
     fn from(error: Error) -> wasmi_error_t {

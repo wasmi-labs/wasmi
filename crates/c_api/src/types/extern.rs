@@ -8,7 +8,6 @@ use crate::{
     CMemoryType,
     CTableType,
 };
-use alloc::boxed::Box;
 use wasmi::ExternType;
 
 /// A Wasm extern type.
@@ -20,7 +19,7 @@ pub struct wasm_externtype_t {
     pub(crate) which: CExternType,
 }
 
-wasmtime_c_api_macros::declare_ty!(wasm_externtype_t);
+wasmi_c_api_macros::declare_ty!(wasm_externtype_t);
 
 #[derive(Clone)]
 pub(crate) enum CExternType {
