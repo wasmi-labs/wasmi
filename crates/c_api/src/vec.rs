@@ -7,6 +7,7 @@ use crate::{
     wasm_importtype_t,
     wasm_memorytype_t,
     wasm_tabletype_t,
+    wasm_val_t,
     wasm_valtype_t,
 };
 use alloc::{boxed::Box, string::String, vec, vec::Vec};
@@ -262,14 +263,14 @@ declare_vecs! {
         fn copy: wasm_exporttype_vec_copy;
         fn delete: wasm_exporttype_vec_delete;
     }
-    // struct wasm_val_vec_t {
-    //     type element = wasm_val_t;
-    //     fn new: wasm_val_vec_new;
-    //     fn empty: wasm_val_vec_new_empty;
-    //     fn uninit: wasm_val_vec_new_uninitialized;
-    //     fn copy: wasm_val_vec_copy;
-    //     fn delete: wasm_val_vec_delete;
-    // }
+    struct wasm_val_vec_t {
+        type element = wasm_val_t;
+        fn new: wasm_val_vec_new;
+        fn empty: wasm_val_vec_new_empty;
+        fn uninit: wasm_val_vec_new_uninitialized;
+        fn copy: wasm_val_vec_copy;
+        fn delete: wasm_val_vec_delete;
+    }
     struct wasm_frame_vec_t<'a> {
         type element = Option<Box<wasm_frame_t<'a>>>;
         fn new: wasm_frame_vec_new;

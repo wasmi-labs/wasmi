@@ -1,6 +1,6 @@
 #![allow(dead_code)] // TODO: remove when all warnings are gone
 
-use core::{ffi, slice};
+use core::{ffi, mem::MaybeUninit, ptr, slice};
 
 /// Wrapper for running a C-defined finalizer over foreign data upon [`Drop`].
 pub struct ForeignData {
@@ -47,4 +47,17 @@ pub unsafe fn slice_from_raw_parts_mut<'a, T>(ptr: *mut T, len: usize) -> &'a mu
 #[allow(clippy::empty_loop)] // TODO: implement this properly for both, no_std and std modes
 pub fn abort(_message: &str) -> ! {
     loop {}
+}
+
+/// Initialize a `MaybeUninit<T>` with `value`.
+///
+/// # ToDo
+///
+/// Replace calls to this function with [`MaybeUninit::write`] once it is stable.
+///
+/// [`MaybeUninit::write`]: https://doc.rust-lang.org/nightly/std/mem/union.MaybeUninit.html#method.write
+pub(crate) fn initialize<T>(dst: &mut MaybeUninit<T>, value: T) {
+    unsafe {
+        ptr::write(dst.as_mut_ptr(), value);
+    }
 }

@@ -15,10 +15,12 @@ mod engine;
 mod error;
 mod foreign;
 mod frame;
+mod r#ref;
 mod store;
 mod trap;
 mod types;
 mod utils;
+mod val;
 mod vec;
 
 use self::utils::*;
@@ -28,11 +30,19 @@ pub use self::{
     error::*,
     foreign::*,
     frame::*,
+    r#ref::*,
     store::*,
     trap::*,
     types::*,
+    val::*,
     vec::*,
 };
 
 // TODO: remove type alias place-holders once types are fully implemented
+pub type wasm_func_t = core::ffi::c_void;
+pub type wasm_global_t = core::ffi::c_void;
+pub type wasm_memory_t = core::ffi::c_void;
+pub type wasm_table_t = core::ffi::c_void;
+pub type wasm_extern_t = core::ffi::c_void;
+pub type wasm_module_t = core::ffi::c_void;
 pub type wasm_instance_t = core::ffi::c_void;
