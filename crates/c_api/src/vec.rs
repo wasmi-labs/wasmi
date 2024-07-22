@@ -12,6 +12,7 @@ use crate::{
 use alloc::{boxed::Box, string::String, vec, vec::Vec};
 use core::{mem::MaybeUninit, ptr, slice};
 
+/// A Wasm name string buffer.
 pub type wasm_name_t = wasm_byte_vec_t;
 
 impl wasm_name_t {
