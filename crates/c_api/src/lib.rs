@@ -7,6 +7,9 @@
 #![allow(dead_code)] // TODO: remove when done implementing Wasmi C-API
 
 extern crate alloc;
+#[cfg(feature = "std")]
+#[macro_use]
+extern crate std;
 
 pub use wasmi;
 

@@ -22,3 +22,7 @@ wasmi_c_api_macros = { workspace = true }
 name = "wasmi_c_api"
 test = false
 doctest = false
+
+[features]
+default = ["std"]
+std = []
