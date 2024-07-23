@@ -43,6 +43,8 @@ wasmi_c_api_macros::declare_own!(wasm_shared_module_t);
 ///
 /// Returns `None` if creation of the [`wasm_module_t`] failed.
 ///
+/// Wraps [`Module::new`].
+///
 /// # Safety
 ///
 /// It is the caller's responsibility not to alias the [`wasm_module_t`]
@@ -59,6 +61,8 @@ pub unsafe extern "C" fn wasm_module_new(
 }
 
 /// Returns `true` if the Wasm `binary` successfully validates.
+///
+/// Wraps [`Module::validate`].
 ///
 /// # Safety
 ///
@@ -89,6 +93,8 @@ fn fill_exports(module: &Module, out: &mut wasm_exporttype_vec_t) {
 /// Queries the module exports of the [`wasm_module_t`].
 ///
 /// Stores the queried module exports in `out`.
+///
+/// Wraps [`Module::exports`].
 #[no_mangle]
 pub extern "C" fn wasm_module_exports(module: &wasm_module_t, out: &mut wasm_exporttype_vec_t) {
     fill_exports(&module.inner, out);
@@ -112,6 +118,8 @@ fn fill_imports(module: &Module, out: &mut wasm_importtype_vec_t) {
 /// Queries the module imports of the [`wasm_module_t`].
 ///
 /// Stores the queried module imports in `out`.
+///
+/// Wraps [`Module::imports`].
 #[no_mangle]
 pub extern "C" fn wasm_module_imports(module: &wasm_module_t, out: &mut wasm_importtype_vec_t) {
     fill_imports(&module.inner, out);
@@ -121,6 +129,8 @@ pub extern "C" fn wasm_module_imports(module: &wasm_module_t, out: &mut wasm_imp
 ///
 /// - This has similar effects to shallow-cloning a [`wasm_module_t`].
 /// - Obtain the original [`wasm_module_t`] via a call to [`wasm_module_obtain`].
+///
+/// Wraps [`Module::clone`] (kinda).
 #[no_mangle]
 pub extern "C" fn wasm_module_share(module: &wasm_module_t) -> Box<wasm_shared_module_t> {
     Box::new(wasm_shared_module_t {
@@ -136,6 +146,8 @@ pub extern "C" fn wasm_module_share(module: &wasm_module_t) -> Box<wasm_shared_m
 ///
 /// It is the caller's responsibility not to alias the [`wasm_module_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
+///
+/// Wraps [`Module::clone`] (kinda).
 #[no_mangle]
 pub unsafe extern "C" fn wasm_module_obtain(
     store: &mut wasm_store_t,

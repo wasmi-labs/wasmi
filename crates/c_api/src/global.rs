@@ -82,6 +82,8 @@ pub extern "C" fn wasm_global_as_extern_const(g: &wasm_global_t) -> &wasm_extern
 
 /// Returns the [`wasm_globaltype_t`] of the [`wasm_global_t`].
 ///
+/// Wraps [`Global::ty`].
+///
 /// # Safety
 ///
 /// It is the caller's responsibility not to alias the [`wasm_global_t`]
@@ -93,6 +95,8 @@ pub unsafe extern "C" fn wasm_global_type(g: &wasm_global_t) -> Box<wasm_globalt
 }
 
 /// Returns the current value of the [`wasm_global_t`].
+///
+/// Wraps [`Global::get`].
 ///
 /// # Safety
 ///
@@ -108,6 +112,8 @@ pub unsafe extern "C" fn wasm_global_get(g: &mut wasm_global_t, out: &mut MaybeU
 }
 
 /// Sets the current value of the [`wasm_global_t`].
+///
+/// Wraps [`Global::set`].
 ///
 /// # Safety
 ///
