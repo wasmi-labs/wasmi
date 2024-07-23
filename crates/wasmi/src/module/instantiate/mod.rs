@@ -51,7 +51,7 @@ impl Module {
         externals: I,
     ) -> Result<InstancePre, Error>
     where
-        I: IntoIterator<Item = Extern>,
+        I: IntoIterator<Item = Extern, IntoIter: ExactSizeIterator>,
     {
         context
             .as_context_mut()
@@ -97,22 +97,17 @@ impl Module {
         externals: I,
     ) -> Result<(), InstantiationError>
     where
-        I: IntoIterator<Item = Extern>,
+        I: IntoIterator<Item = Extern, IntoIter: ExactSizeIterator>,
     {
-        let mut imports = self.imports();
-        let mut externals = externals.into_iter();
-        loop {
-            // Iterate on module imports and the given external values in lock-step fashion.
-            //
-            // Note: We cannot use [`zip`](`core::iter::zip`) here since we require that both
-            //       iterators yield the same amount of elements.
-            let (import, external) = match (imports.next(), externals.next()) {
-                (Some(import), Some(external)) => (import, external),
-                (None, None) => break,
-                (Some(_), None) | (None, Some(_)) => {
-                    return Err(InstantiationError::ImportsExternalsLenMismatch)
-                }
-            };
+        let imports = self.imports();
+        let externals = externals.into_iter();
+        if imports.len() != externals.len() {
+            return Err(InstantiationError::InvalidNumberOfImports {
+                required: imports.len(),
+                given: externals.len(),
+            });
+        }
+        for (import, external) in imports.zip(externals) {
             match (import.ty(), external) {
                 (ExternType::Func(expected_signature), Extern::Func(func)) => {
                     let actual_signature = func.ty(context.as_context());
