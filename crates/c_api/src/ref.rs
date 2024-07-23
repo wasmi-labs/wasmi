@@ -53,11 +53,6 @@ impl WasmRef {
         matches!(self, Self::Func(_))
     }
 
-    /// Returns `true` if `self` is a Wasm extern reference.
-    pub fn is_extern(&self) -> bool {
-        matches!(self, Self::Extern(_))
-    }
-
     /// Returns `true` if `self` is a `null` reference.
     pub fn is_null(&self) -> bool {
         match self {
