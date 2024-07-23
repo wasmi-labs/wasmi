@@ -99,7 +99,7 @@ pub fn declare_ref(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         #[no_mangle]
         pub extern "C" fn #same(_a: &#ty, _b: &#ty) -> ::core::primitive::bool {
             #[cfg(feature = "std")]
-            ::std::eprintln!("`{}` is not implemented", ::core::::core::stringify!(#same));
+            ::std::eprintln!("`{}` is not implemented", ::core::stringify!(#same));
             ::core::unimplemented!(::core::stringify!(#same))
         }
 
