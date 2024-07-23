@@ -50,7 +50,7 @@ pub unsafe extern "C" fn wasm_extern_type(e: &wasm_extern_t) -> Box<wasm_externt
 /// Returns `None` if `e` is not a [`wasm_func_t`].
 #[no_mangle]
 pub extern "C" fn wasm_extern_as_func(e: &mut wasm_extern_t) -> Option<&mut wasm_func_t> {
-    todo!()
+    wasm_func_t::try_from_mut(e)
 }
 
 /// Returns the [`wasm_extern_t`] as reference to shared [`wasm_func_t`] if possible.
@@ -58,7 +58,7 @@ pub extern "C" fn wasm_extern_as_func(e: &mut wasm_extern_t) -> Option<&mut wasm
 /// Returns `None` if `e` is not a [`wasm_func_t`].
 #[no_mangle]
 pub extern "C" fn wasm_extern_as_func_const(e: &wasm_extern_t) -> Option<&wasm_func_t> {
-    todo!()
+    wasm_func_t::try_from(e)
 }
 
 /// Returns the [`wasm_extern_t`] as reference to mutable [`wasm_global_t`] if possible.

@@ -18,6 +18,7 @@ mod error;
 mod r#extern;
 mod foreign;
 mod frame;
+mod func;
 mod global;
 mod memory;
 mod r#ref;
@@ -36,6 +37,7 @@ pub use self::{
     error::*,
     foreign::*,
     frame::*,
+    func::*,
     global::*,
     memory::*,
     r#extern::*,
@@ -49,6 +51,5 @@ pub use self::{
 };
 
 // TODO: remove type alias place-holders once types are fully implemented
-pub type wasm_func_t = core::ffi::c_void;
 pub type wasm_module_t = core::ffi::c_void;
 pub type wasm_instance_t = core::ffi::c_void;
