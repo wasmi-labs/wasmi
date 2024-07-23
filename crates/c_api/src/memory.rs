@@ -76,7 +76,7 @@ pub extern "C" fn wasm_memory_as_extern_const(m: &wasm_memory_t) -> &wasm_extern
 }
 
 /// Returns the [`wasm_memorytype_t`] of the [`wasm_memory_t`].
-/// 
+///
 /// Wraps [`Memory::ty`].
 ///
 /// # Safety
@@ -90,7 +90,7 @@ pub unsafe extern "C" fn wasm_memory_type(m: &wasm_memory_t) -> Box<wasm_memoryt
 }
 
 /// Returns the underlying data pointer of the [`wasm_memory_t`].
-/// 
+///
 /// Wraps [`Memory::data_ptr`].
 ///
 /// # Safety
@@ -103,7 +103,7 @@ pub unsafe extern "C" fn wasm_memory_data(m: &wasm_memory_t) -> *mut u8 {
 }
 
 /// Returns the data buffer size of the [`wasm_memory_t`].
-/// 
+///
 /// Wraps [`Memory::data_size`].
 ///
 /// # Safety
@@ -116,7 +116,7 @@ pub unsafe extern "C" fn wasm_memory_data_size(m: &wasm_memory_t) -> usize {
 }
 
 /// Returns the current number of Wasm pages of the [`wasm_memory_t`].
-/// 
+///
 /// Wraps [`Memory::size`].
 ///
 /// # Safety
@@ -131,7 +131,7 @@ pub unsafe extern "C" fn wasm_memory_size(m: &wasm_memory_t) -> wasm_memory_page
 /// Grows the [`wasm_memory_t`] by `delta` Wasm pages.
 ///
 /// Returns `true` if the operation was successful.
-/// 
+///
 /// Wraps [`Memory::grow`].
 ///
 /// # Safety
