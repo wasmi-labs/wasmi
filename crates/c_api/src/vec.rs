@@ -1,5 +1,6 @@
 use crate::{
     wasm_exporttype_t,
+    wasm_extern_t,
     wasm_externtype_t,
     wasm_frame_t,
     wasm_functype_t,
@@ -279,12 +280,12 @@ declare_vecs! {
         fn copy: wasm_frame_vec_copy;
         fn delete: wasm_frame_vec_delete;
     }
-    // struct wasm_extern_vec_t {
-    //     type element = Option<Box<wasm_extern_t>>;
-    //     fn new: wasm_extern_vec_new;
-    //     fn empty: wasm_extern_vec_new_empty;
-    //     fn uninit: wasm_extern_vec_new_uninitialized;
-    //     fn copy: wasm_extern_vec_copy;
-    //     fn delete: wasm_extern_vec_delete;
-    // }
+    struct wasm_extern_vec_t {
+        type element = Option<Box<wasm_extern_t>>;
+        fn new: wasm_extern_vec_new;
+        fn empty: wasm_extern_vec_new_empty;
+        fn uninit: wasm_extern_vec_new_uninitialized;
+        fn copy: wasm_extern_vec_copy;
+        fn delete: wasm_extern_vec_delete;
+    }
 }
