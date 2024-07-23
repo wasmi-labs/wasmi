@@ -20,6 +20,7 @@ mod foreign;
 mod frame;
 mod func;
 mod global;
+mod instance;
 mod memory;
 mod module;
 mod r#ref;
@@ -40,6 +41,7 @@ pub use self::{
     frame::*,
     func::*,
     global::*,
+    instance::*,
     memory::*,
     module::*,
     r#extern::*,
@@ -51,6 +53,3 @@ pub use self::{
     val::*,
     vec::*,
 };
-
-// TODO: remove type alias place-holders once types are fully implemented
-pub type wasm_instance_t = core::ffi::c_void;
