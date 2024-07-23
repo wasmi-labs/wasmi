@@ -113,6 +113,8 @@ unsafe fn create_function(
 ///
 /// Calls the given [`wasm_func_callback_t`] when calling the returned [`wasm_func_t`].
 ///
+/// Wraps [`Func::new`].
+///
 /// # Safety
 ///
 /// It is the caller's responsibility not to alias the [`wasm_functype_t`]
@@ -131,6 +133,8 @@ pub unsafe extern "C" fn wasm_func_new(
 ///
 /// - Calls the given [`wasm_func_callback_t`] when calling the returned [`wasm_func_t`].
 /// - Unlike [`wasm_func_new`] this also allows to access environment data in the function closure.
+///
+/// Wraps [`Func::new`].
 ///
 /// # Safety
 ///
@@ -172,6 +176,8 @@ fn prepare_params_and_results(
 ///
 /// - Returns a [`wasm_trap_t`] if the Wasm function call failed or trapped.
 /// - Returns a `null` pointer if the Wasm function call succeeded.
+///
+/// Wraps [`Func::call`].
 ///
 /// # Safety
 ///
@@ -235,6 +241,8 @@ fn error_from_panic(panic: Box<dyn Any + Send>) -> Error {
 
 /// Returns the [`wasm_functype_t`] of the [`wasm_func_t`].
 ///
+/// Wraps [`Func::ty`].
+///
 /// # Safety
 ///
 /// It is the caller's responsibility not to alias the [`wasm_func_t`]
@@ -246,10 +254,14 @@ pub unsafe extern "C" fn wasm_func_type(f: &wasm_func_t) -> Box<wasm_functype_t>
 
 /// Returns the number of parameter types of the [`wasm_func_t`].
 ///
+/// Wraps [`Func::ty`], followed by [`FuncType::params`] and a call to `len`.
+///
 /// # Safety
 ///
 /// It is the caller's responsibility not to alias the [`wasm_func_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
+///
+/// [`FuncType::params`]: wasmi::FuncType::params
 #[no_mangle]
 pub unsafe extern "C" fn wasm_func_param_arity(f: &wasm_func_t) -> usize {
     f.func().ty(f.inner.store.context()).params().len()
@@ -257,10 +269,14 @@ pub unsafe extern "C" fn wasm_func_param_arity(f: &wasm_func_t) -> usize {
 
 /// Returns the number of result types of the [`wasm_func_t`].
 ///
+/// Wraps [`Func::ty`], followed by [`FuncType::results`] and a call to `len`.
+///
 /// # Safety
 ///
 /// It is the caller's responsibility not to alias the [`wasm_func_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
+///
+/// [`FuncType::results`]: wasmi::FuncType::results
 #[no_mangle]
 pub unsafe extern "C" fn wasm_func_result_arity(f: &wasm_func_t) -> usize {
     f.func().ty(f.inner.store.context()).results().len()
