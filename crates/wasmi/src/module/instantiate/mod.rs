@@ -92,7 +92,7 @@ impl Module {
     /// [`Func`]: [`crate::Func`]
     fn extract_imports<I>(
         &self,
-        context: impl AsContext,
+        store: impl AsContext,
         builder: &mut InstanceEntityBuilder,
         externals: I,
     ) -> Result<(), InstantiationError>
@@ -110,7 +110,7 @@ impl Module {
         for (import, external) in imports.zip(externals) {
             match (import.ty(), external) {
                 (ExternType::Func(expected_signature), Extern::Func(func)) => {
-                    let actual_signature = func.ty(context.as_context());
+                    let actual_signature = func.ty(&store);
                     if &actual_signature != expected_signature {
                         return Err(InstantiationError::SignatureMismatch {
                             actual: actual_signature,
@@ -120,17 +120,17 @@ impl Module {
                     builder.push_func(func);
                 }
                 (ExternType::Table(required), Extern::Table(table)) => {
-                    let imported = table.dynamic_ty(context.as_context());
+                    let imported = table.dynamic_ty(&store);
                     imported.is_subtype_or_err(required)?;
                     builder.push_table(table);
                 }
                 (ExternType::Memory(required), Extern::Memory(memory)) => {
-                    let imported = memory.dynamic_ty(context.as_context());
+                    let imported = memory.dynamic_ty(&store);
                     imported.is_subtype_or_err(required)?;
                     builder.push_memory(memory);
                 }
                 (ExternType::Global(required), Extern::Global(global)) => {
-                    let imported = global.ty(context.as_context());
+                    let imported = global.ty(&store);
                     required.satisfies(&imported)?;
                     builder.push_global(global);
                 }
