@@ -21,6 +21,7 @@ mod frame;
 mod func;
 mod global;
 mod memory;
+mod module;
 mod r#ref;
 mod store;
 mod table;
@@ -40,6 +41,7 @@ pub use self::{
     func::*,
     global::*,
     memory::*,
+    module::*,
     r#extern::*,
     r#ref::*,
     store::*,
@@ -51,5 +53,4 @@ pub use self::{
 };
 
 // TODO: remove type alias place-holders once types are fully implemented
-pub type wasm_module_t = core::ffi::c_void;
 pub type wasm_instance_t = core::ffi::c_void;
