@@ -38,6 +38,15 @@ pub(crate) enum WasmRef {
     Extern(ExternRef),
 }
 
+impl From<WasmRef> for Val {
+    fn from(value: WasmRef) -> Self {
+        match value {
+            WasmRef::Func(r) => Self::FuncRef(r),
+            WasmRef::Extern(r) => Self::ExternRef(r),
+        }
+    }
+}
+
 impl WasmRef {
     /// Returns `true` if `self` is a Wasm function reference.
     pub fn is_func(&self) -> bool {
