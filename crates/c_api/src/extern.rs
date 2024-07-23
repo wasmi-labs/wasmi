@@ -98,7 +98,7 @@ pub extern "C" fn wasm_extern_as_table_const(e: &wasm_extern_t) -> Option<&wasm_
 /// Returns `None` if `e` is not a [`wasm_memory_t`].
 #[no_mangle]
 pub extern "C" fn wasm_extern_as_memory(e: &mut wasm_extern_t) -> Option<&mut wasm_memory_t> {
-    todo!()
+    wasm_memory_t::try_from_mut(e)
 }
 
 /// Returns the [`wasm_extern_t`] as reference to shared [`wasm_memory_t`] if possible.
@@ -106,5 +106,5 @@ pub extern "C" fn wasm_extern_as_memory(e: &mut wasm_extern_t) -> Option<&mut wa
 /// Returns `None` if `e` is not a [`wasm_memory_t`].
 #[no_mangle]
 pub extern "C" fn wasm_extern_as_memory_const(e: &wasm_extern_t) -> Option<&wasm_memory_t> {
-    todo!()
+    wasm_memory_t::try_from(e)
 }
