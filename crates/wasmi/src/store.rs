@@ -535,6 +535,34 @@ impl StoreInner {
         self.engine.resolve_func_type(func_type, f)
     }
 
+    /// Returns `true` if `self` contains the stored entity.
+    fn contains_stored_entity<Idx>(&self, stored: &Stored<Idx>) -> bool
+    where
+        Idx: ArenaIndex,
+    {
+        stored.entity_index(self.store_idx).is_some()
+    }
+
+    /// Returns `true` if `self` contains `func`.
+    pub fn contains_func(&self, func: &Func) -> bool {
+        self.contains_stored_entity(func.as_inner())
+    }
+
+    /// Returns `true` if `self` contains `global`.
+    pub fn contains_global(&self, global: &Global) -> bool {
+        self.contains_stored_entity(global.as_inner())
+    }
+
+    /// Returns `true` if `self` contains `memory`.
+    pub fn contains_memory(&self, memory: &Memory) -> bool {
+        self.contains_stored_entity(memory.as_inner())
+    }
+
+    /// Returns `true` if `self` contains `table`.
+    pub fn contains_table(&self, table: &Table) -> bool {
+        self.contains_stored_entity(table.as_inner())
+    }
+
     /// Returns a shared reference to the [`GlobalEntity`] associated to the given [`Global`].
     ///
     /// # Panics
