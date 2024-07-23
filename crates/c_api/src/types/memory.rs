@@ -34,7 +34,7 @@ impl wasm_memorytype_t {
     }
 
     pub(crate) fn try_from_mut(e: &mut wasm_externtype_t) -> Option<&mut wasm_memorytype_t> {
-        match &e.which {
+        match &mut e.which {
             CExternType::Memory(_) => Some(unsafe { &mut *(e as *mut _ as *mut _) }),
             _ => None,
         }

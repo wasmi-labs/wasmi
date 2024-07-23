@@ -35,7 +35,7 @@ impl wasm_functype_t {
     }
 
     pub(crate) fn try_from_mut(e: &mut wasm_externtype_t) -> Option<&mut wasm_functype_t> {
-        match &e.which {
+        match &mut e.which {
             CExternType::Func(_) => Some(unsafe { &mut *(e as *mut _ as *mut _) }),
             _ => None,
         }

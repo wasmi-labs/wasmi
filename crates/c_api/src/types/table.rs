@@ -35,7 +35,7 @@ impl wasm_tabletype_t {
     }
 
     pub(crate) fn try_from_mut(e: &mut wasm_externtype_t) -> Option<&mut wasm_tabletype_t> {
-        match &e.which {
+        match &mut e.which {
             CExternType::Table(_) => Some(unsafe { &mut *(e as *mut _ as *mut _) }),
             _ => None,
         }

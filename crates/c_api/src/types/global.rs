@@ -44,7 +44,7 @@ impl wasm_globaltype_t {
     }
 
     pub(crate) fn try_from_mut(e: &mut wasm_externtype_t) -> Option<&mut wasm_globaltype_t> {
-        match &e.which {
+        match &mut e.which {
             CExternType::Global(_) => Some(unsafe { &mut *(e as *mut _ as *mut _) }),
             _ => None,
         }
