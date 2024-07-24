@@ -8,6 +8,26 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.36.0`] - 2024-07-24
+
+### Added
+
+- Added support for the official Wasm C-API. (https://github.com/wasmi-labs/wasmi/pull/1009)
+  - This allows to use Wasmi from any program that can interface with C code.
+  - The `wasmi_c_api_impl` crate allows to use Wasmi via the Wasm C-API from Rust code.
+- Added `Instance::new` API. (https://github.com/wasmi-labs/wasmi/pull/1134)
+  - This was mainly needed to support the Wasm C-API.
+  - The new API offers a more low-level way for Wasm module instantiation
+    that may be more efficient for certain use cases.
+- Added `Clone` implementation for `Module`. (https://github.com/wasmi-labs/wasmi/pull/1130)
+  - This was mainly needed to support the Wasm C-API.
+
+### Changed
+
+- The store fuel API now returns `Error` instead of `FuelError`. (https://github.com/wasmi-labs/wasmi/pull/1131)
+  - This was needed to support the Wasm C-API.
+  - The `FuelError` is still accessible via the `Error::kind` method.
+
 ## [`0.35.0`] - 2024-07-11
 
 ### Fixed
