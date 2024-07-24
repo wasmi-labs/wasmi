@@ -2,6 +2,11 @@
 
 This document briefly explains how to properly use Wasmi and get the most out of it performance-wise.
 
+## Usage: C-Bindings or C-API
+
+If you intend to use Wasmi from C or use Wasmi's C-API then
+please view the [Wasmi C-API readme](../crates/c_api/README.md)
+
 ## Usage: As CLI Installation
 
 Install the newest Wasmi CLI version using:
