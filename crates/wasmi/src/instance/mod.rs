@@ -27,6 +27,9 @@ use std::{boxed::Box, sync::Arc};
 mod builder;
 mod exports;
 
+#[cfg(test)]
+mod tests;
+
 /// A raw index to a module instance entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InstanceIdx(u32);
