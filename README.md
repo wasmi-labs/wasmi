@@ -70,7 +70,7 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 | [`relaxed-simd`] | ❌ | Unlikely to be supported since `simd` is unlikely to be supported. |
 | [`component-model`] | 📅 | Planned but not yet implemented. [(#897)] |
 | | |
-| [WASI] | 👨‍🔬 | Experimental support for WASI-p1 via the [`wasmi_wasi` crate]. |
+| [WASI] | 👨‍🔬 | Experimental support for WASI (`wasip1`) via the [`wasmi_wasi` crate]. |
 | [C-API] | 👨‍🔬 | Experimental support for the official Wasm C-API via the [`wasmi_c_api_impl` crate]. |
 
 [`mutable-global`]: https://github.com/WebAssembly/mutable-global
