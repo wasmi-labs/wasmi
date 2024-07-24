@@ -159,8 +159,8 @@ impl Instance {
     /// # Note
     ///
     /// - This function intentionally is rather low-level for [`Instance`] creation.
-    ///   Please use the [`Linker`] type for a more high-level API for Wasm module instantiation
-    ///   with name-based resolution.
+    ///   Please use the [`Linker`](crate::Linker) type for a more high-level API for Wasm
+    ///   module instantiation with name-based resolution.
     /// - Wasm module instantiation implies running the Wasm `start` function which is _not_
     ///   to be confused with WASI's `_start` function.
     ///
