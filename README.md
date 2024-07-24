@@ -71,6 +71,7 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 | [`component-model`] | 📅 | Planned but not yet implemented. [(#897)] |
 | | |
 | [WASI] | 👨‍🔬 | Experimental support via the [`wasmi_wasi` crate] or the Wasmi CLI application. |
+| [C-API] | 👨‍🔬 | Experimental support via the [`wasmi_c_api_impl` crate] for the official Wasm C-API. |
 
 [`mutable-global`]: https://github.com/WebAssembly/mutable-global
 [`saturating-float-to-int`]: https://github.com/WebAssembly/nontrapping-float-to-int-conversions
@@ -89,7 +90,9 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 [`component-model`]: https://github.com/WebAssembly/component-model
 
 [WASI]: https://github.com/WebAssembly/WASI
+[C-API]: https://github.com/WebAssembly/wasm-c-api
 [`wasmi_wasi` crate]: ./crates/wasi
+[`wasmi_c_api_impl` crate]: ./crates/c_api
 
 [(#363)]: https://github.com/wasmi-labs/wasmi/issues/363
 [(#364)]: https://github.com/wasmi-labs/wasmi/issues/364
