@@ -1,6 +1,5 @@
 use crate::{
     collections::map::Iter as MapIter,
-    store::StoreInner,
     AsContext,
     Func,
     FuncType,
@@ -108,16 +107,6 @@ impl Extern {
             Extern::Table(table) => table.ty(ctx).into(),
             Extern::Memory(memory) => memory.ty(ctx).into(),
             Extern::Func(func) => func.ty(ctx).into(),
-        }
-    }
-
-    /// Returns `true` if `self` comes from the same [`StoreInner`].
-    pub(crate) fn originates_from_store(&self, store: &StoreInner) -> bool {
-        match self {
-            Extern::Global(global) => store.contains_global(global),
-            Extern::Table(table) => store.contains_table(table),
-            Extern::Memory(memory) => store.contains_memory(memory),
-            Extern::Func(func) => store.contains_func(func),
         }
     }
 }
