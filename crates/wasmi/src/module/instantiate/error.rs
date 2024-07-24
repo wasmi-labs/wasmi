@@ -11,9 +11,14 @@ use core::{fmt, fmt::Display};
 /// An error that may occur upon instantiation of a Wasm module.
 #[derive(Debug)]
 pub enum InstantiationError {
-    /// Caused when the number of required imports does not match
-    /// the number of given externals upon module instantiation.
-    ImportsExternalsLenMismatch,
+    /// Encountered when trying to instantiate a Wasm module with
+    /// a non-matching number of external imports.
+    InvalidNumberOfImports {
+        /// The number of imports required by the Wasm module definition.
+        required: usize,
+        /// The number of imports given by the faulty Wasm module instantiation.
+        given: usize,
+    },
     /// Caused when a given external value does not match the
     /// type of the required import for module instantiation.
     ImportsExternalsMismatch {
@@ -58,9 +63,9 @@ impl std::error::Error for InstantiationError {}
 impl Display for InstantiationError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::ImportsExternalsLenMismatch => write!(
+            Self::InvalidNumberOfImports { required, given } => write!(
                 f,
-                "encountered mismatch between number of given externals and module imports",
+                "invalid number of imports: required = {required}, given = {given}",
             ),
             Self::ImportsExternalsMismatch { expected, actual } => write!(
                 f,

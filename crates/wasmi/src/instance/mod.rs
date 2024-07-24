@@ -15,6 +15,7 @@ use crate::{
     collections::{arena::ArenaIndex, Map},
     func::FuncError,
     memory::DataSegment,
+    AsContextMut,
     ElementSegment,
     Error,
     TypedFunc,
@@ -25,6 +26,9 @@ use std::{boxed::Box, sync::Arc};
 
 mod builder;
 mod exports;
+
+#[cfg(test)]
+mod tests;
 
 /// A raw index to a module instance entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -147,6 +151,47 @@ impl InstanceEntity {
 pub struct Instance(Stored<InstanceIdx>);
 
 impl Instance {
+    /// Creates a new [`Instance`] from the pre-compiled [`Module`] and the list of `imports`.
+    ///
+    /// Uses the official [Wasm instantiation prodecure] in order to resolve and type-check
+    /// the provided `imports` and match them with the required imports of the [`Module`].
+    ///
+    /// # Note
+    ///
+    /// - This function intentionally is rather low-level for [`Instance`] creation.
+    ///   Please use the [`Linker`](crate::Linker) type for a more high-level API for Wasm
+    ///   module instantiation with name-based resolution.
+    /// - Wasm module instantiation implies running the Wasm `start` function which is _not_
+    ///   to be confused with WASI's `_start` function.
+    ///
+    /// # Usage
+    ///
+    /// The `imports` are intended to correspond 1:1 with the required imports as returned by [`Module::imports`].
+    /// For each import type returned by [`Module::imports`], create an [`Extern`] which corresponds to that type.
+    /// Collect the [`Extern`] values created this way into a list and pass them to this function.
+    ///
+    /// # Errors
+    ///
+    /// - If the number of provided imports does not match the number of imports required by the [`Module`].
+    /// - If the type of any provided [`Extern`] does not match the corresponding required [`ExternType`].
+    /// - If the `start` function, that is run at the end of the Wasm module instantiation, traps.
+    /// - If Wasm module or instance related resource limits are exceeded.
+    ///
+    /// # Panics
+    ///
+    /// If any [`Extern`] does not originate from the provided `store`.
+    ///
+    /// [Wasm instantiation procedure]: https://webassembly.github.io/spec/core/exec/modules.html#exec-instantiation
+    pub fn new(
+        mut store: impl AsContextMut,
+        module: &Module,
+        imports: &[Extern],
+    ) -> Result<Instance, Error> {
+        let instance_pre = Module::instantiate(module, &mut store, imports.iter().cloned())?;
+        let instance = instance_pre.start(&mut store)?;
+        Ok(instance)
+    }
+
     /// Creates a new stored instance reference.
     ///
     /// # Note
