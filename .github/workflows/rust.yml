@@ -30,6 +30,7 @@ jobs:
         run: >-
             cargo build
             --package wasmi
+            --package wasmi_c_api_impl
             --locked
             --lib
             --no-default-features
@@ -49,11 +50,17 @@ jobs:
         run: >-
             cargo build
             --package wasmi
+            --package wasmi_c_api_impl
             --locked
             --lib
             --no-default-features
             --target wasm32-unknown-unknown
             --verbose
+      - name: Build (CMake)
+        run: |
+            cmake --version
+            cmake -S crates/c_api -B target/c_api --install-prefix "$(pwd)/artifacts"
+            cmake --build target/c_api --target install
 
   test-asan:
     name: Test (Address Sanitizer)
@@ -120,6 +127,11 @@ jobs:
         run: cargo fmt --all -- --check
       - name: Formatting (fuzz)
         run: pushd fuzz && cargo fmt --all -- --check && popd
+      - name: Format (CMake)
+        run: |
+            cmake --version
+            cmake -S crates/c_api -B target/c_api --install-prefix "$(pwd)/artifacts"
+            cmake --build target/c_api --target check-format
 
   doc:
     name: Documentation
@@ -135,6 +147,15 @@ jobs:
         env:
           RUSTDOCFLAGS: "-D warnings"
         run: cargo doc --workspace --locked --all-features --no-deps --document-private-items
+      - name: Install Doxygen
+        run: |
+            tar --version
+            curl -L https://sourceforge.net/projects/doxygen/files/rel-1.11.0/doxygen-1.11.0.linux.bin.tar.gz/download | tar xzf - -C $GITHUB_WORKSPACE
+            echo "$GITHUB_WORKSPACE/doxygen-1.11.0/bin" >> $GITHUB_PATH
+      - name: Configure CMake for Wasmi C-API
+        run: cmake -S crates/c_api -B target/c_api
+      - name: Generate Docs via Cmake and Doxygen
+        run: cmake --build target/c_api --target doc
 
   audit:
     name: Audit

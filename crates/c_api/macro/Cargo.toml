@@ -1,0 +1,18 @@
+[package]
+name = "wasmi_c_api_macros"
+version.workspace = true
+authors = ["Robin Freyler <robin.freyler@gmail.com"]
+license = "MIT OR Apache-2.0 WITH LLVM-exception"
+edition.workspace = true
+description = "Support macros for the `wasmi_c_api` crate"
+repository = "https://github.com/wasmi-labs/wasmi"
+
+[lib]
+proc-macro = true
+test = false
+doctest = false
+path = "lib.rs"
+
+[dependencies]
+quote = "1.0"
+proc-macro2 = "1.0"

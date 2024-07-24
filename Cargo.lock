@@ -1865,6 +1865,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "104a7f73be44570cac297b3035d76b169d6599637631cf37a1703326a0727073"
 
 [[package]]
+name = "wasmi_c_api"
+version = "0.35.0"
+dependencies = [
+ "wasmi_c_api_impl",
+]
+
+[[package]]
+name = "wasmi_c_api_impl"
+version = "0.35.0"
+dependencies = [
+ "wasmi 0.35.0",
+ "wasmi_c_api_macros",
+]
+
+[[package]]
+name = "wasmi_c_api_macros"
+version = "0.35.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+]
+
+[[package]]
 name = "wasmi_cli"
 version = "0.35.0"
 dependencies = [

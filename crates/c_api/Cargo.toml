@@ -1,0 +1,28 @@
+[package]
+name = "wasmi_c_api_impl"
+version.workspace = true
+rust-version.workspace = true
+documentation = "https://docs.rs/wasmi_c_api_impl"
+description = "C bindings for the Wasmi WebAssembly interpreter"
+authors.workspace = true
+repository.workspace = true
+edition.workspace = true
+readme.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+exclude.workspace = true
+links = "wasmi_c_api"
+
+[dependencies]
+wasmi = { workspace = true }
+wasmi_c_api_macros = { workspace = true }
+
+[lib]
+name = "wasmi_c_api"
+test = false
+doctest = false
+
+[features]
+default = ["std"]
+std = []
