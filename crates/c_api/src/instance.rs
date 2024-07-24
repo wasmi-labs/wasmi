@@ -40,7 +40,7 @@ impl wasm_instance_t {
 /// # Safety
 ///
 /// It is the caller's responsibility not to alias the [`wasm_instance_t`]
-/// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
+/// with its underlying, internal [`WasmStoreRef`].
 ///
 /// [Wasm core specification]: https://webassembly.github.io/spec/core/exec/modules.html#exec-instantiation
 #[no_mangle]
@@ -81,7 +81,7 @@ pub unsafe extern "C" fn wasm_instance_new(
 /// # Safety
 ///
 /// It is the caller's responsibility not to alias the [`wasm_instance_t`]
-/// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
+/// with its underlying, internal [`WasmStoreRef`].
 #[no_mangle]
 pub unsafe extern "C" fn wasm_instance_exports(
     instance: &mut wasm_instance_t,
