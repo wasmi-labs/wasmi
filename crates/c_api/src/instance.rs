@@ -53,10 +53,7 @@ pub unsafe extern "C" fn wasm_instance_new(
     let imports = (*imports)
         .as_slice()
         .iter()
-        .filter_map(|import| match import {
-            Some(i) => Some(i.which.clone()),
-            None => None,
-        })
+        .filter_map(|import| import.as_ref().map(|i| i.which))
         .collect::<Box<[_]>>();
     match Instance::new(store.inner.context_mut(), &wasm_module.inner, &imports) {
         Ok(instance) => Some(Box::new(wasm_instance_t::new(
