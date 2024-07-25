@@ -153,7 +153,7 @@ pub struct Instance(Stored<InstanceIdx>);
 impl Instance {
     /// Creates a new [`Instance`] from the pre-compiled [`Module`] and the list of `imports`.
     ///
-    /// Uses the official [Wasm instantiation prodecure] in order to resolve and type-check
+    /// Uses the official [Wasm instantiation procedure] in order to resolve and type-check
     /// the provided `imports` and match them with the required imports of the [`Module`].
     ///
     /// # Note
