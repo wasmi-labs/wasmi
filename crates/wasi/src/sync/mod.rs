@@ -4,7 +4,7 @@
 
 pub mod snapshots;
 
-pub use wasi_cap_std_sync::*;
+pub use wasi_common::sync::*;
 
 #[doc(inline)]
 pub use self::snapshots::preview_1::{

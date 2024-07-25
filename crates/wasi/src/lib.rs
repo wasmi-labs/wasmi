@@ -2,14 +2,12 @@
 //!
 //! Use [`add_to_linker`] to add all supported WASI definitions to the Wasmi linker.
 
-mod guest_memory;
-
-#[cfg(feature = "sync")]
 pub mod sync;
 
-pub use self::guest_memory::WasmiGuestMemory;
 pub use wasi_common::{Error, WasiCtx, WasiDir, WasiFile};
+pub use wiggle::GuestMemory as WasmiGuestMemory;
 
 /// Sync mode is the "default" of this crate, so we also export it at the top level.
-#[cfg(feature = "sync")]
 pub use sync::*;
+
+pub use wasi_common;
