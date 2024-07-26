@@ -1,7 +1,7 @@
 use super::*;
 use crate::engine::{
     bytecode::{BranchOffset, BranchOffset16, RegisterSpan},
-    CompiledFunc,
+    EngineFunc,
 };
 
 #[test]
@@ -528,8 +528,8 @@ fn invalid_preservation_slot_reuse_1() {
     let wasm = r#"
         (module
             (func (param i32 i32)
-                (local.get 1) ;; preserved after (local.tee 1)
-                (local.get 0) ;; preserved after (local.tee 0)
+                (local.get 1) ;; preserved for (local.tee 1)
+                (local.get 0) ;; preserved for (local.tee 0)
                 (local.tee 0 (i32.popcnt (local.get 0)))
                 (i32.add)
                 (local.set 1)
@@ -579,12 +579,50 @@ fn invalid_preservation_slot_reuse_2() {
             Instruction::i32_popcnt(Register::from_i16(0), Register::from_i16(0)),
             Instruction::call_internal(
                 RegisterSpan::new(Register::from_i16(2)),
-                CompiledFunc::from_u32(0),
+                EngineFunc::from_u32(0),
             ),
             Instruction::register3(1, 3, 0),
             Instruction::copy(3, 1),
             Instruction::copy(1, 2),
             Instruction::Return,
         ]))
+        .run()
+}
+
+#[test]
+fn concat_local_tee_pair() {
+    let wasm = r"
+        (module
+            (func (result i32)
+                (local i32 i32)
+            
+                (local.set 0 (i32.const 10))
+                (local.set 1 (i32.const 20))
+
+                local.get 1
+                local.get 0
+
+                (local.set 0 (i32.const 10))
+
+                local.tee 1
+                i32.add
+            )
+        )
+    ";
+    TranslationTest::from_wat(wasm)
+        .expect_func_instrs([
+            Instruction::copy_imm32(Register::from_i16(0), 10_i32),
+            Instruction::copy_imm32(Register::from_i16(1), 20_i32),
+            Instruction::copy(Register::from_i16(4), Register::from_i16(0)), // preserved
+            Instruction::copy_imm32(Register::from_i16(0), 10_i32),
+            Instruction::copy(Register::from_i16(3), Register::from_i16(1)), // preserved
+            Instruction::copy(Register::from_i16(1), Register::from_i16(4)),
+            Instruction::i32_add(
+                Register::from_i16(2),
+                Register::from_i16(3),
+                Register::from_i16(1),
+            ),
+            Instruction::return_reg(2),
+        ])
         .run()
 }

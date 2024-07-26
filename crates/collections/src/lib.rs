@@ -38,6 +38,7 @@ extern crate std;
 
 pub mod arena;
 pub mod hash;
+mod head_vec;
 pub mod map;
 pub mod set;
 pub mod string_interner;
@@ -48,6 +49,7 @@ mod tests;
 #[doc(inline)]
 pub use self::{
     arena::{Arena, ComponentVec, DedupArena},
+    head_vec::HeadVec,
     map::Map,
     set::Set,
     string_interner::StringInterner,

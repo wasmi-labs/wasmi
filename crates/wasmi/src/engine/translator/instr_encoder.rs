@@ -328,7 +328,7 @@ impl InstrEncoder {
     /// - Returns `None` if merging of the copy instruction was not possible.
     /// - Returns the `Instr` of the merged `copy2` instruction if merging was successful.
     fn merge_copy_instrs(&mut self, result: Register, value: TypedProvider) -> Option<Instr> {
-        let TypedProvider::Register(value) = value else {
+        let TypedProvider::Register(mut value) = value else {
             // Case: cannot merge copies with immediate values at the moment.
             //
             // Note: we could implement this but it would require us to allocate
@@ -351,11 +351,18 @@ impl InstrEncoder {
             // Case: cannot merge copy instructions as `copy2` since result registers are not contiguous.
             return None;
         }
+
+        // Propagate values according to the order of the merged copies.
+        if value == last_result {
+            value = last_value;
+        }
+
         let (merged_result, value0, value1) = if last_result < result {
             (last_result, last_value, value)
         } else {
             (result, value, last_value)
         };
+
         let merged_copy = Instruction::copy2(RegisterSpan::new(merged_result), value0, value1);
         *self.instrs.get_mut(last_instr) = merged_copy;
         Some(last_instr)

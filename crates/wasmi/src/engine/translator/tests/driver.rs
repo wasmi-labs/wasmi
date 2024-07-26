@@ -1,7 +1,7 @@
 use super::create_module;
 use crate::{
     core::UntypedVal,
-    engine::{bytecode::Instruction, CompiledFunc, DedupFuncType},
+    engine::{bytecode::Instruction, DedupFuncType, EngineFunc},
     Config,
     Engine,
     Module,
@@ -95,18 +95,13 @@ impl ExpectedFunc {
     }
 
     /// Asserts that properties of the [`ExpectedFunc`] have been translated as expected.
-    fn assert_func(&self, engine: &Engine, func_type: DedupFuncType, compiled_func: CompiledFunc) {
-        self.assert_instrs(engine, compiled_func, func_type);
-        self.assert_consts(engine, compiled_func);
+    fn assert_func(&self, engine: &Engine, func_type: DedupFuncType, engine_func: EngineFunc) {
+        self.assert_instrs(engine, engine_func, func_type);
+        self.assert_consts(engine, engine_func);
     }
 
     /// Asserts that the instructions of the [`ExpectedFunc`] have been translated as expected.
-    fn assert_instrs(
-        &self,
-        engine: &Engine,
-        compiled_func: CompiledFunc,
-        func_type: DedupFuncType,
-    ) {
+    fn assert_instrs(&self, engine: &Engine, engine_func: EngineFunc, func_type: DedupFuncType) {
         let expected_instrs = self.expected_instrs();
         let len_expected = expected_instrs.len();
         let func_type = engine.resolve_func_type(&func_type, Clone::clone);
@@ -118,28 +113,28 @@ impl ExpectedFunc {
                 .map(|(index, expected_instr)| {
                     let actual_instr =
                         engine
-                            .resolve_instr(compiled_func, index)
+                            .resolve_instr(engine_func, index)
                             .unwrap_or_else(|error| panic!("failed to compiled lazily initialized function: {}", error))
                             .unwrap_or_else(|| {
-                                panic!("missing instruction at index {index} for {compiled_func:?} ({func_type:?})")
+                                panic!("missing instruction at index {index} for {engine_func:?} ({func_type:?})")
                             });
                     (index, actual_instr, expected_instr)
                 })
         {
             assert!(
                 actual == expected,
-                "instruction mismatch at index {index} for {compiled_func:?} ({func_type:?})\n    \
+                "instruction mismatch at index {index} for {engine_func:?} ({func_type:?})\n    \
                     - expected: {expected:?}\n    \
                     - found: {actual:?}",
             );
         }
-        if let Ok(Some(unexpected)) = engine.resolve_instr(compiled_func, len_expected) {
+        if let Ok(Some(unexpected)) = engine.resolve_instr(engine_func, len_expected) {
             panic!("unexpected instruction at index {len_expected}: {unexpected:?}");
         }
     }
 
     /// Asserts that the function local constant values of the [`ExpectedFunc`] have been translated as expected.
-    fn assert_consts(&self, engine: &Engine, func: CompiledFunc) {
+    fn assert_consts(&self, engine: &Engine, func: EngineFunc) {
         let expected_consts = self.expected_consts();
         for (index, expected_value) in expected_consts.iter().copied().enumerate() {
             let actual_value = engine
@@ -254,10 +249,10 @@ impl TranslationTest {
                 "number of compiled functions (={len_compiled}) do not match the expected amount (= {len_expected})",
             );
         }
-        for ((func_type, compiled_func), expected_func) in
+        for ((func_type, engine_func), expected_func) in
             module.internal_funcs().zip(self.expected_funcs())
         {
-            expected_func.assert_func(engine, func_type, compiled_func);
+            expected_func.assert_func(engine, func_type, engine_func);
         }
     }
 }

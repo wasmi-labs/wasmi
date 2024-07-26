@@ -5,7 +5,7 @@ use crate::{
     core::{TrapCode, F32},
     engine::{
         bytecode::{BranchOffset, BranchOffset16, GlobalIdx, RegisterSpan},
-        CompiledFunc,
+        EngineFunc,
     },
 };
 
@@ -57,11 +57,11 @@ fn fuzz_regression_3() {
         .expect_func_instrs([
             Instruction::call_internal_0(
                 RegisterSpan::new(Register::from_i16(0)),
-                CompiledFunc::from_u32(0),
+                EngineFunc::from_u32(0),
             ),
             Instruction::call_internal_0(
                 RegisterSpan::new(Register::from_i16(3)),
-                CompiledFunc::from_u32(0),
+                EngineFunc::from_u32(0),
             ),
             Instruction::branch_table(Register::from_i16(5), 2),
             Instruction::copy_span_non_overlapping(
@@ -98,13 +98,13 @@ fn fuzz_regression_5() {
         .expect_func_instrs([
             Instruction::call_internal(
                 RegisterSpan::new(Register::from_i16(1)),
-                CompiledFunc::from_u32(0),
+                EngineFunc::from_u32(0),
             ),
             Instruction::register(Register::from_i16(0)),
             Instruction::branch_i32_eq_imm(Register::from_i16(3), 0, BranchOffset16::from(5)),
             Instruction::call_internal(
                 RegisterSpan::new(Register::from_i16(2)),
-                CompiledFunc::from_u32(0),
+                EngineFunc::from_u32(0),
             ),
             Instruction::register(Register::from_i16(2)),
             Instruction::branch_i32_eq_imm(Register::from_i16(4), 0, BranchOffset16::from(1)),

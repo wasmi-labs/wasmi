@@ -8,24 +8,159 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
-## [`0.32.0-beta.16`] - 2024-05-13
-
-**Note:**
-
-- This is the beta of the upcoming `v0.32.0` release.
-  This version is not production ready yet and might contain serious bugs.
-  Please use this only for experimentation or at your own risk.
-- Performance tests indicated that the new register-machine bytecode based
-  Wasmi engine performance is very sensitive to hardware or OS specifics
-  which may lead to very different performance characteristics.
-    - We are working on fixing this until the stable release.
-    - Measurements concluded that execution performance can be equal or sometimes
-        even surpass Wasm3 execution performance.
+## [`0.36.0`] - 2024-07-24
 
 ### Added
 
-- Added a new execution engine based on register-machine bytecode. (https://github.com/wasmi-labs/wasmi/pull/729)
-    - The register-machine Wasmi `Engine` executes roughly 80-100% faster and
+- Added support for the official Wasm C-API. (https://github.com/wasmi-labs/wasmi/pull/1009)
+  - This allows to use Wasmi from any program that can interface with C code.
+  - The `wasmi_c_api_impl` crate allows to use Wasmi via the Wasm C-API from Rust code.
+- Added `Instance::new` API. (https://github.com/wasmi-labs/wasmi/pull/1134)
+  - This was mainly needed to support the Wasm C-API.
+  - The new API offers a more low-level way for Wasm module instantiation
+    that may be more efficient for certain use cases.
+- Added `Clone` implementation for `Module`. (https://github.com/wasmi-labs/wasmi/pull/1130)
+  - This was mainly needed to support the Wasm C-API.
+
+### Changed
+
+- The store fuel API now returns `Error` instead of `FuelError`. (https://github.com/wasmi-labs/wasmi/pull/1131)
+  - This was needed to support the Wasm C-API.
+  - The `FuelError` is still accessible via the `Error::kind` method.
+
+## [`0.35.0`] - 2024-07-11
+
+### Fixed
+
+- Fixed a dead-lock that prevented users from compiling Wasm modules in host functions
+  called from Wasmi's executor. (https://github.com/wasmi-labs/wasmi/pull/1122)
+    - This was a very long-standing bug in the Wasmi interpreter and it is now finally closed.
+    - Note that this regressed performance of call-intense workloads by roughly 5-10%.
+      Future work is under way to hopefully fix these regressions.
+    - Before this fix, users had to use a work-around using resumable function calls to
+      cirumvent this issue which is no longer necessary, fortunately.
+
+### Internals
+
+- Add `CodeMap::alloc_funcs` API and use it when compiling Wasm modules. (https://github.com/wasmi-labs/wasmi/pull/1125)
+    - This significantly improved performance for lazily compiling
+      Wasm modules (e.g.  via `Module::new`) by up to 23%.
+
+## [`0.34.0`] - 2024-07-08
+
+### Added
+
+- Allows Wasmi CLI to be installed with locked dependencies. ([#1096])
+    - This can be done as follows: `cargo install --locked wasmi_cli`
+
+### Fixed
+
+- Allow Wasm module instantiation in host functions called from Wasmi's executor. ([#1116])
+
+### Changed
+
+- Limit number of parameter and result types in `FuncType` to 1000, each. ([#1116])
+
+### Dev. Note
+
+- Significantly improved and Wasmi's CI and made it a lot faster.
+    - Multi PR effort: [#1098], [#1100], [#1104]
+- Refactored and cleaned-up call based and Rust sourced Wasmi benchmarks.
+    - Call-based Benchmarks: [#1102], [#1113]
+    - Rust-sourced Benchmarks: [#1107], [#1108], [#1109], [#1111], [#1115]
+
+[#1096]: https://github.com/wasmi-labs/wasmi/pull/1096
+[#1098]: https://github.com/wasmi-labs/wasmi/pull/1098
+[#1100]: https://github.com/wasmi-labs/wasmi/pull/1100
+[#1102]: https://github.com/wasmi-labs/wasmi/pull/1102
+[#1104]: https://github.com/wasmi-labs/wasmi/pull/1104
+[#1107]: https://github.com/wasmi-labs/wasmi/pull/1107
+[#1108]: https://github.com/wasmi-labs/wasmi/pull/1108
+[#1109]: https://github.com/wasmi-labs/wasmi/pull/1109
+[#1111]: https://github.com/wasmi-labs/wasmi/pull/1111
+[#1113]: https://github.com/wasmi-labs/wasmi/pull/1113
+[#1115]: https://github.com/wasmi-labs/wasmi/pull/1115
+[#1116]: https://github.com/wasmi-labs/wasmi/pull/1116
+
+## [`0.33.1`] - 2024-07-01
+
+### Added
+
+- Added `Error` trait impls for all Wasmi error types impleemnting `Display`. (https://github.com/wasmi-labs/wasmi/pull/1089)
+    - Contributed by [kajacx](https://github.com/kajacx).
+
+### Fixed
+
+- Fixed compilation for Rust versions <1.78. (https://github.com/wasmi-labs/wasmi/pull/1093)
+- Fixed nightly `clippy` warning about `map_err`. (https://github.com/wasmi-labs/wasmi/pull/1094)
+
+## [`0.33.0`] - 2024-06-24
+
+### Added
+
+- Added support for Wasm custom sections processing. (https://github.com/wasmi-labs/wasmi/pull/1085)
+    - It is now possible to query name and data of Wasm custom sections of a `Module`.
+    - Use the new `Config::ignore_custom_sections` flag to disable this functionality.
+- Added `Config::ignore_custom_sections` flag to disable processing custom sections if this is unwanted. (https://github.com/wasmi-labs/wasmi/pull/1085)
+- Add `Memory::{data_ptr, data_size, size}` methods. (https://github.com/wasmi-labs/wasmi/pull/1082)
+- Added a Wasmi usage guide documentation. (https://github.com/wasmi-labs/wasmi/pull/1072)
+    - Link: https://github.com/wasmi-labs/wasmi/blob/master/docs/usage.md
+
+### Changed
+
+- Optimized the Wasmi executor in various ways.
+    - In summary the Wasmi executor now more optimally caches the currently used
+      Wasm instance and optimizes access to instance related data.
+      In particular access to the default linear memory bytes as well as the value of
+      the global variable at index 0 (often used as shadow stack pointer) are more efficient.
+    - The following PRs are part of this effort:
+        - https://github.com/wasmi-labs/wasmi/pull/1059
+        - https://github.com/wasmi-labs/wasmi/pull/1062
+        - https://github.com/wasmi-labs/wasmi/pull/1068
+        - https://github.com/wasmi-labs/wasmi/pull/1069
+        - https://github.com/wasmi-labs/wasmi/pull/1065
+        - https://github.com/wasmi-labs/wasmi/pull/1075
+        - https://github.com/wasmi-labs/wasmi/pull/1076
+- Changed `Memory::grow` signature to mirror Wasmtime's `Memory::grow` method. (https://github.com/wasmi-labs/wasmi/pull/1082)
+
+### Removed
+
+- Removed `Memory::current_pages` method. (https://github.com/wasmi-labs/wasmi/pull/1082)
+    - Users should use the new `Memory::size` method instead.
+
+## [`0.32.3`] - 2024-06-06
+
+### Fixed
+
+- Fix overlapping reuse of local preservation slots. (https://github.com/wasmi-labs/wasmi/pull/1057)
+    - Thanks again to [kaiavintr](https://github.com/kaiavintr) for reporting the bug.
+
+## [`0.32.2`] - 2024-06-03
+
+### Fixed
+
+- Refine and generalize the fix for v0.32.1. (https://github.com/wasmi-labs/wasmi/pull/1054)
+
+## [`0.32.1`] - 2024-06-03
+
+### Fixed
+
+- Fixes a miscompilation when merging two copy instructions where the result of the first copy is also the input to the second copy and vice versa. (https://github.com/wasmi-labs/wasmi/pull/1052)
+    - Thanks to [kaiavintr](https://github.com/kaiavintr) for reporting the bug.
+
+## [`0.32.0`] - 2024-05-28
+
+**Note:**
+
+- This release is the culmination of months of research, development and QA
+  with a new execution engine utilizing register-based IR at its core boosting
+  both startup and execution performance to new levels for the Wasmi interpreter.
+- This release is accompanied with [an article](https://wasmi-labs.github.io/blog/) that presents some of the highlights.
+
+### Added
+
+- Added a new execution engine based on register-based bytecode. (https://github.com/wasmi-labs/wasmi/pull/729)
+    - The register-based Wasmi `Engine` executes roughly 80-100% faster and
       compiles roughly 30% slower according to benchmarks conducted so far.
 - Added `Module::new_unchecked` API. (https://github.com/wasmi-labs/wasmi/pull/829)
     - This allows to compile a Wasm module without Wasm validation which can be useful
@@ -80,7 +215,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
       With this change they can enable this new strict mode using
       ```rust
       let mut config = wasmi::Config::default();
-      config.engine_limits(wasmi::EnforcedLimits::strict());
+      config.enforced_limits(wasmi::EnforcedLimits::strict());
       ```
       In future updates we might relax this to make `EnforcedLimits` fully customizable.
 - Added `EngineWeak` constructed via `Engine::weak`. (https://github.com/wasmi-labs/wasmi/pull/1003)
@@ -114,7 +249,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 ### Removed
 
 - Removed the stack-machine bytecode based Wasmi `Engine` backend. (https://github.com/wasmi-labs/wasmi/pull/818)
-    - The new register-machine bytecode based Wasmi `Engine` is more promising
+    - The new register-based bytecode based Wasmi `Engine` is more promising
       and the Wasmi team does not want to maintain two different engine backends.
 - Removed `FuelConsumptionMode` from `Config`. (https://github.com/wasmi-labs/wasmi/pull/877)
     - `FuelConsumptionMode` was required to differentiate between lazy and eager fuel consumption.

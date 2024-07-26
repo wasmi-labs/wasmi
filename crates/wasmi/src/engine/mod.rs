@@ -2,7 +2,6 @@
 
 mod block_type;
 pub mod bytecode;
-mod cache;
 mod code_map;
 mod config;
 mod executor;
@@ -19,6 +18,9 @@ mod tests;
 #[cfg(test)]
 use self::bytecode::RegisterSpan;
 
+#[cfg(test)]
+use code_map::CompiledFuncRef;
+
 pub(crate) use self::{
     block_type::BlockType,
     config::FuelCosts,
@@ -34,18 +36,19 @@ pub(crate) use self::{
         WasmTranslator,
     },
 };
-pub use self::{
-    code_map::CompiledFunc,
-    config::{CompilationMode, Config},
-    limits::{EnforcedLimits, EnforcedLimitsError, StackLimits},
-    resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
-    traits::{CallParams, CallResults},
-    translator::{Instr, TranslationError},
-};
 use self::{
     code_map::{CodeMap, CompiledFuncEntity},
     func_types::FuncTypeRegistry,
     resumable::ResumableCallBase,
+};
+pub use self::{
+    code_map::{EngineFunc, EngineFuncSpan, EngineFuncSpanIter},
+    config::{CompilationMode, Config},
+    executor::ResumableHostError,
+    limits::{EnforcedLimits, EnforcedLimitsError, StackLimits},
+    resumable::{ResumableCall, ResumableInvocation, TypedResumableCall, TypedResumableInvocation},
+    traits::{CallParams, CallResults},
+    translator::{Instr, TranslationError},
 };
 use crate::{
     collections::arena::{ArenaIndex, GuardedEntity},
@@ -187,11 +190,11 @@ impl Engine {
         self.inner.resolve_func_type(func_type, f)
     }
 
-    /// Allocates a new uninitialized [`CompiledFunc`] to the [`Engine`].
+    /// Allocates `amount` new uninitialized [`EngineFunc`] to the [`CodeMap`].
     ///
-    /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
-    pub(super) fn alloc_func(&self) -> CompiledFunc {
-        self.inner.alloc_func()
+    /// Returns a range of [`EngineFunc`]s to allow accessing the allocated [`EngineFunc`].
+    pub(super) fn alloc_funcs(&self, amount: usize) -> EngineFuncSpan {
+        self.inner.alloc_funcs(amount)
     }
 
     /// Translates the Wasm function using the [`Engine`].
@@ -202,7 +205,7 @@ impl Engine {
     /// # Parameters
     ///
     /// - `func_index`: The index of the translated function within its Wasm module.
-    /// - `compiled_func`: The index of the translated function in the [`Engine`].
+    /// - `engine_func`: The index of the translated function in the [`Engine`].
     /// - `offset`: The global offset of the Wasm function body within the Wasm binary.
     /// - `bytes`: The bytes that make up the Wasm encoded function body of the translated function.
     /// - `module`: The module header information of the Wasm module of the translated function.
@@ -215,7 +218,7 @@ impl Engine {
     pub(crate) fn translate_func(
         &self,
         func_index: FuncIdx,
-        compiled_func: CompiledFunc,
+        engine_func: EngineFunc,
         offset: usize,
         bytes: &[u8],
         module: ModuleHeader,
@@ -228,7 +231,7 @@ impl Engine {
                 let translator = FuncTranslator::new(func_index, module, translation_allocs)?;
                 let translator = ValidatingFuncTranslator::new(validator, translator)?;
                 let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
-                    .translate(|func_entity| self.inner.init_func(compiled_func, func_entity))?;
+                    .translate(|func_entity| self.inner.init_func(engine_func, func_entity))?;
                 self.inner
                     .recycle_allocs(allocs.translation, allocs.validation);
             }
@@ -236,23 +239,23 @@ impl Engine {
                 let allocs = self.inner.get_translation_allocs();
                 let translator = FuncTranslator::new(func_index, module, allocs)?;
                 let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
-                    .translate(|func_entity| self.inner.init_func(compiled_func, func_entity))?;
+                    .translate(|func_entity| self.inner.init_func(engine_func, func_entity))?;
                 self.inner.recycle_translation_allocs(allocs);
             }
             (CompilationMode::LazyTranslation, Some(func_to_validate)) => {
                 let allocs = self.inner.get_validation_allocs();
-                let translator = LazyFuncTranslator::new(func_index, compiled_func, module, None);
+                let translator = LazyFuncTranslator::new(func_index, engine_func, module, None);
                 let validator = func_to_validate.into_validator(allocs);
                 let translator = ValidatingFuncTranslator::new(validator, translator)?;
                 let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
-                    .translate(|func_entity| self.inner.init_func(compiled_func, func_entity))?;
+                    .translate(|func_entity| self.inner.init_func(engine_func, func_entity))?;
                 self.inner.recycle_validation_allocs(allocs.validation);
             }
             (CompilationMode::Lazy | CompilationMode::LazyTranslation, func_to_validate) => {
                 let translator =
-                    LazyFuncTranslator::new(func_index, compiled_func, module, func_to_validate);
+                    LazyFuncTranslator::new(func_index, engine_func, module, func_to_validate);
                 FuncTranslationDriver::new(offset, bytes, translator)?
-                    .translate(|func_entity| self.inner.init_func(compiled_func, func_entity))?;
+                    .translate(|func_entity| self.inner.init_func(engine_func, func_entity))?;
             }
         }
         Ok(())
@@ -282,7 +285,7 @@ impl Engine {
         self.inner.recycle_allocs(translation, validation)
     }
 
-    /// Initializes the uninitialized [`CompiledFunc`] for the [`Engine`].
+    /// Initializes the uninitialized [`EngineFunc`] for the [`Engine`].
     ///
     /// # Note
     ///
@@ -291,12 +294,12 @@ impl Engine {
     ///
     /// # Panics
     ///
-    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
-    /// - If `func` refers to an already initialized [`CompiledFunc`].
+    /// - If `func` is an invalid [`EngineFunc`] reference for this [`CodeMap`].
+    /// - If `func` refers to an already initialized [`EngineFunc`].
     fn init_lazy_func(
         &self,
         func_idx: FuncIdx,
-        func: CompiledFunc,
+        func: EngineFunc,
         bytes: &[u8],
         module: &ModuleHeader,
         func_to_validate: Option<FuncToValidate<ValidatorResources>>,
@@ -305,7 +308,7 @@ impl Engine {
             .init_lazy_func(func_idx, func, bytes, module, func_to_validate)
     }
 
-    /// Resolves the [`CompiledFunc`] to the underlying Wasmi bytecode instructions.
+    /// Resolves the [`EngineFunc`] to the underlying Wasmi bytecode instructions.
     ///
     /// # Note
     ///
@@ -321,18 +324,18 @@ impl Engine {
     ///
     /// # Panics
     ///
-    /// - If the [`CompiledFunc`] is invalid for the [`Engine`].
+    /// - If the [`EngineFunc`] is invalid for the [`Engine`].
     /// - If register machine bytecode translation is disabled.
     #[cfg(test)]
     pub(crate) fn resolve_instr(
         &self,
-        func: CompiledFunc,
+        func: EngineFunc,
         index: usize,
     ) -> Result<Option<Instruction>, Error> {
         self.inner.resolve_instr(func, index)
     }
 
-    /// Resolves the function local constant of [`CompiledFunc`] at `index` if any.
+    /// Resolves the function local constant of [`EngineFunc`] at `index` if any.
     ///
     /// # Note
     ///
@@ -346,14 +349,10 @@ impl Engine {
     ///
     /// # Panics
     ///
-    /// - If the [`CompiledFunc`] is invalid for the [`Engine`].
+    /// - If the [`EngineFunc`] is invalid for the [`Engine`].
     /// - If register machine bytecode translation is disabled.
     #[cfg(test)]
-    fn get_func_const(
-        &self,
-        func: CompiledFunc,
-        index: usize,
-    ) -> Result<Option<UntypedVal>, Error> {
+    fn get_func_const(&self, func: EngineFunc, index: usize) -> Result<Option<UntypedVal>, Error> {
         self.inner.get_func_const(func, index)
     }
 
@@ -474,8 +473,15 @@ impl Engine {
 pub struct EngineInner {
     /// The [`Config`] of the engine.
     config: Config,
-    /// Engine resources shared across multiple engine executors.
-    res: RwLock<EngineResources>,
+    /// Stores information about all compiled functions.
+    code_map: CodeMap,
+    /// Deduplicated function types.
+    ///
+    /// # Note
+    ///
+    /// The engine deduplicates function types to make the equality
+    /// comparison very fast. This helps to speed up indirect calls.
+    func_types: RwLock<FuncTypeRegistry>,
     /// Reusable allocation stacks.
     allocs: Mutex<ReusableAllocationStack>,
     /// Reusable engine stacks for Wasm execution.
@@ -590,9 +596,11 @@ impl EngineStacks {
 impl EngineInner {
     /// Creates a new [`EngineInner`] with the given [`Config`].
     fn new(config: &Config) -> Self {
+        let engine_idx = EngineIdx::new();
         Self {
             config: *config,
-            res: RwLock::new(EngineResources::new(config)),
+            code_map: CodeMap::new(config),
+            func_types: RwLock::new(FuncTypeRegistry::new(engine_idx)),
             allocs: Mutex::new(ReusableAllocationStack::default()),
             stacks: Mutex::new(EngineStacks::new(config)),
         }
@@ -605,7 +613,7 @@ impl EngineInner {
 
     /// Allocates a new function type to the [`EngineInner`].
     fn alloc_func_type(&self, func_type: FuncType) -> DedupFuncType {
-        self.res.write().func_types.alloc_func_type(func_type)
+        self.func_types.write().alloc_func_type(func_type)
     }
 
     /// Resolves a deduplicated function type into a [`FuncType`] entity.
@@ -618,14 +626,14 @@ impl EngineInner {
     where
         F: FnOnce(&FuncType) -> R,
     {
-        f(self.res.read().func_types.resolve_func_type(func_type))
+        f(self.func_types.read().resolve_func_type(func_type))
     }
 
-    /// Allocates a new uninitialized [`CompiledFunc`] to the [`EngineInner`].
+    /// Allocates `amount` new uninitialized [`EngineFunc`] to the [`CodeMap`].
     ///
-    /// Returns a [`CompiledFunc`] reference to allow accessing the allocated [`CompiledFunc`].
-    fn alloc_func(&self) -> CompiledFunc {
-        self.res.write().code_map.alloc_func()
+    /// Returns a range of [`EngineFunc`]s to allow accessing the allocated [`EngineFunc`].
+    fn alloc_funcs(&self, amount: usize) -> EngineFuncSpan {
+        self.code_map.alloc_funcs(amount)
     }
 
     /// Returns reusable [`FuncTranslatorAllocations`] from the [`Engine`].
@@ -679,7 +687,7 @@ impl EngineInner {
         allocs.recycle_validation_allocs(validation);
     }
 
-    /// Initializes the uninitialized [`CompiledFunc`] for the [`EngineInner`].
+    /// Initializes the uninitialized [`EngineFunc`] for the [`EngineInner`].
     ///
     /// # Note
     ///
@@ -687,16 +695,14 @@ impl EngineInner {
     ///
     /// # Panics
     ///
-    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
-    /// - If `func` refers to an already initialized [`CompiledFunc`].
-    fn init_func(&self, compiled_func: CompiledFunc, func_entity: CompiledFuncEntity) {
-        self.res
-            .write()
-            .code_map
-            .init_func(compiled_func, func_entity)
+    /// - If `func` is an invalid [`EngineFunc`] reference for this [`CodeMap`].
+    /// - If `func` refers to an already initialized [`EngineFunc`].
+    fn init_func(&self, engine_func: EngineFunc, func_entity: CompiledFuncEntity) {
+        self.code_map
+            .init_func_as_compiled(engine_func, func_entity)
     }
 
-    /// Initializes the uninitialized [`CompiledFunc`] for the [`Engine`].
+    /// Initializes the uninitialized [`EngineFunc`] for the [`Engine`].
     ///
     /// # Note
     ///
@@ -705,34 +711,32 @@ impl EngineInner {
     ///
     /// # Panics
     ///
-    /// - If `func` is an invalid [`CompiledFunc`] reference for this [`CodeMap`].
-    /// - If `func` refers to an already initialized [`CompiledFunc`].
+    /// - If `func` is an invalid [`EngineFunc`] reference for this [`CodeMap`].
+    /// - If `func` refers to an already initialized [`EngineFunc`].
     fn init_lazy_func(
         &self,
         func_idx: FuncIdx,
-        func: CompiledFunc,
+        func: EngineFunc,
         bytes: &[u8],
         module: &ModuleHeader,
         func_to_validate: Option<FuncToValidate<ValidatorResources>>,
     ) {
-        self.res
-            .write()
-            .code_map
-            .init_lazy_func(func, func_idx, bytes, module, func_to_validate)
+        self.code_map
+            .init_func_as_uncompiled(func, func_idx, bytes, module, func_to_validate)
     }
 
-    /// Resolves the [`InternalFuncEntity`] for [`CompiledFunc`] and applies `f` to it.
+    /// Resolves the [`InternalFuncEntity`] for [`EngineFunc`] and applies `f` to it.
     ///
     /// # Panics
     ///
-    /// If [`CompiledFunc`] is invalid for [`Engine`].
+    /// If [`EngineFunc`] is invalid for [`Engine`].
     #[cfg(test)]
-    pub(super) fn resolve_func<F, R>(&self, func: CompiledFunc, f: F) -> Result<R, Error>
+    pub(super) fn resolve_func<'a, F, R>(&'a self, func: EngineFunc, f: F) -> Result<R, Error>
     where
-        F: FnOnce(&CompiledFuncEntity) -> R,
+        F: FnOnce(CompiledFuncRef<'a>) -> R,
     {
         // Note: We use `None` so this test-only function will never charge for compilation fuel.
-        Ok(f(self.res.read().code_map.get(None, func)?))
+        Ok(f(self.code_map.get(None, func)?))
     }
 
     /// Returns the [`Instruction`] of `func` at `index`.
@@ -749,7 +753,7 @@ impl EngineInner {
     #[cfg(test)]
     pub(crate) fn resolve_instr(
         &self,
-        func: CompiledFunc,
+        func: EngineFunc,
         index: usize,
     ) -> Result<Option<Instruction>, Error> {
         self.resolve_func(func, |func| func.instrs().get(index).copied())
@@ -767,11 +771,7 @@ impl EngineInner {
     ///
     /// If `func` cannot be resolved to a function for the [`EngineInner`].
     #[cfg(test)]
-    fn get_func_const(
-        &self,
-        func: CompiledFunc,
-        index: usize,
-    ) -> Result<Option<UntypedVal>, Error> {
+    fn get_func_const(&self, func: EngineFunc, index: usize) -> Result<Option<UntypedVal>, Error> {
         // Function local constants are stored in reverse order of their indices since
         // they are allocated in reverse order to their absolute indices during function
         // translation. That is why we need to access them in reverse order.
@@ -781,32 +781,5 @@ impl EngineInner {
     /// Recycles the given [`Stack`].
     fn recycle_stack(&self, stack: Stack) {
         self.stacks.lock().recycle(stack)
-    }
-}
-
-/// Engine resources that are immutable during function execution.
-///
-/// Can be shared by multiple engine executors.
-#[derive(Debug)]
-pub struct EngineResources {
-    /// Stores information about all compiled functions.
-    code_map: CodeMap,
-    /// Deduplicated function types.
-    ///
-    /// # Note
-    ///
-    /// The engine deduplicates function types to make the equality
-    /// comparison very fast. This helps to speed up indirect calls.
-    func_types: FuncTypeRegistry,
-}
-
-impl EngineResources {
-    /// Creates a new [`EngineResources`].
-    fn new(config: &Config) -> Self {
-        let engine_idx = EngineIdx::new();
-        Self {
-            code_map: CodeMap::new(config),
-            func_types: FuncTypeRegistry::new(engine_idx),
-        }
     }
 }

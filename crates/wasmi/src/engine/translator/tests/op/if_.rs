@@ -3,7 +3,7 @@ use crate::{
     core::{TrapCode, UntypedVal},
     engine::{
         bytecode::{BranchOffset, BranchOffset16, GlobalIdx, RegisterSpan},
-        CompiledFunc,
+        EngineFunc,
     },
 };
 
@@ -551,7 +551,7 @@ fn test_if_without_else_has_result() {
         .expect_func_instrs([
             Instruction::call_internal_0(
                 RegisterSpan::new(Register::from_i16(0)),
-                CompiledFunc::from_u32(0),
+                EngineFunc::from_u32(0),
             ),
             Instruction::branch_i32_eqz(Register::from_i16(1), BranchOffset16::from(3)),
             Instruction::copy_i64imm32(Register::from_i16(0), -1),

@@ -3,13 +3,14 @@ use super::{
     export::ExternIdx,
     global::Global,
     import::{FuncTypeIdx, Import},
+    CustomSectionsBuilder,
     ElementSegment,
     FuncIdx,
     ModuleBuilder,
     ModuleHeader,
 };
 use crate::{
-    engine::{CompiledFunc, EnforcedLimitsError},
+    engine::{EnforcedLimitsError, EngineFunc},
     Engine,
     Error,
     FuncType,
@@ -19,6 +20,7 @@ use crate::{
 use core::ops::Range;
 use std::boxed::Box;
 use wasmparser::{
+    CustomSectionReader,
     DataSectionReader,
     ElementSectionReader,
     Encoding,
@@ -50,7 +52,7 @@ pub struct ModuleParser {
     /// The underlying Wasm parser.
     parser: WasmParser,
     /// The number of compiled or processed functions.
-    compiled_funcs: u32,
+    engine_funcs: u32,
     /// Flag, `true` when `stream` is at the end.
     eof: bool,
 }
@@ -63,7 +65,7 @@ impl ModuleParser {
             engine: engine.clone(),
             validator: None,
             parser,
-            compiled_funcs: 0,
+            engine_funcs: 0,
             eof: false,
         }
     }
@@ -109,7 +111,7 @@ impl ModuleParser {
         if let Some(validator) = &mut self.validator {
             validator.type_section(&section)?;
         }
-        let limits = self.engine.config().get_engine_limits();
+        let limits = self.engine.config().get_enforced_limits();
         let func_types = section.into_iter().map(|result| {
             let ty = result?.into_types().next().unwrap();
             let func_ty = ty.unwrap_func();
@@ -170,7 +172,7 @@ impl ModuleParser {
         section: FunctionSectionReader,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
-        if let Some(limit) = self.engine.config().get_engine_limits().max_functions {
+        if let Some(limit) = self.engine.config().get_enforced_limits().max_functions {
             if section.count() > limit {
                 return Err(Error::from(EnforcedLimitsError::TooManyFunctions { limit }));
             }
@@ -199,7 +201,7 @@ impl ModuleParser {
         section: TableSectionReader,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
-        if let Some(limit) = self.engine.config().get_engine_limits().max_tables {
+        if let Some(limit) = self.engine.config().get_enforced_limits().max_tables {
             if section.count() > limit {
                 return Err(Error::from(EnforcedLimitsError::TooManyTables { limit }));
             }
@@ -232,7 +234,7 @@ impl ModuleParser {
         section: MemorySectionReader,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
-        if let Some(limit) = self.engine.config().get_engine_limits().max_memories {
+        if let Some(limit) = self.engine.config().get_enforced_limits().max_memories {
             if section.count() > limit {
                 return Err(Error::from(EnforcedLimitsError::TooManyMemories { limit }));
             }
@@ -261,7 +263,7 @@ impl ModuleParser {
         section: GlobalSectionReader,
         header: &mut ModuleHeaderBuilder,
     ) -> Result<(), Error> {
-        if let Some(limit) = self.engine.config().get_engine_limits().max_globals {
+        if let Some(limit) = self.engine.config().get_enforced_limits().max_globals {
             if section.count() > limit {
                 return Err(Error::from(EnforcedLimitsError::TooManyGlobals { limit }));
             }
@@ -342,7 +344,7 @@ impl ModuleParser {
         if let Some(limit) = self
             .engine
             .config()
-            .get_engine_limits()
+            .get_enforced_limits()
             .max_element_segments
         {
             if section.count() > limit {
@@ -368,7 +370,7 @@ impl ModuleParser {
     /// This is part of the bulk memory operations Wasm proposal and not yet supported
     /// by Wasmi.
     fn process_data_count(&mut self, count: u32, range: Range<usize>) -> Result<(), Error> {
-        if let Some(limit) = self.engine.config().get_engine_limits().max_data_segments {
+        if let Some(limit) = self.engine.config().get_enforced_limits().max_data_segments {
             if count > limit {
                 return Err(Error::from(EnforcedLimitsError::TooManyDataSegments {
                     limit,
@@ -395,7 +397,7 @@ impl ModuleParser {
         section: DataSectionReader,
         builder: &mut ModuleBuilder,
     ) -> Result<(), Error> {
-        if let Some(limit) = self.engine.config().get_engine_limits().max_data_segments {
+        if let Some(limit) = self.engine.config().get_enforced_limits().max_data_segments {
             if section.count() > limit {
                 return Err(Error::from(EnforcedLimitsError::TooManyDataSegments {
                     limit,
@@ -432,13 +434,13 @@ impl ModuleParser {
         range: Range<usize>,
         size: u32,
     ) -> Result<(), Error> {
-        let engine_limits = self.engine.config().get_engine_limits();
-        if let Some(limit) = engine_limits.max_functions {
+        let enforced_limits = self.engine.config().get_enforced_limits();
+        if let Some(limit) = enforced_limits.max_functions {
             if count > limit {
                 return Err(Error::from(EnforcedLimitsError::TooManyFunctions { limit }));
             }
         }
-        if let Some(limit) = engine_limits.min_avg_bytes_per_function {
+        if let Some(limit) = enforced_limits.min_avg_bytes_per_function {
             if size >= limit.req_funcs_bytes {
                 let limit = limit.min_avg_bytes_per_function;
                 let avg = size / count;
@@ -457,16 +459,16 @@ impl ModuleParser {
     }
 
     /// Returns the next `FuncIdx` for processing of its function body.
-    fn next_func(&mut self, header: &ModuleHeader) -> (FuncIdx, CompiledFunc) {
-        let index = self.compiled_funcs;
-        let compiled_func = header.inner.compiled_funcs[index as usize];
-        self.compiled_funcs += 1;
+    fn next_func(&mut self, header: &ModuleHeader) -> (FuncIdx, EngineFunc) {
+        let index = self.engine_funcs;
+        let engine_func = header.inner.engine_funcs.get_or_panic(index);
+        self.engine_funcs += 1;
         // We have to adjust the initial func reference to the first
         // internal function before we process any of the internal functions.
         let len_func_imports = u32::try_from(header.inner.imports.len_funcs())
             .unwrap_or_else(|_| panic!("too many imported functions"));
         let func_idx = FuncIdx::from(index + len_func_imports);
-        (func_idx, compiled_func)
+        (func_idx, engine_func)
     }
 
     /// Process a single module code section entry.
@@ -486,7 +488,7 @@ impl ModuleParser {
         bytes: &[u8],
         header: &ModuleHeader,
     ) -> Result<(), Error> {
-        let (func, compiled_func) = self.next_func(header);
+        let (func, engine_func) = self.next_func(header);
         let module = header.clone();
         let offset = func_body.get_binary_reader().original_position();
         let func_to_validate = match &mut self.validator {
@@ -494,7 +496,20 @@ impl ModuleParser {
             None => None,
         };
         self.engine
-            .translate_func(func, compiled_func, offset, bytes, module, func_to_validate)?;
+            .translate_func(func, engine_func, offset, bytes, module, func_to_validate)?;
+        Ok(())
+    }
+
+    /// Process a single Wasm custom section.
+    fn process_custom_section(
+        &mut self,
+        custom_sections: &mut CustomSectionsBuilder,
+        reader: CustomSectionReader,
+    ) -> Result<(), Error> {
+        if self.engine.config().get_ignore_custom_sections() {
+            return Ok(());
+        }
+        custom_sections.push(reader.name(), reader.data());
         Ok(())
     }
 

@@ -3,6 +3,7 @@ use super::{
     export::ExternIdx,
     import::FuncTypeIdx,
     ConstExpr,
+    CustomSectionsBuilder,
     DataSegments,
     ElementSegment,
     ExternTypeIdx,
@@ -15,10 +16,11 @@ use super::{
     ModuleHeader,
     ModuleHeaderInner,
     ModuleImports,
+    ModuleInner,
 };
 use crate::{
     collections::Map,
-    engine::{CompiledFunc, DedupFuncType},
+    engine::{DedupFuncType, EngineFuncSpan},
     Engine,
     Error,
     FuncType,
@@ -26,13 +28,14 @@ use crate::{
     MemoryType,
     TableType,
 };
-use std::{boxed::Box, collections::BTreeMap, sync::Arc, vec::Vec};
+use std::{boxed::Box, sync::Arc, vec::Vec};
 
 /// A builder for a WebAssembly [`Module`].
 #[derive(Debug)]
 pub struct ModuleBuilder {
     pub header: ModuleHeader,
     pub data_segments: DataSegmentsBuilder,
+    pub custom_sections: CustomSectionsBuilder,
 }
 
 /// A builder for a WebAssembly [`Module`] header.
@@ -48,8 +51,7 @@ pub struct ModuleHeaderBuilder {
     pub globals_init: Vec<ConstExpr>,
     pub exports: Map<Box<str>, ExternIdx>,
     pub start: Option<FuncIdx>,
-    pub compiled_funcs: Vec<CompiledFunc>,
-    pub compiled_funcs_idx: BTreeMap<CompiledFunc, FuncIdx>,
+    pub engine_funcs: EngineFuncSpan,
     pub element_segments: Box<[ElementSegment]>,
 }
 
@@ -67,8 +69,7 @@ impl ModuleHeaderBuilder {
             globals_init: Vec::new(),
             exports: Map::new(),
             start: None,
-            compiled_funcs: Vec::new(),
-            compiled_funcs_idx: BTreeMap::new(),
+            engine_funcs: EngineFuncSpan::default(),
             element_segments: Box::from([]),
         }
     }
@@ -87,8 +88,7 @@ impl ModuleHeaderBuilder {
                 globals_init: self.globals_init.into(),
                 exports: self.exports,
                 start: self.start,
-                compiled_funcs: self.compiled_funcs.into(),
-                compiled_funcs_idx: self.compiled_funcs_idx,
+                engine_funcs: self.engine_funcs,
                 element_segments: self.element_segments,
             }),
         }
@@ -132,10 +132,11 @@ impl ModuleImportsBuilder {
 
 impl ModuleBuilder {
     /// Creates a new [`ModuleBuilder`] for the given [`Engine`].
-    pub fn new(header: ModuleHeader) -> Self {
+    pub fn new(header: ModuleHeader, custom_sections: CustomSectionsBuilder) -> Self {
         Self {
             header,
             data_segments: DataSegments::build(),
+            custom_sections,
         }
     }
 }
@@ -235,18 +236,11 @@ impl ModuleHeaderBuilder {
         //       is the last extension of the vector during the build process
         //       and optimizes conversion to boxed slice.
         self.funcs.reserve_exact(funcs.len());
-        self.compiled_funcs.reserve_exact(funcs.len());
+        self.engine_funcs = self.engine.alloc_funcs(funcs.len());
         for func in funcs {
             let func_type_idx = func?;
             let func_type = self.func_types[func_type_idx.into_u32() as usize];
-            let Ok(func_index) = u32::try_from(self.funcs.len()) else {
-                panic!("function index out of bounds: {}", self.funcs.len())
-            };
             self.funcs.push(func_type);
-            let compiled_func = self.engine.alloc_func();
-            self.compiled_funcs.push(compiled_func);
-            self.compiled_funcs_idx
-                .insert(compiled_func, FuncIdx::from(func_index));
         }
         Ok(())
     }
@@ -416,9 +410,12 @@ impl ModuleBuilder {
     /// Finishes construction of the WebAssembly [`Module`].
     pub fn finish(self, engine: &Engine) -> Module {
         Module {
-            engine: engine.clone(),
-            header: self.header,
-            data_segments: self.data_segments.finish(),
+            inner: Arc::new(ModuleInner {
+                engine: engine.clone(),
+                header: self.header,
+                data_segments: self.data_segments.finish(),
+                custom_sections: self.custom_sections.finish(),
+            }),
         }
     }
 }

@@ -2,9 +2,9 @@ name: Rust - Continuous Integration
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
+    branches: [main]
 
 # disable running jobs on earlier commits
 concurrency:
@@ -16,61 +16,74 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: wasm32-unknown-unknown, thumbv7em-none-eabi
-      - name: Set up Cargo cache
-        uses: actions/cache@v4
-        continue-on-error: false
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            ~/target/
-          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-${{ github.job }}-
+          targets: wasm32-unknown-unknown, x86_64-unknown-none
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
       - name: Build (default features)
-        run: cargo build --workspace
+        run: cargo build --workspace --locked --verbose
       - name: Build (all features)
-        run: cargo build --workspace --all-features
-      - name: Build (no_std + no-hash-maps)
-        run: cargo build -p wasmi_collections --no-default-features --features no-hash-maps
+        run: cargo build --workspace --locked --all-features --verbose
       - name: Build (no_std)
-        run: cargo build --workspace --lib --no-default-features --target thumbv7em-none-eabi --exclude wasmi_cli --exclude wasmi_wasi --exclude wasmi_fuzz
-      - name: Build (wasm32)
-        run: cargo build --workspace --lib --no-default-features --target wasm32-unknown-unknown --exclude wasmi_cli --exclude wasmi_wasi --exclude wasmi_fuzz
+        run: >-
+            cargo build
+            --package wasmi
+            --package wasmi_c_api_impl
+            --locked
+            --lib
+            --no-default-features
+            --target x86_64-unknown-none
+            --verbose
+      - name: Build (no_std + no-hash-maps)
+        run: >-
+            cargo build
+            --package wasmi
+            --locked
+            --lib
+            --no-default-features
+            --features no-hash-maps
+            --target x86_64-unknown-none
+            --verbose
+      - name: Build (no_std + wasm32)
+        run: >-
+            cargo build
+            --package wasmi
+            --package wasmi_c_api_impl
+            --locked
+            --lib
+            --no-default-features
+            --target wasm32-unknown-unknown
+            --verbose
+      - name: Build (CMake)
+        run: |
+            cmake --version
+            cmake -S crates/c_api -B target/c_api --install-prefix "$(pwd)/artifacts"
+            cmake --build target/c_api --target install
 
   test-asan:
     name: Test (Address Sanitizer)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
-      - uses: dtolnay/rust-toolchain@nightly
-      - name: Set up Cargo cache
-        uses: actions/cache@v4
-        continue-on-error: false
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            ~/target/
-          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-${{ github.job }}-
-      - name: Checkout Submodules
-        run: git submodule update --init --recursive
+          submodules: true
+      - uses: dtolnay/rust-toolchain@nightly
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
       - name: Show Rust Toolchain
         run: rustup show
       - name: "Add Rust Component: `rust-src`"
         run: rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
+      - name: Build Tests
+        env:
+          RUSTFLAGS: "--cfg debug_assertions -Zsanitizer=address"
+        run: cargo build --tests --workspace --locked -Zbuild-std --target x86_64-unknown-linux-gnu --verbose
       - name: Test
         env:
           RUSTFLAGS: "--cfg debug_assertions -Zsanitizer=address"
-        run: cargo test --workspace --tests -Zbuild-std --target x86_64-unknown-linux-gnu
+        run: cargo test --workspace --locked --tests -Zbuild-std --target x86_64-unknown-linux-gnu
 
   test:
     name: Test
@@ -79,36 +92,34 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Set up Cargo cache
-        uses: actions/cache@v4
-        continue-on-error: false
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            ~/target/
-          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-${{ github.job }}-
-      - name: Checkout Submodules
-        run: git submodule update --init --recursive
+          submodules: true
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
+      - name: Build (default features)
+        env:
+          RUSTFLAGS: "--cfg debug_assertions"
+        run: cargo build --tests --workspace --locked --verbose
       - name: Test (default features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
-        run: cargo test --workspace --release
+        run: cargo test --workspace --locked
+      - name: Build (all features)
+        env:
+          RUSTFLAGS: "--cfg debug_assertions"
+        run: cargo build --tests --workspace --locked --all-features --verbose
       - name: Test (all features)
         env:
           RUSTFLAGS: "--cfg debug_assertions"
-        run: cargo test --workspace --release --all-features
+        run: cargo test --workspace --locked --all-features
 
   fmt:
     name: Formatting
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt
@@ -116,37 +127,41 @@ jobs:
         run: cargo fmt --all -- --check
       - name: Formatting (fuzz)
         run: pushd fuzz && cargo fmt --all -- --check && popd
+      - name: Format (CMake)
+        run: |
+            cmake --version
+            cmake -S crates/c_api -B target/c_api --install-prefix "$(pwd)/artifacts"
+            cmake --build target/c_api --target check-format
 
   doc:
     name: Documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rust-docs, rust-src
-      - name: Set up Cargo cache
-        uses: actions/cache@v4
-        continue-on-error: false
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            ~/target/
-          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-${{ github.job }}-
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
       - name: Check Docs
         env:
           RUSTDOCFLAGS: "-D warnings"
-        run: cargo doc --workspace --all-features --no-deps --document-private-items
+        run: cargo doc --workspace --locked --all-features --no-deps --document-private-items
+      - name: Install Doxygen
+        run: |
+            tar --version
+            curl -L https://sourceforge.net/projects/doxygen/files/rel-1.11.0/doxygen-1.11.0.linux.bin.tar.gz/download | tar xzf - -C $GITHUB_WORKSPACE
+            echo "$GITHUB_WORKSPACE/doxygen-1.11.0/bin" >> $GITHUB_PATH
+      - name: Configure CMake for Wasmi C-API
+        run: cmake -S crates/c_api -B target/c_api
+      - name: Generate Docs via Cmake and Doxygen
+        run: cmake --build target/c_api --target doc
 
   audit:
     name: Audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - uses: dtolnay/rust-toolchain@stable
       - name: Install cargo-audit
         run: |
@@ -160,22 +175,12 @@ jobs:
     name: uDeps
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
-      - uses: dtolnay/rust-toolchain@nightly
-      - name: Set up Cargo cache
-        uses: actions/cache@v4
-        continue-on-error: false
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            ~/target/
-          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-${{ github.job }}-
-      - name: Checkout Submodules
-        run: git submodule update --init --recursive
+          submodules: true
+      - uses: dtolnay/rust-toolchain@nightly
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
       - name: Install cargo-udeps
         run: |
           # Note: We use `|| true` because cargo install returns an error
@@ -188,30 +193,23 @@ jobs:
     name: Fuzz (Translation)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
-      - uses: dtolnay/rust-toolchain@nightly
-      - name: Set up Cargo cache
-        uses: actions/cache@v4
-        continue-on-error: false
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            ~/target/
-            ~/fuzz/target/
+          submodules: true
+      - uses: dtolnay/rust-toolchain@nightly
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-directories: |
             ~/fuzz/corpus/translate/
-            ~/fuzz/curpus/translate_metered/
-          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-${{ github.job }}-
-      - name: Checkout Submodules
-        run: git submodule update --init --recursive
+            ~/fuzz/corpus/translate_metered/
       - name: Install cargo-fuzz
         run: |
           # Note: We use `|| true` because cargo install returns an error
           #       if cargo-udeps was already installed on the CI runner.
           cargo install cargo-fuzz || true
+      - name: Build Fuzzing
+        run: cargo fuzz build translate
       - name: Fuzz (Translation)
         run: cargo fuzz run translate -j 2 --verbose -- -max_total_time=60 # 1 minute of fuzzing
       - name: Fuzz (Translation) + fuel
@@ -221,29 +219,22 @@ jobs:
     name: Fuzz (Execution)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
-      - uses: dtolnay/rust-toolchain@nightly
-      - name: Set up Cargo cache
-        uses: actions/cache@v4
-        continue-on-error: false
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            ~/target/
-            ~/fuzz/target/
+          submodules: true
+      - uses: dtolnay/rust-toolchain@nightly
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-directories: |
             ~/fuzz/corpus/execute/
-          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-${{ github.job }}-
-      - name: Checkout Submodules
-        run: git submodule update --init --recursive
       - name: Install cargo-fuzz
         run: |
           # Note: We use `|| true` because cargo install returns an error
           #       if cargo-udeps was already installed on the CI runner.
           cargo install cargo-fuzz || true
+      - name: Build Fuzzing
+        run: cargo fuzz build execute
       - name: Fuzz (Execution)
         run: cargo fuzz run execute -j 2 --verbose -- -max_total_time=120 # 2 minutes of fuzzing
 
@@ -251,29 +242,22 @@ jobs:
     name: Fuzz (Differential)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
-      - uses: dtolnay/rust-toolchain@nightly
-      - name: Set up Cargo cache
-        uses: actions/cache@v4
-        continue-on-error: false
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            ~/target/
-            ~/fuzz/target/
-            ~/fuzz/corpus/execute/
-          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-${{ github.job }}-
-      - name: Checkout Submodules
-        run: git submodule update --init --recursive
+          submodules: true
+      - uses: dtolnay/rust-toolchain@nightly
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-directories: |
+            ~/fuzz/corpus/differential/
       - name: Install cargo-fuzz
         run: |
           # Note: We use `|| true` because cargo install returns an error
           #       if cargo-udeps was already installed on the CI runner.
           cargo install cargo-fuzz || true
+      - name: Build Fuzzing
+        run: cargo fuzz build differential
       - name: Fuzz (Differential)
         run: cargo fuzz run differential -j 2 --verbose -- -max_total_time=120 # 2 minutes of fuzzing
 
@@ -281,101 +265,75 @@ jobs:
     name: Miri
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          submodules: true
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: miri
           targets: x86_64-unknown-linux-gnu
-      - name: Set up Cargo cache
-        uses: actions/cache@v4
-        continue-on-error: false
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/bin/cargo-nextest
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            ~/target/
-          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-${{ github.job }}-
-      - name: Checkout Submodules
-        run: git submodule update --init --recursive
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
       - name: Install cargo-nextest
         run: |
           # Note: We use `|| true` because cargo install returns an error
           #       if cargo-nextest was already installed on the CI runner.
           cargo install cargo-nextest || true
+      - name: Miri (setup)
+        run: cargo miri setup --target x86_64-unknown-linux-gnu --lib --workspace --locked
       - name: Miri (--lib)
-        run: cargo miri nextest run --target x86_64-unknown-linux-gnu --lib --workspace
+        run: cargo miri nextest run --target x86_64-unknown-linux-gnu --lib --workspace --locked
       - name: Miri (--doc)
-        run: cargo miri test --doc --workspace --target x86_64-unknown-linux-gnu
+        run: cargo miri test --target x86_64-unknown-linux-gnu --doc --workspace --locked
 
   miri-spec:
     name: Miri (spec)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          submodules: true
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: miri
           targets: x86_64-unknown-linux-gnu
-      - name: Set up Cargo cache
-        uses: actions/cache@v4
-        continue-on-error: false
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/bin/cargo-nextest
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            ~/target/
-          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-${{ github.job }}-
-      - name: Checkout Submodules
-        run: git submodule update --init --recursive
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
       - name: Install cargo-nextest
         run: |
           # Note: We use `|| true` because cargo install returns an error
           #       if cargo-nextest was already installed on the CI runner.
           cargo install cargo-nextest || true
+      - name: Miri (setup)
+        run: cargo miri setup --target x86_64-unknown-linux-gnu --locked
       - name: Miri - Wasm Spec Testsuite (store)
         # We just run the `store.wast` test since running the entire Wasm spec testsuite
         # simply takes too long to do on every pull request commit. There exists an entire
         # CRON job that runs the entire Wasm spec testsuite using miri every night.
-        run: cargo miri nextest run --target x86_64-unknown-linux-gnu ::wasm_store
+        run: cargo miri nextest run --target x86_64-unknown-linux-gnu ::wasm_store --locked
 
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          submodules: true
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: clippy
-      - name: Set up Cargo cache
-        uses: actions/cache@v4
-        continue-on-error: false
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            ~/target/
-          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-${{ github.job }}-
-      - name: Checkout Submodules
-        run: git submodule update --init --recursive
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
       - name: Clippy (default features)
-        run: cargo clippy --workspace -- -D warnings
+        run: cargo clippy --workspace --locked -- -D warnings
       - name: Clippy (all features)
-        run: cargo clippy --workspace --all-features -- -D warnings
+        run: cargo clippy --workspace --locked --all-features -- -D warnings
       - name: Clippy (no_std)
-        run: cargo clippy --workspace --no-default-features -- -D warnings
+        run: cargo clippy --workspace --locked --no-default-features -- -D warnings
       - name: Clippy (tests)
-        run: cargo clippy --workspace --tests -- -D warnings
+        run: cargo clippy --workspace --locked --tests -- -D warnings
+      - name: Clippy (benches)
+        run: cargo clippy --workspace --locked --benches -- -D warnings
       - name: Clippy (fuzz)
         run: pushd fuzz && cargo clippy -- -D warnings && popd
 
@@ -384,31 +342,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
+          submodules: true
           fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
-      - name: Set up Cargo cache
-        uses: actions/cache@v4
-        continue-on-error: false
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            ~/target/
-          key: ${{ runner.os }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-${{ github.job }}-
-      - name: Checkout Submodules
-        run: git submodule update --init --recursive
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
       - name: Run cargo-tarpaulin (default features)
         uses: actions-rs/tarpaulin@v0.1.3
         with:
           version: "0.18.0"
-          args: --workspace
+          args: --workspace --locked
       - name: Upload to codecov.io
-        uses: codecov/codecov-action@v4.4.0
+        uses: codecov/codecov-action@v4.5.0
         with:
           token: ${{secrets.CODECOV_TOKEN}}
       - name: Archive code coverage results

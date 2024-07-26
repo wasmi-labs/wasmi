@@ -8,11 +8,11 @@ use super::{
     BranchBinOpInstrImm16,
     BranchOffset,
     CallIndirectParams,
-    CompiledFunc,
     Const16,
     Const32,
     DataSegmentIdx,
     ElementSegmentIdx,
+    EngineFunc,
     FuncIdx,
     GlobalIdx,
     Instruction,
@@ -981,12 +981,12 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CallInternal0`] for the given `func`.
-    pub fn return_call_internal_0(func: CompiledFunc) -> Self {
+    pub fn return_call_internal_0(func: EngineFunc) -> Self {
         Self::ReturnCallInternal0 { func }
     }
 
     /// Creates a new [`Instruction::CallInternal`] for the given `func`.
-    pub fn return_call_internal(func: CompiledFunc) -> Self {
+    pub fn return_call_internal(func: EngineFunc) -> Self {
         Self::ReturnCallInternal { func }
     }
 
@@ -1015,12 +1015,12 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CallInternal0`] for the given `func`.
-    pub fn call_internal_0(results: RegisterSpan, func: CompiledFunc) -> Self {
+    pub fn call_internal_0(results: RegisterSpan, func: EngineFunc) -> Self {
         Self::CallInternal0 { results, func }
     }
 
     /// Creates a new [`Instruction::CallInternal`] for the given `func`.
-    pub fn call_internal(results: RegisterSpan, func: CompiledFunc) -> Self {
+    pub fn call_internal(results: RegisterSpan, func: EngineFunc) -> Self {
         Self::CallInternal { results, func }
     }
 

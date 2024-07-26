@@ -654,13 +654,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let provider_params = &mut self.alloc.buffer.providers;
         self.alloc.stack.pop_n(params.len(), provider_params);
         let results = self.alloc.stack.push_dynamic_n(results.len())?;
-        let instr = match self.module.get_compiled_func(func_idx) {
-            Some(compiled_func) => {
+        let instr = match self.module.get_engine_func(func_idx) {
+            Some(engine_func) => {
                 // Case: We are calling an internal function and can optimize
                 //       this case by using the special instruction for it.
                 match params.len() {
-                    0 => Instruction::call_internal_0(results, compiled_func),
-                    _ => Instruction::call_internal(results, compiled_func),
+                    0 => Instruction::call_internal_0(results, engine_func),
+                    _ => Instruction::call_internal(results, engine_func),
                 }
             }
             None => {
@@ -730,13 +730,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let params = func_type.params();
         let provider_params = &mut self.alloc.buffer.providers;
         self.alloc.stack.pop_n(params.len(), provider_params);
-        let instr = match self.module.get_compiled_func(func_idx) {
-            Some(compiled_func) => {
+        let instr = match self.module.get_engine_func(func_idx) {
+            Some(engine_func) => {
                 // Case: We are calling an internal function and can optimize
                 //       this case by using the special instruction for it.
                 match params.len() {
-                    0 => Instruction::return_call_internal_0(compiled_func),
-                    _ => Instruction::return_call_internal(compiled_func),
+                    0 => Instruction::return_call_internal_0(engine_func),
+                    _ => Instruction::return_call_internal(engine_func),
                 }
             }
             None => {
@@ -817,6 +817,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_local_set(&mut self, local_index: u32) -> Self::Output {
         bail_unreachable!(self);
+        self.alloc.stack.gc_preservations();
         let value = self.alloc.stack.pop();
         let local = Register::try_from(local_index)?;
         if let TypedProvider::Register(value) = value {

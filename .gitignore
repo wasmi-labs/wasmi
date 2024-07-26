@@ -1,9 +1,9 @@
 
 /target/
 **/*.rs.bk
-Cargo.lock
 spec/target
 
 **/fuzz/corpus/
 **/fuzz/target/
 **/fuzz/artifacts/
+**/fuzz/Cargo.lock

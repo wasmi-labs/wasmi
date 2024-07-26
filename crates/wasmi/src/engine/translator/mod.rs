@@ -55,7 +55,7 @@ use crate::{
         },
         config::FuelCosts,
         BlockType,
-        CompiledFunc,
+        EngineFunc,
     },
     module::{FuncIdx, FuncTypeIdx, ModuleHeader},
     Engine,
@@ -209,7 +209,7 @@ pub trait WasmTranslator<'parser>: VisitOperator<'parser, Output = Result<(), Er
     ///
     /// # Note
     ///
-    /// - Initialized the [`CompiledFunc`] in the [`Engine`].
+    /// - Initialized the [`EngineFunc`] in the [`Engine`].
     /// - Returns the allocations used for translation.
     fn finish(self, finalize: impl FnOnce(CompiledFuncEntity)) -> Result<Self::Allocations, Error>;
 }
@@ -361,7 +361,7 @@ pub struct LazyFuncTranslator {
     /// The index of the lazily compiled function within its module.
     func_idx: FuncIdx,
     /// The identifier of the to be compiled function.
-    compiled_func: CompiledFunc,
+    engine_func: EngineFunc,
     /// The Wasm module header information used for translation.
     module: ModuleHeader,
     /// Optional information about lazy Wasm validation.
@@ -372,7 +372,7 @@ impl fmt::Debug for LazyFuncTranslator {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("LazyFuncTranslator")
             .field("func_idx", &self.func_idx)
-            .field("compiled_func", &self.compiled_func)
+            .field("engine_func", &self.engine_func)
             .field("module", &self.module)
             .field("validate", &self.func_to_validate.is_some())
             .finish()
@@ -383,13 +383,13 @@ impl LazyFuncTranslator {
     /// Create a new [`LazyFuncTranslator`].
     pub fn new(
         func_idx: FuncIdx,
-        compiled_func: CompiledFunc,
+        engine_func: EngineFunc,
         module: ModuleHeader,
         func_to_validate: Option<FuncToValidate<ValidatorResources>>,
     ) -> Self {
         Self {
             func_idx,
-            compiled_func,
+            engine_func,
             module,
             func_to_validate,
         }
@@ -411,7 +411,7 @@ impl<'parser> WasmTranslator<'parser> for LazyFuncTranslator {
             })
             .init_lazy_func(
                 self.func_idx,
-                self.compiled_func,
+                self.engine_func,
                 bytes,
                 &self.module,
                 self.func_to_validate.take(),
@@ -674,7 +674,7 @@ impl FuncTranslator {
 
     /// Resolves the [`FuncType`] of the given [`FuncTypeIdx`].
     fn func_type_at(&self, func_type_index: SignatureIdx) -> FuncType {
-        let func_type_index = FuncTypeIdx::from(func_type_index.to_u32()); // TODO: use the same type
+        let func_type_index = FuncTypeIdx::from(u32::from(func_type_index));
         let dedup_func_type = self.module.get_func_type(func_type_index);
         self.engine()
             .resolve_func_type(dedup_func_type, Clone::clone)

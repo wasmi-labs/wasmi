@@ -12,7 +12,7 @@ use crate::engine::bytecode::Instruction;
 type WasmLoadOp =
     fn(memory: &[u8], address: UntypedVal, offset: u32) -> Result<UntypedVal, TrapCode>;
 
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     /// Executes a generic Wasm `store[N_{s|u}]` operation.
     ///
     /// # Note
@@ -34,13 +34,16 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         offset: u32,
         load_extend: WasmLoadOp,
     ) -> Result<(), Error> {
-        let memory = self.cache.default_memory_bytes(self.ctx);
+        // Safety: `self.memory` is always re-loaded conservatively whenever
+        //         the heap allocations and thus the pointer might have changed.
+        let memory = unsafe { self.cache.memory.data() };
         let loaded_value = load_extend(memory, address, offset)?;
         self.set_register(result, loaded_value);
         Ok(())
     }
 
     /// Executes a generic `load` [`Instruction`].
+    #[inline(always)]
     fn execute_load_impl(
         &mut self,
         instr: LoadInstr,
@@ -53,6 +56,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic `load_at` [`Instruction`].
+    #[inline(always)]
     fn execute_load_at_impl(
         &mut self,
         instr: LoadAtInstr,
@@ -64,6 +68,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic `load_offset16` [`Instruction`].
+    #[inline(always)]
     fn execute_load_offset16_impl(
         &mut self,
         instr: LoadOffset16Instr,
@@ -107,7 +112,7 @@ macro_rules! impl_execute_load {
     }
 }
 
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     impl_execute_load! {
         (
             (Instruction::I32Load, execute_i32_load),

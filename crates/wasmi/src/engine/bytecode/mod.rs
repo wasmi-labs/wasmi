@@ -1,5 +1,6 @@
 mod construct;
 mod immediate;
+mod instr_ptr;
 mod provider;
 mod utils;
 
@@ -8,6 +9,7 @@ mod tests;
 
 pub(crate) use self::{
     immediate::{AnyConst16, AnyConst32, Const16, Const32},
+    instr_ptr::InstructionPtr,
     provider::{Provider, ProviderSliceStack, UntypedProvider},
     utils::{
         BinInstr,
@@ -41,7 +43,7 @@ pub(crate) use self::{
         UnaryInstr,
     },
 };
-use crate::{core::TrapCode, engine::CompiledFunc, Error};
+use crate::{core::TrapCode, engine::EngineFunc, Error};
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
 
 /// A Wasmi instruction.
@@ -696,7 +698,7 @@ pub enum Instruction {
     /// Used for tail calling internally compiled Wasm functions without parameters.
     ReturnCallInternal0 {
         /// The called internal function.
-        func: CompiledFunc,
+        func: EngineFunc,
     },
     /// Wasm `return_call` equivalent Wasmi instruction.
     ///
@@ -715,7 +717,7 @@ pub enum Instruction {
     ///     - [`Instruction::Register3`]
     ReturnCallInternal {
         /// The called internal function.
-        func: CompiledFunc,
+        func: EngineFunc,
     },
 
     /// Wasm `return_call` equivalent Wasmi instruction.
@@ -796,7 +798,7 @@ pub enum Instruction {
         /// The registers storing the results of the call.
         results: RegisterSpan,
         /// The called internal function.
-        func: CompiledFunc,
+        func: EngineFunc,
     },
     /// Wasm `call` equivalent Wasmi instruction.
     ///
@@ -817,7 +819,7 @@ pub enum Instruction {
         /// The registers storing the results of the call.
         results: RegisterSpan,
         /// The called internal function.
-        func: CompiledFunc,
+        func: EngineFunc,
     },
 
     /// Wasm `call` equivalent Wasmi instruction.

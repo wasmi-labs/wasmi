@@ -159,6 +159,8 @@ pub use self::{
     linker::{state, Linker, LinkerBuilder},
     memory::{Memory, MemoryType},
     module::{
+        CustomSection,
+        CustomSectionsIter,
         ExportType,
         ImportType,
         InstancePre,
@@ -176,6 +178,6 @@ use self::{
     global::{GlobalEntity, GlobalIdx},
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
     memory::{DataSegmentEntity, DataSegmentIdx, MemoryEntity, MemoryIdx},
-    store::{StoreInner, Stored},
+    store::Stored,
     table::{ElementSegment, ElementSegmentEntity, ElementSegmentIdx, TableEntity, TableIdx},
 };

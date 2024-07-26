@@ -23,6 +23,9 @@ pub enum EnforcedLimitsError {
     MinAvgBytesPerFunction { limit: u32, avg: u32 },
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for EnforcedLimitsError {}
+
 impl Display for EnforcedLimitsError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

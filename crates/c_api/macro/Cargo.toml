@@ -1,0 +1,24 @@
+[package]
+name = "wasmi_c_api_macros"
+version.workspace = true
+rust-version.workspace = true
+documentation = "https://docs.rs/wasmi_c_api_macro"
+description = "Support macros for the `wasmi_c_api_impl` crate"
+authors.workspace = true
+repository.workspace = true
+edition.workspace = true
+readme.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+exclude.workspace = true
+
+[lib]
+proc-macro = true
+test = false
+doctest = false
+path = "lib.rs"
+
+[dependencies]
+quote = "1.0"
+proc-macro2 = "1.0"

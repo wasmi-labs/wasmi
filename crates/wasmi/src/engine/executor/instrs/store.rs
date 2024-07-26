@@ -1,9 +1,14 @@
 use super::Executor;
 use crate::{
     core::{TrapCode, UntypedVal},
-    engine::{
-        bytecode::{Const16, Instruction, Register, StoreAtInstr, StoreInstr, StoreOffset16Instr},
-        code_map::InstructionPtr,
+    engine::bytecode::{
+        Const16,
+        Instruction,
+        InstructionPtr,
+        Register,
+        StoreAtInstr,
+        StoreInstr,
+        StoreOffset16Instr,
     },
     Error,
 };
@@ -16,7 +21,7 @@ type WasmStoreOp = fn(
     value: UntypedVal,
 ) -> Result<(), TrapCode>;
 
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     /// Returns the [`Instruction::Register`] parameter for an [`Instruction`].
     fn fetch_store_value(&self, offset: usize) -> Register {
         let mut addr: InstructionPtr = self.ip;
@@ -45,11 +50,14 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         value: UntypedVal,
         store_wrap: WasmStoreOp,
     ) -> Result<(), Error> {
-        let memory = self.cache.default_memory_bytes(self.ctx);
+        // Safety: `self.memory` is always re-loaded conservatively whenever
+        //         the heap allocations and thus the pointer might have changed.
+        let memory = unsafe { self.cache.memory.data_mut() };
         store_wrap(memory, address, offset, value)?;
         Ok(())
     }
 
+    #[inline(always)]
     fn execute_store(&mut self, instr: StoreInstr, store_op: WasmStoreOp) -> Result<(), Error> {
         let value = self.fetch_store_value(1);
         self.execute_store_wrap(
@@ -61,6 +69,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.try_next_instr_at(2)
     }
 
+    #[inline(always)]
     fn execute_store_offset16(
         &mut self,
         instr: StoreOffset16Instr<Register>,
@@ -75,6 +84,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.try_next_instr()
     }
 
+    #[inline(always)]
     fn execute_store_offset16_imm16<T, V>(
         &mut self,
         instr: StoreOffset16Instr<V>,
@@ -92,6 +102,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.try_next_instr()
     }
 
+    #[inline(always)]
     fn execute_store_at(
         &mut self,
         instr: StoreAtInstr<Register>,
@@ -106,6 +117,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
         self.try_next_instr()
     }
 
+    #[inline(always)]
     fn execute_store_at_imm16<T, V>(
         &mut self,
         instr: StoreAtInstr<V>,
@@ -139,7 +151,7 @@ macro_rules! impl_execute_istore {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store), "`].")]
             #[inline(always)]
-            pub fn $fn_store(&mut self, instr: StoreInstr) -> Result<(), Error> {
+            pub fn $fn_store(&mut self,  instr: StoreInstr) -> Result<(), Error> {
                 self.execute_store(instr, $impl_fn)
             }
 
@@ -163,7 +175,7 @@ macro_rules! impl_execute_istore {
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at), "`].")]
             #[inline(always)]
-            pub fn $fn_store_at(&mut self, instr: StoreAtInstr<Register>) -> Result<(), Error> {
+            pub fn $fn_store_at(&mut self,instr: StoreAtInstr<Register>) -> Result<(), Error> {
                 self.execute_store_at(instr, $impl_fn)
             }
 
@@ -178,7 +190,7 @@ macro_rules! impl_execute_istore {
         )*
     };
 }
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     impl_execute_istore! {
         (
             (Const16<i32> => i32),
@@ -280,7 +292,7 @@ macro_rules! impl_execute_fstore {
     }
 }
 
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     impl_execute_fstore! {
         (
             (Instruction::F32Store, execute_f32_store),

@@ -28,7 +28,7 @@ macro_rules! impl_fallible_conversion_impls {
     };
 }
 
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     impl_conversion_impls! {
         (Instruction::I32WrapI64, execute_i32_wrap_i64, UntypedVal::i32_wrap_i64),
         (Instruction::I64ExtendI32S, execute_i64_extend_i32_s, UntypedVal::i64_extend_i32_s),

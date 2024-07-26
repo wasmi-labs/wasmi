@@ -1,5 +1,6 @@
-pub use self::call::CallKind;
-use self::{call::CallOutcome, return_::ReturnOutcome};
+pub use self::call::{dispatch_host_func, ResumableHostError};
+use self::return_::ReturnOutcome;
+use super::{cache::CachedInstance, Stack};
 use crate::{
     core::{TrapCode, UntypedVal},
     engine::{
@@ -9,24 +10,36 @@ use crate::{
             BinInstrImm16,
             BlockFuel,
             Const16,
+            DataSegmentIdx,
+            ElementSegmentIdx,
             FuncIdx,
+            GlobalIdx,
             Instruction,
+            InstructionPtr,
             Register,
-            RegisterSpan,
+            SignatureIdx,
+            TableIdx,
             UnaryInstr,
         },
-        cache::InstanceCache,
-        code_map::InstructionPtr,
-        executor::stack::{CallFrame, CallStack, FrameRegisters, ValueStack},
-        func_types::FuncTypeRegistry,
-        CodeMap,
+        code_map::CodeMap,
+        executor::stack::{CallFrame, FrameRegisters, ValueStack},
+        DedupFuncType,
     },
-    store::ResourceLimiterRef,
+    memory::DataSegment,
+    module::DEFAULT_MEMORY_INDEX,
+    store::StoreInner,
+    table::ElementSegment,
     Error,
     Func,
     FuncRef,
-    StoreInner,
+    Global,
+    Memory,
+    Store,
+    Table,
 };
+
+#[cfg(doc)]
+use crate::Instance;
 
 mod binary;
 mod branch;
@@ -43,47 +56,12 @@ mod store;
 mod table;
 mod unary;
 
-macro_rules! forward_call {
-    ($expr:expr) => {{
-        if let CallOutcome::Call {
-            results,
-            host_func,
-            call_kind,
-        } = $expr?
-        {
-            return Ok(WasmOutcome::Call {
-                results,
-                host_func,
-                call_kind,
-            });
-        }
-    }};
-}
-
 macro_rules! forward_return {
     ($expr:expr) => {{
         if let ReturnOutcome::Host = $expr {
-            return Ok(WasmOutcome::Return);
+            return Ok(());
         }
     }};
-}
-
-/// The outcome of a Wasm execution.
-///
-/// # Note
-///
-/// A Wasm execution includes everything but host calls.
-/// In other words: Everything in between host calls is a Wasm execution.
-#[derive(Debug, Copy, Clone)]
-pub enum WasmOutcome {
-    /// The Wasm execution has ended and returns to the host side.
-    Return,
-    /// The Wasm execution calls a host function.
-    Call {
-        results: RegisterSpan,
-        host_func: Func,
-        call_kind: CallKind,
-    },
 }
 
 /// Executes compiled function instructions until either
@@ -96,151 +74,143 @@ pub enum WasmOutcome {
 ///
 /// If the execution traps.
 #[inline(never)]
-pub fn execute_instrs<'ctx, 'engine>(
-    ctx: &'ctx mut StoreInner,
-    cache: &'engine mut InstanceCache,
-    value_stack: &'engine mut ValueStack,
-    call_stack: &'engine mut CallStack,
+pub fn execute_instrs<'engine, T>(
+    store: &mut Store<T>,
+    stack: &'engine mut Stack,
     code_map: &'engine CodeMap,
-    func_types: &'engine FuncTypeRegistry,
-    resource_limiter: &'ctx mut ResourceLimiterRef<'ctx>,
-) -> Result<WasmOutcome, Error> {
-    Executor::new(ctx, cache, value_stack, call_stack, code_map, func_types)
-        .execute(resource_limiter)
+) -> Result<(), Error> {
+    let instance = stack.calls.instance_expect();
+    let cache = CachedInstance::new(&mut store.inner, instance);
+    Executor::new(stack, code_map, cache).execute(store)
 }
 
 /// An execution context for executing a Wasmi function frame.
 #[derive(Debug)]
-struct Executor<'ctx, 'engine> {
+struct Executor<'engine> {
     /// Stores the value stack of live values on the Wasm stack.
     sp: FrameRegisters,
     /// The pointer to the currently executed instruction.
     ip: InstructionPtr,
-    /// Stores frequently used instance related data.
-    cache: &'engine mut InstanceCache,
-    /// A mutable [`StoreInner`] context.
+    /// The cached instance and instance related data.
+    cache: CachedInstance,
+    /// The value and call stacks.
+    stack: &'engine mut Stack,
+    /// The static resources of an [`Engine`].
     ///
-    /// [`StoreInner`]: [`crate::StoreInner`]
-    ctx: &'ctx mut StoreInner,
-    /// The value stack.
-    ///
-    /// # Note
-    ///
-    /// This reference is mainly used to synchronize back state
-    /// after manipulations to the value stack via `sp`.
-    value_stack: &'engine mut ValueStack,
-    /// The call stack.
-    ///
-    /// # Note
-    ///
-    /// This is used to store the stack of nested function calls.
-    call_stack: &'engine mut CallStack,
-    /// The Wasm function code map.
-    ///
-    /// # Note
-    ///
-    /// This is used to lookup Wasm function information.
+    /// [`Engine`]: crate::Engine
     code_map: &'engine CodeMap,
-    /// The Wasm function type registry.
-    ///
-    /// # Note
-    ///
-    /// This is used to lookup Wasm function information.
-    func_types: &'engine FuncTypeRegistry,
 }
 
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     /// Creates a new [`Executor`] for executing a Wasmi function frame.
     #[inline(always)]
     pub fn new(
-        ctx: &'ctx mut StoreInner,
-        cache: &'engine mut InstanceCache,
-        value_stack: &'engine mut ValueStack,
-        call_stack: &'engine mut CallStack,
+        stack: &'engine mut Stack,
         code_map: &'engine CodeMap,
-        func_types: &'engine FuncTypeRegistry,
+        cache: CachedInstance,
     ) -> Self {
-        let frame = call_stack
+        let frame = stack
+            .calls
             .peek()
             .expect("must have call frame on the call stack");
         // Safety: We are using the frame's own base offset as input because it is
         //         guaranteed by the Wasm validation and translation phase to be
         //         valid for all register indices used by the associated function body.
-        let sp = unsafe { value_stack.stack_ptr_at(frame.base_offset()) };
+        let sp = unsafe { stack.values.stack_ptr_at(frame.base_offset()) };
         let ip = frame.instr_ptr();
         Self {
             sp,
             ip,
             cache,
-            ctx,
-            value_stack,
-            call_stack,
+            stack,
             code_map,
-            func_types,
         }
     }
 
     /// Executes the function frame until it returns or traps.
     #[inline(always)]
-    fn execute(
-        mut self,
-        resource_limiter: &'ctx mut ResourceLimiterRef<'ctx>,
-    ) -> Result<WasmOutcome, Error> {
+    fn execute<T>(mut self, store: &mut Store<T>) -> Result<(), Error> {
         use Instruction as Instr;
         loop {
             match *self.ip.get() {
                 Instr::Trap(trap_code) => self.execute_trap(trap_code)?,
-                Instr::ConsumeFuel(block_fuel) => self.execute_consume_fuel(block_fuel)?,
+                Instr::ConsumeFuel(block_fuel) => {
+                    self.execute_consume_fuel(&mut store.inner, block_fuel)?
+                }
                 Instr::Return => {
-                    forward_return!(self.execute_return())
+                    forward_return!(self.execute_return(&mut store.inner))
                 }
                 Instr::ReturnReg { value } => {
-                    forward_return!(self.execute_return_reg(value))
+                    forward_return!(self.execute_return_reg(&mut store.inner, value))
                 }
                 Instr::ReturnReg2 { values } => {
-                    forward_return!(self.execute_return_reg2(values))
+                    forward_return!(self.execute_return_reg2(&mut store.inner, values))
                 }
                 Instr::ReturnReg3 { values } => {
-                    forward_return!(self.execute_return_reg3(values))
+                    forward_return!(self.execute_return_reg3(&mut store.inner, values))
                 }
                 Instr::ReturnImm32 { value } => {
-                    forward_return!(self.execute_return_imm32(value))
+                    forward_return!(self.execute_return_imm32(&mut store.inner, value))
                 }
                 Instr::ReturnI64Imm32 { value } => {
-                    forward_return!(self.execute_return_i64imm32(value))
+                    forward_return!(self.execute_return_i64imm32(&mut store.inner, value))
                 }
                 Instr::ReturnF64Imm32 { value } => {
-                    forward_return!(self.execute_return_f64imm32(value))
+                    forward_return!(self.execute_return_f64imm32(&mut store.inner, value))
                 }
                 Instr::ReturnSpan { values } => {
-                    forward_return!(self.execute_return_span(values))
+                    forward_return!(self.execute_return_span(&mut store.inner, values))
                 }
                 Instr::ReturnMany { values } => {
-                    forward_return!(self.execute_return_many(values))
+                    forward_return!(self.execute_return_many(&mut store.inner, values))
                 }
                 Instr::ReturnNez { condition } => {
-                    forward_return!(self.execute_return_nez(condition))
+                    forward_return!(self.execute_return_nez(&mut store.inner, condition))
                 }
                 Instr::ReturnNezReg { condition, value } => {
-                    forward_return!(self.execute_return_nez_reg(condition, value))
+                    forward_return!(self.execute_return_nez_reg(&mut store.inner, condition, value))
                 }
                 Instr::ReturnNezReg2 { condition, values } => {
-                    forward_return!(self.execute_return_nez_reg2(condition, values))
+                    forward_return!(self.execute_return_nez_reg2(
+                        &mut store.inner,
+                        condition,
+                        values
+                    ))
                 }
                 Instr::ReturnNezImm32 { condition, value } => {
-                    forward_return!(self.execute_return_nez_imm32(condition, value))
+                    forward_return!(self.execute_return_nez_imm32(
+                        &mut store.inner,
+                        condition,
+                        value
+                    ))
                 }
                 Instr::ReturnNezI64Imm32 { condition, value } => {
-                    forward_return!(self.execute_return_nez_i64imm32(condition, value))
+                    forward_return!(self.execute_return_nez_i64imm32(
+                        &mut store.inner,
+                        condition,
+                        value
+                    ))
                 }
                 Instr::ReturnNezF64Imm32 { condition, value } => {
-                    forward_return!(self.execute_return_nez_f64imm32(condition, value))
+                    forward_return!(self.execute_return_nez_f64imm32(
+                        &mut store.inner,
+                        condition,
+                        value
+                    ))
                 }
                 Instr::ReturnNezSpan { condition, values } => {
-                    forward_return!(self.execute_return_nez_span(condition, values))
+                    forward_return!(self.execute_return_nez_span(
+                        &mut store.inner,
+                        condition,
+                        values
+                    ))
                 }
                 Instr::ReturnNezMany { condition, values } => {
-                    forward_return!(self.execute_return_nez_many(condition, values))
+                    forward_return!(self.execute_return_nez_many(
+                        &mut store.inner,
+                        condition,
+                        values
+                    ))
                 }
                 Instr::Branch { offset } => self.execute_branch(offset),
                 Instr::BranchTable { index, len_targets } => {
@@ -332,37 +302,41 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::CopyManyNonOverlapping { results, values } => {
                     self.execute_copy_many_non_overlapping(results, values)
                 }
-                Instr::ReturnCallInternal0 { func } => self.execute_return_call_internal_0(func)?,
-                Instr::ReturnCallInternal { func } => self.execute_return_call_internal(func)?,
+                Instr::ReturnCallInternal0 { func } => {
+                    self.execute_return_call_internal_0(&mut store.inner, func)?
+                }
+                Instr::ReturnCallInternal { func } => {
+                    self.execute_return_call_internal(&mut store.inner, func)?
+                }
                 Instr::ReturnCallImported0 { func } => {
-                    forward_call!(self.execute_return_call_imported_0(func))
+                    self.execute_return_call_imported_0::<T>(store, func)?
                 }
                 Instr::ReturnCallImported { func } => {
-                    forward_call!(self.execute_return_call_imported(func))
+                    self.execute_return_call_imported::<T>(store, func)?
                 }
                 Instr::ReturnCallIndirect0 { func_type } => {
-                    forward_call!(self.execute_return_call_indirect_0(func_type))
+                    self.execute_return_call_indirect_0::<T>(store, func_type)?
                 }
                 Instr::ReturnCallIndirect { func_type } => {
-                    forward_call!(self.execute_return_call_indirect(func_type))
+                    self.execute_return_call_indirect::<T>(store, func_type)?
                 }
                 Instr::CallInternal0 { results, func } => {
-                    self.execute_call_internal_0(results, func)?
+                    self.execute_call_internal_0(&mut store.inner, results, func)?
                 }
                 Instr::CallInternal { results, func } => {
-                    self.execute_call_internal(results, func)?
+                    self.execute_call_internal(&mut store.inner, results, func)?
                 }
                 Instr::CallImported0 { results, func } => {
-                    forward_call!(self.execute_call_imported_0(results, func))
+                    self.execute_call_imported_0::<T>(store, results, func)?
                 }
                 Instr::CallImported { results, func } => {
-                    forward_call!(self.execute_call_imported(results, func))
+                    self.execute_call_imported::<T>(store, results, func)?
                 }
                 Instr::CallIndirect0 { results, func_type } => {
-                    forward_call!(self.execute_call_indirect_0(results, func_type))
+                    self.execute_call_indirect_0::<T>(store, results, func_type)?
                 }
                 Instr::CallIndirect { results, func_type } => {
-                    forward_call!(self.execute_call_indirect(results, func_type))
+                    self.execute_call_indirect::<T>(store, results, func_type)?
                 }
                 Instr::Select {
                     result,
@@ -387,13 +361,17 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                     lhs_or_rhs,
                 } => self.execute_select_f64imm32(result_or_condition, lhs_or_rhs),
                 Instr::RefFunc { result, func } => self.execute_ref_func(result, func),
-                Instr::GlobalGet { result, global } => self.execute_global_get(result, global),
-                Instr::GlobalSet { global, input } => self.execute_global_set(global, input),
+                Instr::GlobalGet { result, global } => {
+                    self.execute_global_get(&store.inner, result, global)
+                }
+                Instr::GlobalSet { global, input } => {
+                    self.execute_global_set(&mut store.inner, global, input)
+                }
                 Instr::GlobalSetI32Imm16 { global, input } => {
-                    self.execute_global_set_i32imm16(global, input)
+                    self.execute_global_set_i32imm16(&mut store.inner, global, input)
                 }
                 Instr::GlobalSetI64Imm16 { global, input } => {
-                    self.execute_global_set_i64imm16(global, input)
+                    self.execute_global_set_i64imm16(&mut store.inner, global, input)
                 }
                 Instr::I32Load(instr) => self.execute_i32_load(instr)?,
                 Instr::I32LoadAt(instr) => self.execute_i32_load_at(instr)?,
@@ -698,153 +676,173 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
                 Instr::F64ConvertI32U(instr) => self.execute_f64_convert_i32_u(instr),
                 Instr::F64ConvertI64S(instr) => self.execute_f64_convert_i64_s(instr),
                 Instr::F64ConvertI64U(instr) => self.execute_f64_convert_i64_u(instr),
-                Instr::TableGet { result, index } => self.execute_table_get(result, index)?,
-                Instr::TableGetImm { result, index } => {
-                    self.execute_table_get_imm(result, index)?
+                Instr::TableGet { result, index } => {
+                    self.execute_table_get(&store.inner, result, index)?
                 }
-                Instr::TableSize { result, table } => self.execute_table_size(result, table),
-                Instr::TableSet { index, value } => self.execute_table_set(index, value)?,
-                Instr::TableSetAt { index, value } => self.execute_table_set_at(index, value)?,
-                Instr::TableCopy { dst, src, len } => self.execute_table_copy(dst, src, len)?,
+                Instr::TableGetImm { result, index } => {
+                    self.execute_table_get_imm(&store.inner, result, index)?
+                }
+                Instr::TableSize { result, table } => {
+                    self.execute_table_size(&store.inner, result, table)
+                }
+                Instr::TableSet { index, value } => {
+                    self.execute_table_set(&mut store.inner, index, value)?
+                }
+                Instr::TableSetAt { index, value } => {
+                    self.execute_table_set_at(&mut store.inner, index, value)?
+                }
+                Instr::TableCopy { dst, src, len } => {
+                    self.execute_table_copy(&mut store.inner, dst, src, len)?
+                }
                 Instr::TableCopyTo { dst, src, len } => {
-                    self.execute_table_copy_to(dst, src, len)?
+                    self.execute_table_copy_to(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableCopyFrom { dst, src, len } => {
-                    self.execute_table_copy_from(dst, src, len)?
+                    self.execute_table_copy_from(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableCopyFromTo { dst, src, len } => {
-                    self.execute_table_copy_from_to(dst, src, len)?
+                    self.execute_table_copy_from_to(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableCopyExact { dst, src, len } => {
-                    self.execute_table_copy_exact(dst, src, len)?
+                    self.execute_table_copy_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableCopyToExact { dst, src, len } => {
-                    self.execute_table_copy_to_exact(dst, src, len)?
+                    self.execute_table_copy_to_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableCopyFromExact { dst, src, len } => {
-                    self.execute_table_copy_from_exact(dst, src, len)?
+                    self.execute_table_copy_from_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableCopyFromToExact { dst, src, len } => {
-                    self.execute_table_copy_from_to_exact(dst, src, len)?
+                    self.execute_table_copy_from_to_exact(&mut store.inner, dst, src, len)?
                 }
-                Instr::TableInit { dst, src, len } => self.execute_table_init(dst, src, len)?,
+                Instr::TableInit { dst, src, len } => {
+                    self.execute_table_init(&mut store.inner, dst, src, len)?
+                }
                 Instr::TableInitTo { dst, src, len } => {
-                    self.execute_table_init_to(dst, src, len)?
+                    self.execute_table_init_to(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableInitFrom { dst, src, len } => {
-                    self.execute_table_init_from(dst, src, len)?
+                    self.execute_table_init_from(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableInitFromTo { dst, src, len } => {
-                    self.execute_table_init_from_to(dst, src, len)?
+                    self.execute_table_init_from_to(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableInitExact { dst, src, len } => {
-                    self.execute_table_init_exact(dst, src, len)?
+                    self.execute_table_init_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableInitToExact { dst, src, len } => {
-                    self.execute_table_init_to_exact(dst, src, len)?
+                    self.execute_table_init_to_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableInitFromExact { dst, src, len } => {
-                    self.execute_table_init_from_exact(dst, src, len)?
+                    self.execute_table_init_from_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableInitFromToExact { dst, src, len } => {
-                    self.execute_table_init_from_to_exact(dst, src, len)?
+                    self.execute_table_init_from_to_exact(&mut store.inner, dst, src, len)?
                 }
-                Instr::TableFill { dst, len, value } => self.execute_table_fill(dst, len, value)?,
+                Instr::TableFill { dst, len, value } => {
+                    self.execute_table_fill(&mut store.inner, dst, len, value)?
+                }
                 Instr::TableFillAt { dst, len, value } => {
-                    self.execute_table_fill_at(dst, len, value)?
+                    self.execute_table_fill_at(&mut store.inner, dst, len, value)?
                 }
                 Instr::TableFillExact { dst, len, value } => {
-                    self.execute_table_fill_exact(dst, len, value)?
+                    self.execute_table_fill_exact(&mut store.inner, dst, len, value)?
                 }
                 Instr::TableFillAtExact { dst, len, value } => {
-                    self.execute_table_fill_at_exact(dst, len, value)?
+                    self.execute_table_fill_at_exact(&mut store.inner, dst, len, value)?
                 }
                 Instr::TableGrow {
                     result,
                     delta,
                     value,
-                } => self.execute_table_grow(result, delta, value, &mut *resource_limiter)?,
+                } => self.execute_table_grow(store, result, delta, value)?,
                 Instr::TableGrowImm {
                     result,
                     delta,
                     value,
-                } => self.execute_table_grow_imm(result, delta, value, &mut *resource_limiter)?,
-                Instr::ElemDrop(element_index) => self.execute_element_drop(element_index),
-                Instr::DataDrop(data_index) => self.execute_data_drop(data_index),
-                Instr::MemorySize { result } => self.execute_memory_size(result),
+                } => self.execute_table_grow_imm(store, result, delta, value)?,
+                Instr::ElemDrop(element_index) => {
+                    self.execute_element_drop(&mut store.inner, element_index)
+                }
+                Instr::DataDrop(data_index) => self.execute_data_drop(&mut store.inner, data_index),
+                Instr::MemorySize { result } => self.execute_memory_size(&store.inner, result),
                 Instr::MemoryGrow { result, delta } => {
-                    self.execute_memory_grow(result, delta, &mut *resource_limiter)?
+                    self.execute_memory_grow(store, result, delta)?
                 }
                 Instr::MemoryGrowBy { result, delta } => {
-                    self.execute_memory_grow_by(result, delta, &mut *resource_limiter)?
+                    self.execute_memory_grow_by(store, result, delta)?
                 }
-                Instr::MemoryCopy { dst, src, len } => self.execute_memory_copy(dst, src, len)?,
+                Instr::MemoryCopy { dst, src, len } => {
+                    self.execute_memory_copy(&mut store.inner, dst, src, len)?
+                }
                 Instr::MemoryCopyTo { dst, src, len } => {
-                    self.execute_memory_copy_to(dst, src, len)?
+                    self.execute_memory_copy_to(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryCopyFrom { dst, src, len } => {
-                    self.execute_memory_copy_from(dst, src, len)?
+                    self.execute_memory_copy_from(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryCopyFromTo { dst, src, len } => {
-                    self.execute_memory_copy_from_to(dst, src, len)?
+                    self.execute_memory_copy_from_to(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryCopyExact { dst, src, len } => {
-                    self.execute_memory_copy_exact(dst, src, len)?
+                    self.execute_memory_copy_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryCopyToExact { dst, src, len } => {
-                    self.execute_memory_copy_to_exact(dst, src, len)?
+                    self.execute_memory_copy_to_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryCopyFromExact { dst, src, len } => {
-                    self.execute_memory_copy_from_exact(dst, src, len)?
+                    self.execute_memory_copy_from_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryCopyFromToExact { dst, src, len } => {
-                    self.execute_memory_copy_from_to_exact(dst, src, len)?
+                    self.execute_memory_copy_from_to_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryFill { dst, value, len } => {
-                    self.execute_memory_fill(dst, value, len)?
+                    self.execute_memory_fill(&mut store.inner, dst, value, len)?
                 }
                 Instr::MemoryFillAt { dst, value, len } => {
-                    self.execute_memory_fill_at(dst, value, len)?
+                    self.execute_memory_fill_at(&mut store.inner, dst, value, len)?
                 }
                 Instr::MemoryFillImm { dst, value, len } => {
-                    self.execute_memory_fill_imm(dst, value, len)?
+                    self.execute_memory_fill_imm(&mut store.inner, dst, value, len)?
                 }
                 Instr::MemoryFillExact { dst, value, len } => {
-                    self.execute_memory_fill_exact(dst, value, len)?
+                    self.execute_memory_fill_exact(&mut store.inner, dst, value, len)?
                 }
                 Instr::MemoryFillAtImm { dst, value, len } => {
-                    self.execute_memory_fill_at_imm(dst, value, len)?
+                    self.execute_memory_fill_at_imm(&mut store.inner, dst, value, len)?
                 }
                 Instr::MemoryFillAtExact { dst, value, len } => {
-                    self.execute_memory_fill_at_exact(dst, value, len)?
+                    self.execute_memory_fill_at_exact(&mut store.inner, dst, value, len)?
                 }
                 Instr::MemoryFillImmExact { dst, value, len } => {
-                    self.execute_memory_fill_imm_exact(dst, value, len)?
+                    self.execute_memory_fill_imm_exact(&mut store.inner, dst, value, len)?
                 }
                 Instr::MemoryFillAtImmExact { dst, value, len } => {
-                    self.execute_memory_fill_at_imm_exact(dst, value, len)?
+                    self.execute_memory_fill_at_imm_exact(&mut store.inner, dst, value, len)?
                 }
-                Instr::MemoryInit { dst, src, len } => self.execute_memory_init(dst, src, len)?,
+                Instr::MemoryInit { dst, src, len } => {
+                    self.execute_memory_init(&mut store.inner, dst, src, len)?
+                }
                 Instr::MemoryInitTo { dst, src, len } => {
-                    self.execute_memory_init_to(dst, src, len)?
+                    self.execute_memory_init_to(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryInitFrom { dst, src, len } => {
-                    self.execute_memory_init_from(dst, src, len)?
+                    self.execute_memory_init_from(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryInitFromTo { dst, src, len } => {
-                    self.execute_memory_init_from_to(dst, src, len)?
+                    self.execute_memory_init_from_to(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryInitExact { dst, src, len } => {
-                    self.execute_memory_init_exact(dst, src, len)?
+                    self.execute_memory_init_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryInitToExact { dst, src, len } => {
-                    self.execute_memory_init_to_exact(dst, src, len)?
+                    self.execute_memory_init_to_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryInitFromExact { dst, src, len } => {
-                    self.execute_memory_init_from_exact(dst, src, len)?
+                    self.execute_memory_init_from_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::MemoryInitFromToExact { dst, src, len } => {
-                    self.execute_memory_init_from_to_exact(dst, src, len)?
+                    self.execute_memory_init_from_to_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableIdx(_)
                 | Instr::DataSegmentIdx(_)
@@ -861,10 +859,67 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
             }
         }
     }
+}
+
+macro_rules! get_entity {
+    (
+        $(
+            fn $name:ident(&self, store: &StoreInner, index: $index_ty:ty) -> $id_ty:ty;
+        )*
+    ) => {
+        $(
+            #[doc = ::core::concat!(
+                "Returns the [`",
+                ::core::stringify!($id_ty),
+                "`] at `index` for the currently used [`Instance`].\n\n",
+                "# Panics\n\n",
+                "- If there is no [`",
+                ::core::stringify!($id_ty),
+                "`] at `index` for the currently used [`Instance`] in `store`."
+            )]
+            #[inline]
+            fn $name(&self, index: $index_ty) -> $id_ty {
+                unsafe { self.cache.$name(index) }
+                    .unwrap_or_else(|| {
+                        const ENTITY_NAME: &'static str = ::core::stringify!($id_ty);
+                        ::core::unreachable!(
+                            "missing {ENTITY_NAME} at index {index:?} for the currently used instance",
+                        )
+                    })
+            }
+        )*
+    }
+}
+
+impl<'engine> Executor<'engine> {
+    get_entity! {
+        fn get_func(&self, store: &StoreInner, index: FuncIdx) -> Func;
+        fn get_func_type_dedup(&self, store: &StoreInner, index: SignatureIdx) -> DedupFuncType;
+        fn get_memory(&self, store: &StoreInner, index: u32) -> Memory;
+        fn get_table(&self, store: &StoreInner, index: TableIdx) -> Table;
+        fn get_global(&self, store: &StoreInner, index: GlobalIdx) -> Global;
+        fn get_data_segment(&self, store: &StoreInner, index: DataSegmentIdx) -> DataSegment;
+        fn get_element_segment(&self, store: &StoreInner, index: ElementSegmentIdx) -> ElementSegment;
+    }
+
+    /// Returns the default memory of the current [`Instance`] for `ctx`.
+    ///
+    /// # Panics
+    ///
+    /// - If the current [`Instance`] does not belong to `ctx`.
+    /// - If the current [`Instance`] does not have a linear memory.
+    #[inline]
+    fn get_default_memory(&self) -> Memory {
+        self.get_memory(DEFAULT_MEMORY_INDEX)
+    }
 
     /// Returns the [`Register`] value.
     fn get_register(&self, register: Register) -> UntypedVal {
-        // Safety: TODO
+        // Safety: - It is the responsibility of the `Executor`
+        //           implementation to keep the `sp` pointer valid
+        //           whenever this method is accessed.
+        //         - This is done by updating the `sp` pointer whenever
+        //           the heap underlying the value stack is changed.
         unsafe { self.sp.get(register) }
     }
 
@@ -878,7 +933,11 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Sets the [`Register`] value to `value`.
     fn set_register(&mut self, register: Register, value: impl Into<UntypedVal>) {
-        // Safety: TODO
+        // Safety: - It is the responsibility of the `Executor`
+        //           implementation to keep the `sp` pointer valid
+        //           whenever this method is accessed.
+        //         - This is done by updating the `sp` pointer whenever
+        //           the heap underlying the value stack is changed.
         unsafe { self.sp.set(register, value.into()) };
     }
 
@@ -927,12 +986,6 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Returns the [`FrameRegisters`] of the [`CallFrame`].
-    #[inline]
-    fn frame_stack_ptr(&mut self, frame: &CallFrame) -> FrameRegisters {
-        Self::frame_stack_ptr_impl(self.value_stack, frame)
-    }
-
-    /// Returns the [`FrameRegisters`] of the [`CallFrame`].
     fn frame_stack_ptr_impl(value_stack: &mut ValueStack, frame: &CallFrame) -> FrameRegisters {
         // Safety: We are using the frame's own base offset as input because it is
         //         guaranteed by the Wasm validation and translation phase to be
@@ -946,7 +999,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     ///
     /// The initialization of the [`Executor`] allows for efficient execution.
     fn init_call_frame(&mut self, frame: &CallFrame) {
-        Self::init_call_frame_impl(self.value_stack, &mut self.sp, &mut self.ip, frame)
+        Self::init_call_frame_impl(&mut self.stack.values, &mut self.sp, &mut self.ip, frame)
     }
 
     /// Initializes the [`Executor`] state for the [`CallFrame`].
@@ -980,6 +1033,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic unary [`Instruction`].
+    #[inline(always)]
     fn execute_unary(&mut self, instr: UnaryInstr, op: fn(UntypedVal) -> UntypedVal) {
         let value = self.get_register(instr.input);
         self.set_register(instr.result, op(value));
@@ -987,6 +1041,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a fallible generic unary [`Instruction`].
+    #[inline(always)]
     fn try_execute_unary(
         &mut self,
         instr: UnaryInstr,
@@ -998,6 +1053,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic binary [`Instruction`].
+    #[inline(always)]
     fn execute_binary(&mut self, instr: BinInstr, op: fn(UntypedVal, UntypedVal) -> UntypedVal) {
         let lhs = self.get_register(instr.lhs);
         let rhs = self.get_register(instr.rhs);
@@ -1006,6 +1062,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic binary [`Instruction`].
+    #[inline(always)]
     fn execute_binary_imm16<T>(
         &mut self,
         instr: BinInstrImm16<T>,
@@ -1021,6 +1078,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a generic binary [`Instruction`] with reversed operands.
+    #[inline(always)]
     fn execute_binary_imm16_rev<T>(
         &mut self,
         instr: BinInstrImm16<T>,
@@ -1036,6 +1094,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a fallible generic binary [`Instruction`].
+    #[inline(always)]
     fn try_execute_binary(
         &mut self,
         instr: BinInstr,
@@ -1048,6 +1107,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a fallible generic binary [`Instruction`].
+    #[inline(always)]
     fn try_execute_divrem_imm16<NonZeroT>(
         &mut self,
         instr: BinInstrImm16<NonZeroT>,
@@ -1063,6 +1123,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a fallible generic binary [`Instruction`].
+    #[inline(always)]
     fn execute_divrem_imm16<NonZeroT>(
         &mut self,
         instr: BinInstrImm16<NonZeroT>,
@@ -1077,6 +1138,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 
     /// Executes a fallible generic binary [`Instruction`] with reversed operands.
+    #[inline(always)]
     fn try_execute_binary_imm16_rev<T>(
         &mut self,
         instr: BinInstrImm16<T>,
@@ -1093,7 +1155,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     }
 }
 
-impl<'ctx, 'engine> Executor<'ctx, 'engine> {
+impl<'engine> Executor<'engine> {
     /// Used for all [`Instruction`] words that are not meant for execution.
     ///
     /// # Note
@@ -1113,11 +1175,15 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
 
     /// Executes an [`Instruction::ConsumeFuel`].
     #[inline(always)]
-    fn execute_consume_fuel(&mut self, block_fuel: BlockFuel) -> Result<(), Error> {
+    fn execute_consume_fuel(
+        &mut self,
+        store: &mut StoreInner,
+        block_fuel: BlockFuel,
+    ) -> Result<(), Error> {
         // We do not have to check if fuel metering is enabled since
         // [`Instruction::ConsumeFuel`] are only generated if fuel metering
         // is enabled to begin with.
-        self.ctx
+        store
             .fuel_mut()
             .consume_fuel_unchecked(block_fuel.to_u64())?;
         self.try_next_instr()
@@ -1126,7 +1192,7 @@ impl<'ctx, 'engine> Executor<'ctx, 'engine> {
     /// Executes an [`Instruction::RefFunc`].
     #[inline(always)]
     fn execute_ref_func(&mut self, result: Register, func_index: FuncIdx) {
-        let func = self.cache.get_func(self.ctx, func_index);
+        let func = self.get_func(func_index);
         let funcref = FuncRef::new(func);
         self.set_register(result, funcref);
         self.next_instr();

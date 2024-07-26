@@ -307,11 +307,8 @@ impl<T> Definition<T> {
                     .as_context_mut()
                     .store
                     .alloc_trampoline(host_func.trampoline().clone());
-                let ty_dedup = ctx
-                    .as_context()
-                    .engine()
-                    .alloc_func_type(host_func.func_type().clone());
-                let entity = HostFuncEntity::new(ty_dedup, trampoline);
+                let ty = host_func.func_type();
+                let entity = HostFuncEntity::new(ctx.as_context().engine(), ty, trampoline);
                 let func = ctx
                     .as_context_mut()
                     .store
@@ -1053,10 +1050,10 @@ mod tests {
         let engine = Engine::default();
         let mut builder = <Linker<()>>::build();
         builder
-            .func_wrap("host", "func.0", |_caller: Caller<()>| unimplemented!())
+            .func_wrap("host", "func.0", |_caller: Caller<()>| ())
             .unwrap();
         builder
-            .func_wrap("host", "func.1", |_caller: Caller<()>| unimplemented!())
+            .func_wrap("host", "func.1", |_caller: Caller<()>| ())
             .unwrap();
         let linker = builder.finish().create(&engine);
         let mut store = Store::new(&engine, ());
@@ -1082,11 +1079,11 @@ mod tests {
         let engine = Engine::default();
         let mut builder = <Linker<()>>::build();
         builder
-            .func_wrap("host", "func.0", |_caller: Caller<()>| unimplemented!())
+            .func_wrap("host", "func.0", |_caller: Caller<()>| ())
             .unwrap();
         let mut linker = builder.finish().create(&engine);
         linker
-            .func_wrap("host", "func.1", |_caller: Caller<()>| unimplemented!())
+            .func_wrap("host", "func.1", |_caller: Caller<()>| ())
             .unwrap();
         let mut store = Store::new(&engine, ());
         let module = Module::new(&engine, &wasm[..]).unwrap();
@@ -1099,15 +1096,15 @@ mod tests {
         let engine = Engine::default();
         let mut builder = <Linker<()>>::build();
         builder
-            .func_wrap("host", "func.0", |_caller: Caller<()>| unimplemented!())
+            .func_wrap("host", "func.0", |_caller: Caller<()>| ())
             .unwrap();
         let mut linker = builder.finish().create(&engine);
         linker
-            .func_wrap("host", "func.1", |_caller: Caller<()>| unimplemented!())
+            .func_wrap("host", "func.1", |_caller: Caller<()>| ())
             .unwrap();
         // The following definition won't shadow the previous 'host/func.0' func and errors instead:
         linker
-            .func_wrap("host", "func.0", |_caller: Caller<()>| unimplemented!())
+            .func_wrap("host", "func.0", |_caller: Caller<()>| ())
             .unwrap_err();
     }
 

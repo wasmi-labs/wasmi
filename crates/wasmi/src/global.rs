@@ -46,6 +46,9 @@ pub enum GlobalError {
     },
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for GlobalError {}
+
 impl Display for GlobalError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {

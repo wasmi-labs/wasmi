@@ -8,29 +8,24 @@ jobs:
     name: Miri
     runs-on: ubuntu-latest
     steps:
-        - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
+        - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         - uses: dtolnay/rust-toolchain@nightly
           with:
             components: miri
             targets: x86_64-unknown-linux-gnu
-        - name: Set up Cargo cache
-          uses: actions/cache@v4
-          continue-on-error: false
-          with:
-            path: |
-              ~/.cargo/bin/
-              ~/.cargo/registry/index/
-              ~/.cargo/registry/cache/
-              ~/.cargo/git/db/
-              ~/target/
-            key: ${{ runner.os }}-cargo-miri-${{ hashFiles('**/Cargo.lock') }}
-            restore-keys: ${{ runner.os }}-cargo-miri-
+        - name: Set up Rust cache
+          uses: Swatinem/rust-cache@v2
         - name: Checkout Submodules
           run: git submodule update --init --recursive
         - name: Install cargo-nextest
-          run: |
+          run:
             # Note: We use `|| true` because cargo install returns an error
             #       if cargo-nextest was already installed on the CI runner.
             cargo install cargo-nextest || true
         - name: Miri Testing - Wasm Spec Testsuite
+          env:
+            # Debug assertions are checked in the normal test jobs.
+            # They have huge overhead for Wasmi and unnecessarily slow down Miri.
+            # The Miri job should focus on finding undefined behavior instead or logic errors.
+            CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: "false"
           run: cargo miri nextest run --target x86_64-unknown-linux-gnu --test spec_shim
