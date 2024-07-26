@@ -1,3 +1,5 @@
+use wasmparser::AbstractHeapType;
+
 use crate::{core::ValType, FuncType, GlobalType, MemoryType, Mutability, TableType};
 
 impl TableType {
@@ -120,8 +122,14 @@ impl From<ValType> for WasmiValueType {
 impl From<wasmparser::HeapType> for WasmiValueType {
     fn from(heap_type: wasmparser::HeapType) -> Self {
         match heap_type {
-            wasmparser::HeapType::Func => Self::from(ValType::FuncRef),
-            wasmparser::HeapType::Extern => Self::from(ValType::ExternRef),
+            wasmparser::HeapType::Abstract {
+                shared: false,
+                ty: AbstractHeapType::Func,
+            } => Self::from(ValType::FuncRef),
+            wasmparser::HeapType::Abstract {
+                shared: false,
+                ty: AbstractHeapType::Extern,
+            } => Self::from(ValType::ExternRef),
             unsupported => panic!("encountered unsupported heap type: {unsupported:?}"),
         }
     }

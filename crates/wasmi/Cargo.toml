@@ -19,7 +19,7 @@ exclude = [
 ]
 
 [dependencies]
-wasmparser = { version = "0.207.0", default-features = false, features = ["validate"] }
+wasmparser = { version = "0.214.0", default-features = false, features = ["validate"] }
 wasmi_core = { workspace = true }
 wasmi_collections = { workspace = true }
 spin = { version = "0.9", default-features = false, features = [
@@ -59,7 +59,7 @@ std = [
 # An example of such an environment is `wasm32-unknown-unknown`.
 no-hash-maps = [
     "wasmi_collections/no-hash-maps",
-    # "wasmparser/no-hash-maps",
+    "wasmparser/no-hash-maps",
 ]
 
 [[bench]]

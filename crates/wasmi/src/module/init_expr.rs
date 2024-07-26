@@ -16,6 +16,7 @@ use crate::{
 use core::fmt;
 use smallvec::SmallVec;
 use std::boxed::Box;
+use wasmparser::AbstractHeapType;
 
 /// Types that allow evluation given an evaluation context.
 pub trait Eval {
@@ -269,9 +270,17 @@ impl ConstExpr {
                 }
                 wasmparser::Operator::RefNull { hty } => {
                     let value = match hty {
-                        wasmparser::HeapType::Func => Val::from(FuncRef::null()),
-                        wasmparser::HeapType::Extern => Val::from(ExternRef::null()),
-                        invalid => panic!("encountered invalid heap type for RefNull: {invalid:?}"),
+                        wasmparser::HeapType::Abstract {
+                            shared: false,
+                            ty: AbstractHeapType::Func,
+                        } => Val::from(FuncRef::null()),
+                        wasmparser::HeapType::Abstract {
+                            shared: false,
+                            ty: AbstractHeapType::Extern,
+                        } => Val::from(ExternRef::null()),
+                        invalid => {
+                            panic!("encountered invalid heap type for `ref.null`: {invalid:?}")
+                        }
                     };
                     stack.push(Op::constant(value));
                 }

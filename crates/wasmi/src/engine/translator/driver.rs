@@ -2,7 +2,7 @@ use crate::{
     engine::{code_map::CompiledFuncEntity, WasmTranslator},
     Error,
 };
-use wasmparser::FunctionBody;
+use wasmparser::{BinaryReader, FunctionBody};
 
 /// Translates Wasm bytecode into Wasmi bytecode for a single Wasm function.
 pub struct FuncTranslationDriver<'parser, T> {
@@ -14,7 +14,10 @@ pub struct FuncTranslationDriver<'parser, T> {
     translator: T,
 }
 
-impl<'parser, T> FuncTranslationDriver<'parser, T> {
+impl<'parser, T> FuncTranslationDriver<'parser, T>
+where
+    T: WasmTranslator<'parser>,
+{
     /// Creates a new Wasm to Wasmi bytecode function translator.
     pub fn new(
         offset: impl Into<Option<usize>>,
@@ -22,19 +25,16 @@ impl<'parser, T> FuncTranslationDriver<'parser, T> {
         translator: T,
     ) -> Result<Self, Error> {
         let offset = offset.into().unwrap_or(0);
-        let func_body = FunctionBody::new(offset, bytes);
+        let features = translator.features();
+        let reader = BinaryReader::new(bytes, offset, features);
+        let func_body = FunctionBody::new(reader);
         Ok(Self {
             func_body,
             bytes,
             translator,
         })
     }
-}
 
-impl<'parser, T> FuncTranslationDriver<'parser, T>
-where
-    T: WasmTranslator<'parser>,
-{
     /// Starts translation of the Wasm stream into Wasmi bytecode.
     pub fn translate(
         mut self,

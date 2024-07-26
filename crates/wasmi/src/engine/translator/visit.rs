@@ -679,12 +679,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_call_indirect(
-        &mut self,
-        type_index: u32,
-        table_index: u32,
-        _table_byte: u8,
-    ) -> Self::Output {
+    fn visit_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
         bail_unreachable!(self);
         self.bump_fuel_consumption(FuelCosts::call)?;
         let type_index = SignatureIdx::from(type_index);
@@ -1148,7 +1143,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         )
     }
 
-    fn visit_memory_size(&mut self, mem: u32, _mem_byte: u8) -> Self::Output {
+    fn visit_memory_size(&mut self, mem: u32) -> Self::Output {
         debug_assert_eq!(
             mem, 0,
             "wasmi does not yet support the multi-memory Wasm proposal"
@@ -1159,7 +1154,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_memory_grow(&mut self, _mem: u32, _mem_byte: u8) -> Self::Output {
+    fn visit_memory_grow(&mut self, _mem: u32) -> Self::Output {
         bail_unreachable!(self);
         let delta = self.alloc.stack.pop();
         let delta = <Provider<Const16<u32>>>::new(delta, &mut self.alloc.stack)?;
