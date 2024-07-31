@@ -1032,14 +1032,32 @@ impl<T> Store<T> {
         self.call_hook = Some(CallHookWrapper(Box::new(hook)));
     }
 
-    /// Executes the callback set by [`Store::call_hook`] if any has been set
-    /// and returns the value returned by the callback. If no callback has been
-    /// set, `Ok(())` is returned.
+    /// Executes the callback set by [`Store::call_hook`] if any has been set.
+    ///
+    /// # Note
+    ///
+    /// - Returns the value returned by the call hook.
+    /// - Returns `Ok(())` if no call hook exists.
+    #[inline]
     pub(crate) fn invoke_call_hook(&mut self, call_type: CallHook) -> Result<(), Error> {
         match &mut self.call_hook {
             None => Ok(()),
-            Some(call_hook) => call_hook.0(&mut self.data, call_type),
+            Some(call_hook) => Self::invoke_call_hook_impl(&mut self.data, call_type, call_hook),
         }
+    }
+
+    /// Utility function to invoke the [`Store::call_hook`] that is asserted to
+    /// be available in this case.
+    ///
+    /// This is kept as a separate `#[cold]` function to help the compiler speed
+    /// up the code path without any call hooks.
+    #[cold]
+    fn invoke_call_hook_impl(
+        data: &mut T,
+        call_type: CallHook,
+        call_hook: &mut CallHookWrapper<T>,
+    ) -> Result<(), Error> {
+        call_hook.0(data, call_type)
     }
 }
 
