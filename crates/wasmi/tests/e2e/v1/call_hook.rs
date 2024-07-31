@@ -16,16 +16,17 @@ use wasmi::{
 
 /// Number of times different callback events have fired.
 #[derive(Default)]
-struct TimesCallbacksFired {
+struct CallHookTestState {
     calling_wasm: u32,
     returning_from_wasm: u32,
     calling_host: u32,
     returning_from_host: u32,
+    erroneous_callback_invocation: bool,
 }
 
-fn test_setup() -> (Store<TimesCallbacksFired>, Linker<TimesCallbacksFired>) {
+fn test_setup() -> (Store<CallHookTestState>, Linker<CallHookTestState>) {
     let store = Store::default();
-    let linker = <Linker<TimesCallbacksFired>>::new(store.engine());
+    let linker = <Linker<CallHookTestState>>::new(store.engine());
     (store, linker)
 }
 
@@ -34,8 +35,8 @@ fn test_setup() -> (Store<TimesCallbacksFired>, Linker<TimesCallbacksFired>) {
 /// `wasm_fn_a` calls `host_fn_a`, and `wasm_fn_b` calls `host_fn_b`.
 /// None of the functions accept any arguments or return any value.
 fn execute_wasm_fn_a(
-    mut store: &mut Store<TimesCallbacksFired>,
-    linker: &mut Linker<TimesCallbacksFired>,
+    mut store: &mut Store<CallHookTestState>,
+    linker: &mut Linker<CallHookTestState>,
 ) -> Result<(), Error> {
     const TEST_WAT: &str = r#"
     (module
@@ -72,7 +73,7 @@ fn call_hooks_get_called() {
     let (mut store, mut linker) = test_setup();
 
     store.call_hook(
-        |data: &mut TimesCallbacksFired, hook_type: CallHook| -> Result<(), Error> {
+        |data: &mut CallHookTestState, hook_type: CallHook| -> Result<(), Error> {
             match hook_type {
                 CallHook::CallingWasm => data.calling_wasm += 1,
                 CallHook::ReturningFromWasm => data.returning_from_wasm += 1,
@@ -84,7 +85,7 @@ fn call_hooks_get_called() {
         },
     );
 
-    let host_fn_a = Func::wrap(&mut store, |mut caller: Caller<TimesCallbacksFired>| {
+    let host_fn_a = Func::wrap(&mut store, |mut caller: Caller<CallHookTestState>| {
         // Call wasm_fn_a
         // Call host_fn_a
         assert_eq!(caller.data().calling_wasm, 1);
@@ -114,7 +115,7 @@ fn call_hooks_get_called() {
     });
     linker.define("env", "host_fn_a", host_fn_a).unwrap();
 
-    let host_fn_b = Func::wrap(&mut store, |caller: Caller<TimesCallbacksFired>| {
+    let host_fn_b = Func::wrap(&mut store, |caller: Caller<CallHookTestState>| {
         // Call wasm_fn_a
         // Call host_fn_a
         // Call wasm_fn_b
@@ -140,7 +141,7 @@ fn call_hooks_get_called() {
 fn generate_error_after_n_calls<E: Into<Error> + Clone + Send + Sync + 'static>(
     limit: u32,
     error: E,
-) -> Box<dyn FnMut(&mut TimesCallbacksFired, CallHook) -> Result<(), Error> + Send + Sync> {
+) -> Box<dyn FnMut(&mut CallHookTestState, CallHook) -> Result<(), Error> + Send + Sync> {
     Box::new(move |data, hook_type| -> Result<(), Error> {
         if (data.calling_wasm
             + data.returning_from_wasm
@@ -171,8 +172,8 @@ fn call_hook_prevents_wasm_execution() {
         wasmi_core::TrapCode::BadConversionToInteger,
     ));
 
-    let should_not_run = Func::wrap(&mut store, |_: Caller<TimesCallbacksFired>| {
-        panic!("Host function that should not run due to trap from call hook executed");
+    let should_not_run = Func::wrap(&mut store, |mut caller: Caller<CallHookTestState>| {
+        caller.data_mut().erroneous_callback_invocation = true;
     });
 
     linker.define("env", "host_fn_a", should_not_run).unwrap();
@@ -183,6 +184,10 @@ fn call_hook_prevents_wasm_execution() {
             .expect("The returned error is not a trap code")
     });
 
+    assert!(
+        !store.data().erroneous_callback_invocation,
+        "A callback that should have been prevented was executed."
+    );
     assert_eq!(result, Err(TrapCode::BadConversionToInteger));
 }
 
@@ -192,8 +197,8 @@ fn call_hook_prevents_host_execution() {
 
     store.call_hook(generate_error_after_n_calls(1, TrapCode::BadSignature));
 
-    let should_not_run = Func::wrap(&mut store, |_: Caller<TimesCallbacksFired>| {
-        panic!("Host function that should not run due to trap from call hook executed");
+    let should_not_run = Func::wrap(&mut store, |mut caller: Caller<CallHookTestState>| {
+        caller.data_mut().erroneous_callback_invocation = true;
     });
 
     linker.define("env", "host_fn_a", should_not_run).unwrap();
@@ -204,6 +209,10 @@ fn call_hook_prevents_host_execution() {
             .expect("The returned error is not a trap code")
     });
 
+    assert!(
+        !store.data().erroneous_callback_invocation,
+        "A callback that should have been prevented was executed."
+    );
     assert_eq!(result, Err(TrapCode::BadSignature));
 }
 
@@ -216,7 +225,7 @@ fn call_hook_prevents_nested_wasm_execution() {
         TrapCode::GrowthOperationLimited,
     ));
 
-    let host_fn_a = Func::wrap(&mut store, |mut caller: Caller<TimesCallbacksFired>| {
+    let host_fn_a = Func::wrap(&mut store, |mut caller: Caller<CallHookTestState>| {
         let result = caller
             .get_export("wasm_fn_b")
             .and_then(Extern::into_func)
@@ -232,8 +241,8 @@ fn call_hook_prevents_nested_wasm_execution() {
         assert_eq!(result, Err(TrapCode::GrowthOperationLimited));
     });
 
-    let should_not_run = Func::wrap(&mut store, |_: Caller<TimesCallbacksFired>| {
-        panic!("Host function that should not run due to trap from call hook executed");
+    let should_not_run = Func::wrap(&mut store, |mut caller: Caller<CallHookTestState>| {
+        caller.data_mut().erroneous_callback_invocation = true;
     });
 
     linker.define("env", "host_fn_a", host_fn_a).unwrap();
@@ -245,5 +254,9 @@ fn call_hook_prevents_nested_wasm_execution() {
             .expect("The returned error is not a trap code")
     });
 
+    assert!(
+        !store.data().erroneous_callback_invocation,
+        "A callback that should have been prevented was executed."
+    );
     assert_eq!(result, Err(TrapCode::GrowthOperationLimited));
 }
