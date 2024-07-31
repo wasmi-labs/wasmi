@@ -1,9 +1,21 @@
 //! Tests to check if `Store::call_hook` works as intended.
 
-use wasmi::{core::TrapCode, CallHook, Caller, Error, Extern, Func, Linker, Module, Store};
+use wasmi::{
+    core::TrapCode,
+    AsContext,
+    AsContextMut,
+    CallHook,
+    Caller,
+    Error,
+    Extern,
+    Func,
+    Linker,
+    Module,
+    Store,
+};
 
-#[derive(Default)]
 /// Number of times different callback events have fired.
+#[derive(Default)]
 struct TimesCallbacksFired {
     calling_wasm: u32,
     returning_from_wasm: u32,
@@ -43,16 +55,16 @@ fn execute_wasm_fn_a(
     let instance = linker
         .instantiate(&mut store, &module)
         .unwrap()
-        .start(&mut store)
+        .start(store.as_context_mut())
         .unwrap();
     let wasm_fn = instance
-        .get_export(&store, "wasm_fn_a")
+        .get_export(store.as_context(), "wasm_fn_a")
         .and_then(Extern::into_func)
         .unwrap()
         .typed::<(), ()>(&store)
         .unwrap();
 
-    wasm_fn.call(&mut store, ())
+    wasm_fn.call(store.as_context_mut(), ())
 }
 
 #[test]
@@ -124,11 +136,11 @@ fn call_hooks_get_called() {
 
 /// Utility function to generate a callback that fails after is has been called
 /// `n` times.
+#[allow(clippy::type_complexity)]
 fn generate_error_after_n_calls<E: Into<Error> + Clone + Send + Sync + 'static>(
     limit: u32,
     error: E,
-) -> Box<dyn FnMut(&mut TimesCallbacksFired, CallHook) -> Result<(), Error> + Send + Sync + 'static>
-{
+) -> Box<dyn FnMut(&mut TimesCallbacksFired, CallHook) -> Result<(), Error> + Send + Sync> {
     Box::new(move |data, hook_type| -> Result<(), Error> {
         if (data.calling_wasm
             + data.returning_from_wasm

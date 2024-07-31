@@ -183,9 +183,9 @@ fn test_store_is_send_sync() {
     };
 }
 
-#[derive(Debug)]
 /// Argument to the callback set by [`Store::call_hook`] to indicate why the
 /// callback was invoked.
+#[derive(Debug)]
 pub enum CallHook {
     /// Indicates that a WebAssembly function is being called from the host.
     CallingWasm,
