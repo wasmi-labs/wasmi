@@ -957,8 +957,8 @@ impl<T> Store<T> {
     /// # Errors
     ///
     /// If fuel metering is disabled.
-    pub fn get_fuel(&self) -> Result<u64, FuelError> {
-        self.inner.fuel.get_fuel()
+    pub fn get_fuel(&self) -> Result<u64, Error> {
+        self.inner.fuel.get_fuel().map_err(Into::into)
     }
 
     /// Sets the remaining fuel of the [`Store`] to `value` if fuel metering is enabled.
@@ -970,8 +970,8 @@ impl<T> Store<T> {
     /// # Errors
     ///
     /// If fuel metering is disabled.
-    pub fn set_fuel(&mut self, fuel: u64) -> Result<(), FuelError> {
-        self.inner.fuel.set_fuel(fuel)
+    pub fn set_fuel(&mut self, fuel: u64) -> Result<(), Error> {
+        self.inner.fuel.set_fuel(fuel).map_err(Into::into)
     }
 
     /// Allocates a new [`TrampolineEntity`] and returns a [`Trampoline`] reference to it.
@@ -1088,7 +1088,7 @@ impl<'a, T> StoreContext<'a, T> {
     /// # Errors
     ///
     /// If fuel metering is disabled.
-    pub fn get_fuel(&self) -> Result<u64, FuelError> {
+    pub fn get_fuel(&self) -> Result<u64, Error> {
         self.store.get_fuel()
     }
 }
@@ -1151,7 +1151,7 @@ impl<'a, T> StoreContextMut<'a, T> {
     /// # Errors
     ///
     /// If fuel metering is disabled.
-    pub fn get_fuel(&self) -> Result<u64, FuelError> {
+    pub fn get_fuel(&self) -> Result<u64, Error> {
         self.store.get_fuel()
     }
 
@@ -1162,7 +1162,7 @@ impl<'a, T> StoreContextMut<'a, T> {
     /// # Errors
     ///
     /// If fuel metering is disabled.
-    pub fn set_fuel(&mut self, fuel: u64) -> Result<(), FuelError> {
+    pub fn set_fuel(&mut self, fuel: u64) -> Result<(), Error> {
         self.store.set_fuel(fuel)
     }
 }

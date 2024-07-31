@@ -42,6 +42,7 @@ The following list states some of the distinct features of Wasmi.
 - Loosely mirrors the [Wasmtime API](https://docs.rs/wasmtime/).
 - 100% WebAssembly spec testsuite compliance.
 - Built-in support for fuel metering.
+- Supports the official [Wasm C-API](https://github.com/WebAssembly/wasm-c-api).
 
 ## Usage
 
@@ -68,8 +69,11 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 | [`threads`] | 📅 | Planned but not yet implemented. [(#777)] |
 | [`relaxed-simd`] | ❌ | Unlikely to be supported since `simd` is unlikely to be supported. |
 | [`component-model`] | 📅 | Planned but not yet implemented. [(#897)] |
+| [`exception-handling`] | 📅 | Planned but not yet implemented. [(#1037)] |
+| [`branch-hinting`] | 📅 | Planned but not yet implemented. [(#1036)] |
 | | |
-| [WASI] | 👨‍🔬 | Experimental support via the [`wasmi_wasi` crate] or the Wasmi CLI application. |
+| [WASI] | 👨‍🔬 | Experimental support for WASI (`wasip1`) via the [`wasmi_wasi` crate]. |
+| [C-API] | 👨‍🔬 | Experimental support for the official Wasm C-API via the [`wasmi_c_api_impl` crate]. |
 
 [`mutable-global`]: https://github.com/WebAssembly/mutable-global
 [`saturating-float-to-int`]: https://github.com/WebAssembly/nontrapping-float-to-int-conversions
@@ -86,9 +90,13 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 [`threads`]: https://github.com/WebAssembly/threads
 [`relaxed-simd`]: https://github.com/WebAssembly/relaxed-simd
 [`component-model`]: https://github.com/WebAssembly/component-model
+[`exception-handling`]: https://github.com/WebAssembly/exception-handling
+[`branch-hinting`]: https://github.com/WebAssembly/branch-hinting
 
 [WASI]: https://github.com/WebAssembly/WASI
+[C-API]: https://github.com/WebAssembly/wasm-c-api
 [`wasmi_wasi` crate]: ./crates/wasi
+[`wasmi_c_api_impl` crate]: ./crates/c_api
 
 [(#363)]: https://github.com/wasmi-labs/wasmi/issues/363
 [(#364)]: https://github.com/wasmi-labs/wasmi/issues/364
@@ -103,6 +111,8 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 [(#776)]: https://github.com/wasmi-labs/wasmi/pull/776
 [(#777)]: https://github.com/wasmi-labs/wasmi/pull/777
 [(#897)]: https://github.com/wasmi-labs/wasmi/pull/897
+[(#1036)]: https://github.com/wasmi-labs/wasmi/issues/1136
+[(#1037)]: https://github.com/wasmi-labs/wasmi/issues/1137
 
 ## Development
 

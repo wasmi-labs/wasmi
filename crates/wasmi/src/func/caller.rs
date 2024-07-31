@@ -1,5 +1,5 @@
 use super::super::{AsContext, AsContextMut, StoreContext, StoreContextMut};
-use crate::{store::FuelError, Engine, Extern, Instance};
+use crate::{Engine, Error, Extern, Instance};
 
 /// Represents the caller’s context when creating a host function via [`Func::wrap`].
 ///
@@ -56,7 +56,7 @@ impl<'a, T> Caller<'a, T> {
     /// # Errors
     ///
     /// If fuel metering is disabled.
-    pub fn get_fuel(&self) -> Result<u64, FuelError> {
+    pub fn get_fuel(&self) -> Result<u64, Error> {
         self.ctx.store.get_fuel()
     }
 
@@ -67,7 +67,7 @@ impl<'a, T> Caller<'a, T> {
     /// # Errors
     ///
     /// If fuel metering is disabled.
-    pub fn set_fuel(&mut self, fuel: u64) -> Result<(), FuelError> {
+    pub fn set_fuel(&mut self, fuel: u64) -> Result<(), Error> {
         self.ctx.store.set_fuel(fuel)
     }
 }

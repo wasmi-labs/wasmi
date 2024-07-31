@@ -16,6 +16,7 @@ use super::{
     ModuleHeader,
     ModuleHeaderInner,
     ModuleImports,
+    ModuleInner,
 };
 use crate::{
     collections::Map,
@@ -409,10 +410,12 @@ impl ModuleBuilder {
     /// Finishes construction of the WebAssembly [`Module`].
     pub fn finish(self, engine: &Engine) -> Module {
         Module {
-            engine: engine.clone(),
-            header: self.header,
-            data_segments: self.data_segments.finish(),
-            custom_sections: self.custom_sections.finish(),
+            inner: Arc::new(ModuleInner {
+                engine: engine.clone(),
+                header: self.header,
+                data_segments: self.data_segments.finish(),
+                custom_sections: self.custom_sections.finish(),
+            }),
         }
     }
 }
