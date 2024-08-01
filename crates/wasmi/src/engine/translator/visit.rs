@@ -3049,11 +3049,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_extend_i32_s(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::i64_extend_i32_s, TypedVal::i64_extend_i32_s)
+        self.translate_unary(Instruction::i64_extend32_s, TypedVal::i64_extend_i32_s)
     }
 
     fn visit_i64_extend_i32_u(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::i64_extend_i32_u, TypedVal::i64_extend_i32_u)
+        self.translate_i64_extend_i32_u()
     }
 
     fn visit_i64_trunc_f32_s(&mut self) -> Self::Output {

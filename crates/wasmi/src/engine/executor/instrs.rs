@@ -613,8 +613,6 @@ impl<'engine> Executor<'engine> {
                 Instr::I64RotrImm(instr) => self.execute_i64_rotr_imm(instr),
                 Instr::I64RotrImm16Rev(instr) => self.execute_i64_rotr_imm16_rev(instr),
                 Instr::I32WrapI64(instr) => self.execute_i32_wrap_i64(instr),
-                Instr::I64ExtendI32S(instr) => self.execute_i64_extend_i32_s(instr),
-                Instr::I64ExtendI32U(instr) => self.execute_i64_extend_i32_u(instr),
                 Instr::I32Extend8S(instr) => self.execute_i32_extend8_s(instr),
                 Instr::I32Extend16S(instr) => self.execute_i32_extend16_s(instr),
                 Instr::I64Extend8S(instr) => self.execute_i64_extend8_s(instr),

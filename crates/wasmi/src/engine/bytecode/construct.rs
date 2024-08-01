@@ -1386,8 +1386,6 @@ constructor_for_unary_instrs! {
     fn i64_extend32_s() -> Self::I64Extend32S;
 
     fn i32_wrap_i64() -> Self::I32WrapI64;
-    fn i64_extend_i32_s() -> Self::I64ExtendI32S;
-    fn i64_extend_i32_u() -> Self::I64ExtendI32U;
 
     fn f32_demote_f64() -> Self::F32DemoteF64;
     fn f64_promote_f32() -> Self::F64PromoteF32;

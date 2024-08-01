@@ -497,8 +497,6 @@ impl Instruction {
             I::I64RemUImm16Rev(instr) => relink_simple(instr, new_result, old_result),
 
             I::I32WrapI64(instr) |
-            I::I64ExtendI32S(instr) |
-            I::I64ExtendI32U(instr) |
             I::I32TruncF32S(instr) |
             I::I32TruncF32U(instr) |
             I::I32TruncF64S(instr) |

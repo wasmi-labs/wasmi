@@ -1135,11 +1135,6 @@ impl UntypedVal {
         self.execute_unary(<i32 as ExtendInto<i64>>::extend_into)
     }
 
-    /// Execute `i64.extend_i32_u` Wasm operation.
-    pub fn i64_extend_i32_u(self) -> Self {
-        self.execute_unary(<u32 as ExtendInto<i64>>::extend_into)
-    }
-
     /// Execute `i64.trunc_f32_s` Wasm operation.
     ///
     /// # Errors
