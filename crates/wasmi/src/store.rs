@@ -1040,7 +1040,7 @@ impl<T> Store<T> {
     /// - Returns `Ok(())` if no call hook exists.
     #[inline]
     pub(crate) fn invoke_call_hook(&mut self, call_type: CallHook) -> Result<(), Error> {
-        match &mut self.call_hook {
+        match self.call_hook.as_mut() {
             None => Ok(()),
             Some(call_hook) => Self::invoke_call_hook_impl(&mut self.data, call_type, call_hook),
         }
