@@ -169,7 +169,7 @@ pub use self::{
         ModuleImportsIter,
         Read,
     },
-    store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
+    store::{AsContext, AsContextMut, CallHook, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
     value::Val,
 };

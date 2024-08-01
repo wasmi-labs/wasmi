@@ -103,6 +103,19 @@ impl<T> Debug for ResourceLimiterQuery<T> {
     }
 }
 
+/// A wrapper used to store hooks added with [`Store::call_hook`], containing a
+/// boxed `FnMut(&mut T, CallHook) -> Result<(), Error>`.
+///
+/// This wrapper exists to provide a `Debug` impl so that `#[derive(Debug)]`
+/// works for [`Store`].
+#[allow(clippy::type_complexity)]
+struct CallHookWrapper<T>(Box<dyn FnMut(&mut T, CallHook) -> Result<(), Error> + Send + Sync>);
+impl<T> Debug for CallHookWrapper<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "CallHook(...)")
+    }
+}
+
 /// The store that owns all data associated to Wasm modules.
 #[derive(Debug)]
 pub struct Store<T> {
@@ -119,6 +132,10 @@ pub struct Store<T> {
     data: T,
     /// User provided hook to retrieve a [`ResourceLimiter`].
     limiter: Option<ResourceLimiterQuery<T>>,
+    /// User provided callback called when a host calls a WebAssembly function
+    /// or a WebAssembly function calls a host function, or these functions
+    /// return.
+    call_hook: Option<CallHookWrapper<T>>,
 }
 
 /// The inner store that owns all data not associated to the host state.
@@ -164,6 +181,20 @@ fn test_store_is_send_sync() {
         let _ = assert_send::<Store<()>>;
         let _ = assert_sync::<Store<()>>;
     };
+}
+
+/// Argument to the callback set by [`Store::call_hook`] to indicate why the
+/// callback was invoked.
+#[derive(Debug)]
+pub enum CallHook {
+    /// Indicates that a WebAssembly function is being called from the host.
+    CallingWasm,
+    /// Indicates that a WebAssembly function called from the host is returning.
+    ReturningFromWasm,
+    /// Indicates that a host function is being called from a WebAssembly function.
+    CallingHost,
+    /// Indicates that a host function called from a WebAssembly function is returning.
+    ReturningFromHost,
 }
 
 /// An error that may be encountered when operating on the [`Store`].
@@ -821,6 +852,7 @@ where
             trampolines: Arena::new(),
             data: T::default(),
             limiter: None,
+            call_hook: None,
         }
     }
 }
@@ -833,6 +865,7 @@ impl<T> Store<T> {
             trampolines: Arena::new(),
             data,
             limiter: None,
+            call_hook: None,
         }
     }
 
@@ -977,6 +1010,54 @@ impl<T> Store<T> {
         self.trampolines
             .get(entity_index)
             .unwrap_or_else(|| panic!("failed to resolve stored host function: {entity_index:?}"))
+    }
+
+    /// Sets a callback function that is executed whenever a WebAssembly
+    /// function is called from the host or a host function is called from
+    /// WebAssembly, or these functions return.
+    ///
+    /// The function is passed a `&mut T` to the underlying store, and a
+    /// [`CallHook`]. [`CallHook`] can be used to find out what kind of function
+    /// is being called or returned from.
+    ///
+    /// The callback can either return `Ok(())` or an `Err` with an
+    /// [`Error`]. If an error is returned, it is returned to the host
+    /// caller. If there are nested calls, only the most recent host caller
+    /// receives the error and it is not propagated further automatically. The
+    /// hook may be invoked again as new functions are called and returned from.
+    pub fn call_hook(
+        &mut self,
+        hook: impl FnMut(&mut T, CallHook) -> Result<(), Error> + Send + Sync + 'static,
+    ) {
+        self.call_hook = Some(CallHookWrapper(Box::new(hook)));
+    }
+
+    /// Executes the callback set by [`Store::call_hook`] if any has been set.
+    ///
+    /// # Note
+    ///
+    /// - Returns the value returned by the call hook.
+    /// - Returns `Ok(())` if no call hook exists.
+    #[inline]
+    pub(crate) fn invoke_call_hook(&mut self, call_type: CallHook) -> Result<(), Error> {
+        match self.call_hook.as_mut() {
+            None => Ok(()),
+            Some(call_hook) => Self::invoke_call_hook_impl(&mut self.data, call_type, call_hook),
+        }
+    }
+
+    /// Utility function to invoke the [`Store::call_hook`] that is asserted to
+    /// be available in this case.
+    ///
+    /// This is kept as a separate `#[cold]` function to help the compiler speed
+    /// up the code path without any call hooks.
+    #[cold]
+    fn invoke_call_hook_impl(
+        data: &mut T,
+        call_type: CallHook,
+        call_hook: &mut CallHookWrapper<T>,
+    ) -> Result<(), Error> {
+        call_hook.0(data, call_type)
     }
 }
 

@@ -14,6 +14,7 @@ use crate::{
         ResumableInvocation,
     },
     func::HostFuncEntity,
+    CallHook,
     Error,
     Func,
     FuncEntity,
@@ -219,7 +220,9 @@ impl<'engine> EngineExecutor<'engine> {
                     ),
                     Some(instance),
                 )?;
+                store.invoke_call_hook(CallHook::CallingWasm)?;
                 self.execute_func(store)?;
+                store.invoke_call_hook(CallHook::ReturningFromWasm)?;
             }
             FuncEntity::Host(host_func) => {
                 // The host function signature is required for properly
