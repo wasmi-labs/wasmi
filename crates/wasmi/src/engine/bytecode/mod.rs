@@ -2119,10 +2119,6 @@ pub enum Instruction {
 
     /// Wasm `i32.wrap_i64` instruction.
     I32WrapI64(UnaryInstr),
-    /// Wasm `i64.extend_i32_s` instruction.
-    I64ExtendI32S(UnaryInstr),
-    /// Wasm `i64.extend_i32_u` instruction.
-    I64ExtendI32U(UnaryInstr),
 
     /// Wasm `i32.extend8_s` instruction.
     ///

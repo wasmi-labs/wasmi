@@ -31,8 +31,6 @@ macro_rules! impl_fallible_conversion_impls {
 impl<'engine> Executor<'engine> {
     impl_conversion_impls! {
         (Instruction::I32WrapI64, execute_i32_wrap_i64, UntypedVal::i32_wrap_i64),
-        (Instruction::I64ExtendI32S, execute_i64_extend_i32_s, UntypedVal::i64_extend_i32_s),
-        (Instruction::I64ExtendI32U, execute_i64_extend_i32_u, UntypedVal::i64_extend_i32_u),
 
         (Instruction::I32TruncSatF32S, execute_i32_trunc_sat_f32_s, UntypedVal::i32_trunc_sat_f32_s),
         (Instruction::I32TruncSatF32U, execute_i32_trunc_sat_f32_u, UntypedVal::i32_trunc_sat_f32_u),
