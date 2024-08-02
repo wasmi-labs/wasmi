@@ -71,6 +71,7 @@ use wasmparser::{
     MemArg,
     ValidatorResources,
     VisitOperator,
+    WasmFeatures,
 };
 
 /// Reusable allocations of a [`FuncTranslator`].
@@ -175,6 +176,9 @@ pub trait WasmTranslator<'parser>: VisitOperator<'parser, Output = Result<(), Er
     ///   used for translation of the Wasm function body.
     fn setup(&mut self, bytes: &[u8]) -> Result<bool, Error>;
 
+    /// Returns a reference to the [`WasmFeatures`] used by the [`WasmTranslator`].
+    fn features(&self) -> WasmFeatures;
+
     /// Translates the given local variables for the translated function.
     fn translate_locals(
         &mut self,
@@ -256,6 +260,10 @@ where
         // Note: Wasm validation always need to be driven, therefore returning `Ok(false)`
         //       even if the underlying Wasm translator does not need a translation driver.
         Ok(false)
+    }
+
+    fn features(&self) -> WasmFeatures {
+        self.translator.features()
     }
 
     fn translate_locals(
@@ -366,6 +374,13 @@ pub struct LazyFuncTranslator {
     module: ModuleHeader,
     /// Optional information about lazy Wasm validation.
     func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+    /// The Wasm features used for validation and parsing.
+    ///
+    /// # ToDo
+    ///
+    /// We currently require this field since there is no way to query the
+    /// [`WasmFeatures`] of a [`FuncValidator`] even though it has one.
+    features: WasmFeatures,
 }
 
 impl fmt::Debug for LazyFuncTranslator {
@@ -386,12 +401,14 @@ impl LazyFuncTranslator {
         engine_func: EngineFunc,
         module: ModuleHeader,
         func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+        features: WasmFeatures,
     ) -> Self {
         Self {
             func_idx,
             engine_func,
             module,
             func_to_validate,
+            features,
         }
     }
 }
@@ -417,6 +434,11 @@ impl<'parser> WasmTranslator<'parser> for LazyFuncTranslator {
                 self.func_to_validate.take(),
             );
         Ok(true)
+    }
+
+    #[inline]
+    fn features(&self) -> WasmFeatures {
+        self.features
     }
 
     #[inline]
@@ -499,6 +521,11 @@ impl<'parser> WasmTranslator<'parser> for FuncTranslator {
 
     fn setup(&mut self, _bytes: &[u8]) -> Result<bool, Error> {
         Ok(false)
+    }
+
+    #[inline]
+    fn features(&self) -> WasmFeatures {
+        self.engine.config().wasm_features()
     }
 
     fn translate_locals(

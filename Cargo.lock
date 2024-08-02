@@ -503,7 +503,7 @@ dependencies = [
  "itertools 0.12.1",
  "log",
  "smallvec",
- "wasmparser",
+ "wasmparser 0.207.0",
  "wasmtime-types",
 ]
 
@@ -1853,7 +1853,7 @@ dependencies = [
  "spin",
  "wasmi_collections",
  "wasmi_core 0.36.0",
- "wasmparser-nostd",
+ "wasmparser 0.214.0",
  "wast 70.0.2",
  "wat",
 ]
@@ -1968,6 +1968,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasmparser"
+version = "0.214.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5309c1090e3e84dad0d382f42064e9933fdaedb87e468cc239f0eabea73ddcb6"
+dependencies = [
+ "ahash",
+ "bitflags 2.6.0",
+ "hashbrown 0.14.5",
+ "indexmap",
+ "semver",
+]
+
+[[package]]
 name = "wasmparser-nostd"
 version = "0.100.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1983,7 +1996,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c2d8a7b4dabb460208e6b4334d9db5766e84505038b2529e69c3d07ac619115"
 dependencies = [
  "anyhow",
- "wasmparser",
+ "wasmparser 0.207.0",
 ]
 
 [[package]]
@@ -2025,7 +2038,7 @@ dependencies = [
  "sptr",
  "target-lexicon",
  "wasm-encoder 0.207.0",
- "wasmparser",
+ "wasmparser 0.207.0",
  "wasmtime-asm-macros",
  "wasmtime-cache",
  "wasmtime-component-macro",
@@ -2111,7 +2124,7 @@ dependencies = [
  "object",
  "target-lexicon",
  "thiserror",
- "wasmparser",
+ "wasmparser 0.207.0",
  "wasmtime-environ",
  "wasmtime-versioned-export-macros",
 ]
@@ -2135,7 +2148,7 @@ dependencies = [
  "serde_derive",
  "target-lexicon",
  "wasm-encoder 0.207.0",
- "wasmparser",
+ "wasmparser 0.207.0",
  "wasmprinter",
  "wasmtime-component-util",
  "wasmtime-types",
@@ -2196,7 +2209,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "smallvec",
- "wasmparser",
+ "wasmparser 0.207.0",
 ]
 
 [[package]]
@@ -2221,7 +2234,7 @@ dependencies = [
  "gimli",
  "object",
  "target-lexicon",
- "wasmparser",
+ "wasmparser 0.207.0",
  "wasmtime-cranelift",
  "wasmtime-environ",
  "winch-codegen",
@@ -2368,7 +2381,7 @@ dependencies = [
  "regalloc2",
  "smallvec",
  "target-lexicon",
- "wasmparser",
+ "wasmparser 0.207.0",
  "wasmtime-cranelift",
  "wasmtime-environ",
 ]
@@ -2581,7 +2594,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "unicode-xid",
- "wasmparser",
+ "wasmparser 0.207.0",
 ]
 
 [[package]]

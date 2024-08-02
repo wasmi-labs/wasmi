@@ -1,6 +1,5 @@
 use crate::{
     collections::arena::ArenaIndex,
-    core::ValType,
     module,
     module::{ConstExpr, ElementSegmentItems},
     store::Stored,
@@ -82,8 +81,6 @@ impl ElementSegment {
 /// a need to have an instantiated representation of data segments.
 #[derive(Debug)]
 pub struct ElementSegmentEntity {
-    /// The [`ValType`] of elements of this [`ElementSegmentEntity`].
-    ty: ValType,
     /// The underlying items of the instance element segment.
     ///
     /// # Note
@@ -96,26 +93,19 @@ pub struct ElementSegmentEntity {
 
 impl From<&'_ module::ElementSegment> for ElementSegmentEntity {
     fn from(segment: &'_ module::ElementSegment) -> Self {
-        let ty = segment.ty();
         match segment.kind() {
             module::ElementSegmentKind::Passive | module::ElementSegmentKind::Active(_) => Self {
-                ty,
                 items: Some(segment.items_cloned()),
             },
-            module::ElementSegmentKind::Declared => Self::empty(ty),
+            module::ElementSegmentKind::Declared => Self::empty(),
         }
     }
 }
 
 impl ElementSegmentEntity {
     /// Create an empty [`ElementSegmentEntity`] representing dropped element segments.
-    fn empty(ty: ValType) -> Self {
-        Self { ty, items: None }
-    }
-
-    /// Returns the [`ValType`] of elements in the [`ElementSegmentEntity`].
-    pub fn ty(&self) -> ValType {
-        self.ty
+    fn empty() -> Self {
+        Self { items: None }
     }
 
     /// Returns the number of items in the [`ElementSegment`].

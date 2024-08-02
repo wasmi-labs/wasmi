@@ -1,5 +1,4 @@
 use super::{ConstExpr, TableIdx};
-use crate::{core::ValType, module::utils::WasmiValueType};
 use std::sync::Arc;
 
 /// A table element segment within a [`Module`].
@@ -9,8 +8,6 @@ use std::sync::Arc;
 pub struct ElementSegment {
     /// The kind of the [`ElementSegment`].
     kind: ElementSegmentKind,
-    /// The type of elements of the [`ElementSegment`].
-    ty: ValType,
     /// The items of the [`ElementSegment`].
     items: ElementSegmentItems,
 }
@@ -37,14 +34,20 @@ impl ElementSegmentItems {
                 })
                 .map(ConstExpr::new_funcref)
                 .collect::<Arc<[_]>>(),
-            wasmparser::ElementItems::Expressions(items) => items
-                .clone()
-                .into_iter()
-                .map(|item| {
-                    item.unwrap_or_else(|error| panic!("failed to parse element item: {error}"))
-                })
-                .map(ConstExpr::new)
-                .collect::<Arc<[_]>>(),
+            wasmparser::ElementItems::Expressions(reftype, items) => {
+                assert!(matches!(
+                    *reftype,
+                    wasmparser::RefType::EXTERNREF | wasmparser::RefType::FUNCREF
+                ));
+                items
+                    .clone()
+                    .into_iter()
+                    .map(|item| {
+                        item.unwrap_or_else(|error| panic!("failed to parse element item: {error}"))
+                    })
+                    .map(ConstExpr::new)
+                    .collect::<Arc<[_]>>()
+            }
         };
         Self { exprs }
     }
@@ -94,7 +97,7 @@ impl From<wasmparser::ElementKind<'_>> for ElementSegmentKind {
                 table_index,
                 offset_expr,
             } => {
-                let table_index = TableIdx::from(table_index);
+                let table_index = TableIdx::from(table_index.unwrap_or(0));
                 let offset = ConstExpr::new(offset_expr);
                 Self::Active(ActiveElementSegment {
                     table_index,
@@ -109,15 +112,9 @@ impl From<wasmparser::ElementKind<'_>> for ElementSegmentKind {
 
 impl From<wasmparser::Element<'_>> for ElementSegment {
     fn from(element: wasmparser::Element<'_>) -> Self {
-        assert!(
-            element.ty.is_reference_type(),
-            "only reftypes are allowed as element types but found: {:?}",
-            element.ty
-        );
         let kind = ElementSegmentKind::from(element.kind);
-        let ty = WasmiValueType::from(element.ty).into_inner();
         let items = ElementSegmentItems::new(&element.items);
-        Self { kind, ty, items }
+        Self { kind, items }
     }
 }
 
@@ -125,11 +122,6 @@ impl ElementSegment {
     /// Returns the offset expression of the [`ElementSegment`].
     pub fn kind(&self) -> &ElementSegmentKind {
         &self.kind
-    }
-
-    /// Returns the [`ValType`] of the [`ElementSegment`].
-    pub fn ty(&self) -> ValType {
-        self.ty
     }
 
     /// Returns the element items of the [`ElementSegment`].
