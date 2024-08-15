@@ -1,5 +1,5 @@
 use crate::{for_each_newtype, for_each_op, Op, SafeOpDecoder, Visitor};
-use ::core::{fmt, iter, mem::MaybeUninit, slice};
+use ::core::{fmt, iter, mem, mem::MaybeUninit, slice};
 
 /// A byte stream encoder.
 ///
@@ -46,15 +46,48 @@ where
     T: ExactSizeEncoding,
 {
     fn size_hint(&self) -> usize {
-        <T as ExactSizeEncoding>::LEN
+        encoding_size_of::<Self>()
     }
 }
 
-/// Trait implemented by types which have a fixed encoding size.
-pub trait ExactSizeEncoding: Encode {
-    /// The number of bytes required for encoding `Self`.
-    const LEN: usize;
+/// Marker trait implemented by types which have a fixed encoding size equal to `size_of<Self>`.
+pub trait ExactSizeEncoding: Encode + Sized + Copy {}
+
+/// Returns the number of bytes `T` requires for its exact size encoding.
+///
+/// # Note
+///
+/// This is a convenience method and always returns the same value as `size_of::<T>()`.
+pub const fn encoding_size_of<T: ExactSizeEncoding>() -> usize {
+    mem::size_of::<T>()
 }
+
+macro_rules! impl_exact_encoding_size_for {
+    ( $($ty:ty),* $(,)? ) => {
+        $(
+            impl ExactSizeEncoding for $ty {}
+        )*
+    }
+}
+impl_exact_encoding_size_for!(
+    bool,
+    i8,
+    i16,
+    i32,
+    i64,
+    i128,
+    u8,
+    u16,
+    u32,
+    u64,
+    u128,
+    f32,
+    f64,
+    crate::OpCode,
+    crate::Sign,
+    crate::RegSpan,
+    crate::BranchTableTarget,
+);
 
 /// Trait implemented by byte encoders.
 pub trait Extend<T> {
@@ -123,10 +156,6 @@ macro_rules! impl_encode_as_byte {
                     encoder.extend(iter::once(*self as _))
                 }
             }
-
-            impl ExactSizeEncoding for $ty {
-                const LEN: usize = 1;
-            }
         )*
     };
 }
@@ -142,10 +171,6 @@ macro_rules! impl_encode_for_primitive {
                 {
                     encoder.extend(self.to_ne_bytes())
                 }
-            }
-
-            impl ExactSizeEncoding for $ty {
-                const LEN: usize = ::core::mem::size_of::<$ty>();
             }
         )*
     };
@@ -164,9 +189,7 @@ macro_rules! impl_encode_for_nonzero {
                 }
             }
 
-            impl ExactSizeEncoding for ::core::num::NonZero<$ty> {
-                const LEN: usize = <$ty as ExactSizeEncoding>::LEN;
-            }
+            impl ExactSizeEncoding for ::core::num::NonZero<$ty> {}
         )*
     };
 }
@@ -189,9 +212,7 @@ macro_rules! impl_encode_for_newtype {
                 }
             }
 
-            impl ExactSizeEncoding for crate::$name {
-                const LEN: usize = <$ty as ExactSizeEncoding>::LEN;
-            }
+            impl ExactSizeEncoding for crate::$name {}
         )*
     };
 }
@@ -206,10 +227,6 @@ impl Encode for crate::OpCode {
     }
 }
 
-impl ExactSizeEncoding for crate::OpCode {
-    const LEN: usize = <u16 as ExactSizeEncoding>::LEN;
-}
-
 impl Encode for crate::Sign {
     fn encode<T>(&self, encoder: &mut T)
     where
@@ -217,10 +234,6 @@ impl Encode for crate::Sign {
     {
         (*self as u8).encode(encoder)
     }
-}
-
-impl ExactSizeEncoding for crate::Sign {
-    const LEN: usize = <u8 as ExactSizeEncoding>::LEN;
 }
 
 impl Encode for crate::RegSpan {
@@ -232,10 +245,6 @@ impl Encode for crate::RegSpan {
     }
 }
 
-impl ExactSizeEncoding for crate::RegSpan {
-    const LEN: usize = <crate::Reg as ExactSizeEncoding>::LEN;
-}
-
 impl Encode for crate::BranchTableTarget {
     fn encode<T>(&self, encoder: &mut T)
     where
@@ -243,10 +252,6 @@ impl Encode for crate::BranchTableTarget {
     {
         self.value.encode(encoder)
     }
-}
-
-impl ExactSizeEncoding for crate::BranchTableTarget {
-    const LEN: usize = <i32 as ExactSizeEncoding>::LEN;
 }
 
 impl<T: Copy> Encode for crate::Unalign<T>
@@ -261,12 +266,7 @@ where
     }
 }
 
-impl<T> ExactSizeEncoding for crate::Unalign<T>
-where
-    T: Copy + ExactSizeEncoding,
-{
-    const LEN: usize = <T as ExactSizeEncoding>::LEN;
-}
+impl<T> ExactSizeEncoding for crate::Unalign<T> where T: ExactSizeEncoding {}
 
 impl<'a, T> Encode for crate::Slice<'a, T>
 where
@@ -288,8 +288,8 @@ where
     T: Copy + ExactSizeEncoding,
 {
     fn size_hint(&self) -> usize {
-        <u16 as ExactSizeEncoding>::LEN
-            .saturating_add(usize::from(self.len).saturating_mul(<T as ExactSizeEncoding>::LEN))
+        encoding_size_of::<u16>()
+            .saturating_add(usize::from(self.len).saturating_mul(encoding_size_of::<T>()))
     }
 }
 
@@ -302,9 +302,7 @@ impl Encode for crate::TrapCode {
     }
 }
 
-impl ExactSizeEncoding for crate::TrapCode {
-    const LEN: usize = <u8 as ExactSizeEncoding>::LEN;
-}
+impl ExactSizeEncoding for crate::TrapCode {}
 
 macro_rules! define_encode_for_op {
     (
