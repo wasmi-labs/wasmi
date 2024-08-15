@@ -28,11 +28,32 @@ impl Encoder {
 }
 
 /// Trait implemented by types that can encode their instances into a byte represenation.
-pub trait Encode {
+pub trait Encode: EncodeSizeHint {
     /// Encodes `self` via the `encoder` into its byte representation.
     fn encode<T>(&self, encoder: &mut T)
     where
         T: Extend<u8>;
+}
+
+/// Used to query the number of bytes requires to encode instances of `Self`.
+pub trait EncodeSizeHint {
+    /// The number of bytes required to encode `self`.
+    fn size_hint(&self) -> usize;
+}
+
+impl<T> EncodeSizeHint for T
+where
+    T: ExactSizeEncoding,
+{
+    fn size_hint(&self) -> usize {
+        <T as ExactSizeEncoding>::LEN
+    }
+}
+
+/// Trait implemented by types which have a fixed encoding size.
+pub trait ExactSizeEncoding: Encode {
+    /// The number of bytes required for encoding `Self`.
+    const LEN: usize;
 }
 
 /// Trait implemented by byte encoders.
@@ -102,6 +123,10 @@ macro_rules! impl_encode_as_byte {
                     encoder.extend(iter::once(*self as _))
                 }
             }
+
+            impl ExactSizeEncoding for $ty {
+                const LEN: usize = 1;
+            }
         )*
     };
 }
@@ -118,6 +143,10 @@ macro_rules! impl_encode_for_primitive {
                     encoder.extend(self.to_ne_bytes())
                 }
             }
+
+            impl ExactSizeEncoding for $ty {
+                const LEN: usize = ::core::mem::size_of::<$ty>();
+            }
         )*
     };
 }
@@ -126,7 +155,7 @@ impl_encode_for_primitive!(i16, u16, i32, u32, i64, u64, i128, u128, f32, f64);
 macro_rules! impl_encode_for_nonzero {
     ( $( $ty:ty ),* $(,)? ) => {
         $(
-            impl Encode for $ty {
+            impl Encode for ::core::num::NonZero<$ty> {
                 fn encode<T>(&self, encoder: &mut T)
                 where
                     T: Extend<u8>,
@@ -134,21 +163,14 @@ macro_rules! impl_encode_for_nonzero {
                     self.get().encode(encoder)
                 }
             }
+
+            impl ExactSizeEncoding for ::core::num::NonZero<$ty> {
+                const LEN: usize = <$ty as ExactSizeEncoding>::LEN;
+            }
         )*
     };
 }
-impl_encode_for_nonzero!(
-    ::core::num::NonZeroI8,
-    ::core::num::NonZeroU8,
-    ::core::num::NonZeroI16,
-    ::core::num::NonZeroU16,
-    ::core::num::NonZeroI32,
-    ::core::num::NonZeroU32,
-    ::core::num::NonZeroI64,
-    ::core::num::NonZeroU64,
-    ::core::num::NonZeroI128,
-    ::core::num::NonZeroU128,
-);
+impl_encode_for_nonzero!(i8, u8, i16, u16, i32, u32, i64, u64, i128, u128);
 
 macro_rules! impl_encode_for_newtype {
     (
@@ -166,6 +188,10 @@ macro_rules! impl_encode_for_newtype {
                     self.0.encode(encoder);
                 }
             }
+
+            impl ExactSizeEncoding for crate::$name {
+                const LEN: usize = <$ty as ExactSizeEncoding>::LEN;
+            }
         )*
     };
 }
@@ -180,6 +206,10 @@ impl Encode for crate::OpCode {
     }
 }
 
+impl ExactSizeEncoding for crate::OpCode {
+    const LEN: usize = <u16 as ExactSizeEncoding>::LEN;
+}
+
 impl Encode for crate::Sign {
     fn encode<T>(&self, encoder: &mut T)
     where
@@ -187,6 +217,10 @@ impl Encode for crate::Sign {
     {
         (*self as u8).encode(encoder)
     }
+}
+
+impl ExactSizeEncoding for crate::Sign {
+    const LEN: usize = <u8 as ExactSizeEncoding>::LEN;
 }
 
 impl Encode for crate::RegSpan {
@@ -198,6 +232,10 @@ impl Encode for crate::RegSpan {
     }
 }
 
+impl ExactSizeEncoding for crate::RegSpan {
+    const LEN: usize = <crate::Reg as ExactSizeEncoding>::LEN;
+}
+
 impl Encode for crate::BranchTableTarget {
     fn encode<T>(&self, encoder: &mut T)
     where
@@ -207,9 +245,13 @@ impl Encode for crate::BranchTableTarget {
     }
 }
 
+impl ExactSizeEncoding for crate::BranchTableTarget {
+    const LEN: usize = <i32 as ExactSizeEncoding>::LEN;
+}
+
 impl<T: Copy> Encode for crate::Unalign<T>
 where
-    T: Encode,
+    T: ExactSizeEncoding,
 {
     fn encode<E>(&self, encoder: &mut E)
     where
@@ -219,9 +261,16 @@ where
     }
 }
 
+impl<T> ExactSizeEncoding for crate::Unalign<T>
+where
+    T: Copy + ExactSizeEncoding,
+{
+    const LEN: usize = <T as ExactSizeEncoding>::LEN;
+}
+
 impl<'a, T> Encode for crate::Slice<'a, T>
 where
-    T: Copy + Encode,
+    T: Copy + Encode + ExactSizeEncoding,
 {
     fn encode<E>(&self, encoder: &mut E)
     where
@@ -234,6 +283,16 @@ where
     }
 }
 
+impl<'a, T> EncodeSizeHint for crate::Slice<'a, T>
+where
+    T: Copy + ExactSizeEncoding,
+{
+    fn size_hint(&self) -> usize {
+        <u16 as ExactSizeEncoding>::LEN
+            .saturating_add(usize::from(self.len).saturating_mul(<T as ExactSizeEncoding>::LEN))
+    }
+}
+
 impl Encode for crate::TrapCode {
     fn encode<T>(&self, encoder: &mut T)
     where
@@ -241,6 +300,10 @@ impl Encode for crate::TrapCode {
     {
         (*self as u8).encode(encoder)
     }
+}
+
+impl ExactSizeEncoding for crate::TrapCode {
+    const LEN: usize = <u8 as ExactSizeEncoding>::LEN;
 }
 
 macro_rules! define_encode_for_op {
@@ -272,6 +335,20 @@ macro_rules! define_encode_for_op {
             }
         }
 
+        impl<'op> EncodeSizeHint for crate::Op<'op> {
+            fn size_hint(&self) -> usize {
+                match self {
+                    $(
+                        Self::$camel_name(__op) => {
+                            crate::OpCode::$camel_name.size_hint().wrapping_add(
+                                <crate::op::$camel_name as EncodeSizeHint>::size_hint(__op)
+                            )
+                        },
+                    )*
+                }
+            }
+        }
+
         $(
             impl$(<$lt>)? Encode for crate::op::$camel_name $(<$lt>)? {
                 fn encode<T>(&self, __encoder: &mut T)
@@ -282,6 +359,15 @@ macro_rules! define_encode_for_op {
                         $(
                             self.$field_ident.encode(__encoder)
                         );*
+                    )?
+                }
+            }
+
+            impl$(<$lt>)? EncodeSizeHint for crate::op::$camel_name $(<$lt>)? {
+                fn size_hint(&self) -> usize {
+                    0_usize
+                    $(
+                        $( .wrapping_add(self.$field_ident.size_hint()) )*
                     )?
                 }
             }
@@ -513,11 +599,7 @@ impl OpEncoder {
     /// # Errors
     ///
     /// - If `pos` is invalid for `self`.
-    /// - If `new_op` uses fewer bytes for its encoding than the old [`Op`].
-    ///
-    /// # Panics
-    ///
-    /// If `new_op` uses more bytes for its encoding than the old [`Op`].
+    /// - If `new_op` has a different encoding size from the to-be patched [`Op`].
     pub fn patch<'a>(&mut self, pos: OpPos, new_op: impl Into<Op<'a>>) -> Result<(), PatchError> {
         self.patch_impl(pos, new_op.into())
     }
@@ -527,11 +609,19 @@ impl OpEncoder {
         let Some(bytes) = self.get_bytes_mut(pos) else {
             return Err(PatchError::InvalidOpPos);
         };
+        let size_hint = new_op.size_hint();
+        if bytes.len() != size_hint {
+            return Err(PatchError::EncodedSizeMismatch {
+                old_size: bytes.len(),
+                new_size: size_hint,
+            });
+        }
         let mut encoder = SliceEncoder::from(bytes);
         new_op.encode(&mut encoder);
-        if encoder.has_unencoded() {
-            return Err(PatchError::UnencodedBytes);
-        }
+        assert!(
+            !encoder.has_unencoded(),
+            "unexpected mismatch in encoding size between old `Op` and new `Op`",
+        );
         Ok(())
     }
 
@@ -555,18 +645,20 @@ impl<'a> IntoIterator for &'a OpEncoder {
 pub enum PatchError {
     /// Encountered when trying to patch an [`Op`] at an invalid [`OpPos`].
     InvalidOpPos,
-    /// Encountered when trying to patch an [`Op`] with one that requires less bytes for its encoding.
-    UnencodedBytes,
+    /// Encountered when trying to patch an [`Op`] with one with a differing encoding size.
+    EncodedSizeMismatch {
+        /// The encoding size of the to-be patched [`Op`].
+        old_size: usize,
+        /// The encoding size of the new [`Op`].
+        new_size: usize,
+    },
 }
 
 impl fmt::Display for PatchError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidOpPos => write!(f, "encountered invalid `OpPos` for patching"),
-            Self::UnencodedBytes => write!(
-                f,
-                "new `Op` requires less bytes for its encoding than to-be patched `Op`"
-            ),
+            Self::EncodedSizeMismatch { old_size, new_size } => write!(f, "new `Op` required {new_size} bytes for its encoding but old `Op` required {old_size} bytes")
         }
     }
 }
@@ -606,9 +698,9 @@ impl<'a> Iterator for OpIter<'a> {
         let end = self.ends.next()?.0;
         self.start = end;
         let bytes = &self.bytes[start..end];
-        let op = SafeOpDecoder::new(bytes)
-            .decode()
-            .expect("expect all `Op` in `OpEncoder` to be valid");
+        let op = SafeOpDecoder::new(bytes).decode().unwrap_or_else(|error| {
+            panic!("expect all `Op` in `OpEncoder` to be valid but encountered: {error}")
+        });
         Some(op)
     }
 }
