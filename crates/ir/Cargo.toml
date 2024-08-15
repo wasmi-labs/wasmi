@@ -1,0 +1,16 @@
+[package]
+name = "wasmi_ir"
+version.workspace = true
+rust-version.workspace = true
+documentation = "https://docs.rs/wasmi_ir/"
+description = "The WebAssembly interpreter bytecode (IR) definitions"
+authors.workspace = true
+repository.workspace = true
+edition.workspace = true
+readme.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+wasmi_core = { workspace = true }
