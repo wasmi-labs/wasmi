@@ -245,7 +245,7 @@ jobs:
         run: |
           crash_file=$(ls fuzz/artifacts/execute/crash-* | head -n 1)
           echo "Minimizing $crash_file"
-          cargo fuzz cmin execute --artifact-dir=fuzz/minimized -- "$crash_file"
+          cargo fuzz cmin execute "$crash_file"
       # Install wabt toolkit to convert wasm to wat,
       # always run after the minimization step if it executed
       - name: Install wabt (WebAssembly Binary Toolkit)
@@ -308,7 +308,7 @@ jobs:
       - name: Build Fuzzing
         run: cargo fuzz build bytecode
       # 2 threads fuzz for 2 minutes, each.
-      - name: Fuzz (Execution)
+      - name: Fuzz (Bytecode)
         run: cargo fuzz run bytecode -j 2 --verbose -- -max_total_time=120
       # Step to minimize the crash artifact,
       # only if the fuzzing failed (i.e., found an error)
@@ -317,7 +317,7 @@ jobs:
         run: |
           crash_file=$(ls fuzz/artifacts/bytecode/crash-* | head -n 1)
           echo "Minimizing $crash_file"
-          cargo fuzz cmin execute --artifact-dir=fuzz/minimized -- "$crash_file"
+          cargo fuzz cmin bytecode "$crash_file"
       # Install wabt toolkit to convert wasm to wat,
       # always run after the minimization step if it executed
       - name: Install wabt (WebAssembly Binary Toolkit)
