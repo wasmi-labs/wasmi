@@ -235,8 +235,33 @@ jobs:
           cargo install cargo-fuzz || true
       - name: Build Fuzzing
         run: cargo fuzz build execute
+      # 2 threads fuzz for 2 minutes, each.
       - name: Fuzz (Execution)
-        run: cargo fuzz run execute -j 2 --verbose -- -max_total_time=120 # 2 minutes of fuzzing
+        run: cargo fuzz run execute -j 2 --verbose -- -max_total_time=120
+      # Step to minimize the crash artifact,
+      # only if the fuzzing failed (i.e., found an error)
+      - name: Minimize crash artifact
+        if: ${{ failure() }}
+        run: |
+          crash_file=$(ls fuzz/artifacts/execute/default/crash-* | head -n 1)
+          echo "Minimizing $crash_file"
+          cargo fuzz cmin execute --artifact-dir=fuzz/minimized -- "$crash_file"
+      # Install wabt toolkit to convert wasm to wat,
+      # always run after the minimization step if it executed
+      - name: Install wabt (WebAssembly Binary Toolkit)
+        if: ${{ always() }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wabt
+      # Convert minimized crash artifact to .wat format and print it to console.
+      - name: Convert minimized crash artifact to .wat format
+        if: ${{ always() }}
+        run: |
+          minimized_crash=$(ls fuzz/minimized/* | head -n 1)
+          wasm2wat "$minimized_crash" -o minimized_crash.wat
+          echo "Converted $minimized_crash to minimized_crash.wat"
+          echo "Contents of the .wat file:"
+          cat minimized_crash.wat
 
   fuzz-differential:
     name: Fuzz (Differential)
