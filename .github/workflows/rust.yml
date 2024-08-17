@@ -241,7 +241,7 @@ jobs:
       # Step to minimize the crash artifact,
       # only if the fuzzing failed (i.e., found an error)
       - name: Minimize crash artifact
-        if: ${{ always() && (success() || failure()) }}
+        if: ${{ failure() }}
         run: |
           crash_file=$(ls fuzz/artifacts/execute/default/crash-* | head -n 1)
           echo "Minimizing $crash_file"
@@ -249,13 +249,13 @@ jobs:
       # Install wabt toolkit to convert wasm to wat,
       # always run after the minimization step if it executed
       - name: Install wabt (WebAssembly Binary Toolkit)
-        if: ${{ always() && (success() || failure()) }}
+        if: ${{ failure() }}
         run: |
           sudo apt-get update
           sudo apt-get install -y wabt
       # Convert minimized crash artifact to .wat format and print it to console.
       - name: Convert minimized crash artifact to .wat format
-        if: ${{ always() && (success() || failure()) }}
+        if: ${{ failure() }}
         run: |
           minimized_crash=$(ls fuzz/minimized/* | head -n 1)
           wasm2wat "$minimized_crash" -o minimized_crash.wat
@@ -283,11 +283,12 @@ jobs:
           cargo install cargo-fuzz || true
       - name: Build Fuzzing
         run: cargo fuzz build differential
+      # 2 threads fuzz for 2 minutes, each.
       - name: Fuzz (Differential)
-        run: cargo fuzz run differential -j 2 --verbose -- -max_total_time=120 # 2 minutes of fuzzing
+        run: cargo fuzz run differential -j 2 --verbose -- -max_total_time=120
 
   fuzz-bytecode:
-    name: Fuzz (Execution)
+    name: Fuzz (Bytecode)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
@@ -306,8 +307,33 @@ jobs:
           cargo install cargo-fuzz || true
       - name: Build Fuzzing
         run: cargo fuzz build bytecode
+      # 2 threads fuzz for 2 minutes, each.
       - name: Fuzz (Execution)
-        run: cargo fuzz run bytecode -j 2 --verbose -- -max_total_time=120 # 2 minutes of fuzzing
+        run: cargo fuzz run bytecode -j 2 --verbose -- -max_total_time=120
+      # Step to minimize the crash artifact,
+      # only if the fuzzing failed (i.e., found an error)
+      - name: Minimize crash artifact
+        if: ${{ failure() }}
+        run: |
+          crash_file=$(ls fuzz/artifacts/execute/default/crash-* | head -n 1)
+          echo "Minimizing $crash_file"
+          cargo fuzz cmin execute --artifact-dir=fuzz/minimized -- "$crash_file"
+      # Install wabt toolkit to convert wasm to wat,
+      # always run after the minimization step if it executed
+      - name: Install wabt (WebAssembly Binary Toolkit)
+        if: ${{ failure() }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wabt
+      # Convert minimized crash artifact to .wat format and print it to console.
+      - name: Convert minimized crash artifact to .wat format
+        if: ${{ failure() }}
+        run: |
+          minimized_crash=$(ls fuzz/minimized/* | head -n 1)
+          wasm2wat "$minimized_crash" -o minimized_crash.wat
+          echo "Converted $minimized_crash to minimized_crash.wat"
+          echo "Contents of the .wat file:"
+          cat minimized_crash.wat
 
   miri:
     name: Miri
