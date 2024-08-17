@@ -243,7 +243,7 @@ jobs:
       - name: Minimize crash artifact
         if: ${{ failure() }}
         run: |
-          crash_file=$(ls fuzz/artifacts/execute/default/crash-* | head -n 1)
+          crash_file=$(ls fuzz/artifacts/execute/crash-* | head -n 1)
           echo "Minimizing $crash_file"
           cargo fuzz cmin execute --artifact-dir=fuzz/minimized -- "$crash_file"
       # Install wabt toolkit to convert wasm to wat,
@@ -315,7 +315,7 @@ jobs:
       - name: Minimize crash artifact
         if: ${{ failure() }}
         run: |
-          crash_file=$(ls fuzz/artifacts/execute/default/crash-* | head -n 1)
+          crash_file=$(ls fuzz/artifacts/bytecode/crash-* | head -n 1)
           echo "Minimizing $crash_file"
           cargo fuzz cmin execute --artifact-dir=fuzz/minimized -- "$crash_file"
       # Install wabt toolkit to convert wasm to wat,
