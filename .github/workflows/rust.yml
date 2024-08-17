@@ -241,7 +241,7 @@ jobs:
       # Step to minimize the crash artifact,
       # only if the fuzzing failed (i.e., found an error)
       - name: Minimize crash artifact
-        if: ${{ failure() }}
+        if: ${{ always() && (success() || failure()) }}
         run: |
           crash_file=$(ls fuzz/artifacts/execute/default/crash-* | head -n 1)
           echo "Minimizing $crash_file"
@@ -249,13 +249,13 @@ jobs:
       # Install wabt toolkit to convert wasm to wat,
       # always run after the minimization step if it executed
       - name: Install wabt (WebAssembly Binary Toolkit)
-        if: ${{ always() }}
+        if: ${{ always() && (success() || failure()) }}
         run: |
           sudo apt-get update
           sudo apt-get install -y wabt
       # Convert minimized crash artifact to .wat format and print it to console.
       - name: Convert minimized crash artifact to .wat format
-        if: ${{ always() }}
+        if: ${{ always() && (success() || failure()) }}
         run: |
           minimized_crash=$(ls fuzz/minimized/* | head -n 1)
           wasm2wat "$minimized_crash" -o minimized_crash.wat
