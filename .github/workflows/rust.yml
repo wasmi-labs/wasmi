@@ -238,30 +238,6 @@ jobs:
       # 2 threads fuzz for 2 minutes, each.
       - name: Fuzz (Execution)
         run: cargo fuzz run execute -j 2 --verbose -- -max_total_time=120
-      # Step to minimize the crash artifact,
-      # only if the fuzzing failed (i.e., found an error)
-      - name: Minimize crash artifact
-        if: ${{ failure() }}
-        run: |
-          crash_file=$(ls fuzz/artifacts/execute/crash-* | head -n 1)
-          echo "Minimizing $crash_file"
-          cargo fuzz tmin -v execute "$crash_file"
-      # Install wabt toolkit to convert wasm to wat,
-      # always run after the minimization step if it executed
-      - name: Install wabt (WebAssembly Binary Toolkit)
-        if: ${{ failure() }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wabt
-      # Convert minimized crash artifact to .wat format and print it to console.
-      - name: Convert minimized crash artifact to .wat format
-        if: ${{ failure() }}
-        run: |
-          minimized_crash=$(ls fuzz/artifacts/execute/crash-* | head -n 1)
-          wasm2wat "$minimized_crash" -o minimized_crash.wat
-          echo "Converted $minimized_crash to minimized_crash.wat"
-          echo "Contents of the .wat file:"
-          cat minimized_crash.wat
 
   fuzz-differential:
     name: Fuzz (Differential)
@@ -310,30 +286,6 @@ jobs:
       # 2 threads fuzz for 2 minutes, each.
       - name: Fuzz (Bytecode)
         run: cargo fuzz run bytecode -j 2 --verbose -- -max_total_time=120
-      # Step to minimize the crash artifact,
-      # only if the fuzzing failed (i.e., found an error)
-      - name: Minimize crash artifact
-        if: ${{ failure() }}
-        run: |
-          crash_file=$(ls fuzz/artifacts/bytecode/crash-* | head -n 1)
-          echo "Minimizing $crash_file"
-          cargo fuzz tmin -v bytecode "$crash_file"
-      # Install wabt toolkit to convert wasm to wat,
-      # always run after the minimization step if it executed
-      - name: Install wabt (WebAssembly Binary Toolkit)
-        if: ${{ failure() }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wabt
-      # Convert minimized crash artifact to .wat format and print it to console.
-      - name: Convert minimized crash artifact to .wat format
-        if: ${{ failure() }}
-        run: |
-          minimized_crash=$(ls fuzz/artifacts/bytecode/crash-* | head -n 1)
-          wasm2wat "$minimized_crash" -o minimized_crash.wat
-          echo "Converted $minimized_crash to minimized_crash.wat"
-          echo "Contents of the .wat file:"
-          cat minimized_crash.wat
 
   miri:
     name: Miri
