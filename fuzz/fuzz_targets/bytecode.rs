@@ -9,13 +9,13 @@ fuzz_target!(|data| {
 
 /// Fuzzing procedure:
 ///
-/// 1. Use [`ir::SafeDecoder`] to decode the `data` bytes into an `Op` buffer `ops` until an error is met.
+/// 1. Use [`ir::CheckedDecoder`] to decode the `data` bytes into an `Op` buffer `ops` until an error is met.
 /// 2. Encode `ops` via [`ir::Encoder`].
-/// 3. Decode the encoded `ops` from step 2 again safely via [`ir::SafeDecoder`] and store into `ops2`.
-/// 4. Decode the encoded `ops` from step 2 unsafely via [`ir::UnsafeDecoder`] and store into `ops3`.
+/// 3. Decode the encoded `ops` from step 2 again safely via [`ir::CheckedDecoder`] and store into `ops2`.
+/// 4. Decode the encoded `ops` from step 2 unsafely via [`ir::UnCheckedDecoder`] and store into `ops3`.
 /// 5. Assert that `ops`, `ops2` and `ops3` are all equal.
 fn fuzz(data: &[u8]) -> Result<()> {
-    let mut decoder = ir::SafeOpDecoder::new(data);
+    let mut decoder = ir::CheckedOpDecoder::new(data);
     let mut ops = Vec::new();
     while let Ok(decoded) = decoder.decode() {
         ops.push(decoded);
@@ -24,8 +24,8 @@ fn fuzz(data: &[u8]) -> Result<()> {
     for encoded in &ops {
         encoder.push(*encoded);
     }
-    let mut safe_decoder = ir::SafeOpDecoder::new(encoder.as_bytes());
-    let mut unsafe_decoder = ir::UnsafeOpDecoder::new(encoder.as_bytes().as_ptr());
+    let mut safe_decoder = ir::CheckedOpDecoder::new(encoder.as_bytes());
+    let mut unsafe_decoder = ir::UncheckedOpDecoder::new(encoder.as_bytes().as_ptr());
     let mut ops2 = Vec::new();
     let mut ops3 = Vec::new();
     for _ in 0..ops.len() {

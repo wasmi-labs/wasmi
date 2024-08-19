@@ -1,5 +1,5 @@
 use crate::{
-    decode::{Decode, SafeDecoder, UnsafeDecoder},
+    decode::{Decode, CheckedDecoder, UncheckedDecoder},
     encode::{Encode, Encoder},
     *,
 };
@@ -13,10 +13,10 @@ fn encode_decode_reg_slice() {
     let mut enc = Encoder::default();
     reg_slice.encode(&mut enc);
     let encoded_bytes = enc.as_slice();
-    let mut decoder = SafeDecoder::new(encoded_bytes);
+    let mut decoder = CheckedDecoder::new(encoded_bytes);
     let decoded = Slice::decode(&mut decoder).unwrap();
     assert_eq!(reg_slice, decoded);
-    let mut decoder = unsafe { UnsafeDecoder::new(encoded_bytes.as_ptr()) };
+    let mut decoder = unsafe { UncheckedDecoder::new(encoded_bytes.as_ptr()) };
     let decoded = Slice::decode(&mut decoder).unwrap();
     assert_eq!(reg_slice, decoded);
 }

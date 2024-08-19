@@ -3,9 +3,9 @@ use crate::{
     for_each_op,
     primitive::*,
     DecodeError,
-    SafeOpDecoder,
+    CheckedOpDecoder,
     Slice,
-    UnsafeOpDecoder,
+    UncheckedOpDecoder,
 };
 
 /// Trait implemented by types that can be visited by an [`Visitor`].
@@ -31,7 +31,7 @@ macro_rules! define_visitor {
     ) => {
         /// Trait implemented by Wasmi operator visitors.
         ///
-        /// Visitors can be visited via [`SafeOpDecoder::visit`] and [`UnsafeOpDecoder::visit`].
+        /// Visitors can be visited via [`CheckedOpDecoder::visit`] and [`UncheckedOpDecoder::visit`].
         pub trait Visitor {
             /// The result type returned by each visit method of the visitor.
             type Output;
@@ -69,7 +69,7 @@ macro_rules! define_visitor {
 }
 for_each_op!(define_visitor);
 
-impl<'op> SafeOpDecoder<'op> {
+impl<'op> CheckedOpDecoder<'op> {
     /// Visits `visitor` with the next decoded [`Op`](crate::Op).
     ///
     /// # Errors
@@ -83,7 +83,7 @@ impl<'op> SafeOpDecoder<'op> {
     }
 }
 
-impl UnsafeOpDecoder {
+impl UncheckedOpDecoder {
     /// Visits `visitor` with the next decoded [`Op`](crate::Op).
     ///
     /// # Safety

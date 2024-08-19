@@ -103,22 +103,22 @@ pub trait Decoder<'op> {
     fn read_slice(&mut self, n: usize) -> Result<&'op [u8], Self::Error>;
 }
 
-/// A safe implementation of a [`Decoder`].
+/// An implementation of a safe [`Decoder`] that checks its decoded entities.
 #[derive(Debug, Clone)]
-pub struct SafeDecoder<'op> {
-    /// The bytes underlying to the [`SafeDecoder`].
+pub struct CheckedDecoder<'op> {
+    /// The bytes underlying to the [`CheckedDecoder`].
     bytes: &'op [u8],
     /// The current position within the `bytes` slice.
     pos: usize,
 }
 
-impl<'op> SafeDecoder<'op> {
+impl<'op> CheckedDecoder<'op> {
     pub fn new(bytes: &'op [u8]) -> Self {
         Self { bytes, pos: 0 }
     }
 }
 
-impl<'op> Decoder<'op> for SafeDecoder<'op> {
+impl<'op> Decoder<'op> for CheckedDecoder<'op> {
     type Error = DecodeError;
 
     fn invalid_non_zero_value(&self) -> Self::Error {
@@ -173,16 +173,16 @@ impl<'op> Decoder<'op> for SafeDecoder<'op> {
     }
 }
 
-/// An unsafe and fast implementation of a [`Decoder`].
+/// An unsafe and fast implementation of a [`Decoder`] that avoids safety checks.
 #[derive(Debug, Copy, Clone)]
 #[repr(transparent)]
-pub struct UnsafeDecoder {
+pub struct UncheckedDecoder {
     /// The underlying bytes of encoded data.
     ptr: *const u8,
 }
 
-impl UnsafeDecoder {
-    /// Creates a new [`UnsafeDecoder`].
+impl UncheckedDecoder {
+    /// Creates a new [`UnCheckedDecoder`].
     ///
     /// # Safety
     ///
@@ -193,7 +193,7 @@ impl UnsafeDecoder {
         Self { ptr }
     }
 
-    /// Offsets the underlying pointer of the [`UnsafeDecoder`] by `offset`.
+    /// Offsets the underlying pointer of the [`UnCheckedDecoder`] by `offset`.
     ///
     /// # Safety
     ///
@@ -217,7 +217,7 @@ impl UnsafeDecoder {
 #[derive(Debug)]
 pub enum NeverError {}
 
-impl<'op> Decoder<'op> for UnsafeDecoder {
+impl<'op> Decoder<'op> for UncheckedDecoder {
     type Error = NeverError;
 
     #[inline]
@@ -563,18 +563,18 @@ macro_rules! impl_decode_for_trap_code {
 }
 for_each_trap_code!(impl_decode_for_trap_code);
 
-/// An implementation of a safe [`Op`] decoder.
+/// An implementation of a safe [`Op`] decoder that checks its decoded entities.
 #[derive(Debug, Clone)]
-pub struct SafeOpDecoder<'op>(pub(crate) SafeDecoder<'op>);
+pub struct CheckedOpDecoder<'op>(pub(crate) CheckedDecoder<'op>);
 
-impl<'op> SafeOpDecoder<'op> {
-    /// Creates a new [`SafeOpDecoder`] from the given byte slice.
+impl<'op> CheckedOpDecoder<'op> {
+    /// Creates a new [`CheckedOpDecoder`] from the given byte slice.
     pub fn new(bytes: &'op [u8]) -> Self {
-        Self(SafeDecoder::new(bytes))
+        Self(CheckedDecoder::new(bytes))
     }
 }
 
-impl<'op> SafeOpDecoder<'op> {
+impl<'op> CheckedOpDecoder<'op> {
     /// Decode the next [`Op`] from `self`.
     ///
     /// # Errors
@@ -587,41 +587,41 @@ impl<'op> SafeOpDecoder<'op> {
 
 /// An implementation of a fast but unsafe [`Op`] decoder.
 #[derive(Debug, Clone)]
-pub struct UnsafeOpDecoder(pub(crate) UnsafeDecoder);
+pub struct UncheckedOpDecoder(pub(crate) UncheckedDecoder);
 
-impl UnsafeOpDecoder {
-    /// Creates a new [`UnsafeOpDecoder`] from the given pointer to bytes.
+impl UncheckedOpDecoder {
+    /// Creates a new [`UncheckedOpDecoder`] from the given pointer to bytes.
     pub fn new(ptr: *const u8) -> Self {
         // We disable the warning here since it is a false-positive clippy warnings as described in the linked issue:
         // <https://github.com/rust-lang/rust-clippy/issues/3045#issuecomment-1437288944>
         // TODO: remove this silencing of the warning when the issue has been fixed.
         #![allow(clippy::not_unsafe_ptr_arg_deref)]
-        // Safety: Creating an instance of an [`UnsafeOpDecoder`] isn't unsafe
+        // Safety: Creating an instance of an [`UncheckedOpDecoder`] isn't unsafe
         //         since its decode methods are instead marked as `unsafe` which
         //         makes more sense since the decoding is where undefined behavior
         //         might occur when using this abstraction improperly.
         //
-        // Unfortuantely the same rules cannot be applied to `UnsafeDecoder`'s API
+        // Unfortuantely the same rules cannot be applied to `UnCheckedDecoder`'s API
         // since it implements `Decoder` which offers a safe API and thus at least
         // its constructor has to be marked as `unsafe` to indicate to users that
         // the underlying API is actually unsafe to use.
-        Self(unsafe { UnsafeDecoder::new(ptr) })
+        Self(unsafe { UncheckedDecoder::new(ptr) })
     }
 }
 
-impl<'op> UnsafeOpDecoder {
+impl<'op> UncheckedOpDecoder {
     /// Decode the next [`Op`] from `self`.
     ///
     /// # Safety
     ///
     /// It is the callers responsibility to ensure that the bytes underlying
-    /// to the [`UnsafeOpDecoder`] can safely be decoded as [`Op`].
+    /// to the [`UncheckedOpDecoder`] can safely be decoded as [`Op`].
     #[inline]
     pub unsafe fn decode(&mut self) -> Op<'op> {
         <Op as Decode<'op>>::decode(&mut self.0).unwrap_unchecked()
     }
 
-    /// Offsets the position within the [`UnsafeOpDecoder`] by `offset` bytes.
+    /// Offsets the position within the [`UncheckedOpDecoder`] by `offset` bytes.
     ///
     /// # Safety
     ///
@@ -633,7 +633,7 @@ impl<'op> UnsafeOpDecoder {
         Self(self.0.offset(offset))
     }
 
-    /// Returns the underlying byte pointer of the [`UnsafeOpDecoder`].
+    /// Returns the underlying byte pointer of the [`UncheckedOpDecoder`].
     #[inline]
     pub fn as_ptr(&self) -> *const u8 {
         self.0.as_ptr()

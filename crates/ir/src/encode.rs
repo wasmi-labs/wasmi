@@ -1,4 +1,4 @@
-use crate::{for_each_newtype, for_each_op, Op, SafeOpDecoder, Visitor};
+use crate::{for_each_newtype, for_each_op, Op, CheckedOpDecoder, Visitor};
 use ::core::{fmt, iter, mem, mem::MaybeUninit, slice};
 
 /// A byte stream encoder.
@@ -456,7 +456,7 @@ impl OpEncoder {
     }
 
     /// Implementation detail for [`Self::pop_drop`], [`Self::pop_decode`] and [`Self::pop_visit`].
-    fn pop_impl<'a, R>(&'a mut self, f: impl FnOnce(SafeOpDecoder<'a>) -> R) -> Option<R> {
+    fn pop_impl<'a, R>(&'a mut self, f: impl FnOnce(CheckedOpDecoder<'a>) -> R) -> Option<R> {
         let last_pos = self.last_pos()?;
         let (start, end) = self
             .get_start_end(last_pos)
@@ -469,7 +469,7 @@ impl OpEncoder {
         // Safety: this is safe as this exact slice of bytes have already been initialized
         //         and are just marked as uninitialized since we truncated the `Vec`'s length above.
         let bytes: &[u8] = unsafe { &*(bytes as *const [MaybeUninit<u8>] as *const [u8]) };
-        let result = f(SafeOpDecoder::new(bytes));
+        let result = f(CheckedOpDecoder::new(bytes));
         self.ends
             .pop()
             .expect("must have an `ends` item for every `Op`");
@@ -485,7 +485,7 @@ impl OpEncoder {
     /// If decoding of the [`Op`] at `pos` fails.
     pub fn get(&self, pos: OpPos) -> Option<Op> {
         let bytes = self.get_bytes(pos)?;
-        let Ok(decoded) = SafeOpDecoder::new(bytes).decode() else {
+        let Ok(decoded) = CheckedOpDecoder::new(bytes).decode() else {
             panic!("`OpEncoder::get`: failed to decode `Op` at: {pos:?}")
         };
         Some(decoded)
@@ -586,7 +586,7 @@ impl OpEncoder {
     /// If decoding of the [`Op`] at `pos` fails.
     pub fn visit<V: Visitor>(&self, pos: OpPos, visitor: &mut V) -> Option<V::Output> {
         let bytes = self.get_bytes(pos)?;
-        let Ok(result) = SafeOpDecoder::new(bytes).visit(visitor) else {
+        let Ok(result) = CheckedOpDecoder::new(bytes).visit(visitor) else {
             panic!("`OpEncoder::get`: failed to decode `Op` at: {pos:?}")
         };
         Some(result)
@@ -696,7 +696,7 @@ impl<'a> Iterator for OpIter<'a> {
         let end = self.ends.next()?.0;
         self.start = end;
         let bytes = &self.bytes[start..end];
-        let op = SafeOpDecoder::new(bytes).decode().unwrap_or_else(|error| {
+        let op = CheckedOpDecoder::new(bytes).decode().unwrap_or_else(|error| {
             panic!("expect all `Op` in `OpEncoder` to be valid but encountered: {error}")
         });
         Some(op)

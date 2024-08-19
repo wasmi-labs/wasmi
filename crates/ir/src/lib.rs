@@ -6,8 +6,8 @@ mod primitive;
 mod tests;
 
 pub use self::{
-    decode::{DecodeError, SafeOpDecoder, UnsafeOpDecoder},
-    dispatch::{OpVariant, UnsafeOpVariantDecoder},
+    decode::{DecodeError, CheckedOpDecoder, UncheckedOpDecoder},
+    dispatch::{OpVariant, UncheckedOpVariantDecoder},
     encode::{OpEncoder, OpIter, OpPos, PatchError},
     primitive::*,
     r#enum::*,
