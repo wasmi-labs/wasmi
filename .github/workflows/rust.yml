@@ -257,7 +257,7 @@ jobs:
       - name: Convert minimized crash artifact to .wat format
         if: ${{ failure() }}
         run: |
-          minimized_crash=$(ls fuzz/minimized/* | head -n 1)
+          minimized_crash=$(ls fuzz/artifacts/execute/crash-* | head -n 1)
           wasm2wat "$minimized_crash" -o minimized_crash.wat
           echo "Converted $minimized_crash to minimized_crash.wat"
           echo "Contents of the .wat file:"
@@ -329,7 +329,7 @@ jobs:
       - name: Convert minimized crash artifact to .wat format
         if: ${{ failure() }}
         run: |
-          minimized_crash=$(ls fuzz/minimized/* | head -n 1)
+          minimized_crash=$(ls fuzz/artifacts/bytecode/crash-* | head -n 1)
           wasm2wat "$minimized_crash" -o minimized_crash.wat
           echo "Converted $minimized_crash to minimized_crash.wat"
           echo "Contents of the .wat file:"
