@@ -2520,6 +2520,25 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Translates a Wasm `i64.extend_i32_u` instruction.
+    fn translate_i64_extend_i32_u(&mut self) -> Result<(), Error> {
+        bail_unreachable!(self);
+        if let TypedProvider::Register(_) = self.alloc.stack.peek() {
+            // Nothing to do.
+            //
+            // We try to not manipulate the emulation stack if not needed.
+            return Ok(());
+        }
+        // Case: At this point we know that the top-most stack item is a constant value.
+        //       We pop it, change its type and push it back onto the stack.
+        let TypedProvider::Const(value) = self.alloc.stack.pop() else {
+            panic!("the top-most stack item was asserted to be a constant value but a register was found")
+        };
+        debug_assert_eq!(value.ty(), ValType::I32);
+        self.alloc.stack.push_const(u64::from(u32::from(value)));
+        Ok(())
+    }
+
     /// Translates an unconditional `return` instruction.
     fn translate_return(&mut self) -> Result<(), Error> {
         let fuel_info = self.fuel_info();

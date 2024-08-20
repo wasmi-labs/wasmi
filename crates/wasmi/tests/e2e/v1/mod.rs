@@ -1,3 +1,4 @@
+mod call_hook;
 mod fuel_consumption;
 mod fuel_metering;
 mod func;

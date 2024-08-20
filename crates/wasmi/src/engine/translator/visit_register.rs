@@ -523,8 +523,6 @@ impl VisitInputRegisters for Instruction {
             Instruction::F32CopysignImm(instr) => instr.visit_input_registers(f),
             Instruction::F64CopysignImm(instr) => instr.visit_input_registers(f),
             Instruction::I32WrapI64(instr) => instr.visit_input_registers(f),
-            Instruction::I64ExtendI32S(instr) => instr.visit_input_registers(f),
-            Instruction::I64ExtendI32U(instr) => instr.visit_input_registers(f),
             Instruction::I32TruncF32S(instr) => instr.visit_input_registers(f),
             Instruction::I32TruncF32U(instr) => instr.visit_input_registers(f),
             Instruction::I32TruncF64S(instr) => instr.visit_input_registers(f),
