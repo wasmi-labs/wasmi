@@ -68,8 +68,8 @@ impl fmt::Display for DecodeError {
     }
 }
 
-/// Trait implemented by byte stream decoders.
-pub trait Decoder<'op> {
+/// Sub-trait implemented by byte stream decoders to inform about errors.
+pub trait DecoderError {
     /// The error type that represents decoding errors for this [`Decoder`].
     type Error;
 
@@ -87,7 +87,10 @@ pub trait Decoder<'op> {
 
     /// Returned when decoding a [`TrapCode`] with invalid bit pattern.
     fn invalid_trap_code(&self, value: u8) -> Self::Error;
+}
 
+/// Trait implemented by byte stream decoders.
+pub trait Decoder<'op>: DecoderError {
     /// Reads `N` bytes from the byte stream.
     ///
     /// # Errors
@@ -118,7 +121,7 @@ impl<'op> CheckedDecoder<'op> {
     }
 }
 
-impl<'op> Decoder<'op> for CheckedDecoder<'op> {
+impl<'op> DecoderError for  CheckedDecoder<'op> {
     type Error = DecodeError;
 
     fn invalid_non_zero_value(&self) -> Self::Error {
@@ -152,7 +155,9 @@ impl<'op> Decoder<'op> for CheckedDecoder<'op> {
             value,
         }
     }
+}
 
+impl<'op> Decoder<'op> for CheckedDecoder<'op> {
     fn read<const N: usize>(&mut self) -> Result<[u8; N], Self::Error> {
         let Some((chunk, rest)) = self.bytes.split_first_chunk::<N>() else {
             return Err(DecodeError::EndOfStream { pos: self.pos });
@@ -217,7 +222,7 @@ impl UncheckedDecoder {
 #[derive(Debug)]
 pub enum NeverError {}
 
-impl<'op> Decoder<'op> for UncheckedDecoder {
+impl DecoderError for UncheckedDecoder {
     type Error = NeverError;
 
     #[inline]
@@ -244,7 +249,9 @@ impl<'op> Decoder<'op> for UncheckedDecoder {
     fn invalid_trap_code(&self, _value: u8) -> Self::Error {
         unsafe { hint::unreachable_unchecked() }
     }
+}
 
+impl<'op> Decoder<'op> for UncheckedDecoder {
     #[inline]
     fn read<const N: usize>(&mut self) -> Result<[u8; N], Self::Error> {
         debug_assert!(!self.ptr.is_null());
@@ -396,6 +403,9 @@ where
         let len = u16::decode(decoder)?;
         let len_bytes = (len as usize).wrapping_mul(2);
         let bytes = decoder.read_slice(len_bytes)?;
+        // TODO: add decode checks for all items in the slice in a way
+        //       that allows an optimizer to easily remove those checks
+        //       when using an `unsafe` unchecked decoder.
         let data = bytes.as_ptr() as *const crate::Unalign<T>;
         Ok(Self {
             len,
@@ -637,5 +647,161 @@ impl<'op> UncheckedOpDecoder {
     #[inline]
     pub fn as_ptr(&self) -> *const u8 {
         self.0.as_ptr()
+    }
+}
+
+pub trait Mut<'op> {
+    type Type: 'op + Sized;
+}
+
+macro_rules! impl_mut_for_primitive {
+    ( $($ty:ty),* $(,)? ) => {
+        $(
+            impl<'op> Mut<'op> for $ty {
+                type Type = &'op mut crate::Unalign<$ty>;
+            }
+        )*
+    };
+}
+impl_mut_for_primitive!(
+    bool,
+    i8, i16, i32, i64, i128,
+    u8, u16, u32, u64, u128,
+    f32, f64,
+);
+
+macro_rules! impl_mut_for_newtype {
+    (
+        $(
+            $( #[$docs:meta] )*
+            struct $name:ident($vis:vis $ty:ty);
+        )*
+    ) => {
+        $(
+            impl<'op> Mut<'op> for $name {
+                type Type = &'op mut crate::Unalign<$name>;
+            }
+        )*
+    };
+}
+for_each_newtype!(impl_mut_for_newtype);
+
+impl<'op, T> Mut<'op> for crate::Slice<'op, T>
+where
+    T: Copy,
+{
+    type Type = crate::SliceMut<'op, T>;
+}
+
+pub trait DecodeMut<'op>: Mut<'op> {
+    /// Decodes `Self` mutably from a `decoder` byte stream.
+    ///
+    /// # Errors
+    ///
+    /// If the byte stream cannot be decoded into an instance of `Self`.
+    fn decode_mut<T>(decoder: &mut T) -> Result<<Self as Mut<'op>>::Type, T::Error>
+    where
+        T: DecoderMut<'op>;
+}
+
+pub trait DecoderMut<'op>: DecoderError {
+    /// Reads `N` bytes from the byte stream.
+    ///
+    /// # Errors
+    ///
+    /// If the byte stream ran out of enough bytes.
+    fn read_mut<const N: usize>(&mut self) -> Result<&'op mut [u8; N], Self::Error>;
+
+    /// Reads a byte slice of length `n` from the byte stream.
+    ///
+    /// # Errors
+    ///
+    /// If the byte stream ran out of enough bytes.
+    fn read_slice_mut(&mut self, n: usize) -> Result<&'op mut [u8], Self::Error>;
+}
+
+#[derive(Debug)]
+pub struct CheckedDecoderMut<'op> {
+    /// The bytes underlying to the [`CheckedDecoder`].
+    bytes: &'op mut [u8],
+    /// The current position within the `bytes` slice.
+    pos: usize,
+}
+
+impl<'op> DecoderError for  CheckedDecoderMut<'op> {
+    type Error = DecodeError;
+
+    fn invalid_non_zero_value(&self) -> Self::Error {
+        Self::Error::InvalidNonZeroValue { pos: self.pos }
+    }
+
+    fn invalid_bool(&self, value: u8) -> Self::Error {
+        Self::Error::InvalidBool {
+            pos: self.pos,
+            value,
+        }
+    }
+
+    fn invalid_sign(&self, value: u8) -> Self::Error {
+        Self::Error::InvalidSign {
+            pos: self.pos,
+            value,
+        }
+    }
+
+    fn invalid_op_code(&self, value: u16) -> Self::Error {
+        Self::Error::InvalidOpCode {
+            pos: self.pos,
+            value,
+        }
+    }
+
+    fn invalid_trap_code(&self, value: u8) -> Self::Error {
+        Self::Error::InvalidTrapCode {
+            pos: self.pos,
+            value,
+        }
+    }
+}
+
+/// Extends the lifetime of `input` to from `'a`' to `'b`.
+/// 
+/// # Safety
+/// 
+/// The caller has to make sure to uphold Rust's lifetime semantics and guarantees.
+unsafe fn extend_lifetime<'a, 'b: 'a, T: ?Sized>(input: &'a mut T) -> &'b mut T {
+    unsafe { ::core::mem::transmute(input) }
+}
+
+impl<'op> DecoderMut<'op> for CheckedDecoderMut<'op> {
+    fn read_mut<const N: usize>(&mut self) -> Result<&'op mut [u8; N], Self::Error> {
+        // SAFETY: extending the lifetime of `bytes` to `'op` is safe because:
+        //
+        // - We make sure that `CheckedDecoderMut` cannot be cloned.
+        // - We make sure that the same `CheckedDecoderMut` will never
+        //   return the same slice of bytes more than once.
+        // - An instance of `CheckedDecoderMut` shares the `&mut` lifetime
+        //   of the original bytes slice that it wraps.
+        //
+        // With the above rules it is impossible to have multiple `&mut` borrows of the same sub-slices.
+        let bytes: &'op mut [u8] = unsafe { extend_lifetime(&mut self.bytes[..]) };
+        let Some((chunk, rest)) = bytes.split_first_chunk_mut::<N>() else {
+            return Err(DecodeError::EndOfStream { pos: self.pos });
+        };
+        self.bytes = rest;
+        self.pos += N;
+        Ok(chunk)
+    }
+
+    fn read_slice_mut(&mut self, n: usize) -> Result<&'op mut [u8], Self::Error> {
+        if self.bytes.len() < n {
+            return Err(DecodeError::EndOfStream { pos: self.pos });
+        }
+        // SAFETY: this is safe for the same reasons detailed in the `read_mut` method.
+        let bytes: &'op mut [u8] = unsafe { extend_lifetime(&mut self.bytes[..]) };
+        let (chunk, rest) = bytes.split_at_mut(n);
+        self.bytes = rest;
+        self.pos += n;
+        Ok(chunk)
     }
 }

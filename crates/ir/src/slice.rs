@@ -124,3 +124,14 @@ impl<'a, T: Copy> AsRef<[Unalign<T>]> for Slice<'a, T> {
         unsafe { slice::from_raw_parts(self.data, self.len as usize) }
     }
 }
+
+/// A slice of items with alignment of 1 and a `u16` length field.
+#[derive(Debug)]
+pub struct SliceMut<'a, T: Copy> {
+    /// The pointer to the Unalign items of the slice.
+    pub(crate) data: *mut Unalign<T>,
+    /// The number of items in the slice.
+    pub(crate) len: u16,
+    /// Associated lifetime capture for the compiler.
+    pub(crate) lt: PhantomData<&'a mut [Unalign<T>]>,
+}
