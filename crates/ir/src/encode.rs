@@ -1,4 +1,4 @@
-use crate::{for_each_newtype, for_each_op, CheckedOpDecoder, Op, Visitor};
+use crate::{decode::CheckedOpDecoderMut, for_each_newtype, for_each_op, CheckedOpDecoder, Op, OpMut, Visitor};
 use ::core::{fmt, iter, mem, mem::MaybeUninit, slice};
 
 /// A byte stream encoder.
@@ -487,6 +487,21 @@ impl OpEncoder {
         let bytes = self.get_bytes(pos)?;
         let Ok(decoded) = CheckedOpDecoder::new(bytes).decode() else {
             panic!("`OpEncoder::get`: failed to decode `Op` at: {pos:?}")
+        };
+        Some(decoded)
+    }
+
+    /// Returns the n-th encoded [`OpMut`] in `self` if any.
+    ///
+    /// Returns `None` if there is no encoded [`OpMut`] at `pos`.
+    ///
+    /// # Panics
+    ///
+    /// If decoding of the [`OpMut`] at `pos` fails.
+    pub fn get_mut(&mut self, pos: OpPos) -> Option<OpMut> {
+        let bytes = self.get_bytes_mut(pos)?;
+        let Ok(decoded) = CheckedOpDecoderMut::new(bytes).decode_mut() else {
+            panic!("`OpEncoder::get_mut`: failed to decode `Op` at: {pos:?}")
         };
         Some(decoded)
     }

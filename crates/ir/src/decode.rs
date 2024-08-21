@@ -662,7 +662,7 @@ macro_rules! impl_mut_for_primitive {
         )*
     };
 }
-impl_mut_for_primitive!(bool, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, f32, f64,);
+impl_mut_for_primitive!(bool, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, f32, f64);
 
 macro_rules! impl_mut_for_non_zero {
     ( $($ty:ty),* $(,)? ) => {
@@ -745,7 +745,27 @@ macro_rules! impl_decode_mut_for_primitive {
         )*
     };
 }
-impl_decode_mut_for_primitive!(bool, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
+impl_decode_mut_for_primitive!(bool, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, f32, f64);
+
+macro_rules! impl_decode_mut_for_non_zero {
+    ( $($ty:ty),* $(,)? ) => {
+        $(
+            impl<'op> DecodeMut<'op> for ::core::num::NonZero<$ty> {
+                fn decode_mut<T>(decoder: &mut T) -> Result<<Self as Mut<'op>>::Type, <T as DecoderError>::Error>
+                where
+                    T: DecoderMut<'op>,
+                {
+                    Ok(unsafe {
+                        transmute_from_byte_array_mut::<{mem::size_of::<::core::num::NonZero<$ty>>()}, ::core::num::NonZero<$ty>>(
+                            decoder.read_mut::<{mem::size_of::<::core::num::NonZero<$ty>>()}>()?
+                        )
+                    })
+                }
+            }
+        )*
+    };
+}
+impl_decode_mut_for_non_zero!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
 
 macro_rules! impl_decode_mut_for_newtype {
     (
@@ -772,6 +792,26 @@ macro_rules! impl_decode_mut_for_newtype {
 }
 for_each_newtype!(impl_decode_mut_for_newtype);
 
+macro_rules! impl_decode_mut_for {
+    ( $($ty:ty),* $(,)? ) => {
+        $(
+            impl<'op> DecodeMut<'op> for $ty {
+                fn decode_mut<D>(decoder: &mut D) -> Result<<Self as Mut<'op>>::Type, <D as DecoderError>::Error>
+                where
+                    D: DecoderMut<'op>,
+                {
+                    Ok(unsafe {
+                        transmute_from_byte_array_mut::<{mem::size_of::<$ty>()}, $ty>(
+                            decoder.read_mut::<{mem::size_of::<$ty>()}>()?
+                        )
+                    })
+                }
+            }
+        )*
+    };
+}
+impl_decode_mut_for!(crate::Sign, crate::RegSpan, crate::TrapCode);
+
 impl<'op, T> DecodeMut<'op> for crate::Slice<'op, T>
 where
     T: Copy,
@@ -780,7 +820,7 @@ where
     where
         D: DecoderMut<'op>,
     {
-        let len = u16::decode_mut(decoder)?.get();
+        let len = u16::decode(decoder)?;
         let len_bytes = (len as usize).wrapping_mul(2);
         let bytes = decoder.read_slice_mut(len_bytes)?;
         // TODO: add decode checks for all items in the slice in a way
@@ -795,7 +835,68 @@ where
     }
 }
 
-pub trait DecoderMut<'op>: DecoderError {
+macro_rules! impl_decode_mut_for_ops {
+    (
+        $(
+            $( #[doc = $doc:literal] )*
+            #[snake_name($snake_name:ident)]
+            $camel_name:ident $(<$lt:lifetime>)? $( {
+                $(
+                    $( #[$field_attr:meta ] )*
+                    $field_ident:ident: $field_ty:ty
+                ),* $(,)?
+            } )?
+        ),* $(,)?
+    ) => {
+        impl<'op> Mut<'op> for crate::Op<'op> {
+            type Type = crate::OpMut<'op>;
+        }
+
+        impl<'op> Mut<'op> for crate::OpCode {
+            type Type = crate::OpCode;
+        }
+
+        impl<'op> DecodeMut<'op> for crate::Op<'op> {
+            fn decode_mut<T>(__decoder: &mut T) -> Result<<Self as Mut<'op>>::Type, T::Error>
+            where
+                T: DecoderMut<'op>,
+            {
+                match crate::OpCode::decode(__decoder)? {
+                    $(
+                        crate::OpCode::$camel_name => {
+                            <crate::op::$camel_name as DecodeMut<'op>>::decode_mut(__decoder).map(<<Self as Mut>::Type>::from)
+                        },
+                    )*
+                }
+            }
+        }
+
+        $(
+            impl<'op> Mut<'op> for crate::op::$camel_name $(<$lt>)? {
+                type Type = crate::op::r#mut::$camel_name<'op>;
+            }
+
+            impl<'op> DecodeMut<'op> for crate::op::$camel_name $(<$lt>)? {
+                fn decode_mut<T>(__decoder: &mut T) -> Result<<Self as Mut<'op>>::Type, T::Error>
+                where
+                    T: DecoderMut<'op>,
+                {
+                    Ok(crate::op::r#mut::$camel_name {
+                        $(
+                            $(
+                                $field_ident: <$field_ty as DecodeMut<'op>>::decode_mut(__decoder)?,
+                            )*
+                        )?
+                        __marker: PhantomData,
+                    })
+                }
+            }
+        )*
+    };
+}
+for_each_op!(impl_decode_mut_for_ops);
+
+pub trait DecoderMut<'op>: Decoder<'op> {
     /// Reads `N` bytes from the byte stream.
     ///
     /// # Errors
@@ -817,6 +918,12 @@ pub struct CheckedDecoderMut<'op> {
     bytes: &'op mut [u8],
     /// The current position within the `bytes` slice.
     pos: usize,
+}
+
+impl<'op> CheckedDecoderMut<'op> {
+    pub fn new(bytes: &'op mut [u8]) -> Self {
+        Self { bytes, pos: 0 }
+    }
 }
 
 impl<'op> DecoderError for CheckedDecoderMut<'op> {
@@ -864,6 +971,16 @@ unsafe fn extend_lifetime<'a, 'b: 'a, T: ?Sized>(input: &'a mut T) -> &'b mut T 
     unsafe { mem::transmute(input) }
 }
 
+impl<'op> Decoder<'op> for CheckedDecoderMut<'op> {
+    fn read<const N: usize>(&mut self) -> Result<[u8; N], Self::Error> {
+        self.read_mut().copied()
+    }
+
+    fn read_slice(&mut self, n: usize) -> Result<&'op [u8], Self::Error> {
+        self.read_slice_mut(n).map(|slice| &*slice)
+    }
+}
+
 impl<'op> DecoderMut<'op> for CheckedDecoderMut<'op> {
     fn read_mut<const N: usize>(&mut self) -> Result<&'op mut [u8; N], Self::Error> {
         // SAFETY: extending the lifetime of `bytes` to `'op` is safe because:
@@ -894,5 +1011,27 @@ impl<'op> DecoderMut<'op> for CheckedDecoderMut<'op> {
         self.bytes = rest;
         self.pos += n;
         Ok(chunk)
+    }
+}
+
+/// An implementation of a safe [`Op`] decoder that checks its decoded entities.
+#[derive(Debug)]
+pub struct CheckedOpDecoderMut<'op>(pub(crate) CheckedDecoderMut<'op>);
+
+impl<'op> CheckedOpDecoderMut<'op> {
+    /// Creates a new [`CheckedOpDecoderMut`] from the given byte slice.
+    pub fn new(bytes: &'op mut [u8]) -> Self {
+        Self(CheckedDecoderMut::new(bytes))
+    }
+}
+
+impl<'op> CheckedOpDecoderMut<'op> {
+    /// Decode the next [`OpMut`] from `self`.
+    ///
+    /// # Errors
+    ///
+    /// If an [`OpMut`] cannot be decoded from the underlying bytes in `self`.
+    pub fn decode_mut(&mut self) -> Result<OpMut<'op>, DecodeError> {
+        <Op as DecodeMut<'op>>::decode_mut(&mut self.0)
     }
 }

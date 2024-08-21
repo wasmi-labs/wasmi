@@ -135,7 +135,7 @@ macro_rules! define_enum {
                                 pub $field_ident: <$field_ty as crate::decode::Mut<'op>>::Type,
                             )*
                         )?
-                        __marker: ::core::marker::PhantomData<&'op mut ()>,
+                        pub(crate) __marker: ::core::marker::PhantomData<&'op mut ()>,
                     }
 
                     impl<'op> Code for $camel_name<'op> {
