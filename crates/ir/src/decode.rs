@@ -765,7 +765,7 @@ impl<'op> DecoderError for CheckedDecoderMut<'op> {
 ///
 /// The caller has to make sure to uphold Rust's lifetime semantics and guarantees.
 unsafe fn extend_lifetime<'a, 'b: 'a, T: ?Sized>(input: &'a mut T) -> &'b mut T {
-    unsafe { ::core::mem::transmute(input) }
+    unsafe { mem::transmute(input) }
 }
 
 impl<'op> DecoderMut<'op> for CheckedDecoderMut<'op> {
@@ -779,7 +779,7 @@ impl<'op> DecoderMut<'op> for CheckedDecoderMut<'op> {
         //   of the original bytes slice that it wraps.
         //
         // With the above rules it is impossible to have multiple `&mut` borrows of the same sub-slices.
-        let bytes: &'op mut [u8] = unsafe { extend_lifetime(&mut self.bytes[..]) };
+        let bytes: &'op mut [u8] = unsafe { extend_lifetime(self.bytes) };
         let Some((chunk, rest)) = bytes.split_first_chunk_mut::<N>() else {
             return Err(DecodeError::EndOfStream { pos: self.pos });
         };
@@ -793,7 +793,7 @@ impl<'op> DecoderMut<'op> for CheckedDecoderMut<'op> {
             return Err(DecodeError::EndOfStream { pos: self.pos });
         }
         // SAFETY: this is safe for the same reasons detailed in the `read_mut` method.
-        let bytes: &'op mut [u8] = unsafe { extend_lifetime(&mut self.bytes[..]) };
+        let bytes: &'op mut [u8] = unsafe { extend_lifetime(self.bytes) };
         let (chunk, rest) = bytes.split_at_mut(n);
         self.bytes = rest;
         self.pos += n;
