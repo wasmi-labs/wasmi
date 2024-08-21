@@ -44,6 +44,29 @@ macro_rules! define_enum {
             }
         }
 
+        /// The `enum` operator of a Wasmi instruction.
+        #[derive(
+            ::core::fmt::Debug,
+            ::core::cmp::PartialEq,
+            ::core::cmp::Eq,
+        )]
+        pub enum OpMut<'op> {
+            $(
+                $( #[doc = $doc] )*
+                $camel_name(crate::op::r#mut::$camel_name<'op>),
+            )*
+        }
+
+        impl crate::Code for OpMut<'_> {
+            fn code(&self) -> crate::OpCode {
+                match self {
+                    $(
+                        Self::$camel_name { .. } => OpCode::$camel_name
+                    ),*
+                }
+            }
+        }
+
         /// The op-code of a Wasmi instruction.
         #[derive(
             ::core::fmt::Debug,
@@ -94,6 +117,40 @@ macro_rules! define_enum {
                     }
                 }
             )*
+
+            pub mod r#mut {
+                use crate::*;
+
+                $(
+                    $( #[doc = $doc] )*
+                    #[derive(
+                        ::core::fmt::Debug,
+                        ::core::cmp::PartialEq,
+                        ::core::cmp::Eq,
+                    )]
+                    pub struct $camel_name<'op> {
+                        $(
+                            $(
+                                $( #[$field_attr] )*
+                                pub $field_ident: <$field_ty as crate::decode::Mut<'op>>::Type,
+                            )*
+                        )?
+                        __marker: ::core::marker::PhantomData<&'op mut ()>,
+                    }
+
+                    impl<'op> Code for $camel_name<'op> {
+                        fn code(&self) -> crate::OpCode {
+                            crate::OpCode::$camel_name
+                        }
+                    }
+
+                    impl<'op> From<$camel_name<'op>> for crate::OpMut<'op> {
+                        fn from(__value: $camel_name<'op>) -> Self {
+                            Self::$camel_name(__value)
+                        }
+                    }
+                )*
+            }
         }
     };
 }
