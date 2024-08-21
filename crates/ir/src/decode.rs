@@ -1,6 +1,5 @@
 use crate::*;
-use ::core::{fmt, hint, mem, num, slice};
-use std::marker::PhantomData;
+use ::core::{fmt, hint, marker::PhantomData, mem, num, slice};
 
 /// An error that might occur when decoding a byte stream.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -697,6 +696,81 @@ pub trait DecodeMut<'op>: Mut<'op> {
     fn decode_mut<T>(decoder: &mut T) -> Result<<Self as Mut<'op>>::Type, T::Error>
     where
         T: DecoderMut<'op>;
+}
+
+unsafe fn transmute_from_byte_array_mut<const N: usize, T: Copy>(
+    bytes: &mut [u8; N],
+) -> &mut Unalign<T> {
+    debug_assert_eq!(mem::size_of::<[u8; N]>(), mem::size_of::<T>());
+    unsafe { mem::transmute(bytes) }
+}
+
+macro_rules! impl_decode_mut_for_primitive {
+    ( $($ty:ty),* $(,)? ) => {
+        $(
+            impl<'op> DecodeMut<'op> for $ty {
+                fn decode_mut<T>(decoder: &mut T) -> Result<<Self as Mut<'op>>::Type, <T as DecoderError>::Error>
+                where
+                    T: DecoderMut<'op>,
+                {
+                    Ok(unsafe {
+                        transmute_from_byte_array_mut::<{mem::size_of::<$ty>()}, $ty>(
+                            decoder.read_mut::<{mem::size_of::<$ty>()}>()?
+                        )
+                    })
+                }
+            }
+        )*
+    };
+}
+impl_decode_mut_for_primitive!(bool, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
+
+macro_rules! impl_decode_mut_for_newtype {
+    (
+        $(
+            $( #[$docs:meta] )*
+            struct $name:ident($vis:vis $ty:ty);
+        )*
+    ) => {
+        $(
+            impl<'op> DecodeMut<'op> for crate::$name {
+                fn decode_mut<T>(decoder: &mut T) -> Result<<Self as Mut<'op>>::Type, <T as DecoderError>::Error>
+                where
+                    T: DecoderMut<'op>,
+                {
+                    Ok(unsafe {
+                        transmute_from_byte_array_mut::<{mem::size_of::<crate::$name>()}, crate::$name>(
+                            decoder.read_mut::<{mem::size_of::<crate::$name>()}>()?
+                        )
+                    })
+                }
+            }
+        )*
+    };
+}
+for_each_newtype!(impl_decode_mut_for_newtype);
+
+impl<'op, T> DecodeMut<'op> for crate::Slice<'op, T>
+where
+    T: Copy,
+{
+    fn decode_mut<D>(decoder: &mut D) -> Result<crate::SliceMut<'op, T>, <D as DecoderError>::Error>
+    where
+        D: DecoderMut<'op>,
+    {
+        let len = u16::decode_mut(decoder)?.get();
+        let len_bytes = (len as usize).wrapping_mul(2);
+        let bytes = decoder.read_slice_mut(len_bytes)?;
+        // TODO: add decode checks for all items in the slice in a way
+        //       that allows an optimizer to easily remove those checks
+        //       when using an `unsafe` unchecked decoder.
+        let data = bytes.as_mut_ptr() as *mut crate::Unalign<T>;
+        Ok(crate::SliceMut {
+            len,
+            data,
+            lt: PhantomData,
+        })
+    }
 }
 
 pub trait DecoderMut<'op>: DecoderError {
