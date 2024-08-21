@@ -664,6 +664,17 @@ macro_rules! impl_mut_for_primitive {
 }
 impl_mut_for_primitive!(bool, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, f32, f64,);
 
+macro_rules! impl_mut_for_non_zero {
+    ( $($ty:ty),* $(,)? ) => {
+        $(
+            impl<'op> Mut<'op> for ::core::num::NonZero<$ty> {
+                type Type = &'op mut crate::Unalign<::core::num::NonZero<$ty>>;
+            }
+        )*
+    };
+}
+impl_mut_for_non_zero!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
+
 macro_rules! impl_mut_for_newtype {
     (
         $(
@@ -679,6 +690,17 @@ macro_rules! impl_mut_for_newtype {
     };
 }
 for_each_newtype!(impl_mut_for_newtype);
+
+macro_rules! impl_mut_for {
+    ( $($ty:ty),* $(,)? ) => {
+        $(
+            impl<'op> Mut<'op> for $ty {
+                type Type = &'op mut crate::Unalign<$ty>;
+            }
+        )*
+    };
+}
+impl_mut_for!(RegSpan, BranchTableTarget, Sign, TrapCode,);
 
 impl<'op, T> Mut<'op> for crate::Slice<'op, T>
 where
