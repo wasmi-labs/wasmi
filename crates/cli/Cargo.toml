@@ -17,7 +17,7 @@ exclude.workspace = true
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 wasmi = { workspace = true }
-wasmi_wasi = { workspace = true, features = ["sync"] }
+wasmi_wasi = { workspace = true }
 wat = "1"
 
 [dev-dependencies]
