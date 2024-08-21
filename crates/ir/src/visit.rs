@@ -2,8 +2,8 @@ use crate::{
     decode::Decode,
     for_each_op,
     primitive::*,
-    DecodeError,
     CheckedOpDecoder,
+    DecodeError,
     Slice,
     UncheckedOpDecoder,
 };

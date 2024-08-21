@@ -1,4 +1,4 @@
-use crate::{for_each_newtype, for_each_op, Op, CheckedOpDecoder, Visitor};
+use crate::{for_each_newtype, for_each_op, CheckedOpDecoder, Op, Visitor};
 use ::core::{fmt, iter, mem, mem::MaybeUninit, slice};
 
 /// A byte stream encoder.
@@ -696,9 +696,11 @@ impl<'a> Iterator for OpIter<'a> {
         let end = self.ends.next()?.0;
         self.start = end;
         let bytes = &self.bytes[start..end];
-        let op = CheckedOpDecoder::new(bytes).decode().unwrap_or_else(|error| {
-            panic!("expect all `Op` in `OpEncoder` to be valid but encountered: {error}")
-        });
+        let op = CheckedOpDecoder::new(bytes)
+            .decode()
+            .unwrap_or_else(|error| {
+                panic!("expect all `Op` in `OpEncoder` to be valid but encountered: {error}")
+            });
         Some(op)
     }
 }

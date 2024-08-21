@@ -121,7 +121,7 @@ impl<'op> CheckedDecoder<'op> {
     }
 }
 
-impl<'op> DecoderError for  CheckedDecoder<'op> {
+impl<'op> DecoderError for CheckedDecoder<'op> {
     type Error = DecodeError;
 
     fn invalid_non_zero_value(&self) -> Self::Error {
@@ -663,12 +663,7 @@ macro_rules! impl_mut_for_primitive {
         )*
     };
 }
-impl_mut_for_primitive!(
-    bool,
-    i8, i16, i32, i64, i128,
-    u8, u16, u32, u64, u128,
-    f32, f64,
-);
+impl_mut_for_primitive!(bool, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, f32, f64,);
 
 macro_rules! impl_mut_for_newtype {
     (
@@ -728,7 +723,7 @@ pub struct CheckedDecoderMut<'op> {
     pos: usize,
 }
 
-impl<'op> DecoderError for  CheckedDecoderMut<'op> {
+impl<'op> DecoderError for CheckedDecoderMut<'op> {
     type Error = DecodeError;
 
     fn invalid_non_zero_value(&self) -> Self::Error {
@@ -765,9 +760,9 @@ impl<'op> DecoderError for  CheckedDecoderMut<'op> {
 }
 
 /// Extends the lifetime of `input` to from `'a`' to `'b`.
-/// 
+///
 /// # Safety
-/// 
+///
 /// The caller has to make sure to uphold Rust's lifetime semantics and guarantees.
 unsafe fn extend_lifetime<'a, 'b: 'a, T: ?Sized>(input: &'a mut T) -> &'b mut T {
     unsafe { ::core::mem::transmute(input) }

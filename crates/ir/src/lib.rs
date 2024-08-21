@@ -6,7 +6,7 @@ mod primitive;
 mod tests;
 
 pub use self::{
-    decode::{DecodeError, CheckedOpDecoder, UncheckedOpDecoder},
+    decode::{CheckedOpDecoder, DecodeError, UncheckedOpDecoder},
     dispatch::{OpVariant, UncheckedOpVariantDecoder},
     encode::{OpEncoder, OpIter, OpPos, PatchError},
     primitive::*,

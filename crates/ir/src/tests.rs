@@ -1,5 +1,5 @@
 use crate::{
-    decode::{Decode, CheckedDecoder, UncheckedDecoder},
+    decode::{CheckedDecoder, Decode, UncheckedDecoder},
     encode::{Encode, Encoder},
     *,
 };
