@@ -8,7 +8,7 @@ mod tests;
 pub use self::{
     decode::{CheckedOpDecoder, DecodeError, Mut, UncheckedOpDecoder},
     dispatch::{OpVariant, UncheckedOpVariantDecoder},
-    encode::{OpEncoder, OpIter, OpPos, PatchError},
+    encode::{OpEncoder, OpIter, OpIterMut, OpPos, PatchError},
     primitive::*,
     r#enum::*,
     slice::*,

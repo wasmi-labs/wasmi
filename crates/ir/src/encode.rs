@@ -1,4 +1,12 @@
-use crate::{decode::CheckedOpDecoderMut, for_each_newtype, for_each_op, CheckedOpDecoder, Op, OpMut, Visitor};
+use crate::{
+    decode::CheckedOpDecoderMut,
+    for_each_newtype,
+    for_each_op,
+    CheckedOpDecoder,
+    Op,
+    OpMut,
+    Visitor,
+};
 use ::core::{fmt, iter, mem, mem::MaybeUninit, slice};
 
 /// A byte stream encoder.
@@ -642,6 +650,11 @@ impl OpEncoder {
     pub fn iter(&self) -> OpIter {
         OpIter::new(self)
     }
+
+    /// Returns an iterator over all [`OpMut`] encoded by `self`.
+    pub fn iter_mut(&mut self) -> OpIterMut {
+        OpIterMut::new(self)
+    }
 }
 
 impl<'a> IntoIterator for &'a OpEncoder {
@@ -650,6 +663,15 @@ impl<'a> IntoIterator for &'a OpEncoder {
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a mut OpEncoder {
+    type Item = OpMut<'a>;
+    type IntoIter = OpIterMut<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
     }
 }
 
@@ -670,8 +692,12 @@ pub enum PatchError {
 impl fmt::Display for PatchError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidOpPos => write!(f, "encountered invalid `OpPos` for patching"),
-            Self::EncodedSizeMismatch { old_size, new_size } => write!(f, "new `Op` required {new_size} bytes for its encoding but old `Op` required {old_size} bytes")
+            Self::InvalidOpPos => {
+                write!(f, "encountered invalid `OpPos` for patching")
+            }
+            Self::EncodedSizeMismatch { old_size, new_size } => {
+                write!(f, "new `Op` required {new_size} bytes for its encoding but old `Op` required {old_size} bytes")
+            }
         }
     }
 }
@@ -721,3 +747,56 @@ impl<'a> Iterator for OpIter<'a> {
 }
 
 impl<'a> ExactSizeIterator for OpIter<'a> {}
+
+/// An iterator over the [`Op`]s of an [`OpEncoder`].
+#[derive(Debug)]
+pub struct OpIterMut<'a> {
+    /// The underlying encoded bytes of all `Op`.
+    bytes: &'a mut [u8],
+    /// The end indices of all `Op`.`
+    ends: slice::Iter<'a, OpPos>,
+    /// The current start index of the iterator.
+    start: usize,
+}
+
+impl<'a> OpIterMut<'a> {
+    /// Create a new [`OpIterMut`] from the given [`OpEncoder`].
+    fn new(encoder: &'a mut OpEncoder) -> Self {
+        Self {
+            bytes: encoder.encoder.as_slice_mut(),
+            ends: encoder.ends.iter(),
+            start: 0,
+        }
+    }
+}
+
+impl<'a> Iterator for OpIterMut<'a> {
+    type Item = OpMut<'a>;
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.ends.size_hint()
+    }
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let start = self.start;
+        let end = self.ends.next()?.0;
+        self.start = end;
+        // Safety: it is safe to extend the lifetime of `self.bytes` to `'op` because:
+        //
+        // - The `op` lifetime is their actual lifetime
+        // - Shared mutable access is avoided since bytes of different encoded `Op`
+        //   do never overlap and thus no bytes will ever be mutably shared via this iterator.
+        // - It is not possible to have multiple `OpIterMut` for the same `OpEncoder` at the same time.
+        // - `OpIterMut` cannot be cloned.
+        let bytes = unsafe { crate::decode::extend_lifetime(&mut self.bytes[start..end]) };
+        let op = CheckedOpDecoderMut::new(bytes)
+            .decode_mut()
+            .unwrap_or_else(|error| {
+                panic!("expect all `Op` in `OpEncoder` to be valid but encountered: {error}")
+            });
+        Some(op)
+    }
+}
+
+impl<'a> ExactSizeIterator for OpIterMut<'a> {}

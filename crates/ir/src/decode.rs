@@ -967,7 +967,7 @@ impl<'op> DecoderError for CheckedDecoderMut<'op> {
 /// # Safety
 ///
 /// The caller has to make sure to uphold Rust's lifetime semantics and guarantees.
-unsafe fn extend_lifetime<'a, 'b: 'a, T: ?Sized>(input: &'a mut T) -> &'b mut T {
+pub(crate) unsafe fn extend_lifetime<'a, 'b: 'a, T: ?Sized>(input: &'a mut T) -> &'b mut T {
     unsafe { mem::transmute(input) }
 }
 
