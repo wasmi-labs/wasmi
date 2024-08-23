@@ -400,7 +400,7 @@ where
         D: Decoder<'a>,
     {
         let len = u16::decode(decoder)?;
-        let len_bytes = (len as usize).wrapping_mul(2);
+        let len_bytes = (len as usize).wrapping_mul(mem::size_of::<T>());
         let bytes = decoder.read_slice(len_bytes)?;
         // TODO: add decode checks for all items in the slice in a way
         //       that allows an optimizer to easily remove those checks
@@ -821,7 +821,7 @@ where
         D: DecoderMut<'op>,
     {
         let len = u16::decode(decoder)?;
-        let len_bytes = (len as usize).wrapping_mul(2);
+        let len_bytes = (len as usize).wrapping_mul(mem::size_of::<T>());
         let bytes = decoder.read_slice_mut(len_bytes)?;
         // TODO: add decode checks for all items in the slice in a way
         //       that allows an optimizer to easily remove those checks

@@ -28,11 +28,6 @@ impl Encoder {
     pub fn as_slice_mut(&mut self) -> &mut [u8] {
         &mut self.bytes[..]
     }
-
-    /// Returns the number of bytes for all encoded instructions in the [`Encoder`].
-    pub fn len_bytes(&self) -> usize {
-        self.bytes.len()
-    }
 }
 
 /// Trait implemented by types that can encode their instances into a byte represenation.
@@ -390,7 +385,7 @@ pub struct OpEncoder {
     /// The end indices of the encoded [`Op`].
     ///
     /// The length of `ends` equals the number of encoded [`Op`] in the [`OpEncoder`].
-    ends: Vec<OpPos>,
+    ends: Vec<usize>,
 }
 
 /// A position denoting the existence of an encoded [`Op`] in an [`OpEncoder`].
@@ -412,8 +407,8 @@ impl OpEncoder {
     /// Encodes `op` and pushes the encoded `op` to `self`.
     fn push_op(&mut self, op: Op) -> OpPos {
         op.encode(&mut self.encoder);
-        let pos = OpPos(self.encoder.len_bytes());
-        self.ends.push(pos);
+        let pos = OpPos(self.len());
+        self.ends.push(self.encoder.as_slice().len());
         pos
     }
 
@@ -516,13 +511,14 @@ impl OpEncoder {
 
     /// Returns the bytes of the encoded [`Op`] in `self`.
     pub fn as_bytes(&self) -> &[u8] {
-        self.encoder.as_slice()
+        let n = self.ends.last().copied().unwrap_or(0);
+        &self.encoder.as_slice()[..n]
     }
 
     /// Returns the start and end indices within the encoded byte stream for `pos`.
     fn get_start_end(&self, pos: OpPos) -> Option<(usize, usize)> {
         let pos = pos.0;
-        let end = self.ends.get(pos)?.0;
+        let end = self.ends.get(pos).copied()?;
         let start = self
             .ends
             .get(pos.wrapping_sub(1))
@@ -708,7 +704,7 @@ pub struct OpIter<'a> {
     /// The underlying encoded bytes of all `Op`.
     bytes: &'a [u8],
     /// The end indices of all `Op`.`
-    ends: slice::Iter<'a, OpPos>,
+    ends: slice::Iter<'a, usize>,
     /// The current start index of the iterator.
     start: usize,
 }
@@ -734,7 +730,7 @@ impl<'a> Iterator for OpIter<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let start = self.start;
-        let end = self.ends.next()?.0;
+        let end = self.ends.next().copied()?;
         self.start = end;
         let bytes = &self.bytes[start..end];
         let op = CheckedOpDecoder::new(bytes)
@@ -754,7 +750,7 @@ pub struct OpIterMut<'a> {
     /// The underlying encoded bytes of all `Op`.
     bytes: &'a mut [u8],
     /// The end indices of all `Op`.`
-    ends: slice::Iter<'a, OpPos>,
+    ends: slice::Iter<'a, usize>,
     /// The current start index of the iterator.
     start: usize,
 }
@@ -780,7 +776,7 @@ impl<'a> Iterator for OpIterMut<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let start = self.start;
-        let end = self.ends.next()?.0;
+        let end = self.ends.next().copied()?;
         self.start = end;
         // Safety: it is safe to extend the lifetime of `self.bytes` to `'op` because:
         //
