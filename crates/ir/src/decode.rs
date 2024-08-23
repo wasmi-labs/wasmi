@@ -186,7 +186,7 @@ pub struct UncheckedDecoder {
 }
 
 impl UncheckedDecoder {
-    /// Creates a new [`UnCheckedDecoder`].
+    /// Creates a new [`UncheckedDecoder`].
     ///
     /// # Safety
     ///
@@ -197,7 +197,7 @@ impl UncheckedDecoder {
         Self { ptr }
     }
 
-    /// Offsets the underlying pointer of the [`UnCheckedDecoder`] by `offset`.
+    /// Offsets the underlying pointer of the [`UncheckedDecoder`] by `offset`.
     ///
     /// # Safety
     ///
