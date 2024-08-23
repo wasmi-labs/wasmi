@@ -224,41 +224,14 @@ impl Engine {
         module: ModuleHeader,
         func_to_validate: Option<FuncToValidate<ValidatorResources>>,
     ) -> Result<(), Error> {
-        match (self.config().get_compilation_mode(), func_to_validate) {
-            (CompilationMode::Eager, Some(func_to_validate)) => {
-                let (translation_allocs, validation_allocs) = self.inner.get_allocs();
-                let validator = func_to_validate.into_validator(validation_allocs);
-                let translator = FuncTranslator::new(func_index, module, translation_allocs)?;
-                let translator = ValidatingFuncTranslator::new(validator, translator)?;
-                let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
-                    .translate(|func_entity| self.inner.init_func(engine_func, func_entity))?;
-                self.inner
-                    .recycle_allocs(allocs.translation, allocs.validation);
-            }
-            (CompilationMode::Eager, None) => {
-                let allocs = self.inner.get_translation_allocs();
-                let translator = FuncTranslator::new(func_index, module, allocs)?;
-                let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
-                    .translate(|func_entity| self.inner.init_func(engine_func, func_entity))?;
-                self.inner.recycle_translation_allocs(allocs);
-            }
-            (CompilationMode::LazyTranslation, Some(func_to_validate)) => {
-                let allocs = self.inner.get_validation_allocs();
-                let translator = LazyFuncTranslator::new(func_index, engine_func, module, None);
-                let validator = func_to_validate.into_validator(allocs);
-                let translator = ValidatingFuncTranslator::new(validator, translator)?;
-                let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
-                    .translate(|func_entity| self.inner.init_func(engine_func, func_entity))?;
-                self.inner.recycle_validation_allocs(allocs.validation);
-            }
-            (CompilationMode::Lazy | CompilationMode::LazyTranslation, func_to_validate) => {
-                let translator =
-                    LazyFuncTranslator::new(func_index, engine_func, module, func_to_validate);
-                FuncTranslationDriver::new(offset, bytes, translator)?
-                    .translate(|func_entity| self.inner.init_func(engine_func, func_entity))?;
-            }
-        }
-        Ok(())
+        self.inner.translate_func(
+            func_index,
+            engine_func,
+            offset,
+            bytes,
+            module,
+            func_to_validate,
+        )
     }
 
     /// Returns reusable [`FuncTranslatorAllocations`] from the [`Engine`].
@@ -634,6 +607,69 @@ impl EngineInner {
     /// Returns a range of [`EngineFunc`]s to allow accessing the allocated [`EngineFunc`].
     fn alloc_funcs(&self, amount: usize) -> EngineFuncSpan {
         self.code_map.alloc_funcs(amount)
+    }
+
+    /// Translates the Wasm function using the [`Engine`].
+    ///
+    /// - Uses the internal [`Config`] to drive the function translation as mandated.
+    /// - Reuses translation and validation allocations to be more efficient when used for many translation units.
+    ///
+    /// # Parameters
+    ///
+    /// - `func_index`: The index of the translated function within its Wasm module.
+    /// - `engine_func`: The index of the translated function in the [`Engine`].
+    /// - `offset`: The global offset of the Wasm function body within the Wasm binary.
+    /// - `bytes`: The bytes that make up the Wasm encoded function body of the translated function.
+    /// - `module`: The module header information of the Wasm module of the translated function.
+    /// - `func_to_validate`: Optionally validates the translated function.
+    ///
+    /// # Errors
+    ///
+    /// - If function translation fails.
+    /// - If function validation fails.
+    pub(crate) fn translate_func(
+        &self,
+        func_index: FuncIdx,
+        engine_func: EngineFunc,
+        offset: usize,
+        bytes: &[u8],
+        module: ModuleHeader,
+        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+    ) -> Result<(), Error> {
+        match (self.config.get_compilation_mode(), func_to_validate) {
+            (CompilationMode::Eager, Some(func_to_validate)) => {
+                let (translation_allocs, validation_allocs) = self.get_allocs();
+                let validator = func_to_validate.into_validator(validation_allocs);
+                let translator = FuncTranslator::new(func_index, module, translation_allocs)?;
+                let translator = ValidatingFuncTranslator::new(validator, translator)?;
+                let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
+                    .translate(|func_entity| self.init_func(engine_func, func_entity))?;
+                self.recycle_allocs(allocs.translation, allocs.validation);
+            }
+            (CompilationMode::Eager, None) => {
+                let allocs = self.get_translation_allocs();
+                let translator = FuncTranslator::new(func_index, module, allocs)?;
+                let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
+                    .translate(|func_entity| self.init_func(engine_func, func_entity))?;
+                self.recycle_translation_allocs(allocs);
+            }
+            (CompilationMode::LazyTranslation, Some(func_to_validate)) => {
+                let allocs = self.get_validation_allocs();
+                let translator = LazyFuncTranslator::new(func_index, engine_func, module, None);
+                let validator = func_to_validate.into_validator(allocs);
+                let translator = ValidatingFuncTranslator::new(validator, translator)?;
+                let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
+                    .translate(|func_entity| self.init_func(engine_func, func_entity))?;
+                self.recycle_validation_allocs(allocs.validation);
+            }
+            (CompilationMode::Lazy | CompilationMode::LazyTranslation, func_to_validate) => {
+                let translator =
+                    LazyFuncTranslator::new(func_index, engine_func, module, func_to_validate);
+                FuncTranslationDriver::new(offset, bytes, translator)?
+                    .translate(|func_entity| self.init_func(engine_func, func_entity))?;
+            }
+        }
+        Ok(())
     }
 
     /// Returns reusable [`FuncTranslatorAllocations`] from the [`Engine`].
