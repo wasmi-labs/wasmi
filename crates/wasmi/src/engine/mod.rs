@@ -752,7 +752,7 @@ impl EngineInner {
     ///
     /// If [`EngineFunc`] is invalid for [`Engine`].
     #[cfg(test)]
-    pub(super) fn resolve_func<'a, F, R>(&'a self, func: EngineFunc, f: F) -> Result<R, Error>
+    fn resolve_func<'a, F, R>(&'a self, func: EngineFunc, f: F) -> Result<R, Error>
     where
         F: FnOnce(CompiledFuncRef<'a>) -> R,
     {
@@ -772,11 +772,7 @@ impl EngineInner {
     ///
     /// If `func` cannot be resolved to a function for the [`EngineInner`].
     #[cfg(test)]
-    pub(crate) fn resolve_instr(
-        &self,
-        func: EngineFunc,
-        index: usize,
-    ) -> Result<Option<Instruction>, Error> {
+    fn resolve_instr(&self, func: EngineFunc, index: usize) -> Result<Option<Instruction>, Error> {
         self.resolve_func(func, |func| func.instrs().get(index).copied())
     }
 
