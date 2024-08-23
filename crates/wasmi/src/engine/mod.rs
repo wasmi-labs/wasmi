@@ -611,23 +611,8 @@ impl EngineInner {
 
     /// Translates the Wasm function using the [`Engine`].
     ///
-    /// - Uses the internal [`Config`] to drive the function translation as mandated.
-    /// - Reuses translation and validation allocations to be more efficient when used for many translation units.
-    ///
-    /// # Parameters
-    ///
-    /// - `func_index`: The index of the translated function within its Wasm module.
-    /// - `engine_func`: The index of the translated function in the [`Engine`].
-    /// - `offset`: The global offset of the Wasm function body within the Wasm binary.
-    /// - `bytes`: The bytes that make up the Wasm encoded function body of the translated function.
-    /// - `module`: The module header information of the Wasm module of the translated function.
-    /// - `func_to_validate`: Optionally validates the translated function.
-    ///
-    /// # Errors
-    ///
-    /// - If function translation fails.
-    /// - If function validation fails.
-    pub(crate) fn translate_func(
+    /// For more information read [`Engine::translate_func`].
+    fn translate_func(
         &self,
         func_index: FuncIdx,
         engine_func: EngineFunc,
