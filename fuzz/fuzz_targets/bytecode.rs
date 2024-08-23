@@ -1,5 +1,6 @@
 #![no_main]
 
+use ir::Code as _;
 use libfuzzer_sys::{arbitrary::*, fuzz_target};
 use wasmi_ir as ir;
 
@@ -16,23 +17,24 @@ fuzz_target!(|data| {
 /// 5. Assert that `ops`, `ops2` and `ops3` are all equal.
 fn fuzz(data: &[u8]) -> Result<()> {
     let mut decoder = ir::CheckedOpDecoder::new(data);
-    let mut ops = Vec::new();
+    let mut ops = ir::OpEncoder::default();
     while let Ok(decoded) = decoder.decode() {
-        ops.push(decoded);
+        let pos = ops.push(decoded);
+        assert_eq!(ops.get(pos), Some(decoded));
+        assert_eq!(
+            ops.get(pos).map(|op| op.code()),
+            ops.get_mut(pos).map(|op| op.code())
+        );
     }
-    let mut encoder = ir::OpEncoder::default();
-    for encoded in &ops {
-        encoder.push(*encoded);
-    }
-    let mut safe_decoder = ir::CheckedOpDecoder::new(encoder.as_bytes());
-    let mut unsafe_decoder = ir::UncheckedOpDecoder::new(encoder.as_bytes().as_ptr());
-    let mut ops2 = Vec::new();
-    let mut ops3 = Vec::new();
+    let mut safe_decoder = ir::CheckedOpDecoder::new(ops.as_bytes());
+    let mut unsafe_decoder = ir::UncheckedOpDecoder::new(ops.as_bytes().as_ptr());
+    let mut ops2 = ir::OpEncoder::default();
+    let mut ops3 = ir::OpEncoder::default();
     for _ in 0..ops.len() {
         ops2.push(safe_decoder.decode().unwrap());
         ops3.push(unsafe { unsafe_decoder.decode() });
     }
-    assert_eq!(ops, ops2);
-    assert_eq!(ops, ops3);
+    assert!(ops.iter().eq(&ops2));
+    assert!(ops.iter().eq(&ops3));
     Ok(())
 }
