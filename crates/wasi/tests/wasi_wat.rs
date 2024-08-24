@@ -1,4 +1,4 @@
-use wasi_cap_std_sync::WasiCtxBuilder;
+use wasi_common::sync::WasiCtxBuilder;
 use wasmi::{Config, Engine, Extern, Instance, Linker, Module, Store};
 use wasmi_wasi::{add_to_linker, WasiCtx};
 

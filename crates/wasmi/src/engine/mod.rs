@@ -224,41 +224,14 @@ impl Engine {
         module: ModuleHeader,
         func_to_validate: Option<FuncToValidate<ValidatorResources>>,
     ) -> Result<(), Error> {
-        match (self.config().get_compilation_mode(), func_to_validate) {
-            (CompilationMode::Eager, Some(func_to_validate)) => {
-                let (translation_allocs, validation_allocs) = self.inner.get_allocs();
-                let validator = func_to_validate.into_validator(validation_allocs);
-                let translator = FuncTranslator::new(func_index, module, translation_allocs)?;
-                let translator = ValidatingFuncTranslator::new(validator, translator)?;
-                let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
-                    .translate(|func_entity| self.inner.init_func(engine_func, func_entity))?;
-                self.inner
-                    .recycle_allocs(allocs.translation, allocs.validation);
-            }
-            (CompilationMode::Eager, None) => {
-                let allocs = self.inner.get_translation_allocs();
-                let translator = FuncTranslator::new(func_index, module, allocs)?;
-                let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
-                    .translate(|func_entity| self.inner.init_func(engine_func, func_entity))?;
-                self.inner.recycle_translation_allocs(allocs);
-            }
-            (CompilationMode::LazyTranslation, Some(func_to_validate)) => {
-                let allocs = self.inner.get_validation_allocs();
-                let translator = LazyFuncTranslator::new(func_index, engine_func, module, None);
-                let validator = func_to_validate.into_validator(allocs);
-                let translator = ValidatingFuncTranslator::new(validator, translator)?;
-                let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
-                    .translate(|func_entity| self.inner.init_func(engine_func, func_entity))?;
-                self.inner.recycle_validation_allocs(allocs.validation);
-            }
-            (CompilationMode::Lazy | CompilationMode::LazyTranslation, func_to_validate) => {
-                let translator =
-                    LazyFuncTranslator::new(func_index, engine_func, module, func_to_validate);
-                FuncTranslationDriver::new(offset, bytes, translator)?
-                    .translate(|func_entity| self.inner.init_func(engine_func, func_entity))?;
-            }
-        }
-        Ok(())
+        self.inner.translate_func(
+            func_index,
+            engine_func,
+            offset,
+            bytes,
+            module,
+            func_to_validate,
+        )
     }
 
     /// Returns reusable [`FuncTranslatorAllocations`] from the [`Engine`].
@@ -636,6 +609,54 @@ impl EngineInner {
         self.code_map.alloc_funcs(amount)
     }
 
+    /// Translates the Wasm function using the [`Engine`].
+    ///
+    /// For more information read [`Engine::translate_func`].
+    fn translate_func(
+        &self,
+        func_index: FuncIdx,
+        engine_func: EngineFunc,
+        offset: usize,
+        bytes: &[u8],
+        module: ModuleHeader,
+        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+    ) -> Result<(), Error> {
+        match (self.config.get_compilation_mode(), func_to_validate) {
+            (CompilationMode::Eager, Some(func_to_validate)) => {
+                let (translation_allocs, validation_allocs) = self.get_allocs();
+                let validator = func_to_validate.into_validator(validation_allocs);
+                let translator = FuncTranslator::new(func_index, module, translation_allocs)?;
+                let translator = ValidatingFuncTranslator::new(validator, translator)?;
+                let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
+                    .translate(|func_entity| self.init_func(engine_func, func_entity))?;
+                self.recycle_allocs(allocs.translation, allocs.validation);
+            }
+            (CompilationMode::Eager, None) => {
+                let allocs = self.get_translation_allocs();
+                let translator = FuncTranslator::new(func_index, module, allocs)?;
+                let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
+                    .translate(|func_entity| self.init_func(engine_func, func_entity))?;
+                self.recycle_translation_allocs(allocs);
+            }
+            (CompilationMode::LazyTranslation, Some(func_to_validate)) => {
+                let allocs = self.get_validation_allocs();
+                let translator = LazyFuncTranslator::new(func_index, engine_func, module, None);
+                let validator = func_to_validate.into_validator(allocs);
+                let translator = ValidatingFuncTranslator::new(validator, translator)?;
+                let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
+                    .translate(|func_entity| self.init_func(engine_func, func_entity))?;
+                self.recycle_validation_allocs(allocs.validation);
+            }
+            (CompilationMode::Lazy | CompilationMode::LazyTranslation, func_to_validate) => {
+                let translator =
+                    LazyFuncTranslator::new(func_index, engine_func, module, func_to_validate);
+                FuncTranslationDriver::new(offset, bytes, translator)?
+                    .translate(|func_entity| self.init_func(engine_func, func_entity))?;
+            }
+        }
+        Ok(())
+    }
+
     /// Returns reusable [`FuncTranslatorAllocations`] from the [`Engine`].
     fn get_translation_allocs(&self) -> FuncTranslatorAllocations {
         self.allocs.lock().get_translation_allocs()
@@ -731,7 +752,7 @@ impl EngineInner {
     ///
     /// If [`EngineFunc`] is invalid for [`Engine`].
     #[cfg(test)]
-    pub(super) fn resolve_func<'a, F, R>(&'a self, func: EngineFunc, f: F) -> Result<R, Error>
+    fn resolve_func<'a, F, R>(&'a self, func: EngineFunc, f: F) -> Result<R, Error>
     where
         F: FnOnce(CompiledFuncRef<'a>) -> R,
     {
@@ -751,11 +772,7 @@ impl EngineInner {
     ///
     /// If `func` cannot be resolved to a function for the [`EngineInner`].
     #[cfg(test)]
-    pub(crate) fn resolve_instr(
-        &self,
-        func: EngineFunc,
-        index: usize,
-    ) -> Result<Option<Instruction>, Error> {
+    fn resolve_instr(&self, func: EngineFunc, index: usize) -> Result<Option<Instruction>, Error> {
         self.resolve_func(func, |func| func.instrs().get(index).copied())
     }
 
