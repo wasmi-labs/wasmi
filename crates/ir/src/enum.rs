@@ -1,0 +1,58 @@
+use crate::{core::TrapCode, for_each_op, index::*, *};
+use ::core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
+
+macro_rules! define_enum {
+    (
+        $(
+            $( #[doc = $doc:literal] )*
+            #[snake_name($snake_name:ident)]
+            $name:ident
+            $(
+                {
+                    $(
+                        @ $result_name:ident: $result_ty:ty,
+                    )?
+                    $(
+                        $( #[$field_docs:meta] )*
+                        $field_name:ident: $field_ty:ty
+                    ),*
+                    $(,)?
+                }
+            )?
+        ),* $(,)?
+    ) => {
+        /// A Wasmi instruction.
+        ///
+        /// Actually Wasmi instructions are composed of so-called instruction words.
+        /// In fact this type represents single instruction words but for simplicity
+        /// we call the type [`Instruction`] still.
+        /// Most instructions are composed of a single instruction words. An example of
+        /// this is [`Instruction::I32Add`]. However, some instructions like
+        /// [`Instruction::Select`] are composed of two or more instruction words.
+        /// The Wasmi bytecode translation phase makes sure that those instruction words
+        /// always appear in valid sequences. The Wasmi executor relies on this guarantee.
+        /// The documentation of each [`Instruction`] variant describes its encoding in the
+        /// `#Encoding` section of its documentation if it requires more than a single
+        /// instruction word for its encoding.
+        #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+        pub enum Instruction {
+            $(
+                $( #[doc = $doc] )*
+                $name
+                $(
+                    {
+                        $(
+                            /// The register(s) storing the result of the instruction.
+                            $result_name: $result_ty,
+                        )?
+                        $(
+                            $( #[$field_docs] )*
+                            $field_name: $field_ty
+                        ),*
+                    }
+                )?
+            ),*
+        }
+    };
+}
+for_each_op::for_each_op!(define_enum);
