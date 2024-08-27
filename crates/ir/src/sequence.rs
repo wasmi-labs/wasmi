@@ -35,6 +35,15 @@ impl InstrSequence {
         self.instrs.into_boxed_slice()
     }
 
+    /// Clears all [`Instruction`]s from `self` emptying `self` in the process.
+    ///
+    /// # Note
+    ///
+    /// This invalidates all [`Instr`] references to `self`.
+    pub fn clear(&mut self) {
+        self.instrs.clear()
+    }
+
     /// Returns the underlying [`Instruction`]s as shared slice.
     pub fn as_slice(&self) -> &[Instruction] {
         &self.instrs[..]
