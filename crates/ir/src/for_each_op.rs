@@ -1377,95 +1377,115 @@ macro_rules! for_each_op {
                 func_type: FuncType,
             },
 
-            /// A Wasm `select` or `select <ty>` instruction.
-            ///
-            /// Inspect `condition` and if `condition != 0`:
-            ///
-            /// - `true` : store `lhs` into `result`
-            /// - `false`: store `rhs` into `result`
+            /// A Wasm `select` equivalent Wasmi instruction.
             ///
             /// # Encoding
             ///
-            /// Must be followed by either of
-            ///
-            /// 1. [`Instruction::Register`]
-            /// 1. [`Instruction::Const32`]
-            /// 1. [`Instruction::I64Const32`]
-            /// 1. [`Instruction::F64Const32`]
-            ///
-            /// to encode the `rhs` value.
+            /// Must be followed by [`Instruction::Register2`] to encode `condition` and `rhs`.
             #[snake_name(select)]
             Select {
                 @result: Reg,
-                /// The register holding the `condition` value.
-                condition: Reg,
-                /// The register holding the `lhs` value.
+                /// The register holding the left-hand side value.
                 lhs: Reg,
             },
-            /// Variant of [`Instruction::Select`] with swapped `lhs` and `rhs` values.
+            /// A Wasm `select` equivalent Wasmi instruction with 32-bit immediate `rhs` value.
             ///
             /// # Encoding
             ///
-            /// Must be followed by either of
-            ///
-            /// 1. [`Instruction::Register`]
-            /// 1. [`Instruction::Const32`]
-            /// 1. [`Instruction::I64Const32`]
-            /// 1. [`Instruction::F64Const32`]
-            ///
-            /// to encode the `lhs` value.
-            #[snake_name(select_rev)]
-            SelectRev {
+            /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
+            #[snake_name(select_imm32_rhs)]
+            SelectImm32Rhs {
                 @result: Reg,
-                /// The register holding the `condition` value.
-                condition: Reg,
-                /// The register holding the `rhs` value.
-                rhs: Reg,
+                /// The register holding the left-hand side value.
+                lhs: Reg,
             },
-            /// Variant of [`Instruction::Select`] where `lhs` and `rhs` are 32-bit constant values.
+            /// A Wasm `select` equivalent Wasmi instruction with 32-bit immediate `lhs` value.
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] is always encoded as pair:
+            /// Must be followed by [`Instruction::Register2`] to encode `condition` and `lhs`.
+            #[snake_name(select_imm32_lhs)]
+            SelectImm32Lhs {
+                @result: Reg,
+                /// The register holding the left-hand side value.
+                lhs: AnyConst32,
+            },
+            /// A Wasm `select` equivalent Wasmi instruction with 32-bit immediate `lhs` and `rhs` values.
             ///
-            /// 1. [`Instruction::SelectImm32`] encodes `result` and `lhs`
-            /// 2. [`Instruction::SelectImm32`] encodes `condition` and `rhs`.
+            /// # Encoding
+            ///
+            /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
             #[snake_name(select_imm32)]
             SelectImm32 {
-                /// Register storing either the `result` or the `condition`.
-                result_or_condition: Reg,
-                /// Either the constant 32-bit `lhs` or `rhs` value.
-                lhs_or_rhs: AnyConst32,
+                @result: Reg,
+                /// The register holding the left-hand side value.
+                lhs: AnyConst32,
             },
-            /// Variant of [`Instruction::Select`] where `lhs` and `rhs` are 32-bit encoded `i64` constant values.
+            /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `i64` immediate `lhs` value.
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] is always encoded as pair:
+            /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
+            #[snake_name(select_i64imm32_rhs)]
+            SelectI64Imm32Rhs {
+                @result: Reg,
+                /// The register holding the left-hand side value.
+                lhs: Reg,
+            },
+            /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `i64` immediate `lhs` value.
             ///
-            /// 1. [`Instruction::SelectI64Imm32`] encodes `result` and `lhs`
-            /// 2. [`Instruction::SelectI64Imm32`] encodes `condition` and `rhs`.
+            /// # Encoding
+            ///
+            /// Must be followed by [`Instruction::Register2`] to encode `condition` and `rhs`.
+            #[snake_name(select_i64imm32_lhs)]
+            SelectI64Imm32Lhs {
+                @result: Reg,
+                /// The register holding the left-hand side value.
+                lhs: Const32<i64>,
+            },
+            /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `i64` immediate `lhs` and `rhs` values.
+            ///
+            /// # Encoding
+            ///
+            /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
             #[snake_name(select_i64imm32)]
             SelectI64Imm32 {
-                /// Register storing either the `result` or the `condition`.
-                result_or_condition: Reg,
-                /// Either the constant 32-bit `i64` `lhs` or `rhs` value.
-                lhs_or_rhs: Const32<i64>,
+                @result: Reg,
+                /// The register holding the left-hand side value.
+                lhs: Const32<i64>,
             },
-            /// Variant of [`Instruction::Select`] where `lhs` and `rhs` are 32-bit encoded `f64` constant values.
+            /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `f64` immediate `rhs` value.
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] is always encoded as pair:
+            /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
+            #[snake_name(select_f64imm32_rhs)]
+            SelectF64Imm32Rhs {
+                @result: Reg,
+                /// The register holding the left-hand side value.
+                lhs: Reg,
+            },
+            /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `f64` immediate `lhs` value.
             ///
-            /// 1. [`Instruction::SelectF64Imm32`] encodes `result` and `lhs`
-            /// 2. [`Instruction::SelectF64Imm32`] encodes `condition` and `rhs`.
+            /// # Encoding
+            ///
+            /// Must be followed by [`Instruction::Register2`] to encode `condition` and `rhs`.
+            #[snake_name(select_f64imm32_lhs)]
+            SelectF64Imm32Lhs {
+                @result: Reg,
+                /// The register holding the left-hand side value.
+                lhs: Const32<f64>,
+            },
+            /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `f64` immediate `lhs` and `rhs` value.
+            ///
+            /// # Encoding
+            ///
+            /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
             #[snake_name(select_f64imm32)]
             SelectF64Imm32 {
-                /// Register storing either the `result` or the `condition`.
-                result_or_condition: Reg,
-                /// Either the constant 32-bit `f64` `lhs` or `rhs` value.
-                lhs_or_rhs: Const32<f64>,
+                @result: Reg,
+                /// The register holding the left-hand side value.
+                lhs: Const32<f64>,
             },
 
             /// A Wasm `ref.func` equivalent Wasmi instruction.
@@ -5391,6 +5411,18 @@ macro_rules! for_each_op {
             #[snake_name(f64const32)]
             F64Const32 {
                 value: Const32<f64>
+            },
+            /// An instruction parameter with a [`Reg`] and a 32-bit immediate value.
+            #[snake_name(register_and_imm32)]
+            RegisterAndImm32 {
+                /// The [`Reg`] parameter value.
+                ///
+                /// # Note
+                ///
+                /// This also serves as utility to align `imm` to 4-bytes.
+                reg: Reg,
+                /// The 32-bit immediate value.
+                imm: AnyConst32,
             },
             /// A [`Reg`] instruction parameter.
             ///
