@@ -1506,10 +1506,10 @@ macro_rules! for_each_op {
             /// Wasm `global.set` equivalent Wasmi instruction.
             #[snake_name(global_set)]
             GlobalSet {
-                /// The index identifying the global variable for the `global.set` instruction.
-                global: Global,
                 /// The register holding the value to be stored in the global variable.
                 input: Reg,
+                /// The index identifying the global variable for the `global.set` instruction.
+                global: Global,
             },
             /// Wasm `global.set` equivalent Wasmi instruction.
             ///
@@ -1518,10 +1518,10 @@ macro_rules! for_each_op {
             /// Variant of [`Instruction::GlobalSet`] for 16-bit encoded `i32` immutable `input` values.
             #[snake_name(global_set_i32imm16)]
             GlobalSetI32Imm16 {
-                /// The index identifying the global variable for the `global.set` instruction.
-                global: Global,
                 /// The 16-bit encoded `i32` value.
                 input: Const16<i32>,
+                /// The index identifying the global variable for the `global.set` instruction.
+                global: Global,
             },
             /// Wasm `global.set` equivalent Wasmi instruction.
             ///
@@ -1530,10 +1530,10 @@ macro_rules! for_each_op {
             /// Variant of [`Instruction::GlobalSet`] for 16-bit encoded `i64` immutable `input` values.
             #[snake_name(global_i64imm16)]
             GlobalSetI64Imm16 {
-                /// The index identifying the global variable for the `global.set` instruction.
-                global: Global,
                 /// The 16-bit encoded `i64` value.
                 input: Const16<i64>,
+                /// The index identifying the global variable for the `global.set` instruction.
+                global: Global,
             },
 
             /// Wasm `i32.load` equivalent Wasmi instruction.
@@ -2089,18 +2089,18 @@ macro_rules! for_each_op {
             /// Variant of [`Instruction::I32Store`] for constant `address`.
             #[snake_name(i32_store_at)]
             I32StoreAt {
-                /// The constant address to store the value.
-                address: Unalign<u32>,
                 /// The value to be stored.
                 value: Reg,
+                /// The constant address to store the value.
+                address: Unalign<u32>,
             },
             /// Variant of [`Instruction::I32StoreAt`] for constant 16-bit `value`.
             #[snake_name(i32_store_at_imm16)]
             I32StoreAtImm16 {
-                /// The constant address to store the value.
-                address: Unalign<u32>,
                 /// The value to be stored.
                 value: Const16<i32>,
+                /// The constant address to store the value.
+                address: Unalign<u32>,
             },
 
             /// Wasm `i32.store8` equivalent Wasmi instruction.
@@ -2138,18 +2138,18 @@ macro_rules! for_each_op {
             /// Variant of [`Instruction::I32Store8`] for constant `address`.
             #[snake_name(i32_store8_at)]
             I32Store8At {
-                /// The constant address to store the value.
-                address: Unalign<u32>,
                 /// The value to be stored.
                 value: Reg,
+                /// The constant address to store the value.
+                address: Unalign<u32>,
             },
             /// Variant of [`Instruction::I32Store8At`] for constant `value`.
             #[snake_name(i32_store8_at_imm)]
             I32Store8AtImm {
-                /// The constant address to store the value.
-                address: Unalign<u32>,
                 /// The value to be stored.
                 value: i8,
+                /// The constant address to store the value.
+                address: Unalign<u32>,
             },
 
             /// Wasm `i32.store16` equivalent Wasmi instruction.
@@ -2187,18 +2187,18 @@ macro_rules! for_each_op {
             /// Variant of [`Instruction::I32Store16`] for constant `address`.
             #[snake_name(i32_store16_at)]
             I32Store16At {
-                /// The constant address to store the value.
-                address: Unalign<u32>,
                 /// The value to be stored.
                 value: Reg,
+                /// The constant address to store the value.
+                address: Unalign<u32>,
             },
             /// Variant of [`Instruction::I32Store16At`] for constant `value`.
             #[snake_name(i32_store16_at_imm)]
             I32Store16AtImm {
-                /// The constant address to store the value.
-                address: Unalign<u32>,
                 /// The value to be stored.
                 value: i16,
+                /// The constant address to store the value.
+                address: Unalign<u32>,
             },
 
             /// Wasm `i64.store` equivalent Wasmi instruction.
@@ -2236,18 +2236,18 @@ macro_rules! for_each_op {
             /// Variant of [`Instruction::I64Store`] for constant `address`.
             #[snake_name(i64_store_at)]
             I64StoreAt {
-                /// The constant address to store the value.
-                address: Unalign<u32>,
                 /// The value to be stored.
                 value: Reg,
+                /// The constant address to store the value.
+                address: Unalign<u32>,
             },
             /// Variant of [`Instruction::I64StoreAt`] for 16-bit `value`.
             #[snake_name(i64_store_at_imm16)]
             I64StoreAtImm16 {
-                /// The constant address to store the value.
-                address: Unalign<u32>,
                 /// The value to be stored.
                 value: Const16<i64>,
+                /// The constant address to store the value.
+                address: Unalign<u32>,
             },
 
             /// Wasm `i64.store8` equivalent Wasmi instruction.
@@ -2285,18 +2285,18 @@ macro_rules! for_each_op {
             /// Variant of [`Instruction::I64Store8`] for constant `address`.
             #[snake_name(i64_store8_at)]
             I64Store8At {
-                /// The constant address to store the value.
-                address: Unalign<u32>,
                 /// The value to be stored.
                 value: Reg,
+                /// The constant address to store the value.
+                address: Unalign<u32>,
             },
             /// Variant of [`Instruction::I64Store8At`] for constant `value`.
             #[snake_name(i64_store8_at_imm)]
             I64Store8AtImm {
-                /// The constant address to store the value.
-                address: Unalign<u32>,
                 /// The value to be stored.
                 value: i8,
+                /// The constant address to store the value.
+                address: Unalign<u32>,
             },
 
             /// Wasm `i64.store16` equivalent Wasmi instruction.
@@ -2334,18 +2334,18 @@ macro_rules! for_each_op {
             /// Variant of [`Instruction::I64Store16`] for constant `address`.
             #[snake_name(i64_store16_at)]
             I64Store16At {
-                /// The constant address to store the value.
-                address: Unalign<u32>,
                 /// The value to be stored.
                 value: Reg,
+                /// The constant address to store the value.
+                address: Unalign<u32>,
             },
             /// Variant of [`Instruction::I64Store16At`] for constant `value`.
             #[snake_name(i64_store16_at_imm)]
             I64Store16AtImm {
-                /// The constant address to store the value.
-                address: Unalign<u32>,
                 /// The value to be stored.
                 value: i16,
+                /// The constant address to store the value.
+                address: Unalign<u32>,
             },
 
             /// Wasm `i64.store32` equivalent Wasmi instruction.
@@ -2383,18 +2383,18 @@ macro_rules! for_each_op {
             /// Variant of [`Instruction::I64Store32`] for constant `address`.
             #[snake_name(i64_store32_at)]
             I64Store32At {
-                /// The constant address to store the value.
-                address: Unalign<u32>,
                 /// The value to be stored.
                 value: Reg,
+                /// The constant address to store the value.
+                address: Unalign<u32>,
             },
             /// Variant of [`Instruction::I64Store32At`] for constant 16-bit `value`.
             #[snake_name(i64_store32_at_imm16)]
             I64Store32AtImm16 {
-                /// The constant address to store the value.
-                address: Unalign<u32>,
                 /// The value to be stored.
                 value: Const16<i32>,
+                /// The constant address to store the value.
+                address: Unalign<u32>,
             },
 
             /// Wasm `f32.store` equivalent Wasmi instruction.
@@ -2422,10 +2422,10 @@ macro_rules! for_each_op {
             /// Variant of [`Instruction::F32Store`] for constant `address`.
             #[snake_name(f32_store_at)]
             F32StoreAt {
-                /// The constant address to store the value.
-                address: Unalign<u32>,
                 /// The value to be stored.
                 value: Reg,
+                /// The constant address to store the value.
+                address: Unalign<u32>,
             },
 
             /// Wasm `f32.store` equivalent Wasmi instruction.
@@ -2453,10 +2453,10 @@ macro_rules! for_each_op {
             /// Variant of [`Instruction::F32Store`] for constant `address`.
             #[snake_name(f64_store_at)]
             F64StoreAt {
-                /// The constant address to store the value.
-                address: Unalign<u32>,
                 /// The value to be stored.
                 value: Reg,
+                /// The constant address to store the value.
+                address: Unalign<u32>,
             },
 
             /// `i32` equality comparison instruction: `r0 = r1 == r2`
@@ -4595,10 +4595,10 @@ macro_rules! for_each_op {
             /// This [`Instruction`] must be followed by an [`Instruction::TableIndex`].
             #[snake_name(table_set_at)]
             TableSetAt {
-                /// The constant `index` of the instruction.
-                index: Unalign<u32>,
                 /// The register holding the `value` of the instruction.
                 value: Reg,
+                /// The constant `index` of the instruction.
+                index: Unalign<u32>,
             },
 
             /// Wasm `table.copy <dst> <src>` instruction.
@@ -5475,18 +5475,18 @@ macro_rules! for_each_op {
             /// Auxiliary [`Instruction`] to encode table access information for indirect call instructions.
             #[snake_name(call_indirect_params)]
             CallIndirectParams {
-                /// The table which holds the called function at the index.
-                table: Table,
                 /// The index of the called function in the table.
                 index: Reg,
+                /// The table which holds the called function at the index.
+                table: Table,
             },
             /// Variant of [`Instruction::CallIndirectParams`] for 16-bit constant `index` parameter.
             #[snake_name(call_indirect_params_imm16)]
             CallIndirectParamsImm16 {
-                /// The table which holds the called function at the index.
-                table: Table,
                 /// The index of the called function in the table.
                 index: Const16<u32>,
+                /// The table which holds the called function at the index.
+                table: Table,
             },
         }
     };

@@ -35,6 +35,7 @@ macro_rules! define_enum {
         /// `#Encoding` section of its documentation if it requires more than a single
         /// instruction word for its encoding.
         #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+        #[repr(u16)]
         pub enum Instruction {
             $(
                 $( #[doc = $doc] )*
@@ -56,3 +57,17 @@ macro_rules! define_enum {
     };
 }
 for_each_op::for_each_op!(define_enum);
+
+#[test]
+fn size_of() {
+    // Note: In case this test starts failing:
+    //
+    // There currently is a bug in the Rust compiler that causes
+    // Rust `enum` definitions with `#[repr(uN)]` to be incorrectly
+    // sized: https://github.com/rust-lang/rust/issues/53657
+    //
+    // Until that bug is fixed we need to order the `enum` variant
+    // fields in a precise order to end up with the correct `enum` size.
+    assert_eq!(::core::mem::size_of::<Instruction>(), 8);
+    assert_eq!(::core::mem::align_of::<Instruction>(), 4);
+}
