@@ -68,6 +68,13 @@ impl InstrSequence {
     pub fn iter_mut(&mut self) -> InstrIterMut {
         InstrIterMut::new(self)
     }
+
+    /// Pops the last [`Instruction`] in `self` if any.
+    ///
+    /// Returns `None` if `self` is empty.
+    pub fn pop(&mut self) -> Option<Instruction> {
+        self.ops.pop()
+    }
 }
 
 impl<'a> IntoIterator for &'a InstrSequence {
