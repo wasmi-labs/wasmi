@@ -1233,13 +1233,23 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// Must be followed by
-            ///
-            /// 1. Either
-            ///     - [`Instruction::CallIndirectParams`]: the `table` and `index`
-            ///     - [`Instruction::CallIndirectParamsImm16`]: the `table` and 16-bit constant `index`
+            /// Must be followed by [`Instruction::CallIndirectParams`] encoding `table` and `index`.
             #[snake_name(return_call_indirect_0)]
             ReturnCallIndirect0 {
+                /// The called internal function.
+                func_type: FuncType,
+            },
+            /// Wasm `return_call_indirect` equivalent Wasmi instruction with 16-bit immediate `index`.
+            ///
+            /// # Note
+            ///
+            /// Used for indirectly calling Wasm functions without parameters.
+            ///
+            /// # Encoding
+            ///
+            /// Must be followed by [`Instruction::CallIndirectParamsImm16`] encoding `table` and `index`.
+            #[snake_name(return_call_indirect_0_imm16)]
+            ReturnCallIndirect0Imm16 {
                 /// The called internal function.
                 func_type: FuncType,
             },
@@ -1253,9 +1263,7 @@ macro_rules! for_each_op {
             ///
             /// Must be followed by
             ///
-            /// 1. Either
-            ///     - [`Instruction::CallIndirectParams`]: the `table` and `index`
-            ///     - [`Instruction::CallIndirectParamsImm16`]: the `table` and 16-bit constant `index`
+            /// 1. [`Instruction::CallIndirectParams`]: encoding `table` and `index`
             /// 2. Zero or more [`Instruction::RegisterList`]
             /// 3. Followed by one of
             ///     - [`Instruction::Register`]
@@ -1263,6 +1271,27 @@ macro_rules! for_each_op {
             ///     - [`Instruction::Register3`]
             #[snake_name(return_call_indirect)]
             ReturnCallIndirect {
+                /// The called internal function.
+                func_type: FuncType,
+            },
+            /// Wasm `return_call_indirect` equivalent Wasmi instruction with 16-bit immediate `index`.
+            ///
+            /// # Note
+            ///
+            /// Used for indirectly calling Wasm functions with parameters.
+            ///
+            /// # Encoding
+            ///
+            /// Must be followed by
+            ///
+            /// 1. [`Instruction::CallIndirectParamsImm16`]: encoding `table` and `index`
+            /// 2. Zero or more [`Instruction::RegisterList`]
+            /// 3. Followed by one of
+            ///     - [`Instruction::Register`]
+            ///     - [`Instruction::Register2`]
+            ///     - [`Instruction::Register3`]
+            #[snake_name(return_call_indirect_imm16)]
+            ReturnCallIndirectImm16 {
                 /// The called internal function.
                 func_type: FuncType,
             },
@@ -1341,13 +1370,24 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// Must be followed by
-            ///
-            /// 1. Either
-            ///     - [`Instruction::CallIndirectParams`]: the `table` and `index`
-            ///     - [`Instruction::CallIndirectParamsImm16`]: the `table` and 16-bit constant `index`
+            /// Must be followed by [`Instruction::CallIndirectParams`] encoding `table` and `index`.
             #[snake_name(call_indirect_0)]
             CallIndirect0 {
+                @results: RegSpan,
+                /// The called internal function.
+                func_type: FuncType,
+            },
+            /// Wasm `call_indirect` equivalent Wasmi instruction with 16-bit immediate `inde` value.
+            ///
+            /// # Note
+            ///
+            /// Used for indirectly calling Wasm functions without parameters.
+            ///
+            /// # Encoding
+            ///
+            /// Must be followed by [`Instruction::CallIndirectParamsImm16`] encoding `table` and `index`.
+            #[snake_name(call_indirect_0_imm16)]
+            CallIndirect0Imm16 {
                 @results: RegSpan,
                 /// The called internal function.
                 func_type: FuncType,
@@ -1362,9 +1402,7 @@ macro_rules! for_each_op {
             ///
             /// Must be followed by
             ///
-            /// 1. Either
-            ///     - [`Instruction::CallIndirectParams`]: the `table` and `index`
-            ///     - [`Instruction::CallIndirectParamsImm16`]: the `table` and 16-bit constant `index`
+            /// 1. [`Instruction::CallIndirectParams`]: encoding `table` and `index`
             /// 2. Zero or more [`Instruction::RegisterList`]
             /// 3. Followed by one of
             ///     - [`Instruction::Register`]
@@ -1372,6 +1410,28 @@ macro_rules! for_each_op {
             ///     - [`Instruction::Register3`]
             #[snake_name(call_indirect)]
             CallIndirect {
+                @results: RegSpan,
+                /// The called internal function.
+                func_type: FuncType,
+            },
+            /// Wasm `call_indirect` equivalent Wasmi instruction with 16-bit immediate `index` value.
+            ///
+            /// # Note
+            ///
+            /// Used for indirectly calling Wasm functions with parameters.
+            ///
+            /// # Encoding
+            ///
+            /// Must be followed by
+            ///
+            /// 1. [`Instruction::CallIndirectParamsImm16`]: encoding `table` and `index`
+            /// 2. Zero or more [`Instruction::RegisterList`]
+            /// 3. Followed by one of
+            ///     - [`Instruction::Register`]
+            ///     - [`Instruction::Register2`]
+            ///     - [`Instruction::Register3`]
+            #[snake_name(call_indirect_imm16)]
+            CallIndirectImm16 {
                 @results: RegSpan,
                 /// The called internal function.
                 func_type: FuncType,
