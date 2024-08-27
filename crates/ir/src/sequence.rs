@@ -35,6 +35,16 @@ impl InstrSequence {
         self.instrs.into_boxed_slice()
     }
 
+    /// Returns the underlying [`Instruction`]s as shared slice.
+    pub fn as_slice(&self) -> &[Instruction] {
+        &self.instrs[..]
+    }
+
+    /// Returns the underlying [`Instruction`]s as mutable slice.
+    pub fn as_slice_mut(&mut self) -> &mut [Instruction] {
+        &mut self.instrs[..]
+    }
+
     /// Returns the number of [`Instruction`] in `self`.
     #[inline]
     pub fn len(&self) -> usize {
