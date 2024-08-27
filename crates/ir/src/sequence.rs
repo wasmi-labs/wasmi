@@ -140,14 +140,14 @@ for_each_op!(define_builder);
 /// Iterator yielding the [`Instruction`]s of an [`InstrSequence`].
 #[derive(Debug)]
 pub struct InstrIter<'a> {
-    ops: slice::Iter<'a, Instruction>,
+    instrs: slice::Iter<'a, Instruction>,
 }
 
 impl<'a> InstrIter<'a> {
     /// Creates a new [`InstrIter`] for the [`InstrSequence`].
     fn new(builder: &'a InstrSequence) -> Self {
         Self {
-            ops: builder.instrs.iter(),
+            instrs: builder.instrs.iter(),
         }
     }
 }
@@ -157,17 +157,17 @@ impl<'a> Iterator for InstrIter<'a> {
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        self.ops.next()
+        self.instrs.next()
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        self.ops.size_hint()
+        self.instrs.size_hint()
     }
 }
 
 impl<'a> DoubleEndedIterator for InstrIter<'a> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        self.ops.next_back()
+        self.instrs.next_back()
     }
 }
 
@@ -176,14 +176,14 @@ impl<'a> ExactSizeIterator for InstrIter<'a> {}
 /// Iterator yielding the [`Instruction`]s of an [`InstrSequence`] mutably.
 #[derive(Debug)]
 pub struct InstrIterMut<'a> {
-    ops: slice::IterMut<'a, Instruction>,
+    instrs: slice::IterMut<'a, Instruction>,
 }
 
 impl<'a> InstrIterMut<'a> {
     /// Creates a new [`InstrIter`] for the [`InstrSequence`].
     fn new(builder: &'a mut InstrSequence) -> Self {
         Self {
-            ops: builder.instrs.iter_mut(),
+            instrs: builder.instrs.iter_mut(),
         }
     }
 }
@@ -193,17 +193,17 @@ impl<'a> Iterator for InstrIterMut<'a> {
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        self.ops.next()
+        self.instrs.next()
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        self.ops.size_hint()
+        self.instrs.size_hint()
     }
 }
 
 impl<'a> DoubleEndedIterator for InstrIterMut<'a> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        self.ops.next_back()
+        self.instrs.next_back()
     }
 }
 
