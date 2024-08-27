@@ -165,6 +165,12 @@ impl<'a> Iterator for InstrIter<'a> {
     }
 }
 
+impl<'a> DoubleEndedIterator for InstrIter<'a> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.ops.next_back()
+    }
+}
+
 impl<'a> ExactSizeIterator for InstrIter<'a> {}
 
 /// Iterator yielding the [`Instruction`]s of an [`InstrSequence`] mutably.
@@ -192,6 +198,12 @@ impl<'a> Iterator for InstrIterMut<'a> {
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.ops.size_hint()
+    }
+}
+
+impl<'a> DoubleEndedIterator for InstrIterMut<'a> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.ops.next_back()
     }
 }
 
