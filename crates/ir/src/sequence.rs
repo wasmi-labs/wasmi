@@ -119,7 +119,7 @@ macro_rules! define_builder {
 }
 for_each_op!(define_builder);
 
-/// Iterator yielding the [`Instruction`] of an [`InstrSequence`].
+/// Iterator yielding the [`Instruction`]s of an [`InstrSequence`].
 #[derive(Debug)]
 pub struct InstrIter<'a> {
     ops: slice::Iter<'a, Instruction>,
@@ -149,7 +149,7 @@ impl<'a> Iterator for InstrIter<'a> {
 
 impl<'a> ExactSizeIterator for InstrIter<'a> {}
 
-/// Iterator yielding the [`Instruction`] of an [`InstrSequence`].
+/// Iterator yielding the [`Instruction`]s of an [`InstrSequence`] mutably.
 #[derive(Debug)]
 pub struct InstrIterMut<'a> {
     ops: slice::IterMut<'a, Instruction>,
