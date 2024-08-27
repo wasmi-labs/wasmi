@@ -9,7 +9,7 @@ use std::{boxed::Box, vec::Vec};
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct InstrSequence {
     /// The [`Instruction`] that make up all built instructions in sequence.
-    ops: Vec<Instruction>,
+    instrs: Vec<Instruction>,
 }
 
 impl From<InstrSequence> for Vec<Instruction> {
@@ -27,18 +27,18 @@ impl From<InstrSequence> for Box<[Instruction]> {
 impl InstrSequence {
     /// Returns `self` as vector of [`Instruction`]s.
     pub fn into_vec(self) -> Vec<Instruction> {
-        self.ops
+        self.instrs
     }
 
     /// Returns `self` as boxed slice of [`Instruction`]s.
     pub fn into_boxed_slice(self) -> Box<[Instruction]> {
-        self.ops.into_boxed_slice()
+        self.instrs.into_boxed_slice()
     }
 
     /// Returns the number of [`Instruction`] in `self`.
     #[inline]
     pub fn len(&self) -> usize {
-        self.ops.len()
+        self.instrs.len()
     }
 
     /// Returns `true` if `self` is empty.
@@ -50,13 +50,13 @@ impl InstrSequence {
     /// Returns the [`Instruction`] that is associated to `instr`.
     #[inline]
     pub fn get(&self, instr: Instr) -> Option<Instruction> {
-        self.ops.get(instr.0).copied()
+        self.instrs.get(instr.0).copied()
     }
 
     /// Returns a mutable reference to the [`Instruction`] that is associated to `instr`.
     #[inline]
     pub fn get_mut(&mut self, instr: Instr) -> Option<&mut Instruction> {
-        self.ops.get_mut(instr.0)
+        self.instrs.get_mut(instr.0)
     }
 
     /// Returns an iterator yielding the [`Instruction`] of the [`InstrSequence`].
@@ -73,7 +73,7 @@ impl InstrSequence {
     ///
     /// Returns `None` if `self` is empty.
     pub fn pop(&mut self) -> Option<Instruction> {
-        self.ops.pop()
+        self.instrs.pop()
     }
 }
 
@@ -125,8 +125,8 @@ macro_rules! define_builder {
                     &mut self,
                     $( $( $field_name: impl Into<$field_ty> ),* )?
                 ) -> Instr {
-                    let pos = Instr(self.ops.len());
-                    self.ops.push(Instruction::$name {
+                    let pos = Instr(self.instrs.len());
+                    self.instrs.push(Instruction::$name {
                         $( $( $field_name: $field_name.into() ),* )?
                     });
                     pos
@@ -147,7 +147,7 @@ impl<'a> InstrIter<'a> {
     /// Creates a new [`InstrIter`] for the [`InstrSequence`].
     fn new(builder: &'a InstrSequence) -> Self {
         Self {
-            ops: builder.ops.iter(),
+            ops: builder.instrs.iter(),
         }
     }
 }
@@ -177,7 +177,7 @@ impl<'a> InstrIterMut<'a> {
     /// Creates a new [`InstrIter`] for the [`InstrSequence`].
     fn new(builder: &'a mut InstrSequence) -> Self {
         Self {
-            ops: builder.ops.iter_mut(),
+            ops: builder.instrs.iter_mut(),
         }
     }
 }
