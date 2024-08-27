@@ -13,10 +13,10 @@ use alloc::boxed::Box;
 use core::{ffi::c_void, ptr, unimplemented};
 use wasmi::{ExternRef, FuncRef, Val};
 
-/// `*mut wasm_ref_t` is a reference type (`externref` or `funcref`), as seen by
-/// the C API. Because we do not have a uniform representation for `funcref`s
-/// and `externref`s, a `*mut wasm_ref_t` is morally a
-/// `Option<Box<Either<ExternRef, Func>>>`.
+/// `*mut wasm_ref_t` is a reference type (`externref` or `funcref`) for the C API.
+/// 
+/// Because we do not have a uniform representation for `funcref`s and `externref`s,
+/// a `*mut wasm_ref_t` is morally a `Option<Box<Either<ExternRef, Func>>>`.
 ///
 /// A null `*mut wasm_ref_t` is either a null `funcref` or a null `externref`
 /// depending on context (e.g. the table's element type that it is going into or
