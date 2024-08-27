@@ -12,6 +12,12 @@ pub struct InstrSequence {
     ops: Vec<Instruction>,
 }
 
+impl From<InstrSequence> for Vec<Instruction> {
+    fn from(sequence: InstrSequence) -> Self {
+        sequence.into_vec()
+    }
+}
+
 impl From<InstrSequence> for Box<[Instruction]> {
     fn from(sequence: InstrSequence) -> Self {
         sequence.into_boxed_slice()
