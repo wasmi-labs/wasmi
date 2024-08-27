@@ -14,7 +14,7 @@ use core::{ffi::c_void, ptr, unimplemented};
 use wasmi::{ExternRef, FuncRef, Val};
 
 /// `*mut wasm_ref_t` is a reference type (`externref` or `funcref`) for the C API.
-/// 
+///
 /// Because we do not have a uniform representation for `funcref`s and `externref`s,
 /// a `*mut wasm_ref_t` is morally a `Option<Box<Either<ExternRef, Func>>>`.
 ///
