@@ -8,7 +8,6 @@ mod instr_encoder;
 mod labels;
 mod relink_result;
 mod stack;
-mod typed_value;
 mod utils;
 mod visit;
 mod visit_register;
@@ -27,7 +26,6 @@ use self::{
     control_stack::AcquiredTarget,
     labels::{LabelRef, LabelRegistry},
     stack::ValueStack,
-    typed_value::TypedVal,
     utils::{WasmFloat, WasmInteger},
 };
 pub use self::{
@@ -40,7 +38,7 @@ pub use self::{
 };
 use super::code_map::CompiledFuncEntity;
 use crate::{
-    core::{TrapCode, UntypedVal, ValType},
+    core::{TrapCode, Typed, TypedVal, UntypedVal, ValType},
     engine::{
         bytecode::{
             AnyConst32,
@@ -60,6 +58,8 @@ use crate::{
     module::{FuncIdx, FuncTypeIdx, ModuleHeader},
     Engine,
     Error,
+    ExternRef,
+    FuncRef,
     FuncType,
 };
 use core::fmt;
@@ -72,6 +72,33 @@ use wasmparser::{
     ValidatorResources,
     VisitOperator,
 };
+
+macro_rules! impl_typed_for {
+    ( $( $ty:ident ),* $(,)? ) => {
+        $(
+            impl Typed for $ty {
+                const TY: ValType = crate::core::ValType::$ty;
+            }
+
+            impl From<TypedVal> for $ty {
+                fn from(typed_value: TypedVal) -> Self {
+                    // # Note
+                    //
+                    // We only use a `debug_assert` here instead of a proper `assert`
+                    // since the whole translation process assumes that Wasm validation
+                    // was already performed and thus type checking does not necessarily
+                    // need to happen redundantly outside of debug builds.
+                    debug_assert!(matches!(typed_value.ty(), <$ty as Typed>::TY));
+                    Self::from(typed_value.untyped())
+                }
+            }
+        )*
+    };
+}
+impl_typed_for! {
+    FuncRef,
+    ExternRef,
+}
 
 /// Reusable allocations of a [`FuncTranslator`].
 #[derive(Debug, Default)]

@@ -1,8 +1,4 @@
-use crate::{
-    core::{TrapCode, UntypedVal, ValType, F32, F64},
-    ExternRef,
-    FuncRef,
-};
+use crate::{TrapCode, UntypedVal, ValType, F32, F64};
 
 /// Types that are associated to a static Wasm type.
 pub trait Typed {
@@ -28,8 +24,6 @@ impl_typed_for! {
     f64 => ValType::F64;
     F32 => ValType::F32;
     F64 => ValType::F64;
-    FuncRef => ValType::FuncRef;
-    ExternRef => ValType::ExternRef;
 }
 
 impl From<TypedVal> for UntypedVal {
@@ -65,6 +59,11 @@ impl TypedVal {
     /// Returns the [`ValType`] of the [`TypedVal`].
     pub fn ty(&self) -> ValType {
         self.ty
+    }
+
+    /// Returns the [`UntypedVal`] of the [`TypedVal`].
+    pub fn untyped(&self) -> UntypedVal {
+        self.value
     }
 
     /// Changes the [`ValType`] of `self` to `ty`.
@@ -127,8 +126,6 @@ impl_from_typed_value_for! {
     impl From<TypedValue> for f64;
     impl From<TypedValue> for F32;
     impl From<TypedValue> for F64;
-    impl From<TypedValue> for FuncRef;
-    impl From<TypedValue> for ExternRef;
 }
 
 macro_rules! impl_forwarding {
@@ -138,6 +135,15 @@ macro_rules! impl_forwarding {
         )*
     };
     ( @impl #[fallible] fn $name:ident($lhs_ty:ty, $rhs_ty:ty) -> $result_ty:ty ) => {
+        #[doc = concat!("Forwards to [`UntypedVal::", stringify!($name), "`] with debug type checks.")]
+        #[doc = ""]
+        #[doc = "# Errors"]
+        #[doc = ""]
+        #[doc = concat!("If [`UntypedVal::", stringify!($name), "`] returns an error.")]
+        #[doc = ""]
+        #[doc = "# Panics (Debug)"]
+        #[doc = ""]
+        #[doc = "If type checks fail."]
         pub fn $name(self, other: Self) -> Result<Self, TrapCode> {
             debug_assert!(matches!(self.ty(), <$lhs_ty as Typed>::TY));
             debug_assert!(matches!(other.ty(), <$rhs_ty as Typed>::TY));
@@ -148,6 +154,11 @@ macro_rules! impl_forwarding {
         }
     };
     ( @impl fn $name:ident($lhs_ty:ty, $rhs_ty:ty) -> $result_ty:ty ) => {
+        #[doc = concat!("Forwards to [`UntypedVal::", stringify!($name), "`] with debug type checks.")]
+        #[doc = ""]
+        #[doc = "# Panics (Debug)"]
+        #[doc = ""]
+        #[doc = "If type checks fail."]
         pub fn $name(self, other: Self) -> Self {
             debug_assert!(matches!(self.ty(), <$lhs_ty as Typed>::TY));
             debug_assert!(matches!(other.ty(), <$rhs_ty as Typed>::TY));
@@ -158,6 +169,15 @@ macro_rules! impl_forwarding {
         }
     };
     ( @impl #[fallible] fn $name:ident($input_ty:ty) -> $result_ty:ty ) => {
+        #[doc = concat!("Forwards to [`UntypedVal::", stringify!($name), "`] with debug type checks.")]
+        #[doc = ""]
+        #[doc = "# Errors"]
+        #[doc = ""]
+        #[doc = concat!("If [`UntypedVal::", stringify!($name), "`] returns an error.")]
+        #[doc = ""]
+        #[doc = "# Panics (Debug)"]
+        #[doc = ""]
+        #[doc = "If type checks fail."]
         pub fn $name(self) -> Result<Self, TrapCode> {
             debug_assert!(matches!(self.ty(), <$input_ty as Typed>::TY));
             Ok(Self::new(
@@ -167,6 +187,11 @@ macro_rules! impl_forwarding {
         }
     };
     ( @impl fn $name:ident($input_ty:ty) -> $result_ty:ty ) => {
+        #[doc = concat!("Forwards to [`UntypedVal::", stringify!($name), "`] with debug type checks.")]
+        #[doc = ""]
+        #[doc = "# Panics (Debug)"]
+        #[doc = ""]
+        #[doc = "If type checks fail."]
         pub fn $name(self) -> Self {
             debug_assert!(matches!(self.ty(), <$input_ty as Typed>::TY));
             Self::new(
