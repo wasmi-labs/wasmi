@@ -1473,7 +1473,7 @@ impl Instruction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::engine::translator::typed_value::TypedVal;
+    use crate::core::TypedVal;
 
     #[test]
     fn has_overlapping_copies_works() {

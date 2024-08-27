@@ -1,5 +1,6 @@
-use super::{typed_value::TypedVal, ControlFrame};
+use super::ControlFrame;
 use crate::{
+    core::TypedVal,
     engine::bytecode::{Provider, ProviderSliceStack},
     Error,
 };
