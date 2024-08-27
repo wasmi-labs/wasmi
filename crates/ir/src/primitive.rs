@@ -470,30 +470,12 @@ macro_rules! define_comparator {
             type Error = Error;
 
             fn try_from(value: u32) -> Result<Self, Self::Error> {
-                /// Returns the maximum `u32` of the `array` or 0.
-                const fn array_max_or_0<const N: usize>(array: [u32; N]) -> u32 {
-                    let mut max = 0;
-                    let mut i = 0;
-                    while i < N {
-                        if array[i] > max {
-                            max = array[i];
-                        }
-                        i += 1;
-                    }
-                    max
+                match value {
+                    $(
+                        x if x == Self::$name as u32 => Ok(Self::$name),
+                    )*
+                    _ => Err(Error::ComparatorOutOfBounds),
                 }
-                /// The maximum discriminant value of `Comparator`.
-                const MAX_DISCRIMINANT: u32 = array_max_or_0([
-                    $( Comparator::$name as u32 ),*
-                ]);
-                if value > MAX_DISCRIMINANT {
-                    return Err(Error::ComparatorOutOfBounds)
-                }
-                // Safety: we already asserted that `value` is within valid bounds of
-                //         possible discriminants for `Comparator` and we know that all
-                //         discriminant values are contiguous.
-                //         Therefore `value` must be a valid `Comparator`.
-                Ok(unsafe { ::core::mem::transmute::<u32, Self>(value) })
             }
         }
 
