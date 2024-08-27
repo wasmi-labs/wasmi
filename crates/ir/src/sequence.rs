@@ -19,7 +19,12 @@ impl From<InstrSequence> for Box<[Instruction]> {
 }
 
 impl InstrSequence {
-    /// Returns `self` as boxed slice of [`Instruction`].
+    /// Returns `self` as vector of [`Instruction`]s.
+    pub fn into_vec(self) -> Vec<Instruction> {
+        self.ops
+    }
+
+    /// Returns `self` as boxed slice of [`Instruction`]s.
     pub fn into_boxed_slice(self) -> Box<[Instruction]> {
         self.ops.into_boxed_slice()
     }
