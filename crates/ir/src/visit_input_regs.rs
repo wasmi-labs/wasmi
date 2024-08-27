@@ -28,6 +28,7 @@ impl_visit_input_regs_fallback!(
     i8,
     i16,
     u16,
+    u32,
     Sign,
     TrapCode,
     BlockFuel,
@@ -46,11 +47,6 @@ impl_visit_input_regs_fallback!(
     Global,
     FuncType,
 );
-
-impl<T> VisitInputRegs for Unalign<T> {
-    #[inline(always)]
-    fn visit_input_regs(&mut self, _f: impl FnMut(&mut Reg)) {}
-}
 
 impl<T> VisitInputRegs for Const16<T> {
     #[inline(always)]

@@ -27,7 +27,6 @@ pub use self::{
         RegSpan,
         RegSpanIter,
         Sign,
-        Unalign,
     },
     r#enum::Instruction,
     sequence::{InstrIter, InstrIterMut, InstrSequence},

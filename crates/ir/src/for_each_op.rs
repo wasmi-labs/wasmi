@@ -1042,7 +1042,7 @@ macro_rules! for_each_op {
                 /// The register holding the index of the instruction.
                 index: Reg,
                 /// The number of branch table targets including the default target.
-                len_targets: Unalign<u32>,
+                len_targets: u32,
             },
 
             /// Copies `value` to `result`.
@@ -1617,7 +1617,7 @@ macro_rules! for_each_op {
             I32LoadAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Unalign<u32>,
+                address: u32,
             },
             /// Wasm `i32.load` equivalent Wasmi instruction.
             ///
@@ -1654,7 +1654,7 @@ macro_rules! for_each_op {
             I64LoadAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Unalign<u32>,
+                address: u32,
             },
             /// Wasm `i64.load` equivalent Wasmi instruction.
             ///
@@ -1691,7 +1691,7 @@ macro_rules! for_each_op {
             F32LoadAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Unalign<u32>,
+                address: u32,
             },
             /// Wasm `f32.load` equivalent Wasmi instruction.
             ///
@@ -1728,7 +1728,7 @@ macro_rules! for_each_op {
             F64LoadAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Unalign<u32>,
+                address: u32,
             },
             /// Wasm `f64.load` equivalent Wasmi instruction.
             ///
@@ -1765,7 +1765,7 @@ macro_rules! for_each_op {
             I32Load8sAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Unalign<u32>,
+                address: u32,
             },
             /// Wasm `i32.load8_s` equivalent Wasmi instruction.
             ///
@@ -1802,7 +1802,7 @@ macro_rules! for_each_op {
             I32Load8uAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Unalign<u32>,
+                address: u32,
             },
             /// Wasm `i32.load8_u` equivalent Wasmi instruction.
             ///
@@ -1839,7 +1839,7 @@ macro_rules! for_each_op {
             I32Load16sAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Unalign<u32>,
+                address: u32,
             },
             /// Wasm `i32.load16_s` equivalent Wasmi instruction.
             ///
@@ -1876,7 +1876,7 @@ macro_rules! for_each_op {
             I32Load16uAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Unalign<u32>,
+                address: u32,
             },
             /// Wasm `i32.load16_u` equivalent Wasmi instruction.
             ///
@@ -1913,7 +1913,7 @@ macro_rules! for_each_op {
             I64Load8sAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Unalign<u32>,
+                address: u32,
             },
             /// Wasm `i64.load8_s` equivalent Wasmi instruction.
             ///
@@ -1950,7 +1950,7 @@ macro_rules! for_each_op {
             I64Load8uAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Unalign<u32>,
+                address: u32,
             },
             /// Wasm `i64.load8_u` equivalent Wasmi instruction.
             ///
@@ -1987,7 +1987,7 @@ macro_rules! for_each_op {
             I64Load16sAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Unalign<u32>,
+                address: u32,
             },
             /// Wasm `i64.load16_s` equivalent Wasmi instruction.
             ///
@@ -2024,7 +2024,7 @@ macro_rules! for_each_op {
             I64Load16uAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Unalign<u32>,
+                address: u32,
             },
             /// Wasm `i64.load16_u` equivalent Wasmi instruction.
             ///
@@ -2061,7 +2061,7 @@ macro_rules! for_each_op {
             I64Load32sAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Unalign<u32>,
+                address: u32,
             },
             /// Wasm `i64.load32_s` equivalent Wasmi instruction.
             ///
@@ -2098,7 +2098,7 @@ macro_rules! for_each_op {
             I64Load32uAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Unalign<u32>,
+                address: u32,
             },
             /// Wasm `i64.load32_u` equivalent Wasmi instruction.
             ///
@@ -2124,7 +2124,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Unalign<u32>,
+                offset: u32,
             },
             /// Variant of [`Instruction::I32Store`] for 16-bit `offset`.
             #[snake_name(i32_store_offset16)]
@@ -2152,7 +2152,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: Reg,
                 /// The constant address to store the value.
-                address: Unalign<u32>,
+                address: u32,
             },
             /// Variant of [`Instruction::I32StoreAt`] for constant 16-bit `value`.
             #[snake_name(i32_store_at_imm16)]
@@ -2160,7 +2160,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: Const16<i32>,
                 /// The constant address to store the value.
-                address: Unalign<u32>,
+                address: u32,
             },
 
             /// Wasm `i32.store8` equivalent Wasmi instruction.
@@ -2173,7 +2173,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Unalign<u32>,
+                offset: u32,
             },
             /// Variant of [`Instruction::I32Store8`] for 16-bit `offset`.
             #[snake_name(i32_store8_offset16)]
@@ -2201,7 +2201,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: Reg,
                 /// The constant address to store the value.
-                address: Unalign<u32>,
+                address: u32,
             },
             /// Variant of [`Instruction::I32Store8At`] for constant `value`.
             #[snake_name(i32_store8_at_imm)]
@@ -2209,7 +2209,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: i8,
                 /// The constant address to store the value.
-                address: Unalign<u32>,
+                address: u32,
             },
 
             /// Wasm `i32.store16` equivalent Wasmi instruction.
@@ -2222,7 +2222,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Unalign<u32>,
+                offset: u32,
             },
             /// Variant of [`Instruction::I32Store16`] for 16-bit `offset`.
             #[snake_name(i32_store16_offset16)]
@@ -2250,7 +2250,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: Reg,
                 /// The constant address to store the value.
-                address: Unalign<u32>,
+                address: u32,
             },
             /// Variant of [`Instruction::I32Store16At`] for constant `value`.
             #[snake_name(i32_store16_at_imm)]
@@ -2258,7 +2258,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: i16,
                 /// The constant address to store the value.
-                address: Unalign<u32>,
+                address: u32,
             },
 
             /// Wasm `i64.store` equivalent Wasmi instruction.
@@ -2271,7 +2271,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Unalign<u32>,
+                offset: u32,
             },
             /// Variant of [`Instruction::I64Store`] for 16-bit `offset`.
             #[snake_name(i64_store_offset16)]
@@ -2299,7 +2299,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: Reg,
                 /// The constant address to store the value.
-                address: Unalign<u32>,
+                address: u32,
             },
             /// Variant of [`Instruction::I64StoreAt`] for 16-bit `value`.
             #[snake_name(i64_store_at_imm16)]
@@ -2307,7 +2307,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: Const16<i64>,
                 /// The constant address to store the value.
-                address: Unalign<u32>,
+                address: u32,
             },
 
             /// Wasm `i64.store8` equivalent Wasmi instruction.
@@ -2320,7 +2320,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Unalign<u32>,
+                offset: u32,
             },
             /// Variant of [`Instruction::I64Store8`] for 16-bit `offset`.
             #[snake_name(i64_store8_offset16)]
@@ -2348,7 +2348,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: Reg,
                 /// The constant address to store the value.
-                address: Unalign<u32>,
+                address: u32,
             },
             /// Variant of [`Instruction::I64Store8At`] for constant `value`.
             #[snake_name(i64_store8_at_imm)]
@@ -2356,7 +2356,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: i8,
                 /// The constant address to store the value.
-                address: Unalign<u32>,
+                address: u32,
             },
 
             /// Wasm `i64.store16` equivalent Wasmi instruction.
@@ -2369,7 +2369,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Unalign<u32>,
+                offset: u32,
             },
             /// Variant of [`Instruction::I64Store16`] for 16-bit `offset`.
             #[snake_name(i64_store16_offset16)]
@@ -2397,7 +2397,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: Reg,
                 /// The constant address to store the value.
-                address: Unalign<u32>,
+                address: u32,
             },
             /// Variant of [`Instruction::I64Store16At`] for constant `value`.
             #[snake_name(i64_store16_at_imm)]
@@ -2405,7 +2405,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: i16,
                 /// The constant address to store the value.
-                address: Unalign<u32>,
+                address: u32,
             },
 
             /// Wasm `i64.store32` equivalent Wasmi instruction.
@@ -2418,7 +2418,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Unalign<u32>,
+                offset: u32,
             },
             /// Variant of [`Instruction::I64Store32`] for 16-bit `offset`.
             #[snake_name(i64_store32_offset16)]
@@ -2446,7 +2446,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: Reg,
                 /// The constant address to store the value.
-                address: Unalign<u32>,
+                address: u32,
             },
             /// Variant of [`Instruction::I64Store32At`] for constant 16-bit `value`.
             #[snake_name(i64_store32_at_imm16)]
@@ -2454,7 +2454,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: Const16<i32>,
                 /// The constant address to store the value.
-                address: Unalign<u32>,
+                address: u32,
             },
 
             /// Wasm `f32.store` equivalent Wasmi instruction.
@@ -2467,7 +2467,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Unalign<u32>,
+                offset: u32,
             },
             /// Variant of [`Instruction::F32Store`] for 16-bit `offset`.
             #[snake_name(f32_store_offset16)]
@@ -2485,7 +2485,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: Reg,
                 /// The constant address to store the value.
-                address: Unalign<u32>,
+                address: u32,
             },
 
             /// Wasm `f32.store` equivalent Wasmi instruction.
@@ -2498,7 +2498,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Unalign<u32>,
+                offset: u32,
             },
             /// Variant of [`Instruction::F32Store`] for 16-bit `offset`.
             #[snake_name(f64_store_offset16)]
@@ -2516,7 +2516,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: Reg,
                 /// The constant address to store the value.
-                address: Unalign<u32>,
+                address: u32,
             },
 
             /// `i32` equality comparison instruction: `r0 = r1 == r2`
@@ -4625,7 +4625,7 @@ macro_rules! for_each_op {
             TableGetImm {
                 @result: Reg,
                 /// The constant `index` value of the table element to get.
-                index: Unalign<u32>,
+                index: u32,
             },
 
             /// A Wasm `table.size` instruction.
@@ -4658,7 +4658,7 @@ macro_rules! for_each_op {
                 /// The register holding the `value` of the instruction.
                 value: Reg,
                 /// The constant `index` of the instruction.
-                index: Unalign<u32>,
+                index: u32,
             },
 
             /// Wasm `table.copy <dst> <src>` instruction.

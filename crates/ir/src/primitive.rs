@@ -1,22 +1,5 @@
 use crate::{core::UntypedVal, index::Reg, Error};
 
-/// Thin-wrapper around a `T` that aligns it to 1 byte.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[repr(C, packed)]
-pub struct Unalign<T>(T);
-
-impl<T: Copy> Unalign<T> {
-    /// Returns the underlying value of `self`.
-    pub fn get(&self) -> T {
-        self.0
-    }
-
-    /// Sets the underlying value of `self` to `new_value`.
-    pub fn set(&mut self, new_value: T) {
-        self.0 = new_value;
-    }
-}
-
 /// Used to query the [`Instruction`] of an [`InstrSequence`].
 ///
 /// [`Instruction`]: crate::Instruction
