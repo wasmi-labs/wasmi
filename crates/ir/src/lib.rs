@@ -10,6 +10,9 @@ mod relink_result;
 mod sequence;
 mod visit_input_regs;
 
+#[cfg(test)]
+mod tests;
+
 use wasmi_core as core;
 
 #[doc(inline)]
