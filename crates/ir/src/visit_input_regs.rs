@@ -34,7 +34,6 @@ impl_visit_input_regs_fallback!(
     BlockFuel,
     BranchOffset,
     BranchOffset16,
-    BranchTableTarget,
     Reg,
     RegSpan,
     RegSpanIter,

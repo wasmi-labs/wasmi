@@ -30,7 +30,6 @@ pub use self::{
         BlockFuel,
         BranchOffset,
         BranchOffset16,
-        BranchTableTarget,
         Comparator,
         ComparatorAndOffset,
         Instr,

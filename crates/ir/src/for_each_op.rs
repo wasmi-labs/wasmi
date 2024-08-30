@@ -1027,7 +1027,7 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// Followed `len_targets` times by [`Instruction::BranchTableTarget`].
+            /// Followed `len_targets` times by either [`Instruction::Branch`] or [`Instruction::Return`].
             #[snake_name(branch_table)]
             BranchTable {
                 /// The register holding the index of the instruction.
@@ -1039,7 +1039,7 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// 1. Followed `len_targets` times by [`Instruction::BranchTableTarget`].
+            /// 1. Followed `len_targets` times by either [`Instruction::Branch`] or [`Instruction::Return`].
             /// 1. Followed by one of the copy instructions:
             ///
             /// - [`Instruction::Copy`]
@@ -5568,16 +5568,6 @@ macro_rules! for_each_op {
                 index: Const16<u32>,
                 /// The table which holds the called function at the index.
                 table: Table,
-            },
-            /// A Wasmi branch table target that either branches or returns control flow.
-            ///
-            /// # Encoding
-            ///
-            /// Must follow an [`Instruction::BranchTable`] or [`Instruction::BranchTableCopy`].
-            #[snake_name(branch_table_target)]
-            BranchTableTarget {
-                /// The underlying branch table target state.
-                target: BranchTableTarget,
             },
         }
     };
