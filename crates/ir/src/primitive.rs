@@ -540,3 +540,78 @@ impl From<ComparatorAndOffset> for UntypedVal {
         Self::from(params.as_u64())
     }
 }
+
+/// A Wasmi branch table target.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C, u16)]
+pub enum BranchTableTarget {
+    /// The branch table target returns from the function.
+    Return,
+    /// The branch table target branches with the given [`BranchOffset`].
+    Branch(BranchTableTargetBranch),
+}
+
+impl BranchTableTarget {
+    /// Creates a new [`BranchTableTarget::Branch`] with the given `offset`.
+    pub fn branch(offset: impl Into<BranchOffset>) -> Self {
+        Self::Branch(BranchTableTargetBranch::from(offset.into()))
+    }
+}
+
+/// A branching Wasmi branch table target.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct BranchTableTargetBranch {
+    /// The offset of the branch.
+    ///
+    /// # Dev. Note
+    ///
+    /// We have to put [`BranchOffset`] into [`Unalign`] to make sure that
+    /// the [`Instruction`] enum as a whole fits into 8 bytes. Otherwise alignment
+    /// causes [`Instruction`] to grow beyond 8 bytes.
+    offset: Unalign<BranchOffset>,
+}
+
+impl From<BranchOffset> for BranchTableTargetBranch {
+    fn from(offset: BranchOffset) -> Self {
+        Self {
+            offset: Unalign::from(offset),
+        }
+    }
+}
+
+impl BranchTableTargetBranch {
+    /// Returns the [`BranchOffset`] of `self`.
+    pub fn offset(&self) -> BranchOffset {
+        self.offset.get()
+    }
+
+    /// Sets the [`BranchOffset`] of `self` to `new_offset`.
+    pub fn set_offset(&mut self, new_offset: BranchOffset) {
+        self.offset.set(new_offset);
+    }
+}
+
+/// Thin-wrapper around a `T` with alignment of 1 for packing `struct`s.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[repr(C, packed)]
+pub struct Unalign<T>(T);
+
+impl<T: Copy> From<T> for Unalign<T> {
+    fn from(value: T) -> Self {
+        Self(value)
+    }
+}
+
+impl<T: Copy> Unalign<T> {
+    /// Returns the value of the inner `T`.
+    pub fn get(&self) -> T {
+        self.0
+    }
+}
+
+impl<T> Unalign<T> {
+    /// Sets the underlying inner `T` to `new_value`.
+    pub fn set(&mut self, new_value: T) {
+        self.0 = new_value;
+    }
+}
