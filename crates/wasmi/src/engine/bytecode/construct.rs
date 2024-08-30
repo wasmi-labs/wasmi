@@ -1007,9 +1007,23 @@ impl Instruction {
         }
     }
 
+    /// Creates a new [`Instruction::ReturnCallIndirect0Imm16`] for the given `func`.
+    pub fn return_call_indirect_0_imm16(func_type: impl Into<SignatureIdx>) -> Self {
+        Self::ReturnCallIndirect0Imm16 {
+            func_type: func_type.into(),
+        }
+    }
+
     /// Creates a new [`Instruction::ReturnCallIndirect`] for the given `func`.
     pub fn return_call_indirect(func_type: impl Into<SignatureIdx>) -> Self {
         Self::ReturnCallIndirect {
+            func_type: func_type.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::ReturnCallIndirectImm16`] for the given `func`.
+    pub fn return_call_indirect_imm16(func_type: impl Into<SignatureIdx>) -> Self {
+        Self::ReturnCallIndirectImm16 {
             func_type: func_type.into(),
         }
     }
@@ -1048,9 +1062,28 @@ impl Instruction {
         }
     }
 
+    /// Creates a new [`Instruction::CallIndirect0Imm16`] for the given `func`.
+    pub fn call_indirect_0_imm16(
+        results: RegisterSpan,
+        func_type: impl Into<SignatureIdx>,
+    ) -> Self {
+        Self::CallIndirect0Imm16 {
+            results,
+            func_type: func_type.into(),
+        }
+    }
+
     /// Creates a new [`Instruction::CallIndirect`] for the given `func`.
     pub fn call_indirect(results: RegisterSpan, func_type: impl Into<SignatureIdx>) -> Self {
         Self::CallIndirect {
+            results,
+            func_type: func_type.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::CallIndirectImm16`] for the given `func`.
+    pub fn call_indirect_imm16(results: RegisterSpan, func_type: impl Into<SignatureIdx>) -> Self {
+        Self::CallIndirectImm16 {
             results,
             func_type: func_type.into(),
         }

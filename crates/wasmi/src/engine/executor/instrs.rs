@@ -317,8 +317,14 @@ impl<'engine> Executor<'engine> {
                 Instr::ReturnCallIndirect0 { func_type } => {
                     self.execute_return_call_indirect_0::<T>(store, func_type)?
                 }
+                Instr::ReturnCallIndirect0Imm16 { func_type } => {
+                    self.execute_return_call_indirect_0_imm16::<T>(store, func_type)?
+                }
                 Instr::ReturnCallIndirect { func_type } => {
                     self.execute_return_call_indirect::<T>(store, func_type)?
+                }
+                Instr::ReturnCallIndirectImm16 { func_type } => {
+                    self.execute_return_call_indirect_imm16::<T>(store, func_type)?
                 }
                 Instr::CallInternal0 { results, func } => {
                     self.execute_call_internal_0(&mut store.inner, results, func)?
@@ -335,8 +341,14 @@ impl<'engine> Executor<'engine> {
                 Instr::CallIndirect0 { results, func_type } => {
                     self.execute_call_indirect_0::<T>(store, results, func_type)?
                 }
+                Instr::CallIndirect0Imm16 { results, func_type } => {
+                    self.execute_call_indirect_0_imm16::<T>(store, results, func_type)?
+                }
                 Instr::CallIndirect { results, func_type } => {
                     self.execute_call_indirect::<T>(store, results, func_type)?
+                }
+                Instr::CallIndirectImm16 { results, func_type } => {
+                    self.execute_call_indirect_imm16::<T>(store, results, func_type)?
                 }
                 Instr::Select {
                     result,

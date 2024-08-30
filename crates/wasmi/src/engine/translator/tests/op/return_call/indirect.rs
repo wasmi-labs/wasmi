@@ -40,7 +40,7 @@ fn no_params_imm16() {
         );
         TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
-                Instruction::return_call_indirect_0(SignatureIdx::from(0)),
+                Instruction::return_call_indirect_0_imm16(SignatureIdx::from(0)),
                 Instruction::call_indirect_params_imm16(u32imm16(index), TableIdx::from(0)),
             ])
             .run();
@@ -94,7 +94,7 @@ fn one_reg_param_imm16() {
         );
         TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
-                Instruction::return_call_indirect(SignatureIdx::from(0)),
+                Instruction::return_call_indirect_imm16(SignatureIdx::from(0)),
                 Instruction::call_indirect_params_imm16(u32imm16(index), TableIdx::from(0)),
                 Instruction::register(1),
             ])
@@ -187,7 +187,7 @@ fn one_imm_param_imm16() {
         TranslationTest::from_wat(&wasm)
             .expect_func(
                 ExpectedFunc::new([
-                    Instruction::return_call_indirect(SignatureIdx::from(0)),
+                    Instruction::return_call_indirect_imm16(SignatureIdx::from(0)),
                     Instruction::call_indirect_params_imm16(u32imm16(index), TableIdx::from(0)),
                     Instruction::register(-1),
                 ])
@@ -335,7 +335,7 @@ fn two_reg_params_imm16() {
         let elem_index = u32imm16(index);
         TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
-                Instruction::return_call_indirect(SignatureIdx::from(0)),
+                Instruction::return_call_indirect_imm16(SignatureIdx::from(0)),
                 Instruction::call_indirect_params_imm16(elem_index, TableIdx::from(0)),
                 Instruction::register2(0, 1),
             ])
@@ -369,7 +369,7 @@ fn two_reg_params_rev_imm16() {
         let elem_index = u32imm16(index);
         TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
-                Instruction::return_call_indirect(SignatureIdx::from(0)),
+                Instruction::return_call_indirect_imm16(SignatureIdx::from(0)),
                 Instruction::call_indirect_params_imm16(elem_index, TableIdx::from(0)),
                 Instruction::register2(1, 0),
             ])
@@ -404,7 +404,7 @@ fn two_imm_params_imm16() {
         TranslationTest::from_wat(&wasm)
             .expect_func(
                 ExpectedFunc::new([
-                    Instruction::return_call_indirect(SignatureIdx::from(0)),
+                    Instruction::return_call_indirect_imm16(SignatureIdx::from(0)),
                     Instruction::call_indirect_params_imm16(elem_index, TableIdx::from(0)),
                     Instruction::register2(-1, -2),
                 ])
@@ -523,7 +523,7 @@ fn three_imm_params_imm16() {
         TranslationTest::from_wat(&wasm)
             .expect_func(
                 ExpectedFunc::new([
-                    Instruction::return_call_indirect(SignatureIdx::from(0)),
+                    Instruction::return_call_indirect_imm16(SignatureIdx::from(0)),
                     Instruction::call_indirect_params_imm16(elem_index, TableIdx::from(0)),
                     Instruction::register3(-1, -2, -3),
                 ])

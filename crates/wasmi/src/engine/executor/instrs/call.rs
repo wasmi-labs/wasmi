@@ -195,6 +195,26 @@ impl<'engine> Executor<'engine> {
                 let table = call_params.table;
                 (index, table)
             }
+            unexpected => unreachable!(
+                "expected `Instruction::CallIndirectParams[Imm16]` but found {unexpected:?}"
+            ),
+        }
+    }
+
+    /// Fetches the [`Instruction::CallIndirectParamsImm16`] parameter for a call [`Instruction`].
+    ///
+    /// # Note
+    ///
+    /// - This advances the [`InstructionPtr`] to the next [`Instruction`].
+    /// - This is done by encoding an [`Instruction::TableGet`] instruction
+    ///   word following the actual instruction where the [`TableIdx`]
+    ///   paremeter belongs to.
+    /// - This is required for some instructions that do not fit into
+    ///   a single instruction word and store a [`TableIdx`] value in
+    ///   another instruction word.
+    fn pull_call_indirect_params_imm16(&mut self) -> (u32, TableIdx) {
+        self.ip.add(1);
+        match self.ip.get() {
             Instruction::CallIndirectParamsImm16(call_params) => {
                 let index = u32::from(call_params.index);
                 let table = call_params.table;
@@ -568,6 +588,20 @@ impl<'engine> Executor<'engine> {
         )
     }
 
+    /// Executes an [`Instruction::CallIndirect0Imm16`].
+    #[inline(always)]
+    pub fn execute_return_call_indirect_0_imm16<T>(
+        &mut self,
+        store: &mut Store<T>,
+        func_type: SignatureIdx,
+    ) -> Result<(), Error> {
+        let (index, table) = self.pull_call_indirect_params_imm16();
+        let results = self.caller_results();
+        self.execute_call_indirect_impl::<marker::ReturnCall0, T>(
+            store, results, func_type, index, table,
+        )
+    }
+
     /// Executes an [`Instruction::CallIndirect0`].
     #[inline(always)]
     pub fn execute_return_call_indirect<T>(
@@ -576,6 +610,20 @@ impl<'engine> Executor<'engine> {
         func_type: SignatureIdx,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
+        let results = self.caller_results();
+        self.execute_call_indirect_impl::<marker::ReturnCall, T>(
+            store, results, func_type, index, table,
+        )
+    }
+
+    /// Executes an [`Instruction::CallIndirect0Imm16`].
+    #[inline(always)]
+    pub fn execute_return_call_indirect_imm16<T>(
+        &mut self,
+        store: &mut Store<T>,
+        func_type: SignatureIdx,
+    ) -> Result<(), Error> {
+        let (index, table) = self.pull_call_indirect_params_imm16();
         let results = self.caller_results();
         self.execute_call_indirect_impl::<marker::ReturnCall, T>(
             store, results, func_type, index, table,
@@ -596,6 +644,20 @@ impl<'engine> Executor<'engine> {
         )
     }
 
+    /// Executes an [`Instruction::CallIndirect0Imm16`].
+    #[inline(always)]
+    pub fn execute_call_indirect_0_imm16<T>(
+        &mut self,
+        store: &mut Store<T>,
+        results: RegisterSpan,
+        func_type: SignatureIdx,
+    ) -> Result<(), Error> {
+        let (index, table) = self.pull_call_indirect_params_imm16();
+        self.execute_call_indirect_impl::<marker::NestedCall0, T>(
+            store, results, func_type, index, table,
+        )
+    }
+
     /// Executes an [`Instruction::CallIndirect`].
     #[inline(always)]
     pub fn execute_call_indirect<T>(
@@ -605,6 +667,20 @@ impl<'engine> Executor<'engine> {
         func_type: SignatureIdx,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
+        self.execute_call_indirect_impl::<marker::NestedCall, T>(
+            store, results, func_type, index, table,
+        )
+    }
+
+    /// Executes an [`Instruction::CallIndirectImm16`].
+    #[inline(always)]
+    pub fn execute_call_indirect_imm16<T>(
+        &mut self,
+        store: &mut Store<T>,
+        results: RegisterSpan,
+        func_type: SignatureIdx,
+    ) -> Result<(), Error> {
+        let (index, table) = self.pull_call_indirect_params_imm16();
         self.execute_call_indirect_impl::<marker::NestedCall, T>(
             store, results, func_type, index, table,
         )

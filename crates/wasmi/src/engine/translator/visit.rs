@@ -691,31 +691,27 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let func_type = self.func_type_at(type_index);
         let (params, results) = func_type.params_results();
         let index = self.alloc.stack.pop();
+        let indirect_params = self.call_indirect_params(index, table_index)?;
         let provider_params = &mut self.alloc.buffer.providers;
         self.alloc.stack.pop_n(params.len(), provider_params);
-        let table_params = match index {
-            TypedProvider::Const(index) => match <Const16<u32>>::try_from(u32::from(index)).ok() {
-                Some(index) => {
-                    // Case: the index is encodable as 16-bit constant value
-                    //       which allows us to use an optimized instruction.
-                    Instruction::call_indirect_params_imm16(index, table_index)
-                }
-                None => {
-                    // Case: the index is not encodable as 16-bit constant value
-                    //       and we need to allocate it as function local constant.
-                    let index = self.alloc.stack.alloc_const(index)?;
-                    Instruction::call_indirect_params(index, table_index)
-                }
-            },
-            TypedProvider::Register(index) => Instruction::call_indirect_params(index, table_index),
-        };
         let results = self.alloc.stack.push_dynamic_n(results.len())?;
-        let instr = match params.len() {
-            0 => Instruction::call_indirect_0(results, type_index),
-            _ => Instruction::call_indirect(results, type_index),
+        let instr = match (params.len(), indirect_params) {
+            (0, Instruction::CallIndirectParams { .. }) => {
+                Instruction::call_indirect_0(results, type_index)
+            }
+            (0, Instruction::CallIndirectParamsImm16 { .. }) => {
+                Instruction::call_indirect_0_imm16(results, type_index)
+            }
+            (_, Instruction::CallIndirectParams { .. }) => {
+                Instruction::call_indirect(results, type_index)
+            }
+            (_, Instruction::CallIndirectParamsImm16 { .. }) => {
+                Instruction::call_indirect_imm16(results, type_index)
+            }
+            _ => unreachable!(),
         };
         self.alloc.instr_encoder.push_instr(instr)?;
-        self.alloc.instr_encoder.append_instr(table_params)?;
+        self.alloc.instr_encoder.append_instr(indirect_params)?;
         self.alloc
             .instr_encoder
             .encode_register_list(&mut self.alloc.stack, provider_params)?;
@@ -763,30 +759,26 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let func_type = self.func_type_at(type_index);
         let params = func_type.params();
         let index = self.alloc.stack.pop();
+        let indirect_params = self.call_indirect_params(index, table_index)?;
         let provider_params = &mut self.alloc.buffer.providers;
         self.alloc.stack.pop_n(params.len(), provider_params);
-        let table_params = match index {
-            TypedProvider::Const(index) => match <Const16<u32>>::try_from(u32::from(index)).ok() {
-                Some(index) => {
-                    // Case: the index is encodable as 16-bit constant value
-                    //       which allows us to use an optimized instruction.
-                    Instruction::call_indirect_params_imm16(index, table_index)
-                }
-                None => {
-                    // Case: the index is not encodable as 16-bit constant value
-                    //       and we need to allocate it as function local constant.
-                    let index = self.alloc.stack.alloc_const(index)?;
-                    Instruction::call_indirect_params(index, table_index)
-                }
-            },
-            TypedProvider::Register(index) => Instruction::call_indirect_params(index, table_index),
-        };
-        let instr = match params.len() {
-            0 => Instruction::return_call_indirect_0(type_index),
-            _ => Instruction::return_call_indirect(type_index),
+        let instr = match (params.len(), indirect_params) {
+            (0, Instruction::CallIndirectParams { .. }) => {
+                Instruction::return_call_indirect_0(type_index)
+            }
+            (0, Instruction::CallIndirectParamsImm16 { .. }) => {
+                Instruction::return_call_indirect_0_imm16(type_index)
+            }
+            (_, Instruction::CallIndirectParams { .. }) => {
+                Instruction::return_call_indirect(type_index)
+            }
+            (_, Instruction::CallIndirectParamsImm16 { .. }) => {
+                Instruction::return_call_indirect_imm16(type_index)
+            }
+            _ => unreachable!(),
         };
         self.alloc.instr_encoder.push_instr(instr)?;
-        self.alloc.instr_encoder.append_instr(table_params)?;
+        self.alloc.instr_encoder.append_instr(indirect_params)?;
         self.alloc
             .instr_encoder
             .encode_register_list(&mut self.alloc.stack, provider_params)?;
