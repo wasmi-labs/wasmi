@@ -194,13 +194,17 @@ impl VisitInputRegisters for Instruction {
             Instruction::ReturnCallImported0 { .. } |
             Instruction::ReturnCallImported { .. } |
             Instruction::ReturnCallIndirect0 { .. } |
-            Instruction::ReturnCallIndirect { .. } => {},
+            Instruction::ReturnCallIndirect0Imm16 { .. } |
+            Instruction::ReturnCallIndirect { .. } |
+            Instruction::ReturnCallIndirectImm16 { .. } => {},
             Instruction::CallInternal0 { .. } |
             Instruction::CallInternal { .. } |
             Instruction::CallImported0 { .. } |
             Instruction::CallImported { .. } |
             Instruction::CallIndirect0 { .. } |
-            Instruction::CallIndirect { .. } => {},
+            Instruction::CallIndirect0Imm16 { .. } |
+            Instruction::CallIndirect { .. } |
+            Instruction::CallIndirectImm16 { .. } => {},
             Instruction::Select { condition, lhs, .. } => visit_registers!(f, condition, lhs),
             Instruction::SelectRev { condition, rhs, .. } => visit_registers!(f, condition, rhs),
             Instruction::SelectImm32 { result_or_condition, .. } |

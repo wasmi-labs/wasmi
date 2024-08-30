@@ -143,14 +143,19 @@ impl Instruction {
             | I::ReturnCallImported0 { .. }
             | I::ReturnCallImported { .. }
             | I::ReturnCallIndirect0 { .. }
-            | I::ReturnCallIndirect { .. } => Ok(false),
+            | I::ReturnCallIndirect0Imm16 { .. }
+            | I::ReturnCallIndirect { .. }
+            | I::ReturnCallIndirectImm16 { .. } => Ok(false),
             I::CallInternal0 { results, func } | I::CallInternal { results, func } => {
                 relink_call_internal(results, *func, module, new_result, old_result)
             }
             I::CallImported0 { results, func } | I::CallImported { results, func } => {
                 relink_call_imported(results, *func, module, new_result, old_result)
             }
-            I::CallIndirect0 { results, func_type } | I::CallIndirect { results, func_type } => {
+            I::CallIndirect0 { results, func_type }
+            | I::CallIndirect0Imm16 { results, func_type }
+            | I::CallIndirect { results, func_type }
+            | I::CallIndirectImm16 { results, func_type } => {
                 relink_call_indirect(results, *func_type, module, new_result, old_result)
             }
             I::Select { result, .. }

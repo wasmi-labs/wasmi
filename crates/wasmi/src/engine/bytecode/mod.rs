@@ -757,12 +757,21 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// Must be followed by
-    ///
-    /// 1. Either
-    ///     - [`Instruction::CallIndirectParams`]: the `table` and `index`
-    ///     - [`Instruction::CallIndirectParamsImm16`]: the `table` and 16-bit constant `index`
+    /// Must be followed by [`Instruction::CallIndirectParams`] encoding `table` and `index`.
     ReturnCallIndirect0 {
+        /// The called internal function.
+        func_type: SignatureIdx,
+    },
+    /// Wasm `return_call_indirect` equivalent Wasmi instruction.
+    ///
+    /// # Note
+    ///
+    /// Used for indirectly calling Wasm functions without parameters.
+    ///
+    /// # Encoding
+    ///
+    /// Must be followed by [`Instruction::CallIndirectParamsImm16`] encoding `table` and 16-bit immediate `index`.
+    ReturnCallIndirect0Imm16 {
         /// The called internal function.
         func_type: SignatureIdx,
     },
@@ -776,15 +785,33 @@ pub enum Instruction {
     ///
     /// Must be followed by
     ///
-    /// 1. Either
-    ///     - [`Instruction::CallIndirectParams`]: the `table` and `index`
-    ///     - [`Instruction::CallIndirectParamsImm16`]: the `table` and 16-bit constant `index`
+    /// 1. [`Instruction::CallIndirectParams`] encoding `table` and `index`
     /// 2. Zero or more [`Instruction::RegisterList`]
     /// 3. Followed by one of
     ///     - [`Instruction::Register`]
     ///     - [`Instruction::Register2`]
     ///     - [`Instruction::Register3`]
     ReturnCallIndirect {
+        /// The called internal function.
+        func_type: SignatureIdx,
+    },
+    /// Wasm `return_call_indirect` equivalent Wasmi instruction.
+    ///
+    /// # Note
+    ///
+    /// Used for indirectly calling Wasm functions with parameters.
+    ///
+    /// # Encoding
+    ///
+    /// Must be followed by
+    ///
+    /// 1. [`Instruction::CallIndirectParamsImm16`] encoding `table` and 16-bit immediate `index`
+    /// 2. Zero or more [`Instruction::RegisterList`]
+    /// 3. Followed by one of
+    ///     - [`Instruction::Register`]
+    ///     - [`Instruction::Register2`]
+    ///     - [`Instruction::Register3`]
+    ReturnCallIndirectImm16 {
         /// The called internal function.
         func_type: SignatureIdx,
     },
@@ -863,12 +890,43 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// Must be followed by
-    ///
-    /// 1. Either
-    ///     - [`Instruction::CallIndirectParams`]: the `table` and `index`
-    ///     - [`Instruction::CallIndirectParamsImm16`]: the `table` and 16-bit constant `index`
+    /// Must be followed by [`Instruction::CallIndirectParams`] encoding `table` and `index`.
     CallIndirect0 {
+        /// The registers storing the results of the call.
+        results: RegisterSpan,
+        /// The called internal function.
+        func_type: SignatureIdx,
+    },
+    /// Wasm `call_indirect` equivalent Wasmi instruction.
+    ///
+    /// # Note
+    ///
+    /// Used for indirectly calling Wasm functions without parameters.
+    ///
+    /// # Encoding
+    ///
+    /// Must be followed by [`Instruction::CallIndirectParamsImm16`] encoding `table` and 16-bit constant `index`.
+    CallIndirect0Imm16 {
+        /// The registers storing the results of the call.
+        results: RegisterSpan,
+        /// The called internal function.
+        func_type: SignatureIdx,
+    },
+    /// Wasm `call_indirect` equivalent Wasmi instruction.
+    ///
+    /// # Note
+    ///
+    /// Used for indirectly calling Wasm functions with parameters.
+    ///
+    /// # Encoding
+    ///
+    /// Must be followed by [`Instruction::CallIndirectParams`] encoding `table` and `index`.
+    /// 2. Zero or more [`Instruction::RegisterList`]
+    /// 3. Followed by one of
+    ///     - [`Instruction::Register`]
+    ///     - [`Instruction::Register2`]
+    ///     - [`Instruction::Register3`]
+    CallIndirect {
         /// The registers storing the results of the call.
         results: RegisterSpan,
         /// The called internal function.
@@ -884,15 +942,13 @@ pub enum Instruction {
     ///
     /// Must be followed by
     ///
-    /// 1. Either
-    ///     - [`Instruction::CallIndirectParams`]: the `table` and `index`
-    ///     - [`Instruction::CallIndirectParamsImm16`]: the `table` and 16-bit constant `index`
+    /// 1. [`Instruction::CallIndirectParamsImm16`] encoding `table` and 16-bit immediate `index`
     /// 2. Zero or more [`Instruction::RegisterList`]
     /// 3. Followed by one of
     ///     - [`Instruction::Register`]
     ///     - [`Instruction::Register2`]
     ///     - [`Instruction::Register3`]
-    CallIndirect {
+    CallIndirectImm16 {
         /// The registers storing the results of the call.
         results: RegisterSpan,
         /// The called internal function.

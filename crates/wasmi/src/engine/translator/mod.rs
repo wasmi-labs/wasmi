@@ -36,7 +36,7 @@ pub use self::{
     instr_encoder::{Instr, InstrEncoder},
     stack::TypedProvider,
 };
-use super::code_map::CompiledFuncEntity;
+use super::{bytecode::Provider, code_map::CompiledFuncEntity};
 use crate::{
     core::{TrapCode, Typed, TypedVal, UntypedVal, ValType},
     engine::{
@@ -2598,5 +2598,30 @@ impl FuncTranslator {
             values,
             fuel_info,
         )
+    }
+
+    /// Create either [`Instruction::CallIndirectParams`] or [`Instruction::CallIndirectParamsImm16`] depending on the inputs.
+    fn call_indirect_params(
+        &mut self,
+        index: Provider<TypedVal>,
+        table_index: u32,
+    ) -> Result<Instruction, Error> {
+        let instr = match index {
+            TypedProvider::Const(index) => match <Const16<u32>>::try_from(u32::from(index)).ok() {
+                Some(index) => {
+                    // Case: the index is encodable as 16-bit constant value
+                    //       which allows us to use an optimized instruction.
+                    Instruction::call_indirect_params_imm16(index, table_index)
+                }
+                None => {
+                    // Case: the index is not encodable as 16-bit constant value
+                    //       and we need to allocate it as function local constant.
+                    let index = self.alloc.stack.alloc_const(index)?;
+                    Instruction::call_indirect_params(index, table_index)
+                }
+            },
+            TypedProvider::Register(index) => Instruction::call_indirect_params(index, table_index),
+        };
+        Ok(instr)
     }
 }
