@@ -3179,7 +3179,7 @@ pub enum Instruction {
     F64Const32(Const32<f64>),
     /// An instruction parameter with a [`Register`] and a 32-bit immediate value.
     RegisterAndImm32 {
-        /// The [`Reg`] parameter value.
+        /// The [`Register`] parameter value.
         ///
         /// # Note
         ///
