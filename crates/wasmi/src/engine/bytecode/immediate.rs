@@ -527,6 +527,12 @@ impl TryFrom<f64> for AnyConst32 {
     }
 }
 
+impl<T> From<Const32<T>> for AnyConst32 {
+    fn from(value: Const32<T>) -> Self {
+        value.inner
+    }
+}
+
 impl From<bool> for AnyConst32 {
     fn from(value: bool) -> Self {
         Self::from(u32::from(value))

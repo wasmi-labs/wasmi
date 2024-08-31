@@ -350,28 +350,24 @@ impl<'engine> Executor<'engine> {
                 Instr::CallIndirectImm16 { results, func_type } => {
                     self.execute_call_indirect_imm16::<T>(store, results, func_type)?
                 }
-                Instr::Select {
-                    result,
-                    condition,
-                    lhs,
-                } => self.execute_select(result, condition, lhs),
-                Instr::SelectRev {
-                    result,
-                    condition,
-                    rhs,
-                } => self.execute_select_rev(result, condition, rhs),
-                Instr::SelectImm32 {
-                    result_or_condition,
-                    lhs_or_rhs,
-                } => self.execute_select_imm32(result_or_condition, lhs_or_rhs),
-                Instr::SelectI64Imm32 {
-                    result_or_condition,
-                    lhs_or_rhs,
-                } => self.execute_select_i64imm32(result_or_condition, lhs_or_rhs),
-                Instr::SelectF64Imm32 {
-                    result_or_condition,
-                    lhs_or_rhs,
-                } => self.execute_select_f64imm32(result_or_condition, lhs_or_rhs),
+                Instr::Select { result, lhs } => self.execute_select(result, lhs),
+                Instr::SelectImm32Rhs { result, lhs } => self.execute_select_imm32_rhs(result, lhs),
+                Instr::SelectImm32Lhs { result, lhs } => self.execute_select_imm32_lhs(result, lhs),
+                Instr::SelectImm32 { result, lhs } => self.execute_select_imm32(result, lhs),
+                Instr::SelectI64Imm32Rhs { result, lhs } => {
+                    self.execute_select_i64imm32_rhs(result, lhs)
+                }
+                Instr::SelectI64Imm32Lhs { result, lhs } => {
+                    self.execute_select_i64imm32_lhs(result, lhs)
+                }
+                Instr::SelectI64Imm32 { result, lhs } => self.execute_select_i64imm32(result, lhs),
+                Instr::SelectF64Imm32Rhs { result, lhs } => {
+                    self.execute_select_f64imm32_rhs(result, lhs)
+                }
+                Instr::SelectF64Imm32Lhs { result, lhs } => {
+                    self.execute_select_f64imm32_lhs(result, lhs)
+                }
+                Instr::SelectF64Imm32 { result, lhs } => self.execute_select_f64imm32(result, lhs),
                 Instr::RefFunc { result, func } => self.execute_ref_func(result, func),
                 Instr::GlobalGet { result, global } => {
                     self.execute_global_get(&store.inner, result, global)
@@ -863,6 +859,7 @@ impl<'engine> Executor<'engine> {
                 | Instr::Register(_)
                 | Instr::Register2(_)
                 | Instr::Register3(_)
+                | Instr::RegisterAndImm32 { .. }
                 | Instr::RegisterList(_)
                 | Instr::CallIndirectParams(_)
                 | Instr::CallIndirectParamsImm16(_) => self.invalid_instruction_word()?,

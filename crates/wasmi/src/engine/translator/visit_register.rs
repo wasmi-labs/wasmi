@@ -41,6 +41,7 @@ impl VisitInputRegisters for Instruction {
             Instruction::Const32(_) |
             Instruction::I64Const32(_) |
             Instruction::F64Const32(_) => {},
+            Instruction::RegisterAndImm32 { reg, .. } => f(reg),
             Instruction::Register(register) => f(register),
             Instruction::Register2(registers) => registers.visit_input_registers(f),
             Instruction::Register3(registers) |
@@ -205,11 +206,16 @@ impl VisitInputRegisters for Instruction {
             Instruction::CallIndirect0Imm16 { .. } |
             Instruction::CallIndirect { .. } |
             Instruction::CallIndirectImm16 { .. } => {},
-            Instruction::Select { condition, lhs, .. } => visit_registers!(f, condition, lhs),
-            Instruction::SelectRev { condition, rhs, .. } => visit_registers!(f, condition, rhs),
-            Instruction::SelectImm32 { result_or_condition, .. } |
-            Instruction::SelectI64Imm32 { result_or_condition, .. } |
-            Instruction::SelectF64Imm32 { result_or_condition, .. } => f(result_or_condition),
+            Instruction::Select { lhs, .. } => f(lhs),
+            Instruction::SelectImm32Rhs { lhs, .. } => f(lhs),
+            Instruction::SelectImm32Lhs { .. } |
+            Instruction::SelectImm32 { .. } => {},
+            Instruction::SelectI64Imm32Rhs { lhs, .. } => f(lhs),
+            Instruction::SelectI64Imm32Lhs { .. } |
+            Instruction::SelectI64Imm32 { .. } => {},
+            Instruction::SelectF64Imm32Rhs { lhs, .. } => f(lhs),
+            Instruction::SelectF64Imm32Lhs { .. } |
+            Instruction::SelectF64Imm32 { .. } => {},
             Instruction::RefFunc { .. } |
             Instruction::TableGet { .. } |
             Instruction::TableGetImm { .. } |

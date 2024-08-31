@@ -37,6 +37,7 @@ impl Instruction {
             | I::Const32(_)
             | I::I64Const32(_)
             | I::F64Const32(_)
+            | I::RegisterAndImm32 { .. }
             | I::Register(_)
             | I::Register2(_)
             | I::Register3(_)
@@ -158,25 +159,16 @@ impl Instruction {
             | I::CallIndirectImm16 { results, func_type } => {
                 relink_call_indirect(results, *func_type, module, new_result, old_result)
             }
-            I::Select { result, .. }
-            | I::SelectRev { result, .. }
-            | I::SelectImm32 {
-                result_or_condition: result,
-                ..
-            }
-            | I::SelectI64Imm32 {
-                result_or_condition: result,
-                ..
-            }
-            | I::SelectF64Imm32 {
-                result_or_condition: result,
-                ..
-            } => {
-                // Note: the `result_or_condition` necessarily points to the actual `result`
-                //       register since we make sure elsewhere that only the correct instruction
-                //       word is given to this method.
-                relink_simple(result, new_result, old_result)
-            }
+            I::Select { result, .. } |
+            I::SelectImm32Rhs { result, .. } |
+            I::SelectImm32Lhs { result, .. } |
+            I::SelectImm32 { result, .. } |
+            I::SelectI64Imm32Rhs { result, .. } |
+            I::SelectI64Imm32Lhs { result, .. } |
+            I::SelectI64Imm32 { result, .. } |
+            I::SelectF64Imm32Rhs { result, .. } |
+            I::SelectF64Imm32Lhs { result, .. } |
+            I::SelectF64Imm32 { result, .. } => relink_simple(result, new_result, old_result),
             I::RefFunc { result, .. }
             | I::TableGet { result, .. }
             | I::TableGetImm { result, .. }

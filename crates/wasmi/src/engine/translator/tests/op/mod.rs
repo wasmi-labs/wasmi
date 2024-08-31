@@ -98,26 +98,6 @@ fn f64imm32(value: f64) -> Const32<f64> {
         .unwrap_or_else(|_| panic!("value must be 32-bit encodable: {}", value))
 }
 
-/// Creates an [`Instruction::I64Imm32`] from the given `i64` value.
-///
-/// # Panics
-///
-/// If the `value` cannot be converted into `i32` losslessly.
-#[track_caller]
-fn i64imm32_instr(value: i64) -> Instruction {
-    Instruction::I64Const32(i64imm32(value))
-}
-
-/// Creates an [`Instruction::F64Imm32`] from the given `i64` value.
-///
-/// # Panics
-///
-/// If the `value` cannot be converted into `i32` losslessly.
-#[track_caller]
-fn f64imm32_instr(value: f64) -> Instruction {
-    Instruction::F64Const32(f64imm32(value))
-}
-
 /// Creates an [`Instruction::ReturnI64Imm32`] from the given `i64` value.
 ///
 /// # Panics

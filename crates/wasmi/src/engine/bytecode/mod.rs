@@ -955,92 +955,115 @@ pub enum Instruction {
         func_type: SignatureIdx,
     },
 
-    /// A Wasm `select` or `select <ty>` instruction.
-    ///
-    /// Inspect `condition` and if `condition != 0`:
-    ///
-    /// - `true` : store `lhs` into `result`
-    /// - `false`: store `rhs` into `result`
+    /// A Wasm `select` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
-    /// Must be followed by either of
-    ///
-    /// 1. [`Instruction::Register`]
-    /// 1. [`Instruction::Const32`]
-    /// 1. [`Instruction::I64Const32`]
-    /// 1. [`Instruction::F64Const32`]
-    ///
-    /// to encode the `rhs` value.
+    /// Must be followed by [`Instruction::Register2`] to encode `condition` and `rhs`.
     Select {
-        /// The register holding the `result` value.
+        /// The register holding the result of the instruction.
         result: Register,
-        /// The register holding the `condition` value.
-        condition: Register,
-        /// The register holding the `lhs` value.
+        /// The register holding the left-hand side value.
         lhs: Register,
     },
-    /// Variant of [`Instruction::Select`] with swapped `lhs` and `rhs` values.
+    /// A Wasm `select` equivalent Wasmi instruction with 32-bit immediate `rhs` value.
     ///
     /// # Encoding
     ///
-    /// Must be followed by either of
-    ///
-    /// 1. [`Instruction::Register`]
-    /// 1. [`Instruction::Const32`]
-    /// 1. [`Instruction::I64Const32`]
-    /// 1. [`Instruction::F64Const32`]
-    ///
-    /// to encode the `lhs` value.
-    SelectRev {
-        /// The register holding the `result` value.
+    /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
+    SelectImm32Rhs {
+        /// The register holding the result of the instruction.
         result: Register,
-        /// The register holding the `condition` value.
-        condition: Register,
-        /// The register holding the `rhs` value.
-        rhs: Register,
+        /// The register holding the left-hand side value.
+        lhs: Register,
     },
-    /// Variant of [`Instruction::Select`] where `lhs` and `rhs` are 32-bit constant values.
+    /// A Wasm `select` equivalent Wasmi instruction with 32-bit immediate `lhs` value.
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] is always encoded as pair:
+    /// Must be followed by [`Instruction::Register2`] to encode `condition` and `lhs`.
+    SelectImm32Lhs {
+        /// The register holding the result of the instruction.
+        result: Register,
+        /// The register holding the left-hand side value.
+        lhs: AnyConst32,
+    },
+    /// A Wasm `select` equivalent Wasmi instruction with 32-bit immediate `lhs` and `rhs` values.
     ///
-    /// 1. [`Instruction::SelectImm32`] encodes `result` and `lhs`
-    /// 2. [`Instruction::SelectImm32`] encodes `condition` and `rhs`.
+    /// # Encoding
+    ///
+    /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
     SelectImm32 {
-        /// Register storing either the `result` or the `condition`.
-        result_or_condition: Register,
-        /// Either the constant 32-bit `lhs` or `rhs` value.
-        lhs_or_rhs: AnyConst32,
+        /// The register holding the result of the instruction.
+        result: Register,
+        /// The register holding the left-hand side value.
+        lhs: AnyConst32,
     },
-    /// Variant of [`Instruction::Select`] where `lhs` and `rhs` are 32-bit encoded `i64` constant values.
+    /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `i64` immediate `lhs` value.
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] is always encoded as pair:
+    /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
+    SelectI64Imm32Rhs {
+        /// The register holding the result of the instruction.
+        result: Register,
+        /// The register holding the left-hand side value.
+        lhs: Register,
+    },
+    /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `i64` immediate `lhs` value.
     ///
-    /// 1. [`Instruction::SelectI64Imm32`] encodes `result` and `lhs`
-    /// 2. [`Instruction::SelectI64Imm32`] encodes `condition` and `rhs`.
+    /// # Encoding
+    ///
+    /// Must be followed by [`Instruction::Register2`] to encode `condition` and `rhs`.
+    SelectI64Imm32Lhs {
+        /// The register holding the result of the instruction.
+        result: Register,
+        /// The register holding the left-hand side value.
+        lhs: Const32<i64>,
+    },
+    /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `i64` immediate `lhs` and `rhs` values.
+    ///
+    /// # Encoding
+    ///
+    /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
     SelectI64Imm32 {
-        /// Register storing either the `result` or the `condition`.
-        result_or_condition: Register,
-        /// Either the constant 32-bit `i64` `lhs` or `rhs` value.
-        lhs_or_rhs: Const32<i64>,
+        /// The register holding the result of the instruction.
+        result: Register,
+        /// The register holding the left-hand side value.
+        lhs: Const32<i64>,
     },
-    /// Variant of [`Instruction::Select`] where `lhs` and `rhs` are 32-bit encoded `f64` constant values.
+    /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `f64` immediate `rhs` value.
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] is always encoded as pair:
+    /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
+    SelectF64Imm32Rhs {
+        /// The register holding the result of the instruction.
+        result: Register,
+        /// The register holding the left-hand side value.
+        lhs: Register,
+    },
+    /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `f64` immediate `lhs` value.
     ///
-    /// 1. [`Instruction::SelectF64Imm32`] encodes `result` and `lhs`
-    /// 2. [`Instruction::SelectF64Imm32`] encodes `condition` and `rhs`.
+    /// # Encoding
+    ///
+    /// Must be followed by [`Instruction::Register2`] to encode `condition` and `rhs`.
+    SelectF64Imm32Lhs {
+        /// The register holding the result of the instruction.
+        result: Register,
+        /// The register holding the left-hand side value.
+        lhs: Const32<f64>,
+    },
+    /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `f64` immediate `lhs` and `rhs` value.
+    ///
+    /// # Encoding
+    ///
+    /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
     SelectF64Imm32 {
-        /// Register storing either the `result` or the `condition`.
-        result_or_condition: Register,
-        /// Either the constant 32-bit `f64` `lhs` or `rhs` value.
-        lhs_or_rhs: Const32<f64>,
+        /// The register holding the result of the instruction.
+        result: Register,
+        /// The register holding the left-hand side value.
+        lhs: Const32<f64>,
     },
 
     /// A Wasm `ref.func` equivalent Wasmi instruction.
@@ -3154,6 +3177,17 @@ pub enum Instruction {
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
     F64Const32(Const32<f64>),
+    /// An instruction parameter with a [`Register`] and a 32-bit immediate value.
+    RegisterAndImm32 {
+        /// The [`Register`] parameter value.
+        ///
+        /// # Note
+        ///
+        /// This also serves as utility to align `imm` to 4-bytes.
+        reg: Register,
+        /// The 32-bit immediate value.
+        imm: AnyConst32,
+    },
     /// A [`Register`] instruction parameter.
     ///
     /// # Note

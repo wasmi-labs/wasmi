@@ -344,51 +344,91 @@ impl Instruction {
         Self::F64CopysignImm(BinInstrImm::new(result, lhs, rhs))
     }
 
-    /// Creates a new [`Instruction::Select`].
-    pub fn select(result: Register, condition: Register, lhs: Register) -> Self {
-        Self::Select {
-            result,
-            condition,
-            lhs,
+    /// Creates a new [`Instruction::RegisterAndImm32`].
+    pub fn register_and_imm32(reg: impl Into<Register>, imm: impl Into<AnyConst32>) -> Self {
+        Self::RegisterAndImm32 {
+            reg: reg.into(),
+            imm: imm.into(),
         }
     }
 
-    /// Creates a new [`Instruction::SelectRev`].
-    pub fn select_rev(result: Register, condition: Register, rhs: Register) -> Self {
-        Self::SelectRev {
-            result,
-            condition,
-            rhs,
+    /// Creates a new [`Instruction::Select`].
+    pub fn select(result: impl Into<Register>, lhs: impl Into<Register>) -> Self {
+        Self::Select {
+            result: result.into(),
+            lhs: lhs.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::SelectImm32Rhs`].
+    pub fn select_imm32_rhs(result: impl Into<Register>, lhs: impl Into<Register>) -> Self {
+        Self::SelectImm32Rhs {
+            result: result.into(),
+            lhs: lhs.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::SelectImm32Lhs`].
+    pub fn select_imm32_lhs(result: impl Into<Register>, lhs: impl Into<AnyConst32>) -> Self {
+        Self::SelectImm32Lhs {
+            result: result.into(),
+            lhs: lhs.into(),
         }
     }
 
     /// Creates a new [`Instruction::SelectImm32`].
-    pub fn select_imm32(result_or_condition: Register, lhs_or_rhs: impl Into<AnyConst32>) -> Self {
+    pub fn select_imm32(result: impl Into<Register>, lhs: impl Into<AnyConst32>) -> Self {
         Self::SelectImm32 {
-            result_or_condition,
-            lhs_or_rhs: lhs_or_rhs.into(),
+            result: result.into(),
+            lhs: lhs.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::SelectI64Imm32Rhs`].
+    pub fn select_i64imm32_rhs(result: impl Into<Register>, lhs: impl Into<Register>) -> Self {
+        Self::SelectI64Imm32Rhs {
+            result: result.into(),
+            lhs: lhs.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::SelectI64Imm32Lhs`].
+    pub fn select_i64imm32_lhs(result: impl Into<Register>, lhs: impl Into<Const32<i64>>) -> Self {
+        Self::SelectI64Imm32Lhs {
+            result: result.into(),
+            lhs: lhs.into(),
         }
     }
 
     /// Creates a new [`Instruction::SelectI64Imm32`].
-    pub fn select_i64imm32(
-        result_or_condition: Register,
-        lhs_or_rhs: impl Into<Const32<i64>>,
-    ) -> Self {
+    pub fn select_i64imm32(result: impl Into<Register>, lhs: impl Into<Const32<i64>>) -> Self {
         Self::SelectI64Imm32 {
-            result_or_condition,
-            lhs_or_rhs: lhs_or_rhs.into(),
+            result: result.into(),
+            lhs: lhs.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::SelectF64Imm32Rhs`].
+    pub fn select_f64imm32_rhs(result: impl Into<Register>, lhs: impl Into<Register>) -> Self {
+        Self::SelectF64Imm32Rhs {
+            result: result.into(),
+            lhs: lhs.into(),
+        }
+    }
+
+    /// Creates a new [`Instruction::SelectF64Imm32Lhs`].
+    pub fn select_f64imm32_lhs(result: impl Into<Register>, lhs: impl Into<Const32<f64>>) -> Self {
+        Self::SelectF64Imm32Lhs {
+            result: result.into(),
+            lhs: lhs.into(),
         }
     }
 
     /// Creates a new [`Instruction::SelectF64Imm32`].
-    pub fn select_f64imm32(
-        result_or_condition: Register,
-        lhs_or_rhs: impl Into<Const32<f64>>,
-    ) -> Self {
+    pub fn select_f64imm32(result: impl Into<Register>, lhs: impl Into<Const32<f64>>) -> Self {
         Self::SelectF64Imm32 {
-            result_or_condition,
-            lhs_or_rhs: lhs_or_rhs.into(),
+            result: result.into(),
+            lhs: lhs.into(),
         }
     }
 
