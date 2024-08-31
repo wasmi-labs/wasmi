@@ -65,8 +65,8 @@ fn reg() {
         let result = Register::from_i16(3);
         TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
-                Instruction::select(result, condition, lhs),
-                Instruction::Register(rhs),
+                Instruction::select(result, lhs),
+                Instruction::register2(condition, rhs),
                 Instruction::return_reg(result),
             ])
             .run();
@@ -299,8 +299,8 @@ fn reg_imm32() {
         let condition = Register::from_i16(0);
         let lhs = Register::from_i16(1);
         let expected = [
-            Instruction::select(result, condition, lhs),
-            Instruction::const32(value),
+            Instruction::select_imm32_rhs(result, lhs),
+            Instruction::register_and_imm32(condition, value),
             Instruction::return_reg(result),
         ];
         test_reg_imm(kind, value).expect_func_instrs(expected).run();
@@ -349,8 +349,8 @@ fn reg_imm() {
         let condition = Register::from_i16(0);
         let lhs = Register::from_i16(1);
         let instrs = [
-            Instruction::select(result, condition, lhs),
-            Instruction::Register(Register::from_i16(-1)),
+            Instruction::select(result, lhs),
+            Instruction::register2(condition, Register::from_i16(-1)),
             Instruction::return_reg(result),
         ];
         let expected = ExpectedFunc::new(instrs).consts([value]);
@@ -389,8 +389,8 @@ fn reg_i64imm32() {
         let condition = Register::from_i16(0);
         let lhs = Register::from_i16(1);
         let expected = [
-            Instruction::select(result, condition, lhs),
-            i64imm32_instr(value),
+            Instruction::select_i64imm32_rhs(result, lhs),
+            Instruction::register_and_imm32(condition, i32::try_from(value).unwrap()),
             Instruction::return_reg(result),
         ];
         test_reg_imm(kind, value).expect_func_instrs(expected).run();
@@ -418,8 +418,8 @@ fn reg_f64imm32() {
         let condition = Register::from_i16(0);
         let lhs = Register::from_i16(1);
         let expected = [
-            Instruction::select(result, condition, lhs),
-            f64imm32_instr(value),
+            Instruction::select_f64imm32_rhs(result, lhs),
+            Instruction::register_and_imm32(condition, value as f32),
             Instruction::return_reg(result),
         ];
         test_reg_imm(kind, value).expect_func_instrs(expected).run();
@@ -478,8 +478,8 @@ fn imm32_reg() {
         let condition = Register::from_i16(0);
         let lhs = Register::from_i16(1);
         let expected = [
-            Instruction::select_rev(result, condition, lhs),
-            Instruction::const32(value),
+            Instruction::select_imm32_lhs(result, value),
+            Instruction::register2(condition, lhs),
             Instruction::return_reg(result),
         ];
         test_imm_reg(kind, value).expect_func_instrs(expected).run();
@@ -528,8 +528,8 @@ fn imm_reg() {
         let condition = Register::from_i16(0);
         let lhs = Register::from_i16(1);
         let instrs = [
-            Instruction::select_rev(result, condition, lhs),
-            Instruction::Register(Register::from_i16(-1)),
+            Instruction::select(result, Register::from_i16(-1)),
+            Instruction::register2(condition, lhs),
             Instruction::return_reg(result),
         ];
         let expected = ExpectedFunc::new(instrs).consts([value]);
@@ -568,8 +568,8 @@ fn i64imm32_reg() {
         let condition = Register::from_i16(0);
         let lhs = Register::from_i16(1);
         let expected = [
-            Instruction::select_rev(result, condition, lhs),
-            i64imm32_instr(value),
+            Instruction::select_i64imm32_lhs(result, i32::try_from(value).unwrap()),
+            Instruction::register2(condition, lhs),
             Instruction::return_reg(result),
         ];
         test_imm_reg(kind, value).expect_func_instrs(expected).run();
@@ -597,8 +597,8 @@ fn f64imm32_reg() {
         let condition = Register::from_i16(0);
         let lhs = Register::from_i16(1);
         let expected = [
-            Instruction::select_rev(result, condition, lhs),
-            f64imm32_instr(value),
+            Instruction::select_f64imm32_lhs(result, value as f32),
+            Instruction::register2(condition, lhs),
             Instruction::return_reg(result),
         ];
         test_imm_reg(kind, value).expect_func_instrs(expected).run();
@@ -660,7 +660,7 @@ fn both_imm32() {
         let rhs32 = AnyConst32::from(rhs);
         let expected = [
             Instruction::select_imm32(result, lhs32),
-            Instruction::select_imm32(condition, rhs32),
+            Instruction::register_and_imm32(condition, rhs32),
             Instruction::return_reg(result),
         ];
         test_both_imm(kind, lhs, rhs)
@@ -704,8 +704,8 @@ fn both_imm() {
         let lhs_reg = Register::from_i16(-1);
         let rhs_reg = Register::from_i16(-2);
         let instrs = [
-            Instruction::select(result, condition, lhs_reg),
-            Instruction::Register(rhs_reg),
+            Instruction::select(result, lhs_reg),
+            Instruction::register2(condition, rhs_reg),
             Instruction::return_reg(result),
         ];
         test_both_imm(kind, lhs, rhs)
@@ -741,7 +741,7 @@ fn both_i64imm32() {
         let rhs32 = i64imm32(rhs);
         let expected = [
             Instruction::select_i64imm32(result, lhs32),
-            Instruction::select_i64imm32(condition, rhs32),
+            Instruction::register_and_imm32(condition, rhs32),
             Instruction::return_reg(result),
         ];
         test_both_imm(kind, lhs, rhs)
@@ -772,7 +772,7 @@ fn both_f64imm32() {
         let rhs32 = f64imm32(rhs);
         let expected = [
             Instruction::select_f64imm32(result, lhs32),
-            Instruction::select_f64imm32(condition, rhs32),
+            Instruction::register_and_imm32(condition, rhs32),
             Instruction::return_reg(result),
         ];
         test_both_imm(kind, lhs, rhs)

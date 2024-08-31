@@ -41,7 +41,6 @@ use crate::{
     core::{TrapCode, Typed, TypedVal, UntypedVal, ValType},
     engine::{
         bytecode::{
-            AnyConst32,
             Const16,
             Const32,
             Instruction,
@@ -2129,404 +2128,217 @@ impl FuncTranslator {
     /// - Properly chooses the correct `select` instruction encoding and optimizes for
     ///   cases with 32-bit constant values.
     fn translate_select(&mut self, type_hint: Option<ValType>) -> Result<(), Error> {
-        /// Convenience function to encode a `select` instruction.
-        ///
-        /// # Note
-        ///
-        /// Helper for `select` instructions where one of `lhs` and `rhs`
-        /// is a [`Register`] and the other a function local constant value.
-        fn encode_select_imm(
-            this: &mut FuncTranslator,
-            result: Register,
-            condition: Register,
-            reg_in: Register,
-            imm_in: impl Into<UntypedVal>,
-            make_instr: fn(
-                result: Register,
-                condition: Register,
-                lhs_or_rhs: Register,
-            ) -> Instruction,
-        ) -> Result<(), Error> {
-            this.push_fueled_instr(make_instr(result, condition, reg_in), FuelCosts::base)?;
-            let rhs = this.alloc.stack.alloc_const(imm_in)?;
-            this.alloc
-                .instr_encoder
-                .append_instr(Instruction::Register(rhs))?;
-            Ok(())
-        }
-
-        /// Convenience function to encode a `select` instruction.
-        ///
-        /// # Note
-        ///
-        /// Helper for `select` instructions where one of `lhs` and `rhs`
-        /// is a [`Register`] and the other a 32-bit constant value.
-        fn encode_select_imm32(
-            this: &mut FuncTranslator,
-            result: Register,
-            condition: Register,
-            reg_in: Register,
-            imm_in: impl Into<AnyConst32>,
-            make_instr: fn(
-                result: Register,
-                condition: Register,
-                lhs_or_rhs: Register,
-            ) -> Instruction,
-        ) -> Result<(), Error> {
-            this.push_fueled_instr(make_instr(result, condition, reg_in), FuelCosts::base)?;
-            this.alloc
-                .instr_encoder
-                .append_instr(Instruction::const32(imm_in))?;
-            Ok(())
-        }
-
-        /// Convenience function to encode a `select` instruction.
-        ///
-        /// # Note
-        ///
-        /// Helper for `select` instructions where one of `lhs` and `rhs`
-        /// is a [`Register`] and the other a 64-bit constant value.
-        fn encode_select_imm64<T>(
-            this: &mut FuncTranslator,
-            result: Register,
-            condition: Register,
-            reg_in: Register,
-            imm_in: T,
-            make_instr: fn(
-                result: Register,
-                condition: Register,
-                lhs_or_rhs: Register,
-            ) -> Instruction,
-            make_instr_param: fn(Const32<T>) -> Instruction,
-        ) -> Result<(), Error>
-        where
-            T: Copy + Into<UntypedVal>,
-            Const32<T>: TryFrom<T>,
-        {
-            match <Const32<T>>::try_from(imm_in) {
-                Ok(imm_in) => {
-                    this.push_fueled_instr(make_instr(result, condition, reg_in), FuelCosts::base)?;
-                    this.alloc
-                        .instr_encoder
-                        .append_instr(make_instr_param(imm_in))?;
-                }
-                Err(_) => {
-                    encode_select_imm(this, result, condition, reg_in, imm_in, make_instr)?;
-                }
-            }
-            Ok(())
-        }
-
         bail_unreachable!(self);
         let (lhs, rhs, condition) = self.alloc.stack.pop3();
-        match condition {
-            TypedProvider::Const(condition) => match (bool::from(condition), lhs, rhs) {
-                // # Optimization
-                //
-                // Since the `condition` is a constant value we can forward `lhs` or `rhs` statically.
-                (true, TypedProvider::Register(reg), _)
-                | (false, _, TypedProvider::Register(reg)) => {
-                    self.alloc.stack.push_register(reg)?;
-                    Ok(())
-                }
-                (true, TypedProvider::Const(value), _)
-                | (false, _, TypedProvider::Const(value)) => {
-                    self.alloc.stack.push_const(value);
-                    Ok(())
-                }
-            },
-            TypedProvider::Register(condition) => {
-                match (lhs, rhs) {
-                    (TypedProvider::Register(lhs), TypedProvider::Register(rhs)) => {
-                        if lhs == rhs {
-                            // # Optimization
-                            //
-                            // Both `lhs` and `rhs` are equal registers
-                            // and thus will always yield the same value.
-                            self.alloc.stack.push_register(lhs)?;
-                            return Ok(());
-                        }
-                        let result = self.alloc.stack.push_dynamic()?;
-                        self.push_fueled_instr(
-                            Instruction::select(result, condition, lhs),
-                            FuelCosts::base,
-                        )?;
-                        self.alloc
-                            .instr_encoder
-                            .append_instr(Instruction::Register(rhs))?;
-                        Ok(())
-                    }
-                    (TypedProvider::Register(lhs), TypedProvider::Const(rhs)) => {
-                        if let Some(type_hint) = type_hint {
-                            debug_assert_eq!(rhs.ty(), type_hint);
-                        }
-                        let result = self.alloc.stack.push_dynamic()?;
-                        match rhs.ty() {
-                            ValType::I32 => encode_select_imm32(
-                                self,
-                                result,
-                                condition,
-                                lhs,
-                                i32::from(rhs),
-                                Instruction::select,
-                            ),
-                            ValType::F32 => encode_select_imm32(
-                                self,
-                                result,
-                                condition,
-                                lhs,
-                                f32::from(rhs),
-                                Instruction::select,
-                            ),
-                            ValType::I64 => encode_select_imm64(
-                                self,
-                                result,
-                                condition,
-                                lhs,
-                                i64::from(rhs),
-                                Instruction::select,
-                                Instruction::i64const32,
-                            ),
-                            ValType::F64 => encode_select_imm64(
-                                self,
-                                result,
-                                condition,
-                                lhs,
-                                f64::from(rhs),
-                                Instruction::select,
-                                Instruction::f64const32,
-                            ),
-                            ValType::FuncRef | ValType::ExternRef => encode_select_imm(
-                                self,
-                                result,
-                                condition,
-                                lhs,
-                                rhs,
-                                Instruction::select,
-                            ),
-                        }
-                    }
-                    (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
-                        if let Some(type_hint) = type_hint {
-                            debug_assert_eq!(lhs.ty(), type_hint);
-                        }
-                        let result = self.alloc.stack.push_dynamic()?;
-                        match lhs.ty() {
-                            ValType::I32 => encode_select_imm32(
-                                self,
-                                result,
-                                condition,
-                                rhs,
-                                i32::from(lhs),
-                                Instruction::select_rev,
-                            ),
-                            ValType::F32 => encode_select_imm32(
-                                self,
-                                result,
-                                condition,
-                                rhs,
-                                f32::from(lhs),
-                                Instruction::select_rev,
-                            ),
-                            ValType::I64 => encode_select_imm64(
-                                self,
-                                result,
-                                condition,
-                                rhs,
-                                i64::from(lhs),
-                                Instruction::select_rev,
-                                Instruction::i64const32,
-                            ),
-                            ValType::F64 => encode_select_imm64(
-                                self,
-                                result,
-                                condition,
-                                rhs,
-                                f64::from(lhs),
-                                Instruction::select_rev,
-                                Instruction::f64const32,
-                            ),
-                            ValType::FuncRef | ValType::ExternRef => encode_select_imm(
-                                self,
-                                result,
-                                condition,
-                                rhs,
-                                lhs,
-                                Instruction::select_rev,
-                            ),
-                        }
-                    }
-                    (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
-                        /// Convenience function to encode a `select` instruction.
-                        ///
-                        /// # Note
-                        ///
-                        /// Helper for `select` instructions where both
-                        /// `lhs` and `rhs` are 32-bit constant values.
-                        fn encode_select_imm32<T: Into<AnyConst32>>(
-                            this: &mut FuncTranslator,
-                            result: Register,
-                            condition: Register,
-                            lhs: T,
-                            rhs: T,
-                        ) -> Result<(), Error> {
-                            this.push_fueled_instr(
-                                Instruction::select_imm32(result, lhs),
-                                FuelCosts::base,
-                            )?;
-                            this.alloc
-                                .instr_encoder
-                                .append_instr(Instruction::select_imm32(condition, rhs))?;
-                            Ok(())
-                        }
-
-                        /// Convenience function to encode a `select` instruction.
-                        ///
-                        /// # Note
-                        ///
-                        /// Helper for `select` instructions where both
-                        /// `lhs` and `rhs` are 64-bit constant values.
-                        fn encode_select_imm64<T>(
-                            this: &mut FuncTranslator,
-                            result: Register,
-                            condition: Register,
-                            lhs: T,
-                            rhs: T,
-                            make_instr: fn(
-                                result_or_condition: Register,
-                                lhs_or_rhs: Const32<T>,
-                            ) -> Instruction,
-                            make_param: fn(Const32<T>) -> Instruction,
-                        ) -> Result<(), Error>
-                        where
-                            T: Copy + Into<UntypedVal>,
-                            Const32<T>: TryFrom<T>,
-                        {
-                            let lhs32 = <Const32<T>>::try_from(lhs).ok();
-                            let rhs32 = <Const32<T>>::try_from(rhs).ok();
-                            match (lhs32, rhs32) {
-                                (Some(lhs), Some(rhs)) => {
-                                    this.push_fueled_instr(
-                                        make_instr(result, lhs),
-                                        FuelCosts::base,
-                                    )?;
-                                    this.alloc
-                                        .instr_encoder
-                                        .append_instr(make_instr(condition, rhs))?;
-                                    Ok(())
-                                }
-                                (Some(lhs), None) => {
-                                    let rhs = this.alloc.stack.alloc_const(rhs)?;
-                                    this.push_fueled_instr(
-                                        Instruction::select_rev(result, condition, rhs),
-                                        FuelCosts::base,
-                                    )?;
-                                    this.alloc.instr_encoder.append_instr(make_param(lhs))?;
-                                    Ok(())
-                                }
-                                (None, Some(rhs)) => {
-                                    let lhs = this.alloc.stack.alloc_const(lhs)?;
-                                    this.push_fueled_instr(
-                                        Instruction::select(result, condition, lhs),
-                                        FuelCosts::base,
-                                    )?;
-                                    this.alloc.instr_encoder.append_instr(make_param(rhs))?;
-                                    Ok(())
-                                }
-                                (None, None) => {
-                                    encode_select_imm(this, result, condition, lhs, rhs)
-                                }
-                            }
-                        }
-
-                        /// Convenience function to encode a `select` instruction.
-                        ///
-                        /// # Note
-                        ///
-                        /// Helper for `select` instructions where both `lhs`
-                        /// and `rhs` are function local constant values.
-                        fn encode_select_imm<T>(
-                            this: &mut FuncTranslator,
-                            result: Register,
-                            condition: Register,
-                            lhs: T,
-                            rhs: T,
-                        ) -> Result<(), Error>
-                        where
-                            T: Into<UntypedVal>,
-                        {
-                            let lhs = this.alloc.stack.alloc_const(lhs)?;
-                            let rhs = this.alloc.stack.alloc_const(rhs)?;
-                            this.push_fueled_instr(
-                                Instruction::select(result, condition, lhs),
-                                FuelCosts::base,
-                            )?;
-                            this.alloc
-                                .instr_encoder
-                                .append_instr(Instruction::Register(rhs))?;
-                            Ok(())
-                        }
-
-                        debug_assert_eq!(lhs.ty(), rhs.ty());
-                        if let Some(type_hint) = type_hint {
-                            debug_assert_eq!(lhs.ty(), type_hint);
-                        }
-                        if lhs == rhs {
-                            // # Optimization
-                            //
-                            // Both `lhs` and `rhs` are equal constant values
-                            // and thus will always yield the same value.
-                            self.alloc.stack.push_const(lhs);
-                            return Ok(());
-                        }
-                        let result = self.alloc.stack.push_dynamic()?;
-                        match lhs.ty() {
-                            ValType::I32 => {
-                                encode_select_imm32(
-                                    self,
-                                    result,
-                                    condition,
-                                    i32::from(lhs),
-                                    i32::from(rhs),
-                                )?;
-                                Ok(())
-                            }
-                            ValType::F32 => {
-                                encode_select_imm32(
-                                    self,
-                                    result,
-                                    condition,
-                                    f32::from(lhs),
-                                    f32::from(rhs),
-                                )?;
-                                Ok(())
-                            }
-                            ValType::I64 => encode_select_imm64(
-                                self,
-                                result,
-                                condition,
-                                i64::from(lhs),
-                                i64::from(rhs),
-                                Instruction::select_i64imm32,
-                                Instruction::i64const32,
-                            ),
-                            ValType::F64 => encode_select_imm64(
-                                self,
-                                result,
-                                condition,
-                                f64::from(lhs),
-                                f64::from(rhs),
-                                Instruction::select_f64imm32,
-                                Instruction::f64const32,
-                            ),
-                            ValType::FuncRef | ValType::ExternRef => {
-                                encode_select_imm(self, result, condition, lhs, rhs)
-                            }
-                        }
-                    }
-                }
+        let condition = match condition {
+            Provider::Register(condition) => {
+                // TODO: technically we could look through function local constant values here.
+                condition
+            }
+            Provider::Const(condition) => {
+                // Optimization: since condition is a constant value we can const-fold the `select`
+                //               instruction and simply push the selected value back to the provider stack.
+                match i32::from(condition) != 0 {
+                    true => self.alloc.stack.push_provider(lhs)?,
+                    false => self.alloc.stack.push_provider(rhs)?,
+                };
+                return Ok(());
+            }
+        };
+        if lhs == rhs {
+            // Optimization: both `lhs` and `rhs` either are the same register or constant values and
+            //               thus `select` will always yield this same value irrespective of the condition.
+            //
+            // TODO: we could technically look through registers representing function local constants and
+            //       check whether they are equal to a given constant in cases where `lhs` and `rhs` are referring
+            //       to a function local register and a constant value or vice versa.
+            self.alloc.stack.push_provider(lhs)?;
+            return Ok(());
+        }
+        let type_infer = match (lhs, rhs) {
+            (Provider::Register(lhs), Provider::Register(rhs)) => {
+                let result = self.alloc.stack.push_dynamic()?;
+                return self.translate_select_regs(result, condition, lhs, rhs);
+            }
+            (Provider::Register(_), Provider::Const(rhs)) => rhs.ty(),
+            (Provider::Const(lhs), Provider::Register(_)) => lhs.ty(),
+            (Provider::Const(lhs), Provider::Const(rhs)) => {
+                debug_assert_eq!(lhs.ty(), rhs.ty());
+                lhs.ty()
+            }
+        };
+        if let Some(type_hint) = type_hint {
+            assert_eq!(type_hint, type_infer);
+        }
+        let result = self.alloc.stack.push_dynamic()?;
+        match type_infer {
+            ValType::I32 | ValType::F32 => self.translate_select_32(result, condition, lhs, rhs),
+            ValType::I64 => self.translate_select_i64(result, condition, lhs, rhs),
+            ValType::F64 => self.translate_select_f64(result, condition, lhs, rhs),
+            ValType::FuncRef | ValType::ExternRef => {
+                self.translate_select_reftype(result, condition, lhs, rhs)
             }
         }
+    }
+
+    fn translate_select_regs(
+        &mut self,
+        result: Register,
+        condition: Register,
+        lhs: Register,
+        rhs: Register,
+    ) -> Result<(), Error> {
+        debug_assert_ne!(lhs, rhs);
+        self.push_fueled_instr(Instruction::select(result, lhs), FuelCosts::base)?;
+        self.alloc
+            .instr_encoder
+            .append_instr(Instruction::register2(condition, rhs))?;
+        Ok(())
+    }
+
+    fn translate_select_32(
+        &mut self,
+        result: Register,
+        condition: Register,
+        lhs: Provider<TypedVal>,
+        rhs: Provider<TypedVal>,
+    ) -> Result<(), Error> {
+        debug_assert_ne!(lhs, rhs);
+        let (instr, param) = match (lhs, rhs) {
+            (Provider::Register(_), Provider::Register(_)) => unreachable!(),
+            (Provider::Register(lhs), Provider::Const(rhs)) => {
+                debug_assert!(matches!(rhs.ty(), ValType::I32 | ValType::F32));
+                (
+                    Instruction::select_imm32_rhs(result, lhs),
+                    Instruction::register_and_imm32(condition, u32::from(rhs.untyped())),
+                )
+            }
+            (Provider::Const(lhs), Provider::Register(rhs)) => {
+                debug_assert!(matches!(lhs.ty(), ValType::I32 | ValType::F32));
+                (
+                    Instruction::select_imm32_lhs(result, u32::from(lhs.untyped())),
+                    Instruction::register2(condition, rhs),
+                )
+            }
+            (Provider::Const(lhs), Provider::Const(rhs)) => {
+                debug_assert!(matches!(lhs.ty(), ValType::I32 | ValType::F32));
+                debug_assert!(matches!(rhs.ty(), ValType::I32 | ValType::F32));
+                (
+                    Instruction::select_imm32(result, u32::from(lhs.untyped())),
+                    Instruction::register_and_imm32(condition, u32::from(rhs.untyped())),
+                )
+            }
+        };
+        self.push_fueled_instr(instr, FuelCosts::base)?;
+        self.alloc.instr_encoder.append_instr(param)?;
+        Ok(())
+    }
+
+    fn translate_select_i64(
+        &mut self,
+        result: Register,
+        condition: Register,
+        lhs: Provider<TypedVal>,
+        rhs: Provider<TypedVal>,
+    ) -> Result<(), Error> {
+        debug_assert_ne!(lhs, rhs);
+        let lhs = match lhs {
+            Provider::Register(lhs) => Provider::Register(lhs),
+            Provider::Const(lhs) => match <Const32<i64>>::try_from(i64::from(lhs)) {
+                Ok(lhs) => Provider::Const(lhs),
+                Err(_) => Provider::Register(self.alloc.stack.alloc_const(lhs)?),
+            },
+        };
+        let rhs = match rhs {
+            Provider::Register(rhs) => Provider::Register(rhs),
+            Provider::Const(rhs) => match <Const32<i64>>::try_from(i64::from(rhs)) {
+                Ok(rhs) => Provider::Const(rhs),
+                Err(_) => Provider::Register(self.alloc.stack.alloc_const(rhs)?),
+            },
+        };
+        let (instr, param) = match (lhs, rhs) {
+            (Provider::Register(lhs), Provider::Register(rhs)) => {
+                return self.translate_select_regs(result, condition, lhs, rhs)
+            }
+            (Provider::Register(lhs), Provider::Const(rhs)) => (
+                Instruction::select_i64imm32_rhs(result, lhs),
+                Instruction::register_and_imm32(condition, rhs),
+            ),
+            (Provider::Const(lhs), Provider::Register(rhs)) => (
+                Instruction::select_i64imm32_lhs(result, lhs),
+                Instruction::register2(condition, rhs),
+            ),
+            (Provider::Const(lhs), Provider::Const(rhs)) => (
+                Instruction::select_i64imm32(result, lhs),
+                Instruction::register_and_imm32(condition, rhs),
+            ),
+        };
+        self.push_fueled_instr(instr, FuelCosts::base)?;
+        self.alloc.instr_encoder.append_instr(param)?;
+        Ok(())
+    }
+
+    fn translate_select_f64(
+        &mut self,
+        result: Register,
+        condition: Register,
+        lhs: Provider<TypedVal>,
+        rhs: Provider<TypedVal>,
+    ) -> Result<(), Error> {
+        debug_assert_ne!(lhs, rhs);
+        let lhs = match lhs {
+            Provider::Register(lhs) => Provider::Register(lhs),
+            Provider::Const(lhs) => match <Const32<f64>>::try_from(f64::from(lhs)) {
+                Ok(lhs) => Provider::Const(lhs),
+                Err(_) => Provider::Register(self.alloc.stack.alloc_const(lhs)?),
+            },
+        };
+        let rhs = match rhs {
+            Provider::Register(rhs) => Provider::Register(rhs),
+            Provider::Const(rhs) => match <Const32<f64>>::try_from(f64::from(rhs)) {
+                Ok(rhs) => Provider::Const(rhs),
+                Err(_) => Provider::Register(self.alloc.stack.alloc_const(rhs)?),
+            },
+        };
+        let (instr, param) = match (lhs, rhs) {
+            (Provider::Register(lhs), Provider::Register(rhs)) => {
+                return self.translate_select_regs(result, condition, lhs, rhs)
+            }
+            (Provider::Register(lhs), Provider::Const(rhs)) => (
+                Instruction::select_f64imm32_rhs(result, lhs),
+                Instruction::register_and_imm32(condition, rhs),
+            ),
+            (Provider::Const(lhs), Provider::Register(rhs)) => (
+                Instruction::select_f64imm32_lhs(result, lhs),
+                Instruction::register2(condition, rhs),
+            ),
+            (Provider::Const(lhs), Provider::Const(rhs)) => (
+                Instruction::select_f64imm32(result, lhs),
+                Instruction::register_and_imm32(condition, rhs),
+            ),
+        };
+        self.push_fueled_instr(instr, FuelCosts::base)?;
+        self.alloc.instr_encoder.append_instr(param)?;
+        Ok(())
+    }
+
+    fn translate_select_reftype(
+        &mut self,
+        result: Register,
+        condition: Register,
+        lhs: Provider<TypedVal>,
+        rhs: Provider<TypedVal>,
+    ) -> Result<(), Error> {
+        debug_assert_ne!(lhs, rhs);
+        let lhs = match lhs {
+            Provider::Register(lhs) => lhs,
+            Provider::Const(lhs) => self.alloc.stack.alloc_const(lhs)?,
+        };
+        let rhs: Register = match rhs {
+            Provider::Register(rhs) => rhs,
+            Provider::Const(rhs) => self.alloc.stack.alloc_const(rhs)?,
+        };
+        self.translate_select_regs(result, condition, lhs, rhs)
     }
 
     /// Translates a Wasm `reinterpret` instruction.
