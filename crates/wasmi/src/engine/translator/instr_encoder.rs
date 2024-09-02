@@ -157,7 +157,7 @@ impl InstrSequence {
     /// # Panics
     ///
     /// If no [`Instruction`] is associated to the [`Instr`] for this [`InstrSequence`].
-    fn get(&mut self, instr: Instr) -> &Instruction {
+    fn get(&self, instr: Instr) -> &Instruction {
         &self.instrs[instr.into_usize()]
     }
 
@@ -229,6 +229,14 @@ impl InstrEncoder {
     /// The [`InstrEncoder`] will be in an empty state after this operation.
     pub fn drain_instrs(&mut self) -> Drain<Instruction> {
         self.instrs.drain()
+    }
+
+    pub fn get_instr(&self, instr: Instr) -> &Instruction {
+        self.instrs.get(instr)
+    }
+
+    pub fn patch_instr(&mut self, instr: Instr, new_instruction: Instruction) {
+        *self.instrs.get_mut(instr) = new_instruction;
     }
 
     /// Creates a new unresolved label and returns its [`LabelRef`].
@@ -310,6 +318,24 @@ impl InstrEncoder {
         let last_instr = self.instrs.push(instr)?;
         self.last_instr = Some(last_instr);
         Ok(last_instr)
+    }
+
+    /// Utility function for pushing a new [`Instruction`] with fuel costs.
+    ///
+    /// # Note
+    ///
+    /// Fuel metering is only encoded or adjusted if it is enabled.
+    pub fn push_fueled_instr<F>(
+        &mut self,
+        instr: Instruction,
+        fuel_info: FuelInfo,
+        f: F,
+    ) -> Result<Instr, Error>
+    where
+        F: FnOnce(&FuelCosts) -> u64,
+    {
+        self.bump_fuel_consumption(fuel_info, f)?;
+        self.push_instr(instr)
     }
 
     /// Appends the [`Instruction`] to the last [`Instruction`] created via [`InstrEncoder::push_instr`].

@@ -3,6 +3,70 @@ use crate::engine::bytecode::{BranchOffset, GlobalIdx, RegisterSpan};
 
 #[test]
 #[cfg_attr(miri, ignore)]
+fn spec_test_failure_2() {
+    let wasm = r"
+        (module
+            (func (param i32) (result i32 i32)
+                (i32.add
+                    (block (result i32 i32)
+                        (br_table 0 1 0 (i32.const 50) (i32.const 51) (local.get 0))
+                        (i32.const 51) (i32.const -3)
+                    )
+                )
+                (i32.const 52)
+            )
+        )
+    ";
+    TranslationTest::from_wat(wasm)
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::branch_table_2(0, 3),
+                Instruction::copy2(RegisterSpan::new(Register::from(1)), -1, -2),
+                Instruction::branch(BranchOffset::from(3)),
+                Instruction::return_reg2(-1, -2),
+                Instruction::branch(BranchOffset::from(1)),
+                Instruction::i32_add(Register::from(1), Register::from(1), Register::from(2)),
+                Instruction::return_reg2(1, -3),
+            ])
+            .consts([50, 51, 52]),
+        )
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn spec_test_failure() {
+    let wasm = r"
+        (module
+            (func (param i32) (result i32)
+                (block
+                    (block
+                        (block
+                            (br_table 0 1 2 (local.get 0))
+                            (return (i32.const 0))
+                        )
+                        (return (i32.const 1))
+                    )
+                    (return (i32.const 2))
+                )
+                (i32.const 3)
+            )
+        )";
+    TranslationTest::from_wat(wasm)
+        .expect_func_instrs([
+            Instruction::branch_table_0(0, 3),
+            Instruction::branch(BranchOffset::from(3)),
+            Instruction::branch(BranchOffset::from(3)),
+            Instruction::branch(BranchOffset::from(3)),
+            Instruction::return_imm32(1_i32),
+            Instruction::return_imm32(2_i32),
+            Instruction::return_imm32(3_i32),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
 fn reg_len_targets_1() {
     let wasm = r"
         (module

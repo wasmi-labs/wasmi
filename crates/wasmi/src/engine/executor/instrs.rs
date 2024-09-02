@@ -213,8 +213,20 @@ impl<'engine> Executor<'engine> {
                     ))
                 }
                 Instr::Branch { offset } => self.execute_branch(offset),
-                Instr::BranchTable { index, len_targets } => {
-                    self.execute_branch_table(index, len_targets)
+                Instr::BranchTable0 { index, len_targets } => {
+                    self.execute_branch_table_0(index, len_targets)
+                }
+                Instr::BranchTable1 { index, len_targets } => {
+                    self.execute_branch_table_1(index, len_targets)
+                }
+                Instr::BranchTable2 { index, len_targets } => {
+                    self.execute_branch_table_2(index, len_targets)
+                }
+                Instr::BranchTableSpan { index, len_targets } => {
+                    self.execute_branch_table_span(index, len_targets)
+                }
+                Instr::BranchTableMany { index, len_targets } => {
+                    self.execute_branch_table_many(index, len_targets)
                 }
                 Instr::BranchCmpFallback { lhs, rhs, params } => {
                     self.execute_branch_cmp_fallback(lhs, rhs, params)

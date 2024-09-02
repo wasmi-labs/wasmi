@@ -855,21 +855,21 @@ impl FuncTranslator {
     fn translate_copy_branch_params(
         &mut self,
         branch_params: RegisterSpanIter,
-    ) -> Result<(), Error> {
+    ) -> Result<Option<Instr>, Error> {
         if branch_params.is_empty() {
             // If the block does not have branch parameters there is no need to copy anything.
-            return Ok(());
+            return Ok(None);
         }
         let fuel_info = self.fuel_info();
         let params = &mut self.alloc.buffer.providers;
         self.alloc.stack.pop_n(branch_params.len(), params);
-        self.alloc.instr_encoder.encode_copies(
+        let copy_instr = self.alloc.instr_encoder.encode_copies(
             &mut self.alloc.stack,
             branch_params,
             &self.alloc.buffer.providers[..],
             fuel_info,
         )?;
-        Ok(())
+        Ok(copy_instr)
     }
 
     /// Translates the `end` of a Wasm `block` control frame.
@@ -2435,5 +2435,333 @@ impl FuncTranslator {
             TypedProvider::Register(index) => Instruction::call_indirect_params(index, table_index),
         };
         Ok(instr)
+    }
+
+    /// Translates a Wasm `br` instruction with its `relative_depth`.
+    fn translate_br(&mut self, relative_depth: u32) -> Result<(), Error> {
+        let engine = self.engine().clone();
+        match self.alloc.control_stack.acquire_target(relative_depth) {
+            AcquiredTarget::Return(_frame) => self.translate_return(),
+            AcquiredTarget::Branch(frame) => {
+                frame.bump_branches();
+                let branch_dst = frame.branch_destination();
+                let branch_params = frame.branch_params(&engine);
+                self.translate_copy_branch_params(branch_params)?;
+                let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
+                self.push_base_instr(Instruction::branch(branch_offset))?;
+                self.reachable = false;
+                Ok(())
+            }
+        }
+    }
+
+    /// Populate the `buffer` with the `table` targets including the `table` default target.
+    ///
+    /// Returns a shared slice to the `buffer` after it has been filled.
+    ///
+    /// # Note
+    ///
+    /// The `table` default target is pushed last to the `buffer`.
+    fn populate_br_table_buffer<'a>(
+        buffer: &'a mut Vec<u32>,
+        table: &wasmparser::BrTable,
+    ) -> Result<&'a [u32], Error> {
+        let default_target = table.default();
+        buffer.clear();
+        for target in table.targets() {
+            buffer.push(target?);
+        }
+        buffer.push(default_target);
+        Ok(buffer)
+    }
+
+    fn apply_providers_buffer<R>(&mut self, f: impl FnOnce(&mut Self, &[TypedProvider]) -> R) -> R {
+        let values = core::mem::take(&mut self.alloc.buffer.providers);
+        let result = f(self, &values[..]);
+        let _ = core::mem::replace(&mut self.alloc.buffer.providers, values);
+        result
+    }
+
+    /// Translates a Wasm `br_table` instruction with its branching targets.
+    fn translate_br_table(&mut self, table: wasmparser::BrTable) -> Result<(), Error> {
+        let engine = self.engine().clone();
+        let index = self.alloc.stack.pop();
+        let default_target = table.default();
+        if table.is_empty() {
+            // Case: the `br_table` only has a single target `t` which is equal to a `br t`.
+            return self.translate_br(default_target);
+        }
+        let index: Register = match index {
+            TypedProvider::Register(index) => index,
+            TypedProvider::Const(index) => {
+                // Case: the `br_table` index is a constant value, therefore always taking the same branch.
+                let chosen_index = u32::from(index) as usize;
+                let chosen_target = table
+                    .targets()
+                    .nth(chosen_index)
+                    .transpose()?
+                    .unwrap_or(default_target);
+                return self.translate_br(chosen_target);
+            }
+        };
+        let targets = &mut self.alloc.buffer.br_table_targets;
+        Self::populate_br_table_buffer(targets, &table)?;
+        if targets.iter().all(|&target| target == default_target) {
+            // Case: all targets are the same and thus the `br_table` is equal to a `br`.
+            return self.translate_br(default_target);
+        }
+        // Note: The Wasm spec mandates that all `br_table` targets manipulate the
+        //       Wasm value stack the same. This implies for Wasmi that all `br_table`
+        //       targets share the same branch parameters.
+        let branch_params = self
+            .alloc
+            .control_stack
+            .acquire_target(default_target)
+            .control_frame()
+            .branch_params(&engine);
+        let default_branch_params = branch_params;
+        assert!(targets
+            .iter()
+            .map(|&target| {
+                self.alloc
+                    .control_stack
+                    .acquire_target(target)
+                    .control_frame()
+                    .branch_params(&engine)
+            })
+            .all(|branch_params| branch_params == default_branch_params));
+        match branch_params.len() {
+            0 => self.translate_br_table_0(index),
+            1 => self.translate_br_table_1(index, branch_params),
+            2 => self.translate_br_table_2(index, branch_params),
+            _ => self.translate_br_table_n(index, branch_params),
+        }
+    }
+
+    fn translate_br_table_targets(&mut self, values: &[TypedProvider]) -> Result<(), Error> {
+        let fuel_info = self.fuel_info();
+        let targets = &self.alloc.buffer.br_table_targets;
+        for &target in targets {
+            match self.alloc.control_stack.acquire_target(target) {
+                AcquiredTarget::Return(_) => {
+                    self.alloc.instr_encoder.encode_return(
+                        &mut self.alloc.stack,
+                        values,
+                        fuel_info,
+                    )?;
+                }
+                AcquiredTarget::Branch(frame) => {
+                    frame.bump_branches();
+                    let branch_dst = frame.branch_destination();
+                    let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
+                    self.alloc
+                        .instr_encoder
+                        .append_instr(Instruction::branch(branch_offset))?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn translate_br_table_0(&mut self, index: Register) -> Result<(), Error> {
+        let targets = &self.alloc.buffer.br_table_targets;
+        let len_targets = targets.len() as u32;
+        self.alloc.instr_encoder.push_fueled_instr(
+            Instruction::branch_table_0(index, len_targets),
+            self.fuel_info(),
+            FuelCosts::base,
+        )?;
+        self.translate_br_table_targets(&[])?;
+        self.reachable = false;
+        Ok(())
+    }
+
+    fn patch_into_br_table(
+        &mut self,
+        br_table: Instr,
+        index: Register,
+        len_targets: u32,
+        make_instr: fn(Register, u32) -> Instruction,
+    ) {
+        self.alloc
+            .instr_encoder
+            .patch_instr(br_table, make_instr(index, len_targets));
+    }
+
+    fn translate_br_table_1(
+        &mut self,
+        index: Register,
+        branch_params: RegisterSpanIter,
+    ) -> Result<(), Error> {
+        debug_assert_eq!(branch_params.len(), 1);
+        let targets = &self.alloc.buffer.br_table_targets;
+        let len_targets = targets.len() as u32;
+        let instr = self.alloc.instr_encoder.push_fueled_instr(
+            Instruction::branch_table_1(index, len_targets),
+            self.fuel_info(),
+            FuelCosts::base,
+        )?;
+        let result = branch_params.span().head();
+        let value = self.alloc.stack.pop();
+        let fuel_info = self.fuel_info();
+        let copy = self.alloc.instr_encoder.encode_copy(
+            &mut self.alloc.stack,
+            result,
+            value,
+            fuel_info,
+        )?;
+        if copy.is_none() {
+            self.patch_into_br_table(instr, index, len_targets, Instruction::branch_table_0);
+        }
+        self.translate_br_table_targets(&[value])?;
+        self.reachable = false;
+        Ok(())
+    }
+
+    fn translate_br_table_2(
+        &mut self,
+        index: Register,
+        branch_params: RegisterSpanIter,
+    ) -> Result<(), Error> {
+        debug_assert_eq!(branch_params.len(), 2);
+        let targets = &self.alloc.buffer.br_table_targets;
+        let len_targets = targets.len() as u32;
+        let instr = self.alloc.instr_encoder.push_fueled_instr(
+            Instruction::branch_table_2(index, len_targets),
+            self.fuel_info(),
+            FuelCosts::base,
+        )?;
+        let (v0, v1) = self.alloc.stack.pop2();
+        let values = &[v0, v1];
+        let fuel_info = self.fuel_info();
+        let copy = self.alloc.instr_encoder.encode_copies(
+            &mut self.alloc.stack,
+            branch_params,
+            values,
+            fuel_info,
+        )?;
+        match copy {
+            None => {
+                self.patch_into_br_table(instr, index, len_targets, Instruction::branch_table_0)
+            }
+            Some(copy) => match self.alloc.instr_encoder.get_instr(copy) {
+                Instruction::Copy { .. }
+                | Instruction::CopyImm32 { .. }
+                | Instruction::CopyI64Imm32 { .. }
+                | Instruction::CopyF64Imm32 { .. } => {
+                    self.patch_into_br_table(instr, index, len_targets, Instruction::branch_table_1)
+                }
+                Instruction::Copy2 { .. } => {}
+                _ => unreachable!(),
+            },
+        }
+        self.translate_br_table_targets(values)?;
+        self.reachable = false;
+        Ok(())
+    }
+
+    fn translate_br_table_n(
+        &mut self,
+        index: Register,
+        branch_params: RegisterSpanIter,
+    ) -> Result<(), Error> {
+        debug_assert!(branch_params.len() > 2);
+        let values = &mut self.alloc.buffer.providers;
+        self.alloc.stack.pop_n(branch_params.len(), values);
+        match RegisterSpanIter::from_providers(values) {
+            Some(_span) => self.translate_br_table_span(index, branch_params),
+            None => self.translate_br_table_many(index, branch_params),
+        }
+    }
+
+    fn translate_br_table_span(
+        &mut self,
+        index: Register,
+        branch_params: RegisterSpanIter,
+    ) -> Result<(), Error> {
+        debug_assert!(branch_params.len() > 2);
+        let targets = &mut self.alloc.buffer.br_table_targets;
+        let len_targets = targets.len() as u32;
+        let instr = self.alloc.instr_encoder.push_fueled_instr(
+            Instruction::branch_table_span(index, len_targets),
+            self.fuel_info(),
+            FuelCosts::base,
+        )?;
+        let fuel_info = self.fuel_info();
+        let values = &mut self.alloc.buffer.providers;
+        let copy = self.alloc.instr_encoder.encode_copies(
+            &mut self.alloc.stack,
+            branch_params,
+            values,
+            fuel_info,
+        )?;
+        match copy {
+            None => {
+                self.patch_into_br_table(instr, index, len_targets, Instruction::branch_table_0)
+            }
+            Some(copy) => match self.alloc.instr_encoder.get_instr(copy) {
+                Instruction::Copy { .. }
+                | Instruction::CopyImm32 { .. }
+                | Instruction::CopyI64Imm32 { .. }
+                | Instruction::CopyF64Imm32 { .. } => {
+                    self.patch_into_br_table(instr, index, len_targets, Instruction::branch_table_1)
+                }
+                Instruction::Copy2 { .. } => {
+                    self.patch_into_br_table(instr, index, len_targets, Instruction::branch_table_2)
+                }
+                Instruction::CopySpan { .. } | Instruction::CopySpanNonOverlapping { .. } => {}
+                _ => unreachable!(),
+            },
+        }
+        self.apply_providers_buffer(Self::translate_br_table_targets)?;
+        self.reachable = false;
+        Ok(())
+    }
+
+    fn translate_br_table_many(
+        &mut self,
+        index: Register,
+        branch_params: RegisterSpanIter,
+    ) -> Result<(), Error> {
+        debug_assert!(branch_params.len() > 2);
+        let targets = &mut self.alloc.buffer.br_table_targets;
+        let len_targets = targets.len() as u32;
+        let instr = self.alloc.instr_encoder.push_fueled_instr(
+            Instruction::branch_table_many(index, len_targets),
+            self.fuel_info(),
+            FuelCosts::base,
+        )?;
+        let fuel_info = self.fuel_info();
+        let values = &mut self.alloc.buffer.providers;
+        let copy = self.alloc.instr_encoder.encode_copies(
+            &mut self.alloc.stack,
+            branch_params,
+            values,
+            fuel_info,
+        )?.expect("must have copy instruction since copy span instructions have already been filtered out");
+        match self.alloc.instr_encoder.get_instr(copy) {
+            Instruction::Copy { .. }
+            | Instruction::CopyImm32 { .. }
+            | Instruction::CopyI64Imm32 { .. }
+            | Instruction::CopyF64Imm32 { .. } => {
+                self.patch_into_br_table(instr, index, len_targets, Instruction::branch_table_1)
+            }
+            Instruction::Copy2 { .. } => {
+                self.patch_into_br_table(instr, index, len_targets, Instruction::branch_table_2)
+            }
+            Instruction::CopyMany { .. } | Instruction::CopyManyNonOverlapping { .. } => {}
+            _ => unreachable!(),
+        }
+        if let Instruction::BranchTableMany { .. } = self.alloc.instr_encoder.get_instr(instr) {
+            // Note: `br_table_many` instruction always executes the copy instruction before the branches.
+            //       Therefore branches that return must use the results (span) of the copy instruction.
+            //       This implies that all emitted return instructions are `Instruction::ReturnSpan`.
+            let values = &mut self.alloc.buffer.providers;
+            values.clear();
+            values.extend(branch_params.map(TypedProvider::Register));
+        }
+        self.apply_providers_buffer(Self::translate_br_table_targets)?;
+        self.reachable = false;
+        Ok(())
     }
 }

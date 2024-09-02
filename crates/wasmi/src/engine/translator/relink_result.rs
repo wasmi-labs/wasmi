@@ -77,7 +77,11 @@ impl Instruction {
             | I::BranchI32OrEqzImm(_)
             | I::BranchI32XorEqz(_)
             | I::BranchI32XorEqzImm(_)
-            | I::BranchTable { .. }
+            | I::BranchTable0 { .. }
+            | I::BranchTable1 { .. }
+            | I::BranchTable2 { .. }
+            | I::BranchTableSpan { .. }
+            | I::BranchTableMany { .. }
             | I::BranchI32Eq(_)
             | I::BranchI32EqImm(_)
             | I::BranchI32Ne(_)

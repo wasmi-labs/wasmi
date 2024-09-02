@@ -552,25 +552,110 @@ pub enum Instruction {
     /// A fused [`Instruction::F64Ge`] and Wasm branch instruction.
     BranchF64Ge(BranchBinOpInstr),
 
-    /// A Wasm `br_table` instruction.
+    /// A Wasm `br_table` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
-    /// 1. May be followed by one of the copy instructions.
-    /// 1. Must be followed `len_targets` times by any of:
+    /// Followed `len_target` times by
     ///
     /// - [`Instruction::Branch`]
     /// - [`Instruction::Return`]
     /// - [`Instruction::ReturnReg`]
+    /// - [`Instruction::ReturnReg2`]
+    /// - [`Instruction::ReturnReg3`]
     /// - [`Instruction::ReturnImm32`]
     /// - [`Instruction::ReturnI64Imm32`]
     /// - [`Instruction::ReturnF64Imm32`]
     /// - [`Instruction::ReturnSpan`]
-    BranchTable {
+    BranchTable0 {
         /// The register holding the index of the instruction.
         index: Register,
         /// The number of branch table targets including the default target.
-        len_targets: Const32<u32>,
+        len_targets: u32,
+    },
+    /// A Wasm `br_table` equivalent Wasmi instruction.
+    ///
+    /// # Encoding
+    ///
+    /// 1. Followed by one of
+    ///
+    /// - [`Instruction::Copy`]
+    /// - [`Instruction::CopyImm32`]
+    /// - [`Instruction::CopyI64Imm32`]
+    /// - [`Instruction::CopyF64Imm32`]
+    ///
+    /// 2. Followed `len_target` times by
+    ///
+    /// - [`Instruction::Branch`]
+    /// - [`Instruction::ReturnReg`]
+    /// - [`Instruction::ReturnReg2`]
+    /// - [`Instruction::ReturnReg3`]
+    /// - [`Instruction::ReturnImm32`]
+    /// - [`Instruction::ReturnI64Imm32`]
+    /// - [`Instruction::ReturnF64Imm32`]
+    /// - [`Instruction::ReturnSpan`]
+    BranchTable1 {
+        /// The register holding the index of the instruction.
+        index: Register,
+        /// The number of branch table targets including the default target.
+        len_targets: u32,
+    },
+    /// A Wasm `br_table` equivalent Wasmi instruction.
+    ///
+    /// # Encoding
+    ///
+    /// 1. Followed by [`Instruction::Copy2`].
+    /// 2. Followed `len_target` times by
+    ///
+    /// - [`Instruction::Branch`]
+    /// - [`Instruction::ReturnReg2`]
+    /// - [`Instruction::ReturnReg3`]
+    /// - [`Instruction::ReturnSpan`]
+    BranchTable2 {
+        /// The register holding the index of the instruction.
+        index: Register,
+        /// The number of branch table targets including the default target.
+        len_targets: u32,
+    },
+    /// A Wasm `br_table` equivalent Wasmi instruction.
+    ///
+    /// # Encoding
+    ///
+    /// 1. Followed by one of
+    ///
+    /// - [`Instruction::CopySpan`]
+    /// - [`Instruction::CopySpanNonOverlapping`]
+    ///
+    /// 2. Followed `len_target` times by
+    ///
+    /// - [`Instruction::Branch`]
+    /// - [`Instruction::ReturnSpan`]
+    /// - [`Instruction::ReturnReg3`]
+    BranchTableSpan {
+        /// The register holding the index of the instruction.
+        index: Register,
+        /// The number of branch table targets including the default target.
+        len_targets: u32,
+    },
+    /// A Wasm `br_table` equivalent Wasmi instruction.
+    ///
+    /// # Encoding
+    ///
+    /// 1. Followed by one of
+    ///
+    /// - [`Instruction::CopyMany`]
+    /// - [`Instruction::CopyManyNonOverlapping`]
+    ///
+    /// 2. Followed `len_target` times by
+    ///
+    /// - [`Instruction::Branch`]
+    /// - [`Instruction::ReturnSpan`]
+    /// - [`Instruction::ReturnReg3`]
+    BranchTableMany {
+        /// The register holding the index of the instruction.
+        index: Register,
+        /// The number of branch table targets including the default target.
+        len_targets: u32,
     },
 
     /// Copies `value` to `result`.

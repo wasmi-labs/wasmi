@@ -202,11 +202,49 @@ impl Instruction {
         Self::branch_i64_ne_imm(condition, 0_i16, offset)
     }
 
-    /// Creates a new [`Instruction::BranchTable`] for the given `index` and `len_targets`.
-    pub fn branch_table(index: Register, len_targets: impl Into<Const32<u32>>) -> Self {
-        Self::BranchTable {
-            index,
-            len_targets: len_targets.into(),
+    // TODO: remove this method
+    /// Creates a new [`Instruction::BranchTable0`] for the given `index` and `len_targets`.
+    pub fn branch_table(index: Register, len_targets: u32) -> Self {
+        Self::branch_table_0(index, len_targets)
+    }
+
+    /// Creates a new [`Instruction::BranchTable0`] for the given `index` and `len_targets`.
+    pub fn branch_table_0(index: impl Into<Register>, len_targets: u32) -> Self {
+        Self::BranchTable0 {
+            index: index.into(),
+            len_targets,
+        }
+    }
+
+    /// Creates a new [`Instruction::BranchTable1`] for the given `index` and `len_targets`.
+    pub fn branch_table_1(index: impl Into<Register>, len_targets: u32) -> Self {
+        Self::BranchTable1 {
+            index: index.into(),
+            len_targets,
+        }
+    }
+
+    /// Creates a new [`Instruction::BranchTable2`] for the given `index` and `len_targets`.
+    pub fn branch_table_2(index: impl Into<Register>, len_targets: u32) -> Self {
+        Self::BranchTable2 {
+            index: index.into(),
+            len_targets,
+        }
+    }
+
+    /// Creates a new [`Instruction::BranchTableSpan`] for the given `index` and `len_targets`.
+    pub fn branch_table_span(index: impl Into<Register>, len_targets: u32) -> Self {
+        Self::BranchTable1 {
+            index: index.into(),
+            len_targets,
+        }
+    }
+
+    /// Creates a new [`Instruction::BranchTableMany`] for the given `index` and `len_targets`.
+    pub fn branch_table_many(index: impl Into<Register>, len_targets: u32) -> Self {
+        Self::BranchTable1 {
+            index: index.into(),
+            len_targets,
         }
     }
 

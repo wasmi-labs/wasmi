@@ -9,7 +9,6 @@ use crate::{
         BranchOffset16,
         ComparatorOffsetParam,
         Const16,
-        Const32,
         Instruction,
         Register,
     },
@@ -42,53 +41,101 @@ impl<'engine> Executor<'engine> {
         self.branch_to(offset)
     }
 
-    #[inline(always)]
-    pub fn execute_branch_table(&mut self, index: Register, len_targets: Const32<u32>) {
+    /// Fetches the branch table index value and normalizes it to clamp between `0..len_targets`.
+    fn fetch_branch_table_offset(&self, index: Register, len_targets: u32) -> usize {
         let index: u32 = self.get_register_as(index);
         // The index of the default target which is the last target of the slice.
-        let max_index = u32::from(len_targets) - 1;
+        let max_index = len_targets - 1;
         // A normalized index will always yield a target without panicking.
-        let normalized_index = cmp::min(index, max_index);
-        // Check if the next instruction is a copy instruction and execute it if so.
-        self.ip.add(1);
-        self.execute_optional_copy_instr();
-        // Update `pc`:
-        self.ip.add(normalized_index as usize);
+        cmp::min(index, max_index) as usize + 1
     }
 
-    /// Executes an optional copy instruction at `ip`.
-    ///
-    /// Does nothing if there is no `copy` instruction at `ip`.
-    #[inline(never)]
-    fn execute_optional_copy_instr(&mut self) {
-        match *self.ip.get() {
-            Instruction::Copy { result, value } => self.execute_copy(result, value),
-            Instruction::Copy2 { results, values } => self.execute_copy_2(results, values),
-            Instruction::CopyImm32 { result, value } => self.execute_copy_imm32(result, value),
+    #[inline(always)]
+    pub fn execute_branch_table_0(&mut self, index: Register, len_targets: u32) {
+        let offset = self.fetch_branch_table_offset(index, len_targets);
+        self.ip.add(offset);
+    }
+
+    #[inline(always)]
+    pub fn execute_branch_table_1(&mut self, index: Register, len_targets: u32) {
+        let offset = self.fetch_branch_table_offset(index, len_targets);
+        self.ip.add(1);
+        let (result, value) = match *self.ip.get() {
+            Instruction::Copy { result, value } => (result, self.get_register(value)),
+            Instruction::CopyImm32 { result, value } => {
+                (result, UntypedVal::from(u32::from(value)))
+            }
             Instruction::CopyI64Imm32 { result, value } => {
-                self.execute_copy_i64imm32(result, value)
+                (result, UntypedVal::from(i64::from(value)))
             }
             Instruction::CopyF64Imm32 { result, value } => {
-                self.execute_copy_f64imm32(result, value)
+                (result, UntypedVal::from(f64::from(value)))
             }
-            Instruction::CopySpan {
-                results,
-                values,
-                len,
-            } => self.execute_copy_span(results, values, len),
-            Instruction::CopySpanNonOverlapping {
-                results,
-                values,
-                len,
-            } => self.execute_copy_span_non_overlapping(results, values, len),
+            _ => unreachable!(),
+        };
+        self.ip.add(offset);
+        // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
+        //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
+        if let Instruction::Branch { offset } = *self.ip.get() {
+            self.set_register(result, value);
+            self.execute_branch(offset)
+        }
+    }
+
+    #[inline(always)]
+    pub fn execute_branch_table_2(&mut self, index: Register, len_targets: u32) {
+        let offset = self.fetch_branch_table_offset(index, len_targets);
+        self.ip.add(1);
+        let Instruction::Copy2 { results, values } = *self.ip.get() else {
+            unreachable!()
+        };
+        self.ip.add(offset);
+        // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
+        //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
+        if let Instruction::Branch { offset } = *self.ip.get() {
+            self.execute_copy_2_impl(results, values);
+            self.execute_branch(offset)
+        }
+    }
+
+    #[inline(always)]
+    pub fn execute_branch_table_span(&mut self, index: Register, len_targets: u32) {
+        let offset = self.fetch_branch_table_offset(index, len_targets);
+        self.ip.add(1);
+        let copy_instr = *self.ip.get();
+        self.ip.add(offset);
+        // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
+        //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
+        if let Instruction::Branch { offset } = *self.ip.get() {
+            match copy_instr {
+                Instruction::CopySpan {
+                    results,
+                    values,
+                    len,
+                } => self.execute_copy_span_impl(results, values, len),
+                Instruction::CopySpanNonOverlapping {
+                    results,
+                    values,
+                    len,
+                } => self.execute_copy_span_non_overlapping_impl(results, values, len),
+                _ => unreachable!(),
+            }
+            self.execute_branch(offset)
+        }
+    }
+
+    #[inline(always)]
+    pub fn execute_branch_table_many(&mut self, index: Register, len_targets: u32) {
+        let offset = self.fetch_branch_table_offset(index, len_targets);
+        self.ip.add(1);
+        match *self.ip.get() {
             Instruction::CopyMany { results, values } => self.execute_copy_many(results, values),
             Instruction::CopyManyNonOverlapping { results, values } => {
                 self.execute_copy_many_non_overlapping(results, values)
             }
-            _ => {
-                // Nothing to do if there is no `copy` instruction.
-            }
+            _ => unreachable!(),
         };
+        self.ip.add(offset);
     }
 
     /// Executes a generic fused compare and branch instruction.

@@ -29,13 +29,19 @@ impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::Copy2`].
     #[inline(always)]
     pub fn execute_copy_2(&mut self, results: RegisterSpan, values: [Register; 2]) {
+        self.execute_copy_2_impl(results, values);
+        self.next_instr()
+    }
+
+    /// Internal implementation of [`Instruction::Copy2`] execution.
+    #[inline(always)]
+    pub fn execute_copy_2_impl(&mut self, results: RegisterSpan, values: [Register; 2]) {
         let result0 = results.head();
         let result1 = result0.next();
         // We need `tmp` in case `results[0] == values[1]` to avoid overwriting `values[1]` before reading it.
         let tmp = self.get_register(values[1]);
         self.set_register(result0, self.get_register(values[0]));
         self.set_register(result1, tmp);
-        self.next_instr()
     }
 
     /// Executes an [`Instruction::CopyImm32`].
@@ -66,6 +72,18 @@ impl<'engine> Executor<'engine> {
     /// - If `results` and `values` do _not_ overlap [`Instruction::CopySpanNonOverlapping`] is used.
     #[inline(always)]
     pub fn execute_copy_span(&mut self, results: RegisterSpan, values: RegisterSpan, len: u16) {
+        self.execute_copy_span_impl(results, values, len);
+        self.next_instr();
+    }
+
+    /// Internal implementation of [`Instruction::CopySpan`] execution.
+    #[inline(always)]
+    pub fn execute_copy_span_impl(
+        &mut self,
+        results: RegisterSpan,
+        values: RegisterSpan,
+        len: u16,
+    ) {
         let results = results.iter_u16(len);
         let values = values.iter_u16(len);
         let mut tmp = <SmallVec<[UntypedVal; 8]>>::default();
@@ -73,7 +91,6 @@ impl<'engine> Executor<'engine> {
         for (result, value) in results.into_iter().zip(tmp) {
             self.set_register(result, value);
         }
-        self.next_instr();
     }
 
     /// Executes an [`Instruction::CopySpanNonOverlapping`].
@@ -85,6 +102,18 @@ impl<'engine> Executor<'engine> {
     /// - If `results` and `values` _do_ overlap [`Instruction::CopySpan`] is used.
     #[inline(always)]
     pub fn execute_copy_span_non_overlapping(
+        &mut self,
+        results: RegisterSpan,
+        values: RegisterSpan,
+        len: u16,
+    ) {
+        self.execute_copy_span_non_overlapping_impl(results, values, len);
+        self.next_instr();
+    }
+
+    /// Internal implementation of [`Instruction::CopySpanNonOverlapping`] execution.
+    #[inline(always)]
+    pub fn execute_copy_span_non_overlapping_impl(
         &mut self,
         results: RegisterSpan,
         values: RegisterSpan,

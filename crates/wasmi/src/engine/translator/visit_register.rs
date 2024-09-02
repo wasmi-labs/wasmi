@@ -79,7 +79,11 @@ impl VisitInputRegisters for Instruction {
                 values.visit_input_registers(f);
             }
             Instruction::Branch { .. } => {},
-            Instruction::BranchTable { index, .. } => f(index),
+            Instruction::BranchTable0 { index, .. } |
+            Instruction::BranchTable1 { index, .. } |
+            Instruction::BranchTable2 { index, .. } |
+            Instruction::BranchTableSpan { index, .. } |
+            Instruction::BranchTableMany { index, .. } => f(index),
 
             Instruction::BranchCmpFallback { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
             Instruction::BranchI32And(instr) => instr.visit_input_registers(f),
