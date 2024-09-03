@@ -41,7 +41,10 @@ impl Instruction {
             | I::Register(_)
             | I::Register2(_)
             | I::Register3(_)
+            | I::RegisterSpan(_)
             | I::RegisterList(_)
+            | I::BranchTableTarget { .. } // can't relink since `br_table` diverts control flow
+            | I::BranchTableTargetNonOverlapping { .. } // can't relink since `br_table` diverts control flow
             | I::CallIndirectParams(_)
             | I::CallIndirectParamsImm16(_)
             | I::Trap(_)
@@ -80,6 +83,7 @@ impl Instruction {
             | I::BranchTable0 { .. }
             | I::BranchTable1 { .. }
             | I::BranchTable2 { .. }
+            | I::BranchTable3 { .. }
             | I::BranchTableSpan { .. }
             | I::BranchTableMany { .. }
             | I::BranchI32Eq(_)

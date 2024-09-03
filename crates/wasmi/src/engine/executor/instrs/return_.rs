@@ -2,7 +2,15 @@ use super::Executor;
 use crate::{
     core::UntypedVal,
     engine::{
-        bytecode::{AnyConst32, Const32, Instruction, Register, RegisterSpan, RegisterSpanIter},
+        bytecode::{
+            AnyConst32,
+            Const32,
+            Instruction,
+            InstructionPtr,
+            Register,
+            RegisterSpan,
+            RegisterSpanIter,
+        },
         executor::stack::FrameRegisters,
     },
     store::StoreInner,
@@ -211,15 +219,21 @@ impl<'engine> Executor<'engine> {
         store: &mut StoreInner,
         values: [Register; 3],
     ) -> ReturnOutcome {
-        self.execute_return_many_impl(store, &values)
+        self.ip.add(1);
+        self.copy_many_return_values(self.ip, &values);
+        self.return_impl(store)
     }
 
-    /// Executes [`Instruction::ReturnMany`] or parts of [`Instruction::ReturnNezMany`] generically.
-    fn execute_return_many_impl(
-        &mut self,
-        store: &mut StoreInner,
-        values: &[Register],
-    ) -> ReturnOutcome {
+    /// Copies many return values to the caller frame.
+    ///
+    /// # Note
+    ///
+    /// Used by the execution logic for
+    ///
+    /// - [`Instruction::ReturnMany`]
+    /// - [`Instruction::ReturnNezMany`]
+    /// - [`Instruction::BranchTableMany`]
+    pub fn copy_many_return_values(&mut self, ip: InstructionPtr, values: &[Register]) {
         let (mut caller_sp, results) = self.return_caller_results();
         let mut result = results.head();
         let mut copy_results = |values: &[Register]| {
@@ -234,8 +248,7 @@ impl<'engine> Executor<'engine> {
             }
         };
         copy_results(values);
-        let mut ip = self.ip;
-        ip.add(1);
+        let mut ip = ip;
         while let Instruction::RegisterList(values) = ip.get() {
             copy_results(values);
             ip.add(1);
@@ -247,7 +260,6 @@ impl<'engine> Executor<'engine> {
             unexpected => unreachable!("unexpected Instruction found while executing Instruction::ReturnMany: {unexpected:?}"),
         };
         copy_results(values);
-        self.return_impl(store)
     }
 
     /// Execute a generic conditional return [`Instruction`].
@@ -356,14 +368,14 @@ impl<'engine> Executor<'engine> {
         values: [Register; 2],
     ) -> ReturnOutcome {
         let condition = self.get_register(condition);
+        self.ip.add(1);
         match bool::from(condition) {
-            true => self.execute_return_many_impl(store, &values),
+            true => {
+                self.copy_many_return_values(self.ip, &values);
+                self.return_impl(store)
+            }
             false => {
-                self.ip.add(1);
-                while let Instruction::RegisterList(_values) = self.ip.get() {
-                    self.ip.add(1);
-                }
-                self.ip.add(1);
+                self.ip = Self::skip_register_list(self.ip);
                 ReturnOutcome::Wasm
             }
         }

@@ -349,10 +349,16 @@ fn fuzz_regression_15_01_codegen() {
             ExpectedFunc::new([
                 Instruction::i32_wrap_i64(Register::from_i16(1), Register::from_i16(0)),
                 Instruction::branch_table_1(Register::from_i16(1), 3),
-                Instruction::copy_imm32(Register::from_i16(1), 10.0_f32),
-                Instruction::branch(BranchOffset::from(3)),
+                Instruction::const32(10.0_f32),
+                Instruction::branch_table_target(
+                    RegisterSpan::new(Register::from(1)),
+                    BranchOffset::from(3),
+                ),
                 Instruction::return_imm32(10.0_f32),
-                Instruction::branch(BranchOffset::from(1)),
+                Instruction::branch_table_target(
+                    RegisterSpan::new(Register::from(1)),
+                    BranchOffset::from(1),
+                ),
                 Instruction::Trap(TrapCode::UnreachableCodeReached),
             ]),
         )
@@ -395,14 +401,16 @@ fn fuzz_regression_15_02() {
             ExpectedFunc::new([
                 Instruction::i32_wrap_i64(Register::from_i16(1), Register::from_i16(0)),
                 Instruction::branch_table_2(Register::from_i16(1), 3),
-                Instruction::copy2(
-                    RegisterSpan::new(Register::from_i16(1)),
-                    Register::from_i16(-1),
-                    Register::from_i16(-2),
+                Instruction::register2(Register::from_i16(-1), Register::from_i16(-2)),
+                Instruction::branch_table_target(
+                    RegisterSpan::new(Register::from(1)),
+                    BranchOffset::from(3),
                 ),
-                Instruction::branch(BranchOffset::from(3)),
                 Instruction::return_reg2(Register::from_i16(-1), Register::from_i16(-2)),
-                Instruction::branch(BranchOffset::from(1)),
+                Instruction::branch_table_target(
+                    RegisterSpan::new(Register::from(1)),
+                    BranchOffset::from(1),
+                ),
                 Instruction::Trap(TrapCode::UnreachableCodeReached),
             ])
             .consts([10.0_f32, 20.0_f32]),
@@ -422,33 +430,23 @@ fn fuzz_regression_15_03() {
                 Instruction::global_get(Register::from_i16(2), GlobalIdx::from(0)),
                 Instruction::i32_wrap_i64(Register::from_i16(3), Register::from_i16(0)),
                 Instruction::branch_table_2(Register::from_i16(3), 4),
-                Instruction::copy2(
-                    RegisterSpan::new(Register::from(1)),
-                    Register::from(-1),
-                    Register::from(-2),
+                Instruction::register2(Register::from(-1), Register::from(-2)),
+                Instruction::branch_table_target(
+                    RegisterSpan::new(Register::from(3)),
+                    BranchOffset::from(4),
                 ),
-                Instruction::branch(BranchOffset::from(4)),
-                Instruction::branch(BranchOffset::from(5)),
-                Instruction::branch(BranchOffset::from(2)),
-                Instruction::branch(BranchOffset::from(5)),
-                // Instruction::copy2(
-                //     RegisterSpan::new(Register::from_i16(3)),
-                //     Register::from_i16(-1),
-                //     Register::from_i16(-2),
-                // ),
-                // Instruction::branch(BranchOffset::from(5)),
-                // Instruction::copy2(
-                //     RegisterSpan::new(Register::from_i16(2)),
-                //     Register::from_i16(-1),
-                //     Register::from_i16(-2),
-                // ),
-                // Instruction::branch(BranchOffset::from(5)),
-                // Instruction::copy2(
-                //     RegisterSpan::new(Register::from_i16(1)),
-                //     Register::from_i16(-1),
-                //     Register::from_i16(-2),
-                // ),
-                // Instruction::branch(BranchOffset::from(5)),
+                Instruction::branch_table_target(
+                    RegisterSpan::new(Register::from(2)),
+                    BranchOffset::from(5),
+                ),
+                Instruction::branch_table_target(
+                    RegisterSpan::new(Register::from(3)),
+                    BranchOffset::from(2),
+                ),
+                Instruction::branch_table_target(
+                    RegisterSpan::new(Register::from(1)),
+                    BranchOffset::from(5),
+                ),
                 Instruction::i32_add(
                     Register::from_i16(3),
                     Register::from_i16(3),

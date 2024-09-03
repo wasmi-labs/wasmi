@@ -231,14 +231,6 @@ impl InstrEncoder {
         self.instrs.drain()
     }
 
-    pub fn get_instr(&self, instr: Instr) -> &Instruction {
-        self.instrs.get(instr)
-    }
-
-    pub fn patch_instr(&mut self, instr: Instr, new_instruction: Instruction) {
-        *self.instrs.get_mut(instr) = new_instruction;
-    }
-
     /// Creates a new unresolved label and returns its [`LabelRef`].
     pub fn new_label(&mut self) -> LabelRef {
         self.labels.new_label()
@@ -715,11 +707,11 @@ impl InstrEncoder {
     /// Converts a [`TypedProvider`] into a [`Register`].
     ///
     /// This allocates constant values for [`TypedProvider::Const`].
-    fn provider2reg(stack: &mut ValueStack, provider: &TypedProvider) -> Result<Register, Error> {
-        match provider {
-            Provider::Register(register) => Ok(*register),
-            Provider::Const(value) => stack.alloc_const(*value),
-        }
+    pub fn provider2reg(
+        stack: &mut ValueStack,
+        provider: &TypedProvider,
+    ) -> Result<Register, Error> {
+        stack.provider2reg(provider)
     }
 
     /// Encode the given slice of [`TypedProvider`] as a list of [`Register`].
@@ -743,36 +735,32 @@ impl InstrEncoder {
         inputs: &[TypedProvider],
     ) -> Result<(), Error> {
         let mut remaining = inputs;
-        loop {
+        let instr = loop {
             match remaining {
                 [] => return Ok(()),
-                [v0] => {
-                    let v0 = Self::provider2reg(stack, v0)?;
-                    self.instrs.push(Instruction::register(v0))?;
-                    return Ok(());
-                }
+                [v0] => break Instruction::register(stack.provider2reg(v0)?),
                 [v0, v1] => {
-                    let v0 = Self::provider2reg(stack, v0)?;
-                    let v1 = Self::provider2reg(stack, v1)?;
-                    self.instrs.push(Instruction::register2(v0, v1))?;
-                    return Ok(());
+                    break Instruction::register2(stack.provider2reg(v0)?, stack.provider2reg(v1)?)
                 }
                 [v0, v1, v2] => {
-                    let v0 = Self::provider2reg(stack, v0)?;
-                    let v1 = Self::provider2reg(stack, v1)?;
-                    let v2 = Self::provider2reg(stack, v2)?;
-                    self.instrs.push(Instruction::register3(v0, v1, v2))?;
-                    return Ok(());
+                    break Instruction::register3(
+                        stack.provider2reg(v0)?,
+                        stack.provider2reg(v1)?,
+                        stack.provider2reg(v2)?,
+                    );
                 }
                 [v0, v1, v2, rest @ ..] => {
-                    let v0 = Self::provider2reg(stack, v0)?;
-                    let v1 = Self::provider2reg(stack, v1)?;
-                    let v2 = Self::provider2reg(stack, v2)?;
-                    self.instrs.push(Instruction::register_list(v0, v1, v2))?;
+                    self.instrs.push(Instruction::register_list(
+                        stack.provider2reg(v0)?,
+                        stack.provider2reg(v1)?,
+                        stack.provider2reg(v2)?,
+                    ))?;
                     remaining = rest;
                 }
-            }
-        }
+            };
+        };
+        self.instrs.push(instr)?;
+        Ok(())
     }
 
     /// Encode a `local.set` or `local.tee` instruction.
@@ -1423,7 +1411,9 @@ impl Instruction {
         use Instruction as I;
         use BranchComparator as Cmp;
         match self {
-            Instruction::Branch { offset } => {
+            Instruction::Branch { offset } |
+            Instruction::BranchTableTarget { offset, .. } |
+            Instruction::BranchTableTargetNonOverlapping { offset, .. } => {
                 offset.init(new_offset);
                 Ok(())
             }
