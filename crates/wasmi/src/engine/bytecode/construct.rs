@@ -202,12 +202,6 @@ impl Instruction {
         Self::branch_i64_ne_imm(condition, 0_i16, offset)
     }
 
-    // TODO: remove this method
-    /// Creates a new [`Instruction::BranchTable0`] for the given `index` and `len_targets`.
-    pub fn branch_table(index: Register, len_targets: u32) -> Self {
-        Self::branch_table_0(index, len_targets)
-    }
-
     /// Creates a new [`Instruction::BranchTable0`] for the given `index` and `len_targets`.
     pub fn branch_table_0(index: impl Into<Register>, len_targets: u32) -> Self {
         Self::BranchTable0 {

@@ -109,7 +109,7 @@ fn reg_params_0() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_table(Register::from_i16(0), 4),
+            Instruction::branch_table_0(Register::from_i16(0), 4),
             Instruction::branch(BranchOffset::from(7)),
             Instruction::branch(BranchOffset::from(5)),
             Instruction::branch(BranchOffset::from(3)),
@@ -146,7 +146,7 @@ fn reg_params_0_return() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_table(Register::from_i16(0), 5),
+            Instruction::branch_table_0(Register::from_i16(0), 5),
             Instruction::Return,
             Instruction::branch(BranchOffset::from(10)),
             Instruction::branch(BranchOffset::from(7)),
