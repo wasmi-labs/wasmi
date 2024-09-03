@@ -36,7 +36,10 @@ pub use self::{
     instr_encoder::{Instr, InstrEncoder},
     stack::TypedProvider,
 };
-use super::{bytecode::Provider, code_map::CompiledFuncEntity};
+use super::{
+    bytecode::{BranchOffset, Provider},
+    code_map::CompiledFuncEntity,
+};
 use crate::{
     core::{TrapCode, Typed, TypedVal, UntypedVal, ValType},
     engine::{
@@ -2528,7 +2531,15 @@ impl FuncTranslator {
         }
     }
 
-    fn translate_br_table_targets(&mut self, values: &[TypedProvider]) -> Result<(), Error> {
+    fn translate_br_table_targets_simple(&mut self, values: &[TypedProvider]) -> Result<(), Error> {
+        self.translate_br_table_targets(values, |_, _| unreachable!())
+    }
+
+    fn translate_br_table_targets(
+        &mut self,
+        values: &[TypedProvider],
+        make_target: impl Fn(RegisterSpanIter, BranchOffset) -> Instruction,
+    ) -> Result<(), Error> {
         let engine = self.engine().clone();
         let fuel_info = self.fuel_info();
         let targets = &self.alloc.buffer.br_table_targets;
@@ -2548,7 +2559,10 @@ impl FuncTranslator {
                     let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
                     let instr = match branch_params.len() {
                         0 => Instruction::branch(branch_offset),
-                        _ => Instruction::branch_table_target(branch_params.span(), branch_offset),
+                        1..=3 => {
+                            Instruction::branch_table_target(branch_params.span(), branch_offset)
+                        }
+                        _ => make_target(branch_params, branch_offset),
                     };
                     self.alloc.instr_encoder.append_instr(instr)?;
                 }
@@ -2565,7 +2579,7 @@ impl FuncTranslator {
             self.fuel_info(),
             FuelCosts::base,
         )?;
-        self.translate_br_table_targets(&[])?;
+        self.translate_br_table_targets_simple(&[])?;
         self.reachable = false;
         Ok(())
     }
@@ -2606,7 +2620,7 @@ impl FuncTranslator {
             },
         };
         self.alloc.instr_encoder.append_instr(param_instr)?;
-        self.translate_br_table_targets(&[value])?;
+        self.translate_br_table_targets_simple(&[value])?;
         self.reachable = false;
         Ok(())
     }
@@ -2628,7 +2642,7 @@ impl FuncTranslator {
                 stack.provider2reg(&v0)?,
                 stack.provider2reg(&v1)?,
             ))?;
-        self.translate_br_table_targets(&[v0, v1])?;
+        self.translate_br_table_targets_simple(&[v0, v1])?;
         self.reachable = false;
         Ok(())
     }
@@ -2651,7 +2665,7 @@ impl FuncTranslator {
                 stack.provider2reg(&v1)?,
                 stack.provider2reg(&v2)?,
             ))?;
-        self.translate_br_table_targets(&[v0, v1, v2])?;
+        self.translate_br_table_targets_simple(&[v0, v1, v2])?;
         self.reachable = false;
         Ok(())
     }
@@ -2683,7 +2697,20 @@ impl FuncTranslator {
         self.alloc
             .instr_encoder
             .append_instr(Instruction::register_span(values))?;
-        self.apply_providers_buffer(Self::translate_br_table_targets)?;
+        self.apply_providers_buffer(|this, buffer| {
+            this.translate_br_table_targets(buffer, |branch_params, branch_offset| {
+                debug_assert_eq!(values.len(), branch_params.len());
+                let len = values.len();
+                let results = branch_params.span();
+                let values = values.span();
+                let make_instr =
+                    match InstrEncoder::has_overlapping_copy_spans(results, values, len) {
+                        true => Instruction::branch_table_target,
+                        false => Instruction::branch_table_target_non_overlapping,
+                    };
+                make_instr(branch_params.span(), branch_offset)
+            })
+        })?;
         self.reachable = false;
         Ok(())
     }
@@ -2703,7 +2730,15 @@ impl FuncTranslator {
         self.alloc
             .instr_encoder
             .encode_register_list(stack, values)?;
-        self.translate_br_table_targets(&[])?;
+        self.apply_providers_buffer(|this, values| {
+            this.translate_br_table_targets(&[], |branch_params, branch_offset| {
+                let make_instr = match InstrEncoder::has_overlapping_copies(branch_params, values) {
+                    true => Instruction::branch_table_target,
+                    false => Instruction::branch_table_target_non_overlapping,
+                };
+                make_instr(branch_params.span(), branch_offset)
+            })
+        })?;
         self.reachable = false;
         Ok(())
     }

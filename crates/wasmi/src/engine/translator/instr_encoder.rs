@@ -527,7 +527,11 @@ impl InstrEncoder {
     /// - `[ 1 <- 0 ]`: single element never overlaps
     /// - `[ 0 <- 1, 1 <- 2, 2 <- 3 ]``: no overlap
     /// - `[ 1 <- 0, 2 <- 1 ]`: overlaps!
-    fn has_overlapping_copy_spans(results: RegisterSpan, values: RegisterSpan, len: usize) -> bool {
+    pub fn has_overlapping_copy_spans(
+        results: RegisterSpan,
+        values: RegisterSpan,
+        len: usize,
+    ) -> bool {
         RegisterSpanIter::has_overlapping_copies(results.iter(len), values.iter(len))
     }
 
@@ -540,7 +544,7 @@ impl InstrEncoder {
     ///   is written to in the first copy but read from in the next.
     /// - The sequence `[ 3 <- 1, 4 <- 2, 5 <- 3 ]` has overlapping copies since register `3`
     ///   is written to in the first copy but read from in the third.
-    fn has_overlapping_copies(results: RegisterSpanIter, values: &[TypedProvider]) -> bool {
+    pub fn has_overlapping_copies(results: RegisterSpanIter, values: &[TypedProvider]) -> bool {
         debug_assert_eq!(results.len(), values.len());
         if results.is_empty() {
             // Note: An empty set of copies can never have overlapping copies.
