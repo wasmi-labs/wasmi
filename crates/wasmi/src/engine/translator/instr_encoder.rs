@@ -475,8 +475,8 @@ impl InstrEncoder {
                     // Note: we already asserted that the first copy is not a no-op
                     return self.encode_copy(stack, result, *v0, fuel_info);
                 }
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
+                let reg0 = stack.provider2reg(v0)?;
+                let reg1 = stack.provider2reg(v1)?;
                 self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
                 let instr = self.push_instr(Instruction::copy2(results.span(), reg0, reg1))?;
                 Ok(Some(instr))
@@ -510,8 +510,8 @@ impl InstrEncoder {
                     true => Instruction::copy_many,
                     false => Instruction::copy_many_non_overlapping,
                 };
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
+                let reg0 = stack.provider2reg(v0)?;
+                let reg1 = stack.provider2reg(v1)?;
                 let instr = self.push_instr(make_instr(results.span(), reg0, reg1))?;
                 self.encode_register_list(stack, rest)?;
                 Ok(Some(instr))
@@ -607,14 +607,14 @@ impl InstrEncoder {
                 }
             },
             [v0, v1] => {
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
+                let reg0 = stack.provider2reg(v0)?;
+                let reg1 = stack.provider2reg(v1)?;
                 Instruction::return_reg2(reg0, reg1)
             }
             [v0, v1, v2] => {
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
-                let reg2 = Self::provider2reg(stack, v2)?;
+                let reg0 = stack.provider2reg(v0)?;
+                let reg1 = stack.provider2reg(v1)?;
+                let reg2 = stack.provider2reg(v2)?;
                 Instruction::return_reg3(reg0, reg1, reg2)
             }
             [v0, v1, v2, rest @ ..] => {
@@ -630,9 +630,9 @@ impl InstrEncoder {
                     self.push_instr(Instruction::return_span(span))?;
                     return Ok(());
                 }
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
-                let reg2 = Self::provider2reg(stack, v2)?;
+                let reg0 = stack.provider2reg(v0)?;
+                let reg1 = stack.provider2reg(v1)?;
+                let reg2 = stack.provider2reg(v2)?;
                 self.push_instr(Instruction::return_many(reg0, reg1, reg2))?;
                 self.encode_register_list(stack, rest)?;
                 return Ok(());
@@ -675,8 +675,8 @@ impl InstrEncoder {
                 }
             },
             [v0, v1] => {
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
+                let reg0 = stack.provider2reg(v0)?;
+                let reg1 = stack.provider2reg(v1)?;
                 Instruction::return_nez_reg2(condition, reg0, reg1)
             }
             [v0, v1, rest @ ..] => {
@@ -692,8 +692,8 @@ impl InstrEncoder {
                     self.push_instr(Instruction::return_nez_span(condition, span))?;
                     return Ok(());
                 }
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
+                let reg0 = stack.provider2reg(v0)?;
+                let reg1 = stack.provider2reg(v1)?;
                 self.push_instr(Instruction::return_nez_many(condition, reg0, reg1))?;
                 self.encode_register_list(stack, rest)?;
                 return Ok(());
@@ -702,16 +702,6 @@ impl InstrEncoder {
         self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
         self.push_instr(instr)?;
         Ok(())
-    }
-
-    /// Converts a [`TypedProvider`] into a [`Register`].
-    ///
-    /// This allocates constant values for [`TypedProvider::Const`].
-    pub fn provider2reg(
-        stack: &mut ValueStack,
-        provider: &TypedProvider,
-    ) -> Result<Register, Error> {
-        stack.provider2reg(provider)
     }
 
     /// Encode the given slice of [`TypedProvider`] as a list of [`Register`].
