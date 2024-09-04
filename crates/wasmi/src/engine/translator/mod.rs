@@ -858,21 +858,21 @@ impl FuncTranslator {
     fn translate_copy_branch_params(
         &mut self,
         branch_params: RegisterSpanIter,
-    ) -> Result<Option<Instr>, Error> {
+    ) -> Result<(), Error> {
         if branch_params.is_empty() {
             // If the block does not have branch parameters there is no need to copy anything.
-            return Ok(None);
+            return Ok(());
         }
         let fuel_info = self.fuel_info();
         let params = &mut self.alloc.buffer.providers;
         self.alloc.stack.pop_n(branch_params.len(), params);
-        let copy_instr = self.alloc.instr_encoder.encode_copies(
+        self.alloc.instr_encoder.encode_copies(
             &mut self.alloc.stack,
             branch_params,
             &self.alloc.buffer.providers[..],
             fuel_info,
         )?;
-        Ok(copy_instr)
+        Ok(())
     }
 
     /// Translates the `end` of a Wasm `block` control frame.
